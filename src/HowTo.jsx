@@ -3,10 +3,10 @@ import { useState } from "react";
 export default function HowTo({ objective, steps }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="bg-indigo-950/30 border border-indigo-800/40 rounded-xl p-4 space-y-2">
+    <div className="bg-violet-950/20 border border-violet-800/30 rounded-xl p-4 space-y-2">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-indigo-400 uppercase tracking-widest mb-0.5">🎯 Learning Objective</p>
+          <p className="text-xs text-violet-400 uppercase tracking-widest mb-0.5">🎯 Learning Objective</p>
           <p className="text-sm text-zinc-200">{objective}</p>
         </div>
         <button onClick={() => setOpen(o => !o)}
@@ -15,10 +15,10 @@ export default function HowTo({ objective, steps }) {
         </button>
       </div>
       {open && (
-        <div className="border-t border-indigo-800/30 pt-2 space-y-1">
+        <div className="border-t border-violet-800/20 pt-2 space-y-1">
           {steps.map((s, i) => (
             <div key={i} className="flex items-start gap-2 text-xs text-zinc-400">
-              <span className="text-indigo-500 shrink-0 font-mono">{i + 1}.</span>{s}
+              <span className="text-violet-500 shrink-0 font-mono">{i + 1}.</span>{s}
             </div>
           ))}
         </div>

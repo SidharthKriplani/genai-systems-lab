@@ -1095,7 +1095,7 @@ function SearchModal({ onClose, onSelect }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center pt-16 px-4" onClick={onClose}>
-      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-zinc-400 shrink-0">
             <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
@@ -1308,10 +1308,10 @@ export default function App() {
       )}
       {showShortcuts && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowShortcuts(false)}>
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-white">Keyboard Shortcuts</span>
-              <button onClick={() => setShowShortcuts(false)} className="text-zinc-500 hover:text-white text-xs">✕</button>
+              <button onClick={() => setShowShortcuts(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕ Close</button>
             </div>
             <div className="space-y-2">
               {SHORTCUT_TABS.map((tab, i) => (
@@ -1339,10 +1339,10 @@ export default function App() {
       {/* What's New modal */}
       {whatsNewOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={dismissWhatsNew}>
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-md w-full space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 max-w-md w-full space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-white">🆕 What's New</span>
-              <button onClick={dismissWhatsNew} className="text-zinc-500 hover:text-white text-xs">✕</button>
+              <button onClick={dismissWhatsNew} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕ Close</button>
             </div>
             <div className="space-y-3">
               {[
@@ -1394,9 +1394,15 @@ export default function App() {
                 ))}
               </div>
             ))}
-            <button onClick={() => { setShowShortcuts(true); setMobileMenuOpen(false); }} className="w-full mt-3 py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-white transition-all">
-              ? Keyboard shortcuts
-            </button>
+            <div className="mt-3 space-y-1.5">
+              <button onClick={() => { setSearchOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-400 border border-zinc-700 rounded-lg hover:text-white hover:border-zinc-600 transition-all flex items-center justify-center gap-2">
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                Search modules
+              </button>
+              <button onClick={() => { setLeaderboardOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-white transition-all">
+                📋 Challenge Log
+              </button>
+            </div>
           </div>
         </div>
       )}

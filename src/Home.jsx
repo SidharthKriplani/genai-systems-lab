@@ -121,7 +121,7 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
   return (
     <div className="min-h-screen bg-zinc-950">
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-6 pt-16 pb-12 text-center space-y-6">
+      <div className="max-w-4xl mx-auto px-4 pt-16 pb-12 text-center space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800 border border-zinc-700 text-xs text-zinc-400 font-mono">
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
           Free · Static · No login · No backend
@@ -207,7 +207,7 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
       </div>
 
       {/* ── START HERE JOURNEY ──────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-6 pb-8">
+      <div className="max-w-4xl mx-auto px-4 pb-8">
         <div className="bg-zinc-900/80 border border-violet-900/40 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div>
@@ -238,7 +238,7 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
       </div>
 
       {/* ── LEARNING PATHS ───────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-6 pb-16 space-y-8">
+      <div className="max-w-4xl mx-auto px-4 pb-16 space-y-8">
         <div className="text-center space-y-1">
           <h2 className="text-xl font-black text-white">Choose Your Path</h2>
           <p className="text-sm text-zinc-500">Each path is a curated sequence through the lab — or ignore them and explore freely.</p>
@@ -250,7 +250,7 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
             const pct = Math.round((prog.visited / prog.total) * 100);
             return (
             <div key={path.id}
-              className={`bg-zinc-900 border rounded-2xl p-5 cursor-pointer transition-all ${activePath === path.id ? "scale-100" : "hover:border-zinc-600"}`}
+              className={`bg-zinc-900 border rounded-2xl p-5 cursor-pointer transition-all ${activePath === path.id ? "scale-[1.01] shadow-lg" : "hover:border-zinc-600"}`}
               style={{ borderColor: activePath === path.id ? path.color : "#3f3f46" }}
               onClick={() => setActivePath(activePath === path.id ? null : path.id)}>
               <div className="flex items-start justify-between mb-3">

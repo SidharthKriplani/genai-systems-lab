@@ -2865,18 +2865,23 @@ export default function ConceptsApp() {
   const Component = mod.component;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+      {/* Tab header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-black text-white tracking-tight">Concepts</h1>
+        <p className="text-sm text-zinc-400">Core building blocks — from tokenization to multi-agent systems</p>
+      </div>
       {/* Module selector */}
-      <div className="flex gap-3 mb-6 flex-wrap">
+      <div className="flex gap-2 flex-wrap justify-center">
         {MODULES.map((m) => (
           <button
             key={m.id}
             onClick={() => setActive(m.id)}
-            className={`px-4 py-2 rounded-lg text-xs font-mono font-semibold transition-all ${
-              active === m.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
+            className={`px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+              active === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
             }`}
           >
-            <span className="text-zinc-500 mr-1.5">{m.tag}</span>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${active === m.id ? "bg-zinc-200 text-zinc-700" : "bg-zinc-700 text-zinc-500"}`}>{m.tag}</span>
             {m.label}
           </button>
         ))}
