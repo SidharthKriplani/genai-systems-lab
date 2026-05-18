@@ -46,10 +46,10 @@ function StageBox({ label, sublabel, active, failed, warn, pulse, children, colo
   const bg = active ? (failed ? "rgba(239,68,68,0.08)" : warn ? "rgba(245,158,11,0.08)" : `${color}11`) : "rgba(24,24,27,0.5)";
   return (
     <div style={{ minWidth: minW, border: `1px solid ${border}`, background: bg, transition: "all 0.4s ease" }}
-      className="rounded-xl p-3 text-center relative flex-shrink-0">
+      className="rounded-xl px-3 py-3 text-center relative flex-shrink-0">
       {pulse && active && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full flow-pulse" style={{ background: failed ? "#ef4444" : warn ? "#f59e0b" : color }} />}
       <div className="text-xs font-bold font-mono" style={{ color: active ? (failed ? "#ef4444" : warn ? "#f59e0b" : "#fff") : "#52525b", transition: "color 0.3s" }}>{label}</div>
-      {sublabel && <div className="text-xs mt-0.5" style={{ color: active ? "#a1a1aa" : "#3f3f46", transition: "color 0.3s" }}>{sublabel}</div>}
+      {sublabel && <div className="text-[10px] mt-0.5 font-mono" style={{ color: active ? "#71717a" : "#3f3f46", transition: "color 0.3s" }}>{sublabel}</div>}
       {active && children && <div className="flow-fadein mt-2 text-xs text-zinc-400 leading-snug">{children}</div>}
     </div>
   );
@@ -183,21 +183,36 @@ function RAGFlowDiagram() {
             ))}
           </div>
 
-          {/* Stage row */}
-          <div className="flex items-start gap-0 overflow-x-auto pb-2">
+          {/* Stage row — boxes show label+sublabel only, no detail text inside */}
+          <div className="flex items-center gap-0 overflow-x-auto pb-1">
             {stages.map((s, i) => (
-              <div key={i} className="flex items-start">
+              <div key={i} className="flex items-center">
                 <StageBox label={s.label} sublabel={s.sub} active={step >= i}
                   failed={s.failed && step >= i} warn={s.warn && step >= i}
-                  pulse color={modeColor} minW="90px">
-                  {s.detail}
-                </StageBox>
+                  pulse color={modeColor} minW="90px" />
                 {i < stages.length - 1 && (
                   <Arrow active={step > i}
                     color={stages[i + 1].failed && step > i ? "#ef4444" : stages[i + 1].warn && step > i ? "#f59e0b" : modeColor} />
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Active stage detail — clean panel below the pipeline */}
+          <div className="min-h-[36px]">
+            {step >= 0 && step < stages.length && (() => {
+              const s = stages[step];
+              const detailColor = s.failed ? "#ef4444" : s.warn ? "#f59e0b" : modeColor;
+              return (
+                <div className="flow-fadein rounded-lg px-3 py-2 flex items-start gap-2"
+                  style={{ background: `${detailColor}0d`, border: `1px solid ${detailColor}30` }}>
+                  <span className="text-[10px] font-mono font-bold shrink-0 mt-0.5" style={{ color: detailColor }}>
+                    {s.label}
+                  </span>
+                  <span className="text-xs text-zinc-300 leading-relaxed">{s.detail}</span>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Controls */}
