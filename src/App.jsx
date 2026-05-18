@@ -7,6 +7,7 @@ import AIPMApp from "./AIPM";
 import PlaygroundApp from "./Playground";
 import CareerApp from "./Career";
 import ExploreApp from "./Explore";
+import AgentsApp from "./Agents";
 import HomePage from "./Home";
 import HowTo from "./HowTo";
 
@@ -1013,17 +1014,25 @@ const ALL_MODULES_INDEX = [
   { label: "Observability",         tag: "OPS",       tab: "systems", moduleId: "observability" },
   { label: "A/B Testing",           tag: "SHIP",      tab: "systems", moduleId: "abtesting"     },
   { label: "ML CI/CD",              tag: "DEPLOY",    tab: "systems", moduleId: "mlcicd"        },
+  { label: "ReAct Pattern",         tag: "LOOP",      tab: "agents",  moduleId: "react"         },
+  { label: "Tool Use Design",       tag: "TOOLS",     tab: "agents",  moduleId: "tools"         },
+  { label: "Agent Memory",          tag: "MEMORY",    tab: "agents",  moduleId: "memory"        },
+  { label: "Multi-Agent Patterns",  tag: "SCALE",     tab: "agents",  moduleId: "multiagent"    },
+  { label: "Agent Failure Modes",   tag: "DEBUG",     tab: "agents",  moduleId: "failures"      },
+  { label: "Planning Patterns",     tag: "PLAN",      tab: "agents",  moduleId: "planning"      },
   { label: "Embedding Space",       tag: "VISUALIZE", tab: "explore", moduleId: "embeddings"    },
   { label: "Shadow Mode A/B",       tag: "COMPARE",   tab: "explore", moduleId: "shadow"        },
   { label: "Latency Planner",       tag: "BUDGET",    tab: "explore", moduleId: "latency"       },
   { label: "Tokenizer Explorer",    tag: "TOKENS",    tab: "explore", moduleId: "tokenizer"     },
   { label: "Model Card Reader",     tag: "AUDIT",     tab: "explore", moduleId: "modelcard"     },
   { label: "Vector DB Comparison",  tag: "DB",        tab: "explore", moduleId: "vectordb"      },
+  { label: "Structured Outputs",    tag: "SCHEMA",    tab: "explore", moduleId: "structured"    },
   { label: "Red Teaming Lab",       tag: "ATTACK",    tab: "explore", moduleId: "redteam"       },
   { label: "Home",       tag: "TAB", tab: "home",       moduleId: null },
   { label: "Concepts",   tag: "TAB", tab: "concepts",   moduleId: null },
   { label: "Flows",      tag: "TAB", tab: "flows",      moduleId: null },
   { label: "RAG Lab",    tag: "TAB", tab: "lab",        moduleId: null },
+  { label: "Agents",     tag: "TAB", tab: "agents",     moduleId: null },
   { label: "Playground", tag: "TAB", tab: "playground", moduleId: null },
   { label: "Fluency",    tag: "TAB", tab: "fluency",    moduleId: null },
   { label: "AIPM",       tag: "TAB", tab: "aipm",       moduleId: null },
@@ -1031,7 +1040,7 @@ const ALL_MODULES_INDEX = [
 ];
 
 const TAB_COLORS = {
-  systems: "#3b82f6", explore: "#8b5cf6", concepts: "#6366f1",
+  systems: "#3b82f6", explore: "#8b5cf6", agents: "#6366f1", concepts: "#6366f1",
   flows: "#6366f1", lab: "#f59e0b", playground: "#f59e0b",
   fluency: "#22c55e", aipm: "#22c55e", career: "#22c55e", home: "#71717a",
 };
@@ -1127,16 +1136,39 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [systemsModule, setSystemsModule] = useState(null);
   const [exploreModule, setExploreModule] = useState(null);
+  const [agentsModule, setAgentsModule] = useState(null);
+  const [visitedModules, setVisitedModules] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("genai_visited_modules") || "[]")); }
+    catch { return new Set(); }
+  });
+  const [labHintDismissed, setLabHintDismissed] = useState(() => {
+    try { return localStorage.getItem("genai_lab_hint_dismissed") === "1"; } catch { return false; }
+  });
 
-  const SHORTCUT_TABS = ["home","concepts","flows","lab","systems","playground","explore","fluency","aipm","career"];
+  function trackModuleVisit(tab, moduleId) {
+    const key = `${tab}:${moduleId}`;
+    setVisitedModules(prev => {
+      if (prev.has(key)) return prev;
+      const next = new Set([...prev, key]);
+      try { localStorage.setItem("genai_visited_modules", JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }
+  function dismissLabHint() {
+    setLabHintDismissed(true);
+    try { localStorage.setItem("genai_lab_hint_dismissed", "1"); } catch {}
+  }
+
+  const SHORTCUT_TABS = ["home","concepts","flows","lab","agents","systems","playground","explore","fluency","aipm","career"];
   useEffect(() => {
     function onKey(e) {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
       if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(s => !s); return; }
       if (e.key === "?" || e.key === "/") { e.preventDefault(); setShowShortcuts(s => !s); return; }
-      if (e.key === "Escape") { setShowShortcuts(false); setMobileMenuOpen(false); setSearchOpen(false); return; }
+      if (e.key === "Escape") { setShowShortcuts(false); setMobileMenuOpen(false); setSearchOpen(false); setLeaderboardOpen(false); return; }
       const n = parseInt(e.key);
       if (n >= 1 && n <= SHORTCUT_TABS.length) { navigate(SHORTCUT_TABS[n - 1]); setMobileMenuOpen(false); }
     }
@@ -1206,9 +1238,8 @@ export default function App() {
   const NAV_GROUPS = [
     { label: null,    items: [{ id: "home", label: "Home" }] },
     { label: "LEARN", color: "#6366f1", items: [{ id: "concepts", label: "Concepts", count: 11 }, { id: "flows", label: "Flows", count: 5 }] },
-    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab", count: 6 }, { id: "systems", label: "Systems", count: 14 }, { id: "playground", label: "Playground", count: 5 }, { id: "explore", label: "Explore", count: 7 }] },
+    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab", count: 6 }, { id: "agents", label: "Agents", count: 6 }, { id: "systems", label: "Systems", count: 14 }, { id: "playground", label: "Playground", count: 5 }, { id: "explore", label: "Explore", count: 8 }] },
     { label: "GROW",  color: "#22c55e", items: [{ id: "fluency", label: "Fluency", count: 5 }, { id: "aipm", label: "AIPM", count: 5 }, { id: "career", label: "Career", count: 4 }] },
-    { label: null,    items: [{ id: "leaderboard", label: `🏆${leaderboard.filter(e => e.passed).length > 0 ? ` ${leaderboard.filter(e => e.passed).length}` : ""} Board` }] },
   ];
 
   return (
@@ -1220,10 +1251,24 @@ export default function App() {
           onSelect={item => {
             navigate(item.tab);
             if (item.tab === "systems" && item.moduleId) setSystemsModule(item.moduleId);
-            if (item.tab === "explore" && item.moduleId) setExploreModule(item.moduleId);
+            if (item.tab === "explore"  && item.moduleId) setExploreModule(item.moduleId);
+            if (item.tab === "agents"   && item.moduleId) setAgentsModule(item.moduleId);
             setSearchOpen(false);
           }}
         />
+      )}
+      {leaderboardOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center pt-10 px-4 overflow-y-auto" onClick={() => setLeaderboardOpen(false)}>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-2xl mb-10" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-zinc-800">
+              <span className="text-sm font-black text-white">🏆 Challenge Leaderboard</span>
+              <button onClick={() => setLeaderboardOpen(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕ Close</button>
+            </div>
+            <div className="p-5">
+              <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} onRetry={(tab) => { navigate(tab); setLeaderboardOpen(false); }} />
+            </div>
+          </div>
+        </div>
       )}
       {showShortcuts && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowShortcuts(false)}>
@@ -1320,6 +1365,11 @@ export default function App() {
               <span className="hidden xl:inline">Search</span>
               <kbd className="text-[9px] border border-zinc-700 rounded px-1">⌘K</kbd>
             </button>
+            <button onClick={() => setLeaderboardOpen(true)}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
+              title="Leaderboard">
+              🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px]">{leaderboard.filter(e => e.passed).length}</span>}
+            </button>
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">?</button>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
@@ -1328,13 +1378,15 @@ export default function App() {
         </div>
       </header>
 
-      {topView === "home"       && <HomePage onNavigate={navigate} />}
+      {topView === "home"       && <HomePage onNavigate={navigate} visited={visited} />}
 
       {topView === "concepts"   && <ConceptsApp />}
 
       {topView === "flows"      && <FlowsApp />}
 
-      {topView === "systems"    && <SystemsApp initialModule={systemsModule} />}
+      {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
+
+      {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />}
 
       {topView === "fluency"    && <FluencyApp />}
 
@@ -1342,11 +1394,10 @@ export default function App() {
 
       {topView === "playground" && <PlaygroundApp />}
 
-      {topView === "explore"    && <ExploreApp initialModule={exploreModule} />}
+      {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
 
       {topView === "career"     && <CareerApp />}
 
-      {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} onRetry={navigate} />}
 
       {/* Scenario tabs */}
       {topView === "lab" && <div className="border-b border-zinc-800 px-4 py-2">
@@ -1364,6 +1415,17 @@ export default function App() {
           ))}
         </div>
       </div>}
+
+      {topView === "lab" && !labHintDismissed && (
+        <div className="border-b border-violet-800/40 bg-violet-950/20 px-4 py-2.5">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs text-violet-300 leading-relaxed">
+              <span className="font-bold">New here?</span> Pick a scenario, adjust the 4 controls, hit <span className="font-bold text-white">Evaluate</span> — then read the failure diagnosis. Each scenario teaches one production failure mode.
+            </p>
+            <button onClick={dismissLabHint} className="text-[10px] text-violet-400 hover:text-white border border-violet-800 hover:border-violet-600 rounded px-2 py-0.5 transition-all shrink-0 font-mono">Got it ✕</button>
+          </div>
+        </div>
+      )}
 
       {topView === "lab" && activeTab === "simulator" ? (
         <div className="max-w-7xl mx-auto px-4 py-6">

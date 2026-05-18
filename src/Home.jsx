@@ -94,14 +94,19 @@ const MODULE_MAP = [
 
 const STATS = [
   { value: "3",    label: "Learning tracks" },
-  { value: "10",   label: "Tabs" },
-  { value: "65+",  label: "Modules" },
+  { value: "11",   label: "Tabs" },
+  { value: "75+",  label: "Modules" },
   { value: "200+", label: "Interactive challenges" },
 ];
 
-export default function HomePage({ onNavigate }) {
+export default function HomePage({ onNavigate, visited = new Set() }) {
   const [activePath, setActivePath] = useState(null);
   const [expandedModule, setExpandedModule] = useState(null);
+
+  function pathProgress(path) {
+    const visited_count = path.steps.filter(s => visited.has(s.tab)).length;
+    return { visited: visited_count, total: path.steps.length };
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -117,6 +122,20 @@ export default function HomePage({ onNavigate }) {
         <p className="text-base sm:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
           The interactive learning platform for AI engineers and product managers who want to build, ship, and speak about AI systems with precision.
         </p>
+
+        {/* Start Here CTA */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => onNavigate("concepts")}
+            className="px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-black text-sm transition-all shadow-lg shadow-violet-900/40">
+            Start Here — AI Engineer Path →
+          </button>
+          <button
+            onClick={() => onNavigate("fluency")}
+            className="px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-bold text-sm transition-all">
+            Quick: Mock Interview
+          </button>
+        </div>
 
         {/* Stats */}
         <div className="flex flex-wrap justify-center gap-4 sm:gap-8 pt-4">
@@ -185,7 +204,10 @@ export default function HomePage({ onNavigate }) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {LEARNING_PATHS.map(path => (
+          {LEARNING_PATHS.map(path => {
+            const prog = pathProgress(path);
+            const pct = Math.round((prog.visited / prog.total) * 100);
+            return (
             <div key={path.id}
               className={`bg-zinc-900 border rounded-2xl p-5 cursor-pointer transition-all ${activePath === path.id ? "scale-100" : "hover:border-zinc-600"}`}
               style={{ borderColor: activePath === path.id ? path.color : "#3f3f46" }}
@@ -199,7 +221,19 @@ export default function HomePage({ onNavigate }) {
                   <span style={{ color: path.color }}>→</span>
                 </div>
               </div>
-              <p className="text-sm text-zinc-400 leading-relaxed mb-4">{path.tagline}</p>
+              <p className="text-sm text-zinc-400 leading-relaxed mb-3">{path.tagline}</p>
+
+              {/* Progress bar */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-zinc-500">{prog.visited}/{prog.total} steps visited</span>
+                  {prog.visited > 0 && <span className="text-xs font-bold" style={{ color: path.color }}>{pct}%</span>}
+                </div>
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%`, backgroundColor: path.color, opacity: pct === 0 ? 0 : 1 }} />
+                </div>
+              </div>
 
               {/* Steps */}
               <div className="space-y-1.5">
@@ -224,7 +258,8 @@ export default function HomePage({ onNavigate }) {
                 </button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* ── MODULE MAP ──────────────────────────────────────────────────── */}

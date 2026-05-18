@@ -863,6 +863,208 @@ function VectorDBComparison() {
   );
 }
 
+// ─── STRUCTURED OUTPUTS LAB ───────────────────────────────────────────────────
+
+const OUTPUT_APPROACHES = [
+  {
+    id: "json_mode", name: "JSON Mode", color: "#6366f1",
+    desc: "Instruct the model to output valid JSON. Set response_format: {type: 'json_object'} in the API call.",
+    pros: ["Simple — one API parameter", "Works with any schema structure you design", "No tool definition required"],
+    cons: ["API doesn't validate your schema — model decides the key names", "Model may still add prose before JSON in some models", "No way to enforce required fields at the API level"],
+    when: "Structured extraction tasks where you control the full prompt. Simpler use cases where schema drift is acceptable.",
+    code: `// OpenAI / compatible API
+response = client.chat.completions.create(
+  model="gpt-4o",
+  response_format={"type": "json_object"},
+  messages=[{
+    "role": "user",
+    "content": "Extract: name, age, email as JSON."
+  }]
+)`,
+  },
+  {
+    id: "function_calling", name: "Function Calling", color: "#3b82f6",
+    desc: "Define tool schemas and the model fills them in. The API validates the function call format.",
+    pros: ["API-level format validation", "Schema names and descriptions guide the model's output", "Parallel function calls possible in one turn"],
+    cons: ["More setup — must define the full schema", "Model may not call the function at all (add tool_choice: 'required')", "Schema quality directly impacts output quality"],
+    when: "When you need structured data and want the model to commit to it. Agent tool use. Required fields.",
+    code: `tools = [{
+  "name": "extract_contact",
+  "description": "Extract contact info from text",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "name":  {"type": "string"},
+      "age":   {"type": "integer"},
+      "email": {"type": "string", "format": "email"}
+    },
+    "required": ["name", "email"]
+  }
+}]
+# Add tool_choice="required" to force a call`,
+  },
+  {
+    id: "constrained", name: "Constrained Decoding", color: "#22c55e",
+    desc: "At token generation time, constrain the model to only emit tokens valid for your schema. Guaranteed compliance.",
+    pros: ["100% schema compliance — not probabilistic", "No retries needed for format errors", "Works with any JSON Schema, regex, or grammar"],
+    cons: ["Only available self-hosted or via Outlines/Guidance/vLLM", "Not available in standard OpenAI/Anthropic API", "Over-tight constraints can reduce output quality"],
+    when: "When you need absolute schema compliance. Local/self-hosted models. Production pipelines with zero tolerance for format errors.",
+    code: `# Using Outlines (self-hosted)
+import outlines
+model = outlines.models.transformers("mistral-7b")
+
+schema = '{"name": "string", "age": "integer"}'
+generator = outlines.generate.json(model, schema)
+result = generator("Extract from: John is 30 years old.")
+# result is ALWAYS valid JSON matching schema`,
+  },
+];
+
+const OUTPUT_FAILURES = [
+  {
+    id: "prose_wrapper", name: "Prose Around JSON",
+    bad: 'Sure, here is the data:\n\n{"name": "John", "age": 30}\n\nI hope this helps!',
+    good: '{"name": "John", "age": 30}',
+    fix: "Use JSON mode OR add to prompt: 'Output ONLY valid JSON with no surrounding text, explanation, or markdown fences.'",
+  },
+  {
+    id: "wrong_types", name: "Wrong Type Coercion",
+    bad: '{"price": "29.99", "in_stock": "true", "count": "5"}',
+    good: '{"price": 29.99, "in_stock": true, "count": 5}',
+    fix: "Be explicit in the prompt: 'price is a float, in_stock is a boolean, count is an integer — not strings.' Or use function calling with typed schema.",
+  },
+  {
+    id: "missing_required", name: "Missing Required Fields",
+    bad: '{"name": "Widget A", "price": 19.99}\n// missing: description, category, sku',
+    good: '{"name": "Widget A", "price": 19.99, "description": "...", "category": "electronics", "sku": "WA-001"}',
+    fix: "List all required fields explicitly in the prompt. Use function calling with required: [...]. Validate before accepting.",
+  },
+  {
+    id: "schema_drift", name: "Schema Structure Drift",
+    bad: '{"user": {"name": "John"}, "userData": {"email": "j@x.com"}}\n// model split fields across two keys',
+    good: '{"user": {"name": "John", "email": "j@x.com"}}',
+    fix: "Provide a full example of the expected structure in the prompt. Function calling enforces nesting. Test with diverse inputs.",
+  },
+];
+
+function StructuredApproaches() {
+  const [sel, setSel] = useState("json_mode");
+  const appr = OUTPUT_APPROACHES.find(a => a.id === sel);
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {OUTPUT_APPROACHES.map(a => (
+          <button key={a.id} onClick={() => setSel(a.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${sel === a.id ? "text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+            style={sel === a.id ? { backgroundColor: a.color } : {}}>
+            {a.name}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">{appr.desc}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <div className="text-xs text-emerald-400 uppercase mb-2">Pros</div>
+            {appr.pros.map((p, i) => (
+              <div key={i} className="flex gap-2 text-xs bg-emerald-950/20 border border-emerald-900/30 rounded-lg px-3 py-2 mb-1">
+                <span className="text-emerald-400 shrink-0">✓</span><span className="text-zinc-300">{p}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div className="text-xs text-red-400 uppercase mb-2">Cons</div>
+            {appr.cons.map((c, i) => (
+              <div key={i} className="flex gap-2 text-xs bg-red-950/20 border border-red-900/30 rounded-lg px-3 py-2 mb-1">
+                <span className="text-red-400 shrink-0">✗</span><span className="text-zinc-300">{c}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-zinc-800/60 rounded-lg p-3">
+          <div className="text-xs text-zinc-500 mb-1">Use when</div>
+          <p className="text-xs text-zinc-300 leading-relaxed">{appr.when}</p>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3">
+          <div className="text-xs text-zinc-500 mb-2">Code pattern</div>
+          <pre className="text-xs font-mono text-zinc-300 leading-relaxed overflow-x-auto whitespace-pre-wrap">{appr.code}</pre>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OutputFailureModes() {
+  const [sel, setSel] = useState("prose_wrapper");
+  const [showGood, setShowGood] = useState(false);
+  const failure = OUTPUT_FAILURES.find(f => f.id === sel);
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {OUTPUT_FAILURES.map(f => (
+          <button key={f.id} onClick={() => { setSel(f.id); setShowGood(false); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${sel === f.id ? "bg-red-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {f.name}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-3">
+        <div className="rounded-xl border border-red-800/50 bg-red-950/20 p-4">
+          <div className="text-xs text-red-400 uppercase mb-2">Bad output</div>
+          <pre className="text-xs font-mono text-zinc-300 leading-relaxed whitespace-pre-wrap">{failure.bad}</pre>
+        </div>
+        {!showGood ? (
+          <button onClick={() => setShowGood(true)}
+            className="w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-400 hover:text-white transition-all font-bold">
+            Show fixed output →
+          </button>
+        ) : (
+          <>
+            <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/20 p-4">
+              <div className="text-xs text-emerald-400 uppercase mb-2">Fixed output</div>
+              <pre className="text-xs font-mono text-zinc-300 leading-relaxed whitespace-pre-wrap">{failure.good}</pre>
+            </div>
+            <div className="rounded-xl border border-violet-800/50 bg-violet-950/20 p-4">
+              <div className="text-xs text-violet-400 uppercase mb-1">Fix</div>
+              <p className="text-xs text-zinc-300 leading-relaxed">{failure.fix}</p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StructuredOutputsLab() {
+  const [tab, setTab] = useState("approaches");
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Know the 3 approaches to structured output — JSON mode, function calling, constrained decoding — and which failure modes to guard against."
+        steps={[
+          "Approaches: compare JSON mode vs function calling vs constrained decoding with code patterns",
+          "Failure Modes: click each failure, see the bad output, reveal the fix",
+          "Key insight: function calling is the most reliable approach for most production use cases",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {[
+          { id: "approaches", label: "Approaches",    tag: "COMPARE" },
+          { id: "failures",   label: "Failure Modes", tag: "DEBUG"   },
+        ].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "approaches" && <StructuredApproaches />}
+      {tab === "failures"   && <OutputFailureModes />}
+    </div>
+  );
+}
+
 // ─── RED TEAMING LAB ──────────────────────────────────────────────────────────
 
 const ATTACK_PATTERNS = [
@@ -1178,12 +1380,14 @@ const EXPLORE_MODULES = [
   { id: "tokenizer",  label: "Tokenizer Explorer", tag: "TOKENS",    component: TokenizerExplorer },
   { id: "modelcard",  label: "Model Card Reader",  tag: "AUDIT",     component: ModelCardReader },
   { id: "vectordb",  label: "Vector DB Comparison", tag: "DB",      component: VectorDBComparison },
-  { id: "redteam",   label: "Red Teaming Lab",      tag: "ATTACK",  component: RedTeamingLab      },
+  { id: "structured", label: "Structured Outputs",   tag: "SCHEMA",  component: StructuredOutputsLab },
+  { id: "redteam",   label: "Red Teaming Lab",      tag: "ATTACK",  component: RedTeamingLab        },
 ];
 
-export default function ExploreApp({ initialModule }) {
+export default function ExploreApp({ initialModule, onModuleVisit }) {
   const [activeModule, setActiveModule] = useState(initialModule || "embeddings");
   useEffect(() => { if (initialModule) setActiveModule(initialModule); }, [initialModule]);
+  function switchModule(id) { setActiveModule(id); if (onModuleVisit) onModuleVisit("explore", id); }
   const ActiveComponent = EXPLORE_MODULES.find(m => m.id === activeModule)?.component || EmbeddingExplorer;
 
   return (
@@ -1194,7 +1398,7 @@ export default function ExploreApp({ initialModule }) {
       </div>
       <div className="flex gap-2 justify-center flex-wrap">
         {EXPLORE_MODULES.map(m => (
-          <button key={m.id} onClick={() => setActiveModule(m.id)}
+          <button key={m.id} onClick={() => switchModule(m.id)}
             className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
             <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
             {m.label}

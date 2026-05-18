@@ -6,8 +6,8 @@
 
 <br /><br />
 
-**An interactive simulator for RAG failure modes, GenAI concepts, and production system design.**
-Zero backend. Zero cost. Fully open source.
+**The interactive learning platform for AI engineers and product managers.**
+11 tabs · 75+ modules · 200+ challenges · Zero backend · Free forever.
 
 <br />
 
@@ -27,96 +27,66 @@ Zero backend. Zero cost. Fully open source.
 
 ---
 
-## What is this?
+## What's inside
 
-GenAI Systems Lab is a **static, zero-cost interactive simulator** for understanding how production GenAI systems work — and fail.
-
-Two modes:
-
-- **RAG Failure Simulator** — tweak chunk size, top-k, reranker, and answer policy. Watch real failure modes play out across 5 curated scenarios.
-- **Concepts Visualizer** — interactive visuals for tokenization, embedding space, and attention. The mental models you need for interviews, system design, and deep understanding.
-
-No live API calls. No backend. No login. Everything precomputed and curated.
-
----
-
-## RAG Failure Simulator — V1-B
-
-5 interactive scenarios. Each one teaches a distinct failure mode through hands-on configuration.
-
-| # | Scenario | Failure Mode Taught |
-|---|----------|-------------------|
-| 1 | **Conflicting Documents** | Stale retrieval + silent conflict resolution |
-| 2 | **Missing Answer** | Hallucination from retrieval gap |
-| 3 | **Ambiguous Query** | Silent interpretation selection |
-| 4 | **Prompt Injection** | Indirect injection via retrieved chunks |
-| 5 | **Multi-Hop Reasoning** | Single-hop retrieval on multi-hop queries |
-
-Each scenario includes:
-
-- 4 system controls: chunk size, top-k, reranker toggle, answer policy
-- 6–8 curated configs with precomputed results
-- Failure diagnosis + system design lesson
-- **Challenge mode** with graded pass/fail criteria
+| Tab | Modules | What you'll find |
+|-----|---------|-----------------|
+| **Concepts** | 5 | Embeddings, tokenization, attention, transformers — interactive diagrams + sliders |
+| **Flows** | 5 | Animated SVG: RAG pipeline, agent loop, context window, guardrail pipeline, transformer block |
+| **RAG Lab** | 5 scenarios | Failure mode simulator — stale docs, hallucination, prompt injection, context overflow |
+| **Agents** | 6 | ReAct pattern, tool use, agent memory, multi-agent, failure modes, planning patterns |
+| **Systems** | 14 | Evals, eval frameworks (RAGAS/G-Eval), model strategy, prompt caching, fine-tuning, observability, ML CI/CD |
+| **Playground** | 5 | Injection attacks, chunking strategies, reranker, hallucination spotting, bias detection |
+| **Explore** | 8 | Embedding explorer, shadow A/B, latency planner, tokenizer, model card reader, vector DB comparison, structured outputs lab, red teaming lab |
+| **Fluency Gym** | 5 | Phrase bank, timed drills, mock interview (18 questions), company case arena, prompt engineering lab |
+| **AIPM Track** | 5 | PRD simulator, roadmap prioritizer, stakeholder explainer, launch checklist, AI-or-not framework |
+| **Career Track** | 5 | System design interviews, take-home challenges, negotiation flashcards, benchmark literacy |
+| **Leaderboard** | — | Pass/fail tracking across all scored challenges (trophy button in header) |
 
 ---
 
-## Concepts Visualizer — V2-A
+## Learning paths
 
-Three interactive modules for building deep intuition about how GenAI systems work under the hood.
+Three curated sequences — or ignore them and explore freely with **⌘K search**.
 
-| Module | What you see |
-|--------|-------------|
-| **Tokenizer** | Type any text — watch it split into tokens live. See why "unhappiness" ≠ 1 token. |
-| **Embedding Space** | 2D semantic map of 60 words. Vector arithmetic: king − man + woman = ? |
-| **Attention** | Full attention heatmap for real sentences. Switch heads. See what each token attends to. |
+| Path | Time | Who it's for |
+|------|------|-------------|
+| **AI Engineer** | ~6 hrs | Build production RAG, agents, guardrails, and evals |
+| **AI Product Manager** | ~4 hrs | PRDs, roadmap, stakeholder communication, launch |
+| **Interview Prep** | ~3 hrs | System design round, LLM trivia, mock interview |
+| **Quick Reference** | Self-directed | Jump to any module when you need a fast reminder |
 
----
-
-## Tech Stack
-
-| Layer | Choice | Why |
-|-------|--------|-----|
-| Build | Vite 6 | Zero-config, fast HMR |
-| UI | React 18 | Component model |
-| Styling | Tailwind CSS v4 | `@tailwindcss/vite` plugin, no PostCSS |
-| Data | Bundled JS objects | No database, no API, no cost |
-| Deploy | Vercel free tier | Auto-deploy on push |
+Progress is tracked per-tab in `localStorage` — no account, no sync, no tracking.
 
 ---
 
-## Run Locally
+## Features
+
+- **⌘K search** — jump to any of the 75+ modules instantly with fuzzy search
+- **Progress tracking** — visited tabs and modules persist across sessions
+- **Leaderboard modal** — see your pass rate across all scored challenges
+- **Deep-linking** — search results navigate directly into the correct sub-module
+- **Scoring** — challenge modules track pass/fail with localStorage persistence
+
+---
+
+## Tech stack
+
+React 18 · Vite 6 · Tailwind CSS v4 (`@tailwindcss/vite`, no PostCSS) · Deployed on Vercel free tier
+
+No backend. No API calls. No database. No cost.
+
+---
+
+## Run locally
 
 ```bash
 git clone https://github.com/SidharthKriplani/genai-systems-lab
 cd genai-systems-lab
 npm install
 npm run dev
+# → http://localhost:5173
 ```
-
-Open `http://localhost:5173`
-
----
-
-## Roadmap
-
-- [x] V1-A — Single scenario (conflicting documents)
-- [x] V1-B — 5 RAG failure scenarios + challenge mode
-- [x] V2-A — Concepts Visualizer (tokenizer, embeddings, attention)
-- [ ] V2-B — Agent tool-use simulator
-- [ ] V2-C — Evals dashboard: compare configs side-by-side on a leaderboard
-- [ ] V2-D — Monitoring dashboard: simulated production metrics over time
-- [ ] V3 — BYOK live mode (bring your own API key, run against real corpus)
-
----
-
-## Philosophy
-
-> Static. Precomputed. Zero cost. Open source. No login walls.
-
-Built for engineers who want to understand GenAI systems deeply — not just use them.
-
-The best way to understand why a RAG system fails in production is to *configure one yourself and watch it fail*. That's what this is.
 
 ---
 

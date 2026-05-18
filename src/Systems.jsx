@@ -2307,9 +2307,10 @@ const SYSTEMS_GROUPS = [
   { id: "OPS",    label: "OPS",    color: "#22c55e" },
 ];
 
-export default function SystemsApp({ initialModule }) {
+export default function SystemsApp({ initialModule, onModuleVisit }) {
   const [activeModule, setActiveModule] = useState(initialModule || "evals");
   useEffect(() => { if (initialModule) setActiveModule(initialModule); }, [initialModule]);
+  function switchModule(id) { setActiveModule(id); if (onModuleVisit) onModuleVisit("systems", id); }
   const ActiveComponent = SYSTEMS_MODULES.find(m => m.id === activeModule)?.component || EvalsLab;
 
   return (
@@ -2328,7 +2329,7 @@ export default function SystemsApp({ initialModule }) {
               {SYSTEMS_MODULES.filter(m => m.group === grp.id).map(m => (
                 <button
                   key={m.id}
-                  onClick={() => setActiveModule(m.id)}
+                  onClick={() => switchModule(m.id)}
                   className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
                 >
                   <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
