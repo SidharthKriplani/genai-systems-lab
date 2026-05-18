@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import HowTo from "./HowTo";
 import IndiaScaleLab from "./IndiaScale";
 import ModelRouterLab from "./ModelRouter";
 import InferenceOptimizer from "./InferenceOptimizer";
@@ -2057,12 +2058,237 @@ function PromptCachingLab() {
   );
 }
 
+// ─── EVAL FRAMEWORKS LAB ─────────────────────────────────────────────────────
+
+const EVAL_FRAMEWORKS = [
+  {
+    id: "ragas", name: "RAGAS", color: "#6366f1", tagline: "RAG Assessment",
+    desc: "Open-source framework for evaluating RAG pipelines end-to-end. Uses LLM-as-judge internally with principled metric definitions.",
+    metrics: [
+      { name: "Faithfulness",       formula: "Claims supported by context / Total claims",            desc: "Is every claim in the answer grounded in retrieved context? Low faithfulness = hallucination.", good: "≥ 0.90" },
+      { name: "Answer Relevancy",   formula: "Semantic sim(answer, query)",                           desc: "Does the answer actually address the question asked? Low = tangential or incomplete.", good: "≥ 0.85" },
+      { name: "Context Precision",  formula: "Relevant chunks / Total retrieved chunks",              desc: "How much of what was retrieved was actually useful? Low = noisy retrieval.", good: "≥ 0.70" },
+      { name: "Context Recall",     formula: "Ground-truth info covered by context",                  desc: "Did retrieval find all the information needed to answer correctly? Requires ground truth.", good: "≥ 0.80" },
+    ],
+    when: "Evaluating a RAG pipeline end-to-end. Best when you have ground-truth Q&A pairs.",
+    tradeoffs: "Needs reference answers for recall. LLM-based metrics are non-deterministic — run 3× and average.",
+    openSource: true, cost: "Medium (LLM calls per eval)",
+  },
+  {
+    id: "geval", name: "G-Eval", color: "#f59e0b", tagline: "LLM-as-Judge with CoT",
+    desc: "Use a frontier LLM (GPT-4, Claude) as evaluator with explicit scoring rubrics and chain-of-thought. Flexible for any task.",
+    metrics: [
+      { name: "Coherence",    formula: "1–5 rubric judged by LLM",                 desc: "Is the text internally consistent and well-structured? Built for summarization but generalizable.", good: "≥ 4 / 5" },
+      { name: "Consistency",  formula: "% facts in summary consistent with source", desc: "Does the summary avoid adding facts not in the source document?", good: "≥ 4 / 5" },
+      { name: "Fluency",      formula: "1–5 grammar and readability",               desc: "Is the text grammatically correct and readable? Usually high for modern LLMs.", good: "≥ 4.5 / 5" },
+      { name: "Relevance",    formula: "Key info recall from source",               desc: "Does the summary include the most important information from the source?", good: "≥ 3.5 / 5" },
+    ],
+    when: "Custom task types without standard metrics. Open-ended generation: summarization, rewriting, translation.",
+    tradeoffs: "Model bias — the judge LLM has preferences. Expensive at scale. Not deterministic. Calibrate with human annotations.",
+    openSource: true, cost: "High (frontier LLM per eval)",
+  },
+  {
+    id: "human", name: "Human Eval", color: "#22c55e", tagline: "Gold Standard",
+    desc: "Domain expert or crowd annotation on model outputs. The ground truth for validating all automated eval methods.",
+    metrics: [
+      { name: "Preference",                formula: "A/B comparison → % prefer A",          desc: "Given two outputs, which do annotators prefer? Used to rank models.", good: "Significant at p < 0.05" },
+      { name: "Correctness",               formula: "Binary correct/incorrect by expert",    desc: "Is this answer factually right? Requires domain-expert judges for technical topics.", good: "≥ 95% inter-rater agreement" },
+      { name: "Helpfulness",               formula: "1–5 Likert scale",                      desc: "Would this answer actually help the end user accomplish their task?", good: "≥ 4 / 5 average" },
+      { name: "Inter-annotator Agreement", formula: "Cohen's κ or Krippendorff's α",         desc: "Do annotators agree? Low IAA means unclear rubric or subjective task.", good: "κ ≥ 0.60" },
+    ],
+    when: "Calibrating automated evals. High-stakes deploy decisions. Novel task types with no established metrics.",
+    tradeoffs: "Expensive ($1–10/annotation), slow (days–weeks), doesn't scale. Use strategically: periodic calibration, not continuous eval.",
+    openSource: false, cost: "Very High (human time)",
+  },
+  {
+    id: "custom", name: "Custom Model-Graded", color: "#10b981", tagline: "Fine-tuned Judge",
+    desc: "Fine-tune a small model (1B–7B params) as your domain-specific judge, calibrated against human labels. Best cost/quality ratio at scale.",
+    metrics: [
+      { name: "Domain Correctness",  formula: "Fine-tuned classifier on your Q&A pairs",  desc: "Train on your gold data. Learns what 'correct' means for YOUR domain, not generic quality.", good: "Precision/Recall ≥ 0.85 vs human" },
+      { name: "Policy Compliance",   formula: "Binary pass/fail per policy rule",          desc: "Does the output follow your organization's specific policies? Rules-based or classifier.", good: "100% on critical rules" },
+      { name: "Calibration Drift",   formula: "Judge accuracy vs human over time",         desc: "Track whether your judge is drifting as your LLM changes. Recalibrate when drift > 5%.", good: "< 5% drift vs baseline" },
+    ],
+    when: "High-volume production (> 100k evals/day where frontier LLM cost is prohibitive). Domain-specific correctness that generic judges miss.",
+    tradeoffs: "Upfront investment to build + calibrate. Must retrain when domain shifts. Requires ongoing human annotation sample.",
+    openSource: true, cost: "Low at scale (small model inference)",
+  },
+];
+
+const EVAL_USE_CASES = [
+  {
+    id: "rag_qa", label: "RAG Q&A",
+    stack: [
+      { framework: "ragas",  metric: "Faithfulness",     priority: "critical", why: "Hallucination in Q&A is a trust-killer. Must be automated at every deploy." },
+      { framework: "ragas",  metric: "Context Precision", priority: "high",     why: "Noisy retrieval wastes tokens and reduces accuracy. Track p95 per query type." },
+      { framework: "ragas",  metric: "Answer Relevancy",  priority: "high",     why: "Are you actually answering what was asked? Easy to regress on." },
+      { framework: "human",  metric: "Correctness",       priority: "periodic", why: "Calibrate automated metrics quarterly. Human spot-checks catch new failure modes." },
+    ],
+  },
+  {
+    id: "summarization", label: "Summarization",
+    stack: [
+      { framework: "geval",  metric: "Consistency",  priority: "critical", why: "Hallucinating facts not in the source is a hard failure. Run on every output sample." },
+      { framework: "geval",  metric: "Relevance",    priority: "high",     why: "Key information omission is the most common summarization failure mode." },
+      { framework: "geval",  metric: "Coherence",    priority: "medium",   why: "Matters for readability; modern models usually score high — check when model changes." },
+      { framework: "human",  metric: "Preference",   priority: "periodic", why: "Run A/B preference tests when comparing or upgrading models." },
+    ],
+  },
+  {
+    id: "compliance", label: "Compliance Bot",
+    stack: [
+      { framework: "custom",  metric: "Policy Compliance",  priority: "critical", why: "Rules-based checks for known policy violations. Zero tolerance — automate fully." },
+      { framework: "ragas",   metric: "Faithfulness",       priority: "critical", why: "Every claim must be grounded. No hallucinated legal guidance." },
+      { framework: "human",   metric: "Correctness",        priority: "high",     why: "Domain-expert review on sample. Stakes too high for automation alone." },
+      { framework: "custom",  metric: "Calibration Drift",  priority: "medium",   why: "Monitor judge accuracy as policies and models evolve." },
+    ],
+  },
+  {
+    id: "code", label: "Code Assistant",
+    stack: [
+      { framework: "custom",  metric: "Domain Correctness", priority: "critical", why: "Run generated code against test suites. Execution-based eval beats LLM judges for code." },
+      { framework: "geval",   metric: "Coherence",          priority: "medium",   why: "Code explanations should be clear. LLM judge works well here." },
+      { framework: "human",   metric: "Helpfulness",        priority: "periodic", why: "Are developers actually using the suggestions? Periodic surveys." },
+    ],
+  },
+];
+
+function EvalFrameworkGuide() {
+  const [sel, setSel] = useState("ragas");
+  const fw = EVAL_FRAMEWORKS.find(f => f.id === sel);
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {EVAL_FRAMEWORKS.map(f => (
+          <button key={f.id} onClick={() => setSel(f.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${sel === f.id ? "text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+            style={sel === f.id ? { backgroundColor: f.color } : {}}>
+            {f.name}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-xl border bg-zinc-900/60 p-5 space-y-4" style={{ borderColor: fw.color + "55" }}>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="text-base font-black text-white">{fw.name}</div>
+            <div className="text-xs font-mono mt-0.5" style={{ color: fw.color }}>{fw.tagline}</div>
+          </div>
+          <div className="flex gap-2 flex-wrap text-xs font-mono">
+            <span className={`px-2 py-1 rounded border ${fw.openSource ? "border-emerald-700 text-emerald-400 bg-emerald-950/30" : "border-zinc-700 text-zinc-400 bg-zinc-900"}`}>
+              {fw.openSource ? "Open Source" : "Proprietary"}
+            </span>
+            <span className="px-2 py-1 rounded border border-zinc-700 text-zinc-400 bg-zinc-900">{fw.cost}</span>
+          </div>
+        </div>
+        <p className="text-sm text-zinc-300 leading-relaxed">{fw.desc}</p>
+        <div>
+          <div className="text-xs text-zinc-500 uppercase tracking-wide mb-2">Metrics</div>
+          <div className="space-y-2">
+            {fw.metrics.map(m => (
+              <div key={m.name} className="bg-zinc-800 rounded-lg p-3 space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-white">{m.name}</span>
+                  <span className="text-[10px] font-mono text-zinc-500 flex-1 min-w-0 truncate">{m.formula}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-700 font-mono shrink-0" style={{ color: fw.color }}>Good: {m.good}</span>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">{m.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-zinc-800/60 rounded-lg p-3">
+            <div className="text-xs text-zinc-500 uppercase mb-1">Use when</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{fw.when}</p>
+          </div>
+          <div className="bg-amber-950/20 border border-amber-900/40 rounded-lg p-3">
+            <div className="text-xs text-amber-500 uppercase mb-1">Tradeoffs</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{fw.tradeoffs}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EvalDesigner() {
+  const [sel, setSel] = useState("rag_qa");
+  const uc = EVAL_USE_CASES.find(u => u.id === sel);
+  const PRIORITY_STYLE = {
+    critical: "border-red-700 bg-red-950/30",
+    high:     "border-amber-700 bg-amber-950/30",
+    medium:   "border-blue-700 bg-blue-950/30",
+    periodic: "border-zinc-700 bg-zinc-900",
+  };
+  const PRIORITY_TEXT = { critical: "text-red-400", high: "text-amber-400", medium: "text-blue-400", periodic: "text-zinc-400" };
+  const FW_COLORS = { ragas: "#6366f1", geval: "#f59e0b", human: "#22c55e", custom: "#10b981" };
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {EVAL_USE_CASES.map(u => (
+          <button key={u.id} onClick={() => setSel(u.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${sel === u.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {u.label}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2">
+        {uc.stack.map((item, i) => {
+          const fw = EVAL_FRAMEWORKS.find(f => f.id === item.framework);
+          return (
+            <div key={i} className={`rounded-xl border p-4 space-y-1 ${PRIORITY_STYLE[item.priority]}`}>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white">{item.metric}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold" style={{ backgroundColor: (FW_COLORS[item.framework] || "#888") + "33", color: FW_COLORS[item.framework] || "#888" }}>{fw?.name}</span>
+                </div>
+                <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${PRIORITY_STYLE[item.priority]} ${PRIORITY_TEXT[item.priority]}`}>{item.priority}</span>
+              </div>
+              <p className="text-xs text-zinc-400 leading-relaxed">{item.why}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function EvalFrameworksLab() {
+  const [tab, setTab] = useState("guide");
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Know which eval framework to use for your use case — RAGAS for RAG, G-Eval for open-ended tasks, Human eval for calibration, custom models at production scale."
+        steps={[
+          "Framework Guide: click each framework to understand its metrics, when to use it, and tradeoffs",
+          "Eval Design: pick your use case to get a recommended eval stack with priority ordering",
+          "Key insight: combine frameworks — no single approach catches everything",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {[
+          { id: "guide",  label: "Framework Guide", tag: "COMPARE" },
+          { id: "design", label: "Eval Design",      tag: "APPLY"   },
+        ].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "guide"  && <EvalFrameworkGuide />}
+      {tab === "design" && <EvalDesigner />}
+    </div>
+  );
+}
+
 // ─── SYSTEMS APP ─────────────────────────────────────────────────────────────
 
 const SYSTEMS_MODULES = [
-  { id: "evals",         label: "Evals Lab",          tag: "DESIGN",   group: "DESIGN",  component: EvalsLab         },
-  { id: "strategy",      label: "Model Strategy",     tag: "DECISION", group: "DESIGN",  component: ModelStrategyLab },
-  { id: "shouldai",      label: "Should You Use AI?", tag: "JUDGE",    group: "DESIGN",  component: ShouldUseAI      },
+  { id: "evals",         label: "Evals Lab",          tag: "DESIGN",     group: "DESIGN",  component: EvalsLab           },
+  { id: "evalfw",        label: "Eval Frameworks",    tag: "FRAMEWORK",  group: "DESIGN",  component: EvalFrameworksLab  },
+  { id: "strategy",      label: "Model Strategy",     tag: "DECISION",   group: "DESIGN",  component: ModelStrategyLab   },
+  { id: "shouldai",      label: "Should You Use AI?", tag: "JUDGE",      group: "DESIGN",  component: ShouldUseAI        },
   { id: "costlatency",   label: "Cost/Latency",       tag: "COST",     group: "BUILD",   component: CostLatencyLab   },
   { id: "finetune",      label: "Fine-Tuning Lab",    tag: "TRAIN",    group: "BUILD",   component: FineTuningLab    },
   { id: "indiascale",    label: "India Scale Lab",    tag: "₹ INDIA",  group: "BUILD",   component: IndiaScaleLab    },
@@ -2081,8 +2307,9 @@ const SYSTEMS_GROUPS = [
   { id: "OPS",    label: "OPS",    color: "#22c55e" },
 ];
 
-export default function SystemsApp() {
-  const [activeModule, setActiveModule] = useState("evals");
+export default function SystemsApp({ initialModule }) {
+  const [activeModule, setActiveModule] = useState(initialModule || "evals");
+  useEffect(() => { if (initialModule) setActiveModule(initialModule); }, [initialModule]);
   const ActiveComponent = SYSTEMS_MODULES.find(m => m.id === activeModule)?.component || EvalsLab;
 
   return (

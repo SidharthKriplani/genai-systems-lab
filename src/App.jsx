@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import ConceptsApp from "./Concepts";
 import SystemsApp from "./Systems";
 import FluencyApp from "./Fluency";
@@ -996,6 +996,111 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
   );
 }
 
+// ─── MODULE SEARCH INDEX ──────────────────────────────────────────────────────
+
+const ALL_MODULES_INDEX = [
+  { label: "Evals Lab",             tag: "DESIGN",    tab: "systems", moduleId: "evals"         },
+  { label: "Eval Frameworks",       tag: "FRAMEWORK", tab: "systems", moduleId: "evalfw"        },
+  { label: "Model Strategy",        tag: "DECISION",  tab: "systems", moduleId: "strategy"      },
+  { label: "Should You Use AI?",    tag: "JUDGE",     tab: "systems", moduleId: "shouldai"      },
+  { label: "Cost/Latency",          tag: "COST",      tab: "systems", moduleId: "costlatency"   },
+  { label: "Fine-Tuning Lab",       tag: "TRAIN",     tab: "systems", moduleId: "finetune"      },
+  { label: "India Scale Lab",       tag: "₹ INDIA",   tab: "systems", moduleId: "indiascale"    },
+  { label: "Prompt Caching",        tag: "CACHE",     tab: "systems", moduleId: "caching"       },
+  { label: "Model Router",          tag: "ROUTE",     tab: "systems", moduleId: "router"        },
+  { label: "Inference Optimizer",   tag: "SERVING",   tab: "systems", moduleId: "inference"     },
+  { label: "Incident Room",         tag: "DIAGNOSE",  tab: "systems", moduleId: "incidents"     },
+  { label: "Observability",         tag: "OPS",       tab: "systems", moduleId: "observability" },
+  { label: "A/B Testing",           tag: "SHIP",      tab: "systems", moduleId: "abtesting"     },
+  { label: "ML CI/CD",              tag: "DEPLOY",    tab: "systems", moduleId: "mlcicd"        },
+  { label: "Embedding Space",       tag: "VISUALIZE", tab: "explore", moduleId: "embeddings"    },
+  { label: "Shadow Mode A/B",       tag: "COMPARE",   tab: "explore", moduleId: "shadow"        },
+  { label: "Latency Planner",       tag: "BUDGET",    tab: "explore", moduleId: "latency"       },
+  { label: "Tokenizer Explorer",    tag: "TOKENS",    tab: "explore", moduleId: "tokenizer"     },
+  { label: "Model Card Reader",     tag: "AUDIT",     tab: "explore", moduleId: "modelcard"     },
+  { label: "Vector DB Comparison",  tag: "DB",        tab: "explore", moduleId: "vectordb"      },
+  { label: "Red Teaming Lab",       tag: "ATTACK",    tab: "explore", moduleId: "redteam"       },
+  { label: "Home",       tag: "TAB", tab: "home",       moduleId: null },
+  { label: "Concepts",   tag: "TAB", tab: "concepts",   moduleId: null },
+  { label: "Flows",      tag: "TAB", tab: "flows",      moduleId: null },
+  { label: "RAG Lab",    tag: "TAB", tab: "lab",        moduleId: null },
+  { label: "Playground", tag: "TAB", tab: "playground", moduleId: null },
+  { label: "Fluency",    tag: "TAB", tab: "fluency",    moduleId: null },
+  { label: "AIPM",       tag: "TAB", tab: "aipm",       moduleId: null },
+  { label: "Career",     tag: "TAB", tab: "career",     moduleId: null },
+];
+
+const TAB_COLORS = {
+  systems: "#3b82f6", explore: "#8b5cf6", concepts: "#6366f1",
+  flows: "#6366f1", lab: "#f59e0b", playground: "#f59e0b",
+  fluency: "#22c55e", aipm: "#22c55e", career: "#22c55e", home: "#71717a",
+};
+
+function SearchModal({ onClose, onSelect }) {
+  const [query, setQuery] = useState("");
+  const [cursor, setCursor] = useState(0);
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const results = query.trim()
+    ? ALL_MODULES_INDEX.filter(m =>
+        m.label.toLowerCase().includes(query.toLowerCase()) ||
+        m.tag.toLowerCase().includes(query.toLowerCase()) ||
+        m.tab.toLowerCase().includes(query.toLowerCase())
+      )
+    : ALL_MODULES_INDEX.filter(m => m.moduleId !== null).slice(0, 9);
+
+  function onKeyDown(e) {
+    if (e.key === "ArrowDown") { e.preventDefault(); setCursor(c => Math.min(c + 1, results.length - 1)); }
+    if (e.key === "ArrowUp")   { e.preventDefault(); setCursor(c => Math.max(c - 1, 0)); }
+    if (e.key === "Enter" && results[cursor]) { onSelect(results[cursor]); }
+    if (e.key === "Escape") { onClose(); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center pt-16 px-4" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-zinc-400 shrink-0">
+            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+            <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <input ref={inputRef} value={query}
+            onChange={e => { setQuery(e.target.value); setCursor(0); }}
+            onKeyDown={onKeyDown}
+            placeholder="Search modules..."
+            className="flex-1 bg-transparent text-white text-sm outline-none placeholder-zinc-600"
+          />
+          <kbd className="text-[10px] font-mono text-zinc-600 border border-zinc-700 rounded px-1.5 py-0.5">Esc</kbd>
+        </div>
+        <div className="max-h-80 overflow-y-auto">
+          {results.length === 0
+            ? <div className="px-4 py-8 text-center text-xs text-zinc-600">No modules found</div>
+            : results.map((item, i) => (
+              <button key={`${item.tab}-${item.moduleId || "tab"}-${i}`}
+                onClick={() => onSelect(item)}
+                className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-all ${cursor === i ? "bg-zinc-800" : "hover:bg-zinc-800/60"}`}>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-white truncate">{item.label}</div>
+                  <div className="text-xs text-zinc-500 capitalize">{item.tab === "lab" ? "RAG Lab" : item.tab}</div>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0"
+                  style={{ color: (TAB_COLORS[item.tab] || "#888") + "ee", background: (TAB_COLORS[item.tab] || "#888") + "22" }}>
+                  {item.tag}
+                </span>
+              </button>
+            ))
+          }
+        </div>
+        <div className="px-4 py-2 border-t border-zinc-800 flex items-center gap-4 text-[10px] text-zinc-600 font-mono">
+          <span>↑↓ navigate</span><span>↵ select</span><span>Esc close</span>
+          <span className="ml-auto">⌘K to open</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [topView, setTopView] = useState("home");
   const [visited, setVisited] = useState(() => {
@@ -1021,13 +1126,17 @@ export default function App() {
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [systemsModule, setSystemsModule] = useState(null);
+  const [exploreModule, setExploreModule] = useState(null);
 
   const SHORTCUT_TABS = ["home","concepts","flows","lab","systems","playground","explore","fluency","aipm","career"];
   useEffect(() => {
     function onKey(e) {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(s => !s); return; }
       if (e.key === "?" || e.key === "/") { e.preventDefault(); setShowShortcuts(s => !s); return; }
-      if (e.key === "Escape") { setShowShortcuts(false); setMobileMenuOpen(false); return; }
+      if (e.key === "Escape") { setShowShortcuts(false); setMobileMenuOpen(false); setSearchOpen(false); return; }
       const n = parseInt(e.key);
       if (n >= 1 && n <= SHORTCUT_TABS.length) { navigate(SHORTCUT_TABS[n - 1]); setMobileMenuOpen(false); }
     }
@@ -1097,7 +1206,7 @@ export default function App() {
   const NAV_GROUPS = [
     { label: null,    items: [{ id: "home", label: "Home" }] },
     { label: "LEARN", color: "#6366f1", items: [{ id: "concepts", label: "Concepts", count: 11 }, { id: "flows", label: "Flows", count: 5 }] },
-    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab", count: 6 }, { id: "systems", label: "Systems", count: 13 }, { id: "playground", label: "Playground", count: 5 }, { id: "explore", label: "Explore", count: 6 }] },
+    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab", count: 6 }, { id: "systems", label: "Systems", count: 14 }, { id: "playground", label: "Playground", count: 5 }, { id: "explore", label: "Explore", count: 7 }] },
     { label: "GROW",  color: "#22c55e", items: [{ id: "fluency", label: "Fluency", count: 5 }, { id: "aipm", label: "AIPM", count: 5 }, { id: "career", label: "Career", count: 4 }] },
     { label: null,    items: [{ id: "leaderboard", label: `🏆${leaderboard.filter(e => e.passed).length > 0 ? ` ${leaderboard.filter(e => e.passed).length}` : ""} Board` }] },
   ];
@@ -1105,6 +1214,17 @@ export default function App() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans" style={{ fontFamily: "'IBM Plex Mono', 'Fira Code', monospace" }}>
       {/* Keyboard shortcuts overlay */}
+      {searchOpen && (
+        <SearchModal
+          onClose={() => setSearchOpen(false)}
+          onSelect={item => {
+            navigate(item.tab);
+            if (item.tab === "systems" && item.moduleId) setSystemsModule(item.moduleId);
+            if (item.tab === "explore" && item.moduleId) setExploreModule(item.moduleId);
+            setSearchOpen(false);
+          }}
+        />
+      )}
       {showShortcuts && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowShortcuts(false)}>
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
@@ -1120,6 +1240,10 @@ export default function App() {
                 </div>
               ))}
               <div className="border-t border-zinc-800 pt-2 flex items-center justify-between text-xs">
+                <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">⌘K</kbd>
+                <span className="text-zinc-400">Search modules</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
                 <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">?</kbd>
                 <span className="text-zinc-400">Toggle this overlay</span>
               </div>
@@ -1191,6 +1315,11 @@ export default function App() {
           </nav>
           {/* Right side: ? button + hamburger */}
           <div className="flex items-center gap-1 shrink-0">
+            <button onClick={() => setSearchOpen(true)} className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+              <span className="hidden xl:inline">Search</span>
+              <kbd className="text-[9px] border border-zinc-700 rounded px-1">⌘K</kbd>
+            </button>
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">?</button>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
@@ -1205,7 +1334,7 @@ export default function App() {
 
       {topView === "flows"      && <FlowsApp />}
 
-      {topView === "systems"    && <SystemsApp />}
+      {topView === "systems"    && <SystemsApp initialModule={systemsModule} />}
 
       {topView === "fluency"    && <FluencyApp />}
 
@@ -1213,7 +1342,7 @@ export default function App() {
 
       {topView === "playground" && <PlaygroundApp />}
 
-      {topView === "explore"    && <ExploreApp />}
+      {topView === "explore"    && <ExploreApp initialModule={exploreModule} />}
 
       {topView === "career"     && <CareerApp />}
 

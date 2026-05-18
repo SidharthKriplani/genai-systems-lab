@@ -75,9 +75,9 @@ const MODULE_MAP = [
     desc: "Simulate, break, and fix real production systems.",
     modules: [
       { tab: "lab",        icon: "🔬", title: "RAG Lab",     desc: "Failure mode simulator: stale docs, hallucination, prompt injection, context overflow. Configure and watch the pipeline break in real time." },
-      { tab: "systems",    icon: "⚙️", title: "Systems",     desc: "Evals lab, model strategy, incident room, cost/latency tradeoffs, fine-tuning lab, observability, A/B testing. 8 production-grade modules." },
+      { tab: "systems",    icon: "⚙️", title: "Systems",     desc: "Evals lab, eval frameworks, model strategy, prompt caching, model router, fine-tuning, ML CI/CD, observability. 14 production-grade modules." },
       { tab: "playground", icon: "🛝", title: "Playground",  desc: "Hands-on: craft injection attacks, compare chunking strategies, rerank retrieved chunks, spot hallucinated facts, detect bias." },
-      { tab: "explore",    icon: "🔭", title: "Explore",     desc: "Embedding space visualization, shadow mode A/B simulator, latency budget planner, tokenizer explorer, model card reader." },
+      { tab: "explore",    icon: "🔭", title: "Explore",     desc: "Embedding explorer, shadow A/B, latency planner, tokenizer, model card reader, vector DB comparison, red teaming lab. 7 tools." },
     ],
   },
   {
@@ -95,7 +95,7 @@ const MODULE_MAP = [
 const STATS = [
   { value: "3",    label: "Learning tracks" },
   { value: "10",   label: "Tabs" },
-  { value: "55+",  label: "Modules" },
+  { value: "65+",  label: "Modules" },
   { value: "200+", label: "Interactive challenges" },
 ];
 
