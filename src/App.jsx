@@ -1164,6 +1164,10 @@ export default function App() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [palette, setPalette] = useState(() => {
+    try { return localStorage.getItem("genai_palette") || "violet"; } catch { return "violet"; }
+  });
+  const switchPalette = (p) => { setPalette(p); try { localStorage.setItem("genai_palette", p); } catch {} };
   const [systemsModule, setSystemsModule] = useState(null);
   const [exploreModule, setExploreModule] = useState(null);
   const [agentsModule, setAgentsModule] = useState(null);
@@ -1279,7 +1283,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white" style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif" }}>
+    <div className="min-h-screen bg-zinc-950 text-white" data-palette={palette} style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif" }}>
       {/* Keyboard shortcuts overlay */}
       {searchOpen && (
         <SearchModal
@@ -1451,6 +1455,16 @@ export default function App() {
               NEW
               {!whatsNewSeen && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
             </button>
+            {/* Palette switcher */}
+            {[
+              { id: "violet", color: "#7c3aed" },
+              { id: "cyan",   color: "#06b6d4" },
+              { id: "amber",  color: "#f59e0b" },
+            ].map(p => (
+              <button key={p.id} onClick={() => switchPalette(p.id)} title={p.id}
+                className="w-4 h-4 rounded-full border-2 transition-all hover:scale-110"
+                style={{ background: p.color, borderColor: palette === p.id ? "white" : "transparent" }} />
+            ))}
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">?</button>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
