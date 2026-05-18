@@ -1138,6 +1138,46 @@ function SearchModal({ onClose, onSelect }) {
   );
 }
 
+// ─── LOCKED TAB VIEW ─────────────────────────────────────────────────────────
+function LockedTabView({ item, onNavigate }) {
+  return (
+    <div className="min-h-[70vh] flex items-center justify-center p-8">
+      <div className="max-w-sm w-full space-y-6 text-center">
+        <div className="text-5xl">🔒</div>
+        <div>
+          <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-2">In progression</div>
+          <h2 className="text-2xl font-black text-white">{item.label}</h2>
+          {item.count && <p className="text-sm text-zinc-500 mt-1">{item.count} modules</p>}
+        </div>
+        <p className="text-zinc-400 text-sm leading-relaxed">
+          This track unlocks as the lab expands. The content is built — it's part of the progression path.
+        </p>
+        {item.teaser && (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 text-left space-y-2">
+            <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-3">What's inside</div>
+            {item.teaser.map((t, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs text-zinc-500">
+                <span className="text-zinc-700 mt-0.5 shrink-0">—</span>
+                <span>{t}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {item.audience && (
+          <div className="text-xs text-zinc-600 font-mono">
+            Best for: <span className="text-zinc-400">{item.audience}</span>
+          </div>
+        )}
+        <button
+          onClick={() => onNavigate("concepts")}
+          className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all">
+          Continue with free content →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [topView, setTopView] = useState("home");
   const [visited, setVisited] = useState(() => {
@@ -1283,10 +1323,29 @@ export default function App() {
   const hasFallback = lookup && !lookup.curated;
 
   const NAV_GROUPS = [
-    { label: null,    items: [{ id: "home", label: "Home" }] },
-    { label: "LEARN", color: "#6366f1", items: [{ id: "concepts", label: "Concepts", count: 11 }, { id: "flows", label: "Flows", count: 5 }] },
-    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab", count: 6 }, { id: "agents", label: "Agents", count: 7 }, { id: "systems", label: "Systems", count: 15 }, { id: "playground", label: "Playground", count: 5 }, { id: "explore", label: "Explore", count: 8 }] },
-    { label: "GROW",  color: "#22c55e", items: [{ id: "fluency", label: "Fluency", count: 5 }, { id: "aipm", label: "AIPM", count: 5 }, { id: "career", label: "Career", count: 4 }] },
+    { label: null, items: [
+      { id: "home", label: "Home", audience: "All levels" },
+    ]},
+    { label: "LEARN", color: "#6366f1", items: [
+      { id: "concepts", label: "Concepts", count: 11, audience: "All levels" },
+      { id: "flows",    label: "Flows",    count: 5,  audience: "All levels" },
+    ]},
+    { label: "BUILD", color: "#3b82f6", items: [
+      { id: "lab",        label: "RAG Lab",    count: 6,  audience: "Engineers" },
+      { id: "agents",     label: "Agents",     count: 7,  audience: "Engineers" },
+      { id: "systems",    label: "Systems",    count: 15, audience: "Engineers · PMs", locked: true,
+        teaser: ["Evals lab + eval frameworks (RAGAS, G-Eval)", "Model strategy, cost & latency", "Fine-tuning, prompt caching, model router", "Observability, ML CI/CD, context compaction"] },
+      { id: "playground", label: "Playground", count: 5,  audience: "All levels" },
+      { id: "explore",    label: "Explore",    count: 8,  audience: "Engineers" },
+    ]},
+    { label: "GROW", color: "#22c55e", items: [
+      { id: "fluency", label: "Fluency", count: 5, audience: "Interview prep", locked: true,
+        teaser: ["Mock interview — 18 questions, 90s each", "Company case arena (live scenario drills)", "Timed vocabulary + phrase bank", "Prompt engineering lab"] },
+      { id: "aipm",   label: "AIPM",    count: 5, audience: "Product managers", locked: true,
+        teaser: ["PRD simulator with AI feature scoping", "Roadmap prioritizer", "Stakeholder explainer toolkit", "AI-or-not? decision framework"] },
+      { id: "career", label: "Career",  count: 4, audience: "Job seekers", locked: true,
+        teaser: ["Full system design interview prompts", "Take-home challenge simulator", "Negotiation flashcards", "Benchmark literacy"] },
+    ]},
   ];
 
   return (
@@ -1395,12 +1454,13 @@ export default function App() {
                 {group.label && <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5 px-1" style={{ color: group.color + "99" }}>{group.label}</div>}
                 {group.items.map((item, ii) => (
                   <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${topView === item.id ? "bg-violet-600 text-white" : item.locked ? "text-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-500" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
                     <span className="flex items-center gap-2">
                       <span className="text-zinc-600 font-mono">{gi === 0 && ii === 0 ? "1" : SHORTCUT_TABS.indexOf(item.id) >= 0 ? SHORTCUT_TABS.indexOf(item.id) + 1 : ""}</span>
+                      {item.locked && <span className="text-[9px]">🔒</span>}
                       {item.label}
                     </span>
-                    {visited.has(item.id) && topView !== item.id && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
+                    {visited.has(item.id) && topView !== item.id && !item.locked && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -1478,9 +1538,11 @@ export default function App() {
               )}
               {group.items.map(item => (
                 <button key={item.id} onClick={() => navigate(item.id)}
-                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                  title={item.audience ? `For: ${item.audience}` : undefined}
+                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : item.locked ? "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800/50" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                  {item.locked && <span className="text-[9px] opacity-60">🔒</span>}
                   {item.label}
-                  {visited.has(item.id) && topView !== item.id && (
+                  {visited.has(item.id) && topView !== item.id && !item.locked && (
                     <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-500 opacity-80" />
                   )}
                 </button>
@@ -1498,17 +1560,17 @@ export default function App() {
 
       {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />}
+      {topView === "systems"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="systems"); return it?.locked ? <LockedTabView item={it} onNavigate={navigate} /> : <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />; })()}
 
-      {topView === "fluency"    && <FluencyApp />}
+      {topView === "fluency"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="fluency"); return it?.locked ? <LockedTabView item={it} onNavigate={navigate} /> : <FluencyApp />; })()}
 
-      {topView === "aipm"       && <AIPMApp />}
+      {topView === "aipm"       && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="aipm"); return it?.locked ? <LockedTabView item={it} onNavigate={navigate} /> : <AIPMApp />; })()}
 
       {topView === "playground" && <PlaygroundApp />}
 
       {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "career"     && <CareerApp />}
+      {topView === "career"     && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="career"); return it?.locked ? <LockedTabView item={it} onNavigate={navigate} /> : <CareerApp />; })()}
 
 
       {/* Scenario tabs */}

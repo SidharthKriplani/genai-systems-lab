@@ -76,8 +76,12 @@ const MODULE_MAP = [
     color: "#6366f1",
     desc: "Build the mental model before you build the system.",
     modules: [
-      { tab: "concepts", icon: "🧠", title: "Concepts",  desc: "Embeddings, tokenization, attention, transformers, multi-agent architecture — with visual diagrams and interactive sliders." },
-      { tab: "flows",    icon: "🌊", title: "Flows",     desc: "Animated SVG diagrams of RAG pipeline, context window, agent loop, guardrail pipeline, and transformer block. Every animation teaches causality." },
+      { tab: "concepts", icon: "🧠", title: "Concepts", audience: "All levels",
+        desc: "Embeddings, tokenization, attention, transformers, multi-agent architecture — with visual diagrams and interactive sliders.",
+        discovery: "Even if you know transformers: the attention weight explorer shows patterns most tutorials skip." },
+      { tab: "flows", icon: "🌊", title: "Flows", audience: "All levels",
+        desc: "Animated diagrams of RAG pipeline, context window, agent loop, guardrail pipeline, and transformer block.",
+        discovery: "The RAG Architectures module covers Hybrid, CRAG, and Agentic RAG — often the gap between junior and senior engineers." },
     ],
   },
   {
@@ -85,10 +89,18 @@ const MODULE_MAP = [
     color: "#3b82f6",
     desc: "Simulate, break, and fix real production systems.",
     modules: [
-      { tab: "lab",        icon: "🔬", title: "RAG Lab",     desc: "Failure mode simulator: stale docs, hallucination, prompt injection, context overflow. Configure and watch the pipeline break in real time." },
-      { tab: "systems",    icon: "⚙️", title: "Systems",     desc: "Evals lab, eval frameworks, model strategy, prompt caching, model router, fine-tuning, ML CI/CD, observability, context compaction. 15 production-grade modules." },
-      { tab: "playground", icon: "🛝", title: "Playground",  desc: "Hands-on: craft injection attacks, compare chunking strategies, rerank retrieved chunks, spot hallucinated facts, detect bias." },
-      { tab: "explore",    icon: "🔭", title: "Explore",     desc: "Embedding explorer, shadow A/B, latency planner, tokenizer, model card reader, vector DB comparison, red teaming lab. 7 tools." },
+      { tab: "lab", icon: "🔬", title: "RAG Lab", audience: "Engineers",
+        desc: "Production failure simulator: stale docs, hallucination, prompt injection, context overflow. Configure and watch the pipeline break.",
+        discovery: "Configure top_k=1 with no reranker and watch a 3-year-old policy answer confidently. Hard to forget." },
+      { tab: "systems", icon: "⚙️", title: "Systems", audience: "Engineers · PMs", locked: true,
+        desc: "Evals, eval frameworks, model strategy, cost/latency, fine-tuning, observability, ML CI/CD, context compaction. 15 production modules.",
+        discovery: "The Incident Room has 5 real failure post-mortems. The Eval Frameworks module covers RAGAS, G-Eval, and custom grading." },
+      { tab: "playground", icon: "🛝", title: "Playground", audience: "All levels",
+        desc: "Hands-on: craft injection attacks, compare chunking strategies, rerank retrieved chunks, spot hallucinated facts, detect bias.",
+        discovery: "Build your own prompt injection attack and watch it succeed — then switch sides and defend against it." },
+      { tab: "explore", icon: "🔭", title: "Explore", audience: "Engineers",
+        desc: "Embedding explorer, shadow A/B, latency planner, tokenizer explorer, model card reader, vector DB comparison, red teaming lab.",
+        discovery: "The Shadow A/B module models what happens when two model versions run in parallel — a setup most engineers have never seen." },
     ],
   },
   {
@@ -96,9 +108,15 @@ const MODULE_MAP = [
     color: "#22c55e",
     desc: "Communicate, ship, and advance your career.",
     modules: [
-      { tab: "fluency", icon: "💬", title: "Fluency Gym",  desc: "Upgrade how you talk about AI: phrase bank, timed drills, mock interview (18 questions, 90s each), company case arena, prompt engineering lab." },
-      { tab: "aipm",    icon: "📋", title: "AIPM Track",   desc: "PRD simulator, roadmap prioritizer, stakeholder explainer, launch checklist, 'AI or not?' decision framework. PM-specific interactive modules." },
-      { tab: "career",  icon: "🚀", title: "Career Track", desc: "System design interviews, take-home challenges (rank outputs, fix prompts, design evals), negotiation flashcards, benchmark literacy." },
+      { tab: "fluency", icon: "💬", title: "Fluency Gym", audience: "Interview prep", locked: true,
+        desc: "Phrase bank, timed drills, mock interview (18 questions, 90s each), company case arena, prompt engineering lab.",
+        discovery: "The mock interview uses real question patterns from AI engineer and PM interviews at top companies." },
+      { tab: "aipm", icon: "📋", title: "AIPM Track", audience: "Product managers", locked: true,
+        desc: "PRD simulator, roadmap prioritizer, stakeholder explainer, launch checklist, 'AI or not?' decision framework.",
+        discovery: "The AI-or-not? framework is the one thing most PMs say they needed a year ago." },
+      { tab: "career", icon: "🚀", title: "Career Track", audience: "Job seekers", locked: true,
+        desc: "System design interviews, take-home challenges, negotiation flashcards, benchmark literacy.",
+        discovery: "The take-home challenges simulate the exact format used by most AI-forward companies: rank outputs, fix a broken prompt, design an eval." },
     ],
   },
 ];
@@ -338,13 +356,31 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
                 {group.modules.map(m => (
                   <button key={m.tab}
                     onClick={() => onNavigate(m.tab)}
-                    className="text-left bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-xl p-4 transition-all group">
+                    className={`text-left border rounded-xl p-4 transition-all group ${m.locked ? "bg-zinc-900/60 border-zinc-800/60 hover:border-zinc-700" : "bg-zinc-900 border-zinc-800 hover:border-zinc-600"}`}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-lg">{m.icon}</span>
-                      <span className="text-sm font-bold text-white group-hover:text-white">{m.title}</span>
-                      <span className="ml-auto text-zinc-700 group-hover:text-zinc-400 text-xs">→</span>
+                      <span className={`text-sm font-bold ${m.locked ? "text-zinc-500" : "text-white"}`}>{m.title}</span>
+                      <div className="ml-auto flex items-center gap-1.5">
+                        {m.audience && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700/50 hidden sm:inline">
+                            {m.audience}
+                          </span>
+                        )}
+                        {m.locked
+                          ? <span className="text-xs text-zinc-600">🔒</span>
+                          : <span className="text-zinc-700 group-hover:text-zinc-400 text-xs">→</span>
+                        }
+                      </div>
                     </div>
-                    <p className="text-xs text-zinc-500 leading-relaxed">{m.desc}</p>
+                    <p className="text-xs text-zinc-500 leading-relaxed mb-2">{m.desc}</p>
+                    {m.discovery && !m.locked && (
+                      <p className="text-[11px] text-zinc-600 italic leading-relaxed border-t border-zinc-800 pt-1.5 mt-1">
+                        💡 {m.discovery}
+                      </p>
+                    )}
+                    {m.locked && (
+                      <p className="text-[10px] text-zinc-700 font-mono mt-1">In progression — coming soon</p>
+                    )}
                   </button>
                 ))}
               </div>
