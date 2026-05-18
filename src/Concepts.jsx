@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { track } from "./analytics";
 
 // ─── TOKENIZER DATA ───────────────────────────────────────────────────────────
 
@@ -2876,7 +2877,7 @@ export default function ConceptsApp() {
         {MODULES.map((m) => (
           <button
             key={m.id}
-            onClick={() => setActive(m.id)}
+            onClick={() => { setActive(m.id); track("concept_module_opened", { module: m.id, module_label: m.label }); }}
             className={`px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
               active === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
             }`}

@@ -160,8 +160,13 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
             <br />
             <span className="text-violet-400">Learn exactly why.</span>
           </h1>
+          <p className="text-xs font-mono text-zinc-500 tracking-widest uppercase">
+            For AI engineers · PMs · anyone building with LLMs
+          </p>
           <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-            The interactive lab for AI engineers and PMs — configure RAG pipelines, watch them fail, diagnose the root cause. No backend. No login. No fluff.
+            Hands-on modules covering RAG failures, agent loops, evals, and production debugging.
+            Every module is interactive and takes under 20 minutes.
+            No login. No account. Free forever.
           </p>
         </div>
 
@@ -170,49 +175,21 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
           <button
             onClick={() => { track("start_here_clicked", { location: "hero_cta" }); onNavigate("concepts"); }}
             className="px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all shadow-lg shadow-violet-900/40">
-            Start Here — AI Engineer Path →
+            Start the intro path — 45 min →
           </button>
           <button
             onClick={() => onNavigate("fluency")}
             className="px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-medium text-sm transition-all">
-            Quick: Mock Interview
+            Practice AI interview questions
           </button>
         </div>
 
         {/* Trust badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-500 font-mono">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
-          Free · Static · No login · No backend
+          Free · No login · No account · Runs in your browser
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center justify-center gap-8 sm:gap-16 pt-2">
-          {STATS.map((s, i) => (
-            <div key={s.label} className="text-center">
-              <div className="text-4xl sm:text-5xl font-black text-white tabular-nums">{s.value}</div>
-              <div className="text-xs font-semibold text-zinc-300 mt-1">{s.label}</div>
-              <div className="text-[10px] text-zinc-600 mt-0.5 font-mono">{s.sub}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Failure mode preview strip */}
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
-          {[
-            { label: "Stale retrieval",     color: "#ef4444" },
-            { label: "Prompt injection",    color: "#f59e0b" },
-            { label: "Context overflow",    color: "#6366f1" },
-            { label: "Hallucination",       color: "#3b82f6" },
-            { label: "Multi-hop failure",   color: "#22c55e" },
-          ].map(f => (
-            <button key={f.label} onClick={() => onNavigate("lab")}
-              className="px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all hover:opacity-80"
-              style={{ color: f.color, borderColor: f.color + "40", background: f.color + "10" }}>
-              {f.label}
-            </button>
-          ))}
-        </div>
-        <p className="text-[11px] text-zinc-600 font-mono -mt-4">↑ click any failure mode to open the RAG Lab</p>
       </div>
 
       {/* ── START HERE JOURNEY ──────────────────────────────────────────── */}
@@ -241,6 +218,37 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
                   <div className="w-6 h-px bg-violet-900/60 shrink-0 mb-4" />
                 )}
               </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── STATS + FAILURE MODE STRIP ───────────────────────────────────── */}
+      <div className="max-w-4xl mx-auto px-4 pb-10 text-center space-y-6">
+        <div className="flex items-center justify-center gap-8 sm:gap-16">
+          {STATS.map((s) => (
+            <div key={s.label} className="text-center">
+              <div className="text-4xl sm:text-5xl font-black text-white tabular-nums">{s.value}</div>
+              <div className="text-xs font-semibold text-zinc-300 mt-1">{s.label}</div>
+              <div className="text-[10px] text-zinc-600 mt-0.5 font-mono">{s.sub}</div>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-widest">5 production failure patterns you can simulate right now</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              { label: "Stale retrieval",   color: "#ef4444" },
+              { label: "Prompt injection",  color: "#f59e0b" },
+              { label: "Context overflow",  color: "#6366f1" },
+              { label: "Hallucination",     color: "#3b82f6" },
+              { label: "Multi-hop failure", color: "#22c55e" },
+            ].map(f => (
+              <button key={f.label} onClick={() => onNavigate("lab")}
+                className="px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all hover:opacity-80"
+                style={{ color: f.color, borderColor: f.color + "40", background: f.color + "10" }}>
+                {f.label}
+              </button>
             ))}
           </div>
         </div>
@@ -382,6 +390,9 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
           </div>
           <p className="text-xs text-zinc-600 leading-relaxed">
             RAG Lab scenarios are curated from real production failure patterns. The goal throughout is <em className="text-zinc-500">systems intuition</em> — not exact model introspection.
+          </p>
+          <p className="text-[11px] text-zinc-700 border-t border-zinc-800 pt-3 leading-relaxed">
+            This app uses lightweight analytics to understand which modules are useful. No login is required. Feedback is optional. Do not submit sensitive personal information in the feedback form.
           </p>
         </div>
 

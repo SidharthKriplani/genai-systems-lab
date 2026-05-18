@@ -40,3 +40,10 @@ export function track(event, props = {}) {
     window.posthog?.capture(event, { ...props, app: "genai-systems-lab" });
   } catch { /* silent */ }
 }
+
+// Convenience helper for external links — no external resource links exist in the
+// current app, but wire future ones as:
+//   onClick={() => trackExternalResource("https://...", "label", "section")}
+export function trackExternalResource(url, label, section = "") {
+  track("external_resource_clicked", { url, label, section });
+}

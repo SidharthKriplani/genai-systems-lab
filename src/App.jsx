@@ -1413,6 +1413,11 @@ export default function App() {
               <button onClick={() => { setLeaderboardOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-white transition-all">
                 📋 Challenge Log
               </button>
+              <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer"
+                onClick={() => { track("feedback_clicked", { location: "mobile_drawer" }); setMobileMenuOpen(false); }}
+                className="w-full py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-violet-400 hover:border-violet-800 transition-all flex items-center justify-center gap-1.5">
+                💬 Give Feedback
+              </a>
             </div>
           </div>
         </div>
