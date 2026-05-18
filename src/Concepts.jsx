@@ -878,6 +878,361 @@ function AttentionModule() {
   );
 }
 
+// ─── TRANSFORMER MODULE ───────────────────────────────────────────────────────
+
+const TRANSFORMER_SENTENCES = [
+  { label: "the cat sat on", tokens: ["the", "cat", "sat", "on"] },
+  { label: "large language models generate", tokens: ["large", "language", "models", "generate"] },
+  { label: "attention is all you", tokens: ["attention", "is", "all", "you"] },
+];
+
+const NEXT_CANDIDATES = [
+  ["mat", "floor", "chair", "roof", "it", "him", "her", "that", "top", "edge"],
+  ["text", "tokens", "sequences", "output", "answers", "predictions", "responses", "context"],
+  ["need", "want", "see", "get", "know", "have", "do", "think", "feel", "say"],
+];
+
+function seededRand(seed) {
+  return function () {
+    seed = (seed + 0x9e3779b9) | 0;
+    let x = seed;
+    x ^= x >>> 16; x = Math.imul(x, 0x85ebca6b);
+    x ^= x >>> 13; x = Math.imul(x, 0xc2b2ae35);
+    x ^= x >>> 16;
+    return (x >>> 0) / 0xffffffff;
+  };
+}
+function randGauss(r) { return Math.sqrt(-2 * Math.log(r() + 1e-10)) * Math.cos(2 * Math.PI * r()); }
+function randMatrix(rows, cols, seed, scale = 0.3) {
+  const r = seededRand(seed);
+  return Array.from({ length: rows }, () => Array.from({ length: cols }, () => randGauss(r) * scale));
+}
+function matMul(A, B) {
+  const m = A.length, k = A[0].length, n = B[0].length;
+  return Array.from({ length: m }, (_, i) =>
+    Array.from({ length: n }, (_, j) => A[i].reduce((s, a, l) => s + a * B[l][j], 0))
+  );
+}
+function matVec(M, v) { return M.map(row => row.reduce((s, x, i) => s + x * v[i], 0)); }
+function transposeM(M) { return M[0].map((_, j) => M.map(row => row[j])); }
+function softmaxT(arr, temp = 1.0) {
+  const scaled = arr.map(v => v / Math.max(temp, 0.01));
+  const max = Math.max(...scaled);
+  const exps = scaled.map(v => Math.exp(v - max));
+  const sum = exps.reduce((a, b) => a + b, 0);
+  return exps.map(v => v / sum);
+}
+function lnorm(v) {
+  const mean = v.reduce((a, b) => a + b) / v.length;
+  const std = Math.sqrt(v.reduce((s, x) => s + (x - mean) ** 2, 0) / v.length + 1e-5);
+  return v.map(x => (x - mean) / std);
+}
+function relu(v) { return v.map(x => Math.max(0, x)); }
+
+function runTransformer(sentenceIdx, n_heads, temperature) {
+  const D = 8;
+  const dh = Math.floor(D / n_heads);
+  const tokens = TRANSFORMER_SENTENCES[sentenceIdx].tokens;
+  const seqLen = tokens.length;
+
+  // 1. Token + positional embeddings
+  const tokenEmbeds = tokens.map((tok, pos) => {
+    const wordSeed = tok.split("").reduce((s, c) => s + c.charCodeAt(0), 0) * 13 + sentenceIdx * 7;
+    const r = seededRand(wordSeed);
+    const emb = Array.from({ length: D }, () => randGauss(r) * 0.5);
+    return emb.map((v, i) =>
+      v + 0.5 * (i % 2 === 0
+        ? Math.sin(pos / Math.pow(10000, i / D))
+        : Math.cos(pos / Math.pow(10000, (i - 1) / D)))
+    );
+  });
+
+  // 2. Multi-head attention
+  const allHeadWeights = [];
+  let attnOutput = Array.from({ length: seqLen }, () => new Array(D).fill(0));
+  for (let h = 0; h < n_heads; h++) {
+    const WQ = randMatrix(D, dh, 100 + h * 17 + sentenceIdx);
+    const WK = randMatrix(D, dh, 200 + h * 17 + sentenceIdx);
+    const WV = randMatrix(D, dh, 300 + h * 17 + sentenceIdx);
+    const Q = matMul(tokenEmbeds, WQ);
+    const K = matMul(tokenEmbeds, WK);
+    const V = matMul(tokenEmbeds, WV);
+    const scale = Math.sqrt(dh);
+    const KT = transposeM(K);
+    const rawScores = matMul(Q, KT).map(row => row.map(v => v / scale));
+    const attnWeights = rawScores.map((row, i) =>
+      softmaxT(row.map((v, j) => (j <= i ? v : -1e9)), temperature)
+    );
+    allHeadWeights.push(attnWeights);
+    const headOut = matMul(attnWeights, V);
+    for (let i = 0; i < seqLen; i++)
+      for (let d = 0; d < dh; d++)
+        attnOutput[i][h * dh + d] += headOut[i][d];
+  }
+
+  // 3. Residual + LayerNorm
+  const normed = tokenEmbeds.map((emb, i) => lnorm(emb.map((v, d) => v + attnOutput[i][d])));
+
+  // 4. FFN: D → 2D → D
+  const W1 = randMatrix(D, D * 2, 400 + sentenceIdx);
+  const W2 = randMatrix(D * 2, D, 500 + sentenceIdx);
+  const ffnOut = normed.map(v => matVec(transposeM(W2), relu(matVec(transposeM(W1), v))));
+
+  // 5. Residual + LayerNorm after FFN
+  const finalOut = normed.map((v, i) => lnorm(v.map((x, d) => x + ffnOut[i][d])));
+
+  // 6. Output logits for next-token candidates
+  const lastHidden = finalOut[seqLen - 1];
+  const candidates = NEXT_CANDIDATES[sentenceIdx];
+  const logits = candidates.map((tok) => {
+    const wordSeed = tok.split("").reduce((s, c) => s + c.charCodeAt(0), 0) * 31 + 999;
+    const WOut = randMatrix(D, 1, wordSeed + sentenceIdx * 53);
+    return matVec(transposeM(WOut), lastHidden)[0];
+  });
+  const probs = softmaxT(logits, temperature);
+  const nextTokenDist = candidates
+    .map((tok, i) => ({ tok, prob: probs[i] }))
+    .sort((a, b) => b.prob - a.prob);
+
+  return { tokenEmbeds, allHeadWeights, finalOut, nextTokenDist };
+}
+
+function embColor(v) {
+  const t = Math.max(0, Math.min(1, (clamp(v, -2, 2) + 2) / 4));
+  return `rgb(${Math.round(t*139+(1-t)*30)},${Math.round(t*30+(1-t)*30)},${Math.round(t*246+(1-t)*80)})`;
+}
+
+function TransformerModule() {
+  const [sentenceIdx, setSentenceIdx] = useState(0);
+  const [nHeads, setNHeads] = useState(2);
+  const [temperature, setTemperature] = useState(1.0);
+  const [activeHead, setActiveHead] = useState(0);
+  const [activeStep, setActiveStep] = useState("attention");
+
+  const result = useMemo(
+    () => runTransformer(sentenceIdx, nHeads, temperature),
+    [sentenceIdx, nHeads, temperature]
+  );
+
+  const sentence = TRANSFORMER_SENTENCES[sentenceIdx];
+  const tokens = sentence.tokens;
+  const safeActiveHead = Math.min(activeHead, nHeads - 1);
+
+  const STEPS = [
+    { id: "embed",     label: "1 · Embed",   color: "blue" },
+    { id: "attention", label: "2 · Attend",  color: "violet" },
+    { id: "ffn",       label: "3 · FFN",     color: "emerald" },
+    { id: "output",    label: "4 · Predict", color: "amber" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Top controls */}
+      <div className="grid grid-cols-12 gap-3">
+        {/* Sentence picker */}
+        <div className="col-span-12 lg:col-span-5 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Input Sequence</div>
+          {TRANSFORMER_SENTENCES.map((s, i) => (
+            <button key={i} onClick={() => { setSentenceIdx(i); setActiveHead(0); }}
+              className={`w-full text-left px-3 py-2 rounded-lg text-xs font-mono transition-all ${sentenceIdx === i ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+              "{s.tokens.join(" ")} ___"
+            </button>
+          ))}
+        </div>
+
+        {/* Parameters */}
+        <div className="col-span-12 lg:col-span-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-4">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Parameters</div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <span className="text-zinc-300 font-mono">temperature</span>
+              <span className="text-amber-400 font-mono font-bold">{temperature.toFixed(1)}</span>
+            </div>
+            <input type="range" min="0.1" max="2.0" step="0.1" value={temperature}
+              onChange={e => setTemperature(parseFloat(e.target.value))}
+              className="w-full accent-amber-500 cursor-pointer" />
+            <div className="flex justify-between text-xs text-zinc-600 font-mono">
+              <span>0.1 sharp</span><span>2.0 flat</span>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="text-xs text-zinc-300 font-mono">n_heads</div>
+            <div className="flex gap-2">
+              {[1, 2, 4].map(n => (
+                <button key={n} onClick={() => { setNHeads(n); setActiveHead(0); }}
+                  className={`flex-1 py-1.5 rounded text-xs font-mono font-bold transition-all ${nHeads === n ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Pipeline step selector */}
+        <div className="col-span-12 lg:col-span-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Forward Pass</div>
+          {STEPS.map(s => (
+            <button key={s.id} onClick={() => setActiveStep(s.id)}
+              className={`w-full text-left px-3 py-2 rounded-lg text-xs font-mono transition-all ${activeStep === s.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+              {s.label}
+            </button>
+          ))}
+          <p className="text-xs text-zinc-600">d_model=8 · causal · 1 layer</p>
+        </div>
+      </div>
+
+      {/* Step panels */}
+      {activeStep === "embed" && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+          <div className="text-xs font-bold text-blue-400 uppercase tracking-wide">Token + Positional Embeddings (d_model = 8)</div>
+          <p className="text-xs text-zinc-500">Each token → an 8-dim vector from the embedding table, plus a sinusoidal positional offset. Columns = dimensions, colour = value.</p>
+          <div>
+            <div className="flex" style={{ marginLeft: 94 }}>
+              {Array.from({ length: 8 }, (_, i) => (
+                <div key={i} style={{ width: 46, textAlign: "center" }} className="text-xs font-mono text-zinc-600 pb-1">d{i}</div>
+              ))}
+            </div>
+            {tokens.map((tok, i) => (
+              <div key={i} className="flex items-center mb-0.5">
+                <div style={{ width: 94, textAlign: "right", paddingRight: 8 }} className="text-xs font-mono text-zinc-300 truncate">{tok}</div>
+                {result.tokenEmbeds[i].map((v, d) => (
+                  <div key={d} style={{ width: 46, height: 38, background: embColor(v), border: "1px solid #18181b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 9, color: "#fff", fontFamily: "monospace" }}>{v.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="rounded-lg border border-blue-800 bg-blue-950/20 p-3">
+            <p className="text-xs text-zinc-400">This is a lookup table. In GPT-4 d_model=12288 and there are ~100k vocab entries. Positional encoding tells the model token order — without it, "cat sat" and "sat cat" would look identical.</p>
+          </div>
+        </div>
+      )}
+
+      {activeStep === "attention" && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-zinc-500 font-mono">Head:</span>
+            {Array.from({ length: nHeads }, (_, h) => (
+              <button key={h} onClick={() => setActiveHead(h)}
+                className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${safeActiveHead === h ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                H{h}
+              </button>
+            ))}
+            <span className="text-xs text-zinc-600 ml-1 font-mono">d_head = {Math.floor(8 / nHeads)}</span>
+          </div>
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-12 lg:col-span-8 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+              <div className="text-xs font-bold text-violet-400 uppercase tracking-wide mb-2">Attention weights — Head {safeActiveHead} (causal mask)</div>
+              <div className="flex" style={{ marginLeft: 76 }}>
+                {tokens.map((t, j) => (
+                  <div key={j} style={{ width: 66, textAlign: "center" }} className="text-xs font-mono text-zinc-400 pb-2">{t}</div>
+                ))}
+              </div>
+              {(result.allHeadWeights[safeActiveHead] || []).map((row, i) => (
+                <div key={i} className="flex items-center">
+                  <div style={{ width: 76, textAlign: "right", paddingRight: 8 }} className="text-xs font-mono text-zinc-300 truncate">{tokens[i]}</div>
+                  {row.map((v, j) => (
+                    <div key={j}
+                      style={{ width: 66, height: 50, background: j > i ? "#18181b" : heatColor(v), border: "1px solid #18181b", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      title={`${tokens[i]} → ${tokens[j]}: ${v.toFixed(3)}`}>
+                      <span style={{ fontSize: 9, fontFamily: "monospace", color: j > i ? "#3f3f46" : v > 0.4 ? "#fff" : "#71717a" }}>
+                        {j > i ? "—" : v.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              <p className="text-xs text-zinc-600 mt-2">Grey = masked future. Move the temperature slider — watch weights sharpen or flatten.</p>
+            </div>
+            <div className="col-span-12 lg:col-span-4 space-y-3">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+                <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Temperature now</div>
+                <div className="text-xs font-mono space-y-1 text-zinc-400">
+                  <div className={temperature < 0.5 ? "text-amber-300 font-bold" : ""}>T &lt; 0.5 → sharp / confident</div>
+                  <div className={temperature >= 0.5 && temperature <= 1.4 ? "text-amber-300 font-bold" : ""}>T ≈ 1.0 → balanced</div>
+                  <div className={temperature > 1.4 ? "text-amber-300 font-bold" : ""}>T &gt; 1.5 → flat / uncertain</div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-3">
+                <div className="text-xs font-bold text-violet-400 uppercase tracking-wide mb-1">Formula</div>
+                <p className="text-xs text-zinc-400 leading-relaxed font-mono">softmax(Q·Kᵀ / √d_h / T)</p>
+                <p className="text-xs text-zinc-500 mt-1">Each row sums to 1. Multiple heads each learn different relationship patterns.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeStep === "ffn" && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+          <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">FFN Hidden States (after attention + residual + LayerNorm)</div>
+          <p className="text-xs text-zinc-500">D→2D ReLU→D. These enriched vectors carry context from all previous tokens. The last row feeds the output head.</p>
+          <div>
+            <div className="flex" style={{ marginLeft: 94 }}>
+              {Array.from({ length: 8 }, (_, i) => (
+                <div key={i} style={{ width: 46, textAlign: "center" }} className="text-xs font-mono text-zinc-600 pb-1">d{i}</div>
+              ))}
+            </div>
+            {tokens.map((tok, i) => (
+              <div key={i} className={`flex items-center mb-0.5 ${i === tokens.length - 1 ? "ring-1 ring-emerald-700 rounded" : ""}`}>
+                <div style={{ width: 94, textAlign: "right", paddingRight: 8 }} className={`text-xs font-mono truncate ${i === tokens.length - 1 ? "text-emerald-300 font-bold" : "text-zinc-300"}`}>{tok}{i === tokens.length - 1 ? " ←" : ""}</div>
+                {result.finalOut[i].map((v, d) => (
+                  <div key={d} style={{ width: 46, height: 38, background: embColor(v * 0.6), border: "1px solid #18181b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 9, color: "#fff", fontFamily: "monospace" }}>{v.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="rounded-lg border border-emerald-800 bg-emerald-950/20 p-3">
+            <p className="text-xs text-zinc-400">The highlighted last token's vector (← arrow) has attended to all prior tokens. This single 8-dim vector is projected to vocabulary logits to predict what comes next.</p>
+          </div>
+        </div>
+      )}
+
+      {activeStep === "output" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-4">
+            <div className="text-xs font-bold text-amber-400 uppercase tracking-wide">
+              Next Token Prediction — "{sentence.tokens.join(" ")} ___"
+            </div>
+            <p className="text-xs text-zinc-500">Last hidden state → logits over candidates → softmax(logits / T). Drag temperature and watch the distribution reshape in real time.</p>
+            <div className="space-y-2">
+              {result.nextTokenDist.map(({ tok, prob }, i) => (
+                <div key={tok} className="space-y-0.5">
+                  <div className="flex justify-between text-xs font-mono">
+                    <span className={i === 0 ? "text-emerald-300 font-bold" : "text-zinc-300"}>{i + 1}. "{tok}"</span>
+                    <span className={i === 0 ? "text-emerald-400 font-bold" : "text-zinc-500"}>{(prob * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-300"
+                      style={{ width: `${prob * 100}%`, background: i === 0 ? "#10b981" : heatColor(prob * 1.8) }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-amber-800 bg-amber-950/20 p-3">
+              <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">T = {temperature.toFixed(1)}</div>
+              <p className="text-xs text-zinc-400">
+                {temperature < 0.6 ? "Very confident. Top token dominates. Good for factual Q&A and code." :
+                 temperature > 1.4 ? "Flat distribution — probability spreads to many tokens. Good for creative writing." :
+                 "Balanced. Reasonable confidence. Works for most tasks."}
+              </p>
+            </div>
+            <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-3">
+              <div className="text-xs font-bold text-violet-400 uppercase tracking-wide mb-1">Greedy decode → "{result.nextTokenDist[0]?.tok}"</div>
+              <p className="text-xs text-zinc-400">Greedy always picks the top token. Real LLMs sample from this distribution — same prompt, different output each run. That's not a bug.</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN CONCEPTS APP ────────────────────────────────────────────────────────
 
 const MODULES = [
@@ -905,6 +1260,14 @@ const MODULES = [
     subtitle: "How every token relates to every other token. The core of the transformer.",
     component: AttentionModule,
   },
+  {
+    id: "transformer",
+    label: "Transformer",
+    tag: "LAYER 3",
+    title: "Transformer Forward Pass",
+    subtitle: "Real math in the browser. Embed → attend → FFN → predict. Tighten temperature, add heads, watch it change.",
+    component: TransformerModule,
+  },
 ];
 
 export default function ConceptsApp() {
@@ -929,7 +1292,6 @@ export default function ConceptsApp() {
           </button>
         ))}
         <div className="flex items-center gap-2 ml-auto">
-          <span className="text-xs px-2 py-1 bg-zinc-800 text-zinc-500 rounded font-mono">Autoregressive Gen — coming soon</span>
           <span className="text-xs px-2 py-1 bg-zinc-800 text-zinc-500 rounded font-mono">Agent Loop — coming soon</span>
         </div>
       </div>
