@@ -1272,7 +1272,7 @@ export default function App() {
   const NAV_GROUPS = [
     { label: null,    items: [{ id: "home", label: "Home" }] },
     { label: "LEARN", color: "#6366f1", items: [{ id: "concepts", label: "Concepts", count: 11 }, { id: "flows", label: "Flows", count: 5 }] },
-    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab", count: 6 }, { id: "agents", label: "Agents", count: 6 }, { id: "systems", label: "Systems", count: 14 }, { id: "playground", label: "Playground", count: 5 }, { id: "explore", label: "Explore", count: 8 }] },
+    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab", count: 6 }, { id: "agents", label: "Agents", count: 7 }, { id: "systems", label: "Systems", count: 14 }, { id: "playground", label: "Playground", count: 5 }, { id: "explore", label: "Explore", count: 8 }] },
     { label: "GROW",  color: "#22c55e", items: [{ id: "fluency", label: "Fluency", count: 5 }, { id: "aipm", label: "AIPM", count: 5 }, { id: "career", label: "Career", count: 4 }] },
   ];
 
