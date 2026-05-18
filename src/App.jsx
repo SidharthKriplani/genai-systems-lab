@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import ConceptsApp from "./Concepts";
+import SystemsApp from "./Systems";
+import FluencyApp from "./Fluency";
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -836,7 +838,7 @@ function LeaderboardView({ leaderboard, onClear }) {
 }
 
 export default function App() {
-  const [topView, setTopView] = useState("lab"); // "lab" | "concepts" | "leaderboard"
+  const [topView, setTopView] = useState("lab"); // "lab" | "concepts" | "systems" | "fluency" | "leaderboard"
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [config, setConfig] = useState(ALL_SCENARIOS[0].default_config);
   const [evaluated, setEvaluated] = useState(false);
@@ -931,6 +933,18 @@ export default function App() {
               Concepts
             </button>
             <button
+              onClick={() => setTopView("systems")}
+              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "systems" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
+            >
+              Systems
+            </button>
+            <button
+              onClick={() => setTopView("fluency")}
+              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "fluency" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
+            >
+              Fluency
+            </button>
+            <button
               onClick={() => setTopView("leaderboard")}
               className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase flex items-center gap-1.5 ${topView === "leaderboard" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
             >
@@ -950,6 +964,10 @@ export default function App() {
       </header>
 
       {topView === "concepts" && <ConceptsApp />}
+
+      {topView === "systems" && <SystemsApp />}
+
+      {topView === "fluency" && <FluencyApp />}
 
       {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} />}
 
