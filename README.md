@@ -227,6 +227,44 @@ Use these labels:
 
 ---
 
+## Community beta
+
+The lab is currently in free community beta. The goal is to collect usage signal, confusion points, and testimonials before any monetization decision.
+
+**Give feedback:** [Feedback form](https://forms.gle/REPLACE_ME) — 2 minutes, anonymous option available.
+
+### Analytics
+
+The app uses PostHog for lightweight, privacy-respecting analytics. No personal data is collected. Autocapture is disabled. All tracking is event-based and manually instrumented.
+
+To enable analytics on your own fork, set these environment variables:
+
+```
+VITE_POSTHOG_KEY=phc_your_key_here
+VITE_POSTHOG_HOST=https://us.i.posthog.com
+VITE_FEEDBACK_URL=https://forms.gle/your_form_id
+```
+
+Copy `.env.example` to `.env.local` and fill in your values. The app builds and runs with no analytics configured — all calls fail silently.
+
+Events tracked: `home_viewed`, `start_here_clicked`, `module_opened`, `rag_lab_opened`, `evaluate_configuration_clicked`, `challenge_completed`, `feedback_clicked`.
+
+### Feedback form questions
+
+If you're setting up your own feedback form, these are the recommended questions:
+
+1. Your background: Student / Analyst / Engineer / PM / Founder / Other
+2. Which module did you try?
+3. What was most useful?
+4. What was confusing?
+5. Would you share this with someone learning GenAI systems? Why / why not?
+6. Can we quote your feedback publicly? (Yes with name / Yes anonymously / No)
+7. Optional: email for follow-up
+
+Full launch checklist, deployment steps, and 7-day feedback review process: [`docs/COMMUNITY_BETA_LAUNCH_CHECKLIST.md`](docs/COMMUNITY_BETA_LAUNCH_CHECKLIST.md).
+
+---
+
 ## Product decisions
 
 Full rationale behind every major architecture and product decision — what was built, what was deliberately excluded, and why — is in [`DECISIONS.md`](DECISIONS.md).

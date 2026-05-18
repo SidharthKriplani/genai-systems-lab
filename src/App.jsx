@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { initAnalytics, track, FEEDBACK_URL } from "./analytics";
 import ConceptsApp from "./Concepts";
 import SystemsApp from "./Systems";
 import FluencyApp from "./Fluency";
@@ -1145,6 +1146,8 @@ export default function App() {
   });
   function navigate(view) {
     setTopView(view);
+    track("module_opened", { section: view });
+    if (view === "lab") track("rag_lab_opened", { section: "lab" });
     setVisited(prev => {
       const next = new Set([...prev, view]);
       try { localStorage.setItem("genai_visited", JSON.stringify([...next])); } catch {}
@@ -1216,6 +1219,8 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => { initAnalytics(); }, []);
+
   const scenario = ALL_SCENARIOS[scenarioIdx];
   const lookup = useMemo(() => lookupResult(scenario, config), [scenario, config]);
 
@@ -1235,9 +1240,11 @@ export default function App() {
 
   const evaluate = () => {
     setEvaluated(true);
+    track("evaluate_configuration_clicked", { scenario_id: scenario.scenario_id, challenge_mode: challengeMode });
     if (challengeMode && lookup?.result) {
       const grade = gradeChallenge(scenario, lookup.result);
       setGradeResult(grade);
+      if (grade.passed) track("challenge_completed", { scenario_id: scenario.scenario_id, passed: true });
       const entry = {
         scenario: scenario.title,
         scenarioId: scenario.scenario_id,
@@ -1435,6 +1442,11 @@ export default function App() {
                 className="w-3.5 h-3.5 rounded-full border-2 transition-all hover:scale-110"
                 style={{ background: p.color, borderColor: palette === p.id ? "white" : "transparent" }} />
             ))}
+            <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer"
+              onClick={() => track("feedback_clicked", { location: "header" })}
+              className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-violet-700 hover:text-violet-400 transition-all font-mono text-zinc-500">
+              💬 Feedback
+            </a>
             <button onClick={() => setLeaderboardOpen(true)}
               className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
               title="Challenge Log">
@@ -1698,6 +1710,15 @@ export default function App() {
                   <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-4 space-y-2">
                     <div className="text-xs font-bold text-violet-400 uppercase tracking-wide">System Design Lesson</div>
                     <p className="text-xs text-zinc-300 leading-relaxed">{result.system_design_lesson}</p>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 flex items-center justify-between gap-3">
+                    <p className="text-xs text-zinc-500">Was this scenario useful? Tell us what to improve.</p>
+                    <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer"
+                      onClick={() => track("feedback_clicked", { location: "rag_lab_post_evaluate", scenario_id: scenario.scenario_id })}
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-700 hover:border-violet-700 text-zinc-400 hover:text-violet-400 transition-all">
+                      Give Feedback →
+                    </a>
                   </div>
                 </>
               )}

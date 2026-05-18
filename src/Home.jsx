@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { track, FEEDBACK_URL } from "./analytics";
 
 const START_HERE_PATH = [
   { step: 1, label: "Tokenizer",     tab: "concepts", desc: "How text becomes numbers" },
@@ -111,6 +112,16 @@ const STATS = [
 export default function HomePage({ onNavigate, visited = new Set() }) {
   const [activePath, setActivePath] = useState(null);
   const [expandedModule, setExpandedModule] = useState(null);
+  const [betaBannerDismissed, setBetaBannerDismissed] = useState(() => {
+    try { return localStorage.getItem("genai_beta_banner_dismissed") === "1"; } catch { return false; }
+  });
+
+  useEffect(() => { track("home_viewed", {}); }, []);
+
+  function dismissBetaBanner() {
+    setBetaBannerDismissed(true);
+    try { localStorage.setItem("genai_beta_banner_dismissed", "1"); } catch {}
+  }
 
   function pathProgress(path) {
     const visited_count = path.steps.filter(s => visited.has(s.tab)).length;
@@ -119,6 +130,26 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
 
   return (
     <div className="min-h-screen bg-zinc-950">
+
+      {/* ── COMMUNITY BETA BANNER ────────────────────────────────────────── */}
+      {!betaBannerDismissed && (
+        <div className="border-b border-violet-900/40 bg-violet-950/20">
+          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-xs text-violet-300 leading-relaxed">
+              <span className="font-bold text-violet-200">Community beta:</span> this lab is free while we improve it. Try a module, break something, and tell us what confused you.
+            </p>
+            <div className="flex items-center gap-2 shrink-0">
+              <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer"
+                onClick={() => track("feedback_clicked", { location: "beta_banner" })}
+                className="px-3 py-1 rounded-lg text-xs font-bold bg-violet-600 hover:bg-violet-500 text-white transition-all">
+                Give Feedback
+              </a>
+              <button onClick={dismissBetaBanner} className="text-violet-500 hover:text-violet-300 text-xs px-2 py-1 transition-all">✕</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8">
 
@@ -137,7 +168,7 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
-            onClick={() => onNavigate("concepts")}
+            onClick={() => { track("start_here_clicked", { location: "hero_cta" }); onNavigate("concepts"); }}
             className="px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all shadow-lg shadow-violet-900/40">
             Start Here — AI Engineer Path →
           </button>
@@ -192,7 +223,7 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
               <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-0.5">Recommended first journey</p>
               <h3 className="text-sm font-black text-white">From Tokens to Production Failures — ~45 min</h3>
             </div>
-            <button onClick={() => onNavigate("concepts")}
+            <button onClick={() => { track("start_here_clicked", { location: "journey_strip" }); onNavigate("concepts"); }}
               className="px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs transition-all shrink-0">
               Begin →
             </button>
@@ -355,9 +386,16 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
         </div>
 
         {/* ── FOOTER ────────────────────────────────────────────────────── */}
-        <div className="text-center pt-4">
+        <div className="text-center pt-4 space-y-3">
+          <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer"
+            onClick={() => track("feedback_clicked", { location: "footer" })}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 hover:border-violet-700 text-xs font-mono text-zinc-500 hover:text-violet-400 transition-all">
+            💬 Give feedback on this lab
+          </a>
           <p className="text-xs text-zinc-600">GenAI Systems Lab · Free · Static · Built with React + Vite + Tailwind</p>
-          <p className="text-xs text-zinc-700 mt-1">Zero backend. Zero cost. Everything runs in your browser.</p>
+          <p className="text-[11px] text-zinc-700 max-w-lg mx-auto leading-relaxed">
+            This app uses lightweight analytics to understand which modules are useful. No login is required. Feedback is optional. Do not submit sensitive personal information in the feedback form.
+          </p>
         </div>
       </div>
     </div>
