@@ -1,4 +1,5 @@
 import { useState } from "react";
+import IndiaScaleLab from "./IndiaScale";
 
 // ─── EVALS LAB DATA ───────────────────────────────────────────────────────────
 
@@ -1863,6 +1864,7 @@ const SYSTEMS_MODULES = [
   { id: "finetune", label: "Fine-Tuning Lab", tag: "TRAIN", component: FineTuningLab },
   { id: "observability", label: "Observability", tag: "OPS", component: LLMObservability },
   { id: "abtesting", label: "A/B Testing", tag: "SHIP", component: ABTestingLab },
+  { id: "indiascale", label: "India Scale Lab", tag: "₹ INDIA", component: IndiaScaleLab },
 ];
 
 export default function SystemsApp() {
