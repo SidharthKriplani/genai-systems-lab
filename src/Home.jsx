@@ -103,10 +103,9 @@ const MODULE_MAP = [
 ];
 
 const STATS = [
-  { value: "3",    label: "Learning tracks" },
-  { value: "11",   label: "Tabs" },
-  { value: "75+",  label: "Modules" },
-  { value: "200+", label: "Interactive challenges" },
+  { value: "3",    label: "Learning tracks",      sub: "Engineer · PM · Interview" },
+  { value: "75+",  label: "Modules",              sub: "Across 11 tabs"            },
+  { value: "200+", label: "Challenges",           sub: "All interactive"           },
 ];
 
 export default function HomePage({ onNavigate, visited = new Set() }) {
@@ -121,94 +120,73 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
   return (
     <div className="min-h-screen bg-zinc-950">
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-4 pt-16 pb-12 text-center space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800 border border-zinc-700 text-xs text-zinc-400 font-mono">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
-          Free · Static · No login · No backend
-        </div>
-        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-          GenAI Systems Lab
-        </h1>
-        <p className="text-base sm:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-          The interactive learning platform for AI engineers and product managers who want to build, ship, and speak about AI systems with precision.
-        </p>
+      <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8">
 
-        {/* Start Here CTA */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+        {/* Headline */}
+        <div className="space-y-4">
+          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
+            AI systems break<br className="hidden sm:block" /> in production.
+            <br />
+            <span className="text-violet-400">Learn exactly why.</span>
+          </h1>
+          <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+            The interactive lab for AI engineers and PMs — configure RAG pipelines, watch them fail, diagnose the root cause. No backend. No login. No fluff.
+          </p>
+        </div>
+
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
             onClick={() => onNavigate("concepts")}
-            className="px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-black text-sm transition-all shadow-lg shadow-violet-900/40">
+            className="px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all shadow-lg shadow-violet-900/40">
             Start Here — AI Engineer Path →
           </button>
           <button
             onClick={() => onNavigate("fluency")}
-            className="px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-bold text-sm transition-all">
+            className="px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-medium text-sm transition-all">
             Quick: Mock Interview
           </button>
         </div>
 
+        {/* Trust badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-500 font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
+          Free · Static · No login · No backend
+        </div>
+
         {/* Stats */}
-        <div className="flex flex-wrap justify-center gap-4 sm:gap-8 pt-4">
-          {STATS.map(s => (
+        <div className="flex items-center justify-center gap-8 sm:gap-16 pt-2">
+          {STATS.map((s, i) => (
             <div key={s.label} className="text-center">
-              <div className="text-2xl font-black text-white">{s.value}</div>
-              <div className="text-xs text-zinc-500">{s.label}</div>
+              <div className="text-4xl sm:text-5xl font-black text-white tabular-nums">{s.value}</div>
+              <div className="text-xs font-semibold text-zinc-300 mt-1">{s.label}</div>
+              <div className="text-[10px] text-zinc-600 mt-0.5 font-mono">{s.sub}</div>
             </div>
           ))}
         </div>
 
-        {/* Architecture diagram — simple SVG fortress */}
-        <div className="relative mx-auto mt-8" style={{ maxWidth: 560 }}>
-          <svg viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            {/* Connection lines */}
-            <line x1="100" y1="100" x2="200" y2="60"  stroke="#6366f1" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="4,4"/>
-            <line x1="100" y1="100" x2="200" y2="100" stroke="#6366f1" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="4,4"/>
-            <line x1="100" y1="100" x2="200" y2="140" stroke="#6366f1" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="4,4"/>
-            <line x1="300" y1="60"  x2="400" y2="60"  stroke="#22c55e" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="4,4"/>
-            <line x1="300" y1="100" x2="400" y2="100" stroke="#22c55e" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="4,4"/>
-            <line x1="300" y1="140" x2="400" y2="140" stroke="#22c55e" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="4,4"/>
-            <line x1="200" y1="60"  x2="300" y2="60"  stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.5"/>
-            <line x1="200" y1="100" x2="300" y2="100" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.5"/>
-            <line x1="200" y1="140" x2="300" y2="140" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.5"/>
-            {/* LEARN group */}
-            <rect x="160" y="40"  width="80" height="28" rx="6" fill="#6366f1" fillOpacity="0.15" stroke="#6366f1" strokeWidth="1" strokeOpacity="0.6"/>
-            <text x="200" y="58" textAnchor="middle" fill="#a5b4fc" fontSize="10" fontFamily="monospace">LEARN</text>
-            <rect x="160" y="86"  width="80" height="28" rx="6" fill="#6366f1" fillOpacity="0.15" stroke="#6366f1" strokeWidth="1" strokeOpacity="0.6"/>
-            <text x="200" y="104" textAnchor="middle" fill="#a5b4fc" fontSize="10" fontFamily="monospace">Concepts</text>
-            <rect x="160" y="126" width="80" height="28" rx="6" fill="#6366f1" fillOpacity="0.15" stroke="#6366f1" strokeWidth="1" strokeOpacity="0.6"/>
-            <text x="200" y="144" textAnchor="middle" fill="#a5b4fc" fontSize="10" fontFamily="monospace">Flows</text>
-            {/* BUILD group */}
-            <rect x="260" y="40"  width="80" height="28" rx="6" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.6"/>
-            <text x="300" y="58"  textAnchor="middle" fill="#93c5fd" fontSize="10" fontFamily="monospace">RAG Lab</text>
-            <rect x="260" y="86"  width="80" height="28" rx="6" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.6"/>
-            <text x="300" y="104" textAnchor="middle" fill="#93c5fd" fontSize="10" fontFamily="monospace">Systems</text>
-            <rect x="260" y="126" width="80" height="28" rx="6" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.6"/>
-            <text x="300" y="144" textAnchor="middle" fill="#93c5fd" fontSize="10" fontFamily="monospace">Playground</text>
-            {/* GROW group */}
-            <rect x="360" y="40"  width="80" height="28" rx="6" fill="#22c55e" fillOpacity="0.15" stroke="#22c55e" strokeWidth="1" strokeOpacity="0.6"/>
-            <text x="400" y="58"  textAnchor="middle" fill="#86efac" fontSize="10" fontFamily="monospace">Fluency</text>
-            <rect x="360" y="86"  width="80" height="28" rx="6" fill="#22c55e" fillOpacity="0.15" stroke="#22c55e" strokeWidth="1" strokeOpacity="0.6"/>
-            <text x="400" y="104" textAnchor="middle" fill="#86efac" fontSize="10" fontFamily="monospace">AIPM</text>
-            <rect x="360" y="126" width="80" height="28" rx="6" fill="#22c55e" fillOpacity="0.15" stroke="#22c55e" strokeWidth="1" strokeOpacity="0.6"/>
-            <text x="400" y="144" textAnchor="middle" fill="#86efac" fontSize="10" fontFamily="monospace">Career</text>
-            {/* You node */}
-            <circle cx="80" cy="100" r="28" fill="#09090b" stroke="#ffffff" strokeWidth="1.5" strokeOpacity="0.3"/>
-            <text x="80" y="96"  textAnchor="middle" fill="white" fontSize="11" fontWeight="bold" fontFamily="monospace">YOU</text>
-            <text x="80" y="109" textAnchor="middle" fill="#71717a" fontSize="8" fontFamily="monospace">start here</text>
-            {/* Output node */}
-            <circle cx="490" cy="100" r="28" fill="#09090b" stroke="#22c55e" strokeWidth="1.5" strokeOpacity="0.5"/>
-            <text x="490" y="96"  textAnchor="middle" fill="#86efac" fontSize="9" fontWeight="bold" fontFamily="monospace">SHIP</text>
-            <text x="490" y="109" textAnchor="middle" fill="#4ade80" fontSize="8" fontFamily="monospace">confidently</text>
-            <line x1="460" y1="100" x2="462" y2="100" stroke="#22c55e" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="3,3"/>
-            <line x1="440" y1="60"  x2="462" y2="90"  stroke="#22c55e" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="3,3"/>
-            <line x1="440" y1="140" x2="462" y2="110" stroke="#22c55e" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="3,3"/>
-          </svg>
+        {/* Failure mode preview strip */}
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          {[
+            { label: "Stale retrieval",     color: "#ef4444" },
+            { label: "Prompt injection",    color: "#f59e0b" },
+            { label: "Context overflow",    color: "#6366f1" },
+            { label: "Hallucination",       color: "#3b82f6" },
+            { label: "Multi-hop failure",   color: "#22c55e" },
+          ].map(f => (
+            <button key={f.label} onClick={() => onNavigate("lab")}
+              className="px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all hover:opacity-80"
+              style={{ color: f.color, borderColor: f.color + "40", background: f.color + "10" }}>
+              {f.label}
+            </button>
+          ))}
         </div>
+        <p className="text-[11px] text-zinc-600 font-mono -mt-4">↑ click any failure mode to open the RAG Lab</p>
       </div>
 
       {/* ── START HERE JOURNEY ──────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-8">
-        <div className="bg-zinc-900/80 border border-violet-900/40 rounded-2xl p-5">
+        <div className="bg-zinc-900 border border-violet-800/40 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div>
               <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-0.5">Recommended first journey</p>
@@ -361,17 +339,17 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { color: "#22c55e", badge: "✓ Mathematically faithful", desc: "Real algorithm logic on toy inputs. Tokenizer, sampling, and cost models fall here." },
-              { color: "#f59e0b", badge: "~ Simplified",              desc: "Correct pattern, simplified scale. Attention, transformer, and agent trace fall here — real concepts, not frontier-model internals." },
-              { color: "#71717a", badge: "◌ Conceptual",              desc: "Illustrative only. Embedding Space uses precomputed 2D coordinates, not live model embeddings. Useful for intuition, not introspection." },
+              { tw: "emerald", color: "#22c55e", badge: "✓ Mathematically faithful", desc: "Real algorithm logic on toy inputs. Tokenizer, sampling, and cost models fall here." },
+              { tw: "amber",   color: "#f59e0b", badge: "~ Simplified",              desc: "Correct pattern, simplified scale. Attention, transformer, and agent trace — real concepts, not frontier-model internals." },
+              { tw: "zinc",    color: "#71717a", badge: "◌ Conceptual",              desc: "Illustrative only. Embedding Space uses precomputed 2D coords, not live model embeddings. Useful for intuition, not introspection." },
             ].map(t => (
-              <div key={t.badge} className="rounded-xl p-3 space-y-1.5" style={{ background: t.color + "10", border: `1px solid ${t.color}30` }}>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ color: t.color, background: t.color + "20" }}>{t.badge}</span>
-                <p className="text-[11px] text-zinc-400 leading-relaxed">{t.desc}</p>
+              <div key={t.badge} className="rounded-xl p-3 space-y-2 bg-zinc-800/50 border border-zinc-700/50">
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded inline-block" style={{ color: t.color, background: t.color + "20" }}>{t.badge}</span>
+                <p className="text-xs text-zinc-400 leading-relaxed">{t.desc}</p>
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-zinc-600 leading-relaxed">
+          <p className="text-xs text-zinc-600 leading-relaxed">
             RAG Lab scenarios are curated from real production failure patterns. The goal throughout is <em className="text-zinc-500">systems intuition</em> — not exact model introspection.
           </p>
         </div>

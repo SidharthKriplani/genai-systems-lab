@@ -1279,7 +1279,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white font-sans" style={{ fontFamily: "'IBM Plex Mono', 'Fira Code', monospace" }}>
+    <div className="min-h-screen bg-zinc-950 text-white" style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif" }}>
       {/* Keyboard shortcuts overlay */}
       {searchOpen && (
         <SearchModal
