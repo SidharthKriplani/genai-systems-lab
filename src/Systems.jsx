@@ -1,5 +1,8 @@
 import { useState } from "react";
 import IndiaScaleLab from "./IndiaScale";
+import ModelRouterLab from "./ModelRouter";
+import InferenceOptimizer from "./InferenceOptimizer";
+import MLCiCdLab from "./MLCiCd";
 
 // ─── EVALS LAB DATA ───────────────────────────────────────────────────────────
 
@@ -1864,7 +1867,10 @@ const SYSTEMS_MODULES = [
   { id: "finetune", label: "Fine-Tuning Lab", tag: "TRAIN", component: FineTuningLab },
   { id: "observability", label: "Observability", tag: "OPS", component: LLMObservability },
   { id: "abtesting", label: "A/B Testing", tag: "SHIP", component: ABTestingLab },
-  { id: "indiascale", label: "India Scale Lab", tag: "₹ INDIA", component: IndiaScaleLab },
+  { id: "indiascale",  label: "India Scale Lab",       tag: "₹ INDIA",  component: IndiaScaleLab     },
+  { id: "router",      label: "Model Router",          tag: "ROUTE",    component: ModelRouterLab    },
+  { id: "inference",   label: "Inference Optimizer",   tag: "SERVING",  component: InferenceOptimizer},
+  { id: "mlcicd",      label: "ML CI/CD",              tag: "DEPLOY",   component: MLCiCdLab         },
 ];
 
 export default function SystemsApp() {
