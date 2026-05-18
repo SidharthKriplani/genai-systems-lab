@@ -345,12 +345,13 @@ function TimedDrills() {
   }
 
   function changeFilter(f) {
+    clearInterval(timerRef.current);
     setFilter(f);
     setDrillIdx(0);
     setPhase("ready");
     setTimeLeft(DRILL_TIME);
     setShowPoints(false);
-    clearInterval(timerRef.current);
+    setSelfScores({});
   }
 
   const hitCount = Object.values(selfScores).filter(Boolean).length;

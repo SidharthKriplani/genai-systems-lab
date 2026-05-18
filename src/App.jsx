@@ -8,6 +8,7 @@ import PlaygroundApp from "./Playground";
 import CareerApp from "./Career";
 import ExploreApp from "./Explore";
 import HomePage from "./Home";
+import HowTo from "./HowTo";
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -750,13 +751,16 @@ function ChallengeResult({ grade }) {
 
 // ─── LEADERBOARD VIEW ────────────────────────────────────────────────────────
 
-function LeaderboardView({ leaderboard, onClear }) {
+function LeaderboardView({ leaderboard, onClear, onRetry }) {
   if (leaderboard.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center space-y-3">
         <div className="text-5xl mb-4">🏆</div>
         <div className="text-lg font-bold text-zinc-400">No scores yet</div>
         <p className="text-sm text-zinc-600">Go to RAG Lab → enable Challenge Mode → submit a passing config to get on the board.</p>
+        <button onClick={() => onRetry(0)} className="mt-4 px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-lg text-sm transition-all">
+          Go to RAG Lab →
+        </button>
       </div>
     );
   }
@@ -924,25 +928,25 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans" style={{ fontFamily: "'IBM Plex Mono', 'Fira Code', monospace" }}>
-      <header className="border-b border-zinc-800 px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
-          <button onClick={() => setTopView("home")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <header className="border-b border-zinc-800 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <button onClick={() => setTopView("home")} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
             <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold">G</div>
-            <div>
+            <div className="hidden sm:block">
               <div className="text-sm font-bold tracking-wider text-white">GENAI SYSTEMS LAB</div>
               <div className="text-xs text-zinc-500">Interactive AI Learning Platform</div>
             </div>
           </button>
-          <nav className="flex items-center gap-0.5 flex-wrap">
+          <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide min-w-0">
             {NAV_GROUPS.map((group, gi) => (
-              <div key={gi} className="flex items-center gap-0.5">
-                {gi > 0 && <div className="w-px h-4 bg-zinc-700 mx-1.5" />}
+              <div key={gi} className="flex items-center gap-0.5 shrink-0">
+                {gi > 0 && <div className="w-px h-4 bg-zinc-700 mx-1" />}
                 {group.label && (
-                  <span className="text-xs font-mono font-bold px-1 mr-0.5" style={{ color: group.color + "99" }}>{group.label}</span>
+                  <span className="text-xs font-mono font-bold px-1 mr-0.5 hidden md:inline" style={{ color: group.color + "99" }}>{group.label}</span>
                 )}
                 {group.items.map(item => (
                   <button key={item.id} onClick={() => setTopView(item.id)}
-                    className={`px-3 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                    className={`px-2.5 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
                     {item.label}
                   </button>
                 ))}
@@ -970,7 +974,7 @@ export default function App() {
 
       {topView === "career"     && <CareerApp />}
 
-      {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} />}
+      {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} onRetry={setTopView} />}
 
       {/* Scenario tabs */}
       {topView === "lab" && <div className="border-b border-zinc-800 px-6 py-3">
@@ -991,6 +995,18 @@ export default function App() {
 
       {topView === "lab" && activeTab === "simulator" ? (
         <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="mb-4">
+            <HowTo
+              objective="Build intuition for how RAG systems fail in production — and what configuration choices prevent each failure mode."
+              steps={[
+                "Pick a failure scenario from the tabs above (stale docs, hallucination, injection, context overflow)",
+                "Read the scenario description — understand what's broken before you configure",
+                "Adjust chunk size, top-k, reranker, and answer policy to fix the failure",
+                "Turn on Challenge Mode to test yourself: configure first, then see if you match the recommended fix",
+                "Every config combination produces a different result — explore freely",
+              ]}
+            />
+          </div>
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">

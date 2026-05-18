@@ -184,7 +184,7 @@ export default function HomePage({ onNavigate }) {
           <p className="text-sm text-zinc-500">Each path is a curated sequence through the lab — or ignore them and explore freely.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {LEARNING_PATHS.map(path => (
             <div key={path.id}
               className={`bg-zinc-900 border rounded-2xl p-5 cursor-pointer transition-all ${activePath === path.id ? "scale-100" : "hover:border-zinc-600"}`}
@@ -241,7 +241,7 @@ export default function HomePage({ onNavigate }) {
                 <span className="text-xs text-zinc-600">{group.desc}</span>
                 <div className="h-px flex-1 bg-zinc-800" />
               </div>
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
                 {group.modules.map(m => (
                   <button key={m.tab}
                     onClick={() => onNavigate(m.tab)}
@@ -262,7 +262,7 @@ export default function HomePage({ onNavigate }) {
         {/* ── HOW IT WORKS ───────────────────────────────────────────────── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
           <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4">How to use this lab</h3>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
               { n: "1", title: "Pick a path or module", desc: "Follow a learning path for structure, or jump to any module for what you need right now." },
               { n: "2", title: "Read the objective first", desc: "Every module shows what skill you're building before you start. Don't skip it — it frames everything." },

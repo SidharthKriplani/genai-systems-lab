@@ -510,6 +510,7 @@ function TokenizerModule() {
       {/* Token IDs */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-3">
         <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Token IDs (approximate)</span>
+        <span className="text-xs font-mono text-amber-600 ml-2">⚠ illustrative — not real tiktoken</span>
         <div className="flex flex-wrap gap-1">
           {tokens.map((tok) => (
             <span key={tok.id} className="text-xs font-mono text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">
@@ -715,6 +716,7 @@ function EmbeddingModule() {
             <p className="text-xs text-zinc-400 leading-relaxed">
               Each word is a high-dimensional vector (e.g. 1536 dims in text-embedding-3-small). These 2D positions come from PCA — collapsing 1536 dims to 2 while preserving distances. Proximity = semantic similarity.
             </p>
+            <p className="text-xs text-amber-600/80 mt-1">⚠ Coordinates are hand-authored to illustrate clustering — not computed by a real embedding model.</p>
           </div>
         </div>
       </div>

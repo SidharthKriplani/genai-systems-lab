@@ -337,7 +337,7 @@ function EvalsLab() {
             {BUDGET_SCENARIOS.map(s => (
               <button
                 key={s.id}
-                onClick={() => setBudgetScenario(s.id)}
+                onClick={() => { setBudgetScenario(s.id); setAllocation({ factual: 20, groundedness: 20, refusal: 15, format: 15, coherence: 15, edge: 15 }); }}
                 className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${budgetScenario === s.id ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
               >
                 {s.label}
