@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { initAnalytics, track, FEEDBACK_URL } from "./analytics";
+import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
 import ConceptsApp from "./Concepts";
 import SystemsApp from "./Systems";
 import FluencyApp from "./Fluency";
@@ -1150,6 +1150,38 @@ function SearchModal({ onClose, onSelect }) {
   );
 }
 
+// ─── FEEDBACK MODAL (shown when form URL not yet configured) ─────────────────
+function FeedbackFallbackModal({ onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-bold text-white">💬 Give Feedback</span>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕</button>
+        </div>
+        <p className="text-sm text-zinc-400 leading-relaxed">
+          The feedback form is being set up. In the meantime, reach the builder directly:
+        </p>
+        <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-3 space-y-2">
+          <a href="https://github.com/SidharthKriplani/genai-systems-lab/issues"
+            target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-violet-400 hover:text-violet-300 transition-colors">
+            <span>→</span> Open a GitHub issue
+          </a>
+          <a href="https://github.com/SidharthKriplani"
+            target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-300 transition-colors">
+            <span>→</span> GitHub profile
+          </a>
+        </div>
+        <p className="text-[10px] text-zinc-600 font-mono">
+          No login required. No personal data collected.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── LOCKED TAB VIEW ─────────────────────────────────────────────────────────
 function LockedTabView({ item, onNavigate }) {
   return (
@@ -1162,7 +1194,7 @@ function LockedTabView({ item, onNavigate }) {
           {item.count && <p className="text-sm text-zinc-500 mt-1">{item.count} modules</p>}
         </div>
         <p className="text-zinc-400 text-sm leading-relaxed">
-          This track unlocks as the lab expands. The content is built — it's part of the progression path.
+          This track is planned for the next beta wave. Check back soon — or start with the free modules below.
         </p>
         {item.teaser && (
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 text-left space-y-2">
@@ -1183,7 +1215,7 @@ function LockedTabView({ item, onNavigate }) {
         <button
           onClick={() => onNavigate("concepts")}
           className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all">
-          Continue with free content →
+          Explore available modules →
         </button>
       </div>
     </div>
@@ -1233,6 +1265,15 @@ export default function App() {
   const [labHintDismissed, setLabHintDismissed] = useState(() => {
     try { return localStorage.getItem("genai_lab_hint_dismissed") === "1"; } catch { return false; }
   });
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  function openFeedback(location = "unknown") {
+    track("feedback_clicked", { location });
+    if (isFeedbackReady()) {
+      window.open(FEEDBACK_URL, "_blank", "noopener,noreferrer");
+    } else {
+      setFeedbackModalOpen(true);
+    }
+  }
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [whatsNewSeen, setWhatsNewSeen] = useState(() => {
     try { return localStorage.getItem("genai_whatsnew_v3") === "1"; } catch { return false; }
@@ -1362,6 +1403,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white" data-palette={palette} style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif" }}>
+      {/* Feedback fallback modal */}
+      {feedbackModalOpen && <FeedbackFallbackModal onClose={() => setFeedbackModalOpen(false)} />}
+
       {/* Keyboard shortcuts overlay */}
       {searchOpen && (
         <SearchModal
@@ -1486,11 +1530,10 @@ export default function App() {
               <button onClick={() => { setLeaderboardOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-white transition-all">
                 📋 Challenge Log
               </button>
-              <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer"
-                onClick={() => { track("feedback_clicked", { location: "mobile_drawer" }); setMobileMenuOpen(false); }}
+              <button onClick={() => { openFeedback("mobile_drawer"); setMobileMenuOpen(false); }}
                 className="w-full py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-violet-400 hover:border-violet-800 transition-all flex items-center justify-center gap-1.5">
                 💬 Give Feedback
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -1520,11 +1563,10 @@ export default function App() {
                 className="w-3.5 h-3.5 rounded-full border-2 transition-all hover:scale-110"
                 style={{ background: p.color, borderColor: palette === p.id ? "white" : "transparent" }} />
             ))}
-            <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer"
-              onClick={() => track("feedback_clicked", { location: "header" })}
+            <button onClick={() => openFeedback("header")}
               className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-violet-700 hover:text-violet-400 transition-all font-mono text-zinc-500">
               💬 Feedback
-            </a>
+            </button>
             <button onClick={() => setLeaderboardOpen(true)}
               className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
               title="Challenge Log">
@@ -1565,7 +1607,7 @@ export default function App() {
         </div>
       </header>
 
-      {topView === "home"       && <HomePage onNavigate={navigate} visited={visited} />}
+      {topView === "home"       && <HomePage onNavigate={navigate} visited={visited} onFeedback={openFeedback} />}
 
       {topView === "concepts"   && <ConceptsApp />}
 
@@ -1794,11 +1836,10 @@ export default function App() {
 
                   <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 flex items-center justify-between gap-3">
                     <p className="text-xs text-zinc-500">Was this scenario useful? Tell us what to improve.</p>
-                    <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer"
-                      onClick={() => track("feedback_clicked", { location: "rag_lab_post_evaluate", scenario_id: scenario.scenario_id })}
+                    <button onClick={() => openFeedback("rag_lab_post_evaluate")}
                       className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-700 hover:border-violet-700 text-zinc-400 hover:text-violet-400 transition-all">
                       Give Feedback →
-                    </a>
+                    </button>
                   </div>
                 </>
               )}

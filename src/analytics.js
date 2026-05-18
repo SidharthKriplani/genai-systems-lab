@@ -6,8 +6,18 @@
 const KEY  = import.meta.env?.VITE_POSTHOG_KEY;
 const HOST = import.meta.env?.VITE_POSTHOG_HOST || "https://us.i.posthog.com";
 
-export const FEEDBACK_URL =
-  import.meta.env?.VITE_FEEDBACK_URL || "https://forms.gle/REPLACE_ME";
+const _RAW_FEEDBACK_URL = import.meta.env?.VITE_FEEDBACK_URL || "";
+
+// Returns the real URL only if it has been set and isn't a placeholder.
+// Components should call isFeedbackReady() before opening the URL.
+export const FEEDBACK_URL = _RAW_FEEDBACK_URL;
+export function isFeedbackReady() {
+  return (
+    !!_RAW_FEEDBACK_URL &&
+    !_RAW_FEEDBACK_URL.includes("REPLACE_ME") &&
+    _RAW_FEEDBACK_URL.startsWith("http")
+  );
+}
 
 export function initAnalytics() {
   if (!KEY) return; // analytics not configured — app still works

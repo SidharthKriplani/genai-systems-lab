@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { track, FEEDBACK_URL } from "./analytics";
+import { track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
 
 const START_HERE_PATH = [
   { step: 1, label: "Tokenizer",     tab: "concepts", desc: "How text becomes numbers" },
@@ -130,7 +130,12 @@ const STATS = [
   { value: "200+", label: "Challenges",           sub: "All interactive"           },
 ];
 
-export default function HomePage({ onNavigate, visited = new Set() }) {
+export default function HomePage({ onNavigate, visited = new Set(), onFeedback }) {
+  function handleFeedback(location) {
+    track("feedback_clicked", { location });
+    if (onFeedback) { onFeedback(location); return; }
+    if (isFeedbackReady()) window.open(FEEDBACK_URL, "_blank", "noopener,noreferrer");
+  }
   const [activePath, setActivePath] = useState(null);
   const [expandedModule, setExpandedModule] = useState(null);
   const [betaBannerDismissed, setBetaBannerDismissed] = useState(() => {
@@ -160,11 +165,10 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
               <span className="font-bold text-violet-200">Community beta:</span> this lab is free while we improve it. Try a module, break something, and tell us what confused you.
             </p>
             <div className="flex items-center gap-2 shrink-0">
-              <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer"
-                onClick={() => track("feedback_clicked", { location: "beta_banner" })}
+              <button onClick={() => handleFeedback("beta_banner")}
                 className="px-3 py-1 rounded-lg text-xs font-bold bg-violet-600 hover:bg-violet-500 text-white transition-all">
                 Give Feedback
-              </a>
+              </button>
               <button onClick={dismissBetaBanner} className="text-violet-500 hover:text-violet-300 text-xs px-2 py-1 transition-all">✕</button>
             </div>
           </div>
@@ -439,20 +443,19 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
             RAG Lab scenarios are curated from real production failure patterns. The goal throughout is <em className="text-zinc-500">systems intuition</em> — not exact model introspection.
           </p>
           <p className="text-[11px] text-zinc-700 border-t border-zinc-800 pt-3 leading-relaxed">
-            This app uses lightweight analytics to understand which modules are useful. No login is required. Feedback is optional. Do not submit sensitive personal information in the feedback form.
+            No login. No personal data requested. Usage analytics are used only to improve the beta.
           </p>
         </div>
 
         {/* ── FOOTER ────────────────────────────────────────────────────── */}
         <div className="text-center pt-4 space-y-3">
-          <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer"
-            onClick={() => track("feedback_clicked", { location: "footer" })}
+          <button onClick={() => handleFeedback("footer")}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 hover:border-violet-700 text-xs font-mono text-zinc-500 hover:text-violet-400 transition-all">
             💬 Give feedback on this lab
-          </a>
+          </button>
           <p className="text-xs text-zinc-600">GenAI Systems Lab · Free · Static · Built with React + Vite + Tailwind</p>
           <p className="text-[11px] text-zinc-700 max-w-lg mx-auto leading-relaxed">
-            This app uses lightweight analytics to understand which modules are useful. No login is required. Feedback is optional. Do not submit sensitive personal information in the feedback form.
+            No login. No personal data requested. Usage analytics are used only to improve the beta.
           </p>
         </div>
       </div>
