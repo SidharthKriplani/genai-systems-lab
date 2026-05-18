@@ -111,15 +111,15 @@ export default function HomePage({ onNavigate }) {
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
           Free · Static · No login · No backend
         </div>
-        <h1 className="text-5xl font-black text-white tracking-tight leading-tight">
+        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
           GenAI Systems Lab
         </h1>
-        <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
           The interactive learning platform for AI engineers and product managers who want to build, ship, and speak about AI systems with precision.
         </p>
 
         {/* Stats */}
-        <div className="flex justify-center gap-8 pt-4">
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-8 pt-4">
           {STATS.map(s => (
             <div key={s.label} className="text-center">
               <div className="text-2xl font-black text-white">{s.value}</div>
@@ -238,7 +238,7 @@ export default function HomePage({ onNavigate }) {
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-px flex-1 bg-zinc-800" />
                 <span className="text-xs font-mono font-bold uppercase tracking-widest px-2" style={{ color: group.color }}>{group.group}</span>
-                <span className="text-xs text-zinc-600">{group.desc}</span>
+                <span className="text-xs text-zinc-600 hidden sm:inline">{group.desc}</span>
                 <div className="h-px flex-1 bg-zinc-800" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">

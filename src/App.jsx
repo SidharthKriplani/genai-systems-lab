@@ -747,6 +747,44 @@ function ChallengeResult({ grade }) {
   );
 }
 
+// ─── CORPUS PANEL ────────────────────────────────────────────────────────────
+
+function CorpusPanel({ scenario }) {
+  const [open, setOpen] = useState(false);
+  // collect unique sources from all configs
+  const sources = [...new Map(
+    scenario.configs.flatMap(c => c.retrieved_chunks).map(ch => [ch.source, ch])
+  ).values()].sort((a, b) => b.date.localeCompare(a.date));
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Corpus</div>
+        {sources.length > 0 && (
+          <button onClick={() => setOpen(o => !o)} className="text-[10px] font-mono text-zinc-600 hover:text-zinc-300 border border-zinc-700 rounded px-1.5 py-0.5 transition-all">
+            {open ? "hide docs" : `peek docs (${sources.length})`}
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-zinc-400 leading-relaxed">{scenario.corpus_description}</p>
+      {open && (
+        <div className="space-y-1.5 pt-1 border-t border-zinc-800">
+          {sources.map(s => (
+            <div key={s.source} className="flex items-start gap-2 text-[10px] font-mono">
+              <span className="text-zinc-600 shrink-0">📄</span>
+              <div>
+                <span className="text-zinc-300">{s.source}</span>
+                <span className="text-zinc-600 ml-1.5">{s.date}</span>
+              </div>
+            </div>
+          ))}
+          <p className="text-[10px] text-zinc-600 pt-0.5 italic">Documents visible to the retriever — your config determines which get surfaced.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
 
 // ─── LEADERBOARD VIEW ────────────────────────────────────────────────────────
@@ -776,15 +814,15 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-5">
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {[
           { val: `${solved}/5`, label: "Scenarios solved", color: "text-emerald-400" },
           { val: `${passed}/${leaderboard.length}`, label: "Attempts passed", color: "text-violet-400" },
           { val: leaderboard.length, label: "Total attempts", color: "text-amber-400" },
         ].map(({ val, label, color }) => (
-          <div key={label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-center">
-            <div className={`text-3xl font-bold font-mono ${color}`}>{val}</div>
-            <div className="text-xs text-zinc-500 mt-1">{label}</div>
+          <div key={label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 sm:p-4 text-center">
+            <div className={`text-xl sm:text-3xl font-bold font-mono ${color}`}>{val}</div>
+            <div className="text-[10px] sm:text-xs text-zinc-500 mt-1">{label}</div>
           </div>
         ))}
       </div>
@@ -955,10 +993,10 @@ export default function App() {
                 )}
                 {group.items.map(item => (
                   <button key={item.id} onClick={() => navigate(item.id)}
-                    className={`relative px-2.5 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                    className={`relative px-1.5 py-1 sm:px-2.5 sm:py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
                     {item.label}
                     {item.count && (
-                      <span className={`text-[9px] font-mono leading-none ${topView === item.id ? "text-violet-200 opacity-70" : "text-zinc-600"}`}>{item.count}</span>
+                      <span className={`hidden sm:inline text-[9px] font-mono leading-none ${topView === item.id ? "text-violet-200 opacity-70" : "text-zinc-600"}`}>{item.count}</span>
                     )}
                     {visited.has(item.id) && topView !== item.id && (
                       <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />
@@ -992,17 +1030,17 @@ export default function App() {
       {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} onRetry={navigate} />}
 
       {/* Scenario tabs */}
-      {topView === "lab" && <div className="border-b border-zinc-800 px-6 py-3">
-        <div className="max-w-7xl mx-auto flex gap-2 flex-wrap">
+      {topView === "lab" && <div className="border-b border-zinc-800 px-4 py-2">
+        <div className="max-w-7xl mx-auto flex gap-1.5 overflow-x-auto scrollbar-hide flex-nowrap pb-0.5">
           {ALL_SCENARIOS.map((s, i) => (
             <button
               key={s.scenario_id}
               onClick={() => switchScenario(i)}
-              className={`px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all ${
+              className={`shrink-0 px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all ${
                 i === scenarioIdx ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
               }`}
             >
-              #{i + 1} {s.scenario_id}
+              #{i + 1} {s.title.split(" ").slice(0, 2).join(" ")}
             </button>
           ))}
         </div>
@@ -1022,16 +1060,15 @@ export default function App() {
               ]}
             />
           </div>
-          <div className="mb-5 flex items-start justify-between gap-4">
-            <div>
+          <div className="mb-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-mono px-2 py-0.5 bg-violet-900 text-violet-300 rounded border border-violet-700">{scenario.tag}</span>
-                <span className="text-xs text-zinc-500">{scenario.scenario_id}</span>
               </div>
-              <h1 className="text-xl font-bold text-white">{scenario.title}</h1>
-              <p className="text-sm text-zinc-400 mt-1 max-w-2xl">{scenario.description}</p>
+              <h1 className="text-lg sm:text-xl font-bold text-white">{scenario.title}</h1>
+              <p className="text-sm text-zinc-400 mt-1">{scenario.description}</p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 sm:shrink-0">
               <span className="text-xs text-zinc-500">Challenge mode</span>
               <Toggle value={challengeMode} onChange={(v) => { setChallengeMode(v); setEvaluated(false); setGradeResult(null); }} />
             </div>
@@ -1096,10 +1133,7 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-                <div className="text-xs font-bold text-zinc-500 uppercase tracking-wide mb-2">Corpus</div>
-                <p className="text-xs text-zinc-400 leading-relaxed">{scenario.corpus_description}</p>
-              </div>
+              <CorpusPanel scenario={scenario} />
             </div>
 
             <div className="col-span-12 lg:col-span-5 space-y-4">

@@ -1893,18 +1893,20 @@ export default function SystemsApp() {
       {/* Module switcher — grouped */}
       <div className="space-y-2">
         {SYSTEMS_GROUPS.map(grp => (
-          <div key={grp.id} className="flex items-start gap-2 flex-wrap">
+          <div key={grp.id} className="flex items-start gap-2">
             <span className="text-[10px] font-mono font-bold px-1.5 py-1 rounded mt-0.5 shrink-0" style={{ color: grp.color + "cc", background: grp.color + "18" }}>{grp.label}</span>
-            {SYSTEMS_MODULES.filter(m => m.group === grp.id).map(m => (
-              <button
-                key={m.id}
-                onClick={() => setActiveModule(m.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
-              >
-                <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
-                {m.label}
-              </button>
-            ))}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 min-w-0 scrollbar-hide flex-nowrap">
+              {SYSTEMS_MODULES.filter(m => m.group === grp.id).map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => setActiveModule(m.id)}
+                  className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+                >
+                  <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
+                  {m.label}
+                </button>
+              ))}
+            </div>
           </div>
         ))}
       </div>
