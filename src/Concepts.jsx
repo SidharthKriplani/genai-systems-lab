@@ -2756,6 +2756,7 @@ function MultiAgentModule() {
 
 // ─── MAIN CONCEPTS APP ────────────────────────────────────────────────────────
 
+// fidelity tiers: "faithful" (real math), "simplified" (correct pattern, simplified scale), "conceptual" (illustrative)
 const MODULES = [
   {
     id: "tokenizer",
@@ -2763,6 +2764,7 @@ const MODULES = [
     tag: "LAYER 0",
     title: "Tokenization",
     subtitle: "Text → integers. The first transformation in every LLM.",
+    fidelity: { tier: "faithful", note: "Mathematically faithful — real BPE merge rules on a toy vocabulary" },
     component: TokenizerModule,
   },
   {
@@ -2771,6 +2773,7 @@ const MODULES = [
     tag: "LAYER 1",
     title: "Semantic Embedding Space",
     subtitle: "Words as vectors. Meaning as geometry. Vector arithmetic as reasoning.",
+    fidelity: { tier: "conceptual", note: "Conceptual 2D projection — precomputed coordinates, not live model embeddings" },
     component: EmbeddingModule,
   },
   {
@@ -2779,6 +2782,7 @@ const MODULES = [
     tag: "LAYER 2",
     title: "Self-Attention",
     subtitle: "How every token relates to every other token. The core of the transformer.",
+    fidelity: { tier: "simplified", note: "Illustrative attention patterns — not actual GPT/Claude attention maps" },
     component: AttentionModule,
   },
   {
@@ -2787,6 +2791,7 @@ const MODULES = [
     tag: "LAYER 3",
     title: "Transformer Forward Pass",
     subtitle: "Real math in the browser. Embed → attend → FFN → predict. Tighten temperature, add heads, watch it change.",
+    fidelity: { tier: "simplified", note: "Toy forward pass — real math, but tiny model not representative of frontier LLMs" },
     component: TransformerModule,
   },
   {
@@ -2795,6 +2800,7 @@ const MODULES = [
     tag: "LAYER 4",
     title: "Chunking Strategies",
     subtitle: "Same document. Four strategies. Watch which chunks get retrieved for each query — and why some strategies fail.",
+    fidelity: { tier: "simplified", note: "Curated examples — real chunking strategies applied to a simplified corpus" },
     component: ChunkingModule,
   },
   {
@@ -2803,6 +2809,7 @@ const MODULES = [
     tag: "LAYER 5",
     title: "Decoding & Sampling Strategies",
     subtitle: "Same logits. Greedy vs top-K vs top-P vs temperature. See exactly which tokens survive each filter.",
+    fidelity: { tier: "faithful", note: "Mathematically faithful — real softmax, top-K, top-P, temperature on toy logits" },
     component: SamplingModule,
   },
   {
@@ -2811,6 +2818,7 @@ const MODULES = [
     tag: "LAYER 6",
     title: "Context Window & Attention Cost",
     subtitle: "Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.",
+    fidelity: { tier: "simplified", note: "Illustrative cost model — O(n²) relationship is correct, exact flops vary by architecture" },
     component: ContextWindowModule,
   },
   {
@@ -2819,6 +2827,7 @@ const MODULES = [
     tag: "LAYER 7",
     title: "Agent ReAct Loop",
     subtitle: "Reason → Act → Observe → repeat. Step through a live agent trace. Inject tool failures and watch recovery.",
+    fidelity: { tier: "simplified", note: "Simplified ReAct trace — real pattern, scripted responses (no live model)" },
     component: AgentModule,
   },
   {
@@ -2827,6 +2836,7 @@ const MODULES = [
     tag: "LAYER 8",
     title: "Guardrail Pipeline",
     subtitle: "Input guards → LLM → output guards. Try injections, jailbreaks, PII, hallucinations — see exactly where each gets caught.",
+    fidelity: { tier: "simplified", note: "Curated scenarios — real failure modes, static rule-based detection (no live classifier)" },
     component: GuardrailsModule,
   },
   {
@@ -2835,6 +2845,7 @@ const MODULES = [
     tag: "CHALLENGE",
     title: "Debug This RAG System",
     subtitle: "Five incidents. Only the symptom shown. Diagnose the failure mode — then see the root cause explanation.",
+    fidelity: { tier: "simplified", note: "Curated failure cases — drawn from real production RAG failure patterns" },
     component: DebugModule,
   },
   {
@@ -2843,6 +2854,7 @@ const MODULES = [
     tag: "LAYER 9",
     title: "Multi-Agent Systems",
     subtitle: "Architecture patterns, failure cascades, and when single-agent is the right call.",
+    fidelity: { tier: "conceptual", note: "Conceptual patterns — architectural concepts, no live agent orchestration" },
     component: MultiAgentModule,
   },
 ];
@@ -2872,9 +2884,19 @@ export default function ConceptsApp() {
 
       {/* Module header */}
       <div className="mb-5">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span className="text-xs font-mono px-2 py-0.5 bg-violet-900 text-violet-300 rounded border border-violet-700">{mod.tag}</span>
-          <span className="text-xs text-zinc-500">{mod.id}</span>
+          {mod.fidelity && (
+            <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+              mod.fidelity.tier === "faithful"   ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/50" :
+              mod.fidelity.tier === "simplified" ? "bg-amber-950/40 text-amber-400 border-amber-800/50" :
+              "bg-zinc-800 text-zinc-500 border-zinc-700"
+            }`} title={mod.fidelity.note}>
+              {mod.fidelity.tier === "faithful" ? "✓ Mathematically faithful" :
+               mod.fidelity.tier === "simplified" ? "~ Simplified" : "◌ Conceptual"}
+            </span>
+          )}
+          {mod.fidelity && <span className="text-[10px] text-zinc-600 hidden sm:block">{mod.fidelity.note}</span>}
         </div>
         <h2 className="text-xl font-bold text-white">{mod.title}</h2>
         <p className="text-sm text-zinc-400 mt-0.5">{mod.subtitle}</p>

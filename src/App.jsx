@@ -1297,7 +1297,7 @@ export default function App() {
         <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center pt-10 px-4 overflow-y-auto" onClick={() => setLeaderboardOpen(false)}>
           <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-2xl mb-10" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-zinc-800">
-              <span className="text-sm font-black text-white">🏆 Challenge Leaderboard</span>
+              <span className="text-sm font-black text-white">📋 Challenge Log</span>
               <button onClick={() => setLeaderboardOpen(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕ Close</button>
             </div>
             <div className="p-5">
@@ -1437,7 +1437,7 @@ export default function App() {
             </button>
             <button onClick={() => setLeaderboardOpen(true)}
               className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
-              title="Leaderboard">
+              title="Challenge Log">
               🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px]">{leaderboard.filter(e => e.passed).length}</span>}
             </button>
             <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v2","1"); } catch {} }}

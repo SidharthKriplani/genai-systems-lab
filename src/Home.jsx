@@ -1,5 +1,15 @@
 import { useState } from "react";
 
+const START_HERE_PATH = [
+  { step: 1, label: "Tokenizer",     tab: "concepts", desc: "How text becomes numbers" },
+  { step: 2, label: "Embeddings",    tab: "concepts", desc: "Meaning as geometry" },
+  { step: 3, label: "Context Window",tab: "concepts", desc: "Attention cost + overflow" },
+  { step: 4, label: "RAG Flows",     tab: "flows",    desc: "End-to-end pipeline" },
+  { step: 5, label: "RAG Failures",  tab: "lab",      desc: "Break it to understand it" },
+  { step: 6, label: "Agent Loop",    tab: "concepts", desc: "ReAct trace step-by-step" },
+  { step: 7, label: "Debug RAG",     tab: "concepts", desc: "Diagnose 5 real incidents" },
+];
+
 const LEARNING_PATHS = [
   {
     id: "engineer",
@@ -75,7 +85,7 @@ const MODULE_MAP = [
     desc: "Simulate, break, and fix real production systems.",
     modules: [
       { tab: "lab",        icon: "🔬", title: "RAG Lab",     desc: "Failure mode simulator: stale docs, hallucination, prompt injection, context overflow. Configure and watch the pipeline break in real time." },
-      { tab: "systems",    icon: "⚙️", title: "Systems",     desc: "Evals lab, eval frameworks, model strategy, prompt caching, model router, fine-tuning, ML CI/CD, observability. 14 production-grade modules." },
+      { tab: "systems",    icon: "⚙️", title: "Systems",     desc: "Evals lab, eval frameworks, model strategy, prompt caching, model router, fine-tuning, ML CI/CD, observability, context compaction. 15 production-grade modules." },
       { tab: "playground", icon: "🛝", title: "Playground",  desc: "Hands-on: craft injection attacks, compare chunking strategies, rerank retrieved chunks, spot hallucinated facts, detect bias." },
       { tab: "explore",    icon: "🔭", title: "Explore",     desc: "Embedding explorer, shadow A/B, latency planner, tokenizer, model card reader, vector DB comparison, red teaming lab. 7 tools." },
     ],
@@ -196,6 +206,37 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
         </div>
       </div>
 
+      {/* ── START HERE JOURNEY ──────────────────────────────────────────── */}
+      <div className="max-w-4xl mx-auto px-6 pb-8">
+        <div className="bg-zinc-900/80 border border-violet-900/40 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div>
+              <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-0.5">Recommended first journey</p>
+              <h3 className="text-sm font-black text-white">From Tokens to Production Failures — ~45 min</h3>
+            </div>
+            <button onClick={() => onNavigate("concepts")}
+              className="px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs transition-all shrink-0">
+              Begin →
+            </button>
+          </div>
+          <div className="flex items-start gap-0 overflow-x-auto pb-1 scrollbar-hide">
+            {START_HERE_PATH.map((s, i) => (
+              <div key={s.step} className="flex items-center shrink-0">
+                <button onClick={() => onNavigate(s.tab)}
+                  className="flex flex-col items-center gap-1 px-3 hover:opacity-80 transition-opacity group min-w-[72px]">
+                  <div className="w-8 h-8 rounded-full bg-violet-600/20 border border-violet-600/50 flex items-center justify-center text-xs font-black text-violet-400 group-hover:bg-violet-600/40 transition-all">{s.step}</div>
+                  <span className="text-[10px] font-bold text-white text-center leading-tight">{s.label}</span>
+                  <span className="text-[9px] text-zinc-600 text-center leading-tight">{s.desc}</span>
+                </button>
+                {i < START_HERE_PATH.length - 1 && (
+                  <div className="w-6 h-px bg-violet-900/60 shrink-0 mb-4" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── LEARNING PATHS ───────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-6 pb-16 space-y-8">
         <div className="text-center space-y-1">
@@ -312,9 +353,32 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
           </div>
         </div>
 
+        {/* ── ABOUT THIS LAB ────────────────────────────────────────────── */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+          <h3 className="text-sm font-black text-white uppercase tracking-widest">About this lab</h3>
+          <p className="text-xs text-zinc-400 leading-relaxed">
+            GenAI Systems Lab is a static, zero-backend learning tool — no API calls, no live model, no login required. Everything runs entirely in your browser.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { color: "#22c55e", badge: "✓ Mathematically faithful", desc: "Real algorithm logic on toy inputs. Tokenizer, sampling, and cost models fall here." },
+              { color: "#f59e0b", badge: "~ Simplified",              desc: "Correct pattern, simplified scale. Attention, transformer, and agent trace fall here — real concepts, not frontier-model internals." },
+              { color: "#71717a", badge: "◌ Conceptual",              desc: "Illustrative only. Embedding Space uses precomputed 2D coordinates, not live model embeddings. Useful for intuition, not introspection." },
+            ].map(t => (
+              <div key={t.badge} className="rounded-xl p-3 space-y-1.5" style={{ background: t.color + "10", border: `1px solid ${t.color}30` }}>
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ color: t.color, background: t.color + "20" }}>{t.badge}</span>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">{t.desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-zinc-600 leading-relaxed">
+            RAG Lab scenarios are curated from real production failure patterns. The goal throughout is <em className="text-zinc-500">systems intuition</em> — not exact model introspection.
+          </p>
+        </div>
+
         {/* ── FOOTER ────────────────────────────────────────────────────── */}
         <div className="text-center pt-4">
-          <p className="text-xs text-zinc-600">GenAI Systems Lab · Free · Open Source · Built with React + Vite + Tailwind</p>
+          <p className="text-xs text-zinc-600">GenAI Systems Lab · Free · Static · Built with React + Vite + Tailwind</p>
           <p className="text-xs text-zinc-700 mt-1">Zero backend. Zero cost. Everything runs in your browser.</p>
         </div>
       </div>

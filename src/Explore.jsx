@@ -1374,14 +1374,14 @@ function RedTeamingLab() {
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
-  { id: "embeddings", label: "Embedding Space",    tag: "VISUALIZE", component: EmbeddingExplorer },
-  { id: "shadow",     label: "Shadow Mode A/B",    tag: "COMPARE",   component: ShadowMode },
-  { id: "latency",    label: "Latency Planner",    tag: "BUDGET",    component: LatencyPlanner },
-  { id: "tokenizer",  label: "Tokenizer Explorer", tag: "TOKENS",    component: TokenizerExplorer },
-  { id: "modelcard",  label: "Model Card Reader",  tag: "AUDIT",     component: ModelCardReader },
-  { id: "vectordb",  label: "Vector DB Comparison", tag: "DB",      component: VectorDBComparison },
-  { id: "structured", label: "Structured Outputs",   tag: "SCHEMA",  component: StructuredOutputsLab },
-  { id: "redteam",   label: "Red Teaming Lab",      tag: "ATTACK",  component: RedTeamingLab        },
+  { id: "embeddings", label: "Embedding Space",    tag: "VISUALIZE", component: EmbeddingExplorer, fidelity: { tier: "conceptual",  note: "Conceptual 2D projection — precomputed coordinates, not live model embeddings" } },
+  { id: "shadow",     label: "Shadow Mode A/B",    tag: "COMPARE",   component: ShadowMode,        fidelity: { tier: "simplified",  note: "Illustrative comparison — static response pairs, no live inference" } },
+  { id: "latency",    label: "Latency Planner",    tag: "BUDGET",    component: LatencyPlanner,    fidelity: { tier: "simplified",  note: "Estimated model — based on published benchmarks, not live measurements" } },
+  { id: "tokenizer",  label: "Tokenizer Explorer", tag: "TOKENS",    component: TokenizerExplorer, fidelity: { tier: "faithful",    note: "Mathematically faithful — real BPE tokenization logic" } },
+  { id: "modelcard",  label: "Model Card Reader",  tag: "AUDIT",     component: ModelCardReader,   fidelity: { tier: "simplified",  note: "Curated static cards — based on published model documentation" } },
+  { id: "vectordb",  label: "Vector DB Comparison", tag: "DB",      component: VectorDBComparison, fidelity: { tier: "simplified",  note: "Curated comparison — based on published benchmarks and docs" } },
+  { id: "structured", label: "Structured Outputs",   tag: "SCHEMA",  component: StructuredOutputsLab, fidelity: { tier: "simplified", note: "Illustrative — static examples, no live schema validation" } },
+  { id: "redteam",   label: "Red Teaming Lab",      tag: "ATTACK",  component: RedTeamingLab,      fidelity: { tier: "simplified",  note: "Curated scenarios — real attack patterns, scripted responses" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit }) {
@@ -1405,6 +1405,19 @@ export default function ExploreApp({ initialModule, onModuleVisit }) {
           </button>
         ))}
       </div>
+      {(() => { const m = EXPLORE_MODULES.find(x => x.id === activeModule); return m?.fidelity ? (
+        <div className="flex items-center gap-2">
+          <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+            m.fidelity.tier === "faithful"   ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/50" :
+            m.fidelity.tier === "simplified" ? "bg-amber-950/40 text-amber-400 border-amber-800/50" :
+            "bg-zinc-800 text-zinc-500 border-zinc-700"
+          }`}>
+            {m.fidelity.tier === "faithful" ? "✓ Mathematically faithful" :
+             m.fidelity.tier === "simplified" ? "~ Simplified" : "◌ Conceptual"}
+          </span>
+          <span className="text-[10px] text-zinc-600">{m.fidelity.note}</span>
+        </div>
+      ) : null; })()}
       <ActiveComponent />
     </div>
   );

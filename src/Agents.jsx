@@ -1094,14 +1094,17 @@ export default function AgentsApp({ initialModule, onModuleVisit }) {
           <div key={grp.id} className="flex items-start gap-2">
             <span className="text-[10px] font-mono font-bold px-1.5 py-1 rounded mt-0.5 shrink-0"
               style={{ color: grp.color+"cc", background: grp.color+"18" }}>{grp.label}</span>
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 min-w-0 scrollbar-hide flex-nowrap">
-              {AGENTS_MODULES.filter(m => m.group === grp.id).map(m => (
-                <button key={m.id} onClick={() => switchModule(m.id)}
-                  className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-                  <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
-                  {m.label}
-                </button>
-              ))}
+            <div className="relative flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide flex-nowrap">
+                {AGENTS_MODULES.filter(m => m.group === grp.id).map(m => (
+                  <button key={m.id} onClick={() => switchModule(m.id)}
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                    <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-950 to-transparent" />
             </div>
           </div>
         ))}
