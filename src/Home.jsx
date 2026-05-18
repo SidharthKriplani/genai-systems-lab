@@ -93,10 +93,10 @@ const MODULE_MAP = [
 ];
 
 const STATS = [
-  { value: "3", label: "Learning tracks" },
-  { value: "10", label: "Tabs" },
-  { value: "40+", label: "Modules" },
-  { value: "150+", label: "Interactive challenges" },
+  { value: "3",    label: "Learning tracks" },
+  { value: "10",   label: "Tabs" },
+  { value: "55+",  label: "Modules" },
+  { value: "200+", label: "Interactive challenges" },
 ];
 
 export default function HomePage({ onNavigate }) {
