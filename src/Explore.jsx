@@ -675,6 +675,194 @@ function ModelCardReader() {
   );
 }
 
+// ─── VECTOR DB COMPARISON ────────────────────────────────────────────────────
+
+const VECTOR_DBS = [
+  { id: "pinecone",  name: "Pinecone",   type: "Managed SaaS",       latency_ms: 5,  cost_1m: 0.096, max_scale: "Billions",  hybrid: true,  sql: false, self_host: false, setup: 1,
+    pros: ["Zero ops — fully managed", "Serverless pricing", "Consistent sub-10ms latency"],
+    cons: ["Most expensive at scale", "Vendor lock-in", "No SQL joins or relational queries"],
+    use_when: "You need production-ready vector search today and don't want to manage infrastructure." },
+  { id: "qdrant",    name: "Qdrant",     type: "Self-host / Cloud",  latency_ms: 8,  cost_1m: 0.07,  max_scale: "Billions",  hybrid: true,  sql: false, self_host: true,  setup: 2,
+    pros: ["Best hybrid search (dense + sparse BM42)", "Rust-based — fast and memory-efficient", "Flexible payload filtering"],
+    cons: ["Requires infra management if self-hosted", "Smaller community than Pinecone", "Complex payload indexing setup"],
+    use_when: "You need hybrid dense+sparse search or want cost control with the option to self-host." },
+  { id: "pgvector",  name: "pgvector",   type: "PostgreSQL Extension", latency_ms: 25, cost_1m: 0.01,  max_scale: "~10M",     hybrid: false, sql: true,  self_host: true,  setup: 2,
+    pros: ["Familiar SQL — JOIN with existing tables", "Near-zero added cost if on Postgres", "ACID transactions across vector + relational data"],
+    cons: ["Slower at scale (>10M vectors)", "No native hybrid search without extensions", "Requires index tuning (HNSW params)"],
+    use_when: "You're already on Postgres and have under 10M vectors. Don't over-engineer for small datasets." },
+  { id: "weaviate",  name: "Weaviate",   type: "Self-host / Cloud",  latency_ms: 10, cost_1m: 0.05,  max_scale: "Billions",  hybrid: true,  sql: false, self_host: true,  setup: 4,
+    pros: ["Multimodal (text + images + video)", "Built-in BM25 + vector hybrid", "GraphQL API for complex queries"],
+    cons: ["Steep learning curve", "Complex setup and configuration", "Over-engineered for text-only use cases"],
+    use_when: "You need multimodal search or want GraphQL-style queries over your vector store." },
+  { id: "chroma",    name: "Chroma",     type: "Local / Embedded",   latency_ms: 3,  cost_1m: 0,     max_scale: "~1M",      hybrid: false, sql: false, self_host: true,  setup: 1,
+    pros: ["pip install chromadb — zero setup", "Python-native API", "Free — no hosted cost"],
+    cons: ["Not production-ready (no HA, no replication)", "Limited filtering and querying", "Performance degrades past ~1M vectors"],
+    use_when: "You're prototyping or running local evals. Switch to a production DB before you ship." },
+];
+
+function VectorDBExplorer() {
+  const [sel, setSel] = useState("pinecone");
+  const db = VECTOR_DBS.find(d => d.id === sel);
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {VECTOR_DBS.map(d => (
+          <button key={d.id} onClick={() => setSel(d.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${sel === d.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {d.name}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-bold text-white">{db.name}</span>
+            <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-mono">{db.type}</span>
+          </div>
+          <p className="text-xs text-zinc-400 leading-relaxed">{db.use_when}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: "Latency", val: `~${db.latency_ms}ms`, color: db.latency_ms < 10 ? "text-emerald-400" : db.latency_ms < 20 ? "text-amber-400" : "text-red-400" },
+              { label: "Cost / 1M reads", val: db.cost_1m === 0 ? "Free" : `$${db.cost_1m}`, color: "text-zinc-300" },
+              { label: "Max scale", val: db.max_scale, color: "text-zinc-300" },
+              { label: "Setup complexity", val: "●".repeat(db.setup) + "○".repeat(4 - db.setup), color: "text-zinc-400" },
+            ].map(m => (
+              <div key={m.label} className="bg-zinc-800 rounded p-2 text-xs">
+                <div className="text-zinc-500 mb-0.5">{m.label}</div>
+                <div className={`font-mono font-bold ${m.color}`}>{m.val}</div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-4 text-xs flex-wrap">
+            <span className={db.hybrid ? "text-emerald-400" : "text-zinc-600"}>{db.hybrid ? "✓" : "✗"} Hybrid search</span>
+            <span className={db.sql ? "text-emerald-400" : "text-zinc-600"}>{db.sql ? "✓" : "✗"} SQL support</span>
+            <span className={db.self_host ? "text-emerald-400" : "text-zinc-600"}>{db.self_host ? "✓" : "✗"} Self-hostable</span>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="rounded-xl border border-emerald-900 bg-emerald-950/20 p-3 space-y-1.5">
+            <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide mb-2">Pros</div>
+            {db.pros.map((p, i) => <div key={i} className="text-xs text-zinc-300 flex gap-2"><span className="text-emerald-500 shrink-0">+</span>{p}</div>)}
+          </div>
+          <div className="rounded-xl border border-red-900 bg-red-950/20 p-3 space-y-1.5">
+            <div className="text-xs font-bold text-red-400 uppercase tracking-wide mb-2">Cons</div>
+            {db.cons.map((c, i) => <div key={i} className="text-xs text-zinc-300 flex gap-2"><span className="text-red-500 shrink-0">−</span>{c}</div>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VectorDBDecisionTool() {
+  const [useCase, setUseCase] = useState("production");
+  const [vectors, setVectors] = useState(500);
+  const [budget, setBudget] = useState("medium");
+  const [needsSQL, setNeedsSQL] = useState(false);
+  const [needsHybrid, setNeedsHybrid] = useState(false);
+
+  function score(db) {
+    let s = 0;
+    if (useCase === "prototype" && db.setup === 1) s += 3;
+    if (useCase === "production" && !db.self_host) s += 2;
+    if (useCase === "production" && db.max_scale === "Billions") s += 1;
+    if (vectors > 10000 && db.max_scale === "Billions") s += 2;
+    if (vectors <= 1000 && db.id === "pgvector") s += 2;
+    if (vectors <= 100 && db.id === "chroma" && useCase === "prototype") s += 2;
+    if (budget === "low" && db.cost_1m <= 0.01) s += 3;
+    if (budget === "medium" && db.cost_1m <= 0.07) s += 1;
+    if (needsSQL && db.sql) s += 3;
+    if (needsSQL && !db.sql) s -= 2;
+    if (needsHybrid && db.hybrid) s += 3;
+    if (needsHybrid && !db.hybrid) s -= 2;
+    if (useCase === "prototype" && db.id !== "chroma" && db.id !== "pgvector") s -= 1;
+    return s;
+  }
+
+  const ranked = [...VECTOR_DBS].map(db => ({ ...db, score: score(db) })).sort((a, b) => b.score - a.score);
+  const best = ranked[0];
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-xs text-zinc-500">Use case</label>
+          <div className="flex gap-2">
+            {["prototype", "production"].map(u => (
+              <button key={u} onClick={() => setUseCase(u)}
+                className={`flex-1 py-1.5 rounded text-xs font-bold uppercase transition-all ${useCase === u ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>{u}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-zinc-500">Budget priority</label>
+          <div className="flex gap-2">
+            {["low", "medium", "high"].map(b => (
+              <button key={b} onClick={() => setBudget(b)}
+                className={`flex-1 py-1.5 rounded text-xs font-bold uppercase transition-all ${budget === b ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>{b}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1 sm:col-span-2">
+          <label className="text-xs text-zinc-500">Dataset size: {(vectors * 1000).toLocaleString()} vectors</label>
+          <input type="range" min="1" max="100000" step="10" value={vectors} onChange={e => setVectors(+e.target.value)} className="w-full" />
+        </div>
+        <div className="flex gap-6 sm:col-span-2">
+          {[{ label: "SQL / joins needed", val: needsSQL, set: setNeedsSQL }, { label: "Hybrid search needed", val: needsHybrid, set: setNeedsHybrid }].map(c => (
+            <label key={c.label} className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
+              <input type="checkbox" checked={c.val} onChange={e => c.set(e.target.checked)} />
+              {c.label}
+            </label>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        {ranked.map((db, i) => (
+          <div key={db.id} className={`rounded-lg border p-3 flex items-center gap-3 transition-all ${i === 0 ? "border-violet-700 bg-violet-950/20" : "border-zinc-800 bg-zinc-900/40"}`}>
+            <div className="text-xs font-mono text-zinc-500 w-5 shrink-0">#{i + 1}</div>
+            <div className="font-bold text-sm text-white flex-1">{db.name}</div>
+            <div className="text-xs text-zinc-500 hidden sm:block">{db.type}</div>
+            <div className="h-1.5 w-16 bg-zinc-800 rounded-full overflow-hidden">
+              <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${Math.max(8, (db.score / (ranked[0].score || 1)) * 100)}%` }} />
+            </div>
+            {i === 0 && <span className="text-xs bg-violet-900 text-violet-300 px-2 py-0.5 rounded font-mono shrink-0">BEST FIT</span>}
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-4">
+        <p className="text-xs text-zinc-300 leading-relaxed"><span className="text-violet-300 font-bold">{best.name}</span>: {best.use_when}</p>
+      </div>
+    </div>
+  );
+}
+
+function VectorDBComparison() {
+  const [tab, setTab] = useState("explore");
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Build intuition for vector DB tradeoffs — latency, cost, hybrid search, and ops burden — so you can make the right call in system design."
+        steps={[
+          "DB Explorer: click each database to see its full profile, pros/cons, and when to use it",
+          "Decision Tool: set your use case, scale, and constraints to get a ranked recommendation",
+          "Key insight: there's no universally best vector DB — the right choice depends on your constraints",
+        ]}
+      />
+      <div className="flex gap-2">
+        {[{ id: "explore", label: "DB Explorer", tag: "COMPARE" }, { id: "decide", label: "Decision Tool", tag: "PICK" }].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "explore" && <VectorDBExplorer />}
+      {tab === "decide"  && <VectorDBDecisionTool />}
+    </div>
+  );
+}
+
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
@@ -683,6 +871,7 @@ const EXPLORE_MODULES = [
   { id: "latency",    label: "Latency Planner",    tag: "BUDGET",    component: LatencyPlanner },
   { id: "tokenizer",  label: "Tokenizer Explorer", tag: "TOKENS",    component: TokenizerExplorer },
   { id: "modelcard",  label: "Model Card Reader",  tag: "AUDIT",     component: ModelCardReader },
+  { id: "vectordb",   label: "Vector DB Comparison", tag: "DB",      component: VectorDBComparison },
 ];
 
 export default function ExploreApp() {

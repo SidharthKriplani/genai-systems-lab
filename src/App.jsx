@@ -590,12 +590,95 @@ const SCENARIO_MULTIHOP = {
   ],
 };
 
+const SCENARIO_THREEHOP = {
+  scenario_id: "three_hop_chain",
+  title: "Three-Document Evidence Chain",
+  tag: "RAG FAILURE #6",
+  description:
+    "Answering the query requires chaining three facts from three separate documents. No single document contains the full answer. Most configs retrieve one or two hops and confidently miss the third — producing an incomplete compliance answer that could lead to a regulatory violation.",
+  user_query: "Does our product need to comply with FDA 21 CFR Part 11?",
+  corpus_description:
+    "Three-source compliance chain: ProductSpec_v3.pdf (our device is Class II with electronic patient records), FDAGuidance_2023.pdf (Class II + electronic records = Part 11 required), ComplianceMatrix_2024.pdf (Part 11 requires audit trails + access controls + validation).",
+  failure_mode_taught: "Multi-hop evidence chain collapse on 3-document queries",
+  challenge: {
+    requirement:
+      "Design a config that surfaces all three evidence hops and synthesises them into a complete compliance answer. Requirements: groundedness ≥ 88%, citation accuracy ≥ 85%, risk level must be 'low'.",
+    passing_criteria: {
+      groundedness: 0.88,
+      citation_accuracy: 0.85,
+      allowed_risk_levels: ["low"],
+      require_conflict_flagged: false,
+    },
+  },
+  recommended_configs: [
+    { chunk_size: "medium", top_k: 5, reranker: true, answer_policy: "strictly_grounded" },
+  ],
+  default_config: { chunk_size: "small", top_k: 1, reranker: false, answer_policy: "helpful" },
+  configs: [
+    {
+      id: "t1", chunk_size: "small", top_k: 1, reranker: false, answer_policy: "helpful", label: "One hop — wrong confidence",
+      retrieved_chunks: [
+        { id: "t1a", text: "Class II medical devices that incorporate electronic records management are subject to 21 CFR Part 11 compliance requirements.", source: "FDAGuidance_2023.pdf", date: "2023-06-01", relevance_score: 0.85, label: "partial" },
+      ],
+      answer: "Yes, products that incorporate electronic records management are subject to FDA 21 CFR Part 11. Ensure your software complies with these requirements.",
+      metrics: { groundedness: 0.41, citation_accuracy: 0.33, completeness: 0.35, latency_ms: 290, cost_per_1k_queries_usd: 0.05, risk_level: "critical", conflict_flagged: false },
+      failure_mode: "three_hop_chain_collapse",
+      failure_explanation: "The model retrieved the conditional rule (Class II + electronic records → Part 11) but never verified that OUR product is actually Class II or that it has electronic records. It answered a general question rather than a specific one. A compliance officer acting on this answer would not know what specific controls are required.",
+      suggested_fix: "Increase top_k to at least 3 to retrieve the product classification and the compliance control requirements.",
+      system_design_lesson: "Three-hop queries have three failure modes: retrieve only Hop 1, retrieve only Hop 2, or retrieve Hops 1+2 but miss Hop 3 (the 'so what' hop). Single-hop retrieval misses the entire chain.",
+    },
+    {
+      id: "t2", chunk_size: "small", top_k: 3, reranker: false, answer_policy: "helpful", label: "Two hops — missing controls",
+      retrieved_chunks: [
+        { id: "t2a", text: "Class II medical devices that incorporate electronic records management are subject to 21 CFR Part 11 compliance requirements.", source: "FDAGuidance_2023.pdf", date: "2023-06-01", relevance_score: 0.85, label: "correct" },
+        { id: "t2b", text: "ProductSpec v3.1: Device classification — Class II (moderate risk). Software components include: patient intake forms, electronic prescription records, audit log module.", source: "ProductSpec_v3.pdf", date: "2024-02-15", relevance_score: 0.78, label: "correct" },
+        { id: "t2c", text: "Electronic records must be protected against unauthorised access. System administrators are responsible for access provisioning.", source: "ComplianceMatrix_2024.pdf", date: "2024-01-10", relevance_score: 0.60, label: "partial" },
+      ],
+      answer: "Yes. Our product is classified as Class II and includes electronic records (prescriptions, patient intake). Under FDA 21 CFR Part 11, Class II devices with electronic records must comply. Ensure electronic records are protected against unauthorised access.",
+      metrics: { groundedness: 0.72, citation_accuracy: 0.65, completeness: 0.61, latency_ms: 560, cost_per_1k_queries_usd: 0.11, risk_level: "medium", conflict_flagged: false },
+      failure_mode: "three_hop_chain_collapse",
+      failure_explanation: "Two hops retrieved (rule + product class), but the third hop — the full list of Part 11 controls required (audit trails, access controls, validation documentation) — was only partially captured. The answer tells the team they need to comply but not what compliance actually requires.",
+      suggested_fix: "Increase top_k or chunk size to capture the full ComplianceMatrix controls list.",
+      system_design_lesson: "Two of three hops gives a confident but incomplete compliance answer. The most dangerous RAG failure is not 'wrong answer' but 'right-sounding incomplete answer' — the team thinks they know what to do, but they're missing half the checklist.",
+    },
+    {
+      id: "t3", chunk_size: "medium", top_k: 3, reranker: false, answer_policy: "helpful", label: "All hops, weak ordering",
+      retrieved_chunks: [
+        { id: "t3a", text: "Class II medical devices that incorporate electronic records management are subject to 21 CFR Part 11 compliance requirements. This applies to any software handling electronic records in a regulated environment.", source: "FDAGuidance_2023.pdf", date: "2023-06-01", relevance_score: 0.85, label: "correct" },
+        { id: "t3b", text: "ProductSpec v3.1 — Device Classification: Class II. Software modules: (1) Patient intake form with e-signature, (2) Electronic prescription records, (3) Audit log with tamper detection, (4) Role-based access control module.", source: "ProductSpec_v3.pdf", date: "2024-02-15", relevance_score: 0.81, label: "correct" },
+        { id: "t3c", text: "21 CFR Part 11 Compliance Controls Required: (1) Audit trails for all record creation/modification, (2) Access controls with unique user IDs, (3) System validation documentation, (4) Record retention for minimum 3 years, (5) Electronic signature controls.", source: "ComplianceMatrix_2024.pdf", date: "2024-01-10", relevance_score: 0.73, label: "correct" },
+      ],
+      answer: "Yes. Our product is a Class II device with electronic records — both conditions that trigger 21 CFR Part 11. Required compliance controls: audit trails, unique user IDs, system validation docs, 3-year retention, e-signature controls.",
+      metrics: { groundedness: 0.86, citation_accuracy: 0.79, completeness: 0.88, latency_ms: 720, cost_per_1k_queries_usd: 0.14, risk_level: "low", conflict_flagged: false },
+      failure_mode: null,
+      failure_explanation: "All three hops retrieved. Medium chunks preserved the full controls list in one chunk. Without a reranker, retrieval order was by raw similarity — the third hop (controls) ranked last but still made it into top_k=3. Answer is substantively complete.",
+      suggested_fix: "Add a reranker to guarantee the controls list is always ranked and not displaced by noise in larger corpora.",
+      system_design_lesson: "At small corpus size, top_k=3 medium chunks can recover all three hops without a reranker. In a real compliance knowledge base with hundreds of documents, the third hop might be displaced by more-similar-but-less-relevant chunks.",
+    },
+    {
+      id: "t4", chunk_size: "medium", top_k: 5, reranker: true, answer_policy: "strictly_grounded", label: "Best: full chain, cited",
+      retrieved_chunks: [
+        { id: "t4a", text: "ProductSpec v3.1 — Device Classification: Class II (moderate risk, 510(k) cleared). Software modules: (1) Patient intake form with e-signature, (2) Electronic prescription records, (3) Audit log with tamper detection, (4) Role-based access control module.", source: "ProductSpec_v3.pdf", date: "2024-02-15", relevance_score: 0.91, label: "correct" },
+        { id: "t4b", text: "Class II medical devices that incorporate electronic records management are subject to 21 CFR Part 11 compliance requirements. This applies to any software handling electronic records in a regulated clinical environment, regardless of whether records are primary or supporting documentation.", source: "FDAGuidance_2023.pdf", date: "2023-06-01", relevance_score: 0.87, label: "correct" },
+        { id: "t4c", text: "21 CFR Part 11 Compliance Controls Required: (1) Audit trails for all record creation, modification, and deletion — must be computer-generated and tamper-evident. (2) Unique user IDs and access controls. (3) System validation documentation demonstrating the system does what it is intended to do. (4) Electronic record retention for minimum 3 years post-use. (5) Electronic signature controls with identity verification.", source: "ComplianceMatrix_2024.pdf", date: "2024-01-10", relevance_score: 0.83, label: "correct" },
+      ],
+      answer: "Yes — 21 CFR Part 11 applies. Here is the complete evidence chain:\n\nHop 1 (ProductSpec_v3.pdf): Our product is a Class II medical device. It includes electronic patient records and e-signatures.\n\nHop 2 (FDAGuidance_2023.pdf): Class II devices with electronic records are subject to 21 CFR Part 11.\n\nHop 3 (ComplianceMatrix_2024.pdf): Part 11 requires: (1) tamper-evident audit trails, (2) unique user IDs + access controls, (3) system validation documentation, (4) 3-year record retention, (5) e-signature identity verification.\n\nConclusion: All five controls are required. Recommend immediate compliance gap analysis against ComplianceMatrix_2024.pdf.",
+      metrics: { groundedness: 0.97, citation_accuracy: 0.95, completeness: 0.98, latency_ms: 890, cost_per_1k_queries_usd: 0.18, risk_level: "low", conflict_flagged: false },
+      failure_mode: null,
+      failure_explanation: "Perfect three-hop chain. Reranker elevated all three factual hops above irrelevant compliance noise. Strictly grounded policy forced explicit Hop 1/2/3 labelling — the reasoning chain is transparent and auditable. The answer gives the team everything they need to act.",
+      suggested_fix: "None. This is the reference configuration for compliance question answering.",
+      system_design_lesson: "For compliance queries requiring evidence chains, strictly grounded policy is a correctness requirement, not just a style choice. Labelling each hop explicitly makes the reasoning auditable and catches cases where one hop was retrieved incorrectly.",
+    },
+  ],
+};
+
 const ALL_SCENARIOS = [
   SCENARIO_CONFLICTING,
   SCENARIO_MISSING,
   SCENARIO_AMBIGUOUS,
   SCENARIO_INJECTION,
   SCENARIO_MULTIHOP,
+  SCENARIO_THREEHOP,
 ];
 
 // ─── LOOKUP ───────────────────────────────────────────────────────────────────
@@ -936,6 +1019,21 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState(() => {
     try { return JSON.parse(localStorage.getItem("genai_leaderboard") || "[]"); } catch { return []; }
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  const SHORTCUT_TABS = ["home","concepts","flows","lab","systems","playground","explore","fluency","aipm","career"];
+  useEffect(() => {
+    function onKey(e) {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+      if (e.key === "?" || e.key === "/") { e.preventDefault(); setShowShortcuts(s => !s); return; }
+      if (e.key === "Escape") { setShowShortcuts(false); setMobileMenuOpen(false); return; }
+      const n = parseInt(e.key);
+      if (n >= 1 && n <= SHORTCUT_TABS.length) { navigate(SHORTCUT_TABS[n - 1]); setMobileMenuOpen(false); }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const scenario = ALL_SCENARIOS[scenarioIdx];
   const lookup = useMemo(() => lookupResult(scenario, config), [scenario, config]);
@@ -999,20 +1097,77 @@ export default function App() {
   const NAV_GROUPS = [
     { label: null,    items: [{ id: "home", label: "Home" }] },
     { label: "LEARN", color: "#6366f1", items: [{ id: "concepts", label: "Concepts", count: 11 }, { id: "flows", label: "Flows", count: 5 }] },
-    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab", count: 5 }, { id: "systems", label: "Systems", count: 12 }, { id: "playground", label: "Playground", count: 5 }, { id: "explore", label: "Explore", count: 5 }] },
+    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab", count: 6 }, { id: "systems", label: "Systems", count: 13 }, { id: "playground", label: "Playground", count: 5 }, { id: "explore", label: "Explore", count: 6 }] },
     { label: "GROW",  color: "#22c55e", items: [{ id: "fluency", label: "Fluency", count: 5 }, { id: "aipm", label: "AIPM", count: 5 }, { id: "career", label: "Career", count: 4 }] },
     { label: null,    items: [{ id: "leaderboard", label: `🏆${leaderboard.filter(e => e.passed).length > 0 ? ` ${leaderboard.filter(e => e.passed).length}` : ""} Board` }] },
   ];
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans" style={{ fontFamily: "'IBM Plex Mono', 'Fira Code', monospace" }}>
+      {/* Keyboard shortcuts overlay */}
+      {showShortcuts && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowShortcuts(false)}>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold text-white">Keyboard Shortcuts</span>
+              <button onClick={() => setShowShortcuts(false)} className="text-zinc-500 hover:text-white text-xs">✕</button>
+            </div>
+            <div className="space-y-2">
+              {SHORTCUT_TABS.map((tab, i) => (
+                <div key={tab} className="flex items-center justify-between text-xs">
+                  <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">{i + 1}</kbd>
+                  <span className="text-zinc-400 capitalize">{tab.replace("lab", "RAG Lab")}</span>
+                </div>
+              ))}
+              <div className="border-t border-zinc-800 pt-2 flex items-center justify-between text-xs">
+                <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">?</kbd>
+                <span className="text-zinc-400">Toggle this overlay</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">Esc</kbd>
+                <span className="text-zinc-400">Close</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Mobile drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)}>
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute right-0 top-0 bottom-0 w-64 bg-zinc-900 border-l border-zinc-800 p-4 overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Navigation</span>
+              <button onClick={() => setMobileMenuOpen(false)} className="text-zinc-500 hover:text-white text-sm">✕</button>
+            </div>
+            {NAV_GROUPS.map((group, gi) => (
+              <div key={gi} className="mb-3">
+                {group.label && <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5 px-1" style={{ color: group.color + "99" }}>{group.label}</div>}
+                {group.items.map((item, ii) => (
+                  <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-zinc-600 font-mono">{gi === 0 && ii === 0 ? "1" : SHORTCUT_TABS.indexOf(item.id) >= 0 ? SHORTCUT_TABS.indexOf(item.id) + 1 : ""}</span>
+                      {item.label}
+                    </span>
+                    {visited.has(item.id) && topView !== item.id && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            ))}
+            <button onClick={() => { setShowShortcuts(true); setMobileMenuOpen(false); }} className="w-full mt-3 py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-white transition-all">
+              ? Keyboard shortcuts
+            </button>
+          </div>
+        </div>
+      )}
       <header className="border-b border-zinc-800 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <button onClick={() => navigate("home")} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
             <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold text-white">G</div>
             <span className="hidden sm:block text-sm font-bold tracking-wide text-white">GenAI Lab</span>
           </button>
-          <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide min-w-0">
+          <nav className="hidden lg:flex items-center gap-0.5 overflow-x-auto scrollbar-hide min-w-0">
             {NAV_GROUPS.map((group, gi) => (
               <div key={gi} className="flex items-center gap-0.5 shrink-0">
                 {gi > 0 && <div className="w-px h-4 bg-zinc-700 mx-1" />}
@@ -1034,6 +1189,13 @@ export default function App() {
               </div>
             ))}
           </nav>
+          {/* Right side: ? button + hamburger */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">?</button>
+            <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
+            </button>
+          </div>
         </div>
       </header>
 

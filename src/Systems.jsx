@@ -1856,6 +1856,207 @@ function ABTestingLab() {
   );
 }
 
+// ─── PROMPT CACHING LAB ───────────────────────────────────────────────────────
+
+const CACHE_MODELS = [
+  { id: "claude", name: "Claude Sonnet", input: 3.00, cacheWrite: 3.75, cacheRead: 0.30, minTokens: 1024, ttl: 5 },
+  { id: "gpt4o",  name: "GPT-4o",        input: 2.50, cacheWrite: 2.50, cacheRead: 1.25, minTokens: 1024, ttl: 5 },
+  { id: "gemini", name: "Gemini 1.5 Pro", input: 1.25, cacheWrite: 1.25, cacheRead: 0.3125, minTokens: 32768, ttl: 60 },
+];
+
+const CACHE_PATTERNS = [
+  { id: "system_prompt", label: "Static System Prompt", tag: "BEST FIT", cacheability: 5, savings: "90%+",
+    desc: "Long system prompts with persona, rules, and tool definitions that never change between requests.",
+    example: "You are a compliance assistant for Acme Corp. [2,000 tokens of rules, guidelines, examples...]",
+    tip: "The ideal caching candidate. Write once, read thousands of times. Most teams have 1,000–4,000 token system prompts that are identical across every request." },
+  { id: "fewshot", label: "Few-Shot Examples", tag: "GOOD FIT", cacheability: 4, savings: "70–85%",
+    desc: "In-context examples prepended to every request. Cache the example block, append the live query after.",
+    example: "Q: Explain NDCG. A: [full answer]. Q: Explain MRR. A: [full answer]. Q: {live user query}",
+    tip: "Separate static examples from the live query. The cache prefix must end before the dynamic portion begins." },
+  { id: "rag_context", label: "RAG Context", tag: "CONDITIONAL", cacheability: 2, savings: "20–50%",
+    desc: "Retrieved chunks vary per query — only cacheable if the same fixed corpus is reused across requests.",
+    example: "Works if 10 fixed documents are always prepended. Doesn't work if retrieval is dynamic per query.",
+    tip: "Only cache RAG context when using a static knowledge base. Dynamic per-query retrieval creates a different prefix each time — no cache benefit." },
+  { id: "conversation", label: "Conversation History", tag: "LIMITED", cacheability: 1, savings: "5–15%",
+    desc: "Conversation history grows each turn — the cache prefix changes on every message, so hit rate is low.",
+    example: "Turn 1 cached. Turn 2 appends a new message — new prefix, cache miss.",
+    tip: "Cache the system prompt separately. Don't attempt to cache growing conversation history — it defeats the purpose." },
+];
+
+const CACHE_STEPS = [
+  { label: "Request arrives", color: "#6366f1", desc: "User sends a message. Full prompt = system prompt + few-shot + RAG context + user query. All tokens are sent to the API." },
+  { label: "Prefix hash computed", color: "#3b82f6", desc: "Provider hashes the prompt prefix. If the first N tokens are byte-identical to a recent request, it's a cache hit. Even one token difference = cache miss." },
+  { label: "Cache hit — fast path", color: "#22c55e", desc: "Provider skips recomputing attention for cached tokens. You pay 0.1× the normal input price. Claude: $0.30 vs $3.00 per 1M tokens — a 10× reduction." },
+  { label: "Cache miss — write path", color: "#f59e0b", desc: "First time this prefix is seen. Full computation runs. You pay 1.25× normal to write the KV cache. Subsequent requests with this prefix get the cache hit discount." },
+  { label: "TTL expiry", color: "#ef4444", desc: "Cache entries expire after ~5 minutes (Claude, GPT-4o). After expiry, the next request pays the write cost again to re-warm the cache." },
+];
+
+function HowCachingWorks() {
+  const [step, setStep] = useState(0);
+  const s = CACHE_STEPS[step];
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1.5 flex-wrap">
+        {CACHE_STEPS.map((st, i) => (
+          <button key={i} onClick={() => setStep(i)}
+            className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all ${step === i ? "text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+            style={step === i ? { backgroundColor: st.color } : {}}>
+            {i + 1}. {st.label}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-xl border bg-zinc-900/60 p-5 space-y-4" style={{ borderColor: s.color + "55" }}>
+        <div className="text-sm font-bold text-white">{s.label}</div>
+        <p className="text-sm text-zinc-300 leading-relaxed">{s.desc}</p>
+        <div className="grid grid-cols-3 gap-3 text-center text-xs">
+          {[
+            { label: "Cache read price", val: "$0.30/1M", sub: "vs $3.00 uncached", color: "text-emerald-400" },
+            { label: "Cache write price", val: "$3.75/1M", sub: "1.25× write cost", color: "text-amber-400" },
+            { label: "Min tokens (Claude)", val: "1,024", sub: "prefix must be ≥ this", color: "text-violet-400" },
+          ].map(m => (
+            <div key={m.label} className="bg-zinc-800 rounded-lg p-3">
+              <div className="text-zinc-500 mb-1">{m.label}</div>
+              <div className={`font-mono font-bold ${m.color}`}>{m.val}</div>
+              <div className="text-zinc-600 text-[10px] mt-0.5">{m.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CacheCostCalculator() {
+  const [modelId, setModelId] = useState("claude");
+  const [reqPerDay, setReqPerDay] = useState(1000);
+  const [sysTokens, setSysTokens] = useState(2000);
+  const [hitRate, setHitRate] = useState(80);
+  const model = CACHE_MODELS.find(m => m.id === modelId);
+  const monthly = reqPerDay * 30;
+  const noCache = (sysTokens / 1e6) * model.input * monthly;
+  const hits = monthly * (hitRate / 100);
+  const misses = monthly * (1 - hitRate / 100);
+  const withCache = (sysTokens / 1e6) * model.cacheRead * hits + (sysTokens / 1e6) * model.cacheWrite * misses;
+  const saved = noCache - withCache;
+  const pct = noCache > 0 ? (saved / noCache * 100) : 0;
+  const fmt = v => v < 0.01 ? `$${v.toFixed(4)}` : v < 100 ? `$${v.toFixed(2)}` : `$${Math.round(v).toLocaleString()}`;
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-2 flex-wrap">
+        {CACHE_MODELS.map(m => (
+          <button key={m.id} onClick={() => setModelId(m.id)}
+            className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${modelId === m.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {m.name}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: "Requests / day", min: 100, max: 100000, step: 100, val: reqPerDay, set: setReqPerDay, fmt: v => v.toLocaleString() },
+          { label: "System prompt tokens", min: 200, max: 8000, step: 100, val: sysTokens, set: setSysTokens, fmt: v => v.toLocaleString() },
+          { label: "Cache hit rate", min: 10, max: 99, step: 1, val: hitRate, set: setHitRate, fmt: v => v + "%" },
+        ].map(s => (
+          <div key={s.label} className="space-y-1">
+            <label className="text-xs text-zinc-500">{s.label}</label>
+            <input type="range" min={s.min} max={s.max} step={s.step} value={s.val} onChange={e => s.set(+e.target.value)} className="w-full" />
+            <div className="text-xs font-mono text-zinc-300">{s.fmt(s.val)}</div>
+          </div>
+        ))}
+      </div>
+      {sysTokens < model.minTokens && (
+        <div className="rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-xs text-amber-300">
+          ⚠ {model.name} requires ≥ {model.minTokens.toLocaleString()} tokens to cache. Your prompt is too short — caching won't activate.
+        </div>
+      )}
+      <div className="grid grid-cols-3 gap-3 text-center">
+        {[
+          { label: "Without caching", val: fmt(noCache), sub: "/ month", color: "text-red-400" },
+          { label: "With caching", val: fmt(Math.max(0, withCache)), sub: "/ month", color: "text-emerald-400" },
+          { label: "Monthly savings", val: fmt(Math.max(0, saved)), sub: `${pct.toFixed(0)}% less`, color: "text-emerald-300", accent: true },
+        ].map(c => (
+          <div key={c.label} className={`rounded-xl border p-4 ${c.accent ? "border-emerald-800 bg-emerald-950/20" : "border-zinc-800 bg-zinc-900"}`}>
+            <div className="text-xs text-zinc-500 mb-1">{c.label}</div>
+            <div className={`text-lg font-bold font-mono ${c.color}`}>{c.val}</div>
+            <div className="text-xs text-zinc-600">{c.sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CachePatterns() {
+  const [sel, setSel] = useState("system_prompt");
+  const p = CACHE_PATTERNS.find(x => x.id === sel);
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {CACHE_PATTERNS.map(pt => (
+          <button key={pt.id} onClick={() => setSel(pt.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${sel === pt.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${sel === pt.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{pt.tag}</span>
+            {pt.label}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-bold text-white">{p.label}</span>
+          <span className="text-xs text-emerald-400 font-mono bg-emerald-950 px-2 py-0.5 rounded">{p.savings} savings</span>
+        </div>
+        <p className="text-sm text-zinc-300 leading-relaxed">{p.desc}</p>
+        <div className="bg-zinc-800 rounded-lg p-3">
+          <div className="text-xs text-zinc-500 mb-1.5">Example structure</div>
+          <p className="text-xs font-mono text-zinc-400 leading-relaxed italic">{p.example}</p>
+        </div>
+        <div className="flex items-start gap-2 bg-violet-950/30 border border-violet-800/40 rounded-lg p-3">
+          <span className="text-violet-400 text-xs shrink-0">💡</span>
+          <p className="text-xs text-zinc-300 leading-relaxed">{p.tip}</p>
+        </div>
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs"><span className="text-zinc-500">Cacheability</span><span className="text-zinc-400 font-mono">{p.cacheability}/5</span></div>
+          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-full rounded-full bg-violet-500 transition-all duration-500" style={{ width: `${p.cacheability * 20}%` }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PromptCachingLab() {
+  const [tab, setTab] = useState("how");
+  const TABS = [
+    { id: "how",      label: "How It Works",    tag: "CONCEPT"  },
+    { id: "calc",     label: "Cost Calculator", tag: "SIMULATE" },
+    { id: "patterns", label: "Cache Patterns",  tag: "APPLY"    },
+  ];
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Understand prefix caching — what it is, when it cuts 90% of input costs, and which prompt patterns actually benefit."
+        steps={[
+          "How It Works: step through the 5-stage cache lifecycle to understand hits, misses, and TTL",
+          "Cost Calculator: enter your request volume and system prompt size — see real dollar savings",
+          "Cache Patterns: learn which prompt structures cache well (system prompts ✓) and which don't (chat history ✗)",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "how"      && <HowCachingWorks />}
+      {tab === "calc"     && <CacheCostCalculator />}
+      {tab === "patterns" && <CachePatterns />}
+    </div>
+  );
+}
+
 // ─── SYSTEMS APP ─────────────────────────────────────────────────────────────
 
 const SYSTEMS_MODULES = [
@@ -1865,6 +2066,7 @@ const SYSTEMS_MODULES = [
   { id: "costlatency",   label: "Cost/Latency",       tag: "COST",     group: "BUILD",   component: CostLatencyLab   },
   { id: "finetune",      label: "Fine-Tuning Lab",    tag: "TRAIN",    group: "BUILD",   component: FineTuningLab    },
   { id: "indiascale",    label: "India Scale Lab",    tag: "₹ INDIA",  group: "BUILD",   component: IndiaScaleLab    },
+  { id: "caching",       label: "Prompt Caching",     tag: "CACHE",    group: "BUILD",   component: PromptCachingLab },
   { id: "router",        label: "Model Router",       tag: "ROUTE",    group: "BUILD",   component: ModelRouterLab   },
   { id: "inference",     label: "Inference Optimizer",tag: "SERVING",  group: "BUILD",   component: InferenceOptimizer},
   { id: "incidents",     label: "Incident Room",      tag: "DIAGNOSE", group: "OPS",     component: IncidentRoom     },
