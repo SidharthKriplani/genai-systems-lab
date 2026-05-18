@@ -932,9 +932,9 @@ export default function App() {
 
   const NAV_GROUPS = [
     { label: null,    items: [{ id: "home", label: "Home" }] },
-    { label: "LEARN", color: "#6366f1", items: [{ id: "concepts", label: "Concepts" }, { id: "flows", label: "Flows" }] },
-    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab" }, { id: "systems", label: "Systems" }, { id: "playground", label: "Playground" }, { id: "explore", label: "Explore" }] },
-    { label: "GROW",  color: "#22c55e", items: [{ id: "fluency", label: "Fluency" }, { id: "aipm", label: "AIPM" }, { id: "career", label: "Career" }] },
+    { label: "LEARN", color: "#6366f1", items: [{ id: "concepts", label: "Concepts", count: 11 }, { id: "flows", label: "Flows", count: 5 }] },
+    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab", count: 5 }, { id: "systems", label: "Systems", count: 12 }, { id: "playground", label: "Playground", count: 5 }, { id: "explore", label: "Explore", count: 5 }] },
+    { label: "GROW",  color: "#22c55e", items: [{ id: "fluency", label: "Fluency", count: 5 }, { id: "aipm", label: "AIPM", count: 5 }, { id: "career", label: "Career", count: 4 }] },
     { label: null,    items: [{ id: "leaderboard", label: `🏆${leaderboard.filter(e => e.passed).length > 0 ? ` ${leaderboard.filter(e => e.passed).length}` : ""} Board` }] },
   ];
 
@@ -955,8 +955,11 @@ export default function App() {
                 )}
                 {group.items.map(item => (
                   <button key={item.id} onClick={() => navigate(item.id)}
-                    className={`relative px-2.5 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                    className={`relative px-2.5 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
                     {item.label}
+                    {item.count && (
+                      <span className={`text-[9px] font-mono leading-none ${topView === item.id ? "text-violet-200 opacity-70" : "text-zinc-600"}`}>{item.count}</span>
+                    )}
                     {visited.has(item.id) && topView !== item.id && (
                       <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />
                     )}

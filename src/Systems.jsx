@@ -1741,7 +1741,7 @@ const AB_CHALLENGES = [
       { id: "c", label: "Run a binomial test — 58/100 is significant at p < 0.05", detail: "Statistical test gives us confidence level" },
       { id: "d", label: "Human ratings are too subjective to be meaningful", detail: "Use automated metrics only" },
     ],
-    correct: "c",
+    correct: "b",
     explanation: "A binomial test on 58/100 preferences (vs. null hypothesis p=0.5): z = (58-50)/√(100×0.5×0.5) = 8/5 = 1.6. That's p ≈ 0.055 — borderline significant at 95% confidence. You'd want n=150+ to be conclusive. This is why eval sample size matters. The rule of thumb: for a 55-60% preference rate, you need ~150-200 annotated examples to reach p < 0.05. For a 70%+ rate, 50 is enough. Most teams run 200 examples as default to give headroom.",
   },
   {
@@ -1859,18 +1859,24 @@ function ABTestingLab() {
 // ─── SYSTEMS APP ─────────────────────────────────────────────────────────────
 
 const SYSTEMS_MODULES = [
-  { id: "evals", label: "Evals Lab", tag: "DESIGN", component: EvalsLab },
-  { id: "strategy", label: "Model Strategy", tag: "DECISION", component: ModelStrategyLab },
-  { id: "incidents", label: "Incident Room", tag: "DIAGNOSE", component: IncidentRoom },
-  { id: "shouldai", label: "Should You Use AI?", tag: "JUDGE", component: ShouldUseAI },
-  { id: "costlatency", label: "Cost/Latency", tag: "COST", component: CostLatencyLab },
-  { id: "finetune", label: "Fine-Tuning Lab", tag: "TRAIN", component: FineTuningLab },
-  { id: "observability", label: "Observability", tag: "OPS", component: LLMObservability },
-  { id: "abtesting", label: "A/B Testing", tag: "SHIP", component: ABTestingLab },
-  { id: "indiascale",  label: "India Scale Lab",       tag: "₹ INDIA",  component: IndiaScaleLab     },
-  { id: "router",      label: "Model Router",          tag: "ROUTE",    component: ModelRouterLab    },
-  { id: "inference",   label: "Inference Optimizer",   tag: "SERVING",  component: InferenceOptimizer},
-  { id: "mlcicd",      label: "ML CI/CD",              tag: "DEPLOY",   component: MLCiCdLab         },
+  { id: "evals",         label: "Evals Lab",          tag: "DESIGN",   group: "DESIGN",  component: EvalsLab         },
+  { id: "strategy",      label: "Model Strategy",     tag: "DECISION", group: "DESIGN",  component: ModelStrategyLab },
+  { id: "shouldai",      label: "Should You Use AI?", tag: "JUDGE",    group: "DESIGN",  component: ShouldUseAI      },
+  { id: "costlatency",   label: "Cost/Latency",       tag: "COST",     group: "BUILD",   component: CostLatencyLab   },
+  { id: "finetune",      label: "Fine-Tuning Lab",    tag: "TRAIN",    group: "BUILD",   component: FineTuningLab    },
+  { id: "indiascale",    label: "India Scale Lab",    tag: "₹ INDIA",  group: "BUILD",   component: IndiaScaleLab    },
+  { id: "router",        label: "Model Router",       tag: "ROUTE",    group: "BUILD",   component: ModelRouterLab   },
+  { id: "inference",     label: "Inference Optimizer",tag: "SERVING",  group: "BUILD",   component: InferenceOptimizer},
+  { id: "incidents",     label: "Incident Room",      tag: "DIAGNOSE", group: "OPS",     component: IncidentRoom     },
+  { id: "observability", label: "Observability",      tag: "OPS",      group: "OPS",     component: LLMObservability },
+  { id: "abtesting",     label: "A/B Testing",        tag: "SHIP",     group: "OPS",     component: ABTestingLab     },
+  { id: "mlcicd",        label: "ML CI/CD",           tag: "DEPLOY",   group: "OPS",     component: MLCiCdLab        },
+];
+
+const SYSTEMS_GROUPS = [
+  { id: "DESIGN", label: "DESIGN", color: "#6366f1" },
+  { id: "BUILD",  label: "BUILD",  color: "#3b82f6" },
+  { id: "OPS",    label: "OPS",    color: "#22c55e" },
 ];
 
 export default function SystemsApp() {
@@ -1884,17 +1890,22 @@ export default function SystemsApp() {
         <p className="text-sm text-zinc-400">Production AI systems thinking — evals, strategy, and architecture decisions</p>
       </div>
 
-      {/* Module switcher */}
-      <div className="flex gap-2 justify-center flex-wrap">
-        {SYSTEMS_MODULES.map(m => (
-          <button
-            key={m.id}
-            onClick={() => setActiveModule(m.id)}
-            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
-          >
-            <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
-            {m.label}
-          </button>
+      {/* Module switcher — grouped */}
+      <div className="space-y-2">
+        {SYSTEMS_GROUPS.map(grp => (
+          <div key={grp.id} className="flex items-start gap-2 flex-wrap">
+            <span className="text-[10px] font-mono font-bold px-1.5 py-1 rounded mt-0.5 shrink-0" style={{ color: grp.color + "cc", background: grp.color + "18" }}>{grp.label}</span>
+            {SYSTEMS_MODULES.filter(m => m.group === grp.id).map(m => (
+              <button
+                key={m.id}
+                onClick={() => setActiveModule(m.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+              >
+                <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
+                {m.label}
+              </button>
+            ))}
+          </div>
         ))}
       </div>
 
