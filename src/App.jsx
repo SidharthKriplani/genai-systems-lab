@@ -6,6 +6,8 @@ import FlowsApp from "./Flows";
 import AIPMApp from "./AIPM";
 import PlaygroundApp from "./Playground";
 import CareerApp from "./Career";
+import ExploreApp from "./Explore";
+import HomePage from "./Home";
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -842,7 +844,7 @@ function LeaderboardView({ leaderboard, onClear }) {
 }
 
 export default function App() {
-  const [topView, setTopView] = useState("lab"); // "lab" | "concepts" | "systems" | "fluency" | "leaderboard"
+  const [topView, setTopView] = useState("home");
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [config, setConfig] = useState(ALL_SCENARIOS[0].default_config);
   const [evaluated, setEvaluated] = useState(false);
@@ -912,98 +914,61 @@ export default function App() {
   const result = lookup?.result;
   const hasFallback = lookup && !lookup.curated;
 
+  const NAV_GROUPS = [
+    { label: null,    items: [{ id: "home", label: "Home" }] },
+    { label: "LEARN", color: "#6366f1", items: [{ id: "concepts", label: "Concepts" }, { id: "flows", label: "Flows" }] },
+    { label: "BUILD", color: "#3b82f6", items: [{ id: "lab", label: "RAG Lab" }, { id: "systems", label: "Systems" }, { id: "playground", label: "Playground" }, { id: "explore", label: "Explore" }] },
+    { label: "GROW",  color: "#22c55e", items: [{ id: "fluency", label: "Fluency" }, { id: "aipm", label: "AIPM" }, { id: "career", label: "Career" }] },
+    { label: null,    items: [{ id: "leaderboard", label: `🏆${leaderboard.filter(e => e.passed).length > 0 ? ` ${leaderboard.filter(e => e.passed).length}` : ""} Board` }] },
+  ];
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans" style={{ fontFamily: "'IBM Plex Mono', 'Fira Code', monospace" }}>
-      <header className="border-b border-zinc-800 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="border-b border-zinc-800 px-6 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+          <button onClick={() => setTopView("home")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold">G</div>
             <div>
               <div className="text-sm font-bold tracking-wider text-white">GENAI SYSTEMS LAB</div>
-              <div className="text-xs text-zinc-500">RAG Failure Simulator · V1-B</div>
+              <div className="text-xs text-zinc-500">Interactive AI Learning Platform</div>
             </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setTopView("lab")}
-              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "lab" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
-            >
-              RAG Lab
-            </button>
-            <button
-              onClick={() => setTopView("concepts")}
-              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "concepts" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
-            >
-              Concepts
-            </button>
-            <button
-              onClick={() => setTopView("systems")}
-              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "systems" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
-            >
-              Systems
-            </button>
-            <button
-              onClick={() => setTopView("fluency")}
-              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "fluency" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
-            >
-              Fluency
-            </button>
-            <button
-              onClick={() => setTopView("flows")}
-              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "flows" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
-            >
-              Flows
-            </button>
-            <button
-              onClick={() => setTopView("aipm")}
-              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "aipm" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
-            >
-              AIPM
-            </button>
-            <button
-              onClick={() => setTopView("playground")}
-              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "playground" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
-            >
-              Playground
-            </button>
-            <button
-              onClick={() => setTopView("career")}
-              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "career" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
-            >
-              Career
-            </button>
-            <button
-              onClick={() => setTopView("leaderboard")}
-              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase flex items-center gap-1.5 ${topView === "leaderboard" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
-            >
-              🏆 <span>{leaderboard.filter(e => e.passed).length > 0 ? `${leaderboard.filter(e => e.passed).length}` : ""} Board</span>
-            </button>
-            {topView === "lab" && ["simulator", "notes"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${activeTab === tab ? "bg-zinc-700 text-white" : "text-zinc-600 hover:text-zinc-400"}`}
-              >
-                {tab === "simulator" ? "Sim" : "Notes"}
-              </button>
+          </button>
+          <nav className="flex items-center gap-0.5 flex-wrap">
+            {NAV_GROUPS.map((group, gi) => (
+              <div key={gi} className="flex items-center gap-0.5">
+                {gi > 0 && <div className="w-px h-4 bg-zinc-700 mx-1.5" />}
+                {group.label && (
+                  <span className="text-xs font-mono font-bold px-1 mr-0.5" style={{ color: group.color + "99" }}>{group.label}</span>
+                )}
+                {group.items.map(item => (
+                  <button key={item.id} onClick={() => setTopView(item.id)}
+                    className={`px-3 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             ))}
-          </div>
+          </nav>
         </div>
       </header>
 
-      {topView === "concepts" && <ConceptsApp />}
+      {topView === "home"       && <HomePage onNavigate={setTopView} />}
 
-      {topView === "systems" && <SystemsApp />}
+      {topView === "concepts"   && <ConceptsApp />}
 
-      {topView === "fluency" && <FluencyApp />}
+      {topView === "flows"      && <FlowsApp />}
 
-      {topView === "flows" && <FlowsApp />}
+      {topView === "systems"    && <SystemsApp />}
 
-      {topView === "aipm" && <AIPMApp />}
+      {topView === "fluency"    && <FluencyApp />}
+
+      {topView === "aipm"       && <AIPMApp />}
 
       {topView === "playground" && <PlaygroundApp />}
 
-      {topView === "career" && <CareerApp />}
+      {topView === "explore"    && <ExploreApp />}
+
+      {topView === "career"     && <CareerApp />}
 
       {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} />}
 

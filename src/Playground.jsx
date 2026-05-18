@@ -1,5 +1,33 @@
 import { useState, useEffect } from "react";
 
+// ─── SHARED HOW-TO CARD ───────────────────────────────────────────────────────
+function HowTo({ objective, steps }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="bg-indigo-950/30 border border-indigo-800/40 rounded-xl p-4 space-y-2">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs text-indigo-400 uppercase tracking-widest mb-0.5">🎯 Learning Objective</p>
+          <p className="text-sm text-zinc-200">{objective}</p>
+        </div>
+        <button onClick={() => setOpen(o => !o)}
+          className="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 font-mono border border-zinc-700 rounded px-2 py-1 transition-all">
+          {open ? "hide" : "how to use"}
+        </button>
+      </div>
+      {open && (
+        <div className="border-t border-indigo-800/30 pt-2 space-y-1">
+          {steps.map((s, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs text-zinc-400">
+              <span className="text-indigo-500 shrink-0 font-mono">{i+1}.</span>{s}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
 const INJECTION_SCENARIOS = [
@@ -631,17 +659,30 @@ function BiasDetector() {
 // ─── PLAYGROUND APP ───────────────────────────────────────────────────────────
 
 const PLAYGROUND_MODULES = [
-  { id: "injection",    label: "Prompt Injection",      tag: "ATTACK",  component: PromptInjectionPlayground },
-  { id: "chunking",     label: "Chunking Strategy Lab", tag: "RAG",     component: ChunkingLab },
-  { id: "reranker",     label: "Reranker Simulator",    tag: "RANK",    component: RerankerSim },
-  { id: "hallucinate",  label: "Spot the Hallucination",tag: "DETECT",  component: SpotHallucination },
-  { id: "tetris",       label: "Context Tetris",         tag: "BUDGET",  component: ContextTetris },
-  { id: "bias",         label: "Bias Detector",         tag: "FAIR",    component: BiasDetector },
+  { id: "injection",   label: "Prompt Injection",       tag: "ATTACK",  component: PromptInjectionPlayground,
+    objective: "See exactly how injection attacks work — and which guardrail layer catches (or misses) each one.",
+    howTo: ["Pick a bot (customer service or medical)", "Click each attack type to simulate it", "Watch the animated pipeline — where does it get blocked?", "Key insight: indirect injection via uploaded documents is the hardest to catch"] },
+  { id: "chunking",    label: "Chunking Strategy Lab",  tag: "RAG",     component: ChunkingLab,
+    objective: "Understand why chunking strategy is one of the highest-leverage decisions in any RAG system.",
+    howTo: ["Switch between strategies and watch the retrieval score change", "Read the pros/cons for each — there's no universally best strategy", "Paragraph-based scores highest here — but that's not always true in practice", "Ask: what would happen with code or legal documents?"] },
+  { id: "reranker",    label: "Reranker Simulator",     tag: "RANK",    component: RerankerSim,
+    objective: "Build intuition for why ANN vector retrieval order ≠ true relevance order, and what a reranker fixes.",
+    howTo: ["Read all 5 chunks for the given query", "Use ↑↓ to reorder them by your judgment of relevance", "Reveal true scores and compare your NDCG to vector score NDCG", "Key insight: vector similarity ≠ semantic relevance — reranker closes this gap"] },
+  { id: "hallucinate", label: "Spot the Hallucination", tag: "DETECT",  component: SpotHallucination,
+    objective: "Train your eye to detect hallucinated facts in model outputs — a critical skill for evals and production monitoring.",
+    howTo: ["Read all 3 outputs carefully — they'll sound equally confident", "Look for specific claims: names, dates, numbers, acronyms — these are where hallucinations hide", "Click the one you think is fabricated before revealing", "After: learn the pattern of what made it hallucinate"] },
+  { id: "tetris",      label: "Context Tetris",         tag: "BUDGET",  component: ContextTetris,
+    objective: "Learn to think in token budgets — every token in your context window is a cost and a trade-off decision.",
+    howTo: ["Toggle content pieces in/out of the context window", "Watch the bar fill up — try to stay under 4096 tokens", "Some items are locked (required) — you can only cut optional ones", "Real skill: knowing what to drop when you're over budget"] },
+  { id: "bias",        label: "Bias Detector",          tag: "FAIR",    component: BiasDetector,
+    objective: "Recognize subtle model bias patterns that appear in everyday AI outputs — the kind that slip past code review.",
+    howTo: ["Read all 3 outputs carefully — the bias is often subtle, not obvious", "Click the output you think contains a bias before revealing", "The explanation names the exact bias type and why it matters", "These patterns are real: they appear in production LLM outputs regularly"] },
 ];
 
 export default function PlaygroundApp() {
   const [activeModule, setActiveModule] = useState("injection");
-  const ActiveComponent = PLAYGROUND_MODULES.find(m => m.id === activeModule)?.component || PromptInjectionPlayground;
+  const mod = PLAYGROUND_MODULES.find(m => m.id === activeModule);
+  const ActiveComponent = mod?.component || PromptInjectionPlayground;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -658,6 +699,7 @@ export default function PlaygroundApp() {
           </button>
         ))}
       </div>
+      {mod?.objective && <HowTo objective={mod.objective} steps={mod.howTo} />}
       <ActiveComponent />
     </div>
   );

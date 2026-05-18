@@ -1,5 +1,33 @@
 import { useState } from "react";
 
+// ─── SHARED HOW-TO CARD ───────────────────────────────────────────────────────
+function HowTo({ objective, steps }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="bg-indigo-950/30 border border-indigo-800/40 rounded-xl p-4 space-y-2">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs text-indigo-400 uppercase tracking-widest mb-0.5">🎯 Learning Objective</p>
+          <p className="text-sm text-zinc-200">{objective}</p>
+        </div>
+        <button onClick={() => setOpen(o => !o)}
+          className="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 font-mono border border-zinc-700 rounded px-2 py-1 transition-all">
+          {open ? "hide" : "how to use"}
+        </button>
+      </div>
+      {open && (
+        <div className="border-t border-indigo-800/30 pt-2 space-y-1">
+          {steps.map((s, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs text-zinc-400">
+              <span className="text-indigo-500 shrink-0 font-mono">{i+1}.</span>{s}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
 const PRD_SCENARIOS = [
@@ -564,16 +592,27 @@ function AIOrNot() {
 // ─── AIPM APP ─────────────────────────────────────────────────────────────────
 
 const AIPM_MODULES = [
-  { id: "prd",        label: "PRD Simulator",         tag: "WRITE",       component: PRDSimulator },
-  { id: "roadmap",    label: "Roadmap Prioritizer",    tag: "PLAN",        component: RoadmapPrioritizer },
-  { id: "stakeholder",label: "Stakeholder Explainer",  tag: "COMMUNICATE", component: StakeholderExplainer },
-  { id: "checklist",  label: "Launch Checklist",       tag: "SHIP",        component: LaunchChecklist },
-  { id: "aiornot",    label: "AI or Not?",             tag: "DECIDE",      component: AIOrNot },
+  { id: "prd",        label: "PRD Simulator",         tag: "WRITE",       component: PRDSimulator,
+    objective: "Spot the PM decisions most teams get wrong when writing AI feature requirements.",
+    howTo: ["Read the scenario brief — this is your product context", "Answer each question before revealing the answer", "Pay attention to the 'Why' explanation — it's the PM intuition you're building", "Try all 3 scenarios — each covers a different failure mode"] },
+  { id: "roadmap",    label: "Roadmap Prioritizer",    tag: "PLAN",        component: RoadmapPrioritizer,
+    objective: "Build intuition for how constraints (speed vs safety vs ROI) change which AI features to build first.",
+    howTo: ["Start with Balanced mode — see the default priority order", "Switch constraint modes and watch how the rankings shift", "Adjust individual sliders to model your real situation", "The insight: the 'right' roadmap is always relative to your constraints"] },
+  { id: "stakeholder",label: "Stakeholder Explainer",  tag: "COMMUNICATE", component: StakeholderExplainer,
+    objective: "Learn to translate the same technical incident into the right language for each audience.",
+    howTo: ["Pick an incident (hallucination, latency spike, injection attack)", "Read how the same event is framed for engineer, exec, legal, and customer", "Notice what details are included/excluded for each audience", "Take the quiz — pick the right message for a given audience"] },
+  { id: "checklist",  label: "Launch Checklist",       tag: "SHIP",        component: LaunchChecklist,
+    objective: "Know exactly what must be done before shipping any AI feature to production — and why each item matters.",
+    howTo: ["Work through the checklist as if you're prepping to ship tomorrow", "Click the '?' on any item to see why it's required", "Watch the risk gauge — it goes green only when must-haves are covered", "Use this as a real pre-ship template for your team"] },
+  { id: "aiornot",    label: "AI or Not?",             tag: "DECIDE",      component: AIOrNot,
+    objective: "Develop sharp judgment for when AI (LLM, ML, rules) is the right tool — and when it's overkill or wrong.",
+    howTo: ["Read the product brief carefully before picking an answer", "Don't default to LLM — sometimes rules or traditional ML is correct", "Check the explanation after each answer — that's the PM reasoning pattern", "Track your score — this is a real interview question type"] },
 ];
 
 export default function AIPMApp() {
   const [activeModule, setActiveModule] = useState("prd");
-  const ActiveComponent = AIPM_MODULES.find(m => m.id === activeModule)?.component || PRDSimulator;
+  const mod = AIPM_MODULES.find(m => m.id === activeModule);
+  const ActiveComponent = mod?.component || PRDSimulator;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -590,6 +629,7 @@ export default function AIPMApp() {
           </button>
         ))}
       </div>
+      {mod?.objective && <HowTo objective={mod.objective} steps={mod.howTo} />}
       <ActiveComponent />
     </div>
   );

@@ -1,5 +1,33 @@
 import { useState } from "react";
 
+// ─── SHARED HOW-TO CARD ───────────────────────────────────────────────────────
+function HowTo({ objective, steps }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="bg-indigo-950/30 border border-indigo-800/40 rounded-xl p-4 space-y-2">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs text-indigo-400 uppercase tracking-widest mb-0.5">🎯 Learning Objective</p>
+          <p className="text-sm text-zinc-200">{objective}</p>
+        </div>
+        <button onClick={() => setOpen(o => !o)}
+          className="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 font-mono border border-zinc-700 rounded px-2 py-1 transition-all">
+          {open ? "hide" : "how to use"}
+        </button>
+      </div>
+      {open && (
+        <div className="border-t border-indigo-800/30 pt-2 space-y-1">
+          {steps.map((s, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs text-zinc-400">
+              <span className="text-indigo-500 shrink-0 font-mono">{i+1}.</span>{s}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
 const SYSTEM_DESIGN_PROMPTS = [
@@ -525,15 +553,24 @@ function BenchmarkLiteracy() {
 // ─── CAREER APP ───────────────────────────────────────────────────────────────
 
 const CAREER_MODULES = [
-  { id: "sysdesign",   label: "System Design",      tag: "DESIGN",     component: SystemDesignInterview },
-  { id: "takehome",    label: "Take-home Challenge", tag: "CHALLENGE",  component: TakeHomeChallenge },
-  { id: "negotiation", label: "Negotiation Cards",   tag: "PUSHBACK",   component: NegotiationFlashcards },
-  { id: "benchmarks",  label: "Benchmark Literacy",  tag: "SKEPTIC",    component: BenchmarkLiteracy },
+  { id: "sysdesign",   label: "System Design",      tag: "DESIGN",    component: SystemDesignInterview,
+    objective: "Practice the AI system design interview: identify critical components and explain why each one matters at scale.",
+    howTo: ["Read the design prompt and scale constraints — these should drive your choices", "Check every component you'd include before revealing", "After reveal: read the explanation for components you missed — they're production lessons, not trivia", "Focus especially on components you skipped — those are your blind spots"] },
+  { id: "takehome",    label: "Take-home Challenge", tag: "CHALLENGE", component: TakeHomeChallenge,
+    objective: "Sharpen three real AI take-home skills: ranking model outputs, debugging prompts, and designing evals.",
+    howTo: ["Each challenge type appears in real interviews and design reviews", "Rank Outputs: don't just pick 'most helpful' — think about hallucination, specificity, trust", "Fix Prompt: look for contradictions, vagueness, and missing constraints", "Design Eval: good evals need edge cases and the right scoring method, not just happy path tests"] },
+  { id: "negotiation", label: "Negotiation Cards",   tag: "PUSHBACK",  component: NegotiationFlashcards,
+    objective: "Handle the 5 most common stakeholder pushbacks on AI features without caving or being dismissive.",
+    howTo: ["Read what the stakeholder says — take it seriously, don't dismiss it", "Pick your response before revealing — commit to an answer", "The right response always: acknowledges the concern, reframes with data, and maintains momentum", "These scenarios are drawn from real AI project conversations"] },
+  { id: "benchmarks",  label: "Benchmark Literacy",  tag: "SKEPTIC",   component: BenchmarkLiteracy,
+    objective: "Stop being fooled by benchmark claims — learn to identify when a metric is misleading, incomplete, or suspect.",
+    howTo: ["Read the claim as if a vendor or colleague just said it to you in a meeting", "Pick your verdict before revealing", "The goal isn't to be cynical — it's to ask the right follow-up questions", "After each round, memorize the failure mode — you'll see it again"] },
 ];
 
 export default function CareerApp() {
   const [activeModule, setActiveModule] = useState("sysdesign");
-  const ActiveComponent = CAREER_MODULES.find(m => m.id === activeModule)?.component || SystemDesignInterview;
+  const mod = CAREER_MODULES.find(m => m.id === activeModule);
+  const ActiveComponent = mod?.component || SystemDesignInterview;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -550,6 +587,7 @@ export default function CareerApp() {
           </button>
         ))}
       </div>
+      {mod?.objective && <HowTo objective={mod.objective} steps={mod.howTo} />}
       <ActiveComponent />
     </div>
   );
