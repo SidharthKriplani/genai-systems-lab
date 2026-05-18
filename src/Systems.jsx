@@ -2282,6 +2282,188 @@ function EvalFrameworksLab() {
   );
 }
 
+// ─── CONTEXT COMPACTION ───────────────────────────────────────────────────────
+
+const COMPACTION_STRATEGIES = [
+  {
+    id: "rolling",
+    name: "Rolling Window",
+    color: "#6366f1",
+    icon: "🪟",
+    desc: "Keep the most recent N turns verbatim. Oldest turns are dropped entirely when context fills.",
+    when: "Simple chatbots and single-session assistants where recent context is everything. Fast and cheap.",
+    tradeoff: "Loses early context entirely. User mentions their name in turn 1 — agent forgets by turn 20. Bad for tasks that reference earlier information.",
+    example: "Keep last 10 turns. When turn 11 arrives, drop turn 1.",
+    cost: "Zero extra tokens",
+    complexity: "LOW",
+    lossless: false,
+  },
+  {
+    id: "summary",
+    name: "Hierarchical Summary",
+    color: "#3b82f6",
+    icon: "📋",
+    desc: "Older turns are summarized by LLM call. Summary replaces full history in context. New turns appended verbatim.",
+    when: "Long multi-turn conversations (support agents, research assistants) where early context matters but full verbatim isn't needed.",
+    tradeoff: "Summary quality depends on summarizer model quality. Adds latency + cost for the summarization call. Can lose nuance.",
+    example: "Turns 1-15 → 'User is researching LLM evals for a fintech startup. Prefers Python. Interested in RAGAS.' Keep turns 16+ verbatim.",
+    cost: "Extra LLM call per compaction",
+    complexity: "MED",
+    lossless: false,
+  },
+  {
+    id: "pinned",
+    name: "Pinned + Dynamic",
+    color: "#22c55e",
+    icon: "📌",
+    desc: "Critical context (system prompt, key facts, user preferences) is pinned and never evicted. Dynamic context (conversation history) is managed by rolling window or summary.",
+    when: "Agents with important persistent state — user profile, active task spec, constraints that must never be forgotten.",
+    tradeoff: "Pinned context uses budget permanently. Easy to pin too much. Requires explicit design decision about what is 'critical'.",
+    example: "Pinned: user preferences, active task, constraints (400 tokens). Dynamic: last 5 turns (rolling).",
+    cost: "Fixed overhead for pinned section",
+    complexity: "MED",
+    lossless: false,
+  },
+  {
+    id: "rag",
+    name: "Memory RAG",
+    color: "#f59e0b",
+    icon: "🗄",
+    desc: "Long history is stored externally in a vector DB. Relevant prior turns are retrieved and injected at query time — just like document RAG but for conversation history.",
+    when: "Long-running agents (days/weeks), user-specific personalization, any system where relevant history > what fits in context.",
+    tradeoff: "Requires a vector DB + embedding pipeline for conversation history. Retrieval precision matters — wrong memories injected = confusion. More infrastructure.",
+    example: "Store all 200 prior turns as embeddings. Each new query retrieves top-3 most relevant past turns and prepends them to context.",
+    cost: "Embedding + vector storage + retrieval per query",
+    complexity: "HIGH",
+    lossless: true,
+  },
+];
+
+const COMPLEXITY_COLORS = { LOW: "#22c55e", MED: "#f59e0b", HIGH: "#ef4444" };
+
+function ContextCompaction() {
+  const [sel, setSel] = useState("rolling");
+  const [budgetK, setBudgetK] = useState(16);
+  const strategy = COMPACTION_STRATEGIES.find(s => s.id === sel);
+
+  // Simulate how many turns fit
+  const AVG_TURN_TOKENS = 150;
+  const SYSTEM_TOKENS = 800;
+  const available = budgetK * 1000 - SYSTEM_TOKENS;
+  const turnsFit = Math.floor(available / AVG_TURN_TOKENS);
+
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Understand how to manage context as it fills — before your agent starts forgetting things or hitting context limits mid-task."
+        steps={[
+          "Understand why compaction is needed: context windows are finite, and long conversations overflow them",
+          "Pick a strategy based on your use case — rolling window for simple chat, Memory RAG for long-running agents",
+          "Use the calculator to understand how many turns fit before compaction is needed",
+        ]}
+      />
+
+      {/* Why this matters */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/10 p-4">
+        <div className="text-xs font-bold text-amber-400 uppercase mb-2">Why This Matters</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">
+          A 16K context window holds ~{Math.floor((16000 - 800) / 150)} turns at ~150 tokens each.
+          Most production assistants hit this within minutes of use. Without a compaction strategy,
+          your agent either <span className="text-white font-bold">throws a context overflow error</span> or{" "}
+          <span className="text-white font-bold">silently forgets everything before the cutoff</span>.
+          Neither is acceptable in production.
+        </p>
+      </div>
+
+      {/* Context calculator */}
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-4 space-y-3">
+        <div className="text-xs font-bold text-zinc-400 uppercase">Context Budget Calculator</div>
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs">
+            <span className="text-zinc-400">Context window</span>
+            <span className="font-mono text-white">{budgetK}K tokens</span>
+          </div>
+          <input type="range" min={4} max={128} step={4} value={budgetK}
+            onChange={e => setBudgetK(+e.target.value)} className="w-full accent-violet-500" />
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          {[
+            { label: "System prompt", val: "~800", color: "#6366f1" },
+            { label: "Available for history", val: `~${(available/1000).toFixed(0)}K`, color: "#3b82f6" },
+            { label: "Turns before overflow", val: turnsFit, color: "#22c55e" },
+          ].map(({ label, val, color }) => (
+            <div key={label} className="bg-zinc-800 rounded-lg p-2">
+              <div className="text-sm font-bold font-mono" style={{ color }}>{val}</div>
+              <div className="text-xs text-zinc-600 mt-0.5">{label}</div>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-zinc-600">Assumes ~150 tokens/turn avg, 800 token system prompt. Pick a strategy below for when you hit the limit.</p>
+      </div>
+
+      {/* Strategy picker */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {COMPACTION_STRATEGIES.map(s => (
+          <button key={s.id} onClick={() => setSel(s.id)}
+            className={`rounded-xl border p-3 text-left transition-all ${sel === s.id ? "" : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"}`}
+            style={sel === s.id ? { borderColor: s.color, background: s.color + "0f" } : {}}>
+            <div className="text-lg mb-1">{s.icon}</div>
+            <div className="text-xs font-bold text-white leading-tight">{s.name}</div>
+            <div className="text-[10px] font-mono mt-1" style={{ color: COMPLEXITY_COLORS[s.complexity] }}>{s.complexity}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Strategy detail */}
+      <div className="rounded-xl border p-5 space-y-4" style={{ borderColor: strategy.color + "44", background: strategy.color + "08" }}>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xl">{strategy.icon}</span>
+          <span className="text-base font-black text-white">{strategy.name}</span>
+          <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded" style={{ color: COMPLEXITY_COLORS[strategy.complexity], background: COMPLEXITY_COLORS[strategy.complexity] + "22" }}>
+            {strategy.complexity} COMPLEXITY
+          </span>
+          <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded ml-auto ${strategy.lossless ? "text-emerald-400 bg-emerald-950/40" : "text-zinc-500 bg-zinc-800"}`}>
+            {strategy.lossless ? "LOSSLESS" : "LOSSY"}
+          </span>
+        </div>
+
+        <p className="text-sm text-zinc-300 leading-relaxed">{strategy.desc}</p>
+
+        <div className="bg-zinc-900 rounded-lg p-3">
+          <div className="text-xs text-zinc-500 mb-1">Example</div>
+          <p className="text-xs text-zinc-300 font-mono leading-relaxed italic">{strategy.example}</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-emerald-950/20 border border-emerald-900/30 rounded-lg p-3">
+            <div className="text-xs text-emerald-400 mb-1">Use when</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{strategy.when}</p>
+          </div>
+          <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-3">
+            <div className="text-xs text-red-400 mb-1">Watch out</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{strategy.tradeoff}</p>
+          </div>
+          <div className="bg-zinc-800/60 rounded-lg p-3">
+            <div className="text-xs text-zinc-500 mb-1">Extra cost</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{strategy.cost}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Decision guide */}
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-4">
+        <div className="text-xs font-bold text-zinc-400 uppercase mb-3">Decision Guide</div>
+        <div className="space-y-2 text-xs font-mono">
+          <div className="flex gap-2"><span className="text-zinc-500 w-40 shrink-0">Simple chatbot</span><span className="text-zinc-300">→ Rolling Window</span></div>
+          <div className="flex gap-2"><span className="text-zinc-500 w-40 shrink-0">Support / research agent</span><span className="text-zinc-300">→ Hierarchical Summary</span></div>
+          <div className="flex gap-2"><span className="text-zinc-500 w-40 shrink-0">Agent with persistent state</span><span className="text-zinc-300">→ Pinned + Dynamic</span></div>
+          <div className="flex gap-2"><span className="text-zinc-500 w-40 shrink-0">Long-running / personalized</span><span className="text-zinc-300">→ Memory RAG</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── SYSTEMS APP ─────────────────────────────────────────────────────────────
 
 const SYSTEMS_MODULES = [
@@ -2299,6 +2481,7 @@ const SYSTEMS_MODULES = [
   { id: "observability", label: "Observability",      tag: "OPS",      group: "OPS",     component: LLMObservability },
   { id: "abtesting",     label: "A/B Testing",        tag: "SHIP",     group: "OPS",     component: ABTestingLab     },
   { id: "mlcicd",        label: "ML CI/CD",           tag: "DEPLOY",   group: "OPS",     component: MLCiCdLab        },
+  { id: "compaction",    label: "Context Compaction",  tag: "CONTEXT",  group: "BUILD",   component: ContextCompaction },
 ];
 
 const SYSTEMS_GROUPS = [

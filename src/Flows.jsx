@@ -691,6 +691,228 @@ function TransformerBlockDiagram() {
   );
 }
 
+// ─── 6. RAG ARCHITECTURES ────────────────────────────────────────────────────
+
+const RAG_ARCHS = [
+  {
+    id: "hybrid", label: "Hybrid RAG", color: "#6366f1",
+    tagline: "Dense vectors + sparse keywords. The production standard.",
+    when: "Default for any production RAG — especially when users include exact terms, product names, or codes that semantic search misses.",
+    insight: "BM25 catches keyword matches that vector search misses. Reciprocal Rank Fusion (RRF) merges both result lists without needing to tune weights. 15–25% better retrieval accuracy on domain-specific corpora.",
+    left: [
+      { label: "Embedding Model", sub: "text-embedding-3", color: "#6366f1" },
+      { label: "Vector DB", sub: "ANN search", color: "#6366f1" },
+      { label: "Dense Results", sub: "semantic matches", color: "#6366f1" },
+    ],
+    right: [
+      { label: "BM25 Index", sub: "sparse index", color: "#3b82f6" },
+      { label: "Sparse Results", sub: "keyword matches", color: "#3b82f6" },
+    ],
+    merge: [
+      { label: "RRF Fusion", sub: "rank merging", color: "#8b5cf6" },
+      { label: "Top-K Chunks", sub: "reranked", color: "#8b5cf6" },
+      { label: "LLM", sub: "generate", color: "#a78bfa" },
+      { label: "Answer", sub: "grounded", color: "#22c55e" },
+    ],
+    why_not: "Pure vector search fails on exact keywords: product codes, legal citations, named entities. Pure BM25 fails on paraphrase. Hybrid wins both.",
+  },
+  {
+    id: "crag", label: "Corrective RAG (CRAG)", color: "#f59e0b",
+    tagline: "Grade retrieval before trusting it. Never answer from bad context.",
+    when: "High-stakes domains: legal, medical, finance, compliance. Any system where a confident wrong answer is worse than saying 'I don't know'.",
+    insight: "The Evaluator/Grader is the key innovation — it prevents confident wrong answers. If retrieved docs score below threshold, it rewrites the query or falls back to web search before generation.",
+    branches: [
+      { label: "CORRECT", color: "#22c55e", path: ["LLM", "Answer"] },
+      { label: "AMBIGUOUS", color: "#f59e0b", path: ["Query Rewriter", "→ Retriever (retry)"] },
+      { label: "INCORRECT", color: "#ef4444", path: ["Web Search Fallback", "LLM", "Answer"] },
+    ],
+    pipeline: ["Query", "Retriever", "Retrieved Docs", "Evaluator / Grader"],
+    why_not: "Adds latency and complexity. Don't use for low-stakes chatbots. The evaluator itself can misgrade — calibrate thresholds carefully.",
+  },
+  {
+    id: "agentic", label: "Agentic RAG", color: "#22c55e",
+    tagline: "Retrieval becomes a plan, not a step. The planner decides what to retrieve and from where.",
+    when: "Multi-source queries, complex research tasks, enterprise systems with heterogeneous data sources (vector DB + SQL + web + files).",
+    insight: "The Planner Agent decides how many retrieval steps are needed and from which sources. It loops until confident — or until max steps. Retrieval is no longer fixed at 'fetch top-k vectors'.",
+    tools: ["Vector Search Tool", "Web Search Tool", "SQL Database Tool", "File Search Tool"],
+    pipeline: ["Query", "Planner Agent", "→ tools (loop)", "Reasoner Agent", "Final Answer"],
+    why_not: "Highest complexity and latency. Can loop excessively without a max_steps guard. Overkill for single-source, straightforward lookups.",
+  },
+];
+
+function RAGArchitecturesDiagram() {
+  const [archId, setArchId] = useState("hybrid");
+  const [step, setStep] = useState(-1);
+  const [playing, setPlaying] = useState(false);
+  const arch = RAG_ARCHS.find(a => a.id === archId);
+
+  const allStages = archId === "hybrid"
+    ? [...arch.left, ...arch.right, ...arch.merge]
+    : arch.pipeline.length;
+  const maxSteps = archId === "hybrid" ? arch.left.length + arch.right.length + arch.merge.length
+    : archId === "crag" ? arch.pipeline.length + 3
+    : arch.pipeline.length;
+
+  useEffect(() => {
+    if (!playing) return;
+    if (step >= maxSteps - 1) { setPlaying(false); return; }
+    const t = setTimeout(() => setStep(s => s + 1), 600);
+    return () => clearTimeout(t);
+  }, [playing, step, maxSteps]);
+
+  function switchArch(id) { setArchId(id); setStep(-1); setPlaying(false); }
+  function start() { setStep(0); setPlaying(true); }
+  function reset() { setStep(-1); setPlaying(false); }
+
+  const active = (i) => step >= i;
+
+  return (
+    <div className="space-y-5">
+      {/* Arch picker */}
+      <div className="flex gap-2 flex-wrap">
+        {RAG_ARCHS.map(a => (
+          <button key={a.id} onClick={() => switchArch(a.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${archId === a.id ? "text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+            style={archId === a.id ? { backgroundColor: a.color } : {}}>
+            {a.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tagline */}
+      <div className="rounded-xl border bg-zinc-900/60 p-4" style={{ borderColor: arch.color + "44" }}>
+        <p className="text-sm font-bold text-white">{arch.tagline}</p>
+        <p className="text-xs text-zinc-500 mt-1">{arch.insight}</p>
+      </div>
+
+      {/* Diagram */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-5 space-y-4">
+
+        {archId === "hybrid" && (
+          <div className="space-y-3">
+            {/* Query node */}
+            <div className="flex items-center gap-2">
+              <StageBox label="Query" sublabel="user input" active={active(0)} color={arch.color} minW="80px" />
+              <Arrow active={active(0)} color={arch.color} />
+              <div className="flex-1 text-xs text-zinc-600 font-mono">splits into two parallel paths →</div>
+            </div>
+            {/* Two branches */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-4 border-l-2 border-dashed border-zinc-700">
+              <div className="space-y-2">
+                <div className="text-[10px] font-mono text-indigo-400 uppercase">Dense (semantic)</div>
+                {arch.left.map((s, i) => (
+                  <div key={i}>
+                    <StageBox label={s.label} sublabel={s.sub} active={active(i + 1)} color={s.color} minW="auto" />
+                    {i < arch.left.length - 1 && <Arrow active={active(i + 2)} vertical color={s.color} />}
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <div className="text-[10px] font-mono text-blue-400 uppercase">Sparse (keyword)</div>
+                {arch.right.map((s, i) => (
+                  <div key={i}>
+                    <StageBox label={s.label} sublabel={s.sub} active={active(arch.left.length + i + 1)} color={s.color} minW="auto" />
+                    {i < arch.right.length - 1 && <Arrow active={active(arch.left.length + i + 2)} vertical color={s.color} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Merge stages */}
+            <div className="flex items-center gap-1 flex-wrap">
+              {arch.merge.map((s, i) => (
+                <div key={i} className="flex items-center gap-1 shrink-0">
+                  <StageBox label={s.label} sublabel={s.sub} active={active(arch.left.length + arch.right.length + i + 1)} color={s.color} minW="80px" />
+                  {i < arch.merge.length - 1 && <Arrow active={active(arch.left.length + arch.right.length + i + 2)} color={s.color} />}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {archId === "crag" && (
+          <div className="space-y-3">
+            {/* Linear pipeline */}
+            <div className="flex items-center gap-1 flex-wrap">
+              {arch.pipeline.map((s, i) => (
+                <div key={i} className="flex items-center gap-1 shrink-0">
+                  <StageBox label={s} sublabel={i === 3 ? "scores docs" : ""} active={active(i)} color={i < 3 ? "#f59e0b" : "#ef4444"} minW="80px" />
+                  {i < arch.pipeline.length - 1 && <Arrow active={active(i + 1)} color="#f59e0b" />}
+                </div>
+              ))}
+            </div>
+            {/* Three branches */}
+            <div className="text-xs text-zinc-500 font-mono pl-2">↓ Evaluator grades retrieved docs — three outcomes:</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {arch.branches.map((b, i) => (
+                <div key={i} className={`rounded-xl border p-3 space-y-2 transition-all ${active(arch.pipeline.length + i) ? "" : "opacity-40"}`}
+                  style={{ borderColor: b.color + "66", background: b.color + "0a" }}>
+                  <div className="text-xs font-bold" style={{ color: b.color }}>{b.label}</div>
+                  {b.path.map((p, j) => (
+                    <div key={j} className="flex items-center gap-1">
+                      {j > 0 && <span className="text-zinc-700 text-xs">→</span>}
+                      <span className="text-xs font-mono text-zinc-300">{p}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {archId === "agentic" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-1 flex-wrap">
+              {arch.pipeline.map((s, i) => (
+                <div key={i} className="flex items-center gap-1 shrink-0">
+                  <StageBox label={s} sublabel={i === 2 ? "decides what to fetch" : i === 3 ? "synthesizes" : ""} active={active(i)} color={arch.color} minW="80px">
+                    {i === 2 && active(i) && (
+                      <div className="mt-1 space-y-0.5">
+                        {arch.tools.map((t, j) => (
+                          <div key={j} className="text-xs text-zinc-400">• {t}</div>
+                        ))}
+                      </div>
+                    )}
+                  </StageBox>
+                  {i < arch.pipeline.length - 1 && <Arrow active={active(i + 1)} color={arch.color} />}
+                </div>
+              ))}
+            </div>
+            {active(2) && (
+              <div className="rounded bg-emerald-950/20 border border-emerald-800/30 p-3 text-xs text-emerald-300 space-y-1">
+                <div className="font-bold">Planner selects tools based on query type:</div>
+                <div>• "What's our Q3 revenue?" → SQL tool</div>
+                <div>• "Latest news on competitor X?" → Web search</div>
+                <div>• "Find our product spec?" → Vector search</div>
+                <div>• Loops until reasoner agent is confident — or hits max_steps</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Controls */}
+        <div className="flex gap-2 pt-2">
+          {step === -1 && <button onClick={start} className="px-4 py-1.5 rounded text-white text-xs font-bold" style={{ background: arch.color }}>▶ Run pipeline</button>}
+          {playing  && <button onClick={() => setPlaying(false)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">⏸ Pause</button>}
+          {!playing && step > 0 && step < maxSteps - 1 && <button onClick={() => setPlaying(true)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">▶ Resume</button>}
+          {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold">↺ Reset</button>}
+        </div>
+      </div>
+
+      {/* When to use / avoid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/10 p-4">
+          <div className="text-xs text-emerald-400 font-bold uppercase mb-2">Use when</div>
+          <p className="text-xs text-zinc-300 leading-relaxed">{arch.when}</p>
+        </div>
+        <div className="rounded-xl border border-red-800/30 bg-red-950/10 p-4">
+          <div className="text-xs text-red-400 font-bold uppercase mb-2">Avoid when / Watch out</div>
+          <p className="text-xs text-zinc-300 leading-relaxed">{arch.why_not || arch.pipeline && "Adds latency. Calibrate the evaluator thresholds carefully — a miscalibrated grader causes more fallbacks than necessary."}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── FLOWS APP ────────────────────────────────────────────────────────────────
 const FLOW_TABS = [
   { id: "rag",         label: "RAG Pipeline",        tag: "FLOW",    component: RAGFlowDiagram,
@@ -703,6 +925,8 @@ const FLOW_TABS = [
     desc: "Send 4 input types through a two-layer guardrail system. See which layer catches what — and what slips through." },
   { id: "transformer", label: "Transformer Block",    tag: "ARCH",    component: TransformerBlockDiagram,
     desc: "One token's journey through a single transformer block — embedding, attention, FFN, residuals, logits." },
+  { id: "ragarch",    label: "RAG Architectures",   tag: "PATTERNS", component: RAGArchitecturesDiagram,
+    desc: "Hybrid RAG, Corrective RAG, and Agentic RAG — animated pipelines with when-to-use guidance for each." },
 ];
 
 export default function FlowsApp() {

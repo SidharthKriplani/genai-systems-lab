@@ -264,8 +264,115 @@ function KVCacheExplainer() {
   );
 }
 
+// ─── DECISION FRAMEWORK ───────────────────────────────────────────────────────
+
+const SYMPTOMS = [
+  {
+    id: "ttft",
+    label: "TTFT too high",
+    sub: "First token is slow",
+    color: "#6366f1",
+    bottleneck: "Prefill is compute-bound",
+    desc: "Users wait before seeing any output. Prefill is processing all input tokens at once — expensive for long prompts.",
+    techniques: [
+      { name: "Prompt Caching", impact: "HIGH", gain: "40–80% TTFT reduction", desc: "Skip prefill recompute on shared prefixes — system prompt, retrieved docs, instructions. Biggest TTFT win for RAG pipelines with shared context." },
+      { name: "FlashAttention", impact: "HIGH", gain: "2–4× faster prefill", desc: "I/O-aware kernel that reduces HBM data transfer during attention computation. Drop-in replacement — no quality change." },
+      { name: "Chunked Prefill", impact: "MED", gain: "Reduces p99 TTFT", desc: "Splits large prompts into smaller chunks to avoid blocking other requests. Prevents head-of-line blocking in high-concurrency systems." },
+    ],
+  },
+  {
+    id: "tpot",
+    label: "TPOT too high",
+    sub: "Output tokens are slow",
+    color: "#ef4444",
+    bottleneck: "Decode is memory-bandwidth-bound",
+    desc: "Streaming starts but each token takes too long. Decode reads model weights from HBM once per token — bandwidth is the bottleneck, not compute.",
+    techniques: [
+      { name: "Speculative Decoding", impact: "HIGH", gain: "2–3× faster decode", desc: "Small draft model generates 3–12 candidate tokens, large model verifies in one parallel pass. Same quality, dramatically faster decode for structured outputs and summarization." },
+      { name: "Weight Quantization", impact: "HIGH", gain: "1.5–4× faster decode", desc: "INT4/INT8 reduces weight data moved from HBM per token. Biggest single lever for decode speed — INT8 at <1.5% quality loss is the production sweet spot." },
+      { name: "KV Cache Quantization", impact: "HIGH", gain: "Up to 8× faster at 4-bit", desc: "Compress KV activations to ~3.5 bits (TurboQuant). 6× less cache memory. Biggest gains on H100 at long context." },
+      { name: "PagedAttention", impact: "MED", gain: "More concurrent requests", desc: "Allocates KV cache in dynamic pages — eliminates memory waste from fixed-size reservations. Standard in vLLM." },
+    ],
+  },
+  {
+    id: "throughput",
+    label: "Throughput collapse",
+    sub: "GPU idle or OOM at scale",
+    color: "#f59e0b",
+    bottleneck: "Scheduling-bound",
+    desc: "System can't handle concurrent requests — GPU is underutilized or requests are OOM-ing. Static batching leaves GPU idle between requests.",
+    techniques: [
+      { name: "Continuous Batching", impact: "HIGH", gain: "10–20× throughput", desc: "Evicts finished requests instantly, slots in new ones. Keeps GPU fully utilized at all times. Standard in vLLM, TGI. Single biggest throughput lever." },
+      { name: "PagedAttention", impact: "HIGH", gain: "2–4× more concurrency", desc: "Dynamic KV cache paging eliminates wasted GPU memory, enabling far more concurrent sequences without OOM errors." },
+      { name: "Mixture of Experts", impact: "HIGH", gain: "Same quality, fraction of compute", desc: "Only a subset of expert layers activates per token. Large model capacity at fraction of per-token compute. Mistral, Grok, GPT-4 use this architecture." },
+    ],
+  },
+];
+
+const IMPACT_COLORS = { HIGH: "#22c55e", MED: "#f59e0b", LOW: "#71717a" };
+
+function DecisionFramework() {
+  const [sel, setSel] = useState("ttft");
+  const symptom = SYMPTOMS.find(s => s.id === sel);
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/50 p-4">
+        <p className="text-xs text-zinc-400 leading-relaxed">
+          <span className="text-white font-bold">Match your symptom to the technique.</span> TTFT, TPOT, and Throughput have different root causes — and different fixes. Applying the wrong technique wastes engineering time.
+        </p>
+      </div>
+
+      {/* Symptom selector */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {SYMPTOMS.map(s => (
+          <button key={s.id} onClick={() => setSel(s.id)}
+            className={`rounded-xl border p-4 text-left transition-all ${sel === s.id ? "" : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"}`}
+            style={sel === s.id ? { borderColor: s.color, background: s.color + "0f" } : {}}>
+            <div className="text-sm font-bold" style={{ color: sel === s.id ? s.color : "#a1a1aa" }}>{s.label}</div>
+            <div className="text-xs text-zinc-500 mt-0.5">{s.sub}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Bottleneck explanation */}
+      <div className="rounded-xl border p-4" style={{ borderColor: symptom.color + "44", background: symptom.color + "08" }}>
+        <div className="text-xs font-mono font-bold uppercase mb-1" style={{ color: symptom.color }}>Root cause: {symptom.bottleneck}</div>
+        <p className="text-sm text-zinc-300 leading-relaxed">{symptom.desc}</p>
+      </div>
+
+      {/* Techniques */}
+      <div className="space-y-2">
+        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Recommended fixes — sorted by impact</div>
+        {symptom.techniques.map((t, i) => (
+          <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm font-bold text-white">{t.name}</span>
+              <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded" style={{ color: IMPACT_COLORS[t.impact], background: IMPACT_COLORS[t.impact] + "22" }}>
+                {t.impact} IMPACT
+              </span>
+              <span className="text-xs font-mono ml-auto" style={{ color: symptom.color }}>{t.gain}</span>
+            </div>
+            <p className="text-xs text-zinc-400 leading-relaxed">{t.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick reference */}
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-4">
+        <div className="text-xs font-bold text-zinc-400 uppercase mb-3">Quick Reference</div>
+        <div className="space-y-1.5 text-xs font-mono">
+          <div className="flex gap-2"><span className="text-indigo-400 w-28 shrink-0">TTFT too high</span><span className="text-zinc-400">→ Prompt caching (if shared prefix) · FlashAttention · Chunked prefill</span></div>
+          <div className="flex gap-2"><span className="text-red-400 w-28 shrink-0">TPOT too high</span><span className="text-zinc-400">→ Speculative decoding · Weight quantization · KV cache quantization</span></div>
+          <div className="flex gap-2"><span className="text-amber-400 w-28 shrink-0">Throughput low</span><span className="text-zinc-400">→ Continuous batching (first) · PagedAttention · MoE architecture</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
 const TABS = [
+  { id: "decision",  label: "Decision Framework" },
   { id: "quant",    label: "Quantization" },
   { id: "batching", label: "Batch Size"   },
   { id: "kvcache",  label: "KV Cache"     },
@@ -299,6 +406,7 @@ export default function InferenceOptimizer() {
           </button>
         ))}
       </div>
+      {tab === "decision" && <DecisionFramework />}
       {tab === "quant"    && <QuantizationLab />}
       {tab === "batching" && <BatchingSimulator />}
       {tab === "kvcache"  && <KVCacheExplainer />}

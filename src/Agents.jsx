@@ -166,10 +166,11 @@ function ToolUseDesign() {
         steps={[
           "Tool Schemas: compare a weak vs well-designed schema side-by-side — see exactly what changes",
           "Calling Patterns: understand sequential, parallel, and conditional tool use and when each applies",
+          "MCP Protocol: learn how the Model Context Protocol standardises tool integration across any LLM client",
         ]}
       />
-      <div className="flex gap-2">
-        {[{ id: "schemas", label: "Tool Schemas", tag: "DESIGN" }, { id: "patterns", label: "Calling Patterns", tag: "PATTERNS" }].map(t => (
+      <div className="flex gap-2 flex-wrap">
+        {[{ id: "schemas", label: "Tool Schemas", tag: "DESIGN" }, { id: "patterns", label: "Calling Patterns", tag: "PATTERNS" }, { id: "mcp", label: "MCP Protocol", tag: "MCP" }].map(t => (
           <button key={t.id} onClick={() => setView(t.id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${view === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
             <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${view === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
@@ -226,6 +227,109 @@ function ToolUseDesign() {
                 <div className="text-xs text-amber-500 mb-1">Risk</div>
                 <p className="text-xs text-zinc-300 leading-relaxed">{pattern.risk}</p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {view === "mcp" && (
+        <div className="space-y-5">
+          <div className="rounded-xl border border-violet-800/40 bg-violet-950/20 p-4">
+            <div className="text-xs font-bold text-violet-400 uppercase mb-1">What is MCP?</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Model Context Protocol (MCP) is Anthropic's open standard for connecting LLMs to external tools and data sources. Instead of each app defining its own tool-calling format, MCP provides a universal client–server protocol — the model speaks one language, and any compliant server can expose tools, prompts, and resources.
+            </p>
+          </div>
+
+          {/* MCP vs raw function calling */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 space-y-2">
+              <div className="text-xs font-bold text-zinc-400 uppercase">Raw Function Calling</div>
+              <ul className="space-y-1.5 text-xs text-zinc-400">
+                <li className="flex gap-2"><span className="text-red-400 shrink-0">✗</span>Tool schemas hardcoded per app</li>
+                <li className="flex gap-2"><span className="text-red-400 shrink-0">✗</span>No standard for auth or transport</li>
+                <li className="flex gap-2"><span className="text-red-400 shrink-0">✗</span>Each tool integration is custom glue code</li>
+                <li className="flex gap-2"><span className="text-red-400 shrink-0">✗</span>Context/resources passed manually in prompt</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/20 p-4 space-y-2">
+              <div className="text-xs font-bold text-emerald-400 uppercase">MCP</div>
+              <ul className="space-y-1.5 text-xs text-zinc-300">
+                <li className="flex gap-2"><span className="text-emerald-400 shrink-0">✓</span>Standard schema discovery at runtime</li>
+                <li className="flex gap-2"><span className="text-emerald-400 shrink-0">✓</span>Transport-agnostic (stdio, HTTP/SSE)</li>
+                <li className="flex gap-2"><span className="text-emerald-400 shrink-0">✓</span>Server exposes tools, prompts, resources</li>
+                <li className="flex gap-2"><span className="text-emerald-400 shrink-0">✓</span>Reusable across any MCP-compatible client</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* MCP architecture diagram */}
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5">
+            <div className="text-xs font-bold text-zinc-400 uppercase mb-4">MCP Architecture</div>
+            <div className="flex flex-col sm:flex-row items-center gap-3 text-xs font-mono">
+              <div className="flex flex-col items-center gap-1">
+                <div className="bg-violet-600/20 border border-violet-600/50 rounded-lg px-3 py-2 text-violet-300 font-bold">LLM / Host</div>
+                <div className="text-[10px] text-zinc-500">Claude, GPT, etc.</div>
+              </div>
+              <div className="flex flex-col items-center gap-0.5 text-zinc-500">
+                <span>←→</span>
+                <span className="text-[9px]">MCP Client</span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {[
+                  { label: "File Server", color: "#3b82f6", desc: "read/write files" },
+                  { label: "DB Server", color: "#f59e0b", desc: "SQL queries" },
+                  { label: "API Server", color: "#22c55e", desc: "external APIs" },
+                  { label: "Git Server", color: "#ef4444", desc: "repo context" },
+                ].map(s => (
+                  <div key={s.label} className="flex items-center gap-2">
+                    <div className="w-8 border-t border-dashed border-zinc-600" />
+                    <div className="rounded-lg px-2.5 py-1 text-[10px] font-bold" style={{ background: s.color + "20", color: s.color, border: `1px solid ${s.color}40` }}>
+                      {s.label}
+                    </div>
+                    <span className="text-zinc-500 text-[10px]">{s.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Three primitives */}
+          <div>
+            <div className="text-xs font-bold text-zinc-400 uppercase mb-2">Three MCP Primitives</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { name: "Tools", color: "#6366f1", desc: "Model-invoked functions. The main primitive for agent action. Schema-defined, server-executed.", example: "search_web(query), run_sql(stmt)" },
+                { name: "Resources", color: "#3b82f6", desc: "App-controlled data that the model can read. Injected into context without a tool call.", example: "file://report.pdf, db://schema" },
+                { name: "Prompts", color: "#f59e0b", desc: "User-triggered templates pre-built on the server. Reusable across conversations.", example: "Summarize repo prompt, debug mode prompt" },
+              ].map(p => (
+                <div key={p.name} className="rounded-xl border p-3 space-y-1.5" style={{ borderColor: p.color + "40", background: p.color + "10" }}>
+                  <div className="text-xs font-bold" style={{ color: p.color }}>{p.name}</div>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{p.desc}</p>
+                  <code className="text-[10px] font-mono text-zinc-500">{p.example}</code>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* When to use */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4">
+              <div className="text-xs font-bold text-emerald-400 uppercase mb-2">Use MCP when</div>
+              <ul className="space-y-1 text-xs text-zinc-300">
+                <li>• Multiple agents or products need the same tools</li>
+                <li>• You want to swap LLM providers without re-wiring integrations</li>
+                <li>• Tool servers are maintained by different teams</li>
+                <li>• You want IDE-style tool discovery at runtime</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-4">
+              <div className="text-xs font-bold text-amber-400 uppercase mb-2">Watch out</div>
+              <ul className="space-y-1 text-xs text-zinc-300">
+                <li>• MCP adds a network hop — latency matters for tight loops</li>
+                <li>• Servers must handle auth; don't expose raw DB access</li>
+                <li>• Tool count explosion — models get confused with 50+ tools</li>
+                <li>• Still evolving — breaking changes between spec versions</li>
+              </ul>
             </div>
           </div>
         </div>
