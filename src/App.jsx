@@ -1416,12 +1416,13 @@ export default function App() {
             <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold text-white">G</div>
             <span className="hidden sm:block text-sm font-bold tracking-wide text-white">GenAI Lab</span>
           </button>
-          <nav className="hidden lg:flex items-center gap-0.5 overflow-x-auto scrollbar-hide min-w-0">
+          <div className="hidden lg:flex flex-1 min-w-0 relative">
+            <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide min-w-0 flex-1">
             {NAV_GROUPS.map((group, gi) => (
               <div key={gi} className="flex items-center gap-0.5 shrink-0">
                 {gi > 0 && <div className="w-px h-4 bg-zinc-700 mx-1" />}
                 {group.label && (
-                  <span className="text-xs font-mono font-bold px-1 mr-0.5 hidden md:inline" style={{ color: group.color + "99" }}>{group.label}</span>
+                  <span className="text-xs font-mono font-bold px-1 mr-0.5 hidden xl:inline" style={{ color: group.color + "99" }}>{group.label}</span>
                 )}
                 {group.items.map(item => (
                   <button key={item.id} onClick={() => navigate(item.id)}
@@ -1437,7 +1438,9 @@ export default function App() {
                 ))}
               </div>
             ))}
-          </nav>
+            </nav>
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-950 to-transparent" />
+          </div>
           {/* Right side: ? button + hamburger */}
           <div className="flex items-center gap-1 shrink-0">
             <button onClick={() => setSearchOpen(true)} className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">
