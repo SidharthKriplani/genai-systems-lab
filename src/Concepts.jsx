@@ -1659,6 +1659,375 @@ function SamplingModule() {
   );
 }
 
+// ─── CONTEXT WINDOW MODULE ───────────────────────────────────────────────────
+
+const CTX_MODELS = [
+  { name: "Llama 3 8B",  max: 8192,    color: "#f97316" },
+  { name: "GPT-3.5",     max: 16385,   color: "#22c55e" },
+  { name: "GPT-4o",      max: 128000,  color: "#3b82f6" },
+  { name: "Claude 3.5",  max: 200000,  color: "#8b5cf6" },
+  { name: "Gemini 1.5",  max: 1000000, color: "#06b6d4" },
+];
+
+const CTX_SECTIONS = [
+  { id: "system",    label: "System Prompt",  base: 280, perUnit: 0,   color: "#3b82f6", desc: "Instructions, persona, tool definitions, constraints" },
+  { id: "fewshot",   label: "Few-shot",        base: 0,   perUnit: 320, color: "#8b5cf6", desc: "Example Q&A pairs for in-context learning" },
+  { id: "history",   label: "Chat History",   base: 0,   perUnit: 180, color: "#f59e0b", desc: "Previous conversation turns (user + assistant)" },
+  { id: "retrieved", label: "RAG Context",    base: 0,   perUnit: 220, color: "#22c55e", desc: "Retrieved document chunks injected as context" },
+  { id: "query",     label: "Current Query",  base: 65,  perUnit: 0,   color: "#e4e4e7", desc: "The user's current message" },
+  { id: "response",  label: "Response Budget",base: 500, perUnit: 0,   color: "#3f3f46", desc: "Tokens reserved for model output" },
+];
+
+const CTX_COMPLEXITY = [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 128000];
+
+function ContextWindowModule() {
+  const [modelIdx, setModelIdx] = useState(2);
+  const [fewshot, setFewshot] = useState(2);
+  const [history, setHistory] = useState(3);
+  const [chunks, setChunks] = useState(3);
+
+  const model = CTX_MODELS[modelIdx];
+  const sections = CTX_SECTIONS.map(s => ({
+    ...s,
+    tokens: s.base + s.perUnit * (s.id === "fewshot" ? fewshot : s.id === "history" ? history : s.id === "retrieved" ? chunks : 0),
+  }));
+  const totalTokens = sections.reduce((s, sec) => s + sec.tokens, 0);
+  const pctUsed = totalTokens / model.max;
+  const isWarning = pctUsed > 0.8;
+  const isDanger = pctUsed >= 1.0;
+
+  const maxQ = CTX_COMPLEXITY[CTX_COMPLEXITY.length - 1] ** 2;
+  const complexityBars = CTX_COMPLEXITY.map(n => ({
+    n, label: n >= 1000 ? `${n / 1000}k` : `${n}`,
+    pct: (n * n) / maxQ,
+    isCurrent: totalTokens > 0 && n <= totalTokens,
+  }));
+
+  return (
+    <div className="space-y-4">
+      {/* Model selector */}
+      <div className="flex gap-2 flex-wrap">
+        {CTX_MODELS.map((m, i) => (
+          <button key={m.name} onClick={() => setModelIdx(i)}
+            className={`px-3 py-2 rounded-lg text-xs font-mono transition-all border ${modelIdx === i ? "border-violet-500 bg-violet-950/30 text-white" : "border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:text-white"}`}>
+            <span className="font-bold">{m.name}</span>
+            <span className="text-zinc-500 ml-1.5">{m.max >= 1000000 ? "1M" : `${(m.max / 1000).toFixed(0)}k`} ctx</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        {/* Sliders */}
+        <div className="col-span-12 lg:col-span-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-4">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Build Your Context</div>
+          {[
+            { label: "Few-shot examples", val: fewshot, set: setFewshot, max: 6 },
+            { label: "Conversation turns", val: history, set: setHistory, max: 12 },
+            { label: "RAG chunks",         val: chunks,  set: setChunks,  max: 10 },
+          ].map(({ label, val, set, max }) => (
+            <div key={label} className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-zinc-300 font-mono">{label}</span>
+                <span className="text-violet-400 font-mono font-bold">{val}</span>
+              </div>
+              <input type="range" min="0" max={max} step="1" value={val}
+                onChange={e => set(+e.target.value)} className="w-full accent-violet-500" />
+            </div>
+          ))}
+
+          <div className="space-y-1 pt-2 border-t border-zinc-800">
+            {sections.map(s => (
+              <div key={s.id} className="flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: s.color }} />
+                  <span className="text-zinc-400">{s.label}</span>
+                </div>
+                <span className="text-zinc-300">{s.tokens.toLocaleString()}</span>
+              </div>
+            ))}
+            <div className="flex justify-between text-xs font-mono font-bold pt-1.5 border-t border-zinc-700">
+              <span className={isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-white"}>Total</span>
+              <span className={isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-white"}>{totalTokens.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Visuals */}
+        <div className="col-span-12 lg:col-span-8 space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">{model.name} — {model.max >= 1000000 ? "1M" : `${(model.max / 1000).toFixed(0)}k`} tokens</span>
+              <span className={`text-xs font-mono font-bold ${isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-emerald-400"}`}>
+                {(pctUsed * 100).toFixed(1)}% used
+              </span>
+            </div>
+
+            {/* Stacked bar */}
+            <div className="h-10 rounded-lg overflow-hidden flex bg-zinc-800 gap-px">
+              {sections.filter(s => s.tokens > 0).map(s => (
+                <div key={s.id}
+                  style={{ width: `${clamp(s.tokens / model.max * 100, 0, 100)}%`, background: s.color, minWidth: 2 }}
+                  title={`${s.label}: ${s.tokens.toLocaleString()} tokens`} />
+              ))}
+            </div>
+
+            {isDanger && (
+              <div className="rounded-lg border border-red-700 bg-red-950/30 p-2 text-xs text-red-300 font-mono">
+                ⚠ OVERFLOW — {(totalTokens - model.max).toLocaleString()} tokens over limit. Model will truncate oldest history.
+              </div>
+            )}
+            {isWarning && !isDanger && (
+              <div className="rounded-lg border border-amber-700 bg-amber-950/30 p-2 text-xs text-amber-300 font-mono">
+                ⚠ {(pctUsed * 100).toFixed(0)}% full — little room for a long response. Reduce history or chunks.
+              </div>
+            )}
+
+            {/* Legend */}
+            <div className="flex flex-wrap gap-3">
+              {sections.map(s => (
+                <div key={s.id} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                  <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: s.color }} />
+                  {s.label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Attention complexity chart */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Attention Compute Cost O(n²) — your length highlighted</div>
+            <div className="flex items-end gap-1 h-28">
+              {complexityBars.map(({ n, label, pct: barPct, isCurrent }) => (
+                <div key={n} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full rounded-t-sm"
+                    style={{ height: `${Math.max(barPct * 104, 2)}px`, background: isCurrent ? "#8b5cf6" : barPct > 0.5 ? "#ef4444" : barPct > 0.1 ? "#f59e0b" : "#27272a" }} />
+                  <span style={{ fontSize: 9 }} className="text-zinc-600 font-mono">{label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-zinc-500">Doubling context quadruples attention ops. 128k context = 16,000× more compute than 1k. This is why long-context models need flash attention, sliding window attention, and KV cache optimisations.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── AGENT REACT LOOP MODULE ──────────────────────────────────────────────────
+
+const TOOL_STYLE = {
+  search:     { bg: "bg-blue-900/60 border-blue-700",    text: "text-blue-300",    icon: "🔍" },
+  calculator: { bg: "bg-emerald-900/60 border-emerald-700", text: "text-emerald-300", icon: "🧮" },
+  fetch_url:  { bg: "bg-amber-900/60 border-amber-700",  text: "text-amber-300",   icon: "🌐" },
+  finish:     { bg: "bg-violet-900/60 border-violet-700",text: "text-violet-300",  icon: "✓" },
+};
+
+const STEP_STYLE = {
+  thought:     { border: "border-zinc-700",     bg: "bg-zinc-900/50",     tag: "THOUGHT",  tagColor: "text-zinc-400" },
+  action:      { border: "border-blue-800",     bg: "bg-blue-950/20",     tag: "ACTION",   tagColor: "text-blue-400" },
+  observation: { border: "border-emerald-800",  bg: "bg-emerald-950/20",  tag: "OBS",      tagColor: "text-emerald-400" },
+};
+
+const REACT_SCENARIOS = [
+  {
+    title: "Market cap lookup",
+    query: "What is the market cap of the company that makes the iPhone?",
+    tools: ["search", "finish"],
+    failStep: 2, failContent: "Error: Search API rate limit exceeded. Retry after 60s.",
+    failRecovery: "Search failed. I'll rephrase and retry — agents must not give up on first error.",
+    steps: [
+      { type: "thought",     content: "Need to: (1) find who makes iPhone, (2) look up their market cap. Two searches." },
+      { type: "action",      tool: "search",  input: "iPhone manufacturer company" },
+      { type: "observation", content: "Apple Inc. (AAPL) manufactures the iPhone, iPad, Mac, and Apple Watch." },
+      { type: "thought",     content: "Apple makes the iPhone. Now look up their market cap." },
+      { type: "action",      tool: "search",  input: "Apple Inc AAPL market cap 2024" },
+      { type: "observation", content: "Apple Inc. market cap: ~$3.46 trillion USD (2024). Largest public company by market cap." },
+      { type: "thought",     content: "Have both answers. Composing final response." },
+      { type: "action",      tool: "finish",  input: "Apple Inc. (AAPL) makes the iPhone. Market cap ~$3.46 trillion — world's most valuable public company." },
+    ],
+  },
+  {
+    title: "Tip + restaurant",
+    query: "15% tip on $47.80, and the nearest Italian restaurant to Times Square?",
+    tools: ["calculator", "search", "finish"],
+    failStep: 5, failContent: "Error: Location service returned 0 results for that query.",
+    failRecovery: "Location service failed. Broadening search query to find results.",
+    steps: [
+      { type: "thought",     content: "Two parallel tasks: calculate tip, find restaurant. Starting with math." },
+      { type: "action",      tool: "calculator", input: "47.80 × 0.15" },
+      { type: "observation", content: "7.17" },
+      { type: "thought",     content: "Tip = $7.17 (total $54.97). Now find the restaurant." },
+      { type: "action",      tool: "search",     input: "Italian restaurant closest to Times Square NYC" },
+      { type: "observation", content: "Carmine's Italian Restaurant — 200 W 44th St, 0.2 miles from Times Square. ★4.3 Google." },
+      { type: "action",      tool: "finish",     input: "15% tip on $47.80 = $7.17 (total $54.97). Nearest Italian: Carmine's, 200 W 44th St, 0.2mi from Times Square." },
+    ],
+  },
+  {
+    title: "Research + tool failure",
+    query: "Find Hinton's latest AI safety paper and give 3 key takeaways.",
+    tools: ["search", "fetch_url", "finish"],
+    failStep: 5, failContent: "Error: 403 Forbidden. Document cannot be retrieved.",
+    failRecovery: "Fetch blocked. Pivoting to search for a structured summary — never abandon task on first failure.",
+    steps: [
+      { type: "thought",     content: "Search for Hinton's most recent AI safety paper, then fetch its content." },
+      { type: "action",      tool: "search",    input: "Geoffrey Hinton AI safety paper 2024" },
+      { type: "observation", content: "'Will Digital Intelligence Replace Biological Intelligence?' — Hinton 2024. Available on arXiv." },
+      { type: "thought",     content: "Found it. Fetching full paper for key takeaways." },
+      { type: "action",      tool: "fetch_url", input: "https://arxiv.org/abs/2405.00001" },
+      { type: "observation", content: "Error: 403 Forbidden. Document cannot be retrieved.", alwaysFail: true },
+      { type: "thought",     content: "Fetch blocked. Pivot to summary search rather than giving up." },
+      { type: "action",      tool: "search",    input: "Hinton 2024 digital intelligence paper key findings summary" },
+      { type: "observation", content: "(1) AI may surpass human intelligence within decades. (2) AI could develop misaligned self-preservation goals. (3) Biological intelligence faces evolutionary pressure from digital minds." },
+      { type: "action",      tool: "finish",    input: "Hinton 2024: (1) AI may soon exceed human intelligence, (2) AI could develop unaligned self-preservation goals, (3) biological minds face existential competitive pressure." },
+    ],
+  },
+];
+
+const STEP_TOKENS = { thought: 28, action: 14, observation: 38 };
+
+function AgentModule() {
+  const [scenarioIdx, setScenarioIdx] = useState(0);
+  const [injectFail, setInjectFail] = useState(false);
+  const [stepMode, setStepMode] = useState(false); // false = show all
+  const [currentStep, setCurrentStep] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const playRef = useRef(null);
+
+  const scenario = REACT_SCENARIOS[scenarioIdx];
+
+  const displaySteps = useMemo(() => {
+    if (!injectFail) return scenario.steps;
+    return scenario.steps.map((step, i) => {
+      if (i === scenario.failStep) return { ...step, content: scenario.failContent, failed: true };
+      if (i === scenario.failStep + 1 && step.type === "thought") return { ...step, content: scenario.failRecovery, isRecovery: true };
+      return step;
+    });
+  }, [scenarioIdx, injectFail]);
+
+  const shownSteps = stepMode ? displaySteps.slice(0, currentStep + 1) : displaySteps;
+
+  const tokensAt = (n) => displaySteps.slice(0, n + 1).reduce((s, st) => s + (STEP_TOKENS[st.type] || 25), 0);
+  const totalTokensSoFar = tokensAt(shownSteps.length - 1);
+
+  useEffect(() => {
+    if (playing) {
+      playRef.current = setInterval(() => {
+        setCurrentStep(prev => {
+          if (prev >= displaySteps.length - 1) { setPlaying(false); return prev; }
+          return prev + 1;
+        });
+      }, 650);
+    }
+    return () => clearInterval(playRef.current);
+  }, [playing, displaySteps.length]);
+
+  const startPlay = () => { setStepMode(true); setCurrentStep(0); setPlaying(true); };
+  const resetPlay = () => { setPlaying(false); clearInterval(playRef.current); setStepMode(false); setCurrentStep(0); };
+
+  return (
+    <div className="space-y-4">
+      {/* Scenario picker */}
+      <div className="flex flex-wrap gap-2">
+        {REACT_SCENARIOS.map((s, i) => (
+          <button key={i} onClick={() => { setScenarioIdx(i); resetPlay(); setInjectFail(false); }}
+            className={`px-3 py-2 rounded-lg text-xs font-mono transition-all ${scenarioIdx === i ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {s.title}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-12 gap-3">
+        {/* Query + tools */}
+        <div className="col-span-12 lg:col-span-8 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+          <div className="text-xs text-zinc-500 font-mono uppercase tracking-wide">User Query</div>
+          <div className="text-sm text-white font-mono">"{scenario.query}"</div>
+          <div className="flex flex-wrap gap-2">
+            {scenario.tools.map(t => {
+              const ts = TOOL_STYLE[t];
+              return <span key={t} className={`px-2 py-1 rounded border text-xs font-mono ${ts.bg} ${ts.text}`}>{ts.icon} {t}</span>;
+            })}
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="col-span-12 lg:col-span-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Controls</div>
+          <div className="flex gap-2">
+            <button onClick={startPlay} disabled={playing}
+              className="flex-1 py-2 rounded-lg text-xs font-bold bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-40 transition-all">
+              ▶ Step through
+            </button>
+            <button onClick={resetPlay}
+              className="px-3 py-2 rounded-lg text-xs font-bold bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition-all">
+              ↺
+            </button>
+          </div>
+          <label className={`flex items-center gap-2 cursor-pointer p-2 rounded-lg border transition-all ${injectFail ? "border-red-700 bg-red-950/20" : "border-zinc-700"}`}>
+            <input type="checkbox" checked={injectFail} onChange={e => { setInjectFail(e.target.checked); resetPlay(); }} className="accent-red-500" />
+            <div>
+              <div className="text-xs font-mono text-zinc-300">Inject tool failure</div>
+              {injectFail && <div className="text-xs text-red-400 mt-0.5">Step {scenario.failStep + 1} will fail — watch recovery</div>}
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* ReAct trace */}
+      <div className="space-y-2">
+        {shownSteps.map((step, i) => {
+          const ss = STEP_STYLE[step.type] || STEP_STYLE.observation;
+          const ts = step.tool ? TOOL_STYLE[step.tool] : null;
+          return (
+            <div key={i} className={`rounded-xl border px-4 py-3 transition-all duration-300 ${
+              step.failed ? "border-red-700 bg-red-950/10" :
+              step.isRecovery ? "border-amber-700 bg-amber-950/10" :
+              `${ss.border} ${ss.bg}`
+            }`}>
+              <div className="flex items-start gap-2">
+                <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                  <span className={`text-xs font-mono font-bold ${step.failed ? "text-red-400" : step.isRecovery ? "text-amber-400" : ss.tagColor}`}>
+                    {step.failed ? "ERROR" : step.isRecovery ? "PIVOT" : ss.tag}
+                  </span>
+                  {ts && <span className={`px-1.5 py-0.5 rounded border text-xs font-mono ${ts.bg} ${ts.text}`}>{ts.icon} {step.tool}</span>}
+                </div>
+                <div className="flex-1 min-w-0">
+                  {step.input && step.type === "action" && (
+                    <div className="text-xs font-mono text-zinc-500 mb-0.5">input: <span className="text-zinc-300">"{step.input}"</span></div>
+                  )}
+                  <p className={`text-xs font-mono leading-relaxed ${step.failed ? "text-red-300" : step.isRecovery ? "text-amber-300" : "text-zinc-300"}`}>
+                    {step.content || step.input}
+                  </p>
+                </div>
+                <span className="text-xs font-mono text-zinc-700 shrink-0">{tokensAt(i)}t</span>
+              </div>
+            </div>
+          );
+        })}
+        {playing && (
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/40 px-4 py-3 text-xs font-mono text-zinc-500 animate-pulse">
+            Agent reasoning...
+          </div>
+        )}
+      </div>
+
+      {/* Context fill indicator */}
+      {shownSteps.length > 0 && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="flex justify-between text-xs font-mono">
+            <span className="text-zinc-400">Context consumed</span>
+            <span className="text-violet-400">{totalTokensSoFar} tokens · {shownSteps.length}/{displaySteps.length} steps</span>
+          </div>
+          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-full bg-violet-600 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(totalTokensSoFar / 600 * 100, 100)}%` }} />
+          </div>
+          <p className="text-xs text-zinc-600">Each loop appends thought + action + observation. A 10-step chain with 4k-token observations can easily hit 128k limits in real agents. This is why max_iterations and context compression are production requirements.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN CONCEPTS APP ────────────────────────────────────────────────────────
 
 const MODULES = [
@@ -1710,6 +2079,22 @@ const MODULES = [
     subtitle: "Same logits. Greedy vs top-K vs top-P vs temperature. See exactly which tokens survive each filter.",
     component: SamplingModule,
   },
+  {
+    id: "context",
+    label: "Context Window",
+    tag: "LAYER 6",
+    title: "Context Window & Attention Cost",
+    subtitle: "Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.",
+    component: ContextWindowModule,
+  },
+  {
+    id: "agent",
+    label: "Agent Loop",
+    tag: "LAYER 7",
+    title: "Agent ReAct Loop",
+    subtitle: "Reason → Act → Observe → repeat. Step through a live agent trace. Inject tool failures and watch recovery.",
+    component: AgentModule,
+  },
 ];
 
 export default function ConceptsApp() {
@@ -1734,7 +2119,7 @@ export default function ConceptsApp() {
           </button>
         ))}
         <div className="flex items-center gap-2 ml-auto">
-          <span className="text-xs px-2 py-1 bg-zinc-800 text-zinc-500 rounded font-mono">Agent Loop — coming soon</span>
+          <span className="text-xs px-2 py-1 bg-zinc-800 text-zinc-500 rounded font-mono">Guardrails — coming soon</span>
         </div>
       </div>
 
