@@ -740,14 +740,112 @@ function ChallengeResult({ grade }) {
 
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
 
+// ─── LEADERBOARD VIEW ────────────────────────────────────────────────────────
+
+function LeaderboardView({ leaderboard, onClear }) {
+  if (leaderboard.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-16 text-center space-y-3">
+        <div className="text-5xl mb-4">🏆</div>
+        <div className="text-lg font-bold text-zinc-400">No scores yet</div>
+        <p className="text-sm text-zinc-600">Go to RAG Lab → enable Challenge Mode → submit a passing config to get on the board.</p>
+      </div>
+    );
+  }
+
+  const byScenario = ALL_SCENARIOS.map(s => ({
+    ...s,
+    entries: leaderboard.filter(e => e.scenarioId === s.scenario_id),
+    bestPassed: leaderboard.some(e => e.scenarioId === s.scenario_id && e.passed),
+  }));
+  const solved = byScenario.filter(s => s.bestPassed).length;
+  const passed = leaderboard.filter(e => e.passed).length;
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-6 space-y-5">
+      {/* Summary stats */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { val: `${solved}/5`, label: "Scenarios solved", color: "text-emerald-400" },
+          { val: `${passed}/${leaderboard.length}`, label: "Attempts passed", color: "text-violet-400" },
+          { val: leaderboard.length, label: "Total attempts", color: "text-amber-400" },
+        ].map(({ val, label, color }) => (
+          <div key={label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-center">
+            <div className={`text-3xl font-bold font-mono ${color}`}>{val}</div>
+            <div className="text-xs text-zinc-500 mt-1">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Per-scenario status */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-3">Scenario Progress</div>
+        {byScenario.map((s, i) => (
+          <div key={s.scenario_id} className="flex items-center gap-3 py-1">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${s.bestPassed ? "bg-emerald-600 text-white" : s.entries.length > 0 ? "bg-amber-700 text-white" : "bg-zinc-800 text-zinc-500"}`}>
+              {s.bestPassed ? "✓" : i + 1}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-mono text-zinc-300 truncate">{s.title}</div>
+              <div className="text-xs text-zinc-600">{s.entries.length} attempt{s.entries.length !== 1 ? "s" : ""} · {s.entries.filter(e => e.passed).length} passed</div>
+            </div>
+            <span className={`text-xs font-mono px-2 py-0.5 rounded border shrink-0 ${s.bestPassed ? "border-emerald-700 text-emerald-400" : s.entries.length > 0 ? "border-amber-700 text-amber-400" : "border-zinc-700 text-zinc-600"}`}>
+              {s.bestPassed ? "SOLVED" : s.entries.length > 0 ? "ATTEMPTED" : "LOCKED"}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* History */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Attempt History</div>
+          <button onClick={onClear} className="text-xs text-zinc-600 hover:text-red-400 transition-colors font-mono">Clear all</button>
+        </div>
+        {[...leaderboard].reverse().map((entry, i) => (
+          <div key={i} className={`rounded-xl border p-3 ${entry.passed ? "border-emerald-800 bg-emerald-950/10" : "border-zinc-800 bg-zinc-900/40"}`}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-xs px-2 py-0.5 rounded font-mono font-bold border ${entry.passed ? "border-emerald-700 bg-emerald-900 text-emerald-300" : "border-red-800 bg-red-950 text-red-400"}`}>
+                    {entry.passed ? "PASS" : "FAIL"}
+                  </span>
+                  <span className="text-xs font-mono text-zinc-300 truncate">{entry.scenario}</span>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs font-mono text-zinc-500">
+                  <span>chunk={entry.config.chunk_size}</span>
+                  <span>top_k={entry.config.top_k}</span>
+                  <span>reranker={entry.config.reranker ? "on" : "off"}</span>
+                  <span>policy={entry.config.answer_policy}</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {entry.checks.map((c, j) => (
+                    <span key={j} className={`text-xs px-1.5 py-0.5 rounded font-sans ${c.passed ? "bg-emerald-900/60 text-emerald-400" : "bg-red-900/60 text-red-400"}`}>
+                      {c.passed ? "✓" : "✗"} {c.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="text-xs text-zinc-600 font-mono shrink-0">{new Date(entry.date).toLocaleDateString()}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
-  const [topView, setTopView] = useState("lab"); // "lab" | "concepts"
+  const [topView, setTopView] = useState("lab"); // "lab" | "concepts" | "leaderboard"
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [config, setConfig] = useState(ALL_SCENARIOS[0].default_config);
   const [evaluated, setEvaluated] = useState(false);
   const [challengeMode, setChallengeMode] = useState(false);
   const [gradeResult, setGradeResult] = useState(null);
   const [activeTab, setActiveTab] = useState("simulator");
+  const [leaderboard, setLeaderboard] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("genai_leaderboard") || "[]"); } catch { return []; }
+  });
 
   const scenario = ALL_SCENARIOS[scenarioIdx];
   const lookup = useMemo(() => lookupResult(scenario, config), [scenario, config]);
@@ -768,7 +866,28 @@ export default function App() {
 
   const evaluate = () => {
     setEvaluated(true);
-    if (challengeMode && lookup?.result) setGradeResult(gradeChallenge(scenario, lookup.result));
+    if (challengeMode && lookup?.result) {
+      const grade = gradeChallenge(scenario, lookup.result);
+      setGradeResult(grade);
+      const entry = {
+        scenario: scenario.title,
+        scenarioId: scenario.scenario_id,
+        config: { ...config },
+        passed: grade.passed,
+        checks: grade.checks,
+        date: new Date().toISOString(),
+      };
+      setLeaderboard(prev => {
+        const updated = [...prev, entry];
+        try { localStorage.setItem("genai_leaderboard", JSON.stringify(updated)); } catch {}
+        return updated;
+      });
+    }
+  };
+
+  const clearLeaderboard = () => {
+    setLeaderboard([]);
+    try { localStorage.removeItem("genai_leaderboard"); } catch {}
   };
 
   const reset = () => {
@@ -811,6 +930,12 @@ export default function App() {
             >
               Concepts
             </button>
+            <button
+              onClick={() => setTopView("leaderboard")}
+              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase flex items-center gap-1.5 ${topView === "leaderboard" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
+            >
+              🏆 <span>{leaderboard.filter(e => e.passed).length > 0 ? `${leaderboard.filter(e => e.passed).length}` : ""} Board</span>
+            </button>
             {topView === "lab" && ["simulator", "notes"].map((tab) => (
               <button
                 key={tab}
@@ -825,6 +950,8 @@ export default function App() {
       </header>
 
       {topView === "concepts" && <ConceptsApp />}
+
+      {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} />}
 
       {/* Scenario tabs */}
       {topView === "lab" && <div className="border-b border-zinc-800 px-6 py-3">

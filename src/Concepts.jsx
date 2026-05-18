@@ -1233,6 +1233,432 @@ function TransformerModule() {
   );
 }
 
+// ─── CHUNKING MODULE ─────────────────────────────────────────────────────────
+
+const CHUNK_STRATEGIES = {
+  fixed: {
+    label: "Fixed-size", color: "#ef4444",
+    desc: "Split every N characters. Fast, but cuts mid-sentence and mid-concept.",
+    param: "~100 chars",
+    chunks: [
+      { id: 0, text: "Large language models (LLMs) are trained on vast text using self-supervised learning. The model predicts the next" },
+      { id: 1, text: "token, developing internal representations of language and facts. Transformers use self-attention to capture long-range" },
+      { id: 2, text: "dependencies between tokens. At inference, text is generated autoregressively, one token at a time. Retrieval-augmented" },
+      { id: 3, text: "generation (RAG) grounds LLM responses in retrieved documents. A retriever finds relevant chunks from a corpus and" },
+      { id: 4, text: "injects them into the prompt as context. Chunking quality directly affects retrieval: chunks too small lose context," },
+      { id: 5, text: "chunks too large dilute relevance scores and waste tokens." },
+    ],
+  },
+  sliding: {
+    label: "Sliding Window", color: "#f59e0b",
+    desc: "Fixed-size with overlap. Reduces missed context at boundaries — at the cost of redundancy.",
+    param: "~100 chars, 25 overlap",
+    chunks: [
+      { id: 0, text: "Large language models (LLMs) are trained on vast text using self-supervised learning. The model predicts the next token" },
+      { id: 1, text: "The model predicts the next token, developing internal representations of language and facts. Transformers use self-attention" },
+      { id: 2, text: "Transformers use self-attention to capture long-range dependencies between tokens. At inference, text is generated autoregressively" },
+      { id: 3, text: "At inference, text is generated autoregressively, one token at a time. RAG grounds LLM responses in retrieved documents." },
+      { id: 4, text: "RAG grounds LLM responses in retrieved documents. A retriever finds relevant chunks from a corpus and injects them into the prompt." },
+      { id: 5, text: "injects them into the prompt as context. Chunking quality directly affects retrieval: too small = lost context, too large = diluted scores." },
+    ],
+  },
+  sentence: {
+    label: "Sentence-aware", color: "#22c55e",
+    desc: "Split at sentence boundaries. Preserves semantic units. Best default for Q&A.",
+    param: "sentence boundary",
+    chunks: [
+      { id: 0, text: "Large language models (LLMs) are trained on vast text using self-supervised learning." },
+      { id: 1, text: "The model predicts the next token, developing internal representations of language and facts." },
+      { id: 2, text: "Transformers use self-attention to capture long-range dependencies between tokens." },
+      { id: 3, text: "At inference, text is generated autoregressively, one token at a time." },
+      { id: 4, text: "Retrieval-augmented generation (RAG) grounds LLM responses in retrieved documents." },
+      { id: 5, text: "A retriever finds relevant chunks from a corpus and injects them into the prompt as context." },
+      { id: 6, text: "Chunking quality directly affects retrieval: chunks too small lose context, chunks too large dilute relevance scores and waste tokens." },
+    ],
+  },
+  semantic: {
+    label: "Semantic", color: "#8b5cf6",
+    desc: "Group by topic using embedding similarity. Most coherent chunks, highest retrieval precision.",
+    param: "embedding similarity",
+    chunks: [
+      { id: 0, text: "Large language models (LLMs) are trained on vast text using self-supervised learning. The model predicts the next token, developing internal representations of language and facts.", topic: "Training" },
+      { id: 1, text: "Transformers use self-attention to capture long-range dependencies between tokens. At inference, text is generated autoregressively, one token at a time.", topic: "Architecture" },
+      { id: 2, text: "Retrieval-augmented generation (RAG) grounds LLM responses in retrieved documents. A retriever finds relevant chunks from a corpus and injects them into the prompt as context.", topic: "RAG System" },
+      { id: 3, text: "Chunking quality directly affects retrieval: chunks too small lose context, chunks too large dilute relevance scores and waste tokens.", topic: "Chunking Trade-off" },
+    ],
+  },
+};
+
+const CHUNK_QUERIES = [
+  {
+    q: "How does RAG improve LLM accuracy?",
+    hits: { fixed: [3, 4], sliding: [3, 4], sentence: [4, 5], semantic: [2] },
+    verdict: {
+      fixed:    { ok: false, msg: "Chunk 3 cuts mid-sentence — loses how the retriever actually works." },
+      sliding:  { ok: false, msg: "Overlap helps but both chunks have ~20% redundant text." },
+      sentence: { ok: true,  msg: "Two clean sentences: RAG definition + retriever mechanism. Precise." },
+      semantic: { ok: true,  msg: "The entire RAG System topic in one chunk. Perfect precision." },
+    },
+  },
+  {
+    q: "What is self-attention?",
+    hits: { fixed: [1, 2], sliding: [1, 2], sentence: [2], semantic: [1] },
+    verdict: {
+      fixed:    { ok: false, msg: "Self-attention concept split across chunks 1 and 2. Retriever picks both but they overlap awkwardly." },
+      sliding:  { ok: false, msg: "Better — overlap means chunk 1 captures the full concept. Still redundant." },
+      sentence: { ok: true,  msg: "Single sentence, exact answer. Zero noise." },
+      semantic: { ok: true,  msg: "Architecture chunk: self-attention + inference context together." },
+    },
+  },
+  {
+    q: "Why does chunk size affect retrieval quality?",
+    hits: { fixed: [4, 5], sliding: [5], sentence: [6], semantic: [3] },
+    verdict: {
+      fixed:    { ok: false, msg: "Chunk 5 starts with 'chunks too large...' — misses the 'too small' side of the tradeoff." },
+      sliding:  { ok: false, msg: "Chunk 5 gets both sides but starts mid-thought ('injects them into')." },
+      sentence: { ok: true,  msg: "The entire tradeoff in one clean sentence. Best answer." },
+      semantic: { ok: true,  msg: "Dedicated 'Chunking Trade-off' chunk. Both failure modes captured." },
+    },
+  },
+];
+
+const STRAT_KEYS = ["fixed", "sliding", "sentence", "semantic"];
+
+function ChunkingModule() {
+  const [strategy, setStrategy] = useState("fixed");
+  const [queryIdx, setQueryIdx] = useState(0);
+  const [showRetrieval, setShowRetrieval] = useState(false);
+
+  const strat = CHUNK_STRATEGIES[strategy];
+  const query = CHUNK_QUERIES[queryIdx];
+  const hitIds = showRetrieval ? (query.hits[strategy] || []) : [];
+  const verdict = query.verdict[strategy];
+
+  return (
+    <div className="space-y-4">
+      {/* Strategy selector */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        {STRAT_KEYS.map(k => {
+          const s = CHUNK_STRATEGIES[k];
+          return (
+            <button key={k} onClick={() => { setStrategy(k); setShowRetrieval(false); }}
+              className={`p-3 rounded-xl border text-left transition-all ${strategy === k ? "border-violet-500 bg-violet-950/30" : "border-zinc-800 bg-zinc-900/60 hover:border-zinc-600"}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} />
+                <span className="text-xs font-bold text-white font-mono">{s.label}</span>
+              </div>
+              <p className="text-xs text-zinc-500 leading-tight">{s.desc}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        {/* Chunk display */}
+        <div className="col-span-12 lg:col-span-8 rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">{strat.chunks.length} chunks · {strat.param}</span>
+            {showRetrieval && <span className="text-xs text-emerald-400 font-mono">↑ = retrieved for query</span>}
+          </div>
+          {strat.chunks.map((chunk) => {
+            const isHit = hitIds.includes(chunk.id);
+            return (
+              <div key={chunk.id} className={`rounded-lg border px-3 py-2 text-xs font-mono leading-relaxed transition-all duration-200 ${
+                isHit ? "border-emerald-500 bg-emerald-950/30 text-emerald-200" :
+                showRetrieval ? "border-zinc-800 bg-zinc-900/20 text-zinc-600 opacity-40" :
+                "border-zinc-800 bg-zinc-900/40 text-zinc-300"
+              }`}>
+                <div className="flex items-start gap-2">
+                  <span className="shrink-0 text-zinc-600">#{chunk.id}</span>
+                  <span className="flex-1">{chunk.text}</span>
+                  {chunk.topic && (
+                    <span className={`shrink-0 px-1.5 py-0.5 rounded text-xs font-sans border ${isHit ? "border-emerald-700 bg-emerald-900/60 text-emerald-300" : "border-zinc-700 bg-zinc-800 text-zinc-500"}`}>
+                      {chunk.topic}
+                    </span>
+                  )}
+                </div>
+                {isHit && <div className="text-emerald-400 font-sans mt-0.5 text-xs">↑ retrieved</div>}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Right panel */}
+        <div className="col-span-12 lg:col-span-4 space-y-3">
+          {/* Query picker */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Retrieval Query</div>
+            {CHUNK_QUERIES.map((cq, i) => (
+              <button key={i} onClick={() => { setQueryIdx(i); setShowRetrieval(false); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-xs font-mono transition-all ${queryIdx === i ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                "{cq.q}"
+              </button>
+            ))}
+            <button onClick={() => setShowRetrieval(v => !v)}
+              className={`w-full py-2 rounded-lg text-xs font-bold tracking-wide transition-all ${showRetrieval ? "bg-emerald-600 text-white" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"}`}>
+              {showRetrieval ? "▼ Retrieved" : "▶ Run retrieval"}
+            </button>
+          </div>
+
+          {/* Verdict */}
+          {showRetrieval && (
+            <div className={`rounded-xl border p-3 text-xs leading-relaxed ${verdict.ok ? "border-emerald-700 bg-emerald-950/20 text-emerald-300" : "border-amber-700 bg-amber-950/20 text-amber-300"}`}>
+              <div className="font-bold mb-1">{verdict.ok ? "✓ Good retrieval" : "⚠ Suboptimal"}</div>
+              {verdict.msg}
+            </div>
+          )}
+
+          {/* Comparison */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-1.5">
+            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Chunk count</div>
+            {STRAT_KEYS.map(k => (
+              <div key={k} className={`flex items-center justify-between text-xs font-mono px-2 py-1 rounded ${k === strategy ? "bg-zinc-800" : ""}`}>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full" style={{ background: CHUNK_STRATEGIES[k].color }} />
+                  <span className={k === strategy ? "text-white" : "text-zinc-500"}>{CHUNK_STRATEGIES[k].label}</span>
+                </span>
+                <span className={k === strategy ? "text-white font-bold" : "text-zinc-600"}>{CHUNK_STRATEGIES[k].chunks.length}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-3">
+            <div className="text-xs font-bold text-violet-400 uppercase tracking-wide mb-1">Production reality</div>
+            <p className="text-xs text-zinc-400 leading-relaxed">Most teams start with sentence-aware and graduate to semantic when retrieval quality becomes a bottleneck. Semantic costs ~$0.0004/chunk in embedding calls.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SAMPLING MODULE ──────────────────────────────────────────────────────────
+
+const SAMPLE_PROMPTS = [
+  {
+    prompt: "The capital of France is",
+    note: "High-confidence factual query. Greedy is fine here — Paris dominates.",
+    candidates: [
+      { token: "Paris",   logit: 4.2 },
+      { token: "Lyon",    logit: 1.8 },
+      { token: "Berlin",  logit: 0.9 },
+      { token: "London",  logit: 0.6 },
+      { token: "Nice",    logit: 0.3 },
+      { token: "Rome",    logit: 0.1 },
+      { token: "a",       logit: -0.5 },
+      { token: "the",     logit: -1.2 },
+    ],
+  },
+  {
+    prompt: "The best way to learn is by",
+    note: "Moderate uncertainty. Several valid continuations. Top-P captures the interesting ones.",
+    candidates: [
+      { token: "doing",       logit: 2.1 },
+      { token: "practicing",  logit: 2.0 },
+      { token: "reading",     logit: 1.7 },
+      { token: "teaching",    logit: 1.4 },
+      { token: "repeating",   logit: 1.0 },
+      { token: "struggling",  logit: 0.6 },
+      { token: "watching",    logit: 0.3 },
+      { token: "waiting",     logit: -0.8 },
+    ],
+  },
+  {
+    prompt: "Once upon a time there was a",
+    note: "High uncertainty — creative context. Flat distribution. Temperature matters a lot here.",
+    candidates: [
+      { token: "dragon",    logit: 1.8 },
+      { token: "princess",  logit: 1.7 },
+      { token: "king",      logit: 1.5 },
+      { token: "wizard",    logit: 1.4 },
+      { token: "merchant",  logit: 1.2 },
+      { token: "small",     logit: 1.0 },
+      { token: "young",     logit: 0.9 },
+      { token: "dark",      logit: 0.7 },
+    ],
+  },
+];
+
+function computeProbs(candidates, temp) {
+  const scaled = candidates.map(c => c.logit / Math.max(temp, 0.01));
+  const max = Math.max(...scaled);
+  const exps = scaled.map(v => Math.exp(v - max));
+  const sum = exps.reduce((a, b) => a + b, 0);
+  return exps.map(v => v / sum);
+}
+
+function SamplingModule() {
+  const [promptIdx, setPromptIdx] = useState(0);
+  const [strategy, setSampleStrategy] = useState("greedy");
+  const [temperature, setSampleTemp] = useState(1.0);
+  const [topK, setTopK] = useState(3);
+  const [topP, setTopP] = useState(0.9);
+  const [rollKey, setRollKey] = useState(0);
+
+  const prompt = SAMPLE_PROMPTS[promptIdx];
+  const probs = useMemo(() => computeProbs(prompt.candidates, strategy === "temperature" ? temperature : 1.0), [promptIdx, strategy, temperature]);
+
+  // Determine which tokens are in the sampling pool
+  const poolIndices = useMemo(() => {
+    if (strategy === "greedy") return [0]; // top-1
+    if (strategy === "topk") {
+      const sorted = probs.map((p, i) => ({ p, i })).sort((a, b) => b.p - a.p);
+      return sorted.slice(0, topK).map(x => x.i);
+    }
+    if (strategy === "topp") {
+      const sorted = probs.map((p, i) => ({ p, i })).sort((a, b) => b.p - a.p);
+      let cum = 0; const pool = [];
+      for (const { p, i } of sorted) { cum += p; pool.push(i); if (cum >= topP) break; }
+      return pool;
+    }
+    if (strategy === "temperature") {
+      return probs.map((_, i) => i); // all tokens
+    }
+    return [0];
+  }, [probs, strategy, topK, topP]);
+
+  // Weighted sample from pool
+  const sampledIdx = useMemo(() => {
+    if (strategy === "greedy") return probs.indexOf(Math.max(...probs));
+    const poolProbs = poolIndices.map(i => probs[i]);
+    const sum = poolProbs.reduce((a, b) => a + b, 0);
+    const norm = poolProbs.map(p => p / sum);
+    // deterministic from rollKey
+    const r = seededRand(rollKey * 1337 + promptIdx * 99)();
+    let cum = 0;
+    for (let j = 0; j < norm.length; j++) { cum += norm[j]; if (r < cum) return poolIndices[j]; }
+    return poolIndices[0];
+  }, [probs, poolIndices, strategy, rollKey, promptIdx]);
+
+  const STRATEGIES = [
+    { id: "greedy",      label: "Greedy",      desc: "Always pick the highest-probability token. Deterministic. Good for facts, bad for creativity." },
+    { id: "topk",        label: "Top-K",        desc: "Sample from the top K tokens only. K controls the diversity-quality tradeoff." },
+    { id: "topp",        label: "Top-P (nucleus)", desc: "Sample from the smallest set of tokens whose cumulative probability ≥ P. Adapts to the distribution shape." },
+    { id: "temperature", label: "Temperature",  desc: "Rescale all logits by T before softmax. T<1 sharpens, T>1 flattens." },
+  ];
+
+  const barColor = (i, inPool) => {
+    if (i === sampledIdx) return "#10b981";
+    if (inPool) return "#8b5cf6";
+    return "#3f3f46";
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Prompt picker */}
+      <div className="flex flex-wrap gap-2">
+        {SAMPLE_PROMPTS.map((p, i) => (
+          <button key={i} onClick={() => { setPromptIdx(i); setRollKey(0); }}
+            className={`px-3 py-2 rounded-lg text-xs font-mono transition-all ${promptIdx === i ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            "{p.prompt}..."
+          </button>
+        ))}
+      </div>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 text-xs text-zinc-400">{prompt.note}</div>
+
+      <div className="grid grid-cols-12 gap-4">
+        {/* Left: strategy + controls */}
+        <div className="col-span-12 lg:col-span-4 space-y-3">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Decoding Strategy</div>
+            {STRATEGIES.map(s => (
+              <button key={s.id} onClick={() => { setSampleStrategy(s.id); setRollKey(0); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${strategy === s.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                <div className="font-mono font-bold">{s.label}</div>
+                <div className={`text-xs mt-0.5 leading-snug ${strategy === s.id ? "text-violet-200" : "text-zinc-600"}`}>{s.desc}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Strategy-specific controls */}
+          {strategy === "topk" && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+              <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">k</span><span className="text-violet-400 font-mono font-bold">{topK}</span></div>
+              <input type="range" min="1" max="8" step="1" value={topK} onChange={e => setTopK(+e.target.value)} className="w-full accent-violet-500" />
+              <div className="flex justify-between text-xs text-zinc-600 font-mono"><span>1 (greedy)</span><span>8 (all)</span></div>
+            </div>
+          )}
+          {strategy === "topp" && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+              <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">p</span><span className="text-violet-400 font-mono font-bold">{topP.toFixed(2)}</span></div>
+              <input type="range" min="0.5" max="1.0" step="0.05" value={topP} onChange={e => setTopP(+e.target.value)} className="w-full accent-violet-500" />
+              <div className="flex justify-between text-xs text-zinc-600 font-mono"><span>0.5 tight</span><span>1.0 all</span></div>
+            </div>
+          )}
+          {strategy === "temperature" && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+              <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">temperature</span><span className="text-amber-400 font-mono font-bold">{temperature.toFixed(1)}</span></div>
+              <input type="range" min="0.1" max="2.0" step="0.1" value={temperature} onChange={e => setSampleTemp(+e.target.value)} className="w-full accent-amber-500" />
+              <div className="flex justify-between text-xs text-zinc-600 font-mono"><span>0.1 sharp</span><span>2.0 flat</span></div>
+            </div>
+          )}
+
+          {strategy !== "greedy" && (
+            <button onClick={() => setRollKey(k => k + 1)}
+              className="w-full py-2 rounded-lg text-xs font-bold bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition-all font-mono">
+              🎲 Sample again
+            </button>
+          )}
+        </div>
+
+        {/* Right: probability bars */}
+        <div className="col-span-12 lg:col-span-8 rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">"{prompt.prompt} ___"</span>
+            <div className="flex gap-3 text-xs font-mono">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />sampled</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-500" />in pool</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-zinc-600" />filtered</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {prompt.candidates.map((c, i) => {
+              const inPool = poolIndices.includes(i);
+              const isSampled = i === sampledIdx;
+              const p = probs[i];
+              return (
+                <div key={c.token} className="space-y-0.5">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className={isSampled ? "text-emerald-300 font-bold" : inPool ? "text-violet-300" : "text-zinc-600"}>
+                      {isSampled ? "→ " : "  "}{c.token}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-zinc-600">logit {c.logit.toFixed(1)}</span>
+                      <span className={isSampled ? "text-emerald-400 font-bold" : inPool ? "text-violet-400" : "text-zinc-600"}>
+                        {(p * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-300"
+                      style={{ width: `${p * 100}%`, background: barColor(i, inPool) }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className={`rounded-lg border p-3 text-xs mt-2 ${strategy === "greedy" ? "border-blue-800 bg-blue-950/20 text-blue-300" : "border-emerald-800 bg-emerald-950/20 text-emerald-300"}`}>
+            <span className="font-bold">
+              {strategy === "greedy" ? "Greedy always outputs: " : `Sampled: `}
+            </span>
+            <span className="font-mono">"{prompt.candidates[sampledIdx]?.token}"</span>
+            {strategy !== "greedy" && <span className="text-zinc-400 ml-2">— hit "sample again" to see variance</span>}
+          </div>
+
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3 text-xs text-zinc-500 leading-relaxed">
+            <span className="text-zinc-400 font-bold">Pool size: </span>
+            {poolIndices.length} / {prompt.candidates.length} tokens ·{" "}
+            <span className="text-zinc-400 font-bold">Pool mass: </span>
+            {(poolIndices.reduce((s, i) => s + probs[i], 0) * 100).toFixed(1)}% of probability
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN CONCEPTS APP ────────────────────────────────────────────────────────
 
 const MODULES = [
@@ -1267,6 +1693,22 @@ const MODULES = [
     title: "Transformer Forward Pass",
     subtitle: "Real math in the browser. Embed → attend → FFN → predict. Tighten temperature, add heads, watch it change.",
     component: TransformerModule,
+  },
+  {
+    id: "chunking",
+    label: "Chunking",
+    tag: "LAYER 4",
+    title: "Chunking Strategies",
+    subtitle: "Same document. Four strategies. Watch which chunks get retrieved for each query — and why some strategies fail.",
+    component: ChunkingModule,
+  },
+  {
+    id: "sampling",
+    label: "Sampling",
+    tag: "LAYER 5",
+    title: "Decoding & Sampling Strategies",
+    subtitle: "Same logits. Greedy vs top-K vs top-P vs temperature. See exactly which tokens survive each filter.",
+    component: SamplingModule,
   },
 ];
 
