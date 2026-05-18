@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import ConceptsApp from "./Concepts";
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -740,6 +741,7 @@ function ChallengeResult({ grade }) {
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const [topView, setTopView] = useState("lab"); // "lab" | "concepts"
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [config, setConfig] = useState(ALL_SCENARIOS[0].default_config);
   const [evaluated, setEvaluated] = useState(false);
@@ -797,23 +799,35 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            {["simulator", "notes"].map((tab) => (
+            <button
+              onClick={() => setTopView("lab")}
+              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "lab" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
+            >
+              RAG Lab
+            </button>
+            <button
+              onClick={() => setTopView("concepts")}
+              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "concepts" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
+            >
+              Concepts
+            </button>
+            {topView === "lab" && ["simulator", "notes"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${
-                  activeTab === tab ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"
-                }`}
+                className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${activeTab === tab ? "bg-zinc-700 text-white" : "text-zinc-600 hover:text-zinc-400"}`}
               >
-                {tab === "simulator" ? "Simulator" : "Design Notes"}
+                {tab === "simulator" ? "Sim" : "Notes"}
               </button>
             ))}
           </div>
         </div>
       </header>
 
+      {topView === "concepts" && <ConceptsApp />}
+
       {/* Scenario tabs */}
-      <div className="border-b border-zinc-800 px-6 py-3">
+      {topView === "lab" && <div className="border-b border-zinc-800 px-6 py-3">
         <div className="max-w-7xl mx-auto flex gap-2 flex-wrap">
           {ALL_SCENARIOS.map((s, i) => (
             <button
@@ -827,9 +841,9 @@ export default function App() {
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
-      {activeTab === "simulator" ? (
+      {topView === "lab" && activeTab === "simulator" ? (
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
@@ -1028,9 +1042,11 @@ export default function App() {
         </div>
       )}
 
-      <footer className="border-t border-zinc-800 mt-12 px-6 py-4 text-center">
-        <p className="text-xs text-zinc-600">GenAI Systems Lab · V1-B · 5 scenarios · Static precomputed simulator · Zero hosting cost · Open source</p>
-      </footer>
+      {topView === "lab" && (
+        <footer className="border-t border-zinc-800 mt-12 px-6 py-4 text-center">
+          <p className="text-xs text-zinc-600">GenAI Systems Lab · V1-B · 5 scenarios · Static precomputed simulator · Zero hosting cost · Open source</p>
+        </footer>
+      )}
     </div>
   );
 }
