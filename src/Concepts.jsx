@@ -2485,6 +2485,273 @@ function DebugModule() {
   );
 }
 
+// ─── MULTI-AGENT MODULE ───────────────────────────────────────────────────────
+
+const AGENT_PATTERNS = [
+  {
+    id: "orchestrator",
+    label: "Orchestrator-Worker",
+    color: "#6366f1",
+    description: "One orchestrator agent receives the task, breaks it into subtasks, delegates to specialist worker agents, collects results, and synthesizes the final output.",
+    example: "Research request: 'Compare three cloud providers' → Orchestrator spawns: Agent A (AWS research), Agent B (GCP research), Agent C (Azure research) → collects 3 reports → synthesizes comparison",
+    strengths: ["Clear separation of concerns", "Workers can run in parallel", "Easy to add/swap specialist workers"],
+    failureModes: ["Orchestrator becomes a bottleneck", "Worker failure silently drops subtask", "Orchestrator's synthesis can lose nuance from workers"],
+    whenToUse: "When a task has clearly separable subtasks that benefit from specialization",
+  },
+  {
+    id: "pipeline",
+    label: "Sequential Pipeline",
+    color: "#f59e0b",
+    description: "Agents form a chain — Agent A's output is Agent B's input. Each stage transforms or enriches the data. No parallelism; each stage must complete before the next begins.",
+    example: "Document processing: Raw transcript → Agent A (transcription cleanup) → Agent B (key point extraction) → Agent C (executive summary) → final output",
+    strengths: ["Simple to reason about and debug", "Each stage is independently testable", "Clear data lineage"],
+    failureModes: ["Error propagation — one bad output cascades through all downstream stages", "No parallelism means additive latency", "Context can drift/compress at each handoff"],
+    whenToUse: "When each step transforms the data and the next step depends on the previous result",
+  },
+  {
+    id: "parallel",
+    label: "Parallel Agents",
+    color: "#10b981",
+    description: "Multiple agents work simultaneously on independent subtasks. Results are collected and merged by a reducer step. Total latency = slowest agent (not sum of all agents).",
+    example: "Product analysis: Agent A (pricing analysis), Agent B (competitor research), Agent C (user review sentiment) all running simultaneously → merge results into unified report",
+    strengths: ["Latency = max(individual latencies), not sum", "Independent agents can't corrupt each other", "Easy to scale by adding more parallel workers"],
+    failureModes: ["Merge step is underestimated — conflicting outputs need reconciliation logic", "One slow agent blocks the reducer", "Cost scales linearly with agent count"],
+    whenToUse: "When subtasks are truly independent and latency is a primary constraint",
+  },
+];
+
+const FAILURE_SCENARIOS = [
+  {
+    id: "f1",
+    label: "Worker returns empty result",
+    trigger: "worker_empty",
+    description: "Agent B (the data fetcher) returns an empty result because the API timed out.",
+    cascade: [
+      { agent: "Agent A (Orchestrator)", status: "ok", note: "Dispatched task to Agent B" },
+      { agent: "Agent B (Fetcher)", status: "fail", note: "API timeout — returns {}" },
+      { agent: "Agent C (Analyzer)", status: "degraded", note: "Receives empty data — outputs 'No data available'" },
+      { agent: "Agent D (Synthesizer)", status: "degraded", note: "Synthesizes with 1 of 3 sources missing — produces incomplete report" },
+      { agent: "Final output", status: "fail", note: "Report looks complete but is missing 33% of the data. No error surfaced to the user." },
+    ],
+    lesson: "Empty results must be explicitly handled. A multi-agent system that swallows empty returns and continues silently is worse than one that fails loudly — it produces confident-looking incomplete output.",
+  },
+  {
+    id: "f2",
+    label: "Context drift across handoffs",
+    trigger: "context_drift",
+    description: "Each agent summarizes the previous agent's output before passing it forward. Information compresses — critical details are lost by Agent C.",
+    cascade: [
+      { agent: "Agent A (Source)", status: "ok", note: "Outputs 800 tokens with full technical detail including edge case: 'This applies only when X > 3'" },
+      { agent: "Agent B (Summarizer)", status: "degraded", note: "Compresses to 200 tokens — drops the 'only when X > 3' condition as 'minor detail'" },
+      { agent: "Agent C (Formatter)", status: "degraded", note: "Formats summary — the condition is gone" },
+      { agent: "Agent D (Final answer)", status: "fail", note: "States the rule without the condition — factually wrong for X ≤ 3 cases" },
+      { agent: "Final output", status: "fail", note: "Confident, well-formatted, factually incorrect for a subset of cases." },
+    ],
+    lesson: "Each summarization step loses information. Long multi-agent chains should pass structured data (not summaries) between stages, or maintain a shared context store that agents read from and write to without lossy compression.",
+  },
+  {
+    id: "f3",
+    label: "Infinite reasoning loop",
+    trigger: "loop",
+    description: "The orchestrator's ReAct loop fails to terminate — it keeps calling tools because the stopping condition is never satisfied.",
+    cascade: [
+      { agent: "Orchestrator (Iteration 1)", status: "ok", note: "Searches for X. Result is ambiguous — decides to search again with refined query." },
+      { agent: "Orchestrator (Iteration 2)", status: "degraded", note: "Search result still ambiguous. Decides to try a different tool." },
+      { agent: "Orchestrator (Iteration 3)", status: "degraded", note: "Tool result partially answers the question. Decides to verify with another search." },
+      { agent: "Orchestrator (Iteration N)", status: "fail", note: "Still looping. Token budget exceeded. Process killed." },
+      { agent: "Final output", status: "fail", note: "No output returned. $8.40 in API cost consumed. User sees an error after 45 seconds." },
+    ],
+    lesson: "All ReAct-style agents need a hard iteration cap (e.g., max 8 tool calls) and a timeout. The stopping condition must be explicit — 'if the last 2 iterations produced the same action, terminate with best-effort answer.'",
+  },
+];
+
+function MultiAgentModule() {
+  const [activePattern, setActivePattern] = useState("orchestrator");
+  const [activeFailure, setActiveFailure] = useState(null);
+  const [tab, setTab] = useState("patterns");
+
+  const pattern = AGENT_PATTERNS.find(p => p.id === activePattern);
+  const failure = FAILURE_SCENARIOS.find(f => f.id === activeFailure);
+
+  const STATUS_STYLE = {
+    ok: { bg: "bg-emerald-900/30", border: "border-emerald-700", text: "text-emerald-300", dot: "#10b981" },
+    degraded: { bg: "bg-amber-900/20", border: "border-amber-700", text: "text-amber-300", dot: "#f59e0b" },
+    fail: { bg: "bg-red-900/20", border: "border-red-800", text: "text-red-300", dot: "#ef4444" },
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-2 flex-wrap">
+        {[{ id: "patterns", label: "Architecture Patterns" }, { id: "failures", label: "Failure Cascade Simulator" }, { id: "vs", label: "Single vs. Multi-Agent" }].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wide transition-all ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* PATTERNS TAB */}
+      {tab === "patterns" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Three core multi-agent architectural patterns. Each solves a different class of problem.</p>
+          <div className="flex gap-2 flex-wrap">
+            {AGENT_PATTERNS.map(p => (
+              <button key={p.id} onClick={() => setActivePattern(p.id)}
+                className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${activePattern === p.id ? "text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+                style={activePattern === p.id ? { background: p.color } : {}}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-4">
+            <div>
+              <div className="text-base font-bold text-white mb-1" style={{ color: pattern.color }}>{pattern.label}</div>
+              <p className="text-sm text-zinc-300 leading-relaxed">{pattern.description}</p>
+            </div>
+
+            {/* Visual flow */}
+            <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-4">
+              <div className="text-xs font-bold text-zinc-500 mb-3">Example</div>
+              <p className="text-xs text-zinc-300 leading-relaxed font-mono">{pattern.example}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="rounded-lg bg-emerald-950/20 border border-emerald-900/40 p-3">
+                <div className="text-xs font-bold text-emerald-400 mb-2">Strengths</div>
+                {pattern.strengths.map((s, i) => (
+                  <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1">
+                    <span className="text-emerald-500 flex-shrink-0">✓</span>{s}
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-lg bg-red-950/20 border border-red-900/30 p-3">
+                <div className="text-xs font-bold text-red-400 mb-2">Failure modes</div>
+                {pattern.failureModes.map((f, i) => (
+                  <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1">
+                    <span className="text-red-400 flex-shrink-0">✗</span>{f}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded bg-indigo-950/30 border border-indigo-800 p-3 text-xs">
+              <span className="text-indigo-400 font-bold">When to use: </span>
+              <span className="text-zinc-300">{pattern.whenToUse}</span>
+            </div>
+          </div>
+
+          {/* Comparison table */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 overflow-hidden">
+            <div className="grid grid-cols-4 text-xs font-bold text-zinc-500 p-3 border-b border-zinc-800">
+              <div>Pattern</div><div>Latency</div><div>Cost</div><div>Complexity</div>
+            </div>
+            {[
+              { label: "Orchestrator-Worker", latency: "Medium", cost: "Medium", complexity: "High" },
+              { label: "Sequential Pipeline", latency: "High (additive)", cost: "Low", complexity: "Low" },
+              { label: "Parallel Agents", latency: "Low (max, not sum)", cost: "High (per agent)", complexity: "Medium" },
+            ].map((row, i) => (
+              <div key={i} className="grid grid-cols-4 text-xs p-3 border-b border-zinc-800/50">
+                <div className="text-zinc-300 font-semibold">{row.label}</div>
+                <div className="text-zinc-400 font-mono">{row.latency}</div>
+                <div className="text-zinc-400 font-mono">{row.cost}</div>
+                <div className="text-zinc-400 font-mono">{row.complexity}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* FAILURE CASCADE TAB */}
+      {tab === "failures" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Multi-agent systems fail in ways that are hard to detect — errors propagate silently and produce confident-looking wrong output. Select a failure mode to see the cascade.</p>
+          <div className="flex gap-2 flex-wrap">
+            {FAILURE_SCENARIOS.map(f => (
+              <button key={f.id} onClick={() => setActiveFailure(f.id === activeFailure ? null : f.id)}
+                className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${activeFailure === f.id ? "bg-red-700 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {failure && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4">
+                <div className="text-xs font-bold text-red-400 mb-2">Scenario</div>
+                <p className="text-sm text-zinc-300">{failure.description}</p>
+              </div>
+
+              <div className="space-y-2">
+                {failure.cascade.map((step, i) => {
+                  const style = STATUS_STYLE[step.status];
+                  return (
+                    <div key={i} className={`rounded-lg border p-3 ${style.bg} ${style.border}`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: style.dot }} />
+                        <span className={`text-xs font-bold ${style.text}`}>{step.agent}</span>
+                        <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${style.bg} ${style.text}`}>{step.status}</span>
+                      </div>
+                      <p className="text-xs text-zinc-300 ml-4">{step.note}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="rounded-xl bg-zinc-950 border border-amber-800 p-4">
+                <div className="text-xs font-bold text-amber-400 mb-2">Design lesson</div>
+                <p className="text-sm text-zinc-300 leading-relaxed">{failure.lesson}</p>
+              </div>
+            </div>
+          )}
+
+          {!failure && (
+            <div className="rounded-xl border border-dashed border-zinc-700 p-8 text-center text-zinc-500 text-sm">
+              Select a failure scenario above to see the cascade
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SINGLE vs MULTI TAB */}
+      {tab === "vs" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Multi-agent systems add real complexity. Use them when the task genuinely requires it.</p>
+          <div className="space-y-3">
+            {[
+              { signal: "Task requires a single LLM call", single: "✓ Use single agent", multi: "✗ Over-engineered", rec: "single" },
+              { signal: "Multiple steps, each depends on previous", single: "✓ Single ReAct agent with tools", multi: "○ Pipeline agents (adds complexity)", rec: "single" },
+              { signal: "Subtasks are truly independent", single: "✗ Sequential = slow", multi: "✓ Parallel agents", rec: "multi" },
+              { signal: "Tasks require specialized domain knowledge", single: "○ Works with good prompting", multi: "✓ Specialist worker agents", rec: "multi" },
+              { signal: "Real-time data from multiple sources", single: "○ Tool calls handle it", multi: "✓ Parallel fetcher agents", rec: "multi" },
+              { signal: "Single failure should abort the task", single: "✓ Simpler error handling", multi: "✗ Failure propagation is complex", rec: "single" },
+              { signal: "Cost and latency are primary constraints", single: "✓ Cheaper, faster", multi: "✗ Each agent adds cost + latency", rec: "single" },
+              { signal: "Task requires 10+ sequential tool calls", single: "✗ Context window pressure", multi: "✓ Segment across pipeline agents", rec: "multi" },
+            ].map((row, i) => (
+              <div key={i} className={`rounded-lg border p-3 flex items-start gap-3 ${row.rec === "single" ? "border-zinc-700 bg-zinc-900/40" : "border-indigo-900/50 bg-indigo-950/20"}`}>
+                <div className="flex-1">
+                  <div className="text-xs font-bold text-zinc-300 mb-1.5">{row.signal}</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-xs text-zinc-400"><span className="text-zinc-600">Single: </span>{row.single}</div>
+                    <div className="text-xs text-zinc-400"><span className="text-zinc-600">Multi: </span>{row.multi}</div>
+                  </div>
+                </div>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded flex-shrink-0 ${row.rec === "single" ? "bg-zinc-800 text-zinc-300" : "bg-indigo-900 text-indigo-300"}`}>
+                  {row.rec === "single" ? "Single" : "Multi"}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4">
+            <div className="text-xs font-bold text-violet-400 mb-2">The rule of thumb</div>
+            <p className="text-sm text-zinc-300 leading-relaxed">Start with a single ReAct agent with tools. It handles 80% of agentic use cases with far less operational complexity. Upgrade to multi-agent only when: (1) subtasks are genuinely parallel, (2) a task requires specialist knowledge that can't be injected via prompt, or (3) the context window is the binding constraint across a long sequential workflow.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN CONCEPTS APP ────────────────────────────────────────────────────────
 
 const MODULES = [
@@ -2568,6 +2835,14 @@ const MODULES = [
     subtitle: "Five incidents. Only the symptom shown. Diagnose the failure mode — then see the root cause explanation.",
     component: DebugModule,
   },
+  {
+    id: "multiagent",
+    label: "Multi-Agent",
+    tag: "LAYER 9",
+    title: "Multi-Agent Systems",
+    subtitle: "Architecture patterns, failure cascades, and when single-agent is the right call.",
+    component: MultiAgentModule,
+  },
 ];
 
 export default function ConceptsApp() {
@@ -2591,9 +2866,6 @@ export default function ConceptsApp() {
             {m.label}
           </button>
         ))}
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-xs px-2 py-1 bg-zinc-800 text-zinc-500 rounded font-mono">Multi-agent — coming soon</span>
-        </div>
       </div>
 
       {/* Module header */}
