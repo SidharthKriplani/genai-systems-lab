@@ -1410,44 +1410,31 @@ export default function App() {
           </div>
         </div>
       )}
-      <header className="border-b border-zinc-800 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <header className="border-b border-zinc-800">
+        {/* Row 1: Logo + Search + Utilities */}
+        <div className="px-4 py-2 flex items-center gap-3 max-w-7xl mx-auto">
           <button onClick={() => navigate("home")} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
             <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold text-white">G</div>
             <span className="hidden sm:block text-sm font-bold tracking-wide text-white">GenAI Lab</span>
           </button>
-          <div className="hidden lg:flex flex-1 min-w-0 relative">
-            <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide min-w-0 flex-1">
-            {NAV_GROUPS.map((group, gi) => (
-              <div key={gi} className="flex items-center gap-0.5 shrink-0">
-                {gi > 0 && <div className="w-px h-4 bg-zinc-700 mx-1" />}
-                {group.label && (
-                  <span className="text-xs font-mono font-bold px-1 mr-0.5 hidden xl:inline" style={{ color: group.color + "99" }}>{group.label}</span>
-                )}
-                {group.items.map(item => (
-                  <button key={item.id} onClick={() => navigate(item.id)}
-                    className={`relative px-1.5 py-1 sm:px-2.5 sm:py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
-                    {item.label}
-                    {item.count && (
-                      <span className={`hidden sm:inline text-[9px] font-mono leading-none ${topView === item.id ? "text-violet-200 opacity-70" : "text-zinc-600"}`}>{item.count}</span>
-                    )}
-                    {visited.has(item.id) && topView !== item.id && (
-                      <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />
-                    )}
-                  </button>
-                ))}
-              </div>
+          {/* Search bar — center, grows to fill space */}
+          <button onClick={() => setSearchOpen(true)}
+            className="hidden lg:flex flex-1 items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-left">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-zinc-600 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+            <span className="text-xs text-zinc-600 flex-1">Search modules…</span>
+            <kbd className="text-[9px] border border-zinc-700 rounded px-1 text-zinc-600 font-mono">⌘K</kbd>
+          </button>
+          {/* Right utilities */}
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
+            {[
+              { id: "violet", color: "#7c3aed" },
+              { id: "cyan",   color: "#06b6d4" },
+              { id: "amber",  color: "#f59e0b" },
+            ].map(p => (
+              <button key={p.id} onClick={() => switchPalette(p.id)} title={p.id}
+                className="w-3.5 h-3.5 rounded-full border-2 transition-all hover:scale-110"
+                style={{ background: p.color, borderColor: palette === p.id ? "white" : "transparent" }} />
             ))}
-            </nav>
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-950 to-transparent" />
-          </div>
-          {/* Right side: ? button + hamburger */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button onClick={() => setSearchOpen(true)} className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-              <span className="hidden xl:inline">Search</span>
-              <kbd className="text-[9px] border border-zinc-700 rounded px-1">⌘K</kbd>
-            </button>
             <button onClick={() => setLeaderboardOpen(true)}
               className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
               title="Challenge Log">
@@ -1458,21 +1445,31 @@ export default function App() {
               NEW
               {!whatsNewSeen && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
             </button>
-            {/* Palette switcher */}
-            {[
-              { id: "violet", color: "#7c3aed" },
-              { id: "cyan",   color: "#06b6d4" },
-              { id: "amber",  color: "#f59e0b" },
-            ].map(p => (
-              <button key={p.id} onClick={() => switchPalette(p.id)} title={p.id}
-                className="w-4 h-4 rounded-full border-2 transition-all hover:scale-110"
-                style={{ background: p.color, borderColor: palette === p.id ? "white" : "transparent" }} />
-            ))}
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">?</button>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
             </button>
           </div>
+        </div>
+        {/* Row 2: Tab navigation (desktop only) */}
+        <div className="hidden lg:flex items-center gap-0.5 px-4 pb-1.5 max-w-7xl mx-auto">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi} className="flex items-center gap-0.5 shrink-0">
+              {gi > 0 && <div className="w-px h-4 bg-zinc-800 mx-1" />}
+              {group.label && (
+                <span className="text-[10px] font-mono font-bold px-1 mr-0.5" style={{ color: group.color + "99" }}>{group.label}</span>
+              )}
+              {group.items.map(item => (
+                <button key={item.id} onClick={() => navigate(item.id)}
+                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                  {item.label}
+                  {visited.has(item.id) && topView !== item.id && (
+                    <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-500 opacity-80" />
+                  )}
+                </button>
+              ))}
+            </div>
+          ))}
         </div>
       </header>
 

@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── Palette themes ─────────────────────────────────────────────────────────
    Tailwind v4 exposes colors as CSS custom properties (--color-violet-400 etc.)
    Overriding them here remaps every violet utility class app-wide — zero component changes.
