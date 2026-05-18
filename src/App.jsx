@@ -3,6 +3,9 @@ import ConceptsApp from "./Concepts";
 import SystemsApp from "./Systems";
 import FluencyApp from "./Fluency";
 import FlowsApp from "./Flows";
+import AIPMApp from "./AIPM";
+import PlaygroundApp from "./Playground";
+import CareerApp from "./Career";
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -952,6 +955,24 @@ export default function App() {
               Flows
             </button>
             <button
+              onClick={() => setTopView("aipm")}
+              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "aipm" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
+            >
+              AIPM
+            </button>
+            <button
+              onClick={() => setTopView("playground")}
+              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "playground" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
+            >
+              Playground
+            </button>
+            <button
+              onClick={() => setTopView("career")}
+              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "career" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
+            >
+              Career
+            </button>
+            <button
               onClick={() => setTopView("leaderboard")}
               className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase flex items-center gap-1.5 ${topView === "leaderboard" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
             >
@@ -977,6 +998,12 @@ export default function App() {
       {topView === "fluency" && <FluencyApp />}
 
       {topView === "flows" && <FlowsApp />}
+
+      {topView === "aipm" && <AIPMApp />}
+
+      {topView === "playground" && <PlaygroundApp />}
+
+      {topView === "career" && <CareerApp />}
 
       {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} />}
 
