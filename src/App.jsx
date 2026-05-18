@@ -747,6 +747,34 @@ function ChallengeResult({ grade }) {
   );
 }
 
+// ─── COLLAPSIBLE CONFIG CARD ─────────────────────────────────────────────────
+
+function CollapsibleConfigCard({ cfg }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full text-left px-4 py-3 flex items-center gap-3 flex-wrap hover:bg-zinc-800/40 transition-colors"
+      >
+        <span className="text-xs font-mono text-violet-400">{cfg.label}</span>
+        <span className="text-xs text-zinc-600 font-mono">{cfg.chunk_size} · top_k={cfg.top_k} · reranker={cfg.reranker ? "on" : "off"} · {cfg.answer_policy}</span>
+        {cfg.failure_mode
+          ? <span className="text-xs bg-red-900 text-red-300 px-2 py-0.5 rounded font-mono">{cfg.failure_mode}</span>
+          : <span className="text-xs bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded font-mono">no failure</span>
+        }
+        <span className="ml-auto text-zinc-600 text-xs font-mono">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-3 border-t border-zinc-800 pt-3 space-y-1.5">
+          <p className="text-xs text-zinc-300 leading-relaxed">{cfg.system_design_lesson}</p>
+          {cfg.suggested_fix && <p className="text-xs text-zinc-500 leading-relaxed mt-1">Fix: {cfg.suggested_fix}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── CORPUS PANEL ────────────────────────────────────────────────────────────
 
 function CorpusPanel({ scenario }) {
@@ -1235,19 +1263,10 @@ export default function App() {
             <h2 className="text-xl font-bold mt-2">{scenario.title}</h2>
             <p className="text-sm text-zinc-400 mt-1">Failure mode: {scenario.failure_mode_taught}</p>
           </div>
-          <div className="space-y-4">
+          <p className="text-xs text-zinc-600 mb-3">Click any config to expand the design lesson.</p>
+          <div className="space-y-2">
             {scenario.configs.map((cfg) => (
-              <div key={cfg.id} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-xs font-mono text-violet-400">{cfg.label}</span>
-                  <span className="text-xs text-zinc-600 font-mono">{cfg.chunk_size} · top_k={cfg.top_k} · reranker={cfg.reranker ? "on" : "off"} · {cfg.answer_policy}</span>
-                  {cfg.failure_mode
-                    ? <span className="text-xs bg-red-900 text-red-300 px-2 py-0.5 rounded font-mono">{cfg.failure_mode}</span>
-                    : <span className="text-xs bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded font-mono">no failure</span>
-                  }
-                </div>
-                <p className="text-xs text-zinc-400 leading-relaxed">{cfg.system_design_lesson}</p>
-              </div>
+              <CollapsibleConfigCard key={cfg.id} cfg={cfg} />
             ))}
           </div>
         </div>
