@@ -1073,6 +1073,9 @@ const TAB_COLORS = {
   fluency: "#22c55e", aipm: "#22c55e", career: "#22c55e", home: "#71717a",
 };
 
+// Tabs in "in progression" state — keep in sync with NAV_GROUPS locked: true entries
+const LOCKED_TABS = new Set(["systems", "fluency", "aipm", "career"]);
+
 function SearchModal({ onClose, onSelect }) {
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -1113,20 +1116,29 @@ function SearchModal({ onClose, onSelect }) {
         <div className="max-h-80 overflow-y-auto">
           {results.length === 0
             ? <div className="px-4 py-8 text-center text-xs text-zinc-600">No modules found</div>
-            : results.map((item, i) => (
-              <button key={`${item.tab}-${item.moduleId || "tab"}-${i}`}
-                onClick={() => onSelect(item)}
-                className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-all ${cursor === i ? "bg-zinc-800" : "hover:bg-zinc-800/60"}`}>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold text-white truncate">{item.label}</div>
-                  <div className="text-xs text-zinc-500 capitalize">{item.tab === "lab" ? "RAG Lab" : item.tab}</div>
-                </div>
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0"
-                  style={{ color: (TAB_COLORS[item.tab] || "#888") + "ee", background: (TAB_COLORS[item.tab] || "#888") + "22" }}>
-                  {item.tag}
-                </span>
-              </button>
-            ))
+            : results.map((item, i) => {
+              const locked = LOCKED_TABS.has(item.tab);
+              return (
+                <button key={`${item.tab}-${item.moduleId || "tab"}-${i}`}
+                  onClick={() => onSelect(item)}
+                  className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-all ${cursor === i ? "bg-zinc-800" : "hover:bg-zinc-800/60"} ${locked ? "opacity-50" : ""}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-bold truncate ${locked ? "text-zinc-500" : "text-white"}`}>{item.label}</div>
+                    <div className="text-xs text-zinc-500 capitalize flex items-center gap-1">
+                      {item.tab === "lab" ? "RAG Lab" : item.tab}
+                      {locked && <span className="text-[9px] font-mono text-zinc-600">· in progression</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {locked && <span className="text-xs">🔒</span>}
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono"
+                      style={{ color: (TAB_COLORS[item.tab] || "#888") + "ee", background: (TAB_COLORS[item.tab] || "#888") + "22" }}>
+                      {item.tag}
+                    </span>
+                  </div>
+                </button>
+              );
+            })
           }
         </div>
         <div className="px-4 py-2 border-t border-zinc-800 flex items-center gap-4 text-[10px] text-zinc-600 font-mono">
@@ -1223,12 +1235,12 @@ export default function App() {
   });
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [whatsNewSeen, setWhatsNewSeen] = useState(() => {
-    try { return localStorage.getItem("genai_whatsnew_v2") === "1"; } catch { return false; }
+    try { return localStorage.getItem("genai_whatsnew_v3") === "1"; } catch { return false; }
   });
   function dismissWhatsNew() {
     setWhatsNewSeen(true);
     setWhatsNewOpen(false);
-    try { localStorage.setItem("genai_whatsnew_v2", "1"); } catch {}
+    try { localStorage.setItem("genai_whatsnew_v3", "1"); } catch {}
   }
 
   function trackModuleVisit(tab, moduleId) {
@@ -1416,13 +1428,14 @@ export default function App() {
             </div>
             <div className="space-y-3">
               {[
+                { tag: "NEW", color: "#f59e0b", label: "Progression path", desc: "Systems, Fluency, AIPM, Career now show as 'in progression' — content teaser + unlock roadmap visible" },
+                { tag: "NEW", color: "#6366f1", label: "Audience targeting", desc: "Every module now shows who it's for + a discovery hook for people who think they already know it" },
+                { tag: "FIX", color: "#10b981", label: "RAG flow diagram", desc: "Stage boxes cleaned up — detail text moved to its own panel below the pipeline" },
                 { tag: "NEW", color: "#6366f1", label: "Agent Lab", desc: "ReAct, tool use, memory, multi-agent, failure modes, planning — 6 modules" },
                 { tag: "NEW", color: "#6366f1", label: "Agent Loop Simulator", desc: "Interactive step-through of ReAct traces with decision quizzes" },
                 { tag: "NEW", color: "#8b5cf6", label: "Structured Outputs Lab", desc: "JSON mode vs function calling vs constrained decoding, failure modes" },
                 { tag: "NEW", color: "#ef4444", label: "Red Teaming Lab", desc: "6 attack types, 6 defenses, 2 full simulation scenarios" },
                 { tag: "NEW", color: "#f59e0b", label: "Eval Frameworks", desc: "RAGAS, G-Eval, Human Eval, Custom graded — in Systems tab" },
-                { tag: "UX",  color: "#22c55e", label: "Start Here CTA + progress bars", desc: "Pick your path and track steps visited on Home" },
-                { tag: "UX",  color: "#22c55e", label: "Share your score", desc: "Copy your leaderboard score to share anywhere" },
               ].map(({ tag, color, label, desc }) => (
                 <div key={label} className="flex items-start gap-3">
                   <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded mt-0.5 shrink-0"
@@ -1517,7 +1530,7 @@ export default function App() {
               title="Challenge Log">
               🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px]">{leaderboard.filter(e => e.passed).length}</span>}
             </button>
-            <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v2","1"); } catch {} }}
+            <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v3","1"); } catch {} }}
               className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300 relative">
               NEW
               {!whatsNewSeen && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}

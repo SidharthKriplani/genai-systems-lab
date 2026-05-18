@@ -121,6 +121,9 @@ const MODULE_MAP = [
   },
 ];
 
+// Tabs currently in "in progression" (locked) state — keep in sync with App.jsx NAV_GROUPS
+const LOCKED_TABS = new Set(["systems", "fluency", "aipm", "career"]);
+
 const STATS = [
   { value: "3",    label: "Learning tracks",      sub: "Engineer · PM · Interview" },
   { value: "75+",  label: "Modules",              sub: "Across 11 tabs"            },
@@ -313,26 +316,34 @@ export default function HomePage({ onNavigate, visited = new Set() }) {
 
               {/* Steps */}
               <div className="space-y-1.5">
-                {path.steps.map((step, i) => (
-                  <div key={i} className="flex items-center gap-2.5">
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                      style={{ backgroundColor: path.color + "22", color: path.color }}>{i+1}</div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-bold text-white">{step.label}</span>
-                      <span className="text-xs text-zinc-500 ml-1.5">{step.desc}</span>
+                {path.steps.map((step, i) => {
+                  const locked = LOCKED_TABS.has(step.tab);
+                  return (
+                    <div key={i} className={`flex items-center gap-2.5 ${locked ? "opacity-50" : ""}`}>
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                        style={{ backgroundColor: path.color + "22", color: locked ? "#52525b" : path.color }}>
+                        {locked ? "🔒" : i+1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className={`text-xs font-bold ${locked ? "text-zinc-600" : "text-white"}`}>{step.label}</span>
+                        <span className="text-xs text-zinc-600 ml-1.5">{locked ? "coming soon" : step.desc}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              {activePath === path.id && (
-                <button
-                  onClick={e => { e.stopPropagation(); onNavigate(path.steps[0].tab); }}
-                  className="mt-4 w-full py-2 rounded-lg text-xs font-bold text-white transition-all"
-                  style={{ backgroundColor: path.color }}>
-                  Start with {path.steps[0].label} →
-                </button>
-              )}
+              {activePath === path.id && (() => {
+                const firstFree = path.steps.find(s => !LOCKED_TABS.has(s.tab));
+                return firstFree ? (
+                  <button
+                    onClick={e => { e.stopPropagation(); onNavigate(firstFree.tab); }}
+                    className="mt-4 w-full py-2 rounded-lg text-xs font-bold text-white transition-all"
+                    style={{ backgroundColor: path.color }}>
+                    Start with {firstFree.label} →
+                  </button>
+                ) : null;
+              })()}
             </div>
             );
           })}
