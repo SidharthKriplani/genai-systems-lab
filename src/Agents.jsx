@@ -584,20 +584,388 @@ function PlanningPatterns() {
   );
 }
 
+// ─── AGENT LOOP SIMULATOR ────────────────────────────────────────────────────
+
+const SIM_SCENARIOS = [
+  {
+    id: "research", title: "Market Research", difficulty: "BASIC", color: "#6366f1",
+    task: "Find Nvidia's current market cap and compare it to AMD.",
+    steps: [
+      {
+        type: "thought", label: "THOUGHT", color: "#6366f1",
+        content: "I need market caps for both Nvidia and AMD — two separate lookups. I should not guess these numbers from training data.",
+        note: "Reasoning before acting. The agent explicitly decides NOT to guess numbers it might have seen in training.",
+        quiz: {
+          q: "The agent gets this task. What should it do first?",
+          options: [
+            { text: "Answer immediately: 'Nvidia has a much larger market cap than AMD'", correct: false, why: "Hallucination — market caps change daily. Never use training data for live figures." },
+            { text: "Think through what information is needed, then call tools", correct: true, why: "Correct. Reasoning first prevents wasted or wrong tool calls." },
+            { text: "Call get_market_cap('NVDA') right away without thinking", correct: false, why: "Jumping to action without reasoning is brittle — tool names might differ." },
+          ],
+        },
+      },
+      {
+        type: "action", label: "ACTION", color: "#3b82f6",
+        content: 'get_market_cap({ ticker: "NVDA" })',
+        note: "Structured tool call. Uses the exact parameter the schema defines — no improvisation.",
+        quiz: {
+          q: "The agent needs Nvidia's market cap. What's the right move?",
+          options: [
+            { text: "Search the web for 'nvidia market cap 2024'", correct: false, why: "Unstructured web search returns inconsistent, non-machine-readable results." },
+            { text: "Call the financial tool with the correct NVDA ticker", correct: true, why: "Correct. Structured tool → reliable, consistent, parseable data." },
+            { text: "Call get_market_cap for both NVDA and AMD in a single call", correct: false, why: "Most tools don't support batch calls. Sequential is safer and more debuggable." },
+          ],
+        },
+      },
+      {
+        type: "observation", label: "OBSERVATION", color: "#22c55e",
+        content: '{ ticker: "NVDA", market_cap: "$2.81T", as_of: "2024-11-01" }',
+        note: "Tool result injected into context. The model NEVER generates observations — they always come from real tool execution.",
+        quiz: {
+          q: "The tool returns Nvidia's data. Where does this observation come from?",
+          options: [
+            { text: "The model generates it from its training data", correct: false, why: "NEVER. Observations are real tool outputs, not LLM generation. This is the core trust boundary." },
+            { text: "The tool execution result is injected into the agent's context", correct: true, why: "Correct. Observations are ground truth. The model then reasons over them." },
+            { text: "The model caches it and uses it for AMD too", correct: false, why: "AMD needs its own lookup — don't assume known values." },
+          ],
+        },
+      },
+      {
+        type: "final", label: "FINAL ANSWER", color: "#f59e0b",
+        content: "Nvidia: $2.81T market cap. AMD: $218B. Nvidia is ~13× larger — driven by its AI/GPU dominance. Both are in semiconductors but Nvidia commands a massive AI premium. Source: financial data tool, as of 2024-11-01.",
+        note: "Every number cites an observation. No fabrication. The timestamp from the tool is included so the user knows data freshness.",
+        quiz: {
+          q: "Both data points are in context. How should the agent respond?",
+          options: [
+            { text: "Give a grounded answer with specific numbers, citing the data source and date", correct: true, why: "Correct. Every figure traces to an observation. Timestamp included for freshness." },
+            { text: "Summarize broadly without numbers to avoid being wrong", correct: false, why: "Vagueness is a failure mode — the user explicitly asked for specific data." },
+            { text: "Give the answer but add 'these numbers might be outdated'", correct: false, why: "The tool returned a timestamp — use it. Don't add unnecessary uncertainty you can quantify." },
+          ],
+        },
+      },
+    ],
+  },
+  {
+    id: "debugging", title: "Code Debugging", difficulty: "INTERMEDIATE", color: "#3b82f6",
+    task: "My Python function crashes with 'KeyError: user_id'. Find and fix the bug.",
+    steps: [
+      {
+        type: "thought", label: "THOUGHT", color: "#6366f1",
+        content: "KeyError means the code tried to access dict key 'user_id' that doesn't exist. I need to see the actual code — maybe it's 'userId' (camelCase) or something else entirely.",
+        note: "Hypothesis before action. The agent forms a theory, then tests it — just like a real engineer.",
+        quiz: {
+          q: "The agent sees a KeyError. Best first move?",
+          options: [
+            { text: "Suggest adding a .get() call immediately", correct: false, why: "Premature fix without seeing the code. The bug might be a different key name entirely." },
+            { text: "Form a hypothesis about the cause, then read the code", correct: true, why: "Correct. Hypothesis-driven debugging prevents unnecessary tool calls." },
+            { text: "Search Stack Overflow for 'Python KeyError solutions'", correct: false, why: "Too generic. The agent needs to understand the specific codebase first." },
+          ],
+        },
+      },
+      {
+        type: "action", label: "ACTION", color: "#3b82f6",
+        content: 'read_file({ path: "user_service.py", lines: "1-50" })',
+        note: "Targeted read — specific file, specific lines. Not reading the entire codebase.",
+        quiz: {
+          q: "The agent needs to see the code. Which action is most efficient?",
+          options: [
+            { text: "read_file on the specific file with relevant line range", correct: true, why: "Correct. Targeted reads are faster and less noisy than scanning entire codebases." },
+            { text: "search_codebase({ query: 'user_id' })", correct: false, why: "Possible but less efficient — you already know the file from the error trace." },
+            { text: "run_tests() to see all failing tests", correct: false, why: "Premature — fix the known bug first before running a full test suite." },
+          ],
+        },
+      },
+      {
+        type: "observation", label: "OBSERVATION", color: "#22c55e",
+        content: "def get_user(data):\n  return data['user_id']   # line 12\n  # Note: upstream sends { 'userId': ..., 'email': ... }",
+        note: "The observation confirms the hypothesis — 'user_id' vs 'userId' mismatch. One more lookup to be sure before fixing.",
+        quiz: {
+          q: "Code shows data['user_id'] but upstream sends 'userId'. What next?",
+          options: [
+            { text: "Fix the key immediately to 'userId'", correct: false, why: "Close, but read one sample data file first to be 100% certain before changing prod code." },
+            { text: "Read a test fixture to confirm the actual key name before fixing", correct: true, why: "Correct. Verify before fixing. One extra read prevents introducing a new bug." },
+            { text: "Tell the user both keys might be wrong", correct: false, why: "Too vague. An extra lookup gives a definitive answer in seconds." },
+          ],
+        },
+      },
+      {
+        type: "final", label: "FINAL ANSWER", color: "#f59e0b",
+        content: "Bug found: data['user_id'] → should be data['userId'] (camelCase). Fix line 12: return data['userId']. Safer alternative: return data.get('userId') — handles missing key gracefully. Verified against test_fixtures.json.",
+        note: "Specific: line number, the fix, a safer alternative, and evidence. This is what a senior engineer expects.",
+        quiz: {
+          q: "Agent has the fix. What makes the best response?",
+          options: [
+            { text: "Specific fix with line number, explanation of why, and a safer alternative", correct: true, why: "Correct. Line number + why + safer option = senior engineer quality output." },
+            { text: "Give the fixed code without explanation", correct: false, why: "Missing the 'why' — engineers need to understand fixes, not just apply them blindly." },
+            { text: "Suggest rewriting the whole function for safety", correct: false, why: "Scope creep. Fix the reported bug first. Don't over-engineer." },
+          ],
+        },
+      },
+    ],
+  },
+  {
+    id: "planning", title: "Multi-Step Planning", difficulty: "ADVANCED", color: "#22c55e",
+    task: "Book a meeting room for 10 people next Tuesday at 2pm, then send calendar invites to the team.",
+    steps: [
+      {
+        type: "thought", label: "THOUGHT", color: "#6366f1",
+        content: "Two sequential actions: (1) find and book an available room, (2) send calendar invites. Order matters — I can't include a room in the invite until it's confirmed.",
+        note: "Dependency detection. The agent identifies that action 2 depends on action 1 completing successfully.",
+        quiz: {
+          q: "Task has a sequential dependency. How should the agent plan?",
+          options: [
+            { text: "Execute both actions in parallel for speed", correct: false, why: "You can't include a room in an invite until you have the room confirmed. Hard dependency." },
+            { text: "Identify the dependency: book first, then invite", correct: true, why: "Correct. ReAct agents recognize when actions must be ordered and plan accordingly." },
+            { text: "Ask the user to split this into two separate requests", correct: false, why: "A capable agent handles multi-step tasks end-to-end. That's its core value." },
+          ],
+        },
+      },
+      {
+        type: "action", label: "ACTION", color: "#3b82f6",
+        content: 'find_available_room({ capacity: 10, date: "next_tuesday", time: "14:00", duration_mins: 60 })',
+        note: "Read before write. Check availability before booking — never assume a room is free.",
+        quiz: {
+          q: "Agent needs a room for 10 people. What's the right first call?",
+          options: [
+            { text: "book_room() directly — assume a room is available", correct: false, why: "Booking without checking will fail or double-book an existing reservation." },
+            { text: "find_available_room with all required params first", correct: true, why: "Correct. Always read before write. Availability check → booking → invite." },
+            { text: "search_calendar() to see the user's existing bookings", correct: false, why: "Wrong system — that's the user's personal calendar, not the room booking system." },
+          ],
+        },
+      },
+      {
+        type: "observation", label: "OBSERVATION", color: "#22c55e",
+        content: '{ available: [{ id: "conf_B", name: "Board Room B", floor: 3, capacity: 12, av_equipment: true }] }',
+        note: "One room found. 12 seats ≥ 10 required. Agent has enough to proceed — no need to over-optimize.",
+        quiz: {
+          q: "One room with 12 seats is available. What next?",
+          options: [
+            { text: "Book it and proceed to sending invites", correct: true, why: "Correct. 12 ≥ 10 requirement, room has AV. Good enough — don't over-optimize." },
+            { text: "Check if even larger rooms are available first", correct: false, why: "The requirement is met. Searching for 'better' options wastes time and risks losing this one." },
+            { text: "Show the user options and wait for approval", correct: false, why: "The user delegated this task to the agent. Interrupting for trivial decisions defeats the purpose." },
+          ],
+        },
+      },
+      {
+        type: "final", label: "FINAL ANSWER", color: "#f59e0b",
+        content: "✓ Board Room B (floor 3, capacity 12, AV) booked Tue 14:00–15:00. ✓ Calendar invite sent to 10 team members with room details + video link. Booking ref: BRB-TUE-1400.",
+        note: "Structured confirmation with booking reference. Users can verify the actions taken — this is auditable delegation.",
+        quiz: {
+          q: "Both actions done. How should the agent confirm?",
+          options: [
+            { text: "Confirm both actions with specific details and booking reference", correct: true, why: "Correct. Reference number + room details + recipient count = fully auditable." },
+            { text: "'Done! I booked a room and sent invites.'", correct: false, why: "Too vague — what room? Which floor? Users need to verify delegation worked." },
+            { text: "Ask 'Did this work as expected?'", correct: false, why: "The agent should report what it did, not ask if it worked. That's the user's job to verify." },
+          ],
+        },
+      },
+    ],
+  },
+];
+
+const STEP_ICONS = { thought: "💭", action: "⚡", observation: "👁", final: "✓" };
+
+function AgentLoopSimulator() {
+  const [scenarioId, setScenarioId] = useState("research");
+  const [stepIdx, setStepIdx] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const [chosen, setChosen] = useState(null);
+  const [scores, setScores] = useState([]);
+  const [done, setDone] = useState(false);
+
+  const scenario = SIM_SCENARIOS.find(s => s.id === scenarioId);
+  const currentStep = scenario.steps[stepIdx];
+  const totalSteps = scenario.steps.length;
+
+  function pickScenario(id) {
+    setScenarioId(id);
+    setStepIdx(0);
+    setRevealed(false);
+    setChosen(null);
+    setScores([]);
+    setDone(false);
+  }
+
+  function selectOption(idx) {
+    if (chosen !== null) return;
+    setChosen(idx);
+    setRevealed(true);
+    setScores(prev => [...prev, currentStep.quiz.options[idx].correct]);
+  }
+
+  function nextStep() {
+    if (stepIdx + 1 >= totalSteps) {
+      setDone(true);
+    } else {
+      setStepIdx(s => s + 1);
+      setRevealed(false);
+      setChosen(null);
+    }
+  }
+
+  function restart() {
+    setStepIdx(0);
+    setRevealed(false);
+    setChosen(null);
+    setScores([]);
+    setDone(false);
+  }
+
+  const correctCount = scores.filter(Boolean).length;
+
+  if (done) {
+    const pct = Math.round((correctCount / totalSteps) * 100);
+    return (
+      <div className="space-y-5">
+        <HowTo
+          objective="Step through real agent execution traces and predict what the agent should do at each step. Every wrong answer has a lesson — read the explanations."
+          steps={["Pick a scenario", "Read the task and current trace", "Pick the best next action", "See the actual agent decision and why"]}
+        />
+        <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-6 text-center space-y-4">
+          <div className="text-4xl">{pct === 100 ? "🏆" : pct >= 75 ? "🎯" : pct >= 50 ? "📈" : "📚"}</div>
+          <div className="text-xl font-black text-white">{correctCount}/{totalSteps} correct</div>
+          <div className="text-sm text-zinc-400">{pct === 100 ? "Perfect trace — you think like the agent." : pct >= 75 ? "Strong. Review the ones you missed." : "Review the explanations — the patterns repeat across real systems."}</div>
+          <div className="flex items-center justify-center gap-2">
+            {scores.map((s, i) => (
+              <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${s ? "bg-emerald-700 text-white" : "bg-red-900 text-red-300"}`}>
+                {s ? "✓" : "✗"}
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 justify-center flex-wrap">
+            <button onClick={restart} className="px-5 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all">Try again</button>
+            {SIM_SCENARIOS.filter(s => s.id !== scenarioId).map(s => (
+              <button key={s.id} onClick={() => pickScenario(s.id)}
+                className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all">
+                Try: {s.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Step through real agent execution traces and predict what the agent should do at each step. Every wrong answer has a lesson."
+        steps={["Pick a scenario", "Read the task and current trace", "Pick the best next action before revealing", "See the actual decision and explanation"]}
+      />
+
+      {/* Scenario picker */}
+      <div className="flex gap-2 flex-wrap">
+        {SIM_SCENARIOS.map(s => (
+          <button key={s.id} onClick={() => pickScenario(s.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${scenarioId === s.id ? "text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+            style={scenarioId === s.id ? { backgroundColor: s.color } : {}}>
+            {s.title}
+            <span className="text-[9px] px-1 py-0.5 rounded font-mono opacity-70"
+              style={scenarioId === s.id ? { background: "rgba(255,255,255,0.2)", color: "white" } : { background: "#374151", color: "#9ca3af" }}>
+              {s.difficulty}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Task banner */}
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4">
+        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wide mb-1">Task</div>
+        <p className="text-sm font-bold text-white leading-relaxed">{scenario.task}</p>
+        <div className="flex items-center gap-2 mt-3">
+          <div className="flex gap-1">
+            {scenario.steps.map((_, i) => (
+              <div key={i} className={`h-1.5 rounded-full transition-all ${i < stepIdx ? "bg-emerald-500 w-6" : i === stepIdx ? "w-6" : "bg-zinc-700 w-4"}`}
+                style={i === stepIdx ? { backgroundColor: scenario.color } : {}} />
+            ))}
+          </div>
+          <span className="text-xs text-zinc-500 font-mono ml-1">Step {stepIdx + 1} / {totalSteps}</span>
+        </div>
+      </div>
+
+      {/* Trace so far */}
+      {stepIdx > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wide">Trace so far</div>
+          {scenario.steps.slice(0, stepIdx).map((s, i) => (
+            <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800">
+              <span className="text-sm shrink-0">{STEP_ICONS[s.type]}</span>
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-mono font-bold mr-2" style={{ color: s.color }}>{s.label}</span>
+                <span className="text-xs text-zinc-400 font-mono">{s.content.length > 80 ? s.content.slice(0, 80) + "…" : s.content}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Quiz */}
+      <div className="rounded-xl border bg-zinc-900/60 p-5 space-y-4" style={{ borderColor: scenario.color + "44" }}>
+        <div className="flex items-center gap-2">
+          <span className="text-base">{STEP_ICONS[currentStep.type]}</span>
+          <span className="text-xs font-mono font-bold" style={{ color: currentStep.color }}>{currentStep.label}</span>
+        </div>
+        <p className="text-sm font-bold text-white">{currentStep.quiz.q}</p>
+        <div className="space-y-2">
+          {currentStep.quiz.options.map((opt, i) => {
+            let style = "border-zinc-700 bg-zinc-800/60 text-zinc-300";
+            if (revealed) {
+              if (opt.correct) style = "border-emerald-600 bg-emerald-950/40 text-white";
+              else if (i === chosen && !opt.correct) style = "border-red-700 bg-red-950/40 text-zinc-300";
+              else style = "border-zinc-800 bg-zinc-900/40 text-zinc-600";
+            }
+            return (
+              <button key={i} onClick={() => selectOption(i)} disabled={chosen !== null}
+                className={`w-full text-left px-4 py-3 rounded-lg border text-xs transition-all ${style} ${chosen === null ? "hover:border-zinc-500 cursor-pointer" : "cursor-default"}`}>
+                <div className="flex items-start gap-2">
+                  {revealed && <span className="shrink-0 mt-0.5">{opt.correct ? "✓" : i === chosen ? "✗" : "·"}</span>}
+                  <div>
+                    <div className="leading-relaxed">{opt.text}</div>
+                    {revealed && <div className="mt-1.5 text-zinc-400 italic">{opt.why}</div>}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {revealed && (
+          <div className="space-y-3">
+            <div className="rounded-lg border p-3 space-y-1" style={{ borderColor: currentStep.color + "44", background: currentStep.color + "0a" }}>
+              <div className="text-[10px] font-mono font-bold uppercase" style={{ color: currentStep.color }}>
+                {STEP_ICONS[currentStep.type]} {currentStep.label}
+              </div>
+              <p className="text-xs text-zinc-200 font-mono leading-relaxed">{currentStep.content}</p>
+              <p className="text-xs text-zinc-500 italic mt-1">{currentStep.note}</p>
+            </div>
+            <button onClick={nextStep}
+              className="w-full py-2.5 rounded-lg text-xs font-bold text-white transition-all"
+              style={{ backgroundColor: scenario.color }}>
+              {stepIdx + 1 < totalSteps ? "Next step →" : "See results →"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── AGENTS APP ───────────────────────────────────────────────────────────────
 
 const AGENTS_MODULES = [
-  { id: "react",      label: "ReAct Pattern",     tag: "LOOP",   group: "CORE",  component: ReActPattern      },
-  { id: "tools",      label: "Tool Use Design",   tag: "TOOLS",  group: "CORE",  component: ToolUseDesign     },
-  { id: "memory",     label: "Agent Memory",      tag: "MEMORY", group: "CORE",  component: AgentMemory       },
-  { id: "multiagent", label: "Multi-Agent",       tag: "SCALE",  group: "SCALE", component: MultiAgentPatterns},
-  { id: "failures",   label: "Failure Modes",     tag: "DEBUG",  group: "SCALE", component: AgentFailureModes },
-  { id: "planning",   label: "Planning Patterns", tag: "PLAN",   group: "SCALE", component: PlanningPatterns  },
+  { id: "react",      label: "ReAct Pattern",     tag: "LOOP",   group: "CORE",  component: ReActPattern        },
+  { id: "tools",      label: "Tool Use Design",   tag: "TOOLS",  group: "CORE",  component: ToolUseDesign       },
+  { id: "memory",     label: "Agent Memory",      tag: "MEMORY", group: "CORE",  component: AgentMemory         },
+  { id: "multiagent", label: "Multi-Agent",       tag: "SCALE",  group: "SCALE", component: MultiAgentPatterns  },
+  { id: "failures",   label: "Failure Modes",     tag: "DEBUG",  group: "SCALE", component: AgentFailureModes   },
+  { id: "planning",   label: "Planning Patterns", tag: "PLAN",   group: "SCALE", component: PlanningPatterns    },
+  { id: "simulator",  label: "Loop Simulator",    tag: "PLAY",   group: "SIM",   component: AgentLoopSimulator  },
 ];
 
 const AGENTS_GROUPS = [
   { id: "CORE",  label: "CORE",  color: "#6366f1" },
   { id: "SCALE", label: "SCALE", color: "#f59e0b" },
+  { id: "SIM",   label: "SIM",   color: "#22c55e" },
 ];
 
 export default function AgentsApp({ initialModule, onModuleVisit }) {

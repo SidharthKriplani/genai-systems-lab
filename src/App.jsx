@@ -902,6 +902,24 @@ function CorpusPanel({ scenario }) {
 // ─── LEADERBOARD VIEW ────────────────────────────────────────────────────────
 
 function LeaderboardView({ leaderboard, onClear, onRetry }) {
+  const [copied, setCopied] = useState(false);
+
+  function shareScore(solved, passed, total) {
+    const lines = [
+      `🏆 GenAI Systems Lab — my score`,
+      `✅ ${solved}/5 scenarios solved`,
+      `📊 ${passed}/${total} attempts passed`,
+      ``,
+      `Free interactive platform for AI engineers & PMs`,
+      `→ genai-systems-lab-ivory.vercel.app`,
+    ];
+    const text = lines.join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
   if (leaderboard.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center space-y-3">
@@ -938,6 +956,12 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
           </div>
         ))}
       </div>
+      {/* Share button */}
+      <button
+        onClick={() => shareScore(solved, passed, leaderboard.length)}
+        className="w-full py-2.5 rounded-xl border border-zinc-700 hover:border-violet-600 text-xs font-bold text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-2">
+        {copied ? "✓ Copied to clipboard!" : "📤 Share your score"}
+      </button>
 
       {/* Per-scenario status */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
@@ -1020,6 +1044,7 @@ const ALL_MODULES_INDEX = [
   { label: "Multi-Agent Patterns",  tag: "SCALE",     tab: "agents",  moduleId: "multiagent"    },
   { label: "Agent Failure Modes",   tag: "DEBUG",     tab: "agents",  moduleId: "failures"      },
   { label: "Planning Patterns",     tag: "PLAN",      tab: "agents",  moduleId: "planning"      },
+  { label: "Agent Loop Simulator",  tag: "PLAY",      tab: "agents",  moduleId: "simulator"     },
   { label: "Embedding Space",       tag: "VISUALIZE", tab: "explore", moduleId: "embeddings"    },
   { label: "Shadow Mode A/B",       tag: "COMPARE",   tab: "explore", moduleId: "shadow"        },
   { label: "Latency Planner",       tag: "BUDGET",    tab: "explore", moduleId: "latency"       },
@@ -1147,6 +1172,15 @@ export default function App() {
   const [labHintDismissed, setLabHintDismissed] = useState(() => {
     try { return localStorage.getItem("genai_lab_hint_dismissed") === "1"; } catch { return false; }
   });
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+  const [whatsNewSeen, setWhatsNewSeen] = useState(() => {
+    try { return localStorage.getItem("genai_whatsnew_v2") === "1"; } catch { return false; }
+  });
+  function dismissWhatsNew() {
+    setWhatsNewSeen(true);
+    setWhatsNewOpen(false);
+    try { localStorage.setItem("genai_whatsnew_v2", "1"); } catch {}
+  }
 
   function trackModuleVisit(tab, moduleId) {
     const key = `${tab}:${moduleId}`;
@@ -1300,6 +1334,40 @@ export default function App() {
           </div>
         </div>
       )}
+      {/* What's New modal */}
+      {whatsNewOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={dismissWhatsNew}>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-md w-full space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold text-white">🆕 What's New</span>
+              <button onClick={dismissWhatsNew} className="text-zinc-500 hover:text-white text-xs">✕</button>
+            </div>
+            <div className="space-y-3">
+              {[
+                { tag: "NEW", color: "#6366f1", label: "Agent Lab", desc: "ReAct, tool use, memory, multi-agent, failure modes, planning — 6 modules" },
+                { tag: "NEW", color: "#6366f1", label: "Agent Loop Simulator", desc: "Interactive step-through of ReAct traces with decision quizzes" },
+                { tag: "NEW", color: "#8b5cf6", label: "Structured Outputs Lab", desc: "JSON mode vs function calling vs constrained decoding, failure modes" },
+                { tag: "NEW", color: "#ef4444", label: "Red Teaming Lab", desc: "6 attack types, 6 defenses, 2 full simulation scenarios" },
+                { tag: "NEW", color: "#f59e0b", label: "Eval Frameworks", desc: "RAGAS, G-Eval, Human Eval, Custom graded — in Systems tab" },
+                { tag: "UX",  color: "#22c55e", label: "Start Here CTA + progress bars", desc: "Pick your path and track steps visited on Home" },
+                { tag: "UX",  color: "#22c55e", label: "Share your score", desc: "Copy your leaderboard score to share anywhere" },
+              ].map(({ tag, color, label, desc }) => (
+                <div key={label} className="flex items-start gap-3">
+                  <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded mt-0.5 shrink-0"
+                    style={{ color, background: color + "22", border: `1px solid ${color}44` }}>{tag}</span>
+                  <div>
+                    <div className="text-xs font-bold text-white">{label}</div>
+                    <div className="text-xs text-zinc-500">{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={dismissWhatsNew} className="w-full py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all">
+              Got it ✓
+            </button>
+          </div>
+        </div>
+      )}
       {/* Mobile drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)}>
@@ -1369,6 +1437,11 @@ export default function App() {
               className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
               title="Leaderboard">
               🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px]">{leaderboard.filter(e => e.passed).length}</span>}
+            </button>
+            <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v2","1"); } catch {} }}
+              className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300 relative">
+              NEW
+              {!whatsNewSeen && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
             </button>
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">?</button>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all">
