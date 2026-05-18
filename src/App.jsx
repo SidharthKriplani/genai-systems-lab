@@ -849,6 +849,18 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
 
 export default function App() {
   const [topView, setTopView] = useState("home");
+  const [visited, setVisited] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("genai_visited") || '["home"]')); }
+    catch { return new Set(["home"]); }
+  });
+  function navigate(view) {
+    setTopView(view);
+    setVisited(prev => {
+      const next = new Set([...prev, view]);
+      try { localStorage.setItem("genai_visited", JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [config, setConfig] = useState(ALL_SCENARIOS[0].default_config);
   const [evaluated, setEvaluated] = useState(false);
@@ -930,12 +942,9 @@ export default function App() {
     <div className="min-h-screen bg-zinc-950 text-white font-sans" style={{ fontFamily: "'IBM Plex Mono', 'Fira Code', monospace" }}>
       <header className="border-b border-zinc-800 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          <button onClick={() => setTopView("home")} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
-            <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold">G</div>
-            <div className="hidden sm:block">
-              <div className="text-sm font-bold tracking-wider text-white">GENAI SYSTEMS LAB</div>
-              <div className="text-xs text-zinc-500">Interactive AI Learning Platform</div>
-            </div>
+          <button onClick={() => navigate("home")} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
+            <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold text-white">G</div>
+            <span className="hidden sm:block text-sm font-bold tracking-wide text-white">GenAI Lab</span>
           </button>
           <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide min-w-0">
             {NAV_GROUPS.map((group, gi) => (
@@ -945,9 +954,12 @@ export default function App() {
                   <span className="text-xs font-mono font-bold px-1 mr-0.5 hidden md:inline" style={{ color: group.color + "99" }}>{group.label}</span>
                 )}
                 {group.items.map(item => (
-                  <button key={item.id} onClick={() => setTopView(item.id)}
-                    className={`px-2.5 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                  <button key={item.id} onClick={() => navigate(item.id)}
+                    className={`relative px-2.5 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
                     {item.label}
+                    {visited.has(item.id) && topView !== item.id && (
+                      <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -956,7 +968,7 @@ export default function App() {
         </div>
       </header>
 
-      {topView === "home"       && <HomePage onNavigate={setTopView} />}
+      {topView === "home"       && <HomePage onNavigate={navigate} />}
 
       {topView === "concepts"   && <ConceptsApp />}
 
@@ -974,7 +986,7 @@ export default function App() {
 
       {topView === "career"     && <CareerApp />}
 
-      {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} onRetry={setTopView} />}
+      {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} onRetry={navigate} />}
 
       {/* Scenario tabs */}
       {topView === "lab" && <div className="border-b border-zinc-800 px-6 py-3">
