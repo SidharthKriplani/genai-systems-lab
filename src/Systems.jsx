@@ -1383,6 +1383,475 @@ function CostLatencyLab() {
   );
 }
 
+// ─── FINE-TUNING LAB ──────────────────────────────────────────────────────────
+
+const LORA_COMPARISON = [
+  { label: "Full fine-tune (7B model)", params: 7000, color: "#ef4444", desc: "Update all 7 billion weights. Requires 80GB+ VRAM. Takes days. But complete flexibility." },
+  { label: "LoRA rank-8 adapter", params: 8, color: "#10b981", desc: "Add two small matrices A (7168×8) and B (8×7168) per layer. ~16M trainable params. Runs on a single A100 in hours." },
+  { label: "QLoRA (4-bit quantized)", params: 4, color: "#6366f1", desc: "LoRA on a 4-bit quantized base model. ~10GB VRAM. Fits on a single consumer GPU. Near-LoRA quality." },
+];
+
+const RLHF_STEPS = [
+  { id: "sft", label: "1. Supervised Fine-Tune", color: "#6366f1", detail: "Start with a base pre-trained model. Fine-tune on a small, high-quality demonstration dataset (e.g. expert-written conversations). This creates the SFT model — it follows instructions but isn't yet aligned to human preferences." },
+  { id: "reward", label: "2. Train Reward Model", color: "#f59e0b", detail: "Show human annotators pairs of model outputs (A vs. B) for the same prompt. They pick the better one. Train a reward model R(x, y) that predicts human preference scores. This captures what humans prefer — helpfulness, harmlessness, honesty." },
+  { id: "rl", label: "3. Optimize with RL (PPO)", color: "#ef4444", detail: "Use the reward model as a 'score function'. Apply PPO (Proximal Policy Optimization) to update the SFT model to maximize reward while staying close to the SFT policy (KL penalty). This iterative loop aligns the model to human preferences." },
+  { id: "dpo", label: "Alt: DPO (simpler)", color: "#10b981", detail: "Direct Preference Optimization skips the reward model and RL loop entirely. Train directly on (prompt, chosen, rejected) triplets using a contrastive loss. 10× simpler, similar alignment quality for many tasks. Most modern alignment uses DPO variants." },
+];
+
+const FINETUNE_DECISION = [
+  { signal: "Knowledge changes frequently (products, policies, news)", rec: "rag", why: "Fine-tuning bakes knowledge into weights — stale the moment the world changes" },
+  { signal: "Task requires specific output format/style your team defined", rec: "finetune", why: "Style and format are behavioral — exactly what fine-tuning teaches" },
+  { signal: "You have 0 labeled training examples", rec: "prompt", why: "No data → fine-tuning is impossible. Start with prompt engineering." },
+  { signal: "You have 1,000+ labeled examples of the target behavior", rec: "finetune", why: "1k+ examples is the minimum viable fine-tuning dataset for most tasks" },
+  { signal: "Model needs to 'know' your proprietary internal APIs/SDK", rec: "finetune", why: "Proprietary knowledge not in any public training data → must be fine-tuned in" },
+  { signal: "Task is simple Q&A over a static document", rec: "rag", why: "Pure retrieval task — RAG is faster, cheaper, and keeps docs fresh" },
+  { signal: "You need the model to reliably refuse certain query classes", rec: "finetune", why: "Refusal behavior is a behavioral pattern — RLHF/DPO trains it reliably" },
+  { signal: "No ML engineer on the team, 1-week timeline", rec: "prompt", why: "Fine-tuning requires data pipelines, evaluation, infra. Not a 1-week project without ML eng." },
+];
+
+const REC_COLORS = { rag: "#6366f1", finetune: "#10b981", prompt: "#f59e0b" };
+const REC_LABELS = { rag: "RAG", finetune: "Fine-tune", prompt: "Prompting" };
+
+function FineTuningLab() {
+  const [tab, setTab] = useState("what");
+  const TABS = [
+    { id: "what", label: "What is Fine-tuning?" },
+    { id: "lora", label: "LoRA Deep Dive" },
+    { id: "rlhf", label: "RLHF & DPO" },
+    { id: "when", label: "When to Fine-tune?" },
+  ];
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-5">
+        <div className="flex items-center gap-3 mb-1">
+          <span className="text-xs font-mono px-2 py-0.5 bg-violet-900 text-violet-300 rounded border border-violet-700">FINE-TUNING LAB</span>
+        </div>
+        <h2 className="text-xl font-bold text-white">Fine-Tuning Lab</h2>
+        <p className="text-sm text-zinc-400 mt-1">What fine-tuning actually does, why LoRA changed everything, and when to use it vs. RAG vs. prompting.</p>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wide transition-all ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "what" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Fine-tuning updates a model's weights on task-specific data. It teaches behavior, not facts.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[
+              { title: "Pre-training", color: "#6366f1", desc: "Base model trained on internet-scale data (~1T tokens). Learns language, facts, reasoning. Expensive: $10M+ for frontier models.", tag: "DONE ONCE" },
+              { title: "Fine-tuning", color: "#f59e0b", desc: "Update weights on task-specific data (1k–100k examples). Teaches: style, format, domain behavior, refusals. Cheap: $100–$10k for a LoRA run.", tag: "YOUR JOB" },
+              { title: "Inference", color: "#10b981", desc: "Fixed weights used for every query. Knowledge is frozen at fine-tune time. RAG adds live knowledge on top of frozen weights at inference.", tag: "PER QUERY" },
+            ].map(card => (
+              <div key={card.title} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-white">{card.title}</span>
+                  <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: card.color + "22", color: card.color, border: `1px solid ${card.color}44` }}>{card.tag}</span>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">{card.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4 space-y-2">
+            <div className="text-xs font-bold text-zinc-400">The key mental model</div>
+            <p className="text-sm text-zinc-300 leading-relaxed">Fine-tuning teaches <em className="text-white not-italic font-semibold">how to behave</em>, not <em className="text-white not-italic font-semibold">what to know</em>. The weight update encodes patterns, style, and format — not facts. Facts live in the training data at the time of the run, and they go stale. Use RAG to keep knowledge fresh; use fine-tuning to lock in behavior.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "lora" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">LoRA (Low-Rank Adaptation) makes fine-tuning accessible. Instead of updating billions of weights, it adds tiny adapter matrices.</p>
+          {LORA_COMPARISON.map(m => (
+            <div key={m.label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-white">{m.label}</span>
+                <span className="font-mono text-sm font-black" style={{ color: m.color }}>{m.params}M params</span>
+              </div>
+              <p className="text-xs text-zinc-400 leading-relaxed">{m.desc}</p>
+              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${(m.params / 7000) * 100}%`, background: m.color, minWidth: "2px" }} />
+              </div>
+            </div>
+          ))}
+          <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4">
+            <div className="text-xs font-bold text-indigo-400 mb-2">Why LoRA works</div>
+            <p className="text-sm text-zinc-300 leading-relaxed">Weight updates for fine-tuning have low intrinsic rank — you don't need to update all dimensions to change behavior. LoRA decomposes the update ΔW into two small matrices: ΔW = A·B where A ∈ ℝ^(d×r) and B ∈ ℝ^(r×d), with rank r ≪ d. At rank 8, you update 16M parameters instead of 7B — a 437× reduction — with minimal quality loss on most tasks.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "rlhf" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">RLHF (Reinforcement Learning from Human Feedback) is how models learn to be helpful and safe, not just fluent.</p>
+          {RLHF_STEPS.map(step => (
+            <div key={step.id} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: step.color + "22", color: step.color, border: `1px solid ${step.color}44` }}>{step.label}</span>
+              </div>
+              <p className="text-sm text-zinc-300 leading-relaxed">{step.detail}</p>
+            </div>
+          ))}
+          <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4">
+            <div className="text-xs font-bold text-emerald-400 mb-2">DPO vs PPO: the practical answer</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">PPO requires training and running a separate reward model alongside the policy — complex, unstable, expensive. DPO reformulates the RL objective directly as a binary cross-entropy loss on preference pairs (chosen vs. rejected). Same alignment quality on most tasks, 10× simpler to implement. Most labs now default to DPO or DPO variants for instruction tuning.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "when" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">The decision framework. Each signal points toward a primary approach.</p>
+          {FINETUNE_DECISION.map((row, i) => (
+            <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 flex items-start gap-3">
+              <div className="flex-1">
+                <div className="text-xs font-bold text-zinc-200 mb-1">{row.signal}</div>
+                <div className="text-xs text-zinc-500">{row.why}</div>
+              </div>
+              <span className="text-xs font-bold px-2 py-1 rounded flex-shrink-0" style={{ background: REC_COLORS[row.rec] + "22", color: REC_COLORS[row.rec], border: `1px solid ${REC_COLORS[row.rec]}44` }}>
+                {REC_LABELS[row.rec]}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── LLM OBSERVABILITY ────────────────────────────────────────────────────────
+
+const OBS_METRICS = [
+  { id: "hallucination", label: "Hallucination Rate", unit: "% of responses", target: "< 2%", why: "Every response that asserts a false claim is a trust failure. Track via groundedness eval on a sample.", critical: true },
+  { id: "groundedness", label: "Groundedness Score", unit: "avg 0–1", target: "> 0.85", why: "Fraction of response sentences entailed by retrieved context. Low score = model going beyond sources.", critical: true },
+  { id: "latency_p95", label: "Latency P95", unit: "ms", target: "< 3000ms", why: "P50 masks outliers. P95 is what your worst-experience users see. Spikes here = retrieval or model degradation.", critical: true },
+  { id: "cost_query", label: "Cost per Query", unit: "¢", target: "< $0.01", why: "Track per-query AND per-user cohort. Power users with long conversations blow up your cost model fast.", critical: false },
+  { id: "refusal_rate", label: "Refusal Rate", unit: "% of requests", target: "2–8% (tuned)", why: "Too low = safety gap. Too high = over-refusal killing UX. Both are product problems. Track separately for benign vs. adversarial.", critical: false },
+  { id: "retrieval_recall", label: "Retrieval Recall", unit: "% golden queries hit", target: "> 90%", why: "Run a golden eval set of known-answer queries. If top-k doesn't include the answer chunk, no prompt engineering saves you.", critical: true },
+];
+
+const TRACE_STAGES = [
+  { label: "API gateway", ms: 12, color: "#6b7280" },
+  { label: "Input classifier", ms: 38, color: "#ef4444" },
+  { label: "Tokenize + embed query", ms: 45, color: "#8b5cf6" },
+  { label: "ANN vector search", ms: 82, color: "#06b6d4" },
+  { label: "Reranker (cross-encoder)", ms: 145, color: "#6366f1" },
+  { label: "Context assembly + inject", ms: 18, color: "#6b7280" },
+  { label: "LLM inference (streaming)", ms: 1840, color: "#f59e0b" },
+  { label: "Output validator", ms: 42, color: "#ef4444" },
+  { label: "Response serialization", ms: 14, color: "#6b7280" },
+];
+
+const METRIC_SNAPSHOTS = [
+  {
+    id: "snap1",
+    label: "Snapshot A",
+    metrics: { hallucination: 1.2, groundedness: 0.88, latency_p95: 2100, cost_query: 0.6, refusal_rate: 4.2, retrieval_recall: 91 },
+    anomaly: null,
+    diagnosis: "All metrics within target. Healthy system.",
+  },
+  {
+    id: "snap2",
+    label: "Snapshot B",
+    metrics: { hallucination: 18.4, groundedness: 0.31, latency_p95: 2200, cost_query: 0.6, refusal_rate: 3.8, retrieval_recall: 89 },
+    anomaly: ["hallucination", "groundedness"],
+    diagnosis: "High hallucination + low groundedness at normal latency and retrieval recall. Model is ignoring retrieved context — over-relying on parametric memory. Likely cause: answer_policy set to 'helpful' after a prompt update. Check recent prompt changes.",
+  },
+  {
+    id: "snap3",
+    label: "Snapshot C",
+    metrics: { hallucination: 2.1, groundedness: 0.84, latency_p95: 11200, cost_query: 0.7, refusal_rate: 3.9, retrieval_recall: 90 },
+    anomaly: ["latency_p95"],
+    diagnosis: "Latency spike at P95 (11.2s) with all quality metrics normal. Isolated to infrastructure — not a model or retrieval quality problem. Check: was the ANN index rebuilt recently after a corpus update? Run per-stage tracing to isolate the bottleneck.",
+  },
+  {
+    id: "snap4",
+    label: "Snapshot D",
+    metrics: { hallucination: 2.4, groundedness: 0.79, latency_p95: 2300, cost_query: 4.8, refusal_rate: 4.1, retrieval_recall: 88 },
+    anomaly: ["cost_query"],
+    diagnosis: "Cost per query 8× normal with all other metrics roughly stable. Context length explosion — likely a conversation history growth issue. Check: is conversation history being capped? A single user with a 200-turn conversation can drive this spike.",
+  },
+];
+
+const METRIC_TARGETS = { hallucination: { target: 2, max: 25, unit: "%", higherIsBad: true }, groundedness: { target: 0.85, max: 1, unit: "", higherIsBad: false }, latency_p95: { target: 3000, max: 12000, unit: "ms", higherIsBad: true }, cost_query: { target: 1, max: 6, unit: "¢", higherIsBad: true }, refusal_rate: { target: 5, max: 15, unit: "%", higherIsBad: false }, retrieval_recall: { target: 90, max: 100, unit: "%", higherIsBad: false } };
+
+function LLMObservability() {
+  const [tab, setTab] = useState("monitor");
+  const [snapIdx, setSnapIdx] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const snap = METRIC_SNAPSHOTS[snapIdx];
+  const totalTrace = TRACE_STAGES.reduce((a, b) => a + b.ms, 0);
+
+  const TABS = [{ id: "monitor", label: "What to Monitor" }, { id: "trace", label: "Request Tracing" }, { id: "snapshot", label: "Metric Diagnosis" }];
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-emerald-800 bg-emerald-950/20 p-5">
+        <div className="flex items-center gap-3 mb-1">
+          <span className="text-xs font-mono px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded border border-emerald-700">LLM OBSERVABILITY</span>
+        </div>
+        <h2 className="text-xl font-bold text-white">LLM Observability</h2>
+        <p className="text-sm text-zinc-400 mt-1">Production AI systems fail silently. Learn what to monitor, how to trace a request, and how to read anomalous metrics.</p>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wide transition-all ${tab === t.id ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "monitor" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Six metrics every production LLM team tracks. Know what each catches and why it matters.</p>
+          {OBS_METRICS.map(m => (
+            <div key={m.id} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-1">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-white">{m.label}</span>
+                  {m.critical && <span className="text-xs px-1.5 py-0.5 bg-red-950 border border-red-800 text-red-400 rounded font-mono">CRITICAL</span>}
+                </div>
+                <div className="flex gap-3 text-xs font-mono">
+                  <span className="text-zinc-500">{m.unit}</span>
+                  <span className="text-emerald-400">target: {m.target}</span>
+                </div>
+              </div>
+              <p className="text-xs text-zinc-400 leading-relaxed">{m.why}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "trace" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">A production RAG request broken into traced spans. This is what Datadog/Honeycomb shows for a single request.</p>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+            {TRACE_STAGES.map((s, i) => (
+              <div key={i} className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-zinc-300">{s.label}</span>
+                  <span className="font-mono" style={{ color: s.ms > 500 ? "#f59e0b" : "#6b7280" }}>{s.ms}ms</span>
+                </div>
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${(s.ms / totalTrace) * 100}%`, background: s.color }} />
+                </div>
+              </div>
+            ))}
+            <div className="border-t border-zinc-700 pt-2 flex justify-between text-sm font-bold">
+              <span className="text-zinc-300">Total P50</span>
+              <span className="text-amber-400 font-mono">{totalTrace}ms</span>
+            </div>
+          </div>
+          <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4 text-xs text-zinc-300 space-y-1">
+            <div className="font-bold text-zinc-400 mb-2">What this trace tells you:</div>
+            <div>• <span className="text-amber-400">LLM inference (1840ms)</span> is 85% of total latency — the primary optimization target</div>
+            <div>• Retrieval (82ms) + reranker (145ms) = 10% — worth profiling but not the bottleneck</div>
+            <div>• Guards add ~80ms total — cheap for the safety value they provide</div>
+            <div>• Without per-stage tracing, you'd see "2236ms" and not know where to look</div>
+          </div>
+        </div>
+      )}
+
+      {tab === "snapshot" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Given a metrics dashboard snapshot, diagnose the problem before revealing the answer.</p>
+          <div className="flex gap-2 flex-wrap">
+            {METRIC_SNAPSHOTS.map((s, i) => (
+              <button key={s.id} onClick={() => { setSnapIdx(i); setRevealed(false); }}
+                className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${snapIdx === i ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 space-y-3">
+            {Object.entries(snap.metrics).map(([key, val]) => {
+              const cfg = METRIC_TARGETS[key];
+              const isAnomaly = snap.anomaly?.includes(key);
+              const pct = Math.min(100, (val / cfg.max) * 100);
+              const barColor = isAnomaly ? "#ef4444" : "#10b981";
+              return (
+                <div key={key} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className={isAnomaly ? "text-red-400 font-bold" : "text-zinc-400"}>{OBS_METRICS.find(m => m.id === key)?.label}</span>
+                    <span className={`font-mono ${isAnomaly ? "text-red-300 font-bold" : "text-zinc-300"}`}>{val}{cfg.unit}</span>
+                  </div>
+                  <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
+                  </div>
+                  <div className="text-xs text-zinc-700 font-mono">target: {OBS_METRICS.find(m => m.id === key)?.target}</div>
+                </div>
+              );
+            })}
+          </div>
+          {!revealed ? (
+            <button onClick={() => setRevealed(true)} className="w-full py-2.5 rounded-lg bg-emerald-900/30 border border-emerald-800 text-emerald-400 text-sm font-semibold hover:bg-emerald-900/50 transition-all">
+              Reveal diagnosis →
+            </button>
+          ) : (
+            <div className={`rounded-xl p-4 text-sm leading-relaxed ${snap.anomaly ? "bg-red-950/30 border border-red-800 text-zinc-200" : "bg-emerald-950/30 border border-emerald-800 text-zinc-200"}`}>
+              <div className={`font-bold mb-2 ${snap.anomaly ? "text-red-300" : "text-emerald-300"}`}>{snap.anomaly ? "⚠ Anomaly detected" : "✓ Healthy"}</div>
+              {snap.diagnosis}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── A/B TESTING LAB ──────────────────────────────────────────────────────────
+
+const AB_CHALLENGES = [
+  {
+    id: "ab1",
+    title: "The measurement problem",
+    prompt_a: "You are a helpful customer support assistant. Answer the user's question.",
+    prompt_b: "You are a senior customer support specialist. Answer the user's question concisely and cite the relevant policy section.",
+    result_a: "Of course! I'd be happy to help with your question about returns. Our return policy allows returns within 30 days of purchase. You'll need to provide your order number and reason for return. Is there anything else I can help you with?",
+    result_b: "Returns are accepted within 30 days (§4.2 Return Policy). Provide your order number via the Returns portal. Processing takes 3–5 business days.",
+    question: "Prompt B looks better to you. How do you prove it's better before shipping to 100% of users?",
+    options: [
+      { id: "a", label: "A/B test: CTR on 'problem resolved' click", detail: "Users click 'this solved my problem' on version A vs B" },
+      { id: "b", label: "LLM-as-judge pairwise comparison", detail: "Ask GPT-4 to rate which response is better on a sample" },
+      { id: "c", label: "Eval suite regression + human sample", detail: "Run golden eval set + human annotation on 100 sampled pairs" },
+      { id: "d", label: "Just ship it — it's obviously better", detail: "Prompt changes are low-risk, skip formal eval" },
+    ],
+    correct: "c",
+    explanation: "The right answer is a multi-method approach: (1) Run your golden eval suite — does Prompt B maintain or improve groundedness, format compliance, and factual accuracy on your test cases? (2) Sample 100–200 real responses from a shadow deployment and have humans rate preference. (3) Optional: LLM-as-judge for at-scale preference scoring, calibrated against the human sample. CTR is a lagging metric and measures engagement, not quality. 'Obviously better' shipping is how subtle regressions ship — Prompt B might be worse for ambiguous queries that the example doesn't cover.",
+  },
+  {
+    id: "ab2",
+    title: "Statistical significance for subjective output",
+    prompt_a: "Summarize this article in 3 bullet points.",
+    prompt_b: "Summarize this article in 3 bullet points. Each bullet must state a specific fact — no vague generalizations.",
+    human_ratings: { a_better: 31, b_better: 58, tie: 11, total: 100 },
+    question: "58% of human raters preferred Prompt B over 100 evaluated examples. Is this statistically significant?",
+    options: [
+      { id: "a", label: "Yes — 58% > 50%, clearly better", detail: "Majority preference is sufficient signal" },
+      { id: "b", label: "Borderline — need a larger sample", detail: "n=100 is too small for a 58/42 split to be conclusive" },
+      { id: "c", label: "Run a binomial test — 58/100 is significant at p < 0.05", detail: "Statistical test gives us confidence level" },
+      { id: "d", label: "Human ratings are too subjective to be meaningful", detail: "Use automated metrics only" },
+    ],
+    correct: "c",
+    explanation: "A binomial test on 58/100 preferences (vs. null hypothesis p=0.5): z = (58-50)/√(100×0.5×0.5) = 8/5 = 1.6. That's p ≈ 0.055 — borderline significant at 95% confidence. You'd want n=150+ to be conclusive. This is why eval sample size matters. The rule of thumb: for a 55-60% preference rate, you need ~150-200 annotated examples to reach p < 0.05. For a 70%+ rate, 50 is enough. Most teams run 200 examples as default to give headroom.",
+  },
+  {
+    id: "ab3",
+    title: "Shadow evaluation pattern",
+    question: "You want to test a new RAG pipeline (v2) against production (v1) without any risk to real users. What is the right architecture?",
+    options: [
+      { id: "a", label: "1% traffic split — 1% of users see v2", detail: "Low-blast-radius live experiment" },
+      { id: "b", label: "Shadow deployment — v2 runs in parallel, no user exposure", detail: "Both pipelines process the same requests, v2 results stored but not served" },
+      { id: "c", label: "Staging environment — run v2 on synthetic test data only", detail: "Fully isolated, no real user queries" },
+      { id: "d", label: "Offline eval — run v2 on a golden dataset", detail: "Replay logged queries through v2" },
+    ],
+    correct: "b",
+    explanation: "Shadow deployment is the right answer for zero-risk evaluation of a new pipeline. Both v1 (production) and v2 (shadow) receive the same requests. v1 serves the user response; v2 runs in parallel, its outputs stored but never shown to users. You then compare: latency, cost, groundedness scores, eval suite results — all on real production traffic distribution. Offline eval misses production traffic patterns. A 1% split exposes users to an unvalidated system. Staging/synthetic data doesn't reflect real query distribution. Shadow → offline eval → 1% split → 10% → full rollout is the right progression.",
+  },
+];
+
+function ABTestingLab() {
+  const [idx, setIdx] = useState(0);
+  const [chosen, setChosen] = useState(null);
+  const [revealed, setRevealed] = useState(false);
+  const [scores, setScores] = useState({});
+  const ch = AB_CHALLENGES[idx];
+
+  function goTo(i) { setIdx(i); setChosen(null); setRevealed(false); }
+  function reveal() { if (!chosen) return; setRevealed(true); setScores(prev => ({ ...prev, [ch.id]: chosen === ch.correct })); }
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-sky-800 bg-sky-950/20 p-5">
+        <div className="flex items-center gap-3 mb-1">
+          <span className="text-xs font-mono px-2 py-0.5 bg-sky-900 text-sky-300 rounded border border-sky-700">A/B TESTING LAB</span>
+        </div>
+        <h2 className="text-xl font-bold text-white">A/B Testing for LLMs</h2>
+        <p className="text-sm text-zinc-400 mt-1">Proving that your new prompt or pipeline is better before shipping is harder than it sounds.</p>
+      </div>
+      <div className="flex gap-2">
+        {AB_CHALLENGES.map((c, i) => (
+          <button key={c.id} onClick={() => goTo(i)}
+            className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${idx === i ? "bg-sky-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"} ${scores[c.id] === true ? "ring-1 ring-emerald-500" : scores[c.id] === false ? "ring-1 ring-red-500" : ""}`}>
+            {scores[c.id] === true ? "✓" : scores[c.id] === false ? "✗" : i + 1}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-4">
+        <div className="text-sm font-bold text-white">{ch.title}</div>
+        {ch.prompt_a && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="rounded bg-zinc-950 border border-zinc-800 p-3 space-y-2">
+              <div className="text-xs font-mono text-zinc-500">Prompt A</div>
+              <div className="text-xs text-zinc-400 italic">"{ch.prompt_a}"</div>
+              {ch.result_a && <div className="text-xs text-zinc-300 leading-relaxed border-t border-zinc-800 pt-2">{ch.result_a}</div>}
+            </div>
+            <div className="rounded bg-zinc-950 border border-zinc-800 p-3 space-y-2">
+              <div className="text-xs font-mono text-zinc-500">Prompt B</div>
+              <div className="text-xs text-zinc-400 italic">"{ch.prompt_b}"</div>
+              {ch.result_b && <div className="text-xs text-zinc-300 leading-relaxed border-t border-zinc-800 pt-2">{ch.result_b}</div>}
+            </div>
+          </div>
+        )}
+        {ch.human_ratings && (
+          <div className="rounded bg-zinc-950 border border-zinc-800 p-4 space-y-2">
+            <div className="text-xs font-mono text-zinc-500">Human annotation results (n=100)</div>
+            {[{ label: "Prefer A", val: ch.human_ratings.a_better, color: "#6366f1" }, { label: "Prefer B", val: ch.human_ratings.b_better, color: "#10b981" }, { label: "Tie", val: ch.human_ratings.tie, color: "#6b7280" }].map(r => (
+              <div key={r.label} className="flex items-center gap-3">
+                <span className="text-xs text-zinc-500 w-16">{r.label}</span>
+                <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${r.val}%`, background: r.color }} />
+                </div>
+                <span className="text-xs font-mono" style={{ color: r.color }}>{r.val}%</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="text-sm font-semibold text-zinc-200">{ch.question}</div>
+        <div className="space-y-2">
+          {ch.options.map(opt => {
+            let border = "border-zinc-700"; let bg = "bg-zinc-800/50";
+            if (chosen === opt.id && !revealed) { border = "border-sky-500"; bg = "bg-sky-900/20"; }
+            if (revealed) {
+              if (opt.id === ch.correct) { border = "border-emerald-500"; bg = "bg-emerald-900/20"; }
+              else if (opt.id === chosen) { border = "border-red-500"; bg = "bg-red-900/20"; }
+            }
+            return (
+              <button key={opt.id} onClick={() => { if (!revealed) setChosen(opt.id); }} disabled={revealed}
+                className={`w-full rounded-xl border p-3 text-left transition-all ${border} ${bg}`}>
+                <div className="text-sm font-semibold text-zinc-200">{opt.label}</div>
+                <div className="text-xs text-zinc-500 mt-0.5">{opt.detail}</div>
+              </button>
+            );
+          })}
+        </div>
+        {!revealed && (
+          <button onClick={reveal} disabled={!chosen}
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${chosen ? "bg-sky-700 hover:bg-sky-600 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+            Reveal answer
+          </button>
+        )}
+        {revealed && (
+          <div className="space-y-3">
+            <div className={`rounded-lg p-3 text-sm font-bold ${chosen === ch.correct ? "bg-emerald-900/30 border border-emerald-700 text-emerald-300" : "bg-red-900/20 border border-red-800 text-red-300"}`}>
+              {chosen === ch.correct ? "✓ Correct" : `✗ Correct answer: ${ch.options.find(o => o.id === ch.correct)?.label}`}
+            </div>
+            <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4 text-sm text-zinc-300 leading-relaxed">{ch.explanation}</div>
+            {idx < AB_CHALLENGES.length - 1 && (
+              <button onClick={() => goTo(idx + 1)} className="w-full py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-semibold hover:bg-zinc-700 transition-all">Next →</button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── SYSTEMS APP ─────────────────────────────────────────────────────────────
 
 const SYSTEMS_MODULES = [
@@ -1391,6 +1860,9 @@ const SYSTEMS_MODULES = [
   { id: "incidents", label: "Incident Room", tag: "DIAGNOSE", component: IncidentRoom },
   { id: "shouldai", label: "Should You Use AI?", tag: "JUDGE", component: ShouldUseAI },
   { id: "costlatency", label: "Cost/Latency", tag: "COST", component: CostLatencyLab },
+  { id: "finetune", label: "Fine-Tuning Lab", tag: "TRAIN", component: FineTuningLab },
+  { id: "observability", label: "Observability", tag: "OPS", component: LLMObservability },
+  { id: "abtesting", label: "A/B Testing", tag: "SHIP", component: ABTestingLab },
 ];
 
 export default function SystemsApp() {

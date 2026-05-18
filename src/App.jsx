@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import ConceptsApp from "./Concepts";
 import SystemsApp from "./Systems";
 import FluencyApp from "./Fluency";
+import FlowsApp from "./Flows";
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -945,6 +946,12 @@ export default function App() {
               Fluency
             </button>
             <button
+              onClick={() => setTopView("flows")}
+              className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase ${topView === "flows" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
+            >
+              Flows
+            </button>
+            <button
               onClick={() => setTopView("leaderboard")}
               className={`px-4 py-1.5 rounded text-xs font-bold tracking-wide transition-all uppercase flex items-center gap-1.5 ${topView === "leaderboard" ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}
             >
@@ -968,6 +975,8 @@ export default function App() {
       {topView === "systems" && <SystemsApp />}
 
       {topView === "fluency" && <FluencyApp />}
+
+      {topView === "flows" && <FlowsApp />}
 
       {topView === "leaderboard" && <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} />}
 

@@ -966,6 +966,394 @@ function PromptEngLab() {
   );
 }
 
+// ─── MOCK INTERVIEW MODE ──────────────────────────────────────────────────────
+
+const INTERVIEW_QUESTIONS = [
+  {
+    id: "iq1",
+    q: "What's the difference between fine-tuning and prompt engineering? When would you choose each?",
+    keyPoints: ["Fine-tuning adjusts weights (permanent)", "Prompt eng is zero-shot/few-shot (reversible)", "Fine-tune for consistent tone/format, prompt for flexibility", "Fine-tuning needs labeled data; prompting doesn't"],
+    topic: "Fine-Tuning",
+    difficulty: "medium",
+  },
+  {
+    id: "iq2",
+    q: "Explain LoRA. Why does it reduce trainable parameters, and what's the tradeoff?",
+    keyPoints: ["ΔW = A·B where rank r ≪ d", "Only A and B are trained (r·(m+n) vs m·n params)", "Tradeoff: less expressive than full fine-tune", "Merges at inference time — zero latency overhead"],
+    topic: "Fine-Tuning",
+    difficulty: "hard",
+  },
+  {
+    id: "iq3",
+    q: "Your RAG system has high retrieval recall but users still report hallucinations. What do you investigate?",
+    keyPoints: ["Groundedness: is LLM actually using retrieved docs?", "Chunk size may cause context overflow or lost-in-middle", "Reranker may not be surfacing the most relevant chunk", "LLM may ignore context and rely on parametric memory"],
+    topic: "RAG",
+    difficulty: "hard",
+  },
+  {
+    id: "iq4",
+    q: "What is 'lost in the middle' and how do you mitigate it?",
+    keyPoints: ["LLMs attend better to start/end of context than middle", "Relevant chunks buried in middle get ignored", "Mitigation: reranking, reducing context window, map-reduce", "Put most relevant chunks first or last"],
+    topic: "RAG",
+    difficulty: "medium",
+  },
+  {
+    id: "iq5",
+    q: "How would you detect and prevent prompt injection in a production AI system?",
+    keyPoints: ["Input classifier as first gate", "Instruction hierarchy (system > user)", "Output validator as second gate", "Sandbox execution, no direct tool calls from user input"],
+    topic: "Guardrails",
+    difficulty: "hard",
+  },
+  {
+    id: "iq6",
+    q: "What metrics would you put on an LLM observability dashboard? Walk me through your reasoning.",
+    keyPoints: ["Hallucination rate / groundedness score", "Latency P95 (not average)", "Cost per query and total spend", "Retrieval recall (RAG), refusal rate"],
+    topic: "Observability",
+    difficulty: "medium",
+  },
+  {
+    id: "iq7",
+    q: "How do you run an A/B test for two LLM prompt variants in production?",
+    keyPoints: ["Shadow deployment first (no user impact)", "Pairwise human evaluation or automated scoring", "Statistical significance: binomial test, min sample size", "Track both quality and cost/latency tradeoff"],
+    topic: "A/B Testing",
+    difficulty: "medium",
+  },
+  {
+    id: "iq8",
+    q: "Explain RLHF. What problem does it solve and what are its failure modes?",
+    keyPoints: ["SFT → Reward Model → PPO loop", "Aligns LLM to human preferences beyond MLE", "Reward hacking: model games the reward model", "Expensive: needs human annotations + careful RM training"],
+    topic: "Fine-Tuning",
+    difficulty: "hard",
+  },
+  {
+    id: "iq9",
+    q: "When should you NOT use an AI system for a task?",
+    keyPoints: ["When auditability/explainability is legally required", "When error cost is catastrophic and irreversible", "When a deterministic rule suffices (no uncertainty)", "When data is insufficient or too sensitive"],
+    topic: "Strategy",
+    difficulty: "easy",
+  },
+  {
+    id: "iq10",
+    q: "What is a reranker and where does it fit in a RAG pipeline?",
+    keyPoints: ["Cross-encoder that scores query-chunk relevance", "Sits after vector retrieval, before LLM context stuffing", "Slower than ANN but more accurate relevance scoring", "Top-k from ANN → reranker → top-n to LLM"],
+    topic: "RAG",
+    difficulty: "medium",
+  },
+  {
+    id: "iq11",
+    q: "What's the difference between latency P50, P95, and P99? Why does P95 matter more for production?",
+    keyPoints: ["P50 = median (best case user experience)", "P95/P99 = tail latency (worst 5%/1% of requests)", "Users remember slow requests, not fast ones", "SLAs should be set on P95/P99 not mean"],
+    topic: "Observability",
+    difficulty: "easy",
+  },
+  {
+    id: "iq12",
+    q: "You're seeing agent loops in production — the agent keeps calling tools without stopping. How do you debug and fix it?",
+    keyPoints: ["Add max_iterations guard", "Log full tool call trace to find loop source", "Check stopping condition in REASON step", "Set budget/cost ceiling as hard stop"],
+    topic: "Agents",
+    difficulty: "hard",
+  },
+  {
+    id: "iq13",
+    q: "Compare in-context learning vs fine-tuning for adding domain knowledge to an LLM.",
+    keyPoints: ["In-context: pass docs as context (RAG), no training needed", "Fine-tuning: bakes knowledge into weights (risky for facts)", "In-context is more up-to-date and auditable", "Fine-tuning better for style/format, not factual knowledge"],
+    topic: "Fine-Tuning",
+    difficulty: "medium",
+  },
+  {
+    id: "iq14",
+    q: "What is 'grounded' generation? How do you measure it?",
+    keyPoints: ["Response claims are supported by retrieved source documents", "Ungrounded = model uses parametric memory not context", "Measure: NLI entailment score between response and docs", "Attribution check: every claim maps to a cited passage"],
+    topic: "RAG",
+    difficulty: "medium",
+  },
+  {
+    id: "iq15",
+    q: "Describe the transformer architecture at a high level — what are the key operations?",
+    keyPoints: ["Token embedding + positional encoding", "Multi-head self-attention (Q/K/V)", "Feed-forward layers per position", "Layer norm + residual connections, then softmax over vocab"],
+    topic: "Architecture",
+    difficulty: "medium",
+  },
+  {
+    id: "iq16",
+    q: "How does attention work? Why is it O(n²) and when does that matter?",
+    keyPoints: ["Each token attends to every other token → n² pairs", "Memory and compute scale quadratically with context length", "8K context: 64M pairs; 128K: ~16B pairs", "Matters for long-doc RAG and large context deployments"],
+    topic: "Architecture",
+    difficulty: "hard",
+  },
+  {
+    id: "iq17",
+    q: "What's the difference between temperature and top-p in LLM sampling?",
+    keyPoints: ["Temperature: scales logits before softmax (higher = more random)", "Top-p (nucleus): samples from smallest set summing to p", "Both control diversity, but differently", "Low temp for deterministic tasks, higher for creative"],
+    topic: "Architecture",
+    difficulty: "easy",
+  },
+  {
+    id: "iq18",
+    q: "How would you reduce the cost of a high-volume LLM feature in production?",
+    keyPoints: ["Smaller/cheaper model for simpler subtasks (routing)", "Prompt compression / shorter context", "Caching repeated queries (semantic cache)", "Batch requests, reduce output token limits"],
+    topic: "Strategy",
+    difficulty: "medium",
+  },
+];
+
+const TOPIC_REVIEWS = {
+  "Fine-Tuning": "Review the Fine-Tuning Lab in Systems tab — focus on LoRA math and RLHF vs DPO.",
+  "RAG": "Review RAG Pipeline in Flows tab — pay attention to groundedness, reranking, and failure modes.",
+  "Guardrails": "Review Guardrail Pipeline in Flows tab — trace which gate catches each attack type.",
+  "Observability": "Review LLM Observability in Systems tab — know all 6 production metrics cold.",
+  "A/B Testing": "Review A/B Testing Lab in Systems tab — shadow deployment and statistical significance.",
+  "Agents": "Review Agent Loop in Flows tab — understand loop failure mode and budget ceiling.",
+  "Strategy": "Review Model Strategy + Should You Use AI? in Systems tab.",
+  "Architecture": "Review Concepts tab — embeddings, attention, transformer block diagrams.",
+};
+
+function MockInterview() {
+  const SESSION_SIZE = 5;
+  const TIME_LIMIT = 90;
+
+  const [phase, setPhase] = useState("setup"); // setup | question | score | summary
+  const [difficulty, setDifficulty] = useState("all");
+  const [topic, setTopic] = useState("all");
+  const [session, setSession] = useState([]);
+  const [qIndex, setQIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+  const [timerActive, setTimerActive] = useState(false);
+  const [showPoints, setShowPoints] = useState(false);
+  const [scores, setScores] = useState([]); // array of {qId, selfScore (1-3), topic}
+
+  const allTopics = [...new Set(INTERVIEW_QUESTIONS.map(q => q.topic))];
+
+  // Filter + shuffle + pick SESSION_SIZE
+  function startSession() {
+    let pool = INTERVIEW_QUESTIONS;
+    if (difficulty !== "all") pool = pool.filter(q => q.difficulty === difficulty);
+    if (topic !== "all") pool = pool.filter(q => q.topic === topic);
+    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, SESSION_SIZE);
+    if (shuffled.length === 0) return;
+    setSession(shuffled);
+    setQIndex(0);
+    setScores([]);
+    setShowPoints(false);
+    setTimeLeft(TIME_LIMIT);
+    setTimerActive(true);
+    setPhase("question");
+  }
+
+  // Timer
+  useEffect(() => {
+    if (!timerActive) return;
+    if (timeLeft <= 0) { setTimerActive(false); setShowPoints(true); return; }
+    const t = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+    return () => clearTimeout(t);
+  }, [timerActive, timeLeft]);
+
+  function revealPoints() {
+    setTimerActive(false);
+    setShowPoints(true);
+  }
+
+  function scoreAndNext(s) {
+    const q = session[qIndex];
+    const newScores = [...scores, { qId: q.id, selfScore: s, topic: q.topic }];
+    setScores(newScores);
+    if (qIndex + 1 >= session.length) {
+      setPhase("summary");
+      setTimerActive(false);
+    } else {
+      setQIndex(qIndex + 1);
+      setShowPoints(false);
+      setTimeLeft(TIME_LIMIT);
+      setTimerActive(true);
+    }
+  }
+
+  // Summary stats
+  const avgScore = scores.length ? (scores.reduce((a, b) => a + b.selfScore, 0) / scores.length).toFixed(1) : 0;
+  const weakTopics = [...new Set(scores.filter(s => s.selfScore < 2).map(s => s.topic))];
+
+  const timerColor = timeLeft > 45 ? "#22c55e" : timeLeft > 20 ? "#f59e0b" : "#ef4444";
+
+  if (phase === "setup") return (
+    <div className="space-y-6">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 space-y-5">
+        <div>
+          <p className="text-xs text-zinc-400 uppercase tracking-widest mb-1">Session Setup</p>
+          <h2 className="text-white font-bold text-lg">Mock Interview</h2>
+          <p className="text-zinc-400 text-sm mt-1">5 questions · 90 seconds each · self-score your answers</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs text-zinc-400 block mb-2 uppercase tracking-wide">Difficulty</label>
+            <div className="flex flex-col gap-1.5">
+              {["all","easy","medium","hard"].map(d => (
+                <button key={d} onClick={() => setDifficulty(d)}
+                  className={`px-3 py-1.5 rounded text-xs font-mono text-left transition-all ${difficulty === d ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                  {d === "all" ? "All levels" : d.charAt(0).toUpperCase() + d.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-zinc-400 block mb-2 uppercase tracking-wide">Topic</label>
+            <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
+              {["all", ...allTopics].map(t => (
+                <button key={t} onClick={() => setTopic(t)}
+                  className={`px-3 py-1.5 rounded text-xs font-mono text-left transition-all ${topic === t ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                  {t === "all" ? "All topics" : t}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <button onClick={startSession}
+          className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-sm transition-all">
+          Start Session →
+        </button>
+      </div>
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">How it works</p>
+        <ul className="text-sm text-zinc-400 space-y-1">
+          <li>• Timer starts immediately — answer out loud or in your head</li>
+          <li>• Hit <span className="text-white font-mono">"Reveal Key Points"</span> when ready</li>
+          <li>• Self-score honestly: 1 = missed key ideas, 2 = partial, 3 = nailed it</li>
+          <li>• Summary shows weak topics and where to review</li>
+        </ul>
+      </div>
+    </div>
+  );
+
+  if (phase === "question") {
+    const q = session[qIndex];
+    const progress = ((qIndex) / session.length) * 100;
+    return (
+      <div className="space-y-4">
+        {/* Progress bar */}
+        <div className="flex items-center justify-between text-xs text-zinc-500">
+          <span>Question {qIndex + 1} of {session.length}</span>
+          <span className="font-mono" style={{ color: timerColor }}>{timeLeft}s</span>
+        </div>
+        <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-full bg-indigo-600 transition-all" style={{ width: `${progress}%` }} />
+        </div>
+
+        {/* Timer ring */}
+        <div className="flex justify-center">
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="34" fill="none" stroke="#27272a" strokeWidth="6" />
+            <circle cx="40" cy="40" r="34" fill="none" stroke={timerColor} strokeWidth="6"
+              strokeDasharray={`${2 * Math.PI * 34}`}
+              strokeDashoffset={`${2 * Math.PI * 34 * (1 - timeLeft / TIME_LIMIT)}`}
+              strokeLinecap="round"
+              transform="rotate(-90 40 40)"
+              style={{ transition: "stroke-dashoffset 1s linear, stroke 0.5s" }} />
+            <text x="40" y="45" textAnchor="middle" fill={timerColor} fontSize="18" fontWeight="bold" fontFamily="monospace">{timeLeft}</text>
+          </svg>
+        </div>
+
+        {/* Question card */}
+        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs px-2 py-0.5 rounded font-mono bg-zinc-800 text-zinc-400">{q.topic}</span>
+            <span className={`text-xs px-2 py-0.5 rounded font-mono ${q.difficulty === "hard" ? "bg-red-900/40 text-red-400" : q.difficulty === "medium" ? "bg-amber-900/40 text-amber-400" : "bg-green-900/40 text-green-400"}`}>
+              {q.difficulty}
+            </span>
+          </div>
+          <p className="text-white font-medium text-base leading-relaxed">{q.q}</p>
+        </div>
+
+        {/* Reveal / Key points */}
+        {!showPoints ? (
+          <button onClick={revealPoints}
+            className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-lg text-sm transition-all border border-zinc-600">
+            Reveal Key Points
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="bg-zinc-900 border border-indigo-800/50 rounded-xl p-4">
+              <p className="text-xs text-indigo-400 uppercase tracking-widest mb-2">Key Points</p>
+              <ul className="space-y-1.5">
+                {q.keyPoints.map((pt, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                    <span className="text-indigo-500 mt-0.5 shrink-0">▸</span>{pt}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p className="text-center text-xs text-zinc-400">How well did you cover the key points?</p>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { s: 1, label: "Missed it", color: "#ef4444", desc: "Key ideas not covered" },
+                { s: 2, label: "Partial", color: "#f59e0b", desc: "Got some, missed some" },
+                { s: 3, label: "Nailed it", color: "#22c55e", desc: "Hit the main points" },
+              ].map(({ s, label, color, desc }) => (
+                <button key={s} onClick={() => scoreAndNext(s)}
+                  className="p-3 rounded-xl border text-center transition-all hover:scale-105"
+                  style={{ borderColor: color + "55", backgroundColor: color + "11" }}>
+                  <div className="text-lg font-black" style={{ color }}>{s}</div>
+                  <div className="text-xs font-bold text-white">{label}</div>
+                  <div className="text-xs text-zinc-500 mt-0.5">{desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (phase === "summary") {
+    const scoreColor = avgScore >= 2.5 ? "#22c55e" : avgScore >= 1.5 ? "#f59e0b" : "#ef4444";
+    return (
+      <div className="space-y-5">
+        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 text-center">
+          <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Session Complete</p>
+          <div className="text-5xl font-black my-3" style={{ color: scoreColor }}>{avgScore}</div>
+          <p className="text-zinc-400 text-sm">avg self-score · {session.length} questions</p>
+        </div>
+
+        {/* Per-question breakdown */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+          <p className="text-xs text-zinc-500 uppercase tracking-widest">Breakdown</p>
+          {session.map((q, i) => {
+            const sc = scores[i];
+            const c = sc?.selfScore === 3 ? "#22c55e" : sc?.selfScore === 2 ? "#f59e0b" : "#ef4444";
+            return (
+              <div key={q.id} className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ backgroundColor: c + "22", color: c }}>{sc?.selfScore ?? "?"}</div>
+                <p className="text-zinc-300 text-xs flex-1 line-clamp-1">{q.q}</p>
+                <span className="text-xs font-mono text-zinc-600 shrink-0">{q.topic}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Weak topics review */}
+        {weakTopics.length > 0 && (
+          <div className="bg-amber-900/10 border border-amber-800/40 rounded-xl p-4 space-y-2">
+            <p className="text-xs text-amber-400 uppercase tracking-widest">Review Recommended</p>
+            {weakTopics.map(t => (
+              <div key={t} className="flex items-start gap-2">
+                <span className="text-amber-500 shrink-0 mt-0.5">⚡</span>
+                <p className="text-sm text-zinc-300">{TOPIC_REVIEWS[t] || `Review ${t} in the relevant module.`}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button onClick={() => setPhase("setup")}
+          className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-sm transition-all">
+          New Session
+        </button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 // ─── FLUENCY APP ──────────────────────────────────────────────────────────────
 
 const FLUENCY_MODULES = [
@@ -973,6 +1361,7 @@ const FLUENCY_MODULES = [
   { id: "drills", label: "Timed Drills", tag: "PRACTICE" },
   { id: "cases", label: "Company Cases", tag: "ARENA" },
   { id: "prompts", label: "Prompt Engineering", tag: "PROMPTS" },
+  { id: "interview", label: "Mock Interview", tag: "INTERVIEW" },
 ];
 
 export default function FluencyApp() {
@@ -1003,6 +1392,7 @@ export default function FluencyApp() {
       {activeModule === "drills" && <TimedDrills />}
       {activeModule === "cases" && <CompanyCaseArena />}
       {activeModule === "prompts" && <PromptEngLab />}
+      {activeModule === "interview" && <MockInterview />}
     </div>
   );
 }
