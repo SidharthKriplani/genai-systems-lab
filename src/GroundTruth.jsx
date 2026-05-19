@@ -344,6 +344,7 @@ const CATEGORIES = [
   { id: "career",      label: "Careers & Salaries" },
   { id: "interview",   label: "Interview Prep" },
   { id: "research",    label: "Research Papers" },
+  { id: "finetuning",  label: "Fine-Tuning & Training" },
 ];
 
 const CAT_COLORS = {
@@ -361,6 +362,7 @@ const CAT_COLORS = {
   career:      "#f59e0b",
   interview:   "#ec4899",
   research:    "#a78bfa",
+  finetuning:  "#34d399",
 };
 
 

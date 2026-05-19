@@ -5661,6 +5661,571 @@ class StateManager:
     ]},
   ],
 
+  // ─── FINE-TUNING & TRAINING ──────────────────────────────────────────────────
+
+  "fine-tuning-fundamentals": [
+    { t: "p", text: "Fine-tuning is one of the most misused techniques in applied AI. Teams reach for it when they hit a quality ceiling, when a prompt isn't doing what they want, when a model doesn't know their domain. Sometimes it's the right tool. Often it's not — and a poorly motivated fine-tuning run costs weeks of engineering time, GPU budget, and ongoing maintenance overhead without solving the underlying problem." },
+    { t: "p", text: "Before you fine-tune anything, you need a clear answer to three questions: what exactly is wrong with the base model? Would more data in context fix it? And what would success actually look like? This post gives you the mental model to answer all three." },
+    { t: "h2", text: "What fine-tuning actually changes" },
+    { t: "p", text: "Fine-tuning updates the weights of a pre-trained model on a new dataset. Unlike prompting — which changes the model's input — fine-tuning changes the model itself. After fine-tuning, the model generates differently even with the same prompt, because its internal representations have shifted." },
+    { t: "p", text: "What shifts specifically depends on what kind of fine-tuning you do and what data you use. But the core mechanism is always the same: gradient descent updates weights to minimise loss on your new dataset, pulling the model's behaviour toward the distribution of your training examples." },
+    { t: "callout", v: "key", text: "Fine-tuning does not add knowledge by magic. If the base model has never encountered a concept, fine-tuning on a small dataset won't reliably teach it. Fine-tuning is best at reshaping how a model uses knowledge it already has — style, format, tone, task structure — not at injecting new facts." },
+    { t: "h2", text: "The three real use cases for fine-tuning" },
+    { t: "h3", text: "1. Style and format adaptation" },
+    { t: "p", text: "The base model writes in a general style. Your product needs a very specific voice, output format, or structural pattern. A customer support bot that always responds in a specific JSON schema. A code assistant that always writes idiomatic Python with specific patterns. A document analyser that always produces a fixed structured report. Prompting can get close, but fine-tuning locks it in — consistently, at every temperature, without long system prompts." },
+    { t: "h3", text: "2. Task specialisation on a narrow domain" },
+    { t: "p", text: "The base model is a generalist. Your use case is highly specific — medical record extraction, legal clause classification, financial report summarisation. The model knows the domain at a broad level, but struggles with the specific vocabulary, edge cases, and output requirements. Fine-tuning on high-quality domain examples teaches the model the specific patterns that matter for your task." },
+    { t: "h3", text: "3. Latency and cost optimisation via distillation" },
+    { t: "p", text: "You're using a large frontier model and the quality is excellent, but the cost or latency is unsustainable at scale. Use the frontier model to generate high-quality (instruction, response) pairs, then fine-tune a smaller model on this 'teacher' data. This is knowledge distillation — the small model learns to approximate the large model's outputs at a fraction of the inference cost." },
+    { t: "h2", text: "Five situations where fine-tuning is the wrong tool" },
+    { t: "list", items: [
+      "Your evaluation is weak: if you can't reliably measure whether the fine-tuned model is better, you can't tell whether you've improved anything. Fix evals before fine-tuning.",
+      "You have less than ~500 high-quality examples: below this threshold, fine-tuning usually hurts general capability more than it helps task performance. Use few-shot prompting instead.",
+      "Your knowledge changes frequently: fine-tuning bakes knowledge into weights. If your domain knowledge updates weekly, you'll need to retrain constantly. RAG is almost always better for dynamic knowledge.",
+      "You're trying to fix hallucination on factual tasks: fine-tuning on correct facts doesn't reliably reduce hallucination. The model has memorised incorrect patterns that are hard to override with a small dataset. Use RAG or structured retrieval instead.",
+      "You haven't exhausted prompt engineering: a well-structured system prompt with good few-shot examples often achieves 80-90% of what fine-tuning would achieve at zero maintenance cost. Always benchmark a strong prompt baseline before investing in fine-tuning.",
+    ]},
+    { t: "callout", v: "warning", text: "The most common fine-tuning mistake: treating it as a shortcut to skip prompt engineering. Fine-tuning is harder to iterate on, harder to debug, and introduces ongoing maintenance overhead. It should only enter the picture after you've maximised what's achievable through prompting." },
+    { t: "h2", text: "The fine-tuning decision checklist" },
+    { t: "list", items: [
+      "Do you have 500+ high-quality, consistent (instruction, response) pairs in your target domain?",
+      "Have you built an eval set that can reliably measure improvement?",
+      "Have you benchmarked a strong prompt engineering baseline?",
+      "Is the failure mode style/format (not factual accuracy)?",
+      "Does your knowledge change slowly enough that retraining isn't constant overhead?",
+    ]},
+    { t: "p", text: "If you answered yes to all five: fine-tuning is likely the right tool. If you answered no to any: address those first." },
+    { t: "lab", tab: "explore", label: "Compare fine-tuning, RAG, and prompting approaches →", desc: "See how different adaptation strategies perform across varied task types." },
+    { t: "references", items: [
+      { label: "LIMA: Less Is More for Alignment — Zhou et al. (Meta AI, 2023)", url: "https://arxiv.org/abs/2305.11206" },
+      { label: "Hugging Face — Fine-tuning overview and when to use it", url: "https://huggingface.co/docs/transformers/training" },
+      { label: "OpenAI — Fine-tuning guide and best practices", url: "https://platform.openai.com/docs/guides/fine-tuning" },
+    ]},
+  ],
+
+  "full-vs-peft-vs-prompting": [
+    { t: "p", text: "You've decided fine-tuning is the right approach. Now comes the second decision: which kind of fine-tuning? Full fine-tuning updates every parameter. Parameter-efficient fine-tuning (PEFT) methods like LoRA update a tiny fraction of parameters. And sometimes, prompt engineering with a few-shot example set is close enough that no fine-tuning is warranted at all." },
+    { t: "p", text: "These aren't just options on a scale of 'more compute = better results'. They have different cost profiles, update characteristics, inference tradeoffs, and failure modes. Choosing wrong means wasted GPU hours at best and a model that performs worse than your baseline at worst." },
+    { t: "h2", text: "The three approaches compared" },
+    { t: "table", headers: ["Approach", "What Gets Updated", "VRAM (70B model)", "Quality Ceiling", "Best For"], rows: [
+      ["Prompt engineering", "Nothing — inference only", "None", "~80% of fine-tune quality for most tasks", "Format, tone, structured output, few-shot tasks"],
+      ["LoRA / QLoRA (PEFT)", "~0.5–2% of params (adapter matrices)", "12–48GB with QLoRA", "Close to full FT on most tasks", "Domain adaptation, style, task specialisation"],
+      ["Full fine-tuning", "100% of params", "500GB+ (fp16)", "Highest possible", "Deep domain embedding, distillation, novel capabilities"],
+    ]},
+    { t: "h2", text: "When to use prompt engineering (not fine-tuning)" },
+    { t: "list", items: [
+      "You need results in days, not weeks",
+      "Your dataset is small (<500 quality examples)",
+      "Your task format is well-defined and expressible in a system prompt",
+      "You need to update behaviour frequently without retraining",
+      "You're testing a product hypothesis before committing engineering time",
+    ]},
+    { t: "callout", v: "tip", text: "A well-engineered prompt with 10–20 few-shot examples typically achieves 80–90% of the quality a fine-tuned model would achieve on format and style tasks. Measure the gap before deciding fine-tuning is worth the investment." },
+    { t: "h2", text: "When to use LoRA / QLoRA" },
+    { t: "list", items: [
+      "You have 500–50K high-quality training examples",
+      "You need consistent behaviour that a system prompt can't reliably enforce",
+      "You're adapting to a specific domain, persona, or task format",
+      "You want to run fine-tuning on a single GPU or small cluster",
+      "You need multiple specialised models from the same base (LoRA adapters can be swapped at inference time)",
+    ]},
+    { t: "h2", text: "When to use full fine-tuning" },
+    { t: "list", items: [
+      "You have 50K+ high-quality examples and a specific quality target that LoRA doesn't reach",
+      "You're doing knowledge distillation from a larger teacher model",
+      "You're embedding deep domain knowledge (medical, legal, scientific) that requires broad weight updates",
+      "You have the infrastructure to run multi-GPU training and can absorb the compute cost",
+    ]},
+    { t: "callout", v: "warning", text: "Full fine-tuning a 70B model requires 500GB+ of GPU VRAM in fp16 — roughly 8x A100-80GB cards just to fit the model + gradients + optimiser state. Unless you have this infrastructure or a compelling reason LoRA won't work, LoRA/QLoRA is almost always the right starting point." },
+    { t: "h2", text: "The decision tree" },
+    { t: "code", lang: "text", label: "Fine-tuning decision tree", text: "Do you have a strong prompt baseline?\n  No → Build one first. Measure the gap.\n  Yes → Is the gap significant and consistent across your eval set?\n    No → Prompt engineering is sufficient.\n    Yes → Do you have 500+ high-quality training examples?\n      No → Collect more data first.\n      Yes → Can LoRA reach your quality target? (run small experiment)\n        Yes → Use LoRA / QLoRA\n        No → Do you have multi-GPU infrastructure?\n          Yes → Full fine-tuning\n          No → Get infrastructure or revisit quality target" },
+    { t: "lab", tab: "explore", label: "Compare fine-tuning approaches →", desc: "See how full fine-tuning, LoRA, and prompting perform across different task types." },
+    { t: "references", items: [
+      { label: "LoRA: Low-Rank Adaptation of Large Language Models — Hu et al. (Microsoft, 2022)", url: "https://arxiv.org/abs/2106.09685" },
+      { label: "PEFT: State-of-the-art Parameter-Efficient Fine-Tuning — Hugging Face", url: "https://github.com/huggingface/peft" },
+      { label: "Scaling Down to Scale Up: A Guide to Parameter-Efficient Fine-Tuning — Lialin et al. (2023)", url: "https://arxiv.org/abs/2303.15647" },
+    ]},
+  ],
+
+  "lora-in-practice": [
+    { t: "p", text: "The LoRA paper tells you the theory. This post tells you what actually happens when you run it — the config decisions that matter, what goes wrong at each step, and how to go from a raw dataset to a merged adapter ready for production." },
+    { t: "p", text: "Most teams waste their first two or three LoRA runs by making the same preventable mistakes: wrong rank, wrong target modules, no baseline eval, no validation split. This is the guide to not doing that." },
+    { t: "h2", text: "Step 1: Dataset preparation" },
+    { t: "p", text: "LoRA is only as good as its training data. Before writing a single line of training code, your dataset needs to be in the right shape." },
+    { t: "list", items: [
+      "Format: every example must follow exactly one consistent format. The model learns the format as strongly as it learns the content. Inconsistency teaches inconsistency.",
+      "Quality: remove low-quality examples aggressively. 500 excellent examples beat 5,000 mediocre ones (see LIMA).",
+      "Diversity: ensure topic, length, and instruction type diversity. A homogeneous dataset produces a model that handles only the cases it trained on.",
+      "Validation split: hold out 5–10% of examples for evaluation. Never train and evaluate on the same set.",
+      "Deduplication: near-duplicate examples cause overfitting. Use MinHash or embedding similarity to detect and remove them.",
+    ]},
+    { t: "h2", text: "Step 2: Base model selection" },
+    { t: "p", text: "The base model determines the ceiling of your fine-tuned model. A 7B model fine-tuned on excellent data will not match a 70B model on complex reasoning tasks. Choose the smallest model that can plausibly handle your task in zero-shot — then fine-tune it." },
+    { t: "callout", v: "tip", text: "Prefer instruct-tuned base models over raw pretrained models for most fine-tuning tasks. Instruct-tuned models already know the conversation format and follow instructions reasonably well — your fine-tuning data then only needs to teach the domain-specific patterns, not the basic interaction format." },
+    { t: "h2", text: "Step 3: LoRA configuration" },
+    { t: "code", lang: "python", label: "LoRA config (Hugging Face PEFT)", text: `from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=16,                    # rank — start here, experiment up/down
+    lora_alpha=32,           # scaling factor — typically 2× rank
+    target_modules=[         # which layers to adapt
+        "q_proj", "k_proj", "v_proj", "o_proj",  # attention
+        "gate_proj", "up_proj", "down_proj",       # FFN (include for better results)
+    ],
+    lora_dropout=0.05,       # prevent overfitting on small datasets
+    bias="none",             # don't train bias terms
+    task_type="CAUSAL_LM",
+)
+
+model = get_peft_model(model, config)
+model.print_trainable_parameters()
+# Trainable params: ~40M / 7B total = ~0.6%` },
+    { t: "h2", text: "Step 4: Training hyperparameters" },
+    { t: "table", headers: ["Hyperparameter", "Starting Value", "When to Adjust"], rows: [
+      ["Learning rate", "2e-4", "Lower (1e-4) if loss is unstable; higher (3e-4) if training is slow"],
+      ["Batch size", "4–16 (per device)", "Larger = more stable gradients; limited by VRAM"],
+      ["Gradient accumulation", "4–8 steps", "Use to achieve effective batch size of 32–64"],
+      ["Epochs", "1–3", "More epochs = more overfitting risk on small datasets"],
+      ["Warmup steps", "10–50", "Prevents early training instability"],
+      ["LR scheduler", "cosine", "Cosine decay generally outperforms linear"],
+    ]},
+    { t: "h2", text: "Step 5: What to watch during training" },
+    { t: "list", items: [
+      "Training loss curve: should decrease steadily. Spikes indicate learning rate too high or data issues.",
+      "Validation loss: should decrease with training loss. If validation loss rises while training loss falls, you're overfitting.",
+      "GPU utilisation: should be >80%. Lower means your data loading or batch size is the bottleneck.",
+      "Gradient norm: monitor with gradient clipping (max_grad_norm=1.0). High gradients indicate instability.",
+    ]},
+    { t: "h2", text: "Step 6: Evaluation before merging" },
+    { t: "p", text: "Never merge a LoRA adapter into the base model before evaluating it. Use your held-out validation set and your production eval suite. Run the adapter-loaded model against your baseline (base model + best system prompt) on the same eval. If the fine-tuned model isn't clearly better on your target metric, do not proceed to deployment." },
+    { t: "h2", text: "Step 7: Merging and exporting" },
+    { t: "code", lang: "python", label: "Merging LoRA adapter into base model", text: `from peft import PeftModel
+
+# Load base model + adapter
+base_model = AutoModelForCausalLM.from_pretrained(base_model_id)
+peft_model = PeftModel.from_pretrained(base_model, adapter_path)
+
+# Merge adapter weights into base model weights
+merged_model = peft_model.merge_and_unload()
+
+# Save as standard model (no PEFT dependency at inference)
+merged_model.save_pretrained("./merged_model")
+tokenizer.save_pretrained("./merged_model")
+
+# Result: a standard model file that loads without PEFT library
+# Inference speed identical to the base model` },
+    { t: "callout", v: "key", text: "Merging is irreversible — always keep the base model and the separate adapter checkpoint. The merged model can't be 'unmerged'. If you need to update training, you retrain the adapter and re-merge." },
+    { t: "lab", tab: "explore", label: "Explore fine-tuning approaches →", desc: "Compare LoRA configurations and see their effects on task performance." },
+    { t: "references", items: [
+      { label: "LoRA: Low-Rank Adaptation of Large Language Models — Hu et al. (2022)", url: "https://arxiv.org/abs/2106.09685" },
+      { label: "Hugging Face PEFT documentation — LoRA configuration guide", url: "https://huggingface.co/docs/peft/conceptual_guides/lora" },
+      { label: "Axolotl — production fine-tuning framework with LoRA support", url: "https://github.com/axolotl-ai-cloud/axolotl" },
+    ]},
+  ],
+
+  "qlora-consumer-hardware": [
+    { t: "p", text: "LoRA reduced fine-tuning VRAM requirements dramatically — but even with LoRA, a 70B model requires ~140GB of VRAM just to load the model weights in fp16. That's still two A100-80GB cards minimum, before gradients and optimiser state. For most teams, 70B fine-tuning was still out of reach." },
+    { t: "p", text: "QLoRA, published by Tim Dettmers and colleagues in May 2023, broke that wall. By quantising the base model to 4-bit and applying LoRA adapters to the quantised weights, QLoRA made it possible to fine-tune a 70B model on a single 48GB GPU — and a 13B model on a single consumer RTX 3090. The quality gap vs. full fine-tuning was minimal." },
+    { t: "h2", text: "How QLoRA stacks the savings" },
+    { t: "table", headers: ["Approach", "70B model VRAM (training)", "13B model VRAM (training)"], rows: [
+      ["Full fine-tuning (fp16)", "~560GB", "~104GB"],
+      ["LoRA (fp16 base)", "~280GB (gradients only on adapters)", "~52GB"],
+      ["QLoRA (NF4 base + bf16 adapters)", "~48GB", "~12GB"],
+    ]},
+    { t: "h2", text: "NF4: the right quantisation format for weights" },
+    { t: "p", text: "QLoRA uses NormalFloat 4-bit (NF4) quantisation for the frozen base model weights. NF4 is designed specifically for normally-distributed weight values — which LLM weights are. Unlike INT4 (which divides the numeric range into equal buckets), NF4 allocates more buckets near zero where most weight values cluster, reducing quantisation error." },
+    { t: "callout", v: "key", text: "NF4 is information-theoretically optimal for normally distributed weights. The base model weights are stored in 4-bit but dequantised to bf16 on-the-fly during the forward pass. Only the LoRA adapter weights stay in bf16 throughout — they're small enough that this adds minimal memory overhead." },
+    { t: "h2", text: "Double quantisation" },
+    { t: "p", text: "QLoRA also introduces double quantisation: quantising the quantisation constants themselves. Standard quantisation stores a scaling factor (fp32) per block of ~64 weights. Double quantisation quantises these scaling factors to 8-bit, saving an additional ~0.5 bits per parameter — small but meaningful at 70B scale." },
+    { t: "h2", text: "Paged optimisers" },
+    { t: "p", text: "A third QLoRA innovation: paged optimisers using NVIDIA unified memory. The optimiser state (momentum, variance for Adam) is stored in CPU RAM and paged to GPU VRAM only when needed. This prevents OOM errors on memory spikes during training without requiring the entire optimiser state to fit in VRAM at once." },
+    { t: "h2", text: "QLoRA setup" },
+    { t: "code", lang: "python", label: "QLoRA setup with bitsandbytes and PEFT", text: `import torch
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+
+# 4-bit quantisation config
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",          # NF4 — optimal for LLM weights
+    bnb_4bit_compute_dtype=torch.bfloat16,  # compute in bf16
+    bnb_4bit_use_double_quant=True,     # double quantisation
+)
+
+# Load model in 4-bit
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    quantization_config=bnb_config,
+    device_map="auto",
+)
+
+# Prepare for k-bit training (cast LayerNorm to fp32, etc.)
+model = prepare_model_for_kbit_training(model)
+
+# Apply LoRA on top of quantised model
+lora_config = LoraConfig(r=16, lora_alpha=32, target_modules=["q_proj","v_proj"], ...)
+model = get_peft_model(model, lora_config)` },
+    { t: "h2", text: "What you lose with QLoRA" },
+    { t: "list", items: [
+      "Training speed: QLoRA is ~30% slower than LoRA on fp16 due to dequantisation overhead during forward pass",
+      "Slight quality gap: on complex reasoning tasks, QLoRA fine-tuned models show a small but measurable quality reduction vs. full precision LoRA",
+      "Quantisation noise: NF4 introduces small quantisation errors that compound in very deep models — less relevant for most practical tasks",
+    ]},
+    { t: "callout", v: "tip", text: "For most production use cases, the quality difference between QLoRA and full LoRA is negligible on task-specific benchmarks. Start with QLoRA — it unlocks fine-tuning for teams without enterprise GPU clusters, and the 30% speed penalty is a reasonable tradeoff." },
+    { t: "lab", tab: "explore", label: "Explore fine-tuning approaches →", desc: "Compare QLoRA, LoRA, and full fine-tuning across quality and compute dimensions." },
+    { t: "references", items: [
+      { label: "QLoRA: Efficient Finetuning of Quantized LLMs — Dettmers et al. (2023)", url: "https://arxiv.org/abs/2305.14314" },
+      { label: "bitsandbytes library — quantisation for fine-tuning", url: "https://github.com/TimDettmers/bitsandbytes" },
+      { label: "Hugging Face QLoRA guide", url: "https://huggingface.co/blog/4bit-transformers-bitsandbytes" },
+    ]},
+  ],
+
+  "peft-methods-compared": [
+    { t: "p", text: "LoRA gets most of the attention in the PEFT ecosystem — and for good reason. But it's not the only parameter-efficient fine-tuning method, and understanding what the others do (and why LoRA beat them in practice) builds a clearer mental model of what PEFT is actually optimising for." },
+    { t: "p", text: "The four main PEFT families: LoRA (low-rank adapter matrices), Prefix Tuning (prepend trainable tokens to the key-value sequence), Prompt Tuning (prepend trainable tokens to the input), and Adapter Layers (insert small bottleneck networks into transformer layers). They all share the same goal — adapt a large pretrained model efficiently — but make different tradeoffs." },
+    { t: "h2", text: "LoRA (Low-Rank Adaptation)" },
+    { t: "p", text: "Injects trainable low-rank matrices ΔW = BA alongside frozen weight matrices. At inference, adapters can be merged into base weights — zero inference overhead. Rank r controls capacity: higher rank captures more complex adaptations but uses more parameters." },
+    { t: "list", items: [
+      "Parameters: ~0.1–2% of base model (depending on rank and target modules)",
+      "Inference overhead: zero after merging; ~5% before merging",
+      "Works well for: style, format, domain adaptation, instruction following",
+      "Weakness: less effective at tasks requiring broad architectural changes",
+    ]},
+    { t: "h2", text: "Adapter Layers" },
+    { t: "p", text: "Insert small bottleneck networks (down-project → nonlinearity → up-project) into each transformer layer. The adapter learns a residual transformation: output = input + adapter(input). Only the adapter weights are trained." },
+    { t: "list", items: [
+      "Parameters: ~1–8% of base model",
+      "Inference overhead: permanent — the adapter layers are always active, adding latency",
+      "Works well for: multi-task learning (one adapter per task, same base model)",
+      "Weakness: the permanent inference overhead makes it less attractive for production single-task models",
+    ]},
+    { t: "h2", text: "Prefix Tuning" },
+    { t: "p", text: "Prepends a sequence of trainable 'virtual tokens' to the key and value tensors at every attention layer. These prefix vectors are never part of the input text — they exist only inside the attention computation, acting as soft prompts that influence every layer's attention." },
+    { t: "list", items: [
+      "Parameters: prefix length × model dimension × num layers × 2 (K and V) — typically ~0.1% of base model",
+      "Inference overhead: small — each attention computation includes the prefix tokens",
+      "Works well for: generation tasks, summarisation, translation",
+      "Weakness: harder to optimise than LoRA; can be unstable on small models; prefix length is a difficult hyperparameter",
+    ]},
+    { t: "h2", text: "Prompt Tuning" },
+    { t: "p", text: "Simplest of the PEFT methods. Prepend a small number of trainable continuous tokens to the input embedding. Only the token embeddings are trainable — the entire model is frozen. At very large model scales (11B+), prompt tuning was shown to approach full fine-tuning quality." },
+    { t: "list", items: [
+      "Parameters: prompt length × embedding dimension — typically <0.01% of base model",
+      "Inference overhead: the prompt tokens add to sequence length",
+      "Works well for: classification tasks on very large models",
+      "Weakness: significantly underperforms LoRA on smaller models; unstable optimisation",
+    ]},
+    { t: "h2", text: "Why LoRA dominates in practice" },
+    { t: "table", headers: ["Method", "Params", "Inference Overhead", "Stability", "Production Use"], rows: [
+      ["LoRA", "0.1–2%", "Zero (after merge)", "High", "Dominant"],
+      ["QLoRA", "0.1–2%", "Zero (after merge)", "High", "Dominant (low VRAM)"],
+      ["Adapters", "1–8%", "Permanent (~10ms)", "High", "Multi-task setups"],
+      ["Prefix Tuning", "~0.1%", "Small", "Medium", "Niche"],
+      ["Prompt Tuning", "<0.01%", "Minimal", "Low on small models", "Mostly replaced by LoRA"],
+    ]},
+    { t: "callout", v: "key", text: "LoRA wins on the combination of: zero inference overhead after merging, stable optimisation across model sizes, flexibility in rank selection, and the ability to train on top of quantised models (QLoRA). No other PEFT method checks all four boxes." },
+    { t: "lab", tab: "explore", label: "Compare PEFT methods →", desc: "See how LoRA, adapters, and other PEFT approaches perform across task types." },
+    { t: "references", items: [
+      { label: "LoRA: Low-Rank Adaptation of Large Language Models — Hu et al. (2022)", url: "https://arxiv.org/abs/2106.09685" },
+      { label: "Prefix-Tuning: Optimizing Continuous Prompts for Generation — Li and Liang (2021)", url: "https://arxiv.org/abs/2101.00190" },
+      { label: "The Power of Scale for Parameter-Efficient Prompt Tuning — Lester et al. (2021)", url: "https://arxiv.org/abs/2104.08691" },
+      { label: "Parameter-Efficient Transfer Learning for NLP — Houlsby et al. (2019)", url: "https://arxiv.org/abs/1902.00751" },
+    ]},
+  ],
+
+  "instruction-tuning-datasets": [
+    { t: "p", text: "The most common reason fine-tuned models fail in production isn't the training algorithm, the learning rate, or the base model choice. It's the dataset. Specifically: a dataset that contains enough examples to reduce training loss, but not enough quality or diversity to produce a model that generalises to real production inputs." },
+    { t: "p", text: "Dataset curation for instruction tuning is a discipline in itself. The LIMA paper showed that 1,000 carefully curated examples can match RLHF-heavy approaches. The corollary: 10,000 poorly curated examples can produce a model worse than your baseline. Quality is not a nice-to-have — it is the primary variable." },
+    { t: "h2", text: "Anatomy of an instruction tuning example" },
+    { t: "p", text: "Every example in an instruction tuning dataset is a (system_prompt, instruction, response) triple — though system_prompt is sometimes omitted or baked into the instruction. The structure matters as much as the content:" },
+    { t: "code", lang: "json", label: "Standard instruction tuning format (Alpaca/ShareGPT style)", text: `{
+  "system": "You are a helpful assistant that answers questions about company policy.",
+  "instruction": "Can employees expense meals during remote work days?",
+  "response": "Yes. As of January 2024, remote employees may expense up to ₹1,800 per day for meals while working remotely. Receipts are required for amounts above ₹500, and claims must be submitted within 30 days."
+}` },
+    { t: "h2", text: "The five data quality dimensions" },
+    { t: "list", items: [
+      "Correctness: every response must be factually accurate for your domain. Wrong answers teach the model to be confidently wrong. Human review of a sample is non-negotiable.",
+      "Format consistency: all responses must follow exactly the same structure, tone, and length guidelines. Inconsistency is learned as a pattern.",
+      "Instruction diversity: if 80% of your examples are the same type of question, the model overfits to that type. Ensure coverage across all instruction types your production system will receive.",
+      "Difficulty distribution: include easy, medium, and hard examples. A dataset skewed toward simple examples produces a model that struggles with complex production queries.",
+      "Edge case coverage: identify the failure modes in your baseline model and create training examples that specifically address them.",
+    ]},
+    { t: "h2", text: "Synthetic data generation — and its limits" },
+    { t: "p", text: "Generating synthetic training data with GPT-4 or Claude is faster and cheaper than human annotation. The typical approach: write a few seed examples, then prompt the model to generate variations at scale. This works well for format and style tasks, and reasonably well for straightforward instruction following." },
+    { t: "p", text: "The limits of synthetic data: it inherits the biases and failure modes of the generator model. If you're fine-tuning a model to be better than GPT-4 at a specific task, training it on GPT-4's outputs creates a ceiling. And synthetic data tends to be more formulaic than human-written examples — less stylistic diversity, less natural variation in phrasing." },
+    { t: "callout", v: "warning", text: "Never fine-tune a model on its own outputs (self-distillation without quality filtering). This creates a feedback loop where the model reinforces its own errors. If you use the target model to generate training data, filter aggressively with a separate evaluation model or human review." },
+    { t: "h2", text: "Dataset filtering checklist" },
+    { t: "list", items: [
+      "Remove near-duplicates: use MinHash or cosine similarity on embeddings. >0.9 similarity threshold for removal.",
+      "Length filter: remove examples with unusually short responses (likely low quality) or unusually long ones (likely templated)",
+      "Quality classifier: train a simple classifier on a human-rated sample to score the rest of the dataset",
+      "Toxicity/safety filter: run every response through a safety classifier before using as training data",
+      "Human spot-check: manually review 5% of the final dataset before training",
+    ]},
+    { t: "h2", text: "How much data do you need" },
+    { t: "p", text: "For format and style adaptation: 500–2,000 high-quality examples is usually sufficient. For domain knowledge adaptation: 2,000–10,000 examples. For deep specialisation on complex tasks: 10,000–50,000. Beyond 50,000 supervised examples, the marginal return per example drops sharply — at that scale, consider whether continued pretraining on unlabelled domain text might be more efficient." },
+    { t: "lab", tab: "explore", label: "Explore fine-tuning approaches →", desc: "See how dataset quality and size affect fine-tuned model performance." },
+    { t: "references", items: [
+      { label: "LIMA: Less Is More for Alignment — Zhou et al. (Meta AI, 2023)", url: "https://arxiv.org/abs/2305.11206" },
+      { label: "Self-Instruct: Aligning Language Models with Self-Generated Instructions — Wang et al. (2022)", url: "https://arxiv.org/abs/2212.10560" },
+      { label: "Deduplicating Training Data Makes Language Models Better — Lee et al. (2021)", url: "https://arxiv.org/abs/2107.06499" },
+    ]},
+  ],
+
+  "dpo-in-practice": [
+    { t: "p", text: "DPO (Direct Preference Optimization) is theoretically simpler than RLHF — one fine-tuning pass, no reward model, no PPO. But in practice, the data collection step is where most teams stumble. The quality of your preference dataset determines almost everything about the final model." },
+    { t: "p", text: "This post is the practical guide: how to collect preference data, how to format DPO triplets, how to configure and run DPO training, and how to evaluate the result." },
+    { t: "h2", text: "What a DPO dataset looks like" },
+    { t: "code", lang: "json", label: "DPO training example format", text: `{
+  "prompt": "Explain the difference between RAG and fine-tuning.",
+  "chosen": "RAG and fine-tuning solve different problems. RAG retrieves external documents at inference time — it's ideal when knowledge needs to stay current or be cited. Fine-tuning updates model weights — it's better for teaching consistent format, tone, or task-specific reasoning patterns. Neither replaces the other.",
+  "rejected": "RAG is better than fine-tuning because it uses real documents. Fine-tuning is when you train the model again. You should use RAG for most things."
+}` },
+    { t: "h2", text: "How to collect preference data" },
+    { t: "h3", text: "Method 1: Human annotation of model outputs" },
+    { t: "p", text: "Sample production prompts (or create diverse synthetic prompts). Generate 2–4 responses per prompt using the target model (or a stronger model). Have human annotators rank the responses. This is the highest-quality approach but expensive — budget ~$0.50–2.00 per example with skilled annotators." },
+    { t: "h3", text: "Method 2: AI-generated preference pairs" },
+    { t: "p", text: "Use a strong model (GPT-4, Claude) to generate both chosen and rejected responses for your prompts. The chosen response should reflect ideal behaviour; the rejected response should exhibit the specific failure mode you're trying to fix (too verbose, wrong format, incorrect hedging, etc.). Faster and cheaper — but the chosen ceiling is limited by your generator model." },
+    { t: "h3", text: "Method 3: Contrastive pairs from existing data" },
+    { t: "p", text: "If you have an existing dataset with quality labels (thumbs up/down from production users, human ratings), convert high-quality vs. low-quality pairs for the same prompt into (chosen, rejected) DPO examples." },
+    { t: "callout", v: "key", text: "The most important DPO data quality rule: chosen and rejected responses should differ in exactly the dimension you want to improve. If they differ in multiple ways (quality AND length AND tone), the model learns a confounded signal. Make the contrast clean and specific." },
+    { t: "h2", text: "DPO training configuration" },
+    { t: "code", lang: "python", label: "DPO training with TRL", text: `from trl import DPOTrainer, DPOConfig
+from peft import LoraConfig
+
+# DPO works on top of LoRA — keeps VRAM manageable
+lora_config = LoraConfig(r=16, lora_alpha=32, target_modules=["q_proj","v_proj"])
+
+dpo_config = DPOConfig(
+    beta=0.1,                    # KL penalty strength — start here, tune 0.05–0.5
+    learning_rate=5e-5,          # lower than SFT — DPO is more sensitive
+    num_train_epochs=1,          # DPO overfits quickly — rarely go above 2
+    per_device_train_batch_size=2,
+    gradient_accumulation_steps=8,
+    max_length=1024,
+    max_prompt_length=512,
+)
+
+trainer = DPOTrainer(
+    model=model,
+    ref_model=ref_model,         # frozen reference model (SFT checkpoint)
+    args=dpo_config,
+    train_dataset=dataset,
+    peft_config=lora_config,
+)
+trainer.train()` },
+    { t: "h2", text: "The beta hyperparameter" },
+    { t: "p", text: "Beta controls the KL penalty — how far the trained model is allowed to drift from the reference model. Low beta (0.05) = aggressive preference learning, higher risk of capability degradation. High beta (0.5) = conservative, stays close to the reference model but weaker preference signal. Start at 0.1 and adjust based on evaluation results." },
+    { t: "h2", text: "Evaluating DPO-trained models" },
+    { t: "list", items: [
+      "Win rate: generate responses to held-out prompts from both baseline and DPO model, have a judge (GPT-4 or human) pick the better response. Target >60% win rate vs. baseline.",
+      "Capability regression: run the DPO model on general benchmarks (MMLU, HumanEval). DPO should not significantly degrade general capability — if it does, beta is too low.",
+      "Format/safety metrics: measure the specific failure modes you targeted with the preference data.",
+    ]},
+    { t: "callout", v: "warning", text: "DPO models have a known tendency toward mode collapse if trained too aggressively or for too many epochs. The model learns to always produce responses that look like 'chosen' responses — but loses diversity and can fail on out-of-distribution prompts. Monitor response diversity alongside quality metrics." },
+    { t: "lab", tab: "explore", label: "Compare alignment methods →", desc: "See how DPO-trained models compare to SFT and RLHF-trained models." },
+    { t: "references", items: [
+      { label: "Direct Preference Optimization — Rafailov et al. (Stanford, 2023)", url: "https://arxiv.org/abs/2305.18290" },
+      { label: "TRL: Transformer Reinforcement Learning — Hugging Face", url: "https://github.com/huggingface/trl" },
+      { label: "ORPO: Monolithic Preference Optimization without Reference Model — Hong et al. (2024)", url: "https://arxiv.org/abs/2403.07691" },
+    ]},
+  ],
+
+  "fine-tuning-evaluation": [
+    { t: "p", text: "You've trained a fine-tuned model. Now comes the question that most teams answer wrong: is it actually better? The wrong answer: look at training loss, see it went down, conclude the model improved. Training loss going down means the model learned to predict your training data better. It says almost nothing about whether it performs better on your actual production task." },
+    { t: "p", text: "Evaluating fine-tuned models requires a purpose-built evaluation framework. This post explains what to measure, how to measure it, and how to catch the most common failure modes that a good eval catches before they reach users." },
+    { t: "h2", text: "Why perplexity is the wrong metric" },
+    { t: "p", text: "Perplexity measures how well the model predicts the tokens in your evaluation set. It's a training metric. A model can achieve low perplexity on your eval set by memorising surface patterns without actually solving the task correctly. It also doesn't translate to downstream task performance in any reliable way." },
+    { t: "callout", v: "warning", text: "Never use perplexity or cross-entropy loss as your primary evaluation metric for a fine-tuned model. These are training signals, not quality signals. Build task-specific evals." },
+    { t: "h2", text: "The three evaluation layers" },
+    { t: "h3", text: "Layer 1: Automated task metrics" },
+    { t: "p", text: "Define the specific outputs your model needs to produce and write deterministic tests or classifiers against them. Examples:" },
+    { t: "list", items: [
+      "Format compliance: does the output match the required JSON schema? Parsed correctly? Required fields present?",
+      "Classification accuracy: on a labelled test set, what fraction does the model classify correctly?",
+      "Extraction precision/recall: for entity extraction tasks, what fraction of entities are correctly identified?",
+      "Code correctness: for code generation, do the outputs pass a test suite?",
+    ]},
+    { t: "h3", text: "Layer 2: LLM-as-judge evaluation" },
+    { t: "p", text: "For open-ended generation tasks, use a strong model (GPT-4, Claude) as an evaluator. Provide the prompt, the fine-tuned model's response, and a rubric. Have the judge score on dimensions like accuracy, helpfulness, format, and tone. This doesn't replace human evaluation but scales to thousands of examples efficiently." },
+    { t: "code", lang: "text", label: "LLM-as-judge prompt template", text: `You are evaluating a response to a customer support query.
+
+Query: {query}
+Response: {response}
+
+Score on each dimension (1-5):
+- Accuracy: Does the response correctly address the query?
+- Helpfulness: Does the response give actionable information?
+- Format: Does the response follow the expected format?
+- Tone: Is the tone appropriate for customer support?
+
+Return a JSON object with scores and brief justifications.` },
+    { t: "h3", text: "Layer 3: Human evaluation on a representative sample" },
+    { t: "p", text: "For high-stakes deployments, nothing replaces human evaluation on a representative sample of production inputs. Target 100–200 examples, covering the full distribution of your production traffic including edge cases. Have evaluators rate side-by-side: baseline model vs. fine-tuned model, blind to which is which." },
+    { t: "h2", text: "Regression testing: what you must not break" },
+    { t: "p", text: "Every fine-tuned model must be tested for capability regression. Fine-tuning on a narrow domain often degrades performance on general tasks. Build a regression test suite covering:" },
+    { t: "list", items: [
+      "General instruction following: does the model still respond correctly to basic instructions outside your fine-tuning domain?",
+      "Safety: does the model still decline harmful requests appropriately?",
+      "Format on unseen instructions: does format consistency hold on prompts not in the training set?",
+      "Benchmark subset: run a representative sample of MMLU or similar to catch broad capability regression",
+    ]},
+    { t: "callout", v: "key", text: "A fine-tuned model that improves your target metric by 15% but regresses on general instruction following by 30% is a net negative. Regression testing is not optional." },
+    { t: "h2", text: "The evaluation release gate" },
+    { t: "p", text: "Define explicit pass/fail criteria before training. For example: win rate vs. baseline ≥60%, format compliance ≥95%, capability regression <5% on benchmark subset, safety test pass rate ≥99%. If the fine-tuned model doesn't clear every gate, it doesn't ship." },
+    { t: "lab", tab: "systems", label: "Build evaluation pipelines in the Systems lab →", desc: "Design eval frameworks that catch fine-tuning regressions before they reach production." },
+    { t: "references", items: [
+      { label: "HELM: Holistic Evaluation of Language Models — Stanford CRFM", url: "https://crfm.stanford.edu/helm/" },
+      { label: "MT-Bench and Chatbot Arena: Judging LLM-as-a-Judge — Zheng et al. (2023)", url: "https://arxiv.org/abs/2306.05685" },
+      { label: "Beyond the Imitation Game: Quantifying and Extrapolating Language Model Capabilities", url: "https://arxiv.org/abs/2206.04615" },
+    ]},
+  ],
+
+  "catastrophic-forgetting": [
+    { t: "p", text: "You fine-tune a model on 5,000 customer support examples. It becomes excellent at answering support queries in your specific format. Then you notice something: it's gotten worse at general reasoning, struggles with questions outside the support domain, and sometimes ignores instructions that it handled correctly before fine-tuning." },
+    { t: "p", text: "This is catastrophic forgetting — the tendency of neural networks to lose previously learned capabilities when trained on new tasks. It's not a bug in your fine-tuning pipeline. It's a fundamental property of gradient descent on sequential tasks. Understanding it prevents the most common fine-tuning regression failures." },
+    { t: "h2", text: "Why it happens" },
+    { t: "p", text: "A neural network's 'knowledge' is distributed across its weights. When you fine-tune on a new task, gradient descent updates weights to minimise loss on that task — and those updates can overwrite the weight configurations that encoded previously learned capabilities. The network doesn't have a memory management system that protects existing knowledge." },
+    { t: "p", text: "The severity of forgetting depends on: how different the new task is from pretraining, how long you train (more epochs = more forgetting), how large the learning rate is, and whether the new task requires the same weight configurations as the old tasks." },
+    { t: "callout", v: "key", text: "Forgetting is proportional to task distance × training intensity. Fine-tuning a general model on narrow customer support examples for 5 epochs with a high learning rate will cause more forgetting than fine-tuning on a diverse general-purpose instruction dataset for 1 epoch with a low learning rate." },
+    { t: "h2", text: "How forgetting manifests in fine-tuned LLMs" },
+    { t: "list", items: [
+      "Instruction following degradation: the model starts ignoring instruction types not represented in the fine-tuning data",
+      "Format rigidity: the model applies your training format even when it's inappropriate for the query type",
+      "Knowledge loss: facts and capabilities from pretraining that conflict with or are irrelevant to the fine-tuning data may degrade",
+      "Reasoning regression: complex multi-step reasoning often degrades with narrow fine-tuning, because general reasoning requires broad weight patterns that get overwritten",
+      "Safety regression: safety-related weight patterns can be weakened by fine-tuning on task data, making the model more compliant with harmful requests",
+    ]},
+    { t: "h2", text: "Mitigation strategy 1: LoRA instead of full fine-tuning" },
+    { t: "p", text: "LoRA's design inherently reduces catastrophic forgetting. By keeping the base model weights frozen and training only the low-rank adapter matrices, LoRA physically separates the new task knowledge (in the adapters) from the existing knowledge (in the frozen base). Full fine-tuning updates all weights — LoRA doesn't touch the base weights at all." },
+    { t: "h2", text: "Mitigation strategy 2: Data mixing" },
+    { t: "p", text: "Add a fraction of general-purpose instruction-following data to your training set alongside your task-specific data. A common ratio: 70-80% task data, 20-30% general data (from datasets like FLAN, Open Hermes, or ShareGPT). The general data acts as a rehearsal signal that prevents the model from fully forgetting general capabilities." },
+    { t: "h2", text: "Mitigation strategy 3: Low learning rate with early stopping" },
+    { t: "p", text: "A high learning rate causes large weight updates that overwrite more of the base model's knowledge. A low learning rate (1e-5 to 5e-5 for full fine-tuning, 1e-4 to 2e-4 for LoRA) makes smaller, more targeted updates. Combined with early stopping when validation loss stops improving, this limits total forgetting." },
+    { t: "h2", text: "Mitigation strategy 4: Elastic Weight Consolidation (EWC)" },
+    { t: "p", text: "A more principled approach: identify which weights are most important for previous tasks (using the Fisher information matrix), then add a regularisation term to the loss that penalises large changes to those weights. EWC is less commonly used in LLM fine-tuning (it's expensive to compute at scale) but is theoretically the most targeted solution." },
+    { t: "callout", v: "tip", text: "For production fine-tuning: use LoRA (not full fine-tuning), mix 20% general instruction data into your training set, and run regression testing on a capability benchmark before every deployment. These three practices together reduce forgetting to negligible levels for most practical tasks." },
+    { t: "lab", tab: "explore", label: "Explore fine-tuning approaches →", desc: "See how different fine-tuning configurations affect capability retention." },
+    { t: "references", items: [
+      { label: "Overcoming Catastrophic Forgetting in Neural Networks — Kirkpatrick et al. (2017)", url: "https://arxiv.org/abs/1612.00796" },
+      { label: "Continual Learning for Language Models: A Survey — Ke and Liu (2022)", url: "https://arxiv.org/abs/2302.03648" },
+      { label: "LoRA: Low-Rank Adaptation — Hu et al. (2022)", url: "https://arxiv.org/abs/2106.09685" },
+    ]},
+  ],
+
+  "continued-pretraining": [
+    { t: "p", text: "Instruction fine-tuning teaches a model how to respond. Continued pretraining teaches a model what to know. The distinction matters when your domain is genuinely out-of-distribution from the base model's pretraining data — where the vocabulary, concepts, and reasoning patterns of your domain are so specialised that no amount of instruction tuning on labelled examples will fully close the gap." },
+    { t: "p", text: "Medicine. Law. Highly specialised scientific domains. Proprietary internal codebases with unique conventions. These are the domains where continued pretraining on unlabelled text becomes the right tool." },
+    { t: "h2", text: "What continued pretraining actually does" },
+    { t: "p", text: "Continued pretraining runs the standard language modelling objective (predict the next token) on a large corpus of domain-specific text — without any instruction-response structure. The model doesn't learn to answer questions; it learns the statistical patterns, terminology, and reasoning structures of the domain." },
+    { t: "p", text: "After continued pretraining, you still need instruction fine-tuning on top to teach the model how to use that knowledge in response to instructions. Continued pretraining → instruction fine-tuning is the standard two-stage pipeline for deep domain adaptation." },
+    { t: "callout", v: "key", text: "Continued pretraining changes what the model knows. Instruction fine-tuning changes how the model responds. You often need both. The order is always: continued pretraining first, then instruction fine-tuning on top of the domain-adapted base." },
+    { t: "h2", text: "When continued pretraining is worth it" },
+    { t: "list", items: [
+      "Your domain has specialised vocabulary that the base model tokenises inefficiently (medical Latin, legal Latin, scientific notation, proprietary codebases)",
+      "Your domain requires multi-step reasoning patterns not present in general instruction data",
+      "You have a large corpus of unlabelled domain text (10B+ tokens ideally) but limited labelled examples",
+      "Instruction fine-tuning on labelled data has reached a quality ceiling that more data doesn't improve",
+    ]},
+    { t: "h2", text: "When it's not worth it" },
+    { t: "list", items: [
+      "You have <1B tokens of domain text: the compute cost is high relative to the knowledge gain",
+      "Your domain is well-represented in the base model's pretraining data (general web text, common programming languages, mainstream science)",
+      "Your quality ceiling is format/style rather than domain knowledge: instruction fine-tuning alone will close that gap",
+      "You don't have the infrastructure for multi-GPU multi-day training runs",
+    ]},
+    { t: "h2", text: "Data requirements and preparation" },
+    { t: "p", text: "Continued pretraining data is unlabelled — just raw text from your domain. Quality still matters enormously. A 10B token corpus of high-quality medical literature will produce a better model than 50B tokens of scraped web text that happens to mention medical topics." },
+    { t: "list", items: [
+      "Source selection: peer-reviewed papers, authoritative reference materials, high-quality domain documentation",
+      "Deduplication: aggressive deduplication at the document level — duplicated text teaches the model to memorise, not generalise",
+      "Length filtering: remove very short documents (metadata, headers) and very long ones that likely contain non-domain text",
+      "Data mixing: mix domain text with a fraction (~10–20%) of general text to prevent catastrophic forgetting of general capabilities",
+    ]},
+    { t: "h2", text: "Continued pretraining vs. RAG" },
+    { t: "table", headers: ["Aspect", "Continued Pretraining", "RAG"], rows: [
+      ["Knowledge type", "Statistical patterns, reasoning structures, vocabulary", "Specific factual claims, citations"],
+      ["Update cost", "High — requires retraining", "Low — update the index"],
+      ["Knowledge freshness", "Static until next training run", "Can be updated in real time"],
+      ["Hallucination risk", "Doesn't reduce on facts outside training corpus", "Reduces for facts in the retrieved documents"],
+      ["Best for", "Deep domain vocabulary + reasoning", "Dynamic factual knowledge + citation"],
+    ]},
+    { t: "lab", tab: "explore", label: "Explore domain adaptation approaches →", desc: "Compare continued pretraining, fine-tuning, and RAG for domain adaptation tasks." },
+    { t: "references", items: [
+      { label: "BioMedLM: A 2.7B Parameter Language Model Trained On Biomedical Text — Venigalla et al. (2022)", url: "https://www.mosaicml.com/blog/introducing-pubmed-gpt" },
+      { label: "LLaMA: Open and Efficient Foundation Language Models — Meta (2023)", url: "https://arxiv.org/abs/2302.13971" },
+      { label: "Don't Stop Pretraining — Gururangan et al. (2020)", url: "https://arxiv.org/abs/2004.10964" },
+    ]},
+  ],
+
+  "fine-tuning-to-production": [
+    { t: "p", text: "Training a fine-tuned model is the easy part. Getting it into production reliably — with acceptable latency, cost, version control, and monitoring — is where most teams discover the real work. A fine-tuned checkpoint sitting on a training server is not a production model. It's a starting point." },
+    { t: "p", text: "This post covers the gap: what needs to happen between 'training complete' and 'serving production traffic' for a fine-tuned LLM." },
+    { t: "h2", text: "Step 1: Merge and quantise for serving" },
+    { t: "p", text: "If you trained with LoRA, merge the adapter into the base model weights before deployment. The merged model loads without the PEFT library, has no inference overhead, and is easier to serve with standard frameworks." },
+    { t: "p", text: "After merging, quantise for serving. Training in fp16 or bf16 is standard. Serving in fp16 doubles your memory requirement vs. INT8 quantisation, with minimal quality impact for most tasks. For cost-sensitive high-throughput deployments, GPTQ or AWQ INT4 quantisation reduces memory further." },
+    { t: "code", lang: "text", label: "Serving quantisation options", text: "fp16: ~2× base model size. Best quality. Use when latency/memory is not constrained.\nINT8: ~1× base model size. ~1-2% quality degradation. Good default for production.\nGPTQ INT4: ~0.5× base model size. ~2-5% degradation. Use for cost-sensitive high-volume.\nAWQ INT4: ~0.5× base model size. Slightly better quality than GPTQ. Emerging standard." },
+    { t: "h2", text: "Step 2: Model versioning strategy" },
+    { t: "p", text: "Fine-tuned models need versioning like software. Every production checkpoint should be tagged with: base model version, training data hash, key hyperparameters, eval results, and deployment date. Use a model registry (MLflow, Weights & Biases, Hugging Face Hub private repos) to store checkpoints and their metadata." },
+    { t: "callout", v: "key", text: "Never overwrite a production model checkpoint. Always save the previous version before deploying a new one. When a fine-tuned model regresses in production, you need to roll back in minutes — not hours spent retraining." },
+    { t: "h2", text: "Step 3: Serving infrastructure" },
+    { t: "p", text: "Standard serving stacks for fine-tuned LLMs:" },
+    { t: "list", items: [
+      "vLLM: highest throughput for text generation, continuous batching, PagedAttention. Best for high-traffic endpoints.",
+      "TGI (Hugging Face Text Generation Inference): strong production hardening, tensor parallelism, good OpenAI-compatible API.",
+      "Ollama: simplest for local and small-scale deployment. Good for internal tools and development.",
+      "Cloud managed inference: Modal, Replicate, Together AI — reduces infrastructure management at the cost of less control.",
+    ]},
+    { t: "h2", text: "Step 4: Latency and throughput benchmarking" },
+    { t: "p", text: "Before routing production traffic, benchmark your fine-tuned model against your baseline on latency and throughput. Measure TTFT (time to first token), TPS (tokens per second), and p95/p99 latency under realistic load. Fine-tuned models with identical architecture to the base model have identical latency — but confirm this, especially if you changed quantisation or model size." },
+    { t: "h2", text: "Step 5: Production monitoring" },
+    { t: "list", items: [
+      "Quality signals: log a sample of (prompt, response) pairs. Run your eval pipeline on this sample asynchronously. Alert on quality metric drop >5% from baseline.",
+      "Latency: monitor TTFT and e2e latency percentiles. Fine-tuned models can regress on latency if serving config isn't identical.",
+      "Format compliance: for structured output tasks, monitor parse error rate. A sudden spike indicates a model regression.",
+      "Distribution shift: monitor the distribution of input types. If users discover unexpected capability (or failure), the input distribution shifts — and your model may be serving out-of-distribution queries.",
+    ]},
+    { t: "h2", text: "Step 6: Rollback plan" },
+    { t: "p", text: "Define your rollback trigger before deployment: what metric, at what threshold, triggers an automatic or manual rollback to the previous model version. Have the previous checkpoint ready to serve with a config change, not a redeployment. Test the rollback procedure in staging before going live." },
+    { t: "lab", tab: "systems", label: "Explore LLMOps production patterns →", desc: "Design production serving, versioning, and monitoring for fine-tuned models." },
+    { t: "references", items: [
+      { label: "vLLM: Efficient Memory Management for Large Language Model Serving", url: "https://arxiv.org/abs/2309.06180" },
+      { label: "MLflow Model Registry documentation", url: "https://mlflow.org/docs/latest/model-registry.html" },
+      { label: "Hugging Face Text Generation Inference", url: "https://github.com/huggingface/text-generation-inference" },
+    ]},
+  ],
+
+  "process-reward-models": [
+    { t: "p", text: "Standard RLHF trains a reward model to score the final output. Good final answer: high reward. Bad final answer: low reward. For many tasks — chat quality, writing style, instruction following — this outcome-based reward works well. But for tasks that require multi-step reasoning, it fails in a specific and predictable way." },
+    { t: "p", text: "Imagine a model solving a math problem. It takes 8 reasoning steps. At step 4, it makes a subtle error. Steps 5–8 are internally consistent with the error. The final answer is wrong. An outcome reward model scores it low — but it can't tell the model where it went wrong. The model learns 'this reasoning trace is bad' without learning which step was the problem." },
+    { t: "p", text: "Process Reward Models (PRMs) solve this by rewarding each intermediate step instead of only the final answer. They're the training technique behind OpenAI's o1 and o3 reasoning models, DeepSeek-R1, and other 'thinking' models that produce extended chain-of-thought traces." },
+    { t: "h2", text: "Outcome reward models vs. process reward models" },
+    { t: "table", headers: ["Aspect", "Outcome Reward Model (ORM)", "Process Reward Model (PRM)"], rows: [
+      ["What gets scored", "Final answer only", "Each reasoning step"],
+      ["Training signal", "Sparse — one score per rollout", "Dense — one score per step"],
+      ["Data required", "Final answer correct/incorrect labels", "Step-level correctness labels (expensive)"],
+      ["Good for", "Instruction following, style, simple QA", "Multi-step math, code, complex reasoning"],
+      ["Failure mode", "Can't distinguish good reasoning → wrong answer from bad reasoning → right answer", "Expensive to label; can overfit to step-level patterns"],
+    ]},
+    { t: "h2", text: "How PRM training data is collected" },
+    { t: "p", text: "The most expensive part of PRM training is labelling. For each reasoning trace, a human (or automated verifier) labels each step as correct or incorrect. This requires domain expertise — labelling whether step 4 of a calculus proof is logically valid is not a task you can outsource to general annotators." },
+    { t: "p", text: "For domains with verifiable correctness — mathematics, formal logic, code execution — automated verifiers can replace human labellers. This is why math was the proving ground for process reward models: you can verify whether each step is mathematically valid without a human." },
+    { t: "callout", v: "key", text: "The key insight of PRMs: for tasks with verifiable intermediate steps, you can train a much denser reward signal than outcome-based approaches. This dense feedback dramatically improves reasoning quality — but only for tasks where intermediate steps can be verified." },
+    { t: "h2", text: "Best-of-N search with PRMs" },
+    { t: "p", text: "PRMs are often used not just for training but for inference-time search. Generate N candidate reasoning traces, score each step of each trace with the PRM, select the trace with the highest overall step-quality score. This 'best-of-N' search is how o1 and similar models dramatically improve performance on hard reasoning problems at inference time — by spending more compute to verify reasoning quality." },
+    { t: "h2", text: "What this means for o1 and o3" },
+    { t: "p", text: "OpenAI hasn't published full details of o1's training methodology, but the pattern is consistent with: (1) a base reasoning model trained with SFT and RLHF on chain-of-thought traces, (2) a PRM trained on step-level correctness labels for math and code tasks, (3) RL training using the PRM as the reward signal, (4) inference-time best-of-N search or beam search guided by the PRM. The 'thinking' shown in o1's responses is the CoT trace that was scored and selected by the PRM." },
+    { t: "p", text: "DeepSeek-R1 demonstrated that a similar approach could be replicated open-source, achieving comparable reasoning performance at a fraction of the compute cost by using Group Relative Policy Optimisation (GRPO) instead of PPO." },
+    { t: "callout", v: "tip", text: "For teams building reasoning-intensive AI systems: you don't need to train your own PRM. You can approximate PRM-guided inference by using an LLM-as-judge to score intermediate reasoning steps at inference time, then selecting the best trace from N rollouts. Expensive at inference but available without training." },
+    { t: "lab", tab: "explore", label: "Compare reasoning models →", desc: "See how o1-style reasoning models differ from standard instruction-tuned models." },
+    { t: "references", items: [
+      { label: "Let's Verify Step by Step — Lightman et al. (OpenAI, 2023)", url: "https://arxiv.org/abs/2305.20050" },
+      { label: "DeepSeek-R1: Incentivizing Reasoning Capability via RL — DeepSeek (2025)", url: "https://arxiv.org/abs/2501.12948" },
+      { label: "Scaling LLM Test-Time Compute — Snell et al. (2024)", url: "https://arxiv.org/abs/2408.03314" },
+    ]},
+  ],
+
 };
 
 
