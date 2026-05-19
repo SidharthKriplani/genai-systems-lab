@@ -1,8 +1,173 @@
 import { useState, useEffect } from "react";
 import { track } from "./analytics";
+import { POST_CONTENT } from "./groundTruthPosts";
 
 // Every post maps to at least one interactive module on the platform.
 // "labLink" is where the reader goes to test what they just read.
+
+// ─── POST DETAIL RENDERER ────────────────────────────────────────────────────
+function Block({ b, onNavigate, color }) {
+  switch (b.t) {
+    case "p":
+      return <p className="text-sm text-zinc-300 leading-relaxed">{b.text}</p>;
+    case "h2":
+      return <h2 className="text-base font-black text-white mt-8 mb-1">{b.text}</h2>;
+    case "h3":
+      return <h3 className="text-sm font-bold text-zinc-200 mt-5 mb-1">{b.text}</h3>;
+    case "divider":
+      return <hr className="border-zinc-800 my-6" />;
+    case "list":
+      return (
+        <ul className="space-y-1.5 pl-1">
+          {b.items.map((item, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-zinc-300 leading-relaxed">
+              <span className="text-zinc-600 shrink-0 mt-1">—</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    case "callout": {
+      const styles = {
+        key:     { border: "border-violet-800/60", bg: "bg-violet-950/30", text: "text-violet-300", dot: "bg-violet-400" },
+        tip:     { border: "border-emerald-800/60", bg: "bg-emerald-950/30", text: "text-emerald-300", dot: "bg-emerald-400" },
+        warning: { border: "border-amber-800/60",   bg: "bg-amber-950/30",   text: "text-amber-300",   dot: "bg-amber-400" },
+        info:    { border: "border-blue-800/60",    bg: "bg-blue-950/30",    text: "text-blue-300",    dot: "bg-blue-400" },
+      };
+      const s = styles[b.v] || styles.info;
+      return (
+        <div className={`rounded-lg border ${s.border} ${s.bg} px-4 py-3 flex gap-3`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${s.dot} shrink-0 mt-1.5`} />
+          <p className={`text-xs leading-relaxed ${s.text}`}>{b.text}</p>
+        </div>
+      );
+    }
+    case "code":
+      return (
+        <div className="rounded-lg border border-zinc-800 overflow-hidden">
+          {b.label && (
+            <div className="px-3 py-1.5 bg-zinc-900 border-b border-zinc-800 text-[10px] font-mono text-zinc-500">{b.label}</div>
+          )}
+          <pre className="px-4 py-3 overflow-x-auto bg-zinc-950">
+            <code className="text-[11px] font-mono text-zinc-300 whitespace-pre">{b.text}</code>
+          </pre>
+        </div>
+      );
+    case "table":
+      return (
+        <div className="overflow-x-auto rounded-lg border border-zinc-800">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-zinc-800 bg-zinc-900/60">
+                {b.headers.map((h, i) => (
+                  <th key={i} className="px-3 py-2 text-left font-bold text-zinc-400 whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {b.rows.map((row, ri) => (
+                <tr key={ri} className="border-b border-zinc-800/50 hover:bg-zinc-900/30 transition-colors">
+                  {row.map((cell, ci) => (
+                    <td key={ci} className="px-3 py-2 text-zinc-400 leading-relaxed">{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    case "lab":
+      return (
+        <div className="rounded-xl border border-zinc-700 bg-zinc-900/50 p-4 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Try it on the platform</p>
+            <p className="text-xs text-zinc-400">{b.desc}</p>
+          </div>
+          <button
+            onClick={() => onNavigate(b.tab)}
+            className="shrink-0 px-4 py-2 rounded-lg text-sm font-bold text-white transition-all"
+            style={{ background: color }}>
+            {b.label}
+          </button>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+function PostDetail({ post, onBack, onNavigate }) {
+  const content = POST_CONTENT[post.id];
+  const color = CAT_COLORS[post.category] || "#6366f1";
+  const catLabel = CATEGORIES.find(c => c.id === post.category)?.label || post.category;
+
+  useEffect(() => {
+    track("ground_truth_post_opened", { post: post.id });
+    window.scrollTo(0, 0);
+  }, [post.id]);
+
+  return (
+    <div className="min-h-screen bg-zinc-950">
+      <div className="max-w-2xl mx-auto px-4 py-10">
+
+        {/* Back */}
+        <button onClick={onBack}
+          className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors font-mono mb-8">
+          ← Ground Truth
+        </button>
+
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+              style={{ color, background: color + "22", border: `1px solid ${color}44` }}>
+              {catLabel}
+            </span>
+            <span className="text-[9px] text-zinc-600 font-mono">{post.readMin} min read</span>
+          </div>
+          <h1 className="text-xl font-black text-white leading-tight mb-3">{post.title}</h1>
+          <p className="text-sm text-zinc-400 leading-relaxed">{post.desc}</p>
+        </div>
+
+        {/* Content or coming soon */}
+        {content ? (
+          <div className="space-y-4">
+            {content.map((b, i) => (
+              <Block key={i} b={b} onNavigate={onNavigate} color={color} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-8 text-center">
+            <div className="text-3xl mb-3">✍️</div>
+            <p className="text-sm font-bold text-white mb-1">Writing in progress</p>
+            <p className="text-xs text-zinc-500 mb-4">This piece is planned — check back soon.</p>
+            <button
+              onClick={() => onNavigate(post.labLink)}
+              className="px-4 py-2 rounded-lg text-sm font-bold text-white transition-all"
+              style={{ background: color }}>
+              {post.labLabel}
+            </button>
+          </div>
+        )}
+
+        {/* Footer nav */}
+        <div className="mt-12 pt-6 border-t border-zinc-800 flex items-center justify-between">
+          <button onClick={onBack}
+            className="text-xs text-zinc-500 hover:text-white transition-colors font-mono">
+            ← Back to Ground Truth
+          </button>
+          <button
+            onClick={() => onNavigate(post.labLink)}
+            className="text-xs font-mono font-bold transition-colors hover:opacity-80"
+            style={{ color }}>
+            {post.labLabel}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
 
 const CATEGORIES = [
   { id: "all",         label: "All" },
@@ -716,8 +881,13 @@ const POSTS = [
 
 export default function GroundTruth({ onNavigate }) {
   const [filter, setFilter] = useState("all");
+  const [openPost, setOpenPost] = useState(null);
 
   useEffect(() => { track("ground_truth_viewed", {}); }, []);
+
+  if (openPost) {
+    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onNavigate={onNavigate} />;
+  }
 
   const visible = filter === "all" ? POSTS : POSTS.filter(p => p.category === filter);
   const total = POSTS.length;
@@ -772,10 +942,12 @@ export default function GroundTruth({ onNavigate }) {
           {visible.map(post => {
             const color = CAT_COLORS[post.category] || "#6366f1";
             const catLabel = CATEGORIES.find(c => c.id === post.category)?.label || post.category;
+            const hasContent = !!POST_CONTENT[post.id];
             return (
               <div
                 key={post.id}
-                className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 flex flex-col gap-3 relative overflow-hidden">
+                onClick={() => { track("ground_truth_card_clicked", { post: post.id }); setOpenPost(post); }}
+                className={`rounded-xl border p-4 flex flex-col gap-3 relative overflow-hidden cursor-pointer transition-all hover:border-zinc-600 ${hasContent ? "border-zinc-700 bg-zinc-900/50" : "border-zinc-800 bg-zinc-900/30"}`}>
 
                 {/* Top accent line */}
                 <div className="absolute top-0 left-0 right-0 h-[2px]"
@@ -808,14 +980,17 @@ export default function GroundTruth({ onNavigate }) {
 
                 {/* CTA row */}
                 <div className="flex items-center justify-between border-t border-zinc-800 pt-2.5 mt-auto">
-                  <span className="text-[10px] text-zinc-600 font-mono italic">Coming soon</span>
+                  {hasContent
+                    ? <span className="text-[10px] font-mono font-bold" style={{ color }}>Read →</span>
+                    : <span className="text-[10px] text-zinc-600 font-mono italic">Coming soon</span>
+                  }
                   <button
-                    onClick={() => {
+                    onClick={e => {
+                      e.stopPropagation();
                       track("ground_truth_lab_link", { post: post.id, lab: post.labLink });
                       onNavigate(post.labLink);
                     }}
-                    className="text-[10px] font-mono font-bold transition-colors hover:opacity-80"
-                    style={{ color }}>
+                    className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 transition-colors">
                     {post.labLabel}
                   </button>
                 </div>
