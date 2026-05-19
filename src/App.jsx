@@ -1141,7 +1141,7 @@ const ALL_MODULES_INDEX = [
   { label: "Agents",       tag: "TAB", tab: "agents",      moduleId: null },
   { label: "Playground",   tag: "TAB", tab: "playground",  moduleId: null },
   { label: "Fluency",      tag: "TAB", tab: "fluency",     moduleId: null },
-  { label: "AIPM",         tag: "TAB", tab: "aipm",        moduleId: null },
+  { label: "AI Product",   tag: "TAB", tab: "aipm",        moduleId: null },
   { label: "Career",       tag: "TAB", tab: "career",      moduleId: null },
   { label: "Ground Truth", tag: "TAB", tab: "groundtruth", moduleId: null },
   // Ground Truth posts — 83 entries, metadata only (no content loaded here)
@@ -1453,8 +1453,8 @@ export default function App() {
       { id: "explore",    label: "Explore",    count: 8,  audience: "Engineers" },
     ]},
     { label: "GROW", color: "#22c55e", items: [
-      { id: "fluency", label: "Fluency", count: 5, audience: "Interview prep" },
-      { id: "aipm",    label: "AIPM",    count: 5, audience: "Product managers" },
+      { id: "fluency", label: "Fluency",    count: 5, audience: "Interview prep" },
+      { id: "aipm",    label: "AI Product", count: 5, audience: "Product managers" },
       { id: "career",  label: "Career",  count: 4, audience: "Job seekers" },
     ]},
     { label: "READ", color: "#a78bfa", items: [
@@ -1534,19 +1534,23 @@ export default function App() {
             </div>
             <div className="space-y-3">
               {[
-                { tag: "OPEN", color: "#22c55e", label: "All tabs unlocked", desc: "Systems, Fluency, AIPM, and Career are now fully open — no beta code needed." },
-                { tag: "NEW", color: "#6366f1", label: "83 Ground Truth posts", desc: "Complete library across Foundations, RAG, Agents, Eval, LLMOps, Safety, System Design, Careers, and more." },
-                { tag: "NEW", color: "#8b5cf6", label: "Share your solves", desc: "Beat a RAG Lab scenario? A shareable card appears — post it to X or LinkedIn." },
-                { tag: "NEW", color: "#3b82f6", label: "Related posts", desc: "Every Ground Truth post now links to 3 related posts in the same category." },
-                { tag: "NEW", color: "#f59e0b", label: "Continue where you left off", desc: "Home page now picks up your last position and shows your next unvisited step." },
-                { tag: "PERF", color: "#10b981", label: "Faster initial load", desc: "All heavy tab bundles now load on demand — initial JS is ~85% smaller." },
-                { tag: "FIX", color: "#ef4444", label: "RAG Lab + Challenge Log", desc: "Fixed crash on first load and blank screen when clicking 'Go to RAG Lab' from the Challenge Log." },
-              ].map(({ tag, color, label, desc }) => (
-                <div key={label} className="flex items-start gap-3">
+                { tag: "OPEN", color: "#22c55e", label: "All tabs unlocked", desc: "Systems, Fluency, AI Product, and Career are now fully open — no beta code needed.", tab: "home" },
+                { tag: "NEW", color: "#6366f1", label: "82 Ground Truth posts", desc: "Complete library across Foundations, RAG, Agents, Eval, LLMOps, Safety, System Design, Careers, and more.", tab: "groundtruth" },
+                { tag: "NEW", color: "#8b5cf6", label: "Share your solves", desc: "Beat a RAG Lab scenario? A shareable card appears — post it to X or LinkedIn.", tab: "lab" },
+                { tag: "NEW", color: "#3b82f6", label: "Related posts", desc: "Every Ground Truth post now links to 3 related posts in the same category.", tab: "groundtruth" },
+                { tag: "NEW", color: "#f59e0b", label: "Continue where you left off", desc: "Home page now picks up your last position and shows your next unvisited step.", tab: "home" },
+                { tag: "PERF", color: "#10b981", label: "Faster initial load", desc: "All heavy tab bundles now load on demand — initial JS is ~85% smaller.", tab: null },
+                { tag: "FIX", color: "#ef4444", label: "RAG Lab + Challenge Log", desc: "Fixed crash on first load and blank screen when clicking 'Go to RAG Lab' from the Challenge Log.", tab: "lab" },
+              ].map(({ tag, color, label, desc, tab }) => (
+                <div key={label}
+                  onClick={() => { if (tab) { navigate(tab); dismissWhatsNew(); } }}
+                  className={`flex items-start gap-3 rounded-lg p-1.5 -mx-1.5 transition-all ${tab ? "cursor-pointer hover:bg-zinc-800/60" : ""}`}>
                   <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded mt-0.5 shrink-0"
                     style={{ color, background: color + "22", border: `1px solid ${color}44` }}>{tag}</span>
-                  <div>
-                    <div className="text-xs font-bold text-white">{label}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-white flex items-center gap-1">
+                      {label}{tab && <span className="text-zinc-600 text-[10px]">→</span>}
+                    </div>
                     <div className="text-xs text-zinc-500">{desc}</div>
                   </div>
                 </div>
@@ -1569,7 +1573,7 @@ export default function App() {
             </div>
             {NAV_GROUPS.map((group, gi) => (
               <div key={gi} className="mb-3">
-                {group.label && <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5 px-1" style={{ color: group.color + "99" }}>{group.label}</div>}
+                {group.label && <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5 px-1" style={{ color: group.color }}>{group.label}</div>}
                 {group.items.map((item, ii) => (
                   <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
@@ -1626,7 +1630,7 @@ export default function App() {
             <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v4","1"); } catch {} }}
               className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300 relative">
               NEW
-              {!whatsNewSeen && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
+              {!whatsNewSeen && visited.size > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
             </button>
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono" aria-label="Keyboard shortcuts">?</button>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all" aria-label="Open navigation menu">

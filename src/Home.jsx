@@ -134,9 +134,9 @@ const MODULE_MAP = [
 ];
 
 const STATS = [
-  { value: "500+", label: "Engineers & PMs",      sub: "Have used this lab"        },
-  { value: "83",   label: "Ground Truth posts",   sub: "Production depth"          },
-  { value: "200+", label: "Challenges",           sub: "All interactive"           },
+  { value: "500+", label: "Engineers & PMs",    sub: "Have used this lab", tab: null           },
+  { value: "82",   label: "Ground Truth posts", sub: "Production depth",   tab: "groundtruth"  },
+  { value: "200+", label: "Challenges",         sub: "All interactive",    tab: null           },
 ];
 
 export default function HomePage({ onNavigate, visited = new Set(), onFeedback }) {
@@ -209,13 +209,15 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
             onClick={() => { track("start_here_clicked", { location: "hero_cta_primary" }); onNavigate("lab"); }}
-            className="px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all shadow-lg shadow-violet-900/40">
-            Run your first failure scenario →
+            className="flex flex-col items-center px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all shadow-lg shadow-violet-900/40">
+            <span>Run your first failure scenario →</span>
+            <span className="text-[10px] font-normal opacity-70 mt-0.5">For engineers building with LLMs</span>
           </button>
           <button
             onClick={() => { track("start_here_clicked", { location: "hero_cta_secondary" }); onNavigate("concepts"); }}
-            className="px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-medium text-sm transition-all">
-            Start from scratch: Tokenizer → RAG → Agents
+            className="flex flex-col items-center px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-medium text-sm transition-all">
+            <span>Start from scratch: Tokenizer → RAG → Agents</span>
+            <span className="text-[10px] font-normal text-zinc-500 mt-0.5">For PMs &amp; anyone learning from zero</span>
           </button>
         </div>
 
@@ -287,13 +289,18 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
       {/* ── STATS + FAILURE MODE STRIP ───────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-10 text-center space-y-6">
         <div className="flex items-center justify-center gap-8 sm:gap-16">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-4xl sm:text-5xl font-black text-white tabular-nums">{s.value}</div>
-              <div className="text-xs font-semibold text-zinc-300 mt-1">{s.label}</div>
-              <div className="text-[10px] text-zinc-600 mt-0.5 font-mono">{s.sub}</div>
-            </div>
-          ))}
+          {STATS.map((s) => {
+            const inner = (
+              <>
+                <div className="text-4xl sm:text-5xl font-black text-white tabular-nums">{s.value}</div>
+                <div className={`text-xs font-semibold mt-1 ${s.tab ? "text-violet-400 underline underline-offset-2 decoration-dotted" : "text-zinc-300"}`}>{s.label}{s.tab ? " →" : ""}</div>
+                <div className="text-[10px] text-zinc-600 mt-0.5 font-mono">{s.sub}</div>
+              </>
+            );
+            return s.tab
+              ? <button key={s.label} onClick={() => { track("stat_clicked", { stat: s.label }); onNavigate(s.tab); }} className="text-center hover:opacity-80 transition-opacity">{inner}</button>
+              : <div key={s.label} className="text-center">{inner}</div>;
+          })}
         </div>
         <div className="space-y-2">
           <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-widest">5 production failure patterns you can simulate right now</p>
