@@ -1184,7 +1184,25 @@ function FeedbackFallbackModal({ onClose }) {
 }
 
 // ─── LOCKED TAB VIEW ─────────────────────────────────────────────────────────
-function LockedTabView({ item, onNavigate }) {
+function LockedTabView({ item, onNavigate, onUnlock }) {
+  const [code, setCode] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | error | success
+
+  function handleUnlock(e) {
+    e.preventDefault();
+    const expected = import.meta.env.VITE_ADMIN_UNLOCK;
+    if (expected && code.trim() === expected) {
+      try { localStorage.setItem("genai_preview_unlocked", "1"); } catch {}
+      track("beta_unlock_success", { tab: item.id });
+      setStatus("success");
+      setTimeout(() => onUnlock && onUnlock(), 600);
+    } else {
+      track("beta_unlock_failed", { tab: item.id });
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 2000);
+    }
+  }
+
   return (
     <div className="min-h-[70vh] flex items-center justify-center p-8">
       <div className="max-w-sm w-full space-y-6 text-center">
@@ -1213,10 +1231,47 @@ function LockedTabView({ item, onNavigate }) {
             Best for: <span className="text-zinc-400">{item.audience}</span>
           </div>
         )}
+
+        {/* Beta unlock input */}
+        <div className="border-t border-zinc-800 pt-5">
+          <p className="text-xs text-zinc-600 mb-3 font-mono">Have a beta access code?</p>
+          <form onSubmit={handleUnlock} className="flex gap-2">
+            <input
+              type="text"
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              placeholder="Enter code…"
+              autoComplete="off"
+              spellCheck={false}
+              className={`flex-1 px-3 py-2 rounded-lg bg-zinc-900 border text-sm font-mono text-white placeholder-zinc-700 outline-none transition-all ${
+                status === "error"   ? "border-red-600 focus:border-red-500" :
+                status === "success" ? "border-emerald-600" :
+                "border-zinc-700 focus:border-violet-600"
+              }`}
+            />
+            <button
+              type="submit"
+              disabled={!code.trim() || status === "success"}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                status === "success" ? "bg-emerald-600 text-white" :
+                status === "error"   ? "bg-red-900 text-red-300" :
+                "bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+              }`}>
+              {status === "success" ? "✓" : status === "error" ? "✗" : "Unlock"}
+            </button>
+          </form>
+          {status === "error" && (
+            <p className="text-xs text-red-500 mt-2 font-mono">Invalid code — try again</p>
+          )}
+          {status === "success" && (
+            <p className="text-xs text-emerald-500 mt-2 font-mono">Access granted — loading…</p>
+          )}
+        </div>
+
         <button
           onClick={() => onNavigate("home")}
-          className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all">
-          Back to available labs →
+          className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors font-mono">
+          ← Back to available labs
         </button>
       </div>
     </div>
@@ -1628,17 +1683,17 @@ export default function App() {
 
       {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "systems"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="systems"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />; })()}
+      {topView === "systems"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="systems"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} onUnlock={() => { setTopView("systems"); }} /> : <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />; })()}
 
-      {topView === "fluency"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="fluency"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <FluencyApp />; })()}
+      {topView === "fluency"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="fluency"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} onUnlock={() => { setTopView("fluency"); }} /> : <FluencyApp />; })()}
 
-      {topView === "aipm"       && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="aipm"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <AIPMApp />; })()}
+      {topView === "aipm"       && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="aipm"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} onUnlock={() => { setTopView("aipm"); }} /> : <AIPMApp />; })()}
 
       {topView === "playground" && <PlaygroundApp />}
 
       {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "career"     && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="career"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <CareerApp />; })()}
+      {topView === "career"     && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="career"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} onUnlock={() => { setTopView("career"); }} /> : <CareerApp />; })()}
 
 
       {/* Scenario tabs */}
