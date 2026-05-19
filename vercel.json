@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/start", "destination": "/start.html" },
+    { "source": "/((?!start\\.html|og-.*\\.png|robots\\.txt|sitemap\\.xml).*)", "destination": "/index.html" }
+  ]
+}
