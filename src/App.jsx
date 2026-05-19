@@ -1321,12 +1321,12 @@ export default function App() {
   }
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [whatsNewSeen, setWhatsNewSeen] = useState(() => {
-    try { return localStorage.getItem("genai_whatsnew_v3") === "1"; } catch { return false; }
+    try { return localStorage.getItem("genai_whatsnew_v4") === "1"; } catch { return false; }
   });
   function dismissWhatsNew() {
     setWhatsNewSeen(true);
     setWhatsNewOpen(false);
-    try { localStorage.setItem("genai_whatsnew_v3", "1"); } catch {}
+    try { localStorage.setItem("genai_whatsnew_v4", "1"); } catch {}
   }
 
   function trackModuleVisit(tab, moduleId) {
@@ -1520,14 +1520,13 @@ export default function App() {
             </div>
             <div className="space-y-3">
               {[
-                { tag: "NEW", color: "#f59e0b", label: "Progression path", desc: "Systems, Fluency, AIPM, Career now show as 'in progression' — content teaser + unlock roadmap visible" },
-                { tag: "NEW", color: "#6366f1", label: "Audience targeting", desc: "Every module now shows who it's for + a discovery hook for people who think they already know it" },
-                { tag: "FIX", color: "#10b981", label: "RAG flow diagram", desc: "Stage boxes cleaned up — detail text moved to its own panel below the pipeline" },
-                { tag: "NEW", color: "#6366f1", label: "Agent Lab", desc: "ReAct, tool use, memory, multi-agent, failure modes, planning — 6 modules" },
-                { tag: "NEW", color: "#6366f1", label: "Agent Loop Simulator", desc: "Interactive step-through of ReAct traces with decision quizzes" },
-                { tag: "NEW", color: "#8b5cf6", label: "Structured Outputs Lab", desc: "JSON mode vs function calling vs constrained decoding, failure modes" },
-                { tag: "NEW", color: "#ef4444", label: "Red Teaming Lab", desc: "6 attack types, 6 defenses, 2 full simulation scenarios" },
-                { tag: "NEW", color: "#f59e0b", label: "Eval Frameworks", desc: "RAGAS, G-Eval, Human Eval, Custom graded — in Systems tab" },
+                { tag: "OPEN", color: "#22c55e", label: "All tabs unlocked", desc: "Systems, Fluency, AIPM, and Career are now fully open — no beta code needed." },
+                { tag: "NEW", color: "#6366f1", label: "83 Ground Truth posts", desc: "Complete library across Foundations, RAG, Agents, Eval, LLMOps, Safety, System Design, Careers, and more." },
+                { tag: "NEW", color: "#8b5cf6", label: "Share your solves", desc: "Beat a RAG Lab scenario? A shareable card appears — post it to X or LinkedIn." },
+                { tag: "NEW", color: "#3b82f6", label: "Related posts", desc: "Every Ground Truth post now links to 3 related posts in the same category." },
+                { tag: "NEW", color: "#f59e0b", label: "Continue where you left off", desc: "Home page now picks up your last position and shows your next unvisited step." },
+                { tag: "PERF", color: "#10b981", label: "Faster initial load", desc: "All heavy tab bundles now load on demand — initial JS is ~85% smaller." },
+                { tag: "FIX", color: "#ef4444", label: "RAG Lab + Challenge Log", desc: "Fixed crash on first load and blank screen when clicking 'Go to RAG Lab' from the Challenge Log." },
               ].map(({ tag, color, label, desc }) => (
                 <div key={label} className="flex items-start gap-3">
                   <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded mt-0.5 shrink-0"
@@ -1610,7 +1609,7 @@ export default function App() {
               title="Challenge Log" aria-label="Open challenge log">
               🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px]">{leaderboard.filter(e => e.passed).length}</span>}
             </button>
-            <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v3","1"); } catch {} }}
+            <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v4","1"); } catch {} }}
               className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300 relative">
               NEW
               {!whatsNewSeen && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
