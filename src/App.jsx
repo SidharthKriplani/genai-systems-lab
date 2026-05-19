@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock } from "./analytics";
 import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
+import { POSTS as GT_POSTS } from "./groundTruthIndex"; // lightweight metadata — no content bodies
 
 // Heavy tab components — lazy-loaded on first visit to keep initial bundle small
 const GroundTruth    = lazy(() => import("./GroundTruth"));
@@ -1133,15 +1134,24 @@ const ALL_MODULES_INDEX = [
   { label: "Vector DB Comparison",  tag: "DB",        tab: "explore", moduleId: "vectordb"      },
   { label: "Structured Outputs",    tag: "SCHEMA",    tab: "explore", moduleId: "structured"    },
   { label: "Red Teaming Lab",       tag: "ATTACK",    tab: "explore", moduleId: "redteam"       },
-  { label: "Home",       tag: "TAB", tab: "home",       moduleId: null },
-  { label: "Concepts",   tag: "TAB", tab: "concepts",   moduleId: null },
-  { label: "Flows",      tag: "TAB", tab: "flows",      moduleId: null },
-  { label: "RAG Lab",    tag: "TAB", tab: "lab",        moduleId: null },
-  { label: "Agents",     tag: "TAB", tab: "agents",     moduleId: null },
-  { label: "Playground", tag: "TAB", tab: "playground", moduleId: null },
-  { label: "Fluency",    tag: "TAB", tab: "fluency",    moduleId: null },
-  { label: "AIPM",       tag: "TAB", tab: "aipm",       moduleId: null },
-  { label: "Career",     tag: "TAB", tab: "career",     moduleId: null },
+  { label: "Home",         tag: "TAB", tab: "home",        moduleId: null },
+  { label: "Concepts",     tag: "TAB", tab: "concepts",    moduleId: null },
+  { label: "Flows",        tag: "TAB", tab: "flows",       moduleId: null },
+  { label: "RAG Lab",      tag: "TAB", tab: "lab",         moduleId: null },
+  { label: "Agents",       tag: "TAB", tab: "agents",      moduleId: null },
+  { label: "Playground",   tag: "TAB", tab: "playground",  moduleId: null },
+  { label: "Fluency",      tag: "TAB", tab: "fluency",     moduleId: null },
+  { label: "AIPM",         tag: "TAB", tab: "aipm",        moduleId: null },
+  { label: "Career",       tag: "TAB", tab: "career",      moduleId: null },
+  { label: "Ground Truth", tag: "TAB", tab: "groundtruth", moduleId: null },
+  // Ground Truth posts — 83 entries, metadata only (no content loaded here)
+  ...GT_POSTS.map(p => ({
+    label: p.title,
+    tag: p.category.toUpperCase(),
+    tab: "groundtruth",
+    moduleId: p.id,
+    tags: p.tags,
+  })),
 ];
 
 const TAB_COLORS = {
@@ -1157,11 +1167,13 @@ function SearchModal({ onClose, onSelect }) {
   const inputRef = useRef(null);
   useEffect(() => { inputRef.current?.focus(); }, []);
 
-  const results = query.trim()
+  const q = query.trim().toLowerCase();
+  const results = q
     ? ALL_MODULES_INDEX.filter(m =>
-        m.label.toLowerCase().includes(query.toLowerCase()) ||
-        m.tag.toLowerCase().includes(query.toLowerCase()) ||
-        m.tab.toLowerCase().includes(query.toLowerCase())
+        m.label.toLowerCase().includes(q) ||
+        m.tag.toLowerCase().includes(q) ||
+        m.tab.toLowerCase().includes(q) ||
+        (m.tags && m.tags.some(t => t.toLowerCase().includes(q)))
       )
     : ALL_MODULES_INDEX.filter(m => m.moduleId !== null).slice(0, 9);
 
@@ -1183,7 +1195,7 @@ function SearchModal({ onClose, onSelect }) {
           <input ref={inputRef} value={query}
             onChange={e => { setQuery(e.target.value); setCursor(0); }}
             onKeyDown={onKeyDown}
-            placeholder="Search modules..."
+            placeholder="Search modules & posts..."
             aria-label="Search modules"
             className="flex-1 bg-transparent text-white text-sm outline-none placeholder-zinc-600"
           />
@@ -1303,6 +1315,7 @@ export default function App() {
   const [systemsModule, setSystemsModule] = useState(null);
   const [exploreModule, setExploreModule] = useState(null);
   const [agentsModule, setAgentsModule] = useState(null);
+  const [gtPostId, setGtPostId] = useState(null);
   const [visitedModules, setVisitedModules] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited_modules") || "[]")); }
     catch { return new Set(); }
@@ -1460,9 +1473,10 @@ export default function App() {
           onClose={() => setSearchOpen(false)}
           onSelect={item => {
             navigate(item.tab);
-            if (item.tab === "systems" && item.moduleId) setSystemsModule(item.moduleId);
-            if (item.tab === "explore"  && item.moduleId) setExploreModule(item.moduleId);
-            if (item.tab === "agents"   && item.moduleId) setAgentsModule(item.moduleId);
+            if (item.tab === "systems"     && item.moduleId) setSystemsModule(item.moduleId);
+            if (item.tab === "explore"     && item.moduleId) setExploreModule(item.moduleId);
+            if (item.tab === "agents"      && item.moduleId) setAgentsModule(item.moduleId);
+            if (item.tab === "groundtruth" && item.moduleId) setGtPostId(item.moduleId);
             setSearchOpen(false);
           }}
         />
@@ -1657,7 +1671,7 @@ export default function App() {
         {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
         {topView === "career"     && <CareerApp />}
 
-        {topView === "groundtruth" && <GroundTruth onNavigate={navigate} />}
+        {topView === "groundtruth" && <GroundTruth onNavigate={navigate} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
       </Suspense>
 
 
