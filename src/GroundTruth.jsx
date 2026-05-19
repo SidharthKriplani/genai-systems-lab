@@ -1099,6 +1099,16 @@ const POSTS = [
     labLabel: "Build Your Plan →",
     tags: ["career transition", "AI engineer", "learning path"],
   },
+  {
+    id: "ai-role-tech-stacks",
+    category: "career",
+    title: "The Minimum Tech Stack for Every AI Role, Level, and Company Tier",
+    desc: "Exactly what tools, frameworks, and skills are expected from AI Engineers, ML Engineers, AI PMs (technical and non-technical), FDEs, and MLOps engineers — at junior, mid, senior, and staff level, across startup, growth, enterprise, and frontier-lab tiers.",
+    readMin: 18,
+    labLink: "career",
+    labLabel: "Explore AI Careers →",
+    tags: ["AI engineer", "ML engineer", "AI PM", "tech stack", "career", "skills"],
+  },
 ];
 
 export default function GroundTruth({ onNavigate }) {

@@ -2819,5 +2819,363 @@ response = client.messages.create(
     { t: "lab", tab: "systems", label: "Context management tools →", desc: "Configure and test context compaction strategies in the Systems module." },
   ],
 
+
+  // ─── AI ROLE TECH STACKS ──────────────────────────────────────────────────
+
+  "ai-role-tech-stacks": [
+    { t: "p", text: "What does 'knowing the stack' mean for an AI Engineer vs. an ML Engineer vs. an AI PM vs. a Field Developer Engineer? These roles share vocabulary but have almost completely different minimum competency sets. This is the definitive reference: what each role actually needs, at each level, at each company tier — and what gaps will get you screened out." },
+    { t: "callout", v: "key", text: "This post covers six roles: AI Engineer, ML Engineer, MLOps/LLMOps Engineer, Technical AI PM, Non-Technical AI PM, and Field Developer / Solutions Engineer. For each role, skills are layered: junior must have everything in the junior row; senior must have everything from junior + mid + senior." },
+
+    { t: "h2", text: "How to read this guide" },
+    { t: "p", text: "Each level is additive — senior means you have everything from junior and mid, plus the senior additions. Company tier shapes depth and specialisation but rarely changes the baseline. Where tier matters significantly (e.g., FAANG expects internal tooling fluency; frontier labs expect JAX/Triton), it's called out explicitly in the tier notes after each role." },
+
+    { t: "divider" },
+
+    // ── ROLE 1: AI ENGINEER ──
+    { t: "h2", text: "Role 1: AI Engineer" },
+    { t: "p", text: "AI Engineers build products and systems on top of foundation models. They use APIs, build RAG pipelines, design agent workflows, write evals, and own the LLM-powered feature end-to-end. They are not training models — they are building with models." },
+
+    { t: "h3", text: "Junior AI Engineer (0–2 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Language",          "Python — functions, classes, async basics, virtual envs"],
+      ["LLM APIs",          "OpenAI or Anthropic SDK — basic chat completions, streaming, error handling"],
+      ["Prompting",         "System/user/assistant message structure, temperature, max_tokens"],
+      ["Data handling",     "JSON parsing, basic Pandas, reading CSVs and text files"],
+      ["Version control",   "Git — commit, branch, PR workflow"],
+      ["Environment",       "Can run a local dev server, understands .env files and API keys"],
+      ["Basic RAG",         "Can build a simple retrieval pipeline: embed → search → generate"],
+      ["Vector basics",     "Knows what cosine similarity is, has used one vector store (Chroma, Pinecone, or Qdrant)"],
+    ]},
+
+    { t: "h3", text: "Mid AI Engineer (2–5 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["RAG pipeline",      "Full RAG: chunking strategy, embedding model choice, hybrid search (BM25 + vector), reranking"],
+      ["Frameworks",        "LangChain or LlamaIndex — knows when to use and when to avoid them"],
+      ["Evals",             "Can build and run a basic offline eval suite. Knows LLM-as-judge, exact match, RAGAS"],
+      ["Structured output", "Tool use / function calling, JSON schema validation, retry-on-error pattern"],
+      ["Agents",            "Has built at least one multi-step agent with tool use. Knows ReAct pattern"],
+      ["Observability",     "LangSmith or similar for tracing LLM calls. Can debug a broken agent from traces"],
+      ["Deployment",        "Docker basics, can deploy a FastAPI or Flask endpoint to a cloud provider"],
+      ["Prompt management", "Prompts in version control, not hardcoded. Understands prompt caching"],
+      ["Cost awareness",    "Can estimate monthly token costs, knows price differences across model tiers"],
+    ]},
+
+    { t: "h3", text: "Senior AI Engineer (5–8 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["System design",     "Can design a full production AI system: retrieval, generation, guardrails, observability, fallback"],
+      ["Multi-agent",       "Supervisor / pipeline / mesh patterns. Handles agent state, retries, failure recovery"],
+      ["Evals at scale",    "CI-gated eval pipeline, LLM judge calibration, eval set maintenance strategy"],
+      ["Fine-tuning basics","Can explain LoRA/QLoRA trade-offs, knows when fine-tuning beats prompting"],
+      ["Guardrails",        "Input/output filtering pipeline, Llama Guard or Perspective API integration"],
+      ["Model selection",   "Can benchmark 3 models on their specific task and make a cost/quality recommendation"],
+      ["MCP / tool design", "Designs tool contracts with clear schemas, error surfaces, and retry semantics"],
+      ["Infra",             "Kubernetes basics, CI/CD with GitHub Actions, knows how to set rate limits and circuit breakers"],
+      ["Mentoring",         "Can review junior/mid PRs on AI systems and explain the tradeoffs"],
+    ]},
+
+    { t: "h3", text: "Staff / Principal AI Engineer (8+ years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Platform thinking", "Designs shared AI infra: model gateway, eval platform, prompt registry, cost dashboards"],
+      ["Strategy",          "Can make the build-vs-buy-vs-fine-tune call with data to back it up"],
+      ["Cross-team",        "Shapes how multiple product teams use AI — consistency, safety, shared tooling"],
+      ["Frontier awareness","Knows the capability curve of major model releases and their implications for the product"],
+      ["Research translation","Can read ML papers and determine if the technique is relevant and produceable"],
+      ["Hiring bar",        "Can design AI engineering interview loops and calibrate what 'good' looks like"],
+    ]},
+
+    { t: "h3", text: "AI Engineer — Company tier differences" },
+    { t: "table", headers: ["Tier", "Stack differences"], rows: [
+      ["Early-stage startup",     "Full stack often required (Next.js + backend + AI layer). Vercel AI SDK, Supabase pgvector. Ship fast, minimal tooling."],
+      ["Growth-stage (Series B–D)","Dedicated AI team forming. LangSmith, DataDog, Sentry expected. GitHub Actions CI. Cost tracking required."],
+      ["Enterprise",              "Azure OpenAI Service or AWS Bedrock (not direct API). Compliance tooling. Databricks or Snowflake for data. Heavy documentation."],
+      ["FAANG / Big Tech",        "Internal model gateways and prompt registries. Custom eval frameworks. Production ML infra at scale."],
+      ["Frontier AI Lab",         "May train models, not just use them. JAX or PyTorch at training scale. Direct access to unreleased models."],
+    ]},
+
+    { t: "divider" },
+
+    // ── ROLE 2: ML ENGINEER ──
+    { t: "h2", text: "Role 2: ML Engineer" },
+    { t: "p", text: "ML Engineers own the model training and serving pipeline. They work closer to the model weights than AI Engineers. In 2025, most new ML Engineering work is LLM-adjacent: fine-tuning, RLHF pipelines, inference optimisation, and training infrastructure." },
+
+    { t: "h3", text: "Junior ML Engineer (0–2 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Language",          "Python — comfortable with OOP, type hints, pytest"],
+      ["ML frameworks",     "PyTorch — build a neural network, understand forward/backward pass, optimisers"],
+      ["Data",              "NumPy, Pandas, HuggingFace datasets. Can load, inspect, and preprocess a dataset"],
+      ["Training basics",   "Training loop from scratch: forward pass, loss, .backward(), optimiser step"],
+      ["Experiment tracking","MLflow or W&B — log metrics, compare runs, save checkpoints"],
+      ["HuggingFace",       "Transformers library — load a pretrained model, run inference, fine-tune with Trainer API"],
+      ["Notebooks",         "Jupyter for experimentation, knows when to move to scripts"],
+      ["Cloud basics",      "Has trained a model on a cloud VM or managed service (SageMaker, Vertex, or Colab Pro)"],
+    ]},
+
+    { t: "h3", text: "Mid ML Engineer (2–5 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Fine-tuning",       "LoRA / QLoRA — has fine-tuned a 7B+ model on a custom dataset"],
+      ["Distributed training","DataParallel or DistributedDataParallel. Understands gradient synchronisation"],
+      ["Data pipelines",    "Reproducible data processing: versioned datasets, deterministic splits, deduplication"],
+      ["Model serving",     "TorchServe, FastAPI + model loading, or vLLM. Understands batching and throughput"],
+      ["Evaluation",        "Task-specific metrics (BLEU, ROUGE, accuracy, F1), custom eval harness"],
+      ["Inference optimisation","Quantisation (GPTQ/AWQ), knows INT4 vs FP16 quality/speed tradeoff"],
+      ["Model registry",    "MLflow Model Registry or HuggingFace Hub — version and deploy models properly"],
+      ["Containerisation",  "Docker for ML — GPU Docker, model artifact management, reproducible environments"],
+    ]},
+
+    { t: "h3", text: "Senior ML Engineer (5–8 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Large-scale training","FSDP, DeepSpeed ZeRO stages, gradient checkpointing. Can train 30B+ models on multi-GPU"],
+      ["RLHF pipeline",     "Has implemented or fine-tuned a reward model + PPO/DPO training loop"],
+      ["Infra design",      "GPU cluster setup, job scheduling (SLURM or K8s), distributed checkpoint strategy"],
+      ["Speculative decoding","Understands draft/verify pattern and when it applies"],
+      ["Custom CUDA/Triton", "Can write a custom kernel for a performance bottleneck (or at minimum can read one)"],
+      ["Data flywheel",     "Designs feedback loops: production signals → training data → model improvement"],
+      ["ML platform",       "Owns the shared training infra for a team — experiment reproducibility, cost attribution"],
+      ["Research reading",  "Can read and implement key papers (LoRA, Flash Attention, etc.) within a sprint"],
+    ]},
+
+    { t: "h3", text: "Staff / Principal ML Engineer (8+ years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Architecture decisions","Selects base models, training approaches, and serving strategies for org-wide use"],
+      ["Hardware strategy", "GPU procurement decisions: H100 vs A100 vs inference chips. ROI calculations"],
+      ["Compute efficiency", "End-to-end FLOPs budget management across training and serving"],
+      ["Novel techniques",  "Evaluates and productionises techniques from recent papers before they're mainstream"],
+      ["Org-level impact",  "Training and serving infra decisions affect multiple product teams"],
+    ]},
+
+    { t: "h3", text: "ML Engineer — Company tier differences" },
+    { t: "table", headers: ["Tier", "Stack differences"], rows: [
+      ["Early-stage startup",     "Fine-tuning via HuggingFace + Modal or RunPod. No dedicated infra. Often hybrid AI Engineer + MLE role."],
+      ["Growth-stage",            "Dedicated MLE role. W&B required. Modal/Lambda Labs for compute. MLflow for registry."],
+      ["Enterprise",              "AWS SageMaker, Azure ML, or GCP Vertex. Databricks MLflow. Compliance and data governance heavy."],
+      ["FAANG",                   "Internal training frameworks (Meta's fairseq, Google's T5X/Flax). Enormous compute budgets. Specialised MLE tracks."],
+      ["Frontier AI Lab",         "JAX + XLA is common (DeepMind, Google Brain). Triton kernels. Training at 1000s of GPUs. First-principles ML."],
+    ]},
+
+    { t: "divider" },
+
+    // ── ROLE 3: MLOPS/LLMOPS ENGINEER ──
+    { t: "h2", text: "Role 3: MLOps / LLMOps Engineer" },
+    { t: "p", text: "MLOps Engineers own the infrastructure that makes AI systems reliable in production: training pipelines, serving infrastructure, monitoring, cost management, and the developer experience for AI teams. As LLMs become dominant, the role shifts toward LLMOps: prompt versioning, eval pipelines, observability, and model gateways." },
+
+    { t: "h3", text: "Junior MLOps Engineer (0–2 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Cloud",             "AWS, GCP, or Azure — compute, storage, IAM basics. Can provision a GPU instance"],
+      ["Containers",        "Docker — build, run, push images. Understands Dockerfile best practices for ML"],
+      ["CI/CD",             "GitHub Actions or CircleCI — can write a pipeline that tests and deploys code"],
+      ["Python",            "Strong enough to write automation scripts, Makefile targets, data processing jobs"],
+      ["Experiment tracking","MLflow or W&B — set up tracking server, log runs, compare experiments"],
+      ["Monitoring basics", "CloudWatch or Prometheus — can set up basic service health alerts"],
+    ]},
+
+    { t: "h3", text: "Mid MLOps Engineer (2–5 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Orchestration",     "Kubernetes — pods, deployments, services, HPA. Can deploy a model serving endpoint"],
+      ["Workflow pipelines","Airflow, Prefect, or Kubeflow — orchestrate multi-step ML pipelines"],
+      ["Model serving",     "Seldon, BentoML, TorchServe, or vLLM — latency-optimised serving with health checks"],
+      ["LLM observability", "LangSmith, Helicone, or Arize — trace LLM calls, track token costs, flag failures"],
+      ["Prompt management", "Git-based prompt versioning. Eval gates before prompt promotion to production"],
+      ["Feature store",     "Feast or Tecton basics — online vs. offline feature pipelines"],
+      ["Cost tracking",     "Per-model, per-feature LLM cost dashboards. Budget alerts. Token quota enforcement"],
+      ["IaC",               "Terraform or Pulumi — provision ML infra as code, not click-ops"],
+    ]},
+
+    { t: "h3", text: "Senior MLOps Engineer (5–8 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Platform design",   "Designs the internal AI platform: model registry, gateway, eval framework, observability stack"],
+      ["Model gateway",     "Builds a routing layer: rate limiting, model fallback, A/B traffic splitting, cost attribution"],
+      ["Eval CI/CD",        "Eval pipeline that gates prompt and model changes. Regression detection before prod"],
+      ["Multi-cloud",       "Can design and operate ML infra across providers. Vendor lock-in avoidance strategy"],
+      ["Security",          "API key management, audit logging, data isolation, PII scrubbing in LLM pipelines"],
+      ["SRE for LLMs",      "Incident response for AI failures, runbooks, latency regression diagnosis"],
+      ["Capacity planning", "Models GPU and API quota requirements against product growth forecasts"],
+    ]},
+
+    { t: "h3", text: "MLOps/LLMOps — Company tier differences" },
+    { t: "table", headers: ["Tier", "Stack differences"], rows: [
+      ["Early-stage startup",     "Often no dedicated MLOps. Modal or Replicate for hosting. Railway or Render for APIs. Minimal monitoring."],
+      ["Growth-stage",            "First MLOps hire. Buildkite/GitHub Actions CI, DataDog for monitoring, LangSmith for traces."],
+      ["Enterprise",              "AWS SageMaker Pipelines or Azure ML Pipelines. Kubeflow or Vertex. Databricks for data. Compliance logging."],
+      ["FAANG",                   "Internal platforms (Meta's FBLearner, Google's Vertex internals). Dedicated LLMOps teams. Custom gateways."],
+      ["Frontier Lab",            "Training infra at scale. SLURM cluster management. Custom checkpointing. GPU utilisation optimisation is its own specialty."],
+    ]},
+
+    { t: "divider" },
+
+    // ── ROLE 4: TECHNICAL AI PM ──
+    { t: "h2", text: "Role 4: Technical AI PM" },
+    { t: "p", text: "Technical AI PMs can read code, write prompts, build prototypes, and evaluate model outputs. They bridge research/engineering and product. They don't need to build production systems — but they need to understand them deeply enough to spec them precisely, debug quality issues, and make model trade-off calls." },
+
+    { t: "h3", text: "Junior Technical AI PM (0–2 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["APIs",              "Can call OpenAI or Anthropic API in Python or via Postman. Understands request structure"],
+      ["Prompting",         "Can write and iterate on system prompts. Understands few-shot, chain-of-thought, output format control"],
+      ["Token literacy",    "Knows what tokens are, how context windows work, and how pricing works"],
+      ["Basic RAG",         "Can explain what RAG is, why you'd use it, and what can go wrong"],
+      ["Evals basics",      "Understands the concept of a golden eval set and LLM-as-judge"],
+      ["Product sense",     "Can write a user story for an AI feature that includes failure modes"],
+      ["Data reading",      "Can read a confusion matrix, understand precision/recall trade-offs at a conceptual level"],
+    ]},
+
+    { t: "h3", text: "Mid Technical AI PM (2–5 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Prototype building", "Can build a working RAG or agent demo using LangChain/LlamaIndex to validate a product idea"],
+      ["Eval ownership",     "Owns the eval set for their AI feature. Can write judging rubrics and set pass/fail thresholds"],
+      ["AI PRD",             "Writes PRDs with: model spec, failure mode table, eval plan, guardrails requirements"],
+      ["Model selection",    "Can compare models on a benchmark task and articulate cost/quality/latency trade-offs"],
+      ["Observability",      "Uses LangSmith or similar to understand what the model is actually doing in production"],
+      ["Guardrails literacy","Can spec input/output filtering requirements for a feature and work with eng to implement"],
+      ["A/B testing LLMs",  "Understands how to run experiments on AI features (not the same as deterministic A/B tests)"],
+      ["Hallucination triage","Can diagnose why a model hallucinated on a specific input and propose a fix"],
+    ]},
+
+    { t: "h3", text: "Senior Technical AI PM (5–8 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["AI system design",  "Can sketch a production AI architecture (RAG pipeline, agent system, eval loop) on a whiteboard"],
+      ["Eval strategy",     "Designs the multi-layer eval strategy for a product area: unit, integration, production"],
+      ["Model partnerships","Can evaluate model providers, negotiate commercial terms, and manage vendor relationships"],
+      ["Safety governance", "Owns the AI risk framework for their product area. Runs or coordinates red-team exercises"],
+      ["Exec communication","Can explain model quality regressions, cost spikes, and AI limitations to C-level stakeholders"],
+      ["Build vs. buy",     "Makes the call on fine-tuning vs. prompting vs. external service with data to back it up"],
+      ["Platform influence","Shapes how the AI platform team prioritises tooling based on product team needs"],
+    ]},
+
+    { t: "h3", text: "Staff Technical AI PM" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["AI strategy",       "Defines the AI product vision and 2–3 year roadmap for a product area or business unit"],
+      ["Research awareness","Tracks frontier model capabilities and anticipates how they shift product opportunities"],
+      ["Cross-functional",  "Aligns safety, legal, engineering, and business on AI governance policies"],
+      ["Thought leadership","Published AI product perspectives (internal or external) that influence the field"],
+    ]},
+
+    { t: "h3", text: "Technical AI PM — Company tier differences" },
+    { t: "table", headers: ["Tier", "Stack differences"], rows: [
+      ["Early-stage startup",  "More hands-on than typical PM — expected to build prototypes, write prompts, and review eval results directly"],
+      ["Growth-stage",         "Dedicated AI PM role. Expected to own eval pipeline, run model benchmarks, write AI PRDs independently"],
+      ["Enterprise",           "Compliance and governance skills critical. Azure/AWS AI service literacy. Working with legal on AI risk"],
+      ["FAANG",                "Works with internal models. Deep familiarity with internal eval frameworks and model cards required"],
+      ["Frontier Lab",         "TPM-style role. Deep technical depth, often with an eng or research background. Shapes research priorities"],
+    ]},
+
+    { t: "divider" },
+
+    // ── ROLE 5: NON-TECHNICAL AI PM ──
+    { t: "h2", text: "Role 5: Non-Technical AI PM" },
+    { t: "p", text: "Non-technical AI PMs come from product, business, or domain backgrounds. They don't write code. But they need to be sophisticated enough to spec AI features precisely, challenge engineering decisions with evidence, and avoid the two classic failure modes: over-trusting the model and under-specifying the requirements." },
+
+    { t: "h3", text: "Junior Non-Technical AI PM (0–2 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Hands-on usage",    "Power user of ChatGPT, Claude, Gemini — knows their strengths, limitations, and prompt strategies"],
+      ["Basic prompting",   "Can write a system prompt and iterate on it without engineering help"],
+      ["Vocabulary",        "Fluent in: tokens, context window, hallucination, RAG, embeddings, temperature, fine-tuning, evals"],
+      ["Failure modes",     "Can name and describe the 5 main ways LLMs fail (hallucination, context limits, injection, bias, inconsistency)"],
+      ["AI product examples","Has studied 3+ AI products deeply — how they work, what problems they solve, how they fail"],
+      ["Data intuition",    "Comfortable reading a bar chart of model scores. Understands what 'better on evals' means"],
+    ]},
+
+    { t: "h3", text: "Mid Non-Technical AI PM (2–5 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["AI PRD",            "Writes AI feature PRDs with model requirements, failure mode tables, and eval criteria"],
+      ["Eval literacy",     "Can review an eval dashboard, identify regressions, and ask the right questions of engineering"],
+      ["User research",     "Runs user research specifically around AI trust, confusion, and error handling expectations"],
+      ["Vendor evaluation", "Can evaluate AI tool vendors: asks about model cards, SLAs, data retention, compliance"],
+      ["Guardrails spec",   "Can define the content policy for an AI feature and translate it into engineering requirements"],
+      ["Cost literacy",     "Understands token costs, can estimate monthly AI feature spend, knows the cost levers"],
+      ["Metrics design",    "Defines success metrics for AI features that aren't just engagement (quality, trust, task completion)"],
+    ]},
+
+    { t: "h3", text: "Senior Non-Technical AI PM (5–8 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["AI strategy",       "Builds the AI roadmap for a product area: sequenced investments, build-vs-buy calls, maturity model"],
+      ["Risk frameworks",   "Runs AI risk assessments: identifies high-risk use cases, proposes mitigations, documents decisions"],
+      ["Safety ownership",  "Works with legal, compliance, and safety to define and enforce AI usage policies"],
+      ["Competitive intel", "Tracks competitor AI features systematically. Identifies product differentiation through AI capabilities"],
+      ["Exec storytelling", "Can communicate AI product strategy, progress, and risks to board-level stakeholders clearly"],
+    ]},
+
+    { t: "h3", text: "Non-Technical AI PM — Company tier differences" },
+    { t: "table", headers: ["Tier", "Stack differences"], rows: [
+      ["Early-stage startup",  "Often not a distinct role — founder or generalist PM owns AI product. Must be hands-on with the model directly."],
+      ["Growth-stage",         "First AI PM hire. Expected to be self-sufficient on prompting, eval reading, and vendor research."],
+      ["Enterprise",           "Heavy compliance, procurement, and stakeholder management load. Legal fluency around AI risk required."],
+      ["FAANG",                "Works alongside a technical AI PM or TPM. Focuses on market strategy, user research, and business model."],
+    ]},
+
+    { t: "divider" },
+
+    // ── ROLE 6: FDE / SOLUTIONS ENGINEER ──
+    { t: "h2", text: "Role 6: Field Developer Engineer / Solutions Engineer" },
+    { t: "p", text: "FDEs (also called Solutions Engineers, Developer Advocates, or AI Customer Engineers) work at the interface between a model provider or AI platform and its enterprise customers. They write demo code, lead customer workshops, debug integration issues, and translate customer requirements into product feedback. The role requires both technical depth and customer-facing communication." },
+
+    { t: "h3", text: "Junior FDE / Solutions Engineer (0–2 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["API fluency",       "Can demo any core API feature live, from scratch, without notes. Handles unexpected questions confidently"],
+      ["Sample code",       "Has built 5+ small working demos across different use cases (RAG, agents, summarisation, classification)"],
+      ["Language breadth",  "Python required. JavaScript/TypeScript strongly preferred (most enterprise integration is JS)"],
+      ["Explanation skills","Can explain embeddings, RAG, and function calling to a non-technical developer audience"],
+      ["Debugging",         "Can diagnose API errors, rate limit issues, and bad outputs in front of a customer without panicking"],
+      ["Documentation",     "Deep familiarity with the API docs, model cards, and changelog. Knows where to look quickly"],
+    ]},
+
+    { t: "h3", text: "Mid FDE / Solutions Engineer (2–5 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Architecture guidance","Can review a customer's AI architecture and identify failure points, cost inefficiencies, or missing guardrails"],
+      ["Integration depth",  "Has built full integrations: CRM, enterprise search, customer data platforms. Knows OAuth, webhooks, enterprise auth"],
+      ["Workshop facilitation","Runs customer workshops: prompt engineering, RAG design, agent patterns. Can handle live Q&A from senior engineers"],
+      ["Competitive knowledge","Deep comparative knowledge: where the product wins, where it doesn't, and how to position honestly"],
+      ["Escalation",         "Can triage a complex customer issue, write a clear internal escalation report, and follow it to resolution"],
+      ["Feedback loop",      "Turns customer pain points into structured product feedback. Has relationships with PM and engineering"],
+      ["Vertical knowledge", "Deep expertise in 1–2 industries (fintech, healthcare, legal) — knows the compliance, data, and use case landscape"],
+    ]},
+
+    { t: "h3", text: "Senior FDE / Solutions Engineer (5–8 years)" },
+    { t: "table", headers: ["Category", "Must have"], rows: [
+      ["Reference architecture","Authors and maintains reference architectures for key customer use cases"],
+      ["Executive engagement", "Can lead an executive briefing on AI strategy, discuss risk, ROI, and roadmap at C-level"],
+      ["Technical depth",      "Can go 5 levels deep on any product feature — from API parameter to serving infrastructure"],
+      ["Partner ecosystem",    "Knows the partner landscape (system integrators, consultancies) and manages key technical relationships"],
+      ["Enablement",           "Builds training content and technical enablement programs for partner engineers"],
+      ["Product influence",    "Has shaped product priorities through sustained, evidence-based customer feedback"],
+    ]},
+
+    { t: "h3", text: "FDE / Solutions Engineer — Company tier differences" },
+    { t: "table", headers: ["Tier", "Stack differences"], rows: [
+      ["AI-native startup",  "Wears many hats: part sales engineer, part DevRel, part customer success. Must be an excellent communicator and fast learner."],
+      ["Growth-stage",       "Dedicated SE team forming. Expected to build polished demo environments and run customer PoCs independently."],
+      ["Enterprise AI vendor","Deep enterprise integration expertise: SSO, compliance, data residency, procurement. Custom PoC development."],
+      ["FAANG (cloud AI)",   "Scale and breadth: support hundreds of customers. Strong documentation and self-serve tooling skills required."],
+    ]},
+
+    { t: "divider" },
+
+    // ── UNIVERSAL SKILLS ──
+    { t: "h2", text: "Universal skills every AI role needs" },
+    { t: "p", text: "Regardless of role, there are six skills that are expected at every level and in every company. These are the things that get you past the basics filter in any AI interview." },
+    { t: "table", headers: ["Skill", "What 'competent' looks like"], rows: [
+      ["LLM mental model",    "Can explain what happens inside a transformer at a conceptual level. Knows tokens, embeddings, attention."],
+      ["Hallucination literacy","Can explain why models hallucinate, name 3 common triggers, and describe mitigation strategies for each."],
+      ["RAG conceptual",      "Can explain naive RAG end-to-end, name its 3 main failure modes, and describe one architectural improvement."],
+      ["Cost thinking",       "Has a rough intuition for token costs. Can back-of-envelope estimate monthly LLM spend for a feature."],
+      ["Safety awareness",    "Knows prompt injection, jailbreaks, and output filtering. Can identify unsafe AI feature designs."],
+      ["Eval mindset",        "Understands why you can't manually test an LLM feature and what eval automation requires."],
+    ]},
+
+    { t: "h2", text: "The stack evolution: what to add in 2025–2026" },
+    { t: "p", text: "The AI stack moves fast. These are the skills that are transitioning from 'nice-to-have' to 'expected' over the next 12–18 months:" },
+    { t: "list", items: [
+      "MCP (Model Context Protocol): already expected at senior AI engineer level; will be expected at mid level within 12 months",
+      "Agentic evaluation: testing multi-step agent workflows with success rate and error recovery metrics — rapidly becoming standard",
+      "Multi-modal pipelines: vision + text is moving from experimental to production; expected at mid level for AI engineers building consumer products",
+      "Reasoning model usage: knowing when to invoke o1/o3-class models vs. standard models, and how to structure prompts differently for them",
+      "AI governance documentation: model cards, data cards, AI impact assessments — expected in enterprise and regulated industries at all seniority levels",
+      "Vibe coding literacy: engineers who can't accelerate their own coding with AI tools (Cursor, Copilot, Claude Code) are at a compounding disadvantage",
+    ]},
+
+    { t: "callout", v: "warning", text: "The biggest career risk in AI right now is over-specialising on one framework (LangChain, LlamaIndex) or one model provider. Frameworks change every 6 months. The durable skills are the conceptual foundations: how retrieval works, how agents are structured, how evals are designed — not the specific library API." },
+
+    { t: "lab", tab: "career", label: "Explore all AI career paths →", desc: "Salary guides, role definitions, and learning paths for every AI role in the Careers section." },
+  ],
+
 };
+
 
