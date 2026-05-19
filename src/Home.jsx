@@ -4,9 +4,9 @@ import { track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
 // ── Decorative Failure Console ─────────────────────────────────────────────
 function FailureConsole() {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 font-mono select-none">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3.5 font-mono select-none">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2.5">
         <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-violet-500">
           <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
           RAG Failure Console
@@ -15,7 +15,7 @@ function FailureConsole() {
       </div>
 
       {/* Config strip */}
-      <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+      <div className="flex items-center gap-1.5 mb-2.5 flex-wrap">
         <span className="text-[9px] text-zinc-700 shrink-0">config:</span>
         {["top_k=1", "reranker=off", "chunks=large"].map(c => (
           <span key={c} className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700/60 text-zinc-500 text-[9px]">
@@ -25,7 +25,7 @@ function FailureConsole() {
       </div>
 
       {/* Pipeline */}
-      <div className="flex items-center gap-1 mb-3 flex-wrap">
+      <div className="flex items-center gap-1 mb-2.5 flex-wrap">
         {[
           { label: "Query",     bad: false },
           { label: "Retrieval", bad: true  },
@@ -46,7 +46,7 @@ function FailureConsole() {
       </div>
 
       {/* Failure tags */}
-      <div className="flex flex-wrap gap-1.5 mb-3">
+      <div className="flex flex-wrap gap-1.5 mb-2.5">
         <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-red-950/40 border border-red-900/40 text-red-400">
           stale_document_retrieval
         </span>
@@ -56,7 +56,7 @@ function FailureConsole() {
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-3 gap-1.5 mb-3">
+      <div className="grid grid-cols-3 gap-1.5 mb-2.5">
         {[
           { label: "groundedness", value: "34%",      color: "#ef4444" },
           { label: "citation_acc",  value: "38%",      color: "#ef4444" },
@@ -70,7 +70,7 @@ function FailureConsole() {
       </div>
 
       {/* Answer snippet */}
-      <div className="border-t border-zinc-800 pt-2.5">
+      <div className="border-t border-zinc-800 pt-2">
         <div className="text-[8px] text-zinc-700 uppercase tracking-wider mb-1">answer</div>
         <p className="text-[10px] text-zinc-500 leading-relaxed italic mb-1.5">
           "No, employees cannot expense meals while working remotely."
@@ -90,7 +90,7 @@ function FailureConsole() {
 function CardPreview({ preview, accent }) {
   if (preview.type === "steps") {
     return (
-      <div className="flex items-center gap-1 flex-wrap mt-3">
+      <div className="flex items-center gap-0.5 flex-wrap mt-3">
         {preview.items.map((item, i) => (
           <span key={item} className="flex items-center gap-0.5">
             <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
@@ -134,27 +134,34 @@ function CardPreview({ preview, accent }) {
 }
 
 // ── Section card ──────────────────────────────────────────────────────────
-function SectionCard({ card, onNavigate }) {
+function SectionCard({ card, onNavigate, dominant }) {
   const [hovered, setHovered] = useState(false);
+  const baseBg      = dominant ? card.accent + "10" : card.accent + "06";
+  const hoveredBg   = dominant ? card.accent + "18" : card.accent + "0e";
+  const baseBorder  = dominant ? card.accent + "45" : card.accent + "22";
+  const hovBorder   = dominant ? card.accent + "70" : card.accent + "45";
+  const baseGlow    = dominant ? `0 0 28px ${card.accent}20` : "none";
+  const hovGlow     = dominant ? `0 0 32px ${card.accent}28` : `0 0 20px ${card.accent}12`;
+
   return (
     <button
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => { track("home_section_clicked", { section: card.id }); onNavigate(card.id); }}
-      className="text-left rounded-xl p-5 transition-all relative overflow-hidden"
+      className="text-left rounded-xl p-4 transition-all relative overflow-hidden"
       style={{
-        background: hovered ? card.accent + "12" : card.accent + "07",
-        border: `1px solid ${hovered ? card.accent + "55" : card.accent + "28"}`,
-        boxShadow: hovered ? `0 0 24px ${card.accent}18` : "none",
+        background: hovered ? hoveredBg : baseBg,
+        border: `1px solid ${hovered ? hovBorder : baseBorder}`,
+        boxShadow: hovered ? hovGlow : baseGlow,
       }}>
 
       {/* Top gradient accent line */}
       <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-xl"
-        style={{ background: `linear-gradient(90deg, ${card.accent}cc, transparent)` }} />
+        style={{ background: `linear-gradient(90deg, ${card.accent}cc, transparent)`, opacity: dominant ? 1 : 0.5 }} />
 
       {/* Icon + meta */}
-      <div className="flex items-start justify-between mb-3">
-        <span className="text-xl">{card.icon}</span>
+      <div className="flex items-start justify-between mb-2.5">
+        <span className={dominant ? "text-xl" : "text-lg"}>{card.icon}</span>
         <div className="text-right">
           {card.meta.map(m => (
             <div key={m} className="text-[9px] font-mono text-zinc-700 leading-tight">{m}</div>
@@ -163,21 +170,23 @@ function SectionCard({ card, onNavigate }) {
       </div>
 
       {/* Title */}
-      <div className="text-sm font-black text-white mb-1">{card.title}</div>
+      <div className={`font-black text-white mb-1 ${dominant ? "text-sm" : "text-xs"}`}>{card.title}</div>
 
       {/* Desc */}
       <div className="text-xs text-zinc-500 leading-relaxed">{card.desc}</div>
 
-      {/* Preview chips */}
+      {/* Preview */}
       <CardPreview preview={card.preview} accent={card.accent} />
 
       {/* CTA */}
-      <div className="mt-4 text-xs font-bold" style={{ color: card.accent }}>{card.cta}</div>
+      <div className={`mt-3 font-bold ${dominant ? "text-xs" : "text-[11px]"}`} style={{ color: card.accent }}>
+        {card.cta}
+      </div>
     </button>
   );
 }
 
-// ── Data ──────────────────────────────────────────────────────────────────
+// ── Data ───────────────────────────────────────────────────────────────────
 const SECTIONS = [
   {
     id: "starthere",
@@ -185,7 +194,8 @@ const SECTIONS = [
     title: "Start Here",
     desc: "Follow 5 steps from tokenization to RAG failure. Built for first-timers.",
     meta: ["~45 min", "5 required steps", "no prerequisites"],
-    accent: "#6366f1",
+    accent: "#6366f1",           // violet — primary, dominant
+    dominant: true,
     preview: {
       type: "steps",
       items: ["Tokenizer", "Embeddings", "Context", "Chunking", "RAG Lab"],
@@ -198,7 +208,8 @@ const SECTIONS = [
     title: "Labs",
     desc: "Configure RAG pipelines, trace agent loops, craft injection attacks.",
     meta: ["hands-on", "configurable", "interactive"],
-    accent: "#3b82f6",
+    accent: "#3b82f6",           // blue — secondary
+    dominant: false,
     preview: {
       type: "tags",
       items: ["stale_docs", "prompt_injection", "context_overflow", "multi-hop"],
@@ -211,7 +222,8 @@ const SECTIONS = [
     title: "Library",
     desc: "Browse every module by section, audience, or feature.",
     meta: ["75+ modules", "all sections", "filters"],
-    accent: "#f59e0b",
+    accent: "#64748b",           // slate — subdued, tertiary
+    dominant: false,
     preview: {
       type: "chips",
       items: ["Concepts", "Flows", "RAG Lab", "Agents", "Explore"],
@@ -242,25 +254,25 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
   return (
     <div className="min-h-screen bg-zinc-950">
 
-      {/* Beta banner — compact top strip */}
+      {/* Beta banner — minimal system notice */}
       {!betaBannerDismissed && (
-        <div className="bg-violet-950/30 border-b border-violet-900/30 px-4 py-1.5">
+        <div className="border-b border-zinc-800/60 px-4 py-1">
           <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse shrink-0" />
-              <span className="text-[11px] font-bold text-violet-400 font-mono">Community beta</span>
-              <span className="text-[11px] text-violet-700 font-mono hidden sm:inline">
-                · free while we improve it
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-500/70 animate-pulse shrink-0" />
+              <span className="text-[10px] font-mono text-zinc-600">
+                <span className="text-zinc-500 font-bold">Community beta</span>
+                <span className="hidden sm:inline"> — free while we improve it</span>
               </span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleFeedback("beta_banner")}
-                className="text-[10px] font-bold font-mono text-violet-500 hover:text-violet-300 transition-colors px-2 py-0.5 rounded border border-violet-800/40 hover:border-violet-600 whitespace-nowrap">
+                className="text-[10px] font-mono text-zinc-600 hover:text-violet-400 transition-colors">
                 feedback →
               </button>
               <button onClick={dismissBetaBanner}
-                className="text-violet-700 hover:text-violet-400 transition-colors text-xs px-1">
+                className="text-zinc-700 hover:text-zinc-500 transition-colors text-[10px] px-1">
                 ✕
               </button>
             </div>
@@ -268,46 +280,46 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         </div>
       )}
 
-      {/* Hero — two column on desktop */}
-      <div className="max-w-6xl mx-auto px-4 pt-12 pb-10">
-        <div className="grid lg:grid-cols-[1fr_420px] gap-8 lg:gap-12 items-center">
+      {/* Hero */}
+      <div className="max-w-6xl mx-auto px-4 pt-10 pb-8">
+        <div className="grid lg:grid-cols-[1fr_400px] gap-8 lg:gap-14 items-center">
 
           {/* Left: copy + CTAs */}
           <div>
             {/* Status chip */}
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-500 mb-5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[9px] font-mono text-zinc-600 mb-4">
+              <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
               no login · progress saved locally
             </div>
 
-            {/* Headline */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.1] mb-4">
+            {/* Headline — tightened ~10% */}
+            <h1 className="text-[1.75rem] sm:text-[2.25rem] lg:text-[2.6rem] font-black text-white tracking-tight leading-[1.05] mb-3">
               Learn how production<br />
               <span className="text-violet-400">AI actually fails.</span>
             </h1>
 
             {/* Subcopy */}
-            <p className="text-sm sm:text-base text-zinc-400 leading-relaxed mb-7 max-w-md">
-              Configure a RAG system. Watch it retrieve the wrong evidence and answer confidently.
-              Then fix it.
+            <p className="text-sm text-zinc-400 leading-relaxed mb-6 max-w-sm">
+              Configure a RAG system. Watch it retrieve the wrong evidence and answer
+              confidently. Then fix it.
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-7">
+            <div className="flex flex-col sm:flex-row gap-2.5 mb-5">
               <button
                 onClick={() => { track("hero_cta_clicked", { cta: "starthere" }); onNavigate("starthere"); }}
-                className="px-7 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all shadow-lg shadow-violet-900/40">
+                className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all shadow-lg shadow-violet-900/30">
                 Start the guided path →
               </button>
               <button
                 onClick={() => { track("hero_cta_clicked", { cta: "lab" }); onNavigate("lab"); }}
-                className="px-6 py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-zinc-600 text-zinc-300 font-semibold text-sm transition-all">
+                className="px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-400 font-medium text-sm transition-all">
                 Jump to RAG Lab →
               </button>
             </div>
 
             {/* Compact stat strip */}
-            <div className="flex flex-wrap gap-x-5 gap-y-1 text-[10px] font-mono text-zinc-600">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-mono text-zinc-700">
               {["6 failure scenarios", "75+ modules", "7 agent patterns", "all interactive"].map(s => (
                 <span key={s} className="flex items-center gap-1">
                   <span className="text-zinc-800">—</span>{s}
@@ -324,21 +336,26 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
       </div>
 
       {/* Section cards */}
-      <div className="max-w-6xl mx-auto px-4 pb-16">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 font-mono">
+      <div className="max-w-6xl mx-auto px-4 pb-14">
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-700 font-mono">
             Where to go
           </span>
           <div className="flex-1 h-px bg-zinc-900" />
           <button onClick={() => onNavigate("library")}
-            className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 transition-colors">
-            Browse all →
+            className="text-[9px] font-mono text-zinc-700 hover:text-zinc-500 transition-colors">
+            all modules →
           </button>
         </div>
 
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-3 gap-3">
           {SECTIONS.map(card => (
-            <SectionCard key={card.id} card={card} onNavigate={onNavigate} />
+            <SectionCard
+              key={card.id}
+              card={card}
+              onNavigate={onNavigate}
+              dominant={card.dominant}
+            />
           ))}
         </div>
       </div>
@@ -346,11 +363,11 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
       {/* Footer */}
       <div className="border-t border-zinc-900 py-4">
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between flex-wrap gap-2">
-          <span className="text-[10px] text-zinc-700 font-mono">
+          <span className="text-[9px] text-zinc-800 font-mono">
             GenAI Systems Lab · Free · Static · React + Vite + Tailwind
           </span>
           <button onClick={() => handleFeedback("footer")}
-            className="text-[11px] text-zinc-600 hover:text-violet-400 transition-colors font-mono">
+            className="text-[10px] text-zinc-700 hover:text-violet-400 transition-colors font-mono">
             💬 feedback
           </button>
         </div>

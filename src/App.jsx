@@ -1577,32 +1577,32 @@ export default function App() {
           </button>
           {/* Right utilities */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
-            <div className="hidden lg:flex items-center gap-1 opacity-40 hover:opacity-100 transition-opacity" title="Color theme">
+            <div className="hidden lg:flex items-center gap-1 opacity-30 hover:opacity-80 transition-opacity" title="Color theme">
               {[
                 { id: "violet", color: "#7c3aed" },
                 { id: "cyan",   color: "#06b6d4" },
                 { id: "amber",  color: "#f59e0b" },
               ].map(p => (
                 <button key={p.id} onClick={() => switchPalette(p.id)} title={p.id}
-                  className="w-3 h-3 rounded-full border-2 transition-all hover:scale-110"
+                  className="w-2.5 h-2.5 rounded-full border-2 transition-all hover:scale-110"
                   style={{ background: p.color, borderColor: palette === p.id ? "white" : "transparent" }} />
               ))}
             </div>
             <button onClick={() => openFeedback("header")}
-              className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-violet-700 hover:text-violet-400 transition-all font-mono text-zinc-500">
-              💬 Feedback
+              className="hidden lg:flex items-center px-2 py-1 rounded text-[11px] font-mono text-zinc-600 hover:text-violet-400 transition-colors">
+              feedback
             </button>
             <button onClick={() => setLeaderboardOpen(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-mono text-zinc-600 hover:text-zinc-300 transition-colors"
               title="Challenge Log">
               🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px]">{leaderboard.filter(e => e.passed).length}</span>}
             </button>
             <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v3","1"); } catch {} }}
-              className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300 relative">
+              className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-[11px] font-mono text-zinc-600 hover:text-zinc-300 transition-colors relative">
               NEW
               {!whatsNewSeen && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
             </button>
-            <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">?</button>
+            <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-[11px] text-zinc-600 hover:text-zinc-300 transition-colors font-mono">?</button>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
             </button>
