@@ -1576,12 +1576,14 @@ export default function App() {
                 {group.label && <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5 px-1" style={{ color: group.color }}>{group.label}</div>}
                 {group.items.map((item, ii) => (
                   <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
-                    <span className="flex items-center gap-2">
-                      <span className="text-zinc-600 font-mono">{gi === 0 && ii === 0 ? "1" : SHORTCUT_TABS.indexOf(item.id) >= 0 ? SHORTCUT_TABS.indexOf(item.id) + 1 : ""}</span>
-                      {item.label}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${
+                      topView === item.id ? "bg-violet-600 text-white"
+                      : item.id === "lab" ? "text-amber-500 hover:bg-amber-900/20 hover:text-amber-300 border border-amber-900/30"
+                      : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                    <span className="flex items-center gap-1.5">
+                      {item.label}{item.id === "lab" && topView !== "lab" && <span className="text-amber-600 text-[10px]">★</span>}
                     </span>
-                    {visited.has(item.id) && topView !== item.id && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
+                    {visited.has(item.id) && topView !== item.id && item.id !== "lab" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -1649,9 +1651,16 @@ export default function App() {
               {group.items.map(item => (
                 <button key={item.id} onClick={() => navigate(item.id)}
                   title={item.audience ? `For: ${item.audience}` : undefined}
-                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${
+                    topView === item.id
+                      ? "bg-violet-600 text-white"
+                      : item.id === "lab"
+                        ? "text-amber-500 hover:text-amber-300 hover:bg-amber-900/20 border border-amber-900/40"
+                        : "text-zinc-500 hover:text-white hover:bg-zinc-800"
+                  }`}>
                   {item.label}
-                  {visited.has(item.id) && topView !== item.id && (
+                  {item.id === "lab" && topView !== "lab" && <span className="text-amber-600">★</span>}
+                  {visited.has(item.id) && topView !== item.id && item.id !== "lab" && (
                     <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-500 opacity-80" />
                   )}
                 </button>

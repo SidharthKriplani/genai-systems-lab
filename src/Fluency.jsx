@@ -1367,11 +1367,45 @@ const FLUENCY_MODULES = [
 
 export default function FluencyApp() {
   const [activeModule, setActiveModule] = useState("phrases");
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return localStorage.getItem("genai_visited_fluency") !== "1"; } catch { return false; }
+  });
+  function dismissWelcome() {
+    setShowWelcome(false);
+    try { localStorage.setItem("genai_visited_fluency", "1"); } catch {}
+  }
+
+  if (showWelcome) return (
+    <div className="max-w-lg mx-auto px-4 py-16 flex flex-col items-center text-center gap-6">
+      <div className="w-12 h-12 rounded-xl bg-emerald-900/40 border border-emerald-800/50 flex items-center justify-center text-2xl">🗣️</div>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-black text-white tracking-tight">Fluency Lab</h1>
+        <p className="text-sm text-zinc-400 max-w-sm">Train yourself to describe AI systems with the precision and confidence of a senior engineer.</p>
+      </div>
+      <div className="w-full rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-left space-y-3">
+        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">What you'll do</p>
+        {[
+          ["Phrase Upgrades", "Replace vague AI jargon with precise, impressive alternatives — with context and reasoning."],
+          ["Timed Drills", "60-second pressure test: translate weak phrases into strong ones under the clock."],
+          ["Case Studies", "Real production failures framed as communication challenges."],
+        ].map(([title, desc]) => (
+          <div key={title} className="flex items-start gap-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+            <div><span className="text-xs font-bold text-white">{title} — </span><span className="text-xs text-zinc-400">{desc}</span></div>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-zinc-600 font-mono">Best for: interview prep · engineers presenting AI work · anyone who works across teams</p>
+      <button onClick={dismissWelcome} className="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all">
+        Start Practicing →
+      </button>
+    </div>
+  );
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-2xl font-black text-white tracking-tight">Fluency Gym</h1>
+        <h1 className="text-2xl font-black text-white tracking-tight">Fluency Lab</h1>
         <p className="text-sm text-zinc-400">Speak about AI systems like a senior engineer — phrase upgrades and timed drills</p>
       </div>
 

@@ -544,6 +544,40 @@ export default function CareerApp() {
   const [activeModule, setActiveModule] = useState("sysdesign");
   const mod = CAREER_MODULES.find(m => m.id === activeModule);
   const ActiveComponent = mod?.component || SystemDesignInterview;
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return localStorage.getItem("genai_visited_career") !== "1"; } catch { return false; }
+  });
+  function dismissWelcome() {
+    setShowWelcome(false);
+    try { localStorage.setItem("genai_visited_career", "1"); } catch {}
+  }
+
+  if (showWelcome) return (
+    <div className="max-w-lg mx-auto px-4 py-16 flex flex-col items-center text-center gap-6">
+      <div className="w-12 h-12 rounded-xl bg-amber-900/40 border border-amber-800/50 flex items-center justify-center text-2xl">🚀</div>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-black text-white tracking-tight">Career Track</h1>
+        <p className="text-sm text-zinc-400 max-w-sm">Interview prep and career tools for engineers targeting AI-forward roles.</p>
+      </div>
+      <div className="w-full rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-left space-y-3">
+        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">What you'll do</p>
+        {[
+          ["System Design Interviews", "Walk through AI system design prompts the way top companies actually run them — component selection, trade-offs, must-haves vs. nice-to-haves."],
+          ["Take-Home Challenges", "Rank LLM outputs, fix broken prompts, design an eval pipeline — the exact formats used by AI-forward companies."],
+          ["Negotiation Flashcards", "Understand benchmark claims, spot marketing spin, and push back on misleading metrics in job negotiations."],
+        ].map(([title, desc]) => (
+          <div key={title} className="flex items-start gap-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+            <div><span className="text-xs font-bold text-white">{title} — </span><span className="text-xs text-zinc-400">{desc}</span></div>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-zinc-600 font-mono">Best for: engineers targeting AI roles · ML engineers · anyone interviewing at AI companies</p>
+      <button onClick={dismissWelcome} className="px-8 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm transition-all">
+        Start Preparing →
+      </button>
+    </div>
+  );
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
