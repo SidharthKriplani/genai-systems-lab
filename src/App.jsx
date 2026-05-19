@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
-import BlogPage from "./Blog";
+import GroundTruth from "./GroundTruth";
 import QADashboard from "./QADashboard";
 import ConceptsApp from "./Concepts";
 import SystemsApp from "./Systems";
@@ -1073,7 +1073,7 @@ const TAB_COLORS = {
   systems: "#3b82f6", explore: "#8b5cf6", agents: "#6366f1", concepts: "#6366f1",
   flows: "#6366f1", lab: "#f59e0b", playground: "#f59e0b",
   fluency: "#22c55e", aipm: "#22c55e", career: "#22c55e", home: "#71717a",
-  blog: "#a78bfa",
+  groundtruth: "#a78bfa",
 };
 
 // Tabs in "in progression" state — keep in sync with NAV_GROUPS locked: true entries
@@ -1464,7 +1464,7 @@ export default function App() {
         teaser: ["Full system design interview prompts", "Take-home challenge simulator", "Negotiation flashcards", "Benchmark literacy"] },
     ]},
     { label: "READ", color: "#a78bfa", items: [
-      { id: "blog", label: "Blog", audience: "All levels" },
+      { id: "groundtruth", label: "Ground Truth", audience: "All levels" },
     ]},
   ];
 
@@ -1694,7 +1694,7 @@ export default function App() {
 
       {topView === "career"     && <CareerApp />}
 
-      {topView === "blog"       && <BlogPage onNavigate={navigate} />}
+      {topView === "groundtruth" && <GroundTruth onNavigate={navigate} />}
 
 
       {/* Scenario tabs */}
