@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import HowTo from "./HowTo";
 import IndiaScaleLab from "./IndiaScale";
 import ModelRouterLab from "./ModelRouter";
@@ -1417,57 +1417,369 @@ const FINETUNE_DECISION = [
 const REC_COLORS = { rag: "#6366f1", finetune: "#10b981", prompt: "#f59e0b" };
 const REC_LABELS = { rag: "RAG", finetune: "Fine-tune", prompt: "Prompting" };
 
+// ─── FINE-TUNING LAB: interactive data ────────────────────────────────────────
+const FT_MODELS = {
+  "phi3-mini":  { label: "Phi-3 Mini 3.8B",  params: 3.8,  vram_fp16: 7.6  },
+  "mistral-7b": { label: "Mistral 7B",        params: 7,    vram_fp16: 14   },
+  "llama3-8b":  { label: "Llama 3 8B",        params: 8,    vram_fp16: 16   },
+  "llama3-70b": { label: "Llama 3 70B",       params: 70,   vram_fp16: 140  },
+};
+const FT_METHODS = {
+  full:  { label: "Full Fine-Tuning",  vram_mult: 4.0,  time_mult: 3.0, desc: "Update all weights. Max quality ceiling, max cost." },
+  lora:  { label: "LoRA",              vram_mult: 1.6,  time_mult: 1.0, desc: "Low-rank adapters only. ~5–8% quality gap vs full. 5× cheaper." },
+  qlora: { label: "QLoRA (4-bit)",     vram_mult: 0.35, time_mult: 1.4, desc: "4-bit quantized base + LoRA. Fits consumer GPUs. ~8–12% quality gap." },
+  dpo:   { label: "DPO (alignment)",   vram_mult: 1.7,  time_mult: 1.1, desc: "Direct Preference Optimization. For alignment on preference pairs." },
+};
+const FT_SCENARIOS = [
+  {
+    id: "ft_s1", tag: "SCENARIO #1",
+    title: "Customer service tone alignment",
+    desc: "Your support bot is helpful but sounds robotic and off-brand. You have 1,400 (chosen, rejected) response pairs curated by your best agents. No ML infra — using managed fine-tuning APIs. Goal: teach brand voice, not new facts.",
+    options: [
+      { id: "dpo",    label: "DPO on a LoRA adapter",         summary: "Train on preference pairs to shift output distribution toward brand voice" },
+      { id: "full",   label: "Full fine-tune from scratch",    summary: "Retrain the entire model on your preference pairs" },
+      { id: "lora",   label: "LoRA on instruction examples",   summary: "Fine-tune on 1,400 prompt→response pairs without preference signal" },
+      { id: "rag",    label: "RAG over brand guidelines doc",  summary: "Retrieve tone guidance at inference time" },
+    ],
+    correct: "dpo",
+    explanation: "DPO is built for exactly this: you have preference pairs (chosen vs. rejected), and the goal is behavioral alignment — not new knowledge. DPO directly optimizes the model to favor 'chosen' outputs using a contrastive loss. LoRA SFT would shift style but discards the comparative signal. Full fine-tune on 1,400 pairs → severe overfitting and loss of general capability. RAG retrieves text; it cannot change how the model generates — tone is a generative behavior.",
+    wrongNotes: {
+      full: "1,400 examples → severe overfitting on a full fine-tune. You'd bake brittle patterns in and lose general capability.",
+      lora: "LoRA SFT shifts style, but without the chosen/rejected signal you lose the 'this output is better than that' gradient. DPO is strictly better here.",
+      rag: "You can't retrieve brand voice. Tone is a generative behavior trained into the model's output distribution — not a fact to look up.",
+    },
+  },
+  {
+    id: "ft_s2", tag: "SCENARIO #2",
+    title: "Medical billing code classifier",
+    desc: "You're building a HIPAA-compliant medical billing assistant. You have 85,000 labeled diagnosis→ICD-10-code examples. Inference must complete in <100ms. Deployed on AWS with 1× A10G (24GB VRAM). Classification only — no long generation needed.",
+    options: [
+      { id: "qlora",  label: "QLoRA on Phi-3 Mini 3.8B",      summary: "4-bit quantize a 3.8B model, LoRA fine-tune — fits easily on A10G" },
+      { id: "full",   label: "Full fine-tune Llama 3 70B",     summary: "Maximum capability model, fully fine-tuned" },
+      { id: "lora",   label: "LoRA on Llama 3 8B",             summary: "Adapter fine-tune on an 8B model at FP16" },
+      { id: "prompt", label: "Few-shot prompting GPT-4",        summary: "Pass 20 labeled examples in context per query" },
+    ],
+    correct: "qlora",
+    explanation: "QLoRA on Phi-3 Mini is the right call. 85k labeled examples achieves high accuracy on a structured classification task even on a 3.8B model. QLoRA fits comfortably on 24GB VRAM (~4–5GB for the quantized base). At 3.8B vs 8B, inference is ~2× faster — critical for your <100ms constraint. Llama 3 70B needs 140GB VRAM (impossible on 1× A10G). LoRA on 8B works but is ~2× heavier than needed for pure classification. GPT-4 few-shot is 500ms+ minimum and $0.03+/call — multiplied across millions of billing claims per year, that's $50k–$500k.",
+    wrongNotes: {
+      full: "Llama 3 70B requires 140GB VRAM at FP16. Your A10G has 24GB. Physically impossible.",
+      lora: "Would work, but 8B is 2× heavier than needed for a classification task with 85k examples. Phi-3 Mini QLoRA gives near-identical accuracy at half the inference cost.",
+      prompt: "Few-shot GPT-4: ~500ms latency minimum. At millions of billing claims/year, cost becomes $50k–$500k annually. Fine-tuning amortizes to fractions of a cent per call.",
+    },
+  },
+  {
+    id: "ft_s3", tag: "SCENARIO #3",
+    title: "Internal SDK code completion",
+    desc: "Your team has 300 proprietary internal APIs that no public model has ever seen. You want the model to suggest correct API calls in code review. You've collected 380 examples of correct API usage (prompt→correct API call). No labeled 'wrong' examples.",
+    options: [
+      { id: "lora",   label: "LoRA fine-tune on 380 examples only",             summary: "Fine-tune directly on your usage examples" },
+      { id: "qlora",  label: "Continued pretraining on API docs, then LoRA",     summary: "First pretrain on the full API docs corpus, then LoRA fine-tune on examples" },
+      { id: "rag",    label: "RAG over the API documentation",                   summary: "Retrieve relevant API docs at code review time" },
+      { id: "prompt", label: "Paste full API spec in system prompt",             summary: "Include all 300 API descriptions in every prompt" },
+    ],
+    correct: "qlora",
+    explanation: "Two-stage is correct: continued pretraining on the API docs corpus first (model 'learns' the APIs exist), then LoRA fine-tune on the 380 usage examples (model learns when and how to apply them). 380 examples alone is borderline too small — overfitting risk is real. Pretraining on the full docs dramatically improves fine-tune quality and makes 380 examples sufficient. RAG is a valid complement but code completion needs sub-100ms; retrieval injection at each keystroke is too slow for an IDE plugin.",
+    wrongNotes: {
+      lora: "380 examples alone is borderline. Without the continued pretraining step, you're teaching usage patterns before the model understands what the APIs even do.",
+      rag: "Valid complement, but code completion at IDE speed (<50ms) can't absorb retrieval latency. Baked-in knowledge wins at this latency target.",
+      prompt: "300 APIs won't fit in any practical system prompt. And if they did, you'd pay for the full context on every keystroke — expensive and still too slow.",
+    },
+  },
+  {
+    id: "ft_s4", tag: "SCENARIO #4",
+    title: "Legal compliance Q&A",
+    desc: "A legal team wants a bot that answers questions about regulations. Regulations update quarterly. You have no labeled Q&A pairs — only the raw regulatory PDFs. Engineering resources: 2 developers, no ML engineer.",
+    options: [
+      { id: "rag",    label: "RAG over the regulatory document corpus",         summary: "Chunk PDFs, embed, retrieve relevant sections, generate answer" },
+      { id: "lora",   label: "LoRA fine-tune on synthetic Q&A from PDFs",       summary: "Auto-generate Q&A pairs from PDFs and fine-tune" },
+      { id: "full",   label: "Full fine-tune on all regulatory PDFs",           summary: "Use PDFs as training data, full weight update" },
+      { id: "dpo",    label: "DPO on lawyer-reviewed response pairs",           summary: "Have lawyers rate responses, DPO to align toward preferred answers" },
+    ],
+    correct: "rag",
+    explanation: "RAG wins clearly. Regulations update quarterly — fine-tuning requires retraining every quarter, meaning a continuous ML pipeline that 2 non-ML developers cannot maintain. RAG just re-indexes PDFs when they change. No labeled data means no fine-tuning without a synthetic generation step (extra complexity). RAG needs no ML infra — just a vector DB + LLM API. Full fine-tune on PDFs is a classic mistake: fine-tuning teaches behavioral patterns, not factual recall. The model would learn writing style from the PDFs, not the actual regulatory rules, and would confidently hallucinate specific compliance details.",
+    wrongNotes: {
+      lora: "Synthetic Q&A generation is feasible, but quarterly retraining with no ML engineer is not sustainable. The maintenance burden kills this option.",
+      full: "Classic mistake. Fine-tuning on raw PDFs teaches style, not recall. Model learns to write in legalese while hallucinating the actual rules it was supposed to learn.",
+      dpo: "No labeled data, no lawyer bandwidth for rating pairs, quarterly change cadence. Every assumption this approach needs is wrong for this scenario.",
+    },
+  },
+];
+
 function FineTuningLab() {
-  const [tab, setTab] = useState("what");
+  const [tab, setTab] = useState("simulator");
+  const [ftModel, setFtModel]     = useState("llama3-8b");
+  const [ftMethod, setFtMethod]   = useState("lora");
+  const [ftRank, setFtRank]       = useState(16);
+  const [ftDataset, setFtDataset] = useState(2000);
+  const [ftEpochs, setFtEpochs]   = useState(3);
+  const [scIdx, setScIdx]         = useState(0);
+  const [scPick, setScPick]       = useState(null);
+  const [scRevealed, setScRevealed] = useState(false);
+  const [scScores, setScScores]   = useState([]);
+
   const TABS = [
-    { id: "what", label: "What is Fine-tuning?" },
-    { id: "lora", label: "LoRA Deep Dive" },
-    { id: "rlhf", label: "RLHF & DPO" },
-    { id: "when", label: "When to Fine-tune?" },
+    { id: "simulator", label: "Config Simulator" },
+    { id: "scenarios", label: "Scenario Challenges" },
+    { id: "lora",      label: "LoRA Deep Dive" },
+    { id: "rlhf",      label: "RLHF & DPO" },
+    { id: "when",      label: "Decision Matrix" },
   ];
+
+  const sim = useMemo(() => {
+    const m  = FT_MODELS[ftModel];
+    const mt = FT_METHODS[ftMethod];
+    const vram = m.vram_fp16 * mt.vram_mult;
+    const totalTokens = ftDataset * ftEpochs * 512;
+    const tokPerHour  = (1_000_000 / m.params) / mt.time_mult;
+    const hours = totalTokens / tokPerHour;
+    const gpuHrCost = vram <= 24 ? 1.0 : vram <= 40 ? 1.5 : vram <= 80 ? 3.0 : 6.0;
+    const gpuConfig  = vram <= 24 ? "1× A10G 24GB" : vram <= 40 ? "1× A100 40GB" : vram <= 80 ? "1× A100 80GB" : vram <= 160 ? "2× A100 80GB" : "4× A100 80GB";
+    const cost = hours * gpuHrCost;
+    const trainableM = ftMethod === "full" ? m.params * 1000 : ftRank * 16 * 64;
+    const dataPerParam = (ftDataset * 512) / (trainableM * 1000);
+    const overfitRisk  = dataPerParam < 5 ? "high" : dataPerParam < 20 ? "medium" : "low";
+    const overfitColor = overfitRisk === "high" ? "#ef4444" : overfitRisk === "medium" ? "#f59e0b" : "#10b981";
+    const hoursStr = hours < 1 ? `${Math.round(hours * 60)}m` : `${hours.toFixed(1)}h`;
+    const costStr  = cost < 1 ? `$${cost.toFixed(2)}` : `$${Math.round(cost)}`;
+    return { vram: Math.round(vram), hoursStr, costStr, gpuConfig, overfitRisk, overfitColor, feasible: vram <= 320 };
+  }, [ftModel, ftMethod, ftRank, ftDataset, ftEpochs]);
+
+  function handleScPick(id) { if (!scRevealed) setScPick(id); }
+  function handleReveal() {
+    if (!scPick) return;
+    const correct = FT_SCENARIOS[scIdx].correct === scPick;
+    setScScores(prev => [...prev.filter(s => s.idx !== scIdx), { idx: scIdx, correct }]);
+    setScRevealed(true);
+  }
+  function handleNext() {
+    if (scIdx < FT_SCENARIOS.length - 1) { setScIdx(i => i + 1); setScPick(null); setScRevealed(false); }
+  }
+
+  const sc       = FT_SCENARIOS[scIdx];
+  const scResult = scScores.find(s => s.idx === scIdx);
+  const scCorrectCount = scScores.filter(s => s.correct).length;
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-5">
+      {/* Header */}
+      <div className="rounded-xl border border-emerald-800 bg-emerald-950/20 p-5">
         <div className="flex items-center gap-3 mb-1">
-          <span className="text-xs font-mono px-2 py-0.5 bg-violet-900 text-violet-300 rounded border border-violet-700">FINE-TUNING LAB</span>
+          <span className="text-xs font-mono px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded border border-emerald-700">FINE-TUNING LAB</span>
         </div>
         <h2 className="text-xl font-bold text-white">Fine-Tuning Lab</h2>
-        <p className="text-sm text-zinc-400 mt-1">What fine-tuning actually does, why LoRA changed everything, and when to use it vs. RAG vs. prompting.</p>
+        <p className="text-sm text-zinc-400 mt-1">Configure real training runs, see VRAM + cost tradeoffs, and solve fine-tuning decision scenarios.</p>
       </div>
+
+      {/* Tabs */}
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wide transition-all ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            className={`px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wide transition-all ${tab === t.id ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {tab === "what" && (
-        <div className="space-y-3">
-          <p className="text-xs text-zinc-500">Fine-tuning updates a model's weights on task-specific data. It teaches behavior, not facts.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {[
-              { title: "Pre-training", color: "#6366f1", desc: "Base model trained on internet-scale data (~1T tokens). Learns language, facts, reasoning. Expensive: $10M+ for frontier models.", tag: "DONE ONCE" },
-              { title: "Fine-tuning", color: "#f59e0b", desc: "Update weights on task-specific data (1k–100k examples). Teaches: style, format, domain behavior, refusals. Cheap: $100–$10k for a LoRA run.", tag: "YOUR JOB" },
-              { title: "Inference", color: "#10b981", desc: "Fixed weights used for every query. Knowledge is frozen at fine-tune time. RAG adds live knowledge on top of frozen weights at inference.", tag: "PER QUERY" },
-            ].map(card => (
-              <div key={card.title} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-white">{card.title}</span>
-                  <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: card.color + "22", color: card.color, border: `1px solid ${card.color}44` }}>{card.tag}</span>
-                </div>
-                <p className="text-xs text-zinc-400 leading-relaxed">{card.desc}</p>
+      {/* ── CONFIG SIMULATOR ── */}
+      {tab === "simulator" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Pick a model, method, and dataset size — see the hardware requirements and cost before you spin up a run.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Base model */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Base Model</div>
+              <div className="space-y-1.5">
+                {Object.entries(FT_MODELS).map(([k, m]) => (
+                  <button key={k} onClick={() => setFtModel(k)}
+                    className={`w-full text-left px-3 py-2 rounded text-xs transition-all ${ftModel === k ? "bg-emerald-900 border border-emerald-700 text-emerald-300" : "bg-zinc-800 border border-transparent text-zinc-400 hover:text-white"}`}>
+                    <span className="font-bold">{m.label}</span>
+                    <span className="ml-2 text-zinc-500">{m.vram_fp16}GB FP16</span>
+                  </button>
+                ))}
               </div>
-            ))}
+            </div>
+            {/* Training method */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Training Method</div>
+              <div className="space-y-1.5">
+                {Object.entries(FT_METHODS).map(([k, m]) => (
+                  <button key={k} onClick={() => setFtMethod(k)}
+                    className={`w-full text-left px-3 py-2 rounded text-xs transition-all ${ftMethod === k ? "bg-emerald-900 border border-emerald-700 text-emerald-300" : "bg-zinc-800 border border-transparent text-zinc-400 hover:text-white"}`}>
+                    <span className="font-bold">{m.label}</span>
+                    <div className="text-[10px] text-zinc-500 mt-0.5">{m.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4 space-y-2">
-            <div className="text-xs font-bold text-zinc-400">The key mental model</div>
-            <p className="text-sm text-zinc-300 leading-relaxed">Fine-tuning teaches <em className="text-white not-italic font-semibold">how to behave</em>, not <em className="text-white not-italic font-semibold">what to know</em>. The weight update encodes patterns, style, and format — not facts. Facts live in the training data at the time of the run, and they go stale. Use RAG to keep knowledge fresh; use fine-tuning to lock in behavior.</p>
+
+          {/* LoRA rank (hidden for full FT) */}
+          {ftMethod !== "full" && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-3">LoRA Rank (r)</div>
+              <div className="flex gap-2 flex-wrap">
+                {[4, 8, 16, 32, 64].map(r => (
+                  <button key={r} onClick={() => setFtRank(r)}
+                    className={`px-4 py-2 rounded text-xs font-bold transition-all ${ftRank === r ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                    r={r}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-zinc-600 mt-2">Higher rank = more adapter capacity, more VRAM. r=16 is the default. r=64 for complex multi-domain tasks.</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Dataset size */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-3">Training Examples</div>
+              <div className="flex gap-2 flex-wrap">
+                {[500, 1000, 2000, 5000, 10000, 50000].map(n => (
+                  <button key={n} onClick={() => setFtDataset(n)}
+                    className={`px-3 py-2 rounded text-xs font-bold transition-all ${ftDataset === n ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                    {n >= 1000 ? `${n / 1000}k` : n}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Epochs */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-3">Epochs</div>
+              <div className="flex gap-2 flex-wrap">
+                {[1, 2, 3, 5, 10].map(e => (
+                  <button key={e} onClick={() => setFtEpochs(e)}
+                    className={`px-3 py-2 rounded text-xs font-bold transition-all ${ftEpochs === e ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Output metrics */}
+          <div className={`rounded-xl border p-5 space-y-4 ${!sim.feasible ? "border-red-800 bg-red-950/20" : "border-emerald-800 bg-emerald-950/10"}`}>
+            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Estimated Run Profile</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <div className="text-xs text-zinc-500 mb-1">VRAM needed</div>
+                <div className={`text-2xl font-black ${sim.vram > 160 ? "text-red-400" : sim.vram > 80 ? "text-amber-400" : "text-emerald-400"}`}>{sim.vram}GB</div>
+                <div className="text-xs text-zinc-600 mt-0.5">{sim.gpuConfig}</div>
+              </div>
+              <div>
+                <div className="text-xs text-zinc-500 mb-1">Training time</div>
+                <div className="text-2xl font-black text-white">{sim.hoursStr}</div>
+                <div className="text-xs text-zinc-600 mt-0.5">approx wall-clock</div>
+              </div>
+              <div>
+                <div className="text-xs text-zinc-500 mb-1">Cloud GPU cost</div>
+                <div className="text-2xl font-black text-white">{sim.costStr}</div>
+                <div className="text-xs text-zinc-600 mt-0.5">one-time run</div>
+              </div>
+              <div>
+                <div className="text-xs text-zinc-500 mb-1">Overfitting risk</div>
+                <div className="text-2xl font-black capitalize" style={{ color: sim.overfitColor }}>{sim.overfitRisk}</div>
+                <div className="text-xs text-zinc-600 mt-0.5">data-to-param ratio</div>
+              </div>
+            </div>
+            {!sim.feasible && (
+              <div className="rounded-lg bg-red-950 border border-red-800 p-3 text-xs text-red-300">
+                ⚠ VRAM exceeds 320GB — requires a multi-node cluster. Consider QLoRA or a smaller base model.
+              </div>
+            )}
+            {sim.overfitRisk === "high" && (
+              <div className="rounded-lg bg-amber-950 border border-amber-800 p-3 text-xs text-amber-300">
+                ⚠ High overfitting risk: data-to-trainable-parameter ratio is very low. Add more data, reduce LoRA rank, or reduce epochs.
+              </div>
+            )}
           </div>
         </div>
       )}
 
+      {/* ── SCENARIO CHALLENGES ── */}
+      {tab === "scenarios" && (
+        <div className="space-y-4">
+          {/* Progress dots */}
+          <div className="flex items-center gap-3">
+            {FT_SCENARIOS.map((s, i) => {
+              const score = scScores.find(x => x.idx === i);
+              return (
+                <button key={i} onClick={() => { setScIdx(i); setScPick(null); setScRevealed(false); }}
+                  className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${i === scIdx ? "ring-2 ring-emerald-400" : ""} ${score ? (score.correct ? "bg-emerald-700 text-white" : "bg-red-800 text-white") : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                  {i + 1}
+                </button>
+              );
+            })}
+            <span className="text-xs text-zinc-500 ml-1">{scCorrectCount}/{FT_SCENARIOS.length} correct</span>
+          </div>
+
+          {/* Scenario card */}
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-3">
+            <span className="text-xs font-mono px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded border border-zinc-700">{sc.tag}</span>
+            <h3 className="text-base font-bold text-white">{sc.title}</h3>
+            <p className="text-sm text-zinc-300 leading-relaxed">{sc.desc}</p>
+          </div>
+
+          {/* Options */}
+          <div className="space-y-2">
+            {sc.options.map(opt => {
+              const isSelected = scPick === opt.id;
+              const isCorrect  = opt.id === sc.correct;
+              let bCls = "border-zinc-800", bgCls = "bg-zinc-900/60";
+              if (scRevealed && isCorrect)             { bCls = "border-emerald-600"; bgCls = "bg-emerald-950/30"; }
+              else if (scRevealed && isSelected)        { bCls = "border-red-700";     bgCls = "bg-red-950/30"; }
+              else if (isSelected)                      { bCls = "border-emerald-700"; bgCls = "bg-emerald-950/20"; }
+              return (
+                <button key={opt.id} onClick={() => handleScPick(opt.id)}
+                  className={`w-full text-left rounded-xl border ${bCls} ${bgCls} p-4 transition-all`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${isSelected || (scRevealed && isCorrect) ? "border-emerald-400" : "border-zinc-600"}`}>
+                      {(isSelected || (scRevealed && isCorrect)) && <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white">{opt.label}</div>
+                      <div className="text-xs text-zinc-500 mt-0.5">{opt.summary}</div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {!scRevealed ? (
+            <button onClick={handleReveal} disabled={!scPick}
+              className={`px-6 py-2.5 rounded text-sm font-bold transition-all ${scPick ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+              Submit Answer
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <div className={`rounded-xl border p-4 space-y-2 ${scResult?.correct ? "border-emerald-700 bg-emerald-950/30" : "border-red-700 bg-red-950/30"}`}>
+                <div className={`text-xs font-bold ${scResult?.correct ? "text-emerald-400" : "text-red-400"}`}>
+                  {scResult?.correct ? "✓ Correct" : "✗ Not quite"}
+                </div>
+                <p className="text-sm text-zinc-300 leading-relaxed">{sc.explanation}</p>
+                {!scResult?.correct && scPick && sc.wrongNotes[scPick] && (
+                  <div className="rounded bg-zinc-950 border border-zinc-800 p-3 mt-2">
+                    <div className="text-xs font-bold text-zinc-500 mb-1">Why your pick was wrong</div>
+                    <p className="text-xs text-zinc-400">{sc.wrongNotes[scPick]}</p>
+                  </div>
+                )}
+              </div>
+              {scIdx < FT_SCENARIOS.length - 1 ? (
+                <button onClick={handleNext} className="px-6 py-2.5 rounded text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all">
+                  Next Scenario →
+                </button>
+              ) : (
+                <div className="rounded-xl border border-emerald-800 bg-emerald-950/20 p-4 text-center space-y-1">
+                  <div className="text-sm font-bold text-emerald-400">Lab Complete — {scCorrectCount}/{FT_SCENARIOS.length} correct</div>
+                  <p className="text-xs text-zinc-500">These are the judgment calls that separate prompting engineers from fine-tuning engineers.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── LORA DEEP DIVE ── */}
       {tab === "lora" && (
         <div className="space-y-3">
           <p className="text-xs text-zinc-500">LoRA (Low-Rank Adaptation) makes fine-tuning accessible. Instead of updating billions of weights, it adds tiny adapter matrices.</p>
@@ -1479,17 +1791,18 @@ function FineTuningLab() {
               </div>
               <p className="text-xs text-zinc-400 leading-relaxed">{m.desc}</p>
               <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${(m.params / 7000) * 100}%`, background: m.color, minWidth: "2px" }} />
+                <div className="h-full rounded-full" style={{ width: `${Math.max((m.params / 7000) * 100, 0.3)}%`, background: m.color }} />
               </div>
             </div>
           ))}
           <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4">
             <div className="text-xs font-bold text-indigo-400 mb-2">Why LoRA works</div>
-            <p className="text-sm text-zinc-300 leading-relaxed">Weight updates for fine-tuning have low intrinsic rank — you don't need to update all dimensions to change behavior. LoRA decomposes the update ΔW into two small matrices: ΔW = A·B where A ∈ ℝ^(d×r) and B ∈ ℝ^(r×d), with rank r ≪ d. At rank 8, you update 16M parameters instead of 7B — a 437× reduction — with minimal quality loss on most tasks.</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">Weight updates for fine-tuning have low intrinsic rank — you don't need to update all dimensions to change behavior. LoRA decomposes the update ΔW = A·B where A ∈ ℝ^(d×r) and B ∈ ℝ^(r×d), with rank r ≪ d. At rank 8, you update 16M parameters instead of 7B — a 437× reduction — with minimal quality loss on most tasks.</p>
           </div>
         </div>
       )}
 
+      {/* ── RLHF & DPO ── */}
       {tab === "rlhf" && (
         <div className="space-y-3">
           <p className="text-xs text-zinc-500">RLHF (Reinforcement Learning from Human Feedback) is how models learn to be helpful and safe, not just fluent.</p>
@@ -1508,6 +1821,7 @@ function FineTuningLab() {
         </div>
       )}
 
+      {/* ── DECISION MATRIX ── */}
       {tab === "when" && (
         <div className="space-y-3">
           <p className="text-xs text-zinc-500">The decision framework. Each signal points toward a primary approach.</p>
