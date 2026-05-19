@@ -56,44 +56,44 @@ const EMB_POINTS = [
   { id:"m5", label:"Multimodal RAG",             cat:"multi",  x:-1.5, y: 0.0, z: 1.8 },
 ];
 
-// 5 queries — each positioned near their target cluster
+// 5 queries — positioned INSIDE their target cluster for high sim scores (0.93–0.97)
 // KEY: zero keyword overlap between query text and result labels = the "aha moment"
 const EMB_QUERIES = [
   {
     id: "q1",
-    text: "What's the token limit?",
-    x: -1.05, y: 0.72, z: -0.25,  // bridge: RAG–Architecture
-    note: '"token" and "limit" appear in NONE of the top results — the model mapped "token limit" → context window management by understanding meaning, not matching words.',
+    text: "How much text can a model process?",
+    x: 1.47, y: 0.95, z: 0.37,    // Architecture cluster
+    note: '"text" and "process" appear in NONE of the results — the model mapped everyday language to precise ML concepts (KV cache, tokenization, prompt budgeting) by meaning alone.',
   },
   {
     id: "q2",
-    text: "Teaching AI right from wrong",
-    x: 1.88, y: -0.87, z: -1.22,
-    note: '"right from wrong" shares zero words with "RLHF", "DPO", or "Constitutional AI" — the model understood the intent of preference learning without a single keyword match.',
+    text: "Teaching AI to prefer better answers",
+    x: 1.88, y: -0.88, z: -1.22,  // Safety cluster
+    note: '"prefer better answers" shares zero words with "RLHF", "DPO", or "Constitutional AI" — the model understood the intent of preference alignment without any keyword match.',
   },
   {
     id: "q3",
-    text: "Running AI on a tight budget",
-    x: -0.40, y: -1.48, z: 1.10,
-    note: '"tight budget" doesn\'t appear in "quantization", "inference at scale", or "latency budgets" — semantic search found the cost-reduction concept from the intent alone.',
+    text: "Making models cheaper to deploy",
+    x: -0.41, y: -1.50, z: 1.08,  // Ops cluster
+    note: '"cheaper to deploy" doesn\'t appear in "quantization", "inference at scale", or "cost optimization" — semantic search found the cost-reduction cluster from intent alone.',
   },
   {
     id: "q4",
-    text: "Finding images using words",
-    x: -1.50, y: -0.18, z: 2.00,
-    note: '"finding images" → "CLIP embeddings" + "image-text search" + "ViT" — the model bridged everyday language to precise technical concepts, zero lexical overlap.',
+    text: "Looking up pictures by describing them",
+    x: -1.51, y: -0.19, z: 2.00,  // Multimodal cluster
+    note: '"pictures" and "describing" don\'t appear in "CLIP embeddings", "ViT", or "image-text search" — the model bridged everyday language to technical multimodal concepts.',
   },
   {
     id: "q5",
-    text: "AI that plans and takes actions",
-    x: 0.30, y: 1.58, z: 1.82,
-    note: '"plans and takes actions" → "agent reasoning loops" + "AI planning systems" + "ReAct framework" — the entire cluster matched conceptually; not one word in common.',
+    text: "Software that decides what to do next",
+    x: 0.30, y: 1.60, z: 1.80,    // Agents cluster
+    note: '"decides what to do next" shares zero words with "agent reasoning loops", "ReAct framework", or "AI planning systems" — pure conceptual match, zero lexical overlap.',
   },
 ];
 
 function EmbeddingExplorer() {
   const canvasRef = useRef(null);
-  const rotRef    = useRef({ x: 0.28, y: 0.4, dragging: false, lx: 0, ly: 0 });
+  const rotRef    = useRef({ x: 0.32, y: 0.85, dragging: false, lx: 0, ly: 0 });
   const projRef   = useRef([]);
   const qRef      = useRef(null);
   const nearRef   = useRef([]);
@@ -183,12 +183,13 @@ function EmbeddingExplorer() {
       // Draw all points
       projected.forEach(pt => {
         const col = EMB_CAT_COLOR[pt.cat];
-        const isNearest = nearIds.has(pt.id);
+        const nearIdx = nr.findIndex(n => n.id === pt.id); // -1 if not in top-3
+        const isNearest = nearIdx !== -1;
         const dimmed = q && !isNearest;
         const r = isNearest ? 8 : 5;
 
         ctx.globalAlpha = dimmed ? 0.10 : 1;
-        if (isNearest) { ctx.shadowColor = col; ctx.shadowBlur = 14; }
+        if (isNearest) { ctx.shadowColor = col; ctx.shadowBlur = 16; }
         ctx.beginPath();
         ctx.arc(pt.px, pt.py, r, 0, Math.PI * 2);
         ctx.fillStyle = col;
@@ -196,17 +197,15 @@ function EmbeddingExplorer() {
         if (isNearest) {
           ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
           ctx.shadowBlur = 0;
+          // Rank badge ①②③ above point — no text label to avoid overlap
+          const badges = ["①","②","③"];
+          ctx.font = "bold 11px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#fff";
+          ctx.fillText(badges[nearIdx], pt.px, pt.py - r - 4);
         }
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
-
-        // Label only for highlighted points
-        if (isNearest) {
-          ctx.font = "bold 9px monospace";
-          ctx.textAlign = "center";
-          ctx.fillStyle = "#fff";
-          ctx.fillText(pt.label, pt.px, pt.py - r - 5);
-        }
       });
 
       // Query ◆ diamond
