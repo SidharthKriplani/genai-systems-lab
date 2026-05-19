@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
 
 const START_HERE_PATH = [
@@ -144,6 +144,27 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
     track("feedback_clicked", { location });
     if (onFeedback) { onFeedback(location); return; }
     if (isFeedbackReady()) window.open(FEEDBACK_URL, "_blank", "noopener,noreferrer");
+  }
+  const [role, setRole] = useState(() => {
+    try { return localStorage.getItem("genai_role") || "all"; } catch { return "all"; }
+  });
+  function switchRole(r) {
+    setRole(r);
+    track("role_toggle", { role: r });
+    try { localStorage.setItem("genai_role", r); } catch {}
+  }
+  // Reorder MODULE_MAP groups + dim non-relevant modules based on selected role
+  const orderedGroups = useMemo(() => {
+    const order = role === "engineers" ? { BUILD: 0, LEARN: 1, GROW: 2 }
+                : role === "pms"       ? { GROW: 0, LEARN: 1, BUILD: 2 }
+                : { LEARN: 0, BUILD: 1, GROW: 2 };
+    return [...MODULE_MAP].sort((a, b) => (order[a.group] ?? 3) - (order[b.group] ?? 3));
+  }, [role]);
+  function isRelevant(audience) {
+    if (role === "all") return true;
+    if (role === "engineers") return !["Product managers"].includes(audience);
+    if (role === "pms") return !["Engineers"].includes(audience);
+    return true;
   }
   const [activePath, setActivePath] = useState(null);
   const [expandedModule, setExpandedModule] = useState(null);
@@ -455,11 +476,26 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
 
         {/* ── MODULE MAP ──────────────────────────────────────────────────── */}
         <div className="space-y-2 pt-4">
-          <div className="text-center space-y-1 mb-6">
+          <div className="text-center space-y-3 mb-6">
             <h2 className="text-xl font-black text-white">Every Module — Mapped</h2>
-            <p className="text-sm text-zinc-500">Click any module to jump directly to it.</p>
+            {/* Role toggle */}
+            <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-zinc-900 border border-zinc-800">
+              {[
+                { id: "all",       label: "All" },
+                { id: "engineers", label: "Engineers" },
+                { id: "pms",       label: "PMs" },
+              ].map(r => (
+                <button key={r.id} onClick={() => switchRole(r.id)}
+                  className={`px-3 py-1 rounded text-xs font-bold transition-all ${role === r.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}>
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            {role !== "all" && (
+              <p className="text-xs text-zinc-600">Showing modules most relevant to {role === "engineers" ? "engineers" : "product managers"} first</p>
+            )}
           </div>
-          {MODULE_MAP.map(group => (
+          {orderedGroups.map(group => (
             <div key={group.group}>
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-px flex-1 bg-zinc-800" />
@@ -471,7 +507,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
                 {group.modules.map(m => (
                   <button key={m.tab}
                     onClick={() => onNavigate(m.tab)}
-                    className="text-left border rounded-xl p-4 transition-all group bg-zinc-900 border-zinc-800 hover:border-zinc-600">
+                    className={`text-left border rounded-xl p-4 transition-all group bg-zinc-900 border-zinc-800 hover:border-zinc-600 ${!isRelevant(m.audience) ? "opacity-40" : ""}`}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-lg">{m.icon}</span>
                       <span className="text-sm font-bold text-white">{m.title}</span>
