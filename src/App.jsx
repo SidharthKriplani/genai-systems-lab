@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock, isPreviewUnlocked } from "./analytics";
+import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
 import QADashboard from "./QADashboard";
 import ConceptsApp from "./Concepts";
 import SystemsApp from "./Systems";
@@ -1118,20 +1118,17 @@ function SearchModal({ onClose, onSelect }) {
           {results.length === 0
             ? <div className="px-4 py-8 text-center text-xs text-zinc-600">No modules found</div>
             : results.map((item, i) => {
-              const locked = LOCKED_TABS.has(item.tab);
               return (
                 <button key={`${item.tab}-${item.moduleId || "tab"}-${i}`}
                   onClick={() => onSelect(item)}
-                  className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-all ${cursor === i ? "bg-zinc-800" : "hover:bg-zinc-800/60"} ${locked ? "opacity-50" : ""}`}>
+                  className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-all ${cursor === i ? "bg-zinc-800" : "hover:bg-zinc-800/60"}`}>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-bold truncate ${locked ? "text-zinc-500" : "text-white"}`}>{item.label}</div>
+                    <div className="text-sm font-bold truncate text-white">{item.label}</div>
                     <div className="text-xs text-zinc-500 capitalize flex items-center gap-1">
                       {item.tab === "lab" ? "RAG Lab" : item.tab}
-                      {locked && <span className="text-[9px] font-mono text-zinc-600">· in progression</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {locked && <span className="text-xs">🔒</span>}
                     <span className="text-[10px] px-1.5 py-0.5 rounded font-mono"
                       style={{ color: (TAB_COLORS[item.tab] || "#888") + "ee", background: (TAB_COLORS[item.tab] || "#888") + "22" }}>
                       {item.tag}
@@ -1376,7 +1373,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    checkPreviewUnlock();
     initAnalytics();
   }, []);
 
@@ -1577,13 +1573,12 @@ export default function App() {
                 {group.label && <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5 px-1" style={{ color: group.color + "99" }}>{group.label}</div>}
                 {group.items.map((item, ii) => (
                   <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${topView === item.id ? "bg-violet-600 text-white" : (item.locked && !isPreviewUnlocked()) ? "text-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-500" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
                     <span className="flex items-center gap-2">
                       <span className="text-zinc-600 font-mono">{gi === 0 && ii === 0 ? "1" : SHORTCUT_TABS.indexOf(item.id) >= 0 ? SHORTCUT_TABS.indexOf(item.id) + 1 : ""}</span>
-                      {(item.locked && !isPreviewUnlocked()) && <span className="text-[9px]">🔒</span>}
                       {item.label}
                     </span>
-                    {visited.has(item.id) && topView !== item.id && !(item.locked && !isPreviewUnlocked()) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
+                    {visited.has(item.id) && topView !== item.id && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -1662,10 +1657,9 @@ export default function App() {
               {group.items.map(item => (
                 <button key={item.id} onClick={() => navigate(item.id)}
                   title={item.audience ? `For: ${item.audience}` : undefined}
-                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : (item.locked && !isPreviewUnlocked()) ? "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800/50" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
-                  {(item.locked && !isPreviewUnlocked()) && <span className="text-[9px] opacity-60">🔒</span>}
+                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
                   {item.label}
-                  {visited.has(item.id) && topView !== item.id && !item.locked && (
+                  {visited.has(item.id) && topView !== item.id && (
                     <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-500 opacity-80" />
                   )}
                 </button>
@@ -1683,17 +1677,17 @@ export default function App() {
 
       {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "systems"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="systems"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} onUnlock={() => { setTopView("systems"); }} /> : <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />; })()}
+      {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "fluency"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="fluency"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} onUnlock={() => { setTopView("fluency"); }} /> : <FluencyApp />; })()}
+      {topView === "fluency"    && <FluencyApp />}
 
-      {topView === "aipm"       && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="aipm"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} onUnlock={() => { setTopView("aipm"); }} /> : <AIPMApp />; })()}
+      {topView === "aipm"       && <AIPMApp />}
 
       {topView === "playground" && <PlaygroundApp />}
 
       {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "career"     && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="career"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} onUnlock={() => { setTopView("career"); }} /> : <CareerApp />; })()}
+      {topView === "career"     && <CareerApp />}
 
 
       {/* Scenario tabs */}
