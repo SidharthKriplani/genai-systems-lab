@@ -86,7 +86,7 @@ const EMB_QUERIES = [
 ];
 
 function EmbeddingExplorer() {
-  const [activeQuery, setActiveQuery] = useState(null);
+  const [activeQuery, setActiveQuery] = useState(EMB_QUERIES[0]);
   const [hovered, setHovered]         = useState(null);
 
   const nearest = useMemo(() => {
@@ -291,7 +291,7 @@ function EmbeddingExplorer() {
           </div>
         </div>
       ) : (
-        <p className="text-xs text-zinc-600 text-center">← Select a query above to see semantic search in action</p>
+        <p className="text-xs text-zinc-600 text-center">← Click a query above to see semantic search in action</p>
       )}
 
       {/* Legend */}
