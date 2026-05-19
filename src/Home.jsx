@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
+import { LOCKED_TABS } from "./constants";
 
 const START_HERE_PATH = [
   { step: 1, label: "Tokenizer",     tab: "concepts", desc: "How text becomes numbers" },
@@ -121,8 +122,7 @@ const MODULE_MAP = [
   },
 ];
 
-// Tabs currently in "in progression" (locked) state — keep in sync with App.jsx NAV_GROUPS
-const LOCKED_TABS = new Set(["systems", "fluency", "aipm", "career"]);
+// LOCKED_TABS imported from ./constants — single source of truth
 
 const STATS = [
   { value: "3",    label: "Learning tracks",      sub: "Engineer · PM · Interview" },

@@ -185,7 +185,7 @@ function PostDetail({ post, onBack, onNavigate }) {
     setMeta('meta[name="description"]', desc);
     setMeta('meta[property="og:title"]', title);
     setMeta('meta[property="og:description"]', desc);
-    setMeta('meta[property="og:url"]', base);
+    setMeta('meta[property="og:url"]', `${base}#groundtruth/${post.id}`);
     setMeta('meta[name="twitter:title"]', title);
     setMeta('meta[name="twitter:description"]', desc);
 

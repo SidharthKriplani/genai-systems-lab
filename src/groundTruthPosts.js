@@ -1377,7 +1377,7 @@ with client.chat.completions.stream(
       ["Gemini 1.5 Pro",   "1M tokens",  "Long-context analysis, enterprise RAG, video understanding"],
       ["Gemini 1.5 Flash", "1M tokens",  "High-volume, cost-efficient tasks"],
       ["Gemini 2.0 Flash", "1M tokens",  "Latest, fastest — default for most API usage"],
-      ["Gemini Ultra",     "32K tokens", "Most capable — used in Gemini Advanced (paid tier)"],
+      ["Gemini Ultra",     "1M tokens",  "Most capable — used in Gemini Advanced (paid tier)"],
     ]},
 
     { t: "h2", text: "1 million token context: what it enables" },
@@ -2186,7 +2186,7 @@ tools = [{
 }]
 
 response = client.messages.create(
-  model="claude-opus-4-5",
+  model="claude-opus-4-6",
   max_tokens=1024,
   tools=tools,
   messages=[{"role": "user", "content": "Alice is a 30yr senior engineer"}]
@@ -3065,7 +3065,7 @@ garak --model_type openai --model_name gpt-4o-mini \\
 
     { t: "h2", text: "Technique 1: Rolling window" },
     { t: "p", text: "Keep only the last N turns in context, dropping the oldest messages when the window fills. Simple, fast, zero cost. Failure mode: the model loses information from early in the conversation that's still relevant — user preferences, established constraints, critical facts stated early." },
-    { t: "code", lang: "python", label: "Rolling window implementation", text: `def get_context_window(messages, max_tokens=100_000, model="claude-opus-4-5"):
+    { t: "code", lang: "python", label: "Rolling window implementation", text: `def get_context_window(messages, max_tokens=100_000, model="claude-opus-4-6"):
     # Always keep system message
     system = [m for m in messages if m["role"] == "system"]
     conversation = [m for m in messages if m["role"] != "system"]
@@ -3139,7 +3139,7 @@ def extract_and_store_memories(messages, memory_store):
     { t: "code", lang: "python", label: "Enable native context compaction", text: `client = anthropic.Anthropic()
 
 response = client.messages.create(
-    model="claude-opus-4-5",
+    model="claude-opus-4-6",
     max_tokens=4096,
     # Enable automatic compaction
     betas=["extended-cache-ttl-2025-04-11"],
@@ -3550,7 +3550,7 @@ response = client.messages.create(
     { t: "h3", text: "4. Prompt caching" },
     { t: "p", text: "If your system prompt + any static RAG context is over 1,024 tokens and identical across requests, enable prompt caching. Anthropic caches at 90% discount on input tokens. OpenAI at 50%. For a 3,000-token cached prefix at 1M requests/day, caching saves ~$9,000–$18,000/day depending on provider. It takes 20 minutes to implement." },
     { t: "code", lang: "python", label: "Anthropic prompt caching", text: `response = client.messages.create(
-    model="claude-opus-4-5",
+    model="claude-opus-4-6",
     system=[{
         "type": "text",
         "text": your_long_system_prompt,

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
+import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, isPreviewUnlocked } from "./analytics";
+import { LOCKED_TABS } from "./constants";
 import GroundTruth from "./GroundTruth";
 import QADashboard from "./QADashboard";
 import ConceptsApp from "./Concepts";
@@ -910,7 +911,7 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
   function shareScore(solved, passed, total) {
     const lines = [
       `🏆 GenAI Systems Lab — my score`,
-      `✅ ${solved}/5 scenarios solved`,
+      `✅ ${solved}/6 scenarios solved`,
       `📊 ${passed}/${total} attempts passed`,
       ``,
       `Free interactive platform for AI engineers & PMs`,
@@ -1076,8 +1077,7 @@ const TAB_COLORS = {
   groundtruth: "#a78bfa",
 };
 
-// Tabs in "in progression" state — keep in sync with NAV_GROUPS locked: true entries
-const LOCKED_TABS = new Set(["systems", "fluency", "aipm", "career"]);
+// LOCKED_TABS imported from ./constants — single source of truth
 
 function SearchModal({ onClose, onSelect }) {
   const [query, setQuery] = useState("");
@@ -1316,6 +1316,7 @@ export default function App() {
     try { return localStorage.getItem("genai_palette") || "violet"; } catch { return "violet"; }
   });
   const switchPalette = (p) => { setPalette(p); try { localStorage.setItem("genai_palette", p); } catch {} };
+  const [previewUnlocked, setPreviewUnlocked] = useState(() => isPreviewUnlocked());
   const [systemsModule, setSystemsModule] = useState(null);
   const [exploreModule, setExploreModule] = useState(null);
   const [agentsModule, setAgentsModule] = useState(null);
@@ -1467,6 +1468,11 @@ export default function App() {
       { id: "groundtruth", label: "Ground Truth", audience: "All levels" },
     ]},
   ];
+
+  // Lookup map for locked tab item metadata — used by LockedTabView
+  const lockedItems = Object.fromEntries(
+    NAV_GROUPS.flatMap(g => g.items).filter(i => i.locked).map(i => [i.id, i])
+  );
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white" data-palette={palette} style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif" }}>
@@ -1620,17 +1626,6 @@ export default function App() {
           </button>
           {/* Right utilities */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
-            <div className="hidden lg:flex items-center gap-1 opacity-40 hover:opacity-100 transition-opacity" title="Color theme">
-              {[
-                { id: "violet", color: "#7c3aed" },
-                { id: "cyan",   color: "#06b6d4" },
-                { id: "amber",  color: "#f59e0b" },
-              ].map(p => (
-                <button key={p.id} onClick={() => switchPalette(p.id)} title={p.id}
-                  className="w-3 h-3 rounded-full border-2 transition-all hover:scale-110"
-                  style={{ background: p.color, borderColor: palette === p.id ? "white" : "transparent" }} />
-              ))}
-            </div>
             <button onClick={() => openFeedback("header")}
               className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-violet-700 hover:text-violet-400 transition-all font-mono text-zinc-500">
               💬 Feedback
@@ -1682,17 +1677,29 @@ export default function App() {
 
       {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />}
+      {topView === "systems" && (previewUnlocked
+        ? <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />
+        : <LockedTabView item={lockedItems.systems} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
+      )}
 
-      {topView === "fluency"    && <FluencyApp />}
+      {topView === "fluency" && (previewUnlocked
+        ? <FluencyApp />
+        : <LockedTabView item={lockedItems.fluency} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
+      )}
 
-      {topView === "aipm"       && <AIPMApp />}
+      {topView === "aipm" && (previewUnlocked
+        ? <AIPMApp />
+        : <LockedTabView item={lockedItems.aipm} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
+      )}
 
       {topView === "playground" && <PlaygroundApp />}
 
       {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "career"     && <CareerApp />}
+      {topView === "career" && (previewUnlocked
+        ? <CareerApp />
+        : <LockedTabView item={lockedItems.career} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
+      )}
 
       {topView === "groundtruth" && <GroundTruth onNavigate={navigate} />}
 
@@ -1933,7 +1940,7 @@ export default function App() {
 
       {topView === "lab" && (
         <footer className="border-t border-zinc-800 mt-12 px-6 py-4 text-center">
-          <p className="text-xs text-zinc-600">GenAI Systems Lab · V1-B · 5 scenarios · Static precomputed simulator · Zero hosting cost · Open source</p>
+          <p className="text-xs text-zinc-600">GenAI Systems Lab · RAG Lab · 6 production failure scenarios · Zero hosting cost · Open source</p>
         </footer>
       )}
 
