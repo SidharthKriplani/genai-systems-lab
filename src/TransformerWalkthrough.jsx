@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // ─── STEP DATA ───────────────────────────────────────────────────────────────
 const STEPS = [
@@ -446,9 +446,27 @@ function FullStackSVG() {
 
 // ─── MAIN COMPONENT ────────────────────────────────────────────────────────────
 export default function TransformerWalkthrough() {
-  const [step, setStep] = useState(0);
-  const current = STEPS[step];
-  const SVGComponent = current.svg;
+  const [step, setStep]       = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const intervalRef           = useRef(null);
+  const current               = STEPS[step];
+  const SVGComponent          = current.svg;
+
+  // Auto-advance every 4 s when playing
+  useEffect(() => {
+    if (playing) {
+      intervalRef.current = setInterval(() => {
+        setStep(s => {
+          if (s >= STEPS.length - 1) { setPlaying(false); return s; }
+          return s + 1;
+        });
+      }, 4000);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [playing]);
+
+  // Manual step — pause auto-play
+  const goTo = (i) => { setStep(i); setPlaying(false); };
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden">
@@ -460,44 +478,62 @@ export default function TransformerWalkthrough() {
             style={{ color: current.color, background: current.color + "20", border: `1px solid ${current.color}40` }}>
             Step {current.id} / {STEPS.length}
           </span>
-          <span className="text-xs text-zinc-400 font-mono">{current.subtitle}</span>
+          <span className="text-xs text-zinc-400 font-mono hidden sm:inline">{current.subtitle}</span>
         </div>
-        <div className="flex items-center gap-1">
-          {STEPS.map((s, i) => (
-            <button key={i} onClick={() => setStep(i)}
-              className="w-2 h-2 rounded-full transition-all"
-              style={{ background: i === step ? current.color : i < step ? current.color + "60" : "#374151" }}/>
-          ))}
+        <div className="flex items-center gap-2">
+          {/* Progress dots */}
+          <div className="flex items-center gap-1">
+            {STEPS.map((_, i) => (
+              <button key={i} onClick={() => goTo(i)}
+                className="w-1.5 h-1.5 rounded-full transition-all hover:scale-125"
+                style={{ background: i === step ? current.color : i < step ? current.color + "55" : "#374151" }}/>
+            ))}
+          </div>
+          {/* Play / Pause */}
+          <button
+            onClick={() => {
+              if (step >= STEPS.length - 1) { setStep(0); setPlaying(true); }
+              else setPlaying(p => !p);
+            }}
+            className="ml-1 flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-all"
+            title={playing ? "Pause" : "Play"}>
+            {playing
+              ? <span>⏸ pause</span>
+              : step >= STEPS.length - 1
+                ? <span>↺ replay</span>
+                : <span>▶ play</span>
+            }
+          </button>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-        {/* Diagram */}
-        <div className="p-4 flex items-center justify-center bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 min-h-[200px]">
-          <div className="w-full max-w-[320px] aspect-[320/200]">
+      {/* Body — fixed height so card never jumps */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:h-[300px]">
+        {/* Diagram — fixed square */}
+        <div className="p-4 flex items-center justify-center bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 h-[220px] md:h-auto">
+          <div className="w-full max-w-[300px] aspect-[320/200]">
             <SVGComponent />
           </div>
         </div>
 
-        {/* Text */}
-        <div className="p-5 flex flex-col justify-between">
-          <div>
-            <h3 className="text-base font-black text-white mb-3">{current.title}</h3>
+        {/* Text — scrollable so long content doesn't push card */}
+        <div className="p-5 flex flex-col h-[260px] md:h-auto overflow-y-auto">
+          <div className="flex-1">
+            <h3 className="text-base font-black text-white mb-2 leading-tight">{current.title}</h3>
             <p className="text-sm text-zinc-300 leading-relaxed mb-3">{current.desc}</p>
             <p className="text-xs text-zinc-500 leading-relaxed font-mono">{current.detail}</p>
           </div>
           {/* Nav */}
-          <div className="flex items-center gap-3 mt-6">
-            <button onClick={() => setStep(s => Math.max(0, s - 1))}
+          <div className="flex items-center gap-3 pt-4 mt-auto shrink-0">
+            <button onClick={() => goTo(Math.max(0, step - 1))}
               disabled={step === 0}
               className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-25 disabled:cursor-not-allowed transition-all">
               ← prev
             </button>
             <span className="text-[10px] text-zinc-600 font-mono flex-1 text-center">
-              {step + 1} of {STEPS.length}
+              {step + 1} / {STEPS.length}
             </span>
-            <button onClick={() => setStep(s => Math.min(STEPS.length - 1, s + 1))}
+            <button onClick={() => goTo(Math.min(STEPS.length - 1, step + 1))}
               disabled={step === STEPS.length - 1}
               className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all disabled:opacity-25 disabled:cursor-not-allowed"
               style={{
