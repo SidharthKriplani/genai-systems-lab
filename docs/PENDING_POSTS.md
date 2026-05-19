@@ -1,6 +1,6 @@
 # Ground Truth — Pending Posts
 
-All posts have been written. The table below reflects the completed state as of May 2026.
+All posts have been written. The table below reflects the completed state as of May 2026. A content-correctness pass was applied in the same session — see note below.
 
 ---
 
@@ -52,8 +52,20 @@ Total posts written: 88+
 
 ---
 
+## Content corrections (May 2026 audit fix batch)
+
+No new posts written. The following existing post received a factual correction:
+
+- `how-gemini-works` — Gemini Ultra context window updated from `32K` → `1M`. `claude-opus-4-5` model string updated to `claude-opus-4-6` across all 4 occurrences in `groundTruthPosts.js`.
+
+---
+
 ## If new posts are needed
 
 Add `"<post-id>": [ ...blocks ]` to the `POST_CONTENT` export in `groundTruthPosts.js`. The post will automatically become visible on the site once it has content.
 
 See `src/GroundTruth.jsx` POSTS array for all defined post IDs and their categories.
+
+---
+
+*Last updated: May 2026*

@@ -686,6 +686,16 @@ const ALL_SCENARIOS = [
   SCENARIO_THREEHOP,
 ];
 
+// ─── SCENARIO DIMENSIONS — maps scenario_id to a skill dimension for scoring ──
+const SCENARIO_DIMENSIONS = {
+  conflicting_documents: { dim: "Retrieval Quality",  color: "#6366f1" },
+  missing_answer:        { dim: "Retrieval Quality",  color: "#6366f1" },
+  ambiguous_query:       { dim: "Query Handling",     color: "#3b82f6" },
+  prompt_injection:      { dim: "Security & Safety",  color: "#ef4444" },
+  multi_hop:             { dim: "Reasoning",          color: "#22c55e" },
+  three_hop_chain:       { dim: "Reasoning",          color: "#22c55e" },
+};
+
 // ─── LOOKUP ───────────────────────────────────────────────────────────────────
 
 function lookupResult(scenario, config) {
@@ -810,8 +820,24 @@ function ChunkCard({ chunk, index }) {
   );
 }
 
-function ChallengeResult({ grade }) {
+function ChallengeResult({ grade, scenarioTitle }) {
+  const [copied, setCopied] = useState(false);
   if (!grade) return null;
+
+  function shareScenarioSolve() {
+    const text = [
+      `🔬 Just diagnosed "${scenarioTitle}" on GenAI Systems Lab`,
+      ``,
+      `The RAG Lab makes you configure a production pipeline, watch it fail, and find the fix.`,
+      `Free — no login: genai-systems-lab-ivory.vercel.app`,
+    ].join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      track("scenario_solve_shared", { scenario: scenarioTitle });
+      setTimeout(() => setCopied(false), 2500);
+    });
+  }
+
   return (
     <div className={`rounded-xl border p-4 space-y-3 ${grade.passed ? "border-emerald-600 bg-emerald-950/50" : "border-red-700 bg-red-950/30"}`}>
       <div className="flex items-center gap-2">
@@ -831,6 +857,12 @@ function ChallengeResult({ grade }) {
           </div>
         ))}
       </div>
+      {grade.passed && (
+        <button onClick={shareScenarioSolve}
+          className="w-full mt-1 py-2 rounded-lg border border-emerald-700/50 hover:border-emerald-500 text-xs font-mono text-emerald-400 hover:text-emerald-300 transition-all flex items-center justify-center gap-2">
+          {copied ? "✓ Copied to clipboard!" : "📤 Share this solve"}
+        </button>
+      )}
     </div>
   );
 }
@@ -944,13 +976,35 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
   }));
   const solved = byScenario.filter(s => s.bestPassed).length;
   const passed = leaderboard.filter(e => e.passed).length;
+  const allSolved = solved === ALL_SCENARIOS.length;
+
+  // Dimension-level scoring
+  const dims = ["Retrieval Quality", "Query Handling", "Security & Safety", "Reasoning"];
+  const dimColors = { "Retrieval Quality": "#6366f1", "Query Handling": "#3b82f6", "Security & Safety": "#ef4444", "Reasoning": "#22c55e" };
+  const dimScores = dims.map(dim => {
+    const dimScenarios = ALL_SCENARIOS.filter(s => SCENARIO_DIMENSIONS[s.scenario_id]?.dim === dim);
+    const dimSolved = dimScenarios.filter(s => byScenario.find(b => b.scenario_id === s.scenario_id)?.bestPassed).length;
+    return { dim, solved: dimSolved, total: dimScenarios.length, color: dimColors[dim] };
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-5">
+
+      {/* All scenarios solved — achievement banner */}
+      {allSolved && (
+        <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/20 p-4 text-center space-y-2">
+          <div className="text-2xl">🏆</div>
+          <div className="text-sm font-black text-emerald-300">All 6 scenarios solved</div>
+          <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed">
+            You've diagnosed every production failure mode in the lab. The next step: test your speed and breadth in the <span className="text-white font-bold">AI Systems Readiness Assessment</span> — coming soon.
+          </p>
+        </div>
+      )}
+
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {[
-          { val: `${solved}/5`, label: "Scenarios solved", color: "text-emerald-400" },
+          { val: `${solved}/${ALL_SCENARIOS.length}`, label: "Scenarios solved", color: "text-emerald-400" },
           { val: `${passed}/${leaderboard.length}`, label: "Attempts passed", color: "text-violet-400" },
           { val: leaderboard.length, label: "Total attempts", color: "text-amber-400" },
         ].map(({ val, label, color }) => (
@@ -960,6 +1014,25 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
           </div>
         ))}
       </div>
+
+      {/* Dimension breakdown */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-1">Skill Dimensions</div>
+        {dimScores.map(({ dim, solved: ds, total, color }) => (
+          <div key={dim} className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-300 font-mono">{dim}</span>
+              <span className="font-bold" style={{ color }}>{ds}/{total}</span>
+            </div>
+            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${(ds / total) * 100}%`, backgroundColor: color, opacity: ds === 0 ? 0 : 1 }} />
+            </div>
+          </div>
+        ))}
+        <p className="text-[10px] text-zinc-600 font-mono pt-1">Based on solved scenarios · solve all 6 to complete every dimension</p>
+      </div>
+
       {/* Share button */}
       <button
         onClick={() => shareScore(solved, passed, leaderboard.length)}
@@ -1160,18 +1233,23 @@ function FeedbackFallbackModal({ onClose }) {
           <button onClick={onClose} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕</button>
         </div>
         <p className="text-sm text-zinc-400 leading-relaxed">
-          The feedback form is being set up. In the meantime, reach the builder directly:
+          Found a bug, have a suggestion, or want to say what's useful? Reach the builder directly:
         </p>
-        <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-3 space-y-2">
+        <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-3 space-y-2.5">
           <a href="https://github.com/SidharthKriplani/genai-systems-lab/issues"
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-violet-400 hover:text-violet-300 transition-colors">
-            <span>→</span> Open a GitHub issue
+            className="flex items-center gap-2 text-xs text-violet-400 hover:text-violet-300 transition-colors font-mono">
+            <span>→</span> Open a GitHub issue (bugs, feature requests)
+          </a>
+          <a href="https://www.linkedin.com/in/sidharth-kriplani"
+            target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-300 transition-colors font-mono">
+            <span>→</span> LinkedIn — Sidharth Kriplani
           </a>
           <a href="https://github.com/SidharthKriplani"
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-300 transition-colors">
-            <span>→</span> GitHub profile
+            className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-300 transition-colors font-mono">
+            <span>→</span> GitHub — @SidharthKriplani
           </a>
         </div>
         <p className="text-[10px] text-zinc-600 font-mono">
@@ -1881,7 +1959,7 @@ export default function App() {
 
               {result && evaluated && (
                 <>
-                  {challengeMode && gradeResult && <ChallengeResult grade={gradeResult} />}
+                  {challengeMode && gradeResult && <ChallengeResult grade={gradeResult} scenarioTitle={scenario.title} />}
 
                   {result.failure_mode ? (
                     <div className="rounded-xl border border-red-800 bg-red-950/30 p-4 space-y-2">

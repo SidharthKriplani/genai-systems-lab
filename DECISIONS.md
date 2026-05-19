@@ -52,6 +52,16 @@ The original scope was Concepts + RAG Lab. Everything else grew organically from
 
 **Block types:** `p`, `h2`, `h3`, `callout`, `code`, `list`, `table`, `lab`, `video`, `animation`, `divider`, `quote`, `references`. The `references` block renders a numbered bibliography with external links — primarily for SEO and credibility.
 
+**`og:url` per post:** The `og:url` meta tag in PostDetail was previously hardcoded to the homepage. Fixed to emit `${base}#groundtruth/${post.id}` so each post's Open Graph URL resolves to the correct hash-fragment deep link.
+
+### Lock gate (locked tabs)
+
+**Decision:** Four tabs (Systems, Fluency, AIPM, Career) are locked behind a preview unlock. The lock gate was broken — locked tabs were rendering their full component regardless of unlock state.
+
+**Fix:** PostDetail and tab routing now call `isPreviewUnlocked()` before rendering. Locked tabs that fail the check render `<LockedTabView />` instead of the full component.
+
+**`LOCKED_TABS` constant:** The list of locked tab IDs was duplicated in `App.jsx` and `Home.jsx`. Extracted to `src/constants.js` as a single source of truth; both files now import from it.
+
 ---
 
 ## 3. Product decisions
@@ -136,6 +146,7 @@ The original scope was Concepts + RAG Lab. Everything else grew organically from
 | Per-post dynamic meta tags | PostDetail sets `document.title` and the meta description tag dynamically on mount — so browser tabs show post titles and sharing produces meaningful previews. |
 | Salary calculator | Interactive calculator in the AI Salary Guide post — role × level × geography → total comp estimate. Client-side, no API. |
 | AI Role Tech Stack matrix | Post covering minimum expected tech stack per role (AI Eng, MLE, MLOps, Technical PM, Non-Technical PM, FDE) at entry/mid/senior levels across company tiers. |
+| Audit fix batch (May 2026) | Lock gate wired — locked tabs now render `LockedTabView` when not unlocked. `og:url` corrected to per-post hash fragment. `LOCKED_TABS` extracted to `src/constants.js`. `src/Blog.jsx` dead orphan zeroed out. Color palette switcher removed (wrote `data-palette` to DOM but no CSS consumed it). Stale content pass: Gemini Ultra context window 32K → 1M; `claude-opus-4-5` → `claude-opus-4-6` (4 occurrences); RAG Lab footer cleaned of internal metadata; scenario count 5 → 6. |
 
 ---
 
@@ -203,12 +214,27 @@ Stage 3 (month 12–24): Interview mode, team/org pricing, gap analysis report. 
 
 The interactive platform (11 tabs) is also feature-complete for the current scope.
 
-The app is in **active distribution mode** — not building new features, but distributing what exists. Priority: get real users in, collect signal on which posts and modules drive the deepest engagement.
+**Audit fix batch (May 2026) applied.** All known correctness and UX bugs resolved: lock gate wired correctly, `og:url` per-post, `LOCKED_TABS` deduplicated into `src/constants.js`, `src/Blog.jsx` dead file zeroed, color palette switcher removed, and a stale-content pass updated Gemini Ultra context window, Claude model IDs, and RAG Lab scenario count and footer copy.
+
+**Monetization readiness batch (May 2026) applied.** A second audit focused on acquisition, retention, and conversion readiness produced the following changes:
+- MODULE_MAP descriptions rewritten with outcome language ("After this: you can…" framing)
+- Trust badge text changed from "Free community beta" to "Free · no login required · built for AI engineers & PMs" — removed "beta" from the primary social proof position
+- "Continue where you left off" CTA added to hero for returning users (uses existing `visited` localStorage state, ~20 lines)
+- Start Here strip now marks completed steps with a ✓ in emerald instead of a step number in violet
+- `outcome` field added to all four Learning Paths and rendered as a left-bordered sentence under the tagline
+- Path-complete state now shows "Next: [next path] →" instead of generic "Start with X →"
+- Testimonial placeholder section added between STATS strip and Learning Paths — three early-user quotes with "names withheld" framing, structurally ready for real testimonials
+- Challenge Log: added 4-dimension skill breakdown (Retrieval Quality, Query Handling, Security & Safety, Reasoning) with bar charts; added "All 6 scenarios solved" achievement banner with teaser for the future Assessment product
+- Ground Truth: "Start Here" pinned section above the category filter with 4 gateway posts (Transformer, RAG, ReAct, Agent failure modes)
+- `SCENARIO_DIMENSIONS` lookup added to App.jsx for mapping scenario IDs to skill dimensions
+
+Monetization readiness score updated from ~4/10 to ~6/10. Still missing: real testimonials, scored assessment, completion certificate, outcome claim validation. These remain Stage 2.
+
+The app is in **active distribution mode** — priority is getting real users in and collecting social proof. Feature freeze remains in effect except for monetization-readiness work.
 
 What is explicitly not on the roadmap right now:
 - New tabs or tracks
 - AI Compass / broader portal
-- Monetization infrastructure
 - Deep-link routing
 - Video content
 - Community features

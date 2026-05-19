@@ -150,12 +150,28 @@ function Block({ b, onNavigate, color }) {
   }
 }
 
-function PostDetail({ post, onBack, onNavigate }) {
+function PostDetail({ post, onBack, onOpenPost, onNavigate }) {
   const content = POST_CONTENT[post.id];
   const color = CAT_COLORS[post.category] || "#6366f1";
   const catLabel = CATEGORIES.find(c => c.id === post.category)?.label || post.category;
   const [scrollPct, setScrollPct] = useState(0);
+  const [linkCopied, setLinkCopied] = useState(false);
   const articleRef = useRef(null);
+
+  const postUrl = `https://genai-systems-lab-ivory.vercel.app/#groundtruth/${post.id}`;
+  const shareTitle = encodeURIComponent(`${post.title} — Ground Truth | GenAI Systems Lab`);
+  const shareUrl   = encodeURIComponent(postUrl);
+
+  function copyPostLink() {
+    navigator.clipboard.writeText(postUrl).then(() => {
+      setLinkCopied(true);
+      track("post_link_copied", { post: post.id });
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
+  }
+
+  // Related posts — same category, excluding current, max 3
+  const related = POSTS.filter(p => p.id !== post.id && p.category === post.category && !!POST_CONTENT[p.id]).slice(0, 3);
 
   useEffect(() => {
     const onScroll = () => {
@@ -247,18 +263,63 @@ function PostDetail({ post, onBack, onNavigate }) {
           </div>
         )}
 
-        {/* Footer nav */}
-        <div className="mt-12 pt-6 border-t border-zinc-800 flex items-center justify-between">
-          <button onClick={onBack}
-            className="text-xs text-zinc-500 hover:text-white transition-colors font-mono">
-            ← Back to Ground Truth
-          </button>
-          <button
-            onClick={() => onNavigate(post.labLink)}
-            className="text-xs font-mono font-bold transition-colors hover:opacity-80"
-            style={{ color }}>
-            {post.labLabel}
-          </button>
+        {/* Related posts */}
+        {related.length > 0 && (
+          <div className="mt-12 pt-8 border-t border-zinc-800">
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-4">Read next</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {related.map(r => {
+                const rc = CAT_COLORS[r.category] || "#6366f1";
+                return (
+                  <button key={r.id}
+                    onClick={() => { track("related_post_clicked", { from: post.id, to: r.id }); onOpenPost(r); window.scrollTo(0, 0); }}
+                    className="text-left rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 hover:border-zinc-600 transition-all relative overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-[2px]"
+                      style={{ background: `linear-gradient(90deg, ${rc}99, transparent)` }} />
+                    <p className="text-xs font-bold text-white leading-snug mb-1 line-clamp-2">{r.title}</p>
+                    <p className="text-[10px] text-zinc-600 font-mono">{r.readMin} min read</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Share + footer nav */}
+        <div className="mt-8 pt-6 border-t border-zinc-800 space-y-4">
+          {/* Share row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mr-1">Share</span>
+            <button onClick={copyPostLink}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
+              {linkCopied ? "✓ Copied!" : "Copy link"}
+            </button>
+            <a href={`https://twitter.com/intent/tweet?text=${shareTitle}&url=${shareUrl}`}
+              target="_blank" rel="noopener noreferrer"
+              onClick={() => track("post_shared_twitter", { post: post.id })}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
+              𝕏 / Twitter
+            </a>
+            <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`}
+              target="_blank" rel="noopener noreferrer"
+              onClick={() => track("post_shared_linkedin", { post: post.id })}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
+              LinkedIn
+            </a>
+          </div>
+          {/* Back / lab nav */}
+          <div className="flex items-center justify-between">
+            <button onClick={onBack}
+              className="text-xs text-zinc-500 hover:text-white transition-colors font-mono">
+              ← Back to Ground Truth
+            </button>
+            <button
+              onClick={() => onNavigate(post.labLink)}
+              className="text-xs font-mono font-bold transition-colors hover:opacity-80"
+              style={{ color }}>
+              {post.labLabel}
+            </button>
+          </div>
         </div>
 
       </div>
@@ -1168,8 +1229,11 @@ export default function GroundTruth({ onNavigate }) {
   useEffect(() => { track("ground_truth_viewed", {}); }, []);
 
   if (openPost) {
-    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onNavigate={onNavigate} />;
+    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onOpenPost={setOpenPost} onNavigate={onNavigate} />;
   }
+
+  // "Start Here" pinned posts — shown above the category filter regardless of active filter
+  const PINNED_IDS = ["what-is-a-transformer", "how-rag-works", "react-pattern", "agent-failure-modes"];
 
   // Only show posts that have written content
   const WRITTEN = POSTS.filter(p => !!POST_CONTENT[p.id]);
@@ -1201,6 +1265,40 @@ export default function GroundTruth({ onNavigate }) {
             <span className="text-violet-400"> {totalPlanned - total} more in the writing queue — check back soon.</span>
           </p>
         </div>
+
+        {/* Pinned "Start Here" posts */}
+        {filter === "all" && (() => {
+          const pinned = PINNED_IDS.map(id => WRITTEN.find(p => p.id === id)).filter(Boolean);
+          if (pinned.length === 0) return null;
+          return (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[10px] font-mono font-bold text-violet-400 uppercase tracking-widest">Start here</span>
+                <div className="h-px flex-1 bg-zinc-800" />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {pinned.map(post => {
+                  const color = CAT_COLORS[post.category] || "#6366f1";
+                  return (
+                    <button key={post.id}
+                      onClick={() => { track("ground_truth_pinned_clicked", { post: post.id }); setOpenPost(post); }}
+                      className="text-left rounded-xl border border-violet-800/40 bg-violet-950/10 p-3.5 hover:border-violet-600/60 transition-all relative overflow-hidden">
+                      <div className="absolute top-0 left-0 right-0 h-[2px]"
+                        style={{ background: `linear-gradient(90deg, ${color}99, transparent)` }} />
+                      <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-1.5">{post.readMin} min</div>
+                      <p className="text-xs font-bold text-white leading-snug mb-1">{post.title}</p>
+                      <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-2">{post.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-5 mb-2 flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest">All posts</span>
+                <div className="h-px flex-1 bg-zinc-800" />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Category filter — scrolls horizontally on mobile */}
         <div className="flex gap-2 mb-8 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-none">

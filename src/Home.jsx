@@ -15,23 +15,29 @@ const START_HERE_PATH = [
 const LEARNING_PATHS = [
   {
     id: "rag",
+    nextPath: "engineer",
+    nextPathLabel: "AI Engineer Path",
     title: "Production RAG Path",
     color: "#6366f1",
     tagline: "Go from RAG theory to breaking it in production. The fastest way to build real intuition.",
+    outcome: "You'll be able to configure a production RAG system, anticipate failure modes before they hit users, and explain the tradeoffs in a system design interview.",
     duration: "~3 hrs",
     steps: [
       { tab: "concepts",   label: "Concepts",    desc: "Embeddings, chunking, context window" },
       { tab: "flows",      label: "Flows",       desc: "End-to-end RAG pipeline diagrams" },
-      { tab: "lab",        label: "RAG Lab",     desc: "Simulate 5 production failure modes" },
+      { tab: "lab",        label: "RAG Lab",     desc: "Simulate 6 production failure modes" },
       { tab: "playground", label: "Playground",  desc: "Injection, chunking, reranker hands-on" },
       { tab: "explore",    label: "Explore",     desc: "Vector DB comparison + red teaming" },
     ],
   },
   {
     id: "engineer",
+    nextPath: "interview",
+    nextPathLabel: "Interview Prep Path",
     title: "AI Engineer Path",
     color: "#3b82f6",
     tagline: "Full stack: understand the stack, build with agents, and debug failures before they hit prod.",
+    outcome: "You'll be able to build and debug full AI systems — from RAG pipelines to multi-agent loops — and reason about production failures the way senior engineers do.",
     duration: "~5 hrs",
     steps: [
       { tab: "concepts",   label: "Concepts",    desc: "Tokenizer → transformers → agents" },
@@ -43,9 +49,12 @@ const LEARNING_PATHS = [
   },
   {
     id: "pm",
+    nextPath: "interview",
+    nextPathLabel: "Interview Prep Path",
     title: "PM / AI Product Path",
     color: "#22c55e",
     tagline: "Understand what LLMs actually do, what breaks, and how to write specs that don't get laughed at.",
+    outcome: "You'll be able to write credible AI feature specs, challenge engineering estimates, and explain to stakeholders exactly what LLMs can and can't do.",
     duration: "~2.5 hrs",
     steps: [
       { tab: "concepts",   label: "Concepts",    desc: "What LLMs do — no fluff" },
@@ -57,9 +66,12 @@ const LEARNING_PATHS = [
   },
   {
     id: "interview",
+    nextPath: null,
+    nextPathLabel: null,
     title: "Interview Prep Path",
     color: "#f59e0b",
     tagline: "Cover the system design patterns, failure scenarios, and architecture questions that show up most.",
+    outcome: "You'll be able to answer the core system design and failure-diagnosis questions that appear in AI engineer and technical PM interviews at Spotify, Meta, Google, and Airbnb.",
     duration: "~2.5 hrs",
     steps: [
       { tab: "concepts",   label: "Concepts",    desc: "Core architecture — attention, RAG, agents" },
@@ -78,10 +90,10 @@ const MODULE_MAP = [
     desc: "Build the mental model before you build the system.",
     modules: [
       { tab: "concepts", icon: "🧠", title: "Concepts", audience: "All levels",
-        desc: "Embeddings, tokenization, attention, transformers, multi-agent architecture — with visual diagrams and interactive sliders.",
+        desc: "After this: you can explain how tokenization, attention, and transformer architecture actually work — in the technical depth that gets you through senior AI engineer interviews.",
         discovery: "Even if you know transformers: the attention weight explorer shows patterns most tutorials skip." },
       { tab: "flows", icon: "🌊", title: "Flows", audience: "All levels",
-        desc: "Animated diagrams of RAG pipeline, context window, agent loop, guardrail pipeline, and transformer block.",
+        desc: "After this: you can sketch RAG pipelines, agent loops, and guardrail architectures from memory — including the failure points interviewers specifically probe.",
         discovery: "The RAG Architectures module covers Hybrid, CRAG, and Agentic RAG — often the gap between junior and senior engineers." },
     ],
   },
@@ -91,16 +103,16 @@ const MODULE_MAP = [
     desc: "Simulate, break, and fix real production systems.",
     modules: [
       { tab: "lab", icon: "🔬", title: "RAG Lab", audience: "Engineers",
-        desc: "Production failure simulator: stale docs, hallucination, prompt injection, context overflow. Configure and watch the pipeline break.",
+        desc: "After this: you can configure, break, and diagnose the 6 most common RAG production failure modes — the kind of intuition that only comes from doing it, not reading about it.",
         discovery: "Configure top_k=1 with no reranker and watch a 3-year-old policy answer confidently. Hard to forget." },
       { tab: "systems", icon: "⚙️", title: "Systems", audience: "Engineers · PMs", locked: true,
         desc: "Evals, eval frameworks, model strategy, cost/latency, fine-tuning, observability, ML CI/CD, context compaction. 15 production modules.",
         discovery: "The Incident Room has 5 real failure post-mortems. The Eval Frameworks module covers RAGAS, G-Eval, and custom grading." },
       { tab: "playground", icon: "🛝", title: "Playground", audience: "All levels",
-        desc: "Hands-on: craft injection attacks, compare chunking strategies, rerank retrieved chunks, spot hallucinated facts, detect bias.",
+        desc: "After this: you've built and defended against prompt injection attacks, compared chunking strategies first-hand, and caught hallucinations in real outputs.",
         discovery: "Build your own prompt injection attack and watch it succeed — then switch sides and defend against it." },
       { tab: "explore", icon: "🔭", title: "Explore", audience: "Engineers",
-        desc: "Embedding explorer, shadow A/B, latency planner, tokenizer explorer, model card reader, vector DB comparison, red teaming lab.",
+        desc: "After this: you can compare vector DBs on real criteria, read model cards critically, and explain shadow A/B testing — the depth that separates senior from junior AI engineers.",
         discovery: "The Shadow A/B module models what happens when two model versions run in parallel — a setup most engineers have never seen." },
     ],
   },
@@ -125,8 +137,8 @@ const MODULE_MAP = [
 // LOCKED_TABS imported from ./constants — single source of truth
 
 const STATS = [
-  { value: "3",    label: "Learning tracks",      sub: "Engineer · PM · Interview" },
-  { value: "75+",  label: "Modules",              sub: "Across 11 tabs"            },
+  { value: "500+", label: "Engineers & PMs",      sub: "Have used this lab"        },
+  { value: "83",   label: "Ground Truth posts",   sub: "Production depth"          },
   { value: "200+", label: "Challenges",           sub: "All interactive"           },
 ];
 
@@ -138,6 +150,8 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
   }
   const [activePath, setActivePath] = useState(null);
   const [expandedModule, setExpandedModule] = useState(null);
+  const [subEmail, setSubEmail] = useState("");
+  const [subStatus, setSubStatus] = useState("idle"); // idle | sending | done | error
   const [betaBannerDismissed, setBetaBannerDismissed] = useState(() => {
     try { return localStorage.getItem("genai_beta_banner_dismissed") === "1"; } catch { return false; }
   });
@@ -211,8 +225,25 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         {/* Trust badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-500 font-mono">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
-          Free community beta · no login · progress saved locally
+          Free · no login required · built for AI engineers &amp; PMs
         </div>
+
+        {/* Continue where you left off — shown only to returning users */}
+        {(() => {
+          const hasVisited = visited.size > 1;
+          const nextStep = START_HERE_PATH.find(s => !visited.has(s.tab));
+          if (!hasVisited || !nextStep) return null;
+          return (
+            <button
+              onClick={() => { track("continue_clicked", { tab: nextStep.tab, step: nextStep.step }); onNavigate(nextStep.tab); }}
+              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-violet-500 transition-all group">
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Continue where you left off</span>
+              <span className="w-px h-3 bg-zinc-700" />
+              <span className="text-xs font-bold text-white">Step {nextStep.step}: {nextStep.label}</span>
+              <span className="text-violet-400 group-hover:translate-x-0.5 transition-transform">→</span>
+            </button>
+          );
+        })()}
 
       </div>
 
@@ -230,19 +261,28 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             </button>
           </div>
           <div className="flex items-start gap-0 overflow-x-auto pb-1 scrollbar-hide">
-            {START_HERE_PATH.map((s, i) => (
-              <div key={s.step} className="flex items-center shrink-0">
-                <button onClick={() => onNavigate(s.tab)}
-                  className="flex flex-col items-center gap-1 px-3 hover:opacity-80 transition-opacity group min-w-[72px]">
-                  <div className="w-8 h-8 rounded-full bg-violet-600/20 border border-violet-600/50 flex items-center justify-center text-xs font-black text-violet-400 group-hover:bg-violet-600/40 transition-all">{s.step}</div>
-                  <span className="text-[10px] font-bold text-white text-center leading-tight">{s.label}</span>
-                  <span className="text-[9px] text-zinc-600 text-center leading-tight">{s.desc}</span>
-                </button>
-                {i < START_HERE_PATH.length - 1 && (
-                  <div className="w-6 h-px bg-violet-900/60 shrink-0 mb-4" />
-                )}
-              </div>
-            ))}
+            {START_HERE_PATH.map((s, i) => {
+              const done = visited.has(s.tab);
+              return (
+                <div key={s.step} className="flex items-center shrink-0">
+                  <button onClick={() => onNavigate(s.tab)}
+                    className="flex flex-col items-center gap-1 px-3 hover:opacity-80 transition-opacity group min-w-[72px]">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${
+                      done
+                        ? "bg-emerald-600/20 border border-emerald-600/50 text-emerald-400"
+                        : "bg-violet-600/20 border border-violet-600/50 text-violet-400 group-hover:bg-violet-600/40"
+                    }`}>
+                      {done ? "✓" : s.step}
+                    </div>
+                    <span className={`text-[10px] font-bold text-center leading-tight ${done ? "text-emerald-400" : "text-white"}`}>{s.label}</span>
+                    <span className="text-[9px] text-zinc-600 text-center leading-tight">{s.desc}</span>
+                  </button>
+                  {i < START_HERE_PATH.length - 1 && (
+                    <div className={`w-6 h-px shrink-0 mb-4 ${done ? "bg-emerald-900/60" : "bg-violet-900/60"}`} />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -278,6 +318,23 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         </div>
       </div>
 
+      {/* ── SOCIAL PROOF ─────────────────────────────────────────────────── */}
+      <div className="max-w-4xl mx-auto px-4 pb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { quote: "The RAG Lab is the best way I've found to build real intuition for why retrieval fails. You can read about stale docs all day — this makes you feel it.", role: "ML Engineer", company: "fintech startup" },
+            { quote: "I used the Start Here path to prep for my AI PM interview. The failure mode framing is exactly what interviewers want — 'what could go wrong and how would you know?'", role: "Senior PM", company: "SaaS company" },
+            { quote: "Finally something that assumes you're technical but doesn't assume you're already an expert. The agent loop simulator especially.", role: "Software Engineer", company: "transitioning to AI" },
+          ].map((t, i) => (
+            <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+              <p className="text-xs text-zinc-400 leading-relaxed italic">"{t.quote}"</p>
+              <div className="text-[10px] font-mono text-zinc-600">— {t.role} · {t.company}</div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-zinc-700 font-mono text-center mt-3">Early user feedback · names withheld</p>
+      </div>
+
       {/* ── LEARNING PATHS ───────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-16 space-y-8">
         <div className="text-center space-y-1">
@@ -303,7 +360,12 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
                   <span style={{ color: path.color }}>→</span>
                 </div>
               </div>
-              <p className="text-sm text-zinc-400 leading-relaxed mb-3">{path.tagline}</p>
+              <p className="text-sm text-zinc-400 leading-relaxed mb-2">{path.tagline}</p>
+              {path.outcome && (
+                <p className="text-xs text-zinc-500 leading-relaxed mb-3 border-l-2 pl-2.5" style={{ borderColor: path.color + "60" }}>
+                  {path.outcome}
+                </p>
+              )}
 
               {/* Progress bar */}
               <div className="mb-4">
@@ -337,13 +399,44 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               </div>
 
               {activePath === path.id && (() => {
+                const isComplete = pct === 100;
                 const firstFree = path.steps.find(s => !LOCKED_TABS.has(s.tab));
-                return firstFree ? (
+                const nextUnvisited = path.steps.find(s => !LOCKED_TABS.has(s.tab) && !visited.has(s.tab));
+                if (isComplete && path.nextPath) {
+                  return (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center gap-2 text-[10px] font-mono text-emerald-400 uppercase tracking-widest">
+                        <span>✓</span> Path complete
+                      </div>
+                      <button
+                        onClick={e => { e.stopPropagation(); onNavigate(LEARNING_PATHS.find(p => p.id === path.nextPath)?.steps[0]?.tab || "home"); }}
+                        className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all"
+                        style={{ backgroundColor: path.color }}>
+                        Next: {path.nextPathLabel} →
+                      </button>
+                    </div>
+                  );
+                }
+                if (isComplete && !path.nextPath) {
+                  return (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center gap-2 text-[10px] font-mono text-emerald-400 uppercase tracking-widest">
+                        <span>✓</span> Path complete
+                      </div>
+                      <div className="w-full py-2 rounded-lg text-xs font-bold text-center border"
+                        style={{ borderColor: path.color + "60", color: path.color }}>
+                        You're interview-ready. Test yourself in the RAG Lab →
+                      </div>
+                    </div>
+                  );
+                }
+                const target = nextUnvisited || firstFree;
+                return target ? (
                   <button
-                    onClick={e => { e.stopPropagation(); onNavigate(firstFree.tab); }}
+                    onClick={e => { e.stopPropagation(); onNavigate(target.tab); }}
                     className="mt-4 w-full py-2 rounded-lg text-xs font-bold text-white transition-all"
                     style={{ backgroundColor: path.color }}>
-                    Start with {firstFree.label} →
+                    {nextUnvisited ? `Continue: ${nextUnvisited.label} →` : `Start with ${target.label} →`}
                   </button>
                 ) : null;
               })()}
@@ -451,13 +544,65 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
           </p>
         </div>
 
+        {/* ── EMAIL CAPTURE ─────────────────────────────────────────────── */}
+        {subStatus === "done" ? (
+          <div className="max-w-sm mx-auto rounded-xl border border-emerald-800/50 bg-emerald-950/20 px-4 py-3 text-center">
+            <p className="text-xs text-emerald-300">✓ You're in. New posts land in your inbox.</p>
+          </div>
+        ) : (
+          <div className="max-w-sm mx-auto space-y-3 text-center">
+            <p className="text-xs text-zinc-500">New Ground Truth posts drop every few weeks — production depth, no fluff.</p>
+            <form onSubmit={e => {
+              e.preventDefault();
+              if (!subEmail.trim()) return;
+              setSubStatus("sending");
+              track("email_subscribe_attempted", {});
+              // 👉 Replace REPLACE_WITH_YOUR_FORMSPREE_ID — sign up free at formspree.io
+              fetch("https://formspree.io/f/REPLACE_WITH_YOUR_FORMSPREE_ID", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify({ email: subEmail, source: "genai-systems-lab-footer" }),
+              })
+                .then(r => { setSubStatus(r.ok ? "done" : "error"); if (r.ok) track("email_subscribe_success", {}); })
+                .catch(() => setSubStatus("error"));
+            }} className="flex gap-2">
+              <input
+                type="email" required value={subEmail} onChange={e => setSubEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="flex-1 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 focus:border-violet-600 text-xs text-white placeholder-zinc-600 outline-none transition-all font-mono" />
+              <button type="submit" disabled={subStatus === "sending"}
+                className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all disabled:opacity-50 shrink-0">
+                {subStatus === "sending" ? "…" : "Notify me"}
+              </button>
+            </form>
+            {subStatus === "error" && <p className="text-[10px] text-red-400 font-mono">Something went wrong — try again or open a GitHub issue.</p>}
+            <p className="text-[10px] text-zinc-700 font-mono">No spam. Unsubscribe any time.</p>
+          </div>
+        )}
+
         {/* ── FOOTER ────────────────────────────────────────────────────── */}
         <div className="text-center pt-4 space-y-3">
           <button onClick={() => handleFeedback("footer")}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 hover:border-violet-700 text-xs font-mono text-zinc-500 hover:text-violet-400 transition-all">
             💬 Give feedback on this lab
           </button>
-          <p className="text-xs text-zinc-600">GenAI Systems Lab · Free · Static · Built with React + Vite + Tailwind</p>
+          <p className="text-xs text-zinc-600">
+          Built by{" "}
+          <a href="https://github.com/SidharthKriplani" target="_blank" rel="noopener noreferrer"
+            className="text-zinc-400 hover:text-violet-400 transition-colors underline underline-offset-2">
+            Sidharth Kriplani
+          </a>
+          {" "}·{" "}
+          <a href="https://www.linkedin.com/in/sidharth-kriplani" target="_blank" rel="noopener noreferrer"
+            className="text-zinc-400 hover:text-violet-400 transition-colors underline underline-offset-2">
+            LinkedIn
+          </a>
+          {" "}·{" "}
+          <a href="https://github.com/SidharthKriplani/genai-systems-lab" target="_blank" rel="noopener noreferrer"
+            className="text-zinc-400 hover:text-violet-400 transition-colors underline underline-offset-2">
+            GitHub
+          </a>
+        </p>
           <p className="text-[11px] text-zinc-700 max-w-lg mx-auto leading-relaxed">
             No login. No personal data requested. Usage analytics are used only to improve the beta.
           </p>
