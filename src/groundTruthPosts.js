@@ -1305,48 +1305,562 @@ print(message.content[0].text)` },
   // ─── SALARY GUIDE ────────────────────────────────────────────────────────────
 
   "ai-salary-guide": [
-    { t: "p", text: "AI and ML roles are among the highest-compensated in the technology industry. Salaries vary significantly by role, level, company type, and geography. This guide gives you real market data and a framework for evaluating and negotiating offers." },
+    { t: "p", text: "AI and ML roles are among the highest-compensated in the technology industry. Salaries vary significantly by role, level, company type, and geography. Use the calculator below to get a personalised estimate, then read the full breakdown." },
 
-    { t: "h2", text: "Salary by role (US, 2025)" },
-    { t: "table", headers: ["Role", "Entry (0-2yr)", "Mid (2-5yr)", "Senior (5+yr)", "Staff/Principal"], rows: [
-      ["AI Engineer",         "$120-160K", "$160-220K", "$220-320K", "$300-500K+"],
-      ["ML Engineer",         "$130-170K", "$170-240K", "$240-340K", "$320-550K+"],
-      ["Research Scientist",  "$140-180K", "$180-260K", "$260-380K", "$350-600K+"],
-      ["AI/ML Product Manager","$130-160K","$160-220K", "$220-300K", "$280-450K+"],
-      ["Data Scientist",      "$100-140K", "$140-190K", "$190-270K", "$250-400K+"],
-    ]},
-    { t: "callout", v: "warning", text: "US figures are total compensation (base + equity + bonus). Equity at FAANG/MANGA companies can be 50-100% of base. At startups, equity is illiquid and high-risk. Always compare on base when evaluating startup offers." },
+    { t: "h2", text: "Salary calculator" },
+    { t: "animation", name: "salary-calc" },
 
-    { t: "h2", text: "Company type premium" },
-    { t: "table", headers: ["Company type", "Relative comp", "Notes"], rows: [
-      ["FAANG / MANGA",      "150-200% of market", "Highest absolute comp, high pressure, high equity value"],
-      ["Frontier AI labs",   "200-350% of market", "Anthropic, OpenAI, DeepMind — exceptional comp for research/eng"],
-      ["AI-native startups", "80-120% of market",  "Lower base, higher equity risk, fast learning, more ownership"],
-      ["Enterprise tech",    "100-130% of market", "Microsoft, Salesforce — solid comp, slower pace"],
-      ["Consulting / agencies","70-100% of market","Lower ceiling, variety of projects"],
+    { t: "divider" },
+
+    { t: "h2", text: "United States" },
+    { t: "p", text: "The US, and especially the San Francisco Bay Area, remains the highest-paying market for AI roles globally. Figures below are total compensation (base + equity + bonus). Frontier AI labs (Anthropic, OpenAI, DeepMind) sit 50–100% above these ranges." },
+    { t: "table", headers: ["Role", "Junior (0–2yr)", "Mid (2–5yr)", "Senior (5–8yr)", "Staff/Principal"], rows: [
+      ["AI Engineer",        "$140–190K", "$180–270K", "$250–380K", "$380–600K+"],
+      ["ML Engineer",        "$150–210K", "$200–300K", "$280–420K", "$400–650K+"],
+      ["Research Scientist", "$160–220K", "$210–330K", "$300–500K", "$450–800K+"],
+      ["Data Scientist",     "$120–170K", "$160–240K", "$220–340K", "$320–510K+"],
+      ["AI PM",              "$145–195K", "$185–270K", "$250–370K", "$360–560K+"],
     ]},
+    { t: "callout", v: "warning", text: "US figures are total comp. At FAANG, equity (RSUs) is often 40–80% of total. At Series A startups, equity is illiquid. Always compare on base salary when evaluating across company stages." },
+
+    { t: "h2", text: "United Kingdom" },
+    { t: "p", text: "The UK AI market is centred in London, with a growing secondary market in Cambridge and Edinburgh. Figures are base salary in GBP. Bonuses of 10–20% are typical at larger companies. DeepMind (London) pays US-equivalent packages." },
+    { t: "table", headers: ["Role", "Junior", "Mid", "Senior", "Staff/Principal"], rows: [
+      ["AI Engineer",        "£55–80K",  "£85–125K", "£130–185K", "£180–250K"],
+      ["ML Engineer",        "£60–85K",  "£90–135K", "£135–195K", "£185–265K"],
+      ["Research Scientist", "£65–90K",  "£95–145K", "£145–210K", "£200–290K"],
+      ["Data Scientist",     "£50–72K",  "£72–112K", "£112–162K", "£155–225K"],
+      ["AI PM",              "£60–85K",  "£85–128K", "£128–178K", "£172–240K"],
+    ]},
+
+    { t: "h2", text: "India" },
+    { t: "p", text: "India's AI market is growing fast. Bangalore dominates, followed by Hyderabad and Pune. Figures in lakhs per annum (CTC). Top-tier companies (Google, Microsoft, Flipkart, top startups) are at the higher end. US remote roles often pay 3–5× these ranges." },
+    { t: "table", headers: ["Role", "Junior", "Mid", "Senior", "Staff/Principal"], rows: [
+      ["AI Engineer",        "₹14–26L",  "₹28–58L",  "₹55–100L", "₹90–170L"],
+      ["ML Engineer",        "₹16–30L",  "₹32–62L",  "₹60–110L", "₹100–190L"],
+      ["Research Scientist", "₹18–32L",  "₹34–72L",  "₹68–125L", "₹115–220L"],
+      ["Data Scientist",     "₹11–20L",  "₹22–45L",  "₹44–82L",  "₹72–135L"],
+      ["AI PM",              "₹16–28L",  "₹32–62L",  "₹62–108L", "₹95–178L"],
+    ]},
+
+    { t: "h2", text: "Australia" },
+    { t: "p", text: "Australia's AI market is maturing rapidly, led by Sydney and Melbourne. Figures are base salary in AUD. Superannuation (11%) is paid on top. Australian companies are increasingly competing with US remote roles for talent." },
+    { t: "table", headers: ["Role", "Junior", "Mid", "Senior", "Staff/Principal"], rows: [
+      ["AI Engineer",        "A$100–135K", "A$138–188K", "A$188–255K", "A$248–340K"],
+      ["ML Engineer",        "A$105–145K", "A$149–198K", "A$198–272K", "A$264–363K"],
+      ["Research Scientist", "A$110–150K", "A$154–209K", "A$204–286K", "A$275–396K"],
+      ["Data Scientist",     "A$88–121K",  "A$123–170K", "A$170–231K", "A$226–314K"],
+      ["AI PM",              "A$99–132K",  "A$134–182K", "A$182–248K", "A$242–330K"],
+    ]},
+
+    { t: "h2", text: "Canada" },
+    { t: "p", text: "Toronto and Vancouver are the primary Canadian AI markets. Figures are base in CAD. Many Canadian AI engineers take US remote roles (paid in USD), which typically pay 40–60% more than local rates at the same level." },
+    { t: "table", headers: ["Role", "Junior", "Mid", "Senior", "Staff/Principal"], rows: [
+      ["AI Engineer",        "C$95–128K",  "C$130–175K", "C$174–240K", "C$235–328K"],
+      ["ML Engineer",        "C$100–135K", "C$137–186K", "C$183–254K", "C$246–349K"],
+      ["Research Scientist", "C$105–142K", "C$145–196K", "C$192–272K", "C$263–385K"],
+      ["Data Scientist",     "C$82–116K",  "C$118–162K", "C$162–218K", "C$214–302K"],
+      ["AI PM",              "C$93–127K",  "C$126–173K", "C$173–236K", "C$231–318K"],
+    ]},
+
+    { t: "h2", text: "Singapore" },
+    { t: "p", text: "Singapore is the primary APAC AI hub for MNCs. Strong demand, competitive packages, and lower personal income tax than most markets. Many APAC AI leads are based here. Figures in SGD base." },
+    { t: "table", headers: ["Role", "Junior", "Mid", "Senior", "Staff/Principal"], rows: [
+      ["AI Engineer",        "S$66–94K",   "S$97–140K",  "S$143–207K", "S$204–292K"],
+      ["ML Engineer",        "S$72–99K",   "S$103–149K", "S$152–218K", "S$215–308K"],
+      ["Research Scientist", "S$75–105K",  "S$108–160K", "S$160–231K", "S$226–330K"],
+      ["Data Scientist",     "S$60–86K",   "S$88–130K",  "S$130–187K", "S$182–264K"],
+      ["AI PM",              "S$68–97K",   "S$99–143K",  "S$143–207K", "S$198–286K"],
+    ]},
+
+    { t: "divider" },
 
     { t: "h2", text: "What moves the needle most" },
     { t: "list", items: [
-      "Demonstrated production experience: shipping a RAG system or agent to real users is worth more than 5 side projects",
-      "Specific framework expertise: LangGraph, RAGAS, vLLM — depth in a specific tool beats shallow breadth",
-      "Evaluation experience: very few engineers have built proper eval pipelines; this is a genuine differentiator",
-      "Published work: open-source contributions, Kaggle rankings, blog posts, papers all add significant premium at senior levels",
-      "Location: San Francisco still pays 20-40% more than Seattle, 50-80% more than Austin or NYC",
+      "Production experience over side projects — shipping a RAG system or agent to real users signals more than 5 portfolio demos",
+      "Evaluation expertise — very few engineers have built proper eval pipelines; this differentiates mid from senior in most interviews",
+      "Framework depth — LangGraph, RAGAS, vLLM — depth in one thing beats shallow breadth across five",
+      "Open-source contributions or technical writing — adds 10–20% at senior+ levels",
+      "Negotiation — most first offers have 10–25% room; not negotiating is the most common expensive mistake",
     ]},
 
-    { t: "h2", text: "Global market snapshot" },
-    { t: "table", headers: ["Market", "Senior AI Engineer (base)", "Notes"], rows: [
-      ["San Francisco",  "$200-280K",  "Highest in world, but high cost of living"],
-      ["New York",       "$170-230K",  "Finance premium for AI in fintech"],
-      ["London",         "£120-180K",  "Strong market, EU talent pool"],
-      ["Berlin/Amsterdam","€90-140K",  "Growing, lower COL than US"],
-      ["Bangalore",      "₹40-100L",   "Wide range — top companies at higher end"],
-      ["Singapore",      "SGD 150-220K","APAC hub, strong MNC presence"],
-      ["Toronto/Vancouver","CAD 140-200K","US-adjacent, lower equity typically"],
+    { t: "callout", v: "tip", text: "The most consistent salary lever in AI right now: evaluation experience. The ability to design, run, and interpret offline evals is explicitly mentioned in 60%+ of senior AI engineer job descriptions — and very few candidates can demonstrate it credibly." },
+
+    { t: "lab", tab: "career", label: "Benchmark your profile →", desc: "Practice the technical questions that determine which level you interview at — and land at." },
+  ],
+
+  // ─── SELF-ATTENTION DEEP DIVE ─────────────────────────────────────────────
+
+  "self-attention-deep-dive": [
+    { t: "p", text: "Self-attention is the operation that makes transformers work. Everything else — positional encodings, residual connections, layer norms — is scaffolding. If you understand self-attention deeply, you understand 80% of what a transformer is doing." },
+
+    { t: "h2", text: "The core question attention answers" },
+    { t: "p", text: "For each token in a sequence, self-attention asks: which other tokens should I borrow information from, and how much? The answer is computed dynamically — it depends on the content of the tokens, not their positions. This is what makes attention so powerful: the same token can attend to completely different things depending on context." },
+    { t: "callout", v: "key", text: "In \"The animal didn't cross the street because it was tired\", what does \"it\" refer to? Self-attention resolves this — the word \"it\" attends strongly to \"animal\" rather than \"street\". This is coreference resolution, emergent from attention." },
+
+    { t: "h2", text: "Query, Key, Value: the retrieval metaphor" },
+    { t: "p", text: "The QKV formulation is a learned soft retrieval system. Think of it like a search engine: your Query is what you're searching for, the Keys are what each document is indexed under, and the Values are the actual document content returned." },
+    { t: "list", items: [
+      "Query (Q): the current token asking \"what do I need?\"",
+      "Key (K): every token broadcasting \"here is what I contain\"",
+      "Value (V): every token's actual information, returned if selected",
+      "Attention weight: how well a query matches a key — computed as a scaled dot product",
+    ]},
+    { t: "code", lang: "python", label: "Self-attention from scratch (single head)", text: `import torch
+import torch.nn.functional as F
+
+def self_attention(X, W_Q, W_K, W_V, mask=None):
+    """
+    X:    (seq_len, d_model)
+    W_Q, W_K, W_V: (d_model, d_k)
+    """
+    Q = X @ W_Q           # (seq_len, d_k)
+    K = X @ W_K           # (seq_len, d_k)
+    V = X @ W_V           # (seq_len, d_v)
+
+    d_k = Q.shape[-1]
+    scores = Q @ K.T / d_k**0.5   # (seq_len, seq_len)
+
+    if mask is not None:
+        scores = scores.masked_fill(mask == 0, -1e9)
+
+    weights = F.softmax(scores, dim=-1)  # rows sum to 1
+    return weights @ V                   # (seq_len, d_v)` },
+
+    { t: "h2", text: "Why scale by √d_k?" },
+    { t: "p", text: "Without scaling, dot products grow with dimensionality. For d_k = 64, random vectors have dot products with expected value 0 and standard deviation √64 = 8. Large dot products push softmax into saturation — near-zero gradients, and the model stops learning. Dividing by √d_k keeps the variance at 1 regardless of dimension." },
+
+    { t: "h2", text: "The attention matrix: what it reveals" },
+    { t: "p", text: "The attention weight matrix is (seq_len × seq_len). Each row is a probability distribution over all positions — how much each output token draws from each input token. In trained models, these patterns are remarkably interpretable:" },
+    { t: "list", items: [
+      "Syntactic heads often form diagonal patterns (attending to the previous token) or induction patterns",
+      "Coreference heads create off-diagonal spikes connecting pronouns to their antecedents",
+      "Positional heads form banded patterns, attending to fixed relative distances",
+      "Some heads in GPT-2 are \"attention sinks\" — they absorb attention from all tokens but contribute little",
     ]},
 
-    { t: "lab", tab: "career", label: "Prepare your salary negotiation →", desc: "Practice AI engineer technical interviews and positioning in the Career module." },
+    { t: "h2", text: "Multi-head: why one isn't enough" },
+    { t: "p", text: "A single attention head can only capture one type of relationship at once. Multi-head attention runs H independent attention functions with different learned W_Q, W_K, W_V projections. Each head specialises in different syntactic, semantic, or positional relationships. The outputs are concatenated and projected back to d_model." },
+    { t: "callout", v: "tip", text: "Anthropic's mechanistic interpretability research has identified individual attention heads in GPT-2 that implement specific algorithms: induction heads that complete patterns, name-mover heads that copy names, and backup heads that activate only when primary circuits fail." },
+
+    { t: "h2", text: "Causal (masked) self-attention" },
+    { t: "p", text: "In decoder models (GPT-style), tokens can only attend to previous tokens — not future ones. This is enforced by a causal mask: setting future positions to −∞ before softmax. Without this, the model would \"cheat\" during training by reading ahead." },
+
+    { t: "lab", tab: "concepts", label: "Visualise attention patterns →", desc: "See live attention weight matrices for real text in the Concepts module." },
+  ],
+
+  // ─── RAG ARCHITECTURES ───────────────────────────────────────────────────────
+
+  "rag-architectures": [
+    { t: "p", text: "RAG started simple: retrieve some chunks, paste them in the prompt. That naive approach works in demos. It fails in production. Over the past two years, RAG has evolved into a rich family of architectures — each fixing specific failure modes of the version before it." },
+
+    { t: "h2", text: "Naive RAG" },
+    { t: "p", text: "Index documents, embed the query, fetch top-K chunks, concatenate with the query, generate. This is the architecture in every tutorial." },
+    { t: "list", items: [
+      "Breaks on: multi-hop questions, ambiguous queries, stale documents, keyword-heavy queries that semantic search misses",
+      "Good for: simple Q&A over a single well-structured knowledge base",
+      "When to use: prototyping, internal tools, low-stakes applications",
+    ]},
+
+    { t: "h2", text: "Advanced RAG" },
+    { t: "p", text: "Adds pre-retrieval and post-retrieval steps around the naive core. Pre-retrieval: query rewriting, HyDE (generating a hypothetical answer and using it as the query), query decomposition. Post-retrieval: reranking, context compression, citation grounding." },
+    { t: "callout", v: "key", text: "Query rewriting alone improves retrieval recall by 15–40% in most benchmarks. Instead of embedding the raw user query, generate 3 paraphrases and retrieve for all 3, then deduplicate and rerank. This costs one extra LLM call and consistently improves results." },
+
+    { t: "h2", text: "Modular RAG" },
+    { t: "p", text: "Treats the RAG pipeline as composable modules: query transformer, retriever, reranker, context compressor, generator, post-processor. Each module can be swapped independently. This is the architecture of production RAG systems at scale — routers decide which modules to invoke based on query type." },
+    { t: "table", headers: ["Module", "What it does", "Example implementations"], rows: [
+      ["Query transformer", "Rewrite, decompose, or expand the query", "HyDE, step-back prompting, multi-query"],
+      ["Retriever",         "Fetch candidate chunks",                  "Dense (vector), sparse (BM25), hybrid"],
+      ["Reranker",          "Score and filter retrieved chunks",       "Cross-encoder, Cohere Rerank, LLM judge"],
+      ["Compressor",        "Reduce retrieved context to essentials",  "LLMLingua, selective compression"],
+      ["Generator",         "Produce the answer",                     "GPT-4o, Claude, Llama with citations"],
+    ]},
+
+    { t: "h2", text: "Agentic RAG" },
+    { t: "p", text: "The retriever becomes a tool that an agent can call multiple times, in sequence, with different queries. The agent plans its retrieval strategy based on the query and intermediate results. This handles multi-hop questions naturally — retrieve fact A, observe it, formulate a new query for fact B, retrieve, combine." },
+    { t: "callout", v: "warning", text: "Agentic RAG is powerful but adds latency (multiple retrieval rounds), cost (multiple LLM calls), and failure surface (agent can loop or retrieve irrelevantly). Reach for it when simple RAG demonstrably fails on multi-hop or complex questions — not as a default architecture." },
+
+    { t: "h2", text: "Self-RAG and corrective RAG" },
+    { t: "p", text: "Self-RAG trains the model to emit special tokens deciding whether to retrieve, whether retrieved docs are relevant, and whether the final answer is grounded. Corrective RAG adds a retrieval evaluator that reroutes to web search if local retrieval quality is below threshold. Both treat retrieval as dynamic and conditional, not always-on." },
+
+    { t: "lab", tab: "lab", label: "Configure RAG architecture in RAG Lab →", desc: "Switch between naive, advanced, and modular RAG configurations and measure the quality difference." },
+  ],
+
+  // ─── MULTI-AGENT ORCHESTRATION ───────────────────────────────────────────────
+
+  "multi-agent-orchestration": [
+    { t: "p", text: "A single agent has limited context, limited specialisation, and a single point of failure. Multi-agent systems split work across specialised agents, run tasks in parallel, and implement checks and balances. They're also significantly harder to build correctly." },
+
+    { t: "h2", text: "When to go multi-agent" },
+    { t: "list", items: [
+      "The task is too long for a single context window",
+      "Different subtasks require different specialisations or tools",
+      "Parallelisation would meaningfully reduce wall-clock time",
+      "You want verification: one agent produces, another checks",
+      "The domain has natural decomposition (research agent → writer agent → editor agent)",
+    ]},
+    { t: "callout", v: "warning", text: "Multi-agent adds coordination overhead, inter-agent communication failures, and compound reliability problems. A system of 3 agents each with 95% per-step reliability has a 77% success rate across 6 steps combined. Start single-agent and only add agents when you've hit a concrete wall." },
+
+    { t: "h2", text: "Pattern 1: Supervisor / subagent" },
+    { t: "p", text: "One orchestrator agent receives the task, plans the decomposition, and delegates to specialised subagents. The orchestrator waits for results and synthesises them. This is the most common production pattern — the orchestrator maintains state and handles failures." },
+    { t: "code", lang: "python", label: "Supervisor pattern (LangGraph sketch)", text: `# Supervisor decides which worker to call next
+def supervisor(state):
+    task = state["task"]
+    history = state["history"]
+    # LLM decides: researcher | writer | editor | FINISH
+    next_worker = llm.invoke(supervisor_prompt.format(task=task, history=history))
+    return {"next": next_worker}
+
+graph.add_node("supervisor", supervisor)
+graph.add_node("researcher", researcher_agent)
+graph.add_node("writer", writer_agent)
+graph.add_conditional_edges("supervisor",
+    lambda s: s["next"],
+    {"researcher": "researcher", "writer": "writer", "FINISH": END})` },
+
+    { t: "h2", text: "Pattern 2: Pipeline" },
+    { t: "p", text: "Agents are chained sequentially — the output of each becomes the input of the next. No central orchestrator. Simple to reason about, easy to debug, but inflexible: if step 3 fails, you can't route back to step 1 without restarting the whole pipeline." },
+
+    { t: "h2", text: "Pattern 3: Mesh / peer-to-peer" },
+    { t: "p", text: "Agents communicate directly with each other, dynamically choosing who to consult. Most flexible, most complex. Used in research systems (AutoGen, CAMEL). Rarely seen in production due to unpredictable communication patterns and cost." },
+
+    { t: "h2", text: "Inter-agent communication" },
+    { t: "p", text: "Agents can communicate via shared memory (a common state object), message passing (explicit messages), or tool calls (agent A exposes itself as a tool that agent B can call). Shared state is easiest to implement; message passing is most explicit and debuggable." },
+
+    { t: "h2", text: "Failure budgets and guardrails" },
+    { t: "list", items: [
+      "Set max_steps per agent and max_total_steps for the whole system",
+      "Checkpoint shared state so partial failures can be resumed, not restarted",
+      "Build a \"stuck\" detector: if two consecutive steps produce identical state, escalate to human",
+      "Rate-limit inter-agent calls to prevent runaway message loops",
+      "Define a clear success condition — agents should self-terminate, not rely on step exhaustion",
+    ]},
+
+    { t: "lab", tab: "agents", label: "Trace multi-agent execution →", desc: "Watch supervisor and subagent interactions step by step in the Agents Lab." },
+  ],
+
+  // ─── GUARDRAILS FOR LLMS ─────────────────────────────────────────────────────
+
+  "guardrails-for-llms": [
+    { t: "p", text: "Guardrails are the safety layer between your users and your model. They intercept inputs before they reach the LLM and outputs before they reach the user, filtering, transforming, or blocking content that violates your policies." },
+
+    { t: "h2", text: "Input guardrails" },
+    { t: "list", items: [
+      "Topic filter: block off-topic or out-of-scope queries before they consume tokens",
+      "PII detector: identify and redact phone numbers, emails, SSNs, credit cards before sending to the model",
+      "Injection detector: classify whether input looks like a prompt injection attempt",
+      "Toxicity classifier: block abusive inputs using a fast binary classifier",
+      "Jailbreak detector: catch common jailbreak patterns (DAN, role-play escapes, encoding tricks)",
+    ]},
+    { t: "code", lang: "python", label: "Layered input guardrail pipeline", text: `def check_input(user_message: str) -> tuple[bool, str]:
+    """Returns (is_allowed, reason)"""
+
+    # 1. PII detection (fast regex + NER)
+    if contains_pii(user_message):
+        return False, "pii_detected"
+
+    # 2. Topic relevance (small classifier, <10ms)
+    if not is_on_topic(user_message, allowed_topics=["product", "support"]):
+        return False, "off_topic"
+
+    # 3. Injection risk (embedding similarity to known attacks)
+    if injection_score(user_message) > 0.85:
+        return False, "injection_detected"
+
+    return True, "ok"` },
+
+    { t: "h2", text: "Output guardrails" },
+    { t: "list", items: [
+      "Hallucination check: verify claims against retrieved context using an NLI model",
+      "PII leak detector: ensure model didn't reproduce PII from context into the response",
+      "Toxicity filter: block harmful outputs before delivery",
+      "Format validator: ensure structured outputs match the expected schema",
+      "Citation checker: verify that cited sources actually support the claims made",
+    ]},
+
+    { t: "h2", text: "Architecture: where to place guardrails" },
+    { t: "p", text: "Guardrails can run synchronously (blocking — adds latency) or asynchronously (non-blocking — you deliver the response and log violations for review). For safety-critical applications, synchronous input + output checks are mandatory. For high-volume consumer applications, async output checking with human review is more practical." },
+    { t: "callout", v: "key", text: "The fastest guardrails run in 5–20ms (regex, small classifiers). The most accurate run in 100–500ms (LLM-based judges). Design your pipeline to run fast checks first and only invoke expensive checks when the cheap ones raise flags." },
+
+    { t: "h2", text: "Off-the-shelf vs. custom" },
+    { t: "table", headers: ["Option", "Latency", "Accuracy", "Customisability"], rows: [
+      ["Llama Guard (Meta)", "50–200ms", "Good for common categories", "Fine-tuneable"],
+      ["Azure Content Safety", "100–300ms", "Strong on CSAM, violence, hate", "Limited"],
+      ["Guardrails AI", "Varies", "Modular, schema validation", "High — composable"],
+      ["NeMo Guardrails", "100–400ms", "Dialogue flows + policies", "High"],
+      ["Custom classifier", "5–50ms", "Best for domain-specific", "Full control"],
+    ]},
+
+    { t: "lab", tab: "concepts", label: "Explore guardrails in Concepts →", desc: "See input and output filtering in action on the platform." },
+  ],
+
+  // ─── AI SYSTEM DESIGN FRAMEWORK ──────────────────────────────────────────────
+
+  "ai-system-design-framework": [
+    { t: "p", text: "AI system design interviews are different from traditional system design. You're not just designing a scalable service — you're designing a system with probabilistic components, uncertain quality, and failure modes that don't show up in unit tests. Interviewers at staff+ level expect you to handle this difference explicitly." },
+
+    { t: "h2", text: "The 6-axis characterisation (do this first)" },
+    { t: "p", text: "Before drawing any boxes, characterise the problem on 6 axes. This forces precision and signals experience:" },
+    { t: "table", headers: ["Axis", "Questions to answer"], rows: [
+      ["Quality vs. speed",    "What's the latency SLA? Can we afford streaming? Does quality trump speed?"],
+      ["Scale",               "QPS, document count, context length, user count — order of magnitude"],
+      ["Data freshness",       "Does knowledge need to be real-time? Daily? How stale is acceptable?"],
+      ["Personalisation",      "Per-user context? Multi-tenant? Global shared context?"],
+      ["Failure tolerance",    "What's the blast radius of a wrong answer? Is hallucination an incident?"],
+      ["Regulatory/compliance","PII handling? Data residency? Audit trails?"],
+    ]},
+
+    { t: "h2", text: "Choosing your architecture shape" },
+    { t: "p", text: "Based on the 6-axis characterisation, you'll land on one of four shapes:" },
+    { t: "list", items: [
+      "Simple RAG: knowledge retrieval, low real-time requirements, single-hop questions",
+      "Agentic RAG: complex queries, multi-hop reasoning, tool use needed",
+      "Fine-tuned model: behaviour change needed, not just knowledge; stable task definition",
+      "Hybrid pipeline: different query types route to different sub-systems",
+    ]},
+
+    { t: "h2", text: "The components every AI system needs" },
+    { t: "table", headers: ["Component", "Why it matters", "Common mistake"], rows: [
+      ["Eval pipeline",     "You can't measure quality without one",      "Skipping it until something breaks"],
+      ["Observability",     "You can't debug what you can't see",         "Only logging errors, not quality signals"],
+      ["Fallback strategy", "LLMs fail — you need a graceful degradation","Hard-coding one path with no fallback"],
+      ["Rate limiting",     "Runaway agents burn budget fast",            "No per-user or per-session limits"],
+      ["Human-in-the-loop", "High-consequence actions need approval gates","Automating actions with blast radius"],
+    ]},
+
+    { t: "h2", text: "Structuring your 45-minute answer" },
+    { t: "list", items: [
+      "0–5 min: clarify requirements, do the 6-axis characterisation out loud",
+      "5–15 min: high-level architecture — name the shape, draw the data flow",
+      "15–30 min: deep-dive on the hardest component (usually retrieval or eval)",
+      "30–40 min: failure modes — what breaks, how you detect it, how you recover",
+      "40–45 min: scale and cost — rough numbers, bottlenecks, how it changes at 10× traffic",
+    ]},
+    { t: "callout", v: "key", text: "The question interviewers are really asking: do you think about AI systems like a production engineer or like someone who's only built demos? Talking about eval pipelines, failure modes, and cost budgets unprompted is the signal that separates principal engineers from senior ones." },
+
+    { t: "lab", tab: "systems", label: "Practice system design →", desc: "Work through AI system design scenarios in the Systems module with structured feedback." },
+  ],
+
+  // ─── LLM INTERVIEW QUESTION PATTERNS ─────────────────────────────────────────
+
+  "llm-interview-question-patterns": [
+    { t: "p", text: "LLM engineering interviews have converged on a set of question categories that show up consistently across Google, Meta, Anthropic, OpenAI, and AI-native startups. Knowing the categories lets you prepare efficiently rather than guessing what might come up." },
+
+    { t: "h2", text: "The 8 question categories" },
+    { t: "table", headers: ["Category", "What they're testing", "Example questions"], rows: [
+      ["Architecture fundamentals", "Do you understand the mechanics?", "Explain self-attention. What is positional encoding for?"],
+      ["RAG design",               "Can you build a production retrieval system?", "Design a RAG pipeline for a 10M-document corpus. How do you handle stale docs?"],
+      ["Evaluation",               "Do you know how to measure quality?", "How would you evaluate a RAG system? What's faithfulness vs. answer relevance?"],
+      ["Failure modes",            "Have you shipped things that broke?", "What fails in a RAG pipeline? How do you debug a hallucinating agent?"],
+      ["Agent systems",            "Can you build multi-step systems?", "Design a ReAct agent for X. How do you prevent infinite loops?"],
+      ["Cost/latency",             "Do you think about production economics?", "How would you reduce inference cost by 50%? What's TTFT and why does it matter?"],
+      ["System design",            "Can you architect at scale?", "Design an LLM-powered search for an e-commerce site with 1M products."],
+      ["Trade-offs",               "Can you reason about decisions?", "RAG vs. fine-tuning for domain adaptation — when would you choose each?"],
+    ]},
+
+    { t: "h2", text: "The 4-layer answer structure" },
+    { t: "p", text: "For technical questions, structure answers in 4 layers. This signals depth without rambling:" },
+    { t: "list", items: [
+      "Layer 1 — Definition: what is it? One sentence. Precise.",
+      "Layer 2 — Mechanism: how does it work? Two to three sentences, no hand-waving.",
+      "Layer 3 — Trade-offs: when does it fail? What's the cost? What's the alternative?",
+      "Layer 4 — Production experience: when have you used it or seen it break?",
+    ]},
+    { t: "callout", v: "tip", text: "Most candidates answer at Layer 1 or 2 and stop. The interview is won at Layer 3 and 4. If you don't have production experience, use the labs here to generate real examples — \"I reproduced the missing context failure on a 500-chunk corpus and measured a 23% precision drop\" is far better than a textbook definition." },
+
+    { t: "h2", text: "The traps interviewers use" },
+    { t: "list", items: [
+      "\"Just explain it simply\" — they want to see if you can explain clearly, not if you'll drop all precision",
+      "\"What would you do differently?\" after you answer — they're testing whether you can self-critique",
+      "Giving you a system with no eval — they're waiting to see if you notice and call it out",
+      "Asking about a technique and then asking when you wouldn't use it — they want the failure mode",
+      "\"How would you debug that?\" — they want a systematic process, not guessing",
+    ]},
+
+    { t: "h2", text: "Top 10 questions to prepare cold" },
+    { t: "list", items: [
+      "Explain self-attention and why it works better than RNNs for long sequences",
+      "Design a RAG system for a customer support bot. What metrics would you track?",
+      "What is RAGAS and what does faithfulness actually measure?",
+      "How does prompt caching work and when does it pay off?",
+      "What are the failure modes of a ReAct agent in production?",
+      "Fine-tuning vs. RAG: give me a concrete scenario where you'd choose each",
+      "How would you detect hallucinations in a RAG system at scale?",
+      "What is positional encoding and what problem does it solve?",
+      "Design a model routing system that reduces inference cost by 60%",
+      "How do you build an eval pipeline before you have ground truth labels?",
+    ]},
+
+    { t: "lab", tab: "fluency", label: "Drill these questions in Fluency →", desc: "Practice timed answers to LLM interview questions with structured feedback." },
+  ],
+
+  // ─── PRD FOR AI ──────────────────────────────────────────────────────────────
+
+  "prd-for-ai": [
+    { t: "p", text: "AI PRDs break traditional product specification. The core problem: traditional PRDs assume deterministic systems. AI features are probabilistic — the \"feature\" is a statistical distribution of outputs, not a defined behaviour. This changes almost everything about how you write the spec." },
+
+    { t: "h2", text: "What's different about AI PRDs" },
+    { t: "table", headers: ["Traditional PRD", "AI PRD"], rows: [
+      ["\"The feature does X\"",            "\"The feature does X in Y% of cases, degrades gracefully in Z%\""],
+      ["Success = function works",          "Success = eval metrics above threshold on golden test set"],
+      ["Bugs are binary (fixed/not fixed)", "Quality is a continuous distribution that shifts with data"],
+      ["Rollback = revert code",           "Rollback = revert model or prompt version"],
+      ["\"Done\" is clear",               "\"Done\" requires ongoing monitoring and eval gates"],
+    ]},
+
+    { t: "h2", text: "The AI PRD template" },
+    { t: "list", items: [
+      "Problem statement: what user need does this solve? What's the baseline (no AI) experience?",
+      "AI approach: RAG / fine-tuning / prompting / agent — and why not the alternatives",
+      "Input/output spec: what goes in, what comes out, what's the acceptable output distribution",
+      "Evaluation criteria: specific metrics (faithfulness > 0.9, TTFT < 500ms) that define \"done\"",
+      "Failure modes: what does a bad output look like? What are the acceptance criteria?",
+      "Fallback behaviour: what happens when the model fails, is slow, or returns low-confidence output",
+      "Human-in-the-loop: which decisions require human approval? What escalation paths exist?",
+      "Data requirements: what data is needed for eval? For fine-tuning? Who labels it?",
+      "Monitoring plan: what signals indicate degradation post-launch? Who owns the alert?",
+    ]},
+
+    { t: "callout", v: "key", text: "The most important section most AI PRDs are missing: fallback behaviour. What does the user experience when the model fails? \"Show an error message\" is not an answer. Good AI PMs design the failure path as carefully as the success path." },
+
+    { t: "h2", text: "Writing evaluation criteria" },
+    { t: "p", text: "Eval criteria must be specific, measurable, and agreed on before engineering starts. Vague criteria like \"responses should be accurate\" cause scope disputes at launch. Good criteria look like:" },
+    { t: "list", items: [
+      "Faithfulness score ≥ 0.90 on the golden test set (measured by RAGAS)",
+      "P99 end-to-end latency ≤ 3,000ms under 100 concurrent users",
+      "Hallucination rate (NLI-flagged) ≤ 2% on the held-out evaluation set",
+      "Human preference rate ≥ 70% over the baseline (no-AI) experience in A/B test",
+    ]},
+
+    { t: "h2", text: "The AI launch gate" },
+    { t: "p", text: "Define a binary launch gate: a set of criteria that must all pass before the feature ships. This replaces intuition-based \"looks good to me\" sign-offs with objective thresholds. The eval pipeline runs automatically and blocks launch if any criterion fails." },
+
+    { t: "lab", tab: "aipm", label: "Practice AI PRD writing →", desc: "Work through a real AI feature spec in the AI PM module with structured feedback." },
+  ],
+
+  // ─── HYBRID SEARCH ───────────────────────────────────────────────────────────
+
+  "hybrid-search": [
+    { t: "p", text: "Pure semantic search misses exact matches. If a user asks \"what is the CVE-2024-1234 vulnerability?\", a dense vector retriever will find vaguely security-related chunks, not the one that contains that exact CVE ID. Pure keyword search misses meaning — \"car\" and \"automobile\" are unrelated to BM25." },
+    { t: "p", text: "Hybrid search combines both. Run dense retrieval and sparse (keyword) retrieval in parallel, then fuse the results. The combination consistently outperforms either approach alone." },
+
+    { t: "h2", text: "Dense vs. sparse retrieval" },
+    { t: "table", headers: ["Property", "Dense (vector)", "Sparse (BM25/TF-IDF)"], rows: [
+      ["Best for",     "Semantic similarity, paraphrases",    "Exact matches, rare terms, IDs"],
+      ["Misses",       "Rare words, IDs, code, model names",  "Paraphrases, synonyms, meaning"],
+      ["Speed",        "Fast with ANN index",                 "Very fast — inverted index"],
+      ["Index size",   "Large (float32 vectors)",             "Compact (sparse integers)"],
+      ["Training needed","Yes — embedding model",             "No — pure statistics"],
+    ]},
+
+    { t: "h2", text: "Reciprocal Rank Fusion (RRF)" },
+    { t: "p", text: "RRF is the standard fusion algorithm. For each candidate document, its score is the sum of 1/(k + rank) across all retrievers, where k is a smoothing constant (typically 60). This is rank-based, not score-based — it doesn't require normalising the outputs of different retrievers." },
+    { t: "code", lang: "python", label: "RRF fusion", text: `def rrf_fusion(dense_results, sparse_results, k=60):
+    """
+    dense_results, sparse_results: lists of (doc_id, score) sorted by score desc
+    Returns merged list sorted by RRF score desc
+    """
+    scores = {}
+    for rank, (doc_id, _) in enumerate(dense_results):
+        scores[doc_id] = scores.get(doc_id, 0) + 1 / (k + rank + 1)
+    for rank, (doc_id, _) in enumerate(sparse_results):
+        scores[doc_id] = scores.get(doc_id, 0) + 1 / (k + rank + 1)
+
+    return sorted(scores.items(), key=lambda x: x[1], reverse=True)` },
+
+    { t: "h2", text: "When hybrid search pays off most" },
+    { t: "list", items: [
+      "Technical documentation: contains model names, error codes, function signatures — exact match is critical",
+      "Legal / medical: specific terminology, case numbers, drug names must match precisely",
+      "Multi-language corpora: semantic search underperforms on rare languages; BM25 is language-agnostic",
+      "Product catalogues: SKUs, barcodes, exact product names need keyword matching",
+    ]},
+    { t: "callout", v: "key", text: "In Weaviate and Qdrant, hybrid search is built-in. In pgvector, combine with Postgres full-text search (tsvector). In Pinecone, their sparse-dense index supports hybrid natively. The routing logic is trivial — the infrastructure is already there." },
+
+    { t: "lab", tab: "lab", label: "Toggle hybrid search in RAG Lab →", desc: "Compare dense-only vs. hybrid retrieval on queries that require exact matching." },
+  ],
+
+  // ─── BREAKING INTO AI ────────────────────────────────────────────────────────
+
+  "breaking-into-ai": [
+    { t: "p", text: "The barrier to becoming an AI engineer is lower than it's ever been — and the demand is higher than it's ever been. If you're already a software engineer, you're 70% of the way there. The remaining 30% is specific and learnable in 3–6 months with focused effort." },
+
+    { t: "h2", text: "What you don't need" },
+    { t: "list", items: [
+      "A PhD or ML research background — production AI engineering is software engineering with LLM APIs",
+      "To retrain models from scratch — 95% of AI engineering uses foundation models via API",
+      "Deep PyTorch knowledge — helpful, but not required for most AI engineer roles",
+      "A new degree or bootcamp — self-directed learning with real projects is more credible",
+    ]},
+
+    { t: "h2", text: "The 3-phase learning path" },
+    { t: "table", headers: ["Phase", "Duration", "Goal", "Key outputs"], rows: [
+      ["Foundations",  "Month 1",   "Understand how LLMs work",           "Can explain attention, RAG, evals credibly in an interview"],
+      ["Build",        "Months 2–3","Ship two real projects",             "RAG system + agent with proper evals — in a public GitHub repo"],
+      ["Specialise",   "Months 4–6","Go deep on one area",                "Become the person who knows LangGraph / RAGAS / vLLM deeply"],
+    ]},
+
+    { t: "h2", text: "The two projects that open doors" },
+    { t: "p", text: "Recruiters and hiring managers see hundreds of portfolios. These two project types consistently stand out because they demonstrate production thinking, not just tutorial execution:" },
+    { t: "list", items: [
+      "Project 1 — Production RAG system: build a RAG pipeline over a real document corpus (your own docs, a public dataset, a domain you know). Include chunking experiments, an evaluation script with RAGAS metrics, and a write-up of what broke and why. The eval script is what makes it stand out.",
+      "Project 2 — Multi-step agent: build an agent that uses at least 3 tools, handles failures gracefully, and has a max_steps limit and a logging system. The failure handling and logging are the differentiators.",
+    ]},
+    { t: "callout", v: "key", text: "The single most differentiated portfolio signal: an evaluation script. Almost no entry-level AI portfolios have one. If your RAG project includes `eval.py` that runs RAGAS on a golden test set and reports faithfulness/precision/recall, you will stand out from 90% of candidates." },
+
+    { t: "h2", text: "Resources that actually move the needle" },
+    { t: "list", items: [
+      "This platform — Ground Truth for depth, labs for hands-on practice, Fluency for interview prep",
+      "fast.ai Practical Deep Learning — best intuition-first deep learning course, free",
+      "Andrej Karpathy's YouTube — build a GPT from scratch, tokeniser from scratch, neural net from scratch",
+      "LangChain / LangGraph docs + source code — read how production orchestration is actually built",
+      "RAGAS GitHub — understand every metric, read the evaluation code, not just the docs",
+      "Papers: \"Attention Is All You Need\", \"RAG\" (Lewis et al.), \"ReAct\" — the three foundational papers",
+    ]},
+
+    { t: "h2", text: "Timeline reality check" },
+    { t: "p", text: "3–6 months assumes 1–2 hours of focused learning per weekday and meaningful weekend project time. Most people underestimate the project time and overestimate the tutorial time. The tutorials are not the work — the projects are the work." },
+
+    { t: "lab", tab: "career", label: "Start your AI career prep →", desc: "Use the Career module to benchmark where you are and what to work on next." },
+  ],
+
+  // ─── LLMOPS PRODUCTION CHECKLIST ─────────────────────────────────────────────
+
+  "llmops-production-checklist": [
+    { t: "p", text: "Every production AI system needs the same set of infrastructure that tutorial content skips. This is the checklist. If you can't check every box, your system is not production-ready — it's a demo that's somehow in production." },
+
+    { t: "h2", text: "Before you deploy" },
+    { t: "list", items: [
+      "✓ Eval pipeline: offline evaluation on ≥100 golden examples with defined pass/fail thresholds",
+      "✓ Prompt versioning: prompts checked into version control, not hardcoded strings",
+      "✓ Cost estimate: monthly cost projection at expected QPS — reviewed and approved",
+      "✓ Latency SLA: P50 and P99 targets defined, measured in staging, not guessed",
+      "✓ Fallback path: clear degraded mode (simpler model, cached response, or graceful error)",
+      "✓ Rate limiting: per-user and per-session token limits to prevent runaway costs",
+    ]},
+
+    { t: "h2", text: "Observability (what to instrument)" },
+    { t: "list", items: [
+      "Every LLM call: trace ID, model, latency (TTFT + total), token counts, cost, feature, user ID",
+      "Quality signals: thumbs up/down, explicit ratings, task completion flags",
+      "Retrieval metrics (for RAG): chunks retrieved, reranker scores, context utilisation rate",
+      "Agent metrics: steps per task, tool call distribution, success/failure/timeout rates",
+      "Cost alerts: daily/monthly spend alerts at 50%, 80%, 100% of budget",
+    ]},
+
+    { t: "h2", text: "Prompt management" },
+    { t: "p", text: "Prompts are code. They have versions, they cause regressions, and they need to be deployed safely. At minimum: store prompts in version control with semantic versioning, run your eval suite before promoting a new prompt version, and maintain the ability to rollback to a previous prompt in under 5 minutes." },
+    { t: "callout", v: "warning", text: "The most common LLMOps failure: a well-intentioned prompt tweak that ships without running evals and degrades the model's behaviour on edge cases that weren't manually tested. Eval gates before promotion are non-negotiable." },
+
+    { t: "h2", text: "Ongoing operations" },
+    { t: "table", headers: ["Cadence", "What to review"], rows: [
+      ["Daily",    "Cost vs. budget, error rate, P99 latency, flagged outputs"],
+      ["Weekly",   "Quality signal trends, eval score vs. baseline, top failure patterns"],
+      ["Monthly",  "Full eval suite run, prompt performance review, model upgrade consideration"],
+      ["Quarterly","RAG index freshness audit, eval set expansion, cost optimisation review"],
+    ]},
+
+    { t: "lab", tab: "systems", label: "Build your LLMOps stack →", desc: "Configure observability, prompt versioning, and eval pipelines in the Systems module." },
   ],
 
 };

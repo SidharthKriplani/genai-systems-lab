@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { track } from "./analytics";
 import { POST_CONTENT } from "./groundTruthPosts";
 import TransformerWalkthrough from "./TransformerWalkthrough";
+import SalaryCalculator from "./SalaryCalculator";
 
 // Every post maps to at least one interactive module on the platform.
 // "labLink" is where the reader goes to test what they just read.
@@ -114,6 +115,7 @@ function Block({ b, onNavigate, color }) {
       );
     case "animation":
       if (b.name === "transformer") return <TransformerWalkthrough />;
+      if (b.name === "salary-calc") return <SalaryCalculator />;
       return null;
     default:
       return null;
@@ -1088,8 +1090,11 @@ export default function GroundTruth({ onNavigate }) {
     return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onNavigate={onNavigate} />;
   }
 
-  const visible = filter === "all" ? POSTS : POSTS.filter(p => p.category === filter);
-  const total = POSTS.length;
+  // Only show posts that have written content
+  const WRITTEN = POSTS.filter(p => !!POST_CONTENT[p.id]);
+  const visible = filter === "all" ? WRITTEN : WRITTEN.filter(p => p.category === filter);
+  const total = WRITTEN.length;
+  const totalPlanned = POSTS.length;
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -1107,19 +1112,20 @@ export default function GroundTruth({ onNavigate }) {
           </p>
         </div>
 
-        {/* Coming soon banner */}
+        {/* Progress banner */}
         <div className="rounded-xl border border-violet-900/50 bg-violet-950/20 px-4 py-3 mb-8 flex items-center gap-3">
           <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse shrink-0" />
           <p className="text-sm text-violet-300">
-            <span className="font-bold">{total} pieces planned.</span>
-            <span className="text-violet-400"> Topics are locked in — writing now. Check back soon.</span>
+            <span className="font-bold">{total} pieces live.</span>
+            <span className="text-violet-400"> {totalPlanned - total} more in the writing queue — check back soon.</span>
           </p>
         </div>
 
         {/* Category filter */}
         <div className="flex flex-wrap gap-2 mb-8">
           {CATEGORIES.map(c => {
-            const count = c.id === "all" ? POSTS.length : POSTS.filter(p => p.category === c.id).length;
+            const count = c.id === "all" ? WRITTEN.length : WRITTEN.filter(p => p.category === c.id).length;
+            if (count === 0) return null;
             return (
               <button
                 key={c.id}
@@ -1200,7 +1206,7 @@ export default function GroundTruth({ onNavigate }) {
 
         {/* Footer */}
         <div className="mt-12 text-center space-y-1">
-          <p className="text-xs text-zinc-600 font-mono">{total} pieces · every one links to an interactive module</p>
+          <p className="text-xs text-zinc-600 font-mono">{total} pieces live · {totalPlanned - total} more coming · every piece links to an interactive module</p>
           <button onClick={() => onNavigate("home")}
             className="text-xs text-zinc-500 hover:text-white transition-colors font-mono underline">
             ← Back to Home
