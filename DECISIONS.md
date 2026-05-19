@@ -44,6 +44,14 @@ The original scope was Concepts + RAG Lab. Everything else grew organically from
 
 **Why:** Simplicity over architecture purity. No routing library, no state management library, no context API. State is lifted only as far as needed. The app is complex enough in content; it doesn't need additional architectural complexity.
 
+### Ground Truth post rendering
+
+**Decision:** All Ground Truth post content lives in `src/groundTruthPosts.js` as a flat JS object keyed by post ID. Each post is an array of typed content blocks. The renderer in `GroundTruth.jsx` maps block types to JSX — no markdown parser, no MDX build step.
+
+**Why:** MDX requires a compilation step and a more complex build pipeline. A plain JS object is trivially tree-shakeable, has zero build overhead, and is dead-simple to extend (add a new block type = add a new `case` in the renderer). The tradeoff is that content is slightly less readable than Markdown — acceptable because the author is technical.
+
+**Block types:** `p`, `h2`, `h3`, `callout`, `code`, `list`, `table`, `lab`, `video`, `animation`, `divider`, `quote`, `references`. The `references` block renders a numbered bibliography with external links — primarily for SEO and credibility.
+
 ---
 
 ## 3. Product decisions
@@ -99,6 +107,14 @@ The original scope was Concepts + RAG Lab. Everything else grew organically from
 
 **Decided:** Always tag. The risk of a user thinking they're seeing real frontier model internals is a bigger reputational problem than the slight friction of the badge. Transparency builds trust. Hiding simplification destroys it when someone finds out.
 
+### Ground Truth: content over quantity, then both
+
+**Decision:** Ground Truth launched with ~37 posts. In a focused sprint (May 2026), all pending posts were written — bringing the total to 83. All posts follow a consistent structure: narrative hook, technical depth, code samples where relevant, quote blocks for human voice, and a `references` block with real external citations for SEO and credibility.
+
+**Content tone decision:** Posts are written with a "knowledgeable colleague" voice — technically precise but not academic. Emotional hooks and real-world failure stories are used deliberately to give the platform character. The goal is that readers finish a post feeling like they've talked to someone who's shipped this in production, not read a textbook.
+
+**Reading progress bar:** Added to PostDetail — a thin colour-coded bar at the top of the viewport that fills as the user scrolls. Colour matches the post's category accent. Implemented as a scroll event listener on a `ref` to the article container.
+
 ---
 
 ## 4. Features added in order
@@ -114,6 +130,12 @@ The original scope was Concepts + RAG Lab. Everything else grew organically from
 | Scroll fade on dense pill rows | Systems (15 modules) and Agents (7 modules) pill rows overflow on mobile with no visual affordance. Added right-edge gradient fade via absolute positioned overlay. |
 | OG image for WhatsApp/Twitter | The app had no `og:image` meta tag, so link previews were blank. Generated a 1200×630 PNG using Python PIL and added full Open Graph meta tags to `index.html`. |
 | Credibility badges | See section 3 above. |
+| Ground Truth blog section | 83 posts covering foundations, RAG, agents, evals, LLMOps, system design, production failures, AI careers, industry AI, model profiles. Every post has references + reading progress bar. |
+| TransformerWalkthrough animation | Interactive 10-step visual walkthrough of transformer architecture — built as a custom React component with SVG animations, step navigation, and colour-coded data flow. |
+| YouTube video embeds in posts | 7 key posts have embedded YouTube videos (Karpathy, 3Blue1Brown) to pair watching with reading without leaving the page. |
+| Per-post dynamic meta tags | PostDetail sets `document.title` and the meta description tag dynamically on mount — so browser tabs show post titles and sharing produces meaningful previews. |
+| Salary calculator | Interactive calculator in the AI Salary Guide post — role × level × geography → total comp estimate. Client-side, no API. |
+| AI Role Tech Stack matrix | Post covering minimum expected tech stack per role (AI Eng, MLE, MLOps, Technical PM, Non-Technical PM, FDE) at entry/mid/senior levels across company tiers. |
 
 ---
 
@@ -170,15 +192,18 @@ Stage 3 (month 12–24): Interview mode, team/org pricing, gap analysis report. 
 
 ---
 
-## 7. Current locked scope (as of May 2026)
+## 7. Current state (as of May 2026)
 
-The app is in **maintenance mode**. No new product expansion.
+**Ground Truth is complete.** 83 posts written across all planned categories. Every post has:
+- Narrative hook / opening that earns the read
+- Technical depth with code samples where relevant
+- `references` block with real external citations
+- `quote` blocks for human voice in most posts
+- Reading progress bar (UI feature added to PostDetail)
 
-What this means in practice:
-- Fix genuine bugs and broken UI
-- Fix copy issues or misleading text
-- Keep dependencies current
-- Collect user feedback via private sharing
+The interactive platform (11 tabs) is also feature-complete for the current scope.
+
+The app is in **active distribution mode** — not building new features, but distributing what exists. Priority: get real users in, collect signal on which posts and modules drive the deepest engagement.
 
 What is explicitly not on the roadmap right now:
 - New tabs or tracks
@@ -214,6 +239,8 @@ The genuine moat vs YouTube, DeepLearning.AI, fast.ai, and blog posts:
 **You have to make decisions, not watch decisions being made.** Every other resource shows you what to do. The RAG Lab makes you configure the system and watch it fail. That pedagogical difference is the moat.
 
 **The production failure case library as a proprietary dataset.** If curated to 30–50 real production incident patterns with structured diagnosis and explanation — the kind of knowledge that only comes from being in AI engineering — that becomes something nobody else has. YouTube can't replicate it because it requires structured interactive format. DeepLearning.AI won't touch it because it's too niche for their scale.
+
+**83 posts with production depth and citations.** Ground Truth is now the largest free resource of its kind specifically covering production GenAI systems — not introductory ML, not research papers, but the specific knowledge needed to build and operate real AI systems. That library compounds over time as it gets indexed and linked.
 
 The positioning that best captures this: *"The only place you practice diagnosing production GenAI failures before your first on-call shift."*
 

@@ -1162,86 +1162,209 @@ top_5 = [chunk for _, chunk in ranked[:5]]` },
   // ─── HOW CLAUDE WORKS ────────────────────────────────────────────────────────
 
   "how-claude-works": [
-    { t: "p", text: "Claude is Anthropic's AI assistant, built on a family of large language models. Understanding what makes Claude architecturally and behaviourally different from other frontier models is useful both for using it effectively and for understanding how AI safety shapes model design." },
-    { t: "video", youtubeId: "zjkBMFhNj_g", label: "Andrej Karpathy — Intro to Large Language Models (covers the pretraining + RLHF pipeline all frontier models including Claude are built on)" },
+    { t: "p", text: "Claude is Anthropic's AI assistant — and the model underneath it was built differently from other frontier models. Not just different architecture choices, but a fundamentally different philosophy about how to align an AI system with human values. That difference shows up in how Claude behaves at the edges: when asked something ambiguous, something borderline, or something where the right answer is genuinely hard." },
+    { t: "video", youtubeId: "zjkBMFhNj_g", label: "Andrej Karpathy — Intro to Large Language Models (the best 1-hour overview of how frontier models like Claude are built from pretraining through fine-tuning)" },
 
-    { t: "h2", text: "The model family" },
+    { t: "h2", text: "The model family (as of 2025)" },
     { t: "table", headers: ["Model", "Best for", "Context window", "Relative speed"], rows: [
-      ["Claude Opus",   "Complex reasoning, research, long-form analysis", "200K tokens", "Slowest / highest quality"],
-      ["Claude Sonnet", "Balanced performance and speed — most production use", "200K tokens", "Fast"],
-      ["Claude Haiku",  "High-volume, latency-sensitive tasks", "200K tokens", "Fastest / most cost-effective"],
+      ["Claude Opus 4",   "Complex reasoning, research, long-form analysis, hard agentic tasks", "200K tokens", "Slowest / highest quality"],
+      ["Claude Sonnet 4", "Balanced performance and speed — most production use cases", "200K tokens", "Fast"],
+      ["Claude Haiku 4",  "High-volume, latency-sensitive, cost-sensitive tasks", "200K tokens", "Fastest / most cost-effective"],
     ]},
+    { t: "callout", v: "key", text: "The naming convention: Opus > Sonnet > Haiku in capability (and cost). Sonnet is the workhorse for most production deployments. Haiku is what you use when you need Claude at scale. Opus is for when quality matters more than cost." },
 
-    { t: "h2", text: "Constitutional AI: how Claude is trained" },
-    { t: "p", text: "Claude is trained using Constitutional AI (CAI), Anthropic's technique for aligning models with a set of explicit principles rather than relying entirely on human feedback. The process has two phases: supervised learning from AI-generated critiques and revisions (not just human labels), followed by RL from AI feedback (RLAIF)." },
-    { t: "callout", v: "key", text: "The \"constitution\" is a set of principles like \"be helpful, harmless, and honest\" that the model is trained to reason about and apply. CAI allows Anthropic to scale alignment without labelling every possible harmful output — the model learns to self-critique." },
-
-    { t: "h2", text: "200K context window: what it means in practice" },
-    { t: "p", text: "200K tokens is ~150,000 words — approximately 500 pages of text. You can pass an entire codebase, a full legal contract, or a book as context in a single call. But long-context performance degrades: information in the middle of a very long context is retrieved less reliably than information at the start or end (the \"lost in the middle\" problem)." },
-
-    { t: "h2", text: "What Claude is distinctively good at" },
+    { t: "h2", text: "Constitutional AI: how Claude is aligned" },
+    { t: "p", text: "Most AI assistants are aligned via RLHF — human labellers rank model outputs, a reward model learns human preferences, and the model is trained via RL to maximise that reward. Anthropic's Claude uses a different approach: Constitutional AI (CAI)." },
+    { t: "p", text: "In CAI, the model is given a set of explicit principles — the 'constitution' — and trained to critique and revise its own outputs against those principles. Instead of relying entirely on human labellers to identify bad outputs, the model learns to reason about whether its outputs satisfy the principles directly." },
     { t: "list", items: [
-      "Long-document analysis — 200K context with strong extraction from large documents",
-      "Code generation and review — consistently top-tier on HumanEval and SWE-bench",
-      "Nuanced instruction following — strong at complex, multi-part instructions with competing constraints",
-      "Refusing gracefully — trained to say no helpfully, not just refuse and stop",
-      "Agentic tasks — Claude 3+ models are specifically optimised for multi-step tool use",
+      "Phase 1 — Supervised: model critiques its own harmful outputs and generates revisions; trains on those revisions",
+      "Phase 2 — RLAIF: a feedback model (trained on the constitution) scores outputs instead of human labellers; RL on those scores",
+      "Result: a model that can reason about its own values, not just pattern-match to previously-labelled harmful outputs",
     ]},
+    { t: "callout", v: "tip", text: "This is why Claude often explains its reasoning when declining a request rather than just refusing. It's trained to be transparent about the principle it's applying — which makes it more useful for developers who need to understand where the guardrails are." },
 
-    { t: "h2", text: "The Anthropic API" },
-    { t: "code", lang: "python", label: "Basic Claude API call", text: `import anthropic
+    { t: "h2", text: "200K context window — and the lost-in-the-middle caveat" },
+    { t: "p", text: "200K tokens (~150,000 words, ~500 pages) is a genuine capability advantage. You can pass an entire codebase, a full legal agreement, or a large corpus of documents in a single call. But there's a catch: attention doesn't distribute evenly across a long context." },
+    { t: "p", text: "Research (and empirical testing) consistently shows that information in the middle of a very long context is attended to less reliably than information near the start or end. For retrieval tasks in long-context RAG, this means your most relevant passage should be at the top or bottom of the injected context — not buried in the middle." },
 
-client = anthropic.Anthropic()  # uses ANTHROPIC_API_KEY
+    { t: "h2", text: "Prompt caching — Claude's cost advantage at scale" },
+    { t: "p", text: "Claude's API supports prompt caching: if you mark a prefix of your prompt as cacheable, subsequent requests that share that prefix pay only 10% of the input token cost for the cached portion. For applications with long system prompts or large shared context (documentation, policy docs, codebase), this can reduce input costs by 70–90%." },
+    { t: "code", lang: "python", label: "Prompt caching — mark the system prompt as cacheable", text: `import anthropic
 
-message = client.messages.create(
+client = anthropic.Anthropic()
+
+# Cache a long system prompt — pay full cost first time, 10% on subsequent calls
+response = client.messages.create(
     model="claude-sonnet-4-6",
     max_tokens=1024,
-    system="You are an expert in LLM systems.",
-    messages=[
-        {"role": "user", "content": "Explain prompt caching in 3 sentences."}
-    ]
+    system=[
+        {
+            "type": "text",
+            "text": open("large_system_prompt.txt").read(),  # e.g. 10K tokens
+            "cache_control": {"type": "ephemeral"}           # mark for caching
+        }
+    ],
+    messages=[{"role": "user", "content": "Summarise the key risks."}]
 )
-print(message.content[0].text)` },
 
-    { t: "lab", tab: "playground", label: "Compare Claude models in Playground →", desc: "Run the same prompt across Claude Haiku, Sonnet, and Opus and see quality and speed differences." },
+# On subsequent calls with the same system prompt prefix:
+# First 10K tokens cost 10% of normal input price — cache hit
+print(response.usage.cache_read_input_tokens)   # tokens read from cache
+print(response.usage.cache_creation_input_tokens)  # tokens written to cache` },
+
+    { t: "h2", text: "Extended thinking — Claude's reasoning mode" },
+    { t: "p", text: "Claude's extended thinking feature allows the model to generate an internal chain of reasoning (visible in the API response as thinking blocks) before producing its final answer. This is most useful for: complex multi-step reasoning, hard math or coding problems, and tasks where explicit step-by-step planning improves quality." },
+    { t: "callout", v: "warning", text: "Extended thinking increases latency significantly (seconds to minutes for complex problems) and consumes more tokens. Use it for hard reasoning tasks where quality matters more than speed — not for simple Q&A or classification." },
+
+    { t: "h2", text: "What Claude is distinctively good at vs. peers" },
+    { t: "table", headers: ["Capability", "Claude's strength", "Notes"], rows: [
+      ["Instruction following", "Very strong on complex, multi-constraint instructions", "Handles competing requirements better than most"],
+      ["Long-context extraction", "Strong — 200K window with good mid-context recall", "Use positional anchoring for best results"],
+      ["Code generation", "Top-tier — consistently competitive on SWE-bench", "Strong on multi-file, real-repo tasks"],
+      ["Safety refusals", "Contextual — explains reasoning, not just blocks", "More useful for developers than binary refusals"],
+      ["Tool / agentic use", "Specifically optimised for multi-step tool use", "Claude 3+ models trained for agentic contexts"],
+      ["Mathematical reasoning", "Strong with extended thinking enabled", "Use thinking mode for hard math problems"],
+    ]},
+
+    { t: "h2", text: "The Anthropic API — quick start" },
+    { t: "code", lang: "python", label: "Claude API — basic call + tool use", text: `import anthropic
+
+client = anthropic.Anthropic()  # uses ANTHROPIC_API_KEY env var
+
+# Basic generation
+msg = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    system="You are an expert in production AI systems.",
+    messages=[{"role": "user", "content": "What is prompt caching?"}]
+)
+print(msg.content[0].text)
+
+# With tool use
+tools = [{
+    "name": "get_weather",
+    "description": "Get current weather for a location",
+    "input_schema": {
+        "type": "object",
+        "properties": {"location": {"type": "string"}},
+        "required": ["location"]
+    }
+}]
+
+msg = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    tools=tools,
+    messages=[{"role": "user", "content": "What's the weather in London?"}]
+)
+# If stop_reason == "tool_use", extract tool call and execute` },
+
+    { t: "lab", tab: "playground", label: "Compare Claude models in Playground →", desc: "Run the same prompt across Claude Haiku, Sonnet, and Opus and see quality and speed differences live." },
+
+    { t: "references", items: [
+      { label: "Constitutional AI: Harmlessness from AI Feedback (Anthropic)", url: "https://arxiv.org/abs/2212.08073" },
+      { label: "Anthropic Claude API documentation", url: "https://docs.anthropic.com/" },
+      { label: "Prompt caching — Anthropic developer guide", url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" },
+      { label: "Extended thinking — Anthropic documentation", url: "https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking" },
+      { label: "Claude on SWE-bench — Anthropic engineering blog", url: "https://www.anthropic.com/research/swe-bench-sonnet" },
+    ]},
   ],
 
   // ─── HOW CHATGPT WORKS ───────────────────────────────────────────────────────
 
   "how-chatgpt-works": [
-    { t: "p", text: "ChatGPT is OpenAI's consumer product built on the GPT model family. It's the most widely used AI assistant in the world, with over 100 million weekly active users. Understanding how it works — from the underlying models to how it's been fine-tuned — tells you a lot about how modern AI assistants are built." },
-    { t: "video", youtubeId: "zjkBMFhNj_g", label: "Andrej Karpathy — Intro to Large Language Models (1-hr talk covering LLM internals, RLHF, and how ChatGPT-style systems are built)" },
+    { t: "p", text: "ChatGPT didn't just launch a product. It launched a category. When it hit 100 million users in two months — the fastest product in history to that point — it wasn't because of the underlying technology alone. It was because OpenAI made the technology feel accessible. Understanding how that was achieved, technically, is one of the most instructive case studies in applied AI." },
+    { t: "video", youtubeId: "zjkBMFhNj_g", label: "Andrej Karpathy — Intro to Large Language Models (the canonical 1-hour explanation of pretraining, RLHF, and how ChatGPT-style systems are built)" },
 
-    { t: "h2", text: "GPT-4o: the current model" },
-    { t: "p", text: "GPT-4o (\"omni\") is a natively multimodal model — it processes text, images, and audio within a single architecture rather than using separate models stitched together. It's also significantly faster and cheaper than GPT-4 Turbo, making it the default for most OpenAI API users." },
+    { t: "h2", text: "The model family (as of 2025)" },
     { t: "table", headers: ["Model", "Context", "Multimodal", "Best for"], rows: [
-      ["GPT-4o",       "128K", "Text + image + audio", "Most production tasks"],
-      ["GPT-4o-mini",  "128K", "Text + image",         "High-volume, cost-sensitive"],
-      ["o1 / o3",      "128K", "Text",                 "Complex reasoning, math, science"],
-      ["GPT-3.5 Turbo","16K",  "Text",                 "Legacy — mostly replaced by 4o-mini"],
+      ["GPT-4o",        "128K", "Text + image + audio", "Most production tasks — fast and capable"],
+      ["GPT-4o-mini",   "128K", "Text + image",         "High-volume, cost-sensitive applications"],
+      ["o1 / o3",       "128K", "Text",                 "Hard reasoning: math, science, complex coding"],
+      ["o4-mini",       "128K", "Text + image",         "Efficient reasoning — o3-class quality at lower cost"],
     ]},
 
-    { t: "h2", text: "RLHF: how ChatGPT was fine-tuned" },
-    { t: "p", text: "The base GPT-4 model is pre-trained on a large text corpus — it predicts next tokens. ChatGPT's helpful, conversational behaviour comes from fine-tuning via Reinforcement Learning from Human Feedback (RLHF):" },
+    { t: "h2", text: "From text predictor to assistant: RLHF" },
+    { t: "p", text: "The base GPT model, pre-trained on internet text, is a next-token predictor. It's very capable, but not an assistant — it completes patterns, not requests. ChatGPT's conversational, helpful behaviour comes from a fine-tuning process called Reinforcement Learning from Human Feedback (RLHF)." },
     { t: "list", items: [
-      "Step 1 — Supervised fine-tuning (SFT): human labellers write ideal responses to a set of prompts",
-      "Step 2 — Reward model training: labellers rank multiple model responses; a reward model learns what humans prefer",
-      "Step 3 — PPO reinforcement learning: the model is trained to maximise the reward model's score",
+      "Step 1 — Supervised Fine-Tuning (SFT): OpenAI's labellers write high-quality responses to curated prompts. The model is fine-tuned on these examples.",
+      "Step 2 — Reward model training: labellers rank multiple model responses for the same prompt. A separate reward model is trained to predict human preference scores.",
+      "Step 3 — PPO RL: the fine-tuned model is further trained to maximise the reward model's score via Proximal Policy Optimisation. This pushes it toward responses humans prefer.",
     ]},
-    { t: "callout", v: "key", text: "RLHF is why ChatGPT feels like an assistant rather than a text predictor. The base model knows how to complete text — RLHF teaches it to be helpful, follow instructions, and avoid harmful outputs." },
+    { t: "callout", v: "key", text: "RLHF is what makes a model feel like an assistant rather than a text predictor. The base model knows language — RLHF teaches it to be helpful, follow instructions, apologise when uncertain, and avoid harmful outputs. This is the same core technique behind Claude, Gemini, and most frontier assistants." },
 
-    { t: "h2", text: "The o1/o3 reasoning models" },
-    { t: "p", text: "OpenAI's o1 and o3 models use a different inference-time technique: they generate extended chains of reasoning (\"thinking\") before producing a final answer. This internal scratchpad allows them to outperform GPT-4o on math, coding competitions, and scientific reasoning — but at significantly higher latency and cost." },
+    { t: "h2", text: "GPT-4o: natively multimodal architecture" },
+    { t: "p", text: "GPT-4o (\"omni\") was the first GPT model with native multimodality — text, image, and audio processed within a single unified model rather than separate specialist models stitched together. Earlier GPT-4 vision was a text model with a separately-bolted vision encoder. GPT-4o unified them, which improves performance on tasks that require reasoning across modalities simultaneously." },
+    { t: "p", text: "Practically: GPT-4o can read a chart, understand a diagram, or interpret code in a screenshot and reason about it in the same forward pass as the text in your query. It's also significantly faster and cheaper than GPT-4 Turbo — making it the default for most API production deployments." },
 
-    { t: "h2", text: "What GPT-4o is distinctively good at" },
-    { t: "list", items: [
-      "Broad general knowledge — RLHF training on diverse human preferences produces a very capable generalist",
-      "Multimodal tasks — native image understanding, not a bolted-on vision model",
-      "Function calling — OpenAI's tool calling is mature, well-documented, and has a large ecosystem",
-      "Speed — GPT-4o is one of the fastest frontier models at comparable quality",
+    { t: "h2", text: "The o1/o3/o4 reasoning models — a different paradigm" },
+    { t: "p", text: "OpenAI's reasoning model series (o1, o3, o4-mini) takes a fundamentally different approach to hard problems. Rather than generating the answer directly, they produce an extended internal chain of reasoning — a 'thinking' scratchpad — before emitting a final response." },
+    { t: "p", text: "This inference-time compute scaling lets reasoning models outperform GPT-4o on tasks that benefit from deliberate step-by-step reasoning: competitive math, complex debugging, science problems, multi-step logic. The tradeoff: significantly higher latency (10–60 seconds for hard problems) and higher cost." },
+    { t: "table", headers: ["Task type", "GPT-4o", "o1/o3/o4"], rows: [
+      ["General Q&A and writing", "Better — fast, fluent", "Overkill — slow and expensive"],
+      ["Complex multi-step math", "OK", "Significantly better"],
+      ["Hard competitive coding", "Good", "Best available (o3 tops IOI)"],
+      ["Science reasoning (GPQA)", "~50%", "~80%+ (o3)"],
+      ["Instruction following", "Excellent", "Good but less nuanced"],
     ]},
 
-    { t: "lab", tab: "playground", label: "Compare models in Playground →", desc: "Test GPT-4o alongside Claude and Gemini on the same prompts to see where each model shines." },
+    { t: "h2", text: "The OpenAI API — key patterns for builders" },
+    { t: "code", lang: "python", label: "OpenAI API — generation + structured output + streaming", text: `from openai import OpenAI
+from pydantic import BaseModel
+
+client = OpenAI()  # uses OPENAI_API_KEY
+
+# Basic generation
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are an expert in AI systems."},
+        {"role": "user", "content": "Explain RLHF in 3 sentences."}
+    ]
+)
+print(response.choices[0].message.content)
+
+# Structured output with Pydantic
+class SentimentResult(BaseModel):
+    sentiment: str  # positive | negative | neutral
+    score: float    # 0-1
+    reason: str
+
+result = client.beta.chat.completions.parse(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Analyse: 'This RAG system is great but slow'"}],
+    response_format=SentimentResult,
+)
+print(result.choices[0].message.parsed)  # type-safe, schema-validated
+
+# Streaming
+with client.chat.completions.stream(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a haiku about LLMs"}]
+) as stream:
+    for chunk in stream:
+        print(chunk.choices[0].delta.content or "", end="", flush=True)` },
+
+    { t: "h2", text: "OpenAI vs Claude — when to choose which" },
+    { t: "table", headers: ["Factor", "GPT-4o / OpenAI", "Claude / Anthropic"], rows: [
+      ["Multimodal (vision + audio)", "Native — best-in-class audio", "Vision strong, no native audio"],
+      ["Context window", "128K", "200K"],
+      ["Reasoning models", "o1/o3/o4 — highly capable", "Extended thinking — competitive"],
+      ["Tool use / function calling", "Mature ecosystem, well-documented", "Strong, native tool use"],
+      ["Safety / refusals", "RLHF-based — binary refusals common", "CAI-based — contextual, explains reasoning"],
+      ["Prompt caching", "Available", "Available — strong for long contexts"],
+      ["Community / ecosystem", "Largest — most SDKs, integrations", "Growing fast"],
+    ]},
+
+    { t: "lab", tab: "playground", label: "Compare models in Playground →", desc: "Test GPT-4o alongside Claude and Gemini on the same prompts — see where each model shines and where it struggles." },
+
+    { t: "references", items: [
+      { label: "OpenAI — Introducing ChatGPT (original launch blog post)", url: "https://openai.com/blog/chatgpt" },
+      { label: "InstructGPT: Training language models to follow instructions with human feedback", url: "https://arxiv.org/abs/2203.02155" },
+      { label: "OpenAI API documentation", url: "https://platform.openai.com/docs/" },
+      { label: "GPT-4 Technical Report (OpenAI)", url: "https://arxiv.org/abs/2303.08774" },
+      { label: "Let's Reproduce GPT-2 — Karpathy (understanding what's inside)", url: "https://www.youtube.com/watch?v=l8pRSuU81PU" },
+    ]},
   ],
 
   // ─── HOW GEMINI WORKS ────────────────────────────────────────────────────────
@@ -2115,7 +2238,58 @@ def get_structured(prompt, schema, max_retries=3):
       ["Retry with validation",    "Eventually",  "High",    "Legacy fallback only"],
     ]},
 
+    { t: "h2", text: "Production failure modes — and how to catch them" },
+    { t: "p", text: "Even with structured outputs enabled, production pipelines break. These are the failure modes that get past your JSON parser and into your application logic:" },
+    { t: "table", headers: ["Failure mode", "Example", "Catch with"], rows: [
+      ["Null fields", "Model omits an optional field — downstream code throws KeyError", "Default values in Pydantic model or explicit None checks"],
+      ["Out-of-range values", "confidence: 1.7 (should be 0–1)", "Pydantic validator: @field_validator"],
+      ["Enum violation", "role: 'contractor' when schema only allows employee|manager", "Literal type in Pydantic or enum field"],
+      ["Hallucinated keys", "Model adds extra fields not in schema", "Pydantic's model_config = {'extra': 'forbid'}"],
+      ["Empty arrays", "items: [] when at least 1 was required", "min_length constraint on list field"],
+      ["Semantic invalidity", "start_date > end_date (structurally valid, logically wrong)", "Cross-field validator in Pydantic"],
+    ]},
+    { t: "code", lang: "python", label: "Robust Pydantic schema with validators", text: `from pydantic import BaseModel, field_validator, model_validator
+from typing import Literal
+from datetime import date
+
+class ProjectExtraction(BaseModel):
+    model_config = {"extra": "forbid"}   # reject unknown fields
+
+    name: str
+    status: Literal["active", "archived", "draft"]
+    priority: int                         # 1-5
+    start_date: date
+    end_date: date | None = None
+    tags: list[str] = []                  # optional, defaults to empty
+
+    @field_validator("priority")
+    @classmethod
+    def priority_range(cls, v):
+        if not 1 <= v <= 5:
+            raise ValueError(f"Priority must be 1-5, got {v}")
+        return v
+
+    @model_validator(mode="after")
+    def end_after_start(self):
+        if self.end_date and self.end_date < self.start_date:
+            raise ValueError("end_date must be >= start_date")
+        return self` },
+
+    { t: "h2", text: "Streaming structured outputs" },
+    { t: "p", text: "For long structured outputs, waiting for the full JSON object before showing anything creates a poor UX. Both OpenAI and Anthropic support streaming — but streaming and structured outputs don't mix out of the box. The pattern: stream raw tokens, accumulate, parse the complete object at the end. For partial display, use a streaming JSON parser (ijson in Python) to extract completed fields as they arrive." },
+    { t: "callout", v: "tip", text: "For very long structured outputs (e.g., a detailed report with 20 fields), consider breaking them into multiple API calls with smaller schemas. One call per section, one schema per call. This avoids token budget issues and makes partial streaming much simpler." },
+
+    { t: "h2", text: "Testing structured output schemas" },
+    { t: "p", text: "Your schema is code. It should have tests. At minimum: test that valid outputs parse correctly, test that common malformed outputs trigger the right validation errors, and test that edge cases (empty strings, None values, extreme numbers) are handled according to your schema's intent. Use Pydantic's model_validate() with pytest parametrize for clean coverage." },
+
     { t: "lab", tab: "explore", label: "Try structured outputs in the Explore module →", desc: "Test JSON mode, tool use, and schema validation live." },
+
+    { t: "references", items: [
+      { label: "OpenAI Structured Outputs — official documentation", url: "https://platform.openai.com/docs/guides/structured-outputs" },
+      { label: "Anthropic Tool Use — official documentation", url: "https://docs.anthropic.com/en/docs/build-with-claude/tool-use" },
+      { label: "Outlines — open-source constrained generation library", url: "https://github.com/outlines-dev/outlines" },
+      { label: "Pydantic v2 — data validation and settings management", url: "https://docs.pydantic.dev/latest/" },
+    ]},
   ],
 
 
