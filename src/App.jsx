@@ -1224,7 +1224,13 @@ function LockedTabView({ item, onNavigate }) {
 }
 
 export default function App() {
-  const [topView, setTopView] = useState("home");
+  const [topView, setTopView] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("qa") === "1") return "qa";
+    } catch {}
+    return "home";
+  });
   const [visited, setVisited] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited") || '["home"]')); }
     catch { return new Set(["home"]); }
@@ -1304,6 +1310,7 @@ export default function App() {
     function onKey(e) {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
       if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(s => !s); return; }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "Q") { e.preventDefault(); navigate("qa"); return; }
       if (e.key === "?" || e.key === "/") { e.preventDefault(); setShowShortcuts(s => !s); return; }
       if (e.key === "Escape") { setShowShortcuts(false); setMobileMenuOpen(false); setSearchOpen(false); setLeaderboardOpen(false); return; }
       const n = parseInt(e.key);
@@ -1316,13 +1323,6 @@ export default function App() {
   useEffect(() => {
     checkPreviewUnlock();
     initAnalytics();
-    // ?qa=1 opens QA console directly
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("qa") === "1") {
-        setTopView("qa");
-      }
-    } catch {}
   }, []);
 
   const scenario = ALL_SCENARIOS[scenarioIdx];
@@ -1897,11 +1897,11 @@ export default function App() {
       {topView !== "qa" && (
         <button
           onClick={() => navigate("qa")}
-          style={{ opacity: 0.35 }}
+          style={{ opacity: 0.45, zIndex: 9999, position: "fixed", bottom: 12, left: 12 }}
           onMouseEnter={e => e.currentTarget.style.opacity = "1"}
-          onMouseLeave={e => e.currentTarget.style.opacity = "0.35"}
-          className="fixed bottom-3 left-3 z-50 text-[10px] font-mono text-zinc-400 bg-zinc-900 border border-zinc-700 rounded px-2 py-1 transition-colors select-none"
-          title="Internal QA Console — or visit ?qa=1">
+          onMouseLeave={e => e.currentTarget.style.opacity = "0.45"}
+          className="text-[10px] font-mono text-zinc-300 bg-zinc-800 border border-zinc-600 rounded px-2 py-1 transition-colors select-none"
+          title="Internal QA Console — or visit ?qa=1 or Cmd/Ctrl+Shift+Q">
           qa
         </button>
       )}
