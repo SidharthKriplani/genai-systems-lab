@@ -108,14 +108,14 @@ function EmbeddingExplorer() {
     setActiveQuery(prev => prev?.id === q.id ? null : q);
   }
 
-  // Cluster halo centres (approximate centroid of each cluster)
-  const HALOS = [
-    { cat:"rag",    cx:119, cy:128, r:26 },
-    { cat:"arch",   cx:386, cy:116, r:24 },
-    { cat:"safety", cx:438, cy:222, r:24 },
-    { cat:"ops",    cx:250, cy:306, r:24 },
-    { cat:"agents", cx:385, cy:306, r:24 },
-    { cat:"multi",  cx:103, cy:290, r:24 },
+  // Cluster label positions (centroid of each cluster)
+  const CLUSTER_LABELS = [
+    { cat:"rag",    cx:119, cy:104 },
+    { cat:"arch",   cx:386, cy:90  },
+    { cat:"safety", cx:438, cy:198 },
+    { cat:"ops",    cx:250, cy:280 },
+    { cat:"agents", cx:385, cy:280 },
+    { cat:"multi",  cx:103, cy:264 },
   ];
 
   return (
@@ -156,10 +156,13 @@ function EmbeddingExplorer() {
           </defs>
           <rect width="520" height="360" fill="url(#emb-grid)" />
 
-          {/* Cluster halos */}
-          {HALOS.map(h => (
-            <ellipse key={h.cat} cx={h.cx} cy={h.cy} rx={h.r + 10} ry={h.r + 6}
-              fill={EMB_CAT_COLOR[h.cat] + "14"} stroke={EMB_CAT_COLOR[h.cat] + "30"} strokeWidth="1" />
+          {/* Cluster labels */}
+          {CLUSTER_LABELS.map(l => (
+            <text key={l.cat} x={l.cx} y={l.cy}
+              textAnchor="middle" fontSize="9" fontFamily="monospace"
+              fill={EMB_CAT_COLOR[l.cat]} opacity="0.55">
+              {EMB_CAT_LABEL[l.cat]}
+            </text>
           ))}
 
           {/* Connection lines (query → nearest) */}
@@ -204,10 +207,10 @@ function EmbeddingExplorer() {
                     {["①","②","③"][nearIdx]}
                   </text>
                 )}
-                {/* Hover label */}
-                {(isHov || isNearest) && !dimmed && (
-                  <text x={pt.sx + r + 4} y={pt.sy + 3.5}
-                    fontSize="8" fontFamily="sans-serif" fill="#e4e4e7"
+                {/* Hover label — only on explicit hover to avoid overlap */}
+                {isHov && (
+                  <text x={pt.sx + r + 5} y={pt.sy + 3.5}
+                    fontSize="9" fontFamily="sans-serif" fill="#e4e4e7"
                     style={{ pointerEvents: "none" }}>
                     {pt.label}
                   </text>
@@ -233,10 +236,10 @@ function EmbeddingExplorer() {
             );
           })()}
 
-          {/* Category labels at halo centres */}
-          {HALOS.map(h => (
+          {/* (labels already rendered above points via CLUSTER_LABELS) */}
+          {[].map(h => (
             <text key={h.cat + "-lbl"}
-              x={h.cx} y={h.cy - h.r - 9}
+              x={h.cx} y={h.cy}
               textAnchor="middle" fontSize="8" fontFamily="monospace"
               fill={EMB_CAT_COLOR[h.cat]} opacity="0.6">
               {EMB_CAT_LABEL[h.cat]}
