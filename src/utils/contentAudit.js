@@ -1,8 +1,8 @@
 // src/utils/contentAudit.js
 // Static module catalog for QA tooling. Keep in sync with source files.
 
-export const LOCKED_TABS = new Set(["systems", "fluency", "aipm", "career"]);
-export const FREE_TABS = ["home", "concepts", "flows", "lab", "agents", "playground", "explore"];
+export const LOCKED_TABS = new Set(); // all tabs open
+export const FREE_TABS = ["home", "concepts", "flows", "lab", "agents", "systems", "fluency", "aipm", "career", "playground", "explore"];
 
 export const LS_KEYS = [
   { key: "genai_visited",                desc: "Tab visit history (JSON array of tab IDs)" },

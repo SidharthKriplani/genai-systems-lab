@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
-import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, isPreviewUnlocked } from "./analytics";
-import { LOCKED_TABS } from "./constants";
+import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
 import HomePage from "./Home";
 
 // Heavy tab components — lazy-loaded on first visit to keep initial bundle small
@@ -1152,8 +1151,6 @@ const TAB_COLORS = {
   groundtruth: "#a78bfa",
 };
 
-// LOCKED_TABS imported from ./constants — single source of truth
-
 function SearchModal({ onClose, onSelect }) {
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -1263,100 +1260,6 @@ function FeedbackFallbackModal({ onClose }) {
   );
 }
 
-// ─── LOCKED TAB VIEW ─────────────────────────────────────────────────────────
-function LockedTabView({ item, onNavigate, onUnlock }) {
-  const [code, setCode] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | error | success
-
-  function handleUnlock(e) {
-    e.preventDefault();
-    const expected = import.meta.env.VITE_ADMIN_UNLOCK;
-    if (expected && code.trim() === expected) {
-      try { localStorage.setItem("genai_preview_unlocked", "1"); } catch {}
-      track("beta_unlock_success", { tab: item.id });
-      setStatus("success");
-      setTimeout(() => onUnlock && onUnlock(), 600);
-    } else {
-      track("beta_unlock_failed", { tab: item.id });
-      setStatus("error");
-      setTimeout(() => setStatus("idle"), 2000);
-    }
-  }
-
-  return (
-    <div className="min-h-[70vh] flex items-center justify-center p-8">
-      <div className="max-w-sm w-full space-y-6 text-center">
-        <div className="text-5xl">🔒</div>
-        <div>
-          <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-2">In progression</div>
-          <h2 className="text-2xl font-black text-white">{item.label}</h2>
-          {item.count && <p className="text-sm text-zinc-500 mt-1">{item.count} modules</p>}
-        </div>
-        <p className="text-zinc-400 text-sm leading-relaxed">
-          This track is planned for the next beta wave. Check back soon — or start with the free modules below.
-        </p>
-        {item.teaser && (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 text-left space-y-2">
-            <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-3">What's inside</div>
-            {item.teaser.map((t, i) => (
-              <div key={i} className="flex items-start gap-2 text-xs text-zinc-500">
-                <span className="text-zinc-700 mt-0.5 shrink-0">—</span>
-                <span>{t}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        {item.audience && (
-          <div className="text-xs text-zinc-600 font-mono">
-            Best for: <span className="text-zinc-400">{item.audience}</span>
-          </div>
-        )}
-
-        {/* Beta unlock input */}
-        <div className="border-t border-zinc-800 pt-5">
-          <p className="text-xs text-zinc-600 mb-3 font-mono">Have a beta access code?</p>
-          <form onSubmit={handleUnlock} className="flex gap-2">
-            <input
-              type="text"
-              value={code}
-              onChange={e => setCode(e.target.value)}
-              placeholder="Enter code…"
-              autoComplete="off"
-              spellCheck={false}
-              className={`flex-1 px-3 py-2 rounded-lg bg-zinc-900 border text-sm font-mono text-white placeholder-zinc-700 outline-none transition-all ${
-                status === "error"   ? "border-red-600 focus:border-red-500" :
-                status === "success" ? "border-emerald-600" :
-                "border-zinc-700 focus:border-violet-600"
-              }`}
-            />
-            <button
-              type="submit"
-              disabled={!code.trim() || status === "success"}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                status === "success" ? "bg-emerald-600 text-white" :
-                status === "error"   ? "bg-red-900 text-red-300" :
-                "bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
-              }`}>
-              {status === "success" ? "✓" : status === "error" ? "✗" : "Unlock"}
-            </button>
-          </form>
-          {status === "error" && (
-            <p className="text-xs text-red-500 mt-2 font-mono">Invalid code — try again</p>
-          )}
-          {status === "success" && (
-            <p className="text-xs text-emerald-500 mt-2 font-mono">Access granted — loading…</p>
-          )}
-        </div>
-
-        <button
-          onClick={() => onNavigate("home")}
-          className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors font-mono">
-          ← Back to available labs
-        </button>
-      </div>
-    </div>
-  );
-}
 
 export default function App() {
   const [topView, setTopView] = useState(() => {
@@ -1397,7 +1300,6 @@ export default function App() {
     try { return localStorage.getItem("genai_palette") || "violet"; } catch { return "violet"; }
   });
   const switchPalette = (p) => { setPalette(p); try { localStorage.setItem("genai_palette", p); } catch {} };
-  const [previewUnlocked, setPreviewUnlocked] = useState(() => isPreviewUnlocked());
   const [systemsModule, setSystemsModule] = useState(null);
   const [exploreModule, setExploreModule] = useState(null);
   const [agentsModule, setAgentsModule] = useState(null);
@@ -1532,28 +1434,19 @@ export default function App() {
     { label: "BUILD", color: "#3b82f6", items: [
       { id: "lab",        label: "RAG Lab",    count: 6,  audience: "Engineers" },
       { id: "agents",     label: "Agents",     count: 7,  audience: "Engineers" },
-      { id: "systems",    label: "Systems",    count: 15, audience: "Engineers · PMs", locked: true,
-        teaser: ["Evals lab + eval frameworks (RAGAS, G-Eval)", "Model strategy, cost & latency", "Fine-tuning, prompt caching, model router", "Observability, ML CI/CD, context compaction"] },
+      { id: "systems",    label: "Systems",    count: 15, audience: "Engineers · PMs" },
       { id: "playground", label: "Playground", count: 5,  audience: "All levels" },
       { id: "explore",    label: "Explore",    count: 8,  audience: "Engineers" },
     ]},
     { label: "GROW", color: "#22c55e", items: [
-      { id: "fluency", label: "Fluency", count: 5, audience: "Interview prep", locked: true,
-        teaser: ["Mock interview — 18 questions, 90s each", "Company case arena (live scenario drills)", "Timed vocabulary + phrase bank", "Prompt engineering lab"] },
-      { id: "aipm",   label: "AIPM",    count: 5, audience: "Product managers", locked: true,
-        teaser: ["PRD simulator with AI feature scoping", "Roadmap prioritizer", "Stakeholder explainer toolkit", "AI-or-not? decision framework"] },
-      { id: "career", label: "Career",  count: 4, audience: "Job seekers", locked: true,
-        teaser: ["Full system design interview prompts", "Take-home challenge simulator", "Negotiation flashcards", "Benchmark literacy"] },
+      { id: "fluency", label: "Fluency", count: 5, audience: "Interview prep" },
+      { id: "aipm",    label: "AIPM",    count: 5, audience: "Product managers" },
+      { id: "career",  label: "Career",  count: 4, audience: "Job seekers" },
     ]},
     { label: "READ", color: "#a78bfa", items: [
       { id: "groundtruth", label: "Ground Truth", audience: "All levels" },
     ]},
   ];
-
-  // Lookup map for locked tab item metadata — used by LockedTabView
-  const lockedItems = Object.fromEntries(
-    NAV_GROUPS.flatMap(g => g.items).filter(i => i.locked).map(i => [i.id, i])
-  );
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white" data-palette={palette} style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif" }}>
@@ -1669,7 +1562,6 @@ export default function App() {
                     <span className="flex items-center gap-2">
                       <span className="text-zinc-600 font-mono">{gi === 0 && ii === 0 ? "1" : SHORTCUT_TABS.indexOf(item.id) >= 0 ? SHORTCUT_TABS.indexOf(item.id) + 1 : ""}</span>
                       {item.label}
-                      {item.locked && !previewUnlocked && <span className="text-[9px] opacity-50">🔒</span>}
                     </span>
                     {visited.has(item.id) && topView !== item.id && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
                   </button>
@@ -1741,9 +1633,6 @@ export default function App() {
                   title={item.audience ? `For: ${item.audience}` : undefined}
                   className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
                   {item.label}
-                  {item.locked && !previewUnlocked && (
-                    <span className="text-[9px] opacity-60">🔒</span>
-                  )}
                   {visited.has(item.id) && topView !== item.id && (
                     <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-500 opacity-80" />
                   )}
@@ -1761,28 +1650,12 @@ export default function App() {
         {topView === "flows"      && <FlowsApp />}
         {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
-        {topView === "systems" && (previewUnlocked
-          ? <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />
-          : <LockedTabView item={lockedItems.systems} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
-        )}
-
-        {topView === "fluency" && (previewUnlocked
-          ? <FluencyApp />
-          : <LockedTabView item={lockedItems.fluency} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
-        )}
-
-        {topView === "aipm" && (previewUnlocked
-          ? <AIPMApp />
-          : <LockedTabView item={lockedItems.aipm} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
-        )}
-
+        {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />}
+        {topView === "fluency"    && <FluencyApp />}
+        {topView === "aipm"       && <AIPMApp />}
         {topView === "playground" && <PlaygroundApp />}
         {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
-
-        {topView === "career" && (previewUnlocked
-          ? <CareerApp />
-          : <LockedTabView item={lockedItems.career} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
-        )}
+        {topView === "career"     && <CareerApp />}
 
         {topView === "groundtruth" && <GroundTruth onNavigate={navigate} />}
       </Suspense>

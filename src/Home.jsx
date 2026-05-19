@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
-import { LOCKED_TABS } from "./constants";
 
 const START_HERE_PATH = [
   { step: 1, label: "Tokenizer",     tab: "concepts", desc: "How text becomes numbers" },
@@ -105,7 +104,7 @@ const MODULE_MAP = [
       { tab: "lab", icon: "🔬", title: "RAG Lab", audience: "Engineers",
         desc: "After this: you can configure, break, and diagnose the 6 most common RAG production failure modes — the kind of intuition that only comes from doing it, not reading about it.",
         discovery: "Configure top_k=1 with no reranker and watch a 3-year-old policy answer confidently. Hard to forget." },
-      { tab: "systems", icon: "⚙️", title: "Systems", audience: "Engineers · PMs", locked: true,
+      { tab: "systems", icon: "⚙️", title: "Systems", audience: "Engineers · PMs",
         desc: "Evals, eval frameworks, model strategy, cost/latency, fine-tuning, observability, ML CI/CD, context compaction. 15 production modules.",
         discovery: "The Incident Room has 5 real failure post-mortems. The Eval Frameworks module covers RAGAS, G-Eval, and custom grading." },
       { tab: "playground", icon: "🛝", title: "Playground", audience: "All levels",
@@ -121,20 +120,18 @@ const MODULE_MAP = [
     color: "#22c55e",
     desc: "Communicate, ship, and advance your career.",
     modules: [
-      { tab: "fluency", icon: "💬", title: "Fluency Gym", audience: "Interview prep", locked: true,
+      { tab: "fluency", icon: "💬", title: "Fluency Gym", audience: "Interview prep",
         desc: "Phrase bank, timed drills, mock interview (18 questions, 90s each), company case arena, prompt engineering lab.",
         discovery: "The mock interview uses real question patterns from AI engineer and PM interviews at top companies." },
-      { tab: "aipm", icon: "📋", title: "AIPM Track", audience: "Product managers", locked: true,
+      { tab: "aipm", icon: "📋", title: "AIPM Track", audience: "Product managers",
         desc: "PRD simulator, roadmap prioritizer, stakeholder explainer, launch checklist, 'AI or not?' decision framework.",
         discovery: "The AI-or-not? framework is the one thing most PMs say they needed a year ago." },
-      { tab: "career", icon: "🚀", title: "Career Track", audience: "Job seekers", locked: true,
+      { tab: "career", icon: "🚀", title: "Career Track", audience: "Job seekers",
         desc: "System design interviews, take-home challenges, negotiation flashcards, benchmark literacy.",
         discovery: "The take-home challenges simulate the exact format used by most AI-forward companies: rank outputs, fix a broken prompt, design an eval." },
     ],
   },
 ];
-
-// LOCKED_TABS imported from ./constants — single source of truth
 
 const STATS = [
   { value: "500+", label: "Engineers & PMs",      sub: "Have used this lab"        },
@@ -382,16 +379,15 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               {/* Steps */}
               <div className="space-y-1.5">
                 {path.steps.map((step, i) => {
-                  const locked = LOCKED_TABS.has(step.tab);
                   return (
-                    <div key={i} className={`flex items-center gap-2.5 ${locked ? "opacity-50" : ""}`}>
+                    <div key={i} className="flex items-center gap-2.5">
                       <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ backgroundColor: path.color + "22", color: locked ? "#52525b" : path.color }}>
-                        {locked ? "🔒" : i+1}
+                        style={{ backgroundColor: path.color + "22", color: path.color }}>
+                        {i+1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className={`text-xs font-bold ${locked ? "text-zinc-600" : "text-white"}`}>{step.label}</span>
-                        <span className="text-xs text-zinc-600 ml-1.5">{locked ? "coming soon" : step.desc}</span>
+                        <span className="text-xs font-bold text-white">{step.label}</span>
+                        <span className="text-xs text-zinc-600 ml-1.5">{step.desc}</span>
                       </div>
                     </div>
                   );
@@ -400,8 +396,8 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
 
               {activePath === path.id && (() => {
                 const isComplete = pct === 100;
-                const firstFree = path.steps.find(s => !LOCKED_TABS.has(s.tab));
-                const nextUnvisited = path.steps.find(s => !LOCKED_TABS.has(s.tab) && !visited.has(s.tab));
+                const firstFree = path.steps[0];
+                const nextUnvisited = path.steps.find(s => !visited.has(s.tab));
                 if (isComplete && path.nextPath) {
                   return (
                     <div className="mt-4 space-y-2">
