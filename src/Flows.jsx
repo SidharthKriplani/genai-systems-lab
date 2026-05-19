@@ -931,17 +931,23 @@ function RAGArchitecturesDiagram() {
 // ─── FLOWS APP ────────────────────────────────────────────────────────────────
 const FLOW_TABS = [
   { id: "rag",         label: "RAG Pipeline",        tag: "FLOW",    component: RAGFlowDiagram,
-    desc: "Watch a query travel through retrieval, ranking, generation, and citation — and see exactly where each failure mode enters." },
+    desc: "Watch a query travel through retrieval, ranking, generation, and citation — and see exactly where each failure mode enters.",
+    reflection: "What would break if top_k=1 and that single retrieved chunk was stale?" },
   { id: "ctx",         label: "Context Window",       tag: "COST",    component: ContextWindowDiagram,
-    desc: "See how tokens fill the context window, why long contexts lose information in the middle, and why attention cost is O(n²)." },
+    desc: "See how tokens fill the context window, why long contexts lose information in the middle, and why attention cost is O(n²).",
+    reflection: "At what token count does your use case start losing critical context — and how would you detect it?" },
   { id: "agent",       label: "Agent Loop",           tag: "LOOP",    component: AgentLoopDiagram,
-    desc: "Watch a ReAct agent iterate — and see what an infinite loop looks like from a cost and output perspective." },
+    desc: "Watch a ReAct agent iterate — and see what an infinite loop looks like from a cost and output perspective.",
+    reflection: "What condition would cause this agent to loop indefinitely — and how would you detect it before the bill arrives?" },
   { id: "guardrail",   label: "Guardrail Pipeline",   tag: "GATE",    component: GuardrailDiagram,
-    desc: "Send 4 input types through a two-layer guardrail system. See which layer catches what — and what slips through." },
+    desc: "Send 4 input types through a two-layer guardrail system. See which layer catches what — and what slips through.",
+    reflection: "Which layer would you remove to cut latency by 40%? What attack surface does that open?" },
   { id: "transformer", label: "Transformer Block",    tag: "ARCH",    component: TransformerBlockDiagram,
-    desc: "One token's journey through a single transformer block — embedding, attention, FFN, residuals, logits." },
+    desc: "One token's journey through a single transformer block — embedding, attention, FFN, residuals, logits.",
+    reflection: "If the residual connections were removed from this block, what would happen to training stability and why?" },
   { id: "ragarch",    label: "RAG Architectures",   tag: "PATTERNS", component: RAGArchitecturesDiagram,
-    desc: "Hybrid RAG, Corrective RAG, and Agentic RAG — animated pipelines with when-to-use guidance for each." },
+    desc: "Hybrid RAG, Corrective RAG, and Agentic RAG — animated pipelines with when-to-use guidance for each.",
+    reflection: "When would Corrective RAG hurt performance compared to vanilla RAG — not help it?" },
 ];
 
 export default function FlowsApp() {
@@ -972,6 +978,15 @@ export default function FlowsApp() {
       </div>
 
       <Component key={activeTab} />
+
+      {tab.reflection && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-4 py-3 flex items-start gap-2.5">
+          <span className="text-zinc-600 text-sm shrink-0 mt-0.5">💭</span>
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            <span className="text-zinc-400 font-bold">Reflect: </span>{tab.reflection}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

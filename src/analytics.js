@@ -51,6 +51,35 @@ export function track(event, props = {}) {
   } catch { /* silent */ }
 }
 
+// ── Owner preview unlock ──────────────────────────────────────────────────────
+// Set VITE_ADMIN_UNLOCK in Vercel env vars to your chosen secret code.
+// Visit the app with ?preview=YOURCODE to unlock all tabs.
+// Visit with ?lock=1 to re-lock.
+const _ADMIN_CODE = import.meta.env?.VITE_ADMIN_UNLOCK || "";
+
+export function checkPreviewUnlock() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("lock") === "1") {
+      localStorage.removeItem("genai_preview_unlocked");
+      // strip the param cleanly
+      const clean = window.location.pathname;
+      window.history.replaceState({}, "", clean);
+      return;
+    }
+    const code = params.get("preview");
+    if (code && _ADMIN_CODE && code === _ADMIN_CODE) {
+      localStorage.setItem("genai_preview_unlocked", "1");
+      const clean = window.location.pathname;
+      window.history.replaceState({}, "", clean);
+    }
+  } catch { /* silent */ }
+}
+
+export function isPreviewUnlocked() {
+  try { return localStorage.getItem("genai_preview_unlocked") === "1"; } catch { return false; }
+}
+
 // Convenience helper for external links — no external resource links exist in the
 // current app, but wire future ones as:
 //   onClick={() => trackExternalResource("https://...", "label", "section")}

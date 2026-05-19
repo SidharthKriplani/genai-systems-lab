@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
+import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock, isPreviewUnlocked } from "./analytics";
 import ConceptsApp from "./Concepts";
 import SystemsApp from "./Systems";
 import FluencyApp from "./Fluency";
@@ -1213,9 +1213,9 @@ function LockedTabView({ item, onNavigate }) {
           </div>
         )}
         <button
-          onClick={() => onNavigate("concepts")}
+          onClick={() => onNavigate("home")}
           className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all">
-          Explore available modules →
+          Back to available labs →
         </button>
       </div>
     </div>
@@ -1312,7 +1312,7 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => { initAnalytics(); }, []);
+  useEffect(() => { checkPreviewUnlock(); initAnalytics(); }, []);
 
   const scenario = ALL_SCENARIOS[scenarioIdx];
   const lookup = useMemo(() => lookupResult(scenario, config), [scenario, config]);
@@ -1511,13 +1511,13 @@ export default function App() {
                 {group.label && <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5 px-1" style={{ color: group.color + "99" }}>{group.label}</div>}
                 {group.items.map((item, ii) => (
                   <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${topView === item.id ? "bg-violet-600 text-white" : item.locked ? "text-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-500" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${topView === item.id ? "bg-violet-600 text-white" : (item.locked && !isPreviewUnlocked()) ? "text-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-500" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
                     <span className="flex items-center gap-2">
                       <span className="text-zinc-600 font-mono">{gi === 0 && ii === 0 ? "1" : SHORTCUT_TABS.indexOf(item.id) >= 0 ? SHORTCUT_TABS.indexOf(item.id) + 1 : ""}</span>
-                      {item.locked && <span className="text-[9px]">🔒</span>}
+                      {(item.locked && !isPreviewUnlocked()) && <span className="text-[9px]">🔒</span>}
                       {item.label}
                     </span>
-                    {visited.has(item.id) && topView !== item.id && !item.locked && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
+                    {visited.has(item.id) && topView !== item.id && !(item.locked && !isPreviewUnlocked()) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -1554,15 +1554,17 @@ export default function App() {
           </button>
           {/* Right utilities */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
-            {[
-              { id: "violet", color: "#7c3aed" },
-              { id: "cyan",   color: "#06b6d4" },
-              { id: "amber",  color: "#f59e0b" },
-            ].map(p => (
-              <button key={p.id} onClick={() => switchPalette(p.id)} title={p.id}
-                className="w-3.5 h-3.5 rounded-full border-2 transition-all hover:scale-110"
-                style={{ background: p.color, borderColor: palette === p.id ? "white" : "transparent" }} />
-            ))}
+            <div className="hidden lg:flex items-center gap-1 opacity-40 hover:opacity-100 transition-opacity" title="Color theme">
+              {[
+                { id: "violet", color: "#7c3aed" },
+                { id: "cyan",   color: "#06b6d4" },
+                { id: "amber",  color: "#f59e0b" },
+              ].map(p => (
+                <button key={p.id} onClick={() => switchPalette(p.id)} title={p.id}
+                  className="w-3 h-3 rounded-full border-2 transition-all hover:scale-110"
+                  style={{ background: p.color, borderColor: palette === p.id ? "white" : "transparent" }} />
+              ))}
+            </div>
             <button onClick={() => openFeedback("header")}
               className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-violet-700 hover:text-violet-400 transition-all font-mono text-zinc-500">
               💬 Feedback
@@ -1594,8 +1596,8 @@ export default function App() {
               {group.items.map(item => (
                 <button key={item.id} onClick={() => navigate(item.id)}
                   title={item.audience ? `For: ${item.audience}` : undefined}
-                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : item.locked ? "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800/50" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
-                  {item.locked && <span className="text-[9px] opacity-60">🔒</span>}
+                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : (item.locked && !isPreviewUnlocked()) ? "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800/50" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                  {(item.locked && !isPreviewUnlocked()) && <span className="text-[9px] opacity-60">🔒</span>}
                   {item.label}
                   {visited.has(item.id) && topView !== item.id && !item.locked && (
                     <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-500 opacity-80" />
@@ -1615,17 +1617,17 @@ export default function App() {
 
       {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "systems"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="systems"); return it?.locked ? <LockedTabView item={it} onNavigate={navigate} /> : <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />; })()}
+      {topView === "systems"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="systems"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />; })()}
 
-      {topView === "fluency"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="fluency"); return it?.locked ? <LockedTabView item={it} onNavigate={navigate} /> : <FluencyApp />; })()}
+      {topView === "fluency"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="fluency"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <FluencyApp />; })()}
 
-      {topView === "aipm"       && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="aipm"); return it?.locked ? <LockedTabView item={it} onNavigate={navigate} /> : <AIPMApp />; })()}
+      {topView === "aipm"       && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="aipm"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <AIPMApp />; })()}
 
       {topView === "playground" && <PlaygroundApp />}
 
       {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "career"     && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="career"); return it?.locked ? <LockedTabView item={it} onNavigate={navigate} /> : <CareerApp />; })()}
+      {topView === "career"     && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="career"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <CareerApp />; })()}
 
 
       {/* Scenario tabs */}

@@ -130,12 +130,28 @@ Red flags to watch:
 
 ---
 
-## 8. Vercel deployment steps
+## 8. Vercel environment variable setup
+
+In Vercel dashboard → Project Settings → Environment Variables, set:
+
+```
+VITE_POSTHOG_KEY       = phc_your_actual_key
+VITE_POSTHOG_HOST      = https://us.i.posthog.com
+VITE_FEEDBACK_URL      = https://forms.gle/your_form_id
+VITE_ADMIN_UNLOCK      = your_secret_preview_code
+```
+
+- `VITE_ADMIN_UNLOCK` lets you visit `?preview=your_secret_preview_code` to unlock all locked tabs. Keep it secret. Use `?lock=1` to re-lock.
+- All four vars are optional — the app works without them (analytics silent, feedback shows fallback modal, preview unlock disabled).
+
+---
+
+## 9. Deployment steps
 
 ```bash
 # After setting env vars in Vercel dashboard:
 git add -A
-git commit -m "launch: analytics, feedback buttons, beta banner, privacy note"
+git commit -m "launch: polish pass, community beta"
 git push
 
 # Vercel auto-deploys on push to main.
@@ -143,15 +159,33 @@ git push
 # Vercel dashboard → Deployments → Redeploy latest
 ```
 
-To test locally with analytics:
-```bash
-cp .env.example .env.local
-# Fill in VITE_POSTHOG_KEY and VITE_FEEDBACK_URL
-npm run dev
-```
+---
 
-To confirm build works without env vars:
-```bash
-npm run build
-# Should succeed. Analytics simply won't fire. Feedback buttons show placeholder URL.
-```
+## 10. Pre-launch QA checklist (incognito)
+
+Open the live URL in an incognito window and verify:
+
+- [ ] Homepage hero CTA → "Run your first failure scenario →" → lands in RAG Lab
+- [ ] Secondary CTA → "Start from scratch: Tokenizer → RAG → Agents" → lands in Concepts
+- [ ] Beta banner shows and can be dismissed; dismissal persists on reload
+- [ ] Feedback button opens form (or fallback modal if URL not set)
+- [ ] Systems / Fluency / AIPM / Career tabs show LockedTabView — not blank, not error
+- [ ] Locked tab CTA → "Back to available labs →" → returns to Home
+- [ ] `?preview=YOUR_CODE` unlocks all locked tabs
+- [ ] `?lock=1` re-locks them
+- [ ] Mobile nav opens and closes; all tabs reachable
+- [ ] ⌘K search returns results; locked modules show 🔒 label
+- [ ] RAG Lab: select a scenario, change config, click Evaluate — see metrics update
+- [ ] Progress bar fills after visiting tabs; persists on reload
+
+---
+
+## 11. Analytics smoke test
+
+After setting `VITE_POSTHOG_KEY` and redeploying:
+
+- [ ] Visit homepage → check PostHog Live Events for `home_viewed`
+- [ ] Click hero primary CTA → check for `start_here_clicked` with `location: "hero_cta_primary"`
+- [ ] Open RAG Lab → check for `module_opened` and `rag_lab_opened`
+- [ ] Click Evaluate in RAG Lab → check for `evaluate_configuration_clicked`
+- [ ] Click any feedback button → check for `feedback_clicked`

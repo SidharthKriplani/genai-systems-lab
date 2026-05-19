@@ -13,59 +13,59 @@ const START_HERE_PATH = [
 
 const LEARNING_PATHS = [
   {
-    id: "engineer",
-    title: "AI Engineer",
+    id: "rag",
+    title: "Production RAG Path",
     color: "#6366f1",
-    tagline: "Build production RAG, agents, guardrails, and evals that don't break in the real world.",
-    duration: "~6 hrs",
+    tagline: "Go from RAG theory to breaking it in production. The fastest way to build real intuition.",
+    duration: "~3 hrs",
     steps: [
-      { tab: "concepts", label: "Concepts", desc: "Embeddings, attention, transformers" },
-      { tab: "flows",    label: "Flows",    desc: "RAG pipeline, agent loop, guardrails" },
-      { tab: "lab",      label: "RAG Lab",  desc: "Failure modes simulator" },
-      { tab: "systems",  label: "Systems",  desc: "Evals, observability, fine-tuning" },
-      { tab: "playground", label: "Playground", desc: "Injection, chunking, reranker" },
+      { tab: "concepts",   label: "Concepts",    desc: "Embeddings, chunking, context window" },
+      { tab: "flows",      label: "Flows",       desc: "End-to-end RAG pipeline diagrams" },
+      { tab: "lab",        label: "RAG Lab",     desc: "Simulate 5 production failure modes" },
+      { tab: "playground", label: "Playground",  desc: "Injection, chunking, reranker hands-on" },
+      { tab: "explore",    label: "Explore",     desc: "Vector DB comparison + red teaming" },
     ],
   },
   {
-    id: "aipm",
-    title: "AI Product Manager",
-    color: "#22c55e",
-    tagline: "Write better PRDs, prioritize AI features, handle stakeholders, and ship confidently.",
-    duration: "~4 hrs",
+    id: "engineer",
+    title: "AI Engineer Path",
+    color: "#3b82f6",
+    tagline: "Full stack: understand the stack, build with agents, and debug failures before they hit prod.",
+    duration: "~5 hrs",
     steps: [
-      { tab: "concepts", label: "Concepts", desc: "What LLMs actually do" },
-      { tab: "aipm",     label: "AIPM",     desc: "PRD, roadmap, launch checklist" },
-      { tab: "systems",  label: "Systems",  desc: "Evals, cost, should-you-AI?" },
-      { tab: "career",   label: "Career",   desc: "System design + negotiation" },
-      { tab: "fluency",  label: "Fluency",  desc: "Mock interview + phrase bank" },
+      { tab: "concepts",   label: "Concepts",    desc: "Tokenizer → transformers → agents" },
+      { tab: "flows",      label: "Flows",       desc: "RAG, agent loop, guardrail pipeline" },
+      { tab: "lab",        label: "RAG Lab",     desc: "Production failure simulator" },
+      { tab: "agents",     label: "Agents",      desc: "Multi-agent loops and orchestration" },
+      { tab: "playground", label: "Playground",  desc: "Chunking, reranker, hallucination" },
+    ],
+  },
+  {
+    id: "pm",
+    title: "PM / AI Product Path",
+    color: "#22c55e",
+    tagline: "Understand what LLMs actually do, what breaks, and how to write specs that don't get laughed at.",
+    duration: "~2.5 hrs",
+    steps: [
+      { tab: "concepts",   label: "Concepts",    desc: "What LLMs do — no fluff" },
+      { tab: "flows",      label: "Flows",       desc: "RAG pipeline + guardrails" },
+      { tab: "lab",        label: "RAG Lab",     desc: "See failure modes firsthand" },
+      { tab: "playground", label: "Playground",  desc: "Spot hallucinations, detect bias" },
+      { tab: "explore",    label: "Explore",     desc: "Model cards + latency tradeoffs" },
     ],
   },
   {
     id: "interview",
-    title: "Interview Prep",
+    title: "Interview Prep Path",
     color: "#f59e0b",
-    tagline: "Ace the AI system design round, LLM trivia, and stakeholder communication questions.",
-    duration: "~3 hrs",
+    tagline: "Cover the system design patterns, failure scenarios, and architecture questions that show up most.",
+    duration: "~2.5 hrs",
     steps: [
-      { tab: "fluency",  label: "Mock Interview", desc: "18 timed questions" },
-      { tab: "career",   label: "System Design",  desc: "3 full design prompts" },
-      { tab: "systems",  label: "Systems",        desc: "Observability + fine-tuning" },
-      { tab: "playground", label: "Playground",   desc: "Spot hallucinations + bias" },
-      { tab: "career",   label: "Negotiation",    desc: "Stakeholder pushback cards" },
-    ],
-  },
-  {
-    id: "quickref",
-    title: "Quick Reference",
-    color: "#ef4444",
-    tagline: "No linear path. Jump to any module when you need a fast reminder or decision framework.",
-    duration: "Self-directed",
-    steps: [
-      { tab: "flows",    label: "Flows",          desc: "Visual architecture diagrams" },
-      { tab: "systems",  label: "Model Strategy", desc: "Which model, when, why" },
-      { tab: "aipm",     label: "Launch Checklist", desc: "Pre-ship safety checklist" },
-      { tab: "concepts", label: "Concepts",       desc: "Any concept deep-dive" },
-      { tab: "fluency",  label: "Phrase Bank",    desc: "Engineer vocabulary upgrades" },
+      { tab: "concepts",   label: "Concepts",    desc: "Core architecture — attention, RAG, agents" },
+      { tab: "flows",      label: "Flows",       desc: "System design diagrams to sketch" },
+      { tab: "lab",        label: "RAG Lab",     desc: "Failure patterns interviewers test" },
+      { tab: "playground", label: "Playground",  desc: "Injection + hallucination detection" },
+      { tab: "explore",    label: "Explore",     desc: "Benchmarks + model card literacy" },
     ],
   },
 ];
@@ -189,30 +189,29 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             For AI engineers · PMs · anyone building with LLMs
           </p>
           <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-            Hands-on modules covering RAG failures, agent loops, evals, and production debugging.
+            Simulate production failures, trace agent loops, and debug RAG pipelines that break in the real world.
             Every module is interactive and takes under 20 minutes.
-            No login. No account. Free forever.
           </p>
         </div>
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
-            onClick={() => { track("start_here_clicked", { location: "hero_cta" }); onNavigate("concepts"); }}
+            onClick={() => { track("start_here_clicked", { location: "hero_cta_primary" }); onNavigate("lab"); }}
             className="px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all shadow-lg shadow-violet-900/40">
-            Start the intro path — 45 min →
+            Run your first failure scenario →
           </button>
           <button
-            onClick={() => onNavigate("fluency")}
+            onClick={() => { track("start_here_clicked", { location: "hero_cta_secondary" }); onNavigate("concepts"); }}
             className="px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-medium text-sm transition-all">
-            Practice AI interview questions
+            Start from scratch: Tokenizer → RAG → Agents
           </button>
         </div>
 
         {/* Trust badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-500 font-mono">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
-          Free · No login · No account · Runs in your browser
+          Free community beta · no login · progress saved locally
         </div>
 
       </div>
@@ -352,6 +351,11 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             );
           })}
         </div>
+
+        {/* Coming later note */}
+        <p className="text-[11px] text-zinc-600 font-mono text-center pt-1">
+          Coming in later beta waves: Systems · Fluency · AIPM Track · Career
+        </p>
 
         {/* ── MODULE MAP ──────────────────────────────────────────────────── */}
         <div className="space-y-2 pt-4">

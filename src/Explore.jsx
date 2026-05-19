@@ -63,6 +63,9 @@ function EmbeddingExplorer() {
           "Hover any point to see its label",
         ]}
       />
+      <p className="text-[11px] text-zinc-600 font-mono">
+        ◌ Uses precomputed 2D coordinates for intuition — not live embedding inference from a real model.
+      </p>
       <div className="flex flex-wrap gap-2">
         {QUERIES.map((q, i) => (
           <button key={i} onClick={() => setActiveQuery(activeQuery === q ? null : q)}
@@ -228,6 +231,9 @@ function ShadowMode() {
           "The key insight: 'better prompt' depends entirely on which metric you optimize for",
         ]}
       />
+      <p className="text-[11px] text-zinc-600 font-mono">
+        ~ Static response pairs — illustrates the pattern of shadow A/B testing; no live inference is run.
+      </p>
       <div className="flex gap-2">
         {SHADOW_SCENARIOS.map((s, i) => (
           <button key={s.id} onClick={() => { setSIdx(i); setRevealed(false); }}
@@ -608,6 +614,9 @@ function ModelCardReader() {
           "Goal: spot the gaps before you build a product on a model that can't support it",
         ]}
       />
+      <p className="text-[11px] text-zinc-600 font-mono">
+        ~ Curated static cards based on published model documentation — not live API data.
+      </p>
       <div className="flex gap-2">
         {MODEL_CARDS.map((c, i) => (
           <button key={c.id} onClick={() => reset(i)}
