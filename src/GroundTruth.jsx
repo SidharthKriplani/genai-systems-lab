@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { track } from "./analytics";
 import { POST_CONTENT } from "./groundTruthPosts";
+import TransformerWalkthrough from "./TransformerWalkthrough";
 
 // Every post maps to at least one interactive module on the platform.
 // "labLink" is where the reader goes to test what they just read.
@@ -91,6 +92,29 @@ function Block({ b, onNavigate, color }) {
           </button>
         </div>
       );
+    case "video":
+      return (
+        <div className="rounded-xl overflow-hidden border border-zinc-800">
+          <div className="aspect-video w-full bg-zinc-900">
+            <iframe
+              src={`https://www.youtube.com/embed/${b.youtubeId}`}
+              title={b.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+          {(b.title || b.desc) && (
+            <div className="px-4 py-3 bg-zinc-900/60 border-t border-zinc-800">
+              {b.title && <p className="text-xs font-bold text-zinc-300 mb-0.5">{b.title}</p>}
+              {b.desc  && <p className="text-[11px] text-zinc-500">{b.desc}</p>}
+            </div>
+          )}
+        </div>
+      );
+    case "animation":
+      if (b.name === "transformer") return <TransformerWalkthrough />;
+      return null;
     default:
       return null;
   }

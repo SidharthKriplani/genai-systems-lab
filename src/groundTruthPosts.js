@@ -369,4 +369,93 @@ Which one gets chosen? Depends on your sampling strategy.` },
     { t: "lab", tab: "playground", label: "Craft live injection attacks in Playground →", desc: "Try direct and indirect injection patterns. See which ones work and which get caught by the guardrail pipeline." },
   ],
 
+  // ─── TRANSFORMER ARCHITECTURE ─────────────────────────────────────────────
+
+  "what-is-a-transformer": [
+    { t: "p", text: "Every large language model you've used — GPT, Claude, Gemini, Llama — is built on the same architecture: the transformer. Introduced in 2017 in \"Attention Is All You Need\", it replaced recurrent networks with a mechanism called self-attention, and everything changed." },
+    { t: "p", text: "This post builds a transformer from scratch, layer by layer. Not just the intuition — the actual operations, the shapes, the math that makes it work. Walk through the animation below, then read the deep-dive sections." },
+
+    { t: "h2", text: "Build it step by step" },
+    { t: "p", text: "The animation below shows all 10 steps of how a transformer is constructed — from a raw token ID all the way to a next-token probability distribution. Use the prev / next controls to step through each stage." },
+    { t: "animation", name: "transformer" },
+
+    { t: "divider" },
+
+    { t: "h2", text: "Step 1: Tokenization — text becomes integers" },
+    { t: "p", text: "A transformer never sees text. It sees integers. The tokenizer splits your input into subword units called tokens and maps each to an ID from a fixed vocabulary (GPT-4 uses ~100K, Llama uses 32K)." },
+    { t: "callout", v: "key", text: "\"The cat sat\" → [464, 3797, 3332]. These three integers are everything the model receives. All language understanding must be learned from patterns in these numbers." },
+    { t: "p", text: "The vocabulary size is a design choice. Larger vocabularies mean longer tokens (fewer per sentence) but a bigger embedding table. Smaller vocabularies fragment rare words into many tiny tokens, inflating sequence length." },
+
+    { t: "h2", text: "Step 2: Token Embeddings — integers become vectors" },
+    { t: "p", text: "Each token ID is a row index into an embedding matrix E ∈ ℝ^(vocab_size × d_model). You look up the row for that ID and get a dense vector of d_model floats. For GPT-2, d_model = 768." },
+    { t: "p", text: "This lookup table is learned from data. After training, token 464 (\"The\") will live in a region of 768-dimensional space near other common function words. The geometry of this space encodes semantic relationships." },
+    { t: "callout", v: "tip", text: "The embedding matrix has ~50 million parameters in GPT-2 alone (50,257 × 768). It's also weight-tied with the output layer — the same matrix is used to score next-token probabilities at the end." },
+
+    { t: "h2", text: "Step 3: Positional Encoding — injecting position" },
+    { t: "p", text: "Attention is permutation-equivariant: shuffle your input tokens, and the attention computation gives you the same outputs in shuffled order. The model has no inherent sense of sequence position." },
+    { t: "p", text: "Positional encodings fix this by adding a position-dependent signal to each embedding before the first layer. The original transformer used fixed sinusoidal encodings. GPT and most modern models use learned positional embeddings." },
+    { t: "table", headers: ["Encoding type", "How it works", "Used by"], rows: [
+      ["Sinusoidal (fixed)", "sin/cos at different frequencies per dimension", "Original Transformer (2017)"],
+      ["Learned absolute", "A lookup table of position vectors, trained end-to-end", "GPT-2, BERT"],
+      ["RoPE (rotary)", "Rotate Q/K vectors in complex space by position angle", "Llama, Mistral, GPT-NeoX"],
+      ["ALiBi", "Add position-dependent bias to attention scores", "MPT, Falcon"],
+    ]},
+
+    { t: "h2", text: "Step 4: Q, K, V Projections — three views of each token" },
+    { t: "p", text: "For each token, the transformer creates three vectors by multiplying the input embedding by three learned weight matrices: W_Q, W_K, W_V." },
+    { t: "list", items: [
+      "Query (Q): \"What am I looking for?\" — used to probe other positions",
+      "Key (K): \"What do I contain?\" — used to be probed by other positions",
+      "Value (V): \"What will I contribute if selected?\" — the actual content",
+    ]},
+    { t: "callout", v: "info", text: "In multi-head attention with d_model=768 and 12 heads, each head projects down to d_k = d_v = 64. The three projection matrices are W_Q ∈ ℝ^(768×64), W_K ∈ ℝ^(768×64), W_V ∈ ℝ^(768×64)." },
+
+    { t: "h2", text: "Step 5: Attention Scores — who attends to whom" },
+    { t: "p", text: "For each query token, you compute a dot product against every key token, scale by √d_k to prevent vanishing gradients in softmax, then apply softmax to get a probability distribution across positions." },
+    { t: "code", lang: "python", label: "Scaled dot-product attention (numpy)", text: `import numpy as np
+
+def attention(Q, K, V, mask=None):
+    d_k = Q.shape[-1]
+    # scores: (seq_len, seq_len)
+    scores = Q @ K.T / np.sqrt(d_k)
+    if mask is not None:
+        scores = scores + mask  # -inf for future positions
+    weights = np.exp(scores) / np.exp(scores).sum(-1, keepdims=True)
+    return weights @ V  # (seq_len, d_v)` },
+    { t: "p", text: "In decoder models (GPT-style), a causal mask fills upper-triangle positions with −∞ before softmax, ensuring token i can only attend to positions ≤ i. This is what makes autoregressive generation possible." },
+
+    { t: "h2", text: "Steps 6–9: From one head to a full block" },
+    { t: "p", text: "Multi-head attention runs H independent attention functions in parallel (H=12 for GPT-2), concatenates their outputs, and projects back to d_model via W_O. Each head can specialize in different relationships: syntax, coreference, distance, semantics." },
+    { t: "p", text: "The attention output then passes through a residual connection and LayerNorm, then through a position-wise feed-forward network (two linear layers with 4× expansion and GELU activation), followed by another residual + LayerNorm. This is one complete transformer block." },
+    { t: "callout", v: "key", text: "The residual connections are not optional plumbing — they're what makes deep transformers trainable. Gradients can flow directly from loss to any layer without passing through attention or FFN. Without residuals, >6 layers would vanish during backprop." },
+
+    { t: "h2", text: "Step 10: Stack it, project it, sample from it" },
+    { t: "p", text: "Stack N of these blocks (GPT-2: 12, GPT-3: 96, GPT-4 rumoured: ~120+). The final layer's hidden states pass through a linear projection (the LM head) and softmax to produce a probability distribution over the vocabulary for the next token." },
+    { t: "table", headers: ["Model", "d_model", "Layers", "Heads", "Params"], rows: [
+      ["GPT-2 small",   "768",   "12",  "12",  "117M"],
+      ["GPT-2 XL",      "1600",  "48",  "25",  "1.5B"],
+      ["GPT-3",         "12288", "96",  "96",  "175B"],
+      ["Llama 3 8B",    "4096",  "32",  "32",  "8B"],
+      ["Llama 3 70B",   "8192",  "80",  "64",  "70B"],
+    ]},
+
+    { t: "divider" },
+
+    { t: "h2", text: "Watch it explained" },
+    { t: "p", text: "These videos are the gold standard for visual intuition on transformers. 3Blue1Brown's series is exceptionally clear. Karpathy's \"Let's build GPT\" takes you from blank file to working transformer in Python." },
+
+    { t: "video", youtubeId: "wjZofJX0v4M", title: "But what is a GPT? — 3Blue1Brown", desc: "Visual and intuitive deep-dive into how a GPT works. Best starting point if you haven't seen it." },
+    { t: "video", youtubeId: "eMlx5fFNoYc", title: "Visualizing Attention, a Transformer's Heart — 3Blue1Brown", desc: "Focuses specifically on the attention mechanism — what Q, K, V mean geometrically." },
+    { t: "video", youtubeId: "kCc8FmEb1nY", title: "Let's build GPT from scratch — Andrej Karpathy", desc: "2-hour walkthrough where Karpathy codes a working GPT (nanoGPT) from a blank Python file. Essential viewing." },
+
+    { t: "divider" },
+
+    { t: "h2", text: "Why this architecture dominates" },
+    { t: "p", text: "Attention is O(n²) in sequence length but O(1) in distance — any two positions can interact in a single layer, regardless of how far apart they are. RNNs required n steps to propagate information n positions. This parallelism during training is why transformers could scale." },
+    { t: "p", text: "The feed-forward layers, often overlooked, are where factual knowledge appears to be stored. Mechanistic interpretability research has shown that specific FFN weights activate for specific facts — a sort of distributed key-value memory." },
+    { t: "callout", v: "warning", text: "Transformers have a fixed context window defined at training time. Beyond that window, the model has no memory. This is not a bug — it's a fundamental architectural constraint. Techniques like RoPE and ALiBi extend this, but don't eliminate it." },
+
+    { t: "lab", tab: "concepts", label: "Explore transformer concepts interactively →", desc: "See tokenization, attention patterns, and embedding spaces live in the Concepts module." },
+  ],
+
 };
