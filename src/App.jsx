@@ -1737,6 +1737,9 @@ export default function App() {
                   title={item.audience ? `For: ${item.audience}` : undefined}
                   className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
                   {item.label}
+                  {item.locked && !previewUnlocked && (
+                    <span className="text-[9px] opacity-60">🔒</span>
+                  )}
                   {visited.has(item.id) && topView !== item.id && (
                     <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-500 opacity-80" />
                   )}

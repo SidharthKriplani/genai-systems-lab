@@ -1262,7 +1262,9 @@ export default function GroundTruth({ onNavigate }) {
           <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse shrink-0" />
           <p className="text-sm text-violet-300">
             <span className="font-bold">{total} pieces live.</span>
-            <span className="text-violet-400"> {totalPlanned - total} more in the writing queue — check back soon.</span>
+            {totalPlanned - total > 0 && (
+              <span className="text-violet-400"> {totalPlanned - total} more in the writing queue — check back soon.</span>
+            )}
           </p>
         </div>
 
@@ -1385,7 +1387,7 @@ export default function GroundTruth({ onNavigate }) {
 
         {/* Footer */}
         <div className="mt-12 text-center space-y-1">
-          <p className="text-xs text-zinc-600 font-mono">{total} pieces live · {totalPlanned - total} more coming · every piece links to an interactive module</p>
+          <p className="text-xs text-zinc-600 font-mono">{total} pieces live{totalPlanned - total > 0 ? ` · ${totalPlanned - total} more coming` : ""} · every piece links to an interactive module</p>
           <button onClick={() => onNavigate("home")}
             className="text-xs text-zinc-500 hover:text-white transition-colors font-mono underline">
             ← Back to Home
