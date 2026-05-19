@@ -1,19 +1,21 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, isPreviewUnlocked } from "./analytics";
 import { LOCKED_TABS } from "./constants";
-import GroundTruth from "./GroundTruth";
-import QADashboard from "./QADashboard";
-import ConceptsApp from "./Concepts";
-import SystemsApp from "./Systems";
-import FluencyApp from "./Fluency";
-import FlowsApp from "./Flows";
-import AIPMApp from "./AIPM";
-import PlaygroundApp from "./Playground";
-import CareerApp from "./Career";
-import ExploreApp from "./Explore";
-import AgentsApp from "./Agents";
 import HomePage from "./Home";
-import HowTo from "./HowTo";
+
+// Heavy tab components — lazy-loaded on first visit to keep initial bundle small
+const GroundTruth    = lazy(() => import("./GroundTruth"));
+const QADashboard    = lazy(() => import("./QADashboard"));
+const ConceptsApp    = lazy(() => import("./Concepts"));
+const SystemsApp     = lazy(() => import("./Systems"));
+const FluencyApp     = lazy(() => import("./Fluency"));
+const FlowsApp       = lazy(() => import("./Flows"));
+const AIPMApp        = lazy(() => import("./AIPM"));
+const PlaygroundApp  = lazy(() => import("./Playground"));
+const CareerApp      = lazy(() => import("./Career"));
+const ExploreApp     = lazy(() => import("./Explore"));
+const AgentsApp      = lazy(() => import("./Agents"));
+const HowTo          = lazy(() => import("./HowTo"));
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -1174,10 +1176,10 @@ function SearchModal({ onClose, onSelect }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center pt-16 px-4" onClick={onClose}>
-      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center pt-16 px-4" onClick={onClose} role="presentation">
+      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-label="Search modules" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-zinc-400 shrink-0">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-zinc-400 shrink-0" aria-hidden="true">
             <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
             <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
@@ -1185,6 +1187,7 @@ function SearchModal({ onClose, onSelect }) {
             onChange={e => { setQuery(e.target.value); setCursor(0); }}
             onKeyDown={onKeyDown}
             placeholder="Search modules..."
+            aria-label="Search modules"
             className="flex-1 bg-transparent text-white text-sm outline-none placeholder-zinc-600"
           />
           <kbd className="text-[10px] font-mono text-zinc-600 border border-zinc-700 rounded px-1.5 py-0.5">Esc</kbd>
@@ -1226,11 +1229,11 @@ function SearchModal({ onClose, onSelect }) {
 // ─── FEEDBACK MODAL (shown when form URL not yet configured) ─────────────────
 function FeedbackFallbackModal({ onClose }) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose} role="presentation">
+      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 max-w-sm w-full space-y-4" role="dialog" aria-modal="true" aria-label="Give Feedback" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <span className="text-sm font-bold text-white">💬 Give Feedback</span>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕</button>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close feedback">✕</button>
         </div>
         <p className="text-sm text-zinc-400 leading-relaxed">
           Found a bug, have a suggestion, or want to say what's useful? Reach the builder directly:
@@ -1572,10 +1575,10 @@ export default function App() {
       )}
       {leaderboardOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center pt-10 px-4 overflow-y-auto" onClick={() => setLeaderboardOpen(false)}>
-          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-2xl mb-10" onClick={e => e.stopPropagation()}>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-2xl mb-10" role="dialog" aria-modal="true" aria-label="Challenge Log" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-zinc-800">
               <span className="text-sm font-black text-white">📋 Challenge Log</span>
-              <button onClick={() => setLeaderboardOpen(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕ Close</button>
+              <button onClick={() => setLeaderboardOpen(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close challenge log">✕ Close</button>
             </div>
             <div className="p-5">
               <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} onRetry={(tab) => { navigate(tab); setLeaderboardOpen(false); }} />
@@ -1584,11 +1587,11 @@ export default function App() {
         </div>
       )}
       {showShortcuts && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowShortcuts(false)}>
-          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowShortcuts(false)} role="presentation">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 max-w-sm w-full space-y-4" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-white">Keyboard Shortcuts</span>
-              <button onClick={() => setShowShortcuts(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕ Close</button>
+              <button onClick={() => setShowShortcuts(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close shortcuts">✕ Close</button>
             </div>
             <div className="space-y-2">
               {SHORTCUT_TABS.map((tab, i) => (
@@ -1666,6 +1669,7 @@ export default function App() {
                     <span className="flex items-center gap-2">
                       <span className="text-zinc-600 font-mono">{gi === 0 && ii === 0 ? "1" : SHORTCUT_TABS.indexOf(item.id) >= 0 ? SHORTCUT_TABS.indexOf(item.id) + 1 : ""}</span>
                       {item.label}
+                      {item.locked && !previewUnlocked && <span className="text-[9px] opacity-50">🔒</span>}
                     </span>
                     {visited.has(item.id) && topView !== item.id && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
                   </button>
@@ -1710,7 +1714,7 @@ export default function App() {
             </button>
             <button onClick={() => setLeaderboardOpen(true)}
               className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
-              title="Challenge Log">
+              title="Challenge Log" aria-label="Open challenge log">
               🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px]">{leaderboard.filter(e => e.passed).length}</span>}
             </button>
             <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v3","1"); } catch {} }}
@@ -1718,8 +1722,8 @@ export default function App() {
               NEW
               {!whatsNewSeen && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
             </button>
-            <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">?</button>
-            <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all">
+            <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono" aria-label="Keyboard shortcuts">?</button>
+            <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all" aria-label="Open navigation menu">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
             </button>
           </div>
@@ -1750,39 +1754,38 @@ export default function App() {
         </div>
       </header>
 
-      {topView === "home"       && <HomePage onNavigate={navigate} visited={visited} onFeedback={openFeedback} />}
+      {topView === "home" && <HomePage onNavigate={navigate} visited={visited} onFeedback={openFeedback} />}
 
-      {topView === "concepts"   && <ConceptsApp />}
+      <Suspense fallback={<div className="flex-1 flex items-center justify-center py-24 text-zinc-600 text-sm font-mono">Loading…</div>}>
+        {topView === "concepts"   && <ConceptsApp />}
+        {topView === "flows"      && <FlowsApp />}
+        {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "flows"      && <FlowsApp />}
+        {topView === "systems" && (previewUnlocked
+          ? <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />
+          : <LockedTabView item={lockedItems.systems} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
+        )}
 
-      {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
+        {topView === "fluency" && (previewUnlocked
+          ? <FluencyApp />
+          : <LockedTabView item={lockedItems.fluency} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
+        )}
 
-      {topView === "systems" && (previewUnlocked
-        ? <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />
-        : <LockedTabView item={lockedItems.systems} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
-      )}
+        {topView === "aipm" && (previewUnlocked
+          ? <AIPMApp />
+          : <LockedTabView item={lockedItems.aipm} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
+        )}
 
-      {topView === "fluency" && (previewUnlocked
-        ? <FluencyApp />
-        : <LockedTabView item={lockedItems.fluency} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
-      )}
+        {topView === "playground" && <PlaygroundApp />}
+        {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "aipm" && (previewUnlocked
-        ? <AIPMApp />
-        : <LockedTabView item={lockedItems.aipm} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
-      )}
+        {topView === "career" && (previewUnlocked
+          ? <CareerApp />
+          : <LockedTabView item={lockedItems.career} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
+        )}
 
-      {topView === "playground" && <PlaygroundApp />}
-
-      {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
-
-      {topView === "career" && (previewUnlocked
-        ? <CareerApp />
-        : <LockedTabView item={lockedItems.career} onNavigate={navigate} onUnlock={() => setPreviewUnlocked(true)} />
-      )}
-
-      {topView === "groundtruth" && <GroundTruth onNavigate={navigate} />}
+        {topView === "groundtruth" && <GroundTruth onNavigate={navigate} />}
+      </Suspense>
 
 
       {/* Scenario tabs */}
@@ -2026,15 +2029,17 @@ export default function App() {
       )}
 
       {topView === "qa" && (
-        <QADashboard
-          onNavigate={navigate}
-          onOpenModule={(tab, moduleId) => {
-            if (tab === "systems") setSystemsModule(moduleId);
-            if (tab === "explore") setExploreModule(moduleId);
-            if (tab === "agents") setAgentsModule(moduleId);
-            navigate(tab);
-          }}
-        />
+        <Suspense fallback={<div className="flex-1 flex items-center justify-center py-24 text-zinc-600 text-sm font-mono">Loading…</div>}>
+          <QADashboard
+            onNavigate={navigate}
+            onOpenModule={(tab, moduleId) => {
+              if (tab === "systems") setSystemsModule(moduleId);
+              if (tab === "explore") setExploreModule(moduleId);
+              if (tab === "agents") setAgentsModule(moduleId);
+              navigate(tab);
+            }}
+          />
+        </Suspense>
       )}
 
       {/* QA corner link — fixed bottom-left, subtle but findable */}
