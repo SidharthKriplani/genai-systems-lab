@@ -345,6 +345,7 @@ const CATEGORIES = [
   { id: "interview",   label: "Interview Prep" },
   { id: "research",    label: "Research Papers" },
   { id: "finetuning",  label: "Fine-Tuning & Training" },
+  { id: "multimodal",  label: "Multimodal" },
 ];
 
 const CAT_COLORS = {
@@ -363,6 +364,7 @@ const CAT_COLORS = {
   interview:   "#ec4899",
   research:    "#a78bfa",
   finetuning:  "#34d399",
+  multimodal:  "#38bdf8",
 };
 
 
