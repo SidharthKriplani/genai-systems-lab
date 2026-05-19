@@ -343,6 +343,7 @@ const CATEGORIES = [
   { id: "industry",    label: "Industry AI" },
   { id: "career",      label: "Careers & Salaries" },
   { id: "interview",   label: "Interview Prep" },
+  { id: "research",    label: "Research Papers" },
 ];
 
 const CAT_COLORS = {
@@ -359,6 +360,7 @@ const CAT_COLORS = {
   industry:    "#0ea5e9",
   career:      "#f59e0b",
   interview:   "#ec4899",
+  research:    "#a78bfa",
 };
 
 

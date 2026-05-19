@@ -135,7 +135,7 @@ const MODULE_MAP = [
 
 const STATS = [
   { value: "500+", label: "Engineers & PMs",    sub: "Have used this lab", tab: null           },
-  { value: "82",   label: "Ground Truth posts", sub: "Production depth",   tab: "groundtruth"  },
+  { value: "97",   label: "Ground Truth posts", sub: "Production depth",   tab: "groundtruth"  },
   { value: "200+", label: "Challenges",         sub: "All interactive",    tab: null           },
 ];
 
