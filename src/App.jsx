@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
-import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
+import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock } from "./analytics";
 import HomePage from "./Home";
+import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
 
 // Heavy tab components — lazy-loaded on first visit to keep initial bundle small
 const GroundTruth    = lazy(() => import("./GroundTruth"));
@@ -14,7 +15,6 @@ const PlaygroundApp  = lazy(() => import("./Playground"));
 const CareerApp      = lazy(() => import("./Career"));
 const ExploreApp     = lazy(() => import("./Explore"));
 const AgentsApp      = lazy(() => import("./Agents"));
-const HowTo          = lazy(() => import("./HowTo"));
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -963,7 +963,7 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
         <div className="text-5xl mb-4">🏆</div>
         <div className="text-lg font-bold text-zinc-400">No scores yet</div>
         <p className="text-sm text-zinc-600">Go to RAG Lab → enable Challenge Mode → submit a passing config to get on the board.</p>
-        <button onClick={() => onRetry(0)} className="mt-4 px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-lg text-sm transition-all">
+        <button onClick={() => onRetry("lab")} className="mt-4 px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-lg text-sm transition-all">
           Go to RAG Lab →
         </button>
       </div>
@@ -1054,7 +1054,7 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
               <div className="text-xs text-zinc-600">{s.entries.length} attempt{s.entries.length !== 1 ? "s" : ""} · {s.entries.filter(e => e.passed).length} passed</div>
             </div>
             <span className={`text-xs font-mono px-2 py-0.5 rounded border shrink-0 ${s.bestPassed ? "border-emerald-700 text-emerald-400" : s.entries.length > 0 ? "border-amber-700 text-amber-400" : "border-zinc-700 text-zinc-600"}`}>
-              {s.bestPassed ? "SOLVED" : s.entries.length > 0 ? "ATTEMPTED" : "LOCKED"}
+              {s.bestPassed ? "SOLVED" : s.entries.length > 0 ? "ATTEMPTED" : "OPEN"}
             </span>
           </div>
         ))}
@@ -1359,6 +1359,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    checkPreviewUnlock(); // handle ?preview=CODE URL unlock
     initAnalytics();
   }, []);
 

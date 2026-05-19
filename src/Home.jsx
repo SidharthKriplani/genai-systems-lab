@@ -464,30 +464,24 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
                 {group.modules.map(m => (
                   <button key={m.tab}
                     onClick={() => onNavigate(m.tab)}
-                    className={`text-left border rounded-xl p-4 transition-all group ${m.locked ? "bg-zinc-900/60 border-zinc-800/60 hover:border-zinc-700" : "bg-zinc-900 border-zinc-800 hover:border-zinc-600"}`}>
+                    className="text-left border rounded-xl p-4 transition-all group bg-zinc-900 border-zinc-800 hover:border-zinc-600">
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-lg">{m.icon}</span>
-                      <span className={`text-sm font-bold ${m.locked ? "text-zinc-500" : "text-white"}`}>{m.title}</span>
+                      <span className="text-sm font-bold text-white">{m.title}</span>
                       <div className="ml-auto flex items-center gap-1.5">
                         {m.audience && (
                           <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700/50 hidden sm:inline">
                             {m.audience}
                           </span>
                         )}
-                        {m.locked
-                          ? <span className="text-xs text-zinc-600">🔒</span>
-                          : <span className="text-zinc-700 group-hover:text-zinc-400 text-xs">→</span>
-                        }
+                        <span className="text-zinc-700 group-hover:text-zinc-400 text-xs">→</span>
                       </div>
                     </div>
                     <p className="text-xs text-zinc-500 leading-relaxed mb-2">{m.desc}</p>
-                    {m.discovery && !m.locked && (
+                    {m.discovery && (
                       <p className="text-[11px] text-zinc-600 italic leading-relaxed border-t border-zinc-800 pt-1.5 mt-1">
                         💡 {m.discovery}
                       </p>
-                    )}
-                    {m.locked && (
-                      <p className="text-[10px] text-zinc-700 font-mono mt-1">In progression — coming soon</p>
                     )}
                   </button>
                 ))}
