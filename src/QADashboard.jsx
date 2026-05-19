@@ -181,7 +181,9 @@ export default function QADashboard({ onNavigate, onOpenModule }) {
         <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <button onClick={() => onNavigate("home")}
-              className="text-zinc-600 hover:text-zinc-400 text-xs font-mono transition-all">← home</button>
+              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all border border-zinc-700">
+              ← Back to Lab
+            </button>
             <div className="w-px h-3 bg-zinc-700" />
             <span className="text-xs font-mono font-bold text-zinc-400">QA Console</span>
             <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-500 border border-amber-800/40 uppercase tracking-wide">internal</span>

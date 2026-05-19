@@ -1313,7 +1313,17 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => { checkPreviewUnlock(); initAnalytics(); }, []);
+  useEffect(() => {
+    checkPreviewUnlock();
+    initAnalytics();
+    // ?qa=1 opens QA console directly
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("qa") === "1") {
+        setTopView("qa");
+      }
+    } catch {}
+  }, []);
 
   const scenario = ALL_SCENARIOS[scenarioIdx];
   const lookup = useMemo(() => lookupResult(scenario, config), [scenario, config]);
@@ -1883,12 +1893,15 @@ export default function App() {
         />
       )}
 
-      {/* Hidden QA corner link — internal only */}
+      {/* QA corner link — fixed bottom-left, subtle but findable */}
       {topView !== "qa" && (
         <button
           onClick={() => navigate("qa")}
-          className="fixed bottom-3 right-3 text-[9px] font-mono text-zinc-800 hover:text-zinc-500 transition-all z-10 select-none"
-          title="Internal QA Console">
+          style={{ opacity: 0.35 }}
+          onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+          onMouseLeave={e => e.currentTarget.style.opacity = "0.35"}
+          className="fixed bottom-3 left-3 z-50 text-[10px] font-mono text-zinc-400 bg-zinc-900 border border-zinc-700 rounded px-2 py-1 transition-colors select-none"
+          title="Internal QA Console — or visit ?qa=1">
           qa
         </button>
       )}
