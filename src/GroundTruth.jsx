@@ -130,20 +130,41 @@ function PostDetail({ post, onBack, onNavigate }) {
   useEffect(() => {
     track("ground_truth_post_opened", { post: post.id });
     window.scrollTo(0, 0);
+
+    // Dynamic SEO meta per post
+    const base = "https://genai-systems-lab-ivory.vercel.app/";
+    const title = `${post.title} — Ground Truth | GenAI Systems Lab`;
+    const desc  = post.desc;
+
+    document.title = title;
+    const setMeta = (sel, val) => { const el = document.querySelector(sel); if (el) el.setAttribute("content", val); };
+    setMeta('meta[name="description"]', desc);
+    setMeta('meta[property="og:title"]', title);
+    setMeta('meta[property="og:description"]', desc);
+    setMeta('meta[property="og:url"]', base);
+    setMeta('meta[name="twitter:title"]', title);
+    setMeta('meta[name="twitter:description"]', desc);
+
+    return () => {
+      document.title = "GenAI Systems Lab — Interactive AI Engineering Platform";
+      setMeta('meta[name="description"]', "The hands-on platform for AI engineers and product managers. 75+ interactive modules covering RAG, agents, evals, LLMOps, and system design.");
+      setMeta('meta[property="og:title"]', "GenAI Systems Lab — Interactive AI Engineering Platform");
+      setMeta('meta[property="og:description"]', "75+ interactive modules for AI engineers and PMs — RAG Lab, Agents, Evals, Red Teaming, and more.");
+    };
   }, [post.id]);
 
   return (
     <div className="min-h-screen bg-zinc-950">
-      <div className="max-w-2xl mx-auto px-4 py-10">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
 
         {/* Back */}
         <button onClick={onBack}
-          className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors font-mono mb-8">
+          className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors font-mono mb-6 sm:mb-8">
           ← Ground Truth
         </button>
 
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
               style={{ color, background: color + "22", border: `1px solid ${color}44` }}>
@@ -151,7 +172,7 @@ function PostDetail({ post, onBack, onNavigate }) {
             </span>
             <span className="text-[9px] text-zinc-600 font-mono">{post.readMin} min read</span>
           </div>
-          <h1 className="text-xl font-black text-white leading-tight mb-3">{post.title}</h1>
+          <h1 className="text-lg sm:text-xl font-black text-white leading-tight mb-3">{post.title}</h1>
           <p className="text-sm text-zinc-400 leading-relaxed">{post.desc}</p>
         </div>
 
@@ -1121,8 +1142,8 @@ export default function GroundTruth({ onNavigate }) {
           </p>
         </div>
 
-        {/* Category filter */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        {/* Category filter — scrolls horizontally on mobile */}
+        <div className="flex gap-2 mb-8 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-none">
           {CATEGORIES.map(c => {
             const count = c.id === "all" ? WRITTEN.length : WRITTEN.filter(p => p.category === c.id).length;
             if (count === 0) return null;
@@ -1130,7 +1151,7 @@ export default function GroundTruth({ onNavigate }) {
               <button
                 key={c.id}
                 onClick={() => setFilter(c.id)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                   filter === c.id
                     ? "bg-violet-600 text-white"
                     : "bg-zinc-800 hover:bg-zinc-700 text-zinc-400"

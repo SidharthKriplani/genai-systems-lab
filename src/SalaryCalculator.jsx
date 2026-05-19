@@ -125,7 +125,7 @@ export default function SalaryCalculator() {
       </div>
 
       {/* Controls */}
-      <div className="p-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="p-3 sm:p-4 grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
         {/* Role */}
         <div>
           <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">Role</label>
@@ -169,9 +169,9 @@ export default function SalaryCalculator() {
 
       {/* Result */}
       {row && (
-        <div className="px-4 pb-4">
-          <div className="rounded-xl border border-violet-800/40 bg-violet-950/20 p-4">
-            <div className="grid grid-cols-2 gap-4">
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+          <div className="rounded-xl border border-violet-800/40 bg-violet-950/20 p-3 sm:p-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {/* Base */}
               <div>
                 <p className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Base salary</p>

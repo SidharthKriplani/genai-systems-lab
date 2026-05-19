@@ -471,18 +471,18 @@ export default function TransformerWalkthrough() {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between"
+      <div className="px-3 sm:px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between gap-2"
         style={{ background: current.color + "10" }}>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0"
             style={{ color: current.color, background: current.color + "20", border: `1px solid ${current.color}40` }}>
-            Step {current.id} / {STEPS.length}
+            {current.id}/{STEPS.length}
           </span>
-          <span className="text-xs text-zinc-400 font-mono hidden sm:inline">{current.subtitle}</span>
+          <span className="text-[11px] text-zinc-400 font-mono truncate hidden xs:inline sm:inline">{current.subtitle}</span>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Progress dots */}
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Progress dots — hidden on very small screens */}
+          <div className="hidden sm:flex items-center gap-1">
             {STEPS.map((_, i) => (
               <button key={i} onClick={() => goTo(i)}
                 className="w-1.5 h-1.5 rounded-full transition-all hover:scale-125"
@@ -495,13 +495,13 @@ export default function TransformerWalkthrough() {
               if (step >= STEPS.length - 1) { setStep(0); setPlaying(true); }
               else setPlaying(p => !p);
             }}
-            className="ml-1 flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-all"
+            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-all"
             title={playing ? "Pause" : "Play"}>
             {playing
-              ? <span>⏸ pause</span>
+              ? <span>⏸ <span className="hidden sm:inline">pause</span></span>
               : step >= STEPS.length - 1
-                ? <span>↺ replay</span>
-                : <span>▶ play</span>
+                ? <span>↺ <span className="hidden sm:inline">replay</span></span>
+                : <span>▶ <span className="hidden sm:inline">play</span></span>
             }
           </button>
         </div>
@@ -509,19 +509,19 @@ export default function TransformerWalkthrough() {
 
       {/* Body — fixed height so card never jumps */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:h-[300px]">
-        {/* Diagram — fixed square */}
-        <div className="p-4 flex items-center justify-center bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 h-[220px] md:h-auto">
-          <div className="w-full max-w-[300px] aspect-[320/200]">
+        {/* Diagram — fixed height on all screen sizes */}
+        <div className="p-3 sm:p-4 flex items-center justify-center bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 h-[180px] sm:h-[220px] md:h-auto">
+          <div className="w-full max-w-[280px] sm:max-w-[300px] aspect-[320/200]">
             <SVGComponent />
           </div>
         </div>
 
-        {/* Text — scrollable so long content doesn't push card */}
-        <div className="p-5 flex flex-col h-[260px] md:h-auto overflow-y-auto">
+        {/* Text — scrollable, fixed height on mobile */}
+        <div className="p-4 sm:p-5 flex flex-col h-[220px] sm:h-[260px] md:h-auto overflow-y-auto">
           <div className="flex-1">
-            <h3 className="text-base font-black text-white mb-2 leading-tight">{current.title}</h3>
-            <p className="text-sm text-zinc-300 leading-relaxed mb-3">{current.desc}</p>
-            <p className="text-xs text-zinc-500 leading-relaxed font-mono">{current.detail}</p>
+            <h3 className="text-sm sm:text-base font-black text-white mb-2 leading-tight">{current.title}</h3>
+            <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed mb-2 sm:mb-3">{current.desc}</p>
+            <p className="text-[11px] sm:text-xs text-zinc-500 leading-relaxed font-mono">{current.detail}</p>
           </div>
           {/* Nav */}
           <div className="flex items-center gap-3 pt-4 mt-auto shrink-0">
