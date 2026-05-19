@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import HowTo from "./HowTo";
 import IndiaScaleLab from "./IndiaScale";
 import ModelRouterLab from "./ModelRouter";
@@ -1505,6 +1505,204 @@ const FT_SCENARIOS = [
   },
 ];
 
+// ─── 3D LORA DECOMPOSITION VIZ ───────────────────────────────────────────────
+function LoRA3DViz() {
+  const canvasRef = useRef(null);
+  const rotRef    = useRef({ x: 0.28, y: 0.5 });
+  const dragRef   = useRef(null);
+  const animRef   = useRef(null);
+  const [rank, setRank]           = useState(4);
+  const [showDelta, setShowDelta] = useState(true);
+
+  function proj(x, y, z) {
+    const { x: rx, y: ry } = rotRef.current;
+    const cosY = Math.cos(ry), sinY = Math.sin(ry);
+    const x1 = x * cosY - z * sinY, z1 = x * sinY + z * cosY;
+    const cosX = Math.cos(rx), sinX = Math.sin(rx);
+    const y1 = y * cosX - z1 * sinX, z2 = y * sinX + z1 * cosX;
+    const fov = 5, pz = Math.max(fov + z2 + 3, 0.1);
+    return { px: x1 * fov / pz * 80, py: y1 * fov / pz * 80, depth: z2 };
+  }
+
+  const DIM = 8;
+  const wVals    = useMemo(() => Array.from({ length: DIM * DIM  }, (_, i) => Math.abs(Math.sin(i * 2.1) * Math.cos(i * 0.7))), []);
+  const aVals    = useMemo(() => Array.from({ length: DIM * rank }, (_, i) => Math.abs(Math.cos(i * 1.8 + rank * 0.4))), [rank]);
+  const bVals    = useMemo(() => Array.from({ length: rank * DIM }, (_, i) => Math.abs(Math.sin(i * 2.3 + rank * 0.6))), [rank]);
+  const deltaVals = useMemo(() => {
+    const d = [];
+    for (let i = 0; i < DIM; i++)
+      for (let j = 0; j < DIM; j++) {
+        let v = 0;
+        for (let k = 0; k < rank; k++) v += aVals[i * rank + k] * bVals[k * DIM + j];
+        d.push(Math.min(v / rank, 1));
+      }
+    return d;
+  }, [aVals, bVals, rank]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const CX = canvas.width / 2, CY = canvas.height / 2;
+
+    function drawMatrix(rows, cols, ox, oy, oz, vals, baseColor, label, sub) {
+      const cs = 0.27;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = ox + (c - cols / 2 + 0.5) * cs;
+          const y = oy + (r - rows / 2 + 0.5) * cs;
+          const v = vals[r * cols + c];
+          const tl = proj(x - cs/2, y - cs/2, oz);
+          const tr = proj(x + cs/2, y - cs/2, oz);
+          const br = proj(x + cs/2, y + cs/2, oz);
+          const bl = proj(x - cs/2, y + cs/2, oz);
+          const [ri, gi, bi] = baseColor;
+          ctx.beginPath();
+          ctx.moveTo(CX + tl.px, CY + tl.py);
+          ctx.lineTo(CX + tr.px, CY + tr.py);
+          ctx.lineTo(CX + br.px, CY + br.py);
+          ctx.lineTo(CX + bl.px, CY + bl.py);
+          ctx.closePath();
+          ctx.fillStyle = `rgb(${Math.round(ri*(v*0.85+0.15))},${Math.round(gi*(v*0.85+0.15))},${Math.round(bi*(v*0.85+0.15))})`;
+          ctx.fill();
+          ctx.strokeStyle = "rgba(0,0,0,0.45)";
+          ctx.lineWidth = 0.4;
+          ctx.stroke();
+        }
+      }
+      const top = proj(ox, oy - rows * cs / 2 - 0.18, oz);
+      const [ri, gi, bi] = baseColor;
+      ctx.fillStyle = `rgb(${ri},${gi},${bi})`;
+      ctx.font = "bold 10px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(label, CX + top.px, CY + top.py);
+      if (sub) {
+        const bot = proj(ox, oy + rows * cs / 2 + 0.14, oz);
+        ctx.fillStyle = "#34d399";
+        ctx.font = "8px monospace";
+        ctx.fillText(sub, CX + bot.px, CY + bot.py);
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#09090b";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const mats = [
+        { rows: DIM,  cols: DIM,  ox:  0,   oy: 0, oz: -1.4, vals: wVals,     color: [90,90,110],  label: `W [${DIM}×${DIM}]`,       sub: null },
+        { rows: DIM,  cols: rank, ox: -1.6, oy: 0, oz:  0,   vals: aVals,     color: [52,211,153], label: `A [${DIM}×${rank}]`,       sub: "▲ trainable" },
+        { rows: rank, cols: DIM,  ox:  1.6, oy: 0, oz:  0,   vals: bVals,     color: [56,189,248], label: `B [${rank}×${DIM}]`,       sub: "▲ trainable" },
+      ];
+      if (showDelta)
+        mats.push({ rows: DIM, cols: DIM, ox: 0, oy: 0, oz: 1.5, vals: deltaVals, color: [52,211,153], label: `ΔW=A·B [${DIM}×${DIM}]`, sub: null });
+
+      mats.sort((a, b) => proj(a.ox, a.oy, a.oz).depth - proj(b.ox, b.oy, b.oz).depth);
+      mats.forEach(m => drawMatrix(m.rows, m.cols, m.ox, m.oy, m.oz, m.vals, m.color, m.label, m.sub));
+
+      if (showDelta) {
+        const aC = proj(-1.6, 0, 0), bC = proj(1.6, 0, 0), dC = proj(0, 0, 1.5);
+        ctx.strokeStyle = "rgba(52,211,153,0.25)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(CX + aC.px, CY + aC.py); ctx.lineTo(CX + dC.px, CY + dC.py); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(CX + bC.px, CY + bC.py); ctx.lineTo(CX + dC.px, CY + dC.py); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      rotRef.current.y += 0.005;
+    }
+
+    function loop() { render(); animRef.current = requestAnimationFrame(loop); }
+    loop();
+
+    function onDown(e) {
+      const x = e.touches?.[0]?.clientX ?? e.clientX;
+      const y = e.touches?.[0]?.clientY ?? e.clientY;
+      dragRef.current = { x, y, rx: rotRef.current.x, ry: rotRef.current.y };
+    }
+    function onMove(e) {
+      if (!dragRef.current) return;
+      const x = e.touches?.[0]?.clientX ?? e.clientX;
+      const y = e.touches?.[0]?.clientY ?? e.clientY;
+      rotRef.current.y = dragRef.current.ry + (x - dragRef.current.x) * 0.011;
+      rotRef.current.x = dragRef.current.rx + (y - dragRef.current.y) * 0.008;
+    }
+    function onUp() { dragRef.current = null; }
+
+    canvas.addEventListener("mousedown", onDown);
+    canvas.addEventListener("mousemove", onMove);
+    canvas.addEventListener("mouseup",   onUp);
+    canvas.addEventListener("touchstart", onDown, { passive: true });
+    canvas.addEventListener("touchmove",  onMove, { passive: true });
+    canvas.addEventListener("touchend",   onUp);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      canvas.removeEventListener("mousedown", onDown);
+      canvas.removeEventListener("mousemove", onMove);
+      canvas.removeEventListener("mouseup",   onUp);
+      canvas.removeEventListener("touchstart", onDown);
+      canvas.removeEventListener("touchmove",  onMove);
+      canvas.removeEventListener("touchend",   onUp);
+    };
+  }, [rank, showDelta, wVals, aVals, bVals, deltaVals]);
+
+  const fullP = DIM * DIM;
+  const loraP = 2 * DIM * rank;
+  const reduc = Math.round(fullP / loraP);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-zinc-500">
+        LoRA decomposes each weight update into two low-rank matrices: ΔW = A·B.
+        Only A and B are trained — W stays completely frozen.
+        Drag to rotate.
+      </p>
+      <div className="rounded-xl bg-zinc-950 border border-zinc-800 overflow-hidden">
+        <canvas ref={canvasRef} width={560} height={340} className="w-full" style={{ cursor: "grab" }} />
+      </div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-xs text-zinc-400 font-mono">Rank r =</span>
+        {[1, 2, 4, 8, 16].map(r => (
+          <button key={r} onClick={() => setRank(r)}
+            className={`px-2.5 py-1 rounded text-xs font-mono font-bold transition-colors ${rank === r ? "bg-emerald-500 text-black" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {r}
+          </button>
+        ))}
+        <button onClick={() => setShowDelta(v => !v)}
+          className={`ml-auto px-3 py-1 rounded text-xs font-mono transition-colors ${showDelta ? "bg-sky-900/60 text-sky-300 border border-sky-800" : "bg-zinc-800 text-zinc-500"}`}>
+          {showDelta ? "Hide ΔW" : "Show ΔW"}
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3">
+          <div className="text-[10px] text-zinc-500 mb-1">Full fine-tune</div>
+          <div className="font-mono text-sm text-zinc-300">{fullP} params</div>
+          <div className="text-[10px] text-zinc-600 mt-0.5">W (d²)</div>
+        </div>
+        <div className="rounded-lg bg-zinc-900 border border-emerald-900/60 p-3">
+          <div className="text-[10px] text-zinc-500 mb-1">LoRA (r={rank})</div>
+          <div className="font-mono text-sm text-emerald-400">{loraP} params</div>
+          <div className="text-[10px] text-zinc-600 mt-0.5">A + B (2·d·r)</div>
+        </div>
+        <div className="rounded-lg bg-zinc-900 border border-sky-900/60 p-3">
+          <div className="text-[10px] text-zinc-500 mb-1">Reduction</div>
+          <div className="font-mono text-sm text-sky-400">{reduc}×</div>
+          <div className="text-[10px] text-zinc-600 mt-0.5">fewer params</div>
+        </div>
+      </div>
+      <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-3 text-xs text-zinc-400 leading-relaxed">
+        <span className="text-zinc-300 font-bold">W</span> frozen &nbsp;·&nbsp;
+        <span className="text-emerald-400 font-bold">A</span> down-proj (d×r) &nbsp;·&nbsp;
+        <span className="text-sky-400 font-bold">B</span> up-proj (r×d) &nbsp;·&nbsp;
+        <span className="text-emerald-400 font-bold">ΔW</span> = A·B learned update.
+        Inference output: <span className="font-mono">Wx + α·(ΔW·x)/r</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── FINE-TUNING LAB ──────────────────────────────────────────────────────────
 function FineTuningLab() {
   const [tab, setTab] = useState("simulator");
   const [ftModel, setFtModel]     = useState("llama3-8b");
@@ -1521,6 +1719,7 @@ function FineTuningLab() {
     { id: "simulator", label: "Config Simulator" },
     { id: "scenarios", label: "Scenario Challenges" },
     { id: "lora",      label: "LoRA Deep Dive" },
+    { id: "lora3d",    label: "3D LoRA Visual" },
     { id: "rlhf",      label: "RLHF & DPO" },
     { id: "when",      label: "Decision Matrix" },
   ];
@@ -1801,6 +2000,9 @@ function FineTuningLab() {
           </div>
         </div>
       )}
+
+      {/* ── 3D LORA VISUAL ── */}
+      {tab === "lora3d" && <LoRA3DViz />}
 
       {/* ── RLHF & DPO ── */}
       {tab === "rlhf" && (

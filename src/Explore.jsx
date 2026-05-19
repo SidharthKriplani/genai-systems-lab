@@ -1,157 +1,243 @@
 import { useState, useEffect, useRef } from "react";
 import HowTo from "./HowTo";
 
-// ─── EMBEDDING SPACE EXPLORER ─────────────────────────────────────────────────
+// ─── EMBEDDING SPACE EXPLORER 3D ─────────────────────────────────────────────
 
-// Pre-computed 2D positions simulating UMAP projection
-const EMBEDDING_POINTS = [
-  // RAG cluster
-  { id: "e1",  label: "What is RAG?",              x: 120, y: 80,  topic: "RAG",           color: "#6366f1" },
-  { id: "e2",  label: "Retrieval pipeline",         x: 145, y: 105, topic: "RAG",           color: "#6366f1" },
-  { id: "e3",  label: "Vector database indexing",   x: 100, y: 115, topic: "RAG",           color: "#6366f1" },
-  { id: "e4",  label: "Chunking strategies",        x: 130, y: 140, topic: "RAG",           color: "#6366f1" },
-  { id: "e5",  label: "Context window limits",      x: 160, y: 125, topic: "RAG",           color: "#6366f1" },
-  // Agents cluster
-  { id: "e6",  label: "Agent reasoning loop",       x: 310, y: 70,  topic: "Agents",        color: "#22c55e" },
-  { id: "e7",  label: "Tool calling patterns",      x: 340, y: 95,  topic: "Agents",        color: "#22c55e" },
-  { id: "e8",  label: "Agent memory types",         x: 300, y: 115, topic: "Agents",        color: "#22c55e" },
-  { id: "e9",  label: "Multi-agent coordination",   x: 330, y: 135, topic: "Agents",        color: "#22c55e" },
-  // Architecture cluster
-  { id: "e10", label: "Transformer attention",      x: 230, y: 200, topic: "Architecture",  color: "#f59e0b" },
-  { id: "e11", label: "Self-attention mechanism",   x: 260, y: 215, topic: "Architecture",  color: "#f59e0b" },
-  { id: "e12", label: "Feed-forward layers",        x: 215, y: 230, topic: "Architecture",  color: "#f59e0b" },
-  { id: "e13", label: "Positional encoding",        x: 250, y: 240, topic: "Architecture",  color: "#f59e0b" },
-  // Safety cluster
-  { id: "e14", label: "Prompt injection attacks",   x: 420, y: 170, topic: "Safety",        color: "#ef4444" },
-  { id: "e15", label: "Output guardrail design",    x: 450, y: 150, topic: "Safety",        color: "#ef4444" },
-  { id: "e16", label: "Jailbreak techniques",       x: 440, y: 195, topic: "Safety",        color: "#ef4444" },
-  { id: "e17", label: "PII detection in outputs",   x: 415, y: 210, topic: "Safety",        color: "#ef4444" },
-  // Ops cluster
-  { id: "e18", label: "Hallucination rate metrics", x: 80,  y: 220, topic: "Ops",           color: "#3b82f6" },
-  { id: "e19", label: "Latency P95 monitoring",     x: 55,  y: 200, topic: "Ops",           color: "#3b82f6" },
-  { id: "e20", label: "Cost per query tracking",    x: 70,  y: 245, topic: "Ops",           color: "#3b82f6" },
-  { id: "e21", label: "Model observability",        x: 100, y: 235, topic: "Ops",           color: "#3b82f6" },
+// Shared perspective projection — used by all 3D canvas components in this file
+function proj3D(x, y, z, rx, ry, scale = 90) {
+  const cosY = Math.cos(ry), sinY = Math.sin(ry);
+  const x1 = x * cosY - z * sinY, z1 = x * sinY + z * cosY;
+  const cosX = Math.cos(rx), sinX = Math.sin(rx);
+  const y1 = y * cosX - z1 * sinX, z2 = y * sinX + z1 * cosX;
+  const fov = 6, pz = fov + z2, s = fov / pz;
+  return { px: x1 * s * scale, py: y1 * s * scale, depth: z2, s };
+}
+
+const EMBED_TOPICS = [
+  { id: "RAG",          color: "#6366f1" },
+  { id: "Agents",       color: "#22c55e" },
+  { id: "Architecture", color: "#f59e0b" },
+  { id: "Safety",       color: "#ef4444" },
+  { id: "Ops",          color: "#3b82f6" },
+  { id: "Multimodal",   color: "#38bdf8" },
 ];
 
-const QUERIES = [
-  { text: "How does retrieval work in RAG?",       nearTopics: ["RAG"],          notNear: ["Safety", "Ops"] },
-  { text: "How do agents decide what to do next?", nearTopics: ["Agents"],       notNear: ["Architecture", "Ops"] },
-  { text: "How does attention work?",              nearTopics: ["Architecture"], notNear: ["Safety", "RAG"] },
-  { text: "How do I prevent jailbreaks?",          nearTopics: ["Safety"],       notNear: ["Architecture", "Agents"] },
-  { text: "How do I monitor my LLM in production?",nearTopics: ["Ops"],          notNear: ["Architecture", "Agents"] },
+const EMBED_POINTS = [
+  { id:"e1",  label:"What is RAG?",           x:-1.8, y:0.5,  z:0.5,  topic:"RAG"          },
+  { id:"e2",  label:"Retrieval pipeline",      x:-1.5, y:0.8,  z:0.3,  topic:"RAG"          },
+  { id:"e3",  label:"Vector DB indexing",      x:-2.0, y:0.3,  z:0.7,  topic:"RAG"          },
+  { id:"e4",  label:"Chunking strategies",     x:-1.7, y:0.6,  z:0.9,  topic:"RAG"          },
+  { id:"e5",  label:"Context window limits",   x:-1.6, y:0.2,  z:0.4,  topic:"RAG"          },
+  { id:"e6",  label:"Agent reasoning loop",    x:1.8,  y:0.6,  z:0.4,  topic:"Agents"       },
+  { id:"e7",  label:"Tool calling patterns",   x:2.1,  y:0.3,  z:0.6,  topic:"Agents"       },
+  { id:"e8",  label:"Agent memory types",      x:1.6,  y:0.8,  z:0.3,  topic:"Agents"       },
+  { id:"e9",  label:"Multi-agent loops",       x:2.0,  y:0.5,  z:0.8,  topic:"Agents"       },
+  { id:"e10", label:"Transformer attention",   x:-0.2, y:-1.5, z:0.5,  topic:"Architecture" },
+  { id:"e11", label:"Self-attention",          x:0.3,  y:-1.8, z:0.3,  topic:"Architecture" },
+  { id:"e12", label:"Feed-forward layers",     x:-0.4, y:-1.3, z:0.7,  topic:"Architecture" },
+  { id:"e13", label:"Positional encoding",     x:0.2,  y:-1.6, z:0.8,  topic:"Architecture" },
+  { id:"e14", label:"Prompt injection",        x:1.6,  y:-0.4, z:-1.5, topic:"Safety"       },
+  { id:"e15", label:"Output guardrails",       x:1.8,  y:-0.7, z:-1.3, topic:"Safety"       },
+  { id:"e16", label:"Jailbreak techniques",    x:1.4,  y:-0.3, z:-1.7, topic:"Safety"       },
+  { id:"e17", label:"PII detection",           x:1.7,  y:-0.6, z:-1.6, topic:"Safety"       },
+  { id:"e18", label:"Hallucination metrics",   x:-1.6, y:-0.5, z:-1.5, topic:"Ops"          },
+  { id:"e19", label:"Latency P95 monitoring",  x:-1.8, y:-0.3, z:-1.3, topic:"Ops"          },
+  { id:"e20", label:"Cost per query",          x:-1.4, y:-0.7, z:-1.7, topic:"Ops"          },
+  { id:"e21", label:"Model observability",     x:-1.7, y:-0.4, z:-1.8, topic:"Ops"          },
+  { id:"e22", label:"CLIP embeddings",         x:-0.1, y:1.8,  z:-0.4, topic:"Multimodal"   },
+  { id:"e23", label:"Vision transformers",     x:0.3,  y:2.0,  z:-0.6, topic:"Multimodal"   },
+  { id:"e24", label:"Diffusion models",        x:-0.3, y:1.7,  z:-0.7, topic:"Multimodal"   },
+  { id:"e25", label:"Multimodal RAG",          x:0.2,  y:1.9,  z:-0.3, topic:"Multimodal"   },
+];
+
+const EMBED_QUERIES = [
+  { text:"How does retrieval work in RAG?",       near:["RAG"],          notNear:["Safety","Ops"] },
+  { text:"How do agents decide what to do next?", near:["Agents"],       notNear:["Architecture","Ops"] },
+  { text:"How does attention work?",              near:["Architecture"], notNear:["Safety","RAG"] },
+  { text:"How do I prevent jailbreaks?",          near:["Safety"],       notNear:["Architecture","Agents"] },
+  { text:"Monitor LLM in production",             near:["Ops"],          notNear:["Architecture","Agents"] },
+  { text:"How does image-text search work?",      near:["Multimodal"],   notNear:["Safety","Ops"] },
 ];
 
 function EmbeddingExplorer() {
+  const canvasRef = useRef(null);
+  const rotRef   = useRef({ x: 0.25, y: 0.4, dragging: false, lx: 0, ly: 0 });
+  const queryRef = useRef(null);
+  const projRef  = useRef([]);
+  const hovRef   = useRef(null);
   const [activeQuery, setActiveQuery] = useState(null);
-  const [hoveredPoint, setHoveredPoint] = useState(null);
 
-  const relevance = (point) => {
-    if (!activeQuery) return 0.5;
-    const near = activeQuery.nearTopics.includes(point.topic) ? 1 : 0;
-    const far = activeQuery.notNear.includes(point.topic) ? 0 : 0.3;
-    return near || far;
-  };
+  const colorMap = Object.fromEntries(EMBED_TOPICS.map(t => [t.id, t.color]));
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let animId;
+
+    function draw() {
+      const rot = rotRef.current;
+      rot.y += 0.003;
+      const W = canvas.width, H = canvas.height, cx = W / 2, cy = H / 2 - 10;
+      ctx.fillStyle = "#09090b";
+      ctx.fillRect(0, 0, W, H);
+
+      // grid floor
+      ctx.strokeStyle = "#1c1c1e"; ctx.lineWidth = 0.5;
+      for (let i = -3; i <= 3; i++) {
+        const p1 = proj3D(i * 0.8, -0.05, -3, rot.x, rot.y);
+        const p2 = proj3D(i * 0.8, -0.05,  3, rot.x, rot.y);
+        ctx.beginPath(); ctx.moveTo(cx+p1.px, cy+p1.py); ctx.lineTo(cx+p2.px, cy+p2.py); ctx.stroke();
+        const p3 = proj3D(-3, -0.05, i * 0.8, rot.x, rot.y);
+        const p4 = proj3D( 3, -0.05, i * 0.8, rot.x, rot.y);
+        ctx.beginPath(); ctx.moveTo(cx+p3.px, cy+p3.py); ctx.lineTo(cx+p4.px, cy+p4.py); ctx.stroke();
+      }
+
+      const q = queryRef.current;
+      const projected = EMBED_POINTS.map(p => ({
+        ...p, color: colorMap[p.topic],
+        ...proj3D(p.x, p.y, p.z, rot.x, rot.y),
+      })).sort((a, b) => a.depth - b.depth);
+      projRef.current = projected;
+
+      // cluster halos
+      EMBED_TOPICS.forEach(topic => {
+        const pts = projected.filter(p => p.topic === topic.id);
+        const hx = pts.reduce((s,p) => s+p.px, 0)/pts.length;
+        const hy = pts.reduce((s,p) => s+p.py, 0)/pts.length;
+        const isNear = q && q.near.includes(topic.id);
+        ctx.beginPath(); ctx.arc(cx+hx, cy+hy, 52, 0, Math.PI*2);
+        ctx.fillStyle = topic.color + (q ? (isNear ? "14" : "04") : "0a");
+        ctx.fill();
+      });
+
+      // connection lines when query active
+      if (q) {
+        projected.filter(p => q.near.includes(p.topic)).forEach(p => {
+          ctx.beginPath(); ctx.moveTo(cx, cy+110); ctx.lineTo(cx+p.px, cy+p.py);
+          const g = ctx.createLinearGradient(cx, cy+110, cx+p.px, cy+p.py);
+          g.addColorStop(0, "#ffffff20"); g.addColorStop(1, p.color+"55");
+          ctx.strokeStyle = g; ctx.lineWidth = 0.9; ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]);
+        });
+      }
+
+      // points
+      projected.forEach(p => {
+        const near = q ? q.near.includes(p.topic) : false;
+        const baseR = Math.max(3, p.s * 22);
+        const r = q ? (near ? baseR*1.6 : baseR*0.55) : baseR;
+        const alpha = q ? (near ? 1 : 0.15) : 0.9;
+        const isHov = hovRef.current?.id === p.id;
+        if (near) {
+          const g = ctx.createRadialGradient(cx+p.px,cy+p.py,0,cx+p.px,cy+p.py,r*3);
+          g.addColorStop(0, p.color+"28"); g.addColorStop(1, p.color+"00");
+          ctx.beginPath(); ctx.arc(cx+p.px, cy+p.py, r*3, 0, Math.PI*2); ctx.fillStyle=g; ctx.fill();
+        }
+        ctx.beginPath(); ctx.arc(cx+p.px, cy+p.py, r, 0, Math.PI*2);
+        ctx.fillStyle = p.color + Math.round(alpha*255).toString(16).padStart(2,"0"); ctx.fill();
+        if (isHov) { ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke(); }
+        if (near || isHov) {
+          ctx.font="9px monospace"; ctx.fillStyle="#ffffff";
+          ctx.fillText(p.label, cx+p.px+r+3, cy+p.py+3);
+        }
+      });
+
+      // query dot
+      if (q) {
+        ctx.beginPath(); ctx.arc(cx, cy+110, 9, 0, Math.PI*2); ctx.fillStyle="#fff"; ctx.fill();
+        ctx.fillStyle="#09090b"; ctx.font="bold 8px monospace"; ctx.textAlign="center";
+        ctx.fillText("Q", cx, cy+113); ctx.textAlign="left";
+      }
+      ctx.fillStyle="#3f3f46"; ctx.font="9px monospace";
+      ctx.fillText("drag to rotate", 8, H-8);
+      animId = requestAnimationFrame(draw);
+    }
+
+    draw();
+
+    function onDown(e) {
+      const r = canvas.getBoundingClientRect();
+      rotRef.current.dragging = true;
+      rotRef.current.lx = (e.touches?.[0]?.clientX ?? e.clientX) - r.left;
+      rotRef.current.ly = (e.touches?.[0]?.clientY ?? e.clientY) - r.top;
+    }
+    function onMove(e) {
+      const r = canvas.getBoundingClientRect();
+      const mx = (e.touches?.[0]?.clientX ?? e.clientX) - r.left;
+      const my = (e.touches?.[0]?.clientY ?? e.clientY) - r.top;
+      if (rotRef.current.dragging) {
+        rotRef.current.y += (mx - rotRef.current.lx) * 0.012;
+        rotRef.current.x += (my - rotRef.current.ly) * 0.012;
+        rotRef.current.lx = mx; rotRef.current.ly = my;
+      }
+      const W = canvas.width, H = canvas.height, cx = W/2, cy = H/2-10;
+      let closest = null, minD = 16;
+      projRef.current.forEach(p => {
+        const d = Math.hypot(mx-(cx+p.px), my-(cy+p.py));
+        if (d < minD) { minD = d; closest = p; }
+      });
+      if (closest?.id !== hovRef.current?.id) hovRef.current = closest;
+    }
+    function onUp() { rotRef.current.dragging = false; }
+
+    canvas.addEventListener("mousedown", onDown);
+    canvas.addEventListener("mousemove", onMove);
+    canvas.addEventListener("touchstart", onDown, { passive: true });
+    canvas.addEventListener("touchmove",  onMove, { passive: true });
+    window.addEventListener("mouseup",   onUp);
+    window.addEventListener("touchend",  onUp);
+    return () => {
+      cancelAnimationFrame(animId);
+      canvas.removeEventListener("mousedown", onDown);
+      canvas.removeEventListener("mousemove", onMove);
+      canvas.removeEventListener("touchstart", onDown);
+      canvas.removeEventListener("touchmove",  onMove);
+      window.removeEventListener("mouseup",   onUp);
+      window.removeEventListener("touchend",  onUp);
+    };
+  }, [colorMap]);
+
+  function handleQuery(q) {
+    const next = activeQuery === q ? null : q;
+    setActiveQuery(next);
+    queryRef.current = next;
+  }
 
   return (
     <div className="space-y-4">
       <HowTo
-        objective="Understand why semantic search works — similar concepts cluster together in embedding space, so a query finds nearby chunks."
+        objective="Understand why semantic search finds meaning, not keywords — similar concepts cluster together in 3D embedding space."
         steps={[
-          "Click a query below to simulate a vector search",
-          "Watch which points 'light up' — those are the semantically nearest chunks",
-          "Notice that near ≠ same exact words — the model understands meaning, not just keywords",
-          "Hover any point to see its label",
+          "Drag to rotate the 3D space — explore all 6 topic clusters",
+          "Click a query to run a simulated vector search",
+          "Watch which cluster lights up — nearest semantically, not lexically",
+          "Notice RAG and Multimodal are far apart despite both being 'AI topics'",
         ]}
       />
-      <p className="text-[11px] text-zinc-600 font-mono">
-        ◌ Uses precomputed 2D coordinates for intuition — not live embedding inference from a real model.
-      </p>
+      <p className="text-[11px] text-zinc-600 font-mono">◌ 3D projection of precomputed coordinates — conceptual, not live embedding inference.</p>
       <div className="flex flex-wrap gap-2">
-        {QUERIES.map((q, i) => (
-          <button key={i} onClick={() => setActiveQuery(activeQuery === q ? null : q)}
+        {EMBED_QUERIES.map((q, i) => (
+          <button key={i} onClick={() => handleQuery(q)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeQuery === q ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             {q.text}
           </button>
         ))}
       </div>
-
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden relative">
-        {/* Legend */}
-        <div className="absolute top-3 right-3 space-y-1 z-10">
-          {[...new Set(EMBEDDING_POINTS.map(p => p.topic))].map(topic => {
-            const color = EMBEDDING_POINTS.find(p => p.topic === topic).color;
-            return (
-              <div key={topic} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                <span className="text-xs text-zinc-500 font-mono">{topic}</span>
-              </div>
-            );
-          })}
-        </div>
-
-        <svg viewBox="0 0 520 300" className="w-full" style={{ height: 300 }}>
-          {/* Grid */}
-          {[100,200,300,400].map(x => <line key={x} x1={x} y1="0" x2={x} y2="300" stroke="#27272a" strokeWidth="0.5"/>)}
-          {[75,150,225].map(y => <line key={y} x1="0" y1={y} x2="520" y2={y} stroke="#27272a" strokeWidth="0.5"/>)}
-
-          {/* Cluster halos when query active */}
-          {activeQuery && [...new Set(EMBEDDING_POINTS.filter(p => activeQuery.nearTopics.includes(p.topic)).map(p => p.topic))].map(topic => {
-            const pts = EMBEDDING_POINTS.filter(p => p.topic === topic);
-            const cx = pts.reduce((s,p) => s+p.x, 0)/pts.length;
-            const cy = pts.reduce((s,p) => s+p.y, 0)/pts.length;
-            const color = pts[0].color;
-            return <circle key={topic} cx={cx} cy={cy} r="48" fill={color} fillOpacity="0.06" stroke={color} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="4,4"/>;
-          })}
-
-          {/* Connection lines from "query" to nearest points */}
-          {activeQuery && EMBEDDING_POINTS.filter(p => activeQuery.nearTopics.includes(p.topic)).map(p => (
-            <line key={p.id} x1="260" y1="285" x2={p.x} y2={p.y} stroke={p.color} strokeWidth="0.8" strokeOpacity="0.3" strokeDasharray="3,3"/>
-          ))}
-
-          {/* Points */}
-          {EMBEDDING_POINTS.map(p => {
-            const rel = relevance(p);
-            const r = activeQuery ? (rel > 0.5 ? 7 : 4) : 6;
-            const opacity = activeQuery ? (rel > 0.5 ? 1 : 0.25) : 0.8;
-            return (
-              <g key={p.id} onMouseEnter={() => setHoveredPoint(p)} onMouseLeave={() => setHoveredPoint(null)} style={{ cursor: "pointer" }}>
-                <circle cx={p.x} cy={p.y} r={r + 4} fill="transparent" />
-                <circle cx={p.x} cy={p.y} r={r} fill={p.color} fillOpacity={opacity}
-                  style={{ transition: "r 0.3s, fill-opacity 0.3s" }}
-                  stroke={hoveredPoint?.id === p.id ? "white" : p.color}
-                  strokeWidth={hoveredPoint?.id === p.id ? 1.5 : 0.5} strokeOpacity="0.6" />
-              </g>
-            );
-          })}
-
-          {/* Query node */}
-          {activeQuery && (
-            <>
-              <circle cx="260" cy="285" r="8" fill="#ffffff" fillOpacity="0.9"/>
-              <text x="260" y="289" textAnchor="middle" fill="#09090b" fontSize="9" fontWeight="bold">Q</text>
-            </>
-          )}
-
-          {/* Hover tooltip */}
-          {hoveredPoint && (
-            <g>
-              <rect x={Math.min(hoveredPoint.x + 10, 350)} y={hoveredPoint.y - 20} width="140" height="24" rx="4" fill="#18181b" stroke={hoveredPoint.color} strokeWidth="1" strokeOpacity="0.6"/>
-              <text x={Math.min(hoveredPoint.x + 80, 420)} y={hoveredPoint.y - 4} textAnchor="middle" fill="white" fontSize="9" fontFamily="monospace">{hoveredPoint.label}</text>
-            </g>
-          )}
-
-          {/* Axis labels */}
-          <text x="10"  y="295" fill="#52525b" fontSize="8" fontFamily="monospace">← different topics</text>
-          <text x="390" y="295" fill="#52525b" fontSize="8" fontFamily="monospace">similar topics →</text>
-        </svg>
+      <canvas ref={canvasRef} width={520} height={340}
+        className="w-full rounded-xl border border-zinc-800 cursor-grab active:cursor-grabbing"
+        style={{ background: "#09090b", touchAction: "none" }} />
+      <div className="flex flex-wrap gap-3 justify-center">
+        {EMBED_TOPICS.map(t => (
+          <div key={t.id} className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
+            <span className="text-xs text-zinc-500 font-mono">{t.id}</span>
+          </div>
+        ))}
       </div>
-      {activeQuery ? (
-        <p className="text-xs text-zinc-400 text-center">
-          Query: <span className="text-white italic">"{activeQuery.text}"</span> — nearest cluster: <span style={{ color: EMBEDDING_POINTS.find(p => activeQuery.nearTopics.includes(p.topic))?.color }}>{activeQuery.nearTopics.join(", ")}</span>
-        </p>
-      ) : (
-        <p className="text-xs text-zinc-600 text-center">Click a query above to run a simulated vector search</p>
-      )}
+      {activeQuery
+        ? <p className="text-xs text-zinc-400 text-center"><span className="text-white italic">"{activeQuery.text}"</span>{" → nearest: "}{activeQuery.near.map(n=><span key={n} style={{color:colorMap[n]}}>{n}</span>)}</p>
+        : <p className="text-xs text-zinc-600 text-center">Click a query to run a simulated vector search • drag to rotate</p>
+      }
     </div>
   );
 }
@@ -1380,17 +1466,325 @@ function RedTeamingLab() {
   );
 }
 
+// ─── 3D ATTENTION VISUALIZATION ──────────────────────────────────────────────
+
+const ATTN_TOKENS = ["The", "cat", "sat", "on", "the", "mat"];
+function smx(a) { const m=Math.max(...a),e=a.map(x=>Math.exp(x-m)),s=e.reduce((x,y)=>x+y,0); return e.map(x=>x/s); }
+
+const ATTN_HEADS = [
+  { name:"Local Context",    color:"#6366f1", desc:"Adjacent tokens — captures local syntactic patterns like noun phrases",
+    w:[ smx([3,2,0.5,0,0,0]),   smx([2,3,2,0.5,0,0]),   smx([0.5,2,3,2,0.5,0]),   smx([0,0.5,2,3,2,0.5]),  smx([0,0,0.5,2,3,2]),    smx([0,0,0,0.5,2,3])   ] },
+  { name:"Subject → Verb",   color:"#22c55e", desc:"cat→sat and the→mat — subject-verb dependency across distance",
+    w:[ smx([1,0.5,2.5,0.2,0.2,0.2]), smx([0.3,1,3,0.2,0.1,0.1]), smx([0.2,2,1,0.3,0.2,0.3]), smx([0.2,0.2,0.5,1,0.2,0.5]), smx([1,0.2,0.5,0.2,1,2.5]), smx([0.2,0.2,0.3,0.3,2,1]) ] },
+  { name:"Article → Noun",   color:"#f59e0b", desc:"The→cat, the→mat — determiner attends to the noun it modifies",
+    w:[ smx([0.5,3,0.3,0.1,0.1,0.3]), smx([2.5,1,0.3,0.1,0.1,0.1]), smx([0.2,0.2,1,0.2,0.2,0.2]), smx([0.2,0.2,0.2,1,0.2,0.5]), smx([0.1,0.1,0.1,0.2,0.5,3]), smx([0.2,0.2,0.2,0.2,2.5,1]) ] },
+  { name:"Previous Token",   color:"#ef4444", desc:"Each token attends strongly to its predecessor — common pattern for position tracking",
+    w:[ smx([3,0.1,0.1,0.1,0.1,0.1]), smx([3,1,0.1,0.1,0.1,0.1]), smx([0.1,3,1,0.1,0.1,0.1]), smx([0.1,0.1,3,1,0.1,0.1]), smx([0.1,0.1,0.1,3,1,0.1]), smx([0.1,0.1,0.1,0.1,3,1]) ] },
+  { name:"Global (First)",   color:"#3b82f6", desc:"All tokens attend to the first position — gathers global context into a 'summary' token",
+    w:Array.from({length:6},(_,i)=>smx(Array.from({length:6},(_,j)=>j===0?3:0.3+i*0.05))) },
+  { name:"Prepositional",    color:"#a78bfa", desc:"on→sat and on→mat — preposition attends to both its verb and object",
+    w:[ smx([1,0.3,0.3,0.3,0.3,0.3]), smx([0.3,1,0.5,0.3,0.2,0.2]), smx([0.2,0.5,1,0.5,0.2,0.5]), smx([0.2,0.2,2,1,0.2,2]), smx([0.2,0.2,0.3,0.3,1,2.5]), smx([0.2,0.2,0.5,2,0.5,1]) ] },
+  { name:"Distance Decay",   color:"#34d399", desc:"Attention weight falls off with token distance — models local dependencies cleanly",
+    w:Array.from({length:6},(_,i)=>smx(Array.from({length:6},(_,j)=>Math.exp(-Math.abs(i-j)*0.7)))) },
+  { name:"Uniform",          color:"#fb923c", desc:"Diffuse attention equally distributed — seen in shallow heads capturing global statistics",
+    w:Array.from({length:6},()=>Array(6).fill(1/6)) },
+];
+
+function AttentionViz3D() {
+  const canvasRef = useRef(null);
+  const rotRef = useRef({ x: 0.45, y: -0.55, dragging: false, lx: 0, ly: 0 });
+  const selRef = useRef(null);
+  const [selectedHead, setSelectedHead] = useState(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d"); let animId;
+    const N = 6, nH = ATTN_HEADS.length, cs = 0.25, hGap = 0.78;
+
+    function draw() {
+      const rot = rotRef.current;
+      if (!rot.dragging) rot.y += 0.002;
+      const W = canvas.width, H = canvas.height, cx = W/2-20, cy = H/2+10;
+      ctx.fillStyle = "#09090b"; ctx.fillRect(0,0,W,H);
+
+      const cells = [];
+      ATTN_HEADS.forEach((head, h) => {
+        const hz = (h - nH/2) * hGap;
+        const sel = selRef.current;
+        const dim = sel !== null && sel !== h ? 0.18 : 1;
+        for (let src=0;src<N;src++) for (let tgt=0;tgt<N;tgt++) {
+          const w = head.w[src][tgt];
+          const p = proj3D((src-N/2+.5)*cs*1.1, (tgt-N/2+.5)*cs*1.1, hz, rot.x, rot.y, 80);
+          cells.push({h,w,color:head.color,dim,p});
+        }
+      });
+      cells.sort((a,b)=>a.p.depth-b.p.depth);
+      cells.forEach(({w,color,dim,p}) => {
+        const size = Math.max(2, p.s * cs * 72);
+        const [r,g,b] = [parseInt(color.slice(1,3),16),parseInt(color.slice(3,5),16),parseInt(color.slice(5,7),16)];
+        ctx.fillStyle = `rgba(${r},${g},${b},${w*dim*0.95})`;
+        ctx.fillRect(cx+p.px-size/2, cy+p.py-size/2, size, size);
+        if (w>0.22 && dim>0.5) {
+          ctx.strokeStyle=`rgba(${r},${g},${b},0.25)`; ctx.lineWidth=0.4;
+          ctx.strokeRect(cx+p.px-size/2, cy+p.py-size/2, size, size);
+        }
+      });
+
+      // head labels
+      ATTN_HEADS.forEach((head,h) => {
+        const hz = (h-nH/2)*hGap;
+        const lp = proj3D(-N/2*cs*1.1-0.08, N/2*cs*1.1+0.12, hz, rot.x, rot.y, 80);
+        const sel = selRef.current;
+        const alpha = sel!==null && sel!==h ? 0.28 : 1;
+        const [r,g,b]=[parseInt(head.color.slice(1,3),16),parseInt(head.color.slice(3,5),16),parseInt(head.color.slice(5,7),16)];
+        ctx.font=`${sel===h?"bold ":""}9px monospace`;
+        ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
+        ctx.fillText(`H${h+1}`, cx+lp.px-10, cy+lp.py+3);
+      });
+
+      // token axis labels
+      ATTN_TOKENS.forEach((tok,i) => {
+        const lp = proj3D((i-N/2+.5)*cs*1.1, N/2*cs*1.1+0.18, -nH/2*hGap-0.15, rot.x, rot.y, 80);
+        ctx.font="8px monospace"; ctx.fillStyle="#52525b"; ctx.textAlign="center";
+        ctx.fillText(tok, cx+lp.px, cy+lp.py); ctx.textAlign="left";
+      });
+      ctx.fillStyle="#3f3f46"; ctx.font="9px monospace";
+      ctx.fillText("drag to rotate", 8, H-8);
+      animId = requestAnimationFrame(draw);
+    }
+    draw();
+
+    function onDown(e) {
+      const r=canvas.getBoundingClientRect(); rotRef.current.dragging=true;
+      rotRef.current.lx=(e.touches?.[0]?.clientX??e.clientX)-r.left;
+      rotRef.current.ly=(e.touches?.[0]?.clientY??e.clientY)-r.top;
+    }
+    function onMove(e) {
+      const r=canvas.getBoundingClientRect();
+      const mx=(e.touches?.[0]?.clientX??e.clientX)-r.left, my=(e.touches?.[0]?.clientY??e.clientY)-r.top;
+      if (rotRef.current.dragging) {
+        rotRef.current.y+=(mx-rotRef.current.lx)*0.012; rotRef.current.x+=(my-rotRef.current.ly)*0.012;
+        rotRef.current.lx=mx; rotRef.current.ly=my;
+      }
+    }
+    function onUp() { rotRef.current.dragging=false; }
+    canvas.addEventListener("mousedown",onDown); canvas.addEventListener("mousemove",onMove);
+    canvas.addEventListener("touchstart",onDown,{passive:true}); canvas.addEventListener("touchmove",onMove,{passive:true});
+    window.addEventListener("mouseup",onUp); window.addEventListener("touchend",onUp);
+    return () => {
+      cancelAnimationFrame(animId);
+      canvas.removeEventListener("mousedown",onDown); canvas.removeEventListener("mousemove",onMove);
+      canvas.removeEventListener("touchstart",onDown); canvas.removeEventListener("touchmove",onMove);
+      window.removeEventListener("mouseup",onUp); window.removeEventListener("touchend",onUp);
+    };
+  }, []);
+
+  function pickHead(h) {
+    const next = selectedHead === h ? null : h;
+    setSelectedHead(next); selRef.current = next;
+  }
+
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="See all 8 attention heads simultaneously in 3D — each head specialises in a different linguistic relationship."
+        steps={[
+          "Drag to rotate the 3D stack — each layer is one attention head",
+          "Bright cells = strong attention weight, dark = no attention",
+          "Click a head card to isolate it and read what it learned",
+          "Notice different heads capture syntax, position, coreference simultaneously",
+        ]}
+      />
+      <canvas ref={canvasRef} width={560} height={360}
+        className="w-full rounded-xl border border-zinc-800 cursor-grab active:cursor-grabbing"
+        style={{ background:"#09090b", touchAction:"none" }} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {ATTN_HEADS.map((head,h) => (
+          <button key={h} onClick={() => pickHead(h)}
+            className={`px-2 py-2 rounded text-xs text-left transition-all ${selectedHead===h ? "border" : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white"}`}
+            style={selectedHead===h ? {background:head.color+"20",borderColor:head.color+"55",color:head.color} : {}}>
+            <div className="font-bold text-[10px]">H{h+1}: {head.name}</div>
+          </button>
+        ))}
+      </div>
+      {selectedHead !== null && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3">
+          <div className="text-xs font-bold mb-1" style={{color:ATTN_HEADS[selectedHead].color}}>
+            Head {selectedHead+1}: {ATTN_HEADS[selectedHead].name}
+          </div>
+          <p className="text-xs text-zinc-400">{ATTN_HEADS[selectedHead].desc}</p>
+        </div>
+      )}
+      <div className="flex justify-center gap-3 flex-wrap">
+        {ATTN_TOKENS.map(t=><span key={t} className="px-2 py-0.5 bg-zinc-800 rounded text-xs font-mono text-zinc-400">{t}</span>)}
+      </div>
+    </div>
+  );
+}
+
+// ─── 3D DIFFUSION TRAJECTORY ──────────────────────────────────────────────────
+
+const DIFF_ATTRACTORS = [
+  { x:-1.5, y:1.0,  z:0.5,  color:"#6366f1", label:"Cat"   },
+  { x:1.5,  y:1.0,  z:0.5,  color:"#22c55e", label:"Dog"   },
+  { x:-1.5, y:-1.0, z:-0.5, color:"#f59e0b", label:"Car"   },
+  { x:1.5,  y:-1.0, z:-0.5, color:"#ef4444", label:"House" },
+];
+
+function makeDiffParticles() {
+  return Array.from({length:64},(_,i) => {
+    const a = DIFF_ATTRACTORS[i % DIFF_ATTRACTORS.length];
+    return {
+      cx:a.x+(Math.random()-.5)*.5, cy:a.y+(Math.random()-.5)*.5, cz:a.z+(Math.random()-.5)*.5,
+      nx:(Math.random()-.5)*5.5, ny:(Math.random()-.5)*5.5, nz:(Math.random()-.5)*5.5,
+      color:a.color,
+    };
+  });
+}
+
+function DiffusionViz3D() {
+  const canvasRef = useRef(null);
+  const stRef = useRef({ t:1, animating:false, dir:-1, rotX:0.3, rotY:0.4, dragging:false, lx:0, ly:0, pts:makeDiffParticles() });
+
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d"); let animId, lastTs=0;
+
+    function draw(ts) {
+      const st = stRef.current;
+      if (!st.dragging) st.rotY += 0.003;
+      if (st.animating) {
+        const dt = Math.min((ts-lastTs)/1000, 0.05);
+        st.t = Math.max(0, Math.min(1, st.t + st.dir * dt * 0.28));
+        if (st.t<=0 || st.t>=1) st.animating = false;
+      }
+      lastTs = ts;
+      const W=canvas.width, H=canvas.height, cx=W/2, cy=H/2;
+
+      ctx.fillStyle = "rgba(9,9,11,0.86)"; ctx.fillRect(0,0,W,H);
+
+      // attractor glows when nearly denoised
+      if (st.t < 0.55) {
+        DIFF_ATTRACTORS.forEach(a => {
+          const p = proj3D(a.x,a.y,a.z, st.rotX, st.rotY, 80);
+          const g = ctx.createRadialGradient(cx+p.px,cy+p.py,0,cx+p.px,cy+p.py,35*p.s*6);
+          const alpha = Math.round((1-st.t*1.8)*255).toString(16).padStart(2,"0");
+          g.addColorStop(0,a.color+alpha); g.addColorStop(1,a.color+"00");
+          ctx.beginPath(); ctx.arc(cx+p.px,cy+p.py,35*p.s*6,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+          ctx.font="10px monospace"; ctx.fillStyle=a.color+(Math.round(Math.max(0,(1-st.t*2)*255)).toString(16).padStart(2,"0"));
+          ctx.textAlign="center"; ctx.fillText(a.label, cx+p.px, cy+p.py-20); ctx.textAlign="left";
+        });
+      }
+
+      // particles
+      const pts3d = st.pts.map(p => {
+        const x = p.cx*(1-st.t)+p.nx*st.t;
+        const y = p.cy*(1-st.t)+p.ny*st.t;
+        const z = p.cz*(1-st.t)+p.nz*st.t;
+        return {...p, ...proj3D(x,y,z,st.rotX,st.rotY,80)};
+      }).sort((a,b)=>a.depth-b.depth);
+
+      pts3d.forEach(p => {
+        const r = Math.max(2, p.s*14);
+        const noisy = st.t > 0.6;
+        ctx.beginPath(); ctx.arc(cx+p.px, cy+p.py, r, 0, Math.PI*2);
+        if (noisy) ctx.fillStyle=`rgba(140,140,160,${0.5+0.3*(1-st.t)})`;
+        else ctx.fillStyle=p.color+Math.round((0.75+0.25*(1-st.t))*255).toString(16).padStart(2,"0");
+        ctx.fill();
+      });
+
+      // progress bar + label
+      const stepLbl = st.t>0.85?"Pure noise (T=1000)":st.t>0.55?"Denoising…":st.t>0.2?"Taking shape…":"Clean images (T=0)";
+      ctx.fillStyle="#52525b"; ctx.font="9px monospace"; ctx.fillText(`t=${Math.round(st.t*1000).toString().padStart(4,"0")} — ${stepLbl}`, 8, H-20);
+      const bx=cx-90, bw=180;
+      ctx.fillStyle="#27272a"; ctx.fillRect(bx,H-12,bw,4);
+      const r2=Math.round(st.t*200+55), g2=Math.round((1-st.t)*200+55);
+      ctx.fillStyle=`rgb(${r2},${g2},140)`; ctx.fillRect(bx,H-12,bw*st.t,4);
+      ctx.fillStyle="#3f3f46"; ctx.font="9px monospace"; ctx.fillText("drag to rotate", 8, H-26);
+
+      animId = requestAnimationFrame(draw);
+    }
+    draw(0);
+
+    function onDown(e) {
+      const r=canvas.getBoundingClientRect(); stRef.current.dragging=true;
+      stRef.current.lx=(e.touches?.[0]?.clientX??e.clientX)-r.left;
+      stRef.current.ly=(e.touches?.[0]?.clientY??e.clientY)-r.top;
+    }
+    function onMove(e) {
+      const r=canvas.getBoundingClientRect();
+      const mx=(e.touches?.[0]?.clientX??e.clientX)-r.left, my=(e.touches?.[0]?.clientY??e.clientY)-r.top;
+      if (stRef.current.dragging) {
+        stRef.current.rotY+=(mx-stRef.current.lx)*0.012; stRef.current.rotX+=(my-stRef.current.ly)*0.012;
+        stRef.current.lx=mx; stRef.current.ly=my;
+      }
+    }
+    function onUp() { stRef.current.dragging=false; }
+    canvas.addEventListener("mousedown",onDown); canvas.addEventListener("mousemove",onMove);
+    canvas.addEventListener("touchstart",onDown,{passive:true}); canvas.addEventListener("touchmove",onMove,{passive:true});
+    window.addEventListener("mouseup",onUp); window.addEventListener("touchend",onUp);
+    return () => {
+      cancelAnimationFrame(animId);
+      canvas.removeEventListener("mousedown",onDown); canvas.removeEventListener("mousemove",onMove);
+      canvas.removeEventListener("touchstart",onDown); canvas.removeEventListener("touchmove",onMove);
+      window.removeEventListener("mouseup",onUp); window.removeEventListener("touchend",onUp);
+    };
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="See how diffusion models denoise — 64 particles converge from random Gaussian noise into structured image clusters."
+        steps={[
+          "Click 'Denoise' to animate particles from noise → clean images",
+          "Drag to rotate the 3D particle field at any timestep",
+          "At t=1000: pure Gaussian noise. At t=0: tight semantic clusters",
+          "Each color = one image class the model learned to generate",
+        ]}
+      />
+      <canvas ref={canvasRef} width={520} height={340}
+        className="w-full rounded-xl border border-zinc-800 cursor-grab active:cursor-grabbing"
+        style={{ background:"#09090b", touchAction:"none" }} />
+      <div className="flex gap-3 justify-center flex-wrap">
+        <button onClick={() => { stRef.current.animating=true; stRef.current.dir=-1; }}
+          className="px-5 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all">
+          ▶ Denoise (T→0)
+        </button>
+        <button onClick={() => { stRef.current.animating=true; stRef.current.dir=1; }}
+          className="px-5 py-2 rounded bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-bold transition-all">
+          ← Add Noise (T→1000)
+        </button>
+        <button onClick={() => {
+          const s=stRef.current; s.t=1; s.animating=false; s.pts=makeDiffParticles();
+        }} className="px-4 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-sm font-bold transition-all">
+          ↺ Reset
+        </button>
+      </div>
+      <div className="flex gap-4 justify-center flex-wrap">
+        {DIFF_ATTRACTORS.map(a=>(
+          <div key={a.label} className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor:a.color}}/>
+            <span className="text-xs font-mono text-zinc-400">{a.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
-  { id: "embeddings", label: "Embedding Space",    tag: "VISUALIZE", component: EmbeddingExplorer, fidelity: { tier: "conceptual",  note: "Conceptual 2D projection — precomputed coordinates, not live model embeddings" } },
-  { id: "shadow",     label: "Shadow Mode A/B",    tag: "COMPARE",   component: ShadowMode,        fidelity: { tier: "simplified",  note: "Illustrative comparison — static response pairs, no live inference" } },
-  { id: "latency",    label: "Latency Planner",    tag: "BUDGET",    component: LatencyPlanner,    fidelity: { tier: "simplified",  note: "Estimated model — based on published benchmarks, not live measurements" } },
-  { id: "tokenizer",  label: "Tokenizer Explorer", tag: "TOKENS",    component: TokenizerExplorer, fidelity: { tier: "faithful",    note: "Mathematically faithful — real BPE tokenization logic" } },
-  { id: "modelcard",  label: "Model Card Reader",  tag: "AUDIT",     component: ModelCardReader,   fidelity: { tier: "simplified",  note: "Curated static cards — based on published model documentation" } },
-  { id: "vectordb",  label: "Vector DB Comparison", tag: "DB",      component: VectorDBComparison, fidelity: { tier: "simplified",  note: "Curated comparison — based on published benchmarks and docs" } },
-  { id: "structured", label: "Structured Outputs",   tag: "SCHEMA",  component: StructuredOutputsLab, fidelity: { tier: "simplified", note: "Illustrative — static examples, no live schema validation" } },
-  { id: "redteam",   label: "Red Teaming Lab",      tag: "ATTACK",  component: RedTeamingLab,      fidelity: { tier: "simplified",  note: "Curated scenarios — real attack patterns, scripted responses" } },
+  { id: "embeddings",  label: "3D Embedding Space",  tag: "3D SPACE", component: EmbeddingExplorer, fidelity: { tier: "conceptual",  note: "3D projection of precomputed coordinates — not live model embeddings" } },
+  { id: "shadow",      label: "Shadow Mode A/B",      tag: "COMPARE",  component: ShadowMode,        fidelity: { tier: "simplified",  note: "Illustrative comparison — static response pairs, no live inference" } },
+  { id: "latency",     label: "Latency Planner",      tag: "BUDGET",   component: LatencyPlanner,    fidelity: { tier: "simplified",  note: "Estimated model — based on published benchmarks, not live measurements" } },
+  { id: "tokenizer",   label: "Tokenizer Explorer",   tag: "TOKENS",   component: TokenizerExplorer, fidelity: { tier: "faithful",    note: "Mathematically faithful — real BPE tokenization logic" } },
+  { id: "modelcard",   label: "Model Card Reader",    tag: "AUDIT",    component: ModelCardReader,   fidelity: { tier: "simplified",  note: "Curated static cards — based on published model documentation" } },
+  { id: "vectordb",    label: "Vector DB Comparison", tag: "DB",       component: VectorDBComparison, fidelity: { tier: "simplified", note: "Curated comparison — based on published benchmarks and docs" } },
+  { id: "structured",  label: "Structured Outputs",   tag: "SCHEMA",   component: StructuredOutputsLab, fidelity: { tier: "simplified", note: "Illustrative — static examples, no live schema validation" } },
+  { id: "redteam",     label: "Red Teaming Lab",       tag: "ATTACK",   component: RedTeamingLab,     fidelity: { tier: "simplified",  note: "Curated scenarios — real attack patterns, scripted responses" } },
+  { id: "attention3d", label: "3D Attention Heads",   tag: "3D ATTN",  component: AttentionViz3D,    fidelity: { tier: "conceptual",  note: "Pre-computed attention patterns for 'The cat sat on the mat'" } },
+  { id: "diffusion3d", label: "3D Diffusion",          tag: "3D DIFF",  component: DiffusionViz3D,    fidelity: { tier: "conceptual",  note: "Conceptual particle simulation — illustrates forward/reverse diffusion" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit }) {
