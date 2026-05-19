@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { track } from "./analytics";
 import { POST_CONTENT } from "./groundTruthPosts";
 import TransformerWalkthrough from "./TransformerWalkthrough";
@@ -117,6 +117,34 @@ function Block({ b, onNavigate, color }) {
       if (b.name === "transformer") return <TransformerWalkthrough />;
       if (b.name === "salary-calc") return <SalaryCalculator />;
       return null;
+    case "quote":
+      return (
+        <blockquote className="border-l-2 border-zinc-600 pl-4 py-1 my-2">
+          <p className="text-sm text-zinc-400 italic leading-relaxed">"{b.text}"</p>
+          {b.attribution && <p className="text-[11px] text-zinc-600 font-mono mt-1.5">— {b.attribution}</p>}
+        </blockquote>
+      );
+    case "references":
+      return (
+        <div className="mt-8 pt-6 border-t border-zinc-800">
+          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">References &amp; Further Reading</p>
+          <ul className="space-y-2">
+            {b.items.map((ref, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="text-zinc-700 font-mono text-[11px] shrink-0 mt-0.5">[{i+1}]</span>
+                {ref.url ? (
+                  <a href={ref.url} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-violet-400 hover:text-violet-300 transition-colors leading-relaxed underline decoration-violet-800 hover:decoration-violet-400">
+                    {ref.label}
+                  </a>
+                ) : (
+                  <span className="text-xs text-zinc-500 leading-relaxed">{ref.label}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
     default:
       return null;
   }
@@ -126,6 +154,22 @@ function PostDetail({ post, onBack, onNavigate }) {
   const content = POST_CONTENT[post.id];
   const color = CAT_COLORS[post.category] || "#6366f1";
   const catLabel = CATEGORIES.find(c => c.id === post.category)?.label || post.category;
+  const [scrollPct, setScrollPct] = useState(0);
+  const articleRef = useRef(null);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const el = articleRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const total = el.offsetHeight - window.innerHeight;
+      if (total <= 0) { setScrollPct(100); return; }
+      const scrolled = -rect.top;
+      setScrollPct(Math.min(100, Math.max(0, (scrolled / total) * 100)));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     track("ground_truth_post_opened", { post: post.id });
@@ -154,7 +198,13 @@ function PostDetail({ post, onBack, onNavigate }) {
   }, [post.id]);
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-zinc-950" ref={articleRef}>
+      {/* Reading progress bar — fixed at top */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-[3px] bg-zinc-900">
+        <div className="h-full transition-all duration-75 ease-out"
+          style={{ width: `${scrollPct}%`, background: color }} />
+      </div>
+
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
 
         {/* Back */}

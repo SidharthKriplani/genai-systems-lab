@@ -3176,6 +3176,691 @@ response = client.messages.create(
     { t: "lab", tab: "career", label: "Explore all AI career paths →", desc: "Salary guides, role definitions, and learning paths for every AI role in the Careers section." },
   ],
 
+  // ─── BATCH 1 ─────────────────────────────────────────────────────────────
+
+  "prompting-token-economics": [
+    { t: "p", text: "There's a version of prompt engineering that's just vibes — add more words, hope the model cooperates. Then there's the version that treats your prompt like a scarce resource with a real dollar cost, and engineers it accordingly. That second version is the one that survives contact with production." },
+    { t: "p", text: "This post is about the intersection: how to write prompts that perform better *and* cost less. It turns out those goals align more than you'd think." },
+
+    { t: "h2", text: "Your prompt runs a million times" },
+    { t: "p", text: "In development, the cost of a single prompt is negligible. That creates a dangerous habit: adding context, examples, and instructions without any discipline. A system prompt that sprawls to 4,000 tokens costs $0.012 per request at GPT-4o input pricing. At 500K daily requests, that's $6,000/day — $180K/month — just for the system prompt. Discipline compounds." },
+    { t: "callout", v: "key", text: "The single highest-leverage optimisation in production LLM systems is almost always: trim the system prompt. Not the model. Not the infrastructure. The prompt." },
+
+    { t: "h2", text: "Token budgets by component" },
+    { t: "table", headers: ["Component", "Typical range", "Notes"], rows: [
+      ["System prompt",     "200–2,000 tokens",  "Paid on every request. Cache it if static and >1024 tokens."],
+      ["User message",      "10–500 tokens",     "You can't control this, but you can set max_length on inputs"],
+      ["RAG context",       "500–8,000 tokens",  "The biggest variable. Retrieval precision directly reduces this."],
+      ["Chat history",      "0–50,000 tokens",   "Grows unboundedly without compaction. The silent cost killer."],
+      ["Output",            "100–2,000 tokens",  "Priced 3–5× higher than input. Set max_tokens. Use streaming."],
+    ]},
+
+    { t: "h2", text: "The five prompt engineering levers" },
+    { t: "h3", text: "1. Be specific about output format" },
+    { t: "p", text: "Vague instructions produce verbose outputs. \"Summarise this\" might yield 800 tokens. \"Summarise in 3 bullet points, max 20 words each\" yields 60 tokens. You get a better result *and* spend 90% less on output tokens. Specificity is not just a quality lever — it's a cost lever." },
+
+    { t: "h3", text: "2. Few-shot examples: the quality/cost tradeoff" },
+    { t: "p", text: "Few-shot examples dramatically improve quality on nuanced tasks — but they're paid every request. Three examples at 300 tokens each add 900 tokens per request. Evaluate: can you get the same quality with one example? With a better zero-shot instruction? With fine-tuning? At high volume, fine-tuning on your few-shot examples pays off faster than you'd think." },
+
+    { t: "h3", text: "3. Chain-of-thought: spend tokens to save retries" },
+    { t: "p", text: "CoT prompting — asking the model to reason step-by-step — increases output tokens by 2–5×. But it can reduce error rates by 30–60% on reasoning tasks. If getting it wrong means a human escalation or a retry, CoT often saves net tokens. Use CoT on tasks where wrong answers are expensive. Skip it on tasks where speed matters more than reasoning depth." },
+
+    { t: "h3", text: "4. Prompt caching" },
+    { t: "p", text: "If your system prompt + any static RAG context is over 1,024 tokens and identical across requests, enable prompt caching. Anthropic caches at 90% discount on input tokens. OpenAI at 50%. For a 3,000-token cached prefix at 1M requests/day, caching saves ~$9,000–$18,000/day depending on provider. It takes 20 minutes to implement." },
+    { t: "code", lang: "python", label: "Anthropic prompt caching", text: `response = client.messages.create(
+    model="claude-opus-4-5",
+    system=[{
+        "type": "text",
+        "text": your_long_system_prompt,
+        "cache_control": {"type": "ephemeral"}  # mark for caching
+    }],
+    messages=[{"role": "user", "content": user_message}],
+    max_tokens=1024
+)
+# Check cache hit in response.usage.cache_read_input_tokens` },
+
+    { t: "h3", text: "5. Model routing by complexity" },
+    { t: "p", text: "Not all requests need GPT-4o. A support ticket classifier, a yes/no safety check, a template fill — these are GPT-4o-mini or Claude Haiku tasks. The quality difference is negligible. The cost difference is 10–30×. Build a lightweight complexity classifier that routes simple requests to cheaper models, and reserve the frontier model for tasks that genuinely need it." },
+
+    { t: "h2", text: "The prompt optimisation loop" },
+    { t: "p", text: "Good prompt engineering is empirical, not intuitive. The loop: write a prompt, run it against your eval set, measure quality score AND token count, iterate. You're optimising a two-objective function. Document every version in git. Never ship a prompt change without running evals first." },
+
+    { t: "callout", v: "tip", text: "Use an automated prompt optimiser like DSPy or TextGrad for high-volume prompts. These tools iterate prompts against your eval set automatically, finding formulations that score better and often use fewer tokens." },
+
+    { t: "references", items: [
+      { label: "Anthropic — Prompt caching documentation", url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" },
+      { label: "DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines", url: "https://arxiv.org/abs/2310.03714" },
+      { label: "OpenAI — Prompt engineering guide", url: "https://platform.openai.com/docs/guides/prompt-engineering" },
+      { label: "Lilian Weng — Prompt Engineering", url: "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/" },
+    ]},
+    { t: "lab", tab: "playground", label: "Try the Prompt playground →", desc: "Compare prompt variants side-by-side with live token counts." },
+  ],
+
+  "missing-context-failure": [
+    { t: "p", text: "You've built a RAG system. It retrieves the right chunk — the one that contains the answer — and the model still gets it wrong. You stare at the trace, confused. The context is there. The model saw it. It just... didn't use it properly." },
+    { t: "p", text: "This is the missing context failure mode: not missing retrieval, but missing the surrounding context that makes the retrieved text mean what it means. It's one of the most demoralising bugs in RAG, because everything looks correct until you read carefully." },
+
+    { t: "h2", text: "Why this happens" },
+    { t: "p", text: "Chunking splits documents into retrievable pieces. But documents are not written to be read in chunks — they're written to be read sequentially. A chunk that says \"this approach reduced latency by 40%\" only makes sense if you know what *approach* was being described in the previous paragraph." },
+    { t: "p", text: "When that previous paragraph is in a different chunk — one that didn't score high enough to be retrieved — the model fills in the gap with a plausible answer from its training data. It doesn't flag uncertainty. It answers confidently based on half the information." },
+
+    { t: "h2", text: "The five patterns" },
+    { t: "h3", text: "1. Pronoun resolution failure" },
+    { t: "p", text: "The retrieved chunk says \"it reduces error rates by 30%.\" The antecedent of \"it\" — the technique being described — is in an earlier, unretrieved chunk. The model guesses what \"it\" refers to, usually incorrectly." },
+
+    { t: "h3", text: "2. Dependency on document structure" },
+    { t: "p", text: "Tables and lists are the worst offenders. A table row like \"\\\"Q3 2024\\\" | \\\"$4.2M\\\" | \\\"↑ 18%\\\"\" is meaningless without the table headers. If headers and data rows split across chunks, every data row is uninterpretable." },
+    { t: "callout", v: "warning", text: "Never split tables across chunks. Use a document parser that identifies table boundaries and keeps the header row with each data segment. This single rule fixes a huge category of structured-document RAG failures." },
+
+    { t: "h3", text: "3. Definition/reference split" },
+    { t: "p", text: "The first chunk in a document defines a term (\"ARPU means Average Revenue Per User\"). A later chunk uses that term without redefining it. If only the later chunk is retrieved, the model may misinterpret the term or use a different meaning from its training data." },
+
+    { t: "h3", text: "4. Conditional context" },
+    { t: "p", text: "\"If the user is on the enterprise plan, the limit is 10,000 requests per day.\" Retrieved alone, this seems useful. But if the document also says \"If the user is on the starter plan, the limit is 100 requests per day\" in a different chunk, and both are retrieved for the query \"what are my limits?\", the model may hallucinate a synthesised non-existent limit." },
+
+    { t: "h3", text: "5. Implicit negation" },
+    { t: "p", text: "Section 2 of a document describes a feature. Section 5 says that feature was deprecated in version 3.0. If only Section 2 is retrieved, the model confidently describes a feature that no longer exists." },
+
+    { t: "h2", text: "Fixes" },
+    { t: "table", headers: ["Fix", "What it solves"], rows: [
+      ["Sentence-window retrieval", "Retrieve the target chunk + 1–2 sentences before/after. Cheap, effective for pronoun/reference issues."],
+      ["Parent-document retrieval", "Index small chunks; return the full parent section on match. Maintains table/list integrity."],
+      ["Contextual chunk headers",  "Prepend a generated context sentence to each chunk before embedding: 'This chunk is from Section 3 of the 2024 Q3 report, discussing APAC revenue...'"],
+      ["Metadata filtering",        "Add version/date metadata to chunks. Filter retrieved results to the correct document version."],
+      ["Multi-chunk synthesis",     "Retrieve top-10, not top-3. Use the model to synthesise across more context before answering."],
+    ]},
+
+    { t: "h2", text: "How to catch this in evals" },
+    { t: "p", text: "Build eval examples specifically for this pattern: questions whose answers require understanding context from *outside* the retrieved chunk. Flag cases where the model's answer is plausible but wrong — this is the signature of missing context, not hallucination from thin air." },
+
+    { t: "references", items: [
+      { label: "Anthropic — Contextual Retrieval blog post", url: "https://www.anthropic.com/news/contextual-retrieval" },
+      { label: "LangChain — Parent Document Retriever", url: "https://python.langchain.com/docs/modules/data_connection/retrievers/parent_document_retriever" },
+      { label: "Lost in the Middle: How Language Models Use Long Contexts", url: "https://arxiv.org/abs/2307.03172" },
+    ]},
+    { t: "lab", tab: "lab", label: "Debug retrieval failures →", desc: "Step through RAG traces and identify chunk boundary issues in the lab." },
+  ],
+
+  "planning-patterns": [
+    { t: "p", text: "The question that separates junior from senior AI engineers building agents: not 'can I get the model to do this task?' but 'what happens when the model's first attempt is wrong?'" },
+    { t: "p", text: "ReAct works for linear tasks. But for tasks that require exploration, backtracking, or evaluating multiple competing approaches, you need planning patterns. Tree of Thoughts, Graph of Thoughts, and LATS are the three worth knowing. This is where agents stop being toys and start being tools." },
+
+    { t: "h2", text: "Why basic ReAct falls short" },
+    { t: "p", text: "ReAct generates one chain of thought and executes it. If step 3 of that chain is wrong, the agent carries the error through to the end. There's no backtracking, no exploration of alternatives, no self-correction. For simple tool-use tasks — search, lookup, API calls — this is fine. For tasks that require genuine reasoning under uncertainty, it fails." },
+    { t: "callout", v: "key", text: "The limitation of ReAct is not intelligence — it's architecture. A genius who can never change their mind after the first step will still get things wrong. Planning patterns give agents the ability to explore multiple paths and recover from mistakes." },
+
+    { t: "h2", text: "Tree of Thoughts (ToT)" },
+    { t: "p", text: "ToT generates multiple candidate reasoning steps at each point, evaluates them, and keeps the best ones — like a search tree where each node is a thought. Instead of one chain, you explore a branching tree and prune bad branches early." },
+    { t: "list", items: [
+      "Generate: at each step, produce k candidate next thoughts (typically 3–5)",
+      "Evaluate: score each candidate — can be the model evaluating itself or a separate judge",
+      "Search: use BFS or DFS to explore the tree; prune low-scoring branches",
+      "Backtrack: if a path reaches a dead end, return to the last decision point and try another branch",
+    ]},
+    { t: "code", lang: "python", label: "Minimal Tree of Thoughts implementation", text: `def tree_of_thoughts(problem, depth=3, breadth=3):
+    def generate_thoughts(state):
+        prompt = f"Problem: {problem}\\nCurrent state: {state}\\n"
+        prompt += f"Generate {breadth} distinct next steps. Return as JSON list."
+        return json.loads(llm(prompt))
+
+    def evaluate_thought(state, thought):
+        prompt = f"Problem: {problem}\\nState: {state}\\nThought: {thought}\\n"
+        prompt += "Rate this thought's promise (1-10) and explain. JSON: {score, reason}"
+        return json.loads(llm(prompt))
+
+    def dfs(state, remaining_depth):
+        if remaining_depth == 0:
+            return state, evaluate_final(problem, state)
+
+        thoughts = generate_thoughts(state)
+        scored = [(t, evaluate_thought(state, t)["score"]) for t in thoughts]
+        scored.sort(key=lambda x: x[1], reverse=True)
+
+        # Explore top thoughts, return best result
+        best_result, best_score = None, 0
+        for thought, _ in scored[:2]:  # top 2 branches
+            result, score = dfs(state + "\\n" + thought, remaining_depth - 1)
+            if score > best_score:
+                best_result, best_score = result, score
+        return best_result, best_score
+
+    return dfs("", depth)` },
+
+    { t: "h2", text: "Graph of Thoughts (GoT)" },
+    { t: "p", text: "GoT generalises ToT by allowing thoughts to be merged, not just branched. Two separate reasoning chains can be combined into a single thought if they converge on a common insight. This is powerful for tasks like aggregating information from multiple sources or combining approaches." },
+    { t: "p", text: "In practice, GoT is used for tasks like document aggregation (merge summaries of N documents into one coherent answer), code generation (merge two different implementation approaches), and multi-perspective analysis (merge legal, technical, and business views into a recommendation)." },
+
+    { t: "h2", text: "LATS: Language Agent Tree Search" },
+    { t: "p", text: "LATS combines ToT with Monte Carlo Tree Search (MCTS). It's the most powerful — and most expensive — planning pattern. MCTS adds: simulation (run a thought path to completion to estimate its value), backpropagation (update the value estimates of parent nodes based on child outcomes), and selection (use UCB1 to balance exploration vs. exploitation across branches)." },
+    { t: "p", text: "LATS makes sense for high-stakes, long-horizon tasks where the cost of exploring more paths is justified: autonomous research tasks, complex coding challenges, multi-step business analysis. It's overkill for most product features — but it's the right tool for the hardest agent problems." },
+
+    { t: "h2", text: "When to use which" },
+    { t: "table", headers: ["Pattern", "Best for", "Cost", "Complexity"], rows: [
+      ["ReAct",  "Linear tool-use tasks, simple Q&A pipelines",       "Low",    "Low"],
+      ["ToT",    "Reasoning tasks with clear evaluation criteria",    "Medium", "Medium"],
+      ["GoT",    "Aggregation and synthesis across multiple inputs",  "Medium", "Medium"],
+      ["LATS",   "Complex long-horizon tasks where quality > speed",  "High",   "High"],
+    ]},
+
+    { t: "references", items: [
+      { label: "Tree of Thoughts: Deliberate Problem Solving with LLMs (Yao et al., 2023)", url: "https://arxiv.org/abs/2305.10601" },
+      { label: "Graph of Thoughts: Solving Elaborate Problems with LLMs (Besta et al., 2023)", url: "https://arxiv.org/abs/2308.09687" },
+      { label: "Language Agent Tree Search (Zhou et al., 2023)", url: "https://arxiv.org/abs/2310.04406" },
+      { label: "ReAct: Synergizing Reasoning and Acting in Language Models", url: "https://arxiv.org/abs/2210.03629" },
+    ]},
+    { t: "lab", tab: "agents", label: "Build a planning agent →", desc: "Implement ToT-style branching in the Agents module." },
+  ],
+
+  "ab-testing-llms": [
+    { t: "p", text: "Congratulations — you have two prompts and no idea which one is better. You've eyeballed 20 examples, your teammate prefers the other one, and your PM wants a number. This is the moment that separates rigorous AI teams from teams flying blind." },
+    { t: "p", text: "A/B testing LLM systems is harder than testing a button colour. The output is text — subjective, variable, and impossible to compare with a simple ==. Here's how to do it right." },
+
+    { t: "h2", text: "Why LLM A/B tests are different" },
+    { t: "list", items: [
+      "Non-deterministic: the same prompt produces different outputs. Run each condition multiple times.",
+      "No ground truth: 'better' is defined by a rubric, not an exact match",
+      "Correlated samples: the same user sees both versions, so standard t-tests aren't valid without care",
+      "Multivariate confounds: model, prompt, temperature, and context all change quality simultaneously",
+      "Latency and cost are dimensions too — a 'better' response that's 2× slower may be worse for your users",
+    ]},
+
+    { t: "h2", text: "Offline A/B testing: the right default" },
+    { t: "p", text: "Before touching production traffic, run your A/B test offline on a golden eval set. Prepare 200–500 representative inputs. Run both variants on every input. Score both outputs with an LLM judge. Compare mean scores and test for statistical significance. Only put the better-performing variant in production." },
+    { t: "code", lang: "python", label: "Offline A/B eval with LLM judge", text: `import scipy.stats as stats
+import numpy as np
+
+def run_ab_eval(eval_set, variant_a, variant_b, judge):
+    scores_a, scores_b = [], []
+    for example in eval_set:
+        out_a = variant_a(example["input"])
+        out_b = variant_b(example["input"])
+        scores_a.append(judge(example, out_a)["score"])
+        scores_b.append(judge(example, out_b)["score"])
+
+    mean_a = np.mean(scores_a)
+    mean_b = np.mean(scores_b)
+
+    # Paired t-test (same inputs, so samples are paired)
+    t_stat, p_value = stats.ttest_rel(scores_a, scores_b)
+
+    return {
+        "mean_a": mean_a, "mean_b": mean_b,
+        "delta": mean_b - mean_a,
+        "p_value": p_value,
+        "significant": p_value < 0.05,
+        "winner": "B" if mean_b > mean_a and p_value < 0.05 else
+                  "A" if mean_a > mean_b and p_value < 0.05 else "inconclusive"
+    }` },
+    { t: "callout", v: "warning", text: "p < 0.05 is a starting point, not a finish line. With a small eval set (<100), even a real difference may not reach significance. With a large set (>2000), tiny meaningless differences will be 'significant'. Always look at the effect size (delta), not just the p-value." },
+
+    { t: "h2", text: "Online A/B testing: when you need it" },
+    { t: "p", text: "Online testing — splitting live traffic — is necessary when: you need real user behaviour signals (engagement, task completion, thumbs-up rate), your task is too subjective to eval offline reliably, or you need to measure business metrics alongside quality. Use canary deployment: route 5% of traffic to variant B, monitor for 48–72 hours, check both quality metrics and error rates." },
+
+    { t: "h2", text: "Measuring semantic similarity" },
+    { t: "p", text: "For cases where outputs should be similar (same content, just better phrased), cosine similarity between embeddings of variant A and B outputs can surface regressions. If variant B produces outputs with cosine similarity < 0.85 to variant A, something substantive changed — worth manual review." },
+
+    { t: "h2", text: "The interrater reliability problem" },
+    { t: "p", text: "LLM judges are not perfectly consistent. Run the same (example, output) pair through your judge 5 times and check variance. High variance means your judge rubric is underspecified. Tighten the rubric with specific criteria and examples until the judge's variance is low enough to trust." },
+
+    { t: "references", items: [
+      { label: "RAGAS: Automated Evaluation of RAG Pipelines", url: "https://arxiv.org/abs/2309.15217" },
+      { label: "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena", url: "https://arxiv.org/abs/2306.05685" },
+      { label: "Can LLMs replace human evaluators? (Anthropic blog)", url: "https://www.anthropic.com/research/evaluating-ai-systems" },
+    ]},
+    { t: "lab", tab: "systems", label: "Run an A/B eval in the Systems module →", desc: "Compare two prompt variants on a golden eval set with built-in statistical tests." },
+  ],
+
+  "model-strategy": [
+    { t: "p", text: "You will, at some point, be in a meeting where someone asks: 'should we use Claude or GPT-4?' The wrong answer is 'whichever benchmarks best.' The right answer is a framework that maps your specific requirements to the right model — and it changes every six months as the landscape shifts." },
+    { t: "p", text: "This is that framework." },
+
+    { t: "h2", text: "The dimensions that actually matter" },
+    { t: "table", headers: ["Dimension", "Questions to ask"], rows: [
+      ["Task complexity",   "Is this a lookup, a reasoning task, a creative task, or a multi-step agent workflow?"],
+      ["Latency budget",    "What's your P99 target? Chat needs <3s TTFT. Background jobs can tolerate 30s."],
+      ["Cost per request",  "What's the monthly volume? Can you route by complexity?"],
+      ["Context length",    "Do you need 200K tokens for long documents, or does 8K cover your task?"],
+      ["Multimodal",        "Do you need vision? Audio? If yes, that narrows the field significantly."],
+      ["Tool use quality",  "For agents, test function calling accuracy. Models vary significantly here."],
+      ["Output format",     "Structured JSON? Markdown? Code? Some models are much more reliable for specific formats."],
+      ["Compliance",        "Does data need to stay in a specific region? Does your contract require HIPAA/SOC2 coverage?"],
+    ]},
+
+    { t: "h2", text: "The current model landscape (mid-2025)" },
+    { t: "callout", v: "warning", text: "This section ages fast. Always benchmark the latest model releases against your eval set before switching. Leaderboard rankings do not predict performance on your specific task." },
+    { t: "table", headers: ["Model", "Strongest at", "Watch out for"], rows: [
+      ["Claude Opus 4",      "Deep reasoning, long-context, nuanced writing, safety-critical tasks",     "Slower and pricier than Sonnet; overkill for simple tasks"],
+      ["Claude Sonnet 4",    "Balanced performance/speed/cost; strong coding and tool use",              "Not the top choice for very long unstructured creative output"],
+      ["Claude Haiku 4.5",   "High-volume, latency-sensitive, simple classification and extraction",    "Weaker on multi-step reasoning"],
+      ["GPT-4o",             "Multimodal tasks (vision + audio), wide third-party integrations",        "Context window smaller than Claude at same tier"],
+      ["GPT-4o-mini",        "Cost-optimised tasks where GPT-4o quality isn't needed",                 "Noticeably weaker reasoning than GPT-4o"],
+      ["Gemini 1.5 Pro",     "1M token context window, document-heavy tasks, Google Workspace integration", "Availability can lag in some regions"],
+      ["Llama 3.1 70B",      "Self-hosted, cost control, compliance-heavy environments",               "Needs serving infra; weaker instruction following than frontier"],
+      ["Mistral Large",      "European data residency, strong code, function calling",                  "Smaller ecosystem than OpenAI/Anthropic"],
+    ]},
+
+    { t: "h2", text: "The routing decision tree" },
+    { t: "list", items: [
+      "Is it a simple classification, extraction, or yes/no task? → Use a small/fast model (Haiku, GPT-4o-mini, Mistral small)",
+      "Does it require multi-step reasoning or tool calls? → Benchmark Sonnet vs. GPT-4o on your task",
+      "Is it a long-document task (>50K tokens)? → Claude or Gemini 1.5 Pro",
+      "Is it multimodal (images/audio)? → GPT-4o or Gemini",
+      "Is data sovereignty required? → Self-hosted (Llama, Mistral) or region-locked API",
+      "Is it a high-stakes reasoning task where quality > everything? → Claude Opus or GPT-4o on your eval set",
+    ]},
+
+    { t: "h2", text: "Build a model selection eval" },
+    { t: "p", text: "Don't pick based on vibes. Build a 100-example eval on your specific task. Run every candidate model. Score with your LLM judge. Normalise by cost per request. The table of (model, quality score, cost) is the only honest basis for a model selection decision." },
+    { t: "p", text: "Rerun this eval every quarter. The landscape shifts. A model that was the clear winner 6 months ago may have been overtaken — or may have degraded if the provider updated the serving infrastructure in ways that affect your use case (this happens more often than providers admit)." },
+
+    { t: "references", items: [
+      { label: "LMSYS Chatbot Arena Leaderboard", url: "https://chat.lmsys.org/?leaderboard" },
+      { label: "Artificial Analysis — LLM benchmarks & pricing comparison", url: "https://artificialanalysis.ai/" },
+      { label: "Scale AI HELM benchmark", url: "https://crfm.stanford.edu/helm/latest/" },
+    ]},
+    { t: "lab", tab: "systems", label: "Compare models on your task →", desc: "Run side-by-side model comparisons with your prompts in the Systems module." },
+  ],
+
+  "shadow-ab-testing": [
+    { t: "p", text: "Here's the professional way to change your production model: you don't. Not yet. First, you run it in shadow mode — the new model sees every request, generates a response, but that response never reaches your users. You collect data. You compare. Then you decide." },
+    { t: "p", text: "Shadow mode testing is the responsible adult in the room when everyone else wants to just ship it and see what happens. It eliminates the single biggest risk in model upgrades: that your eval set doesn't represent the long tail of real production queries." },
+
+    { t: "h2", text: "The architecture" },
+    { t: "code", lang: "python", label: "Shadow mode: run new model in parallel without serving its response", text: `import asyncio
+
+async def handle_request(query, context):
+    # Primary: always serves the response
+    primary_task = asyncio.create_task(
+        call_model(PRODUCTION_MODEL, query, context)
+    )
+
+    # Shadow: runs in parallel, response is logged but NEVER returned to user
+    shadow_task = asyncio.create_task(
+        call_model(SHADOW_MODEL, query, context)
+    )
+
+    primary_response = await primary_task
+
+    # Don't await shadow in the critical path — fire and forget
+    asyncio.ensure_future(
+        log_shadow_comparison(query, primary_response, shadow_task)
+    )
+
+    return primary_response  # Only primary reaches the user
+
+async def log_shadow_comparison(query, primary_response, shadow_task):
+    try:
+        shadow_response = await asyncio.wait_for(shadow_task, timeout=30)
+        await store_comparison({
+            "query": query,
+            "primary": primary_response,
+            "shadow": shadow_response,
+            "timestamp": datetime.utcnow().isoformat()
+        })
+    except asyncio.TimeoutError:
+        log_metric("shadow_timeout")` },
+
+    { t: "h2", text: "What to measure" },
+    { t: "list", items: [
+      "Pairwise preference: LLM judge decides which response is better for a random 10% sample",
+      "Semantic divergence: cosine similarity between primary and shadow responses — high divergence needs manual review",
+      "Length distribution: if shadow responses are dramatically longer or shorter, worth investigating",
+      "Tool call alignment: do both models call the same tools with the same arguments on agentic tasks?",
+      "Failure rate: does the shadow model time out, error, or produce malformed output more often?",
+      "Latency: would the shadow model's P99 meet your SLA if it were production?",
+    ]},
+
+    { t: "h2", text: "When to graduate from shadow to production" },
+    { t: "p", text: "After 7–14 days of shadow data (or reaching statistical significance on your pairwise preference score), you have a real answer. The threshold I'd recommend: shadow model wins or ties on pairwise preference at p < 0.05, lower or equal error rate, meets latency SLA. If it wins on all three, it earns a canary deployment (5% traffic). Then 25%. Then 100%." },
+    { t: "callout", v: "tip", text: "Run shadow tests continuously, not just during planned upgrades. When a new model version releases, spin up a shadow run immediately. By the time you're ready to evaluate switching, you already have 2 weeks of production data." },
+
+    { t: "references", items: [
+      { label: "Netflix — Shadow testing in ML systems", url: "https://netflixtechblog.com/mezzanine-the-professional-grade-mux-for-netflix-streaming-quality-7f4f1b75ee5d" },
+      { label: "Google — Production ML monitoring and deployment strategies", url: "https://developers.google.com/machine-learning/guides/rules-of-ml" },
+    ]},
+    { t: "lab", tab: "systems", label: "Shadow testing setup →", desc: "Configure shadow routing in the Systems module." },
+  ],
+
+  // ─── BATCH 2 ─────────────────────────────────────────────────────────────
+
+  "bias-in-llms": [
+    { t: "p", text: "LLMs don't generate bias from nowhere. They learn it from us — from the text we wrote, the decisions we recorded, the stories we told. The uncomfortable truth is that an LLM trained on the internet will reflect the internet: its brilliance and its prejudices, its expertise and its blind spots." },
+    { t: "p", text: "This isn't a reason to not build with LLMs. It's a reason to build with your eyes open — to know the types of bias, where they come from, and what you can actually detect and mitigate versus what requires ongoing human oversight." },
+
+    { t: "h2", text: "Types of bias in LLM outputs" },
+    { t: "table", headers: ["Type", "What it looks like", "Example"], rows: [
+      ["Representation bias",    "Under- or over-representation of groups in training data",        "Model defaults to male pronouns for 'engineer', female for 'nurse'"],
+      ["Stereotype amplification","Model exaggerates group patterns beyond what training data shows", "Consistently associates certain ethnicities with crime in creative writing"],
+      ["Performance disparity",  "Model quality degrades for certain languages/dialects/accents",   "Weaker reasoning in African American Vernacular English vs. Standard American English"],
+      ["Allocation bias",        "Model systematically advantages or disadvantages groups in decisions", "Resume screener rates equivalent CVs lower for certain names"],
+      ["Sycophancy",             "Model agrees with the user's apparent beliefs regardless of truth", "Changes its assessment of a political claim when told which party the user supports"],
+      ["Recency/salience bias",  "Over-weights recent or frequently-discussed events",              "Assumes every business is a tech startup if context is ambiguous"],
+    ]},
+
+    { t: "h2", text: "Where bias enters" },
+    { t: "h3", text: "Training data" },
+    { t: "p", text: "The web over-represents English, over-represents wealthy countries, over-represents male voices in certain domains, and contains historical text from periods with explicit discrimination. A model trained on this data learns these patterns as features, not bugs — unless explicit effort is made to counteract them." },
+
+    { t: "h3", text: "RLHF and fine-tuning" },
+    { t: "p", text: "Human feedback is not neutral. Annotators have their own cultural backgrounds, language preferences, and implicit assumptions about what a 'good' answer looks like. If the annotator pool is not diverse, RLHF can encode a narrow view of quality. Some alignment research suggests RLHF may amplify sycophancy — the model learns to please, not to be accurate." },
+
+    { t: "h3", text: "Your prompt and context" },
+    { t: "p", text: "Priming effects are real. Prompts that mention certain groups, use certain frames, or carry implicit assumptions shift model outputs measurably. An evaluation task described as 'written by a student in a disadvantaged school' generates harsher feedback than the identical essay described neutrally." },
+
+    { t: "h2", text: "What you can detect" },
+    { t: "code", lang: "python", label: "Bias audit: pairwise name substitution test", text: `# Test if model treats equivalent CVs differently based on perceived demographics
+NAMES_SET_A = ["Emily Walsh", "Michael Johnson", "Sarah Chen"]
+NAMES_SET_B = ["Lakisha Washington", "Jamal Williams", "María García"]
+
+def audit_bias(resume_template, evaluation_prompt):
+    results = {}
+    for name_a, name_b in zip(NAMES_SET_A, NAMES_SET_B):
+        resume_a = resume_template.replace("{NAME}", name_a)
+        resume_b = resume_template.replace("{NAME}", name_b)
+
+        score_a = llm(evaluation_prompt + resume_a)
+        score_b = llm(evaluation_prompt + resume_b)
+
+        results[f"{name_a} vs {name_b}"] = {
+            "score_a": extract_score(score_a),
+            "score_b": extract_score(score_b),
+            "delta": extract_score(score_a) - extract_score(score_b)
+        }
+    return results` },
+    { t: "callout", v: "warning", text: "The 'Are Emily and Lakisha scored the same?' test is not a comprehensive bias audit. It catches one dimension of one type of bias. Real bias auditing is multi-dimensional, ongoing, and requires domain expertise. A passing pairwise test does not mean your system is unbiased." },
+
+    { t: "h2", text: "Mitigations that actually work" },
+    { t: "list", items: [
+      "Explicit fairness instructions in your system prompt: 'Evaluate candidates solely on their stated qualifications, disregarding names, schools, or any demographic indicators'",
+      "Output filtering: screen model outputs for slurs, stereotypes, and discriminatory content before returning to users",
+      "Diverse annotator pools for any fine-tuning or RLHF — explicitly recruit for demographic, cultural, and linguistic diversity",
+      "Regular bias audits: the pairwise substitution test is a starting point; run it monthly on your production system",
+      "Human review for high-stakes decisions: never let an LLM make final employment, credit, or healthcare decisions without human oversight",
+      "Performance audits across user segments: if your product serves diverse users, check whether quality metrics differ by segment",
+    ]},
+
+    { t: "references", items: [
+      { label: "Stochastic Parrots: On the Dangers of Stochastic Parrots (Bender et al., 2021)", url: "https://dl.acm.org/doi/10.1145/3442188.3445922" },
+      { label: "Are Emily and Greg More Employable than Lakisha and Jamal? (Bertrand & Mullainathan)", url: "https://www.nber.org/papers/w9873" },
+      { label: "NIST AI Risk Management Framework", url: "https://www.nist.gov/system/files/documents/2023/01/26/AI RMF 1.0.pdf" },
+      { label: "Sycophancy to Subterfuge: Investigating Reward Tampering in Language Models", url: "https://arxiv.org/abs/2406.10162" },
+    ]},
+    { t: "lab", tab: "playground", label: "Run a bias audit →", desc: "Test your prompts for systematic disparities in the Playground module." },
+  ],
+
+  "privacy-compliance-llms": [
+    { t: "p", text: "The question your legal team will eventually ask: 'Where does the user's data go when it hits the LLM?' If you don't have a crisp answer to that question, you are not ready for enterprise customers, regulated industries, or any geography with meaningful data protection law." },
+    { t: "p", text: "This isn't about being paranoid. It's about being specific. Privacy and compliance for LLM systems is a solvable problem once you understand the actual requirements." },
+
+    { t: "h2", text: "The data flows that create risk" },
+    { t: "list", items: [
+      "User messages sent to third-party model API (OpenAI, Anthropic, Google) — data leaves your infrastructure",
+      "RAG retrieval — user queries are embedded and matched against your knowledge base; the query itself is sensitive",
+      "Tool outputs fed back to the model — if tools return PII from your database, that PII is now in the model's context",
+      "Conversation history — accumulates PII over time; needs explicit retention limits",
+      "Fine-tuning data — if you fine-tune on user data, that data affects model weights indefinitely",
+      "Logging and observability — traces of LLM calls often contain full user messages; treat logs as sensitive data",
+    ]},
+
+    { t: "h2", text: "What GDPR and CCPA actually require" },
+    { t: "table", headers: ["Requirement", "LLM implication"], rows: [
+      ["Data minimisation",        "Don't send more user data to the LLM than necessary for the task"],
+      ["Purpose limitation",       "User data collected for support cannot be used to train your model without separate consent"],
+      ["Right to erasure",         "If user data was used in fine-tuning, erasure is technically very hard — avoid fine-tuning on opt-in data unless you have a clear policy"],
+      ["Data processing agreements","If you use a third-party model API, you need a DPA with that provider — most major providers offer these"],
+      ["Data residency",           "For EU customers, you may need to use EU-region API endpoints; check provider availability"],
+      ["Consent for AI processing","In some jurisdictions, automated decision-making with significant effects requires explicit consent"],
+    ]},
+
+    { t: "h2", text: "PII scrubbing before the LLM" },
+    { t: "p", text: "For many use cases, user messages can be de-identified before being sent to the model. Named Entity Recognition can strip names, emails, phone numbers, account numbers, and addresses — replacing them with placeholders the model works with, which you then re-identify in post-processing." },
+    { t: "code", lang: "python", label: "PII scrubbing with presidio", text: `from presidio_analyzer import AnalyzerEngine
+from presidio_anonymizer import AnonymizerEngine
+
+analyzer = AnalyzerEngine()
+anonymizer = AnonymizerEngine()
+
+def scrub_pii(text: str) -> tuple[str, dict]:
+    results = analyzer.analyze(text=text, language="en",
+        entities=["PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER",
+                  "CREDIT_CARD", "US_SSN", "LOCATION"])
+    anonymized = anonymizer.anonymize(text=text, analyzer_results=results)
+    # Returns scrubbed text + mapping for re-identification if needed
+    return anonymized.text, {r.entity_type: r for r in results}
+
+scrubbed, pii_map = scrub_pii("My name is Sarah Chen, reach me at sarah@acme.com")
+# scrubbed: "My name is <PERSON>, reach me at <EMAIL_ADDRESS>"` },
+
+    { t: "h2", text: "Compliance by industry" },
+    { t: "table", headers: ["Industry", "Key regulation", "Critical LLM requirements"], rows: [
+      ["Healthcare (US)",    "HIPAA",           "BAA with model provider required; PHI cannot be sent to non-covered entity APIs; audit logs mandatory"],
+      ["Finance (US)",       "GLBA, SOX",       "PII controls; model decisions affecting credit/risk must be explainable; audit trails required"],
+      ["EU (any sector)",    "GDPR",            "DPA with provider; data residency options; right to erasure documented; AI Act compliance for high-risk uses"],
+      ["Legal",              "Attorney-client privilege", "User data may be privileged; extra care on data retention and third-party sharing"],
+      ["Government (US)",    "FedRAMP",         "Model providers must be FedRAMP authorised; Azure OpenAI or self-hosted Llama are common choices"],
+    ]},
+
+    { t: "callout", v: "tip", text: "The safest architecture for heavily regulated environments: self-hosted open-source models (Llama 3, Mistral) on your own infrastructure. Data never leaves your network. You control retention, logging, and access. The tradeoff: you own the serving infrastructure and model quality is behind frontier." },
+
+    { t: "references", items: [
+      { label: "Anthropic — Privacy policy and DPA", url: "https://www.anthropic.com/privacy" },
+      { label: "OpenAI — Enterprise privacy and data processing", url: "https://openai.com/enterprise-privacy" },
+      { label: "Microsoft Presidio — PII detection and anonymisation", url: "https://microsoft.github.io/presidio/" },
+      { label: "EU AI Act — official text", url: "https://artificialintelligenceact.eu/" },
+      { label: "NIST Privacy Framework", url: "https://www.nist.gov/privacy-framework" },
+    ]},
+    { t: "lab", tab: "systems", label: "Privacy architecture patterns →", desc: "Explore compliant LLM pipeline designs in the Systems module." },
+  ],
+
+  "stale-document-failure": [
+    { t: "p", text: "This is a real story. A compliance chatbot at a mid-sized financial firm was RAGging over its internal policy documents. For nine months, it worked perfectly. Then, quietly, the compliance team updated their trading restriction policy. The document was updated in their CMS. The RAG index was not." },
+    { t: "p", text: "For three weeks, the chatbot continued answering questions about trading restrictions based on the old policy. Nobody noticed — until someone made a trade based on the chatbot's guidance that violated the new rules. The investigation cost more than the entire AI project budget for the year." },
+    { t: "p", text: "Stale documents are not an edge case. They are the inevitable result of any knowledge base that isn't actively maintained — and almost none of them are." },
+
+    { t: "h2", text: "Why stale documents are insidious" },
+    { t: "p", text: "Unlike a hallucination, stale document failures produce confident, well-sourced answers. The model isn't making things up — it's accurately describing what the document says. The document is just wrong. This makes the failure much harder to catch in evals, because your golden dataset was built when the document was correct." },
+    { t: "callout", v: "warning", text: "A RAG system without document freshness monitoring is a time bomb. The longer it runs without maintenance, the higher the probability that at least one retrieved document contains outdated information — and the higher the stakes of that staleness becoming a user-facing answer." },
+
+    { t: "h2", text: "Prevention: the document freshness architecture" },
+    { t: "h3", text: "1. Timestamp every chunk" },
+    { t: "p", text: "Every chunk in your vector store should have a metadata field: `last_updated` (when the source document was last modified) and `indexed_at` (when this chunk was embedded). These are different: you want to know when the *source* was last updated, not when you processed it." },
+
+    { t: "h3", text: "2. Change detection at ingestion" },
+    { t: "p", text: "Hash the content of each source document. On each ingestion run, compare the current hash to the stored hash. Only re-embed documents that have changed. This makes your index up-to-date without a full re-index, and creates an audit trail of what changed and when." },
+    { t: "code", lang: "python", label: "Content-hash change detection", text: `import hashlib
+
+def get_document_hash(content: str) -> str:
+    return hashlib.sha256(content.encode()).hexdigest()
+
+def sync_document(doc_id: str, current_content: str, vector_store, hash_store):
+    current_hash = get_document_hash(current_content)
+    stored_hash = hash_store.get(doc_id)
+
+    if stored_hash == current_hash:
+        return "unchanged"
+
+    # Document changed — re-index
+    vector_store.delete_by_metadata({"doc_id": doc_id})
+    chunks = chunk_document(current_content)
+    embeddings = embed_chunks(chunks)
+    vector_store.upsert(chunks, embeddings, metadata={
+        "doc_id": doc_id,
+        "last_updated": datetime.utcnow().isoformat(),
+        "content_hash": current_hash
+    })
+    hash_store.set(doc_id, current_hash)
+    return "re-indexed"` },
+
+    { t: "h3", text: "3. Freshness scoring in retrieval" },
+    { t: "p", text: "Weight retrieval scores by document freshness. A highly relevant chunk from a 2-year-old document should score lower than a moderately relevant chunk from last week, especially for fast-changing domains like compliance, pricing, and product documentation." },
+
+    { t: "h3", text: "4. Cite the source date in responses" },
+    { t: "p", text: "Instruct the model to include the source document's last-updated date in its response: 'According to the trading policy last updated March 2025...' This makes staleness visible to users and creates a natural feedback loop when they notice the date is old." },
+
+    { t: "h2", text: "Detection: freshness monitoring" },
+    { t: "list", items: [
+      "Alert when any document in a critical category hasn't been updated in X days — the threshold depends on your domain",
+      "Flag chunks older than your staleness threshold in the retrieval layer — don't include them without a warning",
+      "Monitor the age distribution of your retrieved chunks — if your P50 retrieved chunk age is 18 months, you have a problem",
+      "Periodic spot-checks: monthly, manually verify that key facts in the chatbot's answers match the current source documents",
+    ]},
+
+    { t: "references", items: [
+      { label: "LlamaIndex — Document management and re-ingestion", url: "https://docs.llamaindex.ai/en/stable/module_guides/loading/ingestion_pipeline/" },
+      { label: "Pinecone — Metadata filtering for freshness", url: "https://docs.pinecone.io/guides/data/filter-with-metadata" },
+    ]},
+    { t: "lab", tab: "lab", label: "Build a document freshness monitor →", desc: "Implement change detection and staleness alerting in the RAG lab." },
+  ],
+
+  "incident-room": [
+    { t: "p", text: "It's 11pm. Your on-call phone buzzes. The AI feature is producing wrong answers at scale. Users are seeing it. You have three engineers in a Slack thread and no runbook." },
+    { t: "p", text: "This post is the runbook you should have written before that moment arrived. AI production incidents are different from regular software incidents — they're probabilistic, hard to reproduce, and often don't have a clear fix. But the process for handling them can be prepared in advance." },
+
+    { t: "h2", text: "Step 1: Contain immediately" },
+    { t: "p", text: "Before you understand the problem, reduce the blast radius. Your first 10 minutes: disable the AI feature or route to a fallback (cached responses, simplified model, 'sorry, this feature is temporarily unavailable'). User-facing wrong answers are worse than no answers. Don't debug with users watching." },
+    { t: "callout", v: "warning", text: "The most common incident mistake: spending the first hour trying to understand *why* instead of containing *what*. Contain first. Understand second." },
+
+    { t: "h2", text: "Step 2: Characterise the failure" },
+    { t: "list", items: [
+      "When did it start? (Check your monitoring — did something change around that time?)",
+      "What fraction of requests are affected? (10%? 100%? A specific user segment?)",
+      "What does the failure look like? (Wrong answers? Errors? Refusals? Latency spikes?)",
+      "Is it reproducible? (Pick 3 failing examples and try to reproduce them manually)",
+      "What changed recently? (Prompt update? Model version? RAG index refresh? New traffic pattern?)",
+    ]},
+
+    { t: "h2", text: "Step 3: The AI incident decision tree" },
+    { t: "table", headers: ["Symptom", "Most likely cause", "First investigation step"], rows: [
+      ["Wrong answers, consistent pattern",   "Prompt regression or model change",      "Roll back last prompt change; check if model version changed"],
+      ["Wrong answers, random subset",        "Retrieval quality degradation",           "Check retrieved chunks for the failing queries — are they relevant?"],
+      ["Stale/outdated information",          "Document index not updated",              "Check last index update time; verify source document dates"],
+      ["Increased refusals",                  "Model safety update or prompt trigger",   "Test affected prompts directly; check if model version changed"],
+      ["Latency spike",                       "Provider issue, rate limits, or context growth", "Check provider status page; check average context length"],
+      ["Errors / exceptions",                 "API change, schema mismatch, or rate limit", "Check API changelog; look at error codes in traces"],
+      ["Hallucinations on specific topics",   "Training data gap or retrieval miss",     "Check if those topics are covered in your knowledge base"],
+    ]},
+
+    { t: "h2", text: "Step 4: Fix or mitigate" },
+    { t: "p", text: "The fix depends on the cause. But in an active incident, your goal is not the perfect fix — it's the fastest safe mitigation. Acceptable mitigations: roll back the prompt to the previous version (this is why you version prompts), switch to a backup model, disable the specific feature or query type that's failing, add a disclaimer to affected responses." },
+    { t: "p", text: "The proper fix happens after the incident is contained. Don't try to fix root cause while users are affected." },
+
+    { t: "h2", text: "Step 5: Post-mortem" },
+    { t: "p", text: "Every AI incident deserves a blameless post-mortem within 48 hours. The five questions: What happened? When did it start? Why didn't we catch it before it hit users? What made it hard to diagnose? What changes prevent recurrence? The last question is the only one that matters for next time." },
+    { t: "callout", v: "tip", text: "The most valuable post-mortem output is not the root cause analysis — it's the new eval example. Every production incident should produce at least one new eval case that would have caught it. Your eval set should grow every time you have an incident." },
+
+    { t: "h2", text: "Build the runbook before you need it" },
+    { t: "list", items: [
+      "Document your fallback path: exactly what to do when the AI feature goes down (who approves the disable? where's the flag?)",
+      "Identify your top 5 most likely failure modes and write detection + mitigation steps for each",
+      "Set up alerts for: error rate, latency P99, model output quality (via sampling judge), cost anomalies",
+      "Run a fire drill: before launch, simulate an incident and walk through the response process",
+    ]},
+
+    { t: "lab", tab: "systems", label: "LLM observability setup →", desc: "Configure monitoring and alerting for AI production systems." },
+  ],
+
+  "solo-operator-ai": [
+    { t: "p", text: "In 2020, running a business solo meant doing everything yourself and burning out trying. In 2025, it means having AI handle the parts that don't require you — and spending your time on the parts that do." },
+    { t: "p", text: "This shift is real. Not theoretical. There are people running consulting practices, content businesses, small software products, and e-commerce stores with AI doing 60–80% of the operational work. They're not replaced by AI — they're *leveraged* by it. One person with the right stack can do what used to require a team of five." },
+
+    { t: "h2", text: "The solo operator stack" },
+    { t: "table", headers: ["Category", "What AI handles", "Tools"], rows: [
+      ["Writing & content",     "First drafts, editing, SEO copy, social posts, email sequences",   "Claude, ChatGPT, Notion AI"],
+      ["Research",              "Competitive research, market analysis, document summarisation",    "Claude + web search, Perplexity"],
+      ["Code",                  "Scripts, automations, data analysis, simple features",             "Claude Code, Cursor, GitHub Copilot"],
+      ["Customer communication","Draft responses, FAQ answers, proposal language",                  "Claude with your context/templates"],
+      ["Data & spreadsheets",   "Analysis, formula writing, visualisation",                         "Claude + Python, ChatGPT Advanced Data Analysis"],
+      ["Scheduling & ops",      "Email triage, meeting summaries, task extraction from calls",      "Notion AI, Otter.ai, Make/Zapier with AI"],
+      ["Learning",              "Explaining new domains, summarising papers, answering questions",  "Claude, Perplexity, NotebookLM"],
+    ]},
+
+    { t: "h2", text: "The high-leverage patterns" },
+    { t: "h3", text: "The context document" },
+    { t: "p", text: "The single biggest force multiplier for a solo operator: a personal context document. A 2,000-word document describing your business, your voice, your clients, your non-negotiables, your pricing, your target customer. Paste this at the start of any AI conversation and you stop re-explaining yourself. The AI works with your context immediately." },
+    { t: "quote", text: "I spent 2 hours writing my context doc. It's saved me 20 minutes every single day since. That's the best ROI of anything I've done this year.", attribution: "Solo consultant, 8 months into using Claude seriously" },
+
+    { t: "h3", text: "The async client pipeline" },
+    { t: "p", text: "Client communication is often 40% of a solo operator's time. AI doesn't replace the relationship — but it drafts the 37 emails you'd write this week in 20 minutes. Your job shifts from writing to editing: review, personalise, adjust tone, send. Speed goes up; quality stays the same or improves because you're not writing at 11pm tired." },
+
+    { t: "h3", text: "The research-to-output pipeline" },
+    { t: "p", text: "For any knowledge-intensive deliverable — a consulting report, a strategy document, a competitor analysis — the old workflow was: research for 3 days, write for 2 days. The new workflow: AI-assisted research in 4 hours (Perplexity + Claude over multiple documents), structured outline in 30 minutes, first draft in 2 hours, editing and refinement in 1 day. The 5-day project becomes a 2-day project. You can take twice as many clients or work half as many days." },
+
+    { t: "h2", text: "What AI can't replace" },
+    { t: "p", text: "The parts that still require you: the initial relationship and trust-building, the judgment calls that require your specific domain knowledge, the creative direction that makes your work distinctive, and the accountability that comes with putting your name on something. AI is a force multiplier for execution. It doesn't replace strategic thinking, relationships, or reputation." },
+    { t: "callout", v: "key", text: "The solo operators winning with AI are not the ones who use the most tools. They're the ones who've deeply integrated 2–3 tools into their actual workflow and built the discipline to use them consistently. Toolbox maximalism is procrastination with a productivity aesthetic." },
+
+    { t: "h2", text: "Getting started without overwhelm" },
+    { t: "list", items: [
+      "Week 1: Write your context document. Use it with Claude for every task this week. Notice where it helps.",
+      "Week 2: Identify your highest-time-cost repetitive task (usually writing or research). Build one AI workflow for it.",
+      "Week 3: Add one automation that connects AI to a tool you already use (email, docs, calendar).",
+      "Month 2+: Systematise what's working. Build templates and prompts for your most common tasks. Iterate.",
+    ]},
+
+    { t: "references", items: [
+      { label: "Paul Graham — How to Do Great Work", url: "https://paulgraham.com/greatwork.html" },
+      { label: "Anthropic — Claude for professional work", url: "https://www.anthropic.com/claude" },
+    ]},
+    { t: "lab", tab: "agents", label: "Build your first AI workflow →", desc: "Set up an AI-powered research or writing pipeline in the Agents module." },
+  ],
+
+  "india-scale-ai": [
+    { t: "p", text: "India is not a smaller version of the US with a different timezone. Building AI for India requires rethinking every assumption: about language, about latency, about cost, about the user's device, and about what 'helpful' means when the same question might be asked in English, Hindi, Tamil, and Hinglish in the same product by the same user in the same day." },
+    { t: "p", text: "This post is for engineers building AI products for Indian users — and for anyone who wants to understand what it takes to build AI at the real scale and complexity of a billion-user market." },
+
+    { t: "h2", text: "The language problem" },
+    { t: "p", text: "India has 22 officially recognised languages and hundreds of dialects. English is the lingua franca of tech and urban professional users. But the next 500 million internet users — the bharat tier — will predominantly use Hindi, Bengali, Telugu, Tamil, Marathi, Kannada, or Gujarati. And many urban users who *can* use English *prefer* to communicate in code-mixed language: Hinglish ('yaar is feature mein bug hai'), Tamil-English, Telugu-English." },
+    { t: "callout", v: "warning", text: "Code-mixed language (Hinglish, Tanglish, etc.) is not a dialect quirk. It's the primary communication mode of hundreds of millions of educated, tech-savvy Indian users. If your model only handles pure Hindi or pure English, it will feel alien to your actual user base." },
+
+    { t: "h2", text: "Token inequality" },
+    { t: "p", text: "Indic scripts are tokenised inefficiently by most LLMs. Hindi text uses 2–4× more tokens than equivalent English text. Tamil can be 4–6× more expensive. At the cost structure of frontier models, this makes Indic-language applications economically challenging at scale. The model cost for a Hindi RAG QA system is 3–5× the cost of the equivalent English system." },
+    { t: "table", headers: ["Language", "Tokens for 'How can I help you today?'", "vs English"], rows: [
+      ["English",  "6",   "1×"],
+      ["Hindi (Devanagari)",  "18–24", "3–4×"],
+      ["Tamil",    "24–36", "4–6×"],
+      ["Bengali",  "20–28", "3.5–5×"],
+      ["Hinglish (mixed)", "8–14", "1.5–2.5×"],
+    ]},
+
+    { t: "h2", text: "Latency in a country of variable connectivity" },
+    { t: "p", text: "P50 mobile latency in India ranges from 40ms in metro areas on 5G to 400ms+ in tier-2 cities and rural areas on 4G or 3G. Your P99 is ugly. Streaming is not optional — it's table stakes. A response that arrives in one piece after 4 seconds will feel broken to a user on a variable connection. Characters appearing as they generate creates the perception of speed even when total latency is high." },
+    { t: "list", items: [
+      "Always stream: even if it costs engineering complexity, the UX improvement on variable connections is non-negotiable",
+      "Progressive loading: show skeleton UI immediately, stream the response as it arrives",
+      "Offline-capable fallback: for critical features, cache common Q&A pairs for offline/slow-connection response",
+      "Model selection: prefer faster models (Haiku, GPT-4o-mini) for mobile surfaces where latency matters more than depth",
+      "Edge inference: for highest-volume, latency-sensitive features, evaluate Groq or self-hosted models on regional infra",
+    ]},
+
+    { t: "h2", text: "Cost architecture for India pricing" },
+    { t: "p", text: "Indian users' willingness-to-pay for SaaS is 5–10× lower than US users. An AI feature that costs ₹50/month in tokens to serve a US user at $5/month ARR pencils out. The same cost structure doesn't work at ₹299/month Indian pricing. You need to engineer for 10–20× lower cost per user than a comparable US product." },
+    { t: "list", items: [
+      "Ruthless prompt trimming: every token counts more when margin is thin",
+      "Aggressive caching: static context (product FAQs, policy documents) should be prompt-cached",
+      "Smaller models where quality holds: test GPT-4o-mini and Claude Haiku against your eval set — they may be sufficient",
+      "Hybrid retrieval: BM25 handles Indic text better than semantic search for exact-match queries; hybrid outperforms either alone",
+      "Consider IndicBERT for embedding: domain-specific Indic embedding models can cut embedding costs while improving retrieval quality for Indic content",
+    ]},
+
+    { t: "h2", text: "Models worth knowing for Indic languages" },
+    { t: "table", headers: ["Model", "Indic strengths", "Notes"], rows: [
+      ["Claude Sonnet/Opus",    "Strong Hindi, reasonable other Indic languages, handles Hinglish well", "Best for quality-first use cases"],
+      ["GPT-4o",                "Comparable Indic language quality to Claude",                           "Strong multimodal (useful for forms/documents in Indic script)"],
+      ["Gemini 1.5 Pro",        "Strong Indic language support — Google's data advantage",               "Particularly strong for South Indian languages"],
+      ["IndicBERT",             "Embedding model fine-tuned on 12 Indic languages",                      "Open source; excellent for retrieval tasks"],
+      ["Krutrim",               "India-specific LLM from Ola",                                           "Early stage; watch for improvements"],
+      ["OpenHathi/Sarvam AI",   "Hindi-focused open-source models",                                      "Growing community; suitable for cost-sensitive self-hosted deployments"],
+    ]},
+
+    { t: "references", items: [
+      { label: "AI4Bharat — Open source NLP for Indian languages", url: "https://ai4bharat.iitm.ac.in/" },
+      { label: "Sarvam AI — Building AI for India", url: "https://www.sarvam.ai/" },
+      { label: "IndicBERT: A Multi-lingual Pre-trained Model for South Asian Languages", url: "https://aclanthology.org/2020.findings-emnlp.445/" },
+      { label: "TRAI — India mobile connectivity reports", url: "https://www.trai.gov.in/" },
+    ]},
+    { t: "lab", tab: "systems", label: "Multi-language RAG setup →", desc: "Configure hybrid retrieval for multilingual content in the Systems module." },
+  ],
+
 };
 
 
