@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock, isPreviewUnlocked } from "./analytics";
+import QADashboard from "./QADashboard";
 import ConceptsApp from "./Concepts";
 import SystemsApp from "./Systems";
 import FluencyApp from "./Fluency";
@@ -1868,6 +1869,28 @@ export default function App() {
         <footer className="border-t border-zinc-800 mt-12 px-6 py-4 text-center">
           <p className="text-xs text-zinc-600">GenAI Systems Lab · V1-B · 5 scenarios · Static precomputed simulator · Zero hosting cost · Open source</p>
         </footer>
+      )}
+
+      {topView === "qa" && (
+        <QADashboard
+          onNavigate={navigate}
+          onOpenModule={(tab, moduleId) => {
+            if (tab === "systems") setSystemsModule(moduleId);
+            if (tab === "explore") setExploreModule(moduleId);
+            if (tab === "agents") setAgentsModule(moduleId);
+            navigate(tab);
+          }}
+        />
+      )}
+
+      {/* Hidden QA corner link — internal only */}
+      {topView !== "qa" && (
+        <button
+          onClick={() => navigate("qa")}
+          className="fixed bottom-3 right-3 text-[9px] font-mono text-zinc-800 hover:text-zinc-500 transition-all z-10 select-none"
+          title="Internal QA Console">
+          qa
+        </button>
       )}
     </div>
   );
