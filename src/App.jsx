@@ -1850,7 +1850,7 @@ export default function App() {
           </div>
         </div>
         {/* Row 2: Tab navigation (desktop only) */}
-        <div className="hidden lg:flex items-center gap-0.5 px-4 pb-1.5 max-w-7xl mx-auto">
+        <div className="hidden lg:flex items-center gap-0.5 px-4 pb-1.5 max-w-7xl mx-auto overflow-x-auto scrollbar-hide">
           {NAV_GROUPS.map((group, gi) => (
             <div key={gi} className="flex items-center gap-0.5 shrink-0">
               {gi > 0 && <div className="w-px h-4 bg-zinc-800 mx-1" />}
