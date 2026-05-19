@@ -8,7 +8,7 @@ A holding area for future product ideas. Nothing here is on the roadmap unless e
 
 **Status: COMPLETE (May 2026)**
 
-83 posts written across all planned categories. Every post has a narrative hook, technical depth, `references` block, and most have `quote` blocks for human voice. Reading progress bar added to PostDetail.
+82 posts written across all planned categories. Every post has a narrative hook, technical depth, `references` block, and most have `quote` blocks for human voice. Reading progress bar added to PostDetail.
 
 Categories covered: Foundations, RAG, Agents, Evaluation, LLMOps, Safety, System Design, Production Failures, AI Product, Model Profiles, Industry AI, Interview Prep, AI Roles & Careers.
 
@@ -113,6 +113,21 @@ The original product angle is delivered: **"Learn the concept. Then break it on 
 **Concept:** Cohort access for AI bootcamps, internal training at companies, or university courses. Bulk pricing + admin dashboard for tracking cohort progress.
 
 **Why it's Stage 3:** Individual social proof must come first. No org buys a training tool that no individuals have independently validated. When 10 engineers say "this is how I prep for AI interviews," the org sale becomes possible.
+
+---
+
+## Completed Since Last Update (May 2026)
+
+- **#59 Tiered scoring in RAG Lab** — 4-tier system (Junior Miss → Analyst-Ready → Senior-Ready → Staff-Level). `SCORE_TIERS` constant, `getTier()`, `TierBadge` component. ChallengeResult shows tier prominently. Leaderboard tracks best tier per scenario.
+- **#60 Role toggle on Home** — All / Engineers / PMs toggle persisted to localStorage. Module map reorders via `useMemo` based on role. Non-relevant modules dimmed.
+- **#61 Cross-tab Progress page** — "My Progress" in nav. `ProgressView` shows tab coverage bars per group, RAG tier breakdown per scenario, suggested next step.
+- **#53–58 UX polish batch** — Cmd+K indexes all 82 GT posts with deep-link; AIPM → AI Product rename; stats clickable; CTA audience labels; GROW tab welcome screens; RAG Lab amber visual; mobile drawer cleanup; What's New suppressed for first-timers.
+
+---
+
+## Pending / Parked Ideas
+
+*(unchanged — see sections above)*
 
 ---
 
