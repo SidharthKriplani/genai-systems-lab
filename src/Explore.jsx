@@ -16,283 +16,120 @@ function proj3D(x, y, z, rx, ry, scale = 90) {
 const EMB_CAT_COLOR = { rag:"#3b82f6", arch:"#f59e0b", safety:"#ef4444", ops:"#10b981", agents:"#8b5cf6", multi:"#38bdf8" };
 const EMB_CAT_LABEL = { rag:"RAG", arch:"Architecture", safety:"Safety", ops:"Ops", agents:"Agents", multi:"Multimodal" };
 
-// 30 points in 6 clusters — UMAP-like layout (irregular, realistic distances)
+// 30 points in 6 clusters — 2D positions in a 520×360 SVG viewBox
 const EMB_POINTS = [
-  // RAG cluster  center ≈ (-2.0, 0.2, -0.8)
-  { id:"r1", label:"What is RAG?",              cat:"rag",    x:-2.1, y: 0.3, z:-0.7 },
-  { id:"r2", label:"Vector DB indexing",         cat:"rag",    x:-1.8, y: 0.1, z:-0.9 },
-  { id:"r3", label:"Chunking strategies",        cat:"rag",    x:-2.2, y: 0.4, z:-0.6 },
-  { id:"r4", label:"Retrieval pipeline",         cat:"rag",    x:-1.9, y:-0.0, z:-1.0 },
-  { id:"r5", label:"Context window limits",      cat:"rag",    x:-2.0, y: 0.2, z:-0.8 },
-  // Architecture cluster  center ≈ (1.5, 0.9, 0.3)
-  { id:"a1", label:"Transformer architecture",   cat:"arch",   x: 1.4, y: 1.0, z: 0.2 },
-  { id:"a2", label:"Attention mechanism",        cat:"arch",   x: 1.7, y: 0.8, z: 0.5 },
-  { id:"a3", label:"KV cache & inference",       cat:"arch",   x: 1.3, y: 0.9, z: 0.4 },
-  { id:"a4", label:"Tokenization deep dive",     cat:"arch",   x: 1.6, y: 1.1, z: 0.1 },
-  { id:"a5", label:"Prompt budget planning",     cat:"arch",   x: 1.5, y: 1.0, z: 0.6 },
-  // Safety cluster  center ≈ (1.9, -0.9, -1.2)
-  { id:"s1", label:"RLHF alignment",             cat:"safety", x: 1.8, y:-1.0, z:-1.3 },
-  { id:"s2", label:"Red teaming",                cat:"safety", x: 2.1, y:-0.8, z:-1.0 },
-  { id:"s3", label:"Jailbreaks & injection",     cat:"safety", x: 1.7, y:-0.9, z:-1.4 },
-  { id:"s4", label:"Constitutional AI",          cat:"safety", x: 2.0, y:-1.1, z:-1.1 },
-  { id:"s5", label:"DPO preference learning",    cat:"safety", x: 1.9, y:-0.7, z:-1.2 },
-  // Ops cluster  center ≈ (-0.4, -1.5, 1.1)
-  { id:"o1", label:"Model quantization",         cat:"ops",    x:-0.3, y:-1.6, z: 1.0 },
-  { id:"o2", label:"Cost optimization",          cat:"ops",    x:-0.6, y:-1.4, z: 1.2 },
-  { id:"o3", label:"Inference at scale",         cat:"ops",    x:-0.2, y:-1.7, z: 1.0 },
-  { id:"o4", label:"Latency budgets & SLAs",     cat:"ops",    x:-0.5, y:-1.3, z: 1.3 },
-  { id:"o5", label:"GPU memory management",      cat:"ops",    x:-0.4, y:-1.5, z: 0.9 },
-  // Agents cluster  center ≈ (0.3, 1.6, 1.8)
-  { id:"ag1", label:"Agent reasoning loops",     cat:"agents", x: 0.2, y: 1.7, z: 1.7 },
-  { id:"ag2", label:"Tool calling patterns",     cat:"agents", x: 0.5, y: 1.5, z: 1.9 },
-  { id:"ag3", label:"ReAct framework",           cat:"agents", x: 0.1, y: 1.6, z: 2.0 },
-  { id:"ag4", label:"AI planning systems",       cat:"agents", x: 0.4, y: 1.8, z: 1.6 },
-  { id:"ag5", label:"Multi-agent coordination",  cat:"agents", x: 0.3, y: 1.5, z: 1.8 },
-  // Multimodal cluster  center ≈ (-1.5, -0.2, 2.0)
-  { id:"m1", label:"CLIP embeddings",            cat:"multi",  x:-1.6, y:-0.1, z: 2.1 },
-  { id:"m2", label:"Vision Transformers (ViT)",  cat:"multi",  x:-1.3, y:-0.3, z: 1.9 },
-  { id:"m3", label:"Image-text search",          cat:"multi",  x:-1.7, y:-0.2, z: 2.0 },
-  { id:"m4", label:"Diffusion models",           cat:"multi",  x:-1.4, y:-0.4, z: 2.2 },
-  { id:"m5", label:"Multimodal RAG",             cat:"multi",  x:-1.5, y: 0.0, z: 1.8 },
+  // RAG  top-left
+  { id:"r1", label:"What is RAG?",              cat:"rag",    sx: 100, sy: 118 },
+  { id:"r2", label:"Vector DB indexing",         cat:"rag",    sx: 138, sy: 128 },
+  { id:"r3", label:"Chunking strategies",        cat:"rag",    sx: 108, sy: 146 },
+  { id:"r4", label:"Retrieval pipeline",         cat:"rag",    sx: 130, sy: 112 },
+  { id:"r5", label:"Context window limits",      cat:"rag",    sx: 118, sy: 135 },
+  // Architecture  top-right
+  { id:"a1", label:"Transformer architecture",   cat:"arch",   sx: 372, sy: 104 },
+  { id:"a2", label:"Attention mechanism",        cat:"arch",   sx: 400, sy: 122 },
+  { id:"a3", label:"KV cache & inference",       cat:"arch",   sx: 376, sy: 130 },
+  { id:"a4", label:"Tokenization deep dive",     cat:"arch",   sx: 396, sy: 104 },
+  { id:"a5", label:"Prompt budget planning",     cat:"arch",   sx: 384, sy: 118 },
+  // Safety  right-middle
+  { id:"s1", label:"RLHF alignment",             cat:"safety", sx: 428, sy: 212 },
+  { id:"s2", label:"Red teaming",                cat:"safety", sx: 448, sy: 230 },
+  { id:"s3", label:"Jailbreaks & injection",     cat:"safety", sx: 422, sy: 234 },
+  { id:"s4", label:"Constitutional AI",          cat:"safety", sx: 442, sy: 210 },
+  { id:"s5", label:"DPO preference learning",    cat:"safety", sx: 448, sy: 222 },
+  // Ops  bottom-center
+  { id:"o1", label:"Model quantization",         cat:"ops",    sx: 238, sy: 294 },
+  { id:"o2", label:"Cost optimization",          cat:"ops",    sx: 264, sy: 312 },
+  { id:"o3", label:"Inference at scale",         cat:"ops",    sx: 240, sy: 318 },
+  { id:"o4", label:"Latency budgets & SLAs",     cat:"ops",    sx: 260, sy: 296 },
+  { id:"o5", label:"GPU memory management",      cat:"ops",    sx: 250, sy: 310 },
+  // Agents  bottom-right
+  { id:"ag1", label:"Agent reasoning loops",     cat:"agents", sx: 375, sy: 296 },
+  { id:"ag2", label:"Tool calling patterns",     cat:"agents", sx: 400, sy: 316 },
+  { id:"ag3", label:"ReAct framework",           cat:"agents", sx: 372, sy: 318 },
+  { id:"ag4", label:"AI planning systems",       cat:"agents", sx: 394, sy: 294 },
+  { id:"ag5", label:"Multi-agent coordination",  cat:"agents", sx: 386, sy: 308 },
+  // Multimodal  bottom-left
+  { id:"m1", label:"CLIP embeddings",            cat:"multi",  sx:  92, sy: 280 },
+  { id:"m2", label:"Vision Transformers (ViT)",  cat:"multi",  sx: 118, sy: 298 },
+  { id:"m3", label:"Image-text search",          cat:"multi",  sx:  88, sy: 298 },
+  { id:"m4", label:"Diffusion models",           cat:"multi",  sx: 110, sy: 278 },
+  { id:"m5", label:"Multimodal RAG",             cat:"multi",  sx: 104, sy: 294 },
 ];
 
-// 5 queries — positioned INSIDE their target cluster for high sim scores (0.93–0.97)
-// KEY: zero keyword overlap between query text and result labels = the "aha moment"
+// 5 queries — placed at cluster centers for high similarity scores
 const EMB_QUERIES = [
   {
-    id: "q1",
+    id: "q1", sx: 384, sy: 116,   // Architecture cluster
     text: "How much text can a model process?",
-    x: 1.47, y: 0.95, z: 0.37,    // Architecture cluster
-    note: '"text" and "process" appear in NONE of the results — the model mapped everyday language to precise ML concepts (KV cache, tokenization, prompt budgeting) by meaning alone.',
+    note: '"text" and "process" appear in NONE of the results — the model mapped everyday language to ML concepts (KV cache, tokenization, prompt budgeting) by meaning alone.',
   },
   {
-    id: "q2",
+    id: "q2", sx: 436, sy: 220,   // Safety cluster
     text: "Teaching AI to prefer better answers",
-    x: 1.88, y: -0.88, z: -1.22,  // Safety cluster
-    note: '"prefer better answers" shares zero words with "RLHF", "DPO", or "Constitutional AI" — the model understood the intent of preference alignment without any keyword match.',
+    note: '"prefer better answers" shares zero words with "RLHF", "DPO", or "Constitutional AI" — the model understood preference alignment without any keyword match.',
   },
   {
-    id: "q3",
+    id: "q3", sx: 250, sy: 306,   // Ops cluster
     text: "Making models cheaper to deploy",
-    x: -0.41, y: -1.50, z: 1.08,  // Ops cluster
-    note: '"cheaper to deploy" doesn\'t appear in "quantization", "inference at scale", or "cost optimization" — semantic search found the cost-reduction cluster from intent alone.',
+    note: '"cheaper to deploy" doesn\'t appear in "quantization", "inference at scale", or "cost optimization" — the model found cost-reduction concepts from intent alone.',
   },
   {
-    id: "q4",
+    id: "q4", sx: 104, sy: 290,   // Multimodal cluster
     text: "Looking up pictures by describing them",
-    x: -1.51, y: -0.19, z: 2.00,  // Multimodal cluster
-    note: '"pictures" and "describing" don\'t appear in "CLIP embeddings", "ViT", or "image-text search" — the model bridged everyday language to technical multimodal concepts.',
+    note: '"pictures" and "describing" don\'t appear in "CLIP embeddings", "ViT", or "image-text search" — the model bridged everyday language to precise technical concepts.',
   },
   {
-    id: "q5",
+    id: "q5", sx: 386, sy: 308,   // Agents cluster
     text: "Software that decides what to do next",
-    x: 0.30, y: 1.60, z: 1.80,    // Agents cluster
-    note: '"decides what to do next" shares zero words with "agent reasoning loops", "ReAct framework", or "AI planning systems" — pure conceptual match, zero lexical overlap.',
+    note: '"decides what to do" shares zero words with "agent reasoning loops", "ReAct framework", or "AI planning systems" — pure conceptual match, zero lexical overlap.',
   },
 ];
 
 function EmbeddingExplorer() {
-  const canvasRef = useRef(null);
-  const rotRef    = useRef({ x: 0.32, y: 0.85, dragging: false, lx: 0, ly: 0 });
-  const projRef   = useRef([]);
-  const qRef      = useRef(null);
-  const nearRef   = useRef([]);
-  const animRef   = useRef(null);
   const [activeQuery, setActiveQuery] = useState(null);
+  const [hovered, setHovered]         = useState(null);
 
-  // Top-3 nearest points to the selected query — computed by 3D distance
   const nearest = useMemo(() => {
     if (!activeQuery) return [];
     return [...EMB_POINTS]
       .map(pt => {
-        const dx = pt.x - activeQuery.x, dy = pt.y - activeQuery.y, dz = pt.z - activeQuery.z;
-        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-        const sim = +Math.max(0.61, Math.min(0.97, 1 - dist * 0.20)).toFixed(2);
+        const dx = pt.sx - activeQuery.sx, dy = pt.sy - activeQuery.sy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const sim = +Math.max(0.62, Math.min(0.97, 1 - dist * 0.006)).toFixed(2);
         return { ...pt, dist, sim };
       })
       .sort((a, b) => a.dist - b.dist)
       .slice(0, 3);
   }, [activeQuery]);
 
-  // Sync state → refs so the canvas loop sees current values without re-running the effect
-  useEffect(() => { qRef.current = activeQuery; },  [activeQuery]);
-  useEffect(() => { nearRef.current = nearest; },   [nearest]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const CX = canvas.width / 2, CY = canvas.height / 2;
-
-    // Inline perspective projection (same math as shared proj3D but self-contained here)
-    function p3(x, y, z) {
-      const { x: rx, y: ry } = rotRef.current;
-      const cosY = Math.cos(ry), sinY = Math.sin(ry);
-      const x1 = x * cosY - z * sinY, z1 = x * sinY + z * cosY;
-      const cosX = Math.cos(rx), sinX = Math.sin(rx);
-      const y1 = y * cosX - z1 * sinX, z2 = y * sinX + z1 * cosX;
-      const fov = 5.5, pz = Math.max(fov + z2 + 3, 0.1);
-      return { px: CX + x1 * fov / pz * 78, py: CY + y1 * fov / pz * 78, depth: z2 };
-    }
-
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#09090b";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Subtle grid floor
-      ctx.strokeStyle = "#18181b";
-      ctx.lineWidth = 0.5;
-      for (let i = -3; i <= 3; i++) {
-        const a = p3(i*0.8, -1.9, -3), b = p3(i*0.8, -1.9,  3);
-        const c = p3(-3, -1.9, i*0.8), d = p3( 3, -1.9, i*0.8);
-        ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(c.px, c.py); ctx.lineTo(d.px, d.py); ctx.stroke();
-      }
-
-      // Project all points (painter's sort)
-      const projected = EMB_POINTS.map(pt => ({ ...pt, ...p3(pt.x, pt.y, pt.z) }))
-        .sort((a, b) => a.depth - b.depth);
-      projRef.current = projected;
-
-      const q = qRef.current;
-      const nr = nearRef.current;
-      const nearIds = new Set(nr.map(n => n.id));
-
-      // Connection lines: query → top-3 nearest, with similarity score badge
-      if (q) {
-        const qp = p3(q.x, q.y, q.z);
-        nr.forEach(n => {
-          const pp = projected.find(pt => pt.id === n.id);
-          if (!pp) return;
-          const col = EMB_CAT_COLOR[n.cat];
-          ctx.strokeStyle = col + "cc";
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([5, 3]);
-          ctx.beginPath(); ctx.moveTo(qp.px, qp.py); ctx.lineTo(pp.px, pp.py); ctx.stroke();
-          ctx.setLineDash([]);
-          // Similarity score label at line midpoint
-          const mx = (qp.px + pp.px) / 2, my = (qp.py + pp.py) / 2 - 5;
-          ctx.font = "bold 9px monospace";
-          ctx.textAlign = "center";
-          ctx.fillStyle = col;
-          ctx.fillText(n.sim.toFixed(2), mx, my);
-        });
-      }
-
-      // Draw all points
-      projected.forEach(pt => {
-        const col = EMB_CAT_COLOR[pt.cat];
-        const nearIdx = nr.findIndex(n => n.id === pt.id); // -1 if not in top-3
-        const isNearest = nearIdx !== -1;
-        const dimmed = q && !isNearest;
-        const r = isNearest ? 8 : 5;
-
-        ctx.globalAlpha = dimmed ? 0.10 : 1;
-        if (isNearest) { ctx.shadowColor = col; ctx.shadowBlur = 16; }
-        ctx.beginPath();
-        ctx.arc(pt.px, pt.py, r, 0, Math.PI * 2);
-        ctx.fillStyle = col;
-        ctx.fill();
-        if (isNearest) {
-          ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
-          ctx.shadowBlur = 0;
-          // Rank badge ①②③ above point — no text label to avoid overlap
-          const badges = ["①","②","③"];
-          ctx.font = "bold 11px sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillStyle = "#fff";
-          ctx.fillText(badges[nearIdx], pt.px, pt.py - r - 4);
-        }
-        ctx.globalAlpha = 1;
-        ctx.shadowBlur = 0;
-      });
-
-      // Query ◆ diamond
-      if (q) {
-        const qp = p3(q.x, q.y, q.z);
-        const s = 9;
-        ctx.shadowColor = "#ffffff"; ctx.shadowBlur = 18;
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.moveTo(qp.px,     qp.py - s);
-        ctx.lineTo(qp.px + s, qp.py);
-        ctx.lineTo(qp.px,     qp.py + s);
-        ctx.lineTo(qp.px - s, qp.py);
-        ctx.closePath();
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = "#09090b";
-        ctx.font = "bold 7px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText("Q", qp.px, qp.py + 2.5);
-      }
-
-      ctx.textAlign = "left";
-      ctx.fillStyle = "#3f3f46";
-      ctx.font = "9px monospace";
-      ctx.fillText("drag to rotate", 8, canvas.height - 8);
-
-      // Slow auto-rotate; nearly pause when studying a query result
-      if (!rotRef.current.dragging) rotRef.current.y += q ? 0.001 : 0.004;
-    }
-
-    function loop() { render(); animRef.current = requestAnimationFrame(loop); }
-    loop();
-
-    function onDown(e) {
-      const r = canvas.getBoundingClientRect();
-      rotRef.current.dragging = true;
-      rotRef.current.lx = (e.touches?.[0]?.clientX ?? e.clientX) - r.left;
-      rotRef.current.ly = (e.touches?.[0]?.clientY ?? e.clientY) - r.top;
-    }
-    function onMove(e) {
-      const r = canvas.getBoundingClientRect();
-      const mx = (e.touches?.[0]?.clientX ?? e.clientX) - r.left;
-      const my = (e.touches?.[0]?.clientY ?? e.clientY) - r.top;
-      if (rotRef.current.dragging) {
-        rotRef.current.y += (mx - rotRef.current.lx) * 0.012;
-        rotRef.current.x += (my - rotRef.current.ly) * 0.008;
-        rotRef.current.lx = mx; rotRef.current.ly = my;
-      }
-    }
-    function onUp() { rotRef.current.dragging = false; }
-
-    canvas.addEventListener("mousedown", onDown);
-    canvas.addEventListener("mousemove", onMove);
-    canvas.addEventListener("touchstart", onDown, { passive: true });
-    canvas.addEventListener("touchmove",  onMove, { passive: true });
-    window.addEventListener("mouseup",  onUp);
-    window.addEventListener("touchend", onUp);
-    return () => {
-      cancelAnimationFrame(animRef.current);
-      canvas.removeEventListener("mousedown", onDown);
-      canvas.removeEventListener("mousemove", onMove);
-      canvas.removeEventListener("touchstart", onDown);
-      canvas.removeEventListener("touchmove",  onMove);
-      window.removeEventListener("mouseup",  onUp);
-      window.removeEventListener("touchend", onUp);
-    };
-  }, []); // no deps — all reads are via refs
+  const nearIds = useMemo(() => new Set(nearest.map(n => n.id)), [nearest]);
 
   function selectQuery(q) {
-    const next = activeQuery?.id === q.id ? null : q;
-    setActiveQuery(next);
-    qRef.current = next;
+    setActiveQuery(prev => prev?.id === q.id ? null : q);
   }
+
+  // Cluster halo centres (approximate centroid of each cluster)
+  const HALOS = [
+    { cat:"rag",    cx:119, cy:128, r:26 },
+    { cat:"arch",   cx:386, cy:116, r:24 },
+    { cat:"safety", cx:438, cy:222, r:24 },
+    { cat:"ops",    cx:250, cy:306, r:24 },
+    { cat:"agents", cx:385, cy:306, r:24 },
+    { cat:"multi",  cx:103, cy:290, r:24 },
+  ];
 
   return (
     <div className="space-y-4">
       <HowTo
         objective="Pick a query. Watch semantic search find conceptually matching results — without matching a single keyword."
         steps={[
-          "Click any query button — note the words it contains",
-          "Watch the ◆ appear; lines connect to the 3 nearest points in semantic space",
-          "Read the results: none share words with your query",
+          "Click any query button — note the words it uses",
+          "Lines appear connecting it to the 3 nearest points in embedding space",
+          "Read the matched labels: none share words with your query",
           "This is the aha moment — embeddings encode meaning, not text",
         ]}
       />
-      <p className="text-[11px] text-zinc-600 font-mono">◌ 3D projection of precomputed coordinates — illustrates semantic proximity in embedding space.</p>
+      <p className="text-[11px] text-zinc-600 font-mono">◌ 2D projection of precomputed embedding coordinates — hover points to see labels.</p>
 
       {/* Query selector */}
       <div className="flex flex-wrap gap-2">
@@ -308,10 +145,105 @@ function EmbeddingExplorer() {
         ))}
       </div>
 
-      {/* 3D Canvas */}
-      <canvas ref={canvasRef} width={520} height={320}
-        className="w-full rounded-xl border border-zinc-800 cursor-grab active:cursor-grabbing"
-        style={{ background: "#09090b", touchAction: "none" }} />
+      {/* SVG scatter map */}
+      <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background: "#09090b" }}>
+        <svg viewBox="0 0 520 360" className="w-full" style={{ display: "block" }}>
+          {/* Subtle dot-grid background */}
+          <defs>
+            <pattern id="emb-grid" x="0" y="0" width="26" height="26" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="0.7" fill="#27272a" />
+            </pattern>
+          </defs>
+          <rect width="520" height="360" fill="url(#emb-grid)" />
+
+          {/* Cluster halos */}
+          {HALOS.map(h => (
+            <ellipse key={h.cat} cx={h.cx} cy={h.cy} rx={h.r + 10} ry={h.r + 6}
+              fill={EMB_CAT_COLOR[h.cat] + "14"} stroke={EMB_CAT_COLOR[h.cat] + "30"} strokeWidth="1" />
+          ))}
+
+          {/* Connection lines (query → nearest) */}
+          {activeQuery && nearest.map((n, i) => (
+            <g key={n.id}>
+              <line x1={activeQuery.sx} y1={activeQuery.sy} x2={n.sx} y2={n.sy}
+                stroke={EMB_CAT_COLOR[n.cat]} strokeWidth="1.5" strokeDasharray="5 3" opacity="0.7" />
+              {/* Sim score at midpoint */}
+              <text
+                x={(activeQuery.sx + n.sx) / 2}
+                y={(activeQuery.sy + n.sy) / 2 - 5}
+                textAnchor="middle" fontSize="8" fontFamily="monospace" fontWeight="bold"
+                fill={EMB_CAT_COLOR[n.cat]}>
+                {n.sim.toFixed(2)}
+              </text>
+            </g>
+          ))}
+
+          {/* Points */}
+          {EMB_POINTS.map(pt => {
+            const col = EMB_CAT_COLOR[pt.cat];
+            const nearIdx = nearest.findIndex(n => n.id === pt.id);
+            const isNearest = nearIdx !== -1;
+            const dimmed = activeQuery && !isNearest;
+            const r = isNearest ? 7 : 5;
+            const isHov = hovered === pt.id;
+            return (
+              <g key={pt.id}
+                onMouseEnter={() => setHovered(pt.id)}
+                onMouseLeave={() => setHovered(null)}
+                style={{ cursor: "default" }}>
+                {isNearest && (
+                  <circle cx={pt.sx} cy={pt.sy} r={r + 5} fill={col} opacity="0.18" />
+                )}
+                <circle cx={pt.sx} cy={pt.sy} r={r}
+                  fill={col} opacity={dimmed ? 0.12 : 1}
+                  stroke={isNearest ? "#fff" : "none"} strokeWidth="1.5" />
+                {/* Rank badge */}
+                {isNearest && (
+                  <text x={pt.sx} y={pt.sy - r - 4}
+                    textAnchor="middle" fontSize="9" fill="#fff" fontWeight="bold">
+                    {["①","②","③"][nearIdx]}
+                  </text>
+                )}
+                {/* Hover label */}
+                {(isHov || isNearest) && !dimmed && (
+                  <text x={pt.sx + r + 4} y={pt.sy + 3.5}
+                    fontSize="8" fontFamily="sans-serif" fill="#e4e4e7"
+                    style={{ pointerEvents: "none" }}>
+                    {pt.label}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+
+          {/* Query diamond */}
+          {activeQuery && (() => {
+            const { sx, sy } = activeQuery;
+            const s = 8;
+            return (
+              <g>
+                <polygon
+                  points={`${sx},${sy-s} ${sx+s},${sy} ${sx},${sy+s} ${sx-s},${sy}`}
+                  fill="#ffffff" />
+                <text x={sx} y={sy + 3} textAnchor="middle"
+                  fontSize="6" fontFamily="monospace" fontWeight="bold" fill="#09090b">
+                  Q
+                </text>
+              </g>
+            );
+          })()}
+
+          {/* Category labels at halo centres */}
+          {HALOS.map(h => (
+            <text key={h.cat + "-lbl"}
+              x={h.cx} y={h.cy - h.r - 9}
+              textAnchor="middle" fontSize="8" fontFamily="monospace"
+              fill={EMB_CAT_COLOR[h.cat]} opacity="0.6">
+              {EMB_CAT_LABEL[h.cat]}
+            </text>
+          ))}
+        </svg>
+      </div>
 
       {/* ── THE AHA MOMENT ── */}
       {activeQuery && nearest.length > 0 ? (
@@ -356,7 +288,7 @@ function EmbeddingExplorer() {
           </div>
         </div>
       ) : (
-        <p className="text-xs text-zinc-600 text-center">← Select a query above to see semantic search in action · drag to rotate</p>
+        <p className="text-xs text-zinc-600 text-center">← Select a query above to see semantic search in action</p>
       )}
 
       {/* Legend */}

@@ -469,10 +469,6 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
           })}
         </div>
 
-        {/* Coming later note */}
-        <p className="text-[11px] text-zinc-600 font-mono text-center pt-1">
-          Coming in later beta waves: Systems · Fluency · AIPM Track · Career
-        </p>
 
         {/* ── MODULE MAP ──────────────────────────────────────────────────── */}
         <div className="space-y-2 pt-4">
