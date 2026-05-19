@@ -1,9 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock, isPreviewUnlocked } from "./analytics";
 import QADashboard from "./QADashboard";
-import StartHere from "./StartHere";
-import Labs from "./Labs";
-import Library from "./Library";
 import ConceptsApp from "./Concepts";
 import SystemsApp from "./Systems";
 import FluencyApp from "./Fluency";
@@ -1248,13 +1245,6 @@ export default function App() {
       return next;
     });
   }
-  function openModule(tab, moduleId) {
-    if (tab === "systems") setSystemsModule(moduleId);
-    if (tab === "explore")  setExploreModule(moduleId);
-    if (tab === "agents")   setAgentsModule(moduleId);
-    navigate(tab);
-  }
-
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [config, setConfig] = useState(ALL_SCENARIOS[0].default_config);
   const [evaluated, setEvaluated] = useState(false);
@@ -1315,7 +1305,7 @@ export default function App() {
     try { localStorage.setItem("genai_lab_hint_dismissed", "1"); } catch {}
   }
 
-  const SHORTCUT_TABS = ["home","starthere","labs","library","lab","agents","playground"];
+  const SHORTCUT_TABS = ["home","concepts","flows","lab","agents","systems","playground","explore","fluency","aipm","career"];
   useEffect(() => {
     function onKey(e) {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
@@ -1396,24 +1386,30 @@ export default function App() {
   const result = lookup?.result;
   const hasFallback = lookup && !lookup.curated;
 
-  // Primary navigation — 4 sections only
-  const PRIMARY_NAV = [
-    { id: "home",      label: "Home" },
-    { id: "starthere", label: "Start Here" },
-    { id: "labs",      label: "Labs" },
-    { id: "library",   label: "Library" },
-  ];
-
-  // Locked track metadata for LockedTabView (reached via Library or preview unlock)
-  const LOCKED_ITEMS = [
-    { id: "systems", locked: true, label: "Systems", audience: "Engineers · PMs",
-      teaser: ["Evals lab + eval frameworks (RAGAS, G-Eval)", "Model strategy, cost & latency", "Fine-tuning, prompt caching, model router", "Observability, ML CI/CD, context compaction"] },
-    { id: "fluency", locked: true, label: "Fluency", audience: "Interview prep",
-      teaser: ["Mock interview — 18 questions, 90s each", "Company case arena (live scenario drills)", "Timed vocabulary + phrase bank", "Prompt engineering lab"] },
-    { id: "aipm",   locked: true, label: "AIPM",    audience: "Product managers",
-      teaser: ["PRD simulator with AI feature scoping", "Roadmap prioritizer", "Stakeholder explainer toolkit", "AI-or-not? decision framework"] },
-    { id: "career", locked: true, label: "Career",  audience: "Job seekers",
-      teaser: ["Full system design interview prompts", "Take-home challenge simulator", "Negotiation flashcards", "Benchmark literacy"] },
+  const NAV_GROUPS = [
+    { label: null, items: [
+      { id: "home", label: "Home", audience: "All levels" },
+    ]},
+    { label: "LEARN", color: "#6366f1", items: [
+      { id: "concepts", label: "Concepts", count: 11, audience: "All levels" },
+      { id: "flows",    label: "Flows",    count: 5,  audience: "All levels" },
+    ]},
+    { label: "BUILD", color: "#3b82f6", items: [
+      { id: "lab",        label: "RAG Lab",    count: 6,  audience: "Engineers" },
+      { id: "agents",     label: "Agents",     count: 7,  audience: "Engineers" },
+      { id: "systems",    label: "Systems",    count: 15, audience: "Engineers · PMs", locked: true,
+        teaser: ["Evals lab + eval frameworks (RAGAS, G-Eval)", "Model strategy, cost & latency", "Fine-tuning, prompt caching, model router", "Observability, ML CI/CD, context compaction"] },
+      { id: "playground", label: "Playground", count: 5,  audience: "All levels" },
+      { id: "explore",    label: "Explore",    count: 8,  audience: "Engineers" },
+    ]},
+    { label: "GROW", color: "#22c55e", items: [
+      { id: "fluency", label: "Fluency", count: 5, audience: "Interview prep", locked: true,
+        teaser: ["Mock interview — 18 questions, 90s each", "Company case arena (live scenario drills)", "Timed vocabulary + phrase bank", "Prompt engineering lab"] },
+      { id: "aipm",   label: "AIPM",    count: 5, audience: "Product managers", locked: true,
+        teaser: ["PRD simulator with AI feature scoping", "Roadmap prioritizer", "Stakeholder explainer toolkit", "AI-or-not? decision framework"] },
+      { id: "career", label: "Career",  count: 4, audience: "Job seekers", locked: true,
+        teaser: ["Full system design interview prompts", "Take-home challenge simulator", "Negotiation flashcards", "Benchmark literacy"] },
+    ]},
   ];
 
   return (
@@ -1455,27 +1451,15 @@ export default function App() {
               <button onClick={() => setShowShortcuts(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕ Close</button>
             </div>
             <div className="space-y-2">
-              {[
-                { key: "1", label: "Home" },
-                { key: "2", label: "Start Here" },
-                { key: "3", label: "Labs" },
-                { key: "4", label: "Library" },
-                { key: "5", label: "RAG Lab (direct)" },
-                { key: "6", label: "Agents (direct)" },
-                { key: "7", label: "Playground (direct)" },
-              ].map(({ key, label }) => (
-                <div key={key} className="flex items-center justify-between text-xs">
-                  <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">{key}</kbd>
-                  <span className="text-zinc-400">{label}</span>
+              {SHORTCUT_TABS.map((tab, i) => (
+                <div key={tab} className="flex items-center justify-between text-xs">
+                  <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">{i + 1}</kbd>
+                  <span className="text-zinc-400 capitalize">{tab.replace("lab", "RAG Lab")}</span>
                 </div>
               ))}
               <div className="border-t border-zinc-800 pt-2 flex items-center justify-between text-xs">
                 <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">⌘K</kbd>
-                <span className="text-zinc-400">Search all modules</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">⌘⇧Q</kbd>
-                <span className="text-zinc-400">QA console</span>
+                <span className="text-zinc-400">Search modules</span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">?</kbd>
@@ -1533,17 +1517,21 @@ export default function App() {
               <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Navigation</span>
               <button onClick={() => setMobileMenuOpen(false)} className="text-zinc-500 hover:text-white text-sm">✕</button>
             </div>
-            {PRIMARY_NAV.map((item, i) => (
-              <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
-                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold flex items-center justify-between mb-1 transition-all ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
-                <span className="flex items-center gap-2">
-                  <span className="text-zinc-600 font-mono text-xs">{i + 1}</span>
-                  {item.label}
-                </span>
-                {visited.has(item.id) && topView !== item.id && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />
-                )}
-              </button>
+            {NAV_GROUPS.map((group, gi) => (
+              <div key={gi} className="mb-3">
+                {group.label && <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5 px-1" style={{ color: group.color + "99" }}>{group.label}</div>}
+                {group.items.map((item, ii) => (
+                  <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${topView === item.id ? "bg-violet-600 text-white" : (item.locked && !isPreviewUnlocked()) ? "text-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-500" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-zinc-600 font-mono">{gi === 0 && ii === 0 ? "1" : SHORTCUT_TABS.indexOf(item.id) >= 0 ? SHORTCUT_TABS.indexOf(item.id) + 1 : ""}</span>
+                      {(item.locked && !isPreviewUnlocked()) && <span className="text-[9px]">🔒</span>}
+                      {item.label}
+                    </span>
+                    {visited.has(item.id) && topView !== item.id && !(item.locked && !isPreviewUnlocked()) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
+                  </button>
+                ))}
+              </div>
             ))}
             <div className="mt-3 space-y-1.5">
               <button onClick={() => { setSearchOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-400 border border-zinc-700 rounded-lg hover:text-white hover:border-zinc-600 transition-all flex items-center justify-center gap-2">
@@ -1577,58 +1565,62 @@ export default function App() {
           </button>
           {/* Right utilities */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
-            <div className="hidden lg:flex items-center gap-1 opacity-30 hover:opacity-80 transition-opacity" title="Color theme">
+            <div className="hidden lg:flex items-center gap-1 opacity-40 hover:opacity-100 transition-opacity" title="Color theme">
               {[
                 { id: "violet", color: "#7c3aed" },
                 { id: "cyan",   color: "#06b6d4" },
                 { id: "amber",  color: "#f59e0b" },
               ].map(p => (
                 <button key={p.id} onClick={() => switchPalette(p.id)} title={p.id}
-                  className="w-2.5 h-2.5 rounded-full border-2 transition-all hover:scale-110"
+                  className="w-3 h-3 rounded-full border-2 transition-all hover:scale-110"
                   style={{ background: p.color, borderColor: palette === p.id ? "white" : "transparent" }} />
               ))}
             </div>
             <button onClick={() => openFeedback("header")}
-              className="hidden lg:flex items-center px-2 py-1 rounded text-[11px] font-mono text-zinc-600 hover:text-violet-400 transition-colors">
-              feedback
+              className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-violet-700 hover:text-violet-400 transition-all font-mono text-zinc-500">
+              💬 Feedback
             </button>
             <button onClick={() => setLeaderboardOpen(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-mono text-zinc-600 hover:text-zinc-300 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
               title="Challenge Log">
               🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px]">{leaderboard.filter(e => e.passed).length}</span>}
             </button>
             <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v3","1"); } catch {} }}
-              className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-[11px] font-mono text-zinc-600 hover:text-zinc-300 transition-colors relative">
+              className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300 relative">
               NEW
               {!whatsNewSeen && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
             </button>
-            <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-[11px] text-zinc-600 hover:text-zinc-300 transition-colors font-mono">?</button>
+            <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono">?</button>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
             </button>
           </div>
         </div>
-        {/* Row 2: Primary navigation (desktop only) — 4 sections */}
+        {/* Row 2: Tab navigation (desktop only) */}
         <div className="hidden lg:flex items-center gap-0.5 px-4 pb-1.5 max-w-7xl mx-auto">
-          {PRIMARY_NAV.map(item => (
-            <button key={item.id} onClick={() => navigate(item.id)}
-              className={`relative px-3 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
-              {item.label}
-              {visited.has(item.id) && topView !== item.id && (
-                <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-500 opacity-80" />
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi} className="flex items-center gap-0.5 shrink-0">
+              {gi > 0 && <div className="w-px h-4 bg-zinc-800 mx-1" />}
+              {group.label && (
+                <span className="text-[10px] font-mono font-bold px-1 mr-0.5" style={{ color: group.color + "99" }}>{group.label}</span>
               )}
-            </button>
+              {group.items.map(item => (
+                <button key={item.id} onClick={() => navigate(item.id)}
+                  title={item.audience ? `For: ${item.audience}` : undefined}
+                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${topView === item.id ? "bg-violet-600 text-white" : (item.locked && !isPreviewUnlocked()) ? "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800/50" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}>
+                  {(item.locked && !isPreviewUnlocked()) && <span className="text-[9px] opacity-60">🔒</span>}
+                  {item.label}
+                  {visited.has(item.id) && topView !== item.id && !item.locked && (
+                    <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-500 opacity-80" />
+                  )}
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       </header>
 
       {topView === "home"       && <HomePage onNavigate={navigate} visited={visited} onFeedback={openFeedback} />}
-
-      {topView === "starthere"  && <StartHere onNavigate={navigate} />}
-
-      {topView === "labs"       && <Labs onNavigate={navigate} />}
-
-      {topView === "library"    && <Library onNavigate={navigate} onOpenModule={openModule} visitedModules={visitedModules} />}
 
       {topView === "concepts"   && <ConceptsApp />}
 
@@ -1636,17 +1628,17 @@ export default function App() {
 
       {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "systems"    && (() => { const it = LOCKED_ITEMS.find(i=>i.id==="systems"); return (!isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />; })()}
+      {topView === "systems"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="systems"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />; })()}
 
-      {topView === "fluency"    && (() => { const it = LOCKED_ITEMS.find(i=>i.id==="fluency"); return (!isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <FluencyApp />; })()}
+      {topView === "fluency"    && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="fluency"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <FluencyApp />; })()}
 
-      {topView === "aipm"       && (() => { const it = LOCKED_ITEMS.find(i=>i.id==="aipm"); return (!isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <AIPMApp />; })()}
+      {topView === "aipm"       && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="aipm"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <AIPMApp />; })()}
 
       {topView === "playground" && <PlaygroundApp />}
 
       {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
 
-      {topView === "career"     && (() => { const it = LOCKED_ITEMS.find(i=>i.id==="career"); return (!isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <CareerApp />; })()}
+      {topView === "career"     && (() => { const it = NAV_GROUPS.flatMap(g=>g.items).find(i=>i.id==="career"); return (it?.locked && !isPreviewUnlocked()) ? <LockedTabView item={it} onNavigate={navigate} /> : <CareerApp />; })()}
 
 
       {/* Scenario tabs */}
@@ -1892,7 +1884,12 @@ export default function App() {
       {topView === "qa" && (
         <QADashboard
           onNavigate={navigate}
-          onOpenModule={openModule}
+          onOpenModule={(tab, moduleId) => {
+            if (tab === "systems") setSystemsModule(moduleId);
+            if (tab === "explore") setExploreModule(moduleId);
+            if (tab === "agents") setAgentsModule(moduleId);
+            navigate(tab);
+          }}
         />
       )}
 
