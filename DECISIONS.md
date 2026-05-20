@@ -203,6 +203,7 @@ Knowledge base built client-side on first render: all 140+ GT posts (title × 3,
 | RSS feed | `/rss.xml` with 20 most recent GT posts |
 | 2 new Agent scenarios | Multi-agent debate, memory-enabled agent |
 | Sitemap (140+ posts) | All GT posts indexed for Google |
+| Mobile responsive pass | PrepLab + Fluency: responsive padding, score font scaling (text-7xl → text-5xl sm:text-7xl), sticky header px fix, JD gap table spacing |
 
 ---
 
@@ -328,6 +329,7 @@ Stage 3 (month 12–24): Team/org pricing for prep cohorts. Custom Defense Doc g
 - Lazy loading all heavy tabs ✓
 - Error boundaries on all tabs ✓
 - PWA manifest + service worker ✓
+- Mobile responsive: Home, RAG Lab, Flows, Concepts ✓ — PrepLab + Fluency fixed ✓ — Agents/Systems/Consultation (max-w-3xl px-4, already safe) ✓
 - Formspree email capture (⚠️ ID still needs replacement by owner)
 
 **What's explicitly not on the roadmap right now:**
