@@ -7475,4 +7475,558 @@ Savings: 78% cost reduction, quality preserved for complex queries` },
   ],
 
 
+  // ─── RLHF & DPO ─────────────────────────────────────────────────────────────
+
+  "rlhf-dpo-explained": [
+    { t: "p", text: "Every capable LLM you've used was trained with human feedback at some point. The model you see — helpful, coherent, aligned with what you actually want — is the product of a training process that goes far beyond next-token prediction. RLHF and its successor DPO are the techniques that bridge the gap between 'predicts text' and 'does what you ask'." },
+    { t: "p", text: "This post explains the full pipeline from SFT through reward models to PPO, then shows why DPO quietly replaced most of it — and what the tradeoffs look like in practice." },
+
+    { t: "h2", text: "Step 1: Supervised Fine-Tuning (SFT)" },
+    { t: "p", text: "Before any human feedback enters the picture, the base pretrained model is fine-tuned on a curated set of (prompt, ideal response) pairs. This is standard supervised learning — cross-entropy loss on the target tokens. The goal is to get the model into the right 'shape' before the more expensive alignment steps." },
+    { t: "list", items: [
+      "Dataset: typically 10K–100K high-quality demonstrations",
+      "Training: 1–3 epochs, learning rate 1e-5 to 5e-5",
+      "Result: a model that knows the format and rough style of good answers",
+      "Limitation: the model only learns from what humans wrote — it can't generalise to novel preferences",
+    ]},
+    { t: "callout", v: "key", text: "SFT alone is often surprisingly good. LIMA (2023) showed that 1,000 carefully chosen examples could match RLHF-tuned models on many tasks. The alignment gap is real but sometimes smaller than assumed." },
+
+    { t: "h2", text: "Step 2: Reward Model Training" },
+    { t: "p", text: "A reward model is a separate neural network trained to predict which of two responses a human would prefer. Human annotators are shown pairs of responses to the same prompt and asked to rank them. This comparison data — hundreds of thousands of pairwise preferences — trains the reward model." },
+    { t: "p", text: "The reward model uses the Bradley-Terry preference model under the hood: for a pair of responses (y_w, y_l) to prompt x, the probability that y_w is preferred is:" },
+    { t: "code", lang: "text", label: "Bradley-Terry preference model", text: `P(y_w > y_l | x) = σ(r(x, y_w) - r(x, y_l))
+
+where:
+  r(x, y) = reward model score for response y to prompt x
+  σ       = sigmoid function
+
+Training objective: maximize log-likelihood of human preferences
+Loss = -E[log σ(r(x, y_w) - r(x, y_l))]` },
+    { t: "p", text: "The reward model is typically initialized from the SFT model with the final layer replaced by a scalar head. Training converges relatively quickly — a few thousand gradient steps on the preference data." },
+
+    { t: "h2", text: "Step 3: RL Fine-Tuning with PPO" },
+    { t: "p", text: "The SFT model is now fine-tuned using Proximal Policy Optimization (PPO) to maximize the reward model's score on generated responses. For each prompt, the policy (LLM) generates a response, the reward model scores it, and the policy parameters are updated to generate higher-scoring responses." },
+    { t: "code", lang: "text", label: "RLHF PPO objective (simplified)", text: `Objective: maximize E[r(x, y)] - β * KL(π_θ || π_ref)
+
+where:
+  r(x, y)      = reward model score
+  KL(π_θ||π_ref) = KL divergence from reference (SFT) model
+  β            = KL penalty coefficient (typically 0.01–0.1)
+
+The KL penalty prevents the policy from drifting too far
+from the SFT model — without it, reward hacking occurs fast.` },
+    { t: "p", text: "The KL divergence penalty is critical. Without it, the policy quickly learns to produce outputs that score high on the reward model but are nonsensical to humans — this is reward hacking. With too large a β, the policy barely moves from SFT. Getting β right requires careful tuning." },
+
+    { t: "h2", text: "Why RLHF Is Expensive" },
+    { t: "table",
+      headers: ["Cost Component", "Why It Hurts", "Approximate Scale"],
+      rows: [
+        ["Human annotation", "Pairwise comparisons are slow and expensive", "100K–1M pairs, $0.05–0.50/pair"],
+        ["Reward model training", "Full fine-tune of a separate LLM", "Equivalent to SFT training cost"],
+        ["PPO stability", "Requires careful hyperparameter tuning", "Many failed runs before convergence"],
+        ["4 models in memory", "Policy, reference, reward, value model all loaded simultaneously", "4× inference VRAM during training"],
+        ["Iteration speed", "Each PPO step requires multiple forward passes", "5–20× slower than SFT per token"],
+      ]
+    },
+    { t: "callout", v: "warning", text: "PPO for LLMs is notoriously unstable. Reward hacking, mode collapse, and training divergence are common. OpenAI's original InstructGPT paper mentions 'careful reward normalization' and 'PPO-clip' modifications — both essential but underdocumented." },
+
+    { t: "h2", text: "DPO: The Simpler Alternative" },
+    { t: "p", text: "Direct Preference Optimization (DPO), introduced by Rafailov et al. at Stanford in 2023, makes a key observation: the optimal policy under the RLHF objective has a closed-form solution. You don't need a reward model at all — you can fine-tune directly on preference pairs using a simple classification loss." },
+    { t: "p", text: "The DPO loss is elegant:" },
+    { t: "code", lang: "text", label: "DPO training objective", text: `DPO Loss = -E[log σ(β * log(π_θ(y_w|x)/π_ref(y_w|x)) - β * log(π_θ(y_l|x)/π_ref(y_l|x)))]
+
+Intuitively: increase the probability of preferred responses
+relative to the reference policy, while decreasing the probability
+of rejected responses — with β controlling how hard you push.
+
+No reward model needed. No PPO. Just one model, one pass, one loss.` },
+    { t: "p", text: "DPO trains on the same (prompt, chosen, rejected) triplets that would go into reward model training — but skips the reward model entirely and fine-tunes the policy directly. Training is as stable as SFT." },
+
+    { t: "h2", text: "RLHF vs DPO: When to Use What" },
+    { t: "table",
+      headers: ["Dimension", "RLHF", "DPO"],
+      rows: [
+        ["Training stability", "Difficult — PPO requires careful tuning", "Stable — SFT-like training loop"],
+        ["Infrastructure complexity", "4 models in memory simultaneously", "2 models (policy + frozen reference)"],
+        ["Data requirements", "Same pairwise preference data", "Same pairwise preference data"],
+        ["Online learning", "Can generate new responses during training", "Offline only — uses fixed dataset"],
+        ["Fine-grained control", "High — reward shaping possible", "Lower — direct on preferences only"],
+        ["Compute cost", "5–10× more than DPO", "Comparable to SFT"],
+        ["Common use cases", "Frontier labs with massive compute", "Open-source fine-tuning, smaller teams"],
+      ]
+    },
+    { t: "callout", v: "tip", text: "In practice: most open-source alignment pipelines (Zephyr, Mistral-Instruct, Llama-3-Instruct) use DPO or variants. Full RLHF with PPO is primarily used by labs with the infrastructure to make it stable — OpenAI, Anthropic, Google." },
+
+    { t: "h2", text: "Real Cost Comparison" },
+    { t: "p", text: "For a 7B model fine-tuned on 50K preference pairs on 8× A100 GPUs:" },
+    { t: "list", items: [
+      "SFT only: ~4–6 hours, ~$80–120 on cloud",
+      "DPO: ~6–10 hours (includes reference model), ~$120–200",
+      "RLHF (reward model + PPO): ~48–72 hours total, ~$800–2000, with high probability of at least one failed run",
+    ]},
+
+    { t: "h2", text: "Beyond DPO: SimPO and IPO" },
+    { t: "p", text: "DPO's weaknesses have spawned a family of improvements:" },
+    { t: "list", items: [
+      "IPO (Identity Preference Optimization, 2024): fixes DPO's tendency to overfit on preference pairs by adding a regularization term",
+      "SimPO (Simple Preference Optimization, 2024): removes the reference model entirely, uses average log-likelihood as the implicit reward — faster and often better",
+      "KTO (Kahneman-Tversky Optimization, 2024): works on non-paired feedback (binary good/bad labels) — more data-efficient when pairwise comparison is expensive",
+      "ORPO (Odds Ratio Preference Optimization): integrates SFT and preference learning into a single stage",
+    ]},
+
+    { t: "h2", text: "Limitations of Both Approaches" },
+    { t: "list", items: [
+      "Reward hacking (RLHF): the model finds responses that score well on the reward model but aren't actually better — more common with small/weak reward models",
+      "Distribution shift: both approaches can cause the model to degrade on tasks not well represented in the preference data",
+      "Label noise: human annotators disagree 10–20% of the time — preference data has real noise that compounds",
+      "Positional bias: annotators often prefer longer or more confident-sounding responses regardless of quality",
+      "DPO offline limitation: DPO can't improve from responses it generates itself — it's limited to what's in the fixed dataset",
+    ]},
+
+    { t: "lab", tab: "systems", label: "Fine-Tuning Lab →", desc: "Compare SFT vs DPO training configs, see how the Bradley-Terry model works on real preference pairs, and trace reward model training curves." },
+
+    { t: "references", items: [
+      { label: "InstructGPT: Training Language Models to Follow Instructions with Human Feedback — Ouyang et al., 2022", url: "https://arxiv.org/abs/2203.02155" },
+      { label: "DPO: Direct Preference Optimization — Rafailov et al., 2023", url: "https://arxiv.org/abs/2305.18290" },
+      { label: "SimPO: Simple Preference Optimization — Meng et al., 2024", url: "https://arxiv.org/abs/2405.14734" },
+      { label: "KTO: Model Alignment as Prospect Theoretic Optimization — Ethayarajh et al., 2024", url: "https://arxiv.org/abs/2402.01306" },
+      { label: "LIMA: Less Is More for Alignment — Zhou et al., 2023", url: "https://arxiv.org/abs/2305.11206" },
+    ]},
+  ],
+
+
+  // ─── STRUCTURED OUTPUTS ─────────────────────────────────────────────────────
+
+  "structured-outputs-json-mode": [
+    { t: "p", text: "Getting an LLM to return valid JSON sounds trivial until you've spent three hours debugging why your production pipeline intermittently returns a response that starts with 'Sure! Here's the JSON you asked for:' followed by a code block with a trailing comma. Structured outputs are a solved problem — but only if you pick the right tool." },
+    { t: "p", text: "This post maps the four main approaches: prompting, JSON mode, tool/function calling, and grammar-constrained decoding. Each gives different guarantees, and those differences matter at production scale." },
+
+    { t: "h2", text: "Why LLMs Drift from Format Instructions" },
+    { t: "p", text: "LLMs are trained to predict the most probable next token, not to follow schema rules. When you write 'respond with JSON', the model has seen billions of examples of humans responding to similar instructions with helpful prose explanations, code blocks, or hybrid formats. The instruction competes with those learned distributions." },
+    { t: "list", items: [
+      "Models hallucinate extra prose before or after the JSON",
+      "Models produce single-quoted strings instead of double-quoted",
+      "Models include trailing commas (valid in JS, invalid in JSON)",
+      "Long arrays get cut off mid-structure when near the context limit",
+      "Optional fields get invented when not present in source data",
+      "Nested objects deepen unpredictably when instructions are ambiguous",
+    ]},
+    { t: "callout", v: "warning", text: "Failure rate on 'just add JSON instructions' prompting is typically 5–15% in production, depending on model and schema complexity. At 10,000 requests/day that's 500–1,500 parse errors. You need a structural guarantee, not a polite request." },
+
+    { t: "h2", text: "Approach 1: Prompting (No Guarantees)" },
+    { t: "p", text: "Prompting-only means asking the model to return JSON in the system or user prompt, with or without a schema. This requires no special API features but gives zero structural guarantees." },
+    { t: "code", lang: "python", label: "Prompting approach", text: `system = """You are a data extraction assistant. Always respond with valid JSON.
+Schema: {"name": string, "age": integer, "email": string}
+Never include any text before or after the JSON object."""
+
+# Works most of the time. Fails 5-15% of the time in production.
+# Failures: preamble text, invalid JSON, schema violations` },
+    { t: "p", text: "Use prompting only for low-stakes, low-volume scenarios where a parse error is acceptable and retry is cheap." },
+
+    { t: "h2", text: "Approach 2: JSON Mode" },
+    { t: "p", text: "JSON mode (OpenAI, Anthropic) guarantees syntactically valid JSON output. The model is constrained at the decoding level to only produce tokens that keep the JSON syntax valid. It does NOT guarantee your schema — the model can return valid JSON that doesn't match your expected structure." },
+    { t: "code", lang: "python", label: "OpenAI JSON mode", text: `response = client.chat.completions.create(
+    model="gpt-4o",
+    response_format={"type": "json_object"},
+    messages=[
+        {"role": "system", "content": "Extract entity data as JSON with fields: name, age, email"},
+        {"role": "user", "content": user_input}
+    ]
+)
+
+data = json.loads(response.choices[0].message.content)
+# Guaranteed: valid JSON syntax
+# NOT guaranteed: correct fields, correct types, no hallucinated fields` },
+    { t: "callout", v: "key", text: "JSON mode prevents syntax errors but not schema errors. You still need Pydantic or Zod validation after parsing. The guarantee is: json.loads() will not throw. It says nothing about data shape." },
+
+    { t: "h2", text: "Approach 3: Tool Calling / Function Calling" },
+    { t: "p", text: "Tool calling (OpenAI function calling, Anthropic tool use) lets you define a JSON Schema for the expected output. The model is constrained to call the tool with arguments that match the schema. This gives you both syntax and schema guarantees for the fields you define." },
+    { t: "code", lang: "python", label: "OpenAI structured outputs with tool calling", text: `tools = [{
+    "type": "function",
+    "function": {
+        "name": "extract_entity",
+        "description": "Extract entity information from text",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name":  {"type": "string", "description": "Full name"},
+                "age":   {"type": "integer", "description": "Age in years"},
+                "email": {"type": "string", "format": "email"}
+            },
+            "required": ["name", "age", "email"],
+            "additionalProperties": false
+        }
+    }
+}]
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    tools=tools,
+    tool_choice={"type": "function", "function": {"name": "extract_entity"}},
+    messages=[{"role": "user", "content": user_input}]
+)
+
+args = json.loads(response.choices[0].message.tool_calls[0].function.arguments)
+# Guaranteed: valid JSON + matches schema types + required fields present` },
+    { t: "p", text: "OpenAI's 'Structured Outputs' mode (August 2024) extended this further — when you pass strict=True, the model is constrained via a finite automaton to only produce tokens valid under your schema. This is the highest-reliability option in the OpenAI API." },
+
+    { t: "h2", text: "Approach 4: Grammar-Constrained Decoding" },
+    { t: "p", text: "For self-hosted models, libraries like Outlines, llama.cpp (GBNF grammars), and Guidance provide grammar-constrained decoding: the token sampling is mathematically constrained to only produce tokens that could lead to a valid output under your grammar or schema. Invalid token probabilities are zeroed out at each step." },
+    { t: "code", lang: "python", label: "Outlines — grammar-constrained decoding", text: `import outlines
+
+model = outlines.models.transformers("mistralai/Mistral-7B-v0.1")
+
+from pydantic import BaseModel
+
+class Entity(BaseModel):
+    name: str
+    age: int
+    email: str
+
+generator = outlines.generate.json(model, Entity)
+
+# Every output is GUARANTEED to be a valid Entity instance
+result = generator("Extract: John Smith, 34, john@example.com")
+# result is already a validated Pydantic object, not a string` },
+    { t: "callout", v: "tip", text: "Outlines/GBNF decoding gives the strongest guarantees but adds ~10-20% latency overhead per token (the masking step). Worth it for complex nested schemas where validation failures are expensive." },
+
+    { t: "h2", text: "Validation Patterns" },
+    { t: "p", text: "Even with JSON mode or tool calling, always validate the parsed output:" },
+    { t: "code", lang: "python", label: "Pydantic validation with retry", text: `from pydantic import BaseModel, ValidationError
+import json
+
+class Entity(BaseModel):
+    name: str
+    age: int
+    email: str
+
+def extract_entity(text: str, max_retries: int = 3) -> Entity:
+    for attempt in range(max_retries):
+        response = call_llm_with_json_mode(text)
+        try:
+            data = json.loads(response)
+            return Entity(**data)
+        except (json.JSONDecodeError, ValidationError) as e:
+            if attempt == max_retries - 1:
+                raise
+            # On retry, add error context to the prompt
+            text = f"{text}\n\nPrevious attempt failed: {e}. Try again."` },
+
+    { t: "h2", text: "When Each Approach Wins" },
+    { t: "table",
+      headers: ["Approach", "Syntax guarantee", "Schema guarantee", "Cost", "Best for"],
+      rows: [
+        ["Prompting only", "None", "None", "Lowest", "Prototyping, very simple schemas"],
+        ["JSON mode", "Yes", "No", "Low", "Flexible schemas, catching syntax errors"],
+        ["Tool calling (strict)", "Yes", "Yes", "Low", "Production on OpenAI/Anthropic APIs"],
+        ["Grammar decoding (Outlines)", "Yes", "Yes (any grammar)", "Medium (+latency)", "Self-hosted, complex/recursive schemas"],
+      ]
+    },
+
+    { t: "h2", text: "Common Failure Modes" },
+    { t: "list", items: [
+      "Nested objects: the deeper the nesting, the more likely the model loses track of which bracket level it's at — especially without constrained decoding",
+      "Optional fields: models often invent values for optional fields rather than omitting them, unless schema says explicitly 'omit if unknown'",
+      "Long arrays: models truncate arrays mid-item when approaching the context window — validate array length and last element integrity",
+      "Enum values: models sometimes produce values outside your enum, especially for string enums with many options — explicit enumeration in the schema helps",
+      "Number precision: floats in JSON can drift (0.1 + 0.2 = 0.30000000000000004) — use string types for currency and validate with Decimal",
+    ]},
+
+    { t: "lab", tab: "playground", label: "Test in Playground →", desc: "Compare JSON mode vs tool calling vs prompting on the same extraction task. Watch the failure modes appear live." },
+
+    { t: "references", items: [
+      { label: "OpenAI Structured Outputs documentation", url: "https://platform.openai.com/docs/guides/structured-outputs" },
+      { label: "Outlines: Structured Text Generation — Willard & Louf, 2023", url: "https://arxiv.org/abs/2307.09702" },
+      { label: "llama.cpp GBNF grammar documentation", url: "https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md" },
+      { label: "Anthropic tool use documentation", url: "https://docs.anthropic.com/en/docs/build-with-claude/tool-use" },
+      { label: "Pydantic documentation", url: "https://docs.pydantic.dev/" },
+    ]},
+  ],
+
+
+  // ─── AGENT MEMORY IMPLEMENTATION ─────────────────────────────────────────────
+
+  "agent-memory-implementation": [
+    { t: "p", text: "Stateless agents fail at real tasks. Ask a customer service agent to 'follow up on the issue we discussed last week' and it has no idea what you mean. Ask a coding assistant to 'use the same pattern as last time' and it starts from scratch. Memory is not a nice-to-have for production agents — it's the difference between a capable assistant and an expensive autocomplete." },
+    { t: "p", text: "This post is about actually implementing it: the architecture choices, the libraries (LangMem, Mem0), and the specific things that break at scale." },
+
+    { t: "h2", text: "The 4 Memory Types" },
+    { t: "table",
+      headers: ["Type", "What it stores", "Retrieval mechanism", "Lifespan"],
+      rows: [
+        ["In-context (working)", "Current conversation, recent tool results", "Always in prompt", "Single session"],
+        ["Episodic", "Past conversations, events, interactions", "Semantic search over summaries", "Persistent across sessions"],
+        ["Semantic", "Facts, preferences, knowledge about the user/world", "Key-value or semantic lookup", "Persistent, updateable"],
+        ["Procedural", "How to do things — learned workflows, user preferences for process", "Retrieved by task type", "Persistent, rarely changes"],
+      ]
+    },
+    { t: "callout", v: "key", text: "Most 'agent memory' implementations only do episodic memory (storing past conversations). That's the easiest but often not what matters. Semantic memory (stored facts about the user) and procedural memory (learned preferences about how to work) are where the real value is." },
+
+    { t: "h2", text: "LangMem Architecture" },
+    { t: "p", text: "LangMem (LangChain's memory library) provides a structured approach to memory formation, storage, and retrieval. Its key insight is the memory formation trigger: rather than dumping every conversation into a store, it uses the LLM itself to decide what's worth remembering." },
+    { t: "code", lang: "python", label: "LangMem basic setup", text: `from langmem import AsyncClient
+from langchain_core.messages import HumanMessage, AIMessage
+
+client = AsyncClient()
+
+# After each conversation turn, trigger memory extraction
+async def process_turn(user_id: str, messages: list):
+    # LangMem sends the conversation to an LLM to extract memories
+    # Only salient facts are stored — not raw conversation
+    await client.add_messages(
+        thread_id=f"user_{user_id}",
+        messages=messages
+    )
+
+# Retrieve relevant memories before generating a response
+async def get_context(user_id: str, query: str):
+    memories = await client.search_user_memory(
+        user_id=user_id,
+        query=query,
+        limit=5
+    )
+    return [m.content for m in memories.items]` },
+    { t: "p", text: "LangMem's memory formation uses a configurable extraction prompt: the LLM reads the conversation and extracts structured facts in a schema you define. These are stored in a vector database. The quality of this extraction step determines the quality of the entire memory system." },
+    { t: "list", items: [
+      "Storage backends: in-memory (dev), PostgreSQL with pgvector (prod), Pinecone (scale)",
+      "Memory types: LangMem calls them 'user memories', 'thread memories', and 'org memories'",
+      "Formation triggers: can be async (after conversation) or inline (during conversation)",
+      "Deduplication: LangMem merges memories that refer to the same fact",
+    ]},
+
+    { t: "h2", text: "Mem0 vs LangMem" },
+    { t: "table",
+      headers: ["Dimension", "LangMem", "Mem0"],
+      rows: [
+        ["Philosophy", "Extraction-based: LLM decides what to remember", "Storage-based: stores everything, retrieves selectively"],
+        ["Ease of setup", "More config required", "Simple API, hosted option available"],
+        ["Storage backends", "PostgreSQL, Pinecone, custom", "Qdrant, Chroma, hosted"],
+        ["Memory types", "User / thread / org memories", "User / agent / session memories"],
+        ["Deduplication", "Built-in LLM-based merge", "Configurable similarity threshold"],
+        ["Pricing (hosted)", "N/A (self-hosted library)", "Free tier + paid plans"],
+        ["Production maturity", "Production-ready (LangChain org)", "Production-ready, fast-growing"],
+      ]
+    },
+    { t: "callout", v: "tip", text: "Mem0 is easier to get started with, especially with their hosted option. LangMem gives you more control over the extraction step and integrates more tightly with LangGraph. For most teams: start with Mem0 hosted, migrate to LangMem + self-hosted when you need customization." },
+
+    { t: "h2", text: "Custom Pattern: Extract → Store → Retrieve → Inject" },
+    { t: "p", text: "If you need full control (or don't want a library dependency), implement the four-step pattern directly:" },
+    { t: "code", lang: "python", label: "Custom memory pipeline", text: `import openai
+import chromadb
+from datetime import datetime
+
+client = openai.AsyncOpenAI()
+db = chromadb.Client()
+collection = db.get_or_create_collection("agent_memories")
+
+# Step 1: EXTRACT — LLM decides what to remember
+async def extract_memories(conversation: str, user_id: str) -> list[str]:
+    resp = await client.chat.completions.create(
+        model="gpt-4o-mini",  # cheap model for extraction
+        messages=[{
+            "role": "system",
+            "content": """Extract key facts from this conversation worth remembering.
+            Focus on: user preferences, stated facts, important context.
+            Return as JSON array of strings. Return [] if nothing memorable."""
+        }, {
+            "role": "user", "content": conversation
+        }],
+        response_format={"type": "json_object"}
+    )
+    return json.loads(resp.choices[0].message.content).get("memories", [])
+
+# Step 2: STORE — embed and persist
+async def store_memories(memories: list[str], user_id: str):
+    if not memories:
+        return
+    embeddings = await client.embeddings.create(
+        model="text-embedding-3-small",
+        input=memories
+    )
+    collection.upsert(
+        ids=[f"{user_id}_{datetime.now().isoformat()}_{i}" for i in range(len(memories))],
+        documents=memories,
+        embeddings=[e.embedding for e in embeddings.data],
+        metadatas=[{"user_id": user_id, "timestamp": datetime.now().isoformat()} for _ in memories]
+    )
+
+# Step 3: RETRIEVE — semantic search at query time
+async def retrieve_memories(query: str, user_id: str, n: int = 5) -> list[str]:
+    query_embedding = (await client.embeddings.create(
+        model="text-embedding-3-small",
+        input=[query]
+    )).data[0].embedding
+    results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=n,
+        where={"user_id": user_id}
+    )
+    return results["documents"][0]
+
+# Step 4: INJECT — prepend to system prompt
+def inject_memories(system_prompt: str, memories: list[str]) -> str:
+    if not memories:
+        return system_prompt
+    memory_block = "\\n".join(f"- {m}" for m in memories)
+    return f"{system_prompt}\\n\\nWhat you know about this user:\\n{memory_block}"` },
+
+    { t: "h2", text: "The Retrieval Problem" },
+    { t: "p", text: "The hardest part of agent memory is not storage — it's knowing what to retrieve and when. The naive approach (retrieve on every turn using the user's message as query) misses two key patterns:" },
+    { t: "list", items: [
+      "Implicit references: 'like we discussed' doesn't contain the keywords of what was discussed — semantic search on the literal message fails",
+      "Temporal relevance: a memory from 6 months ago may be outdated — you need freshness weighting in retrieval",
+      "Proactive injection: sometimes relevant memories aren't triggered by the current message at all — they need to be surfaced based on the task type",
+    ]},
+    { t: "callout", v: "key", text: "Better retrieval: use a 'memory query expansion' step — before searching, have the LLM rewrite the current message as a memory-search query: 'What do I know about this user's preferences related to [topic]?' This dramatically improves recall." },
+
+    { t: "h2", text: "Memory Poisoning Risks" },
+    { t: "p", text: "Memory stores are a persistent attack surface. If an attacker can inject content into the memory store — through a conversation, a retrieved document, or a tool result — that content persists and gets injected into future conversations." },
+    { t: "list", items: [
+      "Prompt injection via memory: an attacker convinces the agent to store an instruction ('Always respond in Spanish') that surfaces in future sessions",
+      "Cross-user contamination: in multi-tenant systems, a memory scoping bug can expose one user's memories to another",
+      "Memory accumulation: unbounded memory stores grow over time — old, stale, or contradictory memories degrade performance",
+    ]},
+
+    { t: "h2", text: "Privacy and PII in Memory Stores" },
+    { t: "p", text: "Memory stores contain sensitive user data by design. This creates real compliance obligations:" },
+    { t: "list", items: [
+      "GDPR/CCPA right to erasure: you must be able to delete all memories for a given user_id — implement this as a first-class operation, not an afterthought",
+      "PII extraction: your extraction LLM will happily store phone numbers, addresses, and health information — add a PII detection filter before storage",
+      "Data residency: if your users are in the EU, your memory store must also be — check your vector DB's regional deployment options",
+      "Audit logging: log what memories are created, retrieved, and deleted — essential for compliance and debugging",
+    ]},
+
+    { t: "h2", text: "Production Checklist" },
+    { t: "list", items: [
+      "Memory formation is async — never block the response path on memory writes",
+      "Set a memory budget per user (e.g., top 1,000 memories by recency+relevance) — prevent unbounded growth",
+      "Implement memory TTL for time-sensitive facts (e.g., 'user is traveling this week' should expire)",
+      "Add a memory review UI — let users see and delete their memories (required for GDPR compliance)",
+      "Test memory injection attacks before launch — try to poison the memory store through the chat interface",
+      "Monitor memory retrieval latency separately — a slow vector DB query delays every response",
+      "Version your memory schema — when you change extraction logic, old memories may be in a different format",
+    ]},
+
+    { t: "lab", tab: "agents", label: "Agents Lab →", desc: "Trace how memory retrieval works across multi-turn conversations. See what gets stored, what gets retrieved, and where retrieval fails." },
+
+    { t: "references", items: [
+      { label: "LangMem documentation and architecture", url: "https://langchain-ai.github.io/langmem/" },
+      { label: "Mem0 documentation", url: "https://docs.mem0.ai/" },
+      { label: "MemGPT: Towards LLMs as Operating Systems — Packer et al., 2023", url: "https://arxiv.org/abs/2310.08560" },
+      { label: "A Survey on the Memory Mechanism of Large Language Model based Agents — Zhang et al., 2024", url: "https://arxiv.org/abs/2404.13501" },
+    ]},
+  ],
+
+
+  // ─── MODEL COMPARISON 2025 ──────────────────────────────────────────────────
+
+  "model-comparison-2025": [
+    { t: "p", text: "The benchmark leaderboards are useless for most decisions. MMLU measures breadth of world knowledge on multiple-choice questions. HumanEval measures Python completions. LMSYS Arena measures which model people prefer in a chat interface. None of these tell you which model to use for your specific RAG pipeline, agent loop, or document processing system." },
+    { t: "p", text: "This post is a practical tradeoff analysis across eight dimensions that matter in production, with concrete guidance on where each model wins." },
+
+    { t: "h2", text: "Why Benchmarks Mislead" },
+    { t: "list", items: [
+      "Benchmark contamination: frontier models are trained on internet data that includes benchmark answers — MMLU scores reflect this",
+      "Task distribution mismatch: your production task is almost never a multiple-choice question about world history",
+      "Static snapshots: a model that scored best 6 months ago may have been superseded by a cheap update that didn't trigger a benchmark run",
+      "Aggregate masking: a model scoring 85% overall might score 65% on the specific subtask you care about and 95% on things you don't need",
+      "Evaluation prompt sensitivity: different system prompts can shift benchmark scores by 5–10 percentage points",
+    ]},
+    { t: "callout", v: "warning", text: "The only benchmark that reliably predicts performance on your task is the eval you build on your own data. Everything else is a starting hypothesis, not a conclusion." },
+
+    { t: "h2", text: "8-Dimension Comparison Table" },
+    { t: "table",
+      headers: ["Dimension", "Claude 3.5 Sonnet", "GPT-4o", "Gemini 1.5 Pro"],
+      rows: [
+        ["Coding", "Strong (top-tier for multi-file refactors)", "Strongest (best SWE-bench, most ecosystem tooling)", "Good (especially for Google infra)"],
+        ["Reasoning", "Excellent (particularly structured/logical)", "Excellent (o1/o3 variants best)", "Good (improving rapidly)"],
+        ["RAG faithfulness", "Best-in-class (cites, stays grounded)", "Very good", "Good but more likely to extrapolate"],
+        ["Instruction following", "Best-in-class (very high precision)", "Very good", "Good but more creative liberties"],
+        ["Long context", "200K tokens, good mid-context performance", "128K tokens, some mid-context degradation", "1M tokens — genuine long-context advantage"],
+        ["Multimodal", "Images + PDFs (strong)", "Images + audio + video (widest modalities)", "Images + video + audio (strong, native)"],
+        ["Speed (default)", "Fast (Sonnet tier)", "Fast", "Fast"],
+        ["Cost (per 1M tokens, approx)", "$3 in / $15 out", "$2.50 in / $10 out", "$1.25 in / $5 out"],
+      ]
+    },
+
+    { t: "h2", text: "Where Claude Wins" },
+    { t: "p", text: "Claude's edge is consistent, predictable instruction following and long-form faithfulness. When you give Claude a complex instruction with multiple constraints, it follows all of them — including the ones at the end of a long system prompt that GPT-4o often ignores. For RAG applications where hallucination is the primary risk, Claude's tendency to say 'I don't know' rather than extrapolate is genuinely valuable." },
+    { t: "list", items: [
+      "Complex system prompts with many constraints — Claude reads and respects the full prompt",
+      "Long-form writing with strict formatting requirements",
+      "RAG faithfulness — Claude quotes and attributes rather than synthesizing",
+      "Safety-sensitive applications — fewer refusals on legitimate edge cases than GPT-4 era, but more principled",
+      "Tasks where 'staying in your lane' matters — Claude is less likely to volunteer unsolicited opinions",
+    ]},
+
+    { t: "h2", text: "Where GPT-4o Wins" },
+    { t: "p", text: "GPT-4o's edge is tool use reliability and ecosystem breadth. When you're building agents that call tools across complex multi-step workflows, GPT-4o's function calling is more reliable — fewer malformed calls, better handling of ambiguous tool signatures. The OpenAI ecosystem also has the most mature tooling (Assistants API, Structured Outputs, DALL-E, Whisper integration)." },
+    { t: "list", items: [
+      "Multi-step agentic tool use — fewest malformed function calls",
+      "Code generation with complex requirements — strongest on SWE-bench",
+      "Applications needing audio/video — native multimodal breadth",
+      "Teams already on Azure OpenAI — same model, enterprise compliance",
+      "Structured outputs with strict JSON schemas — best-in-class with strict mode",
+    ]},
+
+    { t: "h2", text: "Where Gemini Wins" },
+    { t: "p", text: "Gemini 1.5 Pro's 1M token context window is a genuine differentiator — not just a spec number. At 200K tokens, context degradation is measurable in all frontier models. At 1M tokens, Gemini maintains reasonable quality where others simply can't process the input. For applications processing entire codebases, long legal documents, or extended video transcripts, Gemini is often the only practical option." },
+    { t: "list", items: [
+      "Extremely long context (>200K tokens) — only practical option at 1M",
+      "Native video and audio understanding — strongest native multimodal",
+      "Google Workspace integration — Docs, Sheets, Drive access in enterprise plans",
+      "Cost efficiency — lowest cost per token among frontier models as of 2025",
+      "Applications deployed on Google Cloud — latency and data residency advantages",
+    ]},
+
+    { t: "h2", text: "Latency and Cost Comparison" },
+    { t: "table",
+      headers: ["Model", "Median TTFT (simple prompt)", "Tokens/sec (streaming)", "Input cost/1M tokens", "Output cost/1M tokens"],
+      rows: [
+        ["Claude 3.5 Sonnet", "~400ms", "~80 tok/s", "$3.00", "$15.00"],
+        ["Claude 3.5 Haiku", "~200ms", "~120 tok/s", "$0.25", "$1.25"],
+        ["GPT-4o", "~350ms", "~90 tok/s", "$2.50", "$10.00"],
+        ["GPT-4o mini", "~150ms", "~120 tok/s", "$0.15", "$0.60"],
+        ["Gemini 1.5 Pro", "~500ms", "~75 tok/s", "$1.25", "$5.00"],
+        ["Gemini 1.5 Flash", "~200ms", "~150 tok/s", "$0.075", "$0.30"],
+      ]
+    },
+    { t: "callout", v: "key", text: "The Flash/Haiku/mini tiers change the math significantly. For most production workloads, the right comparison isn't Claude Sonnet vs GPT-4o — it's whether you can use Claude Haiku or GPT-4o mini for the bulk of requests and only escalate to flagship models for hard cases." },
+
+    { t: "h2", text: "Practical Routing Heuristic" },
+    { t: "p", text: "A simple routing decision tree for common use cases:" },
+    { t: "list", items: [
+      "RAG Q&A over documents → Claude 3.5 Sonnet (faithfulness) or Gemini Flash (cost at scale)",
+      "Code generation / debugging → GPT-4o or Claude 3.5 Sonnet (task-dependent)",
+      "Multi-step tool-use agent → GPT-4o (function call reliability)",
+      "Long document analysis (>100K tokens) → Gemini 1.5 Pro",
+      "High-volume classification / extraction → GPT-4o mini or Gemini Flash",
+      "Customer-facing chat (safety-sensitive) → Claude (refusal calibration)",
+      "Multimodal with video → Gemini 1.5 Pro",
+    ]},
+
+    { t: "h2", text: "How to Evaluate for Your Specific Task" },
+    { t: "p", text: "The only defensible model selection process is empirical evaluation on your own data. Here's the minimum viable eval process:" },
+    { t: "list", items: [
+      "Collect 50–200 representative examples from production (or hand-craft if pre-launch)",
+      "Define a clear scoring rubric — ideally automated (LLM-as-judge or regex) to avoid bottlenecking on human review",
+      "Run all candidate models with identical prompts (use the same system prompt, same user message format)",
+      "Score on your rubric. Look at failure distributions, not just averages — a model with lower average but fewer catastrophic failures is often better",
+      "Re-run after any prompt change — model rankings are prompt-sensitive",
+      "Set a budget: if Haiku at $0.0002/query gives 85% of Sonnet quality at 60× lower cost, that's a business decision, not a technical one",
+    ]},
+
+    { t: "lab", tab: "systems", label: "Model Strategy Lab →", desc: "Run structured comparison across models on your use case. Cost/latency calculator, side-by-side output comparison, and eval scoring." },
+
+    { t: "references", items: [
+      { label: "LMSYS Chatbot Arena Leaderboard", url: "https://chat.lmsys.org/?leaderboard" },
+      { label: "Anthropic Claude model overview", url: "https://docs.anthropic.com/en/docs/about-claude/models" },
+      { label: "OpenAI model pricing", url: "https://openai.com/api/pricing/" },
+      { label: "Google Gemini API pricing", url: "https://ai.google.dev/pricing" },
+      { label: "SWE-bench Verified leaderboard", url: "https://www.swebench.com/" },
+      { label: "HELM: Holistic Evaluation of Language Models — Liang et al., 2022", url: "https://arxiv.org/abs/2211.09110" },
+    ]},
+  ],
+
+
 };

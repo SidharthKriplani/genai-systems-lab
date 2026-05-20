@@ -282,6 +282,14 @@ function RAGFlowDiagram() {
         </div>
         <div className="mt-2 text-xs text-zinc-500">LLM generation is 100–10,000× the cost of everything else. Caching, smaller models, and shorter prompts all target this line.</div>
       </div>
+
+      {/* Go deeper cross-links */}
+      <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
+        <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+          <button onClick={() => window.location.hash = "concepts"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: RAG</button>
+          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: How RAG Works</button>
+          <button onClick={() => window.location.hash = "systems"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Systems: RAG Lab</button>
+      </div>
     </div>
   );
 }
@@ -416,6 +424,14 @@ function ContextWindowDiagram() {
           ))}
         </div>
       </div>
+
+      {/* Go deeper cross-links */}
+      <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
+        <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+          <button onClick={() => window.location.hash = "concepts"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Context Window</button>
+          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: Context Window Guide</button>
+          <button onClick={() => window.location.hash = "flows"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Flows: Transformer Block</button>
+      </div>
     </div>
   );
 }
@@ -548,6 +564,14 @@ function AgentLoopDiagram() {
             <div className="text-zinc-500 mt-1">Prevention: hard iteration cap (max 8), detect repeated tool calls, terminate with best-effort answer when confidence plateaus.</div>
           </div>
         )}
+      </div>
+
+      {/* Go deeper cross-links */}
+      <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
+        <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+          <button onClick={() => window.location.hash = "concepts"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Agent Loop</button>
+          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: ReAct Pattern</button>
+          <button onClick={() => window.location.hash = "agents"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Agents Lab</button>
       </div>
     </div>
   );
@@ -707,6 +731,14 @@ function GuardrailDiagram() {
           </div>
         )}
       </div>
+
+      {/* Go deeper cross-links */}
+      <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
+        <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+          <button onClick={() => window.location.hash = "concepts"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Guardrails</button>
+          <button onClick={() => window.location.hash = "systems"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Systems: Systems Lab</button>
+          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: Guardrail Patterns</button>
+      </div>
     </div>
   );
 }
@@ -774,6 +806,14 @@ function TransformerBlockDiagram() {
             One transformer block complete. In GPT-3: 96 of these stacked. In GPT-4: estimated 120 layers. The forward pass you just watched runs ~96× per token generated.
           </div>
         )}
+      </div>
+
+      {/* Go deeper cross-links */}
+      <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
+        <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+          <button onClick={() => window.location.hash = "concepts"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Transformer</button>
+          <button onClick={() => window.location.hash = "explore"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Explore: Attention Viz</button>
+          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: What is a Transformer</button>
       </div>
     </div>
   );
@@ -1030,6 +1070,14 @@ function RAGArchitecturesDiagram() {
           </table>
         </div>
         <div className="mt-2 text-xs text-zinc-500">Quality = approximate hallucination-free response rate on a mixed benchmark. Numbers are representative — yours will vary by domain and corpus quality.</div>
+      </div>
+
+      {/* Go deeper cross-links */}
+      <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
+        <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: RAG Architectures</button>
+          <button onClick={() => window.location.hash = "explore"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Explore: Vector DB</button>
+          <button onClick={() => window.location.hash = "systems"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Systems: RAG Lab</button>
       </div>
     </div>
   );

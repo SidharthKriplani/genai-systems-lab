@@ -45,17 +45,25 @@ function Block({ b, onNavigate, color }) {
         </div>
       );
     }
-    case "code":
+    case "code": {
+      const [isCopied, setIsCopied] = useState(false);
       return (
         <div className="rounded-lg border border-zinc-800 overflow-hidden">
           {b.label && (
             <div className="px-3 py-1.5 bg-zinc-900 border-b border-zinc-800 text-[10px] font-mono text-zinc-500">{b.label}</div>
           )}
-          <pre className="px-4 py-3 overflow-x-auto bg-zinc-950">
-            <code className="text-[11px] font-mono text-zinc-300 whitespace-pre">{b.text}</code>
-          </pre>
+          <div className="relative group">
+            <pre className="px-4 py-3 overflow-x-auto bg-zinc-950">
+              <code className="text-[11px] font-mono text-zinc-300 whitespace-pre">{b.text}</code>
+            </pre>
+            <button
+              onClick={() => { navigator.clipboard.writeText(b.text); setIsCopied(true); setTimeout(() => setIsCopied(false), 1500); }}
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] px-2 py-1 rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-300 font-mono"
+            >{isCopied ? "Copied!" : "Copy"}</button>
+          </div>
         </div>
       );
+    }
     case "table":
       return (
         <div className="overflow-x-auto rounded-lg border border-zinc-800">
@@ -246,6 +254,22 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate }) {
         {/* Content or coming soon */}
         {content ? (
           <div className="space-y-4">
+            {(() => {
+              const headings = content.filter(b => b.t === "h2").map(b => b.text);
+              return headings.length >= 3 ? (
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 mb-6">
+                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">In this post</p>
+                  <ul className="space-y-1">
+                    {headings.map((h, i) => (
+                      <li key={i} className="text-xs text-zinc-400 hover:text-white cursor-pointer transition-colors flex items-center gap-2">
+                        <span className="w-1 h-1 rounded-full bg-zinc-600 shrink-0" />
+                        {h}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null;
+            })()}
             {content.map((b, i) => (
               <Block key={i} b={b} onNavigate={onNavigate} color={color} />
             ))}
@@ -335,6 +359,7 @@ const CATEGORIES = [
   { id: "agents",      label: "Agents" },
   { id: "evaluation",  label: "Evaluation" },
   { id: "llmops",      label: "LLMOps" },
+  { id: "production", label: "Production" },
   { id: "safety",      label: "Safety" },
   { id: "sysdesign",   label: "System Design" },
   { id: "failures",    label: "Production Failures" },
@@ -354,6 +379,7 @@ const CAT_COLORS = {
   agents:      "#06b6d4",
   evaluation:  "#22c55e",
   llmops:      "#f59e0b",
+  production:  "#f97316",
   safety:      "#ef4444",
   sysdesign:   "#8b5cf6",
   failures:    "#f97316",
@@ -371,6 +397,19 @@ const CAT_COLORS = {
 export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {
   const [filter, setFilter] = useState("all");
   const [openPost, setOpenPost] = useState(null);
+  const [recentIds, setRecentIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("genai_gt_recent") || "[]"); } catch { return []; }
+  });
+  const [readIds, setReadIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("genai_gt_read") || "[]")); } catch { return new Set(); }
+  });
+  function toggleRead(postId, e) {
+    e.stopPropagation();
+    const next = new Set(readIds);
+    if (next.has(postId)) next.delete(postId); else next.add(postId);
+    setReadIds(next);
+    try { localStorage.setItem("genai_gt_read", JSON.stringify([...next])); } catch {}
+  }
 
   useEffect(() => { track("ground_truth_viewed", {}); }, []);
 
@@ -378,7 +417,12 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
   useEffect(() => {
     if (!initialPostId) return;
     const post = POSTS.find(p => p.id === initialPostId);
-    if (post) { setOpenPost(post); onPostOpened?.(); }
+    if (post) {
+      const updated = [post.id, ...recentIds.filter(id => id !== post.id)].slice(0, 5);
+      setRecentIds(updated);
+      try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
+      setOpenPost(post); onPostOpened?.();
+    }
   }, [initialPostId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (openPost) {
@@ -436,7 +480,13 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
                   const color = CAT_COLORS[post.category] || "#6366f1";
                   return (
                     <button key={post.id}
-                      onClick={() => { track("ground_truth_pinned_clicked", { post: post.id }); setOpenPost(post); }}
+                      onClick={() => {
+                        track("ground_truth_pinned_clicked", { post: post.id });
+                        const updated = [post.id, ...recentIds.filter(id => id !== post.id)].slice(0, 5);
+                        setRecentIds(updated);
+                        try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
+                        setOpenPost(post);
+                      }}
                       className="text-left rounded-xl border border-violet-800/40 bg-violet-950/10 p-3.5 hover:border-violet-600/60 transition-all relative overflow-hidden">
                       <div className="absolute top-0 left-0 right-0 h-[2px]"
                         style={{ background: `linear-gradient(90deg, ${color}99, transparent)` }} />
@@ -450,6 +500,34 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
               <div className="mt-5 mb-2 flex items-center gap-2">
                 <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest">All posts</span>
                 <div className="h-px flex-1 bg-zinc-800" />
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Continue reading */}
+        {recentIds.length > 0 && filter === "all" && (() => {
+          const recentPosts = recentIds.map(id => WRITTEN.find(p => p.id === id)).filter(Boolean);
+          if (!recentPosts.length) return null;
+          return (
+            <div className="mb-4">
+              <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-2">Continue reading</p>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {recentPosts.map(p => {
+                  const color = CAT_COLORS[p.category] || "#6366f1";
+                  return (
+                    <button key={p.id} onClick={() => {
+                        const updated = [p.id, ...recentIds.filter(id => id !== p.id)].slice(0, 5);
+                        setRecentIds(updated);
+                        try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
+                        setOpenPost(p);
+                      }}
+                      className="shrink-0 text-left rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 hover:border-zinc-600 transition-all max-w-[200px]">
+                      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color }}>{p.category}</div>
+                      <div className="text-xs text-white leading-snug line-clamp-2">{p.title}</div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
@@ -485,7 +563,13 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
             return (
               <div
                 key={post.id}
-                onClick={() => { track("ground_truth_card_clicked", { post: post.id }); setOpenPost(post); }}
+                onClick={() => {
+                  track("ground_truth_card_clicked", { post: post.id });
+                  const updated = [post.id, ...recentIds.filter(id => id !== post.id)].slice(0, 5);
+                  setRecentIds(updated);
+                  try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
+                  setOpenPost(post);
+                }}
                 className={`rounded-xl border p-4 flex flex-col gap-3 relative overflow-hidden cursor-pointer transition-all hover:border-zinc-600 ${hasContent ? "border-zinc-700 bg-zinc-900/50" : "border-zinc-800 bg-zinc-900/30"}`}>
 
                 {/* Top accent line */}
@@ -519,10 +603,28 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
 
                 {/* CTA row */}
                 <div className="flex items-center justify-between border-t border-zinc-800 pt-2.5 mt-auto">
-                  {hasContent
-                    ? <span className="text-[10px] font-mono font-bold" style={{ color }}>Read →</span>
-                    : <span className="text-[10px] text-zinc-600 font-mono italic">Coming soon</span>
-                  }
+                  <div className="flex items-center gap-2">
+                    {hasContent
+                      ? <span className="text-[10px] font-mono font-bold" style={{ color }}>Read →</span>
+                      : <span className="text-[10px] text-zinc-600 font-mono italic">Coming soon</span>
+                    }
+                    {readIds.has(post.id) && (
+                      <button
+                        onClick={e => toggleRead(post.id, e)}
+                        title="Mark as unread"
+                        className="text-[9px] font-mono text-emerald-500 bg-emerald-950/30 border border-emerald-800/40 rounded px-1.5 py-0.5 hover:bg-emerald-950/60 transition-all">
+                        ✓ Read
+                      </button>
+                    )}
+                    {!readIds.has(post.id) && hasContent && (
+                      <button
+                        onClick={e => toggleRead(post.id, e)}
+                        title="Mark as read"
+                        className="text-[9px] font-mono text-zinc-700 hover:text-zinc-500 transition-colors">
+                        Mark read
+                      </button>
+                    )}
+                  </div>
                   <button
                     onClick={e => {
                       e.stopPropagation();

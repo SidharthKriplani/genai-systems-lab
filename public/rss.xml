@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>GenAI Systems Lab — Ground Truth</title>
+    <link>https://genai-systems-lab.vercel.app</link>
+    <description>Deep technical posts on production AI systems: RAG, agents, LLMOps, fine-tuning, and more.</description>
+    <atom:link href="https://genai-systems-lab.vercel.app/rss.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 20 May 2026 00:00:00 +0000</lastBuildDate>
+    <item>
+      <title>From Fine-Tuned Model to Production: Serving, Versioning, and Monitoring</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>The gap between a fine-tuned checkpoint and a production deployment. Adapter merging, quantisation for serving, model versioning strategy, and the monitoring signals that catch regressions.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/fine-tuning-to-production</guid>
+    </item>
+    <item>
+      <title>Process Reward Models: How o1 and o3 Learn to Think Step by Step</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>Why outcome-based RLHF fails on multi-step reasoning and how process reward models — rewarding each step rather than the final answer — produce the reasoning models behind o1, o3, and DeepSeek-R1.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/process-reward-models</guid>
+    </item>
+    <item>
+      <title>CLIP: How Contrastive Vision-Language Pretraining Works</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>OpenAI&#x27;s CLIP trained on 400M image-text pairs using contrastive loss — and changed what AI can do with vision. How the dual encoder works, what zero-shot classification means, and why CLIP embeddings power most production image search today.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/clip-how-it-works</guid>
+    </item>
+    <item>
+      <title>Vision Transformers (ViT): How Images Become Tokens</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>The architecture that replaced CNNs for vision tasks. How patch embeddings work, why transformers scale better than convolutions, and what the attention mechanism sees in an image.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/vision-transformers-vit</guid>
+    </item>
+    <item>
+      <title>How Multimodal LLMs Work: LLaVA, GPT-4V, and Gemini Architecture</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>How you connect a vision encoder to a language model — the projection layer, visual tokens, and instruction tuning approach behind LLaVA. How GPT-4V and Gemini differ architecturally, and what &#x27;natively multimodal&#x27; actually means.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/multimodal-llms-architecture</guid>
+    </item>
+    <item>
+      <title>Multimodal RAG: Retrieval Over Images, Tables, and Mixed Documents</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>RAG breaks when your corpus has PDFs with charts, scanned documents, or product images. The three architectures for handling mixed-modal retrieval: late fusion, early fusion, and cross-modal reranking — with when each fails.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/multimodal-rag</guid>
+    </item>
+    <item>
+      <title>Diffusion Models Explained: How Image Generation Actually Works</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>What diffusion models actually do: the forward noising process, the reverse denoising network, why U-Net matters, and how text conditioning (CLIP + cross-attention) turns a text prompt into an image. No hand-waving.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/diffusion-models-explained</guid>
+    </item>
+    <item>
+      <title>Audio and Speech Models: How Whisper and the Speech Pipeline Works</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>From raw audio waveform to text: log-mel spectrograms, the encoder-decoder transformer architecture, why Whisper is so robust to accents and noise, and how to deploy speech-to-text in production at low cost.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/whisper-audio-models</guid>
+    </item>
+    <item>
+      <title>Evaluating Multimodal Systems: Benchmarks, Metrics, and Production Signals</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>How do you know if your vision-language model is actually good? MMMU, MMBench, and VQA explained. Hallucination in multimodal models (CHAIR metric). The gap between benchmark scores and production quality.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/multimodal-eval</guid>
+    </item>
+    <item>
+      <title>Multimodal in Production: Latency, Cost, and Deployment Realities</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>Vision tokens are expensive — GPT-4V charges per tile. The real latency and cost profile of multimodal calls vs. text-only, how to pre-process images to cut costs, and the caching strategies that matter for production workloads.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/multimodal-in-production</guid>
+    </item>
+    <item>
+      <title>Image Embeddings and Visual Search: Building Production Image Retrieval</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>How CLIP embeddings power reverse image search, product discovery, and content moderation. The full pipeline: embed → index → ANN search → rerank. What breaks at scale and how to fix it.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/image-embeddings-visual-search</guid>
+    </item>
+    <item>
+      <title>How to Evaluate Multi-Step AI Agents</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>Why standard LLM evals break for agents. Task completion rate, tool call accuracy, trajectory quality, and building an agent eval harness.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/evaluating-ai-agents</guid>
+    </item>
+    <item>
+      <title>Prompt Caching: Cut Your LLM Costs by 90% Without Changing Your Prompts</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>How prefix caching works in Anthropic Claude and OpenAI APIs, when it applies, how to structure prompts to maximise cache hits, and real cost savings math.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/prompt-caching-guide</guid>
+    </item>
+    <item>
+      <title>LLM Security: Prompt Injection, Jailbreaks, and How to Actually Defend Against Them</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>The real threat model for production LLM systems. Indirect injection, data exfiltration paths, jailbreak taxonomy, and a practical defence checklist.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/llm-security-red-teaming</guid>
+    </item>
+    <item>
+      <title>Choosing a Vector Database in 2025: A Decision Framework</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>Pinecone vs Weaviate vs Qdrant vs Chroma vs pgvector — when to use each, what the real cost looks like at scale, and how to avoid choosing the wrong one.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/vector-db-selection-guide</guid>
+    </item>
+    <item>
+      <title>LLM Cost Optimization Playbook: From $10K to $1K Monthly</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>A systematic approach to cutting LLM inference costs by 80–90% without degrading quality. Caching, model routing, prompt compression, and batch processing.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/llm-cost-optimization</guid>
+    </item>
+    <item>
+      <title>RLHF and DPO Explained: How Language Models Learn Human Preferences</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>How reinforcement learning from human feedback works step-by-step, why DPO is replacing it, and what this means for fine-tuning in 2025.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/rlhf-dpo-explained</guid>
+    </item>
+    <item>
+      <title>Structured Outputs: JSON Mode, Tool Calling, and Constrained Decoding</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>How to reliably get JSON, tables, and typed data from LLMs. JSON mode vs tool calling vs grammar-constrained decoding — what each guarantees and where each breaks.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/structured-outputs-json-mode</guid>
+    </item>
+    <item>
+      <title>Building Memory into AI Agents: LangMem, Mem0, and Custom Patterns</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>How to actually implement persistent memory in production agents. Architecture patterns, library comparison, and what breaks at scale.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/agent-memory-implementation</guid>
+    </item>
+    <item>
+      <title>Claude 3.5 vs GPT-4o vs Gemini 1.5 Pro: A Practical Comparison</title>
+      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <description>Not benchmarks — actual task-type tradeoffs. When each model wins, where each fails, and how to choose for your use case.</description>
+      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab.vercel.app/post/model-comparison-2025</guid>
+    </item>
+  </channel>
+</rss>

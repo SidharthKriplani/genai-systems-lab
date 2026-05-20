@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
+import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock } from "./analytics";
 import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
@@ -974,6 +974,29 @@ function CorpusPanel({ scenario }) {
   );
 }
 
+// ─── ERROR BOUNDARY ──────────────────────────────────────────────────────────
+
+class TabErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  render() {
+    if (this.state.hasError) return (
+      <div className="flex-1 flex items-center justify-center p-12 text-center">
+        <div className="space-y-3">
+          <div className="text-2xl">⚠️</div>
+          <p className="text-white font-bold text-sm">Something went wrong loading this tab</p>
+          <p className="text-zinc-500 text-xs font-mono">{this.state.error?.message}</p>
+          <button onClick={() => this.setState({ hasError: false, error: null })}
+            className="text-xs px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg mt-2">
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
 
 // ─── LEADERBOARD VIEW ────────────────────────────────────────────────────────
@@ -1544,14 +1567,20 @@ export default function App() {
       setFeedbackModalOpen(true);
     }
   }
+  const [toasts, setToasts] = useState([]);
+  function showToast(message, type = "info") {
+    const id = Date.now();
+    setToasts(t => [...t, { id, message, type }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 2500);
+  }
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [whatsNewSeen, setWhatsNewSeen] = useState(() => {
-    try { return localStorage.getItem("genai_whatsnew_v4") === "1"; } catch { return false; }
+    try { return localStorage.getItem("genai_whatsnew_v5") === "1"; } catch { return false; }
   });
   function dismissWhatsNew() {
     setWhatsNewSeen(true);
     setWhatsNewOpen(false);
-    try { localStorage.setItem("genai_whatsnew_v4", "1"); } catch {}
+    try { localStorage.setItem("genai_whatsnew_v5", "1"); } catch {}
   }
 
   function trackModuleVisit(tab, moduleId) {
@@ -1568,6 +1597,28 @@ export default function App() {
     try { localStorage.setItem("genai_lab_hint_dismissed", "1"); } catch {}
   }
 
+  const [streak, setStreak] = useState(() => {
+    try {
+      const data = JSON.parse(localStorage.getItem("genai_streak") || "{}");
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      if (data.lastVisit === today) return data.count || 1;
+      if (data.lastVisit === yesterday) return data.count || 1;
+      return 1;
+    } catch { return 1; }
+  });
+  useEffect(() => {
+    try {
+      const data = JSON.parse(localStorage.getItem("genai_streak") || "{}");
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      let count = 1;
+      if (data.lastVisit === today) count = data.count || 1;
+      else if (data.lastVisit === yesterday) count = (data.count || 0) + 1;
+      setStreak(count);
+      localStorage.setItem("genai_streak", JSON.stringify({ count, lastVisit: today }));
+    } catch {}
+  }, []);
   const SHORTCUT_TABS = ["home","concepts","flows","lab","agents","systems","playground","explore","fluency","aipm","career"];
   useEffect(() => {
     function onKey(e) {
@@ -1597,6 +1648,26 @@ export default function App() {
     window.addEventListener("hashchange", handler);
     return () => window.removeEventListener("hashchange", handler);
   }, [setTopView]);
+
+  useEffect(() => {
+    const TAB_TITLES = {
+      home: "GenAI Systems Lab",
+      concepts: "Concepts — GenAI Systems Lab",
+      flows: "Flows — GenAI Systems Lab",
+      lab: "RAG Lab — GenAI Systems Lab",
+      agents: "Agents Lab — GenAI Systems Lab",
+      systems: "Systems Lab — GenAI Systems Lab",
+      playground: "Playground — GenAI Systems Lab",
+      explore: "Explore — GenAI Systems Lab",
+      fluency: "Fluency — GenAI Systems Lab",
+      aipm: "AI Product — GenAI Systems Lab",
+      career: "Career — GenAI Systems Lab",
+      groundtruth: "Ground Truth — GenAI Systems Lab",
+      progress: "Your Progress — GenAI Systems Lab",
+      qa: "QA Dashboard — GenAI Systems Lab",
+    };
+    document.title = TAB_TITLES[topView] || "GenAI Systems Lab";
+  }, [topView]);
 
   const scenario = ALL_SCENARIOS[scenarioIdx];
   const lookup = useMemo(() => lookupResult(scenario, config), [scenario, config]);
@@ -1760,13 +1831,13 @@ export default function App() {
             </div>
             <div className="space-y-3">
               {[
-                { tag: "OPEN", color: "#22c55e", label: "All tabs unlocked", desc: "Systems, Fluency, AI Product, and Career are now fully open — no beta code needed.", tab: "home" },
-                { tag: "NEW", color: "#6366f1", label: "82 Ground Truth posts", desc: "Complete library across Foundations, RAG, Agents, Eval, LLMOps, Safety, System Design, Careers, and more.", tab: "groundtruth" },
-                { tag: "NEW", color: "#8b5cf6", label: "Share your solves", desc: "Beat a RAG Lab scenario? A shareable card appears — post it to X or LinkedIn.", tab: "lab" },
-                { tag: "NEW", color: "#3b82f6", label: "Related posts", desc: "Every Ground Truth post now links to 3 related posts in the same category.", tab: "groundtruth" },
-                { tag: "NEW", color: "#f59e0b", label: "Continue where you left off", desc: "Home page now picks up your last position and shows your next unvisited step.", tab: "home" },
-                { tag: "PERF", color: "#10b981", label: "Faster initial load", desc: "All heavy tab bundles now load on demand — initial JS is ~85% smaller.", tab: null },
-                { tag: "FIX", color: "#ef4444", label: "RAG Lab + Challenge Log", desc: "Fixed crash on first load and blank screen when clicking 'Go to RAG Lab' from the Challenge Log.", tab: "lab" },
+                { tag: "NEW", color: "#6366f1", label: "AI Systems Readiness Assessment", desc: "20-question timed test across all topics. Get your readiness level: Junior → Staff.", tab: "fluency" },
+                { tag: "NEW", color: "#3b82f6", label: "5 new deep-dive posts", desc: "Agent evals, prompt caching ($4K→$540/mo), LLM security, vector DB selection, cost optimization.", tab: "groundtruth" },
+                { tag: "NEW", color: "#06b6d4", label: "2 new Agent Lab scenarios", desc: "Planning Agent and Reflexion pattern now interactive in the Agents tab.", tab: "agents" },
+                { tag: "NEW", color: "#22c55e", label: "Flashcard unknowns filter", desc: "Fluency flashcards now support 'Study unknowns only' mode for focused drilling.", tab: "fluency" },
+                { tag: "NEW", color: "#f59e0b", label: "URL routing + shareable links", desc: "Every tab now has its own URL. Share genai-systems-lab.vercel.app#systems directly.", tab: null },
+                { tag: "PERF", color: "#8b5cf6", label: "Score persistence", desc: "Quiz and drill scores now persist across sessions in all modules.", tab: null },
+                { tag: "FIX", color: "#ef4444", label: "25 bug fixes across 10 files", desc: "Guardrail logic, mobile SVG overflow, BudgetAllocator cap, MockInterview crash guard, and more.", tab: null },
               ].map(({ tag, color, label, desc, tab }) => (
                 <div key={label}
                   onClick={() => { if (tab) { navigate(tab); dismissWhatsNew(); } }}
@@ -1855,11 +1926,16 @@ export default function App() {
               title="Challenge Log" aria-label="Open challenge log">
               🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px]">{leaderboard.filter(e => e.passed).length}</span>}
             </button>
-            <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v4","1"); } catch {} }}
+            <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v5","1"); } catch {} }}
               className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300 relative">
               NEW
               {!whatsNewSeen && visited.size > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
             </button>
+            {streak >= 2 && (
+              <span className="text-[10px] font-bold text-amber-400 flex items-center gap-0.5">
+                🔥{streak}
+              </span>
+            )}
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono" aria-label="Keyboard shortcuts">?</button>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all" aria-label="Open navigation menu">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
@@ -1898,21 +1974,32 @@ export default function App() {
 
       {topView === "home" && <HomePage onNavigate={navigate} visited={visited} onFeedback={openFeedback} />}
 
-      <Suspense fallback={<div className="flex-1 flex items-center justify-center py-24 text-zinc-600 text-sm font-mono">Loading…</div>}>
-        {topView === "concepts"   && <ConceptsApp />}
-        {topView === "flows"      && <FlowsApp />}
-        {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
+      <TabErrorBoundary>
+        <Suspense fallback={
+          <div className="flex-1 p-6 space-y-4 animate-pulse">
+            <div className="h-6 bg-zinc-800 rounded w-1/3" />
+            <div className="h-4 bg-zinc-800 rounded w-2/3" />
+            <div className="h-4 bg-zinc-800 rounded w-1/2" />
+            <div className="grid grid-cols-2 gap-3 mt-6">
+              {[...Array(6)].map((_, i) => <div key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+            </div>
+          </div>
+        }>
+          {topView === "concepts"   && <ConceptsApp />}
+          {topView === "flows"      && <FlowsApp />}
+          {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
-        {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />}
-        {topView === "fluency"    && <FluencyApp />}
-        {topView === "aipm"       && <AIPMApp />}
-        {topView === "playground" && <PlaygroundApp />}
-        {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
-        {topView === "career"     && <CareerApp />}
+          {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />}
+          {topView === "fluency"    && <FluencyApp />}
+          {topView === "aipm"       && <AIPMApp />}
+          {topView === "playground" && <PlaygroundApp />}
+          {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
+          {topView === "career"     && <CareerApp />}
 
-        {topView === "groundtruth" && <GroundTruth onNavigate={navigate} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
-        {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} />}
-      </Suspense>
+          {topView === "groundtruth" && <GroundTruth onNavigate={navigate} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
+          {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} />}
+        </Suspense>
+      </TabErrorBoundary>
 
 
       {/* Scenario tabs */}
@@ -2180,6 +2267,16 @@ export default function App() {
           title="Internal QA Console — or visit ?qa=1 or Cmd/Ctrl+Shift+Q">
           qa
         </button>
+      )}
+      {toasts.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center pointer-events-none">
+          {toasts.map(t => (
+            <div key={t.id} className={`px-4 py-2 rounded-full text-xs font-bold shadow-lg animate-fade-in
+              \${t.type === "success" ? "bg-emerald-600 text-white" : t.type === "error" ? "bg-red-600 text-white" : "bg-zinc-700 text-zinc-100"}`}>
+              {t.message}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

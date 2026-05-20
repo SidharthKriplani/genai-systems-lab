@@ -469,6 +469,13 @@ function TimedDrills() {
   function scoreThis(hit) {
     scoresRef.current = { ...scoresRef.current, [drill.id]: hit };
     setScoresTick(t => t + 1); // trigger re-render to reflect new score
+    // Persist best score per filter level
+    try {
+      const key = `genai_drill_best_${filter}`;
+      const newScore = Object.values({ ...scoresRef.current }).filter(Boolean).length;
+      const prev = parseInt(localStorage.getItem(key) || "0");
+      if (newScore > prev) localStorage.setItem(key, String(newScore));
+    } catch {}
   }
 
   function nextDrill() {
@@ -494,6 +501,7 @@ function TimedDrills() {
   const answeredCount = Object.keys(selfScores).length;
   const timerPct = (timeLeft / DRILL_TIME) * 100;
   const timerColor = timeLeft > 30 ? "#10b981" : timeLeft > 15 ? "#f59e0b" : "#ef4444";
+  const bestScore = (() => { try { return parseInt(localStorage.getItem(`genai_drill_best_${filter}`) || "0"); } catch { return 0; } })();
 
   if (!drill) return null;
 
@@ -517,7 +525,10 @@ function TimedDrills() {
       </div>
 
       {answeredCount > 0 && (
-        <div className="text-xs font-mono text-violet-400">{hitCount}/{answeredCount} key points hit</div>
+        <div className="flex items-center gap-3 text-xs font-mono text-violet-400">
+          <span>{hitCount}/{answeredCount} key points hit</span>
+          {bestScore > 0 && <span className="text-zinc-500">Best: {bestScore}</span>}
+        </div>
       )}
 
       {/* Drill navigation */}
@@ -1928,6 +1939,312 @@ function PromptChallengeMode() {
   );
 }
 
+
+// ─── READINESS ASSESSMENT DATA ────────────────────────────────────────────────
+
+const READINESS_QUESTIONS = [
+  { id: 1, topic: "Tokenization", q: "A user complains your chatbot \'can\'t count letters correctly.\' What\'s the most likely root cause?", options: ["Bug in the response parser", "The model tokenizes words differently than humans expect, making character-level tasks unreliable", "The model hasn\'t been fine-tuned on counting tasks", "The temperature setting is too high"], correct: 1, explanation: "LLMs operate on tokens, not characters. \'How many R\'s in strawberry?\' fails because the model never sees individual letters — it sees subword tokens." },
+  { id: 2, topic: "RAG", q: "Your RAG system retrieves the correct document but still gives wrong answers. Most likely cause?", options: ["The embedding model is too small", "The chunk containing the answer is not in the retrieved top-k", "The LLM is ignoring the retrieved context", "The vector database index is corrupted"], correct: 2, explanation: "This is the \'right document, wrong chunk\' failure. The retriever surfaces the correct document but the specific chunk with the answer didn\'t make top-k. Fix: increase top-k or improve chunking strategy." },
+  { id: 3, topic: "Evaluation", q: "You\'re building an eval for a summarization system. Which metric is LEAST useful as your primary signal?", options: ["Human preference rating (A vs B)", "ROUGE-L score", "LLM-as-judge with rubric", "Faithfulness score (no hallucinated claims)"], correct: 1, explanation: "ROUGE-L measures n-gram overlap, which doesn\'t capture semantic accuracy. A summary can have high ROUGE-L and still hallucinate or miss the key point. It\'s a proxy metric, not a quality signal." },
+  { id: 4, topic: "Agents", q: "An agent keeps calling the same tool in an infinite loop. Best architectural fix?", options: ["Add a system prompt instruction to not loop", "Implement max_iterations guard with graceful exit", "Use a smaller model that\'s less likely to loop", "Disable the tool after the first call"], correct: 1, explanation: "Prompt instructions alone are unreliable guards. A hard max_iterations limit with a defined fallback behavior is the only robust solution. This is standard practice in all production agent frameworks." },
+  { id: 5, topic: "Cost", q: "You need to reduce LLM costs by 70% without quality regression. Best first lever?", options: ["Switch to a smaller model for all requests", "Implement prefix caching for repeated system prompts", "Reduce max_tokens by 50%", "Route 80% of simple queries to a cheap model, keep 20% on frontier"], correct: 3, explanation: "Model routing is typically the highest-ROI cost optimization. 70-90% of queries in most apps are simple enough for a cheap model. Routing to haiku/mini for those while keeping opus/4o for complex ones can cut costs 5-10x with minimal quality impact." },
+  { id: 6, topic: "Fine-tuning", q: "When is fine-tuning definitively the WRONG choice?", options: ["When you have less than 1000 examples", "When you want the model to know new factual information", "When you want consistent output formatting", "When base model quality on your task is below 60%"], correct: 1, explanation: "Fine-tuning teaches style and behavior patterns — it does NOT reliably inject new factual knowledge. For knowledge injection, use RAG or in-context examples. Fine-tuning on facts causes hallucination of related facts." },
+  { id: 7, topic: "Context Window", q: "Your 128K context model gives worse answers on a 90K-token document than on the same document truncated to 20K tokens. Why?", options: ["The model wasn\'t trained on documents that long", "Lost-in-the-middle: attention degrades for content far from start/end", "Tokenization errors at high token counts", "The 90K document contains more noise"], correct: 1, explanation: "Lost-in-the-middle is a documented phenomenon: LLM recall drops for content in the middle of very long contexts. Mitigations: reranking to put relevant chunks at the edges, map-reduce patterns, or hierarchical summarization." },
+  { id: 8, topic: "Guardrails", q: "Your input classifier blocks 8% of legitimate user queries (false positives). A stakeholder wants to reduce this to 0%. What do you tell them?", options: ["We can achieve 0% FP with a better classifier", "Precision and recall are in tension — 0% FP would require accepting unacceptably high false negatives", "We should remove the classifier and rely on output validation only", "Increase the classifier confidence threshold"], correct: 1, explanation: "This is the fundamental precision-recall tradeoff. Pushing FP to 0 means accepting near-0 true negative rate — you\'d block almost nothing. The right metric is FP rate at a defined recall level. 8% FP at 99% recall may be acceptable; the stakeholder needs to specify their tolerance for both." },
+  { id: 9, topic: "Embeddings", q: "Semantic search returns irrelevant results for short queries (1-2 words) but works well for longer ones. Root cause?", options: ["Short queries don\'t embed well in high-dimensional space", "Embedding models trained on sentences underperform on very short queries", "The vector index needs retraining on short queries", "Short queries should use keyword search instead"], correct: 1, explanation: "Most embedding models are trained on sentence-length text. Single-word or two-word queries produce low-quality embeddings with high variance. Hybrid search (BM25 + dense) solves this: BM25 handles exact short-query matching while dense handles semantic similarity." },
+  { id: 10, topic: "LLMOps", q: "P95 latency suddenly increases from 1.2s to 4.8s with no code changes. First place to check?", options: ["Embedding model performance", "LLM provider rate limiting or capacity issues", "Vector database query time", "Network latency to your server"], correct: 1, explanation: "Sudden latency spikes with no code changes are almost always provider-side. Check the LLM provider\'s status page first. If provider is healthy, check trace spans: embedding → retrieval → reranking → LLM to isolate the slow step." },
+  { id: 11, topic: "Prompting", q: "You want the model to always respond in JSON. Most reliable approach?", options: ["\"You must always respond in JSON\" in system prompt", "JSON mode / structured outputs API parameter", "Few-shot examples of JSON responses", "Post-process and parse whatever format it returns"], correct: 1, explanation: "JSON mode (or structured outputs) enforces format at the decoding level — the model literally cannot produce non-JSON tokens. System prompt instructions and few-shot are probabilistic and fail under distribution shift. Always use the API-level enforcement when available." },
+  { id: 12, topic: "RAG", q: "You\'re building RAG for a legal document corpus. Hybrid search (BM25 + dense) performs worse than BM25 alone. Most likely reason?", options: ["The dense embedding model wasn\'t trained on legal text", "BM25 is always better for long documents", "The RRF fusion weight is misconfigured", "Dense search doesn\'t support metadata filtering"], correct: 0, explanation: "Domain shift is the #1 reason dense models underperform on specialized corpora. A general-purpose embedding model (OpenAI, Cohere) hasn\'t seen enough legal terminology. Fine-tuned or domain-specific embeddings (e.g., legal-bert) typically close the gap." },
+  { id: 13, topic: "Agents", q: "An agent has access to a \'delete_record\' tool. Best practice for this tool\'s design?", options: ["Require a confirmation parameter before deletion", "Log all calls but allow immediate execution", "Add a soft-delete with 24hr recovery window as the default behavior", "Restrict tool to admin users only"], correct: 2, explanation: "Consequence-aware tool design: irreversible tools should default to reversible behavior where possible. Soft-delete with recovery window allows the agent to \'undo\' a mistake within a safety window. Confirmation parameters help but add latency and can be bypassed by a poorly-reasoning agent." },
+  { id: 14, topic: "Evaluation", q: "Which eval setup catches the most real-world failures in a production RAG system?", options: ["Automated BLEU/ROUGE on a golden answer set", "LLM-as-judge scoring on 100 representative queries weekly", "Shadow deployment: run new config in parallel, compare outputs on live traffic", "Unit tests on individual retrieval chunks"], correct: 2, explanation: "Shadow deployment is the gold standard because it tests on actual production distribution, not a static eval set. Your eval set goes stale; real traffic doesn\'t. Run new configs against live queries, have LLM-as-judge compare outputs, only promote if win rate >55% at statistical significance." },
+  { id: 15, topic: "Fine-tuning", q: "Training loss keeps decreasing but eval performance plateaus. You\'re running LoRA on Llama 3 8B. Most likely issue?", options: ["Learning rate is too high", "The LoRA rank is too low", "Overfitting to training distribution — eval set has different characteristics", "The base model needs full fine-tuning, not LoRA"], correct: 2, explanation: "Training/eval divergence with decreasing train loss is the textbook overfitting signature. Check: is your eval set truly representative of production inputs? Common mistake: eval set is a random split of training data rather than a held-out distribution sample." },
+  { id: 16, topic: "Context", q: "You\'re building a long-running customer service agent. After 20 turns, response quality degrades. No change in model. What\'s happening?", options: ["Token limit exceeded — early context is being truncated", "The model is \'forgetting\' earlier context due to attention dilution", "Context window is full and old messages are being dropped silently", "The model needs to be fine-tuned on long conversations"], correct: 2, explanation: "Most frameworks silently drop oldest messages when context limit is hit. The agent loses the system prompt and early instructions. Fix: implement context compaction (summarize old turns), always keep system prompt pinned at position 0, monitor token count per turn." },
+  { id: 17, topic: "Cost", q: "Prompt caching reduces costs most when:", options: ["Queries are short and varied", "A large static system prompt is reused across many requests", "You use streaming responses", "Output tokens dominate total token count"], correct: 1, explanation: "Prompt caching works by reusing KV cache for identical token prefixes. Maximum savings come from long, static prefixes (system prompts, few-shot examples, retrieved documents) reused across many requests. A 2000-token system prompt reused 1000 times saves ~1.9M input tokens at cache-read pricing (~10% of normal cost)." },
+  { id: 18, topic: "Multimodal", q: "Vision model returns inconsistent results for the same image across requests. Most likely cause?", options: ["Image preprocessing varies between requests", "Temperature > 0 causes sampling variance", "The image token count exceeds the context window", "Vision encoders are non-deterministic"], correct: 1, explanation: "Temperature > 0 introduces randomness in token selection, which applies to vision models just as text models. Set temperature=0 for deterministic vision tasks (OCR, classification, structured extraction). Note: even at temperature=0, some providers use non-deterministic hardware that can cause minor variance." },
+  { id: 19, topic: "System Design", q: "You need to process 100K documents for RAG. Embedding costs are $50 and would repeat monthly. Best architecture?", options: ["Re-embed all documents monthly", "Embed on first ingest only, re-embed only changed documents", "Use a cheaper embedding model to reduce monthly cost", "Cache embeddings in the vector DB with TTL=30 days"], correct: 1, explanation: "Incremental embedding (re-embed only on change) is the standard pattern. Most document corpora are 90%+ static month-to-month. Track document hashes; only re-embed when content changes. This reduces monthly re-embedding cost from $50 to $2-5 for a typical corpus." },
+  { id: 20, topic: "Safety", q: "A jailbreak attack bypasses your input classifier. Best secondary defense?", options: ["Retrain the input classifier with the new attack pattern", "Output validation: check model responses for policy violations before returning", "Increase classifier sensitivity (lower confidence threshold)", "Rate limit users who trigger classifier warnings"], correct: 1, explanation: "Defense in depth: input classifiers are your first layer, output validators are your second. Output validation catches what input classifiers miss because it evaluates what the model actually generated, not what the user asked. The combination of both reduces attack success rate by 10-100x vs either alone." },
+];
+
+const READINESS_LEVELS = [
+  { min: 0,  max: 7,  label: "Junior",    color: "#10b981", bg: "#064e3b", border: "#065f46" },
+  { min: 8,  max: 12, label: "Mid-Level", color: "#3b82f6", bg: "#1e3a5f", border: "#1d4ed8" },
+  { min: 13, max: 16, label: "Senior",    color: "#8b5cf6", bg: "#2e1065", border: "#7c3aed" },
+  { min: 17, max: 19, label: "Staff",     color: "#f59e0b", bg: "#451a03", border: "#d97706" },
+  { min: 20, max: 20, label: "Principal", color: "#ef4444", bg: "#450a0a", border: "#dc2626" },
+];
+
+function getLevel(score) {
+  return READINESS_LEVELS.find(l => score >= l.min && score <= l.max) || READINESS_LEVELS[0];
+}
+
+// Map topics to modules for the "Study" deeplink hint
+const TOPIC_MODULE_HINTS = {
+  "Tokenization":    "Concepts tab → Tokenization",
+  "RAG":             "Flows tab → RAG Pipeline",
+  "Evaluation":      "Systems tab → Eval Lab",
+  "Agents":          "Flows tab → Agent Loop",
+  "Cost":            "Systems tab → Model Strategy",
+  "Fine-tuning":     "Systems tab → Fine-Tuning Lab",
+  "Context Window":  "Concepts tab → Context Window",
+  "Guardrails":      "Flows tab → Guardrail Pipeline",
+  "Embeddings":      "Concepts tab → Embeddings",
+  "LLMOps":          "Systems tab → LLM Observability",
+  "Prompting":       "Fluency → Prompt Engineering Lab",
+  "Context":         "Flows tab → Agent Loop",
+  "Multimodal":      "Concepts tab → Architecture",
+  "System Design":   "Systems tab → A/B Testing Lab",
+  "Safety":          "Flows tab → Guardrail Pipeline",
+};
+
+// ─── READINESS ASSESSMENT COMPONENT ──────────────────────────────────────────
+
+function ReadinessAssessment() {
+  const TOTAL_TIME = 1200; // 20 minutes
+  const [phase, setPhase] = useState("intro"); // intro | quiz | results
+  const [qIdx, setQIdx] = useState(0);
+  const [answers, setAnswers] = useState({}); // { questionId: chosenOptionIndex }
+  const [selected, setSelected] = useState(null); // current question selection
+  const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
+  const [startTime, setStartTime] = useState(null);
+  const timerRef = useRef(null);
+
+  // Timer
+  useEffect(() => {
+    if (phase !== "quiz") return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) {
+          clearInterval(timerRef.current);
+          finishAssessment();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function startQuiz() {
+    setPhase("quiz");
+    setQIdx(0);
+    setAnswers({});
+    setSelected(null);
+    setTimeLeft(TOTAL_TIME);
+    setStartTime(Date.now());
+  }
+
+  function finishAssessment() {
+    clearInterval(timerRef.current);
+    setPhase("results");
+  }
+
+  function handleNext() {
+    if (selected === null) return;
+    const newAnswers = { ...answers, [READINESS_QUESTIONS[qIdx].id]: selected };
+    setAnswers(newAnswers);
+    if (qIdx + 1 >= READINESS_QUESTIONS.length) {
+      clearInterval(timerRef.current);
+      setPhase("results");
+    } else {
+      setQIdx(qIdx + 1);
+      setSelected(null);
+    }
+  }
+
+  // ── Derived results ──────────────────────────────────────────────────────────
+  const score = READINESS_QUESTIONS.filter(q => answers[q.id] === q.correct).length;
+  const level = getLevel(score);
+  const timeTaken = startTime ? Math.round((TOTAL_TIME - timeLeft)) : TOTAL_TIME;
+  const timeTakenStr = (() => {
+    const m = Math.floor(timeTaken / 60);
+    const s = timeTaken % 60;
+    return `${m}m ${s}s`;
+  })();
+
+  // Topic breakdown
+  const topicMap = {};
+  READINESS_QUESTIONS.forEach(q => {
+    if (!topicMap[q.topic]) topicMap[q.topic] = { correct: 0, total: 0 };
+    topicMap[q.topic].total++;
+    if (answers[q.id] === q.correct) topicMap[q.topic].correct++;
+  });
+  const topics = Object.entries(topicMap).sort((a, b) => (a[1].correct / a[1].total) - (b[1].correct / b[1].total));
+  const weakestTopic = topics.length ? topics[0][0] : null;
+
+  function copyShareText() {
+    const text = `I scored ${score}/20 on the AI Systems Readiness Assessment — ${level.label} level. Test yourself: genai-systems-lab.vercel.app`;
+    try { navigator.clipboard.writeText(text); } catch {}
+  }
+
+  const timerMins = Math.floor(timeLeft / 60);
+  const timerSecs = timeLeft % 60;
+  const timerStr = `${timerMins}:${String(timerSecs).padStart(2, "0")}`;
+  const timerColor = timeLeft > 300 ? "#10b981" : timeLeft > 120 ? "#f59e0b" : "#ef4444";
+  const progressPct = ((qIdx) / READINESS_QUESTIONS.length) * 100;
+  const q = READINESS_QUESTIONS[qIdx];
+
+  // ── Intro screen ─────────────────────────────────────────────────────────────
+  if (phase === "intro") return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-7 text-center space-y-4">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-red-900/30 border border-red-800/60 flex items-center justify-center text-3xl">
+          🎯
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-2xl font-black text-white tracking-tight">AI Systems Readiness Assessment</h2>
+          <p className="text-sm text-zinc-400">20 questions · Timed · All topics</p>
+        </div>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          {[["20", "Questions"], ["~15 min", "Time limit"], ["5 Levels", "Junior → Principal"]].map(([val, label]) => (
+            <div key={label} className="rounded-lg bg-zinc-800 border border-zinc-700 p-3">
+              <div className="text-base font-black text-white">{val}</div>
+              <div className="text-xs text-zinc-500 mt-0.5">{label}</div>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-4 text-left space-y-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide">What this tests</p>
+          <div className="flex flex-wrap gap-2">
+            {["Tokenization","RAG","Evaluation","Agents","Cost","Fine-tuning","Context","Guardrails","Embeddings","LLMOps","Prompting","Safety"].map(t => (
+              <span key={t} className="text-xs px-2 py-0.5 bg-zinc-800 border border-zinc-700 text-zinc-400 rounded font-mono">{t}</span>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={startQuiz}
+          className="w-full py-3.5 rounded-xl bg-red-700 hover:bg-red-600 text-white font-bold text-base transition-all"
+        >
+          Start Assessment →
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Quiz screen ───────────────────────────────────────────────────────────────
+  if (phase === "quiz") return (
+    <div className="space-y-4">
+      {/* Header: progress + timer */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1">
+          <div className="flex items-center justify-between text-xs text-zinc-500 mb-1">
+            <span>Q {qIdx + 1} of {READINESS_QUESTIONS.length}</span>
+          </div>
+          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-full rounded-full bg-red-600 transition-all" style={{ width: `${progressPct}%` }} />
+          </div>
+        </div>
+        <div className="text-sm font-mono font-bold px-3 py-1.5 rounded-lg border" style={{ color: timerColor, borderColor: timerColor + "55", background: timerColor + "11" }}>
+          {timerStr}
+        </div>
+      </div>
+
+      {/* Question card */}
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono px-2 py-0.5 rounded bg-red-900/40 border border-red-800/60 text-red-400">{q.topic}</span>
+        </div>
+        <p className="text-base font-semibold text-white leading-snug">{q.q}</p>
+
+        {/* Options */}
+        <div className="space-y-2">
+          {q.options.map((opt, i) => {
+            const isSelected = selected === i;
+            return (
+              <button
+                key={i}
+                onClick={() => setSelected(i)}
+                className={`w-full text-left rounded-lg border p-3.5 text-sm transition-all ${
+                  isSelected
+                    ? "border-red-500 bg-red-900/20 text-white"
+                    : "border-zinc-700 bg-zinc-800/40 text-zinc-300 hover:border-zinc-500"
+                }`}
+              >
+                <span className="font-mono text-xs mr-2" style={{ color: isSelected ? "#ef4444" : "#52525b" }}>
+                  {String.fromCharCode(65 + i)}.
+                </span>
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={handleNext}
+          disabled={selected === null}
+          className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${
+            selected !== null
+              ? "bg-red-700 hover:bg-red-600 text-white"
+              : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
+          }`}
+        >
+          {qIdx + 1 < READINESS_QUESTIONS.length ? "Next →" : "See Results →"}
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Results screen ────────────────────────────────────────────────────────────
+  if (phase === "results") return (
+    <div className="space-y-5">
+      {/* Level badge */}
+      <div className="rounded-xl p-6 text-center space-y-3 border" style={{ background: level.bg, borderColor: level.border }}>
+        <p className="text-xs font-mono uppercase tracking-widest" style={{ color: level.color }}>Readiness Level</p>
+        <div className="text-4xl font-black tracking-tight" style={{ color: level.color }}>{level.label.toUpperCase()}</div>
+        <div className="text-2xl font-black text-white">{score} / 20</div>
+        <div className="text-xs text-zinc-400">Completed in {timeTakenStr}</div>
+      </div>
+
+      {/* Topic breakdown */}
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-3">
+        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Topic Breakdown</p>
+        <div className="space-y-2">
+          {topics.map(([topic, { correct, total }]) => {
+            const pct = Math.round((correct / total) * 100);
+            const barColor = pct >= 80 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#ef4444";
+            return (
+              <div key={topic} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-300">{topic}</span>
+                  <span className="font-mono" style={{ color: barColor }}>{correct}/{total}</span>
+                </div>
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Weakest topic study hint */}
+      {weakestTopic && (
+        <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-4 space-y-1">
+          <p className="text-xs font-bold text-amber-400 uppercase tracking-wide">Weakest Topic: {weakestTopic}</p>
+          <p className="text-sm text-zinc-300">Study: {TOPIC_MODULE_HINTS[weakestTopic] || weakestTopic}</p>
+        </div>
+      )}
+
+      {/* Share + Retake */}
+      <div className="flex gap-3">
+        <button
+          onClick={copyShareText}
+          className="flex-1 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm font-semibold hover:bg-zinc-700 transition-all"
+        >
+          Copy result to share
+        </button>
+        <button
+          onClick={() => { setPhase("intro"); setAnswers({}); setSelected(null); setQIdx(0); setTimeLeft(TOTAL_TIME); }}
+          className="flex-1 py-2.5 rounded-lg bg-red-900/40 border border-red-800 text-red-300 text-sm font-semibold hover:bg-red-900/60 transition-all"
+        >
+          Retake
+        </button>
+      </div>
+    </div>
+  );
+
+  return null;
+}
+
 // ─── FLUENCY APP ──────────────────────────────────────────────────────────────
 
 const FLUENCY_MODULES = [
@@ -1938,6 +2255,7 @@ const FLUENCY_MODULES = [
   { id: "prompts", label: "Prompt Engineering", tag: "PROMPTS" },
   { id: "interview", label: "Mock Interview", tag: "INTERVIEW" },
   { id: "challenges", label: "Prompt Challenges", tag: "CHALLENGE" },
+  { id: "assessment", label: "Readiness Check", tag: "TEST" },
 ];
 
 export default function FluencyApp() {
@@ -2005,6 +2323,7 @@ export default function FluencyApp() {
       {activeModule === "interview" && <MockInterview />}
       {activeModule === "flashcards" && <FlashcardMode />}
       {activeModule === "challenges" && <PromptChallengeMode />}
+      {activeModule === "assessment" && <ReadinessAssessment />}
     </div>
   );
 }

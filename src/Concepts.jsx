@@ -3275,6 +3275,7 @@ const MODULES = [
     id: "tokenizer",
     label: "Tokenizer",
     tag: "LAYER 0",
+    level: "beginner",
     title: "Tokenization",
     subtitle: "Text → integers. The first transformation in every LLM.",
     fidelity: { tier: "faithful", note: "Mathematically faithful — real BPE merge rules on a toy vocabulary" },
@@ -3284,6 +3285,7 @@ const MODULES = [
     id: "embeddings",
     label: "Embedding Space",
     tag: "LAYER 1",
+    level: "beginner",
     title: "Semantic Embedding Space",
     subtitle: "Words as vectors. Meaning as geometry. Vector arithmetic as reasoning.",
     fidelity: { tier: "conceptual", note: "Conceptual 2D projection — precomputed coordinates, not live model embeddings" },
@@ -3293,6 +3295,7 @@ const MODULES = [
     id: "attention",
     label: "Attention",
     tag: "LAYER 2",
+    level: "advanced",
     title: "Self-Attention",
     subtitle: "How every token relates to every other token. The core of the transformer.",
     fidelity: { tier: "simplified", note: "Illustrative attention patterns — not actual GPT/Claude attention maps" },
@@ -3302,6 +3305,7 @@ const MODULES = [
     id: "transformer",
     label: "Transformer",
     tag: "LAYER 3",
+    level: "intermediate",
     title: "Transformer Forward Pass",
     subtitle: "Real math in the browser. Embed → attend → FFN → predict. Tighten temperature, add heads, watch it change.",
     fidelity: { tier: "simplified", note: "Toy forward pass — real math, but tiny model not representative of frontier LLMs" },
@@ -3311,6 +3315,7 @@ const MODULES = [
     id: "context",
     label: "Context Window",
     tag: "LAYER 4",
+    level: "intermediate",
     title: "Context Window & Attention Cost",
     subtitle: "Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.",
     fidelity: { tier: "simplified", note: "Illustrative cost model — O(n²) relationship is correct, exact flops vary by architecture" },
@@ -3320,6 +3325,7 @@ const MODULES = [
     id: "sampling",
     label: "Sampling",
     tag: "LAYER 5",
+    level: "intermediate",
     title: "Decoding & Sampling Strategies",
     subtitle: "Same logits. Greedy vs top-K vs top-P vs temperature. See exactly which tokens survive each filter.",
     fidelity: { tier: "faithful", note: "Mathematically faithful — real softmax, top-K, top-P, temperature on toy logits" },
@@ -3329,6 +3335,7 @@ const MODULES = [
     id: "chunking",
     label: "Chunking",
     tag: "LAYER 6",
+    level: "intermediate",
     title: "Chunking Strategies",
     subtitle: "Same document. Four strategies. Watch which chunks get retrieved for each query — and why some strategies fail.",
     fidelity: { tier: "simplified", note: "Curated examples — real chunking strategies applied to a simplified corpus" },
@@ -3338,6 +3345,7 @@ const MODULES = [
     id: "agent",
     label: "Agent Loop",
     tag: "LAYER 7",
+    level: "advanced",
     title: "Agent ReAct Loop",
     subtitle: "Reason → Act → Observe → repeat. Step through a live agent trace. Inject tool failures and watch recovery.",
     fidelity: { tier: "simplified", note: "Simplified ReAct trace — real pattern, scripted responses (no live model)" },
@@ -3347,6 +3355,7 @@ const MODULES = [
     id: "guardrails",
     label: "Guardrails",
     tag: "LAYER 8",
+    level: "intermediate",
     title: "Guardrail Pipeline",
     subtitle: "Input Classifier → LLM → Output Validator. Try injections, jailbreaks, PII, hallucinations — see exactly where each gets caught.",
     fidelity: { tier: "simplified", note: "Curated scenarios — real failure modes, static rule-based detection (no live classifier)" },
@@ -3356,6 +3365,7 @@ const MODULES = [
     id: "debug",
     label: "Debug RAG",
     tag: "CHALLENGE",
+    level: "intermediate",
     title: "Debug This RAG System",
     subtitle: "Five incidents. Only the symptom shown. Diagnose the failure mode — then see the root cause explanation.",
     fidelity: { tier: "simplified", note: "Curated failure cases — drawn from real production RAG failure patterns" },
@@ -3365,6 +3375,7 @@ const MODULES = [
     id: "multiagent",
     label: "Multi-Agent",
     tag: "LAYER 9",
+    level: "advanced",
     title: "Multi-Agent Systems",
     subtitle: "Architecture patterns, failure cascades, and when single-agent is the right call.",
     fidelity: { tier: "conceptual", note: "Conceptual patterns — architectural concepts, no live agent orchestration" },
@@ -3374,6 +3385,7 @@ const MODULES = [
     id: "nextoken",
     label: "Next Token",
     tag: "GAME",
+    level: "beginner",
     title: "Predict the Next Token",
     subtitle: "Five prompts. Guess the highest-probability next token. See the full probability distribution and understand why it has that shape.",
     fidelity: { tier: "conceptual", note: "Illustrative probability distributions — based on typical LLM behavior patterns, not live model inference" },
@@ -3383,12 +3395,19 @@ const MODULES = [
     id: "tempgame",
     label: "Temperature",
     tag: "GAME",
+    level: "beginner",
     title: "Temperature Challenge",
     subtitle: "Three outputs. Same prompt. Different temperatures. Match them — then understand why distribution shape changes creativity and correctness.",
     fidelity: { tier: "conceptual", note: "Curated examples — representative of real temperature effects, not live model sampling" },
     component: TemperatureGame,
   },
 ];
+
+const LEVEL_STYLE = {
+  beginner:     "text-emerald-400 border-emerald-800/50",
+  intermediate: "text-amber-400 border-amber-800/50",
+  advanced:     "text-red-400 border-red-800/50",
+};
 
 export default function ConceptsApp() {
   const [active, setActive] = useState("tokenizer");
@@ -3414,6 +3433,11 @@ export default function ConceptsApp() {
           >
             <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${active === m.id ? "bg-zinc-200 text-zinc-700" : "bg-zinc-700 text-zinc-500"}`}>{m.tag}</span>
             {m.label}
+            {m.level && (
+              <span className={`text-[9px] px-1.5 py-0.5 rounded border font-mono ${active === m.id ? "border-zinc-400 text-zinc-600" : LEVEL_STYLE[m.level]}`}>
+                {m.level}
+              </span>
+            )}
           </button>
         ))}
       </div>

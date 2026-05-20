@@ -1,0 +1,12 @@
+{
+  "name": "GenAI Systems Lab",
+  "short_name": "GenAI Lab",
+  "description": "Interactive platform for learning production AI systems — RAG, Agents, LLMOps, and more.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#6366f1",
+  "icons": [
+    { "src": "/og-image.png", "sizes": "1200x630", "type": "image/png" }
+  ]
+}

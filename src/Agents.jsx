@@ -1308,6 +1308,148 @@ const SIM_SCENARIOS = [
       },
     ],
   },
+  {
+    id: "planning_agent", title: "Goal Decomposition Agent", difficulty: "ADVANCED", color: "#a78bfa",
+    task: "Produce a competitive analysis of 3 vector DBs: Pinecone, Weaviate, and Qdrant.",
+    steps: [
+      {
+        type: "thought", label: "THOUGHT", color: "#6366f1",
+        content: "Goal: competitive analysis of 3 vector DBs. Decompose: search_web(Pinecone), search_web(Weaviate), search_web(Qdrant) are all independent — run in parallel — then compare_features, then write_report.",
+        note: "Planning agents decompose before acting. This step identifies the dependency graph: 3 parallel searches → compare → write. Skipping decomposition means sequential execution of tasks that could run in parallel.",
+        quiz: {
+          q: "Agent receives the high-level goal. What's the right first move?",
+          options: [
+            { text: "Start searching for Pinecone immediately", correct: false, why: "Jumping straight to action means no parallelism. Decomposing first reveals all three searches are independent." },
+            { text: "Decompose into subtasks, identify dependencies, then execute", correct: true, why: "Correct. Planning before acting enables parallel execution of independent subtasks — the core value of a planning agent." },
+            { text: "Ask the user which database to search first", correct: false, why: "The agent has enough information to plan without interrupting. Unnecessary clarification reduces agent value." },
+          ],
+        },
+      },
+      {
+        type: "action", label: "ACTION", color: "#3b82f6",
+        content: 'search_web("Pinecone vector DB 2024") + search_web("Weaviate vector DB 2024") + search_web("Qdrant vector DB 2024")  [parallel]',
+        note: "Three independent tool calls issued in parallel. Reduces wall-clock time by ~2× vs sequential. Only possible because decomposition identified them as non-dependent.",
+        quiz: {
+          q: "The three web searches are independent. How should they be executed?",
+          options: [
+            { text: "Run them sequentially — safer and more predictable", correct: false, why: "Sequential execution of independent tasks wastes time. No safety benefit — they don't share state." },
+            { text: "Run all three in parallel — they don't depend on each other", correct: true, why: "Correct. Independent tasks should be parallelized. A planning agent's efficiency advantage comes from exploiting parallelism." },
+            { text: "Run Pinecone first — it's most popular", correct: false, why: "Relevance ranking doesn't justify sequential execution. The report needs all three regardless." },
+          ],
+        },
+      },
+      {
+        type: "observation", label: "OBSERVATION", color: "#22c55e",
+        content: 'Pinecone: { latency: "low", pricing: "usage-based", managed: true }\nWeaviate: ERROR — search_web timed out after 30s\nQdrant: { latency: "low", pricing: "open-source + cloud", highlights: "Rust-native, payload filtering" }',
+        note: "Partial success: 2 of 3 completed. Weaviate timed out. The agent faces a replanning decision — it can't produce a complete comparison with missing data. This is the critical planning failure mode.",
+        quiz: {
+          q: "Weaviate search timed out. What should the planning agent do?",
+          options: [
+            { text: "Abort the entire task — incomplete data means no report", correct: false, why: "Too conservative. The agent has partial results. A graceful partial result beats abandoning the task." },
+            { text: "Replan: use available results, retry Weaviate once, flag the gap in the report", correct: true, why: "Correct. Replanning: attempt recovery (retry), gracefully degrade (use what you have), and be transparent (flag the gap)." },
+            { text: "Substitute Weaviate data with Pinecone data — they're similar", correct: false, why: "Fabricating data from a different source is hallucination. Flag the gap; never substitute." },
+          ],
+        },
+      },
+      {
+        type: "thought", label: "REPLAN", color: "#6366f1",
+        content: "Weaviate failed. Options: (1) retry once — timeout may be transient, (2) use cached knowledge, (3) proceed with available data and flag the gap. Will retry once, then proceed.",
+        note: "Replanning after failure is a planning agent's most important capability. Explicitly reasoning about recovery rather than silently continuing or failing hard.",
+        quiz: {
+          q: "Retry returned only partial Weaviate data. Best response?",
+          options: [
+            { text: "Include the partial data and clearly label it as incomplete", correct: true, why: "Correct. Partial data with clear provenance beats no data. Transparency about gaps lets the user calibrate trust." },
+            { text: "Don't include Weaviate — partial data distorts the comparison", correct: false, why: "Include with caveats. Users can decide how to weight incomplete data. Silently omitting hides the gap." },
+            { text: "Ask the user if they want to wait and retry later", correct: false, why: "The agent should make the recovery decision and document it. Interrupting for a transient tool failure is poor UX." },
+          ],
+        },
+      },
+      {
+        type: "final", label: "FINAL ANSWER", color: "#f59e0b",
+        content: "Pinecone: managed, serverless ANN, usage-based pricing. Qdrant: open-source, Rust-native, payload filtering, hybrid deployment. Weaviate: ⚠️ data incomplete — search timed out; partial: GraphQL API, multi-modal support. Recommend manual review of weaviate.io before production decision.",
+        note: "Report is transparent about the data gap, completes comparison where data exists, and gives the user an actionable path. Key lesson: planning agents are only as good as their decomposition. Circular deps and missing deps are the main failure modes.",
+        quiz: {
+          q: "How should a planning agent handle a report with one incomplete data source?",
+          options: [
+            { text: "Include available data, flag the gap explicitly, and suggest how to fill it", correct: true, why: "Correct. Transparency + actionable next step = trustworthy output. Users can make informed decisions with known gaps; hidden gaps are dangerous." },
+            { text: "Delay the report until all data is available", correct: false, why: "Blocking on a failed subtask may never resolve. Deliver what you have with clear caveats." },
+            { text: "Complete the report without mentioning the timeout — it's a technical detail", correct: false, why: "Data gaps directly affect reliability. Always surface them." },
+          ],
+        },
+      },
+    ],
+  },
+  {
+    id: "reflexion", title: "Self-Critique Loop", difficulty: "ADVANCED", color: "#f472b6",
+    task: "Write a Python function to find duplicate transactions in a list of transaction dicts.",
+    steps: [
+      {
+        type: "action", label: "DRAFT OUTPUT", color: "#3b82f6",
+        content: "def find_duplicates(transactions):\n    duplicates = []\n    for i in range(len(transactions)):\n        for j in range(i+1, len(transactions)):\n            if transactions[i]['id'] == transactions[j]['id']:\n                duplicates.append(transactions[i])\n    return duplicates",
+        note: "First attempt. Works for basic cases but has production problems: O(n²) complexity, no None handling, no type hints, no docstring. The reflexion loop catches these before delivering to the user.",
+        quiz: {
+          q: "Agent produces an initial solution. What should happen next in a reflexion pattern?",
+          options: [
+            { text: "Deliver the solution immediately — it's technically correct", correct: false, why: "Technically correct ≠ production ready. Reflexion adds a self-critique step to catch quality issues." },
+            { text: "Run a self-critique pass to identify quality gaps before delivering", correct: true, why: "Correct. Reflexion: generate → critique → improve → repeat until quality bar met. Critique happens before the user sees the output." },
+            { text: "Ask the user to review and suggest improvements", correct: false, why: "Reflexion moves the review loop inside the agent. Asking the user to do the critique defeats the purpose." },
+          ],
+        },
+      },
+      {
+        type: "thought", label: "SELF-CRITIQUE 1", color: "#8b5cf6",
+        content: "Issues in draft: (1) O(n²) — nested loop unacceptable at scale, use a set for O(n). (2) No None handling — crashes if 'id' key missing. (3) Returns duplicate items not IDs — ambiguous interface.",
+        note: "Self-critique identifies concrete, actionable gaps. Structured: performance, correctness, interface clarity. This separates useful reflexion from self-congratulation.",
+        quiz: {
+          q: "Good self-critique should be:",
+          options: [
+            { text: "Specific and actionable — identify exact problems with exact fixes", correct: true, why: "Correct. 'O(n²) should be O(n) using a set' is actionable. 'Could be better' is not. Effective critique gives the revision step something concrete to fix." },
+            { text: "Comprehensive — list every possible improvement", correct: false, why: "Diminishing returns. Prioritize material issues over cosmetic ones. Exhaustive critique leads to over-revision and latency spiral." },
+            { text: "Positive — identify what the solution got right first", correct: false, why: "Self-affirmation is not reflexion. The critique step exists to find gaps, not to validate." },
+          ],
+        },
+      },
+      {
+        type: "action", label: "REVISED OUTPUT", color: "#3b82f6",
+        content: "def find_duplicates(transactions):\n    seen_ids = set()\n    duplicate_ids = set()\n    for tx in transactions:\n        if tx is None or 'id' not in tx:\n            continue\n        tx_id = tx['id']\n        if tx_id in seen_ids:\n            duplicate_ids.add(tx_id)\n        else:\n            seen_ids.add(tx_id)\n    return duplicate_ids",
+        note: "Revision addresses all three critique points: O(n) via set, None + missing key handling, returns IDs for unambiguous interface. Production-worthy for basic use — but one more critique pass will catch the documentation gap.",
+        quiz: {
+          q: "The revision fixed O(n²) complexity. Is the reflexion loop done?",
+          options: [
+            { text: "Yes — correctness and performance issues are fixed", correct: false, why: "A production function also needs docstring and type hints. Reflexion iterates until all quality dimensions are met." },
+            { text: "Run one more critique pass before delivering", correct: true, why: "Correct. Reflexion iterates until it meets its own quality bar — not just until 'technically working'. For production code, that bar includes documentation." },
+            { text: "Ask the user if they want type hints — it's optional", correct: false, why: "For production output, the agent delivers to the full quality bar without asking. Type hints and docstrings are standard for production Python." },
+          ],
+        },
+      },
+      {
+        type: "thought", label: "SELF-CRITIQUE 2", color: "#8b5cf6",
+        content: "Critique of revision: (1) Missing docstring — no description of inputs, outputs, edge case behavior. (2) Missing type hints — production Python needs List[dict] → Set[str] signature. Performance and correctness: good. Documentation: incomplete.",
+        note: "Second critique is narrower — big problems fixed, only documentation gaps remain. Reflexion should converge: each iteration produces a strictly smaller critique set. If the set isn't shrinking, the revision isn't working.",
+        quiz: {
+          q: "Second critique finds only documentation gaps. What should the agent decide?",
+          options: [
+            { text: "One more revision to add docstring + type hints, then deliver", correct: true, why: "Correct. Documentation gaps are material for production code. Fix them, then deliver. The critique is converging — that's the stop signal." },
+            { text: "Skip it — docstrings are optional, the logic is correct", correct: false, why: "The agent set its own quality bar to include production readiness. Skipping means ignoring its own critique." },
+            { text: "Keep critiquing until there are zero issues", correct: false, why: "Zero-issue convergence leads to infinite loops. A max_iterations guard is essential. 2 iterations with a converging critique is the stop signal." },
+          ],
+        },
+      },
+      {
+        type: "final", label: "FINAL OUTPUT", color: "#f59e0b",
+        content: "def find_duplicates(transactions: list[dict]) -> set:\n    \"\"\"Find IDs of transactions that appear more than once.\n    Args: transactions: list of dicts, each expected to have an 'id' key.\n    Returns: set of duplicate transaction IDs. None or id-missing entries skipped.\n    Time: O(n). Space: O(n).\n    \"\"\"\n    seen, dupes = set(), set()\n    for tx in transactions:\n        if not tx or 'id' not in tx: continue\n        (dupes if tx['id'] in seen else seen).add(tx['id'])\n    return dupes",
+        note: "Final output: type hints, docstring with Args/Returns/complexity, None handling, O(n) algorithm. 2 reflexion iterations from initial O(n²) draft. Key lesson: reflexion improves quality but costs latency and tokens. Use for high-stakes outputs — production code, executive reports. max_iterations guard is essential.",
+        quiz: {
+          q: "When should you use reflexion, and what's the critical guard to add?",
+          options: [
+            { text: "Use for every output — quality is always worth the extra cost", correct: false, why: "Reflexion adds 2-3× latency and token cost. For low-stakes queries, it's overkill. Use selectively." },
+            { text: "Use for high-stakes outputs; always add a max_iterations guard to prevent infinite loops", correct: true, why: "Correct. High-stakes = production code, legal/medical content, executive reports. max_iterations (typically 2-3) is non-negotiable — without it, non-converging critique loops forever." },
+            { text: "Use only when the user explicitly asks for a review", correct: false, why: "Reflexion is most valuable when the agent proactively applies it to complex outputs. Waiting for user requests defeats the purpose." },
+          ],
+        },
+      },
+    ],
+  },
 ];
 
 const STEP_ICONS = { thought: "💭", action: "⚡", observation: "👁", final: "✓" };
