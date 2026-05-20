@@ -16,6 +16,7 @@ const PlaygroundApp  = lazy(() => import("./Playground"));
 const CareerApp      = lazy(() => import("./Career"));
 const ExploreApp     = lazy(() => import("./Explore"));
 const AgentsApp      = lazy(() => import("./Agents"));
+const ConsultationApp = lazy(() => import("./Consultation"));
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -1173,6 +1174,7 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
 const ALL_TABS = [
   { id: "concepts",    label: "Concepts",    group: "LEARN",  audience: "All levels" },
   { id: "flows",       label: "Flows",       group: "LEARN",  audience: "All levels" },
+  { id: "consult",     label: "Ask",         group: "LEARN",  audience: "All levels" },
   { id: "lab",         label: "RAG Lab",     group: "BUILD",  audience: "Engineers" },
   { id: "agents",      label: "Agents",      group: "BUILD",  audience: "Engineers" },
   { id: "systems",     label: "Systems",     group: "BUILD",  audience: "Engineers · PMs" },
@@ -1186,7 +1188,7 @@ const ALL_TABS = [
 
 const GROUP_COLORS = { LEARN: "#6366f1", BUILD: "#3b82f6", GROW: "#22c55e", READ: "#a78bfa" };
 
-function ProgressView({ visited, visitedModules, leaderboard, onNavigate }) {
+function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookmarks = new Set(), toggleBookmark = () => {} }) {
   const tabsVisited = ALL_TABS.filter(t => visited.has(t.id));
   const tabsByGroup = ["LEARN","BUILD","GROW","READ"].map(g => ({
     group: g,
@@ -1323,6 +1325,76 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate }) {
           <p className="text-xs text-zinc-400">Every tab visited and every RAG scenario solved at Senior-Ready or above.</p>
         </div>
       )}
+
+      {/* Certificates */}
+      {(() => {
+        const learnTabs = ALL_TABS.filter(t => t.group === "LEARN");
+        const buildTabs = ALL_TABS.filter(t => t.group === "BUILD");
+        const growTabs  = ALL_TABS.filter(t => t.group === "GROW");
+        const learnComplete = learnTabs.every(t => visited.has(t.id));
+        const buildComplete = buildTabs.every(t => visited.has(t.id));
+        const growComplete  = growTabs.every(t => visited.has(t.id));
+        if (!learnComplete && !buildComplete && !growComplete) return null;
+        function downloadCert(group) {
+          const canvas = document.createElement("canvas");
+          canvas.width = 800; canvas.height = 560;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#09090b";
+          ctx.fillRect(0, 0, 800, 560);
+          ctx.strokeStyle = "#6366f1";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(20, 20, 760, 520);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 32px system-ui";
+          ctx.textAlign = "center";
+          ctx.fillText("Certificate of Completion", 400, 100);
+          ctx.fillStyle = "#a1a1aa";
+          ctx.font = "18px system-ui";
+          ctx.fillText(`${group} Track — genai-systems-lab.com`, 400, 145);
+          ctx.fillStyle = "#6366f1";
+          ctx.font = "bold 48px system-ui";
+          ctx.fillText(group === "LEARN" ? "AI Foundations" : group === "BUILD" ? "AI Systems Builder" : "AI Career Ready", 400, 260);
+          ctx.fillStyle = "#71717a";
+          ctx.font = "16px system-ui";
+          ctx.fillText(`Completed ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, 400, 320);
+          ctx.fillStyle = "#52525b";
+          ctx.font = "13px system-ui";
+          ctx.fillText("genai-systems-lab.com · Built by Sidharth Kriplani", 400, 520);
+          const a = document.createElement("a");
+          a.download = `certificate-${group.toLowerCase()}.png`;
+          a.href = canvas.toDataURL("image/png");
+          a.click();
+        }
+        return (
+          <div className="rounded-xl border border-indigo-800/40 bg-indigo-900/10 p-4 space-y-3">
+            <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Certificates Earned</p>
+            <div className="space-y-2">
+              {learnComplete && <button onClick={() => downloadCert("LEARN")} className="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Download LEARN Certificate →</button>}
+              {buildComplete && <button onClick={() => downloadCert("BUILD")} className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold">Download BUILD Certificate →</button>}
+              {growComplete  && <button onClick={() => downloadCert("GROW")}  className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">Download GROW Certificate →</button>}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Bookmarked Posts */}
+      {bookmarks.size > 0 && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Bookmarked Posts</p>
+          <div className="space-y-2">
+            {[...bookmarks].map(id => {
+              const post = GT_POSTS.find(p => p.id === id);
+              if (!post) return null;
+              return (
+                <div key={id} className="flex items-center justify-between gap-3">
+                  <button onClick={() => onNavigate("groundtruth")} className="text-xs text-zinc-300 hover:text-white text-left truncate">{post.title}</button>
+                  <button onClick={() => toggleBookmark(id)} className="text-zinc-600 hover:text-red-400 text-xs shrink-0">✕</button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1456,7 +1528,7 @@ function SearchModal({ onClose, onSelect }) {
         </div>
         <div className="px-4 py-2 border-t border-zinc-800 flex items-center gap-4 text-[10px] text-zinc-600 font-mono">
           <span>↑↓ navigate</span><span>↵ select</span><span>Esc close</span>
-          <span className="ml-auto">⌘K to open</span>
+          <span className="ml-auto text-xs text-zinc-600">Press / to open · Esc to close</span>
         </div>
       </div>
     </div>
@@ -1501,7 +1573,7 @@ function FeedbackFallbackModal({ onClose }) {
 }
 
 
-const VALID_VIEWS = ["home","concepts","flows","lab","agents","systems","playground","explore","fluency","aipm","career","groundtruth","progress","qa"];
+const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","systems","playground","explore","fluency","aipm","career","groundtruth","progress","qa"];
 
 function getInitialView() {
   try {
@@ -1539,6 +1611,17 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState(() => {
     try { return JSON.parse(localStorage.getItem("genai_leaderboard") || "[]"); } catch { return []; }
   });
+  const [bookmarks, setBookmarks] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("genai_bookmarks") || "[]")); } catch { return new Set(); }
+  });
+  function toggleBookmark(id) {
+    setBookmarks(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      try { localStorage.setItem("genai_bookmarks", JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -1625,14 +1708,27 @@ export default function App() {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
       if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(s => !s); return; }
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "Q") { e.preventDefault(); navigate("qa"); return; }
-      if (e.key === "?" || e.key === "/") { e.preventDefault(); setShowShortcuts(s => !s); return; }
-      if (e.key === "Escape") { setShowShortcuts(false); setMobileMenuOpen(false); setSearchOpen(false); setLeaderboardOpen(false); return; }
+      if (e.key === "?") { e.preventDefault(); setShowShortcuts(s => !s); return; }
+      if (e.key === "/") {
+        e.preventDefault();
+        setSearchOpen(true);
+        return;
+      }
+      if (e.key === "Escape") {
+        if (searchOpen) { setSearchOpen(false); return; }
+        if (leaderboardOpen) { setLeaderboardOpen(false); return; }
+        if (whatsNewOpen) { dismissWhatsNew(); return; }
+        if (feedbackModalOpen) { setFeedbackModalOpen(false); return; }
+        setShowShortcuts(false);
+        setMobileMenuOpen(false);
+        return;
+      }
       const n = parseInt(e.key);
       if (n >= 1 && n <= SHORTCUT_TABS.length) { navigate(SHORTCUT_TABS[n - 1]); setMobileMenuOpen(false); }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [searchOpen, leaderboardOpen, whatsNewOpen, feedbackModalOpen]);
 
   useEffect(() => {
     checkPreviewUnlock(); // handle ?preview=CODE URL unlock
@@ -1654,6 +1750,7 @@ export default function App() {
       home: "GenAI Systems Lab",
       concepts: "Concepts — GenAI Systems Lab",
       flows: "Flows — GenAI Systems Lab",
+      consult: "Ask — GenAI Systems Lab",
       lab: "RAG Lab — GenAI Systems Lab",
       agents: "Agents Lab — GenAI Systems Lab",
       systems: "Systems Lab — GenAI Systems Lab",
@@ -1738,6 +1835,7 @@ export default function App() {
     { label: "LEARN", color: "#6366f1", items: [
       { id: "concepts", label: "Concepts", count: 11, audience: "All levels" },
       { id: "flows",    label: "Flows",    count: 5,  audience: "All levels" },
+      { id: "consult",  label: "Ask",                 audience: "All levels" },
     ]},
     { label: "BUILD", color: "#3b82f6", items: [
       { id: "lab",        label: "RAG Lab",    count: 6,  audience: "Engineers" },
@@ -1977,16 +2075,17 @@ export default function App() {
       <TabErrorBoundary>
         <Suspense fallback={
           <div className="flex-1 p-6 space-y-4 animate-pulse">
-            <div className="h-6 bg-zinc-800 rounded w-1/3" />
-            <div className="h-4 bg-zinc-800 rounded w-2/3" />
-            <div className="h-4 bg-zinc-800 rounded w-1/2" />
+            <div className="h-6 w-48 rounded-lg bg-zinc-800" />
+            <div className="h-4 w-full rounded bg-zinc-800/60" />
+            <div className="h-4 w-3/4 rounded bg-zinc-800/60" />
             <div className="grid grid-cols-2 gap-3 mt-6">
-              {[...Array(6)].map((_, i) => <div key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+              {[1,2,3,4].map(i => <div key={i} className="h-24 rounded-xl bg-zinc-800/40" />)}
             </div>
           </div>
         }>
           {topView === "concepts"   && <ConceptsApp />}
           {topView === "flows"      && <FlowsApp />}
+          {topView === "consult"    && <ConsultationApp onNavigate={navigate} />}
           {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
           {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />}
@@ -1997,7 +2096,7 @@ export default function App() {
           {topView === "career"     && <CareerApp />}
 
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
-          {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} />}
+          {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} />}
         </Suspense>
       </TabErrorBoundary>
 

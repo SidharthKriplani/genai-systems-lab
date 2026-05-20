@@ -223,7 +223,17 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate }) {
   }, [post.id]);
 
   return (
-    <div className="min-h-screen bg-zinc-950" ref={articleRef}>
+    <div className="min-h-screen bg-zinc-950" id="post-print-content" ref={articleRef}>
+      <style>{`
+        @media print {
+          body > * { display: none !important; }
+          #post-print-content { display: block !important; }
+          #post-print-content { font-family: Georgia, serif; color: #000; background: #fff; padding: 2cm; max-width: 100%; }
+          #post-print-content h2 { font-size: 1.3em; margin-top: 1.5em; border-bottom: 1px solid #ccc; padding-bottom: 0.3em; }
+          #post-print-content pre { background: #f4f4f4; padding: 1em; border-radius: 4px; overflow: auto; font-size: 0.85em; }
+          #post-print-content .no-print { display: none !important; }
+        }
+      `}</style>
       {/* Reading progress bar — fixed at top */}
       <div className="fixed top-0 left-0 right-0 z-50 h-[3px] bg-zinc-900">
         <div className="h-full transition-all duration-75 ease-out"
@@ -319,6 +329,10 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate }) {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
               {linkCopied ? "✓ Copied!" : "Copy link"}
             </button>
+            <button onClick={() => window.print()}
+              className="no-print flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
+              Print / Save PDF
+            </button>
             <a href={`https://twitter.com/intent/tweet?text=${shareTitle}&url=${shareUrl}`}
               target="_blank" rel="noopener noreferrer"
               onClick={() => track("post_shared_twitter", { post: post.id })}
@@ -394,6 +408,17 @@ const CAT_COLORS = {
 };
 
 
+const CAT_DIFFICULTY = {
+  foundations: "Beginner", rag: "Intermediate", agents: "Intermediate",
+  evaluation: "Intermediate", llmops: "Advanced", safety: "Intermediate",
+  sysdesign: "Advanced", failures: "Advanced", product: "Beginner",
+  models: "Beginner", industry: "Beginner", career: "Beginner",
+  interview: "Intermediate", research: "Advanced", finetuning: "Advanced",
+  multimodal: "Intermediate", production: "Advanced",
+};
+const DIFF_COLORS = { Beginner: "text-emerald-400", Intermediate: "text-amber-400", Advanced: "text-red-400" };
+
+
 export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {
   const [filter, setFilter] = useState("all");
   const [openPost, setOpenPost] = useState(null);
@@ -409,6 +434,18 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
     if (next.has(postId)) next.delete(postId); else next.add(postId);
     setReadIds(next);
     try { localStorage.setItem("genai_gt_read", JSON.stringify([...next])); } catch {}
+  }
+
+
+  const [helpfulCounts, setHelpfulCounts] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("genai_gt_helpful") || "{}"); } catch { return {}; }
+  });
+  function markHelpful(postId, e) {
+    e.stopPropagation();
+    if (helpfulCounts[postId]) return; // already voted
+    const next = { ...helpfulCounts, [postId]: (helpfulCounts[postId] || 0) + 1 };
+    setHelpfulCounts(next);
+    try { localStorage.setItem("genai_gt_helpful", JSON.stringify(next)); } catch {}
   }
 
   useEffect(() => { track("ground_truth_viewed", {}); }, []);
@@ -576,14 +613,19 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
                 <div className="absolute top-0 left-0 right-0 h-[2px]"
                   style={{ background: `linear-gradient(90deg, ${color}99, transparent)` }} />
 
-                {/* Category + read time */}
+                {/* Category + read time + difficulty */}
                 <div className="flex items-center justify-between">
                   <span
                     className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
                     style={{ color, background: color + "22", border: `1px solid ${color}44` }}>
                     {catLabel}
                   </span>
-                  <span className="text-[9px] text-zinc-600 font-mono">{post.readMin} min</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[9px] font-bold uppercase tracking-widest ${DIFF_COLORS[CAT_DIFFICULTY[post.category]] || "text-zinc-500"}`}>
+                      {CAT_DIFFICULTY[post.category] || ""}
+                    </span>
+                    <span className="text-[9px] text-zinc-600 font-mono">{post.readMin} min</span>
+                  </div>
                 </div>
 
                 {/* Title + desc */}
@@ -625,15 +667,21 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
                       </button>
                     )}
                   </div>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      track("ground_truth_lab_link", { post: post.id, lab: post.labLink });
-                      onNavigate(post.labLink);
-                    }}
-                    className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 transition-colors">
-                    {post.labLabel}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={(e) => markHelpful(post.id, e)}
+                      className={`text-[10px] flex items-center gap-1 transition-all ${helpfulCounts[post.id] ? "text-emerald-400" : "text-zinc-600 hover:text-zinc-400"}`}>
+                      👍 {helpfulCounts[post.id] ? "Helpful" : "Mark helpful"}
+                    </button>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        track("ground_truth_lab_link", { post: post.id, lab: post.labLink });
+                        onNavigate(post.labLink);
+                      }}
+                      className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 transition-colors">
+                      {post.labLabel}
+                    </button>
+                  </div>
                 </div>
               </div>
             );

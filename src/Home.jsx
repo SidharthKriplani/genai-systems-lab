@@ -1,6 +1,103 @@
 import { useState, useEffect, useMemo } from "react";
 import { track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
 
+const DAILY_TIPS = [
+  "Temperature 0 does not mean no randomness. It means greedy decoding. The model always picks the highest-probability token. Useful for deterministic tasks, but can cause repetitive loops.",
+  "Prompt caching in Claude can cut costs by 90%. Structure prompts so the static system prompt comes first and dynamic user content comes last. Cache hits on the prefix.",
+  "RAG retrieves by similarity, not by correctness. A chunk can score 0.92 cosine similarity and still be factually irrelevant to the question. Always add a reranker.",
+  "The lost in the middle problem: LLMs recall information at the start and end of context best. Put your most critical instructions at the beginning and the end, not the middle.",
+  "Fine-tuning does not add new knowledge. It changes style and format. If you need the model to know new facts, use RAG. If you need it to output a specific structure reliably, fine-tune.",
+  "One token is approximately 4 characters in English, but 1-2 characters in Chinese, Japanese, or Korean. A 1000-token budget goes much further for English content than CJK content.",
+  "The ReAct pattern (Reason + Act) works because it forces the model to write out its reasoning before calling a tool. This reduces hallucinated tool calls by ~40% vs. direct tool use.",
+  "Vector databases use Approximate Nearest Neighbor (ANN) search, not exact. They trade a small recall penalty for massive speed gains. At 1M vectors, exact search would take seconds; ANN takes milliseconds.",
+  "LLM-as-judge evals have a self-preference bias: GPT-4 rates GPT-4 outputs higher; Claude rates Claude outputs higher. Always calibrate your judge against human labels.",
+  "Batch API calls are 50% cheaper than real-time calls for both OpenAI and Anthropic. Any offline job (nightly summaries, document indexing, batch classification) should use the batch API.",
+  "Chunking strategy matters more than most people realize. 512-token fixed chunks with 50-token overlap is a reasonable default, but semantic chunking (splitting at topic boundaries) improves retrieval precision by 15-30%.",
+  "Multi-agent systems fail in non-obvious ways: conflicting outputs from two agents, one agent waiting forever for another, cascading hallucinations. Always define a clear contract (schema) between agents.",
+  "LoRA fine-tuning adds trainable rank-r matrices alongside frozen weights. r=16 gives 95% of full fine-tune quality at 1% of the compute cost. Start at r=16, only go higher if quality is insufficient.",
+  "Guardrails have false positive rates. A well-tuned input classifier might block 2-5% of legitimate queries. Track your FP rate in production. Over-blocking is a real UX problem.",
+  "The helpful, harmless, honest alignment goal is easier said than done because they trade off. A maximally helpful response sometimes requires sharing information that is potentially harmful.",
+  "Semantic caching saves cost by returning cached responses for semantically similar (not just identical) queries. At 50K queries/day, 30-40% of queries are semantically duplicate.",
+  "RLHF does not teach models new facts. It shifts the distribution of outputs toward what human raters prefer. It is a style transfer, not a knowledge injection.",
+  "The context window is not free. Attention is O(n^2) in sequence length. Doubling context length quadruples compute cost for the attention mechanism. This is why just use a 1M context window is not always the answer.",
+  "Tool calls from agents should have a consequence level: read-only (safe to call freely), idempotent write (safe to retry), destructive write (require confirmation). Never let an agent delete without a human gate.",
+  "Embedding models have a semantic tunnel vision problem: they capture topic similarity well but miss procedural or causal relationships. how to fix X and X is broken may score low similarity despite being highly relevant.",
+  "A/B testing LLM prompts is harder than testing UI changes because LLM outputs are not binary. Use multi-dimensional evals: quality, safety, helpfulness, and groundedness, not just a single thumbs-up metric.",
+  "The best eval metric is task completion rate, not output quality. A slightly lower-quality response that completes the user goal is better than a beautifully written response that does not.",
+  "Structured output mode (JSON mode) dramatically reduces hallucinations for slot-filling tasks. The model is constrained to valid JSON, which forces it to be explicit about what it knows vs. what it is guessing.",
+  "Observability for LLM apps needs four signal types: latency (per stage), quality (sampled evals), cost (per request), and safety (guardrail hit rates). Missing any one of these leaves you flying blind.",
+  "Human evaluation is the only ground truth for LLM quality, but it is expensive. The right approach: 50-100 human-labeled examples to calibrate an LLM-as-judge, then run the judge at scale.",
+  "Multimodal models do not see images the way humans do. They tokenize image patches and process them as token sequences. Resolution, aspect ratio, and image compression all affect what the model sees.",
+  "Constitutional AI (CAI) trains models to critique and revise their own outputs against a set of principles. It is more scalable than RLHF because it does not require human labelers for every revision.",
+  "The needle in a haystack benchmark tests whether a model can retrieve a specific fact from a long context. Most models struggle with facts placed in the middle 50% of a 128K+ context.",
+  "Hallucination rates vary by task: closed-book Q&A (~20-40%), math (~5-15%), code (~10-20%), factual extraction from given text (~2-8%). Always measure on your specific task. Averages are misleading.",
+  "Model distillation creates smaller, faster models by training them to mimic a larger model's output distribution (not just its labels). GPT-4 distilling into a smaller model is how many fine-tuned 7B models get strong general capabilities.",
+];
+
+const PATHS = {
+  engineer: [
+    { step: 1, label: "Tokenization & Embeddings", tab: "concepts", desc: "How text becomes numbers" },
+    { step: 2, label: "RAG Pipeline", tab: "flows", desc: "The full retrieval pipeline" },
+    { step: 3, label: "RAG Lab", tab: "lab", desc: "Build intuition by breaking configs" },
+    { step: 4, label: "Systems: Evals Lab", tab: "systems", desc: "How to measure quality" },
+    { step: 5, label: "Agent Loop", tab: "agents", desc: "Multi-step tool-using agents" },
+    { step: 6, label: "Fine-Tuning Lab", tab: "systems", desc: "When and how to fine-tune" },
+    { step: 7, label: "Explore: 3D Visualisations", tab: "explore", desc: "Deep intuition builders" },
+    { step: 8, label: "Systems Design Interview", tab: "career", desc: "Practice designing AI systems" },
+  ],
+  pm: [
+    { step: 1, label: "What Is a Transformer?", tab: "groundtruth", desc: "Foundation without the math" },
+    { step: 2, label: "AI Product", tab: "aipm", desc: "PRDs, metrics, roadmaps for AI" },
+    { step: 3, label: "Should You Use AI?", tab: "systems", desc: "Decision framework for AI features" },
+    { step: 4, label: "RAG Lab", tab: "lab", desc: "See what AI failures look like" },
+    { step: 5, label: "Eval Frameworks", tab: "systems", desc: "How to measure AI quality as a PM" },
+    { step: 6, label: "Model Strategy", tab: "systems", desc: "Cost, latency, quality tradeoffs" },
+    { step: 7, label: "AI Product metrics post", tab: "groundtruth", desc: "What to track at each stage" },
+    { step: 8, label: "Stakeholder Explainer", tab: "aipm", desc: "How to talk about AI to execs" },
+  ],
+  researcher: [
+    { step: 1, label: "Transformer Architecture", tab: "flows", desc: "How the forward pass works" },
+    { step: 2, label: "Self-Attention Deep Dive", tab: "groundtruth", desc: "QKV matrices explained" },
+    { step: 3, label: "Explore: 3D Attention", tab: "explore", desc: "Visualise attention patterns" },
+    { step: 4, label: "Sampling Strategies", tab: "concepts", desc: "Temperature, top-p, top-k" },
+    { step: 5, label: "RLHF & DPO", tab: "groundtruth", desc: "Alignment training techniques" },
+    { step: 6, label: "Research Papers", tab: "groundtruth", desc: "15 landmark papers with commentary" },
+    { step: 7, label: "Fine-Tuning Lab", tab: "systems", desc: "LoRA, config simulator, 3D viz" },
+    { step: 8, label: "Eval Lab", tab: "systems", desc: "How to measure model quality" },
+  ],
+  interview: [
+    { step: 1, label: "Fluency: Timed Drills", tab: "fluency", desc: "Speed and breadth under pressure" },
+    { step: 2, label: "Fluency: Flashcards", tab: "fluency", desc: "Master the vocabulary" },
+    { step: 3, label: "Fluency: Mock Interview", tab: "fluency", desc: "Practice behavioural + technical Qs" },
+    { step: 4, label: "Career: System Design", tab: "career", desc: "Design AI systems on the whiteboard" },
+    { step: 5, label: "Career: Negotiation Sim", tab: "career", desc: "Practice offer negotiation" },
+    { step: 6, label: "RAG Lab", tab: "lab", desc: "The most common interview topic" },
+    { step: 7, label: "AI Readiness Assessment", tab: "fluency", desc: "Benchmark your knowledge" },
+    { step: 8, label: "Ground Truth: Interview Prep", tab: "groundtruth", desc: "All interview posts" },
+  ],
+};
+
+function SuggestedPath({ role, onNavigate }) {
+  const steps = PATHS[role] || [];
+  return (
+    <div className="space-y-1.5 pt-1">
+      {steps.map(s => (
+        <button key={s.step} onClick={() => onNavigate(s.tab)}
+          className="w-full text-left flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-zinc-800/60 transition-all group">
+          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 bg-violet-600/20 text-violet-400 group-hover:bg-violet-600/40">
+            {s.step}
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-xs font-bold text-white">{s.label}</span>
+            <span className="text-xs text-zinc-600 ml-1.5">{s.desc}</span>
+          </div>
+          <span className="text-zinc-700 group-hover:text-violet-400 text-xs transition-colors">→</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const START_HERE_PATH = [
   { step: 1, label: "Tokenizer",     tab: "concepts", desc: "How text becomes numbers" },
   { step: 2, label: "Embeddings",    tab: "concepts", desc: "Meaning as geometry" },
@@ -167,6 +264,8 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
     return true;
   }
   const [activePath, setActivePath] = useState(null);
+  const [pathRole, setPathRole] = useState(null);
+  const [showPath, setShowPath] = useState(false);
   const [expandedModule, setExpandedModule] = useState(null);
   const [subEmail, setSubEmail] = useState("");
   const [subStatus, setSubStatus] = useState("idle"); // idle | sending | done | error
@@ -360,6 +459,23 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         <p className="text-[10px] text-zinc-700 font-mono text-center mt-3">Early user feedback · names withheld</p>
       </div>
 
+
+      {/* ---- DAILY TIP ------------------------------------------------- */}
+      {(() => {
+        const tip = DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length];
+        return (
+          <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4 mx-4 mb-4">
+            <div className="flex items-start gap-3">
+              <span className="text-amber-400 text-base shrink-0">💡</span>
+              <div>
+                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Did you know · Today's tip</p>
+                <p className="text-sm text-zinc-300 leading-relaxed">{tip}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── LEARNING PATHS ───────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-16 space-y-8">
         <div className="text-center space-y-1">
@@ -469,6 +585,26 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
           })}
         </div>
 
+
+
+        {/* ---- BUILD MY PATH -------------------------------------------- */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 mx-0 mb-4 space-y-3">
+          <p className="text-xs font-bold text-white">Get a personalised learning path</p>
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { id: "engineer", label: "I'm an Engineer" },
+              { id: "pm", label: "I'm a PM" },
+              { id: "researcher", label: "I'm a Researcher" },
+              { id: "interview", label: "Interview prep" },
+            ].map(r => (
+              <button key={r.id} onClick={() => { setPathRole(r.id); setShowPath(true); }}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-all ${pathRole === r.id ? "bg-violet-600 border-violet-500 text-white" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+                {r.label}
+              </button>
+            ))}
+          </div>
+          {showPath && pathRole && <SuggestedPath role={pathRole} onNavigate={onNavigate} />}
+        </div>
 
         {/* ── MODULE MAP ──────────────────────────────────────────────────── */}
         <div className="space-y-2 pt-4">

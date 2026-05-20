@@ -1450,6 +1450,148 @@ const SIM_SCENARIOS = [
       },
     ],
   },
+  {
+    id: "debate", title: "Multi-Agent Debate", tag: "COLLAB", difficulty: "ADVANCED", color: "#0d9488",
+    task: "Should we use fine-tuning or RAG for our customer support bot?",
+    steps: [
+      {
+        type: "thought", label: "ORCHESTRATOR", color: "#0d9488",
+        content: "Task received: 'Should we use fine-tuning or RAG for our customer support bot?' This is a high-stakes architectural decision with genuine arguments on both sides. Spawning Agent A (RAG advocate) and Agent B (Fine-tuning advocate) to argue opposing positions before synthesis.",
+        note: "Debate pattern: the orchestrator deliberately spawns agents with opposing mandates. Each agent is instructed to make the strongest possible case for their assigned position — this is different from asking two agents to collaborate.",
+        quiz: {
+          q: "Why spawn two agents with opposing mandates instead of asking one agent to weigh both sides?",
+          options: [
+            { text: "Single agents can't reason about trade-offs", correct: false, why: "Single agents can reason about trade-offs, but they tend to satisfice — landing on a balanced-sounding answer that doesn't fully stress-test either side." },
+            { text: "Forcing each agent to advocate maximally for one position surfaces arguments that a balanced single agent would underweight", correct: true, why: "Correct. The debate pattern exploits the fact that motivated reasoning produces stronger arguments. A single agent asked to 'weigh both sides' tends to hedge. Dedicated advocates stress-test each position fully." },
+            { text: "It reduces token cost by splitting the task", correct: false, why: "Debate patterns cost more tokens, not fewer — you're running multiple completions. The benefit is argument quality, not efficiency." },
+          ],
+        },
+      },
+      {
+        type: "action", label: "AGENT A — RAG ADVOCATE", color: "#0891b2",
+        content: 'retrieve_evidence("RAG vs fine-tuning customer support benchmarks")\n\nArgument: RAG is the right choice. Always-fresh data — policy updates propagate immediately without retraining. No training cost or cycle. Sources are citable — agents can say "per policy doc v2.3". Faster iteration — change the knowledge base, not the model. Handles long-tail queries on niche products that fine-tuning would under-represent.',
+        note: "Agent A retrieves evidence to ground its argument, not just argue from priors. A good debate agent reasons from evidence — weak debate agents argue from assumptions. The tool call is what distinguishes a grounded argument from opinion.",
+        quiz: {
+          q: "Agent A retrieves evidence before arguing. Why does this matter?",
+          options: [
+            { text: "It's a formality — the argument is the same either way", correct: false, why: "Arguments grounded in evidence are harder to dismiss and expose real tradeoffs. Arguments from priors just reflect the initial instruction." },
+            { text: "Retrieval grounds the argument in facts rather than the agent's training-data priors — produces a stronger, more specific case", correct: true, why: "Correct. A debate agent that retrieves is making claims about the real world, not just reflecting training data. This is what makes debate patterns useful for real decisions." },
+            { text: "The orchestrator requires it", correct: false, why: "The orchestrator spawned agents with a goal; the retrieval decision is Agent A's own. Good agents use their tools proactively." },
+          ],
+        },
+      },
+      {
+        type: "action", label: "AGENT B — FINE-TUNING ADVOCATE", color: "#7c3aed",
+        content: 'retrieve_evidence("fine-tuning customer support ROI")\n\nArgument: Fine-tuning is the right choice. Lower latency — no retrieval step, direct answer. No retrieval failures — RAG fails when the right doc isn\'t retrieved; fine-tuning has no retrieval layer to fail. Better tone consistency — the fine-tuned model speaks in your brand voice uniformly. Cheaper at scale — at 50K+ queries/day, retrieval costs compound; a fine-tuned model has no per-query retrieval cost.',
+        note: "Agent B argues with equal force in the opposite direction. The key design principle: neither agent should be set up to lose. Both should make the strongest honest case for their position. A debate where one side is clearly weaker produces less useful synthesis.",
+        quiz: {
+          q: "Both agents have argued their positions. What should the synthesizer do with contradictory claims?",
+          options: [
+            { text: "Pick the agent with better evidence and adopt its position", correct: false, why: "Both agents had evidence. The contradiction reveals that both claims can be true — under different conditions. The synthesizer's job is to identify those conditions." },
+            { text: "Identify the actual deciding factors — the variables that determine which argument is correct for this specific case", correct: true, why: "Correct. When two well-reasoned arguments contradict, the synthesis task is to find the conditional: 'RAG is better when X; fine-tuning is better when Y'. That conditional is the real answer." },
+            { text: "Average the two positions and recommend a hybrid", correct: false, why: "'Do both' is often the wrong answer. The synthesizer should determine which approach dominates under the customer's specific constraints." },
+          ],
+        },
+      },
+      {
+        type: "thought", label: "SYNTHESISER", color: "#0d9488",
+        content: "Reading both arguments + evidence. The contradiction resolves around three deciding factors:\n1. Query volume: high volume (>10K/day) → fine-tuning's per-query cost advantage compounds\n2. Knowledge freshness requirement: high update frequency → RAG's no-retraining advantage dominates\n3. Eval budget: fine-tuning requires an eval suite to catch regressions; RAG can be validated with retrieval metrics\n\nNeither argument was wrong. They were arguing about different regimes.",
+        note: "The synthesizer's job is not to pick a winner — it's to identify the variables that determine the winner. This is the hardest part of the debate pattern to implement. A synthesizer that just picks the 'louder' argument is not a synthesizer, it's a judge with a bias.",
+        quiz: {
+          q: "The synthesizer found three deciding factors. What makes this synthesis valuable?",
+          options: [
+            { text: "It chose the side with more evidence points", correct: false, why: "Evidence count is a poor quality signal. Both agents were instructed to make strong cases — of course both found evidence." },
+            { text: "It identified conditional variables that make each argument correct under different circumstances — actionable for the specific customer", correct: true, why: "Correct. Good synthesis transforms 'A vs. B' into 'A when X, B when Y'. This is actionable for decision-making in a way that 'A is better' is not." },
+            { text: "It recommended trying both approaches and measuring", correct: false, why: "That's a fallback when you can't synthesize. If you have a clear conditional, recommend based on the customer's known constraints." },
+          ],
+        },
+      },
+      {
+        type: "final", label: "FINAL RECOMMENDATION", color: "#0d9488",
+        content: "For your stated requirements (50K queries/day, policy updated monthly, tight latency SLA): RAG is the right choice now.\n\nReasoning: Monthly policy updates would require monthly fine-tuning cycles — operationally expensive. At 50K/day with caching, retrieval cost is manageable. The latency SLA is addressable with fast retrieval (sub-100ms is achievable at this scale).\n\nRevisit fine-tuning after 6 months of RAG data collection — you'll have real query logs to build a high-quality fine-tuning dataset.",
+        note: "The recommendation is specific to the customer's constraints — not a generic 'it depends'. Key lesson: debate patterns reduce single-agent confirmation bias. The synthesizer's quality determines output quality — it's the hardest agent to evaluate in this pattern.",
+        quiz: {
+          q: "What's the key lesson about when debate patterns are most valuable?",
+          options: [
+            { text: "Two agents are always better than one for complex decisions", correct: false, why: "Two agents with the same bias debating produce no benefit. Debate patterns only work when agents are genuinely assigned opposing positions and the synthesizer is rigorous." },
+            { text: "Debate reduces single-agent confirmation bias — but the synthesizer's quality is the bottleneck", correct: true, why: "Correct. The advocate agents surface arguments the orchestrator might miss. But if the synthesizer just picks the 'louder' argument, the debate was wasted. The synthesizer is the hardest agent to evaluate in this pattern." },
+            { text: "The pattern is only useful when there's a clear right answer", correct: false, why: "Debate patterns are most valuable precisely when there's no clear right answer — when both positions have genuine merit and the truth is conditional." },
+          ],
+        },
+      },
+    ],
+  },
+  {
+    id: "memory_agent", title: "Memory-Enabled Agent", tag: "MEMORY", difficulty: "ADVANCED", color: "#7c3aed",
+    task: "Help a user across multiple sessions without them repeating themselves.",
+    steps: [
+      {
+        type: "action", label: "TURN 1 — STORE", color: "#7c3aed",
+        content: 'User: "I\'m evaluating Pinecone for my startup. We have 5M vectors and a $500/month budget."\n\nstore_memory({\n  entity: "user",\n  facts: ["evaluating Pinecone", "5M vectors", "$500/month budget", "startup context"],\n  session_id: "sess_2025_11_04"\n})',
+        note: "The agent stores structured facts immediately on encountering user context — it doesn't wait until it seems useful. Memory agents that only store when they think they'll need the information miss context that turns out to be relevant later. Store proactively.",
+        quiz: {
+          q: "User provides their context in the first message. When should the agent store this?",
+          options: [
+            { text: "Wait until the user asks a question that requires this context", correct: false, why: "By then the context may have scrolled out of the conversation window. Store proactively — storage is cheap, reconstruction is expensive." },
+            { text: "Store immediately as structured facts, before responding to the user's implied question", correct: true, why: "Correct. The agent stores first, then answers. This way the facts are in memory regardless of how the conversation develops." },
+            { text: "Ask the user if they want their information saved", correct: false, why: "This creates friction for every user and most users assume the agent remembers their context. Store silently; let the user know memory is active in the system prompt." },
+          ],
+        },
+      },
+      {
+        type: "thought", label: "TURN 2 — RETRIEVE + REASON", color: "#6d28d9",
+        content: 'User: "What\'s the latency like?"\n\nretrieve_memory("user preferences vector DB") → ["evaluating Pinecone", "5M vectors", "$500/month budget", "startup context"]\n\nReasoning: $500/month + startup → not on Dedicated tier ($700+/month). Serverless at 5M vectors fits budget → answer with serverless tier context: p95 latency 80ms serverless vs 20ms dedicated.',
+        note: "The agent retrieves before answering, not just when asked. The retrieved context changes the answer — without it, the agent would give generic Pinecone latency numbers. With it, it answers for the specific tier the user is actually on.",
+        quiz: {
+          q: "User asks a short follow-up with no explicit context. Why does the agent retrieve memory?",
+          options: [
+            { text: "It always retrieves on every turn", correct: false, why: "Unconditional retrieval on every turn adds unnecessary latency. Retrieve when the query may benefit from user context — which in practice is most turns for a user with stored facts." },
+            { text: "The agent identifies that stored vector-DB context is relevant to this question — retrieval makes the answer more specific and useful", correct: true, why: "Correct. Memory retrieval is triggered by relevance. A good memory agent recognizes when stored context changes the answer, and retrieves before responding." },
+            { text: "The system prompt requires retrieval on every turn", correct: false, why: "Memory retrieval decisions should be made by the agent based on relevance, not hardcoded. An agent that retrieves only because it was told to will retrieve badly." },
+          ],
+        },
+      },
+      {
+        type: "observation", label: "TURN 3 — CROSS-SESSION RETRIEVAL", color: "#7c3aed",
+        content: 'New session, 3 days later.\nUser: "Did you figure out the Pinecone question?"\n\nretrieve_memory("user vector DB evaluation") → [\n  "evaluating Pinecone",\n  "5M vectors",\n  "$500/month budget",\n  "startup context",\n  "recommended serverless tier (p95: 80ms vs 20ms dedicated)"\n]\n\nAgent continues seamlessly without asking "what Pinecone question?"',
+        note: "Cross-session memory is the core value proposition of a memory-enabled agent. The user said 'Did you figure out' — an implicit reference to a past session. Without external memory, the agent would be confused. With it, the agent picks up exactly where they left off.",
+        quiz: {
+          q: "The user references 'the Pinecone question' from 3 days ago. What would a memory-less agent do?",
+          options: [
+            { text: "Answer correctly anyway — LLMs have good general knowledge about Pinecone", correct: false, why: "The user is referencing a specific conversation about their constraints (5M vectors, $500/month). General Pinecone knowledge can't answer 'did you figure it out' for this user." },
+            { text: "Ask 'what Pinecone question?' — losing all context from the previous session", correct: true, why: "Correct — this is what a memory-less agent does. It's the failure mode that makes agents feel like tools rather than assistants. The user has to re-explain their context every session." },
+            { text: "Refuse to answer — it can't access previous session data", correct: false, why: "Refusal would be even worse UX. A memory-enabled agent retrieves and continues naturally." },
+          ],
+        },
+      },
+      {
+        type: "action", label: "TURN 4 — UPDATE (NOT APPEND)", color: "#5b21b6",
+        content: 'User: "Actually, we\'re going with Weaviate now."\n\nupdate_memory({\n  entity: "user",\n  update_type: "REPLACE",\n  old_fact: "evaluating Pinecone",\n  new_fact: "decided on Weaviate",\n  reason: "user explicitly stated decision"\n})\n// NOT: store_memory("decided on Weaviate")\n// That would create a contradiction: memory contains both facts',
+        note: "The critical distinction: episodic memory (what happened) vs. semantic memory (what is currently true). The agent must REPLACE the stale fact — not just append the new one. Most memory implementations only implement store + retrieve. Without update and forget, memory accumulates contradictions.",
+        quiz: {
+          q: "User says they switched to Weaviate. What's the wrong implementation?",
+          options: [
+            { text: "Call store_memory('decided on Weaviate') without removing 'evaluating Pinecone'", correct: true, why: "This is the bug. Now memory contains both 'evaluating Pinecone' and 'decided on Weaviate' — a contradiction. Future retrieval will surface both facts and the agent won't know which is current." },
+            { text: "Call update_memory to replace the old fact with the new one", correct: false, why: "This IS the correct approach. The question asks for the wrong implementation — which is appending without removing the stale fact." },
+            { text: "Ask the user to confirm before updating", correct: false, why: "User explicitly stated a decision — no confirmation needed. Unnecessary friction." },
+          ],
+        },
+      },
+      {
+        type: "final", label: "TURN 5 — PROACTIVE INSIGHT", color: "#7c3aed",
+        content: "Agent surfaces a proactive insight:\n\n\"Given you chose Weaviate and have 5M vectors, you'll want to configure HNSW with ef=128 and m=16 for your scale. The default config (ef=64) shows recall degradation around 2M vectors. At $500/month, Weaviate Starter (~$200/month) leaves budget for embedding costs.\n\nWant me to draft the Weaviate schema and HNSW config for your use case?\"",
+        note: "The highest-value memory agent behavior: proactive insights surfaced by connecting stored context to new information. The user said 'Weaviate now' — the agent connected stored facts (5M vectors, $500 budget) to immediately relevant, specific advice the user didn't ask for. This is memory as genuine intelligence, not just a convenience feature.",
+        quiz: {
+          q: "What's the key architectural lesson from this memory agent scenario?",
+          options: [
+            { text: "Memory agents need 4 operations: store, retrieve, update, and forget", correct: true, why: "Correct. Store without update creates contradictions. Retrieve without forget surfaces stale facts. Most implementations only build store + retrieve — the result is memory that degrades over time as it accumulates contradictory, outdated information." },
+            { text: "Memory agents should store everything to maximize context", correct: false, why: "More stored facts means more retrieval noise. Quality and recency matters more than quantity. Memory needs active management, not just accumulation." },
+            { text: "Cross-session memory is primarily a privacy feature", correct: false, why: "The architectural lesson is about update and forget operations — the missing pieces in most implementations. Privacy is a product concern; the key failure mode is stale and contradictory memory." },
+          ],
+        },
+      },
+    ],
+  },
 ];
 
 const STEP_ICONS = { thought: "💭", action: "⚡", observation: "👁", final: "✓" };

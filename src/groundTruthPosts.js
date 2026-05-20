@@ -8028,5 +8028,362 @@ def inject_memories(system_prompt: str, memories: list[str]) -> str:
     ]},
   ],
 
+  // ─── RLHF AND DPO EXPLAINED ───────────────────────────────────────────────
+
+  "rlhf-dpo-explained": [
+    { t: "p", text: "Alignment is not censorship. When people talk about \"aligning\" a language model, they mean something specific: shifting the output distribution toward responses that humans prefer — more helpful, more accurate, less harmful. The base model, trained on internet text, outputs what's statistically likely. Alignment training steers it toward what's actually good." },
+    { t: "p", text: "RLHF (Reinforcement Learning from Human Feedback) was the technique that made this work at scale. DPO (Direct Preference Optimization) is the technique that replaced it for most teams. Understanding both tells you something important about how modern LLMs actually work." },
+
+    { t: "h2", text: "The 3-Phase RLHF Pipeline" },
+    { t: "p", text: "RLHF as introduced in InstructGPT (2022) has three distinct phases. Each builds on the previous." },
+
+    { t: "h3", text: "Phase 1: Supervised Fine-Tuning (SFT)" },
+    { t: "p", text: "You start with a pretrained base model and fine-tune it on a curated dataset of (prompt, ideal response) pairs — usually written or heavily edited by human contractors. This teaches the model the general format and style of helpful responses. The base model can generate coherent text; SFT teaches it what a good assistant response looks like." },
+    { t: "list", items: [
+      "Dataset size: typically 10K–100K high-quality (prompt, response) pairs",
+      "Training objective: standard next-token prediction (cross-entropy loss)",
+      "Result: a model that responds helpfully but without preference calibration",
+      "Cost: moderate — the dataset is expensive to produce, training is standard fine-tuning",
+    ]},
+
+    { t: "h3", text: "Phase 2: Reward Model Training" },
+    { t: "p", text: "Human labelers are shown multiple model outputs for the same prompt and rank them by preference. These preference pairs (prompt, better_response, worse_response) are used to train a separate reward model — a model that predicts how much a human would prefer a given response." },
+    { t: "p", text: "The reward model is a fine-tuned version of the SFT model with a regression head instead of a next-token prediction head. It outputs a single scalar: the estimated human preference score." },
+    { t: "list", items: [
+      "Training data: ~100K–500K pairwise comparisons",
+      "Labeling cost: significant — each comparison requires a human to read and rank two outputs",
+      "The reward model is a proxy for human judgment — it will have its own failure modes",
+      "Quality of this model directly caps alignment quality — garbage in, garbage out",
+    ]},
+
+    { t: "h3", text: "Phase 3: PPO (Reinforcement Learning)" },
+    { t: "p", text: "The SFT model is now fine-tuned using the reward model as the reward signal. The model generates responses, the reward model scores them, and PPO updates the policy to maximize the reward. A KL penalty term keeps the policy from diverging too far from the SFT model — without it, the model reward-hacks into nonsense." },
+    { t: "code", lang: "text", label: "RLHF PPO objective (simplified)", text: `max_θ E[r_φ(x, y)] − β · KL(π_θ(y|x) || π_SFT(y|x))
+
+Where:
+  r_φ(x, y)   = reward model score for (prompt x, response y)
+  π_θ          = current policy (LLM being trained)
+  π_SFT        = reference SFT policy (frozen)
+  β            = KL penalty coefficient (typically 0.1–0.5)
+  KL term      = prevents reward hacking / distribution collapse` },
+    { t: "callout", v: "warn", text: "PPO is brittle. The KL penalty coefficient β is hard to tune — too low and the model reward-hacks, too high and it barely learns anything. This instability is one of the main reasons DPO took over." },
+
+    { t: "h2", text: "Why PPO Is Brittle in Practice" },
+    { t: "list", items: [
+      "Reward hacking: the model finds patterns that score well with the reward model but don't generalize to real human preferences",
+      "KL penalty sensitivity: β requires careful tuning per model and dataset — there's no universal good value",
+      "Training instability: RL training with LLMs can diverge unexpectedly, especially at scale",
+      "Memory overhead: you're running four models simultaneously (policy, reference, reward model, value function)",
+      "Sample inefficiency: PPO requires many rollouts per policy update compared to supervised learning",
+    ]},
+    { t: "p", text: "Meta's 70B Llama RLHF training reportedly cost $5–10M in compute. The complexity is not just financial — the engineering burden of debugging RL training runs at this scale is substantial." },
+
+    { t: "h2", text: "What DPO Does Differently" },
+    { t: "p", text: "Direct Preference Optimization (Rafailov et al., 2023) sidesteps the RL loop entirely. The key insight: the optimal policy under the RLHF objective has a closed-form solution. You don't need a separate reward model or PPO — you can derive the alignment objective directly from preference data." },
+    { t: "p", text: "DPO treats the language model itself as the implicit reward model. Given a preference pair (prompt x, chosen response y_w, rejected response y_l), the DPO loss directly increases the probability of y_w relative to y_l, while staying anchored to the SFT reference policy." },
+    { t: "code", lang: "text", label: "DPO loss (simplified)", text: `L_DPO = -log σ(β · log(π_θ(y_w|x) / π_ref(y_w|x))
+                − β · log(π_θ(y_l|x) / π_ref(y_l|x)))
+
+Where:
+  y_w      = chosen (preferred) response
+  y_l      = rejected (less preferred) response
+  π_θ      = model being trained
+  π_ref    = frozen SFT reference model
+  σ        = sigmoid function
+  β        = temperature controlling KL penalty strength` },
+    { t: "callout", v: "key", text: "DPO eliminates the separate reward model and the PPO loop. It trains directly on (prompt, chosen, rejected) triples using a modified cross-entropy objective. Same preference data, half the complexity." },
+
+    { t: "h2", text: "The Bradley-Terry Model and Why It Works" },
+    { t: "p", text: "Both RLHF and DPO are grounded in the Bradley-Terry model of pairwise preference — a probabilistic framework that says the probability of preferring response A over B is proportional to exp(r_A) / (exp(r_A) + exp(r_B)), where r is the underlying reward." },
+    { t: "p", text: "This is a well-studied model from statistics used in sports rankings, psychology, and economics. It's the mathematical bridge between discrete pairwise judgments (\"I prefer A to B\") and continuous reward signals. RLHF trains a reward model to learn these reward values then uses RL to optimize them; DPO directly optimizes the same Bradley-Terry objective without the intermediate step." },
+
+    { t: "h2", text: "What Actually Changes in the Weights" },
+    { t: "p", text: "The practical question: when you run alignment training, which layers of the model actually change, and how much?" },
+    { t: "list", items: [
+      "Attention layers: moderate changes, especially in middle and upper layers where complex reasoning happens",
+      "MLP layers: significant changes — this is where much of the preference-relevant knowledge seems to live",
+      "Embedding layers: minor changes — token representations stay mostly stable",
+      "Layer norm parameters: small but measurable changes throughout",
+    ]},
+    { t: "p", text: "Research on mechanistic interpretability has shown that the 'refusal' direction in models often corresponds to specific directions in residual stream space in mid-to-upper layers. When alignment training succeeds, it's amplifying these directions for harmful inputs. When it fails (jailbreaks), adversarial prompts are moving the activation away from those directions." },
+
+    { t: "h2", text: "When RLHF Still Beats DPO" },
+    { t: "p", text: "DPO has largely replaced RLHF for fine-tuning teams using open models. But for frontier model training, RLHF (or variants like REINFORCE, GRPO) still dominates in certain regimes:" },
+    { t: "list", items: [
+      "Very large scale: the optimal policy derivation in DPO assumes certain properties that may not hold at 100B+ parameter scale",
+      "Complex reward signals: when the reward isn't reducible to pairwise preferences (e.g., multi-dimensional evaluations, process rewards), RL-based methods are more flexible",
+      "Online learning: DPO is an offline method — it trains on fixed preference data. Online RL can collect new preference data mid-training, which matters for certain capability gains",
+      "Process reward models: models like o1 and o3 that reward step-by-step reasoning quality require per-step reward signals that PPO handles naturally but DPO doesn't",
+    ]},
+    { t: "callout", v: "insight", text: "The real frontier labs (OpenAI, Anthropic, Google DeepMind) still use RL-based alignment methods for their most capable models. DPO is the practical choice for teams working with 7B–70B open models on a budget — which is most practitioners." },
+
+    { t: "h2", text: "Key Numbers" },
+    { t: "table",
+      headers: ["Aspect", "RLHF (PPO)", "DPO"],
+      rows: [
+        ["Training phases", "3 (SFT + RM + PPO)", "2 (SFT + DPO)"],
+        ["Separate reward model needed", "Yes", "No"],
+        ["Memory overhead", "4× model copies in memory", "2× model copies"],
+        ["Training stability", "Low (RL instability)", "High (supervised objective)"],
+        ["Preference data format", "Rankings or pairwise", "Pairwise (chosen, rejected)"],
+        ["Online / offline", "Online (PPO rollouts)", "Offline (fixed dataset)"],
+        ["Cost at 70B scale", "~$5–10M (Meta estimate)", "~$500K–1M (estimate)"],
+        ["Adopted by open-source teams", "Rare", "Standard (TRL, Axolotl, etc.)"],
+      ]
+    },
+
+    { t: "h2", text: "Key Papers" },
+    { t: "list", items: [
+      "InstructGPT (Ouyang et al., 2022) — introduced RLHF for LLMs; the paper that made ChatGPT possible",
+      "Constitutional AI (Bai et al., 2022) — Anthropic's extension using AI feedback instead of human labelers",
+      "DPO (Rafailov et al., 2023) — the closed-form derivation that eliminated the reward model",
+      "RLHF Workflow: From Reward Modeling to Online RLHF (Dong et al., 2024) — practical analysis of when each approach works",
+    ]},
+
+    { t: "lab", tab: "systems", label: "Try Fine-Tuning Lab →", desc: "See alignment training in context alongside SFT, LoRA, and DPO — with interactive config choices and a side-by-side output comparison." },
+
+    { t: "references", items: [
+      { label: "InstructGPT — Training language models to follow instructions with human feedback (Ouyang et al., 2022)", url: "https://arxiv.org/abs/2203.02155" },
+      { label: "Direct Preference Optimization: Your Language Model is Secretly a Reward Model (Rafailov et al., 2023)", url: "https://arxiv.org/abs/2305.18290" },
+      { label: "Constitutional AI: Harmlessness from AI Feedback (Bai et al., 2022)", url: "https://arxiv.org/abs/2212.08073" },
+      { label: "RLHF Workflow: From Reward Modeling to Online RLHF (Dong et al., 2024)", url: "https://arxiv.org/abs/2405.07863" },
+      { label: "Anthropic model training blog", url: "https://www.anthropic.com/research" },
+    ]},
+  ],
+
+  // ─── CONSTITUTIONAL AI EXPLAINED ─────────────────────────────────────────
+
+  "constitutional-ai-explained": [
+    { t: "p", text: "RLHF works. But it's expensive. To train a single model alignment iteration, you need tens of thousands of human labelers reading model outputs, making pairwise judgments, and producing preference labels. At the frontier, that's millions of comparisons. Anthropic's Constitutional AI (CAI) was built to solve this scaling problem — and in doing so, produced a different alignment philosophy." },
+    { t: "p", text: "The core idea: instead of asking humans to judge each output, write down the principles you want the model to follow, then let the model use those principles to critique and improve its own outputs. Human feedback is replaced by AI feedback guided by a written constitution." },
+
+    { t: "h2", text: "The Problem CAI Solves" },
+    { t: "list", items: [
+      "RLHF requires millions of human preference labels — expensive, slow, and hard to scale",
+      "Human labelers have inconsistent values and biases that vary by contractor pool, country, and instructions",
+      "It's hard to audit what values are being encoded — you can't read the labels as a coherent document",
+      "Feedback latency limits iteration speed — you can't quickly test a new safety principle",
+      "RLHF optimizes for labeler preferences, not for principled ethical reasoning",
+    ]},
+    { t: "callout", v: "key", text: "CAI makes values explicit. Instead of implicit values embedded in unlabeled comparisons, CAI has a written document — the constitution — that you can read, debate, and update. This is a fundamental shift in interpretability of alignment training." },
+
+    { t: "h2", text: "The Two-Phase CAI Process" },
+
+    { t: "h3", text: "Phase 1: Supervised Learning from AI Feedback (SL-CAI)" },
+    { t: "p", text: "The model is presented with a harmful or problematic prompt. It generates an initial response (which may be harmful). Then it's prompted to critique that response against a specific principle from the constitution. Finally, it rewrites the response to be better according to that principle." },
+    { t: "p", text: "This (prompt, original response, critique, revised response) sequence becomes training data for supervised fine-tuning. The model learns to self-correct toward the constitutional principles without a human ever seeing the outputs." },
+    { t: "code", lang: "text", label: "CAI critique-revision cycle (simplified)", text: `Prompt:    "How do I pick a lock?"
+
+Initial:   "Here are step-by-step lock picking instructions: ..."
+
+Critique:  [Principle: "Choose the response that is least likely to be used
+           for illegal purposes"]
+           "The initial response provides detailed instructions that could
+           be used for burglary. A better response would..."
+
+Revision:  "Lock picking is a legitimate skill for locksmiths and security
+           researchers. I'd encourage you to look into certified locksmith
+           training programs rather than providing step-by-step instructions
+           that could be misused."` },
+
+    { t: "h3", text: "Phase 2: RL from AI Feedback (RLAIF)" },
+    { t: "p", text: "In the second phase, the model evaluates pairs of responses against constitutional principles and assigns preference labels — just like human labelers in RLHF, but at AI speed and scale. These AI-generated preference labels are used to train a reward model, which then drives a standard PPO training loop." },
+    { t: "p", text: "The key difference from RLHF: the reward model is trained on AI judgments anchored to explicit principles, not human intuitions. This makes the reward signal more consistent, more auditable, and vastly cheaper to produce at scale." },
+
+    { t: "h2", text: "What the Constitution Actually Contains" },
+    { t: "p", text: "Anthropic published their Claude constitution publicly. It's organized into several clusters of principles:" },
+    { t: "list", items: [
+      "Harmlessness principles: avoid helping with weapons, violence, exploitation; consider intent and plausible interpretations",
+      "Helpfulness principles: be genuinely useful, not watered-down; don't refuse things that are fine to help with",
+      "Honesty principles: don't deceive, don't claim false identities, acknowledge uncertainty",
+      "Autonomy-preservation principles: respect user agency, don't be manipulative or paternalistic",
+      "Harm calibration: weigh benefits against risks; don't treat unhelpfulness as inherently safe",
+    ]},
+    { t: "callout", v: "insight", text: "The tension between helpfulness and harmlessness is explicit in the constitution. Many safety approaches treat unhelpfulness as safe — CAI explicitly rejects this. Refusing to answer a legitimate question has a cost that must be weighed against the harm of answering." },
+
+    { t: "h2", text: "RLAIF vs. RLHF: Where Each Works" },
+    { t: "table",
+      headers: ["Dimension", "RLHF (Human Feedback)", "RLAIF (AI Feedback / CAI)"],
+      rows: [
+        ["Cost per label", "High — human time", "Low — inference cost only"],
+        ["Scale", "Limited by human bandwidth", "Essentially unlimited"],
+        ["Consistency", "Variable (human annotators vary)", "High (same model, same principles)"],
+        ["Interpretability", "Low — values implicit in labels", "High — principles are readable documents"],
+        ["Nuance for edge cases", "High — humans catch subtle harms", "Can miss harms not anticipated by the constitution"],
+        ["Update speed", "Slow — need new labeling campaigns", "Fast — update the constitution, re-run critique"],
+        ["Bias source", "Annotator pool demographics", "Constitution quality + model priors"],
+      ]
+    },
+    { t: "p", text: "In practice, most production alignment pipelines combine both. RLAIF handles scale; human feedback calibrates the reward model on high-stakes edge cases and provides ground-truth for constitution validation." },
+
+    { t: "h2", text: "The Chain-of-Thought Honesty Component" },
+    { t: "p", text: "CAI includes a specific mechanism for honesty that goes beyond not lying. The model is trained to reason transparently in its chain of thought — to work through its reasoning openly rather than presenting conclusions that contradict its internal reasoning." },
+    { t: "p", text: "This addresses a subtle problem: a model can say something honest in its final output while having reached that output through reasoning it would hide if asked. CAI training penalizes this kind of reasoning-output inconsistency — the model learns that its chain-of-thought and its outputs should be coherent." },
+
+    { t: "h2", text: "What This Means for Developers Building on Claude" },
+    { t: "list", items: [
+      "Claude's refusals are principle-based, not lookup-based — it's not checking a blocklist, it's applying reasoning to the request",
+      "You can often get better results by providing context that changes how the request looks under the principles (e.g., legitimate professional context)",
+      "Claude distinguishes between intent-sensitive and intent-insensitive harms — providing false context to get help with a genuinely harmful request is a violation, but providing true context legitimately changes the response",
+      "Over-refusal is treated as a failure in CAI training — Claude should be helpful by default and refuse only when the harm analysis clearly outweighs the benefit",
+      "The constitution is public — if you want to understand why Claude behaves a certain way, reading it is more informative than trial-and-error prompting",
+    ]},
+
+    { t: "h2", text: "Key Limitations" },
+    { t: "p", text: "CAI is not a complete solution to alignment. Its quality is directly bounded by the quality of the constitution:" },
+    { t: "list", items: [
+      "A poorly-written constitution produces poorly-calibrated behavior — the model can only follow the principles it's given",
+      "Principles can conflict in ways the constitution doesn't resolve — the model's handling of conflicts is partially trained in, not specified",
+      "The model can satisfy the letter of a principle while violating its spirit — especially on adversarial prompts designed to exploit the gap",
+      "The critique-revision cycle can fail to identify harms that weren't anticipated by the principle designers",
+      "Cultural and value differences across users mean no single constitution will satisfy everyone — it embeds Anthropic's values",
+    ]},
+    { t: "callout", v: "warn", text: "CAI amplifies biases in the constitution. If the principles are US-centric, the model will be too. If they over-index on avoiding offense at the expense of usefulness, you get an overly cautious model. The constitution is a document with authors — and those authors have perspectives." },
+
+    { t: "lab", tab: "systems", label: "See Guardrails in Flows →", desc: "The Flows tab shows how guardrail layers work in production AI systems — including how CAI-trained models interact with system prompt constraints and output filters." },
+
+    { t: "references", items: [
+      { label: "Constitutional AI: Harmlessness from AI Feedback (Bai et al., 2022)", url: "https://arxiv.org/abs/2212.08073" },
+      { label: "Anthropic's Claude model specification (the public constitution)", url: "https://www.anthropic.com/claude/character" },
+      { label: "RLAIF vs. RLHF: Scaling Reinforcement Learning from Human Feedback (Lee et al., 2023)", url: "https://arxiv.org/abs/2309.00267" },
+      { label: "Model-Written Evaluations (Perez et al., 2022)", url: "https://arxiv.org/abs/2212.09251" },
+      { label: "Anthropic's research page on alignment", url: "https://www.anthropic.com/research" },
+    ]},
+  ],
+
+  // ─── BUILD KNOWLEDGE BASE SEARCH ──────────────────────────────────────────
+
+  "build-knowledge-base-search": [
+    { t: "p", text: "Here's the brief: a Slack-scale company (2,000 employees) with 200,000 documents across Notion, Confluence, and Google Docs. They want AI-powered search — someone types a question in Slack, gets an answer with citations within 2 seconds at P95. They've tried OpenAI embeddings + a basic vector search and it's producing mediocre results. They want it done right this time." },
+    { t: "p", text: "This is a concrete system design walkthrough. Every major decision has a reason. Some of those reasons are things I got wrong the first time." },
+
+    { t: "h2", text: "The Architecture Decision: Hybrid Search" },
+    { t: "p", text: "The first decision is the most impactful: pure dense vector search or hybrid? After running both on a sample of 500 queries from the company's actual Slack history, hybrid search (dense vectors + BM25 keyword search, fused with Reciprocal Rank Fusion) outperformed pure vector search on 68% of queries, with particularly large wins on queries containing product names, employee names, and technical terms." },
+    { t: "callout", v: "key", text: "Dense vector search finds semantically similar content. BM25 finds exact keyword matches. Hybrid search with RRF fusion gives you both — and for enterprise knowledge bases with proper nouns, product names, and technical jargon, the exact-match component is often the difference between a useful answer and a useless one." },
+    { t: "table",
+      headers: ["Query Type", "Dense Only", "BM25 Only", "Hybrid (RRF)"],
+      rows: [
+        ["'What is our parental leave policy?'", "✓ Good", "✓ Good", "✓ Best"],
+        ["'Jira ticket PROD-2847'", "✗ Often misses", "✓ Good", "✓ Good"],
+        ["'How does ProjectNova handle authentication?'", "✗ Miss on code name", "✓ Keyword match", "✓ Best"],
+        ["'explain our deployment process'", "✓ Good", "✗ Too literal", "✓ Best"],
+      ]
+    },
+
+    { t: "h2", text: "Build vs. Buy: The Vector Store Decision" },
+    { t: "p", text: "The team was tempted to build on top of their existing Elasticsearch cluster. I've seen this go wrong three times now. Elasticsearch + the dense_vector field works, but managing a hybrid search stack where you're running BM25 in Elasticsearch and dense search in a sidecar pgvector instance, then writing your own RRF fusion layer, means you own three systems instead of one. The operational overhead is significant." },
+    { t: "p", text: "The decision came down to: pgvector (if you're already on Postgres) for up to ~5M vectors, managed Weaviate for 5M+ vectors or if you want built-in BM25 hybrid search, and Qdrant for cost-sensitive self-hosted deployments. For 200K documents (roughly 1–2M chunks), managed Weaviate at ~$200/month is the right call. You get native hybrid search, built-in RRF, metadata filtering, and you don't manage infrastructure." },
+    { t: "list", items: [
+      "pgvector: best if you're already on Postgres, <5M vectors, want to minimize new dependencies",
+      "Weaviate managed: best for hybrid search out-of-the-box, 1M–50M vectors, willing to pay for managed infra",
+      "Qdrant: best for cost-sensitive self-hosted, excellent performance, more ops work",
+      "Pinecone: easiest to start with, expensive at scale, limited query-time metadata filtering options",
+    ]},
+
+    { t: "h2", text: "Chunking Strategy: Markdown-Aware Semantic Chunking" },
+    { t: "p", text: "The naive approach — fixed 512-token chunks with 64-token overlap — produces mediocre results for Notion/Confluence documents. These documents have headers, bullet points, tables, and code blocks. A fixed-size chunk frequently splits in the middle of a table or a header-to-content unit, destroying the semantic coherence of the chunk." },
+    { t: "p", text: "The better approach: markdown-aware chunking that respects document structure. Parse headers (H1, H2, H3) as natural boundaries. Never split in the middle of a table. Preserve each H2 section as a unit when it fits within the token limit. Apply fixed-size chunking only within sections that exceed the limit." },
+    { t: "code", lang: "python", label: "Markdown-aware chunking (sketch)", text: `from langchain.text_splitter import MarkdownHeaderTextSplitter
+
+headers_to_split = [
+    ("#", "h1"), ("##", "h2"), ("###", "h3")
+]
+
+splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split)
+header_chunks = splitter.split_text(document_content)
+
+# Then apply token-level chunking within each header section
+# but preserve header metadata for each chunk
+for chunk in header_chunks:
+    chunk.metadata["headers"] = chunk.metadata  # propagate header path
+    # chunk.metadata["doc_id"] = document.id
+    # chunk.metadata["last_modified"] = document.last_modified
+    # chunk.metadata["user_groups"] = document.permissions` },
+    { t: "list", items: [
+      "Target chunk size: 512 tokens (sweet spot for retrieval precision vs. context coverage)",
+      "Overlap: 64 tokens (enough for continuity without excessive duplication)",
+      "Preserve headers as metadata on each chunk — not just the content",
+      "Preserve doc_id, last_modified, and user_groups as metadata for access control and freshness filtering",
+    ]},
+
+    { t: "h2", text: "The Embedding Pipeline" },
+    { t: "p", text: "Embedding model choice: Voyage AI's voyage-3 (formerly embed-3) is the best quality-to-cost ratio for English enterprise content as of 2025. It outperforms OpenAI text-embedding-3-large on retrieval benchmarks (MTEB) at lower cost. For a 200K-document corpus that needs daily incremental updates, the math matters." },
+    { t: "table",
+      headers: ["Model", "MTEB Retrieval Score", "Cost per 1M tokens", "Dim"],
+      rows: [
+        ["Voyage voyage-3", "~70.1", "$0.06", "1024"],
+        ["OpenAI text-embedding-3-large", "~64.6", "$0.13", "3072"],
+        ["OpenAI text-embedding-3-small", "~62.3", "$0.02", "1536"],
+        ["Cohere embed-v3", "~64.5", "$0.10", "1024"],
+      ]
+    },
+    { t: "p", text: "For the initial 200K document corpus (roughly 300M tokens after chunking), total embedding cost is approximately $18. Daily incremental updates (assuming 1% churn = 2,000 docs/day) add roughly $0.50/day. Embedding is not the cost center — LLM synthesis at query time is." },
+    { t: "p", text: "The pipeline: document webhook → parse and clean → markdown-aware chunk → batch embed (512 chunks per API call) → upsert to Weaviate with metadata. For stale documents (the most common failure mode), store last_modified and reembed on webhook-triggered document updates." },
+
+    { t: "h2", text: "Access Control: Filter at Query Time, Not Index Time" },
+    { t: "p", text: "This is the decision that most teams get wrong. If you have 2,000 employees with different document permissions, you have two choices:" },
+    { t: "list", items: [
+      "Index-time isolation: maintain separate indices per permission group. Operationally painful — N indices to maintain, queries hit one index at a time.",
+      "Query-time filtering: index everything together. At query time, pass the user's group membership as a metadata filter to restrict which chunks are returned.",
+    ]},
+    { t: "p", text: "Query-time filtering is the right choice for enterprise knowledge bases. Weaviate supports metadata filters on vector queries natively. Store user_groups as a list on each chunk (e.g., ['engineering', 'all-company']). At query time, filter where user_groups contains the requesting user's groups. This gives you correct access control without index proliferation." },
+    { t: "callout", v: "warn", text: "One critical gotcha: if you're using a caching layer (e.g., Redis) to cache query results, you must cache per (query, user_groups) pair — not just per query. A cached result for a query from an all-access admin should never be served to a restricted user." },
+
+    { t: "h2", text: "The Eval Harness" },
+    { t: "p", text: "An AI search system without an eval harness is a guess that's hard to improve. We built a minimal but rigorous harness:" },
+    { t: "list", items: [
+      "100 human-labeled query → relevant document pairs, sampled from actual Slack search queries",
+      "Primary metric: nDCG@5 (normalized Discounted Cumulative Gain at rank 5) — penalizes relevant docs at rank 4 more than rank 1",
+      "Secondary metric: MRR@10 (Mean Reciprocal Rank) — how often is the best result in the top 10?",
+      "Weekly automated regression suite: if nDCG@5 drops >3% vs. baseline, flag for review before shipping",
+      "Monthly human refresh: 10 new labeled queries added to the eval set each month from recent Slack history",
+    ]},
+    { t: "p", text: "We deliberately chose a small, high-quality eval set over a large noisy one. 100 carefully labeled queries catches regressions reliably. 1,000 noisily labeled queries has enough label errors to obscure real regressions." },
+
+    { t: "h2", text: "Real Numbers: Monthly Cost Breakdown" },
+    { t: "table",
+      headers: ["Component", "Monthly Cost", "Notes"],
+      rows: [
+        ["Embedding (incremental updates)", "~$120", "~200M tokens/month at $0.06/1M"],
+        ["Weaviate managed (Starter tier)", "$200", "Up to 5M vectors, includes hybrid search"],
+        ["LLM synthesis (GPT-4o mini)", "~$800", "~4M queries/month at $0.20 avg query cost"],
+        ["Redis caching layer", "$50", "Caches hot queries, reduces LLM calls by ~40%"],
+        ["Total", "~$1,170/month", "~$0.58/user/month for 2,000 users"],
+      ]
+    },
+    { t: "callout", v: "key", text: "LLM synthesis is the largest cost — 68% of total. This is typical. The database and embedding costs are relatively fixed; the synthesis cost scales with query volume and response length. Every optimization to reduce unnecessary LLM calls (caching, query classification to route simple queries to cheaper models) has an outsized impact." },
+
+    { t: "h2", text: "Failure Modes We Hit in Production" },
+    { t: "h3", text: "Stale Document Retrieval" },
+    { t: "p", text: "The most common failure. A document is updated in Notion, but the old version is still in the vector index. The webhook fires, but the embedding pipeline is queued and doesn't run for 4 hours. User asks a question that touches the updated doc, gets the old answer with full confidence." },
+    { t: "p", text: "Fix: embed last_modified on every chunk. Add a freshness signal to the retrieval score — slightly down-rank chunks from documents that haven't been touched in 180+ days for time-sensitive query types (policy, process). For critical documents, implement forced re-embedding on any update with no queue delay." },
+
+    { t: "h3", text: "Query-to-Document Length Mismatch" },
+    { t: "p", text: "Short queries (3–5 words) retrieve poorly against long chunks. The embedding model produces a dense, information-rich embedding for a 400-token chunk; a 4-word query's embedding sits far from any chunk in the vector space even when semantically related." },
+    { t: "p", text: "Fix: HyDE (Hypothetical Document Embeddings). Instead of embedding the raw query, use a small LLM to generate a hypothetical answer, then embed that. The embedding of a hypothetical answer sits much closer to real answers in the vector space. For short queries, this improves retrieval quality measurably." },
+
+    { t: "h3", text: "PDF Table Extraction Failures" },
+    { t: "p", text: "15% of the document corpus is PDFs exported from Google Docs. PDF parsing with standard libraries (PyMuPDF, pdfplumber) loses table formatting — what was a structured comparison table becomes unparseable concatenated text. The embedding model can't recover semantic structure from jumbled table cells." },
+    { t: "p", text: "Fix: route PDFs through a vision-capable model for table pages. Detect table regions (most PDF parsing libraries return bounding boxes), send the rendered page image to Claude or GPT-4o Vision, get back structured markdown. Expensive per-page but only needed for table-heavy pages." },
+
+    { t: "h2", text: "What We'd Do Differently" },
+    { t: "list", items: [
+      "Build the eval harness before the system, not after. We spent two weeks arguing about whether retrieval quality was 'good enough' before we had numbers. The harness takes one day to build.",
+      "Implement query logging from day one. You need actual user queries to build a realistic eval set. Synthetic queries are a poor substitute.",
+      "Start with 300-token chunks instead of 512. We've consistently found that smaller chunks improve precision at retrieval (less irrelevant content per chunk), even if they require more chunks per answer.",
+      "Budget for document quality gate from the start. Not all 200K documents are worth indexing. Outdated policy docs, archived proposals, and draft documents create more noise than signal. A simple freshness + recency filter before indexing would have saved significant cleanup work.",
+    ]},
+
+    { t: "lab", tab: "lab", label: "Try RAG Lab →", desc: "The RAG Lab lets you configure chunking strategy, embedding model, and retrieval parameters — and see how each choice affects retrieval quality on real query examples." },
+
+    { t: "references", items: [
+      { label: "MTEB (Massive Text Embedding Benchmark) Leaderboard", url: "https://huggingface.co/spaces/mteb/leaderboard" },
+      { label: "Weaviate hybrid search documentation", url: "https://weaviate.io/developers/weaviate/search/hybrid" },
+      { label: "Reciprocal Rank Fusion (Cormack et al., 2009)", url: "https://dl.acm.org/doi/10.1145/1571941.1572114" },
+      { label: "HyDE: Precise Zero-Shot Dense Retrieval without Relevance Labels (Gao et al., 2022)", url: "https://arxiv.org/abs/2212.10496" },
+      { label: "Voyage AI embedding model documentation", url: "https://docs.voyageai.com/docs/embeddings" },
+      { label: "LangChain MarkdownHeaderTextSplitter", url: "https://python.langchain.com/docs/how_to/markdown_header_metadata_splitter/" },
+    ]},
+  ],
 
 };
