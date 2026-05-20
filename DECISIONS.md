@@ -1,6 +1,6 @@
 # GenAI Systems Lab — Product Lineage & Decision Record
 
-This document captures the full history of product decisions, architectural choices, deliberate exclusions, and the commercial strategy conclusion for GenAI Systems Lab. It exists so that any future collaborator (or future me, six months from now) can understand not just *what* the app is, but *why* it is the way it is.
+This document captures the full history of product decisions, architectural choices, deliberate exclusions, pending ideas, and the commercial strategy conclusion for GenAI Systems Lab. It exists so that any future collaborator (or future me, six months from now) can understand not just *what* the app is, but *why* it is the way it is.
 
 ---
 
@@ -28,249 +28,330 @@ The original scope was Concepts + RAG Lab. Everything else grew organically from
 
 **Decision:** Standard modern stack. Tailwind v4 uses `@tailwindcss/vite` directly — no PostCSS, no config file.
 
-**Why Tailwind v4 specifically:** Simpler setup, faster builds, and the `@tailwindcss/vite` plugin integrates cleanly with Vite without the PostCSS config overhead. The tradeoff: some tooling and third-party components still expect v3 class names. Managed by staying with Tailwind's own utility classes and avoiding third-party component libraries.
+**Why Tailwind v4 specifically:** Simpler setup, faster builds. The tradeoff: some third-party components still expect v3 class names. Managed by staying with Tailwind's own utility classes.
 
 ### localStorage for all persistence
 
-**Decision:** Progress tracking, challenge scores, What's New dismissed state, and leaderboard all persist to `localStorage`. No server sync.
+**Decision:** Progress tracking, challenge scores, What's New dismissed state, leaderboard, bookmarks, streaks, recently viewed posts, mark-as-read, and module scores all persist to `localStorage`. No server sync.
 
 **Why:** Consistent with zero-backend constraint. Users own their data. No GDPR obligations. No account friction.
 
-**Limitation:** Progress doesn't sync across devices. Accepted tradeoff — the app is a single-session or repeated-session tool, not a long-term course.
+**Limitation:** Progress doesn't sync across devices. Accepted tradeoff.
 
 ### Single-file components
 
-**Decision:** Each tab is a single JSX file. Large components (InferenceOptimizer, IndiaScale, ModelRouter, MLCiCd) were extracted into their own files only when the parent file would have exceeded ~2500+ lines.
+**Decision:** Each tab is a single JSX file. Large components were extracted into their own files only when the parent would have exceeded ~2500 lines.
 
-**Why:** Simplicity over architecture purity. No routing library, no state management library, no context API. State is lifted only as far as needed. The app is complex enough in content; it doesn't need additional architectural complexity.
+**Why:** Simplicity over architecture purity. No routing library, no state management library, no context API.
+
+### Hash-based URL routing (no React Router)
+
+**Decision:** Added hash-based URL routing (`#concepts`, `#systems`, etc.) by syncing `window.location.hash` with the `topView` state. Back/forward button works. Deep links are shareable.
+
+**Why not React Router:** Full router refactor would touch every navigation call and add complexity for marginal gain. Hash routing solves the user problem (shareable URLs, browser history) with ~20 lines of code.
 
 ### Ground Truth post rendering
 
-**Decision:** All Ground Truth post content lives in `src/groundTruthPosts.js` as a flat JS object keyed by post ID. Each post is an array of typed content blocks. The renderer in `GroundTruth.jsx` maps block types to JSX — no markdown parser, no MDX build step.
+**Decision:** All post content lives in `src/groundTruthPosts.js` as a flat JS object of typed content blocks. No markdown, no MDX.
 
-**Why:** MDX requires a compilation step and a more complex build pipeline. A plain JS object is trivially tree-shakeable, has zero build overhead, and is dead-simple to extend (add a new block type = add a new `case` in the renderer). The tradeoff is that content is slightly less readable than Markdown — acceptable because the author is technical.
+**Block types:** `p`, `h2`, `h3`, `callout`, `code`, `list`, `table`, `lab`, `video`, `animation`, `divider`, `quote`, `references`.
 
-**Block types:** `p`, `h2`, `h3`, `callout`, `code`, `list`, `table`, `lab`, `video`, `animation`, `divider`, `quote`, `references`. The `references` block renders a numbered bibliography with external links — primarily for SEO and credibility.
+**Why:** MDX requires a compilation step. A plain JS object is trivially tree-shakeable and dead-simple to extend.
 
-**`og:url` per post:** The `og:url` meta tag in PostDetail was previously hardcoded to the homepage. Fixed to emit `${base}#groundtruth/${post.id}` so each post's Open Graph URL resolves to the correct hash-fragment deep link.
+### Unified question bank (PrepLab)
 
-### Lock gate (locked tabs)
+**Decision:** PrepLab.jsx contains a self-contained 57-question bank rather than importing from all other tab files. Each question has: topic, difficulty, type (mcq|text), options, correct index, explanation, readMore link.
 
-**Decision:** Four tabs (Systems, Fluency, AIPM, Career) are locked behind a preview unlock. The lock gate was broken — locked tabs were rendering their full component regardless of unlock state.
-
-**Fix:** PostDetail and tab routing now call `isPreviewUnlocked()` before rendering. Locked tabs that fail the check render `<LockedTabView />` instead of the full component.
-
-**`LOCKED_TABS` constant:** The list of locked tab IDs was duplicated in `App.jsx` and `Home.jsx`. Extracted to `src/constants.js` as a single source of truth; both files now import from it.
+**Why:** Cross-file imports across 8 files would create tight coupling and make the question bank hard to maintain. A single self-contained bank is simpler and LLM-upgrade-friendly (swap the scorer, not the data).
 
 ---
 
 ## 3. Product decisions
 
-### Tab structure (11 tabs)
+### Tab structure (13 tabs)
 
-**Decision:** 11 top-level tabs: Home, Concepts, Flows, RAG Lab, Agents, Systems, Playground, Explore, Fluency, AIPM, Career.
+**Current tabs:** Home, Concepts, Flows, RAG Lab, Agents, Systems, Playground, Explore, Fluency, AI Product, Career, **Ask** (Consultation), **PrepLab**.
 
-**Why this structure:** The tabs map to real job function domains, not just a pedagogical journey. An AI engineer thinks in terms of "evals," "inference," "agents" — not "learn → break → practice." The structure serves returning users who know what they want.
+**Ask** was added as a lightweight consultation space — keyword search over all 140+ GT posts + 57 module descriptions. Conversational UI. LLM-ready: swap the scoring function for embeddings + add a generation step without touching the UI.
 
-**The tradeoff acknowledged:** 11 tabs is a lot for a first-time visitor. Solved by adding a Start Here journey strip on the Home page and a committed 7-step path, not by reducing the tabs.
+**PrepLab** was added to the GROW group. Three modes: timed assessment exam (15/30/60 min), trainer with immediate feedback, and JD+resume gap analysis with targeted drill.
+
+### PrepLab — three modes
+
+**Assessment Mode:** 15/30/60 min timed exam. All scores hidden until end. Final reveal: total score, per-category breakdown, "Strong in / Needs work" callout, wrong-answer review.
+
+**Trainer Mode:** Same question bank, immediate feedback after each answer. Optional speech input via Web Speech API (Chrome). Tracks weak topics. Session summary with "Study these next" recommendations.
+
+**JD Prep Mode:** Paste JD → keyword extraction against 8 skill categories → skill gap vs pasted resume → 20-question targeted drill weighted by gaps → Interview Readiness Score.
+
+**Speech support:** `window.SpeechRecognition || window.webkitSpeechRecognition` — if available, mic button appears. Transcribed text fills the answer field. Degrades gracefully to text input.
 
 ### Fidelity tagging system
 
-**Decision:** Every Concepts and Explore module gets a `fidelity` field with one of three tiers: `faithful` (real math), `simplified` (correct pattern, toy scale), `conceptual` (illustrative only). Displayed as a badge in the module header.
-
-**Why:** Without this, a non-expert could mistake the 2D Embedding Space visualization for actual GPT/Claude embedding geometry, or the Attention module for real transformer attention maps. That would undermine the app's credibility. The badge is honest about what you're seeing.
-
-**The three tiers specifically:**
-- `✓ Mathematically faithful` — Tokenizer (real BPE logic), Sampling (real softmax/top-K/top-P)
-- `~ Simplified` — Attention (illustrative patterns), Transformer (toy forward pass), Agent Loop (scripted ReAct trace)
-- `◌ Conceptual` — Embedding Space (precomputed 2D coords), Multi-Agent (architectural concepts only)
+Every Concepts and Explore module gets a fidelity badge:
+- `✓ Mathematically faithful` — real algorithm logic (Tokenizer, Sampling)
+- `~ Simplified` — correct pattern, toy scale (Attention, Transformer, Agent Loop)
+- `◌ Conceptual` — illustrative only (Embedding Space, Multi-Agent)
 
 ### HowTo component
 
-**Decision:** Every module starts with a `HowTo` component showing: what skill you're building, what the steps are, and what the "aha" moment is.
+Every module opens with a `HowTo` component: what skill you're building, what the steps are. Never more than 3 steps. Sets cognitive frame before interaction.
 
-**Why:** Without framing, users open a module and don't know what they're supposed to get out of it. The HowTo sets the cognitive frame before any interaction happens. It's deliberately short — never more than 3 steps.
+### RAG Lab as the flagship module
 
-### RAG Lab as the flagship professional module
-
-**Decision:** The RAG Lab got the most content depth — 5 curated production failure scenarios, each with multiple configurations, detailed failure explanations, and system design lessons.
-
-**Why:** This is the most defensible and differentiated content in the app. No other free resource teaches RAG configuration trade-offs through interactive failure simulation. YouTube explains RAG. This makes you configure it and watch it break.
-
-**The five scenarios:** Conflicting policy documents (stale retrieval), Missing evidence (hallucination), Ambiguous query (answer quality), Prompt injection (corpus-level attack), Multi-hop failure (cross-document reasoning).
+Five production failure scenarios (stale retrieval, hallucination, prompt injection, context overflow, multi-hop). Each scenario has 6-8 configs with detailed failure explanations and system design lessons. Most differentiated content in the app.
 
 ### Challenge Log (not "Leaderboard")
 
-**Decision:** The challenge tracking modal was originally named "Leaderboard." Renamed to "Challenge Log."
+Renamed from "Leaderboard." Tracks your own pass/fail record, not rankings. "Leaderboard" implied competition the feature doesn't support.
 
-**Why:** "Leaderboard" implies competition and rankings, which the feature doesn't do. It tracks your own pass/fail record across scenarios. "Challenge Log" is accurate. "Leaderboard" was misleading and added a gamification tone that weakens the professional framing.
+### Ground Truth tone
 
-### Agent Loop Simulator
+"Knowledgeable colleague" voice — technically precise but not academic. Emotional hooks and real failure stories used deliberately. The goal: readers finish feeling like they've talked to someone who shipped this in production.
 
-**Decision:** Added a full interactive simulator in Agents — three scenarios (BASIC/INTERMEDIATE/ADVANCED), step-through trace with quiz at each step, scoring at the end.
+### Consultation Space (Ask tab) — architecture
 
-**Why:** The ReAct pattern is easy to describe but hard to internalize. The simulator forces the user to predict what happens at each step before seeing it — that active prediction is the mechanism that builds real intuition, not passive reading.
+Knowledge base built client-side on first render: all 140+ GT posts (title × 3, tags × 2, desc × 1 scoring weight) + 57 module descriptions. Stopword stripping. Top 5 scored results returned. 8 suggested questions. Session conversation history.
 
-### Credibility badges vs no credibility badges
-
-**Considered:** Leaving modules untagged to avoid friction.
-
-**Decided:** Always tag. The risk of a user thinking they're seeing real frontier model internals is a bigger reputational problem than the slight friction of the badge. Transparency builds trust. Hiding simplification destroys it when someone finds out.
-
-### Ground Truth: content over quantity, then both
-
-**Decision:** Ground Truth launched with ~37 posts. In a focused sprint (May 2026), all pending posts were written — bringing the total to 83. All posts follow a consistent structure: narrative hook, technical depth, code samples where relevant, quote blocks for human voice, and a `references` block with real external citations for SEO and credibility.
-
-**Content tone decision:** Posts are written with a "knowledgeable colleague" voice — technically precise but not academic. Emotional hooks and real-world failure stories are used deliberately to give the platform character. The goal is that readers finish a post feeling like they've talked to someone who's shipped this in production, not read a textbook.
-
-**Reading progress bar:** Added to PostDetail — a thin colour-coded bar at the top of the viewport that fills as the user scrolls. Colour matches the post's category accent. Implemented as a scroll event listener on a `ref` to the article container.
+**LLM upgrade path:** Replace the keyword scorer with embedding similarity (Voyage AI or OpenAI `text-embedding-3-small`) + add a Claude API generation step. UI and retrieval layer stay identical.
 
 ---
 
-## 4. Features added in order
+## 4. Full feature lineage (chronological)
 
-| Feature | Decision rationale |
-|---------|-------------------|
-| ⌘K global search | 75+ modules with no search was a UX dead end. ⌘K is the standard pattern engineers know. Searches by label, tag, and tab. Deep-links directly into the module. |
-| Start Here CTA on Home | The app had 11 tabs but no committed entry point. Added both a hero button and a 7-step journey strip to give new visitors a clear path. |
-| Progress bars on learning path cards | Returning users had no memory of where they'd been. Progress bars using localStorage visited state solve the re-entry problem without a backend. |
-| What's New badge | As modules were added, returning users had no idea what was new. Versioned localStorage key (`genai_whatsnew_v2`) so returning users who dismissed v1 see new content. |
-| Share Score button | The challenge log had scores but no way to export or share them. Clipboard copy was the right zero-backend solution. |
-| Mobile hamburger nav | The 11-tab nav was unusable on mobile. Hamburger menu with full navigation, animated slide-in. |
-| Scroll fade on dense pill rows | Systems (15 modules) and Agents (7 modules) pill rows overflow on mobile with no visual affordance. Added right-edge gradient fade via absolute positioned overlay. |
-| OG image for WhatsApp/Twitter | The app had no `og:image` meta tag, so link previews were blank. Generated a 1200×630 PNG using Python PIL and added full Open Graph meta tags to `index.html`. |
-| Credibility badges | See section 3 above. |
-| Ground Truth blog section | 83 posts covering foundations, RAG, agents, evals, LLMOps, system design, production failures, AI careers, industry AI, model profiles. Every post has references + reading progress bar. |
-| TransformerWalkthrough animation | Interactive 10-step visual walkthrough of transformer architecture — built as a custom React component with SVG animations, step navigation, and colour-coded data flow. |
-| YouTube video embeds in posts | 7 key posts have embedded YouTube videos (Karpathy, 3Blue1Brown) to pair watching with reading without leaving the page. |
-| Per-post dynamic meta tags | PostDetail sets `document.title` and the meta description tag dynamically on mount — so browser tabs show post titles and sharing produces meaningful previews. |
-| Salary calculator | Interactive calculator in the AI Salary Guide post — role × level × geography → total comp estimate. Client-side, no API. |
-| AI Role Tech Stack matrix | Post covering minimum expected tech stack per role (AI Eng, MLE, MLOps, Technical PM, Non-Technical PM, FDE) at entry/mid/senior levels across company tiers. |
-| Audit fix batch (May 2026) | Lock gate wired — locked tabs now render `LockedTabView` when not unlocked. `og:url` corrected to per-post hash fragment. `LOCKED_TABS` extracted to `src/constants.js`. `src/Blog.jsx` dead orphan zeroed out. Color palette switcher removed (wrote `data-palette` to DOM but no CSS consumed it). Stale content pass: Gemini Ultra context window 32K → 1M; `claude-opus-4-5` → `claude-opus-4-6` (4 occurrences); RAG Lab footer cleaned of internal metadata; scenario count 5 → 6. |
+| Feature | Rationale |
+|---------|-----------|
+| RAG Lab (5 scenarios) | Core flagship — production failure simulation nobody else does |
+| Concepts (11 modules) | Build the prerequisite mental models for the Lab |
+| Flows (6 diagrams) | Animated pipeline — cements the full system view |
+| ⌘K global search | 77+ modules with no search was a dead end |
+| Start Here journey | 11 tabs but no committed entry point — added 7-step path |
+| What's New badge | Returning users had no idea what changed |
+| OG image | No `og:image` meant blank link previews |
+| Ground Truth (v1, 37 posts) | SEO surface + credibility anchor |
+| YouTube embeds | 7 posts paired with Karpathy/3Blue1Brown without leaving the page |
+| Per-post dynamic meta | Browser tabs show post titles; sharing produces meaningful previews |
+| Salary calculator | Interactive comp estimator in AI Salary Guide post |
+| Mobile hamburger nav | 11-tab nav unusable on mobile |
+| Challenge Log | Track pass/fail across RAG Lab scenarios |
+| Share Score | Clipboard copy of challenge score |
+| Progress bars on paths | Returning users had no memory of where they'd been |
+| Agents tab (7 modules) | ReAct, tool use, memory, multi-agent, MCP protocol, loop sim |
+| Systems tab (16 modules) | Evals, model strategy, fine-tuning, cost/latency, observability, etc. |
+| Explore tab (8 tools) | Embedding space, shadow A/B, tokenizer explorer, vector DB comparison |
+| Fluency tab | Interview prep: drills, mock interview, flashcards, challenges |
+| AIPM tab | PM track: PRD sim, roadmap, stakeholder, launch checklist |
+| Career tab | Negotiation sim, system design interview, take-home challenges |
+| 3D visualizations (4) | Embedding space, attention patterns, diffusion trajectory, LoRA decomposition |
+| Ground Truth (83 posts) | Full library across all categories |
+| TransformerWalkthrough | 10-step interactive transformer animation |
+| RAG Lab tiers (Junior→Staff) | Tiered scoring to signal seniority readiness |
+| Role toggle on Home | Engineers / PMs / All role filter |
+| Progress page | Cross-tab visited state visualization |
+| Fine-Tuning Lab | Interactive LoRA config simulator + 3D visualization |
+| Eval Grader | Hands-on output grading tool |
+| Flashcard mode | Spaced repetition with unknowns-only filter |
+| Next-token + temperature games | Predict-the-next-token, temperature calibration quiz |
+| Negotiation Sim | 3-scenario salary negotiation with equity math |
+| Agent Design Challenge | Build-your-own agent architecture module |
+| Content depth pass | Analogies, O(n²) explainer, postmortem panels, real cost numbers |
+| 25-issue audit fix batch | Bug fixes, UX gaps, mobile overflow, consistency |
+| Hash-based URL routing | Each tab has its own URL; back button works |
+| Mobile SVG fixes | EmbeddingModule + AttentionModule responsive |
+| Flashcard unknowns filter | Study only cards you got wrong |
+| 5 new GT posts (production batch) | Agent evals, prompt caching, LLM security, vector DB selection, cost playbook |
+| 15 mock interview Q&As | Expanded Career question pool |
+| Crore notation in SalaryCalc | India context formatting |
+| YouTube embed (Karpathy) | TransformerWalkthrough complement |
+| What's New v5 | Signal for returning users |
+| Score persistence | TimedDrills best-score per module in localStorage |
+| Loading skeleton | Shimmer on Suspense instead of blank flash |
+| Toast system | Feedback on copy, submit, completion actions |
+| Streak counter | 🔥 daily visit tracking |
+| Recently viewed (GT) | "Continue reading" row from localStorage |
+| Code copy button (GT) | One-click clipboard copy on all code blocks |
+| Mark as read (GT) | Per-post read checkbox with localStorage |
+| Table of contents (GT) | Auto-generated from h2 blocks on long posts |
+| Error boundaries | Catch component crashes without blank app |
+| document.title per tab | Tab titles update on navigation |
+| Certificate of completion | Canvas PNG download on group completion |
+| Bookmarks | Star any GT post or module; Progress tab section |
+| Daily tip (Home) | Rotating "Did you know?" by day-of-year |
+| Learning path generator | Role + experience → 10-step ordered reading list |
+| Difficulty chips (Concepts) | Beginner / Intermediate / Advanced on every module |
+| "Go deeper" links (Flows) | Cross-links to matching Explore/Concepts/GT content |
+| Agent evals tab (Systems) | Tool call precision, trajectory efficiency, graceful failure, reasoning hallucination |
+| 2 new Agent scenarios | Planning Agent, Reflexion pattern |
+| 3 new GT posts | RLHF/DPO, Constitutional AI, build a knowledge base search |
+| Consultation Space (Ask tab) | Keyword search over all GT posts + modules, conversational UI |
+| ELI5 mode (GT posts) | Simplified language toggle on every post |
+| In-post search (GT) | Highlight matching text within a post |
+| Post reactions (GT) | Saved me in an interview / Mind = blown / Confusing |
+| Quiz me on this post (GT) | Auto-generates 3 MCQs from post callout+list blocks |
+| Print styles (GT) | Clean PDF output via @media print |
+| Copy section link (GT) | § anchor link on every h2 heading |
+| Notification bell | Pulses when new content version detected |
+| Analytics events | post_opened, module_completed, assessment_finished, search_query |
+| PrepLab (new tab) | Assessment exam, Trainer mode, JD+resume prep |
+| LLM comparison matrix (Explore) | 6 models × 12 dimensions, filterable |
+| Prompt library (Playground) | 30 production-ready prompts with copy + design notes |
+| Debug Traces (Systems) | 5 production traces, interactive diagnosis, root cause reveal |
+| Helpful counter (GT) | 👍 per-post counter stored in localStorage |
+| Difficulty badge (GT) | Beginner/Intermediate/Advanced on post cards |
+| Service worker | Offline app shell, cache-first images |
+| PWA manifest | Installable on mobile (Add to Home Screen) |
+| RSS feed | `/rss.xml` with 20 most recent GT posts |
+| 2 new Agent scenarios | Multi-agent debate, memory-enabled agent |
+| Sitemap (140+ posts) | All GT posts indexed for Google |
 
 ---
 
 ## 5. What was deliberately excluded
 
-### No video content
+### No live API calls
 
-**Why:** Video requires production, editing, hosting, and a creator face. It also dates quickly as the field moves. Interactive simulators provide more learning per minute for technical topics and are infinitely more maintainable as static assets.
-
-### No AI company API integration
-
-**Why:** API calls add cost, latency, rate limits, key management, and backend requirements. More importantly: for teaching systems concepts, precomputed responses are more reliable than live inference. You can't guarantee a live API gives a broken response at the right moment for a teaching scenario.
+**Why:** API calls add cost, rate limits, key management, and backend requirements. Precomputed scenarios are more reliable pedagogical tools — a live API won't fail at exactly the right moment for a teaching scenario.
 
 ### No community features (forum, comments, Discord)
 
-**Why:** Community requires moderation, cold start, and ongoing maintenance. At this stage it would be an empty room that makes the product look less used than it is. Revisit only after significant organic traction.
+**Why:** Community requires moderation, cold start, and ongoing maintenance. At this stage it would be an empty room. Revisit after significant organic traction.
 
-### No video or certificate (yet)
+**Note on Giscus (GitHub Discussions comments):** Evaluated. Deferred because it requires GitHub repo config from the site owner and adds an external dependency. Good option when traction justifies it.
 
-**Why:** A certificate requires a credible assessment layer first. Building the certificate without the assessment would produce a meaningless badge that cheapens the brand. The assessment is reserved for a future paid tier after the free version has earned social proof.
+### No certification
 
-### No deep-link routing (React Router)
+**Why:** A certificate requires a credible assessment layer first. The PrepLab Assessment Mode exists now; the certificate layer is reserved for the paid tier after social proof is established. "Certified" language cheapens the brand without the credibility to back it.
 
-**Why:** Adding a router is a meaningful refactor with no immediate user benefit. The ⌘K search already solves the "how do I get back to that module" problem. Deep-link routing is a Stage 2 feature when the app has proven it's worth bookmarking.
+### No light mode
 
-### No "AI Compass" / broader portal scope
+**Evaluated:** CSS variable approach is clean in theory. In practice, all 13 JSX files use hardcoded Tailwind dark-theme classes. Refactoring every `zinc-900`, `zinc-800`, `bg-zinc-950` to CSS variables is a full-day cross-file refactor with high breakage risk. Deferred until there's user demand signal.
 
-**Why:** Evaluated and explicitly rejected. The broader frame (Track + Apply + Build + Work + Filter) would require fresh data, editorial curation pipelines, and ongoing maintenance that undermines the zero-backend architecture advantage. More importantly: it would dilute the app's clearest identity — "the interactive production AI failure lab" — into a generic AI resources portal that competes on content volume rather than interactive depth.
+### No simulated discussions (back-and-forth scaling/deployment conversations)
 
-### No monetization (yet)
+**Why:** Back-and-forth that feels real requires dynamic responses to what the user said. A decision tree (3-4 levels deep) would feel rigid. Deferred until LLM backend exists.
 
-**Why:** Commercially evaluated. Current score: ~4/10 readiness. Missing: completion state, scored final assessment, social proof, brand recognition. Charging before earning the right to charge kills word-of-mouth, which is the only realistic acquisition channel at this stage.
+### No React Router
 
----
-
-## 6. Commercial strategy conclusion
-
-GenAI Systems Lab is currently best positioned as a **free credibility and audience-building artifact**. The content is genuinely good. The format is differentiated. But it is not paid-ready because:
-
-1. No completion state — the user never knows if they're "done"
-2. No scored assessment — nothing that produces proof of competence
-3. No social proof — no testimonials, no recognizable builder name, no track record
-4. No outcome language — the app currently says "explore," not "after this you can do X"
-
-**The right monetization path when ready:**
-
-Stage 1 (now — month 6): Free distribution. Build audience, collect testimonials, watch which modules users actually finish.
-
-Stage 2 (month 6–12): Add 10 advanced production incident cases + final AI Systems Readiness Assessment (20 questions, timed, scored across 5 dimensions) + client-side certificate. Charge $29 one-time for the assessment + certificate layer. Keep all existing content free.
-
-Stage 3 (month 12–24): Interview mode, team/org pricing, gap analysis report. Price point: $49 individual once social proof is established.
-
-**What not to do:** Don't call it "certified." Use "readiness assessment." Don't make job outcome claims. Make the assessment hard enough that ~50% fail on first attempt — the difficulty is the credibility.
+**Why:** Hash routing solved the shareable URL problem with 20 lines. Full React Router refactor adds complexity for marginal gain at this scale.
 
 ---
 
-## 7. Current state (as of May 2026)
+## 6. Pending ideas (not yet built, ordered by priority)
 
-**Ground Truth is complete.** 83 posts written across all planned categories. Every post has:
-- Narrative hook / opening that earns the read
-- Technical depth with code samples where relevant
-- `references` block with real external citations
-- `quote` blocks for human voice in most posts
-- Reading progress bar (UI feature added to PostDetail)
+### P1 — Defense Doc (highest priority new feature)
 
-The interactive platform (11 tabs) is also feature-complete for the current scope.
+A personalized "interview brief" generated from a pasted JD. Content: Topic Priority Table (Core / Know Well / Be Aware Of), 8 must-know concepts cold, a system design cheat sheet tailored to the role, 3 behavioral STAR story prompts, production gotchas for the detected domain, questions to ask the interviewer, red flags to avoid.
 
-**Audit fix batch (May 2026) applied.** All known correctness and UX bugs resolved: lock gate wired correctly, `og:url` per-post, `LOCKED_TABS` deduplicated into `src/constants.js`, `src/Blog.jsx` dead file zeroed, color palette switcher removed, and a stale-content pass updated Gemini Ultra context window, Claude model IDs, and RAG Lab scenario count and footer copy.
+Two delivery formats: (a) rendered as an interactive "war room" on the platform, (b) downloadable PDF via jsPDF client-side. No backend required.
 
-**Monetization readiness batch (May 2026) applied.** A second audit focused on acquisition, retention, and conversion readiness produced the following changes:
-- MODULE_MAP descriptions rewritten with outcome language ("After this: you can…" framing)
-- Trust badge text changed from "Free community beta" to "Free · no login required · built for AI engineers & PMs" — removed "beta" from the primary social proof position
-- "Continue where you left off" CTA added to hero for returning users (uses existing `visited` localStorage state, ~20 lines)
-- Start Here strip now marks completed steps with a ✓ in emerald instead of a step number in violet
-- `outcome` field added to all four Learning Paths and rendered as a left-bordered sentence under the tagline
-- Path-complete state now shows "Next: [next path] →" instead of generic "Start with X →"
-- Testimonial placeholder section added between STATS strip and Learning Paths — three early-user quotes with "names withheld" framing, structurally ready for real testimonials
-- Challenge Log: added 4-dimension skill breakdown (Retrieval Quality, Query Handling, Security & Safety, Reasoning) with bar charts; added "All 6 scenarios solved" achievement banner with teaser for the future Assessment product
-- Ground Truth: "Start Here" pinned section above the category filter with 4 gateway posts (Transformer, RAG, ReAct, Agent failure modes)
-- `SCENARIO_DIMENSIONS` lookup added to App.jsx for mapping scenario IDs to skill dimensions
+**Why this is the strongest pending idea:** It's the one thing that doesn't exist anywhere else. A personalized study brief the morning of an interview is something people bookmark and return for. Clear paid tier hook: free = platform-only, paid = download PDF.
 
-Monetization readiness score updated from ~4/10 to ~6/10. Still missing: real testimonials, scored assessment, completion certificate, outcome claim validation. These remain Stage 2.
+### P2 — Traps and Bug Catching
 
-The app is in **active distribution mode** — priority is getting real users in and collecting social proof. Feature freeze remains in effect except for monetization-readiness work.
+A challenge module that tests critical thinking rather than recall. Formats: "Here's a system diagram with 3 intentional flaws — find them," "Here's an eval framework, what's wrong with it?", "This Python function calls an LLM. What are the 2 bugs?", "A candidate said X. What's wrong with this approach?"
 
-What is explicitly not on the roadmap right now:
-- New tabs or tracks
-- AI Compass / broader portal
-- Deep-link routing
+Maps directly to how senior interviews actually work — they give you broken things, not blank slates. Static challenge set, ~15-20 challenges, self-contained.
+
+### P3 — Senior / Leadership Lens
+
+A "Senior Lens" filter or callout layer on top of existing system design and eval modules. Shows how a Staff engineer would approach the same problem differently. Content additions: "At Staff level, the question isn't X — it's Y," "What you'd tell your manager after this incident," "How to prioritize across 3 competing AI initiatives."
+
+No new modules needed — content additions to existing ones.
+
+### P4 — Open-ended Take-homes (with rubric)
+
+Long-form async challenges that simulate real take-home assignments. User writes a paragraph or structured answer, then reveals an expert model answer with a detailed rubric showing what a strong answer covers. 5-8 challenges. Already partially exists in Career — extend and formalize.
+
+### P5 — Simulated Discussions (defer to LLM era)
+
+Back-and-forth scaling/deployment/monitoring conversations. An interviewer responds dynamically to what you said. Decision-tree version is too rigid to be useful. Defer until LLM backend exists.
+
+### P6 — Persistent Leaderboard (Vercel KV)
+
+RAG Lab scores shared across users via Vercel KV Edge Config (free tier, 0ms latency). No dedicated backend needed. Adds social/competitive dimension. Feasible today but deferred — not enough users yet to make a leaderboard meaningful.
+
+### P7 — Split groundTruthPosts.js
+
+File is ~1.3MB in one chunk. Split into 5 category-based files with lazy imports. Reduces GT initial load chunk significantly. Low priority because the file is already in a lazy-loaded chunk (GroundTruth.jsx). Revisit when load time becomes measurable user pain.
+
+### P8 — LLM integration (Consultation Space upgrade)
+
+Current Ask tab uses keyword scoring. Upgrade path: Voyage AI embed-3 (free tier) for embeddings → cosine similarity retrieval → Claude API for generation. UI stays identical. Worth doing when the site has a clear audience and the cost is justifiable.
+
+### P9 — Giscus comments on GT posts
+
+GitHub Discussions-based comments. Zero backend, free, spam-resistant. Requires configuring the GitHub repo for Discussions. Good option once traction justifies it.
+
+### P10 — More Ground Truth posts
+
+Topics with no coverage yet: RLHF implementation walkthrough (detailed), Constitutional AI deep dive (done), GPT-4 technical report analysis, Gemini architecture, "How I'd build X" series (AI search, code review bot, real-time document analysis), multi-agent debugging patterns.
+
+---
+
+## 7. Commercial strategy conclusion
+
+GenAI Systems Lab is positioned as a **free credibility and audience-building artifact** with a clear paid tier path.
+
+**Current monetization readiness: ~7/10.** Gaps that remain:
+1. No real testimonials (placeholder structure exists, needs real quotes)
+2. Certificate layer not yet deployed as paid feature
+3. No outcome claim validation (need users to report interview results)
+
+**The right monetization path:**
+
+Stage 1 (now — month 6): Free distribution. Build audience, collect testimonials, watch which modules users finish. PrepLab + Consultation Space are the new engagement hooks.
+
+Stage 2 (month 6–12): Deploy Defense Doc as a premium feature. Add Certificate layer. Score the AI Systems Readiness Assessment and surface it as a product. Charge $29 one-time for Defense Doc PDF download + Certificate.
+
+Stage 3 (month 12–24): Team/org pricing for prep cohorts. Custom Defense Doc generation with LLM backend. Price point: $49 individual, $199 team (5 users).
+
+**What not to do:** Don't call it "certified." Don't make job outcome claims. Make the assessment hard enough that ~50% fail on first attempt — the difficulty is the credibility.
+
+---
+
+## 8. Current state (as of May 2026)
+
+**Scale:**
+- 13 tabs
+- 100+ interactive modules
+- 140+ Ground Truth posts across 18 categories
+- 57-question PrepLab question bank
+- 5 RAG Lab production failure scenarios
+- 30 prompt library entries
+- 5 debug trace challenges
+- PWA installable, offline service worker, RSS feed, sitemap with 140+ URLs
+
+**Architecture status:**
+- Zero backend ✓
+- Hash-based URL routing ✓
+- localStorage for all persistence ✓
+- Lazy loading all heavy tabs ✓
+- Error boundaries on all tabs ✓
+- PWA manifest + service worker ✓
+- Formspree email capture (⚠️ ID still needs replacement by owner)
+
+**What's explicitly not on the roadmap right now:**
+- New tabs beyond PrepLab and Ask
+- AI Compass / broader portal scope
 - Video content
-- Community features
-- API integrations
-
----
-
-## 8. Reserved for later
-
-These are explicitly parked — not abandoned, not scheduled.
-
-| Item | Why parked | When to revisit |
-|------|-----------|----------------|
-| AI Systems Readiness Assessment | Requires social proof before charging | After 1,000+ active users and 10+ testimonials |
-| Client-side certificate generation | Requires assessment to exist first | Simultaneously with assessment |
-| Advanced production incident cases (10+) | Content moat, but pointless without audience | After traction established |
-| Interview mode | Stage 3 feature | After assessment is validated |
-| Deep-link routing | Not enough user demand signal yet | If users start requesting shareable module URLs |
-| AI Compass / broader portal | Different product, different audience | Only if current app earns its own identity first |
-| Team/org pricing | Requires individual proof of value first | Stage 3 |
+- Community moderation
+- API integrations (except as Consultation Space upgrade)
 
 ---
 
 ## 9. What makes this defensible
 
-The genuine moat vs YouTube, DeepLearning.AI, fast.ai, and blog posts:
-
 **You have to make decisions, not watch decisions being made.** Every other resource shows you what to do. The RAG Lab makes you configure the system and watch it fail. That pedagogical difference is the moat.
 
-**The production failure case library as a proprietary dataset.** If curated to 30–50 real production incident patterns with structured diagnosis and explanation — the kind of knowledge that only comes from being in AI engineering — that becomes something nobody else has. YouTube can't replicate it because it requires structured interactive format. DeepLearning.AI won't touch it because it's too niche for their scale.
+**The production failure case library as a proprietary dataset.** 5 curated RAG failure scenarios + 5 debug traces + 24 RCA cases + 22 metrics cases + 10 business cases — structured interactive diagnosis that YouTube can't replicate and DeepLearning.AI won't touch because it's too niche.
 
-**83 posts with production depth and citations.** Ground Truth is now the largest free resource of its kind specifically covering production GenAI systems — not introductory ML, not research papers, but the specific knowledge needed to build and operate real AI systems. That library compounds over time as it gets indexed and linked.
+**140+ posts with production depth and citations.** The largest free resource specifically covering production GenAI systems — not introductory ML, not research papers, but the specific knowledge needed to build and operate real AI systems at scale.
 
-The positioning that best captures this: *"The only place you practice diagnosing production GenAI failures before your first on-call shift."*
+**PrepLab as the differentiated assessment layer.** JD-aware question weighting + speech input + gap analysis is not available anywhere else for free, for this specific audience.
+
+The positioning: *"The only place you practice diagnosing production GenAI failures before your first on-call shift."*
 
 ---
 
 *Last updated: May 2026*
-*Document maintained by: Sidharth Kriplani*
+*Maintained by: Sidharth Kriplani*
