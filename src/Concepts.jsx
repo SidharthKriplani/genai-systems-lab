@@ -531,6 +531,25 @@ function TokenizerModule() {
           Tokenization is the first place things go wrong. Rare words, names, and technical terms split into many tokens — increasing cost and sometimes breaking semantic coherence. "tokenization" → {tokenize("tokenization").map(t => `"${t.text}"`).join(" + ")} = {tokenize("tokenization").length} tokens. Numbers are especially fragmented: "2024" → {tokenize("2024").length} token(s).
         </p>
       </div>
+
+      {/* When tokenization fails */}
+      <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-4 space-y-3">
+        <div className="text-xs font-bold text-red-400 uppercase tracking-wide">When tokenization breaks your system</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          {[
+            { case: "Emoji & special characters", symptom: "Model sees garbage tokens — 🎉 becomes 3–5 tokens. Sentiment analysis on social media text will misread emoji-heavy posts.", fix: "Test your tokenizer on production input samples. If emoji density is high, use a model with a better multilingual vocabulary." },
+            { case: "Code & programming", symptom: "Identifiers like `getUserById` split into `get`, `User`, `By`, `Id` — 4 tokens. Long variable names explode token count and lose semantic coherence.", fix: "For code tasks, prefer models specifically trained on code (Codex, DeepSeek-Coder). They have code-aware vocabularies." },
+            { case: "Non-English languages", symptom: "Languages outside the training corpus tokenize very inefficiently — Arabic or Chinese text can be 3–5× more tokens than equivalent English. Context windows fill up fast.", fix: "Benchmark token counts on your target language. Multilingual models (mBERT, multilingual-e5) have more balanced vocabularies." },
+            { case: "Numbers & dates", symptom: "'2024-01-15' becomes ['2024', '-', '01', '-', '15'] — 5 tokens. Arithmetic over tokenized numbers is unreliable because '15' has no inherent numeric value.", fix: "For numeric reasoning, preprocess numbers into words or use chain-of-thought prompting. Never expect an LLM to do reliable arithmetic on raw numbers." },
+          ].map(f => (
+            <div key={f.case} className="rounded-lg bg-zinc-900/60 border border-zinc-700 p-3 space-y-1">
+              <div className="text-red-400 font-semibold">{f.case}</div>
+              <div className="text-zinc-400 leading-relaxed"><span className="text-zinc-300 font-medium">Symptom: </span>{f.symptom}</div>
+              <div className="text-zinc-400 leading-relaxed"><span className="text-emerald-400 font-medium">Fix: </span>{f.fix}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -719,6 +738,25 @@ function EmbeddingModule() {
             </p>
             <p className="text-xs text-amber-600/80 mt-1">⚠ Coordinates are hand-authored to illustrate clustering — not computed by a real embedding model.</p>
           </div>
+        </div>
+      </div>
+
+      {/* When embeddings fail */}
+      <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-4 space-y-3">
+        <div className="text-xs font-bold text-red-400 uppercase tracking-wide">When embedding search breaks in production</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          {[
+            { case: "Frequency anisotropy", symptom: "Common words ('the', 'is', 'a') cluster in a tight region of embedding space. Queries containing common words get pulled toward frequent but irrelevant documents.", fix: "Normalize embeddings and apply dimensionality reduction (PCA whitening). Or use a reranker on top of vector search to correct relevance." },
+            { case: "Domain shift", symptom: "A model trained on Wikipedia + web text embeds medical jargon poorly. 'MI' (myocardial infarction) lands near 'Michigan' instead of 'heart attack'.", fix: "Fine-tune or use domain-specific embedding models. Test retrieval quality on in-domain queries before launch." },
+            { case: "Short query vs long document", symptom: "A 5-word query and a 500-word document live in different length regimes. Cosine similarity is biased toward documents similar in length to the query.", fix: "Use asymmetric embedding models designed for query-document pairs (e.g. bge-large with separate query/passage prefixes). Don't use symmetric models for RAG." },
+            { case: "Semantic similarity ≠ relevance", symptom: "'How do I cancel my subscription?' is semantically similar to 'I love my subscription!' — both discuss subscriptions. The wrong document gets retrieved.", fix: "Add a reranker (cross-encoder) that scores actual relevance, not just semantic similarity. Or use BM25 hybrid to add keyword matching." },
+          ].map(f => (
+            <div key={f.case} className="rounded-lg bg-zinc-900/60 border border-zinc-700 p-3 space-y-1">
+              <div className="text-red-400 font-semibold">{f.case}</div>
+              <div className="text-zinc-400 leading-relaxed"><span className="text-zinc-300 font-medium">Symptom: </span>{f.symptom}</div>
+              <div className="text-zinc-400 leading-relaxed"><span className="text-emerald-400 font-medium">Fix: </span>{f.fix}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -1658,6 +1696,25 @@ function SamplingModule() {
           </div>
         </div>
       </div>
+
+      {/* When sampling fails */}
+      <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-4 space-y-3">
+        <div className="text-xs font-bold text-red-400 uppercase tracking-wide">Common sampling mistakes in production</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          {[
+            { case: "Temperature too high for structured output", symptom: "Temperature=1.5 on a JSON-generating prompt produces malformed JSON. High temperature flattens the probability distribution — low-probability garbage tokens start appearing.", fix: "Set temperature=0 or 0.1 for any structured output task (JSON, SQL, code, classification). Reserve high temperature for creative tasks only." },
+            { case: "Top-P=1.0 with high temperature", symptom: "Using both top-P=1.0 (no filtering) and temperature=1.2 gives maximum randomness — outputs become incoherent. These two settings amplify each other.", fix: "If using high temperature, combine with top-P=0.9 to trim the long tail. Rule of thumb: tighten one when you loosen the other." },
+            { case: "Greedy decoding repetition loops", symptom: "Temperature=0 (greedy) sometimes gets stuck repeating the same phrase: 'The answer is... The answer is... The answer is...' The model finds a local loop.", fix: "Add a repetition penalty or use a small temperature (0.1) instead of pure greedy. Most inference APIs have a repetition_penalty parameter." },
+            { case: "Inconsistent outputs confuse users", symptom: "Customer support bot gives different answers to the same question on different days because temperature=0.8. Users think the system is broken.", fix: "Use temperature=0–0.2 for any factual, consistent-answer-required task. Temperature is for creative diversity, not factual retrieval." },
+          ].map(f => (
+            <div key={f.case} className="rounded-lg bg-zinc-900/60 border border-zinc-700 p-3 space-y-1">
+              <div className="text-red-400 font-semibold">{f.case}</div>
+              <div className="text-zinc-400 leading-relaxed"><span className="text-zinc-300 font-medium">Symptom: </span>{f.symptom}</div>
+              <div className="text-zinc-400 leading-relaxed"><span className="text-emerald-400 font-medium">Fix: </span>{f.fix}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1810,6 +1867,25 @@ function ContextWindowModule() {
             </div>
             <p className="text-xs text-zinc-500">Doubling context quadruples attention ops. 128k context = 16,000× more compute than 1k. This is why long-context models need flash attention, sliding window attention, and KV cache optimisations.</p>
           </div>
+        </div>
+      </div>
+
+      {/* When context window fails */}
+      <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-4 space-y-3">
+        <div className="text-xs font-bold text-red-400 uppercase tracking-wide">Context window failure modes</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          {[
+            { case: "Lost in the middle", symptom: "You stuff 10 retrieved chunks into context. The answer is in chunk 5. The model answers using chunk 1 or chunk 10 and ignores chunk 5. Empirically, LLMs attend strongly to the beginning and end of context — the middle is a dead zone.", fix: "Put your most relevant chunks FIRST and LAST in the context. Use a reranker to identify the most relevant chunk, then position it at the start." },
+            { case: "Soft context overflow", symptom: "Your prompt is within the context limit but the model's responses get worse as you add more content. No error — just degrading quality. This happens because attention is spread too thin.", fix: "Monitor response quality as a function of context length. If quality drops past 50% of your context window, switch to map-reduce (process each chunk separately, combine results)." },
+            { case: "Stale context in long conversations", symptom: "In a long chat, the user refers to something they said 30 messages ago. With a sliding window, old context gets dropped. The model acts confused or contradicts itself.", fix: "Implement conversation summarization: compress old turns into a running summary that's prepended to new context. Most chat systems need this by turn 15–20." },
+            { case: "Prompt + output budget collision", symptom: "Your system prompt is 2K tokens. Retrieved context is 6K tokens. User query is 500 tokens. Total input = 8.5K. But you need 2K output tokens. At 8K context limit, generation gets cut short silently.", fix: "Always budget: max_input_tokens = context_limit - max_output_tokens - safety_margin. Monitor actual token usage per request in production." },
+          ].map(f => (
+            <div key={f.case} className="rounded-lg bg-zinc-900/60 border border-zinc-700 p-3 space-y-1">
+              <div className="text-red-400 font-semibold">{f.case}</div>
+              <div className="text-zinc-400 leading-relaxed"><span className="text-zinc-300 font-medium">Symptom: </span>{f.symptom}</div>
+              <div className="text-zinc-400 leading-relaxed"><span className="text-emerald-400 font-medium">Fix: </span>{f.fix}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

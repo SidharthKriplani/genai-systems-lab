@@ -596,6 +596,41 @@ const NEGOTIATION_SCENARIOS = [
     ],
     debrief: "Internal transitions require a different playbook than offer negotiations. Key principles: (1) Be specific about what you want and why you're uniquely suited. (2) Reduce manager risk — propose a trial period before asking for a title change. (3) Show the work you've already done before the conversation. (4) Own the proposal — managers are busy. (5) Patience: internal transitions typically take 3-6 months of demonstrated performance.",
   },
+  {
+    id: "n3",
+    title: "They Said Final — Now What?",
+    context: "You're negotiating a senior ML engineer offer at a well-funded Series A (raised $30M, 80 employees). Offered $165k base + 0.3% options. You asked for $175k. The recruiter says: 'We've already gone above our standard band for you. This is genuinely our final offer.'",
+    turns: [
+      {
+        recruiterLine: "I want to be transparent — we stretched for you. $165k is truly our ceiling for this role. I really hope we can make this work.",
+        options: [
+          { id: "a", text: "Ok, I understand. I'll sign.", outcome: "neutral", feedback: "Acceptable if $165k meets your needs — but you haven't tested whether 'final' is actually final, and you've left other levers unexplored. 'Final' on base doesn't mean final on total comp." },
+          { id: "b", text: "I appreciate that. If base is the ceiling, can we look at the equity component? I'd love to understand the current 409A and whether there's flexibility on the options grant.", outcome: "good", feedback: "Excellent pivot. Base and equity come from different budgets. Asking about the 409A is a signal you understand equity — it often prompts more transparent conversation. A 0.1% increase at a $30M raise could be worth $30k+ at a 3× exit." },
+          { id: "c", text: "I have a competing offer at $180k so I'll have to go with them unless you can match.", outcome: "neutral", feedback: "Using a competing offer here is valid leverage IF it's real. But using a fake competing offer is risky — recruiters sometimes call your bluff. If your competing offer is real, be specific: 'I have an offer at $180k base from [company]. Is there any way to close the gap?'" },
+          { id: "d", text: "That's disappointing. I was hoping for more flexibility.", outcome: "bad", feedback: "Expressing disappointment without a counter-proposal ends the negotiation. You've signaled you're unhappy but given them nothing to work with. If you want to keep negotiating, make a specific ask." },
+        ],
+      },
+      {
+        recruiterLine: "The options are set by the board at 0.3% for this level. I really can't change that. What else can I do to help you say yes?",
+        options: [
+          { id: "a", text: "Is there a sign-on bonus available? That would help me bridge the gap on the base difference.", outcome: "good", feedback: "Sign-on bonuses come from a completely different budget than recurring comp and equity. Many companies have sign-on flexibility even when base and equity are locked. 'Bridge the gap on base difference' gives them a logical framing — you're asking for a one-time payment, not a permanent expense." },
+          { id: "b", text: "Can I get an earlier performance review — say at 6 months instead of 12 — with a comp review attached?", outcome: "good", feedback: "An accelerated review cycle is a low-cost concession for the company that gives you a path to your number. If you perform well, you get the raise. If you don't, they've committed to nothing. Sophisticated negotiators use this when base is truly maxed." },
+          { id: "c", text: "Can I work fully remote?", outcome: "neutral", feedback: "Remote work is a valid concession to negotiate, especially if it saves you commuting costs or improves quality of life. But it's not monetary — it doesn't close the comp gap you wanted. Fine as a secondary ask, weak as a primary counter." },
+          { id: "d", text: "Fine, I accept.", outcome: "neutral", feedback: "Acceptable — you've negotiated in good faith and tested the limits. But you haven't asked about sign-on or timeline for review, which are often available. A quick 'one last ask: is there any sign-on flexibility?' costs you nothing and frequently yields $10–20k." },
+        ],
+      },
+      {
+        recruiterLine: "A sign-on bonus of $15k is something I can probably get approved. Does that work for you?",
+        options: [
+          { id: "a", text: "Yes — that works. Can we get the full offer in writing including the sign-on, equity terms, and vesting schedule?", outcome: "good", feedback: "Perfect close. You accepted positively, and immediately asked for the full written offer before giving verbal acceptance. Always get equity terms (cliff, vesting, strike price, shares outstanding) in writing. These details matter enormously for startup options and are sometimes 'clarified' unfavorably later." },
+          { id: "b", text: "Can you make it $20k?", outcome: "neutral", feedback: "One more counter is defensible — you moved from $0 to $15k in one ask, there might be a few thousand more. But you've done well. Pushing for 33% more on a bonus after they've been generous on base may strain goodwill at a small company where you'll work with these people daily. Read the room." },
+          { id: "c", text: "I need to think about it for a few days.", outcome: "bad", feedback: "You've been negotiating for several rounds. They've made a real concession. Asking for more time now — without a specific reason — signals either poor decision-making or that you're using this offer as leverage elsewhere. If you need time for a specific reason ('I need to discuss with my family'), say so. Otherwise, close." },
+          { id: "d", text: "Great! I'm really excited to join the team.", outcome: "good", feedback: "Enthusiastic acceptance is also good — especially at a small company where relationship matters. Follow up with an email reiterating the agreed terms (base, sign-on, equity) so there's a written record before the formal offer letter." },
+        ],
+      },
+    ],
+    debrief: "When someone says 'final offer': (1) Test it by pivoting to a different lever — base, equity, sign-on, review timeline, remote work. 'Final' on base rarely means final on everything. (2) Sign-on bonuses are the most commonly available hidden lever — always ask. (3) Accelerated review cycles are a low-cost company concession with high personal upside. (4) If you genuinely can't improve the offer, close enthusiastically — resentment before day one poisons the relationship. (5) Get everything in writing before verbal acceptance, especially equity terms at startups.",
+  },
 ];
 
 function NegotiationSim() {
@@ -669,6 +704,34 @@ function NegotiationSim() {
             );
           })}
         </div>
+        {/* Equity math explainer */}
+        <div className="rounded-xl border border-indigo-800/50 bg-indigo-950/20 p-4 space-y-3">
+          <div className="text-xs font-bold text-indigo-400 uppercase tracking-wide">The equity math every engineer should know</div>
+          <div className="space-y-3 text-xs text-zinc-300 leading-relaxed">
+            <div>Equity offers feel abstract until you do the math. Here's how to compare offers with different equity components:</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="rounded-lg bg-zinc-900 border border-zinc-700 p-3 space-y-2">
+                <div className="text-indigo-300 font-semibold">RSUs at public company</div>
+                <div className="text-zinc-400">400 RSUs @ $50/share = $20k/year at current price. Straightforward — you know the value. Risk is stock price movement.</div>
+                <div className="text-zinc-500 text-[11px]">Typical grant: $100–500k over 4 years at senior IC levels</div>
+              </div>
+              <div className="rounded-lg bg-zinc-900 border border-zinc-700 p-3 space-y-2">
+                <div className="text-amber-300 font-semibold">Options at startup</div>
+                <div className="text-zinc-400">0.1% of a $10M-valued startup = $10k on paper. That same 0.1% at a $1B outcome = $1M. At zero = $0. The valuation and liquidation preference determine actual value.</div>
+                <div className="text-zinc-500 text-[11px]">Most startup options expire 90 days after leaving. Factor in exercise cost and tax.</div>
+              </div>
+            </div>
+            <div className="rounded-lg bg-zinc-800/60 border border-zinc-700 p-3 space-y-2">
+              <div className="text-zinc-300 font-semibold">Questions to ask about equity before accepting</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-zinc-400 text-[11px] mt-1">
+                {["What is the current 409A valuation?", "What's the last round valuation and your % dilution?", "What is the liquidation preference stack?", "How many shares are fully diluted?", "What's the vesting cliff and schedule?", "What happens to my options if I leave before vesting?", "Has the company ever done a down-round or repricing?", "What's the expected exit timeline?"].map(q => (
+                  <div key={q} className="flex gap-1.5"><span className="text-indigo-400 shrink-0">→</span>{q}</div>
+                ))}
+              </div>
+            </div>
+            <div className="text-zinc-500 text-[11px]">Resources: levels.fyi for RSU grant ranges by company/level. Blind for candid comp discussions. AngelList salary data for startups. Never rely on recruiter-provided comp percentile claims without independent verification.</div>
+          </div>
+        </div>
         <div className="flex gap-3">
           {NEGOTIATION_SCENARIOS.map(s => (
             <button key={s.id} onClick={() => reset(s.id)}
@@ -694,6 +757,25 @@ function NegotiationSim() {
 
       <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 text-xs text-zinc-400 leading-relaxed">
         <span className="text-zinc-300 font-bold">Scenario: </span>{sc.context}
+      </div>
+
+      {/* Market research note */}
+      <div className="rounded-lg border border-zinc-700 bg-zinc-800/40 p-3 text-xs">
+        <div className="text-zinc-400 font-semibold mb-1.5">Before you negotiate: know your market rate</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[
+            { source: "levels.fyi", what: "Verified TC at big tech by level & location" },
+            { source: "Blind", what: "Anonymous peer comp — good for candid ranges" },
+            { source: "Glassdoor", what: "Broad market, less reliable — use as floor" },
+            { source: "LinkedIn Salary", what: "Good for non-eng roles at mid-market companies" },
+          ].map(s => (
+            <div key={s.source} className="rounded bg-zinc-900 border border-zinc-700 p-2">
+              <div className="text-indigo-400 font-semibold text-[11px]">{s.source}</div>
+              <div className="text-zinc-500 text-[11px] mt-0.5 leading-relaxed">{s.what}</div>
+            </div>
+          ))}
+        </div>
+        <div className="text-zinc-500 mt-2 text-[11px]">Know your number BEFORE the call. "I've done my research and the market rate for this role at this stage is $X–Y" is much stronger than "I was hoping for more."</div>
       </div>
 
       <div className="flex items-center gap-2 text-xs text-zinc-500">

@@ -5,6 +5,45 @@ import HowTo from "./HowTo";
 
 const PRD_SCENARIOS = [
   {
+    id: "vague_brief", title: "The Vague Brief", tag: "ANTI-PATTERN",
+    brief: "A product team wants to 'use AI to improve customer experience.' The PM writes a one-pager: 'We should integrate AI into our product. Success = customers are happier and the product feels smarter. Launch in Q2.'",
+    questions: [
+      {
+        q: "What's wrong with 'customers are happier' as a success metric?",
+        options: [
+          "It's too ambitious — teams should set lower bars",
+          "It's unmeasurable, not causal, and has no baseline — you can't tell if AI caused any change",
+          "It should say 'customers are satisfied' instead",
+          "Happiness metrics belong in user research, not PRDs",
+        ],
+        correct: 1,
+        explanation: "A success metric must be measurable, tied to a specific action, and have a baseline to compare against. 'Happier' is an outcome you can't attribute to AI specifically, can't measure without a survey instrument, and can't track over time without a starting number.",
+      },
+      {
+        q: "What's missing from 'launch in Q2' as a goal?",
+        options: [
+          "A specific month — Q2 is too vague",
+          "Sign-off from the engineering lead",
+          "No quality bar, no rollback criteria, and no definition of done — launch on what terms?",
+          "A contingency plan if Q2 is missed",
+        ],
+        correct: 2,
+        explanation: "'Launch in Q2' tells engineering when, but not what done means. A real goal includes: what quality bar must be met (e.g., hallucination rate < 3%), what triggers a rollback (e.g., CSAT drops > 10%), and how success is measured 30 days post-launch.",
+      },
+      {
+        q: "How do you fix this brief in one sentence?",
+        options: [
+          "Remove the AI requirement and solve the problem with existing tools first",
+          "Add a customer journey map to clarify what 'smarter' means",
+          "Increase CSAT score from 3.8 to 4.2 (measured at 30 days post-launch) by deflecting tier-1 support queries with < 3% hallucination rate and P95 latency < 2s",
+          "Define AI as a must-have feature in the product strategy document",
+        ],
+        correct: 2,
+        explanation: "One sentence can contain everything a PRD needs: a specific metric (CSAT), a threshold (3.8 → 4.2), a constraint (hallucination rate, latency), and a measurement window (30 days post-launch). Vague briefs produce vague products — precision is the PM's job.",
+      },
+    ],
+  },
+  {
     id: "support_bot", title: "AI Customer Support Bot", tag: "E-COMMERCE",
     brief: "Engineering proposes an LLM chatbot to handle tier-1 support queries. You're PM. Define the PRD.",
     questions: [
@@ -157,13 +196,13 @@ const STAKEHOLDER_INCIDENTS = [
 ];
 
 const LAUNCH_CHECKLIST = [
-  { id: "lc1",  category: "Evals",      priority: "must",   label: "Offline eval suite: happy path, edge cases, adversarial inputs",            why: "Without evals, you can't know if a model change broke something. Ship nothing without a baseline." },
+  { id: "lc1",  category: "Evals",      priority: "must",   label: "Offline eval suite: happy path, edge cases, adversarial inputs",            why: "Without evals, you can't know if a model change broke something. Ship nothing without a baseline. Minimum bar: 50+ test cases covering happy path, edge cases, and adversarial inputs. At least 10% of cases should be from real user queries." },
   { id: "lc2",  category: "Evals",      priority: "must",   label: "Regression threshold defined: max acceptable metric degradation per cohort", why: "A new model might improve average but hurt a critical subgroup. Define 'acceptable' before you see the numbers." },
-  { id: "lc3",  category: "Monitoring", priority: "must",   label: "Production dashboard live (latency, hallucination rate, cost/query)",        why: "You can't fix what you can't see. Day-1 observability is non-negotiable." },
+  { id: "lc3",  category: "Monitoring", priority: "must",   label: "Production dashboard live (latency, hallucination rate, cost/query)",        why: "You can't fix what you can't see. Day-1 observability is non-negotiable. Minimum bar: Track hallucination rate, latency P50/P95/P99, cost per query, and refusal rate. Alert thresholds set before launch, not after." },
   { id: "lc4",  category: "Monitoring", priority: "must",   label: "Alerts configured for P95 latency spikes and error rate anomalies",          why: "Silent failures are the worst kind. Alerts catch degradation before users report it." },
-  { id: "lc5",  category: "Fallback",   priority: "must",   label: "Graceful degradation path defined and tested (LLM API goes down)",           why: "LLM APIs go down. Your product should not go down with them." },
+  { id: "lc5",  category: "Fallback",   priority: "must",   label: "Graceful degradation path defined and tested (LLM API goes down)",           why: "LLM APIs go down. Your product should not go down with them. Minimum bar: Fallback triggers within 500ms. User sees a helpful message — not a raw error. Tested with synthetic load before launch." },
   { id: "lc6",  category: "Fallback",   priority: "must",   label: "Human escalation path for high-stakes decisions",                            why: "No AI should make irreversible high-stakes decisions without a human in the loop." },
-  { id: "lc7",  category: "Safety",     priority: "must",   label: "Input/output guardrails tested against known attack types",                  why: "Prompt injection is not theoretical. Test your guardrails before users do." },
+  { id: "lc7",  category: "Safety",     priority: "must",   label: "Input/output guardrails tested against known attack types",                  why: "Prompt injection is not theoretical. Test your guardrails before users do. Minimum bar: False positive rate < 2% on a representative query sample. Tested against at least 20 adversarial inputs from your threat model." },
   { id: "lc8",  category: "Safety",     priority: "must",   label: "PII handling reviewed — no user data in prompts unless necessary",           why: "LLM providers may log prompts. Sending PII to a third-party API is a data handling decision, not just eng." },
   { id: "lc9",  category: "Fairness",   priority: "should", label: "Bias evaluation across demographic cohorts relevant to use case",            why: "Models perform differently across groups. Know your disparities before shipping." },
   { id: "lc10", category: "Fairness",   priority: "should", label: "Low-resource language testing if users are multilingual",                    why: "English-centric models degrade significantly on other languages. Don't assume." },
@@ -393,6 +432,23 @@ function StakeholderExplainer() {
       ) : (
         <StakeholderQuiz incident={incident} onBack={() => setQuizMode(false)} />
       )}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-4 mt-4">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-2">The hardest case: you don't know the root cause yet</div>
+        <div className="text-xs text-zinc-300 leading-relaxed space-y-2">
+          <div>Real incidents rarely have a clean root cause in the first hour. The frameworks above show the <em>final</em> message — but the harder skill is communicating under uncertainty.</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+            <div className="rounded-lg bg-zinc-800/60 border border-zinc-700 p-2.5">
+              <div className="text-red-400 font-semibold text-[11px] mb-1">❌ Don't say</div>
+              <div className="text-zinc-400 text-[11px]">"We have a bug and we're looking into it." — No timeline, no scope, no accountability. Creates anxiety.</div>
+            </div>
+            <div className="rounded-lg bg-zinc-800/60 border border-zinc-700 p-2.5">
+              <div className="text-emerald-400 font-semibold text-[11px] mb-1">✓ Say instead</div>
+              <div className="text-zinc-400 text-[11px]">"We identified an issue affecting [X users / Y% of queries]. We're investigating and will have an update in [N hours]. No data has been lost." — Scope + timeline + reassurance.</div>
+            </div>
+          </div>
+          <div className="text-zinc-500 text-[11px] mt-1">Commit to an update cadence (every 2h), not to a resolution time you can't guarantee.</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -558,6 +614,41 @@ function AIOrNot() {
         ? <button onClick={submit} disabled={!sel} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold rounded-lg text-sm">Submit</button>
         : <button onClick={next} className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-lg text-sm">{idx+1 >= AI_OR_NOT_QS.length ? "Restart →" : "Next →"}</button>
       }
+      {/* Cost/latency reference */}
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 mt-4">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-3">Cost & latency reality check — before you pick a tool</div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-zinc-700">
+                <th className="text-left text-zinc-500 font-semibold pb-2 pr-4">Approach</th>
+                <th className="text-center text-zinc-500 font-semibold pb-2 px-3">Latency</th>
+                <th className="text-center text-zinc-500 font-semibold pb-2 px-3">Cost/1k calls</th>
+                <th className="text-left text-zinc-500 font-semibold pb-2 pl-4">Best for</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800">
+              {[
+                { name: "Rules-based", lat: "<1ms", cost: "~$0", best: "Deterministic decisions, audit trails, zero tolerance for error" },
+                { name: "Traditional ML", lat: "5–50ms", cost: "$0.001–0.01", best: "Tabular prediction, classification, high-volume structured data" },
+                { name: "Fine-tuned LLM", lat: "100–300ms", cost: "$0.10–0.50", best: "Stable behavioral patterns, proprietary domain, labeled data exists" },
+                { name: "Frontier LLM", lat: "500ms–3s", cost: "$1–30", best: "Open-ended generation, complex reasoning, one-off or low-volume tasks" },
+                { name: "Rules + LLM hybrid", lat: "5ms + 500ms", cost: "$0.001 + $1", best: "Rules handle 80–90% of volume cheaply; LLM handles edge cases only" },
+              ].map(r => (
+                <tr key={r.name}>
+                  <td className="py-2 pr-4 text-zinc-300 font-semibold">{r.name}</td>
+                  <td className="py-2 px-3 text-center font-mono text-emerald-400">{r.lat}</td>
+                  <td className="py-2 px-3 text-center font-mono text-amber-400">{r.cost}</td>
+                  <td className="py-2 pl-4 text-zinc-400 leading-relaxed">{r.best}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-3 rounded-lg bg-indigo-950/30 border border-indigo-800/50 p-3 text-xs text-zinc-300 leading-relaxed">
+          <span className="text-indigo-400 font-semibold">The hybrid pattern: </span>Route 90% of queries through rules or a small fine-tuned model (fast + cheap). Send only ambiguous or complex cases to a frontier LLM. This is how production systems at scale actually work — pure LLM for every query is rarely the right answer at volume.
+        </div>
+      </div>
     </div>
   );
 }

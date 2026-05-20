@@ -353,6 +353,7 @@ function EvalsLab() {
     { id: "budget", label: "Budget Allocator" },
     { id: "judge", label: "LLM-as-Judge Audit" },
     { id: "grader", label: "Output Grader" },
+    { id: "postmortem", label: "Real Postmortems" },
   ];
 
   return (
@@ -519,6 +520,84 @@ function EvalsLab() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Tab: Real Postmortems */}
+      {activeTab === "postmortem" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Real production incidents caused by missing or misconfigured evals. Each one was preventable.</p>
+          {[
+            {
+              title: "The Hallucination Nobody Caught for 6 Weeks",
+              severity: "HIGH",
+              sev_color: "red",
+              timeline: "Detected at week 6 via user complaint spike",
+              what: "A customer support RAG bot was answering billing questions using outdated pricing docs (6 months old). The retrieval was working — it was finding the right document — but the document itself was wrong. No groundedness eval existed.",
+              numbers: "~18% of billing queries returned wrong amounts. Caught only after a wave of angry support escalations.",
+              missed: "Team had hallucination evals but only for RAG retrieval gaps, not for stale-document cases. 'Grounded' was defined as 'response matches retrieved doc' — which was true, the doc just had wrong numbers.",
+              fix: "Added document freshness metadata to the vector store. Eval now checks doc date against a staleness threshold. Added a 'factual sanity check' eval (LLM judge cross-checks key numbers against a trusted source weekly).",
+              lesson: "Groundedness ≠ correctness. You can be perfectly grounded in wrong information. Evals must cover data freshness, not just retrieval quality.",
+            },
+            {
+              title: "The Eval That Passed Everything Wrong",
+              severity: "MEDIUM",
+              sev_color: "amber",
+              timeline: "Discovered during quarterly eval audit",
+              what: "A code review assistant's eval suite was 100 test cases — all 'happy path' examples where the code had obvious bugs. The model scored 97%. In production it was missing subtle bugs, security issues, and misidentifying correct patterns as bugs.",
+              numbers: "Production bug-detection precision: 61%. Eval suite precision: 97%. The gap was invisible for 3 months.",
+              missed: "Eval test cases were all easy examples written by the same team that built the model. No adversarial cases. No 'correct code that looks suspicious' cases. No edge cases from real PRs.",
+              fix: "Added 3 categories to eval suite: (1) adversarial — subtle real bugs from historical CVEs, (2) negative — correct code that looks suspicious, (3) real — 50 actual PR samples from the last quarter. Overall eval score dropped to 71% — more honest about actual capability.",
+              lesson: "If your eval score is >90%, you probably have too few hard cases. A useful eval suite should have enough hard examples that a mediocre model fails 20–30% of them.",
+            },
+            {
+              title: "The LLM Judge That Loved Long Answers",
+              severity: "MEDIUM",
+              sev_color: "amber",
+              timeline: "Identified when engineers noticed model getting verbose over time",
+              what: "A writing assistant used an LLM-as-judge for quality scoring. The judge consistently rated longer, more elaborate responses higher. Over 6 weeks of RLHF fine-tuning against this judge, the model learned to pad every response with unnecessary content.",
+              numbers: "Average response length: 180 words at launch → 340 words at week 6. User satisfaction (measured separately via thumbs) dropped 12%.",
+              missed: "LLM judges have verbosity bias — they tend to prefer longer, more comprehensive-seeming responses. Nobody calibrated the judge against human raters before using it for training signal.",
+              fix: "Paused fine-tuning loop. Ran 200-sample human calibration study against the LLM judge — found 31% disagreement rate on length preference. Added explicit length-appropriateness dimension to judge prompt. Re-evaluated judge reliability before resuming training.",
+              lesson: "Before using LLM-as-judge as a training signal, calibrate it against 100+ human annotations. Disagreement rate >20% means the judge has systematic biases that will compound over training iterations.",
+            },
+          ].map(p => (
+            <div key={p.title} className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-3">
+              <div className="flex items-start gap-3 flex-wrap">
+                <span className={`text-xs font-bold px-2 py-0.5 rounded bg-${p.sev_color}-900/40 border border-${p.sev_color}-800 text-${p.sev_color}-300`}>{p.severity}</span>
+                <div>
+                  <div className="text-sm font-bold text-white">{p.title}</div>
+                  <div className="text-xs text-zinc-500 mt-0.5">Detected: {p.timeline}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="space-y-2">
+                  <div className="rounded bg-zinc-950 border border-zinc-800 p-3">
+                    <div className="text-zinc-500 font-bold mb-1">What happened</div>
+                    <div className="text-zinc-300 leading-relaxed">{p.what}</div>
+                  </div>
+                  <div className="rounded bg-red-950/20 border border-red-900/30 p-3">
+                    <div className="text-red-400 font-bold mb-1">Impact</div>
+                    <div className="text-zinc-300 leading-relaxed">{p.numbers}</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="rounded bg-amber-950/20 border border-amber-900/30 p-3">
+                    <div className="text-amber-400 font-bold mb-1">What the eval missed</div>
+                    <div className="text-zinc-300 leading-relaxed">{p.missed}</div>
+                  </div>
+                  <div className="rounded bg-emerald-950/20 border border-emerald-900/30 p-3">
+                    <div className="text-emerald-400 font-bold mb-1">Fix</div>
+                    <div className="text-zinc-300 leading-relaxed">{p.fix}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-lg bg-indigo-950/30 border border-indigo-800/50 p-3 text-xs">
+                <span className="text-indigo-300 font-bold">Lesson: </span>
+                <span className="text-zinc-300">{p.lesson}</span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -791,6 +870,23 @@ function ModelStrategyLab() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Production lessons */}
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 mt-4 space-y-3">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Real numbers — what these decisions actually cost</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          {[
+            { title: "RAG vs Fine-tune cost", content: "Fine-tuning a 7B model on 10k examples: ~$50–200 one-time on cloud GPU. Running RAG at 100k queries/day with gpt-4o-mini: ~$120/day. Break-even: 1–2 days. Fine-tuning wins at scale IF the knowledge is stable.", color: "blue" },
+            { title: "Prompt engineering ceiling", content: "Few-shot prompting with 10 examples typically gets you to 80–85% of fine-tuned performance for classification tasks. The last 15% usually requires fine-tuning or better training data. Don't fine-tune until you've hit the prompting ceiling.", color: "violet" },
+            { title: "Agent vs direct LLM", content: "A 3-step agent chain costs 3× the LLM calls + tool call latency. At 100k queries/day, a 3-step agent costs 3× a single LLM call. Only use agents when the task genuinely requires sequential decisions — not for multi-retrieval (use parallel tool calls instead).", color: "amber" },
+          ].map(n => (
+            <div key={n.title} className={`rounded-lg bg-${n.color}-950/25 border border-${n.color}-900/40 p-3 space-y-1`}>
+              <div className={`text-${n.color}-400 font-semibold`}>{n.title}</div>
+              <div className="text-zinc-300 leading-relaxed">{n.content}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -2248,6 +2344,25 @@ function FineTuningLab() {
           ))}
         </div>
       )}
+
+      {/* When fine-tuning fails */}
+      <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-6 space-y-3">
+        <div className="text-xs font-bold text-red-400 uppercase tracking-wide">When fine-tuning fails — and why it's often the wrong tool</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          {[
+            { case: "Catastrophic forgetting", symptom: "Fine-tuned model does great on your task but loses general reasoning ability. Ask it to write code after fine-tuning on customer support transcripts — quality degrades.", fix: "Use LoRA (Low-Rank Adaptation) which only trains small adapter matrices, leaving base weights intact. Full fine-tuning on narrow datasets almost always causes forgetting." },
+            { case: "Training on hallucinations", symptom: "You auto-generate fine-tuning data using the base model, then train on it. The model learns to reproduce its own hallucinations with more confidence.", fix: "Never use model-generated data as ground truth without human review. Fine-tuning amplifies whatever patterns are in the data — good or bad." },
+            { case: "Overfitting to format, not content", symptom: "Fine-tuned model produces responses in exactly the right format but with wrong content. It learned the surface pattern (JSON structure, response length) not the semantic task.", fix: "Increase training data diversity. Include negative examples. Eval on held-out examples that have the right content but different surface form to the training examples." },
+            { case: "Fine-tuning for knowledge injection", symptom: "Team fine-tunes on product documentation to 'teach' the model new facts. Works initially, then facts change. Retraining is expensive. Model hallucinates on anything not in training data.", fix: "Don't use fine-tuning to inject facts. Use RAG. Fine-tuning is for style, format, and behavioral patterns — not facts. Facts belong in a retrieval store you can update cheaply." },
+          ].map(f => (
+            <div key={f.case} className="rounded-lg bg-zinc-900/60 border border-zinc-700 p-3 space-y-1">
+              <div className="text-red-400 font-semibold">{f.case}</div>
+              <div className="text-zinc-400 leading-relaxed"><span className="text-zinc-300 font-medium">Symptom: </span>{f.symptom}</div>
+              <div className="text-zinc-400 leading-relaxed"><span className="text-emerald-400 font-medium">Fix: </span>{f.fix}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
