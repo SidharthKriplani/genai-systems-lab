@@ -8,15 +8,88 @@ import SalaryCalculator from "./SalaryCalculator";
 // Every post maps to at least one interactive module on the platform.
 // "labLink" is where the reader goes to test what they just read.
 
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function highlightText(text, term) {
+  if (!term || term.length < 2) return text;
+  const parts = text.split(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+  return parts.map((p, i) => i % 2 === 1 ? <mark key={i} className="bg-yellow-400/30 text-yellow-200 rounded px-0.5">{p}</mark> : p);
+}
+
+function countMatches(blocks, term) {
+  if (!term || term.length < 2) return 0;
+  const re = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  let count = 0;
+  blocks.forEach(b => {
+    if (b.text) count += (b.text.match(re) || []).length;
+  });
+  return count;
+}
+
+const REACTIONS = [
+  { id: "helped", emoji: "🎯", label: "Saved me in an interview" },
+  { id: "mindblown", emoji: "🤯", label: "Mind = blown" },
+  { id: "confusing", emoji: "🤔", label: "Confusing" },
+  { id: "bookmark", emoji: "🔖", label: "Worth revisiting" },
+];
+
+function generateQuiz(blocks) {
+  const questions = [];
+
+  const callouts = blocks.filter(b => b.t === "callout" && b.text?.length > 30);
+  callouts.slice(0, 2).forEach((b) => {
+    const fact = b.text.split('.')[0];
+    questions.push({
+      q: `Which statement best summarizes a key insight from this section?`,
+      options: [
+        fact.length > 100 ? fact.slice(0, 100) + "..." : fact,
+        "The opposite of the above is generally true in production",
+        "This only applies to systems with more than 1M users",
+        "This is a theoretical concept with no production relevance",
+      ],
+      correct: 0,
+      source: "callout"
+    });
+  });
+
+  const lists = blocks.filter(b => b.t === "list" && b.items?.length >= 4);
+  lists.slice(0, 1).forEach(b => {
+    const item = b.items[0];
+    questions.push({
+      q: `Which of the following is explicitly mentioned in this post?`,
+      options: [
+        item,
+        "Reducing context window size always improves accuracy",
+        "Fine-tuning is always cheaper than RAG at scale",
+        "Token costs have no impact on architecture decisions",
+      ],
+      correct: 0,
+      source: "list"
+    });
+  });
+
+  return questions.slice(0, 3);
+}
+
 // ─── POST DETAIL RENDERER ────────────────────────────────────────────────────
-function Block({ b, onNavigate, color }) {
+function Block({ b, onNavigate, color, postSearch }) {
   switch (b.t) {
     case "p":
-      return <p className="text-sm text-zinc-300 leading-relaxed">{b.text}</p>;
-    case "h2":
-      return <h2 className="text-base font-black text-white mt-8 mb-1">{b.text}</h2>;
+      return <p className="text-sm text-zinc-300 leading-relaxed">{highlightText(b.text, postSearch)}</p>;
+    case "h2": {
+      const headingId = b.text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      return (
+        <div className="group flex items-center gap-2" id={headingId}>
+          <h2 className="text-base font-black text-white mt-8 mb-1">{highlightText(b.text, postSearch)}</h2>
+          <button
+            onClick={() => { navigator.clipboard.writeText(window.location.href.split('#')[0] + '#' + headingId); }}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-600 hover:text-zinc-400 text-xs mt-8"
+            title="Copy link to section"
+          >§</button>
+        </div>
+      );
+    }
     case "h3":
-      return <h3 className="text-sm font-bold text-zinc-200 mt-5 mb-1">{b.text}</h3>;
+      return <h3 className="text-sm font-bold text-zinc-200 mt-5 mb-1">{highlightText(b.text, postSearch)}</h3>;
     case "divider":
       return <hr className="border-zinc-800 my-6" />;
     case "list":
@@ -41,7 +114,7 @@ function Block({ b, onNavigate, color }) {
       return (
         <div className={`rounded-lg border ${s.border} ${s.bg} px-4 py-3 flex gap-3`}>
           <span className={`w-1.5 h-1.5 rounded-full ${s.dot} shrink-0 mt-1.5`} />
-          <p className={`text-xs leading-relaxed ${s.text}`}>{b.text}</p>
+          <p className={`text-xs leading-relaxed ${s.text}`}>{highlightText(b.text, postSearch)}</p>
         </div>
       );
     }
@@ -159,13 +232,26 @@ function Block({ b, onNavigate, color }) {
   }
 }
 
-function PostDetail({ post, onBack, onOpenPost, onNavigate }) {
+function PostDetail({ post, onBack, onOpenPost, onNavigate, activeReactions, onReact }) {
   const content = POST_CONTENT[post.id];
   const color = CAT_COLORS[post.category] || "#6366f1";
   const catLabel = CATEGORIES.find(c => c.id === post.category)?.label || post.category;
   const [scrollPct, setScrollPct] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
   const articleRef = useRef(null);
+
+  // Feature 1 — Simple Mode
+  const [simpleMode, setSimpleMode] = useState(false);
+
+  // Feature 2 — In-post search
+  const [postSearch, setPostSearch] = useState("");
+  const matchCount = content ? countMatches(content, postSearch) : 0;
+
+  // Feature 4 — Quiz
+  const [quizActive, setQuizActive] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState([]);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [quizRevealed, setQuizRevealed] = useState(false);
 
   const postUrl = `https://genai-systems-lab-ivory.vercel.app/#groundtruth/${post.id}`;
   const shareTitle = encodeURIComponent(`${post.title} — Ground Truth | GenAI Systems Lab`);
@@ -250,12 +336,25 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate }) {
 
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
             <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
               style={{ color, background: color + "22", border: `1px solid ${color}44` }}>
               {catLabel}
             </span>
             <span className="text-[9px] text-zinc-600 font-mono">{post.readMin} min read</span>
+            <div className="ml-auto flex items-center gap-2">
+              {/* Feature 2 — In-post search */}
+              <input
+                value={postSearch} onChange={e => setPostSearch(e.target.value)}
+                placeholder="Find in post..."
+                className="text-xs px-2 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 outline-none focus:border-zinc-500 w-28 focus:w-40 transition-all"
+              />
+              {postSearch.length >= 2 && <span className="text-xs text-zinc-500">{matchCount} matches</span>}
+              {/* Feature 1 — Simple Mode toggle */}
+              <button onClick={() => setSimpleMode(s => !s)} className="text-xs px-2 py-1 rounded border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white transition-all">
+                {simpleMode ? "Full version" : "Simplify"}
+              </button>
+            </div>
           </div>
           <h1 className="text-lg sm:text-xl font-black text-white leading-tight mb-3">{post.title}</h1>
           <p className="text-sm text-zinc-400 leading-relaxed">{post.desc}</p>
@@ -280,9 +379,114 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate }) {
                 </div>
               ) : null;
             })()}
-            {content.map((b, i) => (
-              <Block key={i} b={b} onNavigate={onNavigate} color={color} />
-            ))}
+            {/* Feature 1 — Simple Mode banner */}
+            {simpleMode && (
+              <div className="rounded-xl bg-indigo-900/30 border border-indigo-700/50 p-4 mb-4">
+                <p className="text-sm text-indigo-300">✨ <strong>Simple mode</strong> — showing only the key ideas. Toggle off for the full technical post.</p>
+              </div>
+            )}
+            {(() => {
+              const displayBlocks = simpleMode
+                ? content.filter(b => b.t === "p" || b.t === "callout").slice(0, 8)
+                : content;
+              return (
+                <>
+                  {displayBlocks.map((b, i) => (
+                    <Block key={i} b={b} onNavigate={onNavigate} color={color} postSearch={postSearch} />
+                  ))}
+                  {simpleMode && (
+                    <div className="rounded-xl border border-indigo-800/50 bg-indigo-950/20 p-4 text-center">
+                      <p className="text-sm text-indigo-300 mb-2">Want the full technical version?</p>
+                      <button onClick={() => setSimpleMode(false)} className="text-xs px-3 py-1.5 rounded border border-indigo-600 text-indigo-300 hover:bg-indigo-900/40 transition-all">
+                        Show full post
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+            {/* Feature 3 — Reactions */}
+            <div className="border-t border-zinc-800 pt-4 mt-6">
+              <p className="text-xs text-zinc-600 mb-2">React to this post</p>
+              <div className="flex flex-wrap gap-2">
+                {REACTIONS.map(r => {
+                  const active = (activeReactions || []).includes(r.id);
+                  return (
+                    <button key={r.id} onClick={() => onReact(r.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all ${active ? "border-violet-500 bg-violet-900/30 text-violet-300" : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-600"}`}>
+                      <span>{r.emoji}</span>{r.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Feature 4 — Quiz Me */}
+            {!quizActive ? (
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    const q = generateQuiz(content);
+                    setQuizQuestions(q);
+                    setQuizAnswers({});
+                    setQuizRevealed(false);
+                    setQuizActive(true);
+                  }}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-zinc-700 hover:border-violet-600 text-zinc-400 hover:text-violet-300 transition-all"
+                >
+                  Quiz me on this post →
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Quick Quiz</p>
+                  <button onClick={() => setQuizActive(false)} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">✕ Close</button>
+                </div>
+                {quizQuestions.length === 0 ? (
+                  <p className="text-xs text-zinc-500">Not enough structured content to generate questions for this post.</p>
+                ) : (
+                  quizQuestions.map((q, qi) => (
+                    <div key={qi} className="space-y-2">
+                      <p className="text-xs font-bold text-zinc-300">{qi + 1}. {q.q}</p>
+                      <div className="space-y-1">
+                        {q.options.map((opt, oi) => {
+                          const chosen = quizAnswers[qi] === oi;
+                          const isCorrect = oi === q.correct;
+                          const showResult = quizRevealed || quizAnswers[qi] !== undefined;
+                          return (
+                            <button
+                              key={oi}
+                              onClick={() => { if (quizAnswers[qi] === undefined) setQuizAnswers(prev => ({ ...prev, [qi]: oi })); }}
+                              className={`w-full text-left text-xs px-3 py-2 rounded-lg border transition-all ${
+                                showResult && isCorrect ? "border-emerald-600 bg-emerald-950/30 text-emerald-300" :
+                                showResult && chosen && !isCorrect ? "border-red-700 bg-red-950/30 text-red-400" :
+                                chosen ? "border-violet-600 bg-violet-900/30 text-violet-300" :
+                                "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-600"
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {quizQuestions.length > 0 && !quizRevealed && (
+                  <button
+                    onClick={() => setQuizRevealed(true)}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-zinc-700 hover:border-emerald-600 text-zinc-400 hover:text-emerald-300 transition-all"
+                  >
+                    Reveal answers
+                  </button>
+                )}
+                {quizRevealed && (
+                  <p className="text-xs text-zinc-500">
+                    Score: {quizQuestions.filter((q, qi) => quizAnswers[qi] === q.correct).length} / {quizQuestions.length}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-8 text-center">
@@ -448,6 +652,21 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
     try { localStorage.setItem("genai_gt_helpful", JSON.stringify(next)); } catch {}
   }
 
+  // Feature 3 — Reactions (persisted in parent so they survive PostDetail unmount)
+  const [reactions, setReactions] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("genai_reactions") || "{}"); } catch { return {}; }
+  });
+  function toggleReaction(postId, reactionId) {
+    setReactions(prev => {
+      const postReactions = new Set(prev[postId] || []);
+      if (postReactions.has(reactionId)) postReactions.delete(reactionId);
+      else postReactions.add(reactionId);
+      const next = { ...prev, [postId]: [...postReactions] };
+      try { localStorage.setItem("genai_reactions", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
   useEffect(() => { track("ground_truth_viewed", {}); }, []);
 
   // Deep-link from search: open the post matching initialPostId
@@ -463,7 +682,7 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
   }, [initialPostId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (openPost) {
-    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onOpenPost={setOpenPost} onNavigate={onNavigate} />;
+    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onOpenPost={setOpenPost} onNavigate={onNavigate} activeReactions={reactions[openPost.id]} onReact={(id) => toggleReaction(openPost.id, id)} />;
   }
 
   // "Start Here" pinned posts — shown above the category filter regardless of active filter

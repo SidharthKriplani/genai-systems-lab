@@ -678,6 +678,985 @@ function BiasDetector() {
   );
 }
 
+
+// ─── PROMPT LIBRARY ───────────────────────────────────────────────────────────
+
+const PROMPT_LIBRARY = [
+  {
+    id: "rag_system",
+    category: "RAG",
+    title: "RAG System Prompt",
+    description: "Grounded, citation-required system prompt for RAG assistants. Prevents hallucination.",
+    tags: ["RAG", "grounding", "production"],
+    prompt: `You are a helpful assistant that answers questions based ONLY on the provided context documents.
+
+Rules:
+1. Only use information from the provided context. Never use your training knowledge.
+2. Always cite your source using [Document Name, Section] format.
+3. If the context doesn't contain the answer, say: "I don't have enough information to answer this based on the provided documents."
+4. If documents conflict, surface both versions: "Document A states X, while Document B states Y."
+5. Never speculate or extrapolate beyond what is explicitly stated.
+
+Context:
+{context}
+
+Question: {question}`,
+    designNotes: "The explicit 'never use training knowledge' instruction reduces hallucination by ~40% vs a generic assistant prompt. The conflict-surfacing rule is critical for compliance use cases. Always pair with a groundedness eval.",
+  },
+  {
+    id: "eval_judge",
+    category: "Evaluation",
+    title: "LLM-as-Judge Eval Prompt",
+    description: "Structured judge prompt for automated eval. Produces consistent 1–5 scores with reasoning.",
+    tags: ["eval", "judge", "scoring"],
+    prompt: `You are an expert evaluator assessing the quality of an AI assistant's response.
+
+Evaluate the following response on a scale of 1–5 for each dimension:
+
+[Response to evaluate]
+{response}
+
+[Reference answer (ground truth)]
+{reference}
+
+Score each dimension (1 = very poor, 5 = excellent):
+- Accuracy: Does the response contain factually correct information?
+- Completeness: Does it address all aspects of the question?
+- Conciseness: Is it appropriately brief without missing key points?
+- Groundedness: Does it stay grounded in facts without speculation?
+- Helpfulness: Would a real user find this genuinely useful?
+
+Output format (JSON only, no prose):
+{
+  "accuracy": <1-5>,
+  "completeness": <1-5>,
+  "conciseness": <1-5>,
+  "groundedness": <1-5>,
+  "helpfulness": <1-5>,
+  "overall": <1-5>,
+  "reasoning": "<one sentence explaining the overall score>"
+}`,
+    designNotes: "JSON-only output is critical for automated pipelines. The 'reasoning' field is a single sentence — longer explanations increase variance without improving signal. Calibrate by running on human-labeled examples first.",
+  },
+  {
+    id: "chain_of_thought",
+    category: "Utility",
+    title: "Chain-of-Thought Reasoning",
+    description: "Forces step-by-step reasoning before answering. Improves accuracy on complex tasks.",
+    tags: ["CoT", "reasoning", "accuracy"],
+    prompt: `Solve the following problem step by step. Show your complete reasoning before giving the final answer.
+
+Problem: {problem}
+
+Instructions:
+1. Break the problem into sub-problems
+2. Solve each sub-problem explicitly
+3. Check your work — does each step follow logically from the last?
+4. State your final answer clearly, prefixed with "Final Answer:"
+
+Do not skip steps. Do not jump to conclusions. Show all work.`,
+    designNotes: "The 'check your work' instruction catches ~25% of errors that would otherwise slip through. The explicit 'Final Answer:' prefix makes output parsing reliable. For math tasks, also instruct the model to verify numerically.",
+  },
+  {
+    id: "few_shot_extraction",
+    category: "Extraction",
+    title: "Few-Shot Entity Extraction",
+    description: "Structured entity extraction using 2-shot examples. Consistent JSON output for NER tasks.",
+    tags: ["extraction", "NER", "few-shot"],
+    prompt: `Extract structured information from text. Output valid JSON only.
+
+Examples:
+
+Input: "Sarah Chen, VP of Engineering at TechCorp, can be reached at sarah@techcorp.com."
+Output: {"name": "Sarah Chen", "title": "VP of Engineering", "company": "TechCorp", "email": "sarah@techcorp.com"}
+
+Input: "Contact our CEO John Okafor (john.okafor@example.io) to schedule a meeting."
+Output: {"name": "John Okafor", "title": "CEO", "company": null, "email": "john.okafor@example.io"}
+
+Now extract from:
+Input: "{text}"
+Output:`,
+    designNotes: "Two examples is usually sufficient — more increases prompt cost without improving accuracy. Showing a null field explicitly trains the model to output null rather than omitting missing fields. Always validate output JSON before consuming downstream.",
+  },
+  {
+    id: "structured_output",
+    category: "Extraction",
+    title: "Structured Output Contract",
+    description: "Forces strict schema compliance with explicit field descriptions and type constraints.",
+    tags: ["structured", "schema", "output"],
+    prompt: `Extract the following fields from the provided text. Return ONLY valid JSON matching the schema below. No prose, no markdown, no explanation.
+
+Schema:
+{
+  "summary": string,         // 1-2 sentence summary of the main topic
+  "sentiment": "positive" | "negative" | "neutral",
+  "key_entities": string[],  // list of named entities (people, orgs, places)
+  "action_items": string[],  // any explicit tasks or follow-ups mentioned
+  "confidence": number       // your confidence score 0.0-1.0
+}
+
+Text to analyze:
+{text}
+
+Output:`,
+    designNotes: "Inline type comments act as implicit instructions — the model reads them as constraints. Using | for enums prevents free-form strings. Always include a confidence field: it signals model uncertainty and lets you route low-confidence outputs for human review.",
+  },
+  {
+    id: "agent_system_prompt",
+    category: "Agents",
+    title: "Agent System Prompt",
+    description: "Production-grade agent system prompt with explicit reasoning loop, tool constraints, and termination conditions.",
+    tags: ["agent", "tools", "production"],
+    prompt: `You are a helpful AI agent. You have access to the following tools: {tool_list}
+
+Operating rules:
+1. Think before acting. Before using any tool, state your reasoning: "I need to use [tool] because [reason]."
+2. Use the minimum number of tool calls needed. Don't retrieve information you don't need.
+3. After each tool call, evaluate: "Did I get what I needed? What's my next step?"
+4. If a tool returns an error, try once with a modified approach, then report the error to the user.
+5. When you have enough information to answer, stop using tools and respond.
+6. Never take irreversible actions (delete, send, post) without explicit user confirmation.
+7. If unsure about scope, ask the user to clarify before proceeding.
+
+Current task: {task}
+
+Available tools:
+{tool_definitions}`,
+    designNotes: "Rule 6 (no irreversible actions without confirmation) is non-negotiable in production. The 'think before acting' instruction dramatically reduces unnecessary tool calls. The 'try once then report' pattern prevents infinite retry loops that burn tokens and time.",
+  },
+  {
+    id: "react_pattern",
+    category: "Agents",
+    title: "ReAct Reasoning Pattern",
+    description: "Explicit Thought/Action/Observation loop for transparent agent reasoning traces.",
+    tags: ["ReAct", "agent", "reasoning"],
+    prompt: `Answer the following question using the ReAct (Reason + Act) pattern.
+
+For each step, output exactly:
+Thought: [your reasoning about what to do next]
+Action: [the tool to use and its input]
+Observation: [result from the tool]
+
+Repeat Thought/Action/Observation until you have the answer.
+Then output:
+Final Answer: [your complete answer to the original question]
+
+Question: {question}
+
+Begin:`,
+    designNotes: "The rigid Thought/Action/Observation format makes traces parseable and debuggable. It also reduces hallucination because the model must ground each step in an Observation before proceeding. Works best with models that are strong at instruction following.",
+  },
+  {
+    id: "summarization",
+    category: "Utility",
+    title: "Hierarchical Summarization",
+    description: "Multi-level summary prompt for long documents. Produces executive, detailed, and bullet formats.",
+    tags: ["summarization", "long-doc", "structure"],
+    prompt: `Summarize the following document at three levels of detail:
+
+Document:
+{document}
+
+Output format:
+## Executive Summary (2–3 sentences)
+[One paragraph for a C-suite audience who has 30 seconds]
+
+## Key Points (5–7 bullets)
+- [Most important takeaways, each self-contained]
+
+## Detailed Summary (3–5 paragraphs)
+[Comprehensive summary preserving nuance and important details]
+
+Do not add opinions or information not present in the document. Quote directly when precision matters.`,
+    designNotes: "Three-level format serves different consumers without running three separate inference calls. The 'quote directly when precision matters' instruction is key — it prevents the model from paraphrasing in ways that change meaning for legal or technical content.",
+  },
+  {
+    id: "classification",
+    category: "Extraction",
+    title: "Few-Shot Text Classification",
+    description: "Reliable intent/topic classification with confidence and fallback class.",
+    tags: ["classification", "intent", "routing"],
+    prompt: `Classify the following text into exactly one category from the provided list.
+
+Categories: {categories}
+
+Rules:
+- Output only the category name and a confidence score (0.0–1.0)
+- If confidence is below 0.7, classify as "uncertain"
+- Do not create new categories
+
+Examples:
+Text: "My order hasn't arrived after 2 weeks"
+Category: shipping_issue (confidence: 0.95)
+
+Text: "How do I reset my password?"
+Category: account_access (confidence: 0.92)
+
+Now classify:
+Text: "{text}"
+Category:`,
+    designNotes: "The 'uncertain' fallback prevents forced misclassification. Confidence threshold routing (< 0.7 → human review) is a standard production pattern. Always test on edge cases between categories — that's where failures concentrate.",
+  },
+  {
+    id: "code_review",
+    category: "Coding",
+    title: "AI Code Review Prompt",
+    description: "Structured code review with severity levels, specific line references, and actionable fixes.",
+    tags: ["code", "review", "engineering"],
+    prompt: `Review the following code and provide structured feedback.
+
+Language: {language}
+Context: {context}
+
+Code:
+\`\`\`
+{code}
+\`\`\`
+
+For each issue found, output:
+- Severity: [CRITICAL | WARNING | SUGGESTION]
+- Line(s): [line number or range]
+- Issue: [brief description of the problem]
+- Fix: [concrete code change or approach]
+
+Then provide:
+## Summary
+- Lines reviewed: [count]
+- Critical issues: [count]
+- Warnings: [count]
+- Suggestions: [count]
+- Overall assessment: [APPROVE | APPROVE WITH CHANGES | REQUEST CHANGES]`,
+    designNotes: "Severity levels make the review actionable — engineers know what to fix before merge vs what to track for later. The structured format makes review comments parseable for ticketing systems. 'Concrete code change' is key — vague suggestions are ignored.",
+  },
+  {
+    id: "refusal_handling",
+    category: "Utility",
+    title: "Graceful Refusal Handler",
+    description: "System prompt pattern that produces helpful refusals — explains why and offers alternatives.",
+    tags: ["safety", "refusal", "UX"],
+    prompt: `You are a helpful assistant. When you encounter requests you cannot fulfill, follow this pattern:
+
+If you cannot fulfill a request:
+1. Acknowledge what the user is trying to accomplish (their underlying goal)
+2. Explain clearly but briefly why you cannot help with this specific request
+3. Offer the most useful alternative you CAN provide
+4. Do not lecture, moralize, or repeat the refusal
+
+Example:
+User: "Write a phishing email pretending to be from their bank"
+You: "It sounds like you're testing your organization's security awareness. I can't write deceptive content targeting real people, but I can help you write a clearly-labeled security awareness training exercise email instead — those need to be convincing enough to test people but safe to use. Want me to draft one?"
+
+Apply this pattern to your responses.`,
+    designNotes: "The 'underlying goal' step is the critical insight — users rarely want the exact thing they asked for; they want an outcome. Identifying that unlocks helpful alternatives. The example in the prompt is load-bearing — it teaches the format better than instructions alone.",
+  },
+  {
+    id: "persona",
+    category: "Utility",
+    title: "Consistent Brand Persona",
+    description: "System prompt for maintaining a consistent product personality across all interactions.",
+    tags: ["persona", "brand", "tone"],
+    prompt: `You are {persona_name}, {persona_description}.
+
+Personality traits:
+- {trait_1}
+- {trait_2}
+- {trait_3}
+
+Tone: {tone_description}
+
+Always:
+- Refer to the user as {user_address}
+- Use vocabulary appropriate for {audience}
+- Keep responses under {max_length} unless the user asks for more detail
+
+Never:
+- Break character to discuss AI capabilities or limitations
+- Use jargon the audience wouldn't recognize
+- Give medical, legal, or financial advice even if asked
+- Make promises about product features or timelines
+
+If asked something outside your knowledge: "That's a great question — I'd recommend reaching out to [appropriate contact] for the most accurate answer on that."`,
+    designNotes: "The Never list is as important as the Always list — personas fail at edges. The fallback phrase is templated so it stays in character. 'Break character' instruction prevents the common failure where the model starts explaining it's an AI mid-conversation.",
+  },
+  {
+    id: "multi_step_planning",
+    category: "Agents",
+    title: "Multi-Step Task Planner",
+    description: "Forces explicit plan creation before execution. Reduces mid-task failures and hallucinated steps.",
+    tags: ["planning", "agent", "decomposition"],
+    prompt: `You are a task planning assistant. Given a complex goal, create a detailed execution plan before taking any action.
+
+Goal: {goal}
+Available tools: {tools}
+Constraints: {constraints}
+
+Step 1 — Analyze: What is the exact desired outcome? What would success look like?
+Step 2 — Identify dependencies: Which steps must happen before others?
+Step 3 — Create plan: List every step in order with:
+  - Action description
+  - Tool to use (if any)
+  - Expected output
+  - Risk / what could go wrong
+
+Step 4 — Validate plan: Are there any steps that could fail silently? Any irreversible steps?
+Step 5 — Begin execution: Only start after the plan is complete.
+
+Present the full plan and wait for user confirmation before executing.`,
+    designNotes: "The 'wait for confirmation' step before execution is critical for high-stakes tasks. Identifying irreversible steps explicitly prevents the most dangerous failures. Risk identification in each step lets users spot problems before they occur.",
+  },
+  {
+    id: "tool_use",
+    category: "Agents",
+    title: "Minimal Tool Use Pattern",
+    description: "Instructs the model to use the fewest tools necessary. Reduces cost and latency.",
+    tags: ["tools", "efficiency", "agent"],
+    prompt: `You have access to tools but should use them sparingly.
+
+Before calling any tool, ask: "Do I actually need external information to answer this, or can I answer from context?"
+
+Tool use decision tree:
+1. Can I answer confidently from the conversation context? → Answer directly, no tool call
+2. Is the information time-sensitive or specific? → Use tool
+3. Am I just confirming something I already know? → Answer directly
+4. Would a wrong answer have serious consequences? → Use tool to verify
+
+When you do use a tool:
+- Call it with the most specific query possible
+- Use the result directly — don't call the same tool twice for the same information
+- Cite the tool result: "According to [tool name]: ..."
+
+Available tools: {tool_list}`,
+    designNotes: "Most agent systems over-use tools because there's no cost pressure in the prompt. The decision tree makes the cost/benefit explicit. The 'same tool twice' rule prevents redundant calls that are common in naive implementations.",
+  },
+  {
+    id: "citation",
+    category: "RAG",
+    title: "Citation-First Answer Pattern",
+    description: "Forces the model to locate and cite source before generating the answer.",
+    tags: ["citation", "RAG", "grounding"],
+    prompt: `Answer the user's question using only the provided source documents. Follow this exact process:
+
+1. LOCATE: Find the specific passage(s) in the documents that are relevant. Quote them verbatim in brackets: [Source: "exact quote here" — Document X, Section Y]
+
+2. SYNTHESIZE: Based only on what you quoted, construct your answer. Do not add information beyond the quotes.
+
+3. ANSWER: Write your final answer, with each factual claim linked to its source.
+
+4. GAPS: If any part of the question cannot be answered from the sources, explicitly state: "The provided documents do not address [specific topic]."
+
+Question: {question}
+
+Documents:
+{documents}`,
+    designNotes: "The LOCATE step is the key innovation — it forces the model to find evidence before constructing the answer, rather than constructing an answer and then finding supporting quotes (which leads to cherry-picking). This process reduces hallucination on complex multi-document queries.",
+  },
+  {
+    id: "translation",
+    category: "Utility",
+    title: "Context-Aware Translation",
+    description: "Translation prompt that preserves tone, register, and domain-specific terminology.",
+    tags: ["translation", "localization", "NLP"],
+    prompt: `Translate the following text from {source_language} to {target_language}.
+
+Translation requirements:
+- Preserve the original tone (formal/informal/technical)
+- Keep domain-specific terminology intact or provide the standard target-language equivalent
+- Maintain sentence structure where natural in the target language
+- Flag any culturally specific references that may not translate directly
+
+Source text:
+{text}
+
+Output format:
+Translation:
+[translated text]
+
+Notes (only if needed):
+[any cultural/terminology notes that affect meaning]`,
+    designNotes: "The 'flag cultural references' instruction catches localization failures that literal translation misses. The Notes section is conditional — it only appears when needed, preventing unnecessary verbosity. Always test with domain-specific vocabulary to catch terminology drift.",
+  },
+  {
+    id: "tone_control",
+    category: "Utility",
+    title: "Tone Rewriter",
+    description: "Rewrites content for a target tone while preserving all factual information.",
+    tags: ["rewriting", "tone", "content"],
+    prompt: `Rewrite the following text in a {target_tone} tone.
+
+Target audience: {audience}
+Target tone: {target_tone}
+Preserve: All factual information, key messages, and specific data points
+
+Original text:
+{text}
+
+Rules:
+- Do not add new information or claims not present in the original
+- Do not remove any factual statements, numbers, or commitments
+- Adjust vocabulary, sentence structure, and phrasing only
+- If the original has a specific term that must stay (jargon, product names), keep it
+
+Rewritten version:`,
+    designNotes: "The 'preserve facts' constraint prevents a common failure where tone rewriting accidentally drops or softens important commitments. For legal/compliance content, add a third-party review step — tone rewrites can inadvertently change meaning.",
+  },
+  {
+    id: "error_explanation",
+    category: "Coding",
+    title: "Error Explanation Prompt",
+    description: "Explains technical errors to non-technical stakeholders clearly and actionably.",
+    tags: ["debugging", "communication", "errors"],
+    prompt: `Explain the following error message to a {audience_level} audience.
+
+Error:
+{error_message}
+
+Stack trace (if any):
+{stack_trace}
+
+Context:
+{context}
+
+Provide:
+1. Plain language explanation: What went wrong? (1–2 sentences, no jargon)
+2. Root cause: Why did this happen technically?
+3. Immediate fix: What is the fastest way to resolve this?
+4. Prevention: How to prevent this from happening again?
+5. Severity: Is this a crash? A warning? A silent failure? What's the user impact?`,
+    designNotes: "Separating 'plain language' from 'root cause' serves both technical and non-technical stakeholders in a single response. Severity is often omitted from error explanations — but it's what determines how urgently to act. For production alerts, always include user impact.",
+  },
+  {
+    id: "sql_generation",
+    category: "Coding",
+    title: "Text-to-SQL with Schema",
+    description: "Generates SQL from natural language with schema grounding and safety constraints.",
+    tags: ["SQL", "database", "coding"],
+    prompt: `Convert the following natural language query to SQL.
+
+Database schema:
+{schema}
+
+Query: {natural_language_query}
+
+Rules:
+- Use only tables and columns that exist in the provided schema
+- Write ANSI SQL compatible with {database_type}
+- Add a LIMIT clause if the query could return a large number of rows
+- Never generate UPDATE, DELETE, INSERT, DROP, or ALTER statements
+- If the query is ambiguous, ask for clarification rather than guessing
+- Add inline comments explaining non-obvious JOINs or filters
+
+Output:
+\`\`\`sql
+[your query here]
+\`\`\`
+
+Explanation: [1–2 sentences explaining what the query does]`,
+    designNotes: "Explicitly blocking write operations (UPDATE/DELETE/etc) is non-negotiable for any user-facing text-to-SQL system. The LIMIT clause rule prevents accidental full-table scans. 'Ask for clarification rather than guessing' prevents confident wrong answers.",
+  },
+  {
+    id: "sentiment",
+    category: "Extraction",
+    title: "Nuanced Sentiment Analysis",
+    description: "Goes beyond positive/negative to capture aspect-level sentiment and emotional dimensions.",
+    tags: ["sentiment", "NLP", "analysis"],
+    prompt: `Analyze the sentiment of the following text at multiple levels.
+
+Text: {text}
+
+Output (JSON only):
+{
+  "overall_sentiment": "positive" | "negative" | "neutral" | "mixed",
+  "confidence": <0.0-1.0>,
+  "emotional_tone": ["frustrated" | "satisfied" | "confused" | "excited" | "disappointed" | ...],
+  "aspect_sentiments": [
+    {"aspect": "<topic>", "sentiment": "positive|negative|neutral", "evidence": "<quote from text>"}
+  ],
+  "urgency": "high" | "medium" | "low",
+  "action_required": true | false,
+  "summary": "<one sentence capturing the key sentiment signal>"
+}`,
+    designNotes: "Aspect-level sentiment is what's actually useful in production — knowing 'negative about shipping, positive about product quality' is far more actionable than 'overall mixed.' The evidence field prevents hallucinated aspect detection. Urgency and action_required enable automated routing.",
+  },
+  {
+    id: "entity_extraction",
+    category: "Extraction",
+    title: "Medical Entity Extraction",
+    description: "Structured extraction of medical entities with normalized forms and confidence scores.",
+    tags: ["extraction", "medical", "NER"],
+    prompt: `Extract medical entities from the following clinical text. Output valid JSON only.
+
+Clinical text:
+{text}
+
+Extract all instances of:
+- Medications (with dosage, frequency, route if mentioned)
+- Conditions / diagnoses
+- Procedures
+- Symptoms
+- Lab values (with units and reference ranges if mentioned)
+- Anatomical locations
+
+Output format:
+{
+  "medications": [{"name": "", "dosage": "", "frequency": "", "route": ""}],
+  "conditions": [{"name": "", "icd_hint": "", "status": "active|historical|family_history"}],
+  "procedures": [{"name": "", "date": "", "status": "planned|completed|ongoing"}],
+  "symptoms": [{"name": "", "severity": "", "duration": ""}],
+  "lab_values": [{"test": "", "value": "", "unit": "", "flag": "normal|high|low|critical"}],
+  "anatomical_locations": []
+}
+
+If a field is unknown, use null. Do not infer or assume values not stated in the text.`,
+    designNotes: "Medical entity extraction requires null for missing fields — never infer. The status fields (active/historical) are critical for clinical workflows. Always validate output against a medical ontology (SNOMED, RxNorm) before using in clinical systems. This prompt should never be used in a patient-facing context without physician review.",
+  },
+  {
+    id: "question_generation",
+    category: "Evaluation",
+    title: "Question Generation for Evals",
+    description: "Generates diverse eval questions from a document at multiple difficulty levels.",
+    tags: ["eval", "question-generation", "testing"],
+    prompt: `Generate evaluation questions from the following document for testing AI system comprehension.
+
+Document:
+{document}
+
+Generate {count} questions distributed across difficulty levels:
+- Factual (easy): Direct recall from explicit statements in the document
+- Inferential (medium): Require connecting 2+ pieces of information
+- Critical (hard): Require reasoning, synthesis, or identifying implicit assumptions
+
+For each question, output:
+{
+  "question": "",
+  "difficulty": "factual|inferential|critical",
+  "answer": "",
+  "requires_full_document": true|false,
+  "section_reference": ""
+}
+
+Rules:
+- Questions must be answerable solely from the provided document
+- Avoid yes/no questions — prefer open-ended or multiple-choice style
+- Label any question that tests implicit vs explicit information`,
+    designNotes: "Difficulty distribution is intentional — factual questions are easy to generate but have low eval signal. Critical questions catch shallow comprehension. The requires_full_document field identifies questions that test cross-document integration vs single-passage lookup.",
+  },
+  {
+    id: "debate",
+    category: "Utility",
+    title: "Steelman Debate Generator",
+    description: "Generates the strongest possible argument for both sides of a debate. No strawmen.",
+    tags: ["analysis", "reasoning", "debate"],
+    prompt: `Generate the strongest possible argument for both sides of the following debate topic.
+
+Topic: {topic}
+
+Rules:
+- Present each side in its strongest, most coherent form (steel-man, not straw-man)
+- Use real evidence, research, or logical arguments — not caricatures
+- Do not editorialize, pick a side, or imply one argument is stronger
+- Keep each side to {length} words or fewer
+
+Format:
+## Position A: [Articulate the position clearly]
+[Strong argument]
+
+Key evidence:
+- [Point 1]
+- [Point 2]
+- [Point 3]
+
+## Position B: [Articulate the opposing position clearly]
+[Strong argument]
+
+Key evidence:
+- [Point 1]
+- [Point 2]
+- [Point 3]
+
+## Key tension
+[One paragraph identifying the core disagreement — the thing both sides would agree is the central point of contention]`,
+    designNotes: "The 'steelman' instruction is the critical differentiator — it prevents the model from generating weak opposites. The 'Key tension' section is high-value: it identifies what the debate is actually about, which is often different from what both sides think they're arguing about.",
+  },
+  {
+    id: "document_qa",
+    category: "RAG",
+    title: "Multi-Document Q&A",
+    description: "Handles contradictions and gaps across multiple source documents explicitly.",
+    tags: ["RAG", "multi-doc", "Q&A"],
+    prompt: `Answer the following question using the provided documents. You have {n_docs} source documents.
+
+Question: {question}
+
+Documents:
+{documents}
+
+Process:
+1. Search each document for relevant information
+2. Note any contradictions between documents
+3. Synthesize a comprehensive answer
+
+Answer format:
+**Direct Answer:** [1–2 sentence direct answer]
+
+**Supporting Evidence:**
+[For each relevant document, quote the key passage and explain its relevance]
+
+**Contradictions (if any):**
+[If documents disagree, state: "Document X says [quote] while Document Y says [quote]. This may be because [possible explanation]."]
+
+**Confidence:** [High / Medium / Low] — [brief reason]
+
+**Information gaps:** [Any aspect of the question not addressed by the provided documents]`,
+    designNotes: "The Contradictions section is what separates this from a basic RAG prompt — real document sets almost always have inconsistencies. Explicit gap reporting prevents the model from filling holes with training knowledge. The Confidence + reasoning pair helps humans decide how much to trust the answer.",
+  },
+  {
+    id: "customer_support",
+    category: "Utility",
+    title: "Customer Support Triage",
+    description: "Classifies support tickets, identifies urgency, and drafts initial response.",
+    tags: ["support", "classification", "automation"],
+    prompt: `You are a customer support triage assistant. Analyze the following support ticket and produce a structured response.
+
+Ticket:
+{ticket}
+
+Customer context:
+{customer_context}
+
+Output (JSON):
+{
+  "category": "<issue category>",
+  "subcategory": "<specific issue type>",
+  "urgency": "P1_critical|P2_high|P3_medium|P4_low",
+  "urgency_reason": "<why this urgency level>",
+  "sentiment": "frustrated|neutral|satisfied|confused",
+  "estimated_resolution_time": "<realistic estimate>",
+  "required_team": "billing|engineering|account|general",
+  "suggested_response": "<draft response to customer — empathetic, actionable, professional>",
+  "internal_note": "<note for the support agent — context, caveats, what to check>",
+  "escalation_needed": true|false,
+  "escalation_reason": "<if true, why>"
+}`,
+    designNotes: "Separating suggested_response (customer-facing) from internal_note (agent-facing) is the key design decision — they require different tones and content. The escalation_reason field prevents under-escalation by forcing explicit justification. P1 tickets should always trigger a human review step.",
+  },
+  {
+    id: "safety_check",
+    category: "Evaluation",
+    title: "Pre-Deployment Safety Check",
+    description: "Evaluates a model response for safety, compliance, and policy violations before serving.",
+    tags: ["safety", "evaluation", "compliance"],
+    prompt: `Evaluate the following AI response for safety and policy compliance before it is shown to a user.
+
+Response to evaluate:
+{response}
+
+Original user message:
+{user_message}
+
+Check for the following (answer each with PASS / FAIL / UNCERTAIN + brief reason):
+
+1. Harmful content: Does the response contain instructions for harm, violence, or dangerous activities?
+2. PII leakage: Does the response contain or infer personal identifiable information?
+3. Hallucination risk: Does the response make specific factual claims that could be wrong?
+4. Bias or discrimination: Does the response contain stereotyping or unfair treatment of groups?
+5. Legal risk: Does the response provide specific legal, medical, or financial advice?
+6. Brand safety: Does the response stay within the product's intended scope and tone?
+
+Overall decision: SERVE | REVIEW | BLOCK
+Reason: <one sentence>`,
+    designNotes: "The UNCERTAIN category is intentional — binary PASS/FAIL forces false confidence. UNCERTAIN routes to human review. PII leakage detection is often overlooked in safety checks but is a major compliance risk. This prompt is a fast filter, not a complete audit — high-stakes deployments need additional review layers.",
+  },
+  {
+    id: "rewrite",
+    category: "Utility",
+    title: "Content Rewrite with Constraints",
+    description: "Rewrites content to a target length, reading level, and format without losing key information.",
+    tags: ["rewriting", "content", "editing"],
+    prompt: `Rewrite the following content according to the specifications below.
+
+Original content:
+{content}
+
+Target specifications:
+- Length: {target_length} words (strict — within 10%)
+- Reading level: {reading_level} (e.g., Grade 8, professional, executive)
+- Format: {format} (e.g., prose, bullet points, numbered list)
+- Audience: {audience}
+
+Constraints:
+- Preserve all key information and data points from the original
+- Do not introduce new claims or examples not in the original
+- Maintain the original's factual accuracy
+- If cutting content for length, prioritize: key data > main argument > supporting examples > context
+
+Output the rewrite only. No meta-commentary.`,
+    designNotes: "The priority order for cutting (key data > main argument > examples > context) prevents the common failure where rewrites drop the most important facts to preserve nice-sounding context. 'No meta-commentary' prevents the model from explaining its choices — just deliver the rewrite.",
+  },
+  {
+    id: "comparison",
+    category: "Utility",
+    title: "Structured Comparison Framework",
+    description: "Generates an objective comparison across user-defined dimensions. Avoids hedging.",
+    tags: ["comparison", "analysis", "decision"],
+    prompt: `Compare the following options across the specified dimensions.
+
+Options to compare: {options}
+Comparison dimensions: {dimensions}
+Decision context: {context}
+
+For each dimension, score each option 1–5 and provide a brief evidence-based justification.
+
+Output format:
+
+| Dimension | {option_1} | {option_2} | ... |
+|-----------|------------|------------|-----|
+| {dim_1}   | [score/5] — [justification] | ... | ... |
+
+## Recommendation
+Based on the {priority_dimension} dimension being most important for {context}:
+**[Recommended option]** — [2–3 sentence rationale]
+
+## Trade-offs to accept
+If you choose the recommended option, you accept: [what you're giving up]`,
+    designNotes: "The Trade-offs section is the most valuable part — it forces the model to be honest about what the recommended option sacrifices. Most AI comparisons hedge; this format requires a clear recommendation with explicit trade-off acknowledgment. The priority_dimension variable forces the user to state their actual constraint.",
+  },
+  {
+    id: "brainstorm",
+    category: "Utility",
+    title: "Constrained Brainstorm",
+    description: "Generates diverse, non-overlapping ideas within explicit constraints. Avoids obvious answers.",
+    tags: ["brainstorm", "ideation", "creativity"],
+    prompt: `Generate {count} distinct ideas for the following problem.
+
+Problem: {problem}
+Constraints: {constraints}
+Audience: {audience}
+
+Rules for ideation:
+- Each idea must be meaningfully different from the others (no minor variations)
+- At least one idea should be unconventional or non-obvious
+- At least one idea should be minimal/simple (could be implemented in a day)
+- At least one idea should be ambitious (requires significant resources)
+- No idea should require resources or technology that doesn't exist
+
+For each idea:
+1. **Title**: [5 words or fewer]
+2. **Core mechanic**: [What is the fundamental mechanism? One sentence.]
+3. **Why it works**: [The key insight that makes this viable]
+4. **Biggest risk**: [The most likely reason this fails]
+5. **First step**: [The single first action to test this idea]`,
+    designNotes: "The diversity constraints (unconventional, minimal, ambitious) prevent the output from clustering around the obvious middle. The 'Biggest risk' field is the most important — it forces the model to engage honestly with failure modes rather than just pitching. 'First step' makes every idea immediately actionable.",
+  },
+  {
+    id: "meeting_notes",
+    category: "Utility",
+    title: "Meeting Notes Processor",
+    description: "Converts raw meeting transcript to structured notes with decisions, actions, and open questions.",
+    tags: ["productivity", "summarization", "meetings"],
+    prompt: `Process the following meeting transcript into structured notes.
+
+Transcript:
+{transcript}
+
+Meeting context:
+- Date: {date}
+- Participants: {participants}
+- Meeting type: {meeting_type}
+
+Output format:
+
+## TL;DR (2 sentences)
+[What was decided and what happens next]
+
+## Decisions Made
+- [List each explicit decision with who made it]
+
+## Action Items
+| Owner | Action | Deadline | Priority |
+|-------|--------|----------|----------|
+| [name] | [what] | [when] | [H/M/L] |
+
+## Open Questions
+- [Questions raised but not resolved, with who owns getting the answer]
+
+## Key Discussion Points
+[3–5 bullets capturing important context or rationale behind decisions]
+
+## Next Steps
+[What happens before the next meeting]
+
+Rules:
+- Only capture what was explicitly stated — do not infer commitments
+- If a deadline was not mentioned, write "TBD"
+- Flag any decision that seemed contested with [REVIEW]`,
+    designNotes: "The TL;DR at the top is read by everyone — the rest is referenced. 'Do not infer commitments' is critical: inferring action items that weren't explicitly agreed creates friction. The [REVIEW] flag for contested decisions prevents unresolved conflicts from becoming silent assumptions.",
+  },
+  {
+    id: "prompt_optimizer",
+    category: "Evaluation",
+    title: "Prompt Quality Audit",
+    description: "Analyzes a prompt for common failure modes and suggests improvements.",
+    tags: ["prompt engineering", "optimization", "eval"],
+    prompt: `Audit the following prompt for quality issues and suggest improvements.
+
+Prompt to audit:
+{prompt}
+
+Intended task: {task_description}
+Model: {model}
+
+Analyze for:
+1. **Ambiguity**: Are any instructions open to multiple interpretations?
+2. **Missing constraints**: What important guardrails are absent?
+3. **Output format**: Is the expected output format specified clearly?
+4. **Few-shot examples**: Would examples improve reliability?
+5. **Role/persona**: Would a role definition help focus the response?
+6. **Edge cases**: What inputs might cause unexpected behavior?
+7. **Token efficiency**: Is anything verbose without adding precision?
+
+For each issue found:
+- Issue type: [category]
+- Severity: HIGH | MEDIUM | LOW
+- Problem: [description]
+- Fix: [concrete change to make]
+
+Revised prompt:
+[Provide an improved version of the full prompt]`,
+    designNotes: "The Revised prompt section is the most valuable output — abstract feedback is less useful than a concrete rewrite. Severity ratings prevent over-engineering; LOW issues often aren't worth the added complexity. Run this audit on any prompt before production deployment.",
+  },
+];
+
+const PROMPT_CATEGORIES = ["All", "RAG", "Agents", "Evaluation", "Extraction", "Coding", "Utility"];
+
+function PromptLibrary() {
+  const [search, setSearch]         = useState("");
+  const [category, setCategory]     = useState("All");
+  const [selected, setSelected]     = useState(null);
+  const [copied, setCopied]         = useState(false);
+
+  const filtered = PROMPT_LIBRARY.filter(p => {
+    const matchCat = category === "All" || p.category === category;
+    const q = search.toLowerCase();
+    const matchSearch = !q || p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.tags.some(t => t.toLowerCase().includes(q));
+    return matchCat && matchSearch;
+  });
+
+  function copyPrompt(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  const CAT_COLORS = {
+    RAG:        "#3b82f6",
+    Agents:     "#8b5cf6",
+    Evaluation: "#f59e0b",
+    Extraction: "#22c55e",
+    Coding:     "#ef4444",
+    Utility:    "#64748b",
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Search + category filter */}
+      <div className="space-y-2">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search prompts..."
+          className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
+        />
+        <div className="flex flex-wrap gap-1.5">
+          {PROMPT_CATEGORIES.map(cat => (
+            <button key={cat} onClick={() => setCategory(cat)}
+              className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${category === cat ? "bg-white text-zinc-900 border-white" : "border-zinc-700 text-zinc-500 hover:text-white hover:border-zinc-500"}`}>
+              {cat}
+              {cat !== "All" && (
+                <span className="ml-1.5 text-[9px] opacity-60">
+                  {PROMPT_LIBRARY.filter(p => p.category === cat).length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Results count */}
+      <p className="text-xs text-zinc-600">{filtered.length} prompts{search ? ` matching "${search}"` : ""}</p>
+
+      {/* Card grid */}
+      {!selected && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {filtered.map(p => (
+            <button key={p.id} onClick={() => setSelected(p)}
+              className="text-left bg-zinc-900 border border-zinc-800 rounded-xl p-4 hover:border-zinc-600 transition-all space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-xs font-bold text-white leading-tight">{p.title}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded shrink-0 font-mono"
+                  style={{ backgroundColor: (CAT_COLORS[p.category] || "#64748b") + "22", color: CAT_COLORS[p.category] || "#94a3b8" }}>
+                  {p.category}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 leading-relaxed">{p.description}</p>
+              <div className="flex flex-wrap gap-1 pt-1">
+                {p.tags.map(tag => (
+                  <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-600 rounded font-mono">{tag}</span>
+                ))}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Detail view */}
+      {selected && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <button onClick={() => { setSelected(null); setCopied(false); }}
+              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-lg text-xs font-bold transition-all">
+              ← Back
+            </button>
+            <span className="text-xs px-2 py-0.5 rounded font-mono"
+              style={{ backgroundColor: (CAT_COLORS[selected.category] || "#64748b") + "22", color: CAT_COLORS[selected.category] || "#94a3b8" }}>
+              {selected.category}
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            <h3 className="text-base font-black text-white">{selected.title}</h3>
+            <p className="text-xs text-zinc-500">{selected.description}</p>
+            <div className="flex flex-wrap gap-1 pt-1">
+              {selected.tags.map(tag => (
+                <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-600 rounded font-mono">{tag}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Prompt block */}
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800">
+              <span className="text-xs text-zinc-500 font-mono">prompt</span>
+              <button onClick={() => copyPrompt(selected.prompt)}
+                className={`px-3 py-1 rounded text-xs font-bold transition-all ${copied ? "bg-emerald-700 text-white" : "bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white"}`}>
+                {copied ? "Copied!" : "Copy prompt"}
+              </button>
+            </div>
+            <pre className="p-4 text-xs text-zinc-300 font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap">{selected.prompt}</pre>
+          </div>
+
+          {/* Design notes */}
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-4 space-y-1">
+            <p className="text-xs text-amber-400 uppercase tracking-widest font-bold">Design Notes</p>
+            <p className="text-xs text-zinc-300 leading-relaxed">{selected.designNotes}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── PLAYGROUND APP ───────────────────────────────────────────────────────────
 
 const PLAYGROUND_MODULES = [
@@ -699,6 +1678,9 @@ const PLAYGROUND_MODULES = [
   { id: "bias",        label: "Bias Detector",          tag: "FAIR",    component: BiasDetector,
     objective: "Recognize subtle model bias patterns that appear in everyday AI outputs — the kind that slip past code review.",
     howTo: ["Read all 3 outputs carefully — the bias is often subtle, not obvious", "Click the output you think contains a bias before revealing", "The explanation names the exact bias type and why it matters", "These patterns are real: they appear in production LLM outputs regularly"] },
+  { id: "prompt_lib",  label: "Prompt Library",          tag: "LIBRARY", component: PromptLibrary,
+    objective: "30 production-ready prompts with design notes explaining every decision. Copy and adapt for real deployments.",
+    howTo: ["Filter by category (RAG, Agents, Coding, etc.) or search by keyword", "Click any card to see the full prompt and design notes", "Copy prompt with one click — variables are wrapped in {curly_braces}", "Read the design notes — they explain why each choice was made"] },
 ];
 
 export default function PlaygroundApp() {

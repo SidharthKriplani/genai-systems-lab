@@ -1878,6 +1878,306 @@ function DiffusionViz3D() {
   );
 }
 
+
+// ─── LLM COMPARISON MATRIX ────────────────────────────────────────────────────
+
+const LLM_DATA = [
+  {
+    id: "gpt4o", name: "GPT-4o", vendor: "OpenAI", color: "#10a37f",
+    context: "128K", inputCost: "$2.50/1M", outputCost: "$10/1M",
+    coding: 5, reasoning: 5, instruction: 5, multimodal: 5, speed: 4,
+    agents: 4, rag: 5, safety: 3, openSource: false,
+    bestFor: "All-round production, coding, complex reasoning",
+    weakness: "Cost at scale, no open weights",
+  },
+  {
+    id: "claude35", name: "Claude 3.5 Sonnet", vendor: "Anthropic", color: "#d97706",
+    context: "200K", inputCost: "$3/1M", outputCost: "$15/1M",
+    coding: 5, reasoning: 5, instruction: 5, multimodal: 4, speed: 4,
+    agents: 5, rag: 5, safety: 5, openSource: false,
+    bestFor: "Long-context, agents, safe production deployments",
+    weakness: "Cost, no open weights",
+  },
+  {
+    id: "gemini15pro", name: "Gemini 1.5 Pro", vendor: "Google", color: "#4285f4",
+    context: "1M", inputCost: "$1.25/1M", outputCost: "$5/1M",
+    coding: 4, reasoning: 5, instruction: 4, multimodal: 5, speed: 3,
+    agents: 4, rag: 5, safety: 4, openSource: false,
+    bestFor: "Massive context, multimodal, video understanding",
+    weakness: "Slower on short tasks, variable instruction following",
+  },
+  {
+    id: "llama31_70b", name: "Llama 3.1 70B", vendor: "Meta", color: "#0064e0",
+    context: "128K", inputCost: "~$0.35/1M", outputCost: "~$0.40/1M",
+    coding: 4, reasoning: 4, instruction: 4, multimodal: 2, speed: 5,
+    agents: 3, rag: 4, safety: 3, openSource: true,
+    bestFor: "Self-hosted, cost-sensitive, privacy-required",
+    weakness: "Weaker than frontier on complex reasoning",
+  },
+  {
+    id: "mistral_large", name: "Mistral Large 2", vendor: "Mistral", color: "#ff7000",
+    context: "128K", inputCost: "$2/1M", outputCost: "$6/1M",
+    coding: 4, reasoning: 4, instruction: 4, multimodal: 2, speed: 5,
+    agents: 3, rag: 4, safety: 3, openSource: false,
+    bestFor: "European data residency, fast inference, code",
+    weakness: "Smaller ecosystem, fewer plugins",
+  },
+  {
+    id: "gpt4o_mini", name: "GPT-4o Mini", vendor: "OpenAI", color: "#10a37f",
+    context: "128K", inputCost: "$0.15/1M", outputCost: "$0.60/1M",
+    coding: 3, reasoning: 3, instruction: 4, multimodal: 3, speed: 5,
+    agents: 3, rag: 3, safety: 3, openSource: false,
+    bestFor: "High-volume, cost-sensitive, simple tasks, routing layer",
+    weakness: "Weaker reasoning, not for complex tasks",
+  },
+];
+
+const LLM_USE_CASES = [
+  { id: "long_context", label: "I need long context",             winner: "gemini15pro",    reason: "1M token context window — 8x larger than the 128K field" },
+  { id: "lowest_cost",  label: "I need lowest cost",              winner: "gpt4o_mini",     reason: "$0.15/$0.60 per 1M tokens — cheapest capable model for high-volume tasks" },
+  { id: "open_source",  label: "I need open source",              winner: "llama31_70b",    reason: "Only open-weights model in this set — self-hostable, no vendor lock-in" },
+  { id: "best_coding",  label: "I need best coding",              winner: "gpt4o",          reason: "Ties with Claude on coding (5/5) but has broader ecosystem and tool support" },
+  { id: "safest",       label: "I need safest for production",    winner: "claude35",       reason: "Highest safety score (5/5) — Constitutional AI + best RLHF alignment" },
+  { id: "agents",       label: "I need best for agents",          winner: "claude35",       reason: "Top agent score (5/5) — best instruction following + tool use + long context" },
+];
+
+function ScoreDots({ value, max = 5, color }) {
+  return (
+    <div className="flex gap-0.5">
+      {Array.from({ length: max }, (_, i) => (
+        <div key={i} className="w-2 h-2 rounded-full"
+          style={{ backgroundColor: i < value ? color : "#3f3f46" }} />
+      ))}
+    </div>
+  );
+}
+
+function LLMMatrixExplorer() {
+  const [activeModels, setActiveModels] = useState(new Set(LLM_DATA.map(m => m.id)));
+  const [tab, setTab] = useState("capabilities");
+  const [selectedUseCase, setSelectedUseCase] = useState(null);
+
+  const visibleModels = LLM_DATA.filter(m => activeModels.has(m.id));
+
+  function toggleModel(id) {
+    setActiveModels(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        if (next.size === 1) return prev;
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  const CAP_DIMS = [
+    { key: "coding",      label: "Coding" },
+    { key: "reasoning",   label: "Reasoning" },
+    { key: "instruction", label: "Instruction" },
+    { key: "multimodal",  label: "Multimodal" },
+    { key: "speed",       label: "Speed" },
+    { key: "agents",      label: "Agents" },
+    { key: "rag",         label: "RAG" },
+    { key: "safety",      label: "Safety" },
+  ];
+
+  const parseCost = str => parseFloat(str.replace(/[^0-9.]/g, "")) || 0;
+  const maxInputCost  = Math.max(...LLM_DATA.map(m => parseCost(m.inputCost)));
+  const maxOutputCost = Math.max(...LLM_DATA.map(m => parseCost(m.outputCost)));
+
+  const winnerModel = selectedUseCase ? LLM_DATA.find(m => m.id === selectedUseCase.winner) : null;
+
+  return (
+    <div className="space-y-5">
+      {/* Model filter chips */}
+      <div className="flex flex-wrap gap-2">
+        {LLM_DATA.map(m => (
+          <button key={m.id} onClick={() => toggleModel(m.id)}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${activeModels.has(m.id) ? "text-white" : "bg-zinc-900 border-zinc-700 text-zinc-500"}`}
+            style={activeModels.has(m.id) ? { backgroundColor: m.color + "22", borderColor: m.color + "88", color: m.color } : {}}>
+            {m.name}
+            {m.openSource && <span className="ml-1 text-[9px] bg-zinc-800 text-zinc-400 px-1 rounded">OSS</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab selector */}
+      <div className="flex gap-2 flex-wrap">
+        {[
+          { id: "capabilities", label: "Capabilities", tag: "SCORE" },
+          { id: "cost",         label: "Cost",         tag: "PRICE" },
+          { id: "usecases",     label: "Use Cases",    tag: "MATCH" },
+          { id: "glance",       label: "At a Glance",  tag: "PICK"  },
+        ].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Capabilities tab */}
+      {tab === "capabilities" && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr>
+                <td className="text-zinc-600 font-mono pb-2 pr-4 text-left w-24">Dimension</td>
+                {visibleModels.map(m => (
+                  <td key={m.id} className="pb-2 px-2 text-center">
+                    <div className="font-bold text-[10px]" style={{ color: m.color }}>{m.name.split(" ")[0]}</div>
+                    <div className="text-[9px] text-zinc-600">{m.vendor}</div>
+                  </td>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {CAP_DIMS.map(dim => (
+                <tr key={dim.key} className="border-t border-zinc-800">
+                  <td className="py-2 pr-4 text-zinc-500 text-[11px]">{dim.label}</td>
+                  {visibleModels.map(m => (
+                    <td key={m.id} className="py-2 px-2 text-center">
+                      <div className="flex justify-center">
+                        <ScoreDots value={m[dim.key]} color={m.color} />
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr className="border-t border-zinc-700">
+                <td className="py-2 pr-4 text-zinc-500 text-[11px]">Context</td>
+                {visibleModels.map(m => (
+                  <td key={m.id} className="py-2 px-2 text-center font-mono text-[10px]" style={{ color: m.color }}>{m.context}</td>
+                ))}
+              </tr>
+              <tr className="border-t border-zinc-800">
+                <td className="py-2 pr-4 text-zinc-500 text-[11px]">Open Source</td>
+                {visibleModels.map(m => (
+                  <td key={m.id} className="py-2 px-2 text-center text-[11px]">
+                    {m.openSource ? <span className="text-emerald-400 font-bold">✓</span> : <span className="text-zinc-600">✗</span>}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Cost tab */}
+      {tab === "cost" && (
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <p className="text-xs text-zinc-500 uppercase tracking-widest">Input cost per 1M tokens</p>
+            {visibleModels.map(m => {
+              const cost = parseCost(m.inputCost);
+              const pct  = maxInputCost > 0 ? (cost / maxInputCost) * 100 : 0;
+              return (
+                <div key={m.id} className="flex items-center gap-3">
+                  <span className="text-xs text-zinc-400 w-32 shrink-0 truncate">{m.name}</span>
+                  <div className="flex-1 h-3 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: m.color }} />
+                  </div>
+                  <span className="text-xs font-mono w-20 text-right shrink-0" style={{ color: m.color }}>{m.inputCost}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="space-y-3">
+            <p className="text-xs text-zinc-500 uppercase tracking-widest">Output cost per 1M tokens</p>
+            {visibleModels.map(m => {
+              const cost = parseCost(m.outputCost);
+              const pct  = maxOutputCost > 0 ? (cost / maxOutputCost) * 100 : 0;
+              return (
+                <div key={m.id} className="flex items-center gap-3">
+                  <span className="text-xs text-zinc-400 w-32 shrink-0 truncate">{m.name}</span>
+                  <div className="flex-1 h-3 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: m.color }} />
+                  </div>
+                  <span className="text-xs font-mono w-20 text-right shrink-0" style={{ color: m.color }}>{m.outputCost}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-500 leading-relaxed">
+            Output tokens cost 3–8x more than input tokens across all providers. For long-form generation, output cost dominates. For classification or short extraction, input cost matters more.
+          </div>
+        </div>
+      )}
+
+      {/* Use Cases tab */}
+      {tab === "usecases" && (
+        <div className="space-y-3">
+          {visibleModels.map(m => (
+            <div key={m.id} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-sm" style={{ color: m.color }}>{m.name}</span>
+                <span className="text-[10px] text-zinc-500 font-mono">{m.vendor}</span>
+                {m.openSource && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/50 font-mono">OSS</span>}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="bg-emerald-950/20 border border-emerald-900/30 rounded-lg px-3 py-2">
+                  <div className="text-[10px] text-emerald-400 uppercase mb-1">Best for</div>
+                  <p className="text-xs text-zinc-300">{m.bestFor}</p>
+                </div>
+                <div className="bg-red-950/20 border border-red-900/30 rounded-lg px-3 py-2">
+                  <div className="text-[10px] text-red-400 uppercase mb-1">Weakness</div>
+                  <p className="text-xs text-zinc-300">{m.weakness}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* At a Glance tab */}
+      {tab === "glance" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Click a use case to see the best model for it.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {LLM_USE_CASES.map(uc => {
+              const isSelected = selectedUseCase?.id === uc.id;
+              const wm = LLM_DATA.find(m => m.id === uc.winner);
+              return (
+                <button key={uc.id} onClick={() => setSelectedUseCase(isSelected ? null : uc)}
+                  className={`text-left px-4 py-3 rounded-xl border text-sm transition-all ${isSelected ? "border-white bg-zinc-800 text-white" : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500"}`}>
+                  <div className="font-medium text-xs">{uc.label}</div>
+                  {isSelected && wm && (
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: wm.color }} />
+                      <span className="text-xs font-bold" style={{ color: wm.color }}>{wm.name}</span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {selectedUseCase && winnerModel && (
+            <div className="rounded-xl border p-4 space-y-2 transition-all"
+              style={{ borderColor: winnerModel.color + "55", backgroundColor: winnerModel.color + "11" }}>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="font-black text-base" style={{ color: winnerModel.color }}>{winnerModel.name}</span>
+                <span className="text-[10px] text-zinc-500 font-mono">{winnerModel.vendor} · {winnerModel.context} context</span>
+                {winnerModel.openSource && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/50 font-mono">OSS</span>}
+              </div>
+              <p className="text-xs text-zinc-300 leading-relaxed">{selectedUseCase.reason}</p>
+              <div className="flex gap-4 flex-wrap pt-1">
+                <span className="text-xs text-zinc-500">Input: <span className="font-mono text-zinc-300">{winnerModel.inputCost}</span></span>
+                <span className="text-xs text-zinc-500">Output: <span className="font-mono text-zinc-300">{winnerModel.outputCost}</span></span>
+              </div>
+            </div>
+          )}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-500 leading-relaxed">
+            These recommendations reflect general-purpose strengths. Always run task-specific evals before committing to a model in production.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
@@ -1891,6 +2191,7 @@ const EXPLORE_MODULES = [
   { id: "redteam",     label: "Red Teaming Lab",       tag: "ATTACK",   component: RedTeamingLab,     fidelity: { tier: "simplified",  note: "Curated scenarios — real attack patterns, scripted responses" } },
   { id: "attention3d", label: "3D Attention Heads",   tag: "3D ATTN",  component: AttentionViz3D,    fidelity: { tier: "conceptual",  note: "Pre-computed attention patterns for 'The cat sat on the mat'" } },
   { id: "diffusion3d", label: "3D Diffusion",          tag: "3D DIFF",  component: DiffusionViz3D,    fidelity: { tier: "conceptual",  note: "Conceptual particle simulation — illustrates forward/reverse diffusion" } },
+  { id: "llm_matrix",  label: "Model Matrix",          tag: "COMPARE",  component: LLMMatrixExplorer, fidelity: { tier: "simplified",  note: "Curated comparison based on published benchmarks — not live API data" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit }) {

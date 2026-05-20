@@ -17,6 +17,7 @@ const CareerApp      = lazy(() => import("./Career"));
 const ExploreApp     = lazy(() => import("./Explore"));
 const AgentsApp      = lazy(() => import("./Agents"));
 const ConsultationApp = lazy(() => import("./Consultation"));
+const PrepLabApp      = lazy(() => import("./PrepLab"));
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -1183,6 +1184,7 @@ const ALL_TABS = [
   { id: "fluency",     label: "Fluency",     group: "GROW",   audience: "Interview prep" },
   { id: "aipm",        label: "AI Product",  group: "GROW",   audience: "Product managers" },
   { id: "career",      label: "Career",      group: "GROW",   audience: "Job seekers" },
+  { id: "preplab",     label: "Prep Lab",    group: "GROW",   audience: "Interview prep" },
   { id: "groundtruth", label: "Ground Truth",group: "READ",   audience: "All levels" },
 ];
 
@@ -1573,7 +1575,7 @@ function FeedbackFallbackModal({ onClose }) {
 }
 
 
-const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","systems","playground","explore","fluency","aipm","career","groundtruth","progress","qa"];
+const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","qa"];
 
 function getInitialView() {
   try {
@@ -1595,6 +1597,7 @@ export default function App() {
     setTopView(view);
     window.location.hash = view;
     track("module_opened", { section: view });
+    track("tab_navigated", { tab: view });
     if (view === "lab") track("rag_lab_opened", { section: "lab" });
     setVisited(prev => {
       const next = new Set([...prev, view]);
@@ -1659,6 +1662,10 @@ export default function App() {
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [whatsNewSeen, setWhatsNewSeen] = useState(() => {
     try { return localStorage.getItem("genai_whatsnew_v5") === "1"; } catch { return false; }
+  });
+  const CONTENT_VERSION = "v6"; // increment this when you add content
+  const [notifSeen, setNotifSeen] = useState(() => {
+    try { return localStorage.getItem("genai_notif_seen") === CONTENT_VERSION; } catch { return false; }
   });
   function dismissWhatsNew() {
     setWhatsNewSeen(true);
@@ -1759,6 +1766,7 @@ export default function App() {
       fluency: "Fluency — GenAI Systems Lab",
       aipm: "AI Product — GenAI Systems Lab",
       career: "Career — GenAI Systems Lab",
+      preplab: "Prep Lab — GenAI Systems Lab",
       groundtruth: "Ground Truth — GenAI Systems Lab",
       progress: "Your Progress — GenAI Systems Lab",
       qa: "QA Dashboard — GenAI Systems Lab",
@@ -1790,6 +1798,9 @@ export default function App() {
       const grade = gradeChallenge(scenario, lookup.result);
       setGradeResult(grade);
       if (grade.passed) track("challenge_completed", { scenario_id: scenario.scenario_id, passed: true });
+      const _passed = leaderboard.filter(e => e.passed).length + (grade.passed ? 1 : 0);
+      const _total = leaderboard.length + 1;
+      track("assessment_completed", { score: _passed, total: _total });
       const entry = {
         scenario: scenario.title,
         scenarioId: scenario.scenario_id,
@@ -1848,6 +1859,7 @@ export default function App() {
       { id: "fluency", label: "Fluency",    count: 5, audience: "Interview prep" },
       { id: "aipm",    label: "AI Product", count: 5, audience: "Product managers" },
       { id: "career",  label: "Career",  count: 4, audience: "Job seekers" },
+      { id: "preplab", label: "Prep Lab", audience: "Interview prep" },
     ]},
     { label: "READ", color: "#a78bfa", items: [
       { id: "groundtruth", label: "Ground Truth", audience: "All levels" },
@@ -1868,6 +1880,7 @@ export default function App() {
           onClose={() => setSearchOpen(false)}
           onSelect={item => {
             navigate(item.tab);
+            track("search_performed", { query: item.label?.slice(0, 50) });
             if (item.tab === "systems"     && item.moduleId) setSystemsModule(item.moduleId);
             if (item.tab === "explore"     && item.moduleId) setExploreModule(item.moduleId);
             if (item.tab === "agents"      && item.moduleId) setAgentsModule(item.moduleId);
@@ -2029,6 +2042,13 @@ export default function App() {
               NEW
               {!whatsNewSeen && visited.size > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
             </button>
+            <button onClick={() => { setNotifSeen(true); setWhatsNewOpen(true); try { localStorage.setItem("genai_notif_seen", CONTENT_VERSION); } catch {}; }}
+              className="relative p-1.5 text-zinc-500 hover:text-white transition-colors">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1a5 5 0 00-5 5v2.5L1.5 10h13L13 8.5V6a5 5 0 00-5-5zM6.5 13a1.5 1.5 0 003 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+              {!notifSeen && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />}
+            </button>
             {streak >= 2 && (
               <span className="text-[10px] font-bold text-amber-400 flex items-center gap-0.5">
                 🔥{streak}
@@ -2094,6 +2114,7 @@ export default function App() {
           {topView === "playground" && <PlaygroundApp />}
           {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
           {topView === "career"     && <CareerApp />}
+          {topView === "preplab"    && <PrepLabApp onNavigate={navigate} />}
 
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} />}

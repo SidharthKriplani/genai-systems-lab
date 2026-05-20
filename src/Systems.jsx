@@ -3479,6 +3479,285 @@ function ContextCompaction() {
   );
 }
 
+
+// ─── DEBUG TRACES ─────────────────────────────────────────────────────────────
+
+const DEBUG_TRACES = [
+  {
+    id: "dt1",
+    title: "Latency Spike — P95 jumps from 800ms to 4.2s overnight",
+    symptoms: [
+      "P95 latency: 800ms → 4,200ms (overnight, no deploy)",
+      "P50 unchanged at 420ms",
+      "Error rate unchanged at 0.3%",
+      "Token usage per request: unchanged",
+      "Vector DB query time: unchanged (checked separately)",
+    ],
+    context: "RAG system, 50K queries/day, uses GPT-4o. No code changes in 3 days. Traffic pattern normal.",
+    options: [
+      { id: "a", text: "LLM provider rate limiting — requests queuing at provider", correct: false, explanation: "Rate limiting would affect P50 too. P50 unchanged rules this out." },
+      { id: "b", text: "Reranker model cold start — serverless reranker spinning up on some requests", correct: true, explanation: "P95 affected but not P50 = only some requests affected. Overnight = serverless instance went cold (no traffic to keep warm). Classic cold-start signature on P95 with stable P50." },
+      { id: "c", text: "Context window overflow — some documents pushing past limit", correct: false, explanation: "Overflow causes errors or truncation, not 5× latency increase on a subset of requests." },
+      { id: "d", text: "Embedding model degradation", correct: false, explanation: "Embedding is pre-computed at index time. Query embedding is fast. Wouldn't spike P95 this way." },
+    ],
+    fix: "Configure reranker with minimum instances=1 to prevent cold starts, or add a warm-ping cron every 5 minutes. Cost: ~$15/month. Savings: customer experience on 5% of queries.",
+    lesson: "P95 spiking while P50 stays flat is the cold-start signature. Always check separately: which specific step (embed, retrieve, rerank, generate) changed.",
+  },
+  {
+    id: "dt2",
+    title: "Hallucination rate jumps from 4% to 23% after corpus update",
+    symptoms: [
+      "Hallucination rate (LLM-as-judge): 4% → 23%",
+      "Retrieval quality score (nDCG@5): unchanged at 0.71",
+      "User CSAT: 4.1 → 2.8 stars",
+      "Most hallucinations mention correct-sounding but non-existent policy numbers",
+      "Corpus update: added 400 new policy documents last Tuesday",
+    ],
+    context: "HR policy assistant, strictly-grounded answer policy, 20K documents total.",
+    options: [
+      { id: "a", text: "New documents contain contradictory information that the LLM resolves by confabulating", correct: true, explanation: "Retrieval unchanged (nDCG stable) but hallucinations up = the retrieved content is fine but what the model does with it changed. New docs likely have internal contradictions or ambiguous phrasing the model resolves with plausible-sounding inventions." },
+      { id: "b", text: "Embedding model drifted — new documents not embedded correctly", correct: false, explanation: "If embedding failed, nDCG@5 would drop. It didn't." },
+      { id: "c", text: "LLM provider updated their model silently", correct: false, explanation: "Possible but unlikely to cause this magnitude of change. Also: corpus update timing matches exactly." },
+      { id: "d", text: "Answer policy was changed to 'helpful' accidentally during the import", correct: false, explanation: "Config changes are auditable and would affect all queries immediately, not just hallucinations on policy numbers." },
+    ],
+    fix: "Audit new 400 documents for: (1) conflicting version numbers, (2) ambiguous placeholders like 'TBD' or 'see policy X', (3) cross-references to non-existent sections. Add a document quality gate to the ingestion pipeline: flag docs with high ambiguity scores before they enter production.",
+    lesson: "When retrieval quality is stable but answer quality degrades after a corpus update — the problem is in the documents, not the retrieval. Build quality gates into your ingestion pipeline.",
+  },
+  {
+    id: "dt3",
+    title: "Agent stuck in infinite loop — 847 tool calls in one session",
+    symptoms: [
+      "Single agent session: 847 tool calls, $4.20 in API costs",
+      "Task: 'Summarize this week's Slack messages'",
+      "Tool call log: get_messages(channel=general, limit=100) repeated 847 times",
+      "Each call returned same 100 messages",
+      "Agent never produced output",
+      "No error thrown",
+    ],
+    context: "Custom agent with tool: get_messages(channel, limit, after_cursor). GPT-4o with tools.",
+    options: [
+      { id: "a", text: "Tool missing pagination cursor — agent can't advance past first page", correct: true, explanation: "get_messages returns the same 100 messages each time because without an after_cursor in the response, the agent has no way to know it needs to call with a cursor to get the next page. No error = it's successfully calling the tool but logically stuck." },
+      { id: "b", text: "Max iterations not set — agent loops until context limit", correct: false, explanation: "Partially true (always set max_iterations!) but doesn't explain WHY it's calling the same tool with same args. The root cause is the pagination design." },
+      { id: "c", text: "Slack API rate limiting causing duplicate responses", correct: false, explanation: "Rate limiting causes errors, not duplicate successful responses." },
+      { id: "d", text: "Agent system prompt missing task completion instructions", correct: false, explanation: "System prompt affects behavior but an agent that calls the same tool 847× with identical args has a tool design problem, not a prompt problem." },
+    ],
+    fix: "Fix tool design: return {messages: [...], next_cursor: string|null} from get_messages. Document in the tool schema that cursor=null means no more pages. Add max_iterations=50 as a hard stop. Add loop detection: if same tool called with same args 3× in a row, raise an error.",
+    lesson: "Agent loops almost always trace to tool design, not LLM behavior. Tools must: (1) make progress visible in their return value, (2) have clear termination signals, (3) never return identical output for identical inputs unless explicitly documented.",
+  },
+  {
+    id: "dt4",
+    title: "Fine-tuned model performs worse than base on new data",
+    symptoms: [
+      "Fine-tuned GPT-4o Mini on 2,400 customer support examples",
+      "Benchmark on holdout set: 91% accuracy (great!)",
+      "Production accuracy (human eval): 61% (bad)",
+      "Production queries look different from training examples",
+      "Training data was collected Oct 2023 – Dec 2023",
+      "Production data from Jan 2024 – present",
+    ],
+    context: "E-commerce support bot, fine-tuned to match brand tone and handle return/refund flows.",
+    options: [
+      { id: "a", text: "Model overfit to training distribution — fails on out-of-distribution queries", correct: true, explanation: "91% on holdout but 61% in production = holdout came from the same Oct-Dec 2023 distribution. Production has shifted (new products, new policies, new query patterns). This is classic train-serve skew / distribution shift." },
+      { id: "b", text: "Fine-tuning removed the model's general language understanding", correct: false, explanation: "Fine-tuning on 2,400 examples with proper hyperparams (low LR, few epochs) doesn't catastrophically degrade base capabilities." },
+      { id: "c", text: "The base model was updated by the provider after fine-tuning", correct: false, explanation: "Fine-tuned models are frozen at the checkpoint used. Provider updates don't affect already fine-tuned models." },
+      { id: "d", text: "Training data was too small — need at least 10,000 examples", correct: false, explanation: "2,400 examples is sufficient for instruction tuning. Data size isn't the issue — data representativeness is." },
+    ],
+    fix: "Collect 6 months of production queries (with resolutions). Retrain monthly on rolling window. Add a data drift detector: monitor embedding distance between incoming queries and training set. Alert when drift exceeds threshold. Consider RAG over current policies instead of fine-tuning for volatile knowledge.",
+    lesson: "Holdout accuracy is only meaningful if holdout comes from the same distribution as production. Always evaluate on live traffic, not just historic test sets.",
+  },
+  {
+    id: "dt5",
+    title: "RAG assistant confidently answers questions about documents it wasn't given",
+    symptoms: [
+      "Users ask about Document C — assistant answers confidently",
+      "Document C is not in the vector database",
+      "Retrieval log confirms: no chunks from Document C retrieved",
+      "Answer is plausible-sounding but fabricated",
+      "System prompt: 'Answer based on the provided documents'",
+      "Model: Claude 3.5 Sonnet",
+    ],
+    context: "Legal document assistant. 800 documents indexed. Document C (a specific NDA template) was accidentally excluded from ingestion.",
+    options: [
+      { id: "a", text: "Model using training knowledge to fill gap despite 'based on documents' instruction", correct: true, explanation: "LLMs will use training knowledge when context doesn't cover the query, especially if the answer is plausible from pre-training data. 'Answer based on documents' reduces but doesn't eliminate this. The model never says 'I don't have that document.'" },
+      { id: "b", text: "Vector DB returning chunks from similar-sounding documents", correct: false, explanation: "Retrieval log confirms no Document C chunks. The problem is in generation, not retrieval." },
+      { id: "c", text: "The document was indexed but the metadata was corrupted", correct: false, explanation: "If indexed, retrieval log would show it. It wasn't indexed — confirmed by retrieval log." },
+      { id: "d", text: "Answer policy is set to 'helpful' which allows synthesis", correct: false, explanation: "The system prompt says 'based on documents' — the issue is that instruction isn't strong enough, not that a separate answer_policy config was set wrong." },
+    ],
+    fix: "Strengthen the system prompt: 'If the provided context does not contain the answer, you MUST say: I cannot find this in the provided documents. Never answer from general knowledge.' Add a post-generation grounding check: verify every claim in the output cites a retrieved chunk. Implement document coverage monitoring: alert when queries return zero relevant chunks.",
+    lesson: "Instruction following is probabilistic, not deterministic. 'Answer based on documents' reduces hallucination but doesn't eliminate it. Pair strong instructions with a grounding verification step.",
+  },
+];
+
+function DebugTraces() {
+  const [caseIdx, setCaseIdx] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [scores, setScores] = useState({});
+
+  const trace = DEBUG_TRACES[caseIdx];
+  const correctCount = Object.values(scores).filter(Boolean).length;
+
+  function handleSubmit() {
+    if (!selected) return;
+    const isCorrect = trace.options.find(o => o.id === selected)?.correct ?? false;
+    setScores(prev => ({ ...prev, [trace.id]: isCorrect }));
+    setSubmitted(true);
+  }
+
+  function goToCase(idx) {
+    setCaseIdx(idx);
+    setSelected(null);
+    setSubmitted(false);
+  }
+
+  const selectedOption = trace.options.find(o => o.id === selected);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-lg font-black text-white">Debug This</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">Read the symptoms. Diagnose the root cause. Learn the fix.</p>
+        </div>
+        <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5">
+          <span className="text-xs text-zinc-500">Score</span>
+          <span className="text-sm font-black text-violet-400">{correctCount}<span className="text-zinc-600 font-normal">/{DEBUG_TRACES.length}</span></span>
+        </div>
+      </div>
+
+      {/* Case selector */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {DEBUG_TRACES.map((dt, i) => {
+          const attempted = scores[dt.id] !== undefined;
+          const correct = scores[dt.id] === true;
+          return (
+            <button
+              key={dt.id}
+              onClick={() => goToCase(i)}
+              className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border ${
+                i === caseIdx
+                  ? "bg-violet-600 text-white border-violet-500"
+                  : attempted
+                    ? correct
+                      ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                      : "bg-red-950 text-red-400 border-red-900"
+                    : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white"
+              }`}
+            >
+              {i + 1}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Symptoms panel */}
+      <div className="rounded-xl border border-red-900/50 bg-red-950/10 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-red-950 text-red-400 border border-red-900">SYMPTOMS</span>
+          <h3 className="text-sm font-bold text-white leading-snug">{trace.title}</h3>
+        </div>
+        <ul className="space-y-1.5">
+          {trace.symptoms.map((s, i) => (
+            <li key={i} className="flex items-start gap-2 text-xs text-zinc-300">
+              <span className="text-red-500 mt-0.5 shrink-0">▸</span>
+              <span>{s}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Context box */}
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4">
+        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Context</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">{trace.context}</p>
+      </div>
+
+      {/* Diagnosis options */}
+      <div className="space-y-2">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest">What is the root cause?</div>
+        {trace.options.map(opt => {
+          let border = "border-zinc-800 bg-zinc-900/40 hover:border-zinc-600";
+          let textColor = "text-zinc-300";
+          if (submitted) {
+            if (opt.correct) { border = "border-emerald-700 bg-emerald-950/30"; textColor = "text-emerald-300"; }
+            else if (opt.id === selected && !opt.correct) { border = "border-red-700 bg-red-950/30"; textColor = "text-red-300"; }
+            else { border = "border-zinc-800 bg-zinc-900/20"; textColor = "text-zinc-500"; }
+          } else if (opt.id === selected) {
+            border = "border-violet-600 bg-violet-950/30";
+            textColor = "text-white";
+          }
+          return (
+            <button
+              key={opt.id}
+              onClick={() => { if (!submitted) setSelected(opt.id); }}
+              disabled={submitted}
+              className={`w-full text-left rounded-xl border p-3 transition-all ${border}`}
+            >
+              <div className="flex items-start gap-2.5">
+                <span className={`text-[10px] font-bold font-mono mt-0.5 shrink-0 w-4 ${submitted && opt.correct ? "text-emerald-400" : submitted && opt.id === selected && !opt.correct ? "text-red-400" : "text-zinc-600"}`}>
+                  {opt.id.toUpperCase()}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-medium leading-relaxed ${textColor}`}>{opt.text}</p>
+                  {submitted && (opt.id === selected || opt.correct) && (
+                    <p className={`text-xs mt-1.5 leading-relaxed ${opt.correct ? "text-emerald-400" : "text-red-400"}`}>
+                      {opt.correct ? "✓ " : "✗ "}{opt.explanation}
+                    </p>
+                  )}
+                </div>
+                {submitted && opt.correct && <span className="text-emerald-400 text-sm shrink-0">✓</span>}
+                {submitted && opt.id === selected && !opt.correct && <span className="text-red-400 text-sm shrink-0">✗</span>}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Submit button */}
+      {!submitted && (
+        <button
+          onClick={handleSubmit}
+          disabled={!selected}
+          className={`w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all ${
+            selected ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
+          }`}
+        >
+          Submit Diagnosis
+        </button>
+      )}
+
+      {/* Fix panel — shown after submit */}
+      {submitted && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-blue-900/50 bg-blue-950/10 p-4">
+            <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2">The Fix</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{trace.fix}</p>
+          </div>
+          <div className="rounded-xl border border-violet-800/50 bg-violet-950/20 p-4">
+            <div className="text-[10px] font-bold text-violet-400 uppercase tracking-widest mb-2">Lesson</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{trace.lesson}</p>
+          </div>
+          {caseIdx < DEBUG_TRACES.length - 1 && (
+            <button
+              onClick={() => goToCase(caseIdx + 1)}
+              className="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold uppercase tracking-wide transition-all"
+            >
+              Next Case →
+            </button>
+          )}
+          {caseIdx === DEBUG_TRACES.length - 1 && correctCount === DEBUG_TRACES.length && (
+            <div className="rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-center">
+              <div className="text-emerald-400 font-black text-sm">5/5 — Flawless diagnosis</div>
+              <div className="text-xs text-zinc-400 mt-1">You can read production incident reports.</div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SYSTEMS APP ─────────────────────────────────────────────────────────────
 
 const SYSTEMS_MODULES = [
@@ -3496,6 +3775,7 @@ const SYSTEMS_MODULES = [
   { id: "observability", label: "Observability",      tag: "OPS",      group: "OPS",     component: LLMObservability },
   { id: "abtesting",     label: "A/B Testing",        tag: "SHIP",     group: "OPS",     component: ABTestingLab     },
   { id: "mlcicd",        label: "ML CI/CD",           tag: "DEPLOY",   group: "OPS",     component: MLCiCdLab        },
+  { id: "debug_traces",  label: "Debug This",         tag: "DIAGNOSE", group: "OPS",     component: DebugTraces       },
   { id: "compaction",    label: "Context Compaction",  tag: "CONTEXT",  group: "BUILD",   component: ContextCompaction },
 ];
 
