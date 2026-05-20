@@ -201,6 +201,136 @@ const DRILLS = [
     ],
     hint: "Hit: precision/recall tradeoff, sentence-aware vs fixed, overlap, empirical eval needed",
   },
+  {
+    id: "f3",
+    level: "FOUNDATIONAL",
+    color: "#6366f1",
+    question: "What does 'hallucination' mean in the context of LLMs?",
+    keyPoints: [
+      "The model generates plausible-sounding but factually incorrect or fabricated information with false confidence.",
+      "Can be intrinsic (contradicts source), extrinsic (not verifiable), or confabulated (invented detail)",
+      "Hallucination is a groundedness failure — not a knowledge gap",
+      "Key mitigation: RAG with strict grounding policy + NLI validation",
+    ],
+    hint: "Hit: plausible-but-wrong, false confidence, grounding failure, not just knowledge gap",
+  },
+  {
+    id: "f4",
+    level: "FOUNDATIONAL",
+    color: "#6366f1",
+    question: "What is prompt injection?",
+    keyPoints: [
+      "An attack where malicious instructions are hidden in user input or external data, causing the model to ignore its system prompt and execute unintended actions.",
+      "Indirect injection: via retrieved documents in a RAG pipeline",
+      "Direct injection: user message overrides system prompt instructions",
+      "Defense: XML delimiters, label user input as data, input classifiers",
+    ],
+    hint: "Hit: malicious instructions, bypasses system prompt, direct vs indirect, structural defenses",
+  },
+  {
+    id: "f5",
+    level: "FOUNDATIONAL",
+    color: "#6366f1",
+    question: "What is the difference between zero-shot and few-shot prompting?",
+    keyPoints: [
+      "Zero-shot gives no examples and relies on the model's training knowledge alone.",
+      "Few-shot includes 2–5 input/output examples in the prompt to guide the model's response format and reasoning style.",
+      "Few-shot is more reliable for complex formatting, edge cases, and classification tasks",
+      "Tradeoff: few-shot examples consume tokens — cache the system prompt to amortize cost",
+    ],
+    hint: "Hit: no examples vs. 2-5 examples, format/style guidance, token cost tradeoff",
+  },
+  {
+    id: "f6",
+    level: "FOUNDATIONAL",
+    color: "#6366f1",
+    question: "What is a system prompt?",
+    keyPoints: [
+      "Instructions given to the model before the conversation starts, typically by the developer.",
+      "Sets the model's persona, constraints, format, and behavioral rules.",
+      "Has higher authority than user turns in the instruction hierarchy",
+      "Often cached for cost efficiency — identical prefixes reuse KV cache",
+    ],
+    hint: "Hit: pre-conversation, developer-set, persona + constraints, instruction hierarchy authority",
+  },
+  {
+    id: "f7",
+    level: "FOUNDATIONAL",
+    color: "#6366f1",
+    question: "What does 'grounded' mean for an LLM response?",
+    keyPoints: [
+      "The response is supported by and traceable to specific retrieved documents or provided context.",
+      "The model doesn't rely on parametric (baked-in training) knowledge alone.",
+      "Grounded ≠ correct — a response can be grounded in a wrong document",
+      "Measured via NLI entailment score or citation verification",
+    ],
+    hint: "Hit: traceable to retrieved context, not parametric memory, grounded ≠ correct, NLI measurement",
+  },
+  {
+    id: "f8",
+    level: "FOUNDATIONAL",
+    color: "#6366f1",
+    question: "What is fine-tuning?",
+    keyPoints: [
+      "Continuing to train a pre-trained model on a smaller, task-specific dataset to adapt its behavior, tone, or knowledge for a particular use case.",
+      "Use for: stable behavioral patterns (tone, format), proprietary domain conventions",
+      "Don't use for: frequently-changing facts — use RAG instead",
+      "Fine-tuning adjusts weights permanently; prompt engineering is reversible",
+    ],
+    hint: "Hit: task-specific training, behavior vs knowledge distinction, RAG for facts, weight updates",
+  },
+  {
+    id: "f9",
+    level: "FOUNDATIONAL",
+    color: "#6366f1",
+    question: "What is the difference between a completion model and a chat model?",
+    keyPoints: [
+      "Completion models predict the next tokens given any text — no special message structure.",
+      "Chat models are fine-tuned on conversation data and expect a structured message format (system/user/assistant turns).",
+      "Chat models have an instruction hierarchy baked in — system prompt > user > assistant",
+      "Most modern production deployments use chat models",
+    ],
+    hint: "Hit: next-token prediction vs conversation fine-tune, message format, instruction hierarchy",
+  },
+  {
+    id: "f10",
+    level: "FOUNDATIONAL",
+    color: "#6366f1",
+    question: "What is latency vs. throughput in LLM systems?",
+    keyPoints: [
+      "Latency is the time to get one response — affects user experience directly.",
+      "Throughput is how many requests can be processed per second — affects cost and scale.",
+      "Optimizing one can hurt the other: batching improves throughput but increases latency per request",
+      "Production SLAs should target P95 latency, not mean",
+    ],
+    hint: "Hit: latency = single response time, throughput = requests/second, batching tradeoff, P95 SLA",
+  },
+  {
+    id: "f11",
+    level: "FOUNDATIONAL",
+    color: "#6366f1",
+    question: "What is a vector embedding?",
+    keyPoints: [
+      "A numerical representation of text (or other data) as a fixed-length array of floats.",
+      "Semantically similar content has vectors that are close together in high-dimensional space (small cosine distance).",
+      "Produced by the model's embedding layer before transformer blocks",
+      "Foundation for semantic search, RAG retrieval, and nearest-neighbor lookup",
+    ],
+    hint: "Hit: fixed-length float array, semantic similarity = cosine distance, foundation for RAG retrieval",
+  },
+  {
+    id: "f12",
+    level: "FOUNDATIONAL",
+    color: "#6366f1",
+    question: "What does 'context window' refer to?",
+    keyPoints: [
+      "The maximum amount of text (measured in tokens) that a model can process at once.",
+      "Includes the system prompt, conversation history, retrieved documents, and the current user message.",
+      "Attention cost scales O(n²) — doubling context roughly quadruples compute",
+      "Models degrade on tasks requiring retrieval from the middle of very long contexts ('lost in the middle')",
+    ],
+    hint: "Hit: max tokens at once, includes all input types, O(n²) cost scaling, lost-in-middle degradation",
+  },
 ];
 
 // ─── PHRASE BANK COMPONENT ────────────────────────────────────────────────────
@@ -1102,6 +1232,111 @@ const INTERVIEW_QUESTIONS = [
     topic: "Strategy",
     difficulty: "medium",
   },
+  {
+    id: "iq19",
+    q: "Walk me through how you'd implement semantic caching for an LLM API to reduce costs.",
+    keyPoints: ["Cache key = embedding of query, lookup by cosine similarity", "Similarity threshold (e.g. 0.95) determines cache hit", "TTL + invalidation strategy for stale answers", "Cost math: at 10K queries/day, 30% cache hit rate saves ~$X/month"],
+    topic: "Strategy",
+    difficulty: "medium",
+  },
+  {
+    id: "iq20",
+    q: "How would you detect and handle prompt injection in a customer-facing LLM feature?",
+    keyPoints: ["Input classifier layer as first gate (fine-tuned or rule-based)", "Privilege separation: system prompt vs user input scopes", "Output scanning before returning to user", "Rate limiting on anomalous pattern bursts"],
+    topic: "Guardrails",
+    difficulty: "hard",
+  },
+  {
+    id: "iq21",
+    q: "Your RAG system has 85% retrieval recall but users still say it misses answers. What do you investigate?",
+    keyPoints: ["Chunk size: too large or too small loses relevant signal", "Query reformulation: user phrasing vs indexed phrasing mismatch", "Hybrid search (dense + sparse) often recovers what pure vector search misses", "Reranker quality + coverage gaps in the corpus itself"],
+    topic: "RAG",
+    difficulty: "hard",
+  },
+  {
+    id: "iq22",
+    q: "How do you evaluate whether fine-tuning improved your model or just overfit your eval set?",
+    keyPoints: ["Hold out a test set never seen during training or eval iteration", "Compare against base model on the same test set", "Diversity of test cases: adversarial, edge cases, distribution shift", "Human eval on edge cases catches what automated metrics miss"],
+    topic: "Fine-Tuning",
+    difficulty: "hard",
+  },
+  {
+    id: "iq23",
+    q: "Explain how you'd implement streaming responses and why it matters for user experience.",
+    keyPoints: ["Server-sent events (SSE) or WebSockets for token-by-token delivery", "TTFT (time to first token) is what users perceive as 'fast'", "Partial rendering: show content while generation continues", "Error recovery mid-stream: need graceful truncation + retry logic"],
+    topic: "Architecture",
+    difficulty: "medium",
+  },
+  {
+    id: "iq24",
+    q: "How would you design an LLM feature that needs to handle 10K concurrent users?",
+    keyPoints: ["Async queuing (e.g. Redis + worker pool) decouples request spike from LLM calls", "Load balancing across multiple API keys to avoid rate limits", "Circuit breakers: fail fast and return fallback if LLM is overloaded", "Graceful degradation: rule-based fallback when queue depth exceeds threshold"],
+    topic: "Strategy",
+    difficulty: "hard",
+  },
+  {
+    id: "iq25",
+    q: "How do you define success metrics for an LLM-powered feature on day 1 vs. day 90?",
+    keyPoints: ["Day 1: task completion rate, error/refusal rate, P95 latency", "Day 90: user retention on the feature, cost per completed task", "Qualitative feedback trend: thumbs-down categories shifting over time", "Day 90 also adds drift detection — does quality degrade as prompts diverge?"],
+    topic: "Strategy",
+    difficulty: "medium",
+  },
+  {
+    id: "iq26",
+    q: "A stakeholder says the AI feature needs 99% accuracy. How do you respond?",
+    keyPoints: ["Clarify: accuracy on what task, measured how?", "What's the base rate? (99% may already be the do-nothing baseline)", "What does failure cost — false positive vs false negative harm asymmetry?", "Reframe around precision/recall tradeoff for the specific harm type"],
+    topic: "Strategy",
+    difficulty: "medium",
+  },
+  {
+    id: "iq27",
+    q: "How do you prioritize between adding a new AI capability vs. improving reliability of existing ones?",
+    keyPoints: ["Measure failure rate and user impact of existing issues first", "New capability has uncertain uptake; reliability has measurable current pain", "Below ~95% satisfaction on existing features, reliability usually wins", "Frame as: fix the floor before raising the ceiling"],
+    topic: "Strategy",
+    difficulty: "medium",
+  },
+  {
+    id: "iq28",
+    q: "Your AI feature launches and 8% of responses get thumbs-down. Is that good or bad?",
+    keyPoints: ["Depends on baseline: what's the task type and prior expectation?", "Analyze the 8% qualitatively before reacting — cluster failure modes", "Thumbs-down rate alone is not actionable without understanding what went wrong", "Compare against industry benchmarks for similar task categories"],
+    topic: "Observability",
+    difficulty: "medium",
+  },
+  {
+    id: "iq29",
+    q: "Tell me about a time you had to explain AI limitations to a non-technical stakeholder who wanted guarantees.",
+    keyPoints: ["Specific story with concrete stakes", "Reframe from 'the AI is wrong' to 'here's what we can measure and guarantee'", "Set expectation contracts: what the system will and won't do", "Turn limitations into product decisions, not blockers"],
+    topic: "Strategy",
+    difficulty: "easy",
+  },
+  {
+    id: "iq30",
+    q: "Describe how you'd run a red-teaming session for a new LLM product before launch.",
+    keyPoints: ["Define threat model and attacker personas before starting", "Test categories: prompt injection, jailbreak, PII leakage, off-topic responses", "Triage findings by impact × likelihood", "Establish go/no-go criteria for each risk category upfront"],
+    topic: "Guardrails",
+    difficulty: "hard",
+  },
+  {
+    id: "iq31",
+    q: "How do you handle a production LLM incident at 2am where outputs are clearly wrong?",
+    keyPoints: ["Rollback to previous known-good prompt/config immediately", "Kill switch to rule-based fallback while investigating", "Write RCA template while facts are fresh", "Postmortem process: what detection failed, what runbook was missing"],
+    topic: "Observability",
+    difficulty: "hard",
+  },
+  {
+    id: "iq32",
+    q: "What's the difference between evals you run pre-launch vs. evals you run in production?",
+    keyPoints: ["Pre-launch: offline against fixed dataset, regression testing, deterministic", "Production: shadow mode scoring, LLM-as-judge on sampled traffic", "Production adds: user signal (thumbs), drift detection, distribution shift", "Pre-launch evals go stale — production evals catch what pre-launch missed"],
+    topic: "A/B Testing",
+    difficulty: "medium",
+  },
+  {
+    id: "iq33",
+    q: "How would you build a business case for switching from GPT-4 to a cheaper model?",
+    keyPoints: ["Measure quality gap on real task distribution, not benchmark scores", "Cost savings math: tokens/day × price delta × 365", "A/B test quality metrics side-by-side before committing", "Decision matrix: cost, quality, latency, vendor risk — weighted by your priorities"],
+    topic: "Strategy",
+    difficulty: "medium",
+  },
 ];
 
 const TOPIC_REVIEWS = {
@@ -1397,15 +1632,18 @@ function FlashcardMode() {
   const [filter, setFilter] = useState("All");
   const [known, setKnown] = useState({});
   const [showProgress, setShowProgress] = useState(false);
+  const [unknownsOnly, setUnknownsOnly] = useState(false);
 
   const categories = ["All", ...Array.from(new Set(FLASHCARD_TERMS.map(t => t.category)))];
-  const deck = filter === "All" ? FLASHCARD_TERMS : FLASHCARD_TERMS.filter(t => t.category === filter);
+  const baseDeck = filter === "All" ? FLASHCARD_TERMS : FLASHCARD_TERMS.filter(t => t.category === filter);
+  const deck = unknownsOnly ? baseDeck.filter(t => known[t.id] === false || known[t.id] === undefined) : baseDeck;
   const card = deck[idx] || deck[0];
 
   function changeFilter(cat) { setFilter(cat); setIdx(0); setFlipped(false); }
   function next() { setIdx(i => (i + 1) % deck.length); setFlipped(false); }
   function prev() { setIdx(i => (i - 1 + deck.length) % deck.length); setFlipped(false); }
   function markKnown(v) { setKnown(prev => ({ ...prev, [card.id]: v })); next(); }
+  function toggleUnknownsOnly() { setUnknownsOnly(u => !u); setIdx(0); setFlipped(false); }
 
   const knownCount = Object.values(known).filter(Boolean).length;
   const reviewCount = Object.values(known).filter(v => v === false).length;
@@ -1415,9 +1653,17 @@ function FlashcardMode() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <p className="text-xs text-zinc-500">25 core GenAI terms. Flip each card, self-grade, and track what you know vs. need to review.</p>
-        <button onClick={() => setShowProgress(!showProgress)} className="text-xs text-emerald-400 hover:text-white transition-colors">
-          {showProgress ? "Hide" : "Show"} progress
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleUnknownsOnly}
+            className={`text-xs px-3 py-1 rounded-full border transition-all ${unknownsOnly ? "bg-amber-600 border-amber-500 text-white" : "border-zinc-600 text-zinc-400 hover:border-zinc-400"}`}
+          >
+            {unknownsOnly ? "📚 Unknowns only" : "All cards"}
+          </button>
+          <button onClick={() => setShowProgress(!showProgress)} className="text-xs text-emerald-400 hover:text-white transition-colors">
+            {showProgress ? "Hide" : "Show"} progress
+          </button>
+        </div>
       </div>
 
       {showProgress && (
@@ -1440,6 +1686,14 @@ function FlashcardMode() {
         ))}
       </div>
 
+      {deck.length === 0 ? (
+        <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-8 text-center space-y-2">
+          <div className="text-2xl">🎉</div>
+          <div className="text-sm font-semibold text-white">No unknowns — you've learned them all!</div>
+          <div className="text-xs text-zinc-500">Toggle "All cards" to review everything, or switch categories.</div>
+        </div>
+      ) : (
+      <>
       <div className="text-xs text-zinc-500 text-center">{idx + 1} / {deck.length} · {card.category}</div>
 
       {/* Flashcard */}
@@ -1476,6 +1730,8 @@ function FlashcardMode() {
         <button onClick={prev} className="px-4 py-2 rounded bg-zinc-800 text-zinc-400 hover:text-white text-xs font-bold transition-all">← Prev</button>
         <button onClick={next} className="px-4 py-2 rounded bg-zinc-800 text-zinc-400 hover:text-white text-xs font-bold transition-all">Next →</button>
       </div>
+      </>
+      )}
     </div>
   );
 }

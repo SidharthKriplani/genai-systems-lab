@@ -95,7 +95,11 @@ const COMPANY_MULTIPLIERS = [
 ];
 
 function fmt(n, symbol, format) {
-  if (format === "L") return `${symbol}${n}L`;
+  if (format === "L") {
+    // n is in lakhs; 100L = 1 Crore
+    if (n >= 100) return `${symbol}${(n / 100).toFixed(2)} Cr`;
+    return `${symbol}${n}L`;
+  }
   return `${symbol}${n}k`;
 }
 

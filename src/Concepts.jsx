@@ -550,6 +550,14 @@ function TokenizerModule() {
           ))}
         </div>
       </div>
+
+      <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-800/40 p-3">
+        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Go deeper</p>
+        <div className="flex flex-wrap gap-2">
+          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">🔬 Explore tab → Tokenizer Explorer</span>
+          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">📖 Ground Truth → Tokenization Deep Dive</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -621,8 +629,8 @@ function EmbeddingModule() {
 
       <div className="grid grid-cols-12 gap-4">
         {/* SVG */}
-        <div className="col-span-12 lg:col-span-9 rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden">
-          <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }}>
+        <div className="col-span-12 lg:col-span-9 rounded-xl border border-zinc-800 bg-zinc-950 overflow-x-auto w-full">
+          <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="w-full max-w-full" style={{ display: "block" }}>
             {/* Grid lines */}
             {[-0.5, 0, 0.5].map((v) => {
               const { x } = toSVG(v, 0);
@@ -759,6 +767,14 @@ function EmbeddingModule() {
           ))}
         </div>
       </div>
+
+      <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-800/40 p-3">
+        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Go deeper</p>
+        <div className="flex flex-wrap gap-2">
+          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">🔬 Explore tab → Embedding Space (3D viz)</span>
+          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">📐 Flows tab → RAG Pipeline Diagram</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -817,50 +833,52 @@ function AttentionModule() {
       <div className="grid grid-cols-12 gap-4">
         {/* Heatmap */}
         <div className="col-span-12 lg:col-span-8">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 overflow-auto">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
             <div className="text-xs text-zinc-600 mb-3 font-mono">
               Row = query token (what is attending) · Column = key token (being attended to)
             </div>
-            <div style={{ display: "inline-block" }}>
-              {/* Column headers */}
-              <div style={{ display: "flex", marginLeft: LABEL_W }}>
-                {tokens.map((t, j) => (
-                  <div key={j} style={{ width: CELL, textAlign: "center" }}
-                    className="text-xs font-mono text-zinc-400 pb-2 truncate">
-                    {t}
-                  </div>
-                ))}
-              </div>
-              {/* Rows */}
-              {weights.map((row, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center" }}
-                  onMouseEnter={() => setHoveredRow(i)}
-                  onMouseLeave={() => setHoveredRow(null)}>
-                  {/* Row label */}
-                  <div style={{ width: LABEL_W, textAlign: "right", paddingRight: 10 }}
-                    className={`text-xs font-mono truncate ${hoveredRow === i ? "text-white font-bold" : "text-zinc-400"}`}>
-                    {tokens[i]}
-                  </div>
-                  {/* Cells */}
-                  {row.map((v, j) => (
-                    <div key={j}
-                      style={{
-                        width: CELL, height: CELL,
-                        background: heatColor(v),
-                        border: hoveredRow === i ? "1px solid #7c3aed" : "1px solid #18181b",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        transition: "background 0.2s",
-                        cursor: "default",
-                      }}
-                      title={`${tokens[i]} → ${tokens[j]}: ${v.toFixed(2)}`}
-                    >
-                      <span style={{ fontSize: 10, color: v > 0.4 ? "#fff" : "#71717a", fontFamily: "monospace" }}>
-                        {v.toFixed(2)}
-                      </span>
+            <div className="overflow-x-auto w-full">
+              <div style={{ display: "inline-block" }}>
+                {/* Column headers */}
+                <div style={{ display: "flex", marginLeft: LABEL_W }}>
+                  {tokens.map((t, j) => (
+                    <div key={j} style={{ width: CELL, textAlign: "center" }}
+                      className="text-xs font-mono text-zinc-400 pb-2 truncate">
+                      {t}
                     </div>
                   ))}
                 </div>
-              ))}
+                {/* Rows */}
+                {weights.map((row, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center" }}
+                    onMouseEnter={() => setHoveredRow(i)}
+                    onMouseLeave={() => setHoveredRow(null)}>
+                    {/* Row label */}
+                    <div style={{ width: LABEL_W, textAlign: "right", paddingRight: 10 }}
+                      className={`text-xs font-mono truncate ${hoveredRow === i ? "text-white font-bold" : "text-zinc-400"}`}>
+                      {tokens[i]}
+                    </div>
+                    {/* Cells */}
+                    {row.map((v, j) => (
+                      <div key={j}
+                        style={{
+                          width: CELL, height: CELL,
+                          background: heatColor(v),
+                          border: hoveredRow === i ? "1px solid #7c3aed" : "1px solid #18181b",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          transition: "background 0.2s",
+                          cursor: "default",
+                        }}
+                        title={`${tokens[i]} → ${tokens[j]}: ${v.toFixed(2)}`}
+                      >
+                        <span style={{ fontSize: 10, color: v > 0.4 ? "#fff" : "#71717a", fontFamily: "monospace" }}>
+                          {v.toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -913,6 +931,14 @@ function AttentionModule() {
               <span>0.0</span><span>0.5</span><span>1.0</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-800/40 p-3">
+        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Go deeper</p>
+        <div className="flex flex-wrap gap-2">
+          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">🔬 Explore tab → 3D Attention Visualization</span>
+          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">📐 Flows tab → Transformer Block</span>
         </div>
       </div>
     </div>
@@ -1941,6 +1967,14 @@ function ContextWindowModule() {
               <div className="text-zinc-400 leading-relaxed"><span className="text-emerald-400 font-medium">Fix: </span>{f.fix}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-800/40 p-3">
+        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Go deeper</p>
+        <div className="flex flex-wrap gap-2">
+          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">📐 Flows tab → Context Window Diagram</span>
+          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">⚙️ Systems tab → Context Compaction Lab</span>
         </div>
       </div>
     </div>

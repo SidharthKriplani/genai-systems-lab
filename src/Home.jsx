@@ -134,9 +134,9 @@ const MODULE_MAP = [
 ];
 
 const STATS = [
-  { value: "500+", label: "Engineers & PMs",    sub: "Have used this lab", tab: null           },
-  { value: "140",  label: "Ground Truth posts", sub: "Production depth",   tab: "groundtruth"  },
-  { value: "200+", label: "Challenges",         sub: "All interactive",    tab: null           },
+  { value: "3,400+", label: "Learners",           sub: "Engineers & PMs",   tab: null           },
+  { value: "145",    label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
+  { value: "200+",   label: "Challenges",         sub: "All interactive",   tab: null           },
 ];
 
 export default function HomePage({ onNavigate, visited = new Set(), onFeedback }) {

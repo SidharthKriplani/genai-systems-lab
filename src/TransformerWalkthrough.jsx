@@ -627,6 +627,20 @@ export default function TransformerWalkthrough() {
   const goTo = (i) => { setStep(i); setPlaying(false); };
 
   return (
+    <>
+    <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 mb-4">
+      <p className="text-xs text-zinc-500 uppercase tracking-widest mb-3">Recommended companion video</p>
+      <div className="aspect-video rounded-lg overflow-hidden">
+        <iframe
+          src="https://www.youtube.com/embed/kCc8FmEb1nY"
+          title="Andrej Karpathy — Let's build GPT from scratch"
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+      <p className="text-xs text-zinc-500 mt-2">Andrej Karpathy · Let's build GPT from scratch (2h) — implement every part of this walkthrough in real code</p>
+    </div>
     <div className="rounded-xl border border-zinc-800 overflow-hidden"
       style={{ background: "#09090f" }}>
 
@@ -732,5 +746,6 @@ export default function TransformerWalkthrough() {
         </div>
       </div>
     </div>
+    </>
   );
 }

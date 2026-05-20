@@ -1478,20 +1478,27 @@ function FeedbackFallbackModal({ onClose }) {
 }
 
 
+const VALID_VIEWS = ["home","concepts","flows","lab","agents","systems","playground","explore","fluency","aipm","career","groundtruth","progress","qa"];
+
+function getInitialView() {
+  try {
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    if (VALID_VIEWS.includes(hash)) return hash;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("qa") === "1") return "qa";
+  } catch {}
+  return "home";
+}
+
 export default function App() {
-  const [topView, setTopView] = useState(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("qa") === "1") return "qa";
-    } catch {}
-    return "home";
-  });
+  const [topView, setTopView] = useState(getInitialView);
   const [visited, setVisited] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited") || '["home"]')); }
     catch { return new Set(["home"]); }
   });
   function navigate(view) {
     setTopView(view);
+    window.location.hash = view;
     track("module_opened", { section: view });
     if (view === "lab") track("rag_lab_opened", { section: "lab" });
     setVisited(prev => {
@@ -1580,6 +1587,16 @@ export default function App() {
     checkPreviewUnlock(); // handle ?preview=CODE URL unlock
     initAnalytics();
   }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      const h = window.location.hash.replace('#', '').toLowerCase();
+      if (VALID_VIEWS.includes(h)) setTopView(h);
+      else if (!h) setTopView("home");
+    };
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, [setTopView]);
 
   const scenario = ALL_SCENARIOS[scenarioIdx];
   const lookup = useMemo(() => lookupResult(scenario, config), [scenario, config]);
