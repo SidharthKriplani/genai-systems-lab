@@ -1355,6 +1355,125 @@ function MockInterview() {
   return null;
 }
 
+// ─── FLASHCARD MODE ──────────────────────────────────────────────────────────
+
+const FLASHCARD_TERMS = [
+  { id: "fc1", term: "Temperature", back: "A scalar that controls the 'sharpness' of the next-token probability distribution. Low (0.1) = near-deterministic greedy choice. High (1.5) = flat distribution, high diversity. Set by dividing logits by T before softmax.", category: "Architecture" },
+  { id: "fc2", term: "Top-P (Nucleus Sampling)", back: "Only sample from the smallest set of tokens whose cumulative probability ≥ P. Top-P=0.9 cuts off the long tail of low-probability tokens. Combines well with temperature — they operate at different points in the sampling pipeline.", category: "Architecture" },
+  { id: "fc3", term: "Context Window", back: "Maximum number of tokens a model can attend to at once (input + output combined). GPT-4: 128K. Claude: 200K. Attention cost scales O(n²) — doubling context roughly quadruples compute.", category: "Architecture" },
+  { id: "fc4", term: "Embedding", back: "A dense numeric vector that represents a token or piece of text in high-dimensional space. Semantically similar items have small cosine distance. Produced by the model's embedding layer before the transformer blocks.", category: "Architecture" },
+  { id: "fc5", term: "Self-Attention", back: "Each token computes three vectors: Query, Key, Value. Attention score = softmax(QK^T / √d_k) × V. Lets every token 'look at' every other token — O(n²) in sequence length.", category: "Architecture" },
+  { id: "fc6", term: "RAG (Retrieval-Augmented Generation)", back: "Architecture pattern: retrieve relevant documents at query time, append them to the LLM context, generate a grounded response. Keeps knowledge fresh without retraining. Key failure modes: stale retrieval, lost-in-middle, hallucination from retrieval gaps.", category: "Systems" },
+  { id: "fc7", term: "Hallucination", back: "When a model generates text that is plausible-sounding but factually incorrect or not supported by the retrieved context. Can be: intrinsic (contradicts source), extrinsic (not verifiable from source), or confabulated (invented detail).", category: "Systems" },
+  { id: "fc8", term: "Groundedness", back: "A response is grounded if every claim can be traced to the retrieved context or source documents. Measured via NLI entailment score or explicit citation verification. Grounded ≠ correct — a response can be grounded in a wrong document.", category: "Systems" },
+  { id: "fc9", term: "Reranker", back: "A cross-encoder model that takes (query, chunk) pairs and scores their relevance. Slower than ANN vector search but more accurate. Sits between retrieval (top-k from vector DB) and generation (top-n to LLM context). Typical setup: ANN retrieves top-50, reranker keeps top-5.", category: "Systems" },
+  { id: "fc10", term: "Fine-tuning", back: "Training a pretrained model on a task-specific dataset to update weights. Use for: stable behavioral patterns (tone, format, code style), proprietary domain knowledge baked in, classification tasks with labeled data. Don't use for: frequently-changing facts (use RAG instead).", category: "Training" },
+  { id: "fc11", term: "LoRA (Low-Rank Adaptation)", back: "Fine-tuning method that adds small trainable matrices (rank r) alongside frozen pretrained weights. ΔW = A·B where A is (m×r) and B is (r×n). Reduces trainable params from m×n to r·(m+n). r=16 is common. Merges at inference — zero latency overhead.", category: "Training" },
+  { id: "fc12", term: "RLHF", back: "Reinforcement Learning from Human Feedback. Three stages: (1) Supervised fine-tuning on human-curated outputs, (2) Train a reward model on human preference pairs, (3) PPO to optimize the LLM against the reward model. Risk: reward hacking — model learns to satisfy the reward model, not human intent.", category: "Training" },
+  { id: "fc13", term: "System Prompt", back: "The first, privileged instruction sent to an LLM before user input. Sets persona, constraints, output format, and behavioral rules. Has higher authority than user turns in the instruction hierarchy. Cached in many deployment architectures for cost efficiency.", category: "Prompting" },
+  { id: "fc14", term: "Few-Shot Prompting", back: "Providing input-output examples in the prompt to demonstrate the desired behavior. Typically 3-10 examples. More reliable than zero-shot for complex formatting, classification, or style tasks. Token-expensive — cache the system prompt to amortize cost.", category: "Prompting" },
+  { id: "fc15", term: "Chain of Thought (CoT)", back: "Technique where the model is prompted (or trained) to show its reasoning steps before the final answer. Improves accuracy on multi-step reasoning, math, and code. 'Let's think step by step' is a zero-shot CoT trigger. Works because each step becomes context for the next.", category: "Prompting" },
+  { id: "fc16", term: "P-value", back: "In A/B testing: the probability of observing a result at least this extreme if the null hypothesis (no effect) were true. p < 0.05 means less than 5% probability under H0. Does NOT mean '95% chance the treatment works.' Common misinterpretation kills product decisions.", category: "Stats" },
+  { id: "fc17", term: "Type I / Type II Error", back: "Type I (false positive): rejecting H0 when it's true — shipping a treatment that has no real effect. Type II (false negative): failing to reject H0 when it's false — missing a real improvement. Controlled by α (Type I rate) and power = 1 - β (Type II rate).", category: "Stats" },
+  { id: "fc18", term: "Statistical Power", back: "Probability of detecting a true effect given it exists. Power = 1 - P(Type II error). Target ≥ 80%. Increases with: larger sample size, larger true effect, lower variance, higher α. Underpowered tests produce unreliable results — the 'winner' is often noise.", category: "Stats" },
+  { id: "fc19", term: "Prompt Injection", back: "Attack where malicious content in user input or retrieved data instructs the LLM to override its system prompt or take unintended actions. Indirect: via retrieved documents. Defense: input classifiers, strict grounded output policy, instruction hierarchy enforcement.", category: "Safety" },
+  { id: "fc20", term: "LLM-as-Judge", back: "Using an LLM to evaluate the outputs of another LLM. Scales evaluation beyond human capacity. Failure modes: position bias (favors first option), verbosity bias (favors longer outputs), self-enhancement bias (a model favors its own style). Always calibrate against human annotations.", category: "Evals" },
+  { id: "fc21", term: "Latency P95", back: "The 95th percentile latency — 95% of requests complete at or below this time. P95 matters more than mean for production SLAs because users remember slow responses. P99 is used for 'tail latency' budgeting. Never set SLAs on mean — it masks outliers.", category: "Production" },
+  { id: "fc22", term: "Semantic Cache", back: "Caching LLM responses indexed by embedding similarity rather than exact key match. A new query that is semantically close to a cached query returns the cached response. Reduces cost and latency for high-volume features with repetitive queries. Threshold tuning is critical — too loose creates wrong cache hits.", category: "Production" },
+  { id: "fc23", term: "KV Cache", back: "Optimization where transformer key-value attention pairs for the prefix/system prompt are computed once and reused across requests. Makes repeated system prompts essentially free after the first computation. Anthropic prompt caching: tokens must appear at the start of a request in an identical prefix.", category: "Production" },
+  { id: "fc24", term: "Mixture of Experts (MoE)", back: "Architecture where the model has multiple 'expert' FFN layers and a learned router that activates only a subset per token. GPT-4 and Mixtral use MoE. Activates ~2 experts per token. Total parameters ≫ active parameters — enables large model capacity at lower inference cost.", category: "Architecture" },
+  { id: "fc25", term: "Speculative Decoding", back: "Latency optimization where a small draft model generates multiple tokens ahead, and the main model verifies them in parallel. If the draft is correct, you get multiple tokens for the cost of one forward pass. Works because verification is faster than generation. 2-3× speedup in practice.", category: "Production" },
+];
+
+function FlashcardMode() {
+  const [idx, setIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [filter, setFilter] = useState("All");
+  const [known, setKnown] = useState({});
+  const [showProgress, setShowProgress] = useState(false);
+
+  const categories = ["All", ...Array.from(new Set(FLASHCARD_TERMS.map(t => t.category)))];
+  const deck = filter === "All" ? FLASHCARD_TERMS : FLASHCARD_TERMS.filter(t => t.category === filter);
+  const card = deck[idx] || deck[0];
+
+  function changeFilter(cat) { setFilter(cat); setIdx(0); setFlipped(false); }
+  function next() { setIdx(i => (i + 1) % deck.length); setFlipped(false); }
+  function prev() { setIdx(i => (i - 1 + deck.length) % deck.length); setFlipped(false); }
+  function markKnown(v) { setKnown(prev => ({ ...prev, [card.id]: v })); next(); }
+
+  const knownCount = Object.values(known).filter(Boolean).length;
+  const reviewCount = Object.values(known).filter(v => v === false).length;
+  const unseenCount = deck.length - Object.keys(known).filter(id => deck.find(c => c.id === id)).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <p className="text-xs text-zinc-500">25 core GenAI terms. Flip each card, self-grade, and track what you know vs. need to review.</p>
+        <button onClick={() => setShowProgress(!showProgress)} className="text-xs text-emerald-400 hover:text-white transition-colors">
+          {showProgress ? "Hide" : "Show"} progress
+        </button>
+      </div>
+
+      {showProgress && (
+        <div className="grid grid-cols-3 gap-3">
+          {[["Known", knownCount, "#22c55e"], ["Review", reviewCount, "#ef4444"], ["Unseen", unseenCount, "#6366f1"]].map(([label, count, color]) => (
+            <div key={label} className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 text-center">
+              <div className="text-2xl font-black" style={{ color }}>{count}</div>
+              <div className="text-xs text-zinc-500 mt-0.5">{label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex gap-2 flex-wrap">
+        {categories.map(cat => (
+          <button key={cat} onClick={() => changeFilter(cat)}
+            className={`px-3 py-1 rounded text-xs font-semibold transition-all ${filter === cat ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      <div className="text-xs text-zinc-500 text-center">{idx + 1} / {deck.length} · {card.category}</div>
+
+      {/* Flashcard */}
+      <div
+        onClick={() => setFlipped(f => !f)}
+        className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 min-h-40 cursor-pointer hover:border-zinc-500 transition-all flex flex-col justify-between"
+      >
+        {!flipped ? (
+          <div className="flex flex-col items-center justify-center h-full space-y-3 text-center py-4">
+            <div className="text-xs text-zinc-600 uppercase tracking-widest">Term · click to flip</div>
+            <div className="text-2xl font-black text-white">{card.term}</div>
+            <span className="text-xs px-2 py-0.5 rounded bg-emerald-900/40 border border-emerald-800 text-emerald-400">{card.category}</span>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="text-xs text-zinc-600 uppercase tracking-widest">Definition · click to flip back</div>
+            <div className="text-sm text-zinc-300 leading-relaxed">{card.back}</div>
+          </div>
+        )}
+      </div>
+
+      {flipped && (
+        <div className="flex gap-3">
+          <button onClick={() => markKnown(false)} className="flex-1 py-2.5 rounded-lg bg-red-900/40 border border-red-800 text-red-300 text-sm font-bold hover:bg-red-900/60 transition-all">
+            ✗ Need to review
+          </button>
+          <button onClick={() => markKnown(true)} className="flex-1 py-2.5 rounded-lg bg-emerald-900/40 border border-emerald-800 text-emerald-300 text-sm font-bold hover:bg-emerald-900/60 transition-all">
+            ✓ Got it
+          </button>
+        </div>
+      )}
+
+      <div className="flex justify-between">
+        <button onClick={prev} className="px-4 py-2 rounded bg-zinc-800 text-zinc-400 hover:text-white text-xs font-bold transition-all">← Prev</button>
+        <button onClick={next} className="px-4 py-2 rounded bg-zinc-800 text-zinc-400 hover:text-white text-xs font-bold transition-all">Next →</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── FLUENCY APP ──────────────────────────────────────────────────────────────
 
 const FLUENCY_MODULES = [
@@ -1363,6 +1482,7 @@ const FLUENCY_MODULES = [
   { id: "cases", label: "Company Cases", tag: "ARENA" },
   { id: "prompts", label: "Prompt Engineering", tag: "PROMPTS" },
   { id: "interview", label: "Mock Interview", tag: "INTERVIEW" },
+  { id: "flashcards", label: "Flashcards", tag: "CARDS" },
 ];
 
 export default function FluencyApp() {
@@ -1428,6 +1548,7 @@ export default function FluencyApp() {
       {activeModule === "cases" && <CompanyCaseArena />}
       {activeModule === "prompts" && <PromptEngLab />}
       {activeModule === "interview" && <MockInterview />}
+      {activeModule === "flashcards" && <FlashcardMode />}
     </div>
   );
 }

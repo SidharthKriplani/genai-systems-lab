@@ -523,6 +523,234 @@ function BenchmarkLiteracy() {
   );
 }
 
+// ─── NEGOTIATION SIMULATOR ────────────────────────────────────────────────────
+
+const NEGOTIATION_SCENARIOS = [
+  {
+    id: "n1",
+    title: "Initial Offer — Software Engineer",
+    context: "You just received an offer for a Senior SWE role at a Series B AI startup. Base: $155k. Your current comp is $148k. You have a competing offer at $172k (but a worse team/mission). Recruiter says 'this is our standard band.'",
+    turns: [
+      {
+        recruiterLine: "We're really excited to extend you an offer! Base salary of $155k, with equity and benefits. What do you think?",
+        options: [
+          { id: "a", text: "That sounds great, I accept!", outcome: "bad", feedback: "Never accept on the spot. You've left significant money on the table and signaled no market awareness. Even if you love the offer, ask for 48 hours to review and discuss with family." },
+          { id: "b", text: "Thank you so much! I'm very excited. I do have a competing offer at $172k — is there flexibility to match or get closer?", outcome: "good", feedback: "Good — you expressed enthusiasm, mentioned the competing offer (real leverage), and asked an open question. Letting them name the counter keeps options open." },
+          { id: "c", text: "I was expecting something in the $180k range based on my research.", outcome: "neutral", feedback: "Anchoring high is a valid tactic, but jumping straight to a number without expressing enthusiasm or mentioning your competing offer is weaker. Sequence matters: thank → express excitement → mention leverage → ask." },
+          { id: "d", text: "I need more than that. I have a family to support.", outcome: "bad", feedback: "Personal circumstances are never negotiating leverage in compensation. Companies pay for market rate and your value, not your expenses. This weakens your position immediately." },
+        ],
+      },
+      {
+        recruiterLine: "We have some flexibility. We could go up to $163k on base. Does that work?",
+        options: [
+          { id: "a", text: "Yes, $163k works. I'll sign.", outcome: "neutral", feedback: "Better than the original, but you've shown your floor after only one counter. If they moved $8k easily, there may be more room. A single re-ask is usually fine: 'I appreciate that — could we get to $168k and I'm in?'" },
+          { id: "b", text: "I appreciate the move. Could we get to $168k and I'm ready to sign today?", outcome: "good", feedback: "This is strong. You acknowledged the counter (respect), made a specific ask, and gave a closing condition ('ready to sign today'). The conditional close shows you're serious and creates urgency." },
+          { id: "c", text: "That's still below my competing offer. I need at least $172k.", outcome: "neutral", feedback: "Mentioning the competing offer again is fine, but demanding a specific number without a conditional close is weaker. Try: 'Is there any path to $172k? If so, I could let the other offer go today.'" },
+          { id: "d", text: "What about equity? Can we discuss increasing the equity grant instead?", outcome: "good", feedback: "Smart pivot — if base is near the ceiling, negotiating equity is high-EV at a Series B. RSU value depends on outcome but the upside is much larger than a $5k base difference at a growth-stage company." },
+        ],
+      },
+      {
+        recruiterLine: "We can do $168k. That's really our final number on base. I hope we can close this.",
+        options: [
+          { id: "a", text: "Great — I accept. Can we also confirm the equity grant and sign-on bonus in writing?", outcome: "good", feedback: "Perfect close. You accepted cleanly, moved forward, and asked for the full written offer including equity and sign-on. Always get everything in writing before giving final verbal acceptance." },
+          { id: "b", text: "I need another week to decide.", outcome: "bad", feedback: "At this point you've negotiated three rounds and gotten meaningful movement. Asking for more time without reason will irritate the recruiter and signal you're not serious. Only ask for time if you have a specific reason." },
+          { id: "c", text: "OK but I still think I'm worth more. Fine.", outcome: "bad", feedback: "Accepting while complaining is the worst outcome — you've signaled resentment before day one. If you accept, accept cleanly and enthusiastically. The negotiation is over." },
+          { id: "d", text: "Understood. Let me also confirm: is there a sign-on bonus available to help bridge the gap?", outcome: "good", feedback: "Smart — sign-on bonuses often come from a different budget than base salary. When base is truly at ceiling, a one-time sign-on of $10-20k is often available. Good final ask before accepting." },
+        ],
+      },
+    ],
+    debrief: "Key principles: (1) Always express enthusiasm first — you're negotiating, not arguing. (2) Use competing offers as leverage, not ultimatums. (3) Give conditional closes ('if you can get to X, I'll sign today'). (4) Base, equity, and sign-on come from different budgets — when one is maxed, pivot to another. (5) Accept cleanly — resentment before day one damages the relationship.",
+  },
+  {
+    id: "n2",
+    title: "Promotion Conversation — AI Product Manager",
+    context: "You're an ML Engineer who wants to move into an AI PM role. Your manager respects you but has never made this transition internally. You've been shipping a side project and building PM skills for 6 months.",
+    turns: [
+      {
+        recruiterLine: "I wanted to touch base. How are you feeling about your role and trajectory here?",
+        options: [
+          { id: "a", text: "Honestly, I've been thinking I'd like to move into a PM role. I've been working on my skills for months.", outcome: "good", feedback: "Being direct in a 1:1 is right. You've put in the work — now you're asking. Don't bury the lede. Managers appreciate clarity about your goals." },
+          { id: "b", text: "I'm good! Just working hard.", outcome: "bad", feedback: "This is a perfect opening to raise your goal. Not using it means you'll need to create another opening later — and your manager can't help you if they don't know what you want." },
+          { id: "c", text: "I've been feeling a bit undervalued lately.", outcome: "neutral", feedback: "Leading with frustration before making your ask muddies the conversation. It sounds like a retention threat, not a career goal. Reframe: share what excites you about PM, not what frustrates you about your current role." },
+          { id: "d", text: "I'd like to discuss my promotion timeline.", outcome: "neutral", feedback: "Reasonable, but asking about 'promotion timeline' before establishing what role you want is ambiguous. Be specific about which direction you want to grow." },
+        ],
+      },
+      {
+        recruiterLine: "That's interesting. I didn't know you were thinking about PM. What makes you want that transition?",
+        options: [
+          { id: "a", text: "I want more money and PMs seem to make more.", outcome: "bad", feedback: "Never lead with comp as your motivation. Even if true, it signals you'll leave for any higher offer and don't have a genuine interest in the work." },
+          { id: "b", text: "I've loved the eng-facing parts of my work — scoping, roadmap discussions, talking to users. I want to do that full-time, and I think my technical depth gives me an edge as an AI PM specifically.", outcome: "good", feedback: "This is exactly right: specific skills you've enjoyed, your unique edge, and why this company specifically benefits. You're making the case for them, not just for yourself." },
+          { id: "c", text: "I've been building PM skills on the side for 6 months and I think I'm ready.", outcome: "neutral", feedback: "Mentioning your work is good but 'I'm ready' without evidence is weak. Show the work: 'I've been running product reviews for X feature, wrote 3 PRDs, and got positive feedback from the PM team.'" },
+          { id: "d", text: "PM work is more strategic and I want strategic work.", outcome: "neutral", feedback: "Generic. Every engineer who wants to be a PM says this. Make it specific to your situation, your company, and your skills." },
+        ],
+      },
+      {
+        recruiterLine: "I'm open to it, but I'll need to understand what this would look like concretely. We've never done this transition here.",
+        options: [
+          { id: "a", text: "I was thinking I could shadow the PM team for 2-3 months, then take on a small product area.", outcome: "good", feedback: "Proposing a concrete, low-risk transition plan is smart. You're asking for a try-before-you-commit, which removes risk for your manager. Come prepared with the specific PM you'd shadow and the specific project." },
+          { id: "b", text: "I'd need a formal title change first before I can fully commit.", outcome: "bad", feedback: "You're asking the company to commit to you before you've demonstrated you can do the job. This is backwards. Show the work first, earn the title second." },
+          { id: "c", text: "I could write a transition plan and bring it back next week.", outcome: "good", feedback: "Offering to own the proposal shows initiative and takes work off your manager's plate. This is the right move — come back with a specific 90-day plan, success metrics, and how you'd hand off your current work." },
+          { id: "d", text: "Other companies would hire me as a PM given my background.", outcome: "bad", feedback: "Threatening to leave to get a promotion rarely works and always damages trust. If you'd prefer to interview externally, do that. Don't use it as a leverage threat in an internal conversation." },
+        ],
+      },
+    ],
+    debrief: "Internal transitions require a different playbook than offer negotiations. Key principles: (1) Be specific about what you want and why you're uniquely suited. (2) Reduce manager risk — propose a trial period before asking for a title change. (3) Show the work you've already done before the conversation. (4) Own the proposal — managers are busy. (5) Patience: internal transitions typically take 3-6 months of demonstrated performance.",
+  },
+];
+
+function NegotiationSim() {
+  const [scenarioId, setScenarioId] = useState("n1");
+  const [turnIdx, setTurnIdx] = useState(0);
+  const [choices, setChoices] = useState({});
+  const [revealed, setRevealed] = useState({});
+  const [showDebrief, setShowDebrief] = useState(false);
+
+  const sc = NEGOTIATION_SCENARIOS.find(s => s.id === scenarioId);
+  const turn = sc.turns[turnIdx];
+  const thisTurnRevealed = revealed[turnIdx];
+  const thisChoice = choices[turnIdx];
+  const chosenOption = thisChoice ? turn.options.find(o => o.id === thisChoice) : null;
+  const isLast = turnIdx === sc.turns.length - 1;
+
+  function choose(optId) {
+    if (thisTurnRevealed) return;
+    setChoices(prev => ({ ...prev, [turnIdx]: optId }));
+  }
+
+  function revealTurn() {
+    if (!thisChoice) return;
+    setRevealed(prev => ({ ...prev, [turnIdx]: true }));
+  }
+
+  function nextTurn() {
+    if (isLast) { setShowDebrief(true); return; }
+    setTurnIdx(i => i + 1);
+  }
+
+  function reset(id) {
+    setScenarioId(id);
+    setTurnIdx(0);
+    setChoices({});
+    setRevealed({});
+    setShowDebrief(false);
+  }
+
+  const outcomeColor = { good: "#22c55e", neutral: "#f59e0b", bad: "#ef4444" };
+  const outcomeLabel = { good: "Strong move", neutral: "Acceptable", bad: "Avoid this" };
+
+  const goodCount = Object.values(choices).filter(cId => {
+    const turnNum = Object.keys(choices).find(k => choices[k] === cId);
+    const t = sc.turns[Number(turnNum)];
+    return t && t.options.find(o => o.id === cId)?.outcome === "good";
+  }).length;
+
+  if (showDebrief) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-emerald-800 bg-emerald-950/20 p-5 space-y-3">
+          <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">Negotiation Complete</div>
+          <div className="text-lg font-black text-white">{goodCount}/{sc.turns.length} strong moves</div>
+          <p className="text-xs text-zinc-400 leading-relaxed">{sc.debrief}</p>
+        </div>
+        <div className="space-y-3">
+          {sc.turns.map((t, i) => {
+            const c = t.options.find(o => o.id === choices[i]);
+            return (
+              <div key={i} className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 space-y-1">
+                <div className="text-xs text-zinc-500">Turn {i + 1}</div>
+                <div className="text-xs text-zinc-300 italic">"{t.recruiterLine.slice(0, 60)}..."</div>
+                <div className="flex items-start gap-2">
+                  <span className="text-xs font-bold mt-0.5" style={{ color: outcomeColor[c?.outcome || "neutral"] }}>
+                    {outcomeLabel[c?.outcome || "neutral"]}:
+                  </span>
+                  <span className="text-xs text-zinc-400 leading-relaxed">{c?.feedback}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-3">
+          {NEGOTIATION_SCENARIOS.map(s => (
+            <button key={s.id} onClick={() => reset(s.id)}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${s.id === scenarioId ? "bg-zinc-700 text-zinc-300" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+              {s.id === scenarioId ? "Retry" : s.title.split("—")[0].trim()}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {NEGOTIATION_SCENARIOS.map(s => (
+          <button key={s.id} onClick={() => reset(s.id)}
+            className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${scenarioId === s.id ? "bg-rose-700 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {s.title}
+          </button>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 text-xs text-zinc-400 leading-relaxed">
+        <span className="text-zinc-300 font-bold">Scenario: </span>{sc.context}
+      </div>
+
+      <div className="flex items-center gap-2 text-xs text-zinc-500">
+        {sc.turns.map((_, i) => (
+          <div key={i} className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] transition-all ${i < turnIdx ? "bg-emerald-900 text-emerald-300 border border-emerald-700" : i === turnIdx ? "bg-rose-700 text-white" : "bg-zinc-800 text-zinc-600"}`}>
+            {i + 1}
+          </div>
+        ))}
+        <span className="ml-1">Turn {turnIdx + 1} of {sc.turns.length}</span>
+      </div>
+
+      <div className="rounded-lg border border-rose-900/50 bg-rose-950/20 p-4">
+        <div className="text-xs text-rose-400 font-bold mb-1">RECRUITER / MANAGER</div>
+        <p className="text-sm text-zinc-300 leading-relaxed italic">"{turn.recruiterLine}"</p>
+      </div>
+
+      <div className="space-y-2">
+        <div className="text-xs text-zinc-500 font-bold">Your response:</div>
+        {turn.options.map(opt => {
+          const selected = thisChoice === opt.id;
+          const isRevealed = thisTurnRevealed && selected;
+          let cls = "w-full text-left rounded-lg border p-3 text-xs leading-relaxed transition-all ";
+          if (!thisTurnRevealed) {
+            cls += selected ? "bg-zinc-700 border-zinc-500 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-500 cursor-pointer";
+          } else if (selected) {
+            cls += opt.outcome === "good" ? "bg-emerald-900/40 border-emerald-700 text-emerald-200" : opt.outcome === "bad" ? "bg-red-900/40 border-red-700 text-red-200" : "bg-amber-900/40 border-amber-700 text-amber-200";
+          } else {
+            cls += "bg-zinc-900/30 border-zinc-800 text-zinc-600";
+          }
+          return (
+            <button key={opt.id} onClick={() => choose(opt.id)} className={cls}>
+              <div>{opt.text}</div>
+              {isRevealed && (
+                <div className="mt-2 pt-2 border-t border-zinc-700 space-y-1">
+                  <div className="font-bold" style={{ color: outcomeColor[opt.outcome] }}>{outcomeLabel[opt.outcome]}</div>
+                  <div className="text-zinc-400 leading-relaxed">{opt.feedback}</div>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {!thisTurnRevealed ? (
+        <button onClick={revealTurn} disabled={!thisChoice}
+          className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${thisChoice ? "bg-rose-700 hover:bg-rose-600 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+          See feedback
+        </button>
+      ) : (
+        <button onClick={nextTurn} className="w-full py-2.5 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-bold transition-all">
+          {isLast ? "See full debrief →" : "Next turn →"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── CAREER APP ───────────────────────────────────────────────────────────────
 
 const CAREER_MODULES = [
@@ -538,6 +766,9 @@ const CAREER_MODULES = [
   { id: "benchmarks",  label: "Benchmark Literacy",  tag: "SKEPTIC",   component: BenchmarkLiteracy,
     objective: "Stop being fooled by benchmark claims — learn to identify when a metric is misleading, incomplete, or suspect.",
     howTo: ["Read the claim as if a vendor or colleague just said it to you in a meeting", "Pick your verdict before revealing", "The goal isn't to be cynical — it's to ask the right follow-up questions", "After each round, memorize the failure mode — you'll see it again"] },
+  { id: "negotiate", label: "Negotiation Sim", tag: "SIM", component: NegotiationSim,
+    objective: "Practice real salary and promotion negotiation conversations — learn which moves build leverage and which ones destroy it.",
+    howTo: ["Read the recruiter or manager line carefully — the subtext matters as much as the words", "Pick your response before revealing — commit to a choice", "After revealing, read the feedback even for options you didn't pick", "Track your strong moves across turns — the debrief shows your full pattern"] },
 ];
 
 export default function CareerApp() {

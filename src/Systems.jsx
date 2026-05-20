@@ -130,6 +130,81 @@ const JUDGE_SCENARIOS = [
   },
 ];
 
+// ─── EVAL GRADER DATA ─────────────────────────────────────────────────────────
+
+const GRADING_CASES = [
+  {
+    id: "g1",
+    scenario: "Customer Support RAG Bot",
+    systemContext: "You are a support assistant. Answer only using the provided documentation. If the answer is not in the docs, say so.",
+    userQuery: "Can I get a refund after 45 days?",
+    retrievedDoc: "Refund Policy (v2.3, updated March 2024): Customers may request a full refund within 30 days of purchase. After 30 days, store credit may be issued at the company's discretion for up to 60 days. No refunds or credits after 60 days.",
+    response: "Yes, you can get a refund within 30 days. After that, you may be eligible for store credit up to 60 days. Unfortunately, no refunds are available after 60 days.",
+    dimensions: [
+      { id: "groundedness", name: "Groundedness", criterion: "Every claim is supported by the retrieved document", correctScore: 3, explanation: "All three claims (30-day refund, 60-day store credit, no refunds after 60 days) are directly stated in the policy doc. This is fully grounded." },
+      { id: "completeness", name: "Completeness", criterion: "The response answers the user's actual question (refund after 45 days)", correctScore: 2, explanation: "The response answers the general policy but doesn't directly answer the 45-day question. The user is at 45 days — store credit may be available. A complete answer would say 'At 45 days, you're past the refund window but within the store credit window.'" },
+      { id: "format", name: "Format / Helpfulness", criterion: "Clear, direct, actionable answer", correctScore: 3, explanation: "Well-structured, no jargon, progressive disclosure of policy tiers. Appropriate length." },
+    ],
+    insight: "Groundedness ≠ Completeness. A response can be fully grounded (zero hallucination) while still missing the user's actual question. This is why you need both evals.",
+  },
+  {
+    id: "g2",
+    scenario: "Legal Document Summarizer",
+    systemContext: "Summarize the following contract clause in plain English for a non-lawyer.",
+    userQuery: "Explain this indemnification clause.",
+    retrievedDoc: "12.3 Indemnification. Each Party ('Indemnifying Party') shall indemnify, defend, and hold harmless the other Party and its officers, directors, employees, and agents from and against any and all claims, damages, losses, costs, and expenses (including reasonable attorneys' fees) arising out of or resulting from the Indemnifying Party's: (a) breach of any representation, warranty, or obligation under this Agreement; (b) negligence or willful misconduct; or (c) infringement of any third-party intellectual property rights.",
+    response: "This clause means both sides agree to protect each other from legal and financial losses. If one company does something wrong — breaks the contract, acts negligently, or violates someone's intellectual property — they're responsible for covering the other side's legal costs and damages. It's basically mutual 'you break it, you fix it' protection.",
+    dimensions: [
+      { id: "accuracy", name: "Factual Accuracy", criterion: "Plain-English translation preserves the legal meaning accurately", correctScore: 3, explanation: "The summary correctly captures: mutual protection, three triggers (breach, negligence, IP infringement), and coverage of legal costs. No material distortions." },
+      { id: "simplicity", name: "Plain Language Quality", criterion: "A non-lawyer would understand this without legal training", correctScore: 3, explanation: "The 'you break it, you fix it' analogy is excellent. No legal jargon left unexplained. Very accessible." },
+      { id: "completeness", name: "Completeness", criterion: "All key elements of the clause are captured", correctScore: 2, explanation: "The response omits one nuance: the clause covers officers, directors, employees, and agents — not just 'the companies.' This matters for indemnification scope. Not a fatal omission for a non-lawyer, but a partial miss." },
+    ],
+    insight: "Plain-language translation is hard to eval automatically. LLM judges often rate 'sounds good' highly even when specific terms are simplified to the point of inaccuracy. Human review is essential for high-stakes legal content.",
+  },
+  {
+    id: "g3",
+    scenario: "Medical Symptom Checker",
+    systemContext: "You are a medical information assistant. Provide factual health information. Always recommend consulting a doctor for diagnosis.",
+    userQuery: "I have a fever of 38.5°C and a sore throat. What could this be?",
+    retrievedDoc: "Common causes of fever + sore throat: (1) Streptococcal pharyngitis (strep throat) — bacterial, requires antibiotics, 20-30% of sore throats in adults. (2) Viral pharyngitis — most common, self-limiting, 70-80% of cases. (3) Infectious mononucleosis — especially in young adults, characterized by fatigue and lymphadenopathy. (4) COVID-19 — fever and sore throat are common early symptoms.",
+    response: "A fever of 38.5°C with sore throat could indicate strep throat, which needs antibiotics, or it could be a viral infection that resolves on its own. Strep throat is definitively diagnosed with a rapid test. You should see a doctor to get tested — if it's strep, untreated infection can lead to complications like rheumatic fever.",
+    dimensions: [
+      { id: "accuracy", name: "Medical Accuracy", criterion: "Information is clinically accurate and not misleading", correctScore: 2, explanation: "Mostly accurate, but omits mononucleosis and COVID-19 as possibilities, which are in the source. More critically, 'strep needs antibiotics' is correct but the response implies strep is the main concern without noting it's only 20-30% of cases. Partial miss." },
+      { id: "safety", name: "Safety / Appropriate Referral", criterion: "Recommends professional consultation appropriately", correctScore: 3, explanation: "Correctly recommends seeing a doctor and explains the clinical reason (rapid strep test, complication risk). Safety framing is appropriate and not alarmist." },
+      { id: "groundedness", name: "Groundedness", criterion: "Claims are supported by the provided medical document", correctScore: 2, explanation: "The response is partially grounded — strep and viral causes are covered. But mononucleosis and COVID-19 from the doc are not mentioned, making the response incomplete relative to the source." },
+    ],
+    insight: "Medical evals need specialized safety rubrics — 'is this grounded?' is insufficient. You also need: 'does this create false certainty?', 'does this omit critical diagnoses?', and 'is the referral framing appropriate?'",
+  },
+  {
+    id: "g4",
+    scenario: "Code Review Assistant",
+    systemContext: "Review the following Python code for bugs, security issues, and style improvements.",
+    userQuery: "Review my authentication function.",
+    retrievedDoc: "```python\ndef authenticate(username, password):\n    conn = sqlite3.connect('users.db')\n    query = f\"SELECT * FROM users WHERE username='{username}' AND password='{password}'\"\n    result = conn.execute(query)\n    user = result.fetchone()\n    if user:\n        return {'authenticated': True, 'user_id': user[0]}\n    return {'authenticated': False}```",
+    response: "The function has a critical security vulnerability: SQL injection. The f-string directly embeds user input into the SQL query — an attacker can bypass authentication with username `' OR '1'='1`. Fix: use parameterized queries: `conn.execute('SELECT * FROM users WHERE username=? AND password=?', (username, password))`. Also, passwords should be hashed (bcrypt/argon2), never stored as plaintext.",
+    dimensions: [
+      { id: "correctness", name: "Issue Detection Accuracy", criterion: "Identifies real bugs/issues correctly, no false positives", correctScore: 3, explanation: "Correctly identifies: SQL injection (critical), demonstrates the attack vector, and recommends parameterized queries. Correctly flags plaintext password storage. Both are real, serious issues." },
+      { id: "actionability", name: "Fix Quality", criterion: "Provides a specific, correct, actionable fix", correctScore: 3, explanation: "Parameterized query fix is correct Python. Bcrypt/argon2 recommendation is the current best practice. Specific and immediately usable." },
+      { id: "completeness", name: "Completeness", criterion: "Catches all significant issues in the code", correctScore: 2, explanation: "The response correctly catches the two biggest issues. It misses: (1) the database connection is never closed (resource leak), and (2) there's no error handling for database failures. Minor issues relative to the security bugs, but present." },
+    ],
+    insight: "Code review evals should weight issues by severity. SQL injection and plaintext passwords are P0 — correctly caught. Resource leaks are P2 — missing them is a partial miss, not a failure. Your rubric should reflect issue severity, not just count.",
+  },
+  {
+    id: "g5",
+    scenario: "Financial Report Summarizer",
+    systemContext: "Summarize the following earnings report section for an investor audience.",
+    userQuery: "Summarize Q3 revenue performance.",
+    retrievedDoc: "Q3 2024 Financial Results: Total revenue was $847M, up 12% year-over-year. Subscription revenue grew 18% YoY to $612M, representing 72% of total revenue (up from 68% in Q3 2023). Professional services revenue declined 8% YoY to $235M due to the strategic shift toward self-serve onboarding. Gross margin expanded 180 basis points to 74.3%. The company raised full-year guidance to $3.2-3.3B (from $3.1-3.2B).",
+    response: "Q3 revenue hit $847M, up 12% year-over-year. The standout was subscription revenue — up 18% YoY and now 72% of the mix, showing strong recurring revenue growth. Services revenue fell 8%, but this is intentional: the company is shifting customers to self-serve. Margins expanded to 74.3% (+180bps). Management raised full-year guidance to $3.2-3.3B, reflecting confidence in the trajectory.",
+    dimensions: [
+      { id: "accuracy", name: "Numerical Accuracy", criterion: "All figures are correctly reported from the source", correctScore: 3, explanation: "Every number is accurate: $847M, 12%, 18%, $612M, 72%, 68%, 8%, $235M, 74.3%, 180bps, $3.2-3.3B. No transcription errors." },
+      { id: "framing", name: "Investor Framing", criterion: "Positions data appropriately for an investor audience (context, trend, signal vs noise)", correctScore: 3, explanation: "Excellent framing: calls out the mix shift as a signal, contextualizes the services decline as intentional, notes guidance raise as confidence indicator. Investor-appropriate interpretation without being promotional." },
+      { id: "completeness", name: "Completeness", criterion: "No material information from the source is omitted", correctScore: 3, explanation: "All five data points from the source are represented: total revenue, subscription growth, mix shift (incl. prior year comp), services decline with reason, margin expansion, guidance raise. Complete." },
+    ],
+    insight: "Financial summarization evals should test both accuracy (exact figures) and framing (does the narrative match the data's meaning for the target audience). A response can be numerically perfect but misleadingly framed — or well-framed but numerically wrong.",
+  },
+];
+
 // ─── MODEL STRATEGY LAB DATA ──────────────────────────────────────────────────
 
 const STRATEGY_SCENARIOS = [
@@ -277,6 +352,7 @@ function EvalsLab() {
     { id: "types", label: "Eval Types" },
     { id: "budget", label: "Budget Allocator" },
     { id: "judge", label: "LLM-as-Judge Audit" },
+    { id: "grader", label: "Output Grader" },
   ];
 
   return (
@@ -392,6 +468,9 @@ function EvalsLab() {
         </div>
       )}
 
+      {/* Tab: Output Grader */}
+      {activeTab === "grader" && <GradingTool />}
+
       {/* Tab: LLM-as-Judge Audit */}
       {activeTab === "judge" && (
         <div className="space-y-4">
@@ -442,6 +521,135 @@ function EvalsLab() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function GradingTool() {
+  const [caseIdx, setCaseIdx] = useState(0);
+  const [scores, setScores] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  const gc = GRADING_CASES[caseIdx];
+  const allScored = gc.dimensions.every(d => scores[d.id] !== undefined);
+
+  function setScore(dimId, val) {
+    if (!submitted) setScores(prev => ({ ...prev, [dimId]: val }));
+  }
+
+  function submit() {
+    if (!allScored) return;
+    const correct = gc.dimensions.filter(d => scores[d.id] === d.correctScore).length;
+    setTotalCorrect(correct);
+    setSubmitted(true);
+  }
+
+  function nextCase() {
+    setCaseIdx(i => (i + 1) % GRADING_CASES.length);
+    setScores({});
+    setSubmitted(false);
+  }
+
+  const scoreLabels = { 1: "Poor", 2: "Partial", 3: "Good" };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-zinc-500">Grade real LLM outputs across multiple dimensions. Calibrate your judgment against expert scores — this is how you build eval intuition.</p>
+
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          {GRADING_CASES.map((_, i) => (
+            <button key={i} onClick={() => { setCaseIdx(i); setScores({}); setSubmitted(false); }}
+              className={`w-7 h-7 rounded text-xs font-bold transition-all ${caseIdx === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+              {i + 1}
+            </button>
+          ))}
+        </div>
+        <span className="text-xs text-zinc-500 font-mono">CASE {caseIdx + 1}/{GRADING_CASES.length}</span>
+      </div>
+
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold px-2 py-0.5 rounded bg-indigo-900/60 text-indigo-300 border border-indigo-800">{gc.scenario}</span>
+        </div>
+
+        <div className="space-y-2 text-xs">
+          <div className="rounded bg-zinc-950 border border-zinc-800 p-3">
+            <div className="text-zinc-500 font-bold mb-1">SYSTEM</div>
+            <div className="text-zinc-400 leading-relaxed">{gc.systemContext}</div>
+          </div>
+          <div className="rounded bg-zinc-950 border border-zinc-800 p-3">
+            <div className="text-zinc-500 font-bold mb-1">USER QUERY</div>
+            <div className="text-zinc-300">{gc.userQuery}</div>
+          </div>
+          <div className="rounded bg-zinc-950 border border-zinc-800 p-3">
+            <div className="text-zinc-500 font-bold mb-1">RETRIEVED CONTEXT</div>
+            <div className="text-zinc-400 leading-relaxed font-mono text-[11px] whitespace-pre-wrap">{gc.retrievedDoc}</div>
+          </div>
+          <div className="rounded bg-indigo-950/30 border border-indigo-800/50 p-3">
+            <div className="text-indigo-400 font-bold mb-1">LLM RESPONSE</div>
+            <div className="text-zinc-300 leading-relaxed">{gc.response}</div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Grade each dimension (1=Poor · 2=Partial · 3=Good)</div>
+          {gc.dimensions.map(dim => (
+            <div key={dim.id} className="space-y-1">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-white">{dim.name}</span>
+                  <span className="text-xs text-zinc-500 ml-2">— {dim.criterion}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {[1, 2, 3].map(v => {
+                  const selected = scores[dim.id] === v;
+                  const isCorrect = submitted && v === dim.correctScore;
+                  const isWrong = submitted && selected && v !== dim.correctScore;
+                  return (
+                    <button key={v} onClick={() => setScore(dim.id, v)}
+                      className={`flex-1 py-2 rounded text-xs font-bold transition-all ${
+                        isCorrect ? "bg-emerald-900/60 border border-emerald-600 text-emerald-300" :
+                        isWrong ? "bg-red-900/40 border border-red-700 text-red-300" :
+                        selected ? "bg-zinc-700 border border-zinc-500 text-white" :
+                        "bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white"
+                      }`}>
+                      {v} · {scoreLabels[v]}
+                    </button>
+                  );
+                })}
+              </div>
+              {submitted && (
+                <div className={`text-xs p-2 rounded leading-relaxed ${scores[dim.id] === dim.correctScore ? "bg-emerald-950/40 text-emerald-300" : "bg-amber-950/40 text-amber-300"}`}>
+                  <span className="font-bold">Expert ({dim.correctScore}/3): </span>{dim.explanation}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {!submitted ? (
+          <button onClick={submit} disabled={!allScored}
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${allScored ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+            Submit grades
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className={`rounded-lg p-4 text-center ${totalCorrect === gc.dimensions.length ? "bg-emerald-900/40 border border-emerald-700" : totalCorrect >= 2 ? "bg-amber-900/40 border border-amber-700" : "bg-red-900/40 border border-red-700"}`}>
+              <div className={`text-2xl font-black ${totalCorrect === gc.dimensions.length ? "text-emerald-300" : totalCorrect >= 2 ? "text-amber-300" : "text-red-300"}`}>{totalCorrect}/{gc.dimensions.length}</div>
+              <div className="text-xs text-zinc-400 mt-1">{totalCorrect === gc.dimensions.length ? "Expert calibration — you nailed it" : totalCorrect >= 2 ? "Close — review the dimension you missed" : "Review the expert reasoning carefully"}</div>
+            </div>
+            <div className="rounded-lg bg-indigo-950/30 border border-indigo-800 p-3">
+              <div className="text-xs font-bold text-indigo-300 mb-1">Key Insight</div>
+              <p className="text-xs text-zinc-300 leading-relaxed">{gc.insight}</p>
+            </div>
+            <button onClick={nextCase} className="w-full py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-bold transition-all">
+              Next case →
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

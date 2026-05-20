@@ -2755,6 +2755,353 @@ function MultiAgentModule() {
   );
 }
 
+// ─── NEXT TOKEN GAME ─────────────────────────────────────────────────────────
+
+const NEXT_TOKEN_PROMPTS = [
+  {
+    id: "nt1",
+    prefix: "The capital of France is",
+    options: [
+      { token: " Paris", prob: 0.94, correct: true },
+      { token: " Lyon", prob: 0.03, correct: false },
+      { token: " a", prob: 0.02, correct: false },
+      { token: " the", prob: 0.01, correct: false },
+    ],
+    explanation: "Factual recall dominates here. The model has seen 'The capital of France is Paris' millions of times. Temperature has almost no effect — even at temp=2.0, Paris gets ~75% probability. This is why factual completions are nearly deterministic.",
+    concept: "Deterministic factual recall — high-confidence next token",
+  },
+  {
+    id: "nt2",
+    prefix: "The best way to learn machine learning is to",
+    options: [
+      { token: " practice", prob: 0.31, correct: true },
+      { token: " read", prob: 0.28, correct: false },
+      { token: " build", prob: 0.22, correct: false },
+      { token: " take", prob: 0.19, correct: false },
+    ],
+    explanation: "Open-ended advice creates a flat distribution — multiple equally valid continuations. The model has seen all of these as correct advice. This is where temperature matters: at temp=0.1 you always get 'practice'; at temp=1.5 the distribution flattens and any of the four are likely. No single correct answer exists.",
+    concept: "Flat distribution — multiple valid continuations, temperature-sensitive",
+  },
+  {
+    id: "nt3",
+    prefix: "def calculate_sum(a, b):\n    return",
+    options: [
+      { token: " a", prob: 0.82, correct: true },
+      { token: " sum", prob: 0.09, correct: false },
+      { token: " (a", prob: 0.06, correct: false },
+      { token: " the", prob: 0.03, correct: false },
+    ],
+    explanation: "Code completions are highly constrained by syntax. Given the function name and parameters, 'return a + b' is the overwhelmingly likely completion. Notice 'the' at 3% — that's residual language model probability that makes no syntactic sense, but it's never zero. LLMs can still generate syntactically invalid code at high temperatures.",
+    concept: "Code syntax constraints — near-deterministic with syntactic residual noise",
+  },
+  {
+    id: "nt4",
+    prefix: "Once upon a time, in a land far away, there lived a",
+    options: [
+      { token: " young", prob: 0.24, correct: false },
+      { token: " beautiful", prob: 0.22, correct: false },
+      { token: " brave", prob: 0.19, correct: false },
+      { token: " wise", prob: 0.18, correct: false },
+    ],
+    explanation: "Formulaic creative text creates another flat distribution — but for a different reason. The model has memorized many fairy tales with all these patterns. 'Young/beautiful/brave/wise' are all genre-appropriate. None is more correct than another. This is creative generation territory where temperature controls variety vs repetitiveness.",
+    concept: "Genre templates — creative flat distribution, all options equally valid",
+  },
+  {
+    id: "nt5",
+    prefix: "In 2024, the most widely used large language model API was",
+    options: [
+      { token: " OpenAI", prob: 0.51, correct: true },
+      { token: " Anthropic", prob: 0.21, correct: false },
+      { token: " Google", prob: 0.18, correct: false },
+      { token: " Meta", prob: 0.10, correct: false },
+    ],
+    explanation: "Recent factual knowledge with uncertainty. The model has training data suggesting OpenAI dominance but the landscape is contested. This produces a skewed-but-not-peaked distribution — the model has signal but also uncertainty. Notice that all four options are plausible, so hallucination risk is higher than question 1 (France capital) but lower than question 2 (open-ended advice).",
+    concept: "Recent facts with uncertainty — skewed distribution, hallucination-prone zone",
+  },
+];
+
+function NextTokenGame() {
+  const [idx, setIdx] = useState(0);
+  const [picked, setPicked] = useState(null);
+  const [revealed, setRevealed] = useState(false);
+  const [scores, setScores] = useState({});
+
+  const prompt = NEXT_TOKEN_PROMPTS[idx];
+
+  function pick(token) {
+    if (revealed) return;
+    setPicked(token);
+  }
+
+  function reveal() {
+    if (!picked) return;
+    const correct = prompt.options.find(o => o.correct);
+    const isRight = picked === correct.token;
+    setScores(prev => ({ ...prev, [prompt.id]: isRight }));
+    setRevealed(true);
+  }
+
+  function next() {
+    setIdx(i => (i + 1) % NEXT_TOKEN_PROMPTS.length);
+    setPicked(null);
+    setRevealed(false);
+  }
+
+  const correct = prompt.options.find(o => o.correct);
+  const maxProb = Math.max(...prompt.options.map(o => o.prob));
+  const hitCount = Object.values(scores).filter(Boolean).length;
+  const totalAnswered = Object.keys(scores).length;
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Predict which token the model assigns the highest probability to. After guessing, see the full distribution — and understand <em>why</em> the distribution has that shape.</p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1.5">
+          {NEXT_TOKEN_PROMPTS.map((_, i) => (
+            <button key={i} onClick={() => { setIdx(i); setPicked(null); setRevealed(false); }}
+              className={`w-7 h-7 rounded text-xs font-bold transition-all ${idx === i ? "bg-violet-600 text-white" : scores[NEXT_TOKEN_PROMPTS[i].id] === true ? "bg-emerald-900 text-emerald-300 border border-emerald-700" : scores[NEXT_TOKEN_PROMPTS[i].id] === false ? "bg-red-900 text-red-300 border border-red-700" : "bg-zinc-800 text-zinc-400"}`}>
+              {i + 1}
+            </button>
+          ))}
+        </div>
+        {totalAnswered > 0 && <span className="text-xs text-zinc-500 font-mono">{hitCount}/{totalAnswered} correct</span>}
+      </div>
+
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-4">
+        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Complete this text — which token comes next?</div>
+        <div className="rounded bg-zinc-950 border border-zinc-800 p-4">
+          <span className="text-sm text-zinc-300 font-mono leading-relaxed whitespace-pre-wrap">{prompt.prefix}</span>
+          <span className={`text-sm font-mono ${revealed ? (picked === correct.token ? "text-emerald-400" : "text-red-400") : "text-violet-400 animate-pulse"}`}>
+            {revealed ? picked : " ▌"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          {prompt.options.map(opt => {
+            const isSelected = picked === opt.token;
+            const isCorrect = opt.correct;
+            let cls = "rounded-lg p-3 border text-xs font-mono cursor-pointer transition-all ";
+            if (!revealed) {
+              cls += isSelected ? "bg-violet-900/60 border-violet-600 text-violet-200" : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-500";
+            } else {
+              if (isCorrect) cls += "bg-emerald-900/50 border-emerald-600 text-emerald-200";
+              else if (isSelected && !isCorrect) cls += "bg-red-900/40 border-red-700 text-red-300";
+              else cls += "bg-zinc-800/40 border-zinc-800 text-zinc-500";
+            }
+            return (
+              <button key={opt.token} onClick={() => pick(opt.token)} className={cls}>
+                <div className="font-bold text-sm">"{opt.token.trim()}"</div>
+                {revealed && (
+                  <div className="mt-2 space-y-1">
+                    <div className="w-full bg-zinc-700 rounded-full h-1.5">
+                      <div className="h-1.5 rounded-full transition-all" style={{ width: `${opt.prob * 100}%`, background: isCorrect ? "#22c55e" : "#6366f1" }} />
+                    </div>
+                    <div className="text-[10px] text-zinc-400">{(opt.prob * 100).toFixed(0)}% probability</div>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {!revealed ? (
+          <button onClick={reveal} disabled={!picked}
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${picked ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+            Reveal distribution
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className={`rounded-lg p-3 text-sm font-semibold text-center ${picked === correct.token ? "bg-emerald-900/40 border border-emerald-700 text-emerald-300" : "bg-amber-900/40 border border-amber-700 text-amber-300"}`}>
+              {picked === correct.token ? `✓ Correct — "${correct.token.trim()}" had the highest probability (${(correct.prob * 100).toFixed(0)}%)` : `The highest-probability token was "${correct.token.trim()}" (${(correct.prob * 100).toFixed(0)}%)`}
+            </div>
+            <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-4 space-y-2">
+              <div className="text-xs font-bold text-zinc-400">Distribution shape: <span className="text-violet-400">{prompt.concept}</span></div>
+              <p className="text-xs text-zinc-300 leading-relaxed">{prompt.explanation}</p>
+            </div>
+            <button onClick={next} className="w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all">
+              Next prompt →
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── TEMPERATURE GAME ─────────────────────────────────────────────────────────
+
+const TEMP_CHALLENGES = [
+  {
+    id: "tc1",
+    prompt: 'Write a one-sentence product tagline for a note-taking app.',
+    outputs: [
+      { id: "a", text: "Capture your thoughts, organize your world.", temp: 0.3, label: "Low (0.3)" },
+      { id: "b", text: "Your brain's external hard drive — but without the spinning of fate.", temp: 1.4, label: "High (1.4)" },
+      { id: "c", text: "The note-taking app that remembers so you don't have to.", temp: 0.7, label: "Medium (0.7)" },
+    ],
+    explanation: "Low temp (0.3) produces the 'most expected' tagline — polished but generic. Medium (0.7) adds personality while staying coherent. High (1.4) gets creative and unusual — 'spinning of fate' is unexpected, might be brilliant or might not fit the brand. This is the temperature tradeoff in creative writing.",
+  },
+  {
+    id: "tc2",
+    prompt: 'Explain what a transformer is in one sentence for a beginner.',
+    outputs: [
+      { id: "a", text: "A transformer is a type of neural network that processes text by learning which words are most important to pay attention to in context.", temp: 0.2, label: "Low (0.2)" },
+      { id: "b", text: "A transformer is an AI architecture that reads all words simultaneously and weighs how much each word should influence every other word's meaning.", temp: 0.6, label: "Medium (0.6)" },
+      { id: "c", text: "A transformer is basically a word relationship calculator that figures out which parts of text are friends with each other.", temp: 1.3, label: "High (1.3)" },
+    ],
+    explanation: "For explanations, low temp is safest — the 0.2 output is technically precise. Medium (0.6) adds a creative framing ('reads simultaneously') that's still accurate. High (1.3) uses 'word relationship calculator' and 'friends' — memorable but slightly imprecise. For educational content, 0.4-0.7 is usually the sweet spot: creative but not hallucination-prone.",
+  },
+  {
+    id: "tc3",
+    prompt: 'Generate a Python variable name for storing the user\'s last login timestamp.',
+    outputs: [
+      { id: "a", text: "last_login_timestamp", temp: 0.1, label: "Low (0.1)" },
+      { id: "b", text: "user_last_login_at", temp: 0.4, label: "Medium (0.4)" },
+      { id: "c", text: "temporal_user_session_inception_marker", temp: 1.5, label: "High (1.5)" },
+    ],
+    explanation: "Code generation should always use low temperature. At 0.1, you get the clear, conventional name. At 0.4, you get a valid alternative. At 1.5, the model produces 'temporal_user_session_inception_marker' — technically not wrong, but absurdly verbose and unlike real code. This is why coding assistants like Copilot use temp < 0.3.",
+  },
+  {
+    id: "tc4",
+    prompt: 'What is 2 + 2?',
+    outputs: [
+      { id: "a", text: "4", temp: 0.0, label: "Zero (0.0)" },
+      { id: "b", text: "4", temp: 0.7, label: "Medium (0.7)" },
+      { id: "c", text: "4", temp: 1.8, label: "Very High (1.8)" },
+    ],
+    explanation: "All three produce '4' — but this is deceptive. Temperature affects the probability distribution, not the outcome on near-certain facts. '4' has ~99.9% probability at temp=0. At temp=1.8, the distribution flattens but 4 is still dominant. The risk: on fact-adjacent but uncertain questions, high temp makes the model more likely to pick a wrong but plausible answer. Don't confuse 'high temp works here' with 'high temp is safe for factual tasks'.",
+  },
+];
+
+function TemperatureGame() {
+  const [idx, setIdx] = useState(0);
+  const [guesses, setGuesses] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+
+  const ch = TEMP_CHALLENGES[idx];
+  const allGuessed = ch.outputs.every(o => guesses[o.id] !== undefined);
+
+  function setGuess(outputId, label) {
+    if (submitted) return;
+    setGuesses(prev => {
+      const next = { ...prev };
+      // If another output has this label, unset it
+      Object.keys(next).forEach(k => { if (next[k] === label) delete next[k]; });
+      next[outputId] = label;
+      return next;
+    });
+  }
+
+  function submit() {
+    if (!allGuessed) return;
+    setSubmitted(true);
+  }
+
+  function next() {
+    setIdx(i => (i + 1) % TEMP_CHALLENGES.length);
+    setGuesses({});
+    setSubmitted(false);
+  }
+
+  const tempLabels = ch.outputs.map(o => o.label);
+  const correctCount = submitted ? ch.outputs.filter(o => guesses[o.id] === o.label).length : 0;
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-amber-800 bg-amber-950/20 p-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Three outputs. Same prompt. Different temperatures. Match each output to its temperature — then see why the distribution shapes differ.</p>
+      </div>
+
+      <div className="flex gap-1.5">
+        {TEMP_CHALLENGES.map((_, i) => (
+          <button key={i} onClick={() => { setIdx(i); setGuesses({}); setSubmitted(false); }}
+            className={`w-7 h-7 rounded text-xs font-bold transition-all ${idx === i ? "bg-amber-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {i + 1}
+          </button>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-4">
+        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Prompt</div>
+        <div className="rounded bg-zinc-950 border border-zinc-800 p-3 text-sm text-zinc-300 font-mono">"{ch.prompt}"</div>
+
+        <div className="text-xs text-zinc-500">Drag or click to assign a temperature label to each output. Each label can only be used once.</div>
+
+        <div className="flex gap-2 flex-wrap">
+          {tempLabels.map(label => {
+            const used = Object.values(guesses).includes(label);
+            return (
+              <span key={label} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${used ? "bg-amber-900/60 border-amber-700 text-amber-300" : "bg-zinc-800 border-zinc-700 text-zinc-400"}`}>
+                {label}
+              </span>
+            );
+          })}
+        </div>
+
+        <div className="space-y-3">
+          {ch.outputs.map((out, i) => {
+            const selectedLabel = guesses[out.id];
+            const isCorrect = submitted && selectedLabel === out.label;
+            const isWrong = submitted && selectedLabel && selectedLabel !== out.label;
+            return (
+              <div key={out.id} className={`rounded-lg border p-4 space-y-3 transition-all ${isCorrect ? "border-emerald-700 bg-emerald-950/30" : isWrong ? "border-red-700 bg-red-950/30" : "border-zinc-700 bg-zinc-900/40"}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="text-xs text-zinc-300 leading-relaxed flex-1">
+                    <span className="text-zinc-600 font-mono mr-2">[{String.fromCharCode(65 + i)}]</span>
+                    {out.text}
+                  </div>
+                  {submitted && (
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded shrink-0 ${isCorrect ? "bg-emerald-900 text-emerald-300" : "bg-red-900 text-red-300"}`}>
+                      {out.label} {isCorrect ? "✓" : "✗"}
+                    </span>
+                  )}
+                </div>
+                {!submitted && (
+                  <div className="flex gap-2 flex-wrap">
+                    {tempLabels.map(label => {
+                      const alreadyUsedElsewhere = Object.entries(guesses).some(([k, v]) => k !== out.id && v === label);
+                      const selected = guesses[out.id] === label;
+                      return (
+                        <button key={label} onClick={() => !alreadyUsedElsewhere && setGuess(out.id, label)}
+                          className={`px-2 py-1 rounded text-[11px] font-bold transition-all ${selected ? "bg-amber-600 text-white" : alreadyUsedElsewhere ? "bg-zinc-800 text-zinc-700 cursor-not-allowed" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"}`}>
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {!submitted ? (
+          <button onClick={submit} disabled={!allGuessed}
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${allGuessed ? "bg-amber-600 hover:bg-amber-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+            Check answers
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className={`rounded-lg p-3 text-center ${correctCount === 3 ? "bg-emerald-900/40 border border-emerald-700" : "bg-amber-900/40 border border-amber-700"}`}>
+              <div className={`text-xl font-black ${correctCount === 3 ? "text-emerald-300" : "text-amber-300"}`}>{correctCount}/3 correct</div>
+            </div>
+            <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-4">
+              <div className="text-xs font-bold text-amber-400 mb-2">Why these temperatures?</div>
+              <p className="text-xs text-zinc-300 leading-relaxed">{ch.explanation}</p>
+            </div>
+            <button onClick={next} className="w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all">
+              Next challenge →
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN CONCEPTS APP ────────────────────────────────────────────────────────
 
 // fidelity tiers: "faithful" (real math), "simplified" (correct pattern, simplified scale), "conceptual" (illustrative)
@@ -2857,6 +3204,24 @@ const MODULES = [
     subtitle: "Architecture patterns, failure cascades, and when single-agent is the right call.",
     fidelity: { tier: "conceptual", note: "Conceptual patterns — architectural concepts, no live agent orchestration" },
     component: MultiAgentModule,
+  },
+  {
+    id: "nextoken",
+    label: "Next Token",
+    tag: "GAME",
+    title: "Predict the Next Token",
+    subtitle: "Five prompts. Guess the highest-probability next token. See the full probability distribution and understand why it has that shape.",
+    fidelity: { tier: "conceptual", note: "Illustrative probability distributions — based on typical LLM behavior patterns, not live model inference" },
+    component: NextTokenGame,
+  },
+  {
+    id: "tempgame",
+    label: "Temperature",
+    tag: "GAME",
+    title: "Temperature Challenge",
+    subtitle: "Three outputs. Same prompt. Different temperatures. Match them — then understand why distribution shape changes creativity and correctness.",
+    fidelity: { tier: "conceptual", note: "Curated examples — representative of real temperature effects, not live model sampling" },
+    component: TemperatureGame,
   },
 ];
 
