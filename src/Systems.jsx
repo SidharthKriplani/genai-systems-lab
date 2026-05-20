@@ -335,6 +335,12 @@ function EvalsLab() {
 
   function adjustAlloc(key, delta) {
     setAllocation(prev => {
+      if (delta > 0) {
+        const currentTotal = Object.values(prev).reduce((a, b) => a + b, 0);
+        const headroom = 100 - currentTotal;
+        if (headroom <= 0) return prev;
+        delta = Math.min(delta, headroom);
+      }
       const next = { ...prev, [key]: Math.max(0, Math.min(60, prev[key] + delta)) };
       return next;
     });

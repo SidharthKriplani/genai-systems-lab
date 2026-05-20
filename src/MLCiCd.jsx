@@ -193,10 +193,17 @@ function DeployPipeline() {
             className="px-4 py-2 rounded text-xs font-bold border border-red-800/60 text-red-400 hover:bg-red-950/40 disabled:opacity-30 transition-all">
             ← Rollback
           </button>
-          <button onClick={advance} disabled={!allGatesMet || stageIdx === STAGES.length - 1}
-            className={`flex-1 px-4 py-2 rounded text-xs font-bold transition-all ${allGatesMet && stageIdx < STAGES.length - 1 ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
-            {stageIdx === STAGES.length - 1 ? "✓ Fully Deployed" : allGatesMet ? `Advance to ${STAGES[stageIdx + 1].label} →` : "Check all gates to advance"}
-          </button>
+          {stageIdx === STAGES.length - 1 && allGatesMet ? (
+            <button onClick={() => { setStageIdx(0); setGatesDone({}); }}
+              className="flex-1 px-4 py-2 rounded text-xs font-bold bg-zinc-700 hover:bg-zinc-600 text-white transition-all">
+              Run again →
+            </button>
+          ) : (
+            <button onClick={advance} disabled={!allGatesMet || stageIdx === STAGES.length - 1}
+              className={`flex-1 px-4 py-2 rounded text-xs font-bold transition-all ${allGatesMet && stageIdx < STAGES.length - 1 ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+              {stageIdx === STAGES.length - 1 ? "✓ Fully Deployed" : allGatesMet ? `Advance to ${STAGES[stageIdx + 1].label} →` : "Check all gates to advance"}
+            </button>
+          )}
         </div>
       </div>
     </div>

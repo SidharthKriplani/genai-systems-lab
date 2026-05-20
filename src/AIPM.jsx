@@ -147,6 +147,17 @@ const PRD_SCENARIOS = [
         correct: 2,
         explanation: "AI content moderation affecting free expression requires human review. This is a legal requirement in many jurisdictions and a core product trust issue. It must be spec'd in the PRD, not left to policy later.",
       },
+      {
+        q: "What's the primary success metric for a content moderation system?",
+        options: [
+          "Overall accuracy (% of all content correctly classified)",
+          "Precision only — minimize wrongful removals at all costs",
+          "Recall only — catch every piece of harmful content",
+          "A defined precision/recall tradeoff tuned to the specific harm category and user trust cost",
+        ],
+        correct: 3,
+        explanation: "Overall accuracy is misleading when classes are imbalanced (most content is benign). Optimizing precision or recall alone ignores the other cost. The right answer is an explicit tradeoff: high-severity harms (CSAM, terrorism) warrant high recall; lower-severity policy violations warrant higher precision to avoid over-moderation chilling effects.",
+      },
     ],
   },
 ];
@@ -232,7 +243,7 @@ function PRDSimulator() {
   const [qIdx, setQIdx] = useState(0);
   const [sel, setSel] = useState(null);
   const [revealed, setRevealed] = useState(false);
-  const [scores, setScores] = useState([]);
+  const [answers, setAnswers] = useState([]);
   const [done, setDone] = useState(false);
 
   const sc = PRD_SCENARIOS[sIdx];
@@ -241,7 +252,7 @@ function PRDSimulator() {
   function submit() {
     if (sel === null) return;
     setRevealed(true);
-    setScores(s => [...s, sel === q.correct ? 1 : 0]);
+    setAnswers(a => [...a, { correct: sel === q.correct }]);
   }
 
   function next() {
@@ -250,18 +261,19 @@ function PRDSimulator() {
   }
 
   function reset(i) {
-    setSIdx(i); setQIdx(0); setSel(null); setRevealed(false); setScores([]); setDone(false);
+    setSIdx(i); setQIdx(0); setSel(null); setRevealed(false); setAnswers([]); setDone(false);
   }
 
   if (done) {
-    const pct = Math.round((scores.reduce((a, b) => a + b, 0) / sc.questions.length) * 100);
+    const totalCorrect = answers.filter(a => a.correct).length;
+    const pct = Math.round((totalCorrect / sc.questions.length) * 100);
     const col = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
     return (
       <div className="space-y-4">
         <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 text-center">
           <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">{sc.title}</p>
           <div className="text-5xl font-black my-3" style={{ color: col }}>{pct}%</div>
-          <p className="text-zinc-400 text-sm">{scores.reduce((a,b)=>a+b,0)}/{sc.questions.length} PM decisions correct</p>
+          <p className="text-zinc-400 text-sm">{totalCorrect}/{sc.questions.length} PM decisions correct</p>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {PRD_SCENARIOS.map((s, i) => (
@@ -293,7 +305,7 @@ function PRDSimulator() {
       <div className="flex items-center justify-between text-xs text-zinc-500">
         <span>Q {qIdx + 1}/{sc.questions.length}</span>
         <div className="flex gap-1">{sc.questions.map((_, i) => (
-          <div key={i} className={`w-2 h-2 rounded-full ${i < scores.length ? (scores[i] ? "bg-green-500" : "bg-red-500") : i === qIdx ? "bg-indigo-500" : "bg-zinc-700"}`} />
+          <div key={i} className={`w-2 h-2 rounded-full ${i < answers.length ? (answers[i].correct ? "bg-green-500" : "bg-red-500") : i === qIdx ? "bg-indigo-500" : "bg-zinc-700"}`} />
         ))}</div>
       </div>
       <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5">
@@ -397,21 +409,34 @@ function StakeholderExplainer() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 flex-wrap">
-        {STAKEHOLDER_INCIDENTS.map((inc, i) => (
-          <button key={inc.id} onClick={() => { setIIdx(i); setQuizMode(false); }}
-            className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${i === iIdx ? "bg-red-700 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-            {inc.title.split(" ").slice(0, 3).join(" ")}…
-          </button>
-        ))}
+      {/* Mode toggle — prominently at the top */}
+      <div className="flex gap-2">
+        <button onClick={() => setQuizMode(false)}
+          className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${!quizMode ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+          Study Framings
+        </button>
+        <button onClick={() => setQuizMode(true)}
+          className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${quizMode ? "bg-amber-500 text-zinc-900" : "bg-zinc-800 text-amber-400 hover:bg-zinc-700 hover:text-amber-300"}`}>
+          Test Yourself →
+        </button>
       </div>
-      <div className="bg-red-900/10 border border-red-800/40 rounded-xl p-4">
-        <p className="text-xs text-red-400 uppercase tracking-widest mb-1">Incident</p>
-        <p className="text-white font-medium text-sm">{incident.title}</p>
-        <p className="text-zinc-400 text-xs mt-1 leading-relaxed">{incident.technical}</p>
-      </div>
-      {!quizMode ? (
+      {quizMode ? (
+        <StakeholderQuiz incident={incident} onBack={() => setQuizMode(false)} />
+      ) : (
         <>
+          <div className="flex gap-2 flex-wrap">
+            {STAKEHOLDER_INCIDENTS.map((inc, i) => (
+              <button key={inc.id} onClick={() => { setIIdx(i); setQuizMode(false); }}
+                className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${i === iIdx ? "bg-red-700 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                {inc.title.split(" ").slice(0, 3).join(" ")}…
+              </button>
+            ))}
+          </div>
+          <div className="bg-red-900/10 border border-red-800/40 rounded-xl p-4">
+            <p className="text-xs text-red-400 uppercase tracking-widest mb-1">Incident</p>
+            <p className="text-white font-medium text-sm">{incident.title}</p>
+            <p className="text-zinc-400 text-xs mt-1 leading-relaxed">{incident.technical}</p>
+          </div>
           <div className="flex gap-2 flex-wrap">
             {audiences.map(a => (
               <button key={a} onClick={() => setAudience(a)}
@@ -424,13 +449,7 @@ function StakeholderExplainer() {
             <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Message for: <span className="text-white">{audience}</span></p>
             <p className="text-sm text-zinc-200 leading-relaxed">{incident.audiences[audience]}</p>
           </div>
-          <button onClick={() => setQuizMode(true)}
-            className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold rounded-lg transition-all">
-            Quiz Me: Pick the Right Framing →
-          </button>
         </>
-      ) : (
-        <StakeholderQuiz incident={incident} onBack={() => setQuizMode(false)} />
       )}
       <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-4 mt-4">
         <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-2">The hardest case: you don't know the root cause yet</div>
@@ -559,6 +578,7 @@ function AIOrNot() {
   const [sel, setSel] = useState(null);
   const [revealed, setRevealed] = useState(false);
   const [scores, setScores] = useState([]);
+  const [isComplete, setIsComplete] = useState(false);
   const q = AI_OR_NOT_QS[idx];
   const options = ["LLM", "Traditional ML", "Rules-based", "No automation"];
   const colorMap = { "LLM": "#6366f1", "Traditional ML": "#3b82f6", "Rules-based": "#f59e0b", "No automation": "#ef4444" };
@@ -569,8 +589,37 @@ function AIOrNot() {
     setScores(s => [...s, sel === q.answer ? 1 : 0]);
   }
   function next() {
-    if (idx + 1 >= AI_OR_NOT_QS.length) { setIdx(0); setScores([]); } else { setIdx(idx + 1); }
-    setSel(null); setRevealed(false);
+    if (idx + 1 >= AI_OR_NOT_QS.length) {
+      setIsComplete(true);
+    } else {
+      setIdx(idx + 1);
+      setSel(null);
+      setRevealed(false);
+    }
+  }
+  function restart() {
+    setIdx(0); setScores([]); setSel(null); setRevealed(false); setIsComplete(false);
+  }
+
+  if (isComplete) {
+    const total = AI_OR_NOT_QS.length;
+    const correct = scores.filter(Boolean).length;
+    const pct = Math.round((correct / total) * 100);
+    const col = pct >= 75 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
+    const verdict = pct >= 75 ? "Strong AI instinct" : pct >= 50 ? "Solid foundation — keep sharpening" : "Keep building judgment";
+    return (
+      <div className="space-y-4">
+        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 text-center">
+          <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Results</p>
+          <div className="text-5xl font-black my-3" style={{ color: col }}>{correct}/{total}</div>
+          <p className="text-zinc-300 font-semibold text-sm mb-1" style={{ color: col }}>{verdict}</p>
+          <p className="text-zinc-500 text-xs">{pct}% correct across all 8 scenarios</p>
+        </div>
+        <button onClick={restart} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-sm transition-all">
+          Try Again →
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -612,7 +661,7 @@ function AIOrNot() {
       )}
       {!revealed
         ? <button onClick={submit} disabled={!sel} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold rounded-lg text-sm">Submit</button>
-        : <button onClick={next} className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-lg text-sm">{idx+1 >= AI_OR_NOT_QS.length ? "Restart →" : "Next →"}</button>
+        : <button onClick={next} className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-lg text-sm">{idx+1 >= AI_OR_NOT_QS.length ? "See Results →" : "Next →"}</button>
       }
       {/* Cost/latency reference */}
       <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 mt-4">

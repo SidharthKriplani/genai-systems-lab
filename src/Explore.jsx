@@ -176,7 +176,7 @@ function EmbeddingExplorer() {
                 y={(activeQuery.sy + n.sy) / 2 - 5}
                 textAnchor="middle" fontSize="8" fontFamily="monospace" fontWeight="bold"
                 fill={EMB_CAT_COLOR[n.cat]}>
-                {n.sim.toFixed(2)}
+                {n.dist.toFixed(1)}
               </text>
             </g>
           ))}
@@ -257,7 +257,7 @@ function EmbeddingExplorer() {
           </div>
 
           <div>
-            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Top matches · cosine similarity</div>
+            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Top matches · distance <span className="normal-case tracking-normal font-sans text-zinc-600">(smaller = more similar)</span></div>
             <div className="space-y-2">
               {nearest.map((pt, i) => (
                 <div key={pt.id} className="flex items-center gap-3">
@@ -268,7 +268,7 @@ function EmbeddingExplorer() {
                     style={{ background: EMB_CAT_COLOR[pt.cat] + "22", color: EMB_CAT_COLOR[pt.cat] }}>
                     {EMB_CAT_LABEL[pt.cat]}
                   </span>
-                  <span className="font-mono text-sm font-bold text-emerald-400 w-10 text-right flex-shrink-0">{pt.sim.toFixed(2)}</span>
+                  <span className="font-mono text-sm font-bold text-amber-400 w-14 text-right flex-shrink-0">{pt.dist.toFixed(1)}</span>
                 </div>
               ))}
             </div>
@@ -348,6 +348,7 @@ const SHADOW_SCENARIOS = [
 function ShadowMode() {
   const [sIdx, setSIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [userPick, setUserPick] = useState(null);
   const sc = SHADOW_SCENARIOS[sIdx];
 
   const MetricBar = ({ label, a, b, unit, lowerBetter }) => {
@@ -387,7 +388,7 @@ function ShadowMode() {
       </p>
       <div className="flex gap-2">
         {SHADOW_SCENARIOS.map((s, i) => (
-          <button key={s.id} onClick={() => { setSIdx(i); setRevealed(false); }}
+          <button key={s.id} onClick={() => { setSIdx(i); setRevealed(false); setUserPick(null); }}
             className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${i === sIdx ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
             {s.label}
           </button>
@@ -428,15 +429,54 @@ function ShadowMode() {
         <MetricBar label="Latency" a={sc.metrics.latency_a} b={sc.metrics.latency_b} unit="ms" lowerBetter={true} />
       </div>
 
+      {/* Step 1: user picks A or B */}
+      <div className="space-y-2">
+        <p className="text-xs text-zinc-500 uppercase tracking-wide font-bold">Which do you prefer?</p>
+        <div className="flex gap-3">
+          {["A", "B"].map(pick => (
+            <button key={pick} onClick={() => setUserPick(pick)}
+              className={"flex-1 py-2 rounded-lg text-sm font-bold border transition-all " + (
+                userPick === pick
+                  ? "bg-indigo-600 border-indigo-500 text-white"
+                  : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white"
+              )}>
+              Variant {pick}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Step 2: reveal — only enabled after picking */}
       {revealed ? (
-        <div className="bg-zinc-900 border border-indigo-800/50 rounded-xl p-4">
-          <p className="text-xs text-indigo-400 uppercase tracking-widest mb-1">Verdict</p>
+        <div className="bg-zinc-900 border border-indigo-800/50 rounded-xl p-4 space-y-3">
+          <p className="text-xs text-indigo-400 uppercase tracking-widest mb-1">Expert Verdict</p>
           <p className="text-sm text-zinc-300 leading-relaxed">{sc.verdict}</p>
+          {userPick && (
+            <div className={"mt-2 px-3 py-2 rounded-lg text-xs font-bold border " + (
+              sc.verdict.toLowerCase().includes("variant " + userPick.toLowerCase() + " wins") ||
+              sc.verdict.toLowerCase().startsWith(userPick.toLowerCase() + " wins") ||
+              sc.verdict.toLowerCase().includes("a wins") && userPick === "A" ||
+              sc.verdict.toLowerCase().includes("b wins") && userPick === "B"
+                ? "bg-emerald-950/40 border-emerald-700 text-emerald-400"
+                : "bg-zinc-800 border-zinc-700 text-zinc-400"
+            )}>
+              You picked Variant {userPick} — {
+                sc.verdict.toLowerCase().includes("a wins") && userPick === "A" ||
+                sc.verdict.toLowerCase().includes("b wins") && userPick === "B"
+                  ? "that matches the expert pick"
+                  : "the expert reasoning is above"
+              }
+            </div>
+          )}
         </div>
       ) : (
-        <button onClick={() => setRevealed(true)}
-          className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-lg text-sm">
-          Reveal Verdict →
+        <button onClick={() => setRevealed(true)} disabled={!userPick}
+          className={"w-full py-2.5 font-bold rounded-lg text-sm transition-all " + (
+            userPick
+              ? "bg-zinc-800 hover:bg-zinc-700 text-white cursor-pointer"
+              : "bg-zinc-900 text-zinc-600 cursor-not-allowed border border-zinc-800"
+          )}>
+          {userPick ? "Reveal Expert Verdict →" : "Pick A or B first"}
         </button>
       )}
     </div>
@@ -910,6 +950,7 @@ function VectorDBExplorer() {
           </div>
         </div>
       </div>
+      <p className="text-xs text-zinc-500 mt-2">* Pricing and features current as of June 2025. Always verify at vendor docs.</p>
     </div>
   );
 }
@@ -1843,7 +1884,7 @@ const EXPLORE_MODULES = [
   { id: "embeddings",  label: "3D Embedding Space",  tag: "3D SPACE", component: EmbeddingExplorer, fidelity: { tier: "conceptual",  note: "3D projection of precomputed coordinates — not live model embeddings" } },
   { id: "shadow",      label: "Shadow Mode A/B",      tag: "COMPARE",  component: ShadowMode,        fidelity: { tier: "simplified",  note: "Illustrative comparison — static response pairs, no live inference" } },
   { id: "latency",     label: "Latency Planner",      tag: "BUDGET",   component: LatencyPlanner,    fidelity: { tier: "simplified",  note: "Estimated model — based on published benchmarks, not live measurements" } },
-  { id: "tokenizer",   label: "Tokenizer Explorer",   tag: "TOKENS",   component: TokenizerExplorer, fidelity: { tier: "faithful",    note: "Mathematically faithful — real BPE tokenization logic" } },
+  { id: "tokenizer",   label: "Tokenizer Explorer",   tag: "TOKENS",   component: TokenizerExplorer, fidelity: { tier: "approximate", note: "Approximate (simplified BPE) — heuristic tokenization, not a production tokenizer" } },
   { id: "modelcard",   label: "Model Card Reader",    tag: "AUDIT",    component: ModelCardReader,   fidelity: { tier: "simplified",  note: "Curated static cards — based on published model documentation" } },
   { id: "vectordb",    label: "Vector DB Comparison", tag: "DB",       component: VectorDBComparison, fidelity: { tier: "simplified", note: "Curated comparison — based on published benchmarks and docs" } },
   { id: "structured",  label: "Structured Outputs",   tag: "SCHEMA",   component: StructuredOutputsLab, fidelity: { tier: "simplified", note: "Illustrative — static examples, no live schema validation" } },
@@ -1877,10 +1918,12 @@ export default function ExploreApp({ initialModule, onModuleVisit }) {
         <div className="flex items-center gap-2">
           <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
             m.fidelity.tier === "faithful"   ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/50" :
+            m.fidelity.tier === "approximate" ? "bg-amber-900/20 text-amber-400 border-amber-700" :
             m.fidelity.tier === "simplified" ? "bg-amber-950/40 text-amber-400 border-amber-800/50" :
             "bg-zinc-800 text-zinc-500 border-zinc-700"
           }`}>
             {m.fidelity.tier === "faithful" ? "✓ Mathematically faithful" :
+             m.fidelity.tier === "approximate" ? "~ Approximate (simplified BPE)" :
              m.fidelity.tier === "simplified" ? "~ Simplified" : "◌ Conceptual"}
           </span>
           <span className="text-[10px] text-zinc-600">{m.fidelity.note}</span>

@@ -449,9 +449,32 @@ function SpotHallucination() {
     setRevealed(true);
     setScores(s => [...s, id === round.outputs.find(o => o.hallucination).id ? 1 : 0]);
   }
+  const [showHallucinationSummary, setShowHallucinationSummary] = useState(false);
+
   function next() {
-    if (idx + 1 >= HALLUCINATION_ROUNDS.length) { setIdx(0); setScores([]); } else { setIdx(idx + 1); }
-    setSel(null); setRevealed(false);
+    if (idx + 1 >= HALLUCINATION_ROUNDS.length) {
+      setShowHallucinationSummary(true);
+    } else {
+      setIdx(idx + 1); setSel(null); setRevealed(false);
+    }
+  }
+  function restart() { setIdx(0); setScores([]); setSel(null); setRevealed(false); setShowHallucinationSummary(false); }
+
+  if (showHallucinationSummary) {
+    const correct = scores.filter(Boolean).length;
+    const total = HALLUCINATION_ROUNDS.length;
+    const pct = Math.round((correct / total) * 100);
+    const verdict = pct >= 80 ? "Sharp eye! You caught most hallucinations." : pct >= 60 ? "Decent instincts — keep practicing." : "Keep practicing — hallucinations are subtle.";
+    return (
+      <div className="space-y-4 text-center">
+        <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-6 space-y-3">
+          <div className="text-4xl font-black text-white">{correct} / {total}</div>
+          <div className="text-sm text-zinc-400">hallucinations correctly identified</div>
+          <div className={`text-sm font-bold ${pct >= 80 ? "text-emerald-400" : pct >= 60 ? "text-amber-400" : "text-red-400"}`}>{verdict}</div>
+        </div>
+        <button onClick={restart} className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-lg text-sm">Try again →</button>
+      </div>
+    );
   }
 
   return (
@@ -489,7 +512,7 @@ function SpotHallucination() {
       {revealed && (
         <button onClick={next}
           className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-lg text-sm">
-          {idx+1 >= HALLUCINATION_ROUNDS.length ? "Restart →" : "Next →"}
+          {"Next →"}
         </button>
       )}
     </div>
@@ -527,6 +550,9 @@ function ContextTetris() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg bg-zinc-800 border border-zinc-700 p-3 mb-3">
+        <p className="text-xs text-zinc-400"><span className="text-white font-semibold">Goal:</span> Fit as many high-priority items into the context window as possible without exceeding the token budget. Items that don't fit are truncated at inference time.</p>
+      </div>
       <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
         <div className="flex justify-between text-xs mb-2">
           <span className="text-zinc-400">Context window: {totalTokens.toLocaleString()} / {WINDOW.toLocaleString()} tokens</span>
@@ -579,9 +605,32 @@ function BiasDetector() {
     setRevealed(true);
     setScores(s => [...s, i === round.biasIn ? 1 : 0]);
   }
+  const [showBiasSummary, setShowBiasSummary] = useState(false);
+
   function next() {
-    if (idx + 1 >= BIAS_ROUNDS.length) { setIdx(0); setScores([]); } else { setIdx(idx + 1); }
-    setSel(null); setRevealed(false);
+    if (idx + 1 >= BIAS_ROUNDS.length) {
+      setShowBiasSummary(true);
+    } else {
+      setIdx(idx + 1); setSel(null); setRevealed(false);
+    }
+  }
+  function restart() { setIdx(0); setScores([]); setSel(null); setRevealed(false); setShowBiasSummary(false); }
+
+  if (showBiasSummary) {
+    const correct = scores.filter(Boolean).length;
+    const total = BIAS_ROUNDS.length;
+    const pct = Math.round((correct / total) * 100);
+    const verdict = pct >= 80 ? "Sharp eye! You spotted the bias patterns." : pct >= 60 ? "Decent instincts — bias is subtle." : "Keep practicing — these patterns are easy to miss.";
+    return (
+      <div className="space-y-4 text-center">
+        <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-6 space-y-3">
+          <div className="text-4xl font-black text-white">{correct} / {total}</div>
+          <div className="text-sm text-zinc-400">bias instances correctly identified</div>
+          <div className={`text-sm font-bold ${pct >= 80 ? "text-emerald-400" : pct >= 60 ? "text-amber-400" : "text-red-400"}`}>{verdict}</div>
+        </div>
+        <button onClick={restart} className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-lg text-sm">Try again →</button>
+      </div>
+    );
   }
 
   return (
@@ -622,7 +671,7 @@ function BiasDetector() {
       {revealed && (
         <button onClick={next}
           className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-lg text-sm">
-          {idx+1 >= BIAS_ROUNDS.length ? "Restart →" : "Next →"}
+          {"Next →"}
         </button>
       )}
     </div>

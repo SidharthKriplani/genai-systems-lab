@@ -297,7 +297,9 @@ function TimedDrills() {
   const [drillIdx, setDrillIdx] = useState(0);
   const [phase, setPhase] = useState("ready"); // ready | answering | reviewing | done
   const [timeLeft, setTimeLeft] = useState(DRILL_TIME);
-  const [selfScores, setSelfScores] = useState({});
+  // Scores are stored in a ref keyed by drill ID so filter changes never wipe accumulated scores
+  const scoresRef = useRef({});
+  const [scoresTick, setScoresTick] = useState(0); // used to trigger re-render when scores change
   const [showPoints, setShowPoints] = useState(false);
   const timerRef = useRef(null);
   const [filter, setFilter] = useState("All");
@@ -305,6 +307,9 @@ function TimedDrills() {
   const levels = ["All", "FOUNDATIONAL", "INTERMEDIATE", "ADVANCED"];
   const filteredDrills = filter === "All" ? DRILLS : DRILLS.filter(d => d.level === filter);
   const drill = filteredDrills[drillIdx] || filteredDrills[0];
+
+  // Derive a stable view of scores from the ref (re-reads on scoresTick changes)
+  const selfScores = scoresRef.current; // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     return () => clearInterval(timerRef.current);
@@ -332,7 +337,8 @@ function TimedDrills() {
   }
 
   function scoreThis(hit) {
-    setSelfScores(prev => ({ ...prev, [drill.id]: hit }));
+    scoresRef.current = { ...scoresRef.current, [drill.id]: hit };
+    setScoresTick(t => t + 1); // trigger re-render to reflect new score
   }
 
   function nextDrill() {
@@ -351,7 +357,7 @@ function TimedDrills() {
     setPhase("ready");
     setTimeLeft(DRILL_TIME);
     setShowPoints(false);
-    setSelfScores({});
+    // NOTE: scoresRef is intentionally NOT reset — scores persist across filter changes
   }
 
   const hitCount = Object.values(selfScores).filter(Boolean).length;
@@ -1130,7 +1136,7 @@ function MockInterview() {
     let pool = INTERVIEW_QUESTIONS;
     if (difficulty !== "all") pool = pool.filter(q => q.difficulty === difficulty);
     if (topic !== "all") pool = pool.filter(q => q.topic === topic);
-    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, SESSION_SIZE);
+    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, Math.min(SESSION_SIZE, pool.length));
     if (shuffled.length === 0) return;
     setSession(shuffled);
     setQIndex(0);
@@ -1670,11 +1676,11 @@ function PromptChallengeMode() {
 
 const FLUENCY_MODULES = [
   { id: "phrases", label: "Phrase Bank", tag: "UPGRADE" },
+  { id: "flashcards", label: "Flashcards", tag: "CARDS" },
   { id: "drills", label: "Timed Drills", tag: "PRACTICE" },
   { id: "cases", label: "Company Cases", tag: "ARENA" },
   { id: "prompts", label: "Prompt Engineering", tag: "PROMPTS" },
   { id: "interview", label: "Mock Interview", tag: "INTERVIEW" },
-  { id: "flashcards", label: "Flashcards", tag: "CARDS" },
   { id: "challenges", label: "Prompt Challenges", tag: "CHALLENGE" },
 ];
 

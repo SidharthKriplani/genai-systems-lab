@@ -592,7 +592,7 @@ function GuardrailDiagram() {
   const classifierActive = step >= 1;
   const llmActive = step >= 2 && outcome.input !== "block";
   const validatorActive = step >= 3 && outcome.input !== "block";
-  const resultActive = step >= 4 && outcome.input !== "block" ||
+  const resultActive = (step >= 4 && outcome.input !== "block") ||
     (step >= 2 && outcome.input === "block");
 
   const classifierPass = outcome.input === "pass" || outcome.input === "pass_miss";
@@ -651,7 +651,7 @@ function GuardrailDiagram() {
 
           {/* Input classifier */}
           <StageBox
-            label="INPUT CLASSIFIER"
+            label="Input Classifier"
             sublabel={classifierActive ? (classifierPass ? inputMissed ? "⚠ MISSED" : "✓ PASS" : "✗ BLOCKED") : "checking…"}
             active={classifierActive}
             warn={inputMissed && classifierActive}
@@ -669,7 +669,7 @@ function GuardrailDiagram() {
             </StageBox>
             <Arrow active={validatorActive} color={outputPass ? "#10b981" : "#ef4444"} />
             <StageBox
-              label="OUTPUT VALIDATOR"
+              label="Output Validator"
               sublabel={validatorActive ? (outputPass ? outputMissed ? "⚠ MISSED" : "✓ PASS" : "✗ BLOCKED") : "waiting"}
               active={validatorActive}
               warn={outputMissed && validatorActive}
@@ -1086,12 +1086,10 @@ export default function FlowsApp() {
 
       <Component key={activeTab} />
 
-      {tab.reflection && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-4 py-3 flex items-start gap-2.5">
-          <span className="text-zinc-600 text-sm shrink-0 mt-0.5">💭</span>
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            <span className="text-zinc-400 font-bold">Reflect: </span>{tab.reflection}
-          </p>
+      {tab?.reflection && (
+        <div className="mt-4 rounded-xl border border-indigo-800/40 bg-indigo-950/20 p-4">
+          <p className="text-xs font-bold text-indigo-400 uppercase tracking-wide mb-1">Reflect</p>
+          <p className="text-sm text-zinc-300">{tab.reflection}</p>
         </div>
       )}
     </div>

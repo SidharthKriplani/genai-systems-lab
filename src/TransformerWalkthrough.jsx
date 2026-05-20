@@ -314,7 +314,7 @@ function QKVProjectionSVG() {
             fill={color + "20"} stroke={color} strokeWidth="2" />
           <text x="172" y={y + 28} textAnchor="middle" fill={color} fontSize="14" fontFamily="monospace" fontWeight="800">{label}</text>
           {/* Description */}
-          <text x="196" y={y + 24} fontSize="8" fontFamily="monospace" fill="#6b7280" x="196">{desc}</text>
+          <text x="196" y={y + 24} fontSize="8" fontFamily="monospace" fill="#6b7280">{desc}</text>
         </g>
       ))}
 
@@ -606,7 +606,7 @@ function FullStackSVG() {
 // ─── MAIN COMPONENT ────────────────────────────────────────────────────────────
 export default function TransformerWalkthrough() {
   const [step, setStep]       = useState(0);
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
   const intervalRef           = useRef(null);
   const current               = STEPS[step];
   const SVGComponent          = current.svg;

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import HowTo from "./HowTo";
+import SalaryCalculator from "./SalaryCalculator";
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
@@ -303,8 +304,8 @@ function TakeHomeChallenge() {
               <div key={o.id} className={`border rounded-xl p-3 transition-all ${correct ? "border-green-600 bg-green-900/10" : wrong ? "border-red-700 bg-red-900/10" : "border-zinc-700 bg-zinc-900"}`}>
                 <div className="flex items-start gap-3">
                   <div className="flex flex-col gap-0.5">
-                    <button onClick={() => moveRankUp(pos)} className="text-zinc-600 hover:text-white text-xs">↑</button>
-                    <button onClick={() => moveRankDown(pos)} className="text-zinc-600 hover:text-white text-xs">↓</button>
+                    <button onClick={() => moveRankUp(pos)} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-600 hover:text-white text-sm rounded hover:bg-zinc-700/50 transition-colors">↑</button>
+                    <button onClick={() => moveRankDown(pos)} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-600 hover:text-white text-sm rounded hover:bg-zinc-700/50 transition-colors">↓</button>
                   </div>
                   <div className="flex-1">
                     <span className="text-xs font-mono text-zinc-500 mr-2">Option {o.label}</span>
@@ -851,6 +852,9 @@ const CAREER_MODULES = [
   { id: "negotiate", label: "Negotiation Sim", tag: "SIM", component: NegotiationSim,
     objective: "Practice real salary and promotion negotiation conversations — learn which moves build leverage and which ones destroy it.",
     howTo: ["Read the recruiter or manager line carefully — the subtext matters as much as the words", "Pick your response before revealing — commit to a choice", "After revealing, read the feedback even for options you didn't pick", "Track your strong moves across turns — the debrief shows your full pattern"] },
+  { id: "salary", label: "Salary Calculator", tag: "TOOL", component: SalaryCalculator,
+    objective: "Calculate your total compensation and compare offers — understand base, equity, and bonus trade-offs.",
+    howTo: ["Enter your offer components: base, equity, bonus", "See the total annualized value and equity vesting breakdown", "Compare multiple offers side-by-side", "Use this before any negotiation conversation"] },
 ];
 
 export default function CareerApp() {

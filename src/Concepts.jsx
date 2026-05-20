@@ -1365,12 +1365,46 @@ const CHUNK_QUERIES = [
 
 const STRAT_KEYS = ["fixed", "sliding", "sentence", "semantic"];
 
+// Helper: build sliding-window chunks from corpus with given chunkSize and overlapSize
+function buildSlidingChunks(corpus, chunkSize, overlapSize) {
+  const step = Math.max(1, chunkSize - overlapSize);
+  const chunks = [];
+  let id = 0;
+  for (let start = 0; start < corpus.length; start += step) {
+    const text = corpus.slice(start, start + chunkSize).trim();
+    if (text.length < 20) break;
+    chunks.push({ id: id++, text });
+    if (start + chunkSize >= corpus.length) break;
+  }
+  return chunks;
+}
+
+const SLIDING_CORPUS =
+  "Large language models (LLMs) are trained on vast text using self-supervised learning. " +
+  "The model predicts the next token, developing internal representations of language and facts. " +
+  "Transformers use self-attention to capture long-range dependencies between tokens. " +
+  "At inference, text is generated autoregressively, one token at a time. " +
+  "Retrieval-augmented generation (RAG) grounds LLM responses in retrieved documents. " +
+  "A retriever finds relevant chunks from a corpus and injects them into the prompt as context. " +
+  "Chunking quality directly affects retrieval: chunks too small lose context, chunks too large dilute relevance scores and waste tokens.";
+
 function ChunkingModule() {
   const [strategy, setStrategy] = useState("fixed");
   const [queryIdx, setQueryIdx] = useState(0);
   const [showRetrieval, setShowRetrieval] = useState(false);
+  const [overlapSize, setOverlapSize] = useState(25);
 
-  const strat = CHUNK_STRATEGIES[strategy];
+  // Reactively recompute sliding chunks whenever overlapSize changes — no button needed
+  const slidingChunks = useMemo(
+    () => buildSlidingChunks(SLIDING_CORPUS, 110, overlapSize),
+    [overlapSize]
+  );
+
+  // Use live sliding chunks when strategy is "sliding", otherwise fall back to static data
+  const strat = strategy === "sliding"
+    ? { ...CHUNK_STRATEGIES.sliding, chunks: slidingChunks, param: `~110 chars, ${overlapSize} char overlap` }
+    : CHUNK_STRATEGIES[strategy];
+
   const query = CHUNK_QUERIES[queryIdx];
   const hitIds = showRetrieval ? (query.hits[strategy] || []) : [];
   const verdict = query.verdict[strategy];
@@ -1393,6 +1427,24 @@ function ChunkingModule() {
           );
         })}
       </div>
+
+      {/* Overlap slider — only shown for sliding window strategy */}
+      {strategy === "sliding" && (
+        <div className="rounded-xl border border-amber-800/50 bg-amber-950/10 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-amber-400 uppercase tracking-wide">Overlap size</span>
+            <span className="text-xs font-mono text-amber-300">{overlapSize} chars</span>
+          </div>
+          <input
+            type="range" min={0} max={80} step={5} value={overlapSize}
+            onChange={e => { setOverlapSize(Number(e.target.value)); setShowRetrieval(false); }}
+            className="w-full accent-amber-500"
+          />
+          <p className="text-xs text-zinc-500">
+            Drag to see chunks update instantly. More overlap = fewer boundary gaps, more redundancy.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-12 gap-4">
         {/* Chunk display */}
@@ -1452,15 +1504,18 @@ function ChunkingModule() {
           {/* Comparison */}
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-1.5">
             <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Chunk count</div>
-            {STRAT_KEYS.map(k => (
-              <div key={k} className={`flex items-center justify-between text-xs font-mono px-2 py-1 rounded ${k === strategy ? "bg-zinc-800" : ""}`}>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ background: CHUNK_STRATEGIES[k].color }} />
-                  <span className={k === strategy ? "text-white" : "text-zinc-500"}>{CHUNK_STRATEGIES[k].label}</span>
-                </span>
-                <span className={k === strategy ? "text-white font-bold" : "text-zinc-600"}>{CHUNK_STRATEGIES[k].chunks.length}</span>
-              </div>
-            ))}
+            {STRAT_KEYS.map(k => {
+              const displayCount = k === "sliding" ? slidingChunks.length : CHUNK_STRATEGIES[k].chunks.length;
+              return (
+                <div key={k} className={`flex items-center justify-between text-xs font-mono px-2 py-1 rounded ${k === strategy ? "bg-zinc-800" : ""}`}>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ background: CHUNK_STRATEGIES[k].color }} />
+                    <span className={k === strategy ? "text-white" : "text-zinc-500"}>{CHUNK_STRATEGIES[k].label}</span>
+                  </span>
+                  <span className={k === strategy ? "text-white font-bold" : "text-zinc-600"}>{displayCount}</span>
+                </div>
+              );
+            })}
           </div>
 
           <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-3">
@@ -2201,9 +2256,9 @@ function GuardrailsModule() {
 
   const STAGES = [
     { id: "input",        label: "User Input",    icon: "👤" },
-    { id: "input_guard",  label: "Input Guards",  icon: "🛡" },
+    { id: "input_guard",  label: "Input Classifier",  icon: "🛡" },
     { id: "llm",          label: "LLM",           icon: "🧠" },
-    { id: "output_guard", label: "Output Guards", icon: "🛡" },
+    { id: "output_guard", label: "Output Validator", icon: "🛡" },
     { id: "response",     label: "Response",      icon: "💬" },
   ];
 
@@ -3219,13 +3274,13 @@ const MODULES = [
     component: TransformerModule,
   },
   {
-    id: "chunking",
-    label: "Chunking",
+    id: "context",
+    label: "Context Window",
     tag: "LAYER 4",
-    title: "Chunking Strategies",
-    subtitle: "Same document. Four strategies. Watch which chunks get retrieved for each query — and why some strategies fail.",
-    fidelity: { tier: "simplified", note: "Curated examples — real chunking strategies applied to a simplified corpus" },
-    component: ChunkingModule,
+    title: "Context Window & Attention Cost",
+    subtitle: "Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.",
+    fidelity: { tier: "simplified", note: "Illustrative cost model — O(n²) relationship is correct, exact flops vary by architecture" },
+    component: ContextWindowModule,
   },
   {
     id: "sampling",
@@ -3237,13 +3292,13 @@ const MODULES = [
     component: SamplingModule,
   },
   {
-    id: "context",
-    label: "Context Window",
+    id: "chunking",
+    label: "Chunking",
     tag: "LAYER 6",
-    title: "Context Window & Attention Cost",
-    subtitle: "Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.",
-    fidelity: { tier: "simplified", note: "Illustrative cost model — O(n²) relationship is correct, exact flops vary by architecture" },
-    component: ContextWindowModule,
+    title: "Chunking Strategies",
+    subtitle: "Same document. Four strategies. Watch which chunks get retrieved for each query — and why some strategies fail.",
+    fidelity: { tier: "simplified", note: "Curated examples — real chunking strategies applied to a simplified corpus" },
+    component: ChunkingModule,
   },
   {
     id: "agent",
@@ -3259,7 +3314,7 @@ const MODULES = [
     label: "Guardrails",
     tag: "LAYER 8",
     title: "Guardrail Pipeline",
-    subtitle: "Input guards → LLM → output guards. Try injections, jailbreaks, PII, hallucinations — see exactly where each gets caught.",
+    subtitle: "Input Classifier → LLM → Output Validator. Try injections, jailbreaks, PII, hallucinations — see exactly where each gets caught.",
     fidelity: { tier: "simplified", note: "Curated scenarios — real failure modes, static rule-based detection (no live classifier)" },
     component: GuardrailsModule,
   },
