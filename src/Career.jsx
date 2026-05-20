@@ -97,7 +97,7 @@ const TAKEHOME_CHALLENGES = [
   },
 ];
 
-const NEGOTIATION_SCENARIOS = [
+const STAKEHOLDER_SCENARIOS = [
   {
     pushback: "\"This AI feature will solve all our support problems. We won't need as many agents.\"",
     speaker: "VP of Operations",
@@ -398,7 +398,7 @@ function NegotiationFlashcards() {
   const [sel, setSel] = useState(null);
   const [revealed, setRevealed] = useState(false);
   const [scores, setScores] = useState([]);
-  const sc = NEGOTIATION_SCENARIOS[idx];
+  const sc = STAKEHOLDER_SCENARIOS[idx];
 
   function pick(i) {
     if (revealed) return;
@@ -407,14 +407,14 @@ function NegotiationFlashcards() {
     setScores(s => [...s, i === sc.correct ? 1 : 0]);
   }
   function next() {
-    if (idx + 1 >= NEGOTIATION_SCENARIOS.length) { setIdx(0); setScores([]); } else { setIdx(idx + 1); }
+    if (idx + 1 >= STAKEHOLDER_SCENARIOS.length) { setIdx(0); setScores([]); } else { setIdx(idx + 1); }
     setSel(null); setRevealed(false);
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex gap-1">{NEGOTIATION_SCENARIOS.map((_, i) => (
+        <div className="flex gap-1">{STAKEHOLDER_SCENARIOS.map((_, i) => (
           <div key={i} className={`w-2 h-2 rounded-full ${i < scores.length ? (scores[i] ? "bg-green-500" : "bg-red-500") : i === idx ? "bg-indigo-500" : "bg-zinc-700"}`} />
         ))}</div>
         <span className="text-xs text-zinc-500">{scores.filter(Boolean).length}/{scores.length} handled well</span>
@@ -447,7 +447,7 @@ function NegotiationFlashcards() {
       {revealed && (
         <button onClick={next}
           className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-lg text-sm">
-          {idx+1 >= NEGOTIATION_SCENARIOS.length ? "Restart →" : "Next →"}
+          {idx+1 >= STAKEHOLDER_SCENARIOS.length ? "Restart →" : "Next →"}
         </button>
       )}
     </div>
