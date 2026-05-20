@@ -786,7 +786,7 @@ function ExamConfig({ onStart, onExit }) {
   const DM = { 15: 20, 30: 35, 60: 55 };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-4 sm:p-6">
       <div className="max-w-lg w-full space-y-6">
         <div className="flex items-center gap-3">
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Back</button>
@@ -902,7 +902,7 @@ function ExamMode({ onExit }) {
   if (finished) {
     const r = computeResults();
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
             <button onClick={onExit} className="text-zinc-400 hover:text-zinc-200 text-sm">← Exit</button>
@@ -910,9 +910,9 @@ function ExamMode({ onExit }) {
               Download Results
             </button>
           </div>
-          <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 text-center">
+          <div className="bg-zinc-900 rounded-2xl p-5 sm:p-8 border border-zinc-800 text-center">
             <p className="text-zinc-400 text-sm mb-2">Final Score</p>
-            <div className="text-7xl font-bold text-indigo-400 mb-1">{r.pct}%</div>
+            <div className="text-5xl sm:text-7xl font-bold text-indigo-400 mb-1">{r.pct}%</div>
             <p className="text-zinc-400">{r.tc} / {r.total} correct</p>
             {(r.strong.length > 0 || r.weak.length > 0) && (
               <div className="mt-4 flex flex-wrap gap-2 justify-center">
@@ -955,7 +955,7 @@ function ExamMode({ onExit }) {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="sticky top-0 z-10 bg-zinc-950/90 backdrop-blur border-b border-zinc-800 px-6 py-3">
+      <div className="sticky top-0 z-10 bg-zinc-950/90 backdrop-blur border-b border-zinc-800 px-3 sm:px-6 py-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
           <div className="flex-1 space-y-1">
@@ -970,7 +970,7 @@ function ExamMode({ onExit }) {
           </div>
         </div>
       </div>
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
         <QuestionCard q={q} />
         {q.type === "mcq"
           ? <MCQOptions options={q.options} selected={answers[q.id]} onSelect={i => setAnswers(a => ({ ...a, [q.id]: i }))} />
@@ -1025,7 +1025,7 @@ function TrainerMode({ onExit, onNavigate }) {
           <button onClick={onExit} className="text-zinc-400 hover:text-zinc-200 text-sm">← Exit</button>
           <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 text-center">
             <p className="text-zinc-400 text-sm mb-2">Session Score</p>
-            <div className="text-6xl font-bold text-indigo-400 mb-1">{pct}%</div>
+            <div className="text-4xl sm:text-6xl font-bold text-indigo-400 mb-1">{pct}%</div>
             <p className="text-zinc-400">{tc} / {sessionAnswers.length} correct</p>
           </div>
           {weakList.length > 0 && (
@@ -1149,12 +1149,12 @@ function JDPrepMode({ onExit, onNavigate }) {
       if (correct) bt[q.topic].correct++;
     }
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
         <div className="max-w-2xl mx-auto space-y-6">
           <button onClick={onExit} className="text-zinc-400 hover:text-zinc-200 text-sm">← Exit</button>
-          <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 text-center">
+          <div className="bg-zinc-900 rounded-2xl p-5 sm:p-8 border border-zinc-800 text-center">
             <p className="text-zinc-400 text-sm mb-2">Interview Readiness Score</p>
-            <div className="text-7xl font-bold text-indigo-400 mb-1">{pct}%</div>
+            <div className="text-5xl sm:text-7xl font-bold text-indigo-400 mb-1">{pct}%</div>
             <p className="text-zinc-400">{tc} / {sessionAnswers.length} correct</p>
           </div>
           <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 space-y-4">
@@ -1206,7 +1206,7 @@ function JDPrepMode({ onExit, onNavigate }) {
 
   // Steps 1 & 2
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
@@ -1271,7 +1271,7 @@ function JDPrepMode({ onExit, onNavigate }) {
             {resumeText.trim() && jdTopics.length > 0 && (
               <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800 space-y-3">
                 <h3 className="font-medium text-zinc-300">Gap Analysis</h3>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 text-sm">
                   <div>
                     <p className="text-zinc-500 text-xs mb-2 uppercase tracking-wide">JD Requires</p>
                     <div className="space-y-1.5">{jdTopics.map(t => <div key={t} className="text-zinc-300">{TOPIC_LABELS[t]}</div>)}</div>
@@ -1343,11 +1343,11 @@ export default function PrepLab({ onNavigate }) {
   if (mode === "jdprep") return <JDPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
-      <div className="max-w-4xl mx-auto space-y-10">
-        <div className="text-center space-y-3 pt-8">
-          <h1 className="text-4xl font-bold tracking-tight">PrepLab</h1>
-          <p className="text-zinc-400 text-lg">Interview prep and assessment for GenAI roles</p>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-10">
+        <div className="text-center space-y-3 pt-6 sm:pt-8">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">PrepLab</h1>
+          <p className="text-zinc-400 text-base sm:text-lg">Interview prep and assessment for GenAI roles</p>
           <div className="flex justify-center gap-2 flex-wrap">
             {Object.entries(TOPIC_LABELS).map(([t, l]) => (
               <span key={t} className={`text-xs px-2.5 py-1 rounded-full border ${TOPIC_COLORS[t]}`}>{l}</span>

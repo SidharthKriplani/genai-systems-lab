@@ -1429,14 +1429,14 @@ function MockInterview() {
 
   if (phase === "setup") return (
     <div className="space-y-6">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 space-y-5">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4 sm:p-6 space-y-5">
         <div>
           <p className="text-xs text-zinc-400 uppercase tracking-widest mb-1">Session Setup</p>
           <h2 className="text-white font-bold text-lg">Mock Interview</h2>
           <p className="text-zinc-400 text-sm mt-1">5 questions · 90 seconds each · self-score your answers</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4">
           <div>
             <label className="text-xs text-zinc-400 block mb-2 uppercase tracking-wide">Difficulty</label>
             <div className="flex flex-col gap-1.5">
