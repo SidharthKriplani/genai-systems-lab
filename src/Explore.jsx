@@ -61,11 +61,11 @@ const EMB_POINTS = [
 // Category labels at sector midpoints, r~205 from center (250,250)
 const EMB_SECTOR_LABELS = [
   { cat:"rag",    x:250, y: 44, anchor:"middle" },
-  { cat:"arch",   x:428, y:148, anchor:"start"  },
-  { cat:"safety", x:428, y:355, anchor:"start"  },
+  { cat:"arch",   x:404, y:148, anchor:"start"  },
+  { cat:"safety", x:404, y:355, anchor:"start"  },
   { cat:"ops",    x:250, y:458, anchor:"middle" },
-  { cat:"agents", x: 72, y:355, anchor:"end"    },
-  { cat:"multi",  x: 72, y:148, anchor:"end"    },
+  { cat:"agents", x: 90, y:355, anchor:"end"    },
+  { cat:"multi",  x: 92, y:148, anchor:"end"    },
 ];
 
 const EMB_QUERIES = [
@@ -216,7 +216,7 @@ function EmbeddingExplorer() {
           {activeQuery && nearestPoints.map((n, i) => (
             <text key={animKey + "-sim-" + n.id}
               className="emb-node-in"
-              x={(CX + n.x) / 2} y={(CY + n.y) / 2 - 9}
+              x={CX + (n.x - CX) * 0.72} y={CY + (n.y - CY) * 0.72 - 9}
               textAnchor="middle"
               fontSize="8" fontFamily="ui-monospace,monospace" fontWeight="700"
               fill={EMB_CAT_COLOR[n.cat]}
@@ -281,22 +281,39 @@ function EmbeddingExplorer() {
                 fontSize="6.5" fontFamily="ui-monospace,monospace" letterSpacing="0.1em" fill="#52525b">QUERY</text>
               {(() => {
                 const words = activeQuery.text.split(" ");
-                const half = Math.ceil(words.length / 2);
+                const n = words.length;
+                const fs = n > 5 ? "6.5" : "7.5";
+                if (n > 5) {
+                  const t1 = words.slice(0, Math.ceil(n/3)).join(" ");
+                  const t2 = words.slice(Math.ceil(n/3), Math.ceil(2*n/3)).join(" ");
+                  const t3 = words.slice(Math.ceil(2*n/3)).join(" ");
+                  return (
+                    <g>
+                      <text x={CX} y={CY - 9} textAnchor="middle" dominantBaseline="middle"
+                        fontSize={fs} fontFamily="ui-sans-serif,sans-serif" fill="#e4e4e7" fontWeight="600">{t1}</text>
+                      <text x={CX} y={CY + 1} textAnchor="middle" dominantBaseline="middle"
+                        fontSize={fs} fontFamily="ui-sans-serif,sans-serif" fill="#e4e4e7" fontWeight="600">{t2}</text>
+                      <text x={CX} y={CY + 11} textAnchor="middle" dominantBaseline="middle"
+                        fontSize={fs} fontFamily="ui-sans-serif,sans-serif" fill="#e4e4e7" fontWeight="600">{t3}</text>
+                    </g>
+                  );
+                }
+                const half = Math.ceil(n/2);
                 return (
                   <g>
                     <text x={CX} y={CY - 4} textAnchor="middle" dominantBaseline="middle"
-                      fontSize="7.5" fontFamily="ui-sans-serif,sans-serif" fill="#e4e4e7" fontWeight="600">
+                      fontSize={fs} fontFamily="ui-sans-serif,sans-serif" fill="#e4e4e7" fontWeight="600">
                       {words.slice(0, half).join(" ")}
                     </text>
                     <text x={CX} y={CY + 9} textAnchor="middle" dominantBaseline="middle"
-                      fontSize="7.5" fontFamily="ui-sans-serif,sans-serif" fill="#e4e4e7" fontWeight="600">
+                      fontSize={fs} fontFamily="ui-sans-serif,sans-serif" fill="#e4e4e7" fontWeight="600">
                       {words.slice(half).join(" ")}
                     </text>
                   </g>
                 );
               })()}
               <text x={CX} y={CY + 25} textAnchor="middle"
-                fontSize="7" fontFamily="ui-monospace,monospace" fontWeight="800" fill="#ef4444">0 KEYWORDS</text>
+                fontSize="6" fontFamily="ui-monospace,monospace" letterSpacing="0.08em" fill="#52525b">↗ SEMANTIC</text>
             </g>
           ) : (
             <g>
