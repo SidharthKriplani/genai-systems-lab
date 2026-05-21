@@ -113,7 +113,7 @@ const RELATED_GT = {
   finetuning:  [{ id: "finetune-playbook", title: "Fine-Tuning Playbook" }, { id: "full-vs-peft-vs-prompting", title: "Full FT vs PEFT vs Prompting" }],
 };
 
-export default function SystemsApp({ initialModule, onModuleVisit }) {
+export default function SystemsApp({ initialModule, onModuleVisit, onNavigate }) {
   const [activeModule, setActiveModule] = useState(initialModule || "evals");
   const [search, setSearch] = useState("");
   const [done, setDone] = useState(() => {
@@ -214,10 +214,13 @@ export default function SystemsApp({ initialModule, onModuleVisit }) {
           <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">📖 Related reading in Ground Truth</div>
           <div className="flex flex-wrap gap-2">
             {RELATED_GT[activeModule].map(post => (
-              <span key={post.id}
-                className="text-xs text-indigo-400 bg-indigo-950/40 border border-indigo-900/50 px-2.5 py-1 rounded-lg font-medium">
+              <button
+                key={post.id}
+                onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: post.id })}
+                className="text-xs text-indigo-400 bg-indigo-950/40 border border-indigo-900/50 px-2.5 py-1 rounded-lg font-medium hover:bg-indigo-900/40 hover:text-indigo-300 transition-colors cursor-pointer"
+              >
                 {post.title} →
-              </span>
+              </button>
             ))}
           </div>
         </div>

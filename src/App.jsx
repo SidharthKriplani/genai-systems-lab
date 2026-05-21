@@ -2122,7 +2122,7 @@ export default function App() {
           {topView === "consult"    && <ConsultationApp onNavigate={navigate} />}
           {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
-          {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} />}
+          {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "fluency"    && <FluencyApp />}
           {topView === "aipm"       && <AIPMApp />}
           {topView === "playground" && <PlaygroundApp />}
