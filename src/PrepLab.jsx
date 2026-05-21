@@ -2063,20 +2063,41 @@ function TrainerMode({ onExit, onNavigate }) {
   const [weakTopics, setWeakTopics] = useState({});
   const [done, setDone] = useState(false);
   const [sessionAnswers, setSessionAnswers] = useState([]);
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); }
+    catch { return {}; }
+  });
+  const [weakOnly, setWeakOnly] = useState(false);
+
+  function recordAnswer(questionId, correct) {
+    setHistory(prev => {
+      const entry = prev[questionId] || { attempts: 0, wrong: 0 };
+      const next = {
+        ...prev,
+        [questionId]: {
+          attempts: entry.attempts + 1,
+          wrong: entry.wrong + (correct ? 0 : 1),
+        }
+      };
+      try { localStorage.setItem("gsl-preplab-history", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
 
   // Recompute filtered+shuffled questions whenever filters change
   useEffect(() => {
     const filtered = PREP_QUESTIONS.filter(q => {
       const topicOk = topicFilter === "all" || q.topic === topicFilter;
       const diffOk = diffFilter === "all" || q.difficulty === diffFilter;
-      return topicOk && diffOk;
+      const weakOk = !weakOnly || (history[q.id]?.wrong > 0);
+      return topicOk && diffOk && weakOk;
     });
     setQuestions(shuffle(filtered));
     setCurrent(0);
     setAnswer("");
     setSubmitted(false);
     setIsCorrect(false);
-  }, [topicFilter, diffFilter]);
+  }, [topicFilter, diffFilter, weakOnly]);
 
   const q = questions[current];
 
@@ -2085,6 +2106,7 @@ function TrainerMode({ onExit, onNavigate }) {
     setIsCorrect(ok); setSubmitted(true);
     if (!ok) setWeakTopics(wt => ({ ...wt, [q.topic]: (wt[q.topic] || 0) + 1 }));
     setSessionAnswers(sa => [...sa, { q, correct: ok }]);
+    recordAnswer(q.id, ok);
   }
 
   function next() {
@@ -2153,6 +2175,29 @@ function TrainerMode({ onExit, onNavigate }) {
             ))}
             <span className="text-xs text-zinc-600 ml-auto">{questions.length} questions</span>
           </div>
+          {/* Weak spots toggle */}
+          {Object.values(history).some(h => h.wrong > 0) && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setWeakOnly(w => !w)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${weakOnly ? "bg-red-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+              >
+                <span>⚡</span>
+                Weak spots ({Object.values(history).filter(h => h.wrong > 0).length})
+              </button>
+              {weakOnly && (
+                <span className="text-xs text-zinc-600">Showing questions you've answered wrong</span>
+              )}
+              {Object.keys(history).length > 0 && (
+                <button
+                  onClick={() => { setHistory({}); try { localStorage.removeItem("gsl-preplab-history"); } catch {} }}
+                  className="text-[10px] text-zinc-700 hover:text-zinc-500 transition-colors ml-auto"
+                >
+                  Clear history
+                </button>
+              )}
+            </div>
+          )}
         </div>
         {questions.length === 0 ? (
           <div className="bg-zinc-900 rounded-xl p-8 border border-zinc-800 text-center text-zinc-500 text-sm">
@@ -2160,7 +2205,14 @@ function TrainerMode({ onExit, onNavigate }) {
           </div>
         ) : (
           <>
-            <QuestionCard q={q} />
+            <div className="relative">
+              <QuestionCard q={q} />
+              {history[q.id]?.wrong > 0 && (
+                <span className="absolute top-2 right-2 text-[10px] text-red-400 font-semibold">
+                  ✗ {history[q.id].wrong}× wrong
+                </span>
+              )}
+            </div>
             {!submitted && (
               <>
                 {q.type === "mcq"
