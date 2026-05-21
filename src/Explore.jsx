@@ -19,84 +19,84 @@ const EMB_CAT_LABEL = { rag:"RAG", arch:"Architecture", safety:"Safety", ops:"Op
 // Redesigned embedding space — wider canvas, cluster halos, always-visible labels,
 // cosine similarity scores, animated connection lines via CSS keyframes
 
-// 30 points spread across a 600×420 canvas with deliberate cluster separation
+// 30 points spread across a 620×440 canvas — each cluster spans ~110×90px for clear visual separation
 const EMB_POINTS = [
-  // RAG — top-left
-  { id:"r1", label:"What is RAG?",             cat:"rag",    x:  82, y:  90 },
-  { id:"r2", label:"Vector DB indexing",        cat:"rag",    x: 122, y: 106 },
-  { id:"r3", label:"Chunking strategies",       cat:"rag",    x:  74, y: 120 },
-  { id:"r4", label:"Retrieval pipeline",        cat:"rag",    x: 108, y:  78 },
-  { id:"r5", label:"Hybrid search",             cat:"rag",    x:  96, y: 132 },
-  // Architecture — top-right
-  { id:"a1", label:"Transformer architecture",  cat:"arch",   x: 468, y:  80 },
-  { id:"a2", label:"Attention mechanism",       cat:"arch",   x: 504, y: 100 },
-  { id:"a3", label:"KV cache & inference",      cat:"arch",   x: 476, y: 116 },
-  { id:"a4", label:"Tokenization deep dive",    cat:"arch",   x: 500, y:  72 },
-  { id:"a5", label:"Positional encoding",       cat:"arch",   x: 488, y: 104 },
-  // Safety — center-right
-  { id:"s1", label:"RLHF alignment",            cat:"safety", x: 504, y: 222 },
-  { id:"s2", label:"Red teaming",               cat:"safety", x: 530, y: 244 },
-  { id:"s3", label:"Jailbreaks & injection",    cat:"safety", x: 498, y: 252 },
-  { id:"s4", label:"Constitutional AI",         cat:"safety", x: 524, y: 216 },
-  { id:"s5", label:"DPO preference learning",   cat:"safety", x: 516, y: 238 },
-  // Ops — bottom-center
-  { id:"o1", label:"Model quantization",        cat:"ops",    x: 268, y: 354 },
-  { id:"o2", label:"Cost optimization",         cat:"ops",    x: 304, y: 374 },
-  { id:"o3", label:"Inference at scale",        cat:"ops",    x: 276, y: 374 },
-  { id:"o4", label:"Latency budgets & SLAs",    cat:"ops",    x: 300, y: 348 },
-  { id:"o5", label:"GPU memory management",     cat:"ops",    x: 286, y: 362 },
-  // Agents — bottom-right
-  { id:"ag1", label:"Agent reasoning loops",    cat:"agents", x: 456, y: 348 },
-  { id:"ag2", label:"Tool calling patterns",    cat:"agents", x: 490, y: 366 },
-  { id:"ag3", label:"ReAct framework",          cat:"agents", x: 452, y: 368 },
-  { id:"ag4", label:"AI planning systems",      cat:"agents", x: 484, y: 344 },
-  { id:"ag5", label:"Multi-agent systems",      cat:"agents", x: 470, y: 358 },
-  // Multimodal — bottom-left
-  { id:"m1", label:"CLIP embeddings",           cat:"multi",  x:  84, y: 340 },
-  { id:"m2", label:"Vision Transformers (ViT)", cat:"multi",  x: 114, y: 358 },
-  { id:"m3", label:"Image-text search",         cat:"multi",  x:  78, y: 360 },
-  { id:"m4", label:"Diffusion models",          cat:"multi",  x: 108, y: 334 },
-  { id:"m5", label:"Multimodal RAG",            cat:"multi",  x:  96, y: 372 },
+  // RAG — top-left (cluster spans x:44-162, y:62-172)
+  { id:"r1", label:"What is RAG?",             cat:"rag",    x:  50, y:  68 },
+  { id:"r2", label:"Vector DB indexing",        cat:"rag",    x: 158, y:  62 },
+  { id:"r3", label:"Chunking strategies",       cat:"rag",    x:  44, y: 150 },
+  { id:"r4", label:"Retrieval pipeline",        cat:"rag",    x: 155, y: 145 },
+  { id:"r5", label:"Hybrid search",             cat:"rag",    x:  98, y: 172 },
+  // Architecture — top-right (cluster spans x:428-568, y:52-168)
+  { id:"a1", label:"Transformer architecture",  cat:"arch",   x: 432, y:  58 },
+  { id:"a2", label:"Attention mechanism",       cat:"arch",   x: 564, y:  56 },
+  { id:"a3", label:"KV cache & inference",      cat:"arch",   x: 436, y: 152 },
+  { id:"a4", label:"Tokenization deep dive",    cat:"arch",   x: 560, y: 150 },
+  { id:"a5", label:"Positional encoding",       cat:"arch",   x: 498, y: 168 },
+  // Safety — center-right (cluster spans x:444-576, y:202-286)
+  { id:"s1", label:"RLHF alignment",            cat:"safety", x: 448, y: 208 },
+  { id:"s2", label:"Red teaming",               cat:"safety", x: 572, y: 206 },
+  { id:"s3", label:"Jailbreaks & injection",    cat:"safety", x: 450, y: 282 },
+  { id:"s4", label:"Constitutional AI",         cat:"safety", x: 570, y: 280 },
+  { id:"s5", label:"DPO preference learning",   cat:"safety", x: 510, y: 252 },
+  // Ops — bottom-center (cluster spans x:210-362, y:306-400)
+  { id:"o1", label:"Model quantization",        cat:"ops",    x: 215, y: 312 },
+  { id:"o2", label:"Cost optimization",         cat:"ops",    x: 358, y: 308 },
+  { id:"o3", label:"Inference at scale",        cat:"ops",    x: 218, y: 396 },
+  { id:"o4", label:"Latency budgets & SLAs",    cat:"ops",    x: 360, y: 392 },
+  { id:"o5", label:"GPU memory management",     cat:"ops",    x: 286, y: 404 },
+  // Agents — bottom-right (cluster spans x:398-546, y:306-402)
+  { id:"ag1", label:"Agent reasoning loops",    cat:"agents", x: 402, y: 310 },
+  { id:"ag2", label:"Tool calling patterns",    cat:"agents", x: 542, y: 308 },
+  { id:"ag3", label:"ReAct framework",          cat:"agents", x: 400, y: 396 },
+  { id:"ag4", label:"AI planning systems",      cat:"agents", x: 544, y: 394 },
+  { id:"ag5", label:"Multi-agent systems",      cat:"agents", x: 472, y: 404 },
+  // Multimodal — bottom-left (cluster spans x:38-162, y:306-402)
+  { id:"m1", label:"CLIP embeddings",           cat:"multi",  x:  42, y: 310 },
+  { id:"m2", label:"Vision Transformers (ViT)", cat:"multi",  x: 158, y: 308 },
+  { id:"m3", label:"Image-text search",         cat:"multi",  x:  40, y: 394 },
+  { id:"m4", label:"Diffusion models",          cat:"multi",  x: 160, y: 392 },
+  { id:"m5", label:"Multimodal RAG",            cat:"multi",  x:  98, y: 404 },
 ];
 
 // Cluster centroids for halos and labels
 const EMB_CLUSTERS = [
-  { cat:"rag",    cx:  96, cy: 105, rx: 58, ry: 42, label:"RAG",         labelY:  52 },
-  { cat:"arch",   cx: 490, cy:  94, rx: 50, ry: 38, label:"Architecture", labelY:  42 },
-  { cat:"safety", cx: 514, cy: 234, rx: 44, ry: 38, label:"Safety",      labelY: 182 },
-  { cat:"ops",    cx: 287, cy: 362, rx: 54, ry: 30, label:"Ops",         labelY: 318 },
-  { cat:"agents", cx: 470, cy: 357, rx: 54, ry: 30, label:"Agents",      labelY: 314 },
-  { cat:"multi",  cx:  96, cy: 353, rx: 54, ry: 32, label:"Multimodal",  labelY: 308 },
+  { cat:"rag",    cx: 101, cy: 111, rx: 78, ry: 68, label:"RAG",          labelY:  26 },
+  { cat:"arch",   cx: 498, cy: 111, rx: 80, ry: 68, label:"Architecture", labelY:  24 },
+  { cat:"safety", cx: 510, cy: 245, rx: 76, ry: 58, label:"Safety",       labelY: 175 },
+  { cat:"ops",    cx: 287, cy: 360, rx: 88, ry: 58, label:"Ops",          labelY: 287 },
+  { cat:"agents", cx: 472, cy: 362, rx: 86, ry: 58, label:"Agents",       labelY: 287 },
+  { cat:"multi",  cx: 100, cy: 362, rx: 80, ry: 58, label:"Multimodal",   labelY: 290 },
 ];
 
 // Queries with precomputed nearest IDs and cosine similarities
 const EMB_QUERIES = [
   {
-    id:"q1", x:490, y:94,
+    id:"q1", x:498, y:111,
     text:"How much text can a model process?",
     nearIds:["a3","a4","a1"], sims:[0.93,0.89,0.85],
     note:'"text" and "process" match zero keywords — the model mapped everyday language to KV cache, tokenization, and architecture by meaning alone.',
   },
   {
-    id:"q2", x:514, y:234,
+    id:"q2", x:510, y:245,
     text:"Teaching AI to prefer better answers",
     nearIds:["s1","s5","s4"], sims:[0.94,0.91,0.87],
     note:'"prefer better answers" shares no words with "RLHF", "DPO", or "Constitutional AI" — pure conceptual alignment.',
   },
   {
-    id:"q3", x:287, y:362,
+    id:"q3", x:287, y:358,
     text:"Making models cheaper to deploy",
     nearIds:["o2","o3","o1"], sims:[0.95,0.90,0.88],
     note:'"cheaper to deploy" isn\'t in "quantization", "inference at scale", or "cost optimization" — intent matched, zero keywords.',
   },
   {
-    id:"q4", x:96, y:353,
+    id:"q4", x:100, y:360,
     text:"Looking up pictures by describing them",
     nearIds:["m3","m1","m2"], sims:[0.96,0.91,0.87],
     note:'"pictures" and "describing" don\'t appear in "CLIP", "ViT", or "image-text search" — the model bridged everyday language to precise concepts.',
   },
   {
-    id:"q5", x:470, y:357,
+    id:"q5", x:472, y:360,
     text:"Software that decides what to do next",
     nearIds:["ag1","ag3","ag4"], sims:[0.94,0.90,0.86],
     note:'"decides what to do" shares zero words with "agent reasoning loops", "ReAct", or "AI planning" — pure conceptual match.',
@@ -167,7 +167,7 @@ function EmbeddingExplorer() {
       `}</style>
 
       <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background: "#08080a" }}>
-        <svg viewBox="0 0 600 420" className="w-full" style={{ display:"block" }}>
+        <svg viewBox="0 0 620 430" className="w-full" style={{ display:"block" }}>
           <defs>
             <pattern id="eg2" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
               <circle cx="0.5" cy="0.5" r="0.6" fill="#1f1f23"/>
@@ -181,7 +181,7 @@ function EmbeddingExplorer() {
             ))}
           </defs>
 
-          <rect width="600" height="420" fill="url(#eg2)"/>
+          <rect width="620" height="430" fill="url(#eg2)"/>
 
           {/* Cluster halos */}
           {EMB_CLUSTERS.map(c => (
