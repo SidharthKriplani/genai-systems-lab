@@ -1610,6 +1610,298 @@ function ChunkingModule({ onNavigate }) {
   );
 }
 
+// ─── RAG PIPELINE MODULE ─────────────────────────────────────────────────────
+
+const RAG_CHUNKS = [
+  {
+    id: 1,
+    text: "SaaS subscriptions cancelled within 14 days of billing are eligible for a full refund, no questions asked.",
+    source: "refund-policy.md · §2",
+    score: 0.91,
+  },
+  {
+    id: 2,
+    text: "Annual plan refunds are prorated to the remaining unused months, minus a 10% processing fee.",
+    source: "refund-policy.md · §4",
+    score: 0.84,
+  },
+  {
+    id: 3,
+    text: "Enterprise contracts are governed by separate SLAs negotiated at time of signing and may override standard refund terms.",
+    source: "enterprise-sla.md · §1",
+    score: 0.72,
+  },
+];
+
+const RAG_FINAL_ANSWER =
+  "Based on your subscription type: if you're on a standard SaaS plan, you can get a full refund within 14 days of billing (Chunk 1). " +
+  "For annual plans, refunds are prorated minus a 10% fee (Chunk 2). " +
+  "If you're on an enterprise contract, your specific SLA applies — please check your agreement or contact your account manager.";
+
+function RAGPipelineModule({ onNavigate }) {
+  const [step, setStep] = useState(0);
+  const [visibleChunks, setVisibleChunks] = useState(0);
+  const [typedAnswer, setTypedAnswer] = useState("");
+  const typingRef = useRef(null);
+
+  // Step 0 → 1: reveal chunks one by one, then advance
+  function handleRetrieve() {
+    setStep(1);
+    setVisibleChunks(0);
+    let i = 0;
+    const timer = setInterval(() => {
+      i += 1;
+      setVisibleChunks(i);
+      if (i >= RAG_CHUNKS.length) clearInterval(timer);
+    }, 500);
+  }
+
+  // Step 1 → 2: show augmented prompt panel
+  function handleGenerate() {
+    setStep(2);
+    setTypedAnswer("");
+    let idx = 0;
+    clearInterval(typingRef.current);
+    typingRef.current = setInterval(() => {
+      idx += 1;
+      setTypedAnswer(RAG_FINAL_ANSWER.slice(0, idx * 4));
+      if (idx * 4 >= RAG_FINAL_ANSWER.length) {
+        setTypedAnswer(RAG_FINAL_ANSWER);
+        clearInterval(typingRef.current);
+      }
+    }, 30);
+  }
+
+  function handleReset() {
+    clearInterval(typingRef.current);
+    setStep(0);
+    setVisibleChunks(0);
+    setTypedAnswer("");
+  }
+
+  const STEP_LABELS = ["Query → Retrieval", "Augmentation", "Generation"];
+
+  return (
+    <div className="space-y-5">
+      {/* Step indicator */}
+      <div className="flex items-center gap-0">
+        {STEP_LABELS.map((label, i) => (
+          <div key={i} className="flex items-center gap-0 flex-1">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              step === i
+                ? "bg-indigo-600 text-white"
+                : step > i
+                ? "bg-indigo-950/60 text-indigo-400 border border-indigo-800/50"
+                : "bg-zinc-900 text-zinc-600 border border-zinc-800"
+            }`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                step === i ? "bg-white text-indigo-700" : step > i ? "bg-indigo-500 text-white" : "bg-zinc-700 text-zinc-400"
+              }`}>{i + 1}</span>
+              {label}
+            </div>
+            {i < STEP_LABELS.length - 1 && (
+              <div className={`flex-1 h-px mx-1 ${step > i ? "bg-indigo-700" : "bg-zinc-800"}`} />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── STEP 0: Query + Retrieval ── */}
+      {step === 0 && (
+        <div className="space-y-4">
+          {/* User query */}
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-4">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">User Query</div>
+            <div className="font-mono text-sm text-white bg-zinc-950 rounded-lg px-4 py-3 border border-zinc-800">
+              "What is the refund policy for SaaS subscriptions?"
+            </div>
+            <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
+              The query is converted to an embedding vector and compared against all indexed chunks using cosine similarity.
+            </p>
+          </div>
+
+          {/* Vector store graphic */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-3">Vector Store · 1,240 chunks indexed</div>
+            <div className="grid grid-cols-8 gap-1 mb-3">
+              {Array.from({ length: 32 }).map((_, i) => (
+                <div key={i} className={`h-6 rounded text-center text-[8px] font-mono flex items-center justify-center ${
+                  i < 3 ? "bg-emerald-800 border border-emerald-600 text-emerald-300 font-bold" : "bg-zinc-800 border border-zinc-700 text-zinc-600"
+                }`}>
+                  {i < 3 ? ["0.91", "0.84", "0.72"][i] : "·"}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-zinc-500">Top-3 chunks scored by cosine similarity will be retrieved.</p>
+          </div>
+
+          <button
+            onClick={handleRetrieve}
+            className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold tracking-wide transition-all active:scale-95"
+          >
+            Retrieve →
+          </button>
+        </div>
+      )}
+
+      {/* ── STEP 1: Retrieved chunks + Augmentation ── */}
+      {step === 1 && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Retrieved Chunks</div>
+            {RAG_CHUNKS.map((chunk, i) => (
+              <div
+                key={chunk.id}
+                className={`rounded-lg border p-3 transition-all duration-500 ${
+                  visibleChunks > i
+                    ? "opacity-100 translate-y-0 border-emerald-700 bg-emerald-950/20"
+                    : "opacity-0 translate-y-2 border-zinc-800 bg-zinc-900"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-xs font-mono text-emerald-200 leading-relaxed">{chunk.text}</p>
+                    <p className="text-[10px] text-zinc-500 mt-1 font-mono">{chunk.source}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className={`text-sm font-black font-mono ${
+                      chunk.score >= 0.85 ? "text-emerald-400" : chunk.score >= 0.75 ? "text-amber-400" : "text-zinc-400"
+                    }`}>{chunk.score}</div>
+                    <div className="text-[9px] text-zinc-600 uppercase tracking-wide">sim score</div>
+                  </div>
+                </div>
+                {chunk.id === 3 && visibleChunks >= 3 && (
+                  <div className="mt-2 text-[10px] text-amber-400 border border-amber-800/50 bg-amber-950/20 rounded px-2 py-1">
+                    ⚠ Borderline (0.72) — included but lower confidence. Score threshold is typically 0.70.
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Assembled prompt preview */}
+          {visibleChunks >= 3 && (
+            <div className="rounded-xl border border-indigo-800/50 bg-indigo-950/10 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Assembled Prompt Preview</div>
+                <div className="text-[10px] font-mono bg-indigo-900/40 text-indigo-300 px-2 py-0.5 rounded border border-indigo-800/50">~840 tokens</div>
+              </div>
+              <div className="space-y-1.5 font-mono text-[10px]">
+                {[
+                  { label: "SYSTEM", color: "text-zinc-400 border-zinc-700 bg-zinc-900/60", text: "You are a helpful assistant. Answer only from the provided context. Do not make up information." },
+                  { label: "CHUNK 1", color: "text-emerald-400 border-emerald-800/50 bg-emerald-950/20", text: RAG_CHUNKS[0].text },
+                  { label: "CHUNK 2", color: "text-emerald-400 border-emerald-800/50 bg-emerald-950/20", text: RAG_CHUNKS[1].text },
+                  { label: "CHUNK 3", color: "text-amber-400 border-amber-800/50 bg-amber-950/10", text: RAG_CHUNKS[2].text },
+                  { label: "USER", color: "text-indigo-400 border-indigo-800/50 bg-indigo-950/20", text: "What is the refund policy for SaaS subscriptions?" },
+                ].map(row => (
+                  <div key={row.label} className={`flex gap-2 items-start rounded border px-2 py-1.5 ${row.color}`}>
+                    <span className="shrink-0 font-black text-[9px] mt-0.5 w-12">[{row.label}]</span>
+                    <span className="leading-relaxed opacity-80">{row.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {visibleChunks >= 3 && (
+            <button
+              onClick={handleGenerate}
+              className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold tracking-wide transition-all active:scale-95"
+            >
+              Generate →
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── STEP 2: Generation ── */}
+      {step === 2 && (
+        <div className="space-y-4">
+          {/* LLM output */}
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">LLM Response</div>
+              <div className="flex gap-1">
+                {["Chunk 1", "Chunk 2"].map(c => (
+                  <span key={c} className="text-[9px] px-1.5 py-0.5 rounded border border-emerald-800/60 bg-emerald-950/30 text-emerald-400 font-mono">
+                    ↗ {c}
+                  </span>
+                ))}
+                <span className="text-[9px] px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800 text-zinc-500 font-mono">↗ Chunk 3</span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 font-mono text-xs text-zinc-200 leading-relaxed min-h-[80px]">
+              {typedAnswer}
+              {typedAnswer.length < RAG_FINAL_ANSWER.length && (
+                <span className="animate-pulse text-indigo-400">▋</span>
+              )}
+            </div>
+          </div>
+
+          {/* Grounding callout */}
+          {typedAnswer.length >= RAG_FINAL_ANSWER.length && (
+            <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/15 p-4">
+              <div className="text-xs font-bold text-emerald-400 mb-1">Grounded response</div>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Every claim maps to a retrieved chunk. No hallucination possible beyond the context window — the model cannot invent a policy that wasn't in the top-3 results.
+              </p>
+              <div className="mt-2 flex gap-3 text-[10px] font-mono">
+                <span className="text-emerald-400">✓ Chunk 1 used (14-day rule)</span>
+                <span className="text-emerald-400">✓ Chunk 2 used (annual prorate)</span>
+                <span className="text-zinc-500">~ Chunk 3 used (enterprise caveat)</span>
+              </div>
+            </div>
+          )}
+
+          {/* Failure mode callout */}
+          {typedAnswer.length >= RAG_FINAL_ANSWER.length && (
+            <div className="rounded-xl border border-red-800/50 bg-red-950/15 p-4">
+              <div className="text-xs font-bold text-red-400 mb-1">Failure mode: stale context</div>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                What if Chunk 1 was from a policy updated 18 months ago? The model answers confidently with wrong info — "14 days" — even if the real policy is now 7 days. The LLM has no way to know a chunk is stale. This is why <span className="text-red-300 font-semibold">freshness metadata + re-indexing cadence</span> are production requirements, not nice-to-haves.
+              </p>
+            </div>
+          )}
+
+          <button
+            onClick={handleReset}
+            className="w-full py-2 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-bold transition-all active:scale-95"
+          >
+            ↺ Reset
+          </button>
+        </div>
+      )}
+
+      {/* Go deeper footer */}
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => onNavigate({ tab: "groundtruth", postId: "how-rag-works" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+            >
+              📖 How RAG Works
+            </button>
+            <button
+              onClick={() => onNavigate({ tab: "systems", postId: "evals" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+            >
+              🔬 Evals Lab
+            </button>
+            <button
+              onClick={() => onNavigate({ tab: "lab" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+            >
+              🧪 RAG Lab
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SAMPLING MODULE ──────────────────────────────────────────────────────────
 
 const SAMPLE_PROMPTS = [
@@ -3482,9 +3774,19 @@ const MODULES = [
     component: ChunkingModule,
   },
   {
+    id: "rag-pipeline",
+    label: "RAG Pipeline",
+    tag: "LAYER 7",
+    level: "intermediate",
+    title: "RAG Pipeline: End to End",
+    subtitle: "Query → retrieval → augmentation → generation. Step through each stage and see where failures hide.",
+    fidelity: { tier: "simplified", note: "Scripted pipeline — real RAG architecture, curated chunks (no live retrieval or model)" },
+    component: RAGPipelineModule,
+  },
+  {
     id: "agent",
     label: "Agent Loop",
-    tag: "LAYER 7",
+    tag: "LAYER 8",
     level: "advanced",
     title: "Agent ReAct Loop",
     subtitle: "Reason → Act → Observe → repeat. Step through a live agent trace. Inject tool failures and watch recovery.",
@@ -3494,7 +3796,7 @@ const MODULES = [
   {
     id: "guardrails",
     label: "Guardrails",
-    tag: "LAYER 8",
+    tag: "LAYER 9",
     level: "intermediate",
     title: "Guardrail Pipeline",
     subtitle: "Input Classifier → LLM → Output Validator. Try injections, jailbreaks, PII, hallucinations — see exactly where each gets caught.",
@@ -3514,7 +3816,7 @@ const MODULES = [
   {
     id: "multiagent",
     label: "Multi-Agent",
-    tag: "LAYER 9",
+    tag: "LAYER 10",
     level: "advanced",
     title: "Multi-Agent Systems",
     subtitle: "Architecture patterns, failure cascades, and when single-agent is the right call.",
