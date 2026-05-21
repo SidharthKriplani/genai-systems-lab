@@ -765,6 +765,194 @@ const PREP_QUESTIONS = [
     correct: 1, keywords: [],
     explanation: "Many-shot jailbreaking exploits the model's in-context learning ability. With enough fabricated 'compliance' examples in context, the model treats the harmful answer as the expected pattern to continue. Defense: detect anomalous context length, rate-limit heavy-context requests, context length caps.",
     readMore: { label: "AI Red Teaming →", tab: "systems" }
+  },
+
+  // ── A2A PROTOCOL (4) ──────────────────────────────────────────────────────
+  {
+    id: "a2a-1", topic: "agents", difficulty: "hard", type: "mcq",
+    question: "The A2A Protocol solves the N×M agent integration problem because:",
+    options: ["It makes agents faster", "Each agent publishes one Agent Card; any caller reads it and knows exactly how to invoke the agent — N+M integrations instead of N×M", "It replaces MCP for tool access", "It enforces security between agents"],
+    correct: 1, keywords: [],
+    explanation: "Without A2A, every agent-to-agent integration requires custom API contracts: N callers × M agents = N×M bespoke integrations. A2A agents publish a standardized Agent Card (capabilities, input/output schemas, auth) so any A2A client can discover and call any A2A server with one shared protocol.",
+    readMore: { label: "A2A Protocol →", tab: "agents" }
+  },
+  {
+    id: "a2a-2", topic: "agents", difficulty: "hard", type: "mcq",
+    question: "In the A2A Task lifecycle, a Task enters 'input-required' state when:",
+    options: ["The network is slow", "The agent needs additional information from the caller mid-task — it cannot proceed without a human or upstream agent response", "The tool is unavailable", "The context window is full"],
+    correct: 1, keywords: [],
+    explanation: "A2A models long-running tasks explicitly. 'input-required' is a first-class state — the agent pauses and requests clarification. The caller must respond to continue. This enables human-in-the-loop patterns without breaking the protocol: the task persists, resumes when unblocked.",
+    readMore: { label: "A2A Protocol →", tab: "agents" }
+  },
+  {
+    id: "a2a-3", topic: "agents", difficulty: "medium", type: "mcq",
+    question: "How does A2A complement MCP rather than replace it?",
+    options: ["A2A is faster than MCP", "MCP connects agents to tools/data; A2A connects agents to other agents — they solve different directions of integration", "A2A is an Anthropic standard; MCP is Google's", "They are the same protocol with different names"],
+    correct: 1, keywords: [],
+    explanation: "MCP (Model Context Protocol) is vertical: model ↔ tools/data. A2A is horizontal: agent ↔ agent. A production multi-agent system uses both — each agent uses MCP to access its tools, and agents communicate with each other via A2A. Together they form the full integration architecture.",
+    readMore: { label: "A2A Protocol →", tab: "agents" }
+  },
+  {
+    id: "a2a-4", topic: "agents", difficulty: "hard", type: "text",
+    question: "Design a multi-agent customer support system using A2A. Identify 3 agents, their Agent Cards, and the A2A call flow for a refund request.",
+    options: null, correct: null,
+    keywords: ["intent", "router", "refund", "agent card", "task", "push", "escalation", "orchestrator"],
+    explanation: "Strong answer: (1) Router Agent — classifies intent, routes to specialist. (2) Refund Agent — Agent Card: input=order_id+reason, output=refund_status, capability=order_lookup+payment_reversal. (3) Escalation Agent — invoked on refund failure. A2A flow: Router creates Task for Refund Agent → Refund Agent enters input-required if order not found → Router provides order data → Refund Agent completes → push notification to caller.",
+    readMore: { label: "A2A Protocol →", tab: "agents" }
+  },
+
+  // ── KV CACHE ENGINEERING (4) ──────────────────────────────────────────────
+  {
+    id: "kv-1", topic: "llmops", difficulty: "hard", type: "mcq",
+    question: "Prefix caching reduces KV cache recomputation cost when:",
+    options: ["Model weights are quantized", "Multiple requests share an identical prompt prefix — the KV states for that prefix are computed once and reused", "The context window exceeds 32K tokens", "Batch size is greater than 8"],
+    correct: 1, keywords: [],
+    explanation: "KV cache prefix caching works by hashing the token sequence of a prefix. If a new request shares the same prefix (identical system prompt, RAG preamble), the KV states are served from cache — zero recomputation. Anthropic's cache_control, OpenAI's prompt caching, and vLLM's prefix caching all use this pattern. Savings: 60-80% cost reduction for repetitive prefixes.",
+    readMore: { label: "KV Cache Engineering →", tab: "systems" }
+  },
+  {
+    id: "kv-2", topic: "llmops", difficulty: "hard", type: "mcq",
+    question: "KV cache memory grows linearly with sequence length. At 128K tokens with a 70B model (GQA, 8 KV heads, fp16), KV cache per sequence is approximately:",
+    options: ["~50MB", "~500MB", "~5GB", "~50GB"],
+    correct: 0, keywords: [],
+    explanation: "With GQA (Grouped Query Attention), KV cache = 2 × layers × KV_heads × head_dim × seq_len × bytes. For Llama 3.1 70B: 2 × 80 × 8 × 128 × 128,000 × 2 ≈ 42GB without GQA, but GQA reduces KV heads from 64→8, so ~42GB × (8/64) ≈ 5.2GB. At lower context or with INT8 KV cache quantization, this drops to ~2-3GB per request — still the primary memory bottleneck for long context.",
+    readMore: { label: "KV Cache Engineering →", tab: "systems" }
+  },
+  {
+    id: "kv-3", topic: "llmops", difficulty: "hard", type: "mcq",
+    question: "Cache-aware routing (as used in llm-d) improves KV cache hit rates by:",
+    options: ["Compressing cache entries", "Routing requests with identical prefixes to the same serving replica so cached KV states are available locally", "Precomputing KV for all possible prompts", "Using a global shared KV cache across all GPUs"],
+    correct: 1, keywords: [],
+    explanation: "Without cache-aware routing, a request with a cached prefix on GPU-1 might land on GPU-2 (cache miss). llm-d and similar systems hash the request prefix and route to the replica most likely to have that prefix cached — dramatically improving cache hit rates without requiring a shared (expensive) cross-replica cache.",
+    readMore: { label: "KV Cache Engineering →", tab: "systems" }
+  },
+  {
+    id: "kv-4", topic: "llmops", difficulty: "medium", type: "mcq",
+    question: "KV cache eviction under memory pressure in vLLM uses PagedAttention because:",
+    options: ["It is faster than standard attention", "Memory is managed in fixed-size pages that can be evicted and reloaded without fragmentation — like virtual memory for KV cache", "It reduces the number of attention heads needed", "It eliminates the KV cache entirely"],
+    correct: 1, keywords: [],
+    explanation: "Traditional KV allocation wastes memory through fragmentation (reserving max_seq_len memory upfront). PagedAttention allocates KV cache in small pages (typically 16 tokens), allowing fine-grained eviction of least-recently-used sequences and near-zero fragmentation. This is why vLLM achieves 2-4× better throughput than naive implementations.",
+    readMore: { label: "KV Cache Engineering →", tab: "systems" }
+  },
+
+  // ── AI GUARDRAILS ENGINEERING (4) ─────────────────────────────────────────
+  {
+    id: "guard-1", topic: "safety", difficulty: "hard", type: "mcq",
+    question: "A dual-stage guardrail architecture applies input classifiers AND output validators. The main reason to run both (not just output validation) is:",
+    options: ["Output validation is cheaper", "Input classifiers stop harmful requests before any LLM compute is spent — fail fast before incurring generation cost and latency", "Input classifiers are more accurate", "Regulations require both stages"],
+    correct: 1, keywords: [],
+    explanation: "If you only validate output, you've already run the full LLM inference for every harmful request. Input classification adds a fast, cheap gate (10-50ms) that rejects obvious bad inputs before generation. The dual-stage pattern: input classifier (fast) → LLM generation → output validator (slower, catches subtler failures). Defense-in-depth AND cost optimization.",
+    readMore: { label: "AI Guardrails →", tab: "systems" }
+  },
+  {
+    id: "guard-2", topic: "safety", difficulty: "hard", type: "mcq",
+    question: "Your guardrail system blocks 0.3% of legitimate user queries (false positive rate). At 5M daily queries, daily false blocks = 15,000. The standard engineering tradeoff is:",
+    options: ["Always tighten thresholds to minimize false positives", "Raise classification threshold (fewer blocks) until false positive rate cost equals safety incident cost — find the operating point, don't blindly minimize either", "Replace classifier with a larger LLM", "Add a human review queue for all blocked queries"],
+    correct: 1, keywords: [],
+    explanation: "Safety and utility are in tension. 15,000 false blocks/day is a real business cost (frustrated users, support tickets). A calibrated threshold where the marginal safety gain equals the marginal user experience cost is the correct operating point — not zero false positives at any cost. Log all blocks, analyze the false positive distribution, set threshold per use case.",
+    readMore: { label: "AI Guardrails →", tab: "systems" }
+  },
+  {
+    id: "guard-3", topic: "safety", difficulty: "medium", type: "mcq",
+    question: "NeMo Guardrails (Nvidia) differs from NLP filter-based guardrails because:",
+    options: ["It is faster", "It uses a programmable dialogue flow (Colang) to enforce conversational rails at the LLM reasoning level — not just keyword matching", "It only works with Nvidia GPUs", "It does not require any configuration"],
+    correct: 1, keywords: [],
+    explanation: "Filter-based guardrails detect bad inputs/outputs via classifiers. NeMo Guardrails uses Colang — a domain-specific language — to define what conversations are allowed at the dialogue level. This enables conversational policies like 'if topic is competitor, politely redirect' that can't be expressed as input/output classifiers.",
+    readMore: { label: "AI Guardrails →", tab: "systems" }
+  },
+  {
+    id: "guard-4", topic: "safety", difficulty: "hard", type: "text",
+    question: "Design a guardrails architecture for a healthcare Q&A bot. What input classifiers, output validators, and escalation logic would you implement?",
+    options: null, correct: null,
+    keywords: ["medical", "disclaimer", "escalation", "PII", "crisis", "hallucination", "grounding", "human"],
+    explanation: "Strong answer: Input classifiers: (1) crisis/suicide detector → immediate escalation, (2) PII detector → redact before LLM, (3) out-of-scope classifier (non-medical topics). Output validators: (1) medical claim grounding checker (claims cited to retrieved docs), (2) disclaimer verifier (professional consultation language present), (3) PII in response detector. Escalation: urgent symptom keywords → human nurse queue. Log all medical claims with source attribution for audit.",
+    readMore: { label: "AI Guardrails →", tab: "systems" }
+  },
+
+  // ── MOE ARCHITECTURE (4) ──────────────────────────────────────────────────
+  {
+    id: "moe-1", topic: "llmops", difficulty: "hard", type: "mcq",
+    question: "A Mixture-of-Experts model with 64 experts and top-2 routing activates what fraction of parameters per token?",
+    options: ["100% — all experts process every token", "~3% — only the 2 selected experts run, plus shared components", "50% — top-2 of 64 is 3%, but shared layers add ~47%", "6% — top-2 of 64 specialists only"],
+    correct: 1, keywords: [],
+    explanation: "MoE sparse activation: only top-K experts process each token. For top-2 of 64 experts, the expert fraction is 2/64 ≈ 3%. Adding shared components (embedding, attention layers, output head) brings total activated parameters to roughly 10-20% of total model size depending on architecture. DeepSeek-V3 (671B total) activates ~37B per token this way.",
+    readMore: { label: "MoE Architecture →", tab: "systems" }
+  },
+  {
+    id: "moe-2", topic: "llmops", difficulty: "hard", type: "mcq",
+    question: "Expert collapse in MoE training means:",
+    options: ["Experts learn the same features and the model degrades to a dense model", "A single expert handles all tokens — load balancing fails, most experts get no gradient signal and remain untrained", "All experts collapse into one weight matrix", "The router stops learning"],
+    correct: 1, keywords: [],
+    explanation: "Without load balancing loss, the router learns to send all tokens to a few experts that became slightly better early in training. Those experts improve; others atrophy. Result: effectively a small model despite large parameter count. Fix: auxiliary load balancing loss penalizes routing imbalance, forcing utilization across all experts.",
+    readMore: { label: "MoE Architecture →", tab: "systems" }
+  },
+  {
+    id: "moe-3", topic: "llmops", difficulty: "medium", type: "mcq",
+    question: "Serving a 671B MoE model like DeepSeek-V3 requires less memory than a 671B dense model because:",
+    options: ["MoE uses 8-bit weights by default", "Only activated expert weights need to be in GPU VRAM at inference time — but all experts must fit somewhere across the cluster", "MoE weights are compressed during training", "Sparse attention reduces memory regardless of expert count"],
+    correct: 1, keywords: [],
+    explanation: "All expert weights must reside in memory (GPU or fast CPU/NVMe) but only activated experts are loaded to GPU registers per forward pass. For a cluster with enough GPUs, each GPU holds a shard of experts and the network routes tokens. Memory per GPU is fraction_of_experts × weight_size. This is why MoE models work well with expert parallelism across many GPUs.",
+    readMore: { label: "MoE Architecture →", tab: "systems" }
+  },
+  {
+    id: "moe-4", topic: "llmops", difficulty: "hard", type: "mcq",
+    question: "DeepSeek-V3's 'shared experts' innovation addresses which MoE limitation?",
+    options: ["Memory usage", "The router overhead — shared experts always activate, ensuring there is always a fallback for tokens the router misclassifies or for generalizable features", "Gradient vanishing in experts", "Inference latency on single GPUs"],
+    correct: 1, keywords: [],
+    explanation: "Pure sparse routing can leave tokens without the right expert if routing is noisy, especially early in training. Shared experts (always-on subset, 2 in DeepSeek-V3) handle general patterns while specialist experts handle domain-specific features. This hybrid — 2 shared + top-K sparse — improves training stability and final model quality.",
+    readMore: { label: "MoE Architecture →", tab: "systems" }
+  },
+
+  // ── VIBE CODING + AGENTIC DEV (3) ─────────────────────────────────────────
+  {
+    id: "vibe-1", topic: "agents", difficulty: "medium", type: "mcq",
+    question: "Andrej Karpathy's 'Objective-Validation Protocol' for vibe coding means:",
+    options: ["Run unit tests only", "Define the success condition in advance before AI generates code — 'the test that tells me this is done correctly' precedes generation, not follows it", "Let the AI decide what correct output looks like", "Use formal specification languages"],
+    correct: 1, keywords: [],
+    explanation: "The common vibe coding failure: you accept AI code that 'looks right' without a pre-defined correctness criterion. Karpathy's protocol: write the test (or define the observable behavior) before prompting the AI. This forces you to know what done means, and catches AI-generated code that is plausible but wrong.",
+    readMore: { label: "Vibe Coding →", tab: "systems" }
+  },
+  {
+    id: "vibe-2", topic: "agents", difficulty: "hard", type: "mcq",
+    question: "60% of code being AI-generated (2026 baseline) creates which specific reliability risk at the system level?",
+    options: ["Code runs slower", "Subtle correlated errors — AI-generated code across multiple services may share the same blind spots, creating systemic failure modes that human review of individual PRs won't catch", "Higher test coverage needed", "License violations from training data"],
+    correct: 1, keywords: [],
+    explanation: "Human engineers introduce errors independently. AI-generated code from the same model introduces correlated errors — the same misunderstanding of a concurrency pattern, the same off-by-one in a data structure, replicated across the codebase. Traditional code review catches isolated bugs, not model-systematic blind spots. This requires integration tests, chaos engineering, and architectural review beyond per-PR diff inspection.",
+    readMore: { label: "Vibe Coding →", tab: "systems" }
+  },
+  {
+    id: "vibe-3", topic: "agents", difficulty: "medium", type: "mcq",
+    question: "The primary reason Cursor reached $2B ARR faster than any developer tool in history is:",
+    options: ["It has better autocomplete than Copilot", "It operates at the project/codebase level — context includes full repository, not just open file — enabling multi-file edits that Copilot's single-file context cannot do", "It is cheaper than alternatives", "It supports more programming languages"],
+    correct: 1, keywords: [],
+    explanation: "GitHub Copilot operates primarily on the current file. Cursor indexes the full codebase, understands cross-file dependencies, and can make coordinated multi-file edits with a single prompt. This difference — file-scope vs. codebase-scope — is why developers describe Cursor as qualitatively different rather than incrementally better.",
+    readMore: { label: "Vibe Coding →", tab: "systems" }
+  },
+
+  // ── TRAPS LAB / DEBUG PATTERNS (3) ────────────────────────────────────────
+  {
+    id: "trap-1", topic: "agents", difficulty: "hard", type: "mcq",
+    question: "Your RAG system returns high cosine similarity scores (>0.85) but answers are factually wrong. Most likely root cause?",
+    options: ["Embedding model is broken", "Semantic similarity captures linguistic style and topic, not factual accuracy — the retrieved chunk discusses the right topic but contains a different fact", "Top-k is too low", "The LLM has hallucinated the embedding"],
+    correct: 1, keywords: [],
+    explanation: "This is the classic semantic similarity trap. A query about 'Q3 revenue' will match a chunk about 'Q2 revenue discussion' at high similarity — same domain, same style. Cosine similarity is a retrieval signal, not a correctness signal. Fixes: add metadata filtering (quarter, year), use hybrid search with exact-match keyword boost, or add post-retrieval answer verification.",
+    readMore: { label: "Traps Lab →", tab: "systems" }
+  },
+  {
+    id: "trap-2", topic: "agents", difficulty: "hard", type: "mcq",
+    question: "Your eval shows 92% accuracy on your test set but production accuracy is 61%. The most likely cause (beyond distribution shift) is:",
+    options: ["The LLM changed its API", "Test set contamination — the test set was inadvertently created from the same source as training data, so the model 'memorized' those specific examples", "Production has more traffic", "Token limit differences"],
+    correct: 1, keywords: [],
+    explanation: "Benchmark contamination is the #1 cause of eval-production gaps in LLM systems. If your test set was sampled from the same corpus as your training data, fine-tuned examples, or prompt examples, the model has seen those exact questions. Fix: use held-out, freshly collected, real production queries as eval set — never reuse any queries that informed prompt or fine-tuning decisions.",
+    readMore: { label: "Traps Lab →", tab: "systems" }
+  },
+  {
+    id: "trap-3", topic: "agents", difficulty: "hard", type: "mcq",
+    question: "Your agent completes tasks correctly in testing but fails in production on any task longer than 15 steps. Root cause?",
+    options: ["Network latency increases with task length", "Context window degradation — after 15+ steps of Thought/Action/Observation, early context (task goal, constraints) is positioned in the 'lost in the middle' zone and attention weight drops", "Tool rate limits kick in at 15 calls", "Temperature drift over long sequences"],
+    correct: 1, keywords: [],
+    explanation: "Long agent trajectories accumulate context. The original task specification, key constraints, and early tool results drift toward the middle of an ever-growing context. LLMs underweight middle-context content (Liu et al. 2023). Fix: periodic re-anchoring (re-inject the original goal every N steps), summarize completed sub-tasks, keep running context under 40K tokens with a sliding summary buffer.",
+    readMore: { label: "Traps Lab →", tab: "systems" }
   }
 ];
 
