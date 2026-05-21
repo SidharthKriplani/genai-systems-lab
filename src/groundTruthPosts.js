@@ -319,6 +319,7 @@ Which one gets chosen? Depends on your sampling strategy.` },
       { label: "Lost in the Middle: How Language Models Use Long Contexts (Liu et al.)", url: "https://arxiv.org/abs/2307.03172" },
       { label: "Anthropic — Contextual Retrieval: improving chunk relevance with prepended context", url: "https://www.anthropic.com/news/contextual-retrieval" },
     ]},
+    { t: "lab", tab: "lab", label: "Try it: Build a RAG configuration that avoids these failure modes →" },
   ],
 
 
@@ -3477,7 +3478,7 @@ response = client.messages.create(
 
   // ─── BATCH 1 ─────────────────────────────────────────────────────────────
 
-  "prompting-token-economics": [
+  "prompt-cost-engineering": [
     { t: "p", text: "There's a version of prompt engineering that's just vibes — add more words, hope the model cooperates. Then there's the version that treats your prompt like a scarce resource with a real dollar cost, and engineers it accordingly. That second version is the one that survives contact with production." },
     { t: "p", text: "This post is about the intersection: how to write prompts that perform better *and* cost less. It turns out those goals align more than you'd think." },
 
@@ -7436,7 +7437,7 @@ Savings: 78% cost reduction, quality preserved for complex queries` },
 
   // ─── RLHF & DPO ─────────────────────────────────────────────────────────────
 
-  "rlhf-dpo-explained": [
+  "rlhf-dpo-explained-v2": [
     { t: "p", text: "Every capable LLM you've used was trained with human feedback at some point. The model you see — helpful, coherent, aligned with what you actually want — is the product of a training process that goes far beyond next-token prediction. RLHF and its successor DPO are the techniques that bridge the gap between 'predicts text' and 'does what you ask'." },
     { t: "p", text: "This post explains the full pipeline from SFT through reward models to PPO, then shows why DPO quietly replaced most of it — and what the tradeoffs look like in practice." },
 
