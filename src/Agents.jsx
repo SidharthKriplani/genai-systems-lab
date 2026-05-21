@@ -2441,7 +2441,7 @@ function MCPDeepDive() {
 
 // ─── AGENTIC RELIABILITY ──────────────────────────────────────────────────────
 
-const AGENT_FAILURES = [
+const AGENTIC_FAILURES = [
   { id: "loop", name: "Infinite Loop", severity: "critical", desc: "Agent calls tools repeatedly without progress. Tool outputs don't satisfy the stopping condition.", signals: ["Same tool called 3+ times with identical args", "Step count grows without new information", "LLM output repeats previous reasoning verbatim"], fix: "Max step budget (hard ceiling). Duplicate tool-call detection. Self-critique step: 'Did the last action make progress?'", pattern: "step-limit" },
   { id: "cascade", name: "Tool Cascade Failure", severity: "critical", desc: "Tool A fails → agent misinterprets error → calls Tool B incorrectly → chain of failures.", signals: ["Error messages accumulate in context", "Agent 'fixes' errors with increasingly speculative actions", "Final output confident despite upstream failures"], fix: "Classify tool errors immediately: retriable vs. fatal. On fatal error, surface to human rather than continuing. Never let error messages pile up beyond 3.", pattern: "circuit-breaker" },
   { id: "scope", name: "Scope Creep", severity: "high", desc: "Agent takes actions outside the intended task scope. Especially dangerous with write/delete tools.", signals: ["Tool calls on resources not mentioned in original task", "Unexpected side effects in external systems", "Agent creates/modifies files not specified in task"], fix: "Explicit task scope definition in system prompt. Tool access: give read-only by default, require confirmation for writes. Resource allow-list per task.", pattern: "least-privilege" },
@@ -2521,7 +2521,7 @@ function AgenticReliability() {
       {tab === "failures" && (
         <div className="space-y-3">
           <p className="text-xs text-zinc-500">The 6 most common production agent failures. Click for signals and fixes.</p>
-          {AGENT_FAILURES.map(f => (
+          {AGENTIC_FAILURES.map(f => (
             <div key={f.id} onClick={() => setSelFailure(selFailure?.id === f.id ? null : f)}
               className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all ${selFailure?.id === f.id ? "border-orange-500/50" : "border-zinc-800 hover:border-zinc-600"}`}>
               <div className="flex items-center gap-2 mb-1">
