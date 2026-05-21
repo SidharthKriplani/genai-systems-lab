@@ -485,6 +485,8 @@ def attention(Q, K, V, mask=None):
     { t: "p", text: "The feed-forward layers, often overlooked, are where factual knowledge appears to be stored. Mechanistic interpretability research has shown that specific FFN weights activate for specific facts — a sort of distributed key-value memory." },
     { t: "callout", v: "warning", text: "Transformers have a fixed context window defined at training time. Beyond that window, the model has no memory. This is not a bug — it's a fundamental architectural constraint. Techniques like RoPE and ALiBi extend this, but don't eliminate it." },
 
+    { t: "callout", text: "→ Interactive: Explore the Transformer Architecture module in Systems Lab — click through attention heads, decoder-only diagrams, and modern variants." },
+
     { t: "references", items: [
       { label: "Attention Is All You Need (Vaswani et al., 2017) — the original transformer paper", url: "https://arxiv.org/abs/1706.03762" },
       { label: "3Blue1Brown — But what is a GPT? Visual intro to transformers", url: "https://www.youtube.com/watch?v=wjZofJX0v4M" },
@@ -1046,6 +1048,8 @@ Respond in JSON: {"faithfulness": 0.X, "relevance": 0.X, "completeness": 0.X, "r
     { t: "callout", v: "key", text: "Context Recall requires ground-truth labels and is expensive to compute. In practice, start with Faithfulness and Context Precision — they're automatic (no ground truth needed) and catch the most common failure modes." },
 
     { t: "lab", tab: "systems", label: "Build your eval pipeline →", desc: "Set up an automated eval suite on the Systems module with your own golden test cases." },
+
+    { t: "callout", text: "→ Interactive: The Evals Lab and Eval Metrics modules in Systems Lab let you practice eval design and compare ROUGE/BERTScore/G-Eval hands-on." },
   ],
 
   // ─── TOOL USE DESIGN ─────────────────────────────────────────────────────────
@@ -1118,6 +1122,8 @@ def get_weather(city: str) -> dict:
     { t: "callout", v: "tip", text: "vLLM is the standard for self-hosted inference serving. For most teams: use a managed API (OpenAI, Anthropic, Together) until you hit $10K+/month in inference costs — then evaluate self-hosted." },
 
     { t: "lab", tab: "systems", label: "Model inference tradeoffs in Systems →", desc: "Compare latency, throughput, and cost across quantisation levels and serving strategies." },
+
+    { t: "callout", text: "→ Interactive: Systems Lab covers Speculative Decoding, Flash Attention, KV Cache Engineering, and Serving Infrastructure as separate interactive modules." },
   ],
 
   // ─── RERANKING ───────────────────────────────────────────────────────────────
@@ -1637,6 +1643,8 @@ def self_attention(X, W_Q, W_K, W_V, mask=None):
 
     { t: "lab", tab: "concepts", label: "Visualise attention patterns →", desc: "See live attention weight matrices for real text in the Concepts module." },
 
+    { t: "callout", text: "→ Interactive: The Transformer Architecture module in Systems Lab has a token-level attention heatmap you can click through." },
+
     { t: "references", items: [
       { label: "Attention Is All You Need (Vaswani et al., 2017) — QKV attention formulation", url: "https://arxiv.org/abs/1706.03762" },
       { label: "Flash Attention: Fast and Memory-Efficient Exact Attention (Dao et al.)", url: "https://arxiv.org/abs/2205.14135" },
@@ -1763,6 +1771,8 @@ def self_attention(X, W_Q, W_K, W_V, mask=None):
     ]},
 
     { t: "lab", tab: "concepts", label: "Explore guardrails in Concepts →", desc: "See input and output filtering in action on the platform." },
+
+    { t: "callout", text: "→ Interactive: The AI Guardrails module in Systems Lab walks through guardrail patterns, failure modes, and decision frameworks." },
 
     { t: "references", items: [
       { label: "Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations (Meta)", url: "https://arxiv.org/abs/2312.06674" },
@@ -7123,6 +7133,8 @@ response = client.messages.create(
 
     { t: "lab", tab: "systems", label: "Try in Systems Lab →", desc: "Configure a caching strategy and see the projected cost savings for your workload." },
 
+    { t: "callout", text: "→ Interactive: The Prompt Caching module in Systems Lab includes a savings calculator and prefix caching flow diagram." },
+
     { t: "references", items: [
       { label: "Anthropic prompt caching documentation", url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" },
       { label: "OpenAI prompt caching documentation", url: "https://platform.openai.com/docs/guides/prompt-caching" },
@@ -7531,6 +7543,8 @@ No reward model needed. No PPO. Just one model, one pass, one loss.` },
     ]},
 
     { t: "lab", tab: "systems", label: "Fine-Tuning Lab →", desc: "Compare SFT vs DPO training configs, see how the Bradley-Terry model works on real preference pairs, and trace reward model training curves." },
+
+    { t: "callout", text: "→ Interactive: The RLHF / DPO / PPO module in Systems Lab walks through the full pipeline and PPO vs DPO trade-offs interactively." },
 
     { t: "references", items: [
       { label: "InstructGPT: Training Language Models to Follow Instructions with Human Feedback — Ouyang et al., 2022", url: "https://arxiv.org/abs/2203.02155" },
@@ -9886,6 +9900,8 @@ lora_config = LoraConfig(
       "Latency-critical real-time API → dense has less routing overhead",
       "Training from scratch at scale → MoE is likely worth the engineering complexity at 70B+ parameter targets",
     ]},
+    { t: "callout", text: "→ Interactive: The MoE Architecture module in Systems Lab has interactive routing diagrams and failure mode walkthroughs." },
+
     { t: "refs", items: [
       { label: "Mixtral of Experts (arXiv)", url: "https://arxiv.org/abs/2401.04088" },
       { label: "DeepSeek-V3 Technical Report (arXiv)", url: "https://arxiv.org/abs/2412.19437" },
@@ -10339,6 +10355,8 @@ def slerp(w1, w2, t):
       ["Same base, different HPs", "Model Soup", "which checkpoints to include", "Greedy soup for safety; uniform for speed"],
       ["Adapter-level merge", "LoRA Merge", "per-adapter weights", "Cheapest option; works across task-specific adapters"],
     ]},
+    { t: "callout", text: "→ Interactive: The Model Merging module in Systems Lab has a SLERP interpolation slider and method comparison table." },
+
     { t: "refs", items: [
       { label: "TIES-Merging: Resolving Interference When Merging Models (Yadav et al., 2023)", url: "https://arxiv.org/abs/2306.01708" },
       { label: "DARE: Language Models are Super Mario (Yu et al., 2023)", url: "https://arxiv.org/abs/2311.03099" },
@@ -10504,6 +10522,7 @@ def slerp(w1, w2, t):
     { t: "h2", text: "Observability Is Not Optional" },
     { t: "p", text: "Log every step: the full prompt, the generated action, the tool inputs and outputs, latency, and token count. Without this, debugging a failed agent run is guesswork. Use structured logging — not print statements — so you can trace specific run IDs across steps. Build a replay tool: given a run ID, reconstruct exactly what the agent saw and did at each step." },
     { t: "callout", text: "Production rule: never deploy an agent without a max_steps limit, per-tool timeout, total cost budget, and a human escalation path. Any agent that can spend money or modify data needs all four." },
+    { t: "callout", text: "→ Interactive: The Agent Architecture module in Systems Lab has a clickable ReAct loop, planning pattern comparison, and tool design reference." },
     { t: "divider" },
     { t: "refs", items: [{ label: "ReAct: Synergizing Reasoning and Acting (Yao et al.)", url: "https://arxiv.org/abs/2210.03629" }, { label: "Toolformer (Schick et al.)", url: "https://arxiv.org/abs/2302.04761" }, { label: "LangGraph — stateful agent framework", url: "https://langchain-ai.github.io/langgraph/" }] },
   ],

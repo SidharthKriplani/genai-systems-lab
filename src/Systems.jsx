@@ -64,6 +64,48 @@ const SYSTEMS_GROUPS = [
   { id: "OPS",    label: "OPS",    color: "#22c55e" },
 ];
 
+const RELATED_GT = {
+  evals:        [{ id: "llm-evaluation-guide", title: "The LLM Evaluation Guide" }, { id: "iv-eval-system", title: "Design an Eval System" }],
+  evalfw:       [{ id: "llm-evaluation-guide", title: "The LLM Evaluation Guide" }],
+  evalmetrics:  [{ id: "ai-benchmarks-explained", title: "AI Benchmarks Explained" }, { id: "model-benchmarks-deep-dive", title: "Model Benchmarks Deep-Dive" }],
+  strategy:     [{ id: "model-strategy", title: "Model Strategy" }, { id: "model-routing", title: "Model Routing" }],
+  costlatency:  [{ id: "cost-latency-tradeoffs", title: "Cost vs Latency Trade-offs" }, { id: "llm-cost-optimization", title: "LLM Cost Optimization" }],
+  finetune:     [{ id: "full-vs-peft-vs-prompting", title: "Full FT vs PEFT vs Prompting" }, { id: "lora-in-practice", title: "LoRA in Practice" }],
+  caching:      [{ id: "prompt-caching-guide", title: "Prompt Caching Guide" }],
+  router:       [{ id: "model-routing", title: "Model Routing" }],
+  incidents:    [{ id: "incident-room", title: "Incident Room Patterns" }],
+  observability:[{ id: "llm-observability", title: "LLM Observability" }],
+  abtesting:    [{ id: "shadow-ab-testing", title: "Shadow A/B Testing" }],
+  mlcicd:       [{ id: "ml-cicd", title: "ML CI/CD" }],
+  debug_traces: [{ id: "tracing-agent-loops", title: "Tracing Agent Loops" }],
+  compaction:   [{ id: "context-compaction", title: "Context Compaction" }],
+  txarch:       [{ id: "what-is-a-transformer", title: "What Is a Transformer?" }, { id: "self-attention-deep-dive", title: "Self-Attention Deep-Dive" }],
+  structout:    [{ id: "structured-outputs", title: "Structured Outputs" }],
+  kvcache:      [{ id: "inference-optimisation", title: "Inference Optimisation" }],
+  guardrails:   [{ id: "guardrails-for-llms", title: "Guardrails for LLMs" }],
+  moe:          [{ id: "moe-architecture-guide", title: "MoE Architecture Guide" }, { id: "mixtral-mixture-of-experts", title: "Mixtral: Mixture of Experts" }],
+  specdecoding: [{ id: "inference-optimisation", title: "Inference Optimisation" }],
+  streaming:    [{ id: "cost-latency-tradeoffs", title: "Cost vs Latency Trade-offs" }],
+  rlhf:         [{ id: "rlhf-dpo-explained", title: "RLHF & DPO Explained" }, { id: "rlhf-production", title: "RLHF in Production" }],
+  multimodal:   [{ id: "multimodal-llms-architecture", title: "Multimodal LLMs Architecture" }],
+  multimodal2:  [{ id: "multimodal-in-production", title: "Multimodal in Production" }],
+  agentarch:    [{ id: "react-reasoning-acting", title: "ReAct: Reasoning + Acting" }, { id: "building-reliable-agents", title: "Building Reliable Agents" }],
+  flashattn:    [{ id: "self-attention-deep-dive", title: "Self-Attention Deep-Dive" }],
+  quantization: [{ id: "ft-quantization", title: "Quantization Deep-Dive" }],
+  serving:      [{ id: "inference-optimisation", title: "Inference Optimisation" }],
+  promptcaching:[{ id: "prompt-caching-guide", title: "Prompt Caching Guide" }],
+  finetuning:   [{ id: "full-vs-peft-vs-prompting", title: "Full FT vs PEFT vs Prompting" }, { id: "lora-in-practice", title: "LoRA in Practice" }],
+  modelmerging: [{ id: "model-merging-guide", title: "Model Merging Guide" }],
+  constrained:  [{ id: "structured-outputs", title: "Structured Outputs" }],
+  ctxwindow:    [{ id: "context-window-guide", title: "Context Window Guide" }],
+  promptlab:    [{ id: "chain-of-thought-prompting", title: "Chain-of-Thought Prompting" }],
+  redteam:      [{ id: "red-teaming-llms", title: "Red Teaming LLMs" }],
+  deploy:       [{ id: "llmops-production-checklist", title: "LLMOps Production Checklist" }],
+  reasoning:    [{ id: "reason-prod-patterns", title: "Reasoning in Production" }, { id: "reason-what-changed", title: "What Changed with Reasoning Models" }],
+  canvas:       [{ id: "ai-system-design-framework", title: "AI System Design Framework" }],
+  langsmith:    [{ id: "llm-observability", title: "LLM Observability" }],
+};
+
 export default function SystemsApp({ initialModule, onModuleVisit }) {
   const [activeModule, setActiveModule] = useState(initialModule || "evals");
   const [search, setSearch] = useState("");
@@ -158,6 +200,21 @@ export default function SystemsApp({ initialModule, onModuleVisit }) {
       </div>
 
       <ActiveComponent />
+
+      {/* Related GT reading */}
+      {RELATED_GT[activeModule]?.length > 0 && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">📖 Related reading in Ground Truth</div>
+          <div className="flex flex-wrap gap-2">
+            {RELATED_GT[activeModule].map(post => (
+              <span key={post.id}
+                className="text-xs text-indigo-400 bg-indigo-950/40 border border-indigo-900/50 px-2.5 py-1 rounded-lg font-medium">
+                {post.title} →
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Mark as done */}
       <div className="flex justify-end pt-2 border-t border-zinc-800">
