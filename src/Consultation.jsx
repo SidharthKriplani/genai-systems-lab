@@ -15,6 +15,9 @@ const MODULES_KB = [
   { id: "rag-concept",      label: "RAG Pipeline",             tab: "concepts",  group: "Concepts",  desc: "End-to-end retrieval-augmented generation pipeline from query to grounded answer.", keywords: ["RAG","retrieval augmented generation","retrieve","chunk","embed","generate","grounded"] },
   { id: "agents-concept",   label: "Agents Overview",          tab: "concepts",  group: "Concepts",  desc: "ReAct loop, tool use, memory, and planning in AI agents.", keywords: ["agents","react","tool use","tool call","planning","memory","reasoning","multi-step"] },
   { id: "debug",            label: "Debug Mode",               tab: "concepts",  group: "Concepts",  desc: "Inspect model internals — token probabilities, attention maps, and logprobs.", keywords: ["debug","logprobs","probabilities","internals","token probability","attention map","interpretability"] },
+  { id: "multiagent",      label: "Multi-Agent Patterns",     tab: "concepts",  group: "Concepts",  desc: "Orchestrator-worker architectures, message passing, coordination strategies", keywords: ["agents","multiagent","orchestration","orchestrator","worker","message passing","coordination"] },
+  { id: "nextoken",        label: "Next Token Prediction Game", tab: "concepts", group: "Concepts",  desc: "Interactive game: predict the next token like a language model", keywords: ["tokens","llm","prediction","game","next token","token prediction","language model game"] },
+  { id: "tempgame",        label: "Temperature Explorer Game", tab: "concepts",  group: "Concepts",  desc: "Interactive: see how temperature affects token sampling randomness", keywords: ["temperature","sampling","game","tokens","temperature explorer","randomness","sampling game"] },
 
   // Flows
   { id: "transformer-flow", label: "Transformer Architecture", tab: "flows",     group: "Flows",     desc: "Animated walkthrough of the full transformer architecture — encoder, decoder, attention, FFN.", keywords: ["transformer","architecture","encoder","decoder","feed forward","positional encoding","layer norm","residual"] },
@@ -211,13 +214,58 @@ const CANNED_ANSWERS = [
   },
 ];
 
+// ─── TRIGGER KEYWORD SCORING ─────────────────────────────────────────────────
+
+const TRIGGER_KEYWORDS = {
+  rag: ["rag", "retrieval", "retriev", "chunking", "chunk", "vector", "embedding", "augment", "knowledge base", "document"],
+  tokens: ["token", "tokeniz", "tokenisation", "bpe", "wordpiece", "vocabulary", "vocab"],
+  embeddings: ["embed", "semantic", "similarity", "vector space", "cosine"],
+  temperature: ["temperature", "sampling", "top-p", "top-k", "greedy", "random", "creative"],
+  finetuning: ["fine-tun", "finetun", "lora", "peft", "train", "instruction", "qlora", "sft"],
+  evaluation: ["eval", "metric", "benchmark", "assess", "measur", "rouge", "bleu", "judge"],
+  "prompt injection": ["inject", "jailbreak", "attack", "adversar", "prompt hack", "security"],
+  "context window": ["context window", "context length", "long context", "needle", "haystack"],
+  agents: ["agent", "tool use", "function call", "orchestrat", "react pattern", "planning", "reliable"],
+  cost: ["cost", "cheap", "expensive", "latency", "speed", "fast", "optimis", "budget", "token cost"],
+};
+
+// Map TRIGGER_KEYWORDS keys to CANNED_ANSWERS topic indices
+const TOPIC_TO_CANNED_INDEX = {
+  rag: 0,
+  tokens: 1,
+  embeddings: 2,
+  finetuning: 3,
+  temperature: 4,
+  evaluation: 5,
+  "prompt injection": 6,
+  "context window": 7,
+  agents: 8,
+  cost: 9,
+};
+
 function findCannedAnswer(q) {
   const normalised = q.toLowerCase().trim();
+
+  // First try exact substring match on original triggers (fast path for unambiguous questions)
   for (const entry of CANNED_ANSWERS) {
     for (const trigger of entry.triggers) {
       if (normalised.includes(trigger)) return entry;
     }
   }
+
+  // Keyword-overlap scoring for partial / natural-language queries
+  const queryWords = normalised.split(/\s+/);
+  let bestTopic = null;
+  let bestScore = 0;
+  Object.entries(TRIGGER_KEYWORDS).forEach(([topic, keywords]) => {
+    const score = keywords.filter(kw => queryWords.some(w => w.includes(kw) || kw.includes(w))).length;
+    if (score > bestScore) { bestScore = score; bestTopic = topic; }
+  });
+
+  if (bestScore >= 1 && bestTopic !== null && TOPIC_TO_CANNED_INDEX[bestTopic] !== undefined) {
+    return CANNED_ANSWERS[TOPIC_TO_CANNED_INDEX[bestTopic]];
+  }
+
   return null;
 }
 
@@ -286,10 +334,13 @@ function CannedBox({ canned, onNavigate }) {
   );
 }
 
-function PostCard({ post, onNavigate }) {
+function PostCard({ post, onNavigate, onNavigateTo }) {
   const catCls = CAT_COLOURS[post.category] || "bg-zinc-800 text-zinc-400 border-zinc-700";
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 flex flex-col gap-2 hover:border-zinc-600 transition-colors">
+    <div
+      className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 flex flex-col gap-2 hover:border-zinc-600 cursor-pointer hover:bg-zinc-800/50 transition-colors"
+      onClick={() => onNavigateTo ? onNavigateTo({ tab: "groundtruth", postId: post.id }) : onNavigate && onNavigate("groundtruth")}
+    >
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${catCls}`}>
           {post.category}
@@ -298,9 +349,9 @@ function PostCard({ post, onNavigate }) {
       </div>
       <p className="text-sm font-semibold text-white leading-snug">{post.title}</p>
       <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{post.desc}</p>
-      {onNavigate && (
+      {(onNavigate || onNavigateTo) && (
         <button
-          onClick={() => onNavigate("groundtruth", { postId: post.id })}
+          onClick={e => { e.stopPropagation(); onNavigateTo ? onNavigateTo({ tab: "groundtruth", postId: post.id }) : onNavigate("groundtruth"); }}
           className="self-start text-xs text-violet-400 hover:text-violet-300 font-semibold mt-1 transition-colors"
         >
           Open →
@@ -335,7 +386,7 @@ function ModuleCard({ mod, onNavigate }) {
   );
 }
 
-function ResultsPanel({ results, query, onNavigate }) {
+function ResultsPanel({ results, query, onNavigate, onNavigateTo }) {
   const { posts, modules, keywords, canned } = results;
   const hasResults = posts.length > 0 || modules.length > 0;
 
@@ -369,7 +420,7 @@ function ResultsPanel({ results, query, onNavigate }) {
               </p>
               <div className="space-y-2">
                 {posts.map(p => (
-                  <PostCard key={p.id} post={p} onNavigate={onNavigate} />
+                  <PostCard key={p.id} post={p} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />
                 ))}
               </div>
             </div>
@@ -422,7 +473,7 @@ function HistoryPanel({ history, onRerun }) {
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
-export default function Consultation({ onNavigate }) {
+export default function Consultation({ onNavigate, onNavigateTo }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
   const [history, setHistory] = useState([]);
@@ -508,6 +559,7 @@ export default function Consultation({ onNavigate }) {
           results={results}
           query={query}
           onNavigate={onNavigate}
+          onNavigateTo={onNavigateTo}
         />
       )}
 
