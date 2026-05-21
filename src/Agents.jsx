@@ -2439,6 +2439,172 @@ function MCPDeepDive() {
   );
 }
 
+// ─── AGENTIC RELIABILITY ──────────────────────────────────────────────────────
+
+const AGENT_FAILURES = [
+  { id: "loop", name: "Infinite Loop", severity: "critical", desc: "Agent calls tools repeatedly without progress. Tool outputs don't satisfy the stopping condition.", signals: ["Same tool called 3+ times with identical args", "Step count grows without new information", "LLM output repeats previous reasoning verbatim"], fix: "Max step budget (hard ceiling). Duplicate tool-call detection. Self-critique step: 'Did the last action make progress?'", pattern: "step-limit" },
+  { id: "cascade", name: "Tool Cascade Failure", severity: "critical", desc: "Tool A fails → agent misinterprets error → calls Tool B incorrectly → chain of failures.", signals: ["Error messages accumulate in context", "Agent 'fixes' errors with increasingly speculative actions", "Final output confident despite upstream failures"], fix: "Classify tool errors immediately: retriable vs. fatal. On fatal error, surface to human rather than continuing. Never let error messages pile up beyond 3.", pattern: "circuit-breaker" },
+  { id: "scope", name: "Scope Creep", severity: "high", desc: "Agent takes actions outside the intended task scope. Especially dangerous with write/delete tools.", signals: ["Tool calls on resources not mentioned in original task", "Unexpected side effects in external systems", "Agent creates/modifies files not specified in task"], fix: "Explicit task scope definition in system prompt. Tool access: give read-only by default, require confirmation for writes. Resource allow-list per task.", pattern: "least-privilege" },
+  { id: "confab", name: "Tool Output Confabulation", severity: "high", desc: "Agent 'remembers' tool outputs incorrectly, especially when context is long. Makes decisions based on hallucinated results.", signals: ["Agent cites tool output that doesn't match actual return value", "Inconsistency between what agent says it found vs. what tool returned", "Happens more often after step 10+"], fix: "Re-anchor: periodically summarize confirmed facts from tool outputs. Quote tool results verbatim in reasoning. Keep context under 50K tokens for agents.", pattern: "grounding" },
+  { id: "premature", name: "Premature Termination", severity: "med", desc: "Agent stops before task is complete. Often because it 'thinks' it's done based on a partial result.", signals: ["Final answer references only some of the requested outputs", "Agent says 'I have completed X' when Y and Z remain", "Missing sub-tasks not flagged"], fix: "Structured task decomposition at start. Checklist pattern: agent ticks off sub-goals explicitly. Final verification step: 'Did I address all parts of the request?'", pattern: "checklist" },
+  { id: "halluc-plan", name: "Hallucinated Tool Calls", severity: "high", desc: "Agent calls a tool with made-up parameters or calls tools that don't exist.", signals: ["Tool call arguments don't match available schema", "Agent references non-existent tools by name", "Confident tool invocation on wrong resource ID"], fix: "Strict tool schema validation before execution. Function call rejection returns structured error with available tools list. Never silently ignore bad tool calls.", pattern: "validation" },
+];
+
+const HITL_PATTERNS = [
+  { name: "Confirmation Gate", when: "Before any irreversible action (delete, send, publish, purchase)", how: "Agent pauses, presents action plan to human, waits for explicit 'confirm' before proceeding.", code: `async def execute_with_confirmation(action: Action) -> Result:
+    if action.is_irreversible:
+        approval = await request_human_approval(
+            action=action,
+            context=agent.get_recent_steps(),
+            timeout=300  # 5 min SLA
+        )
+        if not approval.approved:
+            return Result(status="cancelled", reason=approval.reason)
+    return await execute(action)` },
+  { name: "Escalation Threshold", when: "When agent confidence is below threshold or situation is novel", how: "Agent rates its own confidence. Below threshold → route to human. Above → proceed autonomously.", code: `def should_escalate(step_result: StepResult) -> bool:
+    if step_result.confidence < 0.7:
+        return True
+    if step_result.action_type in HIGH_RISK_ACTIONS:
+        return True
+    if agent.consecutive_errors >= 2:
+        return True
+    return False` },
+  { name: "Checkpoint Review", when: "Long-running tasks (>10 steps) or multi-day workflows", how: "Agent saves state and produces a progress summary at defined checkpoints. Human reviews before next phase.", code: `class CheckpointedAgent:
+    def run(self, task: Task):
+        phases = task.decompose_into_phases()
+        for phase in phases:
+            result = self.execute_phase(phase)
+            checkpoint = self.save_checkpoint(result)
+            # Async: human reviews checkpoint
+            approval = self.await_approval(checkpoint)
+            if not approval:
+                return self.rollback(checkpoint)` },
+  { name: "Ambiguity Surfacing", when: "Agent encounters unclear instruction or multiple valid interpretations", how: "Agent stops and asks a targeted clarifying question rather than assuming. Max 1 question per stop.", code: `def handle_ambiguity(self, ambiguity: str) -> str:
+    # Don't ask multiple questions at once
+    question = self.synthesize_single_question(ambiguity)
+    self.pause_execution()
+    return self.ask_human(question)
+    # Resume only after receiving clear answer` },
+];
+
+const RELIABILITY_PATTERNS_DATA = [
+  { name: "Step Budget", desc: "Hard ceiling on number of agent steps. When reached, surface current state to human.", impl: "max_steps = 20; if step_count >= max_steps: escalate_to_human()" },
+  { name: "Idempotent Tool Calls", desc: "Design tools so calling them twice has the same effect as calling once. Enables safe retries.", impl: "Use PUT not POST for state updates. Include idempotency keys. Check-before-write pattern." },
+  { name: "Duplicate Detection", desc: "Detect when agent calls the same tool with same args twice. Likely a loop.", impl: "Hash (tool_name, args) → track in sliding window. If seen 2× → inject loop-break prompt." },
+  { name: "Rollback / Compensation", desc: "For each irreversible action, define a compensating action. Build a log of actions taken.", impl: "Action log: [{action, params, timestamp, compensating_action}]. On failure: execute compensating_actions in reverse." },
+  { name: "Context Pruning", desc: "Agent context grows with every step. Prune old tool outputs after they've been processed.", impl: "Summarize raw tool outputs after 3 steps. Keep only summary + key facts. Target < 40K tokens total." },
+  { name: "Self-Critique Loop", desc: "After every N steps, inject: 'Review your progress. Have you made meaningful progress? What's blocking you?'", impl: "Every 5 steps: add critique_prompt to context. If critique reveals stagnation → escalate." },
+];
+
+function AgenticReliability() {
+  const [tab, setTab] = useState("failures");
+  const [selFailure, setSelFailure] = useState(null);
+  const [selHITL, setSelHITL] = useState(null);
+  const TABS = [
+    { id: "failures", label: "Failure Taxonomy" },
+    { id: "patterns", label: "Reliability Patterns" },
+    { id: "hitl", label: "Human-in-the-Loop" },
+    { id: "checklist", label: "Production Checklist" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${tab === t.id ? "bg-orange-700 border-orange-600 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "failures" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">The 6 most common production agent failures. Click for signals and fixes.</p>
+          {AGENT_FAILURES.map(f => (
+            <div key={f.id} onClick={() => setSelFailure(selFailure?.id === f.id ? null : f)}
+              className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all ${selFailure?.id === f.id ? "border-orange-500/50" : "border-zinc-800 hover:border-zinc-600"}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${f.severity === "critical" ? "bg-red-900/40 text-red-300 border-red-700/40" : f.severity === "high" ? "bg-orange-900/40 text-orange-300 border-orange-700/40" : "bg-amber-900/40 text-amber-300 border-amber-700/40"}`}>{f.severity.toUpperCase()}</span>
+                <p className="text-sm font-bold text-zinc-100">{f.name}</p>
+              </div>
+              <p className="text-xs text-zinc-400">{f.desc}</p>
+              {selFailure?.id === f.id && (
+                <div className="mt-3 pt-3 border-t border-zinc-800 space-y-3">
+                  <div>
+                    <p className="text-[10px] font-bold text-amber-400 uppercase mb-1">Detection Signals</p>
+                    {f.signals.map((s, i) => <p key={i} className="text-xs text-zinc-400 flex gap-1.5"><span className="text-zinc-600 shrink-0">•</span>{s}</p>)}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Fix</p>
+                    <p className="text-xs text-zinc-300">{f.fix}</p>
+                  </div>
+                  <p className="text-[10px] text-zinc-600">Pattern: <span className="text-zinc-500 font-mono">{f.pattern}</span></p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "patterns" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Reliability engineering patterns for production agents. Apply these before launch.</p>
+          {RELIABILITY_PATTERNS_DATA.map((p, i) => (
+            <div key={i} className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+              <p className="text-sm font-bold text-zinc-100 mb-1">{p.name}</p>
+              <p className="text-xs text-zinc-400 mb-2">{p.desc}</p>
+              <div className="bg-zinc-950 rounded-lg p-2 border border-zinc-800">
+                <p className="text-[10px] font-mono text-zinc-400">{p.impl}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "hitl" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Four patterns for keeping humans in the loop without killing automation value. Click for code.</p>
+          {HITL_PATTERNS.map((p, i) => (
+            <div key={i} onClick={() => setSelHITL(selHITL === i ? null : i)}
+              className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all ${selHITL === i ? "border-orange-500/40" : "border-zinc-800 hover:border-zinc-600"}`}>
+              <p className="text-sm font-bold text-zinc-100 mb-1">{p.name}</p>
+              <p className="text-xs text-zinc-500 mb-1"><span className="text-zinc-400 font-semibold">When:</span> {p.when}</p>
+              <p className="text-xs text-zinc-400">{p.how}</p>
+              {selHITL === i && (
+                <pre className="mt-3 bg-zinc-950 rounded-lg p-3 text-[10px] text-zinc-300 font-mono overflow-x-auto whitespace-pre border border-zinc-800">{p.code}</pre>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "checklist" && (
+        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-4">
+          <h3 className="text-sm font-bold text-zinc-200">Agentic System Production Checklist</h3>
+          {[
+            { phase: "Loop control", items: ["Hard step limit configured (default: 20)", "Duplicate tool-call detection with loop-break injection", "Self-critique injected every 5 steps", "Escalation path when step limit hit"] },
+            { phase: "Tool safety", items: ["Read-only tools by default; write tools require justification", "Schema validation before every tool call", "Idempotent tool implementations verified", "Tool call timeout (30s default) with retry logic"] },
+            { phase: "Human-in-the-loop", items: ["Irreversible actions gated behind confirmation", "Ambiguity surfaces as single clarifying question", "Checkpoint review defined for tasks > 10 steps", "Escalation threshold defined and tested"] },
+            { phase: "State management", items: ["Action log persisted (action, params, result, timestamp)", "Compensating actions defined for every write operation", "Context pruning strategy: raw tool output summarized after 3 steps", "Checkpoint save/restore tested in failure scenario"] },
+            { phase: "Observability", items: ["Every tool call logged with latency and success/fail", "Agent traces exportable (LangSmith / OpenTelemetry)", "Alert on: loop detection, cascade failures, step limit reached", "Replay capability: can reproduce any agent run from logs"] },
+          ].map(phase => (
+            <div key={phase.phase}>
+              <p className="text-xs font-bold text-orange-400 uppercase tracking-wide mb-2">{phase.phase}</p>
+              {phase.items.map((item, i) => (
+                <div key={i} className="flex gap-2 mb-1.5">
+                  <span className="text-zinc-600 text-xs mt-0.5 shrink-0">☐</span>
+                  <p className="text-xs text-zinc-300">{item}</p>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const AGENTS_MODULES = [
   { id: "react",      label: "ReAct Pattern",       tag: "LOOP",   group: "CORE",      component: ReActPattern        },
   { id: "tools",      label: "Tool Use Design",     tag: "TOOLS",  group: "CORE",      component: ToolUseDesign       },
@@ -2450,7 +2616,8 @@ const AGENTS_MODULES = [
   { id: "design",     label: "Design Challenge",    tag: "BUILD",  group: "SIM",       component: AgentDesignChallenge },
   { id: "simulator",  label: "Loop Simulator",      tag: "PLAY",   group: "SIM",       component: AgentLoopSimulator  },
   { id: "frameworks", label: "Framework Landscape", tag: "STACK",  group: "ECOSYSTEM", component: FrameworkLandscape  },
-  { id: "mcp",        label: "MCP Deep Dive",       tag: "MCP",    group: "ECOSYSTEM", component: MCPDeepDive         },
+  { id: "mcp",        label: "MCP Deep Dive",        tag: "MCP",      group: "ECOSYSTEM", component: MCPDeepDive         },
+  { id: "reliability", label: "Agentic Reliability",  tag: "RELIABLE", group: "SCALE",     component: AgenticReliability  },
 ];
 
 const AGENTS_GROUPS = [
