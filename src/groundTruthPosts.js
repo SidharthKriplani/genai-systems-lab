@@ -8386,4 +8386,290 @@ for chunk in header_chunks:
     ]},
   ],
 
+  // ─── PRODUCTION CASE STUDIES ─────────────────────────────────────────────────
+
+  "case-notion-ai": [
+    { t: "p", text: "Notion's AI features look like standard RAG from the outside: you ask a question, the system finds relevant content from your workspace, and returns an answer. Under the hood, it's more complicated — and more instructive — than that." },
+    { t: "p", text: "The complication comes from Notion's data model. Every piece of content in Notion is a block: a paragraph block, a heading block, a to-do block, a table block, a database row. Blocks are nested. A page is a block. A sub-page is a block inside a page block. A table row is a block inside a table block inside a page block." },
+    { t: "callout", v: "key", text: "The core challenge: standard chunking algorithms assume flat, linear text. Notion's data is a tree. A chunk boundary that makes sense for flat text will often split a row from its table header, a list item from its parent context, or a database cell from its column label." },
+
+    { t: "h2", text: "The block-as-chunk approach" },
+    { t: "p", text: "The most natural solution — and what Notion appears to use — is treating blocks as the atomic unit of retrieval. Each block gets embedded individually. The retriever finds the most relevant blocks for a query." },
+    { t: "p", text: "This works well for paragraph blocks. It breaks down for small blocks: a single-sentence to-do item has almost no semantic content. Embedded alone, it's close to meaningless. A to-do that says 'Fix the auth bug' will match almost nothing useful." },
+    { t: "list", items: [
+      "Paragraph blocks: embed well individually, decent semantic content",
+      "Heading blocks: embed poorly alone, need child blocks for context",
+      "To-do / bullet items: often too short, need parent page context",
+      "Table rows: meaningless without column headers — the column names are in a parent block",
+      "Database rows (Notion's structured content): properties + values need to be serialized together",
+    ]},
+    { t: "p", text: "The solution to short blocks is context enrichment: when embedding a block, prepend its parent chain. A to-do inside 'Q2 Engineering Sprint' inside 'Engineering' gets serialized as 'Engineering > Q2 Engineering Sprint: Fix the auth bug'. Now the embedding carries context." },
+
+    { t: "h2", text: "Context assembly for generation" },
+    { t: "p", text: "Retrieval gives you a set of relevant blocks. The harder problem is assembling them into a coherent context for the LLM." },
+    { t: "p", text: "Isolated blocks are often incoherent. A paragraph from a meeting notes page makes sense if you know it's from a meeting about Q3 roadmap. Without that frame, the LLM has to guess. Notion likely assembles context by including: the retrieved block, its parent page title, its position in the page hierarchy, and a few surrounding sibling blocks." },
+    { t: "callout", v: "tip", text: "This is a general lesson: retrieval returns the most relevant chunks, but the LLM context should include surrounding context. The retrieved chunk is a pointer to a region of the document, not the complete context itself." },
+    { t: "p", text: "For database-structured content, context assembly looks different. A database of project tasks needs to be serialized in a way the LLM can reason about: 'Project: Redesign checkout | Status: In progress | Owner: Sarah | Due: June 15'. This is query-specific serialization — you decide what fields to include based on the user's question." },
+
+    { t: "h2", text: "The delta ingestion problem" },
+    { t: "p", text: "Notion workspaces change constantly. Pages are edited, created, deleted. A standard approach would be to re-embed the entire workspace on a schedule — but workspaces can have hundreds of thousands of blocks." },
+    { t: "p", text: "The production-grade solution is delta ingestion: track which blocks changed since the last run using Notion's block update timestamps and webhook events. Re-embed only those blocks. Delete embeddings for deleted blocks. This keeps the index fresh at a fraction of the cost." },
+    { t: "list", items: [
+      "Notion API provides last_edited_time per block — use this for delta detection",
+      "Block deletion events come via webhooks — update the vector index immediately",
+      "Moved blocks (parent_id changed) need re-embedding with new context chain",
+      "Full re-index should run weekly as a consistency check, not as the primary update mechanism",
+    ]},
+
+    { t: "h2", text: "Access control as a retrieval constraint" },
+    { t: "p", text: "Notion has granular access control: pages can be shared with specific people, teams, or the entire workspace. The AI system must respect these permissions at query time — you can't return content from a page the user doesn't have access to." },
+    { t: "p", text: "This is implemented as metadata filtering on the vector index. Every embedded block carries its page_id and associated permissions. At query time, the retriever adds a filter: only return blocks from pages this user can access. This means the user's permission set is part of the retrieval query, not just a post-retrieval filter." },
+    { t: "callout", v: "warning", text: "Filtering after retrieval (post-hoc filtering) is a common mistake. If you retrieve top-k=20 blocks and then filter 15 out due to permissions, you've burned latency and returned poor context. Always filter at the retrieval layer — before re-ranking." },
+
+    { t: "h2", text: "What Notion's AI features reveal about RAG at scale" },
+    { t: "p", text: "Three hard lessons from Notion's architecture that apply broadly:" },
+    { t: "list", items: [
+      "Your data model determines your chunking strategy. Flat-text chunking algorithms are designed for flat-text corpora. If your content is structured, hierarchical, or relational, you need a custom chunking approach that preserves structural meaning.",
+      "Context enrichment at embedding time is non-negotiable for short content. Embedding a paragraph in isolation loses the context that makes it meaningful. Always include parent path, section, and surrounding blocks.",
+      "Access control must live in the retrieval layer, not post-filtering. Filtering after retrieval wastes compute and degrades the quality of what reaches the LLM.",
+      "Delta ingestion is the only viable approach at scale. Full re-embedding costs real money and introduces latency. Track changes at the source and propagate them incrementally.",
+    ]},
+    { t: "lab", text: "See how chunk boundaries affect retrieval quality — configure chunking strategy in RAG Lab", link: "lab" },
+    { t: "refs", items: [
+      { label: "Notion AI launch announcement", url: "https://www.notion.com/blog/notion-ai" },
+      { label: "Notion API: Blocks", url: "https://developers.notion.com/reference/block" },
+      { label: "Contextual Retrieval (Anthropic)", url: "https://www.anthropic.com/research/contextual-retrieval" },
+    ]},
+  ],
+
+  "case-perplexity": [
+    { t: "p", text: "Perplexity is a real-time search engine that replaces ten blue links with a synthesized answer that cites its sources. Every query triggers a pipeline that retrieves from the live web, synthesizes an answer, and cites exactly which source each claim came from — in under two seconds." },
+    { t: "p", text: "Building this at scale means solving three hard problems simultaneously: freshness (the web changes by the minute), groundedness (every claim must trace back to a source), and latency (users expect near-instant results). Most RAG systems have to solve only one of these at a time." },
+
+    { t: "h2", text: "The pipeline: search → retrieve → synthesize" },
+    { t: "p", text: "When a query arrives, Perplexity runs multiple operations in parallel:" },
+    { t: "list", items: [
+      "Query classification: is this a factual question, a how-to, a comparison, a current-events query? The type determines the retrieval strategy.",
+      "Web search: multiple search sources fire simultaneously — not just one API but several, to maximize recall across different index strengths.",
+      "Source fetch + parse: top results are fetched, HTML is cleaned, content is extracted. This is where most of the latency lives.",
+      "Reranking: retrieved passages are scored against the original query. Irrelevant passages are dropped before the LLM sees them.",
+      "Synthesis: an LLM generates an answer grounded in the retrieved passages, with citation markers inserted inline.",
+    ]},
+    { t: "callout", v: "key", text: "The hardest part isn't retrieval — it's grounding. An LLM synthesizing from multiple sources will naturally blend information, add context from training data, and sometimes fabricate details that 'fit' with what it retrieved. Perplexity's system prompt is engineered to prevent all of these." },
+
+    { t: "h2", text: "Citation accuracy: the hardest problem" },
+    { t: "p", text: "Every sentence in a Perplexity answer has a citation number. Click it and you go to the source. This looks simple. It is not." },
+    { t: "p", text: "The challenge: LLMs don't naturally generate sentence-level citations. They synthesize from multiple sources simultaneously. A sentence might blend information from three different sources — which one do you cite?" },
+    { t: "p", text: "The production solution is post-generation attribution. After the LLM generates the answer, a separate step checks each sentence against the retrieved passages using NLI (natural language inference) entailment. If a sentence is entailed by passage 3, it gets citation [3]. If a sentence isn't entailed by any retrieved passage — it's a hallucination from training data — it gets flagged or removed." },
+    { t: "callout", v: "warning", text: "NLI-based citation verification only catches factual hallucinations. It won't catch cases where the model subtly misrepresents what a source says while staying technically consistent with it. Citation verification is a floor, not a ceiling." },
+
+    { t: "h2", text: "Model routing: Sonar and beyond" },
+    { t: "p", text: "Not every query needs GPT-4 or Claude Opus. Perplexity uses model routing to match query complexity to model capability:" },
+    { t: "list", items: [
+      "Sonar (their own fine-tuned models): handles the majority of queries. Tuned specifically for search synthesis — knows how to follow citation instructions, stay grounded, and handle the retrieval context format.",
+      "Frontier models (GPT-4o, Claude): used for Pro Search and complex multi-step queries where reasoning quality matters more than latency.",
+      "The routing decision happens before retrieval — a fast classifier determines which path the query takes.",
+    ]},
+    { t: "p", text: "This is a textbook model routing pattern: use a cheap, specialized model for the common case, route to expensive frontier models for the tail. The savings are significant at Perplexity's scale — millions of queries per day." },
+
+    { t: "h2", text: "Latency engineering: how they hit <2s" },
+    { t: "p", text: "Two seconds end-to-end for search + retrieval + LLM synthesis sounds impossible. It's achievable with aggressive parallelism and streaming:" },
+    { t: "list", items: [
+      "Search fires before the user finishes typing (Pro Search shows 'Searching...' almost immediately)",
+      "Fetch + parse runs in parallel across multiple sources simultaneously",
+      "LLM generation starts streaming as soon as enough context is ready — no waiting for all sources to load",
+      "Citation markers are inserted in a post-processing step on the already-streaming output",
+      "TTFT (time to first token) is the user-visible metric — users see text appearing at ~400ms even if the full answer takes 2-3s",
+    ]},
+    { t: "callout", v: "tip", text: "Streaming changes the perceived latency more than it changes actual latency. Users rate a 3-second response with streaming as faster than a 2-second response that appears all at once. Prioritize TTFT over total latency when designing user-facing LLM systems." },
+
+    { t: "h2", text: "Lessons from Perplexity's architecture" },
+    { t: "list", items: [
+      "Real-time RAG requires freshness as a first-class constraint. Your retrieval source must have live data or your answers will be stale. A static vector index isn't sufficient for current-events queries.",
+      "Citation accuracy requires a separate verification step. Don't trust the LLM to self-cite accurately. NLI entailment post-processing is the production pattern.",
+      "Model routing at query classification time (not post-retrieval) saves compute and latency.",
+      "Stream everything. Users tolerate high total latency if they see output quickly. Streaming is a UX requirement for any user-facing LLM system.",
+    ]},
+    { t: "lab", text: "See how RAG pipelines work step by step — and where citations and grounding can fail", link: "lab" },
+    { t: "refs", items: [
+      { label: "Perplexity blog: How Perplexity works", url: "https://www.perplexity.ai/hub/blog" },
+      { label: "Sonar model announcement", url: "https://www.perplexity.ai/hub/blog/meet-the-sonar-models" },
+      { label: "RAG survey (Gao et al., 2024)", url: "https://arxiv.org/abs/2312.10997" },
+    ]},
+  ],
+
+  "case-cursor": [
+    { t: "p", text: "Code completion has a unique set of constraints that make it one of the hardest production AI problems. The latency budget is 200ms for inline suggestions — slower than that, and the completion appears after the developer has already moved on. The context problem is severe — a production codebase has hundreds of thousands of files, but the LLM context window holds only a fraction." },
+    { t: "p", text: "Cursor solves both. Their editor integrates AI at two levels: sub-200ms ghost text completion (powered by smaller, faster models) and codebase-aware chat (powered by frontier models with intelligent retrieval). The architecture behind each is fundamentally different." },
+
+    { t: "h2", text: "Fill-in-the-middle (FIM): how completions work" },
+    { t: "p", text: "Standard LLMs predict what comes next given a prefix. Code completion is different: the developer has a cursor in the middle of a file. There's context before the cursor (prefix) and context after (suffix). The model needs to fill in the gap." },
+    { t: "p", text: "Fill-in-the-middle (FIM) is the training objective that enables this. During training, a segment is removed from the middle of code, and the model learns to predict the removed segment given both prefix and suffix. OpenAI's Codex, StarCoder, and DeepSeek-Coder all support FIM." },
+    { t: "code", lang: "text", label: "FIM prompt structure (simplified)", text: `<PRE> def calculate_total(items):
+    prices = [item.price for item in items]
+    <SUF>
+    return total
+<MID>` },
+    { t: "p", text: "The model fills in what goes between prefix and suffix. Cursor formats context precisely to maximize cache hits on the prefix tokens — a prompt caching optimization that reduces latency significantly on repeated completions in the same file." },
+
+    { t: "h2", text: "Context assembly: what goes into the completion prompt" },
+    { t: "p", text: "The completion model sees more than just the current file. Cursor assembles context from multiple sources, ranked by relevance:" },
+    { t: "list", items: [
+      "Current file: the entire file being edited, truncated to fit the context window",
+      "Recently edited files: files modified in the last 30 minutes, included with recency weighting",
+      "Imported files: files imported by the current file — often directly relevant",
+      "Related files: BM25 + semantic search over the repository for files similar to the current editing context",
+      "Git diff: what changed in the current branch — helps the model understand what problem is being solved",
+    ]},
+    { t: "p", text: "The context budget is limited. Cursor allocates it greedily — most-relevant content goes in first, least-relevant gets dropped. The relevance ranking is what makes completions feel context-aware rather than generic." },
+    { t: "callout", v: "key", text: "Context selection is the main lever on completion quality. More context isn't always better — irrelevant context is noise. Cursor's retrieval step is the system's real intelligence, not the completion model itself." },
+
+    { t: "h2", text: "Codebase indexing for chat" },
+    { t: "p", text: "Cursor's 'Chat' and 'Composer' features (multi-file editing) require understanding the whole codebase. This is a different problem from completion." },
+    { t: "p", text: "Cursor indexes the repository using a combination of:" },
+    { t: "list", items: [
+      "Tree-sitter AST parsing: each file is parsed into an abstract syntax tree. Functions, classes, methods, and their docstrings are extracted as distinct chunks — not arbitrary text chunks, but semantically meaningful code units.",
+      "Embedding-based search: code chunks are embedded using a code-specialized embedding model. When you ask a question, your question is embedded and matched against the chunk index.",
+      "Symbol graph: import relationships between files are tracked. If you ask about a class, the system can retrieve not just the class definition but its callers, its dependencies, and its tests.",
+    ]},
+    { t: "p", text: "This is meaningfully better than embedding raw file contents. A function has a clear semantic boundary. Embedding file chunks with arbitrary boundaries loses this structure." },
+
+    { t: "h2", text: "The dual latency model" },
+    { t: "p", text: "Cursor runs two parallel inference paths at different latency budgets:" },
+    { t: "list", items: [
+      "Fast path (<200ms): small, specialized models (likely DeepSeek-Coder or similar) for ghost text completion. No round-trip to a frontier model. Cached prefix tokens reduce latency further.",
+      "Slow path (1-10s): frontier models (Claude, GPT-4o) for codebase chat, multi-file edits, and complex refactors. Users accept latency here because they've issued a deliberate command.",
+    ]},
+    { t: "p", text: "The routing between paths is based on the type of interaction. Typing → fast path. Explicit chat message → slow path. This is model routing at the UI layer, not the backend." },
+
+    { t: "h2", text: "Measuring quality: accepted completions" },
+    { t: "p", text: "Cursor's primary quality metric is acceptance rate — what percentage of shown completions the developer actually accepts (keeps typing rather than dismissing). A high-quality completion system has >30% acceptance on good context." },
+    { t: "p", text: "But acceptance rate is noisy. A developer might accept a completion that's technically correct but not what they wanted. Persistence rate — whether the completion is still in the file 30 days later — is a better signal and closer to what GitHub Copilot uses." },
+    { t: "lab", text: "Explore how inference optimization and latency budgets work for real-time systems", link: "systems" },
+    { t: "refs", items: [
+      { label: "Fill-in-the-middle paper (Bavarian et al.)", url: "https://arxiv.org/abs/2207.14255" },
+      { label: "DeepSeek-Coder", url: "https://arxiv.org/abs/2401.14196" },
+      { label: "Tree-sitter", url: "https://tree-sitter.github.io/tree-sitter/" },
+    ]},
+  ],
+
+  "case-github-copilot": [
+    { t: "p", text: "GitHub Copilot launched in 2021 as the first mass-market AI code completion tool. Three years later, it processes hundreds of millions of suggestions per day across millions of developers. Understanding how it works at this scale reveals production decisions that apply far beyond code completion." },
+
+    { t: "h2", text: "The context problem at scale" },
+    { t: "p", text: "A code completion request arrives every time a developer pauses. At Copilot's scale, that's thousands of requests per second. Each request needs relevant context assembled from the developer's open files in under 50ms (the budget before the network round-trip even begins)." },
+    { t: "p", text: "Copilot's context assembly uses what they call a 'prompt crafting' pipeline. Given a cursor position, it assembles:" },
+    { t: "list", items: [
+      "Path marker: the current file's language and path — gives the model domain context",
+      "Similar files: files with similar content to the current file, retrieved using BM25 over file names and a lightweight semantic match over import lists",
+      "Recently opened files: files the developer viewed recently, with a recency decay (files from 2 minutes ago count more than files from 2 hours ago)",
+      "Current file prefix: everything in the current file above the cursor",
+      "Current file suffix: a window of text below the cursor (for FIM models)",
+    ]},
+    { t: "callout", v: "key", text: "Copilot doesn't embed the full codebase per request. The retrieval is fast heuristics: BM25 keyword matching and recency signals. This keeps context assembly under 50ms even for large repositories." },
+
+    { t: "h2", text: "The two-path architecture" },
+    { t: "p", text: "Copilot runs completions on two latency tracks:" },
+    { t: "list", items: [
+      "Inline completions (<300ms): a single-line or short multi-line suggestion that appears as ghost text while you type. Uses a smaller, faster model optimized for low latency. Fires automatically after a short typing pause.",
+      "Multi-line completions (300ms–1s): triggered by a longer pause or explicit request. Uses a larger model. Can suggest entire function implementations.",
+    ]},
+    { t: "p", text: "The model itself changed significantly from the original Codex (2021) to current versions. Codex was a fine-tuned GPT-3 variant. Modern Copilot uses models specifically trained for code with FIM support and stronger context utilization." },
+
+    { t: "h2", text: "Measuring quality at 100M+ daily completions" },
+    { t: "p", text: "You cannot manually review quality at this scale. Copilot uses three automated quality signals:" },
+    { t: "list", items: [
+      "Acceptance rate: what fraction of shown completions are accepted (developer presses Tab). Copilot targets >35% on meaningful completions. A completion that's ignored within 1 second doesn't count.",
+      "Persistence rate: is the accepted completion still present in the file 30 days later, roughly unchanged? This measures whether completions are actually useful vs. accepted then immediately deleted.",
+      "Code-as-written rate: does the committed code contain Copilot suggestions without modification? Copilot can recognize its own suggestions in git diffs and measure how many reach production code.",
+    ]},
+    { t: "p", text: "These metrics are collected passively — no user surveys, no manual annotation. The system monitors developer behavior at scale to infer quality." },
+    { t: "callout", v: "tip", text: "Behavioral signals (acceptance, persistence, usage) are far more reliable quality measures than explicit ratings for developer tools. Developers don't rate completions — they just use them or don't. Build your evals around what developers actually do." },
+
+    { t: "h2", text: "Enterprise: privacy and dedicated infrastructure" },
+    { t: "p", text: "Enterprise Copilot is architecturally different from the personal tier. Key differences:" },
+    { t: "list", items: [
+      "Code is routed to Azure OpenAI deployments in the customer's region, never to shared infrastructure",
+      "Snippets are not retained after the request completes — no training on enterprise customer code",
+      "Enterprise customers can connect private codebase indexes (Copilot Enterprise) — indexing internal repositories to improve retrieval quality",
+      "The model weights are the same; the infrastructure isolation is what's different",
+    ]},
+
+    { t: "h2", text: "What Copilot teaches about production AI at scale" },
+    { t: "list", items: [
+      "Fast retrieval beats perfect retrieval for latency-sensitive systems. BM25 + recency signals assembled in 50ms beats neural retrieval assembled in 500ms for real-time completion.",
+      "Behavioral metrics outperform explicit quality ratings. Acceptance rate and persistence rate are ground truth. User ratings are noise.",
+      "Two-path architecture separates latency concerns cleanly. Sub-300ms path for the common case; slower path for complexity. Design your latency tiers before designing your models.",
+      "Privacy-preserving design requires infrastructure isolation, not just policy. Enterprise AI products live or die on the trust their data handling creates.",
+    ]},
+    { t: "lab", text: "See inference optimization strategies that make sub-200ms completions possible", link: "systems" },
+    { t: "refs", items: [
+      { label: "GitHub Copilot research page", url: "https://github.com/features/copilot" },
+      { label: "Copilot Enterprise announcement", url: "https://github.blog/news-insights/product-news/github-copilot-enterprise-is-now-generally-available/" },
+      { label: "Evaluating LLMs for code (Chen et al., HumanEval)", url: "https://arxiv.org/abs/2107.03374" },
+    ]},
+  ],
+
+  "case-spotify-ai": [
+    { t: "p", text: "Spotify has been doing AI at scale longer than most companies have been doing AI at all. Their recommendation system predates the LLM era by a decade. Understanding how they've layered LLM capabilities on top of a mature ML platform reveals how production AI actually evolves — not as a replacement for existing systems, but as a new layer on top of them." },
+
+    { t: "h2", text: "The recommendation stack before LLMs" },
+    { t: "p", text: "Spotify's recommendation system is a multi-stage ranking pipeline that combines three signal types:" },
+    { t: "list", items: [
+      "Collaborative filtering: 'users like you also liked this.' The classic approach — find users with similar listening history and recommend what they liked. Works well for mainstream content, breaks for new artists and niche genres.",
+      "Audio features: Spotify's audio analysis models extract features from every track — tempo, energy, valence (mood positivity), acousticness, danceability. These are used for mood-based recommendations and radio.",
+      "NLP on text: Spotify crawls the web for blog posts, playlists, and reviews that mention artists and tracks. These are used to build semantic representations of artists — their genre, associations, audience.",
+    ]},
+    { t: "p", text: "In 2018, Spotify published word2vec-based music embeddings (music2vec) — trained not on text but on listening sessions. A track that appears next to another in many sessions gets a similar embedding. This was semantic search applied to music before the term became mainstream." },
+    { t: "callout", v: "key", text: "Embeddings trained on behavioral sequences (listening sessions, clicks, purchases) often outperform embeddings trained on content features alone. The sequence is the signal. This is why word2vec's architecture generalizes beyond text to product recommendations, music, and any sequential interaction data." },
+
+    { t: "h2", text: "Where LLMs actually appear in Spotify's stack" },
+    { t: "p", text: "LLMs don't run the recommendation engine. They run the narrative layer on top of it. The two main use cases are:" },
+    { t: "h2", text: "1. AI DJ: generated narration between tracks" },
+    { t: "p", text: "Spotify's DJ feature (launched 2023) plays music interspersed with short 15-30 second voice narrations. 'You've been on a real 90s indie kick lately. Here's a deep cut from Pavement.' These feel personal. They're generated by an LLM." },
+    { t: "p", text: "The pipeline:" },
+    { t: "list", items: [
+      "The recommendation model selects the next track based on listening history",
+      "A context assembly step gathers: the selected track, the artist, recent listening history, time of day, the previous narration",
+      "An LLM generates a short narration that connects the previous section to the new track",
+      "A text-to-speech model (trained on a specific voice) narrates it with Spotify's DJ voice",
+      "Audio is stitched: previous track fade-out + narration + new track intro",
+    ]},
+    { t: "p", text: "The LLM's job is specific: write a 2-3 sentence bridge that feels natural, references the user's history, and introduces the next track. The system prompt includes rules about tone, length, and what not to say (no artist biographies, no Wikipedia-style facts that feel robotic)." },
+
+    { t: "h2", text: "2. Podcast transcription and search" },
+    { t: "p", text: "Spotify has 5+ million podcasts. Most have no searchable text. Whisper (or an equivalent ASR model) transcribes them at scale. These transcripts enable:" },
+    { t: "list", items: [
+      "Full-text search within episodes — 'find the moment they talked about Python packaging'",
+      "Semantic search across episodes and shows",
+      "Chapter detection — segmenting long episodes into topics for navigation",
+      "Automated summaries for show pages",
+    ]},
+    { t: "p", text: "At Spotify's scale (new podcast episodes every minute), this is a streaming pipeline: new audio → ASR → chunk → embed → index. Latency from publication to searchability is measured in minutes." },
+
+    { t: "h2", text: "Multimodal embeddings: combining audio, text, and behavior" },
+    { t: "p", text: "Spotify's current embedding research fuses three modalities per track:" },
+    { t: "list", items: [
+      "Audio features: from the raw audio signal — spectral analysis, tempo, dynamics",
+      "Text: lyrics + web mentions + artist metadata, processed with a text encoder",
+      "Behavioral: from listening session sequences — what gets played together, what follows what",
+    ]},
+    { t: "p", text: "These are fused into a single embedding using a contrastive training approach similar to CLIP — but instead of image-text pairs, the pairs are audio-behavior sequences. A track's audio embedding should be close to its behavioral embedding if they describe the same musical identity." },
+    { t: "callout", v: "tip", text: "Multi-modal fusion is most powerful when the modalities contain complementary information. Audio tells you what the music sounds like. Behavior tells you who likes it. Text tells you how people talk about it. None of these alone is as powerful as the three combined." },
+
+    { t: "h2", text: "Lessons from Spotify's AI stack" },
+    { t: "list", items: [
+      "LLMs are a narrative layer, not the recommendation engine. At Spotify's scale, collaborative filtering + audio embeddings outperform any prompt-based approach for what to play next. LLMs add value in how to present it.",
+      "Behavioral embeddings (trained on sequences) are often more powerful than content embeddings for recommendation. The sequence is the signal.",
+      "Streaming transcription pipelines need to handle scale continuously, not in batches. Design for throughput from the start.",
+      "Multi-modal fusion requires each modality to carry genuinely complementary information — otherwise you're adding noise.",
+    ]},
+    { t: "lab", text: "Visualize how embeddings encode similarity and cluster related content", link: "explore" },
+    { t: "refs", items: [
+      { label: "Spotify AI DJ announcement", url: "https://newsroom.spotify.com/2023-02-22/spotify-debuts-a-new-ai-dj/" },
+      { label: "music2vec (Spotify Research)", url: "https://research.atspotify.com/2022/02/the-music-embeddings-that-power-discovery/" },
+      { label: "Deep content-based music recommendation (van den Oord et al.)", url: "https://papers.nips.cc/paper_files/paper/2013/hash/b3ba8f1bee1238a2f37603d90b58898d-Abstract.html" },
+    ]},
+  ],
+
 };

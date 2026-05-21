@@ -268,6 +268,14 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, activeReactions, onR
   // Related posts — same category, excluding current, max 3
   const related = POSTS.filter(p => p.id !== post.id && p.category === post.category && !!POST_CONTENT[p.id]).slice(0, 3);
 
+  // Series navigation
+  const postSeriesId = Object.keys(SERIES_META).find(sid => SERIES_META[sid].postIds.includes(post.id));
+  const series = postSeriesId ? SERIES_META[postSeriesId] : null;
+  const seriesPostIds = series?.postIds || [];
+  const seriesIdx = seriesPostIds.indexOf(post.id);
+  const prevSeriesPost = seriesIdx > 0 ? POSTS.find(p => p.id === seriesPostIds[seriesIdx - 1]) : null;
+  const nextSeriesPost = seriesIdx < seriesPostIds.length - 1 ? POSTS.find(p => p.id === seriesPostIds[seriesIdx + 1]) : null;
+
   useEffect(() => {
     const onScroll = () => {
       const el = articleRef.current;
@@ -356,6 +364,14 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, activeReactions, onR
               </button>
             </div>
           </div>
+          {series && (
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] font-mono font-bold px-2 py-1 rounded-full border" style={{ color: series.color, borderColor: series.color + "44", background: series.color + "15" }}>
+                {series.title}
+              </span>
+              <span className="text-[10px] text-zinc-600 font-mono">Part {seriesIdx + 1} of {seriesPostIds.length}</span>
+            </div>
+          )}
           <h1 className="text-lg sm:text-xl font-black text-white leading-tight mb-3">{post.title}</h1>
           <p className="text-sm text-zinc-400 leading-relaxed">{post.desc}</p>
         </div>
@@ -502,6 +518,32 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, activeReactions, onR
           </div>
         )}
 
+        {/* Series navigation */}
+        {series && (prevSeriesPost || nextSeriesPost) && (
+          <div className="mt-10 pt-6 border-t border-zinc-800">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full" style={{ color: series.color, background: series.color + "18" }}>{series.title}</span>
+              <span className="text-[10px] text-zinc-600 font-mono">Part {seriesIdx + 1} of {seriesPostIds.length}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {prevSeriesPost ? (
+                <button onClick={() => { onOpenPost(prevSeriesPost); window.scrollTo(0, 0); }}
+                  className="text-left rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 hover:border-zinc-600 transition-all group">
+                  <div className="text-[10px] text-zinc-600 font-mono mb-1">← Previous in series</div>
+                  <p className="text-xs font-bold text-zinc-300 group-hover:text-white transition-colors leading-snug">{prevSeriesPost.title}</p>
+                </button>
+              ) : <div />}
+              {nextSeriesPost ? (
+                <button onClick={() => { onOpenPost(nextSeriesPost); window.scrollTo(0, 0); }}
+                  className="text-left rounded-xl border bg-zinc-900/40 p-3.5 hover:opacity-90 transition-all group sm:text-right" style={{ borderColor: series.color + "44" }}>
+                  <div className="text-[10px] font-mono mb-1" style={{ color: series.color + "99" }}>Next in series →</div>
+                  <p className="text-xs font-bold text-white leading-snug">{nextSeriesPost.title}</p>
+                </button>
+              ) : <div />}
+            </div>
+          </div>
+        )}
+
         {/* Related posts */}
         {related.length > 0 && (
           <div className="mt-12 pt-8 border-t border-zinc-800">
@@ -622,6 +664,39 @@ const CAT_DIFFICULTY = {
 };
 const DIFF_COLORS = { Beginner: "text-emerald-400", Intermediate: "text-amber-400", Advanced: "text-red-400" };
 
+// ─── SERIES METADATA ──────────────────────────────────────────────────────────
+const SERIES_META = {
+  "rag-production": {
+    title: "RAG in Production",
+    desc: "From basic retrieval to production-grade pipelines — chunking, hybrid search, reranking, architectures, and failure modes.",
+    color: "#3b82f6",
+    postIds: ["how-rag-works", "chunking-strategies", "hybrid-search", "reranking-explained", "rag-architectures", "vector-db-selection-guide"],
+  },
+  "agent-engineering": {
+    title: "Agent Engineering",
+    desc: "How to build agents that work in production — ReAct, tool design, memory, multi-agent orchestration, and the failure taxonomy.",
+    color: "#06b6d4",
+    postIds: ["react-pattern", "tool-use-design", "agent-memory-types", "multi-agent-orchestration", "agent-failure-modes"],
+  },
+  "eval-testing": {
+    title: "Evaluation & Testing",
+    desc: "How to know if your LLM system is actually good — hallucination detection, eval pipelines, LLM-as-judge, and A/B testing.",
+    color: "#22c55e",
+    postIds: ["llm-evaluation-guide", "hallucination-detection", "eval-pipeline-design", "ab-testing-llms"],
+  },
+  "llmops": {
+    title: "LLMOps in Production",
+    desc: "The full production checklist — observability, model routing, inference optimisation, CI/CD, and cost management.",
+    color: "#f59e0b",
+    postIds: ["llmops-production-checklist", "model-routing", "inference-optimisation", "llm-observability", "ml-cicd", "context-compaction"],
+  },
+  "case-studies": {
+    title: "Production Case Studies",
+    desc: "How Notion, Perplexity, Cursor, GitHub Copilot, and Spotify actually built their AI systems — architecture decisions and lessons learned.",
+    color: "#8b5cf6",
+    postIds: ["case-notion-ai", "case-perplexity", "case-cursor", "case-github-copilot", "case-spotify-ai"],
+  },
+};
 
 export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {
   const [filter, setFilter] = useState("all");
@@ -720,6 +795,41 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
             )}
           </p>
         </div>
+
+        {/* Series cards */}
+        {filter === "all" && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Reading Series</span>
+              <span className="text-[10px] text-zinc-600">{Object.keys(SERIES_META).length} series · structured paths through the posts</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Object.entries(SERIES_META).map(([sid, s]) => {
+                const firstPostId = s.postIds[0];
+                const firstPost = POSTS.find(p => p.id === firstPostId);
+                const writtenCount = s.postIds.filter(id => !!POST_CONTENT[id]).length;
+                if (writtenCount === 0) return null;
+                return (
+                  <button key={sid}
+                    onClick={() => { if (firstPost && POST_CONTENT[firstPost.id]) { setOpenPost(firstPost); } }}
+                    className="text-left rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 hover:border-zinc-700 transition-all group relative overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${s.color}aa, transparent)` }} />
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <span className="text-xs font-black text-white group-hover:opacity-90">{s.title}</span>
+                      <span className="text-[10px] font-mono shrink-0 px-1.5 py-0.5 rounded" style={{ color: s.color, background: s.color + "18" }}>{writtenCount} posts</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 leading-relaxed mb-3">{s.desc}</p>
+                    {firstPost && (
+                      <div className="text-[10px] font-mono" style={{ color: s.color + "cc" }}>
+                        Start: {firstPost.title.length > 50 ? firstPost.title.slice(0, 50) + "…" : firstPost.title} →
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Pinned "Start Here" posts */}
         {filter === "all" && (() => {

@@ -208,6 +208,8 @@ Knowledge base built client-side on first render: all 140+ GT posts (title × 3,
 | Framework Landscape (Agents) | LangChain / LangGraph / LangSmith / OpenAI Agents SDK / Google ADK — strengths, weaknesses, when-to-use. Decision Wizard: 3 questions → ranked recommendation. |
 | Production RAG Flow (Flows) | Two animated pipelines: ingestion (Airflow → chunk → embed → vector DB → monitor) + query (embed → LangGraph → rerank → LLM → LangSmith). Production detail per stage. |
 | LangSmith Lab (Systems) | Trace Anatomy (interactive span explorer), Feedback Loops (4 patterns with SDK code), Eval Dataset flywheel (4-step with API examples), Prompt Versioning (push/pull/rollback). |
+| GT Series format | SERIES_META in GroundTruth.jsx: 5 series (RAG in Production, Agent Engineering, Eval & Testing, LLMOps, Case Studies). Series badge in PostDetail header (Part X of Y). Prev/next in-series nav at bottom of post. Series cards grid on GT main list. |
+| 5 Production Case Study posts | Notion AI (block model chunking, delta ingestion, access control filtering), Perplexity (real-time RAG, citation grounding, model routing, streaming), Cursor (FIM, context assembly, codebase indexing, dual latency), GitHub Copilot (BM25 context, two-path architecture, behavioral quality metrics), Spotify AI (music2vec, DJ narration pipeline, multimodal embeddings, podcast transcription). All in "Production Case Studies" series. |
 
 ---
 
@@ -290,6 +292,26 @@ GitHub Discussions-based comments. Zero backend, free, spam-resistant. Requires 
 ### P10 — More Ground Truth posts
 
 Topics with no coverage yet: RLHF implementation walkthrough (detailed), Constitutional AI deep dive (done), GPT-4 technical report analysis, Gemini architecture, "How I'd build X" series (AI search, code review bot, real-time document analysis), multi-agent debugging patterns.
+
+### P11 — LLM Memory Architecture deep-dive module (Agents tab)
+
+Currently Agent Memory module is surface-level. Needs a full interactive module covering: short-term vs. long-term vs. episodic vs. semantic vs. procedural memory, implementation patterns for each (in-context, external DB, summary compression, retrieval-augmented), library comparison (LangMem, Mem0, MemGPT), and a decision wizard ("what type of memory does your agent need?"). Inspired by awesome-llm-apps LLM memory apps section.
+
+### P12 — Voice AI agent flow (Flows tab)
+
+Animated pipeline: microphone → VAD (voice activity detection) → STT (Whisper) → LLM → TTS → speaker. Key production decisions: streaming at each step (don't wait for full STT before starting LLM), VAD sensitivity, word error rate, TTS latency. Applicable to any voice AI product (customer support bots, voice assistants, real-time transcription). Source: awesome-llm-apps Voice AI agents section.
+
+### P13 — "Build This" module (new Systems or standalone tab)
+
+End-to-end build walkthroughs for 3 production patterns: (1) Production RAG system — from ingestion schedule to eval pipeline, (2) LangGraph multi-agent — planner + retriever + synthesizer with checkpointing, (3) Eval pipeline — from trace collection to regression detection. Format: not code to copy, but architecture decisions + failure points + pseudocode + lab cross-links. Philosophy stolen from jamwithai's "one deep production project" approach.
+
+### P14 — Incident Room expansion (Systems tab)
+
+Current Incident Room has ~20 cases. Target 50+ organized by failure category: retrieval failure, hallucination, cost explosion, latency regression, prompt injection, context overflow, agent loop failure, embedding drift. Each case should include: symptoms, root cause, what monitoring would have caught it, the fix. High-signal for senior engineers and system design interviewers.
+
+### P15 — Company prep tracks in PrepLab
+
+Filter PrepLab JD Prep by company archetype: Big Tech AI (Google, Meta, Apple), AI-native startups (Anthropic, OpenAI, Perplexity, Cursor), Indian tech (Flipkart, Swiggy, Zepto AI teams), Enterprise AI (McKinsey, Accenture AI). Each track weights the 8 skill categories differently and surfaces company-specific system design prompts. Currently JD Prep is company-agnostic.
 
 ---
 
