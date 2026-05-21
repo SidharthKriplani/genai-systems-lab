@@ -2624,7 +2624,7 @@ function licenseBadgeClass(license) {
   return "bg-amber-900/60 text-amber-300 border border-amber-700";
 }
 
-function ScoreDots({ score, color }) {
+function LLMOpsScoreDots({ score, color }) {
   return (
     <span className="inline-flex items-center gap-[3px]">
       {[1, 2, 3, 4, 5].map(i => (
@@ -2815,7 +2815,7 @@ function LLMOpsComparison() {
                     </td>
                     {LLMOPS_TOOLS.map(tool => (
                       <td key={tool.id} className="px-3 py-3 text-center">
-                        <ScoreDots score={tool.scores[dim.id]} color={tool.color} />
+                        <LLMOpsScoreDots score={tool.scores[dim.id]} color={tool.color} />
                       </td>
                     ))}
                   </tr>
