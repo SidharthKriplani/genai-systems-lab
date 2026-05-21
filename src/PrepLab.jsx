@@ -2050,8 +2050,12 @@ function ExamMode({ onExit }) {
 
 // ─── MODE 2: TRAINER ──────────────────────────────────────────────────────────
 
+const TRAINER_TOPICS = ["all", ...Array.from(new Set(PREP_QUESTIONS.map(q => q.topic))).sort()];
+
 function TrainerMode({ onExit, onNavigate }) {
-  const [questions] = useState(() => shuffle(PREP_QUESTIONS));
+  const [topicFilter, setTopicFilter] = useState("all");
+  const [diffFilter, setDiffFilter] = useState("all");
+  const [questions, setQuestions] = useState(() => shuffle(PREP_QUESTIONS));
   const [current, setCurrent] = useState(0);
   const [answer, setAnswer] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -2059,6 +2063,21 @@ function TrainerMode({ onExit, onNavigate }) {
   const [weakTopics, setWeakTopics] = useState({});
   const [done, setDone] = useState(false);
   const [sessionAnswers, setSessionAnswers] = useState([]);
+
+  // Recompute filtered+shuffled questions whenever filters change
+  useEffect(() => {
+    const filtered = PREP_QUESTIONS.filter(q => {
+      const topicOk = topicFilter === "all" || q.topic === topicFilter;
+      const diffOk = diffFilter === "all" || q.difficulty === diffFilter;
+      return topicOk && diffOk;
+    });
+    setQuestions(shuffle(filtered));
+    setCurrent(0);
+    setAnswer("");
+    setSubmitted(false);
+    setIsCorrect(false);
+  }, [topicFilter, diffFilter]);
+
   const q = questions[current];
 
   function submit() {
@@ -2113,23 +2132,53 @@ function TrainerMode({ onExit, onNavigate }) {
           <span className="text-sm text-zinc-500">{current + 1} / {questions.length}</span>
         </div>
         <PBar value={current} max={questions.length} />
-        <QuestionCard q={q} />
-        {!submitted && (
+        {/* Filters */}
+        <div className="space-y-2">
+          {/* Topic pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {TRAINER_TOPICS.map(t => (
+              <button key={t} onClick={() => setTopicFilter(t)}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize transition-all ${topicFilter === t ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                {t === "all" ? "All topics" : t}
+              </button>
+            ))}
+          </div>
+          {/* Difficulty + count */}
+          <div className="flex items-center gap-2">
+            {["all", "medium", "hard"].map(d => (
+              <button key={d} onClick={() => setDiffFilter(d)}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize transition-all ${diffFilter === d ? "bg-zinc-200 text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                {d === "all" ? "All difficulty" : d}
+              </button>
+            ))}
+            <span className="text-xs text-zinc-600 ml-auto">{questions.length} questions</span>
+          </div>
+        </div>
+        {questions.length === 0 ? (
+          <div className="bg-zinc-900 rounded-xl p-8 border border-zinc-800 text-center text-zinc-500 text-sm">
+            No questions match these filters. Try a different topic or difficulty.
+          </div>
+        ) : (
           <>
-            {q.type === "mcq"
-              ? <MCQOptions options={q.options} selected={answer === "" ? undefined : parseInt(answer)} onSelect={i => setAnswer(String(i))} />
-              : <SpeechTextArea value={answer} onChange={setAnswer} />
-            }
-            <button onClick={submit} disabled={answer.toString().trim() === ""}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-medium rounded-xl transition-all">
-              Submit Answer
-            </button>
+            <QuestionCard q={q} />
+            {!submitted && (
+              <>
+                {q.type === "mcq"
+                  ? <MCQOptions options={q.options} selected={answer === "" ? undefined : parseInt(answer)} onSelect={i => setAnswer(String(i))} />
+                  : <SpeechTextArea value={answer} onChange={setAnswer} />
+                }
+                <button onClick={submit} disabled={answer.toString().trim() === ""}
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-medium rounded-xl transition-all">
+                  Submit Answer
+                </button>
+              </>
+            )}
+            {submitted && (
+              <RevealCard isCorrect={isCorrect} q={q} onNext={next}
+                nextLabel={current >= questions.length - 1 ? "See Results" : "Next Question →"}
+                onNavigate={onNavigate} />
+            )}
           </>
-        )}
-        {submitted && (
-          <RevealCard isCorrect={isCorrect} q={q} onNext={next}
-            nextLabel={current >= questions.length - 1 ? "See Results" : "Next Question →"}
-            onNavigate={onNavigate} />
         )}
       </div>
     </div>

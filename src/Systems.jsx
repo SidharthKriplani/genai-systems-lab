@@ -66,6 +66,7 @@ const SYSTEMS_GROUPS = [
 
 export default function SystemsApp({ initialModule, onModuleVisit }) {
   const [activeModule, setActiveModule] = useState(initialModule || "evals");
+  const [search, setSearch] = useState("");
   const [done, setDone] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("gsl-systems-done") || "[]")); }
     catch { return new Set(); }
@@ -83,6 +84,14 @@ export default function SystemsApp({ initialModule, onModuleVisit }) {
   const ActiveComponent = SYSTEMS_MODULES.find(m => m.id === activeModule)?.component || EvalsLab;
   const total = SYSTEMS_MODULES.length;
   const doneCount = done.size;
+  const searchLower = search.toLowerCase();
+  const filterModules = (modules) => search
+    ? modules.filter(m =>
+        m.label.toLowerCase().includes(searchLower) ||
+        m.tag.toLowerCase().includes(searchLower) ||
+        m.id.toLowerCase().includes(searchLower)
+      )
+    : modules;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -99,14 +108,37 @@ export default function SystemsApp({ initialModule, onModuleVisit }) {
         )}
       </div>
 
+      {/* Module search */}
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search modules…"
+          className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
+        />
+        {search && (
+          <button onClick={() => setSearch("")}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 text-xs">
+            ✕
+          </button>
+        )}
+      </div>
+
       {/* Module switcher — grouped */}
       <div className="space-y-2">
-        {SYSTEMS_GROUPS.map(grp => (
+        {search && SYSTEMS_GROUPS.every(grp => filterModules(SYSTEMS_MODULES.filter(m => m.group === grp.id)).length === 0) && (
+          <div className="text-center text-sm text-zinc-600 py-4">No modules match "{search}"</div>
+        )}
+        {SYSTEMS_GROUPS.map(grp => {
+          const groupModules = filterModules(SYSTEMS_MODULES.filter(m => m.group === grp.id));
+          if (groupModules.length === 0) return null;
+          return (
           <div key={grp.id} className="flex items-start gap-2">
             <span className="text-[10px] font-mono font-bold px-1.5 py-1 rounded mt-0.5 shrink-0" style={{ color: grp.color + "cc", background: grp.color + "18" }}>{grp.label}</span>
             <div className="relative flex-1 min-w-0">
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide flex-nowrap">
-                {SYSTEMS_MODULES.filter(m => m.group === grp.id).map(m => (
+                {groupModules.map(m => (
                   <button
                     key={m.id}
                     onClick={() => switchModule(m.id)}
@@ -121,7 +153,8 @@ export default function SystemsApp({ initialModule, onModuleVisit }) {
               <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-950 to-transparent" />
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <ActiveComponent />
