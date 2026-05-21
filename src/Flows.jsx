@@ -1774,6 +1774,699 @@ function FineTuningPipelineFlow({ onNavigate }) {
   );
 }
 
+// ─── RLHF PIPELINE FLOW ───────────────────────────────────────────────────────
+const RLHF_STAGES = [
+  { id: "base",    label: "Pretrained Base Model",    sublabel: "raw pretraining",  color: "#8b5cf6",
+    desc: "Next-token prediction on internet-scale data. No alignment, no instruction following — just pattern completion.",
+    detail: "The base model is a powerful but unaligned text predictor. It completes text statistically but doesn't follow instructions or human preferences.",
+    prod: "Use a well-pretrained base (Llama 3, Mistral, Qwen). The base model quality is the ceiling for all downstream alignment — you can't align your way past a weak base.",
+    failure: "Starting from a weak base model means SFT and RLHF have less to work with. Quality of alignment is bounded by pretraining." },
+  { id: "sft",     label: "Supervised Fine-Tuning",   sublabel: "SFT",              color: "#7c3aed",
+    desc: "Train on high-quality (prompt, response) pairs to teach instruction following before RL.",
+    detail: "SFT teaches the model the format and style of helpful responses using demonstration data curated by human labelers or synthetic generation.",
+    prod: "Data quality >> quantity. 1,000 excellent examples beat 100,000 mediocre ones. Use rejection sampling to keep only the best synthetic outputs.",
+    failure: "SFT overfitting: model memorizes response formats but fails on novel prompts. Validate on held-out distribution — not just training prompts." },
+  { id: "reward",  label: "Reward Model Training",    sublabel: "preference data",  color: "#6d28d9",
+    desc: "Train a scalar reward predictor on human preference pairs: which of two responses is better?",
+    detail: "Labelers rank pairs of model outputs. The reward model learns to predict the human preference score for any (prompt, response) pair.",
+    prod: "Reward model quality is the RLHF ceiling. Bad reward models cause reward hacking — the policy learns to exploit the RM's weaknesses, not genuinely improve. Use ensembles to reduce RM variance.",
+    failure: "Reward hacking: the policy finds high-reward outputs that humans rate poorly — e.g., verbose, sycophantic, or superficially confident responses." },
+  { id: "ppo",     label: "PPO Optimization Loop",    sublabel: "RL fine-tuning",   color: "#5b21b6",
+    desc: "Use the reward model to score model outputs, then update the policy via Proximal Policy Optimization.",
+    detail: "PPO generates rollouts, scores them with the RM, and updates the policy to maximize expected reward while staying close to the SFT reference model (KL penalty).",
+    prod: "KL coefficient is critical: too low = reward hacking, too high = no improvement. Monitor reward, KL divergence, and output diversity simultaneously. Typical training: 1–3 epochs.",
+    failure: "Mode collapse: the policy over-optimizes for the reward model and produces repetitive, high-scoring but low-quality outputs. KL constraint mitigates this." },
+  { id: "aligned", label: "RLHF-Aligned Model",       sublabel: "deployment ready", color: "#4c1d95",
+    desc: "The final model — helpful, harmless, and honest — ready for production deployment.",
+    detail: "The aligned model combines the knowledge of the base model with instruction following from SFT and human preference alignment from RLHF/DPO.",
+    prod: "Always eval on both task performance AND safety benchmarks before deployment. Alignment can hurt task performance if over-constrained.",
+    failure: "Over-refusal: an overly aligned model refuses legitimate requests. Tune the KL penalty and reward model to balance helpfulness vs. safety." },
+];
+
+function RLHFPipelineFlow({ onNavigate }) {
+  const [activeStage, setActiveStage] = useState(null);
+  const [view, setView] = useState("pipeline");
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {[{id:"pipeline",label:"RLHF Pipeline"},{id:"dpo",label:"DPO Alternative"},{id:"grpo",label:"GRPO"}].map(v => (
+          <button key={v.id} onClick={() => setView(v.id)}
+            className={`px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all ${view===v.id ? "bg-violet-600 border-violet-500 text-white" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {view === "pipeline" && (
+        <div className="space-y-2">
+          <p className="text-xs text-zinc-500">Click any stage to see training details, production considerations, and failure modes.</p>
+
+          {/* Animated pipeline */}
+          <div className="bg-zinc-950 rounded-xl p-4 overflow-x-auto">
+            <div className="flex items-center gap-1 flex-nowrap min-w-max">
+              {RLHF_STAGES.map((s, i) => (
+                <div key={s.id} className="flex items-center gap-1">
+                  <StageBox label={s.label} sublabel={s.sublabel} active={activeStage === s.id} color="#8b5cf6" pulse minW="110px">
+                    <div className="text-[10px] leading-tight">{s.desc.slice(0, 60)}…</div>
+                  </StageBox>
+                  {i < RLHF_STAGES.length - 1 && <Arrow active={activeStage === s.id} color="#8b5cf6" />}
+                </div>
+              ))}
+            </div>
+            {/* Feedback loop arrow */}
+            <div className="mt-3 flex items-center gap-2">
+              <div className="flex-1 h-px bg-violet-900/40 border-t border-dashed border-violet-800/60" />
+              <span className="text-[9px] font-mono text-violet-600 px-2 py-0.5 rounded border border-violet-900/50 bg-violet-950/40 whitespace-nowrap">
+                PPO feedback loop — policy updates feed back to generation
+              </span>
+              <div className="flex-1 h-px bg-violet-900/40 border-t border-dashed border-violet-800/60" />
+            </div>
+          </div>
+
+          {/* Stage detail cards */}
+          <div className="space-y-2">
+            {RLHF_STAGES.map((stage, i) => (
+              <div key={stage.id}>
+                <div onClick={() => setActiveStage(activeStage === stage.id ? null : stage.id)}
+                  className="rounded-xl border p-4 cursor-pointer transition-all"
+                  style={{ background: activeStage === stage.id ? "#8b5cf611" : "#09090b", borderColor: activeStage === stage.id ? "#8b5cf680" : "#27272a" }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0"
+                      style={{ background: "#8b5cf622", border: "1.5px solid #8b5cf655", color: "#8b5cf6" }}>
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold font-mono text-violet-400">STAGE {i + 1}</span>
+                        <p className="text-sm font-bold text-zinc-100">{stage.label}</p>
+                      </div>
+                      <p className="text-xs text-zinc-500 truncate">{stage.desc.slice(0, 80)}…</p>
+                    </div>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0" style={{ background: "#8b5cf622", color: "#8b5cf6" }}>{stage.sublabel}</span>
+                  </div>
+                  {activeStage === stage.id && (
+                    <div className="mt-3 pt-3 border-t border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-3 flow-fadein">
+                      <div>
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase mb-1">What happens</p>
+                        <p className="text-xs text-zinc-300">{stage.detail}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Production detail</p>
+                        <p className="text-xs text-zinc-300">{stage.prod}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-red-400 uppercase mb-1">Failure mode</p>
+                        <p className="text-xs text-zinc-300">{stage.failure}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {i < RLHF_STAGES.length - 1 && (
+                  <div className="flex justify-center">
+                    <div className="w-px h-4 bg-zinc-800" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {view === "dpo" && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-violet-800/40 bg-violet-950/10 p-4">
+            <p className="text-xs font-bold text-violet-400 mb-2">DPO: DIRECT PREFERENCE OPTIMIZATION</p>
+            <p className="text-sm text-zinc-300 leading-relaxed mb-3">DPO skips the reward model entirely — it trains directly on preference pairs using a clever mathematical equivalence. The policy IS the reward model implicitly.</p>
+            <div className="space-y-2 text-xs font-mono">
+              <p className="text-zinc-500">// RLHF (PPO) — 3 models, 2 training phases</p>
+              <p className="text-zinc-400">SFT model → reward model → PPO policy (online RL)</p>
+              <p className="text-zinc-500 mt-2">// DPO — 1 model, 1 training phase</p>
+              <p className="text-violet-400">SFT model → DPO fine-tune directly on (prompt, chosen, rejected) triples</p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  <th className="text-left p-3 text-zinc-500 font-mono text-[10px] uppercase">Dimension</th>
+                  <th className="text-left p-3 text-violet-400 font-semibold">DPO</th>
+                  <th className="text-left p-3 text-indigo-400 font-semibold">RLHF (PPO)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { dim: "Reward model", dpo: "Not needed — implicit in policy", rlhf: "Requires separate training + storage" },
+                  { dim: "Training stability", dpo: "More stable — no online RL", rlhf: "Prone to reward hacking, instability" },
+                  { dim: "Compute cost", dpo: "Lower — single supervised pass", rlhf: "Higher — online rollouts + RM inference" },
+                  { dim: "Data efficiency", dpo: "Requires good preference pairs", rlhf: "Can use online rollouts + RM scoring" },
+                  { dim: "Best for", dpo: "Chat, instruction following, most alignment", rlhf: "Verifiable rewards (math, code), complex RM signals" },
+                  { dim: "Production use", dpo: "Default for most fine-tuning pipelines", rlhf: "DeepSeek, Llama alignment, reasoning models" },
+                ].map((r, i) => (
+                  <tr key={i} className={`border-b border-zinc-800/50 ${i % 2 === 0 ? "bg-zinc-900/30" : ""}`}>
+                    <td className="p-3 text-zinc-400 font-semibold">{r.dim}</td>
+                    <td className="p-3 text-zinc-300">{r.dpo}</td>
+                    <td className="p-3 text-zinc-300">{r.rlhf}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="rounded-xl border border-violet-800/30 bg-violet-950/10 p-4">
+            <p className="text-[10px] font-mono font-bold text-violet-400 uppercase mb-1">Key Insight</p>
+            <p className="text-xs text-zinc-300 leading-relaxed">DPO skips the reward model — trains directly on preference pairs. The implicit reward is: log π_θ(y_w|x) - log π_ref(y_w|x) - log π_θ(y_l|x) + log π_ref(y_l|x). No separate RM inference needed at training time.</p>
+          </div>
+        </div>
+      )}
+
+      {view === "grpo" && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/10 p-4">
+            <p className="text-xs font-bold text-amber-400 mb-2">GRPO: GROUP RELATIVE POLICY OPTIMIZATION</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">Used in DeepSeek-R1. Instead of a learned reward model, GRPO generates multiple responses to the same prompt and scores them relative to each other — the group IS the baseline.</p>
+          </div>
+          <div className="space-y-2">
+            {[
+              { label: "How it works", color: "#f59e0b", text: "Sample G responses for each prompt. Score all G with a verifiable reward function (code tests pass/fail, math answer correct/wrong). Normalize scores within the group. Update policy to push up high-scoring responses relative to low-scoring ones." },
+              { label: "Why no value network", color: "#22c55e", text: "PPO requires a value function (critic) to estimate baseline reward — expensive. GRPO replaces the critic with the group mean score. Simpler architecture, more stable training, 40% lower memory footprint vs. PPO." },
+              { label: "When to use GRPO", color: "#3b82f6", text: "Tasks with verifiable rewards: math (correct answer check), code (unit tests), structured output (schema validation). Not ideal for open-ended tasks where 'correct' is subjective — use DPO there." },
+              { label: "DeepSeek-R1 result", color: "#8b5cf6", text: "GRPO + verifiable math/code rewards produced chain-of-thought reasoning that emerged without explicit CoT training data. The model learned to 'think' by being rewarded only for correct final answers." },
+            ].map((item, i) => (
+              <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-3">
+                <p className="text-[10px] font-bold uppercase mb-1" style={{ color: item.color }}>{item.label}</p>
+                <p className="text-xs text-zinc-300 leading-relaxed">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {onNavigate && (
+        <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-800">
+          <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+          <button onClick={() => onNavigate({ tab: "groundtruth", postId: "rlhf-dpo-explained" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">GT: RLHF / DPO Explained</button>
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "rlhf" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Systems: RLHF / DPO / PPO</button>
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "grpo" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Systems: GRPO</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── INFERENCE OPTIMIZATION STACK FLOW ───────────────────────────────────────
+const INFERENCE_STAGES = [
+  { id: "request",  label: "Incoming Request",       sublabel: "user prompt",          color: "#3b82f6",
+    desc: "The prompt arrives — system prompt + conversation history + user message.",
+    detail: "Every token in the request contributes to prefill cost. System prompts that never change are prime candidates for prompt caching — pay once, reuse millions of times.",
+    prod: "Apply prompt caching (Anthropic, OpenAI) to your system prompt. For batched inference, group requests by system prompt hash to maximize cache hit rate.",
+    failure: "Cold start: first request always pays full prefill cost. Warm the cache on deployment, not on first user request." },
+  { id: "prefill",  label: "Prefill Phase",          sublabel: "prompt processing",    color: "#2563eb",
+    desc: "Process all prompt tokens in parallel — compute attention for the full input in one forward pass.",
+    detail: "Prefill is compute-bound and highly parallelizable. All input tokens are processed simultaneously via matrix multiplication on GPU. Cost scales linearly with prompt length.",
+    prod: "Chunked prefill: split long prompts into chunks to interleave with decode steps, reducing TTFT for concurrent requests. Critical for high-throughput serving.",
+    failure: "Long system prompts without caching cause high TTFT for every request. A 2,000-token uncached system prompt adds ~200ms to every call." },
+  { id: "kvcache", label: "KV Cache",                sublabel: "attention states",     color: "#1d4ed8",
+    desc: "Store Key-Value attention matrices for all processed tokens — reuse on every decode step.",
+    detail: "The KV cache stores the computed K and V tensors for each layer and each past token. Decode steps only compute KV for the new token — not all past tokens. This is what makes autoregressive generation feasible.",
+    prod: "KV cache size: seq_len × num_layers × num_heads × head_dim × 2 × dtype_bytes. A 70B model with 4096 context window needs ~35GB KV cache. Use quantized KV cache (FP8/INT8) to reduce 2×.",
+    failure: "KV cache eviction under memory pressure causes cache misses and forces recomputation. Monitor GPU memory headroom. Use PagedAttention (vLLM) for dynamic, fragmentation-free KV cache management." },
+  { id: "decode",   label: "Decode Phase",           sublabel: "autoregressive gen",   color: "#1e40af",
+    desc: "Generate one token per forward pass, attending to all past tokens via the KV cache.",
+    detail: "Decode is memory-bandwidth-bound — not compute-bound. The GPU waits on memory reads of the KV cache and model weights, not on floating-point operations. This is why bigger GPUs help less than better memory bandwidth.",
+    prod: "Continuous batching (vLLM, TGI): batch decode steps across multiple concurrent requests to maximize GPU utilization. Without it, single-request throughput is <5% of GPU capacity.",
+    failure: "Small batch sizes leave GPU idle during decode. At batch_size=1, most of the GPU is waiting on memory reads. Target batch_size ≥ 16 for efficient serving." },
+  { id: "specdec",  label: "Speculative Decoding",   sublabel: "draft + verify",       color: "#3b82f6",
+    desc: "A small draft model generates k tokens speculatively; the target model verifies all k in one pass.",
+    detail: "Draft model (e.g., 7B) generates k=4–8 tokens. Target model (e.g., 70B) runs one forward pass over all k tokens + 1 bonus token. All correct tokens are accepted; on rejection, fall back to the target model's token. Net result: 2–3× throughput with identical output distribution.",
+    prod: "Draft model must share the same tokenizer and vocab as target. Acceptance rate matters: if draft accuracy < 70%, speculative decoding may not help. Fine-tune draft on your specific prompt distribution.",
+    failure: "Draft/target distribution mismatch on your domain (e.g., code, math) reduces acceptance rate and speculative decoding provides no speedup. Measure acceptance rate before deploying." },
+  { id: "response", label: "Response",               sublabel: "streamed output",      color: "#60a5fa",
+    desc: "Tokens stream to the user as they are generated — first token in ~200ms, not after full generation.",
+    detail: "Streaming delivers tokens via SSE (Server-Sent Events) as they are generated. TTFT (Time to First Token) is the most user-visible latency metric — prioritize this over total generation time.",
+    prod: "Stream always. A user perceives 'instant' response at TTFT < 300ms even if total generation takes 10 seconds. Non-streaming forces the user to wait for the full response.",
+    failure: "Streaming breaks structured output parsers that need the full response. Use buffered streaming: stream to user display, buffer in background for post-processing." },
+];
+
+function InferenceStackFlow({ onNavigate }) {
+  const [step, setStep] = useState(-1);
+  const [playing, setPlaying] = useState(false);
+  const intervalRef = useRef(null);
+
+  function start() { setStep(0); setPlaying(true); }
+  function reset() { setStep(-1); setPlaying(false); clearInterval(intervalRef.current); }
+
+  useEffect(() => {
+    if (playing) {
+      intervalRef.current = setInterval(() => {
+        setStep(prev => {
+          if (prev >= INFERENCE_STAGES.length - 1) { setPlaying(false); return prev; }
+          return prev + 1;
+        });
+      }, 1800);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [playing]);
+
+  const currentStage = step >= 0 && step < INFERENCE_STAGES.length ? INFERENCE_STAGES[step] : null;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-zinc-500">Animate the full inference stack — from incoming request through prefill, KV cache, decode, and speculative decoding.</p>
+
+      {/* Animated pipeline */}
+      <div className="bg-zinc-950 rounded-xl p-4 overflow-x-auto">
+        <div className="flex items-center gap-1 flex-nowrap min-w-max">
+          {INFERENCE_STAGES.map((s, i) => (
+            <div key={s.id} className="flex items-center gap-1">
+              <StageBox label={s.label} sublabel={s.sublabel} active={step >= i} color="#3b82f6" pulse={step === i} minW="100px">
+                {step === i && <div className="text-[10px] text-zinc-400 leading-tight mt-1">{s.desc.slice(0, 55)}…</div>}
+              </StageBox>
+              {i < INFERENCE_STAGES.length - 1 && <Arrow active={step > i} color="#3b82f6" />}
+            </div>
+          ))}
+        </div>
+        {/* KV cache side-store indicator */}
+        {step >= 2 && (
+          <div className="mt-3 flex items-center gap-2 flow-fadein">
+            <div className="flex-1 h-px border-t border-dashed border-blue-800/60" />
+            <div className="px-3 py-1.5 rounded-lg border border-blue-700/50 bg-blue-950/30 text-[10px] font-mono text-blue-400 whitespace-nowrap">
+              KV Cache — persistent across all decode steps · reused every token
+            </div>
+            <div className="flex-1 h-px border-t border-dashed border-blue-800/60" />
+          </div>
+        )}
+      </div>
+
+      {/* Active stage detail */}
+      {currentStage && (
+        <div className="rounded-xl border p-4 space-y-2 flow-fadein"
+          style={{ borderColor: "#3b82f655", background: "#3b82f60d" }}>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-white">{currentStage.label}</span>
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ background: "#3b82f633", color: "#3b82f6" }}>{currentStage.sublabel}</span>
+          </div>
+          <p className="text-xs text-zinc-300 leading-relaxed">{currentStage.detail}</p>
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Production</p>
+              <p className="text-xs text-zinc-400 leading-relaxed">{currentStage.prod}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-red-400 uppercase mb-1">Failure mode</p>
+              <p className="text-xs text-zinc-400 leading-relaxed">{currentStage.failure}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === -1 && (
+        <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 text-xs text-zinc-400">
+          The inference stack has two distinct phases: prefill (parallel, compute-bound) and decode (sequential, memory-bandwidth-bound). Speculative decoding bridges them — using a fast draft model to generate candidates the target model verifies in bulk.
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        {step === -1 && <button onClick={start} className="px-4 py-1.5 rounded text-white text-xs font-bold bg-blue-600 hover:bg-blue-500 transition-all">▶ Run inference</button>}
+        {playing && <button onClick={() => { setPlaying(false); clearInterval(intervalRef.current); }} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">⏸ Pause</button>}
+        {!playing && step > 0 && step < INFERENCE_STAGES.length - 1 && <button onClick={() => setPlaying(true)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">▶ Resume</button>}
+        {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold">↺ Reset</button>}
+      </div>
+
+      {/* Speculative decoding callout */}
+      <div className="rounded-xl border border-blue-800/30 bg-blue-950/10 p-4">
+        <p className="text-[10px] font-mono font-bold text-blue-400 uppercase mb-1">Key Insight</p>
+        <p className="text-xs text-zinc-300 leading-relaxed">Speculative decoding achieves 2–3× speedup by verifying k tokens in one pass. The target model runs one forward pass over all draft tokens simultaneously — the same cost as generating a single token — but accepts multiple correct tokens when the draft agrees with the target.</p>
+      </div>
+
+      {/* Architecture grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="rounded-xl border border-blue-800/30 bg-blue-950/10 p-4">
+          <p className="text-[10px] font-bold text-blue-400 uppercase mb-2">Memory bandwidth matters</p>
+          <div className="space-y-1 text-xs text-zinc-300">
+            <div>• Decode is <strong>memory-bandwidth-bound</strong>, not compute-bound</div>
+            <div>• Larger batch sizes amortize weight loading cost</div>
+            <div>• Quantization (INT8/FP8) halves bandwidth requirement</div>
+            <div>• PagedAttention eliminates KV cache fragmentation</div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <p className="text-[10px] font-bold text-zinc-400 uppercase mb-2">Serving stack choices</p>
+          <div className="space-y-1 text-xs text-zinc-300">
+            <div>• <strong>vLLM</strong> — PagedAttention + continuous batching</div>
+            <div>• <strong>TGI</strong> — Hugging Face, production-hardened</div>
+            <div>• <strong>TensorRT-LLM</strong> — NVIDIA-optimized, fastest raw throughput</div>
+            <div>• <strong>SGLang</strong> — structured generation + speculative decoding</div>
+          </div>
+        </div>
+      </div>
+
+      {onNavigate && (
+        <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-800">
+          <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+          <button onClick={() => onNavigate({ tab: "groundtruth", postId: "inference-optimisation" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-blue-500 hover:text-blue-400 transition-all">GT: Inference Optimization</button>
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "kvcache" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-blue-500 hover:text-blue-400 transition-all">Systems: KV Cache</button>
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "specdecoding" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-blue-500 hover:text-blue-400 transition-all">Systems: Speculative Decoding</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── LLM EVAL PIPELINE FLOW ───────────────────────────────────────────────────
+const EVAL_STAGES = [
+  { id: "output",    label: "Model Output",         sublabel: "raw generation",     color: "#f59e0b",
+    desc: "The model generates a response to an eval prompt from the test set.",
+    detail: "Eval prompts should cover: held-out in-distribution examples, adversarial edge cases, safety scenarios, and regression tests from previous failures.",
+    prod: "Never eval on prompts the model was trained on. Maintain a frozen, human-labeled eval set. Augment with synthetic variants but keep a clean human-labeled core.",
+    failure: "Eval set contamination: if the model saw eval prompts during training, scores are inflated and meaningless. Hash-check your eval set against training data." },
+  { id: "metric",   label: "Metric Scoring",        sublabel: "ROUGE / BERTScore",  color: "#d97706",
+    desc: "Automated metrics compare model output against reference answers at scale.",
+    detail: "ROUGE measures n-gram overlap — fast but misses semantics. BERTScore uses embedding similarity — better for paraphrase, worse on factual claims. G-Eval uses GPT-4 to score on rubrics — expensive but flexible.",
+    prod: "Run all three in CI. ROUGE for regression speed, BERTScore for semantic quality, G-Eval for task-specific rubrics (accuracy, format adherence, safety). Track all three over time.",
+    failure: "Metric gaming: models can maximize ROUGE by repeating reference n-grams without actually answering correctly. Always combine metrics — no single metric is sufficient." },
+  { id: "judge",    label: "LLM-as-Judge",          sublabel: "semantic eval",      color: "#b45309",
+    desc: "A capable LLM (GPT-4o, Claude) scores model outputs on rubrics — catching failures that ROUGE misses.",
+    detail: "LLM-as-Judge evaluates: correctness (is the answer right?), groundedness (is it supported by context?), coherence (is it well-structured?), and safety (does it violate policies?). Run on a representative sample — not every eval example.",
+    prod: "Use structured output with judge scores + explanations. Run judge in parallel on 10–20% of examples. Cross-validate: compare judge scores against human labels quarterly to detect judge drift.",
+    failure: "Judge sycophancy: some judges prefer their own outputs, longer responses, or confident tone. Use a diverse judge ensemble or a judge specifically fine-tuned for evaluation." },
+  { id: "human",    label: "Human Review Sample",   sublabel: "ground truth",       color: "#92400e",
+    desc: "Human reviewers label a random sample to validate metric and judge accuracy.",
+    detail: "Human review serves two purposes: ground truth calibration (are our metrics correlated with human judgment?) and catching systematic failures that both metrics and judges miss.",
+    prod: "Review 1–3% of outputs weekly, stratified by score range. Focus human review on borderline cases (metric score 0.6–0.8) — clear passes and fails are less informative. Track inter-annotator agreement.",
+    failure: "Annotator fatigue causes label drift over time. Rotate annotators, run calibration tasks, and monitor inter-annotator agreement weekly." },
+  { id: "gate",     label: "Regression Gate",       sublabel: "pass / block",       color: "#f59e0b",
+    desc: "Automated gate: if eval scores regress beyond threshold vs. baseline, block the release.",
+    detail: "The regression gate compares new model scores against the current production baseline. Any metric regression beyond threshold (e.g., ROUGE -0.02, judge score -0.05) blocks deployment.",
+    prod: "Gate on multiple metrics simultaneously — not just overall score. Track per-category regression: a model might improve on average but regress on safety or specific task types.",
+    failure: "Gate thresholds set too loose allow regressions to ship. Set thresholds based on minimum detectable difference in user-visible quality — not arbitrary round numbers." },
+  { id: "ship",     label: "Ship / Block",          sublabel: "deploy decision",    color: "#f59e0b",
+    desc: "Pass: deploy to production. Block: return to training with failure analysis.",
+    detail: "Ship decision packages: eval report, metric trends, human review summary, regression gate results. Block decision triggers: failure taxonomy, training data fixes needed, and next eval date.",
+    prod: "Shadow test before full deploy: run new model on 5% of traffic in parallel, compare outputs, measure quality delta before full cutover.",
+    failure: "Deploying without shadow testing misses production distribution shifts. Your eval set never perfectly covers production traffic distribution." },
+];
+
+function EvalPipelineFlow({ onNavigate }) {
+  const [activeStage, setActiveStage] = useState(null);
+  const [shipResult, setShipResult] = useState(null);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-zinc-500">Click any stage to see eval design details and common failure modes. Use the gate simulator to see pass/block logic.</p>
+
+      {/* Pipeline visualization */}
+      <div className="bg-zinc-950 rounded-xl p-4 overflow-x-auto">
+        <div className="flex items-center gap-1 flex-nowrap min-w-max">
+          {EVAL_STAGES.map((s, i) => (
+            <div key={s.id} className="flex items-center gap-1">
+              <button onClick={() => setActiveStage(activeStage === s.id ? null : s.id)}
+                className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all"
+                style={{ backgroundColor: activeStage === s.id ? "#f59e0b22" : "#18181b", borderColor: activeStage === s.id ? "#f59e0b" : "#3f3f46", minWidth: "90px" }}>
+                <span className="text-[10px] font-mono font-bold text-center leading-tight" style={{ color: activeStage === s.id ? "#f59e0b" : "#a1a1aa" }}>{s.label}</span>
+                <span className="text-[9px] text-zinc-600">{s.sublabel}</span>
+              </button>
+              {i < EVAL_STAGES.length - 1 && (
+                i === EVAL_STAGES.length - 2
+                  ? <div className="flex flex-col items-center gap-0.5"><span className="text-zinc-600 text-lg">→</span><span className="text-[8px] text-amber-600">gate</span></div>
+                  : <span className="text-zinc-600 text-lg">→</span>
+              )}
+            </div>
+          ))}
+        </div>
+        {/* Pass/fail branch */}
+        <div className="mt-3 flex items-center gap-4">
+          <div className="flex-1 h-px border-t border-dashed border-green-800/40" />
+          <div className="flex gap-3">
+            <div className="px-3 py-1 rounded-lg border border-green-700/40 bg-green-950/20 text-[10px] font-mono text-green-400">✓ PASS → deploy</div>
+            <div className="px-3 py-1 rounded-lg border border-red-700/40 bg-red-950/20 text-[10px] font-mono text-red-400">✗ BLOCK → retrain</div>
+          </div>
+          <div className="flex-1 h-px border-t border-dashed border-red-800/40" />
+        </div>
+      </div>
+
+      {/* Stage detail */}
+      {activeStage && (() => {
+        const s = EVAL_STAGES.find(st => st.id === activeStage);
+        return (
+          <div className="rounded-xl border p-4 space-y-3 flow-fadein" style={{ borderColor: "#f59e0b55", background: "#f59e0b0d" }}>
+            <p className="text-sm font-bold text-white">{s.label}</p>
+            <p className="text-xs text-zinc-300 leading-relaxed">{s.detail}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Production</p>
+                <p className="text-xs text-zinc-400 leading-relaxed">{s.prod}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-red-400 uppercase mb-1">Failure mode</p>
+                <p className="text-xs text-zinc-400 leading-relaxed">{s.failure}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Gate simulator */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Regression Gate Simulator</p>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "ROUGE delta", good: "+0.03", bad: "-0.04", unit: "" },
+            { label: "Judge score delta", good: "+0.06", bad: "-0.08", unit: "" },
+            { label: "Safety violations", good: "0", bad: "3", unit: "" },
+          ].map((m, i) => (
+            <div key={i} className="text-center">
+              <p className="text-[9px] text-zinc-600 mb-1 font-mono">{m.label}</p>
+              <div className="flex gap-1 justify-center">
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-green-900/30 text-green-400 border border-green-800/30">{m.good}</span>
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-red-900/30 text-red-400 border border-red-800/30">{m.bad}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setShipResult("pass")} className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-green-800/40 border border-green-700/40 text-green-400 hover:bg-green-800/60 transition-all">Simulate PASS</button>
+          <button onClick={() => setShipResult("block")} className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-red-800/40 border border-red-700/40 text-red-400 hover:bg-red-800/60 transition-all">Simulate BLOCK</button>
+        </div>
+        {shipResult === "pass" && (
+          <div className="rounded-lg border border-green-700/40 bg-green-950/20 p-3 flow-fadein">
+            <p className="text-xs font-bold text-green-400 mb-1">GATE PASSED — deploying</p>
+            <p className="text-xs text-zinc-400">All metrics within threshold. Shadow test at 5% traffic → monitor 48h → full cutover.</p>
+          </div>
+        )}
+        {shipResult === "block" && (
+          <div className="rounded-lg border border-red-700/40 bg-red-950/20 p-3 flow-fadein">
+            <p className="text-xs font-bold text-red-400 mb-1">GATE BLOCKED — return to training</p>
+            <p className="text-xs text-zinc-400">Safety violations: 3. Judge score regression: -0.08 (threshold: -0.05). Trigger failure taxonomy — check training data distribution.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Key insight */}
+      <div className="rounded-xl border border-amber-800/30 bg-amber-950/10 p-4">
+        <p className="text-[10px] font-mono font-bold text-amber-400 uppercase mb-1">Key Insight</p>
+        <p className="text-xs text-zinc-300 leading-relaxed">LLM-as-Judge catches semantic failures that ROUGE misses — a response can have high n-gram overlap with the reference while being factually wrong, unsafe, or unhelpful. Use ROUGE for speed, LLM-as-Judge for depth.</p>
+      </div>
+
+      {onNavigate && (
+        <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-800">
+          <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+          <button onClick={() => onNavigate({ tab: "groundtruth", postId: "llm-evaluation-guide" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-amber-500 hover:text-amber-400 transition-all">GT: LLM Evaluation Guide</button>
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "evalmetrics" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-amber-500 hover:text-amber-400 transition-all">Systems: Eval Metrics</button>
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "evals" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-amber-500 hover:text-amber-400 transition-all">Systems: Evals Lab</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── AGENT MEMORY ARCHITECTURE FLOW ──────────────────────────────────────────
+const MEMORY_TYPES = [
+  { id: "working",   label: "Working Memory",   sublabel: "active context window",  color: "#22c55e", icon: "⚡",
+    desc: "The LLM's context window — everything the model can 'see' right now in a single forward pass.",
+    detail: "Working memory is bounded by the context window (4K–200K tokens). Everything not in the context window is invisible to the model. This is the ONLY memory type that every LLM-based agent has by default.",
+    prod: "Manage context carefully: prioritize recent messages, tool outputs, and task-relevant state. Use summarization to compress older turns. Monitor token usage per turn to avoid context overflow mid-task.",
+    failure: "Context overflow mid-task: the agent silently loses earlier tool results, user instructions, or task state. Always track token count and trigger summarization before hitting the limit." },
+  { id: "episodic",  label: "Episodic Memory",  sublabel: "conversation history",   color: "#16a34a", icon: "📖",
+    desc: "Past conversation turns and sessions, stored outside the context window and retrieved as needed.",
+    detail: "Episodic memory stores conversation history beyond what fits in the context window. Implemented as a vector store (Pinecone, Chroma, pgvector) with semantic retrieval — fetch the most relevant past turns for the current query.",
+    prod: "Chunk conversation history by turn or by semantic segment. Embed each chunk. On new user message, retrieve top-k most semantically similar past turns and inject into context. Include session metadata (date, user, task type) for filtering.",
+    failure: "Retrieval staleness: old preferences override new ones if retrieval doesn't account for recency. Blend semantic similarity with recency score. Re-rank retrieved memories by relevance × recency." },
+  { id: "semantic",  label: "Semantic Memory",  sublabel: "knowledge base / RAG",   color: "#15803d", icon: "🧠",
+    desc: "Long-term factual knowledge — domain docs, product info, policies — retrieved via RAG.",
+    detail: "Semantic memory is the agent's knowledge base: documentation, policies, product catalogs, research papers. Implemented as a RAG pipeline with a vector index over chunked documents.",
+    prod: "Index freshness is critical: semantic memory goes stale as the world changes. Build an incremental ingestion pipeline with change detection. Use metadata filters (date, source, category) to bound retrieval scope.",
+    failure: "Knowledge staleness is invisible to the model — it answers confidently from stale facts. Add document timestamps to retrieval context. Include 'as of [date]' in retrieved chunks." },
+  { id: "tool",      label: "Tool Memory",      sublabel: "function schemas",       color: "#166534", icon: "🔧",
+    desc: "The schemas and capabilities of available tools — what the agent can do and how to call them.",
+    detail: "Tool memory is the set of function schemas the agent can call: web search, code execution, API calls, database queries, file operations. Stored as JSON schemas in the system prompt or in a tool registry.",
+    prod: "For large tool libraries (50+ tools), don't inject all schemas into every prompt — use a tool selector: embed all tool descriptions, retrieve top-k relevant tools per turn based on the user query.",
+    failure: "Tool schema injection bloat: 50 tool schemas × 500 tokens each = 25K tokens of overhead per turn. Dynamic tool selection saves 80% of token cost for large tool libraries." },
+];
+
+function AgentMemoryFlow({ onNavigate }) {
+  const [activeMemory, setActiveMemory] = useState(null);
+  const [generating, setGenerating] = useState(false);
+  const [genStep, setGenStep] = useState(0);
+  const intervalRef = useRef(null);
+
+  function runGeneration() {
+    setGenerating(true);
+    setGenStep(0);
+    let step = 0;
+    intervalRef.current = setInterval(() => {
+      step++;
+      setGenStep(step);
+      if (step >= MEMORY_TYPES.length + 1) {
+        setGenerating(false);
+        clearInterval(intervalRef.current);
+      }
+    }, 700);
+  }
+
+  useEffect(() => () => clearInterval(intervalRef.current), []);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-zinc-500">Explore the 4 memory types in agent architectures. Animate the generation flow to see how each feeds into the response.</p>
+
+      {/* Generation flow animation */}
+      <div className="bg-zinc-950 rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] font-mono font-bold text-zinc-600 uppercase">Response Generation Flow</p>
+          <button onClick={runGeneration} disabled={generating}
+            className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white transition-all disabled:opacity-50">
+            {generating ? "Generating…" : "▶ Animate"}
+          </button>
+        </div>
+
+        {/* User message */}
+        <div className="flex items-center gap-2">
+          <div className={`px-3 py-2 rounded-xl border text-[10px] font-mono transition-all ${genStep >= 1 ? "border-emerald-600 bg-emerald-950/30 text-emerald-400" : "border-zinc-800 text-zinc-600"}`}>
+            User Message
+          </div>
+          <Arrow active={genStep >= 1} color="#22c55e" />
+          <div className={`px-3 py-2 rounded-xl border text-[10px] font-mono transition-all ${genStep >= MEMORY_TYPES.length + 1 ? "border-emerald-500 bg-emerald-950/40 text-emerald-300" : "border-zinc-800 text-zinc-600"}`}>
+            Response Generation
+          </div>
+        </div>
+
+        {/* Memory feeds */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {MEMORY_TYPES.map((m, i) => (
+            <div key={m.id} className={`flex flex-col items-center gap-1 rounded-xl border p-2 transition-all text-center`}
+              style={{ borderColor: genStep >= i + 2 ? m.color + "80" : "#27272a", background: genStep >= i + 2 ? m.color + "0d" : "transparent" }}>
+              <span className="text-base">{m.icon}</span>
+              <span className="text-[9px] font-mono font-bold" style={{ color: genStep >= i + 2 ? m.color : "#52525b" }}>{m.label}</span>
+              {genStep >= i + 2 && <span className="text-[8px] font-mono text-zinc-600 block-flash">{m.sublabel}</span>}
+            </div>
+          ))}
+        </div>
+        {genStep >= MEMORY_TYPES.length + 1 && (
+          <div className="rounded-lg border border-emerald-700/40 bg-emerald-950/20 p-2 flow-fadein text-center">
+            <span className="text-xs text-emerald-400 font-mono">All memory types retrieved → response generated</span>
+          </div>
+        )}
+      </div>
+
+      {/* Memory type detail cards */}
+      <div className="space-y-2">
+        {MEMORY_TYPES.map((m, i) => (
+          <div key={m.id} onClick={() => setActiveMemory(activeMemory === m.id ? null : m.id)}
+            className="rounded-xl border p-4 cursor-pointer transition-all"
+            style={{ background: activeMemory === m.id ? m.color + "0d" : "#09090b", borderColor: activeMemory === m.id ? m.color + "80" : "#27272a" }}>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
+                style={{ background: m.color + "22", border: `1.5px solid ${m.color}55` }}>
+                {m.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold font-mono" style={{ color: m.color }}>TYPE {i + 1}</span>
+                  <p className="text-sm font-bold text-zinc-100">{m.label}</p>
+                </div>
+                <p className="text-xs text-zinc-500 truncate">{m.desc}</p>
+              </div>
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0" style={{ background: m.color + "22", color: m.color }}>{m.sublabel}</span>
+            </div>
+            {activeMemory === m.id && (
+              <div className="mt-3 pt-3 border-t border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-3 flow-fadein">
+                <div>
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase mb-1">What it stores</p>
+                  <p className="text-xs text-zinc-300">{m.detail}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Production detail</p>
+                  <p className="text-xs text-zinc-300">{m.prod}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-red-400 uppercase mb-1">Failure mode</p>
+                  <p className="text-xs text-zinc-300">{m.failure}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Key insight */}
+      <div className="rounded-xl border border-emerald-800/30 bg-emerald-950/10 p-4">
+        <p className="text-[10px] font-mono font-bold text-emerald-400 uppercase mb-1">Key Insight</p>
+        <p className="text-xs text-zinc-300 leading-relaxed">Most agents only implement working memory — the other three are where production agents diverge. Episodic memory enables personalization across sessions. Semantic memory enables knowledge-grounded answers. Tool memory enables dynamic capability selection at scale.</p>
+      </div>
+
+      {/* Memory comparison table */}
+      <div className="rounded-xl border border-zinc-800 overflow-hidden">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-zinc-800">
+              <th className="text-left p-3 text-zinc-500 font-mono text-[10px] uppercase">Memory Type</th>
+              <th className="text-left p-3 text-zinc-500 font-mono text-[10px] uppercase">Scope</th>
+              <th className="text-left p-3 text-zinc-500 font-mono text-[10px] uppercase">Implementation</th>
+              <th className="text-left p-3 text-zinc-500 font-mono text-[10px] uppercase">Most agents</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { type: "Working", scope: "Current turn", impl: "Context window", has: "✓ Always" },
+              { type: "Episodic", scope: "Past sessions", impl: "Vector store + retrieval", has: "Rare" },
+              { type: "Semantic", scope: "Domain knowledge", impl: "RAG pipeline", has: "Sometimes" },
+              { type: "Tool", scope: "Capabilities", impl: "Function schemas", has: "✓ Often" },
+            ].map((r, i) => (
+              <tr key={i} className={`border-b border-zinc-800/50 ${i % 2 === 0 ? "bg-zinc-900/30" : ""}`}>
+                <td className="p-3 text-zinc-300 font-semibold">{r.type}</td>
+                <td className="p-3 text-zinc-400">{r.scope}</td>
+                <td className="p-3 text-zinc-400">{r.impl}</td>
+                <td className={`p-3 font-mono text-[10px] ${r.has.startsWith("✓") ? "text-emerald-400" : "text-zinc-600"}`}>{r.has}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {onNavigate && (
+        <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-800">
+          <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+          <button onClick={() => onNavigate({ tab: "groundtruth", postId: "multi-agent-orchestration" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-emerald-500 hover:text-emerald-400 transition-all">GT: Multi-Agent Orchestration</button>
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "agentarch" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-emerald-500 hover:text-emerald-400 transition-all">Systems: Agent Architecture</button>
+          <button onClick={() => onNavigate({ tab: "agents" })}
+            className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-emerald-500 hover:text-emerald-400 transition-all">Agents tab</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── FLOWS APP ────────────────────────────────────────────────────────────────
 const FLOW_TABS = [
   { id: "rag",         label: "RAG Pipeline",        tag: "FLOW",    component: RAGFlowDiagram,
@@ -1806,6 +2499,18 @@ const FLOW_TABS = [
   { id: "finetuning", label: "Fine-Tuning Pipeline", tag: "TRAIN", component: FineTuningPipelineFlow,
     desc: "Raw data → synthetic augmentation → SFT → DPO → eval → merge & deploy. Every stage with its failure mode.",
     reflection: "Why is DPO preferred over RLHF for most production fine-tuning — and when would you still use RLHF or GRPO?" },
+  { id: "rlhf-pipeline",   label: "RLHF Pipeline",          tag: "ALIGN",   component: RLHFPipelineFlow,
+    desc: "Base model → SFT → reward model training → PPO optimization loop → aligned model. Plus DPO and GRPO alternatives.",
+    reflection: "Why does reward hacking happen in PPO — and what does DPO do structurally to avoid it?" },
+  { id: "inference-stack", label: "Inference Optimization", tag: "PERF",    component: InferenceStackFlow,
+    desc: "Incoming request → prefill → KV cache → decode → speculative decoding → streamed response. Every stage animated.",
+    reflection: "Why is the decode phase memory-bandwidth-bound rather than compute-bound — and what does that mean for hardware choices?" },
+  { id: "eval-pipeline",   label: "Eval Pipeline",          tag: "EVAL",    component: EvalPipelineFlow,
+    desc: "Model output → metric scoring → LLM-as-Judge → human review sample → regression gate → ship or block.",
+    reflection: "A model improves average ROUGE but regresses on safety evals. Your gate passes it because overall score improved. What's wrong with your gate design?" },
+  { id: "agent-memory",    label: "Agent Memory",           tag: "MEMORY",  component: AgentMemoryFlow,
+    desc: "Working memory, episodic memory, semantic memory, and tool memory — the 4 layers that separate toy agents from production ones.",
+    reflection: "Your agent forgets user preferences after each session. Which memory type is missing — and how would you implement it?" },
 ];
 
 export default function FlowsApp({ onNavigate }) {
