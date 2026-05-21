@@ -21,41 +21,41 @@ const EMB_CAT_LABEL = { rag:"RAG", arch:"Architecture", safety:"Safety", ops:"Op
 // Radii: inner ~95, mid ~120, outer ~145 from center (250,250)
 const EMB_POINTS = [
   // RAG — top sector
-  { id:"r1", cat:"rag",    x:212, y:146, label:"What is RAG?"            },
-  { id:"r2", cat:"rag",    x:221, y:82, label:"Vector DB indexing"       },
-  { id:"r3", cat:"rag",    x:250, y:109, label:"Chunking strategies"      },
-  { id:"r4", cat:"rag",    x:279, y:142, label:"Retrieval pipeline"       },
-  { id:"r5", cat:"rag",    x:321, y:96, label:"Hybrid search"            },
+  { id:"r1", cat:"rag",    x:212, y:146, label:"What is RAG?",            gtId:"how-rag-works"              },
+  { id:"r2", cat:"rag",    x:221, y:82,  label:"Vector DB indexing",      gtId:"vector-db-selection-guide"  },
+  { id:"r3", cat:"rag",    x:250, y:109, label:"Chunking strategies",     gtId:"chunking-strategies"        },
+  { id:"r4", cat:"rag",    x:279, y:142, label:"Retrieval pipeline",      gtId:"rag-architectures"          },
+  { id:"r5", cat:"rag",    x:321, y:96,  label:"Hybrid search",           gtId:"hybrid-search"              },
   // Architecture — top-right sector
-  { id:"a1", cat:"arch",   x:318, y:162, label:"Transformer arch."        },
-  { id:"a2", cat:"arch",   x:377, y:136, label:"Attention mechanism"      },
-  { id:"a3", cat:"arch",   x:372, y:180, label:"KV cache & inference"     },
-  { id:"a4", cat:"arch",   x:355, y:216, label:"Tokenization deep dive"   },
-  { id:"a5", cat:"arch",   x:419, y:227, label:"Positional encoding"      },
+  { id:"a1", cat:"arch",   x:318, y:162, label:"Transformer arch.",       gtId:"what-is-a-transformer"      },
+  { id:"a2", cat:"arch",   x:377, y:136, label:"Attention mechanism",     gtId:"iv-explain-attention"       },
+  { id:"a3", cat:"arch",   x:372, y:180, label:"KV cache & inference",    gtId:"inference-optimisation"     },
+  { id:"a4", cat:"arch",   x:355, y:216, label:"Tokenization deep dive",  gtId:"tokenization-deep-dive"     },
+  { id:"a5", cat:"arch",   x:419, y:227, label:"Positional encoding",     gtId:"what-is-a-transformer"      },
   // Safety — right sector
-  { id:"s1", cat:"safety", x:360, y:265, label:"RLHF alignment"           },
-  { id:"s2", cat:"safety", x:412, y:303, label:"Red teaming"              },
-  { id:"s3", cat:"safety", x:372, y:320, label:"Jailbreaks & injection"   },
-  { id:"s4", cat:"safety", x:333, y:325, label:"Constitutional AI"        },
-  { id:"s5", cat:"safety", x:354, y:384, label:"DPO preference learning"  },
+  { id:"s1", cat:"safety", x:360, y:265, label:"RLHF alignment",          gtId:"rlhf-dpo-explained"         },
+  { id:"s2", cat:"safety", x:412, y:303, label:"Red teaming",             gtId:"llm-security-red-teaming"   },
+  { id:"s3", cat:"safety", x:372, y:320, label:"Jailbreaks & injection",  gtId:"prompt-injection-production"},
+  { id:"s4", cat:"safety", x:333, y:325, label:"Constitutional AI",       gtId:"constitutional-ai-explained"},
+  { id:"s5", cat:"safety", x:354, y:384, label:"DPO preference learning", gtId:"ft-dpo-vs-grpo"             },
   // Ops — bottom sector
-  { id:"o1", cat:"ops",    x:292, y:353, label:"Model quantization"       },
-  { id:"o2", cat:"ops",    x:285, y:416, label:"Cost optimization"        },
-  { id:"o3", cat:"ops",    x:250, y:391, label:"Inference at scale"       },
-  { id:"o4", cat:"ops",    x:227, y:359, label:"Latency budgets & SLAs"   },
-  { id:"o5", cat:"ops",    x:187, y:407, label:"GPU memory management"    },
+  { id:"o1", cat:"ops",    x:292, y:353, label:"Model quantization",      gtId:"ft-quantization"            },
+  { id:"o2", cat:"ops",    x:285, y:416, label:"Cost optimization",       gtId:"llm-cost-optimization"      },
+  { id:"o3", cat:"ops",    x:250, y:391, label:"Inference at scale",      gtId:"inference-optimisation"     },
+  { id:"o4", cat:"ops",    x:227, y:359, label:"Latency budgets & SLAs",  gtId:"cost-latency-tradeoffs"     },
+  { id:"o5", cat:"ops",    x:187, y:407, label:"GPU memory management",   gtId:"inference-optimisation"     },
   // Agents — left sector
-  { id:"ag1", cat:"agents", x:181, y:338, label:"Agent reasoning loops"  },
-  { id:"ag2", cat:"agents", x:123, y:364, label:"Tool calling patterns"  },
-  { id:"ag3", cat:"agents", x:128, y:320, label:"ReAct framework"        },
-  { id:"ag4", cat:"agents", x:145, y:284, label:"AI planning systems"    },
-  { id:"ag5", cat:"agents", x:81, y:273, label:"Multi-agent systems"    },
+  { id:"ag1", cat:"agents", x:181, y:338, label:"Agent reasoning loops",  gtId:"iv-agents-screen"           },
+  { id:"ag2", cat:"agents", x:123, y:364, label:"Tool calling patterns",  gtId:"tool-use-design"            },
+  { id:"ag3", cat:"agents", x:128, y:320, label:"ReAct framework",        gtId:"react-pattern"              },
+  { id:"ag4", cat:"agents", x:145, y:284, label:"AI planning systems",    gtId:"planning-patterns"          },
+  { id:"ag5", cat:"agents", x:81,  y:273, label:"Multi-agent systems",    gtId:"multi-agent-orchestration"  },
   // Multimodal — top-left sector
-  { id:"m1", cat:"multi",  x:140, y:235, label:"CLIP embeddings"          },
-  { id:"m2", cat:"multi",  x:88, y:197, label:"Vision Transformers"      },
-  { id:"m3", cat:"multi",  x:128, y:180, label:"Image-text search"        },
-  { id:"m4", cat:"multi",  x:167, y:175, label:"Diffusion models"         },
-  { id:"m5", cat:"multi",  x:146, y:116, label:"Multimodal RAG"           },
+  { id:"m1", cat:"multi",  x:140, y:235, label:"CLIP embeddings",         gtId:"clip-how-it-works"          },
+  { id:"m2", cat:"multi",  x:88,  y:197, label:"Vision Transformers",     gtId:"vision-transformers-vit"    },
+  { id:"m3", cat:"multi",  x:128, y:180, label:"Image-text search",       gtId:"image-embeddings-visual-search"},
+  { id:"m4", cat:"multi",  x:167, y:175, label:"Diffusion models",        gtId:"diffusion-models-explained" },
+  { id:"m5", cat:"multi",  x:146, y:116, label:"Multimodal RAG",          gtId:"ft-multimodal-rag"          },
 ];
 
 // Category labels at sector midpoints, r~205 from center (250,250)
@@ -93,7 +93,7 @@ const EMB_QUERIES = [
 
 const CX = 250, CY = 250;
 
-function EmbeddingExplorer() {
+function EmbeddingExplorer({ onNavigate }) {
   const [activeQuery, setActiveQuery] = useState(null);
   const [animKey, setAnimKey] = useState(0);
 
@@ -251,7 +251,9 @@ function EmbeddingExplorer() {
                 <circle cx={pt.x} cy={pt.y} r={isNearest ? 8 : 5}
                   fill={col}
                   opacity={dimmed ? 0.07 : isNearest ? 1 : 0.6}
-                  stroke={isNearest ? "#fff" : "none"} strokeWidth="1.5"/>
+                  stroke={isNearest ? "#fff" : "none"} strokeWidth="1.5"
+                  style={isNearest && pt.gtId && onNavigate ? { cursor:"pointer" } : {}}
+                  onClick={isNearest && pt.gtId && onNavigate ? () => onNavigate("groundtruth", pt.gtId) : undefined}/>
                 {isNearest && (
                   <text className="emb-node-in"
                     x={lx} y={ly}
@@ -350,6 +352,12 @@ function EmbeddingExplorer() {
                     style={{ background: EMB_CAT_COLOR[pt.cat] + "22", color: EMB_CAT_COLOR[pt.cat] }}>
                     {EMB_CAT_LABEL[pt.cat]}
                   </span>
+                  {pt.gtId && onNavigate && (
+                    <button onClick={() => onNavigate("groundtruth", pt.gtId)}
+                      className="text-[10px] font-mono text-zinc-500 hover:text-zinc-200 transition-colors shrink-0 px-1">
+                      Read →
+                    </button>
+                  )}
                   <div className="flex items-center gap-1.5 shrink-0">
                     <div className="w-14 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: pt.sim * 100 + "%", background: EMB_CAT_COLOR[pt.cat] }}/>
@@ -2532,7 +2540,7 @@ const EXPLORE_MODULES = [
   { id: "semcache",   label: "Semantic Caching",    tag: "CACHE",    component: SemanticCachingExplorer, fidelity: { tier: "simplified", note: "Illustrative similarity scores — precomputed, not live embedding comparison" } },
 ];
 
-export default function ExploreApp({ initialModule, onModuleVisit }) {
+export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {
   const [activeModule, setActiveModule] = useState(initialModule || "embeddings");
   useEffect(() => { if (initialModule) setActiveModule(initialModule); }, [initialModule]);
   function switchModule(id) { setActiveModule(id); if (onModuleVisit) onModuleVisit("explore", id); }
@@ -2568,7 +2576,7 @@ export default function ExploreApp({ initialModule, onModuleVisit }) {
           <span className="text-[10px] text-zinc-600">{m.fidelity.note}</span>
         </div>
       ) : null; })()}
-      <ActiveComponent />
+      <ActiveComponent onNavigate={activeModule === 'embeddings' ? onNavigate : undefined} />
     </div>
   );
 }

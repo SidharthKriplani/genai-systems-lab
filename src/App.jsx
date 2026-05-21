@@ -2112,7 +2112,7 @@ export default function App() {
           {topView === "fluency"    && <FluencyApp />}
           {topView === "aipm"       && <AIPMApp />}
           {topView === "playground" && <PlaygroundApp />}
-          {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} />}
+          {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} onNavigate={(tab, postId) => { if (postId) setGtPostId(postId); navigate(tab); }} />}
           {topView === "career"     && <CareerApp />}
           {topView === "preplab"    && <PrepLabApp onNavigate={navigate} />}
 
