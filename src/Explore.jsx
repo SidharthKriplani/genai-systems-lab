@@ -3027,6 +3027,410 @@ function LLMOpsComparison() {
 }
 
 
+
+// ─── EMBEDDING MODEL SELECTOR ─────────────────────────────────────────────────
+
+const EMBED_MODELS = [
+  {
+    name: "text-embedding-3-small",
+    provider: "OpenAI",
+    dims: 1536,
+    maxTokens: 8191,
+    mtebScore: 62.3,
+    costPer1MTokens: 0.02,
+    latencyMs: 45,
+    strengths: "Best cost/performance for English RAG, matryoshka truncation",
+    bestFor: "General-purpose RAG, semantic search",
+    matryoshka: true,
+  },
+  {
+    name: "text-embedding-3-large",
+    provider: "OpenAI",
+    dims: 3072,
+    maxTokens: 8191,
+    mtebScore: 64.6,
+    costPer1MTokens: 0.13,
+    latencyMs: 80,
+    strengths: "Highest accuracy in OpenAI family, multilin support",
+    bestFor: "High-stakes retrieval, multilingual",
+    matryoshka: true,
+  },
+  {
+    name: "voyage-3",
+    provider: "Voyage AI",
+    dims: 1024,
+    maxTokens: 32000,
+    mtebScore: 68.4,
+    costPer1MTokens: 0.06,
+    latencyMs: 55,
+    strengths: "Top MTEB English, long context, best for technical/code docs",
+    bestFor: "Code retrieval, long technical documents",
+    matryoshka: false,
+  },
+  {
+    name: "voyage-3-lite",
+    provider: "Voyage AI",
+    dims: 512,
+    maxTokens: 32000,
+    mtebScore: 65.1,
+    costPer1MTokens: 0.02,
+    latencyMs: 30,
+    strengths: "Fast, cheap, surprisingly strong — production sweet spot",
+    bestFor: "High-volume production, latency-sensitive",
+    matryoshka: false,
+  },
+  {
+    name: "embed-english-v3.0",
+    provider: "Cohere",
+    dims: 1024,
+    maxTokens: 512,
+    mtebScore: 64.5,
+    costPer1MTokens: 0.10,
+    latencyMs: 70,
+    strengths: "Best reranker pairing, compression to 256d",
+    bestFor: "RAG with Cohere reranker, binary embeddings",
+    matryoshka: false,
+  },
+  {
+    name: "BGE-M3",
+    provider: "BAAI (OSS)",
+    dims: 1024,
+    maxTokens: 8192,
+    mtebScore: 66.1,
+    costPer1MTokens: 0.00,
+    latencyMs: 25,
+    strengths: "Multi-lingual, multi-granularity (dense+sparse+colbert), self-host",
+    bestFor: "Multilingual, hybrid dense+sparse, self-hosted",
+    matryoshka: false,
+  },
+  {
+    name: "Nomic Embed v2",
+    provider: "Nomic (OSS)",
+    dims: 768,
+    maxTokens: 8192,
+    mtebScore: 62.8,
+    costPer1MTokens: 0.00,
+    latencyMs: 20,
+    strengths: "Open weights, matryoshka, strong at 256d, Apache 2.0",
+    bestFor: "Self-hosted, cost-zero, matryoshka",
+    matryoshka: true,
+  },
+];
+
+const EMBED_DIMENSIONS = [
+  "MTEB Score",
+  "Cost/1M tokens",
+  "Latency (ms)",
+  "Max Tokens",
+  "Dims",
+  "Matryoshka",
+];
+
+const USE_CASES = [
+  {
+    label: "General RAG",
+    best: ["voyage-3-lite", "text-embedding-3-small"],
+    why: "Great cost/performance ratio for typical English retrieval workloads. Matryoshka support on text-embedding-3-small lets you truncate dims later.",
+    dimRec: "1536d (or truncate to 512d via matryoshka for 2× faster search)",
+    matryoshkaTip: true,
+  },
+  {
+    label: "Code & Technical Docs",
+    best: ["voyage-3"],
+    why: "Voyage-3 leads MTEB English benchmarks, especially on technical/code domain retrieval with long context windows up to 32k tokens.",
+    dimRec: "1024d — no truncation needed, latency is already low",
+    matryoshkaTip: false,
+  },
+  {
+    label: "Multilingual",
+    best: ["BGE-M3"],
+    why: "BGE-M3 supports 100+ languages and combines dense, sparse, and ColBERT-style retrieval in a single model — free to self-host.",
+    dimRec: "1024d dense; also emit sparse vectors for hybrid retrieval",
+    matryoshkaTip: false,
+  },
+  {
+    label: "Self-hosted / Zero Cost",
+    best: ["BGE-M3", "Nomic Embed v2"],
+    why: "Both are open-weight Apache 2.0 models you can run on your own infra. Nomic Embed v2 adds matryoshka for flexible dim truncation at serving time.",
+    dimRec: "256d–768d with matryoshka (Nomic) or 1024d (BGE-M3)",
+    matryoshkaTip: true,
+  },
+  {
+    label: "High-accuracy, High-stakes",
+    best: ["voyage-3", "text-embedding-3-large"],
+    why: "When accuracy is non-negotiable (legal, medical, financial retrieval), pay for the best. Voyage-3 leads MTEB; text-embedding-3-large is OpenAI's highest-accuracy option.",
+    dimRec: "Full dims (1024–3072) — don't truncate for max fidelity",
+    matryoshkaTip: false,
+  },
+];
+
+function EmbedModelTable() {
+  const topMteb = Math.max(...EMBED_MODELS.map(m => m.mtebScore));
+  const lowestCost = Math.min(...EMBED_MODELS.map(m => m.costPer1MTokens));
+  const fastestLatency = Math.min(...EMBED_MODELS.map(m => m.latencyMs));
+
+  function providerBorder(provider) {
+    if (provider === "OpenAI") return "border-l-violet-500";
+    if (provider === "Voyage AI") return "border-l-emerald-500";
+    if (provider === "Cohere") return "border-l-blue-500";
+    return "border-l-amber-500";
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-xl border border-zinc-800">
+      <table className="w-full text-xs min-w-[700px]">
+        <thead>
+          <tr className="border-b border-zinc-800 bg-zinc-900">
+            <th className="text-left px-3 py-2.5 text-zinc-400 font-semibold">Model</th>
+            <th className="text-left px-3 py-2.5 text-zinc-400 font-semibold">Provider</th>
+            <th className="text-right px-3 py-2.5 text-zinc-400 font-semibold">MTEB ↑</th>
+            <th className="text-right px-3 py-2.5 text-zinc-400 font-semibold">Cost/1M</th>
+            <th className="text-right px-3 py-2.5 text-zinc-400 font-semibold">Latency</th>
+            <th className="text-right px-3 py-2.5 text-zinc-400 font-semibold">Max Tokens</th>
+            <th className="text-right px-3 py-2.5 text-zinc-400 font-semibold">Dims</th>
+            <th className="text-center px-3 py-2.5 text-zinc-400 font-semibold">MRL</th>
+          </tr>
+        </thead>
+        <tbody>
+          {EMBED_MODELS.map((m, i) => (
+            <tr
+              key={m.name}
+              className={`border-b border-zinc-800/60 border-l-2 ${providerBorder(m.provider)} ${i % 2 === 0 ? "bg-zinc-900" : "bg-zinc-950"} hover:bg-zinc-800/40 transition-colors`}
+            >
+              <td className="px-3 py-2.5 font-mono text-zinc-200 font-medium">{m.name}</td>
+              <td className="px-3 py-2.5 text-zinc-400">{m.provider}</td>
+              <td className={`px-3 py-2.5 text-right font-mono font-semibold ${m.mtebScore === topMteb ? "text-green-400" : "text-zinc-300"}`}>
+                {m.mtebScore}
+                {m.mtebScore === topMteb && <span className="ml-1 text-[10px] text-green-500">▲</span>}
+              </td>
+              <td className={`px-3 py-2.5 text-right font-mono ${m.costPer1MTokens === lowestCost ? "text-emerald-400 font-semibold" : "text-zinc-300"}`}>
+                {m.costPer1MTokens === 0 ? "free" : `$${m.costPer1MTokens.toFixed(2)}`}
+                {m.costPer1MTokens === lowestCost && m.costPer1MTokens === 0 && <span className="ml-1 text-[10px] text-emerald-500">★</span>}
+              </td>
+              <td className={`px-3 py-2.5 text-right font-mono ${m.latencyMs === fastestLatency ? "text-blue-400 font-semibold" : "text-zinc-300"}`}>
+                {m.latencyMs}ms
+                {m.latencyMs === fastestLatency && <span className="ml-1 text-[10px] text-blue-500">⚡</span>}
+              </td>
+              <td className="px-3 py-2.5 text-right font-mono text-zinc-400">{m.maxTokens.toLocaleString()}</td>
+              <td className="px-3 py-2.5 text-right font-mono text-zinc-400">{m.dims.toLocaleString()}</td>
+              <td className="px-3 py-2.5 text-center">
+                {m.matryoshka
+                  ? <span className="text-violet-400 text-[11px] font-bold">✓</span>
+                  : <span className="text-zinc-700 text-[11px]">—</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="px-3 py-2 bg-zinc-950 border-t border-zinc-800 flex flex-wrap gap-4 text-[10px] text-zinc-500">
+        <span><span className="text-violet-400 font-bold">■</span> OpenAI</span>
+        <span><span className="text-emerald-400 font-bold">■</span> Voyage AI</span>
+        <span><span className="text-blue-400 font-bold">■</span> Cohere</span>
+        <span><span className="text-amber-400 font-bold">■</span> OSS (self-hosted)</span>
+        <span className="ml-auto"><span className="text-green-400">▲</span> top MTEB &nbsp; <span className="text-emerald-400">★</span> lowest cost &nbsp; <span className="text-blue-400">⚡</span> fastest</span>
+      </div>
+    </div>
+  );
+}
+
+function EmbedWizard() {
+  const [selected, setSelected] = useState(null);
+
+  const chosen = selected !== null ? USE_CASES[selected] : null;
+  const recModels = chosen
+    ? EMBED_MODELS.filter(m => chosen.best.some(b => m.name === b))
+    : [];
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-zinc-400">Select your primary use case to get a concrete model recommendation.</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {USE_CASES.map((uc, i) => (
+          <button
+            key={uc.label}
+            onClick={() => setSelected(selected === i ? null : i)}
+            className={`px-3 py-2.5 rounded-lg text-xs font-semibold text-left border transition-all ${
+              selected === i
+                ? "bg-violet-900/40 border-violet-500 text-violet-200"
+                : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white"
+            }`}
+          >
+            {uc.label}
+          </button>
+        ))}
+      </div>
+
+      {chosen && (
+        <div className="space-y-3 mt-2">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-3">
+            <div className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Recommended</div>
+            <div className="flex flex-wrap gap-2">
+              {recModels.map(m => (
+                <span key={m.name} className="px-2.5 py-1 rounded-lg bg-violet-900/30 border border-violet-700/50 text-violet-200 font-mono text-xs font-semibold">
+                  {m.name}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{chosen.why}</p>
+            <div className="rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2">
+              <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Dim recommendation: </span>
+              <span className="text-xs text-zinc-200">{chosen.dimRec}</span>
+            </div>
+          </div>
+
+          {chosen.matryoshkaTip && (
+            <div className="rounded-xl border border-violet-800/50 bg-violet-950/20 p-3 flex gap-2">
+              <span className="text-violet-400 text-sm mt-0.5 flex-shrink-0">◈</span>
+              <div>
+                <div className="text-[11px] font-semibold text-violet-300 mb-0.5">Matryoshka tip</div>
+                <p className="text-[11px] text-violet-200/80 leading-relaxed">
+                  This model supports MRL — store full-dimension embeddings but truncate to 256d at query time for 5× faster ANN search with ~5% MTEB drop. No re-embedding needed.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 space-y-1.5">
+            <div className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">Model stats</div>
+            {recModels.map(m => (
+              <div key={m.name} className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                <span className="font-mono text-zinc-400 w-40 flex-shrink-0">{m.name}</span>
+                <span className="text-zinc-400">MTEB <span className="font-mono text-green-400">{m.mtebScore}</span></span>
+                <span className="text-zinc-400">Cost <span className="font-mono text-emerald-400">{m.costPer1MTokens === 0 ? "free" : `$${m.costPer1MTokens}/1M`}</span></span>
+                <span className="text-zinc-400">Latency <span className="font-mono text-blue-400">{m.latencyMs}ms</span></span>
+                <span className="text-zinc-400">MaxCtx <span className="font-mono text-zinc-300">{m.maxTokens.toLocaleString()}</span></span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmbedMatryoshka() {
+  const levels = [
+    { dims: 1536, label: "1536d", speedup: "1×", mtebDrop: "baseline", barW: "100%", color: "bg-violet-600" },
+    { dims: 512,  label: "512d",  speedup: "3× faster", mtebDrop: "−2% MTEB", barW: "33%",  color: "bg-violet-500" },
+    { dims: 256,  label: "256d",  speedup: "5× faster", mtebDrop: "−5% MTEB", barW: "17%",  color: "bg-violet-400" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-zinc-300 leading-relaxed">
+        <span className="font-semibold text-violet-300">Matryoshka Representation Learning (MRL)</span> trains the model with a nested loss so that any
+        prefix of the embedding vector is itself a valid, meaningful embedding. At serving time you can
+        truncate from 1536d down to 256d — yielding a 5× faster similarity search — with only a ~5% MTEB score drop.
+        No re-embedding or model change required.
+      </p>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-3">
+        <div className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Nested embedding prefixes</div>
+        <div className="space-y-2">
+          {levels.map(l => (
+            <div key={l.dims} className="flex items-center gap-3">
+              <span className="font-mono text-[11px] text-zinc-400 w-12 flex-shrink-0">{l.label}</span>
+              <div className="flex-1 h-5 bg-zinc-800 rounded overflow-hidden">
+                <div className={`h-full ${l.color} rounded transition-all`} style={{ width: l.barW }} />
+              </div>
+              <span className="text-[11px] text-zinc-400 w-24 flex-shrink-0">{l.speedup}</span>
+              <span className="text-[11px] text-zinc-500 w-20 flex-shrink-0">{l.mtebDrop}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-zinc-600">Bar width represents fraction of dimensions used. The first 256 values already encode the most salient structure.</p>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-zinc-800">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-zinc-800 bg-zinc-900">
+              <th className="text-left px-3 py-2 text-zinc-400 font-semibold">Dimensionality</th>
+              <th className="text-left px-3 py-2 text-zinc-400 font-semibold">ANN Search Speed</th>
+              <th className="text-left px-3 py-2 text-zinc-400 font-semibold">MTEB Impact</th>
+              <th className="text-left px-3 py-2 text-zinc-400 font-semibold">Storage vs 1536d</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b border-zinc-800/60 bg-zinc-900 hover:bg-zinc-800/40">
+              <td className="px-3 py-2 font-mono text-violet-300 font-semibold">1536d</td>
+              <td className="px-3 py-2 text-zinc-300">Baseline</td>
+              <td className="px-3 py-2 text-green-400 font-mono">Baseline</td>
+              <td className="px-3 py-2 font-mono text-zinc-400">100%</td>
+            </tr>
+            <tr className="border-b border-zinc-800/60 bg-zinc-950 hover:bg-zinc-800/40">
+              <td className="px-3 py-2 font-mono text-violet-300 font-semibold">512d</td>
+              <td className="px-3 py-2 text-zinc-300">3× faster</td>
+              <td className="px-3 py-2 text-amber-400 font-mono">−2%</td>
+              <td className="px-3 py-2 font-mono text-zinc-400">33%</td>
+            </tr>
+            <tr className="bg-zinc-900 hover:bg-zinc-800/40">
+              <td className="px-3 py-2 font-mono text-violet-300 font-semibold">256d</td>
+              <td className="px-3 py-2 text-zinc-300">5× faster</td>
+              <td className="px-3 py-2 text-amber-400 font-mono">−5%</td>
+              <td className="px-3 py-2 font-mono text-zinc-400">17%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
+        <div className="text-[11px] font-semibold text-zinc-400 mb-1.5">Models with MRL support</div>
+        <div className="flex flex-wrap gap-2">
+          {EMBED_MODELS.filter(m => m.matryoshka).map(m => (
+            <span key={m.name} className="px-2.5 py-1 rounded-lg bg-violet-900/30 border border-violet-700/50 text-violet-200 font-mono text-xs">
+              {m.name}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmbeddingModelSelector() {
+  const [tab, setTab] = useState("TABLE");
+  const tabs = [
+    { id: "TABLE",  label: "Model Comparison" },
+    { id: "WIZARD", label: "Use-Case Wizard" },
+    { id: "MRL",    label: "Matryoshka" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Pick the right embedding model for your use case — compare MTEB scores, costs, and latency, then get a concrete recommendation."
+        steps={[
+          "Model Comparison: scan the table — green = top MTEB, emerald = lowest cost, blue = fastest",
+          "Use-Case Wizard: select your use case to get a direct model recommendation + config",
+          "Matryoshka: learn how MRL lets you truncate dims at serving time for free speed gains",
+          "Left border colour = provider: violet OpenAI, emerald Voyage, blue Cohere, amber OSS",
+        ]}
+      />
+
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2 ${
+              tab === t.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"
+            }`}
+          >
+            <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${tab === t.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{t.id}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "TABLE"  && <EmbedModelTable />}
+      {tab === "WIZARD" && <EmbedWizard />}
+      {tab === "MRL"    && <EmbedMatryoshka />}
+    </div>
+  );
+}
+
+
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
@@ -3043,6 +3447,7 @@ const EXPLORE_MODULES = [
   { id: "llm_matrix",  label: "Model Matrix",          tag: "COMPARE",  component: LLMMatrixExplorer, fidelity: { tier: "simplified",  note: "Curated comparison based on published benchmarks — not live API data" } },
   { id: "semcache",   label: "Semantic Caching",    tag: "CACHE",    component: SemanticCachingExplorer, fidelity: { tier: "simplified", note: "Illustrative similarity scores — precomputed, not live embedding comparison" } },
   { id: "llmops",  label: "LLMOps Tool Comparison", tag: "OBSERVE", component: LLMOpsComparison, fidelity: { tier: "simplified", note: "Based on published documentation and benchmarks as of mid-2026" } },
+  { id: "embmodels", label: "Embedding Models", tag: "EMBED", group: "RETRIEVAL", component: EmbeddingModelSelector },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {

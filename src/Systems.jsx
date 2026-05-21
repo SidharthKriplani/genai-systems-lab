@@ -5874,49 +5874,123 @@ function AIDeploymentArchitecture() {
 // ─── TRANSFORMER ARCHITECTURE VISUAL ─────────────────────────────────────────
 
 const TX_VIEWS = [
-  { id: "full",      label: "Full Architecture" },
-  { id: "attn",      label: "Self-Attention" },
-  { id: "block",     label: "Transformer Block" },
-  { id: "deconly",   label: "Decoder-Only" },
+  { id: "full",     label: "Full Architecture" },
+  { id: "deconly",  label: "Decoder-Only (LLMs)" },
+  { id: "attn",     label: "Attention Mechanism" },
+  { id: "variants", label: "Modern Variants" },
 ];
-
-// Attention animation: CSS-driven, no JS timers needed
-// Static SVGs for everything else — deliberate decision to avoid fake interactivity
 
 function TransformerArchitecture() {
   const [view, setView] = useState("full");
+  const [activeBlock, setActiveBlock] = useState(null);
   const [animKey, setAnimKey] = useState(0);
+  const [focusToken, setFocusToken] = useState(1); // index into tokens array
 
-  function switchView(v) { setView(v); setAnimKey(k => k + 1); }
+  function switchView(v) { setView(v); setActiveBlock(null); setAnimKey(k => k + 1); }
+
+  const BLOCK_DETAILS = {
+    "Input Embedding": {
+      color: "#e4e4e7",
+      title: "Input Embedding",
+      body: "Converts each discrete token ID into a dense vector of dimension d_model (e.g. 512 or 4096). These vectors are learned parameters — the model adjusts them during training so that semantically similar tokens end up near each other in embedding space.",
+      formula: "E ∈ ℝ^{vocab × d_model}",
+    },
+    "Positional Encoding": {
+      color: "#a78bfa",
+      title: "Positional Encoding",
+      body: "Transformers have no built-in sense of order — attention is a set operation. Positional encodings inject sequence position information. Original paper: sinusoidal fixed encodings. Modern LLMs: learned or RoPE (Rotary Position Embedding).",
+      formula: "PE(pos, 2i) = sin(pos / 10000^{2i/d})",
+    },
+    "Multi-Head Attention": {
+      color: "#93c5fd",
+      title: "Multi-Head Attention",
+      body: "Runs h parallel attention heads, each learning to attend to different relationship types. Queries, Keys, Values are linearly projected to smaller subspaces. Outputs are concatenated and projected back. Complexity: O(n²·d) — quadratic in sequence length.",
+      formula: "Attention(Q,K,V) = softmax(QKᵀ/√d_k)·V",
+    },
+    "Masked Multi-Head Attention": {
+      color: "#93c5fd",
+      title: "Masked Multi-Head Attention",
+      body: "Same as multi-head attention but with a causal mask — each token can only attend to itself and earlier positions. This prevents information leakage from future tokens during training. At inference, the KV cache stores past keys/values so they aren't recomputed.",
+      formula: "mask(i,j) = −∞ if j > i else 0",
+    },
+    "Add & Norm": {
+      color: "#86efac",
+      title: "Add & Norm (Residual + LayerNorm)",
+      body: "The residual connection (x + sublayer(x)) lets gradients flow directly to earlier layers, enabling training of very deep networks. LayerNorm normalises activations across the feature dimension — stabilises training and speeds convergence. Modern LLMs use Pre-Norm (norm before sublayer) rather than Post-Norm.",
+      formula: "output = LayerNorm(x + Sublayer(x))",
+    },
+    "Feed-Forward (FFN)": {
+      color: "#d8b4fe",
+      title: "Feed-Forward Network (FFN)",
+      body: "Two linear transformations with a non-linearity: expands to 4× d_model then projects back. Operates independently on each token position — no cross-token interaction here. This is where most model parameters live. Modern LLMs replace ReLU with SwiGLU or GELU for better gradient flow.",
+      formula: "FFN(x) = max(0, xW₁+b₁)W₂+b₂",
+    },
+    "Cross-Attention (enc→dec)": {
+      color: "#fde68a",
+      title: "Cross-Attention (Encoder → Decoder)",
+      body: "Unique to encoder-decoder models (T5, BART, original Transformer). The decoder's queries attend to the encoder's keys and values, allowing the decoder to focus on relevant parts of the input sequence at each generation step. Dropped in decoder-only LLMs.",
+      formula: "Q=decoder, K=V=encoder output",
+    },
+    "Output Embedding (shifted)": {
+      color: "#e4e4e7",
+      title: "Output Embedding (Right-Shifted)",
+      body: "The decoder receives the target sequence shifted right by one position — the first input token is a special <BOS> (beginning of sentence) token. This teacher-forcing setup means the decoder always gets the correct previous token during training, making training stable.",
+      formula: "input[t] = target[t-1], input[0] = <BOS>",
+    },
+  };
+
+  const encBlocks = [
+    { label:"Input Embedding",       y:48,  fill:"#27272a", text:"#e4e4e7" },
+    { label:"Positional Encoding",   y:90,  fill:"#1c1c22", text:"#a78bfa" },
+    { label:"Multi-Head Attention",  y:140, fill:"#1e3a5f", text:"#93c5fd" },
+    { label:"Add & Norm",            y:190, fill:"#1c2a1c", text:"#86efac" },
+    { label:"Feed-Forward (FFN)",    y:232, fill:"#2a1c2a", text:"#d8b4fe" },
+    { label:"Add & Norm",            y:274, fill:"#1c2a1c", text:"#86efac" },
+  ];
+  const decBlocks = [
+    { label:"Output Embedding (shifted)",   y:48,  fill:"#27272a", text:"#e4e4e7" },
+    { label:"Positional Encoding",           y:90,  fill:"#1c1c22", text:"#a78bfa" },
+    { label:"Masked Multi-Head Attention",   y:140, fill:"#1e3a5f", text:"#93c5fd" },
+    { label:"Add & Norm",                    y:190, fill:"#1c2a1c", text:"#86efac" },
+    { label:"Cross-Attention (enc→dec)",     y:232, fill:"#2a2a1c", text:"#fde68a" },
+    { label:"Feed-Forward (FFN)",            y:274, fill:"#2a1c2a", text:"#d8b4fe" },
+  ];
+
+  const TOKENS = ["The", "cat", "sat", "on", "mat"];
+  // Attention weights per focus token (rows)
+  const ATTN_WEIGHTS = [
+    [0.60, 0.15, 0.10, 0.08, 0.07],
+    [0.08, 0.55, 0.22, 0.07, 0.08],
+    [0.05, 0.18, 0.52, 0.14, 0.11],
+    [0.04, 0.08, 0.20, 0.54, 0.14],
+    [0.06, 0.10, 0.15, 0.18, 0.51],
+  ];
+
+  const VARIANTS = [
+    { feature: "Positional Encoding", original: "Sinusoidal (fixed)", gpt: "Learned absolute", rope: "RoPE (rotary)", gqa: "RoPE", swiglu: "RoPE", rmsnorm: "RoPE", why: "RoPE generalises to longer contexts; encodes relative distance via rotation" },
+    { feature: "Attention", original: "Multi-Head Attention", gpt: "Multi-Head Attention", rope: "MHA", gqa: "Grouped-Query Attn", swiglu: "GQA", rmsnorm: "GQA", why: "GQA shares KV heads across query groups — cuts KV cache memory 4-8×" },
+    { feature: "FFN Activation", original: "ReLU", gpt: "GELU", rope: "GELU", gqa: "GELU", swiglu: "SwiGLU", rmsnorm: "SwiGLU", why: "SwiGLU (gated linear unit) improves loss at same param count, used in LLaMA/Gemma" },
+    { feature: "Normalisation", original: "Post-LayerNorm", gpt: "Pre-LayerNorm", rope: "Pre-LayerNorm", gqa: "Pre-LayerNorm", swiglu: "Pre-LayerNorm", rmsnorm: "RMSNorm", why: "RMSNorm drops mean-centering — faster, numerically stable, no accuracy loss" },
+    { feature: "Bias terms", original: "Bias in all layers", gpt: "No bias (GPT-NeoX)", rope: "No bias", gqa: "No bias", swiglu: "No bias", rmsnorm: "No bias", why: "Removing biases simplifies sharding across GPUs; negligible accuracy impact" },
+    { feature: "Context length", original: "512 (base)", gpt: "2048→32k", rope: "4k→1M+ (NTK)", gqa: "128k", swiglu: "128k", rmsnorm: "200k+", why: "RoPE + NTK/YaRN interpolation allows training on short context and extrapolating" },
+  ];
 
   return (
     <div className="space-y-4">
       <style>{`
-        @keyframes tx-flow {
-          0%   { opacity: 0; transform: translateY(8px); }
-          15%  { opacity: 1; transform: translateY(0); }
-          85%  { opacity: 1; transform: translateY(0); }
-          100% { opacity: 0; transform: translateY(-8px); }
-        }
-        @keyframes attn-pulse {
-          0%, 100% { opacity: 0.15; }
-          50%       { opacity: 0.9; }
-        }
         @keyframes attn-line {
-          from { stroke-dashoffset: 60; opacity: 0; }
+          from { stroke-dashoffset: 80; opacity: 0; }
           to   { stroke-dashoffset: 0;  opacity: 1; }
         }
-        @keyframes weight-fill {
-          from { width: 0%; }
-          to   { width: var(--w); }
+        @keyframes heatmap-pop {
+          from { opacity: 0; transform: scaleY(0.5); }
+          to   { opacity: 1; transform: scaleY(1); }
         }
-        .tx-block { animation: tx-flow 3s ease-in-out infinite; }
-        .attn-weight { animation: attn-pulse 2s ease-in-out infinite; }
-        .attn-arrow  { animation: attn-line  0.6s ease-out forwards; }
-        .w-fill      { animation: weight-fill 1s ease-out forwards; }
+        .attn-arrow  { animation: attn-line 0.5s ease-out forwards; }
+        .heatmap-cell { animation: heatmap-pop 0.3s ease-out forwards; }
       `}</style>
 
-      {/* View tabs */}
+      {/* Tab bar */}
       <div className="flex gap-2 flex-wrap">
         {TX_VIEWS.map(v => (
           <button key={v.id} onClick={() => switchView(v.id)}
@@ -5926,45 +6000,47 @@ function TransformerArchitecture() {
         ))}
       </div>
 
-      {/* ── FULL ARCHITECTURE ── */}
+      {/* ── TAB 1: FULL ARCHITECTURE ── */}
       {view === "full" && (
         <div className="space-y-3">
-          <p className="text-xs text-zinc-500">The encoder-decoder Transformer (original "Attention Is All You Need"). Modern LLMs use decoder-only — see that view.</p>
+          <p className="text-xs text-zinc-500">Click any block to see what it does. The encoder-decoder Transformer (Vaswani et al., 2017). Modern LLMs use decoder-only — see that tab.</p>
           <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#08080a" }}>
-            <svg viewBox="0 0 560 400" className="w-full" style={{ display:"block" }}>
-              {/* Left: Encoder */}
-              <text x="140" y="24" textAnchor="middle" fontSize="11" fontFamily="ui-monospace,monospace" fill="#a1a1aa" fontWeight="600" letterSpacing="0.1em">ENCODER</text>
-              {[
-                { label:"Input Embedding", y:48,  fill:"#27272a", text:"#e4e4e7" },
-                { label:"Positional Encoding", y:90, fill:"#1c1c22", text:"#a1a1aa" },
-                { label:"Multi-Head Attention", y:140, fill:"#1e3a5f", text:"#93c5fd" },
-                { label:"Add & Norm",        y:190, fill:"#1c2a1c", text:"#86efac" },
-                { label:"Feed-Forward (FFN)", y:232, fill:"#2a1c2a", text:"#d8b4fe" },
-                { label:"Add & Norm",        y:274, fill:"#1c2a1c", text:"#86efac" },
-              ].map((b, i) => (
-                <g key={i}>
-                  <rect x="40" y={b.y} width="200" height="32" rx="6" fill={b.fill} stroke="#3f3f46" strokeWidth="1"/>
-                  <text x="140" y={b.y + 20} textAnchor="middle" fontSize="10" fontFamily="ui-sans-serif,sans-serif" fill={b.text}>{b.label}</text>
-                </g>
-              ))}
-              <text x="140" y="330" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">× N layers</text>
+            <svg viewBox="0 0 560 420" className="w-full" style={{ display:"block" }}>
+              <defs>
+                <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#52525b"/>
+                </marker>
+              </defs>
+              {/* Encoder column */}
+              <text x="140" y="22" textAnchor="middle" fontSize="11" fontFamily="ui-monospace,monospace" fill="#a1a1aa" fontWeight="600" letterSpacing="0.08em">ENCODER</text>
+              {encBlocks.map((b, i) => {
+                const isActive = activeBlock === b.label;
+                return (
+                  <g key={i} style={{ cursor:"pointer" }} onClick={() => setActiveBlock(isActive ? null : b.label)}>
+                    <rect x="40" y={b.y} width="200" height="32" rx="6"
+                      fill={isActive ? b.fill.replace("1c","2a").replace("1e","2e") : b.fill}
+                      stroke={isActive ? b.text : "#3f3f46"} strokeWidth={isActive ? 2 : 1}/>
+                    <text x="140" y={b.y + 20} textAnchor="middle" fontSize="10" fontFamily="ui-sans-serif,sans-serif" fill={b.text}>{b.label}</text>
+                    {isActive && <rect x="40" y={b.y} width="200" height="32" rx="6" fill="transparent" stroke={b.text} strokeWidth="2" opacity="0.4"/>}
+                  </g>
+                );
+              })}
+              <text x="140" y="332" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">× N layers</text>
 
-              {/* Right: Decoder */}
-              <text x="420" y="24" textAnchor="middle" fontSize="11" fontFamily="ui-monospace,monospace" fill="#a1a1aa" fontWeight="600" letterSpacing="0.1em">DECODER</text>
-              {[
-                { label:"Output Embedding (shifted)", y:48,  fill:"#27272a", text:"#e4e4e7" },
-                { label:"Positional Encoding",         y:90,  fill:"#1c1c22", text:"#a1a1aa" },
-                { label:"Masked Multi-Head Attention", y:140, fill:"#1e3a5f", text:"#93c5fd" },
-                { label:"Add & Norm",                  y:190, fill:"#1c2a1c", text:"#86efac" },
-                { label:"Cross-Attention (enc→dec)",   y:232, fill:"#2a2a1c", text:"#fde68a" },
-                { label:"Feed-Forward (FFN)",          y:274, fill:"#2a1c2a", text:"#d8b4fe" },
-              ].map((b, i) => (
-                <g key={i}>
-                  <rect x="320" y={b.y} width="200" height="32" rx="6" fill={b.fill} stroke="#3f3f46" strokeWidth="1"/>
-                  <text x="420" y={b.y + 20} textAnchor="middle" fontSize="10" fontFamily="ui-sans-serif,sans-serif" fill={b.text}>{b.label}</text>
-                </g>
-              ))}
-              <text x="420" y="330" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">× N layers</text>
+              {/* Decoder column */}
+              <text x="420" y="22" textAnchor="middle" fontSize="11" fontFamily="ui-monospace,monospace" fill="#a1a1aa" fontWeight="600" letterSpacing="0.08em">DECODER</text>
+              {decBlocks.map((b, i) => {
+                const isActive = activeBlock === b.label;
+                return (
+                  <g key={i} style={{ cursor:"pointer" }} onClick={() => setActiveBlock(isActive ? null : b.label)}>
+                    <rect x="320" y={b.y} width="200" height="32" rx="6"
+                      fill={b.fill} stroke={isActive ? b.text : "#3f3f46"} strokeWidth={isActive ? 2 : 1}/>
+                    <text x="420" y={b.y + 20} textAnchor="middle" fontSize="10" fontFamily="ui-sans-serif,sans-serif" fill={b.text}>{b.label}</text>
+                    {isActive && <rect x="320" y={b.y} width="200" height="32" rx="6" fill="transparent" stroke={b.text} strokeWidth="2" opacity="0.4"/>}
+                  </g>
+                );
+              })}
+              <text x="420" y="332" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">× N layers</text>
 
               {/* Cross-attention arrow */}
               <path d="M240 246 Q280 246 320 248" stroke="#fde68a" strokeWidth="1.5" fill="none" strokeDasharray="4 2" opacity="0.6"/>
@@ -5972,118 +6048,255 @@ function TransformerArchitecture() {
               <text x="280" y="240" textAnchor="middle" fontSize="8" fill="#fde68a" opacity="0.7">cross-attn</text>
 
               {/* Output */}
-              <rect x="320" y="354" width="200" height="32" rx="6" fill="#1c2a1c" stroke="#3f3f46" strokeWidth="1"/>
-              <text x="420" y="374" textAnchor="middle" fontSize="10" fontFamily="ui-sans-serif,sans-serif" fill="#86efac">Linear + Softmax → Probabilities</text>
+              <rect x="320" y="356" width="200" height="32" rx="6" fill="#1c2a1c" stroke="#3f3f46" strokeWidth="1"/>
+              <text x="420" y="376" textAnchor="middle" fontSize="10" fontFamily="ui-sans-serif,sans-serif" fill="#86efac">Linear + Softmax → Probabilities</text>
 
-              {/* Arrows */}
-              {[[140,80,140,140],[140,222,140,232],[140,264,140,274],
-                [420,80,420,140],[420,222,420,232],[420,306,420,354]].map(([x1,y1,x2,y2],i) => (
+              {/* Flow arrows */}
+              {[[140,80,140,140],[140,172,140,190],[140,222,140,232],[140,306,140,330],
+                [420,80,420,140],[420,172,420,190],[420,264,420,274],[420,306,420,354]].map(([x1,y1,x2,y2],i) => (
                 <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#52525b" strokeWidth="1" markerEnd="url(#arr)"/>
               ))}
-              <defs>
-                <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-                  <path d="M0,0 L6,3 L0,6 Z" fill="#52525b"/>
-                </marker>
-              </defs>
+
+              {/* Hint */}
+              <text x="280" y="404" textAnchor="middle" fontSize="8" fill="#52525b" fontFamily="ui-monospace,monospace">↑ click any block for details</text>
             </svg>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { k:"Encoder", v:"Processes input sequence bidirectionally" },
-              { k:"Decoder", v:"Generates output token by token, auto-regressive" },
-              { k:"Cross-Attention", v:"Decoder attends to encoder's output at each layer" },
-            ].map(c => (
-              <div key={c.k} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
-                <p className="text-[10px] font-bold text-zinc-500 uppercase mb-1">{c.k}</p>
-                <p className="text-xs text-zinc-300">{c.v}</p>
-              </div>
-            ))}
+
+          {/* Detail panel */}
+          {activeBlock && BLOCK_DETAILS[activeBlock] && (
+            <div className="rounded-xl border p-4 space-y-2 transition-all" style={{ borderColor: BLOCK_DETAILS[activeBlock].color + "55", background: "#0d0d12" }}>
+              <p className="text-sm font-bold" style={{ color: BLOCK_DETAILS[activeBlock].color }}>{BLOCK_DETAILS[activeBlock].title}</p>
+              <p className="text-xs text-zinc-300 leading-relaxed">{BLOCK_DETAILS[activeBlock].body}</p>
+              <p className="font-mono text-[10px] px-2 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 inline-block">{BLOCK_DETAILS[activeBlock].formula}</p>
+            </div>
+          )}
+
+          {/* Key insight */}
+          <div className="rounded-lg border border-amber-800/40 bg-amber-950/20 px-4 py-3">
+            <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mb-1">Key Insight</p>
+            <p className="text-xs text-zinc-300">The encoder-decoder split is elegant but redundant for pure generation tasks. After 2020, every large-scale LLM converged on decoder-only — simpler to train, easier to serve, and equally capable for language tasks.</p>
           </div>
         </div>
       )}
 
-      {/* ── SELF-ATTENTION (ANIMATED) ── */}
+      {/* ── TAB 2: DECODER-ONLY ── */}
+      {view === "deconly" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">GPT-4o, Claude, Llama, Gemini — all decoder-only Transformers. One token generated per forward pass, attending only to prior tokens via causal masking.</p>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#08080a" }}>
+            <svg viewBox="0 0 560 430" className="w-full" style={{ display:"block" }}>
+              <defs>
+                <marker id="dc-arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#52525b"/>
+                </marker>
+                <marker id="dc-arr-blue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#3b82f6"/>
+                </marker>
+                <marker id="dc-arr-amber" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#f59e0b"/>
+                </marker>
+              </defs>
+
+              {/* Input tokens row */}
+              <text x="14" y="30" fontSize="8" fill="#52525b" fontFamily="ui-monospace,monospace">INPUT</text>
+              {["The","Eiffel","Tower","is","in","Paris"].map((tok, i) => {
+                const isGen = i === 5;
+                return (
+                  <g key={i}>
+                    <rect x={16+i*88} y={14} width={78} height={28} rx="5"
+                      fill={isGen ? "#172554" : "#18181b"} stroke={isGen ? "#3b82f6" : "#3f3f46"} strokeWidth={isGen?1.5:1}/>
+                    <text x={55+i*88} y={32} textAnchor="middle" fontSize="10"
+                      fill={isGen ? "#93c5fd" : "#9ca3af"} fontWeight={isGen?"700":"400"}>{tok}</text>
+                  </g>
+                );
+              })}
+              <text x="549" y="30" fontSize="8" fill="#f59e0b" textAnchor="end">← generated</text>
+
+              {/* Stack of decoder blocks — simplified */}
+              <text x="280" y="60" textAnchor="middle" fontSize="8" fill="#52525b" fontFamily="ui-monospace,monospace">↓ token embeddings + RoPE positional encoding</text>
+
+              {[
+                { label:"Masked Self-Attention  (causal mask)", fill:"#1e3a5f", text:"#93c5fd", y:72 },
+                { label:"Add & RMSNorm",                        fill:"#1c2a1c", text:"#86efac", y:112 },
+                { label:"Feed-Forward (SwiGLU) × 4",            fill:"#2a1c2a", text:"#d8b4fe", y:144 },
+                { label:"Add & RMSNorm",                        fill:"#1c2a1c", text:"#86efac", y:184 },
+              ].map((b, i) => (
+                <g key={i}>
+                  <rect x="80" y={b.y} width="400" height="30" rx="6" fill={b.fill} stroke="#3f3f46" strokeWidth="1"/>
+                  <text x="280" y={b.y+19} textAnchor="middle" fontSize="10" fill={b.text}>{b.label}</text>
+                </g>
+              ))}
+              <text x="280" y="228" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">× N layers  (32 for Llama-3-8B, 80 for Llama-3-70B)</text>
+
+              {/* Autoregressive loop arrow */}
+              <rect x="80" y="244" width="400" height="28" rx="6" fill="#1c2a1c" stroke="#3f3f46" strokeWidth="1"/>
+              <text x="280" y="262" textAnchor="middle" fontSize="10" fill="#86efac">Linear (unembedding) + Softmax → logits over vocab</text>
+
+              {/* Causal mask grid */}
+              <text x="280" y="294" textAnchor="middle" fontSize="8" fill="#52525b" fontFamily="ui-monospace,monospace">causal attention mask — lower-triangular</text>
+              {[0,1,2,3,4,5].map(row =>
+                [0,1,2,3,4,5].map(col => {
+                  const visible = col <= row;
+                  return (
+                    <rect key={`${row}-${col}`}
+                      x={160+col*36} y={302+row*18} width={32} height={15} rx="2"
+                      fill={visible ? "#1d4ed8" : "#18181b"}
+                      opacity={visible ? (col===row ? 0.95 : 0.3+col*0.08) : 0.06}/>
+                  );
+                })
+              )}
+              {["The","Eiff","Towe","is","in","Par"].map((t,i) => (
+                <text key={i} x={176+i*36} y={300} textAnchor="middle" fontSize="6.5" fill="#52525b">{t}</text>
+              ))}
+              {["The","Eiff","Towe","is","in","Par"].map((t,i) => (
+                <text key={i} x={154} y={312+i*18} textAnchor="end" fontSize="6.5" fill="#52525b">{t}</text>
+              ))}
+
+              {/* KV cache callout */}
+              <rect x="370" y="302" width="168" height="74" rx="8" fill="#1c1a0a" stroke="#f59e0b" strokeWidth="1"/>
+              <text x="454" y="320" textAnchor="middle" fontSize="9.5" fill="#f59e0b" fontWeight="600">KV Cache</text>
+              <text x="454" y="337" textAnchor="middle" fontSize="8" fill="#a1a1aa">K, V per layer cached</text>
+              <text x="454" y="352" textAnchor="middle" fontSize="8" fill="#a1a1aa">for all prior tokens.</text>
+              <text x="454" y="367" textAnchor="middle" fontSize="8" fill="#a1a1aa">Only new Q computed</text>
+
+              {/* Autoregressive arrow */}
+              <path d="M480,272 Q540,272 540,14 Q540,0 529,0" stroke="#3b82f6" strokeWidth="1.5" fill="none" strokeDasharray="5 3" opacity="0.5"/>
+              <text x="548" y="160" fontSize="8" fill="#3b82f6" opacity="0.7" textAnchor="middle" transform="rotate(90 548 160)">autoregressive</text>
+            </svg>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { k:"Causal masking", v:"Token i attends only to positions 0…i. Enforced via −∞ mask before softmax. Prevents future-token leakage during training.", c:"#93c5fd" },
+              { k:"KV Cache", v:"At inference, keys & values from all prior tokens are stored. Each new step only computes Q — turns O(n²) attention into O(n) per step.", c:"#fde68a" },
+              { k:"Autoregressive loop", v:"Output token is sampled from the logit distribution, appended to context, and fed back as input for the next step. Repeat until <EOS>.", c:"#86efac" },
+              { k:"Why no encoder?", v:"Encoder-decoder needs 2× parameters and a separate training objective. Decoder-only at scale proved equally capable with simpler pretraining.", c:"#d8b4fe" },
+            ].map(c => (
+              <div key={c.k} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+                <p className="text-[10px] font-bold uppercase mb-1" style={{ color:c.c }}>{c.k}</p>
+                <p className="text-xs text-zinc-300">{c.v}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Key insight */}
+          <div className="rounded-lg border border-violet-800/40 bg-violet-950/20 px-4 py-3">
+            <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wide mb-1">Key Insight</p>
+            <p className="text-xs text-zinc-300">The KV cache is the single most important inference optimization. Without it, each new token requires recomputing attention over the entire context. With it, inference scales linearly with generation length — at the cost of GPU memory proportional to batch × context × layers × 2 × d_head.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 3: ATTENTION MECHANISM ── */}
       {view === "attn" && (
         <div className="space-y-3">
-          <p className="text-xs text-zinc-500">Self-attention lets every token attend to every other token. The weights show which tokens are most relevant to each other — this is where context understanding happens.</p>
+          <p className="text-xs text-zinc-500">Click a token to see its attention pattern. Attention = softmax(QKᵀ/√d_k) × V — a weighted sum of values, where weights reflect query-key similarity.</p>
+
+          {/* Token selector */}
+          <div className="flex gap-2 flex-wrap">
+            {TOKENS.map((tok, i) => (
+              <button key={i} onClick={() => setFocusToken(i)}
+                className={`px-3 py-1 rounded-lg text-xs font-mono font-bold border transition-colors ${focusToken === i ? "bg-amber-600 border-amber-500 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+                "{tok}"
+              </button>
+            ))}
+          </div>
+
           <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#08080a" }}>
-            <svg key={animKey} viewBox="0 0 560 340" className="w-full" style={{ display:"block" }}>
+            <svg key={`${animKey}-${focusToken}`} viewBox="0 0 560 380" className="w-full" style={{ display:"block" }}>
               <defs>
                 <marker id="attn-arr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto">
                   <path d="M0,0 L5,2.5 L0,5 Z" fill="#fbbf24"/>
                 </marker>
               </defs>
 
-              {/* Tokens — input row */}
-              {["The","cat","sat","on","mat"].map((tok, i) => (
-                <g key={i}>
-                  <rect x={60 + i*90} y={20} width={70} height={28} rx="5" fill="#1e293b" stroke="#334155" strokeWidth="1"/>
-                  <text x={95 + i*90} y={38} textAnchor="middle" fontSize="11" fontFamily="ui-sans-serif,sans-serif" fill="#cbd5e1">{tok}</text>
-                </g>
-              ))}
-              <text x="20" y="38" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">input</text>
+              {/* Formula bar */}
+              <rect x="100" y="10" width="360" height="24" rx="5" fill="#1c1c22" stroke="#3f3f46"/>
+              <text x="280" y="26" textAnchor="middle" fontSize="10" fontFamily="ui-monospace,monospace" fill="#a1a1aa">Attention(Q,K,V) = softmax( QKᵀ / √d_k ) · V</text>
 
-              {/* Q K V rows */}
-              {[
-                { label:"Q", y:90,  color:"#93c5fd", bg:"#1e3a5f" },
-                { label:"K", y:130, color:"#fde68a", bg:"#2a2a1c" },
-                { label:"V", y:170, color:"#86efac", bg:"#1c2a1c" },
-              ].map(row => (
-                <g key={row.label}>
-                  <text x="30" y={row.y+16} textAnchor="middle" fontSize="12" fontFamily="ui-monospace,monospace" fontWeight="700" fill={row.color}>{row.label}</text>
-                  {[0,1,2,3,4].map(i => (
-                    <rect key={i} x={60+i*90} y={row.y} width={70} height={24} rx="4" fill={row.bg} stroke={row.color} strokeWidth="0.5" opacity="0.8"/>
-                  ))}
-                </g>
-              ))}
+              {/* Input tokens */}
+              {TOKENS.map((tok, i) => {
+                const isFocus = i === focusToken;
+                return (
+                  <g key={i} style={{ cursor:"pointer" }} onClick={() => setFocusToken(i)}>
+                    <rect x={55+i*90} y={46} width={76} height={28} rx="5"
+                      fill={isFocus ? "#1e3a5f" : "#18181b"} stroke={isFocus ? "#3b82f6" : "#3f3f46"} strokeWidth={isFocus?2:1}/>
+                    <text x={93+i*90} y={64} textAnchor="middle" fontSize="11"
+                      fill={isFocus ? "#93c5fd" : "#9ca3af"} fontWeight={isFocus?"700":"400"}>{tok}</text>
+                  </g>
+                );
+              })}
+              <text x="20" y="64" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">tokens</text>
 
-              {/* Attention weight heatmap for "cat" */}
-              <text x="280" y="222" textAnchor="middle" fontSize="9" fill="#a1a1aa" fontFamily="ui-monospace,monospace">attention weights for "cat"</text>
-              {[
-                { tok:"The", w:0.08, idx:0 },
-                { tok:"cat", w:0.55, idx:1 },
-                { tok:"sat", w:0.22, idx:2 },
-                { tok:"on",  w:0.07, idx:3 },
-                { tok:"mat", w:0.08, idx:4 },
-              ].map(a => (
-                <g key={a.tok}>
-                  <rect x={60+a.idx*90} y={234} width={70} height={14} rx="3" fill="#27272a"/>
-                  <rect x={60+a.idx*90} y={234} width={0} height={14} rx="3" fill="#fbbf24"
-                    style={{"--w":`${a.w*100}%`}}
-                    className="w-fill"/>
-                  <text x={95+a.idx*90} y={244} textAnchor="middle" fontSize="8" fill="#e4e4e7">{a.w.toFixed(2)}</text>
-                </g>
+              {/* Q row — focus token */}
+              <text x="20" y="118" fontSize="11" fontFamily="ui-monospace,monospace" fontWeight="700" fill="#93c5fd" textAnchor="middle">Q</text>
+              <rect x={55+focusToken*90} y={100} width={76} height={24} rx="4" fill="#1e3a5f" stroke="#93c5fd" strokeWidth="1.5"/>
+              <text x={93+focusToken*90} y={116} textAnchor="middle" fontSize="9" fill="#93c5fd">query</text>
+
+              {/* K row — all tokens */}
+              <text x="20" y="158" fontSize="11" fontFamily="ui-monospace,monospace" fontWeight="700" fill="#fde68a" textAnchor="middle">K</text>
+              {TOKENS.map((_, i) => (
+                <rect key={i} x={55+i*90} y={140} width={76} height={24} rx="4" fill="#2a2a1c" stroke="#fde68a" strokeWidth="0.5" opacity="0.8"/>
               ))}
 
-              {/* Animated arrows from "cat" Q to each K */}
-              {[0,1,2,3,4].map((i, idx) => (
-                <line key={i}
-                  className="attn-arrow"
-                  x1={185} y1={102}
-                  x2={95+i*90} y2={130}
-                  stroke="#fbbf24" strokeWidth={i===1?2:0.8}
-                  strokeDasharray="60" strokeDashoffset="60"
-                  opacity="0"
-                  markerEnd="url(#attn-arr)"
-                  style={{ animationDelay:`${idx*0.15}s` }}
-                />
+              {/* Animated query→key arrows */}
+              {TOKENS.map((_, i) => {
+                const w = ATTN_WEIGHTS[focusToken][i];
+                return (
+                  <line key={i}
+                    className="attn-arrow"
+                    x1={93+focusToken*90} y1={112}
+                    x2={93+i*90} y2={140}
+                    stroke="#fbbf24"
+                    strokeWidth={0.5 + w * 3}
+                    strokeDasharray="80" strokeDashoffset="80"
+                    opacity="0"
+                    markerEnd="url(#attn-arr)"
+                    style={{ animationDelay:`${i*0.1}s` }}
+                  />
+                );
+              })}
+
+              {/* V row */}
+              <text x="20" y="196" fontSize="11" fontFamily="ui-monospace,monospace" fontWeight="700" fill="#86efac" textAnchor="middle">V</text>
+              {TOKENS.map((_, i) => (
+                <rect key={i} x={55+i*90} y={178} width={76} height={24} rx="4" fill="#1c2a1c" stroke="#86efac" strokeWidth="0.5" opacity="0.8"/>
               ))}
 
-              {/* Weighted sum arrow */}
-              <line x1="185" y1="194" x2="185" y2="218" stroke="#86efac" strokeWidth="2" markerEnd="url(#attn-arr)" opacity="0.8"/>
-              <text x="200" y="213" fontSize="9" fill="#86efac">weighted sum of V</text>
+              {/* Heatmap label */}
+              <text x="280" y="228" textAnchor="middle" fontSize="9" fill="#a1a1aa" fontFamily="ui-monospace,monospace">
+                {`softmax scores for "${TOKENS[focusToken]}"  →  attention weights`}
+              </text>
 
-              {/* Output */}
-              <rect x="150" y="260" width="70" height="28" rx="5" fill="#1c2a1c" stroke="#86efac" strokeWidth="1.5"/>
-              <text x="185" y="278" textAnchor="middle" fontSize="11" fill="#86efac">cat′</text>
-              <text x="185" y="308" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">context-enriched "cat"</text>
+              {/* Heatmap bars */}
+              {TOKENS.map((tok, i) => {
+                const w = ATTN_WEIGHTS[focusToken][i];
+                return (
+                  <g key={i} className="heatmap-cell" style={{ animationDelay:`${i*0.08}s` }}>
+                    <rect x={55+i*90} y={236} width={76} height={28} rx="4" fill="#18181b" stroke="#3f3f46" strokeWidth="0.5"/>
+                    <rect x={55+i*90} y={236} width={76 * w} height={28} rx="4"
+                      fill={i === focusToken ? "#d97706" : "#1d4ed8"} opacity={0.4 + w * 0.6}/>
+                    <text x={93+i*90} y={256} textAnchor="middle" fontSize="10" fontFamily="ui-monospace,monospace"
+                      fill={i === focusToken ? "#fbbf24" : "#93c5fd"} fontWeight="600">{w.toFixed(2)}</text>
+                    <text x={93+i*90} y={280} textAnchor="middle" fontSize="8" fill="#71717a">{tok}</text>
+                  </g>
+                );
+              })}
+
+              {/* Weighted sum → output */}
+              <text x="280" y="310" textAnchor="middle" fontSize="9" fill="#a1a1aa" fontFamily="ui-monospace,monospace">weighted sum of V vectors → context-enriched "{TOKENS[focusToken]}"</text>
+              <rect x="180" y="320" width="200" height="30" rx="6" fill="#1c2a1c" stroke="#86efac" strokeWidth="1.5"/>
+              <text x="280" y="339" textAnchor="middle" fontSize="11" fill="#86efac" fontWeight="600">{TOKENS[focusToken]}′ (output)</text>
+
+              <text x="280" y="372" textAnchor="middle" fontSize="8" fill="#52525b" fontFamily="ui-monospace,monospace">Multi-head: run h times in parallel with different Wq,Wk,Wv projections → concat → linear</text>
             </svg>
           </div>
+
           <div className="grid grid-cols-3 gap-2">
             {[
-              { k:"Q (Query)", v:"What am I looking for?", color:"#93c5fd" },
-              { k:"K (Key)",   v:"What do I offer?",      color:"#fde68a" },
-              { k:"V (Value)", v:"What do I contribute?", color:"#86efac" },
+              { k:"Q (Query)", v:"What am I looking for? Linear projection of current token.", color:"#93c5fd" },
+              { k:"K (Key)",   v:"What do I offer? Linear projection of each context token.", color:"#fde68a" },
+              { k:"V (Value)", v:"What do I contribute? The actual content mixed into output.", color:"#86efac" },
             ].map(c => (
               <div key={c.k} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
                 <p className="text-[10px] font-bold uppercase mb-1" style={{ color:c.color }}>{c.k}</p>
@@ -6091,136 +6304,67 @@ function TransformerArchitecture() {
               </div>
             ))}
           </div>
-        </div>
-      )}
 
-      {/* ── TRANSFORMER BLOCK (STATIC) ── */}
-      {view === "block" && (
-        <div className="space-y-3">
-          <p className="text-xs text-zinc-500">One Transformer block. Stacked N times to form the model. Each block adds context (attention) then transforms (FFN). Residual connections prevent vanishing gradients.</p>
-          <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#08080a" }}>
-            <svg viewBox="0 0 360 420" className="w-full" style={{ display:"block" }}>
-              <defs>
-                <marker id="blk-arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-                  <path d="M0,0 L6,3 L0,6 Z" fill="#52525b"/>
-                </marker>
-              </defs>
-              {/* Input x */}
-              <circle cx="180" cy="30" r="16" fill="#27272a" stroke="#3f3f46" strokeWidth="1"/>
-              <text x="180" y="35" textAnchor="middle" fontSize="13" fill="#e4e4e7" fontWeight="700">x</text>
-
-              {/* Multi-Head Attention */}
-              <rect x="80" y="70" width="200" height="44" rx="8" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1"/>
-              <text x="180" y="90" textAnchor="middle" fontSize="11" fill="#93c5fd" fontWeight="600">Multi-Head Attention</text>
-              <text x="180" y="106" textAnchor="middle" fontSize="9" fill="#6a9fce">(h parallel attention heads)</text>
-
-              {/* Add & Norm */}
-              <rect x="80" y="132" width="200" height="32" rx="6" fill="#1c2a1c" stroke="#22c55e" strokeWidth="1"/>
-              <text x="180" y="152" textAnchor="middle" fontSize="10" fill="#86efac">Add (residual) & LayerNorm</text>
-
-              {/* FFN */}
-              <rect x="80" y="184" width="200" height="44" rx="8" fill="#2a1c2a" stroke="#a855f7" strokeWidth="1"/>
-              <text x="180" y="204" textAnchor="middle" fontSize="11" fill="#d8b4fe" fontWeight="600">Feed-Forward Network</text>
-              <text x="180" y="220" textAnchor="middle" fontSize="9" fill="#a78abc">Linear → GELU → Linear (dim ×4)</text>
-
-              {/* Add & Norm 2 */}
-              <rect x="80" y="248" width="200" height="32" rx="6" fill="#1c2a1c" stroke="#22c55e" strokeWidth="1"/>
-              <text x="180" y="268" textAnchor="middle" fontSize="10" fill="#86efac">Add (residual) & LayerNorm</text>
-
-              {/* Output */}
-              <circle cx="180" cy="320" r="16" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1"/>
-              <text x="180" y="325" textAnchor="middle" fontSize="13" fill="#93c5fd" fontWeight="700">x′</text>
-
-              {/* Main flow arrows */}
-              {[[180,46,180,70],[180,114,180,132],[180,164,180,184],[180,228,180,248],[180,280,180,304]].map(([x1,y1,x2,y2],i) => (
-                <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#52525b" strokeWidth="1.5" markerEnd="url(#blk-arr)"/>
-              ))}
-
-              {/* Residual skip connections */}
-              <path d="M60,46 Q40,46 40,148 Q40,164 80,164" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeDasharray="4 2" opacity="0.7"/>
-              <path d="M60,164 Q36,164 36,264 Q36,280 80,280" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeDasharray="4 2" opacity="0.7"/>
-
-              <text x="24" y="136" fontSize="8" fill="#22c55e" opacity="0.8" transform="rotate(-90 24 136)">residual</text>
-              <text x="20" y="240" fontSize="8" fill="#22c55e" opacity="0.8" transform="rotate(-90 20 240)">residual</text>
-
-              {/* Repeat indicator */}
-              <text x="180" y="370" textAnchor="middle" fontSize="10" fill="#52525b" fontFamily="ui-monospace,monospace">↑ repeat × N layers ↑</text>
-            </svg>
+          {/* Key insight */}
+          <div className="rounded-lg border border-amber-800/40 bg-amber-950/20 px-4 py-3">
+            <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mb-1">Key Insight</p>
+            <p className="text-xs text-zinc-300">The √d_k scaling prevents dot products from growing too large in high dimensions (which pushes softmax into saturation with near-zero gradients). With d_k=64, you scale by 1/8. Multi-head attention runs this h times in parallel — each head can learn a different type of relationship (syntactic, semantic, coreference, etc.).</p>
           </div>
         </div>
       )}
 
-      {/* ── DECODER-ONLY ── */}
-      {view === "deconly" && (
+      {/* ── TAB 4: MODERN VARIANTS ── */}
+      {view === "variants" && (
         <div className="space-y-3">
-          <p className="text-xs text-zinc-500">GPT-4o, Claude, Llama, Gemini — all decoder-only Transformers. No encoder. The model generates one token at a time, attending only to previous tokens (causal masking).</p>
-          <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#08080a" }}>
-            <svg viewBox="0 0 560 260" className="w-full" style={{ display:"block" }}>
-              {/* Tokens left to right */}
-              {["The","Eiffel","Tower","is","in","___"].map((tok, i) => {
-                const isNext = i === 5;
-                return (
-                  <g key={i}>
-                    <rect x={30+i*84} y={20} width={74} height={30} rx="5"
-                      fill={isNext ? "#1e3a5f" : "#1c1c22"}
-                      stroke={isNext ? "#3b82f6" : "#3f3f46"} strokeWidth="1"/>
-                    <text x={67+i*84} y={39} textAnchor="middle" fontSize={isNext?12:11}
-                      fontFamily="ui-sans-serif,sans-serif"
-                      fill={isNext?"#93c5fd":"#9ca3af"}
-                      fontWeight={isNext?"700":"400"}>
-                      {tok}
-                    </text>
-                  </g>
-                );
-              })}
-              <text x="527" y="36" fontSize="10" fill="#fbbf24">← predict</text>
+          <p className="text-xs text-zinc-500">What changed between the original 2017 Transformer and modern LLMs like LLaMA-3, Gemma-3, and Mistral. Each change has a specific measurable reason.</p>
 
-              {/* Causal mask — triangle */}
-              <text x="280" y="80" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">causal mask (each token sees only previous tokens)</text>
-              <g opacity="0.5">
-                {[0,1,2,3,4,5].map(row =>
-                  [0,1,2,3,4,5].map(col => {
-                    const canAttend = col <= row;
-                    return (
-                      <rect key={`${row}-${col}`}
-                        x={142+col*36} y={92+row*22} width={32} height={18} rx="2"
-                        fill={canAttend ? "#3b82f6" : "#1c1c22"}
-                        opacity={canAttend ? (col===row?0.9:0.35) : 0.05}/>
-                    );
-                  })
-                )}
-              </g>
-              <text x="142" y="88" fontSize="8" fill="#52525b" fontFamily="ui-monospace,monospace">Q\K→</text>
-              {["The","Eiffel","Tower","is","in","___"].map((t,i) => (
-                <text key={i} x={158+i*36} y={88} textAnchor="middle" fontSize="7" fill="#52525b">{t.slice(0,3)}</text>
-              ))}
-              {["The","Eiffel","Tower","is","in","___"].map((t,i) => (
-                <text key={i} x={136} y={105+i*22} textAnchor="end" fontSize="7" fill="#52525b">{t.slice(0,3)}</text>
-              ))}
-
-              {/* KV Cache callout */}
-              <rect x="360" y="92" width="180" height="76" rx="8" fill="#2a2a1c" stroke="#fde68a" strokeWidth="1"/>
-              <text x="450" y="110" textAnchor="middle" fontSize="10" fill="#fde68a" fontWeight="600">KV Cache</text>
-              <text x="450" y="128" textAnchor="middle" fontSize="8.5" fill="#a1a1aa">Previous tokens' K and V</text>
-              <text x="450" y="144" textAnchor="middle" fontSize="8.5" fill="#a1a1aa">vectors are cached — not</text>
-              <text x="450" y="160" textAnchor="middle" fontSize="8.5" fill="#a1a1aa">recomputed each step.</text>
-
-              {/* Output label */}
-              <text x="280" y="234" textAnchor="middle" fontSize="10" fill="#52525b" fontFamily="ui-monospace,monospace">next-token prediction: "Paris" (argmax or temperature sampling)</text>
-            </svg>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-800" style={{ background:"#0d0d12" }}>
+                  <th className="text-left px-3 py-2 text-[10px] font-mono font-bold text-zinc-500 uppercase">Component</th>
+                  <th className="text-left px-3 py-2 text-[10px] font-mono font-bold text-amber-500 uppercase">Original (2017)</th>
+                  <th className="text-left px-3 py-2 text-[10px] font-mono font-bold text-blue-400 uppercase">GPT-style</th>
+                  <th className="text-left px-3 py-2 text-[10px] font-mono font-bold text-violet-400 uppercase">Modern LLM</th>
+                  <th className="text-left px-3 py-2 text-[10px] font-mono font-bold text-emerald-400 uppercase">Why it changed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {VARIANTS.map((row, i) => (
+                  <tr key={i} className={`border-b border-zinc-900 ${i % 2 === 0 ? "bg-zinc-950" : "bg-zinc-900/40"}`}>
+                    <td className="px-3 py-2 font-semibold text-zinc-200 whitespace-nowrap">{row.feature}</td>
+                    <td className="px-3 py-2 text-amber-300/80 font-mono">{row.original}</td>
+                    <td className="px-3 py-2 text-blue-300/80 font-mono">{row.gpt}</td>
+                    <td className="px-3 py-2 text-violet-300/80 font-mono">{row.rmsnorm}</td>
+                    <td className="px-3 py-2 text-zinc-400 leading-relaxed">{row.why}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+
+          {/* Architecture cards */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { k:"Causal masking", v:"Token at position i can only attend to positions 0…i. Prevents cheating by looking at future tokens." },
-              { k:"KV Cache", v:"Keys and values from previous tokens are cached. Only the new token's Q,K,V are computed — reduces inference cost dramatically." },
-              { k:"Autoregressive generation", v:"One token generated at a time. The output is fed back as input for the next step." },
-              { k:"Why decoder-only?", v:"Simpler, more efficient to train at scale than encoder-decoder. GPT, Claude, Llama all dropped the encoder after 2020." },
+              { name:"RoPE", full:"Rotary Position Embedding", desc:"Encodes position by rotating Q and K vectors by angle proportional to position. Relative distance between tokens is implicit in the dot product. Enables length generalisation beyond training context.", color:"#a78bfa" },
+              { name:"GQA", full:"Grouped-Query Attention", desc:"Share one K/V head across G query heads. If G=8, memory for KV cache is 8× smaller. Llama-3 uses GQA — critical for long-context inference with large batches.", color:"#38bdf8" },
+              { name:"SwiGLU", full:"Swish-Gated Linear Unit", desc:"FFN(x) = (xW₁ ⊗ swish(xW₂))W₃. Gating mechanism allows the network to suppress irrelevant dimensions. Outperforms GELU by ~0.2-0.4 bits/token at same params.", color:"#f472b6" },
+              { name:"RMSNorm", full:"Root Mean Square Layer Norm", desc:"Drops mean-centering: norm = x / RMS(x) · γ. ~10-15% faster than LayerNorm with no accuracy loss. Used in LLaMA, Mistral, Gemma, Qwen series.", color:"#34d399" },
             ].map(c => (
-              <div key={c.k} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
-                <p className="text-[10px] font-bold text-amber-400 uppercase mb-1">{c.k}</p>
-                <p className="text-xs text-zinc-300">{c.v}</p>
+              <div key={c.name} className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded" style={{ background: c.color + "22", color: c.color }}>{c.name}</span>
+                  <span className="text-[10px] text-zinc-500">{c.full}</span>
+                </div>
+                <p className="text-xs text-zinc-300 leading-relaxed">{c.desc}</p>
               </div>
             ))}
+          </div>
+
+          {/* Key insight */}
+          <div className="rounded-lg border border-emerald-800/40 bg-emerald-950/20 px-4 py-3">
+            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mb-1">Key Insight</p>
+            <p className="text-xs text-zinc-300">Modern LLMs combine RoPE + GQA + SwiGLU + RMSNorm + Pre-Norm + no biases. Each change is independently motivated by either throughput, memory, or loss quality — and they compound. A LLaMA-3 block trains ~40% faster and serves ~3× more tokens/sec vs an equivalently-sized original Transformer.</p>
           </div>
         </div>
       )}
@@ -6776,7 +6920,7 @@ const KV_CONCEPTS = [
 ];
 
 function KVHowItWorks() {
-  const [open, setOpen] = React.useState(null);
+  const [open, setOpen] = useState(null);
   return (
     <div className="space-y-3">
       <p className="text-xs text-zinc-400">KV cache reuses computed attention key/value matrices for repeated prefix tokens — the core mechanism behind 90% cost reductions on cached input.</p>
@@ -6800,9 +6944,9 @@ function KVHowItWorks() {
 }
 
 function KVCostMath() {
-  const [dailyTokens, setDailyTokens] = React.useState(5000000);
-  const [hitRate, setHitRate] = React.useState(60);
-  const [priceCents, setPriceCents] = React.useState(100);
+  const [dailyTokens, setDailyTokens] = useState(5000000);
+  const [hitRate, setHitRate] = useState(60);
+  const [priceCents, setPriceCents] = useState(100);
 
   const pricePerToken = priceCents / 100 / 1000000;
   const cachedTokens = dailyTokens * (hitRate / 100);
@@ -6920,7 +7064,7 @@ function KVCacheEngineering() {
     { id: "cost", tag: "CALC", label: "Cost Math" },
     { id: "routing", tag: "ARCH", label: "Cache-Aware Routing" },
   ];
-  const [tab, setTab] = React.useState("how");
+  const [tab, setTab] = useState("how");
   return (
     <div className="space-y-4">
       <HowTo
@@ -7087,7 +7231,7 @@ function AIGuardrailsEngineering() {
     { id: "providers", tag: "TOOLS", label: "Provider Comparison" },
     { id: "reality", tag: "TRUTH", label: "Reality Check" },
   ];
-  const [tab, setTab] = React.useState("dual");
+  const [tab, setTab] = useState("dual");
   return (
     <div className="space-y-4">
       <HowTo
@@ -7242,7 +7386,7 @@ function TrapCard({ challenge, revealedIssues, onReveal }) {
 
 function TrapsLab() {
   const STORAGE_KEY = "trapslab_progress";
-  const [revealed, setRevealedRaw] = React.useState(() => {
+  const [revealed, setRevealedRaw] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
   });
 
@@ -7304,7 +7448,7 @@ const MOE_FAILURE_MODES = [
 ];
 
 function MoEHowItWorks() {
-  const [expanded, setExpanded] = React.useState(null);
+  const [expanded, setExpanded] = useState(null);
   const toggle = (id) => setExpanded(expanded === id ? null : id);
 
   const mechanisms = [
@@ -7501,7 +7645,7 @@ function MoEProductionModels() {
 }
 
 function MoEFailureModes() {
-  const [expandedFix, setExpandedFix] = React.useState(null);
+  const [expandedFix, setExpandedFix] = useState(null);
   const toggleFix = (name) => setExpandedFix(expandedFix === name ? null : name);
 
   const severityStyle = (s) => {
@@ -7601,7 +7745,7 @@ function MoEArchitecture() {
     { id: "models",   tag: "DATA",  label: "Production Models"     },
     { id: "failures", tag: "OPS",   label: "Failure Modes & Ops"   },
   ];
-  const [tab, setTab] = React.useState("how");
+  const [tab, setTab] = useState("how");
   return (
     <div className="space-y-4">
       <HowTo
@@ -7624,6 +7768,461 @@ function MoEArchitecture() {
       {tab === "how"      && <MoEHowItWorks />}
       {tab === "models"   && <MoEProductionModels />}
       {tab === "failures" && <MoEFailureModes />}
+    </div>
+  );
+}
+
+// ─── SPECULATIVE DECODING ─────────────────────────────────────────────────────
+
+const SPEC_MODELS = [
+  {
+    name: "Eagle-2",
+    type: "Draft model (separate small LM)",
+    params: "~1B",
+    speedup: "3.5–4.5×",
+    compatibility: "Llama-3, Mistral, Qwen series",
+    how: "Trains a 1B draft model on the same corpus as target. Uses tree-structured drafting — generates multiple candidate continuations as a tree, target verifies entire tree in one pass.",
+  },
+  {
+    name: "Medusa",
+    type: "Draft heads on base model",
+    params: "+N heads (adds ~3% params)",
+    speedup: "2.2–3.1×",
+    compatibility: "Any transformer — add heads to existing model",
+    how: "Adds K extra LM heads to the base model. Each head predicts tokens k steps ahead. All predictions happen in one forward pass. No separate model needed — simplest to deploy.",
+  },
+  {
+    name: "QuantSpec",
+    type: "Quantized draft of target",
+    params: "INT4 version of target model",
+    speedup: "2.8–3.6×",
+    compatibility: "vLLM native, TensorRT-LLM",
+    how: "Uses an INT4 quantized version of the target model as the draft. High acceptance rate (same model family). Works well when target is FP16/BF16. Draft runs fast due to quantization.",
+  },
+  {
+    name: "P-EAGLE",
+    type: "Parallel draft generation",
+    params: "~1B + parallel pipeline",
+    speedup: "4–6×",
+    compatibility: "Experimental, multi-GPU setups",
+    how: "Generates draft tokens in parallel across multiple streams rather than sequentially. Maximises GPU utilisation during the draft phase. Higher complexity — requires careful batching logic.",
+  },
+];
+
+function SpecDraftTargetLoop() {
+  const steps = [
+    { n: "1", label: "Draft: generate K tokens", detail: "Small draft model autoregressively generates K candidate tokens (e.g. K=5). Fast — draft model is 10–50× cheaper per token.", color: "#6366f1", bg: "#1e1b4b" },
+    { n: "2", label: "Target: verify all K in one forward pass", detail: "Target model runs a single forward pass over the prompt + K draft tokens. Computes logits at every position simultaneously — parallel verification.", color: "#3b82f6", bg: "#172554" },
+    { n: "3", label: "Accept prefix up to first mismatch", detail: "Compare target logits vs draft token at each position. Accept tokens greedily or with modified rejection sampling. Stop at first rejection. Guaranteed: distribution matches target exactly.", color: "#10b981", bg: "#064e3b" },
+    { n: "4", label: "Target samples the correction token", detail: "At the first mismatch position, sample from a corrected distribution (target − draft). This ensures the final output is distributed exactly as if target ran alone.", color: "#f59e0b", bg: "#1c1a0a" },
+    { n: "5", label: "Repeat", detail: "Append accepted tokens + correction token to context. Go back to step 1. Loop until <EOS> or max_tokens.", color: "#a78bfa", bg: "#1e1b4b" },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-zinc-500">The draft-then-verify loop. The key insight: target model verification of K tokens costs only marginally more than verifying 1 — so you get K tokens for the price of ~1.2 target forward passes.</p>
+      <div className="space-y-2">
+        {steps.map((s, i) => (
+          <div key={i} className="flex gap-3 items-start rounded-xl border border-zinc-800 p-3" style={{ background: s.bg + "55" }}>
+            <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black font-mono border" style={{ color: s.color, borderColor: s.color + "66", background: s.bg }}>
+              {s.n}
+            </div>
+            <div>
+              <p className="text-xs font-bold text-zinc-100 mb-0.5">{s.label}</p>
+              <p className="text-xs text-zinc-400 leading-relaxed">{s.detail}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Visual flow diagram */}
+      <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#08080a" }}>
+        <svg viewBox="0 0 560 120" className="w-full" style={{ display:"block" }}>
+          <defs>
+            <marker id="sd-arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#52525b"/>
+            </marker>
+          </defs>
+          {/* Draft box */}
+          <rect x="20" y="30" width="120" height="60" rx="8" fill="#1e1b4b" stroke="#6366f1" strokeWidth="1.5"/>
+          <text x="80" y="55" textAnchor="middle" fontSize="10" fill="#a5b4fc" fontWeight="600">Draft Model</text>
+          <text x="80" y="70" textAnchor="middle" fontSize="9" fill="#6366f1">(fast, small)</text>
+          <text x="80" y="84" textAnchor="middle" fontSize="8" fill="#52525b" fontFamily="ui-monospace,monospace">gen K tokens</text>
+
+          {/* Arrow 1 */}
+          <line x1="140" y1="60" x2="170" y2="60" stroke="#52525b" strokeWidth="1.5" markerEnd="url(#sd-arr)"/>
+          <text x="155" y="54" textAnchor="middle" fontSize="7" fill="#6366f1">K tokens</text>
+
+          {/* Target verify box */}
+          <rect x="172" y="30" width="130" height="60" rx="8" fill="#172554" stroke="#3b82f6" strokeWidth="1.5"/>
+          <text x="237" y="55" textAnchor="middle" fontSize="10" fill="#93c5fd" fontWeight="600">Target Model</text>
+          <text x="237" y="70" textAnchor="middle" fontSize="9" fill="#3b82f6">(1 forward pass)</text>
+          <text x="237" y="84" textAnchor="middle" fontSize="8" fill="#52525b" fontFamily="ui-monospace,monospace">verify all K at once</text>
+
+          {/* Arrow 2 */}
+          <line x1="302" y1="60" x2="332" y2="60" stroke="#52525b" strokeWidth="1.5" markerEnd="url(#sd-arr)"/>
+          <text x="317" y="54" textAnchor="middle" fontSize="7" fill="#10b981">accept?</text>
+
+          {/* Accept box */}
+          <rect x="334" y="30" width="100" height="60" rx="8" fill="#064e3b" stroke="#10b981" strokeWidth="1.5"/>
+          <text x="384" y="55" textAnchor="middle" fontSize="10" fill="#6ee7b7" fontWeight="600">Accept</text>
+          <text x="384" y="70" textAnchor="middle" fontSize="9" fill="#10b981">prefix</text>
+          <text x="384" y="84" textAnchor="middle" fontSize="8" fill="#52525b" fontFamily="ui-monospace,monospace">+ correction token</text>
+
+          {/* Repeat arrow */}
+          <path d="M434,60 Q520,60 520,100 Q520,112 80,112 Q20,112 20,90" stroke="#a78bfa" strokeWidth="1.5" fill="none" strokeDasharray="5 3" opacity="0.7" markerEnd="url(#sd-arr)"/>
+          <text x="430" y="108" fontSize="8" fill="#a78bfa" opacity="0.8">repeat</text>
+        </svg>
+      </div>
+
+      <div className="rounded-lg border border-violet-800/40 bg-violet-950/20 px-4 py-3">
+        <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wide mb-1">Key Insight</p>
+        <p className="text-xs text-zinc-300">Speculative decoding does not change the output distribution — it is mathematically equivalent to running the target model alone. The speedup comes purely from amortising target model overhead across K tokens per verification step. The only cost is the draft model's compute, which is typically 5–20% of total.</p>
+      </div>
+    </div>
+  );
+}
+
+function SpecMathExplainer() {
+  const [alpha, setAlpha] = useState(0.75);
+  const [K, setK] = useState(5);
+
+  // Expected number of tokens accepted before first rejection
+  // E[accepted] = (1 - alpha^(K+1)) / (1 - alpha)  ... simplified: ~K*alpha for high alpha
+  // Speedup formula: (1 + alpha*(1 + alpha*(1+...))) — geometric series
+  // Simplified: speedup = (1 - alpha^(K+1)) / ((1 - alpha) * (1 + cost_ratio * K))
+  // cost_ratio = draft_cost / target_cost, typically ~0.10
+  const costRatio = 0.10;
+  const accepted = (1 - Math.pow(alpha, K + 1)) / (1 - alpha);
+  const draftCost = costRatio * K;
+  const speedup = (accepted + 1) / (1 + draftCost);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-zinc-500">How to estimate speedup before deploying speculative decoding. The two key variables are acceptance rate (α) and draft length (K).</p>
+
+      <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-2">
+        <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wide">Speedup Formula</p>
+        <div className="font-mono text-xs text-zinc-300 space-y-1">
+          <p><span className="text-violet-400">E[accepted tokens]</span> = (1 − α^(K+1)) / (1 − α)</p>
+          <p><span className="text-blue-400">speedup</span> = (E[accepted] + 1) / (1 + cost_ratio × K)</p>
+          <p className="text-zinc-600 text-[10px]">where cost_ratio = draft_cost / target_cost ≈ 0.05–0.15</p>
+        </div>
+      </div>
+
+      {/* Sliders */}
+      <div className="space-y-4">
+        <div>
+          <div className="flex justify-between mb-1">
+            <label className="text-xs text-zinc-400">Acceptance rate <span className="font-mono text-violet-400">α = {alpha.toFixed(2)}</span></label>
+            <span className="text-[10px] text-zinc-600 font-mono">0.50 → 0.95</span>
+          </div>
+          <input type="range" min="50" max="95" value={Math.round(alpha * 100)}
+            onChange={e => setAlpha(parseInt(e.target.value) / 100)}
+            className="w-full accent-violet-500"/>
+          <p className="text-[10px] text-zinc-500 mt-0.5">α depends on how similar draft and target model distributions are. Same model family + compatible tokenizer → higher α. Measure on your specific prompt distribution.</p>
+        </div>
+
+        <div>
+          <div className="flex justify-between mb-1">
+            <label className="text-xs text-zinc-400">Draft length <span className="font-mono text-amber-400">K = {K}</span></label>
+            <span className="text-[10px] text-zinc-600 font-mono">3 → 8</span>
+          </div>
+          <input type="range" min="3" max="8" value={K}
+            onChange={e => setK(parseInt(e.target.value))}
+            className="w-full accent-amber-500"/>
+          <p className="text-[10px] text-zinc-500 mt-0.5">Longer K = more upside when acceptance is high, but more wasted draft compute on rejection. K=5 is the empirical sweet spot for most production deployments.</p>
+        </div>
+      </div>
+
+      {/* Result */}
+      <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/20 p-4 flex items-center gap-6">
+        <div className="text-center">
+          <p className="text-3xl font-black text-emerald-400 font-mono">{speedup.toFixed(2)}×</p>
+          <p className="text-[10px] text-zinc-500 mt-0.5">estimated speedup</p>
+        </div>
+        <div className="flex-1 space-y-1.5 text-xs">
+          <div className="flex justify-between">
+            <span className="text-zinc-500">Expected accepted tokens</span>
+            <span className="font-mono text-zinc-300">{accepted.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-zinc-500">Tokens output per loop</span>
+            <span className="font-mono text-zinc-300">{(accepted + 1).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-zinc-500">Draft overhead</span>
+            <span className="font-mono text-zinc-300">{(costRatio * K * 100).toFixed(0)}% of target cost</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-zinc-500">Break-even α (K={K})</span>
+            <span className="font-mono text-amber-400">{(Math.pow(costRatio * K, 1/K)).toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-amber-800/40 bg-amber-950/20 px-4 py-3">
+        <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mb-1">Production Rule of Thumb</p>
+        <p className="text-xs text-zinc-300">Measure α on your real traffic before committing to speculative decoding in prod. Chat prompts typically get α ≈ 0.7–0.85; code completion α ≈ 0.6–0.75 (more diverse outputs); document summarisation α ≈ 0.8–0.9. Below α = 0.6, speculative decoding often breaks even or slows you down.</p>
+      </div>
+    </div>
+  );
+}
+
+function SpeculativeDecoding() {
+  const TABS = [
+    { id: "howit",   label: "How It Works",      tag: "ARCH" },
+    { id: "math",    label: "The Math",           tag: "CALC" },
+    { id: "models",  label: "Production Models",  tag: "PROD" },
+  ];
+  const [tab, setTab] = useState("howit");
+
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="Understand speculative decoding — how draft models accelerate target model inference by 2.5–5× with zero quality loss."
+        steps={[
+          "How It Works: step-by-step draft→verify→accept loop with a visual flow diagram",
+          "The Math: interactive speedup calculator — tune acceptance rate α and draft length K",
+          "Production Models: Eagle-2, Medusa, QuantSpec, P-EAGLE — what they are and when to use each",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "howit"  && <SpecDraftTargetLoop />}
+      {tab === "math"   && <SpecMathExplainer />}
+      {tab === "models" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Four production-grade speculative decoding approaches. Choose based on your model family, serving stack, and acceptable deployment complexity.</p>
+          {SPEC_MODELS.map((m, i) => (
+            <div key={i} className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-zinc-100">{m.name}</p>
+                  <p className="text-[10px] text-zinc-500 font-mono mt-0.5">{m.type}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-lg font-black text-emerald-400 font-mono">{m.speedup}</p>
+                  <p className="text-[10px] text-zinc-600">speedup</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <p className="text-[10px] text-zinc-600 uppercase font-bold mb-0.5">Params overhead</p>
+                  <p className="text-zinc-300 font-mono">{m.params}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-zinc-600 uppercase font-bold mb-0.5">Compatible with</p>
+                  <p className="text-zinc-300">{m.compatibility}</p>
+                </div>
+              </div>
+              <p className="text-xs text-zinc-400 leading-relaxed border-t border-zinc-800 pt-2">{m.how}</p>
+            </div>
+          ))}
+          <div className="rounded-lg border border-blue-800/40 bg-blue-950/20 px-4 py-3">
+            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wide mb-1">Key Insight</p>
+            <p className="text-xs text-zinc-300">Eagle-2 is the current state-of-the-art for offline serving. Medusa is easiest to deploy (no separate model). QuantSpec is the pragmatic choice if you already run quantized models in vLLM. P-EAGLE is research-grade — watch this space.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── STREAMING & REAL-TIME PATTERNS ───────────────────────────────────────────
+
+const STREAM_PATTERNS = [
+  {
+    name: "Server-Sent Events (SSE)",
+    when: "HTTP API streaming — REST endpoints, OpenAI-compatible APIs, most LLM providers",
+    howItWorks: "Server pushes text/event-stream lines to an open HTTP connection. Client reads chunks via EventSource or fetch + ReadableStream. Each chunk is a delta — append to display buffer. Standard across OpenAI, Anthropic, Groq, etc.",
+    gotcha: "SSE is unidirectional (server→client only). You cannot barge-in or send mid-stream messages. Proxies and load balancers must be configured to not buffer — nginx needs proxy_buffering off. Some CDNs break SSE entirely.",
+  },
+  {
+    name: "WebSocket Bidirectional",
+    when: "Real-time conversational UIs, voice interfaces, applications needing mid-stream user input",
+    howItWorks: "Full-duplex connection. Client and server can both send messages at any time. LLM output streamed as deltas. Client can send interrupt signal mid-generation. Requires WS-capable server (not just static hosting).",
+    gotcha: "WebSockets don't work with simple serverless functions (no persistent connections). Reconnection logic is your responsibility — must handle drops gracefully. Cloudflare Durable Objects or dedicated WS servers needed for scale.",
+  },
+  {
+    name: "Streaming Structured Output",
+    when: "Need both low latency AND structured data — e.g. streaming a JSON object or Markdown with sections",
+    howItWorks: "Stream raw tokens and parse incrementally. For JSON: use a streaming JSON parser (e.g. json-stream-stringify). For Markdown: render each line as it arrives. For tool calls: buffer the full tool_use block before executing — partial JSON is invalid.",
+    gotcha: "Never attempt to JSON.parse() a partial token stream — it will throw. Tool call arguments arrive as a complete JSON blob in one delta, not token-by-token. Anthropic's streaming format sends input_json_delta but you must accumulate until stop_reason=tool_use.",
+  },
+  {
+    name: "Barge-In / Interruption",
+    when: "Voice AI, conversational agents where user speaks while model is still generating",
+    howItWorks: "Client detects user speech onset (VAD). Sends interrupt signal via WebSocket. Server cancels current generation (aborts stream). New generation starts from updated context. Audio playback of prior output is flushed.",
+    gotcha: "You must track which generated tokens the user actually heard (playout buffer). Tokens generated but not played must be excluded from conversation history. Otherwise the model thinks it said something the user never heard — causes hallucination loops.",
+  },
+  {
+    name: "Streaming Tool Calls",
+    when: "Agentic systems where you want to execute tools as soon as they're identified, before generation completes",
+    howItWorks: "In Anthropic API: tool_use blocks stream as content_block_start → input_json_delta (accumulate) → content_block_stop. On stop, parse accumulated JSON and execute tool. You can pipeline: start tool execution while model continues generating narrative text.",
+    gotcha: "If the model calls multiple tools, each arrives as a separate content block. Do not start execution until content_block_stop for that block. Parallel tool calls: safe to execute concurrently after all blocks arrive. Never execute on a partial input_json_delta — JSON will be malformed.",
+  },
+];
+
+function StreamLatencyWaterfall() {
+  const phases = [
+    {
+      label: "A. Batch (no streaming)",
+      subtitle: "User sees nothing until full generation completes",
+      bars: [
+        { label: "TTFT wait", width: 60, color: "#6366f1", note: "~300ms" },
+        { label: "Full generation", width: 220, color: "#1e3a5f", note: "~2000ms" },
+        { label: "Display (instant)", width: 20, color: "#10b981", note: "~0ms" },
+      ],
+      totalNote: "User perceived latency: ~2300ms to first visible character",
+    },
+    {
+      label: "B. Streaming",
+      subtitle: "User reads tokens as they arrive — perceived latency = TTFT",
+      bars: [
+        { label: "TTFT", width: 60, color: "#6366f1", note: "~300ms" },
+        { label: "Token 1 visible", width: 8, color: "#10b981", note: "" },
+        { label: "Token 2…N (user reads in parallel)", width: 212, color: "#166534", note: "~2000ms total gen" },
+      ],
+      totalNote: "User perceived latency: ~300ms to first visible character",
+    },
+    {
+      label: "C. Streaming + Speculative Decoding",
+      subtitle: "TTFT same, but inter-token latency reduced 3–4×",
+      bars: [
+        { label: "TTFT", width: 60, color: "#6366f1", note: "~300ms" },
+        { label: "Token 1 visible", width: 8, color: "#10b981", note: "" },
+        { label: "K tokens / verify cycle (faster)", width: 212, color: "#064e3b", note: "~600ms total gen" },
+      ],
+      totalNote: "User perceived latency: ~300ms TTFT, text fills 3× faster",
+    },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-zinc-500">Streaming doesn't change total generation time — it changes when the user sees output. The difference between batch and streaming is entirely perceptual, but it dramatically affects user experience.</p>
+
+      <div className="space-y-4">
+        {phases.map((phase, pi) => (
+          <div key={pi} className="space-y-1.5">
+            <div>
+              <p className="text-xs font-bold text-zinc-200">{phase.label}</p>
+              <p className="text-[10px] text-zinc-500">{phase.subtitle}</p>
+            </div>
+            <div className="relative h-10 flex rounded-lg overflow-hidden border border-zinc-800">
+              {phase.bars.map((bar, bi) => (
+                <div key={bi}
+                  className="flex items-center justify-center text-[9px] font-mono font-bold border-r border-zinc-900/40 last:border-r-0 shrink-0 transition-all"
+                  style={{ width: `${bar.width / 3}%`, background: bar.color, color: "#fff", opacity: 0.85 }}>
+                  {bar.width > 30 ? bar.label : ""}
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3 flex-wrap">
+              {phase.bars.filter(b => b.note).map((bar, bi) => (
+                <span key={bi} className="text-[10px] font-mono" style={{ color: bar.color }}>
+                  {bar.label}: {bar.note}
+                </span>
+              ))}
+            </div>
+            <p className="text-[10px] text-zinc-500 italic">{phase.totalNote}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 text-xs">
+        {[
+          { metric: "TTFT", full: "Time to First Token", desc: "Most important streaming metric. Measures prompt processing latency. Target: <500ms for chat.", color: "#6366f1" },
+          { metric: "TPOT", full: "Time Per Output Token", desc: "Inter-token latency. Determines how fast text streams. Target: <50ms for smooth reading.", color: "#3b82f6" },
+          { metric: "E2E",  full: "End-to-End Latency",   desc: "Total time from request to final token. Matters for non-streaming use cases and batch jobs.", color: "#10b981" },
+        ].map(m => (
+          <div key={m.metric} className="bg-zinc-900 rounded-lg p-2.5 border border-zinc-800">
+            <p className="font-mono font-black text-sm mb-0.5" style={{ color: m.color }}>{m.metric}</p>
+            <p className="text-[10px] text-zinc-500 font-semibold mb-1">{m.full}</p>
+            <p className="text-[10px] text-zinc-400 leading-relaxed">{m.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-lg border border-blue-800/40 bg-blue-950/20 px-4 py-3">
+        <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wide mb-1">Key Insight</p>
+        <p className="text-xs text-zinc-300">TTFT and TPOT are determined by different things. TTFT depends on prompt length and prefill speed — optimise with prompt caching and larger KV cache. TPOT depends on decode throughput — optimise with speculative decoding, quantization, and GQA. Never conflate them when debugging latency.</p>
+      </div>
+    </div>
+  );
+}
+
+function StreamPatternCards() {
+  const [expanded, setExpanded] = useState(null);
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-zinc-500">Five patterns you'll hit in production streaming. Each has a critical gotcha that bites engineers who skip the docs.</p>
+      {STREAM_PATTERNS.map((p, i) => (
+        <div key={i}
+          className={`rounded-xl border transition-all cursor-pointer ${expanded === i ? "border-violet-600/50 bg-zinc-900" : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-700"}`}
+          onClick={() => setExpanded(expanded === i ? null : i)}>
+          <div className="p-3 flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-zinc-100">{p.name}</p>
+              <p className="text-[10px] text-violet-400 mt-0.5 font-semibold">Use when: {p.when}</p>
+            </div>
+            <span className="text-zinc-600 text-sm shrink-0 mt-0.5">{expanded === i ? "▲" : "▼"}</span>
+          </div>
+          {expanded === i && (
+            <div className="px-3 pb-3 space-y-2 border-t border-zinc-800 pt-2">
+              <div>
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-1">How It Works</p>
+                <p className="text-xs text-zinc-300 leading-relaxed">{p.howItWorks}</p>
+              </div>
+              <div className="rounded-lg border border-amber-800/40 bg-amber-950/20 p-2.5">
+                <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mb-1">Gotcha</p>
+                <p className="text-xs text-zinc-300 leading-relaxed">{p.gotcha}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StreamingPatterns() {
+  const TABS = [
+    { id: "patterns",   label: "Patterns & Gotchas", tag: "OPS" },
+    { id: "waterfall",  label: "Latency Waterfall",  tag: "PERF" },
+  ];
+  const [tab, setTab] = useState("patterns");
+
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="Master streaming LLM responses — understand SSE vs WebSocket, avoid the gotchas that break production, and reason about latency correctly."
+        steps={[
+          "Patterns & Gotchas: five streaming patterns (SSE, WS, structured, barge-in, tool calls) with expandable detail",
+          "Latency Waterfall: visualise TTFT vs batch vs speculative decoding — understand what actually matters",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-blue-500 text-blue-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "patterns"  && <StreamPatternCards />}
+      {tab === "waterfall" && <StreamLatencyWaterfall />}
     </div>
   );
 }
@@ -7662,7 +8261,9 @@ const SYSTEMS_MODULES = [
   { id: "kvcache",    label: "KV Cache Engineering",    tag: "CACHE",    group: "BUILD",  component: KVCacheEngineering },
   { id: "guardrails", label: "AI Guardrails",           tag: "GUARD",    group: "OPS",    component: AIGuardrailsEngineering },
   { id: "trapslab",   label: "Traps Lab",               tag: "TRAP",     group: "OPS",    component: TrapsLab },
-  { id: "moe",        label: "MoE Architecture",        tag: "MOE",      group: "DESIGN",  component: MoEArchitecture },
+  { id: "moe",          label: "MoE Architecture",        tag: "MOE",      group: "DESIGN",  component: MoEArchitecture },
+  { id: "specdecoding", label: "Speculative Decoding",    tag: "SPEED",    group: "BUILD",   component: SpeculativeDecoding },
+  { id: "streaming",    label: "Streaming Patterns",      tag: "STREAM",   group: "BUILD",   component: StreamingPatterns },
 ];
 
 const SYSTEMS_GROUPS = [
