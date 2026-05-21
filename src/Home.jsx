@@ -486,7 +486,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
             AI systems break<br className="hidden sm:block" /> in production.
             <br />
-            <span className="text-violet-400">Learn exactly why.</span>
+            <span className="text-cyan-400">Learn exactly why.</span>
           </h1>
           <p className="text-xs font-mono text-zinc-500 tracking-widest uppercase">
             For AI engineers · PMs · anyone building with LLMs
