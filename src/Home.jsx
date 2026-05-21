@@ -844,6 +844,9 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         {/* ── ABOUT THIS LAB ────────────────────────────────────────────── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
           <h3 className="text-sm font-black text-white uppercase tracking-widest">About this lab</h3>
+          <p className="text-sm text-zinc-400 italic mb-3">
+            "I built this because I spent months debugging RAG systems in production and couldn't find a resource that let me <em>break</em> things instead of just read about them."
+          </p>
           <p className="text-xs text-zinc-400 leading-relaxed">
             GenAI Systems Lab is a static, zero-backend learning tool — no API calls, no live model, no login required. Everything runs entirely in your browser.
           </p>
@@ -909,7 +912,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 hover:border-violet-700 text-xs font-mono text-zinc-500 hover:text-violet-400 transition-all">
             💬 Give feedback on this lab
           </button>
-          <p className="text-xs text-zinc-600">
+          <p className="text-sm text-zinc-400 font-medium">
           Built by{" "}
           <a href="https://github.com/SidharthKriplani" target="_blank" rel="noopener noreferrer"
             className="text-zinc-400 hover:text-violet-400 transition-colors underline underline-offset-2">

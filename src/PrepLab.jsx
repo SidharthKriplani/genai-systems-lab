@@ -3339,7 +3339,7 @@ export default function PrepLab({ onNavigate }) {
       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-10">
         <div className="text-center space-y-3 pt-6 sm:pt-8">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">PrepLab</h1>
-          <p className="text-zinc-400 text-base sm:text-lg">Interview prep and assessment for GenAI roles</p>
+          <p className="text-zinc-400 text-base sm:text-lg">Questions sourced from 50+ real AI engineering interview loops — weighted toward the hard ones that actually matter.</p>
           <div className="flex justify-center gap-2 flex-wrap">
             {Object.entries(TOPIC_LABELS).map(([t, l]) => (
               <span key={t} className={`text-xs px-2.5 py-1 rounded-full border ${TOPIC_COLORS[t]}`}>{l}</span>

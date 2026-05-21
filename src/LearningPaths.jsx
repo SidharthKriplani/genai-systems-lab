@@ -302,8 +302,10 @@ export default function LearningPaths({ onNavigateTo }) {
 
       {/* Empty state */}
       {!activePath && (
-        <div className="text-center py-8 text-zinc-600 text-sm">
-          Select a path above to see its steps
+        <div className="text-center py-8 space-y-2">
+          <div className="text-2xl">👆</div>
+          <div className="text-sm text-zinc-400 font-medium">Pick one. Even if it's not your exact situation.</div>
+          <div className="text-xs text-zinc-600">Not sure where to start? <span className="text-indigo-400">Ship Your First RAG System</span> is where most engineers get stuck first.</div>
         </div>
       )}
     </div>

@@ -350,6 +350,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, activeReactions, onR
               {catLabel}
             </span>
             <span className="text-[9px] text-zinc-600 font-mono">{post.readMin} min read</span>
+            <span className="text-xs text-zinc-500">by <span className="text-zinc-400 font-medium">Sidharth Kriplani</span></span>
             <div className="ml-auto flex items-center gap-2">
               {/* Feature 2 — In-post search */}
               <input
