@@ -1608,6 +1608,217 @@ const PREP_QUESTIONS = [
     keywords: ["SGLang", "structured generation", "DFA", "token mask", "caching", "overhead"],
     explanation: "SGLang compiles the JSON schema or regex into an efficient deterministic finite automaton (DFA) and pre-computes token masks for each DFA state. Since many states are visited repeatedly during generation (e.g., 'inside a string value'), the mask lookup becomes a simple array index — O(1) — rather than re-evaluating the constraint against the full vocabulary. This amortization reduces overhead from ~15ms to near-zero for common schema patterns.",
     readMore: { label: "Constrained Generation →", tab: "systems" }
+  },
+
+  // ── Inference (5) ───────────────────────────────────────────────────────────
+  {
+    id: "inf-q1", topic: "inference", difficulty: "medium", type: "mcq",
+    question: "Flash Attention reduces memory complexity from O(N²) to O(N) by:",
+    options: [
+      "Approximating the attention matrix with low-rank decomposition",
+      "Tiling the computation into SRAM-resident blocks to avoid HBM reads",
+      "Skipping attention for tokens below a relevance threshold",
+      "Replacing softmax with a linear kernel function"
+    ],
+    correct: 1,
+    keywords: [],
+    explanation: "Flash Attention uses tiling: it splits Q, K, V into blocks that fit in fast SRAM, performing the softmax and attention output computation block-by-block without materialising the full N×N attention matrix in slow HBM. Memory footprint drops from O(N²) to O(N) at the cost of re-computation during the backward pass.",
+    readMore: { label: "Flash Attention & Inference →", tab: "systems" }
+  },
+  {
+    id: "inf-q2", topic: "inference", difficulty: "hard", type: "text",
+    question: "A production LLM serving system is bottlenecked at 40% GPU utilisation despite high request volume. Walk through the three most likely causes and what metrics you'd check for each.",
+    options: [],
+    correct: 0,
+    keywords: ["KV cache", "batching", "memory bandwidth", "continuous batching", "PagedAttention", "prefill", "decode"],
+    explanation: "The three usual suspects: (1) Insufficient batching — check request queue depth and batch size; continuous batching (vLLM/TGI) dramatically improves utilisation vs static batching. (2) KV cache exhaustion — long sequences or large batch sizes fill the KV cache, forcing requests to wait; PagedAttention mitigates this. (3) Prefill–decode imbalance — prefill is compute-bound, decode is memory-bandwidth-bound; mixed batches stall each other. Check prefill vs decode token ratios and consider chunked prefill.",
+    readMore: { label: "LLM Serving Systems →", tab: "systems" }
+  },
+  {
+    id: "inf-q3", topic: "inference", difficulty: "medium", type: "mcq",
+    question: "Speculative decoding achieves latency reduction primarily because:",
+    options: [
+      "It uses a smaller model for all tokens, falling back to the large model only for important tokens",
+      "The draft model generates candidate tokens in parallel, and the large model verifies a batch of them in a single forward pass",
+      "It caches the KV states of the large model and reuses them across requests",
+      "It quantises the large model's weights to INT4 during the decode phase"
+    ],
+    correct: 1,
+    keywords: [],
+    explanation: "Speculative decoding uses a cheap draft model to propose k tokens speculatively. The large model verifies all k in a single parallel forward pass — accepting correct ones and rejecting at the first mismatch. Since the large model's forward pass cost is roughly constant for 1 vs k tokens (memory-bandwidth-bound decode), you get k tokens for the cost of ~1. Typical speedup: 2–3×.",
+    readMore: { label: "Speculative Decoding →", tab: "systems" }
+  },
+  {
+    id: "inf-q4", topic: "inference", difficulty: "easy", type: "mcq",
+    question: "Token streaming (sending tokens to the user as they are generated) primarily improves which metric?",
+    options: [
+      "Throughput (tokens/second)",
+      "Time to first token (TTFT)",
+      "Total end-to-end latency",
+      "Perceived responsiveness — time to first token seen by user"
+    ],
+    correct: 3,
+    keywords: [],
+    explanation: "Streaming doesn't change actual throughput or true end-to-end latency — the model still generates the same number of tokens at the same speed. What changes is perceived responsiveness: the user sees the first token within milliseconds of TTFT rather than waiting for the entire response. This is a UX win, not a performance win in the traditional sense.",
+    readMore: { label: "Streaming & Latency →", tab: "systems" }
+  },
+  {
+    id: "inf-q5", topic: "inference", difficulty: "hard", type: "text",
+    question: "Explain the trade-offs between INT8 and INT4 quantisation for LLM inference. When would you choose each, and what accuracy mitigation strategies exist for INT4?",
+    options: [],
+    correct: 0,
+    keywords: ["outliers", "activation quantisation", "weight-only", "GPTQ", "AWQ", "perplexity", "calibration", "QLoRA"],
+    explanation: "INT8 (W8A8 or W8A16): minimal accuracy loss (<1% perplexity), well-supported (bitsandbytes, TensorRT-LLM), 2× memory reduction. Good default for production. INT4 (W4A16): 4× memory reduction, enables larger models on consumer hardware, but significant perplexity degradation without mitigation. Mitigation: GPTQ uses layer-wise second-order optimisation on calibration data; AWQ identifies and protects salient weights (those with large activation magnitudes). Choose INT4 when memory is the binding constraint and perplexity loss is acceptable, or when serving on edge/consumer hardware. Always evaluate task-specific metrics, not just perplexity.",
+    readMore: { label: "Quantisation →", tab: "systems" }
+  },
+
+  // ── Alignment — GRPO & Model Merging (6) ────────────────────────────────────
+  {
+    id: "align-q1", topic: "alignment", difficulty: "medium", type: "mcq",
+    question: "GRPO (Group Relative Policy Optimization) differs from PPO primarily in that it:",
+    options: [
+      "Uses a separate value/critic network to estimate baselines",
+      "Computes advantages relative to the mean reward within a group of sampled outputs, eliminating the critic network",
+      "Applies KL divergence constraints at the token level rather than the sequence level",
+      "Is supervised rather than reinforcement learning"
+    ],
+    correct: 1,
+    keywords: [],
+    explanation: "PPO requires a separate value/critic network to compute per-token advantage estimates — this doubles model memory and training complexity. GRPO instead samples G outputs for the same prompt, computes each output's reward, and uses the group mean as the baseline (advantage = reward − mean_reward / std). No critic network needed. This is why GRPO is preferred for LLM post-training: simpler, lower memory, and the group comparison provides a clean relative signal.",
+    readMore: { label: "GRPO & RL for LLMs →", tab: "alignment" }
+  },
+  {
+    id: "align-q2", topic: "alignment", difficulty: "hard", type: "text",
+    question: "You are using LLM-as-judge (the RULER pattern) to score agent trajectories in a GRPO training loop. What are the three biggest failure modes of this approach and how would you mitigate each?",
+    options: [],
+    correct: 0,
+    keywords: ["judge bias", "reward hacking", "positional bias", "length bias", "self-preference", "calibration", "rubric", "multiple judges"],
+    explanation: "Three key failure modes: (1) Positional/length bias — LLM judges prefer longer or first-presented responses; mitigate with rubric-based scoring (score each criterion independently, not holistically) and swapping position in pairwise comparisons. (2) Self-preference — a model judges outputs from the same family as better; mitigate by using a different model family as judge, or by grounding scoring on verifiable criteria (code runs, facts check out). (3) Reward hacking — the policy learns to produce outputs that score well on the rubric without actually being better; mitigate with diverse rubric criteria, held-out judge evals, and monitoring reward vs actual task performance divergence.",
+    readMore: { label: "GRPO & RL for LLMs →", tab: "alignment" }
+  },
+  {
+    id: "align-q3", topic: "alignment", difficulty: "medium", type: "mcq",
+    question: "Model merging via SLERP (Spherical Linear Interpolation) is preferred over linear interpolation for LLM weights because:",
+    options: [
+      "SLERP is computationally cheaper than linear interpolation",
+      "It preserves the magnitude of weight vectors and interpolates along the geodesic of the unit hypersphere",
+      "It only merges the attention layers, leaving FFN weights unchanged",
+      "SLERP requires fewer calibration samples than linear merging"
+    ],
+    correct: 1,
+    keywords: [],
+    explanation: "Linear interpolation (LERP) between two weight vectors changes their magnitude (the average of two unit vectors is shorter than either). SLERP interpolates along the curved surface of the hypersphere, preserving magnitude throughout. For neural network weights where the norm encodes learned feature scales, this geometric correctness matters — SLERP generally produces better capability retention than LERP when merging models trained on different tasks.",
+    readMore: { label: "Model Merging →", tab: "alignment" }
+  },
+  {
+    id: "align-q4", topic: "alignment", difficulty: "medium", type: "mcq",
+    question: "Task Arithmetic model merging works by:",
+    options: [
+      "Fine-tuning a base model on a mixture of all task datasets simultaneously",
+      "Computing task vectors (fine-tuned weights minus base weights) and adding them to a shared base model",
+      "Distilling multiple specialist models into a single student model",
+      "Routing inputs to different model shards based on task classification"
+    ],
+    correct: 1,
+    keywords: [],
+    explanation: "Task Arithmetic (Ilharco et al., 2022) defines a task vector as τ = θ_finetuned − θ_base. Adding τ to a different base model transfers the task capability. Multiple task vectors can be added together (with scaling factors λ) to merge capabilities — the base model acts as a shared subspace. This is zero-shot and requires no additional training, though negating task vectors can also 'unlearn' capabilities.",
+    readMore: { label: "Model Merging →", tab: "alignment" }
+  },
+  {
+    id: "align-q5", topic: "alignment", difficulty: "easy", type: "mcq",
+    question: "Which of the following best describes Direct Preference Optimization (DPO) compared to RLHF with PPO?",
+    options: [
+      "DPO is slower but more sample-efficient than PPO",
+      "DPO eliminates the need for a separate reward model and RL training loop by reformulating preference learning as a classification loss",
+      "DPO requires more human preference data than PPO to reach the same performance",
+      "DPO only works for instruction-following tasks, not for reasoning"
+    ],
+    correct: 1,
+    keywords: [],
+    explanation: "DPO shows that the RLHF objective can be reparametrised so the optimal policy is expressed directly in terms of preference pairs (preferred vs rejected), turning RL into a simple binary cross-entropy loss on the language model itself. No reward model training, no PPO rollouts, no KL constraint tuning. Easier to implement and often more stable, though sometimes less effective on complex reasoning tasks where PPO's online exploration matters.",
+    readMore: { label: "DPO & RLHF →", tab: "alignment" }
+  },
+  {
+    id: "merge-q1", topic: "alignment", difficulty: "hard", type: "text",
+    question: "When would you choose model merging over continued fine-tuning for adding a new capability to a base model? List three scenarios where merging wins and one where fine-tuning is clearly better.",
+    options: [],
+    correct: 0,
+    keywords: ["catastrophic forgetting", "task vectors", "SLERP", "data availability", "compute", "distribution shift", "multi-task"],
+    explanation: "Merging wins when: (1) You have a fine-tuned specialist model for the new capability but no access to its training data (proprietary or expensive to recreate) — merge the task vector instead of retraining. (2) You need to combine capabilities from two fine-tuned models without catastrophic forgetting — fine-tuning on task B erases task A; merging preserves both. (3) Compute budget is tight — merging is inference-only, no GPU hours. Fine-tuning wins when: the new capability requires deep distribution shift (not just task addition) — for example, adapting a general LLM to a highly specific domain like medical coding where the output format, vocabulary, and failure modes are all different from pretraining. Task vectors don't capture deep distributional changes well.",
+    readMore: { label: "Model Merging →", tab: "alignment" }
+  },
+
+  // ── System Design (4) ────────────────────────────────────────────────────────
+  {
+    id: "sd-q1", topic: "sysdesign", difficulty: "hard", type: "text",
+    question: "Design an AI-powered customer support system for an e-commerce platform handling 10K tickets/day. Cover: architecture decisions, model selection rationale, latency budget, fallback strategy, and eval approach.",
+    options: [],
+    correct: 0,
+    keywords: ["intent classification", "RAG", "escalation", "latency", "fine-tuning", "guardrails", "CSAT", "eval", "human handoff", "ticket routing"],
+    explanation: "Strong answers cover: (1) Architecture — intent classifier → topic router → RAG retrieval from product/policy KB → LLM response → post-generation guardrails. (2) Model selection — smaller fast model (Haiku/Flash) for classification, mid-size model for generation to stay within 2s P95 latency budget. (3) Latency budget — intent classification <100ms, retrieval <300ms, generation <1.5s, total <2s. (4) Fallback — if confidence <0.7 or guardrails flag, route to human queue with context. (5) Eval — precision/recall on intent classification, CSAT correlation, resolution rate, escalation rate as primary business metric.",
+    readMore: { label: "System Design Canvas →", tab: "systems" }
+  },
+  {
+    id: "sd-q2", topic: "sysdesign", difficulty: "medium", type: "mcq",
+    question: "When designing an AI system, which consideration should you address FIRST?",
+    options: [
+      "Which LLM provider has the lowest cost per token",
+      "Whether the problem actually needs AI and what the non-AI baseline looks like",
+      "What GPU infrastructure is available",
+      "Which vector database to use for retrieval"
+    ],
+    correct: 1,
+    keywords: [],
+    explanation: "The most common expensive mistake in AI system design is building before validating that AI is the right tool. A rule-based system, a search index, or a human workflow might solve the problem better, cheaper, and more reliably. Defining the non-AI baseline first also gives you a concrete improvement target and evaluation benchmark. Cost, infra, and vector DB are all downstream of this foundational question.",
+    readMore: { label: "System Design Canvas →", tab: "systems" }
+  },
+  {
+    id: "sd-q3", topic: "sysdesign", difficulty: "hard", type: "text",
+    question: "You need to build a document intelligence system that extracts structured data from unstructured insurance claim forms (PDFs, images, handwritten notes). What architecture would you choose and why?",
+    options: [],
+    correct: 0,
+    keywords: ["OCR", "vision model", "structured output", "constrained generation", "validation", "confidence", "human review", "fine-tuning", "extraction"],
+    explanation: "Key decisions: (1) Input pipeline — vision LLM (GPT-4V/Claude Vision) for images/PDFs directly, or OCR first then text LLM for cost efficiency at scale. (2) Extraction architecture — constrained generation with JSON schema to force structured output; define field types and validation rules. (3) Confidence routing — low-confidence extractions flagged for human review; build a confidence signal from log-probs or second-pass verification. (4) Eval — field-level extraction accuracy (not just document-level), handling of missing/ambiguous fields, human-review rate as ops metric. (5) Fine-tuning consideration — if form templates are consistent, a fine-tuned smaller model will outperform a large general model at 10× lower cost.",
+    readMore: { label: "System Design Canvas →", tab: "systems" }
+  },
+  {
+    id: "sd-q4", topic: "sysdesign", difficulty: "medium", type: "mcq",
+    question: "In the AI system design canvas, what is the purpose of defining the 'failure budget' before building?",
+    options: [
+      "To estimate the infrastructure cost of the system",
+      "To set acceptable error rates that guide model selection, fallback design, and eval thresholds before deployment",
+      "To determine how many human reviewers are needed",
+      "To calculate the expected number of API calls per day"
+    ],
+    correct: 1,
+    keywords: [],
+    explanation: "The failure budget (borrowed from SRE) defines what error rate the system can tolerate without violating user-facing SLAs. In AI systems this is especially important because models fail probabilistically — you need to decide upfront what hallucination rate, refusal rate, or latency breach rate is acceptable. This decision drives: model selection (more reliable but slower/costlier vs faster but hallucination-prone), whether a fallback to rule-based/human is needed, and what your evals must catch before ship.",
+    readMore: { label: "System Design Canvas →", tab: "systems" }
+  },
+
+  // ── LLM Ops — Streaming (2) ──────────────────────────────────────────────────
+  {
+    id: "stream-q1", topic: "llmops", difficulty: "medium", type: "mcq",
+    question: "Server-Sent Events (SSE) are preferred over WebSockets for LLM token streaming because:",
+    options: [
+      "SSE is bidirectional, making it better suited for interactive chat",
+      "SSE is unidirectional (server→client), simpler to implement, and works over standard HTTP without protocol upgrade",
+      "SSE automatically handles backpressure when the client is slow",
+      "SSE has lower latency than WebSockets for small payloads"
+    ],
+    correct: 1,
+    keywords: [],
+    explanation: "LLM token streaming is inherently unidirectional — the server sends tokens, the client renders them. SSE is purpose-built for this: it works over plain HTTP/1.1, reconnects automatically, and doesn't require a protocol upgrade handshake like WebSockets. WebSockets add complexity (bidirectional state, connection management, proxy issues) with no benefit for streaming. The main exception: if your chat UI sends audio or large binary data back to the server, WebSockets may be warranted.",
+    readMore: { label: "Streaming & Serving →", tab: "systems" }
+  },
+  {
+    id: "stream-q2", topic: "llmops", difficulty: "hard", type: "text",
+    question: "Your LLM API is streaming tokens to users but users report that the stream 'pauses' mid-response for 2-3 seconds. What are the most likely causes and how would you diagnose each?",
+    options: [],
+    correct: 0,
+    keywords: ["buffering", "nginx", "proxy", "generation", "speculative", "context switch", "KV cache eviction", "network", "X-Accel-Buffering"],
+    explanation: "Most common causes in order: (1) Proxy/CDN buffering — Nginx, Cloudflare, or API gateways buffer SSE by default. Fix: set X-Accel-Buffering: no header, configure proxy_buffering off. (2) Application-level buffering — middleware or response wrappers accumulating tokens before flushing. Fix: ensure flush() is called after each token. (3) KV cache pressure mid-generation — if the context exceeds cached KV state, the model recomputes; shows as a consistent pause at a predictable token position. Fix: monitor KV cache utilisation. (4) Generation stalls — model hitting a low-probability region, attempting multiple speculative decode paths. Less common but diagnosable by correlating pause timing with token log-probs.",
+    readMore: { label: "Streaming & Serving →", tab: "systems" }
   }
 ];
 
