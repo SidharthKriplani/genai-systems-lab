@@ -438,7 +438,7 @@ function heatColor(v) {
 
 // ─── TOKENIZER MODULE ─────────────────────────────────────────────────────────
 
-function TokenizerModule() {
+function TokenizerModule({ onNavigate }) {
   const [text, setText] = useState(TOKENIZER_EXAMPLES[0]);
   const tokens = useMemo(() => tokenize(text), [text]);
   const charCount = text.length;
@@ -551,20 +551,28 @@ function TokenizerModule() {
         </div>
       </div>
 
-      <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-800/40 p-3">
-        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Go deeper</p>
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">🔬 Explore tab → Tokenizer Explorer</span>
-          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">📖 Ground Truth → Tokenization Deep Dive</span>
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "tokenization-deep-dive" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 Tokenization Deep-Dive
+            </button>
+            <button onClick={() => onNavigate({ tab: "flows" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              🗺 Flows
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
 // ─── EMBEDDING MODULE ─────────────────────────────────────────────────────────
 
-function EmbeddingModule() {
+function EmbeddingModule({ onNavigate }) {
   const W = 680, H = 480;
   const pad = 40;
   const toSVG = (nx, ny) => ({
@@ -768,20 +776,28 @@ function EmbeddingModule() {
         </div>
       </div>
 
-      <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-800/40 p-3">
-        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Go deeper</p>
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">🔬 Explore tab → Embedding Space (3D viz)</span>
-          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">📐 Flows tab → RAG Pipeline Diagram</span>
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "embeddings-explained" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 Embeddings Explained
+            </button>
+            <button onClick={() => onNavigate({ tab: "explore", moduleId: "embmodels" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              🔬 Embedding Model Explorer
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
 // ─── ATTENTION MODULE ─────────────────────────────────────────────────────────
 
-function AttentionModule() {
+function AttentionModule({ onNavigate }) {
   const [exIdx, setExIdx] = useState(0);
   const [headIdx, setHeadIdx] = useState(0);
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -934,13 +950,21 @@ function AttentionModule() {
         </div>
       </div>
 
-      <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-800/40 p-3">
-        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Go deeper</p>
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">🔬 Explore tab → 3D Attention Visualization</span>
-          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">📐 Flows tab → Transformer Block</span>
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "self-attention-deep-dive" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 Self-Attention Deep-Dive
+            </button>
+            <button onClick={() => onNavigate({ tab: "flows" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              🗺 Flows
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -1069,7 +1093,7 @@ function embColor(v) {
   return `rgb(${Math.round(t*139+(1-t)*30)},${Math.round(t*30+(1-t)*30)},${Math.round(t*246+(1-t)*80)})`;
 }
 
-function TransformerModule() {
+function TransformerModule({ onNavigate }) {
   const [sentenceIdx, setSentenceIdx] = useState(0);
   const [nHeads, setNHeads] = useState(2);
   const [temperature, setTemperature] = useState(1.0);
@@ -1296,6 +1320,22 @@ function TransformerModule() {
           </div>
         </div>
       )}
+
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "what-is-a-transformer" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 What Is a Transformer?
+            </button>
+            <button onClick={() => onNavigate({ tab: "systems", moduleId: "txarch" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              ⚙️ Transformer Architecture
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1414,7 +1454,7 @@ const SLIDING_CORPUS =
   "A retriever finds relevant chunks from a corpus and injects them into the prompt as context. " +
   "Chunking quality directly affects retrieval: chunks too small lose context, chunks too large dilute relevance scores and waste tokens.";
 
-function ChunkingModule() {
+function ChunkingModule({ onNavigate }) {
   const [strategy, setStrategy] = useState("fixed");
   const [queryIdx, setQueryIdx] = useState(0);
   const [showRetrieval, setShowRetrieval] = useState(false);
@@ -1550,6 +1590,22 @@ function ChunkingModule() {
           </div>
         </div>
       </div>
+
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "chunking-strategies" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 Chunking Strategies
+            </button>
+            <button onClick={() => onNavigate({ tab: "lab" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              🧪 RAG Lab
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1609,7 +1665,7 @@ function computeProbs(candidates, temp) {
   return exps.map(v => v / sum);
 }
 
-function SamplingModule() {
+function SamplingModule({ onNavigate }) {
   const [promptIdx, setPromptIdx] = useState(0);
   const [strategy, setSampleStrategy] = useState("greedy");
   const [temperature, setSampleTemp] = useState(1.0);
@@ -1796,6 +1852,18 @@ function SamplingModule() {
           ))}
         </div>
       </div>
+
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "decoding-sampling" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 Decoding &amp; Sampling
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1821,7 +1889,7 @@ const CTX_SECTIONS = [
 
 const CTX_COMPLEXITY = [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 128000];
 
-function ContextWindowModule() {
+function ContextWindowModule({ onNavigate }) {
   const [modelIdx, setModelIdx] = useState(2);
   const [fewshot, setFewshot] = useState(2);
   const [history, setHistory] = useState(3);
@@ -1970,13 +2038,21 @@ function ContextWindowModule() {
         </div>
       </div>
 
-      <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-800/40 p-3">
-        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Go deeper</p>
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">📐 Flows tab → Context Window Diagram</span>
-          <span className="text-xs bg-zinc-700 text-zinc-300 rounded px-2 py-1">⚙️ Systems tab → Context Compaction Lab</span>
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "context-window-guide" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 Context Window Guide
+            </button>
+            <button onClick={() => onNavigate({ tab: "systems", moduleId: "ctxwindow" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              ⚙️ Context Window Engineering
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -2053,7 +2129,7 @@ const REACT_SCENARIOS = [
 
 const STEP_TOKENS = { thought: 28, action: 14, observation: 38 };
 
-function AgentModule() {
+function AgentModule({ onNavigate }) {
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [injectFail, setInjectFail] = useState(false);
   const [stepMode, setStepMode] = useState(false); // false = show all
@@ -2192,6 +2268,22 @@ function AgentModule() {
           <p className="text-xs text-zinc-600">Each loop appends thought + action + observation. A 10-step chain with 4k-token observations can easily hit 128k limits in real agents. This is why max_iterations and context compression are production requirements.</p>
         </div>
       )}
+
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "building-reliable-agents" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 Building Reliable Agents
+            </button>
+            <button onClick={() => onNavigate({ tab: "agents" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              🤖 Agents Tab
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2280,7 +2372,7 @@ const CAT_STYLE = {
   offtopic:    "border-indigo-700 bg-indigo-950/10 text-indigo-300",
 };
 
-function GuardrailsModule() {
+function GuardrailsModule({ onNavigate }) {
   const [testIdx, setTestIdx] = useState(0);
   const [showRedacted, setShowRedacted] = useState(false);
   const test = GUARDRAIL_TESTS[testIdx];
@@ -2410,6 +2502,22 @@ function GuardrailsModule() {
           ))}
         </div>
       </div>
+
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "guardrails-for-llms" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 Guardrails for LLMs
+            </button>
+            <button onClick={() => onNavigate({ tab: "systems", moduleId: "guardrails" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              ⚙️ Guardrails Deep-Dive
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2499,7 +2607,7 @@ const DEBUG_SCENARIOS = [
   },
 ];
 
-function DebugModule() {
+function DebugModule({ onNavigate }) {
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [selected, setSelected] = useState(null);
   const [submitted, setSubmitted] = useState(false);
@@ -2649,6 +2757,22 @@ function DebugModule() {
           )}
         </div>
       </div>
+
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "lab" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              🧪 RAG Lab
+            </button>
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "how-rag-works" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 How RAG Works
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2733,7 +2857,7 @@ const FAILURE_SCENARIOS = [
   },
 ];
 
-function MultiAgentModule() {
+function MultiAgentModule({ onNavigate }) {
   const [activePattern, setActivePattern] = useState("orchestrator");
   const [activeFailure, setActiveFailure] = useState(null);
   const [tab, setTab] = useState("patterns");
@@ -2913,6 +3037,22 @@ function MultiAgentModule() {
           <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4">
             <div className="text-xs font-bold text-violet-400 mb-2">The rule of thumb</div>
             <p className="text-sm text-zinc-300 leading-relaxed">Start with a single ReAct agent with tools. It handles 80% of agentic use cases with far less operational complexity. Upgrade to multi-agent only when: (1) subtasks are genuinely parallel, (2) a task requires specialist knowledge that can't be injected via prompt, or (3) the context window is the binding constraint across a long sequential workflow.</p>
+          </div>
+        </div>
+      )}
+
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => onNavigate({ tab: "groundtruth", postId: "multi-agent-orchestration" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              📖 Multi-Agent Orchestration
+            </button>
+            <button onClick={() => onNavigate({ tab: "agents" })}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              🤖 Agents Tab
+            </button>
           </div>
         </div>
       )}
@@ -3409,7 +3549,7 @@ const LEVEL_STYLE = {
   advanced:     "text-red-400 border-red-800/50",
 };
 
-export default function ConceptsApp() {
+export default function ConceptsApp({ onNavigate }) {
   const [active, setActive] = useState("tokenizer");
   const mod = MODULES.find((m) => m.id === active);
   const Component = mod.component;
@@ -3462,7 +3602,7 @@ export default function ConceptsApp() {
         <p className="text-sm text-zinc-400 mt-0.5">{mod.subtitle}</p>
       </div>
 
-      <Component />
+      <Component onNavigate={onNavigate} />
     </div>
   );
 }
