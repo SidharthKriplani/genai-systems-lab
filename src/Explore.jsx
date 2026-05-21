@@ -2244,6 +2244,277 @@ function LLMMatrixExplorer() {
   );
 }
 
+
+// ─── SEMANTIC CACHING EXPLORER ─────────────────────────────────────────────────
+
+const SC_CACHE = [
+  { id: "c1", text: "How does RAG work?",                    cat: "rag",      embedding: "retrieval augmentation generation" },
+  { id: "c2", text: "What is prompt caching?",               cat: "infra",    embedding: "prompt prefix kv cache" },
+  { id: "c3", text: "How do I reduce hallucinations?",       cat: "safety",   embedding: "hallucination grounding retrieval" },
+  { id: "c4", text: "What's the difference between SFT and DPO?", cat: "finetune", embedding: "supervised fine-tuning direct preference" },
+  { id: "c5", text: "How does attention work?",              cat: "arch",     embedding: "attention mechanism query key value" },
+];
+
+const SC_CAT_COLOR = {
+  rag: "#3b82f6", infra: "#f59e0b", safety: "#ef4444",
+  finetune: "#8b5cf6", arch: "#10b981"
+};
+
+const SC_QUERIES = [
+  { id: "q1", text: "Explain retrieval-augmented generation",
+    matchId: "c1", sim: 0.91,
+    note: "Same concept, different vocabulary — 'retrieval-augmented generation' is semantically equivalent to 'How does RAG work?'" },
+  { id: "q2", text: "Tell me about KV cache in transformers",
+    matchId: "c2", sim: 0.78,
+    note: "Related but diverges: KV cache in transformers overlaps with prompt caching but is a different mechanism" },
+  { id: "q3", text: "Ways to make LLM outputs more accurate",
+    matchId: "c3", sim: 0.86,
+    note: "'More accurate' maps to hallucination reduction — high semantic overlap despite zero shared keywords" },
+  { id: "q4", text: "Compare supervised fine-tuning vs preference optimization",
+    matchId: "c4", sim: 0.93,
+    note: "SFT vs DPO = supervised fine-tuning vs preference optimization — near-synonym restatement" },
+  { id: "q5", text: "What is the weather in Mumbai?",
+    matchId: null, sim: 0.12,
+    note: "Completely out-of-domain — no cache entry is semantically close, correctly falls through to LLM" },
+  { id: "q6", text: "How does self-attention compute weights?",
+    matchId: "c5", sim: 0.88,
+    note: "Self-attention weight computation is the mechanism inside 'How does attention work?'" },
+];
+
+function SemanticCachingExplorer() {
+  const [threshold, setThreshold] = useState(0.85);
+  const [activeQuery, setActiveQuery] = useState(null);
+  const [fired, setFired] = useState({});
+  const [animating, setAnimating] = useState(false);
+
+  function fireQuery(q) {
+    if (animating) return;
+    setAnimating(true);
+    setActiveQuery(q);
+    setTimeout(() => {
+      const isHit = q.matchId !== null && q.sim >= threshold;
+      setFired(prev => ({ ...prev, [q.id]: isHit ? "hit" : "miss" }));
+      setAnimating(false);
+    }, 700);
+  }
+
+  function changeThreshold(v) {
+    setThreshold(v);
+    setFired({});
+    setActiveQuery(null);
+  }
+
+  const hits = Object.values(fired).filter(v => v === "hit").length;
+  const misses = Object.values(fired).filter(v => v === "miss").length;
+  const savedCost = hits * 0.003;
+  const savedLatency = hits * 420;
+  const totalFired = hits + misses;
+
+  const activeResult = activeQuery
+    ? { isHit: activeQuery.matchId !== null && activeQuery.sim >= threshold, matched: SC_CACHE.find(c => c.id === activeQuery.matchId) }
+    : null;
+
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Set a similarity threshold. Fire queries. Watch semantic caching decide: serve from cache or call the LLM."
+        steps={[
+          "Set threshold — how similar must a query be to a cached answer to count as a hit?",
+          "Fire a query — see if it matches a cache entry semantically",
+          "Hit = instant response from cache. Miss = full LLM call.",
+          "Lower threshold = more hits, more risk of wrong answers. Higher = fewer hits, always fresh.",
+        ]}
+      />
+
+      {/* Threshold slider */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-zinc-400 font-mono w-28">Threshold: {threshold.toFixed(2)}</span>
+          <input type="range" min="0.70" max="0.99" step="0.01"
+            value={threshold} onChange={e => changeThreshold(parseFloat(e.target.value))}
+            className="flex-1 accent-violet-500" />
+          <span className="text-xs text-zinc-500 w-24 text-right">
+            {threshold >= 0.92 ? "Conservative" : threshold >= 0.82 ? "Balanced" : "Aggressive"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-full rounded-full bg-violet-500 transition-all duration-300"
+              style={{ width: `${((threshold - 0.70) / 0.29) * 100}%` }} />
+          </div>
+          <span className="text-[10px] text-zinc-600 font-mono">0.70 to 0.99</span>
+        </div>
+      </div>
+
+      {/* Cache contents */}
+      <div className="space-y-2">
+        <p className="text-xs text-zinc-500 uppercase tracking-widest">Cached queries</p>
+        <div className="flex flex-wrap gap-2">
+          {SC_CACHE.map(entry => (
+            <div key={entry.id}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-700 bg-zinc-900 text-xs">
+              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: SC_CAT_COLOR[entry.cat] }} />
+              <span className="text-zinc-300 truncate max-w-[180px]">
+                {entry.text.length > 35 ? entry.text.slice(0, 35) + "..." : entry.text}
+              </span>
+              <span className="text-[9px] font-mono px-1 py-0.5 rounded shrink-0"
+                style={{ backgroundColor: SC_CAT_COLOR[entry.cat] + "22", color: SC_CAT_COLOR[entry.cat] }}>
+                {entry.cat}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Query buttons */}
+      <div className="space-y-2">
+        <p className="text-xs text-zinc-500 uppercase tracking-widest">Fire a query</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {SC_QUERIES.map(q => {
+            const state = fired[q.id];
+            const isAnimatingThis = animating && activeQuery?.id === q.id;
+            const isHit = state === "hit";
+            const isMiss = state === "miss";
+            return (
+              <button key={q.id} onClick={() => fireQuery(q)}
+                disabled={animating}
+                className={`text-left px-3 py-2.5 rounded-xl border text-xs transition-all relative overflow-hidden ${
+                  isAnimatingThis ? "border-violet-600 bg-violet-950/30 animate-pulse" :
+                  isHit           ? "border-emerald-600/70 bg-emerald-950/20" :
+                  isMiss          ? "border-red-700/70 bg-red-950/20" :
+                  "border-zinc-700 bg-zinc-900 hover:border-zinc-500"
+                }`}>
+                <div className="flex items-start justify-between gap-2">
+                  <span className={`leading-snug ${isHit ? "text-emerald-300" : isMiss ? "text-red-300" : "text-zinc-300"}`}>
+                    {q.text}
+                  </span>
+                  {isAnimatingThis && (
+                    <span className="text-[9px] font-mono text-violet-400 shrink-0 mt-0.5">checking...</span>
+                  )}
+                  {isHit && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-900/50 text-emerald-400 border border-emerald-700/50 shrink-0 mt-0.5">HIT</span>
+                  )}
+                  {isMiss && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-red-900/50 text-red-400 border border-red-700/50 shrink-0 mt-0.5">MISS</span>
+                  )}
+                </div>
+                {isHit && (
+                  <div className="mt-1 text-[10px] text-emerald-500 font-mono">saved $0.003 · saved 420ms</div>
+                )}
+                {isMiss && (
+                  <div className="mt-1 text-[10px] text-red-500 font-mono">LLM call</div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Result panel */}
+      {activeQuery && (
+        <div className={`rounded-xl border p-4 space-y-3 transition-all ${
+          animating ? "border-violet-700/50 bg-violet-950/20" :
+          activeResult?.isHit ? "border-emerald-700/40 bg-emerald-950/10" :
+          "border-red-700/40 bg-red-950/10"
+        }`}>
+          {animating ? (
+            <div className="flex items-center gap-3 animate-pulse">
+              <div className="w-3 h-3 rounded-full bg-violet-500 shrink-0" />
+              <span className="text-xs text-violet-300 font-mono">Scanning cache for semantic match...</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-start gap-3 flex-wrap">
+                <div className={`w-3 h-3 rounded-full shrink-0 mt-0.5 ${activeResult?.isHit ? "bg-emerald-400" : "bg-red-500"}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-zinc-300 font-medium leading-snug">{activeQuery.text}</p>
+                  <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
+                    Best similarity: <span className={`font-bold ${activeResult?.isHit ? "text-emerald-400" : "text-red-400"}`}>{activeQuery.sim.toFixed(2)}</span>
+                    {" "}(threshold: {threshold.toFixed(2)})
+                  </p>
+                </div>
+              </div>
+
+              {/* Similarity bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] text-zinc-600 font-mono">
+                  <span>0.00</span>
+                  <span className="text-zinc-500">similarity score</span>
+                  <span>1.00</span>
+                </div>
+                <div className="relative h-3 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="absolute top-0 bottom-0 w-0.5 bg-zinc-500 z-10"
+                    style={{ left: `${threshold * 100}%` }} />
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${activeQuery.sim * 100}%`,
+                      backgroundColor: activeResult?.isHit ? "#10b981" : "#ef4444"
+                    }} />
+                </div>
+                <div className="flex justify-end">
+                  <span className="text-[9px] text-zinc-600 font-mono">| threshold</span>
+                </div>
+              </div>
+
+              {activeResult?.isHit && activeResult.matched && (
+                <div className="rounded-lg border border-emerald-800/40 bg-emerald-950/20 px-3 py-2 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: SC_CAT_COLOR[activeResult.matched.cat] }} />
+                    <span className="text-[10px] text-emerald-400 font-mono uppercase">Served from cache</span>
+                  </div>
+                  <p className="text-xs text-zinc-300">{activeResult.matched.text}</p>
+                  <div className="flex gap-4 text-[10px] font-mono text-zinc-500 pt-1">
+                    <span className="text-emerald-500">$0.003 saved</span>
+                    <span className="text-emerald-500">420ms saved</span>
+                    <span className="text-zinc-600">no LLM call needed</span>
+                  </div>
+                </div>
+              )}
+
+              {!activeResult?.isHit && (
+                <div className="rounded-lg border border-red-800/40 bg-red-950/20 px-3 py-2 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                    <span className="text-[10px] text-red-400 font-mono uppercase">No cache match above threshold — Full LLM call</span>
+                  </div>
+                  <div className="flex gap-4 text-[10px] font-mono text-zinc-500 pt-1">
+                    <span className="text-red-500">full cost incurred</span>
+                    <span className="text-red-500">full latency</span>
+                    <span className="text-zinc-600">fresh response generated</span>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[11px] text-zinc-500 leading-relaxed italic border-t border-zinc-800 pt-2">{activeQuery.note}</p>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Stats bar */}
+      {totalFired > 0 && (
+        <div className="flex flex-wrap gap-4 px-4 py-3 rounded-xl border border-zinc-800 bg-zinc-900/60 text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="text-zinc-400">Hits: <span className="text-emerald-400 font-mono font-bold">{hits}</span></span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-red-500" />
+            <span className="text-zinc-400">Misses: <span className="text-red-400 font-mono font-bold">{misses}</span></span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-zinc-400">Cost saved: <span className="text-emerald-400 font-mono font-bold">${savedCost.toFixed(3)}</span></span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-zinc-400">Latency saved: <span className="text-violet-400 font-mono font-bold">{savedLatency}ms</span></span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
@@ -2258,6 +2529,7 @@ const EXPLORE_MODULES = [
   { id: "attention3d", label: "3D Attention Heads",   tag: "3D ATTN",  component: AttentionViz3D,    fidelity: { tier: "conceptual",  note: "Pre-computed attention patterns for 'The cat sat on the mat'" } },
   { id: "diffusion3d", label: "3D Diffusion",          tag: "3D DIFF",  component: DiffusionViz3D,    fidelity: { tier: "conceptual",  note: "Conceptual particle simulation — illustrates forward/reverse diffusion" } },
   { id: "llm_matrix",  label: "Model Matrix",          tag: "COMPARE",  component: LLMMatrixExplorer, fidelity: { tier: "simplified",  note: "Curated comparison based on published benchmarks — not live API data" } },
+  { id: "semcache",   label: "Semantic Caching",    tag: "CACHE",    component: SemanticCachingExplorer, fidelity: { tier: "simplified", note: "Illustrative similarity scores — precomputed, not live embedding comparison" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit }) {

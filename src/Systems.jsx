@@ -6513,6 +6513,251 @@ function SyntheticDataGeneration() {
   );
 }
 
+// ─── VIBE CODING & AGENTIC DEV ───────────────────────────────────────────────
+
+const VC_STATS = [
+  { label: "US developers using vibe coding", value: "92%",    sub: "2026 survey" },
+  { label: "AI-generated code share",         value: "60%",    sub: "of all new code" },
+  { label: "Cursor ARR",                      value: "$2B",    sub: "24 months" },
+  { label: "Productivity gain reported",      value: "3–5×",   sub: "idea to prototype" },
+];
+
+const VC_TOOLS = [
+  {
+    name: "Cursor", tag: "AGENT MODE", color: "#8b5cf6",
+    model: "Claude 3.7 / GPT-4o", bestFor: "Multi-file autonomous editing, large codebases",
+    agentMode: true, selfHost: false, contextWindow: "200k", price: "$20/mo",
+    strengths: ["Best-in-class agent mode: describe a feature, agent builds it", "Composer: multi-file diff generation", "Deep codebase indexing for context"],
+    weaknesses: ["Proprietary, cloud-only", "Can over-edit outside scope"],
+  },
+  {
+    name: "Windsurf", tag: "SPEED FIRST", color: "#38bdf8",
+    model: "Cascade (proprietary)", bestFor: "Fast iteration, 40+ IDE plugins",
+    agentMode: true, selfHost: false, contextWindow: "200k", price: "$15/mo",
+    strengths: ["Faster model responses than Cursor", "AI code visualization", "Widest IDE coverage"],
+    weaknesses: ["Agent mode less mature than Cursor", "Smaller community"],
+  },
+  {
+    name: "GitHub Copilot", tag: "INTEGRATED", color: "#10b981",
+    model: "GPT-4o / Claude 3.5", bestFor: "IDE-native, enterprise teams with GitHub",
+    agentMode: false, selfHost: false, contextWindow: "64k", price: "$10/mo",
+    strengths: ["Native VS Code/JetBrains integration", "GitHub PR summaries", "Enterprise audit logs"],
+    weaknesses: ["No true agent mode", "Weaker multi-file reasoning"],
+  },
+  {
+    name: "Claude Code", tag: "TERMINAL", color: "#f59e0b",
+    model: "Claude Sonnet/Opus", bestFor: "Complex refactors, large-scale codebase tasks",
+    agentMode: true, selfHost: false, contextWindow: "200k", price: "API cost",
+    strengths: ["Best at long reasoning chains", "Handles entire codebases in one task", "Hooks + MCP integration"],
+    weaknesses: ["Terminal-only (no GUI)", "Cost unpredictable at scale"],
+  },
+];
+
+const VC_PATTERNS = [
+  {
+    id: "objectivevalidation",
+    title: "Objective-Validation Protocol",
+    tag: "ARCHITECTURE",
+    desc: "Set a verifiable goal. Agent executes. You validate the outcome — not the implementation. The senior engineer becomes the goal-setter and verifier, not the coder.",
+    example: "Goal: 'All API endpoints must return errors in {code, message, details} format.' Agent refactors 47 files. You run the test suite — it either passes or it doesn't.",
+    why: "Separates intent (human) from execution (agent). Works because agents are better at consistent repetitive application of a rule than creative discovery of what the rule should be.",
+  },
+  {
+    id: "contextwindow",
+    title: "Context Window as Working Memory",
+    tag: "PATTERN",
+    desc: "The agent's context is its working memory. Senior engineers manage what goes into that context — architecture docs, test examples, constraints — as carefully as they manage code.",
+    example: "Before a large refactor: load ARCHITECTURE.md, the 3 most representative existing tests, and the style guide. Don't let the agent discover these by accident.",
+    why: "Garbage in context = garbage out. Context curation is now a core engineering skill.",
+  },
+  {
+    id: "reviewshift",
+    title: "Review Shifts from Writing to Verifying",
+    tag: "SKILL SHIFT",
+    desc: "AI-generated code review is fundamentally different: you're not catching typos — you're verifying correctness of intent, edge case coverage, and scope discipline.",
+    example: "Agent adds a retry loop. Review questions: Does it have exponential backoff? Max retries? What happens to the failed request payload? Is this idempotent?",
+    why: "Agents implement confidently and incorrectly. The value of a senior engineer is knowing what questions to ask, not writing the loop themselves.",
+  },
+  {
+    id: "testfirst",
+    title: "Tests as Specification",
+    tag: "QUALITY",
+    desc: "Write tests before giving the task to the agent. Tests become the acceptance criteria. This is TDD but the 'developer' being driven is the AI.",
+    example: "For a new auth middleware: write 8 test cases covering expected token, expired token, malformed token, missing header, rate-limit, admin bypass. Hand them + the task to the agent.",
+    why: "Agents that fail tests produce localized failures. Agents with no tests silently produce code that works in the happy path and fails at 2am in production.",
+  },
+];
+
+const VC_IMPLICATIONS = [
+  { title: "Eval criteria before you vibe", body: "Ship with observability. Every AI-generated feature needs a metric from day one — you can't add it later when the agent has already built 40 interdependent functions." },
+  { title: "Scope discipline is everything", body: "Agents expand scope silently. 'Add a cache' becomes 'refactor the storage layer.' Define explicit boundaries in your prompt, not just the goal." },
+  { title: "Architecture is now the moat", body: "When implementation is cheap, the decisions about what to build and how to structure it become the hard part. Senior engineers design systems; agents implement them." },
+  { title: "Dependency sprawl accelerates", body: "Agents reach for libraries they've seen in training. Review dependency additions as carefully as you review logic. A new npm package is a supply chain event." },
+  { title: "Security review doesn't go away", body: "Agents reproduce insecure patterns from their training data. SQL injection, hardcoded secrets, missing input validation — all appear in AI-generated code. Automated scanners are not optional." },
+  { title: "The floor rises, the ceiling matters more", body: "Junior engineers can now produce senior-level output on known patterns. Differentiation moves to novel problem solving, system design, and production judgment — exactly what this app teaches." },
+];
+
+function VibeCodingAndAgenticDev() {
+  const [tab, setTab] = useState("changed");
+  const [expandedPattern, setExpandedPattern] = useState(null);
+  const [expandedTool, setExpandedTool] = useState(null);
+
+  const tabs = [
+    { id: "changed", label: "What Changed"   },
+    { id: "tools",   label: "Tool Landscape" },
+    { id: "senior",  label: "Senior Lens"    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="Understand the agentic development shift — what changed, which tools lead, and what it means for senior engineers building AI systems."
+        steps={[
+          "See the adoption numbers — this is mainstream, not experimental",
+          "Pick a tool based on your workflow — agent mode maturity varies widely",
+          "Read the senior lens — the skill shift is real and not what most people expect",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${tab === t.id ? "bg-zinc-800 border-zinc-600 text-white" : "border-zinc-700 text-zinc-400 hover:text-zinc-200"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "changed" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {VC_STATS.map((s, i) => (
+              <div key={i} className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 text-center">
+                <p className="text-2xl font-black text-amber-400">{s.value}</p>
+                <p className="text-[10px] text-zinc-400 mt-1 leading-tight">{s.label}</p>
+                <p className="text-[10px] text-zinc-600 mt-0.5">{s.sub}</p>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs text-zinc-500">Four agentic development patterns used by teams shipping with AI in 2026. Click to expand.</p>
+            {VC_PATTERNS.map((p) => (
+              <div key={p.id} onClick={() => setExpandedPattern(expandedPattern === p.id ? null : p.id)}
+                className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all ${expandedPattern === p.id ? "border-amber-500/50" : "border-zinc-800 hover:border-zinc-600"}`}>
+                <div className="flex items-start gap-3">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border bg-amber-900/30 text-amber-300 border-amber-700/40 shrink-0 mt-0.5">{p.tag}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-zinc-100">{p.title}</p>
+                    <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{p.desc}</p>
+                  </div>
+                  <span className="text-zinc-600 text-xs shrink-0">{expandedPattern === p.id ? "▲" : "▼"}</span>
+                </div>
+                {expandedPattern === p.id && (
+                  <div className="mt-3 space-y-2 border-t border-zinc-800 pt-3">
+                    <div className="bg-zinc-950 rounded-lg p-3 border border-zinc-800">
+                      <p className="text-[10px] font-bold text-amber-400 mb-1">EXAMPLE</p>
+                      <p className="text-xs text-zinc-300 leading-relaxed">{p.example}</p>
+                    </div>
+                    <div className="bg-zinc-950 rounded-lg p-3 border border-zinc-800">
+                      <p className="text-[10px] font-bold text-emerald-400 mb-1">WHY IT WORKS</p>
+                      <p className="text-xs text-zinc-300 leading-relaxed">{p.why}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "tools" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">The four tools that matter in 2026. Agent mode maturity is the key differentiator — not completions.</p>
+          {VC_TOOLS.map((tool) => (
+            <div key={tool.name}
+              className={`bg-zinc-900 border rounded-xl overflow-hidden transition-all ${expandedTool === tool.name ? "border-zinc-600" : "border-zinc-800 hover:border-zinc-700"}`}>
+              <div className="p-4 cursor-pointer" onClick={() => setExpandedTool(expandedTool === tool.name ? null : tool.name)}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tool.color }} />
+                  <p className="text-sm font-black text-zinc-100">{tool.name}</p>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold border" style={{ color: tool.color, borderColor: tool.color + "60", backgroundColor: tool.color + "18" }}>{tool.tag}</span>
+                  <span className="ml-auto text-zinc-600 text-xs">{expandedTool === tool.name ? "▲" : "▼"}</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+                  <div>
+                    <p className="text-zinc-600 uppercase tracking-wide">Model</p>
+                    <p className="text-zinc-300 mt-0.5">{tool.model}</p>
+                  </div>
+                  <div>
+                    <p className="text-zinc-600 uppercase tracking-wide">Best For</p>
+                    <p className="text-zinc-300 mt-0.5">{tool.bestFor}</p>
+                  </div>
+                  <div>
+                    <p className="text-zinc-600 uppercase tracking-wide">Context</p>
+                    <p className="text-zinc-300 mt-0.5">{tool.contextWindow}</p>
+                  </div>
+                  <div>
+                    <p className="text-zinc-600 uppercase tracking-wide">Price</p>
+                    <p className="text-zinc-300 mt-0.5">{tool.price}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${tool.agentMode ? "bg-emerald-900/50 text-emerald-300 border border-emerald-700/40" : "bg-zinc-800 text-zinc-500 border border-zinc-700"}`}>
+                    {tool.agentMode ? "✓ Agent Mode" : "✗ No Agent Mode"}
+                  </span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${tool.selfHost ? "bg-sky-900/50 text-sky-300 border border-sky-700/40" : "bg-zinc-800 text-zinc-500 border border-zinc-700"}`}>
+                    {tool.selfHost ? "✓ Self-Host" : "✗ Cloud Only"}
+                  </span>
+                </div>
+              </div>
+              {expandedTool === tool.name && (
+                <div className="border-t border-zinc-800 p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] font-bold text-emerald-400 mb-2">STRENGTHS</p>
+                    <ul className="space-y-1">
+                      {tool.strengths.map((s, i) => (
+                        <li key={i} className="text-xs text-zinc-300 flex gap-2">
+                          <span className="text-emerald-500 shrink-0">+</span>
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-red-400 mb-2">WEAKNESSES</p>
+                    <ul className="space-y-1">
+                      {tool.weaknesses.map((w, i) => (
+                        <li key={i} className="text-xs text-zinc-300 flex gap-2">
+                          <span className="text-red-500 shrink-0">−</span>
+                          {w}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "senior" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">What the agentic shift actually means for senior engineers and PMs building AI systems. Not hype — structural changes.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {VC_IMPLICATIONS.map((imp, i) => (
+              <div key={i} className="bg-zinc-900 rounded-xl border border-zinc-800 p-4">
+                <p className="text-sm font-bold text-amber-400 mb-2">{imp.title}</p>
+                <p className="text-xs text-zinc-400 leading-relaxed">{imp.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 const SYSTEMS_MODULES = [
   { id: "evals",         label: "Evals Lab",          tag: "DESIGN",     group: "DESIGN",  component: EvalsLab           },
@@ -6542,6 +6787,7 @@ const SYSTEMS_MODULES = [
   { id: "txarch",       label: "Transformer Architecture",tag: "VISUAL",   group: "DESIGN",  component: TransformerArchitecture },
   { id: "structout",    label: "Structured Outputs",      tag: "SCHEMA",   group: "DESIGN",  component: StructuredOutputEngineering },
   { id: "synthdata",    label: "Synthetic Data",          tag: "DATA",     group: "DESIGN",  component: SyntheticDataGeneration },
+  { id: "vibecoding",  label: "Vibe Coding & Agentic Dev", tag: "DEV",   group: "DESIGN",  component: VibeCodingAndAgenticDev },
   { id: "buildthis",    label: "Build This",              tag: "BUILD",    group: "BUILD",   component: BuildThis },
 ];
 

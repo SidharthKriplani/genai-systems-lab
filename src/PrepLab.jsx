@@ -553,6 +553,218 @@ const PREP_QUESTIONS = [
     keywords: ["severity", "rollback", "communicate", "escalat", "fix", "monitor", "document"],
     explanation: "Strong answer: assess impact severity and blast radius first, determine fastest mitigation (rollback vs. hotfix), communicate to affected stakeholders immediately, escalate appropriately, document timeline for postmortem.",
     readMore: null
+  },
+
+  // ── MULTIMODAL (5) ────────────────────────────────────────────────────────
+  {
+    id: "mm-1", topic: "multimodal", difficulty: "medium", type: "mcq",
+    question: "A GPT-4o call with a 1024×1024 image in 'high detail' mode uses approximately how many image tokens?",
+    options: ["85 tokens", "512 tokens", "~1700 tokens", "4096 tokens"],
+    correct: 2, keywords: [],
+    explanation: "High-detail mode tiles the image into 512×512 sub-images. A 1024×1024 image produces 4 tiles × ~340 tokens each ≈ 1700 tokens plus the base 85 for a low-res overview. Image token cost is a critical budget consideration.",
+    readMore: { label: "Multimodal AI →", tab: "systems" }
+  },
+  {
+    id: "mm-2", topic: "multimodal", difficulty: "hard", type: "mcq",
+    question: "Your multimodal RAG system retrieves images by text query but misses relevant charts with no caption text. Best fix?",
+    options: ["Increase top_k", "Switch to CLIP-based cross-modal retrieval or pre-generate captions for all images", "Use a larger LLM", "Add OCR to all images"],
+    correct: 1, keywords: [],
+    explanation: "Text-only vector search can't find uncaptioned images because there's no text to embed. CLIP embeds images and text in a shared space — enabling text query to retrieve visually similar images. Captioning is simpler but loses visual detail the caption doesn't describe.",
+    readMore: { label: "Multimodal RAG patterns →", tab: "systems" }
+  },
+  {
+    id: "mm-3", topic: "multimodal", difficulty: "medium", type: "mcq",
+    question: "Which task will a vision LLM reliably fail at even with a clear image?",
+    options: ["Describing the scene", "Reading large text in the image", "Counting 23 specific objects", "Identifying dominant colors"],
+    correct: 2, keywords: [],
+    explanation: "Object counting is a known failure mode. Attention mechanisms don't track discrete instances — models approximate and consistently over/undercount beyond ~5 objects. Use a dedicated detection model (YOLO) for counting tasks.",
+    readMore: { label: "Multimodal failure modes →", tab: "systems" }
+  },
+  {
+    id: "mm-4", topic: "multimodal", difficulty: "hard", type: "mcq",
+    question: "What architectural innovation makes GPT-4o different from GPT-4V?",
+    options: ["Larger parameter count", "End-to-end native multimodal training vs. a separate vision encoder bolted on", "Bigger context window", "RLHF on image preferences"],
+    correct: 1, keywords: [],
+    explanation: "GPT-4V used a separate vision encoder whose output was injected as text tokens. GPT-4o is trained natively on all modalities simultaneously — giving it unified audio/image/text understanding and enabling real-time voice without a pipeline.",
+    readMore: { label: "GPT-4o Deep Dive →", tab: "groundtruth" }
+  },
+  {
+    id: "mm-5", topic: "multimodal", difficulty: "medium", type: "mcq",
+    question: "ColPali is better than CLIP for document retrieval because:",
+    options: ["It's faster at inference", "It embeds whole document pages as visual token sequences — no OCR step needed, captures layout and charts", "It has a larger vocabulary", "It uses BM25 ranking"],
+    correct: 1, keywords: [],
+    explanation: "ColPali (based on PaliGemma) encodes full document pages as image patches, capturing text, layout, charts, and tables together. CLIP struggles with fine-grained text. The tradeoff: ColPali is slower and newer with less tooling.",
+    readMore: { label: "Multimodal RAG patterns →", tab: "systems" }
+  },
+
+  // ── REASONING MODELS (5) ──────────────────────────────────────────────────
+  {
+    id: "rsn-1", topic: "reasoning", difficulty: "medium", type: "mcq",
+    question: "A reasoning model with a 32K thinking budget takes 25s to respond. Which production pattern best hides this from users?",
+    options: ["Reduce thinking budget to 1K tokens", "Stream a live 'thinking...' indicator with elapsed time while reasoning runs", "Cache all responses", "Use a faster model instead"],
+    correct: 1, keywords: [],
+    explanation: "Users tolerate latency much better when they see visible progress. Streaming 'thinking...' with elapsed time manages perception. Reducing thinking budget trades quality for speed — only correct if your accuracy analysis shows the lower budget is sufficient.",
+    readMore: { label: "Reasoning Models Lab →", tab: "systems" }
+  },
+  {
+    id: "rsn-2", topic: "reasoning", difficulty: "hard", type: "mcq",
+    question: "Which task type gets the LEAST benefit from a reasoning model vs. standard GPT-4o?",
+    options: ["Competitive programming", "Multi-step mathematical proofs", "Sentiment classification on customer reviews", "Complex legal contract analysis"],
+    correct: 2, keywords: [],
+    explanation: "Sentiment classification is a pattern-matching task with no multi-step reasoning requirement. A fine-tuned small model beats o3 at 100× lower cost. Reasoning models shine on tasks requiring planning, backtracking, and checking multiple sub-conditions.",
+    readMore: { label: "When to use reasoning models →", tab: "systems" }
+  },
+  {
+    id: "rsn-3", topic: "reasoning", difficulty: "hard", type: "mcq",
+    question: "Your LLM pipeline costs $8K/month. You want to add reasoning models for hard queries. Best cost-control architecture?",
+    options: ["Replace all calls with o3", "Classify query difficulty first; route only high-complexity queries to reasoning model, simple ones to GPT-4o", "Use reasoning models at low thinking budget for everything", "Cache reasoning model responses"],
+    correct: 1, keywords: [],
+    explanation: "Confidence-based routing is the highest-ROI optimization. A fast classifier identifies the ~30% of queries that actually need deep reasoning. The other 70% use the cheap standard model. This typically delivers 90%+ of reasoning model quality at 30–40% of cost.",
+    readMore: { label: "Reasoning model economics →", tab: "systems" }
+  },
+  {
+    id: "rsn-4", topic: "reasoning", difficulty: "medium", type: "mcq",
+    question: "Reasoning models have 'hidden scratchpad' tokens. What does this mean practically for billing?",
+    options: ["You're not billed for thinking tokens", "Thinking tokens are billed at the same rate as output tokens even though they're not shown to the user", "Thinking is free up to 16K tokens", "Only Claude charges for thinking tokens"],
+    correct: 1, keywords: [],
+    explanation: "Thinking tokens are real compute — billed at the model's output token rate regardless of whether they appear in the response. A 32K thinking budget can add $0.48+ to a single o3 call. Budget your thinking token allocation as carefully as output tokens.",
+    readMore: { label: "Thinking budget deep dive →", tab: "systems" }
+  },
+  {
+    id: "rsn-5", topic: "reasoning", difficulty: "medium", type: "mcq",
+    question: "What is the key architectural difference between o1/o3 (OpenAI) and Claude Extended Thinking (Anthropic)?",
+    options: ["o1 is larger", "Claude's thinking is visible to the developer; o1's chain-of-thought is completely hidden", "o3 supports more tools", "Extended thinking only works on Claude Opus"],
+    correct: 1, keywords: [],
+    explanation: "OpenAI hides the full reasoning trace — you see the summary answer. Anthropic exposes the thinking tokens in the API response, which helps with debugging agent failures and building user trust. Different transparency philosophy with real production implications.",
+    readMore: { label: "Claude vs GPT-4o deep dive →", tab: "groundtruth" }
+  },
+
+  // ── MCP + RELIABILITY (agents) (4) ────────────────────────────────────────
+  {
+    id: "mcp-q1", topic: "agents", difficulty: "medium", type: "mcq",
+    question: "What problem does MCP solve that function calling alone doesn't?",
+    options: ["Faster inference", "N×M integration problem — one MCP server works with any host; function calling requires per-application definitions", "Better JSON schemas", "Access to GPT-4o tools"],
+    correct: 1, keywords: [],
+    explanation: "Without MCP: N models × M tools = N×M integrations. With MCP: each tool builds one server, each model builds one client = N+M. MCP also adds Resources (data access) and dynamic tool discovery — things function calling doesn't support.",
+    readMore: { label: "MCP Deep Dive →", tab: "agents" }
+  },
+  {
+    id: "mcp-q2", topic: "agents", difficulty: "hard", type: "mcq",
+    question: "Your production agent calls the same tool with identical arguments 4 times in a row. Root cause?",
+    options: ["Tool is slow", "Agent is in an infinite loop — tool output isn't satisfying the reasoning step, causing repeated attempts", "Network timeout", "Temperature too high"],
+    correct: 1, keywords: [],
+    explanation: "Repeated identical tool calls is the canonical infinite loop signal. The tool's output format or content doesn't match what the LLM's reasoning expects — so it retries. Fix: duplicate-call detection (hash tool+args), inject loop-break prompt, or surface to human after 3 identical calls.",
+    readMore: { label: "Agentic Reliability →", tab: "agents" }
+  },
+  {
+    id: "rel-q1", topic: "agents", difficulty: "hard", type: "mcq",
+    question: "Which agentic reliability pattern prevents an agent from deleting 47 files when asked to clean up 'temp files'?",
+    options: ["Step budget", "Least-privilege tool access + confirmation gate before irreversible actions", "Context pruning", "Self-critique loop"],
+    correct: 1, keywords: [],
+    explanation: "Scope creep (taking actions outside intended scope) is prevented by: (1) only giving the agent access to tools/resources needed for the task, (2) requiring human confirmation before irreversible actions like delete. Step budget limits iterations but doesn't prevent destructive single actions.",
+    readMore: { label: "Agentic Reliability →", tab: "agents" }
+  },
+  {
+    id: "rel-q2", topic: "agents", difficulty: "medium", type: "mcq",
+    question: "What is 'tool output confabulation' in an agentic system?",
+    options: ["The tool crashes", "The agent incorrectly 'remembers' what a tool returned, especially after many steps in a long context", "The tool returns JSON the agent can't parse", "The tool call exceeds timeout"],
+    correct: 1, keywords: [],
+    explanation: "After 10+ steps, LLM context is long and attention degrades on early tool outputs. The agent may assert facts from tool outputs that don't match what was actually returned. Mitigation: periodically re-anchor with a summary of confirmed facts, keep context under 40K tokens for agents.",
+    readMore: { label: "Agentic Reliability →", tab: "agents" }
+  },
+
+  // ── STRUCTURED OUTPUTS + CONTEXT (llmops + rag) (5) ──────────────────────
+  {
+    id: "so-q1", topic: "llmops", difficulty: "medium", type: "mcq",
+    question: "JSON mode vs. tool/function calling for structured output — key difference?",
+    options: ["JSON mode is faster", "JSON mode guarantees valid JSON but NOT schema compliance; tool calling enforces the schema exactly", "Tool calling only works with OpenAI", "JSON mode supports nested objects better"],
+    correct: 1, keywords: [],
+    explanation: "JSON mode gives you syntactically valid JSON — the model may still omit required fields, add unexpected fields, or use wrong types. Tool calling forces the model to call a function matching a specific schema — highest reliability for production structured extraction.",
+    readMore: { label: "Structured Outputs →", tab: "systems" }
+  },
+  {
+    id: "so-q2", topic: "llmops", difficulty: "hard", type: "mcq",
+    question: "Your structured extraction pipeline has a 4% validation failure rate in production. Best first action?",
+    options: ["Switch to a larger model", "Log all failures with input+output, categorize by failure type (schema drift, type error, truncation), fix the top category", "Increase max_tokens", "Add more examples to the prompt"],
+    correct: 1, keywords: [],
+    explanation: "4% failure rate is high but diagnosable. Without logging, you're guessing. Categorizing failures by type reveals whether you need: retry logic (schema drift), type coercion (type errors), bigger max_tokens (truncation), or schema simplification. Each has a different fix.",
+    readMore: { label: "Structured Outputs →", tab: "systems" }
+  },
+  {
+    id: "ctx-q1", topic: "rag", difficulty: "hard", type: "mcq",
+    question: "Gemini 1.5 has 1M token context. When should you still use RAG instead of stuffing the whole corpus?",
+    options: ["Never — 1M context makes RAG obsolete", "When corpus is larger than 1M tokens, dynamically updated, or cost/latency constraints make full-context inference infeasible", "Only when using Claude", "When documents are in PDF format"],
+    correct: 1, keywords: [],
+    explanation: "1M context is transformative but not universal. Corpora often exceed 1M tokens; real-time/user-specific data changes faster than you can ingest; processing 1M tokens costs 50–200× a RAG call; TTFT for 1M contexts adds seconds. RAG remains essential for dynamic, large, or cost-sensitive workloads.",
+    readMore: { label: "Context Window Engineering →", tab: "systems" }
+  },
+  {
+    id: "ctx-q2", topic: "rag", difficulty: "medium", type: "mcq",
+    question: "The 'lost in the middle' problem means:",
+    options: ["Documents in the middle of a retrieval list are never returned", "LLMs pay less attention to content positioned in the middle of a long context — information there is systematically underweighted", "Context windows corrupt text in the center", "Chunking cuts sentences in half"],
+    correct: 1, keywords: [],
+    explanation: "Liu et al. (2023) showed recall drops from ~92% at context start/end to ~42–51% for content positioned in the middle. Fix: put most critical content at start or end, use reranking to place high-relevance chunks at position 1 or last, use map-reduce for long corpora.",
+    readMore: { label: "Context Window Engineering →", tab: "systems" }
+  },
+
+  // ── DEPLOYMENT + SYNTHETIC DATA (llmops + finetuning) (5) ────────────────
+  {
+    id: "dep-q1", topic: "llmops", difficulty: "hard", type: "mcq",
+    question: "Continuous batching improves LLM serving throughput by:",
+    options: ["Running inference in parallel on multiple GPUs", "Allowing new requests to join mid-generation — no request waits for a full batch to complete", "Pre-caching all KV states", "Reducing model size"],
+    correct: 1, keywords: [],
+    explanation: "Traditional static batching waits for all batch members to finish. Continuous batching (used in vLLM, TGI) adds new requests at the token level when GPU has capacity — achieving 10–20× better throughput than no batching, with near-optimal latency for interactive workloads.",
+    readMore: { label: "Deployment Architecture →", tab: "systems" }
+  },
+  {
+    id: "dep-q2", topic: "llmops", difficulty: "medium", type: "mcq",
+    question: "When does self-hosting Llama 3.1 70B become more cost-effective than OpenAI API?",
+    options: ["Always — open source is always cheaper", "Never — managed APIs scale better", "At approximately $50K+/month API spend where GPU costs justify the engineering overhead", "When you have more than 100 users"],
+    correct: 2, keywords: [],
+    explanation: "Below ~$50K/month API spend, engineering cost (infra setup, monitoring, ops) exceeds savings. Above that threshold, self-hosting on dedicated A100/H100 GPUs typically costs 70–90% less per token. The crossover depends on team size, traffic predictability, and data privacy requirements.",
+    readMore: { label: "Llama Deep Dive →", tab: "groundtruth" }
+  },
+  {
+    id: "syn-q1", topic: "finetuning", difficulty: "hard", type: "mcq",
+    question: "LLM-as-judge filtering in synthetic data generation keeps approximately what fraction of generated data?",
+    options: ["95%+ — judge only removes clearly bad examples", "50–70% — significant portion fails quality threshold when judged rigorously", "10–20% — most LLM-generated data is low quality", "100% — the generator and judge use the same model"],
+    correct: 1, keywords: [],
+    explanation: "With a quality threshold of ~0.75/1.0, rigorous LLM-as-judge filtering typically keeps 50–70% of generated data. This is desirable — removing noisy examples reduces overfitting and improves fine-tuning outcomes. The goal is quality over quantity.",
+    readMore: { label: "Synthetic Data →", tab: "systems" }
+  },
+  {
+    id: "syn-q2", topic: "finetuning", difficulty: "medium", type: "mcq",
+    question: "What is Evol-Instruct and why does it produce better fine-tuning data than flat self-instruct?",
+    options: ["It uses evolutionary algorithms to train the model", "It iteratively makes simple instructions more complex — creating a difficulty gradient that trains models to handle hard instructions", "It generates instructions in multiple languages", "It deduplicates by evolutionary distance"],
+    correct: 1, keywords: [],
+    explanation: "Flat self-instruct generates diverse but similarly-difficulty instructions. Evol-Instruct evolves each instruction into harder versions (add constraints, add error handling, add edge cases). The resulting dataset has a difficulty gradient — models trained on it generalize better to hard real-world inputs. Used to train WizardCoder and WizardLM.",
+    readMore: { label: "Synthetic Data →", tab: "systems" }
+  },
+  {
+    id: "arch-q1", topic: "finetuning", difficulty: "medium", type: "mcq",
+    question: "Why do modern LLMs (GPT-4o, Claude, Llama) use decoder-only architecture instead of the original encoder-decoder?",
+    options: ["Decoder-only is cheaper to build", "Decoder-only scales more efficiently — simpler training objective (next-token prediction), no encoder bottleneck, stronger emergent few-shot abilities at scale", "Encoder-decoder can't do generation", "Patents prevent encoder-decoder use"],
+    correct: 1, keywords: [],
+    explanation: "After GPT-2/3 demonstrated that decoder-only models develop powerful emergent abilities through scale, the field converged on this architecture. The autoregressive next-token objective is simpler to optimize at scale, there's no cross-attention bottleneck between encoder/decoder, and the architecture naturally supports few-shot prompting.",
+    readMore: { label: "Transformer Architecture →", tab: "systems" }
+  },
+
+  // ── SAFETY + GOVERNANCE (safety) (4) ──────────────────────────────────────
+  {
+    id: "sec-q1", topic: "safety", difficulty: "hard", type: "mcq",
+    question: "Indirect prompt injection is harder to defend against than direct injection because:",
+    options: ["It uses more tokens", "Malicious instructions are hidden in retrieved content (web pages, docs) — the system can't distinguish attacker instructions from legitimate data", "It bypasses rate limits", "It requires root access"],
+    correct: 1, keywords: [],
+    explanation: "Direct injection (user typing 'ignore all instructions') is visible and filterable. Indirect injection embeds instructions in content your system retrieves — a web page, a document, an email. The LLM sees it as 'trusted' retrieved context. Defense: treat all retrieved content as untrusted data, never let retrieved content reach instruction position directly.",
+    readMore: { label: "AI Red Teaming →", tab: "systems" }
+  },
+  {
+    id: "sec-q2", topic: "safety", difficulty: "medium", type: "mcq",
+    question: "A user pastes 200 example Q&As where the AI 'helpfully' answers harmful questions, then asks a harmful question. This is:",
+    options: ["Role-play jailbreak", "Many-shot jailbreaking — exploiting in-context learning by padding context with fabricated compliance examples", "System prompt injection", "Token smuggling"],
+    correct: 1, keywords: [],
+    explanation: "Many-shot jailbreaking exploits the model's in-context learning ability. With enough fabricated 'compliance' examples in context, the model treats the harmful answer as the expected pattern to continue. Defense: detect anomalous context length, rate-limit heavy-context requests, context length caps.",
+    readMore: { label: "AI Red Teaming →", tab: "systems" }
   }
 ];
 
@@ -567,12 +779,15 @@ const TOPIC_COLORS = {
   safety: "bg-red-500/20 text-red-300 border-red-500/30",
   product: "bg-pink-500/20 text-pink-300 border-pink-500/30",
   behavioral: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+  multimodal: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+  reasoning: "bg-teal-500/20 text-teal-300 border-teal-500/30",
 };
 
 const TOPIC_LABELS = {
   rag: "RAG", agents: "Agents", finetuning: "Fine-Tuning",
   evaluation: "Evaluation", llmops: "LLMOps",
-  safety: "Safety", product: "Product", behavioral: "Behavioral"
+  safety: "Safety", product: "Product", behavioral: "Behavioral",
+  multimodal: "Multimodal", reasoning: "Reasoning Models",
 };
 
 const SKILL_KEYWORDS = {
@@ -1595,6 +1810,334 @@ function CompanyPrepMode({ onExit, onNavigate }) {
   }
 }
 
+
+// ─── DEFENSE DOC MODE ─────────────────────────────────────────────────────────
+
+const DD_DOMAINS = [
+  { id:"rag",       label:"RAG & Retrieval",           color:"#3b82f6", keywords:["rag","retrieval","vector","embedding","chunk","rerank","hybrid search","faiss","pinecone","weaviate","langchain","llama index"] },
+  { id:"agents",    label:"Agent Systems",              color:"#8b5cf6", keywords:["agent","tool call","langgraph","crewai","autogen","react","planning","orchestrat","multi-agent","agentic"] },
+  { id:"eval",      label:"Evals & Quality",            color:"#10b981", keywords:["eval","benchmark","metric","ragas","hallucin","faithfulness","precision","recall","judge","test","quality"] },
+  { id:"infra",     label:"Infra & Deployment",         color:"#f59e0b", keywords:["vllm","triton","kubernetes","docker","latency","throughput","serving","deploy","scale","gpu","inference"] },
+  { id:"finetune",  label:"Fine-tuning & Alignment",    color:"#ef4444", keywords:["fine-tun","lora","qlora","sft","dpo","rlhf","grpo","alignment","peft","adapter","train"] },
+  { id:"safety",    label:"Safety & Red Teaming",       color:"#f97316", keywords:["safety","guardrail","red team","jailbreak","injection","constitutional","responsible","bias","harm"] },
+  { id:"multimodal",label:"Multimodal",                 color:"#38bdf8", keywords:["multimodal","vision","image","clip","vit","audio","video","ocr","document"] },
+  { id:"pm",        label:"Product & Strategy",         color:"#a78bfa", keywords:["product","roadmap","stakeholder","strategy","prd","okr","metric","business","user research","launch"] },
+];
+
+function detectDomains(jd) {
+  const lower = jd.toLowerCase();
+  return DD_DOMAINS.map(d => ({
+    ...d,
+    hits: d.keywords.filter(kw => lower.includes(kw)).length,
+  })).sort((a, b) => b.hits - a.hits);
+}
+
+const DD_CHEATSHEETS = {
+  rag: ["Choose chunk size based on query granularity, not document structure","Hybrid search (BM25 + dense) beats pure dense retrieval on most enterprise corpora","Reranking with a cross-encoder adds ~40ms but +15% precision","RAGAS metrics: faithfulness, answer relevancy, context precision, context recall","Production failure: stale retrieval from nightly-only ingestion"],
+  agents: ["Step budget + timeout on every agent — no unbounded loops","Idempotent tools: every tool call must be safe to retry","Confirmation gate before any write/delete action","LangGraph: stateful nodes + conditional edges; Temporal: durable execution across failures","Production failure: tool confabulation — model invents tool args that look valid but fail silently"],
+  eval: ["Offline eval before every deploy; online eval (shadow + A/B) after","LLM-as-judge: GPT-4o-mini grades 10x cheaper than human for 0.8 correlation","RAGAS for RAG; trajectory efficiency + tool precision for agents","Never move a metric from eval to SLA without 2 weeks of calibration","Production failure: evaluation dataset leaking into fine-tuning data"],
+  infra: ["vLLM continuous batching: 10x throughput vs naive serving","KV cache: the only optimization that gets cheaper as context grows","Speculative decoding: 2-3x speedup for low-entropy outputs (code, structured)","Auto-scale on queue depth, not CPU — LLM workload is bursty","Production failure: cold-start latency from model loading on first request"],
+  finetune: ["SFT first, always — DPO requires a decent base model","QLoRA: 4-bit quantized base + 16-bit adapters = 70B fits on 2xA100","DPO over RLHF for general chat; GRPO for verifiable rewards (math, code)","Eval on held-out task distribution, not training distribution","Production failure: catastrophic forgetting when SFT dataset lacks diversity"],
+  safety: ["Input guardrails + output guardrails — dual-stage, not either/or","Many-shot jailbreaks are now the hardest attack surface","Constitutional AI: model critiques its own outputs before serving","NeMo Guardrails / Lakera Guard for production — don't roll your own","Production failure: indirect prompt injection via retrieved documents"],
+  multimodal: ["Image tokens are expensive: GPT-4o charges ~170 tokens per 512px tile","ColPali: visual document retrieval without OCR — query against page images directly","CLIP retrieval for image search; cross-encoder rerank for precision","Lost-in-middle applies to image context too — put key images early or late","Production failure: spatial reasoning and object counting degrade sharply on real-world images"],
+  pm: ["AI features ship with eval criteria, not just acceptance criteria","Model tier decision = latency SLA x quality floor x cost ceiling","Shadow mode before A/B — validate quality before splitting real traffic","Leading metric: task completion rate. Lagging metric: user retention at D30","Production failure: 'good enough' eval threshold set from demo, not representative sample"],
+};
+
+const DD_MUSTKNOW = {
+  rag: ["What is RAG and why it beats pure parametric memory","Chunking: fixed vs semantic vs hierarchical","Dense vs sparse vs hybrid retrieval","Embedding models: dimensions, latency, cost tradeoffs","Reranking: when to add a cross-encoder step","RAGAS: the 4 core metrics and what they catch","Context overflow: what happens when retrieved docs exceed context window","Production ingestion: chunking → embedding → upsert → staleness detection"],
+  agents: ["ReAct loop: Reason + Act + Observe cycle","Tool design: why idempotency matters for retry safety","LangGraph vs plain LangChain: when stateful graph execution is worth it","Memory types: in-context vs episodic vs semantic vs external","Multi-agent patterns: supervisor, peer-to-peer, specialized subagents","Step budget and timeout: how to prevent infinite loops","Human-in-the-loop: 4 patterns (confirmation, escalation, checkpoint, ambiguity)","MCP: what it solves and how it differs from function calling"],
+  eval: ["Offline vs online eval: what each catches","LLM-as-judge: how to prompt it, correlation with human labels","RAGAS: faithfulness, answer relevancy, context precision, context recall","Trajectory efficiency for agents: steps taken vs optimal path","Eval dataset construction: distribution matching, contamination prevention","Regression detection: how to catch silent quality degradation","Calibration: why your pass threshold matters as much as your metric","Evaluation pyramid: unit → integration → end-to-end → user study"],
+  infra: ["Continuous batching: how vLLM achieves high GPU utilization","KV cache: what it stores, why prefix caching saves money","Speculative decoding: drafter + verifier, when it helps","Quantization: GPTQ/AWQ (GPU), GGUF (CPU) — quality-latency tradeoffs","TTFT vs TPS vs P99 latency: what each signals about your system","Auto-scaling: why queue depth beats CPU for LLM workloads","Cold start: model loading latency and how to mitigate with warm pools","GPU memory math: model weights + KV cache + activations = VRAM budget"],
+  finetune: ["When NOT to fine-tune: prompt engineering + RAG often cheaper","SFT: supervised fine-tuning on demonstrations — always first step","LoRA: low-rank decomposition, why rank matters, what r=8 means","QLoRA: 4-bit quantization + LoRA — fits large models on small hardware","DPO: direct preference optimization — simpler than RLHF, no reward model","GRPO: group relative policy optimization — for verifiable reward tasks","Eval during training: perplexity is not your task metric","Merging adapters: why you merge before serving, not at inference time"],
+  safety: ["Prompt injection: direct vs indirect, how attackers embed instructions","Jailbreaks: roleplay, many-shot, context manipulation — attack surface is large","Input guardrails: before LLM; output guardrails: before user — dual-stage","Hallucination: types (intrinsic vs extrinsic), detection, mitigation","Constitutional AI: self-critique loop before final response","Red teaming: manual, automated fuzzing, adversarial benchmarks","PII: detection in inputs AND outputs — different tools for each","Logging for audit: what to store, retention policy, GDPR implications"],
+  multimodal: ["Image tokenization: tile-based, token count scales with resolution","CLIP: contrastive image-text pretraining, zero-shot retrieval","Vision Transformers: patch embeddings, no convolutional inductive bias","Multimodal RAG: 4 approaches — late fusion, CLIP retrieval, ColPali, captioning","Failure modes: counting, spatial reasoning, small text, chart misread","Context assembly: where to put images relative to text for best recall","ColPali: query page images directly, no OCR required","Cost math: image tokens dominate in vision-heavy workloads"],
+  pm: ["Metric hierarchy: task completion → quality → satisfaction → retention","Shadow mode: validate AI output quality before splitting real traffic","Eval criteria in PRD, not just acceptance criteria — ship with observability","Model tier decision framework: latency SLA x quality floor x cost ceiling","AI feature rollback: how to revert safely when quality regresses","Human-in-the-loop design: when to ask, when to act, when to explain","Cold start problem: AI features need warm-up data — plan the bootstrapping","Leading vs lagging indicators: what to watch daily vs weekly vs monthly"],
+};
+
+const DD_STAR = {
+  rag: ["Tell me about a time you improved retrieval quality in a production system","Describe a retrieval failure that reached users — how did you detect and fix it","Walk me through how you'd design a RAG system for [domain in JD]"],
+  agents: ["Tell me about a time an agent you built behaved unexpectedly in production","Describe how you'd architect a multi-agent system for [use case in JD]","Walk me through a time you had to add reliability controls to an agentic system"],
+  eval: ["Tell me about an eval framework you built from scratch — what surprised you","Describe a time your offline eval missed something that production caught","Walk me through how you'd set quality gates for a new LLM feature"],
+  infra: ["Tell me about a latency problem in an LLM system — how you found and fixed it","Describe a cost optimization you did on an inference system — numbers","Walk me through how you'd scale an LLM API to 10x current traffic"],
+  finetune: ["Tell me about a fine-tuning project — what worked, what didn't","Describe how you chose between fine-tuning and prompt engineering for a task","Walk me through a dataset curation decision that significantly affected model quality"],
+  safety: ["Tell me about a time you caught a safety issue before it reached users","Describe how you'd red team a new AI feature before launch","Walk me through your approach to evaluating a model for production safety"],
+  multimodal: ["Tell me about a multimodal AI feature you built — technical decisions","Describe a failure mode unique to vision inputs that you encountered","Walk me through how you'd design a document understanding pipeline"],
+  pm: ["Tell me about an AI product decision that required a difficult tradeoff","Describe how you measured success for an AI feature after launch","Walk me through how you'd prioritize an AI product roadmap with limited LLM budget"],
+};
+
+const DD_GOTCHAS = {
+  rag: ["Chunk size feels like a hyperparameter but it's really a design decision — wrong size invalidates your entire retrieval strategy","Freshness is not free: nightly re-ingestion misses same-day updates that users expect to see","Hybrid search alpha (BM25 weight vs dense weight) needs tuning per query type — no universal default","Reranking with a cross-encoder adds latency that compounds badly under load — budget for it early"],
+  agents: ["Every tool call is a latency multiplier — a 5-step agent with 500ms tools takes 2.5s minimum","Scope creep is the most underrated agent failure: it completes adjacent tasks you didn't ask for","No step budget = no production readiness — a loop that runs forever looks identical to one that takes 30 seconds","Context accumulates: long agent runs hit context limits you never hit in unit tests"],
+  eval: ["A metric that can't detect regressions is theater — calibrate before you ship","LLM-as-judge is biased toward longer, more verbose outputs — control for length","Eval datasets go stale: the distribution your model was measured on drifts from what users actually ask","The eval you run on demo data will always look better than the eval you run on production data"],
+  infra: ["vLLM's continuous batching only helps at sustained load — if you have bursty traffic, you still need auto-scaling","KV cache hit rate drops to zero on every cold restart — warm-up your prefix cache after deploys","Quantization changes output distribution subtly — A/B test quality after switching, don't assume parity","GPU memory OOM at inference is harder to debug than training OOM because it's load-dependent"],
+  finetune: ["SFT on 1000 bad examples beats SFT on 100 good examples — data quality is everything","DPO requires preference pairs where the chosen response is clearly better — noisy pairs hurt","Eval perplexity drops during training while task performance plateaus — don't use perplexity as a proxy for quality","Merging failure: adapter trained on one base model version rarely transfers cleanly to another version"],
+  safety: ["Defense-in-depth is not optional: in 2026, 80-94% of jailbreak attempts succeed on proprietary models with single-layer defenses","Indirect prompt injection (attacker embeds instructions in retrieved documents) is harder to defend than direct injection","Output guardrails catch things input guardrails miss — you need both","Logging for safety is a feature, not an afterthought — you can't investigate an incident without traces"],
+  multimodal: ["Image token cost scales quadratically with resolution — a 1024px image costs 4x a 512px image","ColPali sounds magical but needs GPU for the visual encoder at query time — budget for it","Spatial reasoning failures are silent: the model gives a confident wrong answer with no hedging","Document understanding degrades sharply on scanned PDFs — always test with production-quality scans, not demo PDFs"],
+  pm: ["'The model is good enough' is not an eval criterion — define what good enough means in measurable terms before building","AI features require ongoing maintenance: model providers change APIs, pricing, and behavior with no notice","A/B testing AI features is harder than normal features: effects compound and contaminate over long windows","Your most important metric is the one you didn't think to measure until month 3 — define a metric review cadence upfront"],
+};
+
+const DD_QUESTIONS = {
+  rag: ["What does your current retrieval pipeline look like — what's the biggest quality gap?","How do you handle document freshness — is there a staleness problem today?","What's the eval suite for retrieval quality — and what's the failure rate in production?","How do you handle multi-hop questions that need information from multiple documents?","What's the bottleneck in your RAG stack today — retrieval quality, generation, or latency?"],
+  agents: ["How autonomous are your agents today — where do humans stay in the loop?","What's the longest-running agent task in production — how do you handle failures mid-run?","How do you evaluate agent trajectory quality beyond final output?","What's the biggest reliability problem with your agentic system right now?","How do you handle tool call failures — retry logic, fallback, escalation?"],
+  eval: ["What does your eval pipeline look like — offline, online, or both?","How do you detect quality regressions between model versions?","Is LLM-as-judge part of your eval stack — how do you trust the judge?","What's the eval metric you trust most and the one you're most uncertain about?","How often does your eval dataset get refreshed — how do you prevent staleness?"],
+  infra: ["What's your current P99 latency and where does most of that time go?","How do you handle traffic spikes — what's the auto-scaling strategy?","Are you running your own inference stack or using managed APIs — what drove that decision?","What's the GPU cost per 1M tokens today — and what's the target?","How do you handle model updates — blue/green, canary, or full swap?"],
+  finetune: ["What's the training data pipeline — how do you ensure quality at scale?","How do you know when fine-tuning is working — what's the eval signal?","Are you doing SFT, DPO, RLHF, or some combination — what drove that choice?","How do you handle catastrophic forgetting across fine-tuning iterations?","What's the iteration cycle time from data to deployed model — and what's the bottleneck?"],
+  safety: ["What's your current red teaming process — manual, automated, or both?","How do you handle prompt injection in user-provided inputs?","What's logged for safety audit — and who reviews it?","How do you decide what content policies to enforce vs. defer to the user?","What's the incident response process when a safety issue reaches users?"],
+  multimodal: ["What modalities are you processing today — and what's next on the roadmap?","How do you handle image quality variance in production inputs?","What's the token cost for your average image-heavy request?","How do you eval multimodal outputs — human review, automated, or both?","What's the most surprising failure mode you've seen with vision inputs in production?"],
+  pm: ["How does the team currently decide what to build with AI vs. without?","What does the eval process look like before an AI feature ships?","How do you measure success for AI features post-launch — what's the north star metric?","What's the biggest gap between what AI can do and what users expect it to do?","How does AI infrastructure investment get prioritized against product features?"],
+};
+
+const DD_PRIORITY_LABELS = { must: "Must Know", well: "Know Well", aware: "Be Aware Of" };
+const DD_PRIORITY_COLORS = {
+  must:  { badge: "bg-rose-500/20 text-rose-300 border-rose-500/30",   row: "bg-rose-500/5" },
+  well:  { badge: "bg-amber-500/20 text-amber-300 border-amber-500/30", row: "bg-amber-500/5" },
+  aware: { badge: "bg-zinc-700/40 text-zinc-400 border-zinc-600/30",    row: "" },
+};
+
+function priorityTier(hits) {
+  if (hits >= 3) return "must";
+  if (hits >= 1) return "well";
+  return "aware";
+}
+
+const DD_TAB_IDS = ["priority","design","mustknow","star","gotchas"];
+const DD_TAB_LABELS = { priority:"Topic Priorities", design:"System Design", mustknow:"Must-Know 8", star:"STAR Starters", gotchas:"Gotchas & Questions" };
+
+function DefenseDocMode({ onExit }) {
+  const [jd, setJd] = useState("");
+  const [result, setResult] = useState(null);
+  const [activeSection, setActiveSection] = useState("priority");
+
+  function generate() {
+    if (jd.trim().length < 50) return;
+    const scored = detectDomains(jd);
+    const top = scored[0];
+    const cheatsheet = DD_CHEATSHEETS[top.id] || DD_CHEATSHEETS.rag;
+    const mustknow   = DD_MUSTKNOW[top.id]    || DD_MUSTKNOW.rag;
+    const stars      = DD_STAR[top.id]         || DD_STAR.rag;
+    const gotchas    = DD_GOTCHAS[top.id]      || DD_GOTCHAS.rag;
+    const questions  = DD_QUESTIONS[top.id]    || DD_QUESTIONS.rag;
+    setResult({ scored, top, cheatsheet, mustknow, stars, gotchas, questions });
+    setActiveSection("priority");
+  }
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
+      <div className="max-w-3xl mx-auto space-y-6">
+
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onExit}
+            className="text-zinc-400 hover:text-zinc-100 transition-colors text-sm flex items-center gap-1"
+          >
+            ← Back
+          </button>
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2">🛡 Defense Doc</h2>
+            <p className="text-zinc-400 text-sm">Interview War Room Brief</p>
+          </div>
+        </div>
+
+        {/* JD Input */}
+        <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800 space-y-4">
+          <label className="block text-sm font-medium text-zinc-300">Paste the Job Description</label>
+          <textarea
+            value={jd}
+            onChange={e => setJd(e.target.value)}
+            rows={8}
+            placeholder="Paste the full job description here (at least 50 characters)..."
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-rose-500 resize-none"
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-zinc-500">{jd.trim().length} characters</span>
+            <button
+              onClick={generate}
+              disabled={jd.trim().length < 50}
+              className="px-5 py-2 bg-rose-600 hover:bg-rose-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              Generate War Room Brief
+            </button>
+          </div>
+        </div>
+
+        {/* Results */}
+        {result && (
+          <div className="space-y-4">
+
+            {/* Top Domain Banner */}
+            <div
+              className="rounded-2xl p-4 border flex items-center gap-4"
+              style={{ borderColor: result.top.color + "60", backgroundColor: result.top.color + "10" }}
+            >
+              <div className="text-3xl">🎯</div>
+              <div>
+                <p className="text-xs text-zinc-400 uppercase tracking-wider mb-0.5">Primary Domain Detected</p>
+                <p className="font-bold text-lg" style={{ color: result.top.color }}>{result.top.label}</p>
+                <p className="text-xs text-zinc-500">{result.top.hits} keyword{result.top.hits !== 1 ? "s" : ""} matched · All sections tailored to this domain</p>
+              </div>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="flex gap-2 flex-wrap">
+              {DD_TAB_IDS.map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveSection(tab)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                    activeSection === tab
+                      ? "bg-rose-600 border-rose-500 text-white"
+                      : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  {DD_TAB_LABELS[tab]}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab: Priority Table */}
+            {activeSection === "priority" && (
+              <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-800">
+                  <h3 className="font-semibold text-zinc-100">Topic Priority Table</h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">Ranked by keyword density in your JD</p>
+                </div>
+                <div className="divide-y divide-zinc-800">
+                  {result.scored.map(domain => {
+                    const tier = priorityTier(domain.hits);
+                    const colors = DD_PRIORITY_COLORS[tier];
+                    return (
+                      <div key={domain.id} className={`flex items-center justify-between px-5 py-3 ${colors.row}`}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: domain.color }} />
+                          <span className="text-sm text-zinc-200">{domain.label}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-zinc-500">{domain.hits} hit{domain.hits !== 1 ? "s" : ""}</span>
+                          <span className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${colors.badge}`}>
+                            {DD_PRIORITY_LABELS[tier]}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Tab: System Design Cheat Sheet */}
+            {activeSection === "design" && (
+              <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-800">
+                  <h3 className="font-semibold text-zinc-100">System Design Cheat Sheet</h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">Tailored to {result.top.label}</p>
+                </div>
+                <ul className="divide-y divide-zinc-800">
+                  {result.cheatsheet.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 px-5 py-3.5">
+                      <span className="text-rose-400 font-bold text-sm flex-shrink-0 mt-0.5">{i + 1}.</span>
+                      <span className="text-sm text-zinc-200 leading-relaxed">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Tab: Must-Know 8 */}
+            {activeSection === "mustknow" && (
+              <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-800">
+                  <h3 className="font-semibold text-zinc-100">8 Must-Know Concepts Cold</h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">Non-negotiables for this role — know these without hesitation</p>
+                </div>
+                <ol className="divide-y divide-zinc-800">
+                  {result.mustknow.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 px-5 py-3.5">
+                      <span
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
+                        style={{ backgroundColor: result.top.color + "25", color: result.top.color }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="text-sm text-zinc-200 leading-relaxed">{item}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Tab: STAR Starters */}
+            {activeSection === "star" && (
+              <div className="space-y-3">
+                <div className="px-1">
+                  <h3 className="font-semibold text-zinc-100">3 STAR Story Starters</h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">Behavioral prompts matched to your detected focus area</p>
+                </div>
+                {result.stars.map((starter, i) => (
+                  <div
+                    key={i}
+                    className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 flex items-start gap-4"
+                  >
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+                      style={{ backgroundColor: result.top.color + "25", color: result.top.color }}
+                    >
+                      {i + 1}
+                    </div>
+                    <div>
+                      <p className="text-sm text-zinc-200 leading-relaxed font-medium">"{starter}"</p>
+                      <p className="text-xs text-zinc-500 mt-2">Prepare a 2-min STAR response: Situation → Task → Action → Result</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Tab: Gotchas + Questions */}
+            {activeSection === "gotchas" && (
+              <div className="space-y-4">
+                {/* Gotchas */}
+                <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-800">
+                    <h3 className="font-semibold text-zinc-100">Production Gotchas</h3>
+                    <p className="text-xs text-zinc-500 mt-0.5">Hard-won lessons for the {result.top.label} domain</p>
+                  </div>
+                  <ul className="divide-y divide-zinc-800">
+                    {result.gotchas.map((g, i) => (
+                      <li key={i} className="flex items-start gap-3 px-5 py-3.5">
+                        <span className="text-amber-400 text-sm flex-shrink-0 mt-0.5">⚠</span>
+                        <span className="text-sm text-zinc-200 leading-relaxed">{g}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Questions */}
+                <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-800">
+                    <h3 className="font-semibold text-zinc-100">5 Questions to Ask the Interviewer</h3>
+                    <p className="text-xs text-zinc-500 mt-0.5">Tailored to the {result.top.label} domain</p>
+                  </div>
+                  <ol className="divide-y divide-zinc-800">
+                    {result.questions.map((q, i) => (
+                      <li key={i} className="flex items-start gap-3 px-5 py-3.5">
+                        <span className="text-emerald-400 font-bold text-sm flex-shrink-0 mt-0.5">Q{i + 1}</span>
+                        <span className="text-sm text-zinc-200 leading-relaxed">{q}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 // ─── HOME SCREEN ──────────────────────────────────────────────────────────────
 
 const MODE_CARDS = [
@@ -1617,6 +2160,11 @@ const MODE_CARDS = [
     id: "companyprep", icon: "🏢", title: "Company Prep Tracks", subtitle: "Archetype Targeting",
     description: "4 company archetypes: Big Tech AI, AI-native startups, Indian tech, Enterprise AI. Weighted question sets + company-specific system design challenges.",
     border: "border-amber-500/40 hover:border-amber-400", badge: "bg-amber-500/20 text-amber-300 border-amber-500/30"
+  },
+  {
+    id: "defense", icon: "🛡", title: "Defense Doc", subtitle: "Interview War Room",
+    description: "Paste a job description. Get your personalized pre-interview brief: topic priorities, system design cheat sheet, must-know concepts, STAR story starters, and questions to ask.",
+    border: "border-rose-500/40 hover:border-rose-400", badge: "bg-rose-500/20 text-rose-300 border-rose-500/30"
   }
 ];
 
@@ -1629,6 +2177,7 @@ export default function PrepLab({ onNavigate }) {
   if (mode === "trainer") return <TrainerMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
   if (mode === "jdprep") return <JDPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
   if (mode === "companyprep") return <CompanyPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
+  if (mode === "defense") return <DefenseDocMode onExit={() => setMode(null)} />;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
