@@ -1175,26 +1175,26 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
 
 const ALL_TABS = [
   { id: "concepts",    label: "Concepts",    group: "LEARN",  audience: "All levels" },
-  { id: "flows",       label: "Flows",       group: "LEARN",  audience: "All levels" },
+  { id: "flows",       label: "Diagrams",    group: "LEARN",  audience: "All levels" },
+  { id: "groundtruth", label: "Ground Truth",group: "LEARN",  audience: "All levels" },
   { id: "consult",     label: "Ask",         group: "LEARN",  audience: "All levels" },
   { id: "lab",         label: "RAG Lab",     group: "BUILD",  audience: "Engineers" },
   { id: "agents",      label: "Agents",      group: "BUILD",  audience: "Engineers" },
-  { id: "systems",     label: "Systems",     group: "BUILD",  audience: "Engineers · PMs" },
   { id: "playground",  label: "Playground",  group: "BUILD",  audience: "All levels" },
   { id: "explore",     label: "Explore",     group: "BUILD",  audience: "Engineers" },
-  { id: "fluency",     label: "Fluency",     group: "GROW",   audience: "Interview prep" },
-  { id: "aipm",        label: "AI Product",  group: "GROW",   audience: "Product managers" },
-  { id: "career",      label: "Career",      group: "GROW",   audience: "Job seekers" },
-  { id: "preplab",     label: "Prep Lab",    group: "GROW",   audience: "Interview prep" },
+  { id: "systems",     label: "Systems",     group: "BUILD",  audience: "Engineers · PMs" },
   { id: "paths",       label: "Paths",       group: "GROW",   audience: "All levels" },
-  { id: "groundtruth", label: "Ground Truth",group: "READ",   audience: "All levels" },
+  { id: "fluency",     label: "Drills",      group: "GROW",   audience: "Interview prep" },
+  { id: "preplab",     label: "Prep Lab",    group: "GROW",   audience: "Interview prep" },
+  { id: "career",      label: "Career",      group: "GROW",   audience: "Job seekers" },
+  { id: "aipm",        label: "AI Product",  group: "GROW",   audience: "Product managers" },
 ];
 
-const GROUP_COLORS = { LEARN: "#6366f1", BUILD: "#3b82f6", GROW: "#22c55e", READ: "#a78bfa" };
+const GROUP_COLORS = { LEARN: "#6366f1", BUILD: "#3b82f6", GROW: "#22c55e" };
 
 function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookmarks = new Set(), toggleBookmark = () => {} }) {
   const tabsVisited = ALL_TABS.filter(t => visited.has(t.id));
-  const tabsByGroup = ["LEARN","BUILD","GROW","READ"].map(g => ({
+  const tabsByGroup = ["LEARN","BUILD","GROW"].map(g => ({
     group: g,
     color: GROUP_COLORS[g],
     tabs: ALL_TABS.filter(t => t.group === g),
@@ -1856,25 +1856,24 @@ export default function App() {
       { id: "home", label: "Home", audience: "All levels" },
     ]},
     { label: "LEARN", color: "#6366f1", items: [
-      { id: "concepts", label: "Concepts", count: 11, audience: "All levels" },
-      { id: "flows",    label: "Flows",    count: 5,  audience: "All levels" },
-      { id: "consult",  label: "Ask",                 audience: "All levels" },
+      { id: "concepts",    label: "Concepts",    count: 11, audience: "All levels" },
+      { id: "flows",       label: "Diagrams",    count: 5,  audience: "All levels" },
+      { id: "groundtruth", label: "Ground Truth",           audience: "All levels" },
+      { id: "consult",     label: "Ask",                    audience: "All levels" },
     ]},
     { label: "BUILD", color: "#3b82f6", items: [
       { id: "lab",        label: "RAG Lab",    count: 6,  audience: "Engineers" },
       { id: "agents",     label: "Agents",     count: 7,  audience: "Engineers" },
-      { id: "systems",    label: "Systems",    count: 15, audience: "Engineers · PMs" },
       { id: "playground", label: "Playground", count: 5,  audience: "All levels" },
       { id: "explore",    label: "Explore",    count: 8,  audience: "Engineers" },
+      { id: "systems",    label: "Systems",    count: 15, audience: "Engineers · PMs" },
     ]},
     { label: "GROW", color: "#22c55e", items: [
-      { id: "fluency", label: "Fluency",    count: 5, audience: "Interview prep" },
-      { id: "aipm",    label: "AI Product", count: 5, audience: "Product managers" },
+      { id: "paths",   label: "Paths",       audience: "All levels" },
+      { id: "fluency", label: "Drills",   count: 5, audience: "Interview prep" },
+      { id: "preplab", label: "Prep Lab",           audience: "Interview prep" },
       { id: "career",  label: "Career",  count: 4, audience: "Job seekers" },
-      { id: "preplab", label: "Prep Lab", audience: "Interview prep" },
-    ]},
-    { label: "READ", color: "#a78bfa", items: [
-      { id: "groundtruth", label: "Ground Truth", audience: "All levels" },
+      { id: "aipm",    label: "AI Product", count: 5, audience: "Product managers" },
     ]},
     { label: null, items: [
       { id: "progress", label: "My Progress", audience: "All levels" },
