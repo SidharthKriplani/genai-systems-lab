@@ -236,6 +236,22 @@ Knowledge base built client-side on first render: all 140+ GT posts (title × 3,
 | Computer Use Agents (Agents) | New AGENTS_MODULES entry (group: SCALE). 4 tabs: "Architectures" (Anthropic API/Operator/browser-use OSS/OmniParser), "Observe→Act Loop" (4 steps: Observe/Ground/Act/Verify), "Action Space" (5 categories: Mouse/Keyboard/Navigation/Observation/System), "Failure Modes" (6: coordinate drift, grounding hallucination, state divergence, infinite loop, scope creep, auth exposure). |
 | Long-Running Workflows (Agents) | New AGENTS_MODULES entry (group: SCALE). 3 tabs: "Patterns" (4 patterns with expandable code: checkpoint/resume, Temporal durable execution, event-driven handoffs, task queue), "Tools" (5: Temporal/LangGraph/Celery/BullMQ/Step Functions), "Decision Framework". |
 | 5 Production ML Ops GT posts | Series: "Production ML Ops" (lime, #84cc16). Posts: "DPO vs RLHF vs GRPO" (alignment method comparison, when to use each, GRPO for verifiable rewards), "Quantization Deep Dive" (GPTQ/AWQ/GGUF, GPU vs CPU inference, latency/quality table), "AI Governance in Production" (model cards, audit trails, drift detection, compliance), "Multimodal RAG in Production" (ColPali, late fusion, captioning approaches, failure modes), "Production Fine-Tuning Case Study" (end-to-end: data → SFT → DPO → eval → deploy, real numbers). |
+| Fine-Tuning Pipeline Flow (Flows) | 2-tab flow: FT_STAGES × 6 (raw data → SFT → DPO → eval → deploy, each with failure mode), DPO vs RLHF comparison table. |
+| Computer Use Agents (Agents) | 4 tabs: 4 architectures (Anthropic/Operator/browser-use/OmniParser), Observe→Act loop, action space × 5, 6 failure modes. |
+| Long-Running Workflows (Agents) | 3 tabs: 4 patterns with code (checkpoint/resume, Temporal, event-driven, task queue), 5 tools, decision framework. |
+| 5 Production ML Ops GT posts | "production-mlops" series (lime): DPO vs GRPO, quantization (GPTQ/AWQ/GGUF), AI governance, multimodal RAG, production fine-tuning case study. |
+| Defense Doc (PrepLab) | New mode (rose 🛡). JD paste → 8-domain extraction → 5 tabs: Topic Priority Table, System Design Cheat Sheet, 8 Must-Know Concepts Cold, STAR story starters, Production Gotchas + interviewer questions. |
+| Semantic Caching Explorer (Explore) | Threshold slider (0.70–0.99), 5 cached entries, 6 test queries, hit/miss animation, cost saved ($0.003/hit) + latency (420ms/hit), running stats. |
+| Vibe Coding & Agentic Dev (Systems) | 3 tabs: What Changed (4 stat cards + patterns), Tool Landscape (Cursor/Windsurf/Copilot/Claude Code), Senior Lens (6 implications for senior engineers). |
+| Embedding Space GT cross-links | All 30 EMB_POINTS have gtId fields. Matched nodes clickable → GT post. Results panel "Read →" links. onNavigate threaded through ExploreApp. |
+| A2A Protocol (Agents) | 3 tabs: N×M→N+M visual + 4 concept cards (Agent Card/Task/Push/Transport), A2A vs MCP 7-row table, framework support matrix × 6 + decision guide. |
+| KV Cache Engineering (Systems/BUILD) | 3 tabs: 4 concept cards (KV blocks/prefix caching/explicit markers/API matrix), 3-slider cost calculator, cache-aware routing (llm-d + EPLB). |
+| AI Guardrails Engineering (Systems/OPS) | 3 tabs: dual-stage flow (5 input + 5 output checks), 6 provider cards (Bedrock/Azure/Lakera/NeMo/Patronus/Guardrails AI), 5-layer defense-in-depth reality check. |
+| Traps Lab (Systems/OPS) | 8 find-the-flaw challenges: System Design × 2, LLM Code × 2, Evals × 2, Interview Critique × 2. 24 total issues. localStorage reveal tracking. |
+| LLMOps Tool Comparison (Explore) | 5 tools × 6 dimensions score grid (filled dots), expandable per-tool cards, Decision Wizard with branching recommendation. Langfuse/Braintrust/Arize/LangSmith/Laminar. |
+| Perspectives GT series (Explore) | 6 annotated thought leader posts (Karpathy, Simon Willison, swyx, Hamel Husain, Chollet, LeCun). Core thesis + essential reading table + what to question. Cyan series. |
+| MoE Architecture (Systems/DESIGN) | 3 tabs: How MoE Works (router math + 3 mechanism cards), Production Models (5 models × 6 dimensions + serving considerations), Failure Modes (6 failures + EPLB + health metrics + decision guide). |
+| World Models + MoE GT posts | "frontier" category. World models primer (JEPA, WAMs, video-as-simulator, agent planning implications). MoE guide (routing, DeepSeek-V3 architecture, production failure modes). |
 
 ---
 
@@ -408,6 +424,26 @@ Clear paid tier hook: free = platform render, paid = download PDF.
 
 Still unbuilt. Find-the-flaw challenge format. ~15–20 challenges across: broken system diagrams, eval frameworks with subtle errors, Python LLM functions with bugs, "a candidate said X — what's wrong?" Directly maps to how Staff-level interviews actually work.
 
+### P27 — Open-ended Take-homes (Career/PrepLab)
+
+Formalize the 5–8 long-form async challenges that exist informally in Career.jsx. Each challenge: a realistic scenario (design a RAG system, build an eval harness, debug this incident), the user writes a free-form answer, then reveals an expert model answer with a rubric showing what strong answers cover. Extend the Career "Take-Home Challenges" section with structure and scoring.
+
+### P28 — PrepLab question bank expansion
+
+All modules added since the last question bank pass (A2A, KV Cache, Guardrails, MoE, Vibe Coding, LLMOps, Traps Lab) have zero PrepLab questions. Add 3–5 questions per module = ~35 new questions targeting the production-engineering concepts.
+
+### P29 — "How I'd Build X" GT series
+
+3–5 posts in "How I'd Build X" format: (1) AI Search (query understanding, retrieval, ranking, freshness), (2) Code Review Bot (AST parsing, diff retrieval, explanation generation, false positive tuning), (3) Real-time Document Q&A (streaming ingestion, delta chunking, access control filtering), (4) Customer Support AI (intent routing, escalation triggers, tone compliance, hallucination guardrails). Opinionated, first-person, production-decision-heavy.
+
+### P30 — Speculative Decoding deep-dive (Systems)
+
+Speculative decoding is now production infrastructure (vLLM, TGI both ship it). A Systems module covering: draft model + target model loop, acceptance sampling mechanics, speedup math (draft acceptance rate × draft model speed), QuantSpec (quantized KV cache for speculative), P-EAGLE (parallel speculative decoding). Interactive: show draft token acceptance probability for different temperature settings.
+
+### P31 — A2A Protocol GT companion post
+
+The A2A Protocol Agents module needs a GT post companion. 8-min read covering: the N×M problem, Agent Card format, Task lifecycle, push notifications, transport layer, current framework adoption (CrewAI ✓, OpenAgents ✓, LangGraph 🔄, AutoGen 🔄), and how A2A + MCP compose into a full agent integration architecture.
+
 ---
 
 ## 7. Commercial strategy conclusion
@@ -435,15 +471,17 @@ Stage 3 (month 12–24): Team/org pricing for prep cohorts. Custom Defense Doc g
 
 **Scale:**
 - 13 tabs
-- 110+ interactive modules
-- 160+ Ground Truth posts across 20 categories (new: production-mlops series)
-- 57-question PrepLab question bank
+- 120+ interactive modules
+- 165+ Ground Truth posts across 21 categories (new: frontier, perspectives series)
+- 57-question PrepLab question bank (needs update for new modules)
 - 5 RAG Lab production failure scenarios
 - 30 prompt library entries
 - 5 debug trace challenges
 - PWA installable, offline service worker, RSS feed, sitemap with 140+ URLs
-- Agents tab: 9 modules (added Computer Use, Long-Running Workflows)
-- Flows tab: 7 flows (added Fine-Tuning Pipeline)
+- Agents tab: 10 modules (added A2A Protocol)
+- Systems tab: 25+ modules (added KV Cache, Guardrails, Traps Lab, MoE)
+- Explore tab: 13 tools (added Semantic Caching, LLMOps Comparison)
+- PrepLab: 5 modes (added Defense Doc)
 
 **Architecture status:**
 - Zero backend ✓
@@ -478,13 +516,11 @@ The positioning: *"The only place you practice diagnosing production GenAI failu
 
 ---
 
-**Latest additions (session — May 21 2026):**
-- Flows.jsx: `FineTuningPipelineFlow` registered in FLOW_TABS (FT_STAGES × 6, DPO vs RLHF table, pre-deploy checklist)
-- Agents.jsx: `ComputerUseAgents` (4 architectures, observe→act loop, action space × 5, 6 failure modes) + `LongRunningWorkflows` (4 patterns with code, 5 tools, decision framework) — both in AGENTS_MODULES under SCALE group
-- groundTruthIndex.js + groundTruthPosts.js: 5 new posts in "production-mlops" series (ft-dpo-vs-grpo, ft-quantization, ft-governance, ft-multimodal-rag, ft-case-study)
-- GroundTruth.jsx: "production-mlops" series added to SERIES_META
-- Explore.jsx: Embedding Space radial constellation — scale 1.17x, viewBox "25 25 450 450", fixed angular spread for Ops/Agents queries
-- DECISIONS.md: AI landscape research pass — 11 new pending ideas (P16–P26) added based on 2026 landscape: A2A protocol, semantic caching, KV cache engineering, AI guardrails, vibe coding/agentic dev, LLMOps tool comparison, thought leader reading room, world models, MoE deep dive, Defense Doc (P1/P25), Traps & Bug Catching (P2/P26)
+**Latest additions (session — May 21–22 2026):**
+- Fix: duplicate ScoreDots renamed to LLMOpsScoreDots (Vercel build fix)
+- Systems.jsx: MoEArchitecture module (3 tabs: routing mechanics + math, 5-model comparison, 6 failure modes + EPLB + decision guide)
+- groundTruthIndex.js + groundTruthPosts.js: 2 new "frontier" category posts (world-models-primer, moe-architecture-guide)
+- DECISIONS.md: full lineage update — 15 new lineage entries, P27–P31 pending ideas added, scale numbers updated
 
 **Notable 2026 AI landscape shifts (research pass May 21 2026):**
 - Andrej Karpathy joined Anthropic (May 19, 2026) — pre-training team

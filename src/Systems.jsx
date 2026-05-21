@@ -7284,6 +7284,350 @@ function TrapsLab() {
   );
 }
 
+
+// ─── MOE ARCHITECTURE ────────────────────────────────────────────────────────
+const MOE_MODELS = [
+  { name: "Mixtral 8×7B",    params: "46.7B total / 12.9B active", experts: 8,  topK: 2, context: "32K",  released: "Dec 2023", strength: "First widely-adopted open MoE — established the template",           license: "Apache 2.0" },
+  { name: "DeepSeek-V3",     params: "671B total / 37B active",    experts: 256,topK: 8, context: "128K", released: "Dec 2024", strength: "SOTA on most benchmarks at its release. 256 routed + 2 shared experts", license: "MIT"       },
+  { name: "Gemma 4 26B MoE", params: "26B total / ~7B active",     experts: 8,  topK: 2, context: "128K", released: "Apr 2025", strength: "Google's efficient open MoE — runs on a single A100",                license: "Gemma ToS"  },
+  { name: "Grok-1",          params: "314B total / 86B active",     experts: 8,  topK: 2, context: "8K",   released: "Mar 2024", strength: "xAI's open-weight MoE — largest open model at release",             license: "Apache 2.0" },
+  { name: "GPT-4 (rumoured)", params: "~1.8T total / ~220B active", experts: 16, topK: 2, context: "128K", released: "Mar 2023", strength: "Not confirmed — widely reported MoE architecture behind GPT-4",    license: "Proprietary"},
+];
+
+const MOE_FAILURE_MODES = [
+  { name: "Expert collapse",       severity: "High",   desc: "Router sends >80% of tokens to 1–2 experts. Others atrophy — effectively reducing to a dense model.", fix: "Auxiliary load-balancing loss (z-loss). Cap max expert load per batch. Monitor per-expert utilization histogram." },
+  { name: "Load imbalance",        severity: "High",   desc: "Uneven expert utilization across GPUs causes compute stragglers — throughput matches the slowest expert.", fix: "EPLB (Expert-Level Load Balancing) in vLLM: replicates overloaded experts, redistributes load dynamically at serving time." },
+  { name: "Expert overflow / dropping", severity: "Medium", desc: "Token capacity per expert is exceeded — tokens routed to overloaded experts are dropped. Silent quality degradation.", fix: "Set expert capacity factor ≥1.25. Log dropped token rate. Switch to expert choice routing (experts pick tokens, not vice versa)." },
+  { name: "Router oscillation",    severity: "Medium", desc: "Router assignment becomes unstable during training — tokens flip between experts across gradient steps, hurting learning.", fix: "Lower router learning rate. Add routing entropy regularisation. Use noisy top-k gating (add Gaussian noise before softmax)." },
+  { name: "KV cache fragmentation",severity: "Medium", desc: "Different expert paths generate different KV cache patterns — prefix caching hits drop because requests diverge after the router.", fix: "Group requests by expected expert path before batching. Use semantic caching at a coarser granularity." },
+  { name: "Cold expert problem",   severity: "Low",    desc: "Rarely-activated experts lose gradient signal and become useless over training. Active expert count shrinks over time.", fix: "Expert dropout during training (force random routing occasionally). Monitor expert activation entropy as a health metric." },
+];
+
+function MoEHowItWorks() {
+  const [expanded, setExpanded] = React.useState(null);
+  const toggle = (id) => setExpanded(expanded === id ? null : id);
+
+  const mechanisms = [
+    {
+      id: "router",
+      title: "Router",
+      subtitle: "The most important — and most fragile — component",
+      body: "A small linear layer that takes the token embedding and outputs a probability distribution over N experts. Top-K selection (usually K=2) picks which experts process this token. The router is trained end-to-end alongside the experts.",
+      code: `router_logits = token_emb @ W_router  # shape: [batch, seq, n_experts]\nexpert_weights = softmax(router_logits)  # normalised probabilities\ntop_k_indices = argtopk(expert_weights, k=2)  # which experts to use\noutput = sum(expert_weights[i] * expert_i(token) for i in top_k_indices)`,
+    },
+    {
+      id: "expert",
+      title: "Expert FFN",
+      subtitle: "Each expert is a standard feed-forward network",
+      body: "Each expert is a standard FFN (Linear → activation → Linear). Experts specialise during training — some learn syntax, some factual knowledge, some code. Specialisation is emergent, not designed. You cannot control what each expert learns.",
+      code: `# Each expert i is just:\ndef expert_i(x):\n    return W2_i(activation(W1_i(x)))  # standard FFN\n\n# Experts share identical architecture but have separate weights`,
+    },
+    {
+      id: "shared",
+      title: "Shared Experts",
+      subtitle: "DeepSeek-V3 innovation — always-on universal experts",
+      body: "DeepSeek-V3 innovation: 2 experts always active for every token (shared/universal knowledge), plus 8 routed experts selected per token. Shared experts handle common patterns (grammar, syntax, basic reasoning). Routed experts handle specialised knowledge domains.",
+      code: `# DeepSeek-V3 routing:\nshared_out = shared_expert_1(token) + shared_expert_2(token)\nrouted_out = sum(w_i * expert_i(token) for i in top_8_of_256)\nfinal = shared_out + routed_out  # always 2 shared + 8 routed`,
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Core concept */}
+      <div className="bg-zinc-800 rounded-xl p-4 border border-zinc-700">
+        <h3 className="text-sm font-bold text-white mb-3">Core Concept</h3>
+        <p className="text-xs text-zinc-300 leading-relaxed mb-4">
+          In a standard transformer, every token passes through every FFN layer. In MoE, the FFN is replaced by N expert networks. A learned router sends each token to the top-K experts only. Result: you get a model with N×(FFN params) but only K/N of the compute per forward pass.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="bg-zinc-900 rounded-lg p-3 border border-zinc-600">
+            <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide mb-2">Dense Model</div>
+            <div className="text-xs text-zinc-300 space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-violet-400 font-mono">every token</span>
+                <span className="text-zinc-500">→</span>
+                <span className="text-violet-400 font-mono">every FFN</span>
+              </div>
+              <div className="text-zinc-500 text-[11px]">compute ≈ total params per forward pass</div>
+            </div>
+          </div>
+          <div className="bg-zinc-900 rounded-lg p-3 border border-emerald-700/40">
+            <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mb-2">MoE Model</div>
+            <div className="text-xs text-zinc-300 space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-emerald-400 font-mono">every token</span>
+                <span className="text-zinc-500">→</span>
+                <span className="text-emerald-400 font-mono">router</span>
+                <span className="text-zinc-500">→</span>
+                <span className="text-emerald-400 font-mono">top-K experts</span>
+              </div>
+              <div className="text-zinc-500 text-[11px]">compute ≈ K/N × total params per forward pass</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Key insight callout */}
+      <div className="bg-violet-900/20 border border-violet-700/40 rounded-xl p-4">
+        <div className="text-[10px] font-bold text-violet-400 uppercase tracking-wide mb-1">Why It Matters</div>
+        <p className="text-xs text-zinc-200 leading-relaxed italic">
+          "DeepSeek-V3 has 671B parameters but costs the same to run as a ~37B dense model. MoE gives you quality at scale without proportional inference cost."
+        </p>
+      </div>
+
+      {/* Mechanism cards */}
+      <div className="space-y-2">
+        <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide px-1">3 Key Mechanisms</div>
+        {mechanisms.map(m => (
+          <div key={m.id} className="bg-zinc-800 rounded-xl border border-zinc-700 overflow-hidden">
+            <button
+              onClick={() => toggle(m.id)}
+              className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-750 transition-colors"
+            >
+              <div>
+                <div className="text-sm font-bold text-white">{m.title}</div>
+                <div className="text-xs text-zinc-400 mt-0.5">{m.subtitle}</div>
+              </div>
+              <span className="text-zinc-500 text-lg ml-4">{expanded === m.id ? "−" : "+"}</span>
+            </button>
+            {expanded === m.id && (
+              <div className="px-4 pb-4 space-y-3 border-t border-zinc-700">
+                <p className="text-xs text-zinc-300 leading-relaxed pt-3">{m.body}</p>
+                <pre className="bg-zinc-900 rounded-lg p-3 text-[11px] font-mono text-emerald-300 overflow-x-auto whitespace-pre leading-relaxed border border-zinc-700">{m.code}</pre>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MoEProductionModels() {
+  return (
+    <div className="space-y-4">
+      {/* Comparison table */}
+      <div className="bg-zinc-800 rounded-xl border border-zinc-700 overflow-hidden">
+        <div className="p-4 border-b border-zinc-700">
+          <h3 className="text-sm font-bold text-white">Production MoE Models</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-zinc-700">
+                <th className="text-left p-3 text-zinc-400 font-bold uppercase tracking-wide text-[10px]">Model</th>
+                <th className="text-left p-3 text-zinc-400 font-bold uppercase tracking-wide text-[10px]">Total Params</th>
+                <th className="text-left p-3 text-zinc-400 font-bold uppercase tracking-wide text-[10px]">Active Params</th>
+                <th className="text-left p-3 text-zinc-400 font-bold uppercase tracking-wide text-[10px]">Experts (top-K)</th>
+                <th className="text-left p-3 text-zinc-400 font-bold uppercase tracking-wide text-[10px]">Context</th>
+                <th className="text-left p-3 text-zinc-400 font-bold uppercase tracking-wide text-[10px]">Licence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MOE_MODELS.map((m, i) => {
+                const [total, active] = m.params.split(" / ");
+                return (
+                  <tr key={m.name} className={`border-b border-zinc-700/50 ${i % 2 === 0 ? "bg-zinc-800" : "bg-zinc-800/50"} hover:bg-zinc-700/30 transition-colors`}>
+                    <td className="p-3 font-bold text-white">{m.name}</td>
+                    <td className="p-3 text-zinc-300 font-mono">{total}</td>
+                    <td className="p-3 text-emerald-400 font-mono font-bold">{active}</td>
+                    <td className="p-3 text-violet-300 font-mono">{m.experts} (top-{m.topK})</td>
+                    <td className="p-3 text-zinc-300">{m.context}</td>
+                    <td className="p-3">
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        m.license === "Apache 2.0" ? "bg-emerald-900/40 text-emerald-400 border border-emerald-700/40" :
+                        m.license === "MIT" ? "bg-blue-900/40 text-blue-400 border border-blue-700/40" :
+                        m.license === "Proprietary" ? "bg-red-900/40 text-red-400 border border-red-700/40" :
+                        "bg-zinc-700 text-zinc-300 border border-zinc-600"
+                      }`}>{m.license}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Key insights per model */}
+      <div className="space-y-2">
+        <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide px-1">Key Insights</div>
+        {[
+          { name: "Mixtral 8×7B", color: "violet", insight: "Established the open MoE template that everyone copies — 8 experts, top-2 routing, Apache licence. The baseline every subsequent model is measured against." },
+          { name: "DeepSeek-V3",  color: "blue",   insight: "Pushed to 256 routed experts + 2 shared — the most extreme routing ratio in production. 671B total params, 37B active. Proves MoE can scale further than anyone expected." },
+          { name: "Gemma 4 26B",  color: "emerald",insight: "Google's accessible MoE — 26B total, ~7B active, runs on a single A100. Shows MoE isn't just for hyperscalers. Gemma ToS is permissive for most commercial use." },
+        ].map(item => (
+          <div key={item.name} className={`bg-zinc-800 rounded-lg p-3 border border-${item.color}-700/30 flex gap-3`}>
+            <span className={`text-${item.color}-400 text-lg mt-0.5`}>→</span>
+            <div>
+              <div className={`text-xs font-bold text-${item.color}-300 mb-1`}>{item.name}</div>
+              <p className="text-xs text-zinc-300 leading-relaxed">{item.insight}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Serving considerations */}
+      <div className="space-y-2">
+        <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide px-1">Serving Considerations</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {[
+            {
+              title: "Memory Layout",
+              icon: "🗄",
+              body: "Expert weights must fit in GPU memory. For large MoE models, expert parallelism splits experts across GPUs. Each GPU holds a subset of experts — routing decisions determine which GPU handles each token.",
+            },
+            {
+              title: "Batching Sensitivity",
+              icon: "📦",
+              body: "MoE throughput requires large batches. Small batches mean most experts idle per step — wasteful. Continuous batching is essential. At batch size 1, you pay full expert memory cost for minimal throughput.",
+            },
+            {
+              title: "EPLB (vLLM v0.8+)",
+              icon: "⚖",
+              body: "Expert-Level Load Balancing: vLLM dynamically replicates hot experts and redistributes routing across replicas. This is the production solution to load imbalance — no need to retrain with auxiliary loss.",
+            },
+          ].map(card => (
+            <div key={card.title} className="bg-zinc-800 rounded-xl p-4 border border-zinc-700">
+              <div className="text-xl mb-2">{card.icon}</div>
+              <div className="text-xs font-bold text-white mb-2">{card.title}</div>
+              <p className="text-xs text-zinc-400 leading-relaxed">{card.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MoEFailureModes() {
+  const [expandedFix, setExpandedFix] = React.useState(null);
+  const toggleFix = (name) => setExpandedFix(expandedFix === name ? null : name);
+
+  const severityStyle = (s) => {
+    if (s === "High")   return "bg-red-900/40 text-red-400 border border-red-700/40";
+    if (s === "Medium") return "bg-amber-900/40 text-amber-400 border border-amber-700/40";
+    return "bg-zinc-700 text-zinc-300 border border-zinc-600";
+  };
+
+  const healthMetrics = [
+    { label: "Per-expert utilization", target: "no expert >40% of tokens in a batch", ok: true },
+    { label: "Routing entropy",         target: "high — uniform routing is healthy, collapse = low entropy", ok: true },
+    { label: "Dropped token rate",      target: "<1%", ok: true },
+    { label: "Expert activation count", target: "stable over training — declining = cold expert problem", ok: true },
+  ];
+
+  const decisions = [
+    { q: "Need >30B quality but <30B inference cost?",   a: "MoE",   color: "emerald" },
+    { q: "Running on <2 GPUs?",                          a: "Dense", color: "red",    note: "MoE needs memory for all expert weights" },
+    { q: "Latency-critical real-time app?",              a: "Dense", color: "red",    note: "MoE has routing overhead" },
+    { q: "Training from scratch on 1T+ tokens?",         a: "MoE",   color: "emerald",note: "likely worth it at scale" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Failure mode cards */}
+      <div className="space-y-2">
+        <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide px-1">Failure Modes</div>
+        {MOE_FAILURE_MODES.map(f => (
+          <div key={f.name} className="bg-zinc-800 rounded-xl border border-zinc-700 overflow-hidden">
+            <div className="p-4">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="text-sm font-bold text-white">{f.name}</div>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap ${severityStyle(f.severity)}`}>{f.severity}</span>
+              </div>
+              <p className="text-xs text-zinc-300 leading-relaxed">{f.desc}</p>
+            </div>
+            <div className="border-t border-zinc-700">
+              <button
+                onClick={() => toggleFix(f.name)}
+                className="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-zinc-700/30 transition-colors"
+              >
+                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wide">Fix</span>
+                <span className="text-zinc-500">{expandedFix === f.name ? "−" : "+"}</span>
+              </button>
+              {expandedFix === f.name && (
+                <div className="px-4 pb-3">
+                  <p className="text-xs text-zinc-300 leading-relaxed">{f.fix}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Health metrics checklist */}
+      <div className="bg-zinc-800 rounded-xl border border-zinc-700 p-4">
+        <h3 className="text-sm font-bold text-white mb-3">Health Metrics to Monitor</h3>
+        <div className="space-y-2">
+          {healthMetrics.map(m => (
+            <div key={m.label} className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 text-sm">✓</span>
+              <div>
+                <span className="text-xs font-bold text-zinc-200">{m.label}</span>
+                <span className="text-xs text-zinc-400"> — target: {m.target}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Decision guide */}
+      <div className="bg-zinc-800 rounded-xl border border-zinc-700 p-4">
+        <h3 className="text-sm font-bold text-white mb-3">Decision Guide: MoE vs Dense</h3>
+        <div className="space-y-2">
+          {decisions.map(d => (
+            <div key={d.q} className="flex items-start gap-3 py-2 border-b border-zinc-700/50 last:border-0">
+              <div className="flex-1">
+                <span className="text-xs text-zinc-300 italic">"{d.q}"</span>
+                {d.note && <span className="text-xs text-zinc-500"> ({d.note})</span>}
+              </div>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap ${
+                d.color === "emerald"
+                  ? "bg-emerald-900/40 text-emerald-400 border border-emerald-700/40"
+                  : "bg-red-900/40 text-red-400 border border-red-700/40"
+              }`}>{d.a}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MoEArchitecture() {
+  const TABS = [
+    { id: "how",      tag: "ARCH",  label: "How MoE Works"        },
+    { id: "models",   tag: "DATA",  label: "Production Models"     },
+    { id: "failures", tag: "OPS",   label: "Failure Modes & Ops"   },
+  ];
+  const [tab, setTab] = React.useState("how");
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="Understand Mixture-of-Experts architecture — how routing works, which production models use it, and how to operate MoE systems reliably."
+        steps={[
+          "How MoE Works: explore the router, expert FFN, and shared expert mechanisms with code",
+          "Production Models: compare Mixtral, DeepSeek-V3, Gemma 4, Grok-1, and GPT-4 side-by-side",
+          "Failure Modes & Ops: diagnose expert collapse, load imbalance, and token dropping — with fixes",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "how"      && <MoEHowItWorks />}
+      {tab === "models"   && <MoEProductionModels />}
+      {tab === "failures" && <MoEFailureModes />}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 const SYSTEMS_MODULES = [
   { id: "evals",         label: "Evals Lab",          tag: "DESIGN",     group: "DESIGN",  component: EvalsLab           },
@@ -7318,6 +7662,7 @@ const SYSTEMS_MODULES = [
   { id: "kvcache",    label: "KV Cache Engineering",    tag: "CACHE",    group: "BUILD",  component: KVCacheEngineering },
   { id: "guardrails", label: "AI Guardrails",           tag: "GUARD",    group: "OPS",    component: AIGuardrailsEngineering },
   { id: "trapslab",   label: "Traps Lab",               tag: "TRAP",     group: "OPS",    component: TrapsLab },
+  { id: "moe",        label: "MoE Architecture",        tag: "MOE",      group: "DESIGN",  component: MoEArchitecture },
 ];
 
 const SYSTEMS_GROUPS = [
