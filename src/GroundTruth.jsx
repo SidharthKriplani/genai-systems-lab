@@ -232,7 +232,7 @@ function Block({ b, onNavigate, color, postSearch }) {
   }
 }
 
-function PostDetail({ post, onBack, onOpenPost, onNavigate, activeReactions, onReact }) {
+function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, activeReactions, onReact }) {
   const content = POST_CONTENT[post.id];
   const color = CAT_COLORS[post.category] || "#6366f1";
   const catLabel = CATEGORIES.find(c => c.id === post.category)?.label || post.category;
@@ -511,7 +511,13 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, activeReactions, onR
             <p className="text-sm font-bold text-white mb-1">Writing in progress</p>
             <p className="text-xs text-zinc-500 mb-4">This piece is planned — check back soon.</p>
             <button
-              onClick={() => onNavigate(post.labLink)}
+              onClick={() => {
+                if (onNavigateTo && post.labModuleId) {
+                  onNavigateTo({ tab: post.labLink, moduleId: post.labModuleId });
+                } else {
+                  onNavigate(post.labLink);
+                }
+              }}
               className="px-4 py-2 rounded-lg text-sm font-bold text-white transition-all"
               style={{ background: color }}>
               {post.labLabel}
@@ -600,7 +606,13 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, activeReactions, onR
               ← Back to Ground Truth
             </button>
             <button
-              onClick={() => onNavigate(post.labLink)}
+              onClick={() => {
+                if (onNavigateTo && post.labModuleId) {
+                  onNavigateTo({ tab: post.labLink, moduleId: post.labModuleId });
+                } else {
+                  onNavigate(post.labLink);
+                }
+              }}
               className="text-xs font-mono font-bold transition-colors hover:opacity-80"
               style={{ color }}>
               {post.labLabel}
@@ -781,7 +793,7 @@ const SERIES_META = {
   },
 };
 
-export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {
+export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, onPostOpened }) {
   const [filter, setFilter] = useState("all");
   const [openPost, setOpenPost] = useState(null);
   const [recentIds, setRecentIds] = useState(() => {
@@ -840,7 +852,7 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
   }, [initialPostId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (openPost) {
-    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onOpenPost={setOpenPost} onNavigate={onNavigate} activeReactions={reactions[openPost.id]} onReact={(id) => toggleReaction(openPost.id, id)} />;
+    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onOpenPost={setOpenPost} onNavigate={onNavigate} onNavigateTo={onNavigateTo} activeReactions={reactions[openPost.id]} onReact={(id) => toggleReaction(openPost.id, id)} />;
   }
 
   // "Start Here" pinned posts — shown above the category filter regardless of active filter
@@ -1087,8 +1099,12 @@ export default function GroundTruth({ onNavigate, initialPostId, onPostOpened })
                     <button
                       onClick={e => {
                         e.stopPropagation();
-                        track("ground_truth_lab_link", { post: post.id, lab: post.labLink });
-                        onNavigate(post.labLink);
+                        track("ground_truth_lab_link", { post: post.id, lab: post.labLink, module: post.labModuleId });
+                        if (onNavigateTo && post.labModuleId) {
+                          onNavigateTo({ tab: post.labLink, moduleId: post.labModuleId });
+                        } else {
+                          onNavigate(post.labLink);
+                        }
                       }}
                       className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 transition-colors">
                       {post.labLabel}
