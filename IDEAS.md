@@ -6,6 +6,14 @@ Prioritized backlog of ideas not yet built. Organized by effort and impact. Upda
 
 ---
 
+## 🔨 In Progress
+
+Items actively being built in the current or most recent session. Move here when you start, move to Tier 1 (struck through) when done.
+
+*Nothing in progress — pick from Tier 1 below.*
+
+---
+
 ## Curriculum-Inspired Tracks (Idea Dump)
 
 Topics and structures borrowed from major AI curricula — not built yet, just captured for reference. These are content ideas that complement existing modules rather than replace them.
