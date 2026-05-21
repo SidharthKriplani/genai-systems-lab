@@ -6,7 +6,7 @@ import InferenceOptimizer from "./InferenceOptimizer";
 import MLCiCdLab from "./MLCiCd";
 
 import {
-  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
+  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
 } from "./systems/modules";
 
 const SYSTEMS_MODULES = [
@@ -53,6 +53,7 @@ const SYSTEMS_MODULES = [
   { id: "promptcaching", label: "Prompt Caching", tag: "CACHE", group: "OPS", component: PromptCaching },
   { id: "finetuning", label: "Fine-Tuning Workflows", tag: "TRAIN", group: "BUILD", component: FineTuningWorkflows },
   { id: "rlhf", label: "RLHF / DPO / PPO", tag: "ALIGN", group: "BUILD", component: RLHFAlignment },
+  { id: "grpo", label: "GRPO / Agent RL", tag: "ALIGN", group: "BUILD", component: GRPOAgentRL },
   { id: "multimodal2", label: "Multimodal Systems", tag: "VISION", group: "DESIGN", component: MultimodalSystems },
   { id: "agentarch", label: "Agent Architecture", tag: "AGENT", group: "BUILD", component: AgentArchitecture },
   { id: "evalmetrics", label: "Eval Metrics", tag: "METRIC", group: "DESIGN", component: EvalMetrics },
@@ -87,6 +88,7 @@ const RELATED_GT = {
   specdecoding: [{ id: "inference-optimisation", title: "Inference Optimisation" }],
   streaming:    [{ id: "cost-latency-tradeoffs", title: "Cost vs Latency Trade-offs" }],
   rlhf:         [{ id: "rlhf-dpo-explained", title: "RLHF & DPO Explained" }, { id: "rlhf-production", title: "RLHF in Production" }],
+  grpo:         [{ id: "rlhf-dpo-explained", title: "RLHF, DPO & PPO Explained" }],
   multimodal:   [{ id: "multimodal-llms-architecture", title: "Multimodal LLMs Architecture" }],
   multimodal2:  [{ id: "multimodal-in-production", title: "Multimodal in Production" }],
   agentarch:    [{ id: "react-reasoning-acting", title: "ReAct: Reasoning + Acting" }, { id: "building-reliable-agents", title: "Building Reliable Agents" }],

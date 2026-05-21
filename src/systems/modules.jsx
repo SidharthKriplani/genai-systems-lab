@@ -9724,8 +9724,271 @@ function EvalMetrics() {
   );
 }
 
+// ─── GRPO / AGENT RL TRAINING ─────────────────────────────────────────────────
+
+const METHODS = [
+  {
+    name: "PPO",
+    shortDesc: "Proximal Policy Optimization",
+    rewardSource: "Trained reward model (separate RM)",
+    sampleComplexity: "Very high — needs RM + value network",
+    onPolicyReqs: "Requires reference policy + value baseline",
+    bestFor: "Classic RLHF pipelines (GPT-3, early InstructGPT era)",
+    frontier: "OpenAI (early), Anthropic (early)",
+    accent: "text-blue-400",
+    bg: "bg-blue-950/20",
+    border: "border-blue-800/40",
+  },
+  {
+    name: "DPO",
+    shortDesc: "Direct Preference Optimization",
+    rewardSource: "Implicit reward from preference pairs",
+    sampleComplexity: "Low — offline, no RM training needed",
+    onPolicyReqs: "Off-policy — uses static preference dataset",
+    bestFor: "Style/alignment fine-tunes, quick preference learning",
+    frontier: "Mistral, many open-source labs",
+    accent: "text-emerald-400",
+    bg: "bg-emerald-950/20",
+    border: "border-emerald-800/40",
+  },
+  {
+    name: "GRPO",
+    shortDesc: "Group Relative Policy Optimization",
+    rewardSource: "Rule-based or LLM-as-judge (no separate RM)",
+    sampleComplexity: "Medium — group sampling, no value network",
+    onPolicyReqs: "On-policy sampling; baseline from group average",
+    bestFor: "Reasoning, math, coding, agentic tasks",
+    frontier: "DeepSeek (R1), Alibaba (Qwen3), Google (Gemini 2.0 Flash Thinking)",
+    accent: "text-violet-400",
+    bg: "bg-violet-950/20",
+    border: "border-violet-800/40",
+  },
+];
+
+const GRPO_STEPS = [
+  {
+    step: "1",
+    title: "Group Sampling",
+    desc: "For each prompt, sample G completions from the current policy (e.g., G=8). This gives a distribution of outputs to compare within the group.",
+    icon: "G",
+  },
+  {
+    step: "2",
+    title: "Reward Each Completion",
+    desc: "Score every completion with a reward function — this can be a rule (format check, code execution pass/fail) or an LLM judge. No trained value network required.",
+    icon: "R",
+  },
+  {
+    step: "3",
+    title: "Relative Normalization",
+    desc: "Compute the baseline as the mean reward across the group. Advantage = (reward − mean) / std. This eliminates the need for a critic/value model.",
+    icon: "A",
+  },
+  {
+    step: "4",
+    title: "Policy Gradient Update",
+    desc: "Maximize expected advantage with a PPO-style clipped objective. High-reward completions are reinforced; low-reward ones are suppressed. KL penalty keeps policy near reference.",
+    icon: "U",
+  },
+];
+
+const RULER_CRITERIA = [
+  { label: "Correctness", desc: "Is the final answer factually correct?" },
+  { label: "Reasoning Trace", desc: "Does the chain-of-thought support the conclusion?" },
+  { label: "Format Adherence", desc: "Does the output follow the required schema?" },
+  { label: "Conciseness", desc: "Is the response free of padding and repetition?" },
+  { label: "Safety", desc: "Does the output avoid harmful or policy-violating content?" },
+];
+
+function GRPOAgentRL() {
+  const [activeMethod, setActiveMethod] = useState("GRPO");
+  const [activeStep, setActiveStep] = useState(0);
+  const selected = METHODS.find(m => m.name === activeMethod) || METHODS[2];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-5 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-violet-950/60 text-violet-400 border border-violet-800/40">ALIGN</span>
+          <span className="text-[10px] font-mono text-zinc-500">GROUP RELATIVE POLICY OPTIMIZATION</span>
+        </div>
+        <h2 className="text-lg font-black text-white">GRPO / Agent RL Training</h2>
+        <p className="text-sm text-zinc-400 leading-relaxed">
+          GRPO is the RL training algorithm behind DeepSeek-R1 and Qwen3. It removes the need for a separate value/critic network by using group-relative baselines — making large-scale reasoning training dramatically more efficient than PPO.
+        </p>
+        <div className="flex flex-wrap gap-2 pt-1">
+          {["DeepSeek-R1", "Qwen3", "Gemini 2.0 Flash Thinking"].map(lab => (
+            <span key={lab} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-950/40 text-violet-300 border border-violet-800/30">{lab}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Method Comparison Table */}
+      <div className="space-y-2">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest px-1">Method Comparison</div>
+        <div className="flex gap-2">
+          {METHODS.map(m => (
+            <button key={m.name} onClick={() => setActiveMethod(m.name)}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all border ${activeMethod === m.name ? m.bg + " " + m.accent + " " + m.border : "bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-zinc-300"}`}>
+              {m.name}
+            </button>
+          ))}
+        </div>
+        <div className={`rounded-xl border p-4 space-y-3 ${selected.bg} ${selected.border}`}>
+          <div className="text-sm font-bold text-white">{selected.name} — {selected.shortDesc}</div>
+          <div className="grid grid-cols-1 gap-2">
+            {[
+              ["Reward Source", selected.rewardSource],
+              ["Sample Complexity", selected.sampleComplexity],
+              ["On-Policy Requirements", selected.onPolicyReqs],
+              ["Best For", selected.bestFor],
+              ["Used At", selected.frontier],
+            ].map(([label, val]) => (
+              <div key={label} className="flex gap-2">
+                <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wide w-36 shrink-0 pt-0.5">{label}</span>
+                <span className="text-xs text-zinc-300 leading-relaxed">{val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Side-by-side mini grid */}
+        <div className="grid grid-cols-3 gap-2 pt-1">
+          {METHODS.map(m => (
+            <div key={m.name} className={`rounded-lg border p-3 space-y-1 ${m.bg} ${m.border}`}>
+              <div className={`text-xs font-black ${m.accent}`}>{m.name}</div>
+              <div className="text-[10px] text-zinc-400 leading-relaxed">{m.shortDesc}</div>
+              <div className="text-[10px] text-zinc-500">RM: {m.rewardSource.split(" ")[0]} {m.rewardSource.split(" ")[1]}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* How GRPO Works */}
+      <div className="space-y-2">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest px-1">How GRPO Works</div>
+        <div className="flex gap-2 flex-wrap">
+          {GRPO_STEPS.map((s, i) => (
+            <button key={i} onClick={() => setActiveStep(i)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${activeStep === i ? "bg-violet-900/40 text-violet-300 border-violet-700/50" : "bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-zinc-300"}`}>
+              Step {s.step}: {s.title}
+            </button>
+          ))}
+        </div>
+        <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-violet-950/50 border border-violet-800/40 flex items-center justify-center text-sm font-black text-violet-400 shrink-0">
+              {GRPO_STEPS[activeStep].icon}
+            </div>
+            <div>
+              <div className="text-sm font-bold text-white">Step {GRPO_STEPS[activeStep].step}: {GRPO_STEPS[activeStep].title}</div>
+            </div>
+          </div>
+          <p className="text-sm text-zinc-400 leading-relaxed">{GRPO_STEPS[activeStep].desc}</p>
+        </div>
+        {/* Formula callout */}
+        <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-3">
+          <div className="text-[10px] font-mono text-zinc-500 mb-1.5">GRPO ADVANTAGE FORMULA</div>
+          <div className="font-mono text-xs text-emerald-400 space-y-1">
+            <div>A_i = (r_i - mean(r_1..r_G)) / std(r_1..r_G)</div>
+            <div className="text-zinc-500 text-[10px]">where G = group size, r_i = reward for completion i</div>
+            <div className="text-zinc-500 text-[10px] mt-1">No critic network needed — group mean IS the baseline</div>
+          </div>
+        </div>
+      </div>
+
+      {/* RULER Pattern */}
+      <div className="space-y-2">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest px-1">RULER Pattern — LLM-as-Reward-Model</div>
+        <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4 space-y-3">
+          <p className="text-sm text-zinc-400 leading-relaxed">
+            RULER (Reward Using LLM Evaluation and Rubrics) replaces the trained reward model with a powerful LLM judge. Reward criteria are written in plain English as a rubric — the judge evaluates each agent trajectory and returns a score.
+          </p>
+          <div className="rounded-lg bg-zinc-950/60 border border-zinc-800 p-3 space-y-2">
+            <div className="text-[10px] font-mono font-bold text-zinc-500 mb-2">EXAMPLE RUBRIC CRITERIA</div>
+            {RULER_CRITERIA.map(c => (
+              <div key={c.label} className="flex gap-2 items-start">
+                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                <div>
+                  <span className="text-xs font-semibold text-zinc-300">{c.label}: </span>
+                  <span className="text-xs text-zinc-500">{c.desc}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-lg bg-indigo-950/30 border border-indigo-800/30 p-3 text-xs text-indigo-300">
+            <span className="font-bold">Why this matters: </span>
+            Writing reward criteria in English is far easier than training a separate reward model. RULER enables rapid iteration — change the rubric, restart training, observe new behaviors within hours instead of weeks.
+          </div>
+        </div>
+      </div>
+
+      {/* PPO vs GRPO key difference */}
+      <div className="space-y-2">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest px-1">PPO vs GRPO — The Key Difference</div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-blue-950/20 border border-blue-800/30 p-3 space-y-1.5">
+            <div className="text-xs font-black text-blue-400">PPO</div>
+            <div className="space-y-1">
+              {["Needs separate critic (value) network", "Value network must match policy size", "2x compute + memory overhead", "Complex 4-model setup: policy, ref, RM, critic", "Harder to scale to 70B+"].map(t => (
+                <div key={t} className="flex gap-1.5 items-start">
+                  <span className="text-red-500 text-[10px] mt-0.5">✕</span>
+                  <span className="text-[10px] text-zinc-400">{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl bg-violet-950/20 border border-violet-800/30 p-3 space-y-1.5">
+            <div className="text-xs font-black text-violet-400">GRPO</div>
+            <div className="space-y-1">
+              {["No critic network — group mean is baseline", "Only policy + reference model needed", "~50% memory reduction vs PPO", "Rule-based or LLM reward — no RM training", "Scales to 671B (DeepSeek-V3)"].map(t => (
+                <div key={t} className="flex gap-1.5 items-start">
+                  <span className="text-emerald-400 text-[10px] mt-0.5">✓</span>
+                  <span className="text-[10px] text-zinc-400">{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* DeepSeek-R1 / Qwen3 callout */}
+      <div className="rounded-xl bg-gradient-to-br from-violet-950/30 to-indigo-950/30 border border-violet-800/30 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+          <div className="text-xs font-bold text-violet-300 uppercase tracking-wide">Frontier Lab Context</div>
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          {[
+            { model: "DeepSeek-R1", detail: "Trained with GRPO using rule-based rewards (format checks, math verifiers). No human preference labels needed. Achieved o1-level reasoning at a fraction of training cost." },
+            { model: "Qwen3", detail: "Uses GRPO with LLM-as-judge for multi-step reasoning. The thinking budget control (enable/disable reasoning traces) is tuned via RL." },
+            { model: "Gemini 2.0 Flash Thinking", detail: "Google's 'thinking' variant uses group-sampling RL with process reward models — similar philosophy to GRPO." },
+          ].map(item => (
+            <div key={item.model} className="rounded-lg bg-zinc-900/60 border border-zinc-800 p-3 space-y-1">
+              <div className="text-xs font-bold text-white">{item.model}</div>
+              <div className="text-xs text-zinc-400 leading-relaxed">{item.detail}</div>
+            </div>
+          ))}
+        </div>
+        <div className="text-[10px] text-zinc-500 italic">
+          GRPO is becoming the default RL training loop at frontier labs precisely because it eliminates the critic bottleneck while enabling rapid reward signal iteration.
+        </div>
+      </div>
+
+      {/* DPO vs GRPO positioning */}
+      <div className="rounded-lg bg-amber-950/20 border border-amber-800/30 p-3 text-xs text-amber-300 space-y-1">
+        <div className="font-bold">When to use DPO vs GRPO</div>
+        <div className="text-amber-200/70 leading-relaxed">
+          Use <span className="font-semibold text-amber-300">DPO</span> when you have preference pair data and want offline alignment of style/tone/helpfulness — fast, stable, no RL complexity.
+          Use <span className="font-semibold text-amber-300">GRPO</span> when you need verifiable correctness signals (math, code, reasoning) and want the model to discover new reasoning strategies through on-policy exploration.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
+  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
 };
