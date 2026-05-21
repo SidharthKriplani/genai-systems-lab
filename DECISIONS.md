@@ -363,7 +363,7 @@ Stage 3 (month 12–24): Team/org pricing for prep cohorts. Custom Defense Doc g
 **Scale:**
 - 13 tabs
 - 100+ interactive modules
-- 140+ Ground Truth posts across 18 categories
+- 150+ Ground Truth posts across 19 categories
 - 57-question PrepLab question bank
 - 5 RAG Lab production failure scenarios
 - 30 prompt library entries
@@ -395,13 +395,19 @@ Stage 3 (month 12–24): Team/org pricing for prep cohorts. Custom Defense Doc g
 
 **The production failure case library as a proprietary dataset.** 5 curated RAG failure scenarios + 5 debug traces + 24 RCA cases + 22 metrics cases + 10 business cases — structured interactive diagnosis that YouTube can't replicate and DeepLearning.AI won't touch because it's too niche.
 
-**140+ posts with production depth and citations.** The largest free resource specifically covering production GenAI systems — not introductory ML, not research papers, but the specific knowledge needed to build and operate real AI systems at scale.
+**150+ posts with production depth and citations.** The largest free resource specifically covering production GenAI systems — not introductory ML, not research papers, but the specific knowledge needed to build and operate real AI systems at scale.
 
 **PrepLab as the differentiated assessment layer.** JD-aware question weighting + speech input + gap analysis is not available anywhere else for free, for this specific audience.
 
 The positioning: *"The only place you practice diagnosing production GenAI failures before your first on-call shift."*
 
 ---
+
+**Latest additions (session — May 21 2026):**
+- Flows.jsx: `FineTuningPipelineFlow` registered in FLOW_TABS (FT_STAGES × 6, DPO vs RLHF table, pre-deploy checklist)
+- Agents.jsx: `ComputerUseAgents` (4 architectures, observe→act loop, action space × 5, 6 failure modes) + `LongRunningWorkflows` (4 patterns with code, 5 tools, decision framework) — both in AGENTS_MODULES under SCALE group
+- groundTruthIndex.js + groundTruthPosts.js: 5 new posts in "production-mlops" series (ft-dpo-vs-grpo, ft-quantization, ft-governance, ft-multimodal-rag, ft-case-study)
+- GroundTruth.jsx: "production-mlops" series added to SERIES_META
 
 *Last updated: May 2026*
 *Maintained by: Sidharth Kriplani*

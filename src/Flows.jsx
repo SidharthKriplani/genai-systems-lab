@@ -1548,6 +1548,202 @@ function VoiceAIFlow() {
   );
 }
 
+// ─── FINE-TUNING PIPELINE FLOW ────────────────────────────────────────────────
+
+const FT_STAGES = [
+  {
+    id: "data",
+    label: "Raw Data Collection",
+    color: "#3b82f6",
+    icon: "📥",
+    what: "Gather domain-specific text: internal docs, support tickets, code, logs, labeled examples.",
+    prod: "Quality >> quantity. 1K curated examples beats 100K noisy ones for fine-tuning.",
+    failure: "Training on PII, biased sources, or mislabeled data propagates errors into the model permanently.",
+    output: "Raw corpus (~10K–1M examples)",
+  },
+  {
+    id: "synth",
+    label: "Synthetic Augmentation",
+    color: "#8b5cf6",
+    icon: "🤖",
+    what: "Use an LLM (GPT-4o, Claude) to generate instruction-response pairs from the raw corpus. Apply self-instruct, persona-driven generation, or Evol-Instruct.",
+    prod: "LLM-as-judge filtering: score all generated pairs, keep score > 0.75. Typically retains 50–70%.",
+    failure: "Without filtering, LLM hallucinations in synthetic data become ground truth during training.",
+    output: "Cleaned instruction dataset (~5K–50K pairs)",
+  },
+  {
+    id: "sft",
+    label: "Supervised Fine-Tuning (SFT)",
+    color: "#06b6d4",
+    icon: "🎓",
+    what: "Train on instruction-response pairs. Model learns to follow the task format and domain knowledge. Use LoRA or QLoRA for parameter efficiency.",
+    prod: "Typical hyperparams: 2–5 epochs, lr 2e-4, cosine schedule. Monitor train loss; stop before it plateaus (overfit risk).",
+    failure: "Catastrophic forgetting: fine-tuning on a narrow domain can degrade general capabilities. Use small learning rates and brief training.",
+    output: "SFT checkpoint (adapter weights if LoRA)",
+  },
+  {
+    id: "dpo",
+    label: "Preference Alignment (DPO/RLHF)",
+    color: "#f59e0b",
+    icon: "⚖️",
+    what: "Collect preference pairs: (prompt, chosen response, rejected response). DPO trains directly on pairs — no reward model needed. RLHF uses PPO with a reward model.",
+    prod: "DPO is simpler than RLHF: no separate reward model, stable training, preferred for most production pipelines. RLHF when reward signal is complex.",
+    failure: "Bad preference labels flip the optimization direction. Label quality is the critical bottleneck — mislabeled pairs directly degrade alignment.",
+    output: "Aligned model checkpoint",
+  },
+  {
+    id: "eval",
+    label: "Evaluation",
+    color: "#10b981",
+    icon: "📊",
+    what: "Run held-out eval set. Measure: task-specific metrics (ROUGE, accuracy, pass@k for code), LLM-as-judge for quality, safety evals (refusal rate, hallucination rate).",
+    prod: "Always compare against base model AND previous fine-tuned version. Regression on general benchmarks is a red flag.",
+    failure: "Eval on training distribution — model looks great but fails on real user inputs. Held-out set must reflect production distribution.",
+    output: "Eval report: pass/fail per dimension",
+  },
+  {
+    id: "push",
+    label: "Merge & Deploy",
+    color: "#ef4444",
+    icon: "🚀",
+    what: "Merge LoRA adapters into base model weights. Quantize if needed (GPTQ/AWQ for 4-bit). Deploy via vLLM or TGI. Shadow-test against production traffic before full rollout.",
+    prod: "10% traffic shadow test for 48 hours. Monitor: TTFT, output quality scores, error rate. Canary rollout before 100% traffic.",
+    failure: "Skipping shadow testing. A fine-tuned model that looks great offline can behave unexpectedly on the long tail of production inputs.",
+    output: "Deployed model endpoint",
+  },
+];
+
+const DPO_VS_RLHF = [
+  { dim: "Reward model", dpo: "Not needed — trained directly on pairs", rlhf: "Required — separate model trained first" },
+  { dim: "Training stability", dpo: "More stable — single-stage", rlhf: "PPO can be unstable, needs careful tuning" },
+  { dim: "Compute cost", dpo: "Lower — no RM training or RL loop", rlhf: "Higher — 3 models (base + RM + policy)" },
+  { dim: "Use when", dpo: "Standard alignment, most production cases", rlhf: "Complex reward signal, code execution feedback" },
+  { dim: "Data format", dpo: "(prompt, chosen, rejected) triplets", rlhf: "(prompt, response, human score)" },
+];
+
+function FineTuningPipelineFlow() {
+  const [activeStage, setActiveStage] = useState(null);
+  const [tab, setTab] = useState("pipeline");
+  const TABS = [{ id: "pipeline", label: "Pipeline" }, { id: "dpo", label: "DPO vs RLHF" }, { id: "checklist", label: "Pre-Deploy Checklist" }];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${tab === t.id ? "bg-amber-700 border-amber-600 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "pipeline" && (
+        <div className="space-y-2">
+          <p className="text-xs text-zinc-500">Click any stage for production detail and failure modes.</p>
+          {FT_STAGES.map((stage, i) => (
+            <div key={stage.id}>
+              <div onClick={() => setActiveStage(activeStage === stage.id ? null : stage.id)}
+                className={`rounded-xl border p-4 cursor-pointer transition-all ${activeStage === stage.id ? "border-opacity-60" : "border-zinc-800 hover:border-zinc-600"}`}
+                style={{ background: activeStage === stage.id ? stage.color + "11" : "#09090b", borderColor: activeStage === stage.id ? stage.color + "80" : undefined }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0"
+                    style={{ background: stage.color + "22", border: `1.5px solid ${stage.color}55` }}>
+                    {stage.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold font-mono" style={{ color: stage.color }}>STAGE {i + 1}</span>
+                      <p className="text-sm font-bold text-zinc-100">{stage.label}</p>
+                    </div>
+                    <p className="text-xs text-zinc-500 truncate">{stage.what.slice(0, 80)}…</p>
+                  </div>
+                  <div className="text-[10px] text-zinc-600 shrink-0">{stage.output.split("(")[0].trim()}</div>
+                </div>
+                {activeStage === stage.id && (
+                  <div className="mt-3 pt-3 border-t border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase mb-1">What happens</p>
+                      <p className="text-xs text-zinc-300">{stage.what}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Production detail</p>
+                      <p className="text-xs text-zinc-300">{stage.prod}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-red-400 uppercase mb-1">Failure mode</p>
+                      <p className="text-xs text-zinc-300">{stage.failure}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {i < FT_STAGES.length - 1 && (
+                <div className="flex justify-center">
+                  <div className="w-px h-4 bg-zinc-800"/>
+                  <div className="absolute" style={{ marginTop: "8px" }}>
+                    <svg width="8" height="8" viewBox="0 0 8 8"><path d="M0,0 L8,0 L4,8 Z" fill="#3f3f46"/></svg>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "dpo" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">DPO is now the standard for preference alignment in most production pipelines. RLHF is still used when the reward signal requires complex computation.</p>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  <th className="text-left p-3 text-zinc-500 font-mono text-[10px] uppercase">Dimension</th>
+                  <th className="text-left p-3 text-amber-400 font-semibold">DPO</th>
+                  <th className="text-left p-3 text-violet-400 font-semibold">RLHF (PPO)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {DPO_VS_RLHF.map((r, i) => (
+                  <tr key={i} className={`border-b border-zinc-800/50 ${i % 2 === 0 ? "bg-zinc-900/30" : ""}`}>
+                    <td className="p-3 text-zinc-400 font-semibold">{r.dim}</td>
+                    <td className="p-3 text-zinc-300">{r.dpo}</td>
+                    <td className="p-3 text-zinc-300">{r.rlhf}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="bg-zinc-900 rounded-xl p-4 border border-amber-700/30">
+            <p className="text-xs text-amber-300 font-semibold mb-2">GRPO (Group Relative Policy Optimization)</p>
+            <p className="text-xs text-zinc-400">A newer alternative to PPO used in DeepSeek-R1 training. Instead of a separate reward model, GRPO scores multiple responses to the same prompt relative to each other — more stable than PPO, cheaper than RLHF, works especially well for math/coding tasks with verifiable rewards.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "checklist" && (
+        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-4">
+          <h3 className="text-sm font-bold text-zinc-200">Pre-Deploy Fine-Tuning Checklist</h3>
+          {[
+            { phase: "Data quality", items: ["Held-out eval set is human-labeled, not synthetic", "Deduplication run — < 5% near-duplicate pairs", "PII scrubbed from all training data", "Distribution matches production traffic, not just easy cases"] },
+            { phase: "Training", items: ["SFT loss curve checked — stopped before plateau/overfit", "Learning rate: start at 2e-4 for LoRA, lower for full fine-tune", "Eval on general benchmarks alongside task metrics — check for catastrophic forgetting", "LoRA rank: 8–64 (higher = more capacity but overfit risk)"] },
+            { phase: "Alignment (DPO/RLHF)", items: ["Preference labels verified by humans, not synthetic judge alone", "Beta parameter tuned (DPO) — too high = over-constrained, too low = unsafe", "Safety evals: refusal rate, toxicity, hallucination on adversarial prompts", "Regression vs. base model measured on safety benchmarks"] },
+            { phase: "Deployment", items: ["Shadow test: 10% traffic for ≥ 48 hours before full rollout", "Rollback plan ready: can switch back to previous model in < 5 minutes", "Output quality monitoring live: LLM-as-judge scoring on sample of production outputs", "Alert on distribution shift in output lengths, refusal rates, or error codes"] },
+          ].map(phase => (
+            <div key={phase.phase}>
+              <p className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-2">{phase.phase}</p>
+              {phase.items.map((item, i) => (
+                <div key={i} className="flex gap-2 mb-1.5">
+                  <span className="text-zinc-600 text-xs mt-0.5 shrink-0">☐</span>
+                  <p className="text-xs text-zinc-300">{item}</p>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── FLOWS APP ────────────────────────────────────────────────────────────────
 const FLOW_TABS = [
   { id: "rag",         label: "RAG Pipeline",        tag: "FLOW",    component: RAGFlowDiagram,
@@ -1577,6 +1773,9 @@ const FLOW_TABS = [
   { id: "voiceai",   label: "Voice AI Pipeline",   tag: "VOICE",    component: VoiceAIFlow,
     desc: "Microphone → VAD → STT → LLM → TTS → speaker. Every stage has a latency budget and a failure mode. Real-time voice AI in production.",
     reflection: "Which stage has the highest latency variance — and how would you stream to hide it from the user?" },
+  { id: "finetuning", label: "Fine-Tuning Pipeline", tag: "TRAIN", component: FineTuningPipelineFlow,
+    desc: "Raw data → synthetic augmentation → SFT → DPO → eval → merge & deploy. Every stage with its failure mode.",
+    reflection: "Why is DPO preferred over RLHF for most production fine-tuning — and when would you still use RLHF or GRPO?" },
 ];
 
 export default function FlowsApp() {

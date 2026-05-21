@@ -726,6 +726,12 @@ const SERIES_META = {
     color: "#f43f5e",
     postIds: ["model-claude", "model-gpt4o", "model-gemini", "model-grok", "model-llama"],
   },
+  "production-mlops": {
+    title: "Production ML Ops",
+    desc: "DPO vs GRPO alignment, GPTQ/AWQ/GGUF quantization, AI governance, multimodal RAG on real documents, and an end-to-end fine-tuning case study.",
+    color: "#84cc16",
+    postIds: ["ft-dpo-vs-grpo", "ft-quantization", "ft-governance", "ft-multimodal-rag", "ft-case-study"],
+  },
 };
 
 export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {

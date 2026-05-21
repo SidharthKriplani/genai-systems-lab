@@ -2605,6 +2605,331 @@ function AgenticReliability() {
   );
 }
 
+// ─── COMPUTER USE / BROWSER AGENTS ───────────────────────────────────────────
+const CU_ACTION_SPACE = [
+  { cat: "Mouse", actions: ["click(x,y)", "double_click(x,y)", "right_click(x,y)", "drag(x1,y1,x2,y2)", "scroll(x,y,dir)"], color: "#3b82f6" },
+  { cat: "Keyboard", actions: ["type(text)", "key(shortcut)", "hotkey(ctrl+c)", "select_all()", "clear()"], color: "#8b5cf6" },
+  { cat: "Navigation", actions: ["navigate(url)", "back()", "forward()", "new_tab()", "close_tab()"], color: "#06b6d4" },
+  { cat: "Observation", actions: ["screenshot()", "get_text(selector)", "get_attribute(el,attr)", "wait_for(selector)"], color: "#10b981" },
+  { cat: "System", actions: ["open_app(name)", "switch_window()", "file_open(path)", "file_save(path)"], color: "#f59e0b" },
+];
+
+const CU_GROUNDING_STEPS = [
+  { step: 1, label: "Observe", desc: "Take a screenshot of the current screen state", icon: "📸", detail: "Model receives the full screenshot as a vision input. Bounding boxes or coordinates can be pre-computed with a grounding model (OmniParser, SoM) or computed directly by the LLM." },
+  { step: 2, label: "Ground", desc: "Identify target UI elements and their coordinates", icon: "🎯", detail: "The model must map from 'click the Submit button' to pixel coordinates (x=840, y=612). This is the hardest step — UI layouts vary, elements move, and OCR fails on icon-only buttons." },
+  { step: 3, label: "Act", desc: "Execute the action via computer control API", icon: "⚡", detail: "Anthropic's API returns a structured action dict: {type: 'mouse_click', coordinate: [840, 612]}. The agent executor translates this to OS-level input events via PyAutoGUI, Playwright, or the OS accessibility API." },
+  { step: 4, label: "Verify", desc: "Confirm action had expected effect before next step", icon: "✅", detail: "Take a new screenshot, compare state. Did the button click open a modal? Did the text appear in the field? Failure to verify causes cascading errors — the agent proceeds as if the action worked." },
+];
+
+const CU_FAILURE_MODES = [
+  { name: "Coordinate drift", desc: "UI scales or scrolls between screenshot and action execution — click lands on wrong element", severity: "HIGH", mitigation: "Re-screenshot before every action; use relative coordinates when possible" },
+  { name: "Grounding hallucination", desc: "Model invents coordinates for elements it thinks should be there but aren't", severity: "HIGH", mitigation: "Verify element exists in screenshot before acting; use explicit element detection" },
+  { name: "State divergence", desc: "Agent assumes action succeeded without verifying — subsequent steps fail silently", severity: "HIGH", mitigation: "Mandatory screenshot after every action; explicit success condition checking" },
+  { name: "Infinite loop", desc: "Agent keeps retrying a failed action without escalating or changing strategy", severity: "MED", mitigation: "Max retry per action (3), explicit error state detection, fallback to human handoff" },
+  { name: "Scope creep", desc: "Agent takes additional actions outside the task scope while 'helping'", severity: "MED", mitigation: "Strict task scoping in system prompt; confirmation before irreversible actions" },
+  { name: "Auth exposure", desc: "Agent captures credentials visible on screen into context window", severity: "CRITICAL", mitigation: "Blur/mask credential fields; never log screenshots containing auth data" },
+];
+
+const CU_ARCHITECTURES = [
+  { name: "Anthropic Computer Use API", desc: "Claude 3.5+ natively understands screenshots and outputs structured actions. Simplest path to browser agents.", stack: ["Claude 3.5 Sonnet", "Anthropic API", "PyAutoGUI / Playwright"], use: "General desktop + browser automation" },
+  { name: "Operator-Style (OpenAI)", desc: "GPT-4o with Responses API + computer-use tool. Similar action space to Anthropic, designed for web-first tasks.", stack: ["GPT-4o", "Responses API", "Playwright"], use: "Web task automation, form filling" },
+  { name: "Browser-Use (OSS)", desc: "Open-source library wrapping Playwright with LLM action generation. LLM-agnostic, configurable action space.", stack: ["Any LLM", "Playwright", "browser-use lib"], use: "Custom browser agents, CI testing" },
+  { name: "OmniParser + Any LLM", desc: "Microsoft's grounding model detects UI elements, outputs bounding boxes. LLM plans actions on structured UI tree instead of raw pixels.", stack: ["OmniParser", "GPT-4V/Claude", "PyAutoGUI"], use: "High-accuracy grounding on complex UIs" },
+];
+
+function ComputerUseAgents() {
+  const [tab, setTab] = useState("arch");
+  const [selectedFailure, setSelectedFailure] = useState(null);
+  const TABS = [
+    { id: "arch", label: "Architectures" },
+    { id: "loop", label: "Observe → Act Loop" },
+    { id: "actions", label: "Action Space" },
+    { id: "failures", label: "Failure Modes" },
+  ];
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-white mb-1">Computer Use &amp; Browser Agents</h2>
+        <p className="text-zinc-400 text-sm">Agents that see screens and control computers. Vision → grounding → action → verify. Every production deployment needs explicit failure handling.</p>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${tab === t.id ? "bg-blue-500 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "arch" && (
+        <div className="space-y-3">
+          <p className="text-zinc-400 text-xs">Four dominant architectures for computer use agents — from managed APIs to fully custom stacks.</p>
+          {CU_ARCHITECTURES.map((a, i) => (
+            <div key={i} className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div>
+                  <div className="text-white font-bold text-sm">{a.name}</div>
+                  <div className="text-zinc-400 text-xs mt-0.5">{a.desc}</div>
+                </div>
+                <span className="text-[10px] bg-zinc-700 text-zinc-300 px-2 py-0.5 rounded font-mono shrink-0">{a.use}</span>
+              </div>
+              <div className="flex gap-1.5 flex-wrap mt-3">
+                {a.stack.map((s, j) => (
+                  <span key={j} className="text-[10px] bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2 py-0.5 rounded font-mono">{s}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "loop" && (
+        <div className="space-y-3">
+          <p className="text-zinc-400 text-xs">The core perception-action loop. Every computer use agent runs this cycle. The verify step is the most skipped and most important.</p>
+          <div className="relative">
+            {CU_GROUNDING_STEPS.map((s, i) => (
+              <div key={i} className="flex gap-4 mb-0">
+                <div className="flex flex-col items-center">
+                  <div className="w-9 h-9 rounded-full bg-zinc-800 border-2 border-blue-500/50 flex items-center justify-center text-lg shrink-0">{s.icon}</div>
+                  {i < CU_GROUNDING_STEPS.length - 1 && <div className="w-0.5 h-8 bg-zinc-700 mt-1" />}
+                </div>
+                <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4 mb-3 flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-mono text-blue-400 font-bold">STEP {s.step}</span>
+                    <span className="text-white font-bold text-sm">{s.label}</span>
+                    <span className="text-zinc-500 text-xs">— {s.desc}</span>
+                  </div>
+                  <p className="text-zinc-400 text-xs leading-relaxed">{s.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
+            <div className="text-blue-300 font-bold text-xs mb-1">Anthropic API Action Format</div>
+            <pre className="text-xs text-zinc-300 font-mono leading-relaxed overflow-x-auto">{`// Model output — parsed and executed by agent runner
+{
+  "type": "computer_use",
+  "action": {
+    "type": "mouse_click",
+    "coordinate": [840, 612]
+  }
+}
+
+// After execution → take screenshot → feed back as next observation`}</pre>
+          </div>
+        </div>
+      )}
+
+      {tab === "actions" && (
+        <div className="space-y-4">
+          <p className="text-zinc-400 text-xs">The action space defines what the agent can do. Anthropic's computer use API exposes a subset of these. Larger action spaces mean more capability and more failure surface.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {CU_ACTION_SPACE.map((cat, i) => (
+              <div key={i} className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full" style={{ background: cat.color }} />
+                  <span className="text-white font-bold text-xs">{cat.cat}</span>
+                </div>
+                <div className="space-y-1">
+                  {cat.actions.map((a, j) => (
+                    <div key={j} className="text-[11px] font-mono text-zinc-400 bg-zinc-800 px-2 py-1 rounded">{a}</div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
+            <div className="text-amber-300 font-bold text-xs mb-1">Irreversibility is the key risk axis</div>
+            <p className="text-zinc-400 text-xs">Mouse clicks are low risk. Form submissions, email sends, file deletes are high risk. Production computer use agents should require explicit confirmation before any irreversible action — never let the agent decide unilaterally.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "failures" && (
+        <div className="space-y-3">
+          <p className="text-zinc-400 text-xs">Computer use agents fail in predictable ways. Design your systems around these — especially in production.</p>
+          {CU_FAILURE_MODES.map((f, i) => (
+            <div key={i}
+              className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all ${selectedFailure === i ? "border-blue-500/50" : "border-zinc-700 hover:border-zinc-600"}`}
+              onClick={() => setSelectedFailure(selectedFailure === i ? null : i)}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-white font-bold text-sm">{f.name}</div>
+                  <div className="text-zinc-400 text-xs mt-0.5">{f.desc}</div>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${f.severity === "CRITICAL" ? "bg-red-500/20 text-red-300" : f.severity === "HIGH" ? "bg-orange-500/20 text-orange-300" : "bg-yellow-500/20 text-yellow-300"}`}>{f.severity}</span>
+              </div>
+              {selectedFailure === i && (
+                <div className="mt-3 pt-3 border-t border-zinc-700">
+                  <div className="text-xs text-zinc-500 font-mono font-bold mb-1">MITIGATION</div>
+                  <p className="text-zinc-300 text-xs">{f.mitigation}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── LONG-RUNNING WORKFLOWS ───────────────────────────────────────────────────
+const LRW_PATTERNS = [
+  { name: "Checkpoint & Resume", desc: "Persist agent state at each step. On failure, resume from last checkpoint rather than restarting.", example: "LangGraph Persistence — SQLite/Postgres checkpoint store. Thread ID maps to state history.", code: `# LangGraph checkpoint pattern
+from langgraph.checkpoint.sqlite import SqliteSaver
+memory = SqliteSaver.from_conn_string(":memory:")
+graph = workflow.compile(checkpointer=memory)
+
+# Resume from specific checkpoint
+config = {"configurable": {"thread_id": "task-123"}}
+state = graph.get_state(config)  # inspect state
+result = graph.invoke(resume_input, config)  # resume` },
+  { name: "Durable Execution (Temporal)", desc: "Workflow definition separate from execution. Temporal replays history to reconstruct state after crashes — no explicit checkpointing needed.", example: "Temporal.io — each workflow step is an Activity. Worker crashes don't lose progress.", code: `# Temporal workflow — each @activity is retried independently
+@workflow.defn
+class DocumentPipeline:
+    @workflow.run
+    async def run(self, doc_id: str) -> str:
+        text = await workflow.execute_activity(
+            extract_text, doc_id, schedule_to_close_timeout=timedelta(minutes=10))
+        summary = await workflow.execute_activity(
+            summarize, text, schedule_to_close_timeout=timedelta(minutes=5))
+        return summary` },
+  { name: "Event-Driven Handoffs", desc: "Long-running tasks wait for external events (human approval, webhook, API response) without blocking a thread.", example: "LangGraph wait_for_input → send signal → resume. Or Temporal signals + queries.", code: `# LangGraph human-in-the-loop
+from langgraph.types import interrupt
+
+def review_node(state):
+    # Pause here, wait for human input
+    human_response = interrupt("Review this output: " + state["draft"])
+    return {"approved": human_response["approved"]}` },
+  { name: "Task Queue + Worker Pool", desc: "Break long workflows into discrete tasks queued in Redis/SQS. Workers pick up tasks, results chain together.", example: "Celery + Redis for Python. BullMQ for Node. Each LLM call is a separate queued task.", code: `# Celery chain for multi-step LLM pipeline
+from celery import chain
+result = chain(
+    extract_entities.s(doc_id),
+    enrich_entities.s(),
+    generate_report.s(),
+).delay()
+# Each step runs on separate workers, results chain through` },
+];
+
+const LRW_TOOLS = [
+  { name: "Temporal.io", type: "Durable execution", lang: "Python, Go, Java, TS", strength: "True durability — replay-based, no explicit checkpoints", weakness: "Operational overhead — runs its own cluster" },
+  { name: "LangGraph", type: "State graph + checkpointing", lang: "Python, JS", strength: "Native LLM agent primitives, HITL built-in, OSS", weakness: "LangChain ecosystem dependency, less mature for non-LLM flows" },
+  { name: "Celery + Redis", type: "Distributed task queue", lang: "Python", strength: "Mature, simple, huge ecosystem", weakness: "No built-in replay — need explicit retry/checkpoint logic" },
+  { name: "BullMQ", type: "Distributed task queue", lang: "TypeScript/Node", strength: "Redis-backed, good for Node LLM apps, flow support", weakness: "Node-only, less mature than Celery" },
+  { name: "AWS Step Functions", type: "Managed workflow", lang: "Any (via JSON states)", strength: "Fully managed, 99.99% SLA, built-in retry/wait states", weakness: "Vendor lock-in, cold start latency, cost at scale" },
+];
+
+function LongRunningWorkflows() {
+  const [activePattern, setActivePattern] = useState(0);
+  const [showCode, setShowCode] = useState(false);
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-white mb-1">Long-Running Workflows</h2>
+        <p className="text-zinc-400 text-sm">Multi-hour or multi-day agent workflows with checkpointing, human handoffs, and durable execution. The engineering layer that makes complex agents production-grade.</p>
+      </div>
+
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+        <div className="text-zinc-500 text-xs font-mono font-bold mb-3">WHY THIS IS HARD</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {[
+            { icon: "💥", label: "Crashes lose state", desc: "LLM calls can take minutes. Workers crash. Without checkpointing, you restart from zero." },
+            { icon: "⏳", label: "External waits", desc: "Human approval, webhook callbacks, API rate limits — workflows must pause and resume without blocking." },
+            { icon: "💸", label: "Partial failures cost money", desc: "If step 8 of 10 fails, you've already spent API credits on steps 1-7. Restart from scratch wastes both." },
+          ].map((item, i) => (
+            <div key={i} className="bg-zinc-800 rounded-lg p-3">
+              <div className="text-2xl mb-1">{item.icon}</div>
+              <div className="text-white font-bold text-xs mb-1">{item.label}</div>
+              <div className="text-zinc-400 text-xs">{item.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="text-zinc-500 text-xs font-mono font-bold mb-3">CORE PATTERNS</div>
+        <div className="flex gap-2 flex-wrap mb-4">
+          {LRW_PATTERNS.map((p, i) => (
+            <button key={i} onClick={() => { setActivePattern(i); setShowCode(false); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${activePattern === i ? "bg-blue-500 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+              {p.name}
+            </button>
+          ))}
+        </div>
+        {(() => {
+          const p = LRW_PATTERNS[activePattern];
+          return (
+            <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 space-y-3">
+              <div className="text-white font-bold">{p.name}</div>
+              <p className="text-zinc-400 text-sm">{p.desc}</p>
+              <div className="bg-zinc-800 rounded-lg p-3">
+                <div className="text-zinc-500 text-[10px] font-mono font-bold mb-1">PRODUCTION EXAMPLE</div>
+                <div className="text-zinc-300 text-xs">{p.example}</div>
+              </div>
+              <button onClick={() => setShowCode(!showCode)}
+                className="text-xs text-blue-400 hover:text-blue-300 font-mono transition-colors">
+                {showCode ? "▲ hide code" : "▼ show code"}
+              </button>
+              {showCode && (
+                <pre className="bg-zinc-950 rounded-lg p-4 text-xs text-zinc-300 font-mono leading-relaxed overflow-x-auto">{p.code}</pre>
+              )}
+            </div>
+          );
+        })()}
+      </div>
+
+      <div>
+        <div className="text-zinc-500 text-xs font-mono font-bold mb-3">TOOL LANDSCAPE</div>
+        <div className="space-y-2">
+          {LRW_TOOLS.map((t, i) => (
+            <div key={i} className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-bold text-sm">{t.name}</span>
+                  <span className="text-[10px] bg-zinc-700 text-zinc-300 px-2 py-0.5 rounded font-mono">{t.type}</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">{t.lang}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-[10px] text-emerald-400 font-mono font-bold mb-0.5">STRENGTH</div>
+                  <div className="text-zinc-400 text-xs">{t.strength}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-orange-400 font-mono font-bold mb-0.5">WEAKNESS</div>
+                  <div className="text-zinc-400 text-xs">{t.weakness}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+        <div className="text-zinc-500 text-xs font-mono font-bold mb-3">DECISION FRAMEWORK</div>
+        <div className="space-y-2 text-xs">
+          {[
+            { q: "Do you need true durability (survive process crashes)?", a: "Temporal.io — replay-based, no explicit checkpoints" },
+            { q: "Are you building LLM-native agent workflows?", a: "LangGraph — built-in HITL, agent state primitives" },
+            { q: "Simple async task chaining, Python shop?", a: "Celery + Redis — mature, easy to reason about" },
+            { q: "Already on AWS, need managed service?", a: "Step Functions — pay per state transition, zero ops" },
+            { q: "Node/TypeScript LLM app?", a: "BullMQ — Redis-backed, flow support, growing ecosystem" },
+          ].map((item, i) => (
+            <div key={i} className="flex gap-3">
+              <span className="text-zinc-500 shrink-0">→</span>
+              <div>
+                <div className="text-zinc-300 font-medium">{item.q}</div>
+                <div className="text-blue-400">{item.a}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const AGENTS_MODULES = [
   { id: "react",      label: "ReAct Pattern",       tag: "LOOP",   group: "CORE",      component: ReActPattern        },
   { id: "tools",      label: "Tool Use Design",     tag: "TOOLS",  group: "CORE",      component: ToolUseDesign       },
@@ -2618,6 +2943,8 @@ const AGENTS_MODULES = [
   { id: "frameworks", label: "Framework Landscape", tag: "STACK",  group: "ECOSYSTEM", component: FrameworkLandscape  },
   { id: "mcp",        label: "MCP Deep Dive",        tag: "MCP",      group: "ECOSYSTEM", component: MCPDeepDive         },
   { id: "reliability", label: "Agentic Reliability",  tag: "RELIABLE", group: "SCALE",     component: AgenticReliability  },
+  { id: "computeruse", label: "Computer Use",          tag: "CU",       group: "SCALE",     component: ComputerUseAgents   },
+  { id: "longrunning", label: "Long-Running Workflows",tag: "DURABLE",  group: "SCALE",     component: LongRunningWorkflows},
 ];
 
 const AGENTS_GROUPS = [
