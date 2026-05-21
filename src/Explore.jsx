@@ -3447,7 +3447,7 @@ const EXPLORE_MODULES = [
   { id: "llm_matrix",  label: "Model Matrix",          tag: "COMPARE",  component: LLMMatrixExplorer, fidelity: { tier: "simplified",  note: "Curated comparison based on published benchmarks — not live API data" } },
   { id: "semcache",   label: "Semantic Caching",    tag: "CACHE",    component: SemanticCachingExplorer, fidelity: { tier: "simplified", note: "Illustrative similarity scores — precomputed, not live embedding comparison" } },
   { id: "llmops",  label: "LLMOps Tool Comparison", tag: "OBSERVE", component: LLMOpsComparison, fidelity: { tier: "simplified", note: "Based on published documentation and benchmarks as of mid-2026" } },
-  { id: "embmodels", label: "Embedding Models", tag: "EMBED", group: "RETRIEVAL", component: EmbeddingModelSelector },
+  { id: "embmodels", label: "Embedding Models", tag: "EMBED", component: EmbeddingModelSelector, fidelity: { tier: "simplified", note: "MTEB scores and specs from published benchmarks — model availability changes; verify before production use" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {

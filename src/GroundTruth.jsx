@@ -744,6 +744,12 @@ const SERIES_META = {
     color: "#f59e0b",
     postIds: ["build-ai-search","build-code-review-bot","build-customer-support-ai"],
   },
+  "data-flywheel": {
+    title: "The Data Flywheel",
+    desc: "How production AI systems improve from their own traffic — implicit feedback collection, reward modeling from logs, and the online evaluation loop that compounds over time.",
+    color: "#10b981",
+    postIds: ["flywheel-implicit-feedback", "flywheel-reward-modeling", "flywheel-online-eval"],
+  },
 };
 
 export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {

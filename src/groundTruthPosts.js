@@ -10092,4 +10092,314 @@ lora_config = LoraConfig(
     ]},
   ],
 
+  // ─── DATA FLYWHEEL ────────────────────────────────────────────────────────────
+
+  "flywheel-implicit-feedback": [
+    { t: "p", text: "Every user interaction with your LLM system is a potential label — weak, noisy, but free at scale. Implicit feedback is behavioral signal collected passively from production traffic: what users click, skip, rewrite, copy, or abandon. The insight is that these actions encode preferences without requiring users to rate anything explicitly. The challenge is extracting a high-signal stream from noisy behavior." },
+    { t: "h2", text: "What Is Implicit Feedback" },
+    { t: "p", text: "Explicit feedback asks users to rate. Implicit feedback observes what users do. The distinction matters because explicit feedback is sparse (only ~5% of users fill out thumbs up/down) and subject to social desirability bias (users say things are useful even when they are not). Implicit signals are dense — every session generates them — but each individual signal is weaker and more ambiguous." },
+    { t: "callout", v: "info", text: "Implicit feedback is not ground truth. It is a proxy. A user who copies a response might be copying it to critique it. A user who reformulates a query might be rephrasing correctly, not reacting to a bad answer. Your job is to build a collection pipeline that lets you analyze and de-noise these signals, not to treat them as direct labels." },
+    { t: "h2", text: "Signals Worth Collecting" },
+    { t: "list", items: [
+      "Click-through rate: for ranked results or multi-response interfaces, which option the user selected. Strong pairwise signal — the clicked item was preferred over shown alternatives at that moment.",
+      "Query reformulation rate: user submits a follow-up query that semantically overlaps the previous one within the same session. Strong signal of dissatisfaction with the prior response.",
+      "Copy-paste events: user copies text from the response. Positive signal, but noisy — could be copying to verify or critique. Stronger signal when the copied span is long.",
+      "Session abandonment: user closes the session immediately after receiving a response without further interaction. Negative signal. Confounded by task completion (they got what they needed) vs. frustration.",
+      "Downstream actions: user successfully completes the task the query was about (order placed, code deployed, document submitted). Strongest signal, but hardest to capture. Requires connecting the LLM session to downstream product events.",
+      "Dwell time and scroll depth: how long the user spends reading the response and how far they scroll. Proxy for engagement. Noisy but useful in aggregate.",
+      "Edit distance on generated content: for writing/code tasks, how much the user modifies the generated output before using it. Low edit distance = high acceptance. High edit distance = partial use.",
+    ]},
+    { t: "h2", text: "Signal Hierarchy: Strongest to Weakest" },
+    { t: "table", headers: ["Signal", "Strength", "Noise Level", "Notes"], rows: [
+      ["Downstream task completion", "Very High", "Low", "Requires downstream instrumentation; rare but high-value"],
+      ["Query reformulation", "High", "Medium", "Filter for semantic overlap to avoid counting clarification queries"],
+      ["Click-through (multi-response)", "High", "Medium", "Position bias: users click first result more regardless of quality"],
+      ["Copy-paste (long span)", "Medium-High", "Medium", "Longer spans = stronger signal; short spans may be copying identifiers"],
+      ["Edit distance (low)", "Medium", "Medium", "Task-specific; 0% edit = good or lazy; calibrate per task type"],
+      ["Dwell time / scroll depth", "Low-Medium", "High", "Aggregate at cohort level; individual signals are very noisy"],
+      ["Session abandonment", "Low-Medium", "High", "Confounded by task completion; needs session context to interpret"],
+    ]},
+    { t: "h2", text: "Implementation Pattern" },
+    { t: "p", text: "Design your event schema before you build anything else. Every event needs: session_id, user_id (or anonymized cohort), timestamp, query_id, response_id, event_type, and payload. The query_id and response_id are foreign keys back to your logging system so you can join behavioral events to the actual prompts and completions they refer to." },
+    { t: "code", v: "json", text: `{
+  "session_id": "sess_a1b2c3",
+  "user_id": "u_anon_hash",
+  "timestamp": "2025-11-01T14:32:07Z",
+  "query_id": "q_xyz789",
+  "response_id": "r_abc123",
+  "event_type": "copy_paste",
+  "payload": {
+    "span_start": 42,
+    "span_end": 310,
+    "span_length": 268,
+    "destination": "external"
+  }
+}` },
+    { t: "p", text: "Sampling strategy: log 100% of events for the first 30 days to calibrate base rates. Then switch to stratified sampling: 100% sample for low-frequency high-value events (downstream completions, long copy-paste), 10-20% sample for high-frequency low-value events (scroll depth, short dwell time). This controls storage costs while preserving signal density where it matters." },
+    { t: "callout", v: "tip", text: "Privacy considerations are not optional. Before collecting behavioral signals, audit what constitutes PII in your context. In many jurisdictions, a combination of session_id + timestamp + query content is re-identifiable. Anonymize user IDs at collection, apply differential privacy to aggregate statistics, and document your data retention policy. These are engineering decisions, not legal formalities — they determine what you can legally train on." },
+    { t: "h2", text: "What to Watch Out For" },
+    { t: "list", items: [
+      "Survivorship bias: you only see signals from users who stayed in your product. Users who churned immediately — probably because of a bad experience — are invisible to your feedback loop. Your implicit signal is systematically optimistic.",
+      "Position bias: in ranked or multi-response interfaces, users click the first option at higher rates regardless of quality. Your click-through signal is contaminated by display order. Correct with inverse propensity weighting or randomized presentation experiments.",
+      "Selection bias from what you showed: you can only get implicit feedback on responses you actually showed. If your retrieval or generation is already biased, your feedback data inherits that bias and reinforces it on the next training round — the classic feedback loop failure mode.",
+      "Temporal distribution shift: user behavior changes over time. A reformulation signal collected 6 months ago reflects a different user population and product context. Weight recent signals more heavily or retrain on rolling windows.",
+    ]},
+    { t: "refs", items: [
+      { label: "Learning to Rank for Information Retrieval (Liu, 2011)", url: "https://link.springer.com/book/10.1007/978-3-642-14267-3" },
+      { label: "Unbiased Learning to Rank with Unbiased Propensity Estimation (Joachims et al.)", url: "https://arxiv.org/abs/1804.05938" },
+      { label: "Lessons from the Netflix Prize: Beyond Accuracy", url: "https://netflixtechblog.com/netflix-recommendations-beyond-the-5-stars-part-1-55838468f429" },
+      { label: "Spotify Implicit Feedback for Music Recommendation", url: "https://research.atspotify.com/2022/01/the-role-of-implicit-feedback-in-recommendation-systems/" },
+    ]},
+  ],
+
+  "flywheel-reward-modeling": [
+    { t: "p", text: "You have a stream of implicit feedback from production. Now what? The goal is to convert behavioral signals into training signal: either a reward model that scores responses, or direct preference pairs for DPO. Both require transforming noisy behavioral events into structured (chosen, rejected) pairs — and both have specific contamination traps that corrupt the signal if you are not careful." },
+    { t: "h2", text: "From Logs to Preferences" },
+    { t: "p", text: "The fundamental unit of reward modeling from logs is a preference pair: two responses to the same query, one implicitly preferred over the other. The standard construction: for a given query, the response that received a positive implicit signal (clicked, copied, led to task completion) is chosen; a response shown but not selected — or followed by a reformulation — is rejected." },
+    { t: "callout", v: "warn", text: "The rejected response must have been shown. You cannot sample random model outputs as negative examples — the implicit negative signal only carries information if the user actually saw the alternative and passed over it. This is the exposure constraint, and it is the first thing that breaks naive implementations." },
+    { t: "h2", text: "Bradley-Terry Model" },
+    { t: "p", text: "The Bradley-Terry model is the theoretical foundation for pairwise preference learning. Given two responses A and B to the same query, it models the probability that A is preferred over B as a function of their latent reward scores. The training objective maximizes the log-likelihood of observed preference pairs:" },
+    { t: "code", v: "python", text: `# Bradley-Terry preference probability
+import torch
+import torch.nn.functional as F
+
+def bt_preference_prob(r_A, r_B):
+    # P(A preferred over B) under Bradley-Terry model
+    return torch.sigmoid(r_A - r_B)
+
+def bt_loss(r_chosen, r_rejected):
+    # Negative log-likelihood — gradient pushes r_chosen > r_rejected
+    return -F.logsigmoid(r_chosen - r_rejected).mean()
+
+# Architecture: policy model backbone + scalar regression head
+# Training: freeze backbone, train head first; unfreeze for end-to-end fine-tune` },
+    { t: "h2", text: "DPO from Implicit Pairs" },
+    { t: "p", text: "Direct Preference Optimization bypasses the explicit reward model by directly optimizing the policy from preference pairs. The DPO loss for implicit pairs is identical to explicit pairs — the difference is only in how you construct (chosen, rejected): chosen = response user clicked/copied/used; rejected = response shown but skipped or followed by reformulation." },
+    { t: "code", v: "python", text: `def dpo_loss(chosen_logps, rejected_logps,
+             ref_chosen_logps, ref_rejected_logps, beta=0.1):
+    """
+    DPO loss from implicit preference pairs.
+    beta controls how strongly to deviate from the reference policy.
+    """
+    chosen_rewards  = beta * (chosen_logps  - ref_chosen_logps)
+    rejected_rewards = beta * (rejected_logps - ref_rejected_logps)
+    return -F.logsigmoid(chosen_rewards - rejected_rewards).mean()` },
+    { t: "h2", text: "Contamination Traps" },
+    { t: "p", text: "Three specific ways implicit reward signal gets corrupted, and how to detect each:" },
+    { t: "list", items: [
+      "Exposure bias: the reward model is trained on pairs where the rejected response was shown. But the model you are training will generate different distributions at inference. Responses that were never shown have no calibration. Fix: include some randomly sampled model outputs as negatives in addition to behaviorally rejected responses — this expands the support of your training distribution.",
+      "Label noise from ambiguous signals: a user who reformulates a query might be clarifying rather than reacting to a bad answer. A user who abandons a session might have gotten what they needed. Mislabeled negatives add noise that degrades reward model calibration. Fix: apply a confidence filter — only use pairs where the negative signal is unambiguous (explicit skip in a ranked interface, immediate reformulation with identical semantic intent). Discard ambiguous signals rather than guessing.",
+      "Temporal leakage: if your training set includes behavioral data from after your test set queries, the reward model has implicitly seen test-time user behavior. This inflates eval metrics. Fix: strict temporal train/test splits. All behavioral data used for training must predate the test set queries by at least one full deployment cycle.",
+    ]},
+    { t: "h2", text: "Quality Gates Before Training" },
+    { t: "list", items: [
+      "Deduplication: remove exact-match and near-duplicate query pairs before training. Duplicates inflate confidence in certain patterns and cause overfitting to common queries.",
+      "Length normalization check: if chosen responses are systematically longer than rejected, the reward model will learn length as a proxy for quality. Measure and correct for length correlation in your pair construction.",
+      "Calibration audit on held-out explicit labels: collect a small set of explicit human preferences (100-500 pairs) and measure reward model agreement. If agreement is below 70%, the implicit signal is too noisy to train on.",
+      "Reward hacking detection: after training, generate responses that maximize predicted reward without satisfying the underlying task. Any pattern that scores high but is low-quality indicates the reward model has learned a spurious correlation.",
+    ]},
+    { t: "refs", items: [
+      { label: "Direct Preference Optimization: Your Language Model is Secretly a Reward Model (Rafailov et al.)", url: "https://arxiv.org/abs/2305.18290" },
+      { label: "Learning to Summarize from Human Feedback (Stiennon et al.)", url: "https://arxiv.org/abs/2009.01325" },
+      { label: "Reward Model Ensembles Help Mitigate Overoptimization (Eisenstein et al.)", url: "https://arxiv.org/abs/2310.02743" },
+    ]},
+  ],
+
+  "flywheel-online-eval": [
+    { t: "p", text: "Static eval sets have a half-life. They go stale as your model improves, as your user population shifts, as your product changes scope. The eval set you built in month one measures month-one failure modes. By month six, you are measuring a past version of your own problems. The solution is to close the loop: make production traffic the source of new eval cases automatically." },
+    { t: "h2", text: "Why Static Eval Sets Fail" },
+    { t: "list", items: [
+      "Distribution shift: your users change. New use cases emerge, old ones fade. A static eval built from early-adopter traffic does not represent the current user population.",
+      "Overfitting to the eval: your team iterates against the eval set over months. Consciously or not, engineering decisions get made that optimize the measured eval. The eval stops being a proxy for production quality and becomes a target.",
+      "Missing failure modes: your static eval can only contain failure modes you already knew about when you built it. Novel failure modes — which are the most important ones to catch — are systematically absent.",
+      "Staleness of correct answers: ground truth changes. Policy documents update, product features change, correct answers evolve. Static evals with fixed gold labels become wrong over time without anyone noticing.",
+    ]},
+    { t: "h2", text: "The Production Failure Pipeline" },
+    { t: "p", text: "A production failure pipeline is an automated system that routes production failures into your eval set without human review of every case. The pipeline has three stages: detection, triage, and intake." },
+    { t: "code", v: "python", text: `class ProductionFailurePipeline:
+    def __init__(self, eval_store, model_judge, dedup_store):
+        self.eval_store  = eval_store
+        self.model_judge = model_judge  # LLM-as-judge for triage
+        self.dedup_store = dedup_store
+
+    def process_session(self, session):
+        # Stage 1: Detection — identify failure signals
+        signals = []
+        if session.has_reformulation:
+            signals.append(("reformulation", session.reformulation_pair))
+        if session.has_negative_feedback:
+            signals.append(("explicit_negative", session.feedback_event))
+        if session.abandoned_after_first_response:
+            signals.append(("abandonment", session))
+        if not signals:
+            return
+
+        # Stage 2: Triage — model judge confirms genuine failure
+        for signal_type, signal_data in signals:
+            j = self.model_judge.evaluate(signal_data)
+            if j.is_genuine_failure and j.confidence > 0.8:
+                # Stage 3: Deduplicate and add to eval set
+                fp = self.compute_fingerprint(signal_data)
+                if not self.dedup_store.exists(fp):
+                    self.eval_store.add(
+                        query=signal_data.query,
+                        failure_type=signal_type,
+                        source="production",
+                        date=session.timestamp,
+                        requires_human_review=(j.confidence < 0.95),
+                    )
+                    self.dedup_store.add(fp)` },
+    { t: "callout", v: "tip", text: "Set a budget for human review. Not every case that enters the pipeline needs human adjudication — the LLM judge handles 80%. Flag the 20% where judge confidence is below threshold for a weekly human review cycle. This keeps the pipeline sustainable without requiring manual triage of every production failure." },
+    { t: "h2", text: "Shadow Evaluation Pattern" },
+    { t: "p", text: "Shadow evaluation runs a candidate model alongside the live model on real traffic, compares outputs offline, and surfaces cases where the candidate would have behaved differently — without exposing users to the candidate model. This is the safest way to evaluate on production distribution before any live exposure." },
+    { t: "list", items: [
+      "Architecture: every request goes to both the live model and the shadow model. The shadow model response is logged but not returned to the user. An offline comparison job runs nightly.",
+      "What to compare: response length distribution, confidence scores, semantic similarity to live response (cosine sim below 0.85 flags divergence worth reviewing), policy compliance scores, latency percentiles.",
+      "When shadow disagrees with live: divergent cases are routed to the production failure pipeline for human review. High divergence rate is a signal that the candidate model has meaningfully different behavior — good or bad.",
+      "Cost: shadow evaluation doubles inference cost. Run at 5-10% traffic sample rather than 100%. This gives sufficient statistical power for aggregate comparisons without doubling your inference bill.",
+    ]},
+    { t: "h2", text: "Distribution Shift Detection" },
+    { t: "p", text: "Before your eval set can catch distribution shift, you need to detect it. Three approaches at different levels of granularity:" },
+    { t: "list", items: [
+      "Embedding drift monitoring: embed every incoming query with a frozen encoder. Track the centroid of the embedding distribution weekly. Cosine distance between week N and week N-1 above 0.05-0.1 signals meaningful drift. This catches broad topic shifts.",
+      "Query cluster analysis: run k-means on the embedding space weekly, track cluster membership counts over time. Clusters that grow more than 2x in a week indicate an emerging use case. Clusters that shrink to near-zero indicate a dying use case. Both warrant eval set updates.",
+      "Topic model over time: fit an LDA or BERTopic model on weekly query samples. Track topic proportions. Rising topics not represented in your eval set are eval blind spots. Falling topics that dominate your eval set are wasted eval coverage.",
+    ]},
+    { t: "h2", text: "The Self-Refreshing Eval" },
+    { t: "p", text: "A self-refreshing eval set has three components running in parallel: (1) the static core — high-quality hand-curated cases covering fundamental capabilities that never age out; (2) the rolling window — auto-ingested production failures from the last 90 days, continuously refreshed; (3) the cluster-representative sample — one auto-selected query per major cluster, updated weekly to track distribution shifts." },
+    { t: "callout", v: "info", text: "Target ratio for most production systems: 30% static core, 50% rolling window, 20% cluster sample. Adjust toward more static core for high-stakes regulated domains (legal, medical) where stability matters more than recency. Adjust toward more rolling window for consumer products where user behavior evolves rapidly." },
+    { t: "list", items: [
+      "Governance: every eval case needs a source tag (static/rolling/cluster), an ingestion date, and an expiry policy. Rolling window cases expire at 90 days. Cluster samples expire when the cluster drops below 2% of traffic.",
+      "Versioning: tag your eval set by date. When you report a metric, report it against a specific eval version. This prevents retroactive confusion when the eval set changes and metrics move.",
+      "Drift alert threshold: if more than 30% of your current eval set was ingested from a different distribution than today live traffic (measured by embedding distance), trigger a refresh. A stale eval set is worse than no eval set — it gives false confidence.",
+    ]},
+    { t: "refs", items: [
+      { label: "Evaluating Language Models: An Ongoing Challenge (Liang et al., HELM)", url: "https://arxiv.org/abs/2211.09110" },
+      { label: "DataComp: In Search of the Next Generation of Multimodal Datasets", url: "https://arxiv.org/abs/2304.14108" },
+      { label: "Dynabench: Rethinking Benchmarking in NLP", url: "https://arxiv.org/abs/2104.14337" },
+    ]},
+  ],
+
+  // ─── MODEL MERGING ────────────────────────────────────────────────────────────
+
+  "model-merging-guide": [
+    { t: "p", text: "Model merging combines the weights of multiple fine-tuned models without any additional training. The result is often a model that outperforms any of its parents on the combined task distribution. The open-source community has turned this into an art form — top models on many HuggingFace leaderboards are merges, not vanilla fine-tunes. Here is why it works and how to do it." },
+    { t: "h2", text: "Why It Works" },
+    { t: "p", text: "Fine-tuned models that share the same base model occupy nearby regions of parameter space. Fine-tuning moves weights in directions that improve task-specific performance, but those directions are not arbitrary — the loss landscape of the pre-trained model shapes where fine-tuning can go. Interpolation between two fine-tuned models often lands in a region that preserves the capabilities of both, because the loss surface between nearby minima tends to be relatively flat." },
+    { t: "callout", v: "info", text: "This is the mode connectivity hypothesis: independently fine-tuned models starting from the same base are typically connected by low-loss paths in parameter space. Model merging exploits this geometry. It does not work reliably when merging models with different base architectures or very different base checkpoints — the parameter spaces are not aligned." },
+    { t: "h2", text: "SLERP" },
+    { t: "p", text: "Spherical Linear Interpolation (SLERP) moves along the arc between two weight vectors rather than a straight line. This preserves the norm of the interpolated weights and produces smoother interpolation in high-dimensional spaces than naive linear averaging. One hyperparameter: t in [0, 1], where t=0 returns model A and t=1 returns model B." },
+    { t: "code", v: "python", text: `import torch
+
+def slerp(w1, w2, t):
+    """Spherical linear interpolation between weight tensors."""
+    w1_flat = w1.float().flatten()
+    w2_flat = w2.float().flatten()
+
+    cos_theta = (w1_flat @ w2_flat) / (w1_flat.norm() * w2_flat.norm())
+    cos_theta = cos_theta.clamp(-1, 1)
+    theta = torch.acos(cos_theta)
+
+    if theta.abs() < 1e-6:
+        # Nearly identical vectors: fall back to linear interpolation
+        return ((1 - t) * w1 + t * w2).to(w1.dtype).reshape(w1.shape)
+
+    sin_theta = torch.sin(theta)
+    interp = (torch.sin((1 - t) * theta) / sin_theta) * w1_flat + \
+             (torch.sin(t * theta) / sin_theta) * w2_flat
+
+    return interp.to(w1.dtype).reshape(w1.shape)` },
+    { t: "h2", text: "TIES Merging" },
+    { t: "p", text: "TIES (Trim, Elect Sign, Disjoint Merge) addresses a specific failure mode of naive weight averaging: sign conflicts. When model A has increased a weight and model B has decreased it, averaging produces a near-zero value that neither model wanted. TIES resolves this with three steps:" },
+    { t: "list", items: [
+      "Trim: compute the task vector (fine-tuned weights minus base weights) for each model. Zero out small deltas — parameters that changed less than a threshold from the base. This reduces noise from parameters the fine-tuning barely touched.",
+      "Elect Sign: for each parameter, look at the sign of the delta across all models being merged. Assign the majority-vote sign. If more models increased this parameter than decreased it, the elected sign is positive.",
+      "Disjoint Merge: average only the parameters whose individual sign matches the elected sign. Parameters with conflicting signs are excluded from the average for that position. This prevents cancellation.",
+    ]},
+    { t: "code", v: "python", text: `def ties_merge(base, models, trim_threshold=0.02, t=1.0):
+    task_vectors = [{k: m[k] - base[k] for k in base} for m in models]
+    merged = {}
+    for k in base:
+        deltas = torch.stack([tv[k].float() for tv in task_vectors])
+
+        # Step 1: Trim small deltas
+        deltas[deltas.abs() < trim_threshold] = 0
+
+        # Step 2: Elect sign by majority vote
+        elected_sign = deltas.sign().sum(dim=0).sign()
+        elected_sign[elected_sign == 0] = 1  # break ties
+
+        # Step 3: Average only matching-sign parameters
+        mask = (deltas.sign() == elected_sign.unsqueeze(0))
+        count = mask.float().sum(dim=0).clamp(min=1)
+        merged_delta = (deltas * mask.float()).sum(dim=0) / count
+
+        merged[k] = (base[k].float() + t * merged_delta).to(base[k].dtype)
+    return merged` },
+    { t: "h2", text: "DARE" },
+    { t: "p", text: "DARE (Drop And REscale) is designed for merging many models simultaneously. When merging 4+ models, parameter interference accumulates even after TIES sign resolution. DARE randomly drops delta weights before merging and rescales the survivors to preserve expected value — reducing interference across many models." },
+    { t: "code", v: "python", text: `def dare(task_vector, drop_rate=0.9):
+    """
+    Randomly drop delta weights at rate p.
+    Rescale remaining by 1/(1-p) to preserve expected value.
+    drop_rate=0.9 for 4-8 model merges; 0.7 for 2-3 model merges.
+    Apply to each model task vector before TIES merge.
+    """
+    mask = (torch.rand_like(task_vector) > drop_rate).float()
+    scale = 1.0 / (1.0 - drop_rate)
+    return task_vector * mask * scale` },
+    { t: "h2", text: "Model Soup" },
+    { t: "p", text: "Model soup is the simplest merge technique: average the weights of multiple fine-tuned checkpoints of the same base model, trained with different hyperparameters (learning rate, batch size, data order, LoRA rank). Averaging often beats any single checkpoint because the checkpoints occupy nearby loss minima and their average lands in a flatter, more generalizable region." },
+    { t: "list", items: [
+      "Greedy soup: start with the best single checkpoint. Add models one by one if they improve performance on a validation set. Stop when adding a model hurts.",
+      "Uniform soup: average all checkpoints equally. Works when all checkpoints are trained to reasonable quality. Degrades if any checkpoint significantly underperforms.",
+      "Model soup is particularly effective for fine-tuning sweeps: run 5-10 hyperparameter configurations, merge the top-k by validation performance, often beats the single best by 1-3 points.",
+    ]},
+    { t: "h2", text: "LoRA Adapter Merging" },
+    { t: "p", text: "LoRA adapters can be merged in adapter space before materializing into full weights. A LoRA adapter is defined by two low-rank matrices A and B; the effective weight delta is (alpha/r) * B @ A. Merging multiple LoRA adapters is cheaper and more numerically stable than merging full weights because the parameter count is small." },
+    { t: "code", v: "python", text: `def merge_lora_adapters(adapters, weights=None):
+    """
+    Linear combination of LoRA adapter deltas.
+    adapters: list of (A, B, alpha) tuples
+    weights: merge coefficients (default: uniform)
+    Returns: merged delta to add to base weight
+    """
+    if weights is None:
+        weights = [1.0 / len(adapters)] * len(adapters)
+
+    merged_delta = None
+    for (A, B, alpha), w in zip(adapters, weights):
+        r = A.shape[0]
+        delta = (alpha / r) * (B @ A)
+        merged_delta = w * delta if merged_delta is None else merged_delta + w * delta
+
+    return merged_delta  # W_final = W_base + merged_delta` },
+    { t: "h2", text: "How to Pick Merge Ratios" },
+    { t: "p", text: "The interpolation coefficient t (for SLERP) or merge weight (for TIES/DARE) is a hyperparameter. Running full evals to tune it is expensive. Use proxy tasks instead: a small set of 50-100 representative queries where you can judge quality quickly. Run inference at t = 0.0, 0.2, 0.4, 0.6, 0.8, 1.0. Fit a quadratic curve to the scores. Pick the peak." },
+    { t: "callout", v: "tip", text: "Cost estimate: 6 inference runs on a 7B model with 50 proxy queries costs approximately $5-20 depending on your serving setup. A full eval sweep costs $500+. The proxy task approach gives you 80% of the information at 2% of the cost. The main risk is if your proxy tasks do not represent your actual eval distribution — choose proxy tasks that span the full range of your expected use cases." },
+    { t: "h2", text: "When Merging Beats Fine-Tuning" },
+    { t: "list", items: [
+      "Combining capabilities: you have model A fine-tuned for task X and model B fine-tuned for task Y, both from the same base. TIES merge often produces a model that handles both tasks at near-single-task quality — without the catastrophic forgetting that would result from sequential fine-tuning.",
+      "Zero training cost: you have no labeled data for a new task but there are relevant community models on HuggingFace. Merge 2-3 relevant models and evaluate — often competitive with fine-tuning from scratch.",
+      "Avoiding catastrophic forgetting: sequential fine-tuning on task B tends to degrade performance on task A. Merging two independently fine-tuned models sidesteps this entirely.",
+      "Community model leverage: the open-source community continuously releases specialized fine-tunes. Merging is often faster than retraining and benefits from community dataset curation work.",
+    ]},
+    { t: "h2", text: "Decision Table" },
+    { t: "table", headers: ["Scenario", "Method", "Hyperparams", "Notes"], rows: [
+      ["2 models, simple blend", "SLERP", "t in [0,1]", "Best for equal-capability models from same base"],
+      ["2-4 models with sign conflicts", "TIES", "trim threshold, t", "Use when naive averaging degrades performance"],
+      ["4+ models simultaneously", "DARE + TIES", "drop rate p, trim threshold", "drop_rate=0.9 standard; reduces parameter interference"],
+      ["Same base, different HPs", "Model Soup", "which checkpoints to include", "Greedy soup for safety; uniform for speed"],
+      ["Adapter-level merge", "LoRA Merge", "per-adapter weights", "Cheapest option; works across task-specific adapters"],
+    ]},
+    { t: "refs", items: [
+      { label: "TIES-Merging: Resolving Interference When Merging Models (Yadav et al., 2023)", url: "https://arxiv.org/abs/2306.01708" },
+      { label: "DARE: Language Models are Super Mario (Yu et al., 2023)", url: "https://arxiv.org/abs/2311.03099" },
+      { label: "Model Soups: Averaging Weights of Multiple Fine-Tuned Models (Wortsman et al.)", url: "https://arxiv.org/abs/2203.05482" },
+      { label: "Evolutionary Optimization of Model Merging Recipes (Akiba et al.)", url: "https://arxiv.org/abs/2403.13187" },
+      { label: "MergeKit: Open-source model merging library", url: "https://github.com/arcee-ai/mergekit" },
+    ]},
+  ],
+
+
 };

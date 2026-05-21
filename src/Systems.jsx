@@ -8227,6 +8227,148 @@ function StreamingPatterns() {
   );
 }
 
+// ─── MODEL MERGING ────────────────────────────────────────────────────────────
+const MERGE_METHODS = [
+  { name: "SLERP", params: "2 models", hyperparams: "t ∈ [0,1]", cost: "seconds", best: "Blending 2 complementary fine-tunes (coding + reasoning)" },
+  { name: "TIES",  params: "2-4 models", hyperparams: "density threshold", cost: "minutes", best: "Merging models with conflicting parameter updates" },
+  { name: "DARE",  params: "4+ models", hyperparams: "drop rate p", cost: "minutes", best: "Merging many LoRA-fine-tuned models without catastrophic interference" },
+  { name: "Model Soup", params: "N checkpoints", hyperparams: "none (uniform average)", cost: "seconds", best: "Same base model, different hyperparameter runs" },
+  { name: "LoRA Merge", params: "N adapters", hyperparams: "per-adapter weight λ", cost: "seconds", best: "Task-specific adapters combined without weight materialization" },
+];
+
+const MERGE_STEPS = [
+  { n: 1, title: "Pick your base model", body: "All models being merged must share the same base architecture and tokenizer. You can't SLERP Llama 3.1 8B with Mistral 7B — different architectures, incompatible parameter shapes." },
+  { n: 2, title: "Choose merge method", body: "2 models → SLERP. Multiple models with conflicts → TIES. Many LoRA adapters → DARE+TIES or LoRA merge. Same base, different HP runs → Model Soup." },
+  { n: 3, title: "Set merge ratio via proxy tasks", body: "Run 5-10 cheap proxy evals at t={0.2, 0.4, 0.5, 0.6, 0.8}. Plot eval score vs t. Pick the peak. Total cost: $5-20 vs $500+ for a full fine-tuning run." },
+  { n: 4, title: "Run MergeKit", body: "mergekit-yaml config.yml --out-path merged_model/ — one command, runs on CPU in minutes for 7B models. Output is a standard HuggingFace model directory." },
+  { n: 5, title: "Evaluate merged model", body: "Run your full eval harness on the merged model. Compare against both source models. A good merge beats both source models on at least one dimension." },
+];
+
+function MergeSLERPVisual() {
+  const [t, setT] = useState(0.5);
+  const barA = Math.round((1 - t) * 100);
+  const barB = Math.round(t * 100);
+  return (
+    <div className="space-y-4">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 space-y-3">
+        <div className="flex justify-between text-xs text-zinc-400">
+          <span>Model A weight</span>
+          <span className="font-mono text-white">{barA}%</span>
+        </div>
+        <input type="range" min={0} max={100} step={5} value={Math.round(t*100)} onChange={e => setT(e.target.value/100)} className="w-full accent-violet-500" />
+        <div className="flex justify-between text-xs text-zinc-400">
+          <span className="text-violet-300 font-bold">Model A (coding)</span>
+          <span className="text-emerald-300 font-bold">Model B (reasoning)</span>
+        </div>
+        <div className="h-6 rounded-full overflow-hidden flex">
+          <div className="h-full bg-violet-600 transition-all" style={{ width: `${barA}%` }} />
+          <div className="h-full bg-emerald-600 transition-all" style={{ width: `${barB}%` }} />
+        </div>
+        <div className="bg-zinc-800 rounded-lg p-3 text-center">
+          <p className="text-xs text-zinc-400">Expected merged capability</p>
+          <div className="flex justify-around mt-2">
+            {[["Coding", Math.round(90 - t*30)], ["Reasoning", Math.round(60 + t*35)], ["General", Math.round(75 + t*5)]].map(([label, score]) => (
+              <div key={label} className="text-center">
+                <p className="text-lg font-black text-white font-mono">{score}</p>
+                <p className="text-[10px] text-zinc-500">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="bg-violet-950/40 border border-violet-800/40 rounded-xl p-3">
+        <p className="text-xs text-violet-300 leading-relaxed">
+          <span className="font-bold">SLERP moves along the arc</span> between two weight vectors — not a straight line. This preserves the norm of the weights and produces smoother interpolation than linear blending.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function MergeMethodTable() {
+  const [selected, setSelected] = useState(null);
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-zinc-400">Click a method for details on when to use it.</p>
+      {MERGE_METHODS.map((m, i) => (
+        <div key={m.name} className={`bg-zinc-900 rounded-xl border transition-all cursor-pointer ${selected === i ? "border-violet-500" : "border-zinc-800 hover:border-zinc-600"}`}
+          onClick={() => setSelected(selected === i ? null : i)}>
+          <div className="p-4 flex items-center gap-4 flex-wrap">
+            <span className="text-sm font-bold text-white w-28">{m.name}</span>
+            <span className="text-xs text-zinc-500 font-mono">{m.params}</span>
+            <span className="text-xs text-zinc-600">·</span>
+            <span className="text-xs text-zinc-500">t={m.hyperparams}</span>
+            <span className="text-xs text-zinc-600">·</span>
+            <span className="text-xs text-zinc-500">{m.cost}</span>
+          </div>
+          {selected === i && (
+            <div className="px-4 pb-4 border-t border-zinc-800 pt-3">
+              <p className="text-xs text-zinc-300 leading-relaxed"><span className="text-violet-400 font-bold">Best for:</span> {m.best}</p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MergeWorkflow() {
+  const [done, setDone] = useState(new Set());
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-zinc-400">Click each step as you work through it.</p>
+      {MERGE_STEPS.map(s => (
+        <div key={s.n} onClick={() => setDone(prev => { const n = new Set(prev); n.has(s.n) ? n.delete(s.n) : n.add(s.n); return n; })}
+          className={`bg-zinc-900 rounded-xl border p-4 flex gap-4 cursor-pointer transition-all ${done.has(s.n) ? "border-emerald-600/60 bg-emerald-950/20" : "border-zinc-800 hover:border-zinc-600"}`}>
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 transition-all ${done.has(s.n) ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400"}`}>{done.has(s.n) ? "✓" : s.n}</div>
+          <div>
+            <p className="text-sm font-bold text-white">{s.title}</p>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{s.body}</p>
+          </div>
+        </div>
+      ))}
+      <div className="bg-zinc-800 rounded-xl p-3">
+        <p className="text-xs font-mono text-emerald-300">$ pip install mergekit</p>
+        <p className="text-xs font-mono text-emerald-300">$ mergekit-yaml config.yml --out-path ./merged/</p>
+        <p className="text-xs text-zinc-500 mt-1">MergeKit (Charles Goddard) is the standard open-source tool — supports SLERP, TIES, DARE, Model Soup.</p>
+      </div>
+    </div>
+  );
+}
+
+function ModelMerging() {
+  const TABS = [
+    { id: "slerp",    tag: "VISUAL", label: "SLERP Interactive" },
+    { id: "methods",  tag: "TABLE",  label: "Method Comparison" },
+    { id: "workflow", tag: "HOW-TO", label: "Merge Workflow" },
+  ];
+  const [tab, setTab] = useState("slerp");
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="Understand model merging — combine fine-tuned models in weight space to get capabilities from both without any additional training."
+        steps={[
+          "SLERP Interactive: drag the merge ratio slider and see how coding vs reasoning capability shifts",
+          "Method Comparison: pick the right technique for your specific scenario (2 models? 4+? same base?)",
+          "Merge Workflow: step-by-step from choosing base model to evaluating the merged result",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "slerp"    && <MergeSLERPVisual />}
+      {tab === "methods"  && <MergeMethodTable />}
+      {tab === "workflow" && <MergeWorkflow />}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 const SYSTEMS_MODULES = [
   { id: "evals",         label: "Evals Lab",          tag: "DESIGN",     group: "DESIGN",  component: EvalsLab           },
@@ -8264,6 +8406,7 @@ const SYSTEMS_MODULES = [
   { id: "moe",          label: "MoE Architecture",        tag: "MOE",      group: "DESIGN",  component: MoEArchitecture },
   { id: "specdecoding", label: "Speculative Decoding",    tag: "SPEED",    group: "BUILD",   component: SpeculativeDecoding },
   { id: "streaming",    label: "Streaming Patterns",      tag: "STREAM",   group: "BUILD",   component: StreamingPatterns },
+  { id: "modelmerging", label: "Model Merging", tag: "MERGE", group: "DESIGN", component: ModelMerging },
 ];
 
 const SYSTEMS_GROUPS = [

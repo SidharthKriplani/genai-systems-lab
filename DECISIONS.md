@@ -252,6 +252,12 @@ Knowledge base built client-side on first render: all 140+ GT posts (title × 3,
 | Perspectives GT series (Explore) | 6 annotated thought leader posts (Karpathy, Simon Willison, swyx, Hamel Husain, Chollet, LeCun). Core thesis + essential reading table + what to question. Cyan series. |
 | MoE Architecture (Systems/DESIGN) | 3 tabs: How MoE Works (router math + 3 mechanism cards), Production Models (5 models × 6 dimensions + serving considerations), Failure Modes (6 failures + EPLB + health metrics + decision guide). |
 | World Models + MoE GT posts | "frontier" category. World models primer (JEPA, WAMs, video-as-simulator, agent planning implications). MoE guide (routing, DeepSeek-V3 architecture, production failure modes). |
+| Speculative Decoding (Systems/BUILD) | Draft model + target model loop, acceptance sampling mechanics, speedup math, token acceptance probability slider by temperature, vLLM/TGI production notes. |
+| Streaming Patterns (Systems/BUILD) | SSE vs WebSockets comparison, first-token latency vs throughput tradeoff, streaming structured output, back-pressure and buffering, latency waterfall visual with streaming vs batching toggle. |
+| Embedding Model Selection (Explore) | MTEB score comparison table (Voyage AI/Cohere/OpenAI/BGE), Matryoshka Representation Learning, fine-tuning approaches (contrastive/triplet/hard negative mining), model × use-case selection wizard. fidelity: simplified. |
+| Model Merging (Systems/DESIGN) | SLERP interactive slider (coding vs reasoning capability blend), 5-method comparison table (SLERP/TIES/DARE/Model Soup/LoRA Merge), 5-step workflow checklist, MergeKit CLI reference. |
+| Data Flywheel GT series (3 posts) | "Closing the Loop" series: implicit feedback signals (thumbs/dwell/reformulation), reward modeling from logs (Bradley-Terry, DPO from preference logs), self-refreshing eval loop (online vs offline pipeline, dataset versioning, contamination). |
+| Model Merging GT post (frontier) | SLERP/TIES/DARE/Model Soup/LoRA merge comparison + decision table + proxy task eval methodology + MergeKit walkthrough. |
 
 ---
 
@@ -357,7 +363,7 @@ Topics with no coverage yet: RLHF implementation walkthrough (detailed), Gemini 
 ### P25 — Defense Doc (PrepLab mode) ✓ DONE
 ### P26 — Traps Lab / Bug Catching (Systems/OPS module, 8 challenges) ✓ DONE
 
-### P27 — Open-ended Take-homes (Career/PrepLab)
+### P27 — Open-ended Take-homes (Career/PrepLab) ✓ DONE
 
 Formalize the 5–8 long-form async challenges that exist informally in Career.jsx. Each challenge: a realistic scenario (design a RAG system, build an eval harness, debug this incident), the user writes a free-form answer, then reveals an expert model answer with a rubric showing what strong answers cover. Extend the Career "Take-Home Challenges" section with structure and scoring.
 
@@ -369,7 +375,7 @@ All modules added since the last question bank pass (A2A, KV Cache, Guardrails, 
 
 3–5 posts in "How I'd Build X" format: (1) AI Search (query understanding, retrieval, ranking, freshness), (2) Code Review Bot (AST parsing, diff retrieval, explanation generation, false positive tuning), (3) Real-time Document Q&A (streaming ingestion, delta chunking, access control filtering), (4) Customer Support AI (intent routing, escalation triggers, tone compliance, hallucination guardrails). Opinionated, first-person, production-decision-heavy.
 
-### P30 — Speculative Decoding deep-dive (Systems)
+### P30 — Speculative Decoding deep-dive (Systems) ✓ DONE
 
 Speculative decoding is now production infrastructure (vLLM, TGI both ship it). A Systems module covering: draft model + target model loop, acceptance sampling mechanics, speedup math (draft acceptance rate × draft model speed), QuantSpec (quantized KV cache for speculative), P-EAGLE (parallel speculative decoding). Interactive: show draft token acceptance probability for different temperature settings.
 
@@ -377,15 +383,15 @@ Speculative decoding is now production infrastructure (vLLM, TGI both ship it). 
 
 The A2A Protocol Agents module needs a GT post companion. 8-min read covering: the N×M problem, Agent Card format, Task lifecycle, push notifications, transport layer, current framework adoption (CrewAI ✓, OpenAgents ✓, LangGraph 🔄, AutoGen 🔄), and how A2A + MCP compose into a full agent integration architecture.
 
-### P32 — Embedding Model Selection (Explore or Systems module)
+### P32 — Embedding Model Selection (Explore or Systems module) ✓ DONE
 
 Gap: app teaches what embeddings are and how retrieval works, but never helps engineers pick the right embedding model. Cover: Voyage AI vs Cohere Embed vs OpenAI text-embedding-3 vs BGE — benchmark dimensions (MTEB score, dimensionality, max tokens, cost, latency). Matryoshka Representation Learning (truncate dimensions for speed). Fine-tuning embedding models (contrastive loss, triplet loss, hard negative mining). Interactive: model × use-case selection wizard. High job-relevance — this comes up in every RAG system design interview.
 
-### P33 — Streaming & Real-time Production Patterns (Systems/DESIGN)
+### P33 — Streaming & Real-time Production Patterns (Systems/DESIGN) ✓ DONE
 
 Gap: streaming is universally deployed but the app has no treatment of it. Cover: SSE vs WebSockets for LLM streaming, first-token latency vs throughput tradeoff, streaming structured output (partial JSON validation), barge-in and interruption handling in voice, streaming tool calls (partial tool arguments), back-pressure and client-side buffering. Interactive: latency waterfall diagram with configurable streaming vs batching. Highly practical — every production LLM app does streaming.
 
-### P34 — Data Flywheel from Production (Systems or GT series)
+### P34 — Data Flywheel from Production (Systems or GT series) ✓ DONE
 
 Gap: feedback loops from live traffic are the compounding advantage nobody talks about in early-career resources. Cover: implicit feedback signals (thumbs, dwell time, reformulation rate), reward modeling from logs (Bradley-Terry, DPO from preference logs), online vs offline evaluation pipelines, the "shadow mode" deployment pattern for collecting ground truth, dataset versioning and contamination. GT series: "Closing the Loop — Building Self-Improving AI Systems." This is senior-level knowledge that differentiates candidates.
 
@@ -393,7 +399,7 @@ Gap: feedback loops from live traffic are the compounding advantage nobody talks
 
 Gap: structured output at the API level (json_mode, function calling) is covered implicitly, but below-API structured generation isn't. Cover: Outlines / llama.cpp grammar — GBNF grammars, context-free grammar → logit masking, speed overhead vs reliability gain. Guidance (Microsoft) — control flow inside the LLM generation loop. Use cases: guaranteed schema adherence for tool-call parsers, form extraction, SQL generation. Interactive: grammar editor → watch token probability collapse on invalid continuations. Useful for inference engineers and ML platform folks.
 
-### P36 — Model Merging (Systems/DESIGN or GT post)
+### P36 — Model Merging (Systems/DESIGN or GT post) ✓ DONE
 
 Gap: model merging went mainstream in 2025 (Mistral, community models on HuggingFace are routinely merged). Cover: SLERP (spherical linear interpolation in weight space), TIES merging (task vector interference resolution), model soup (average of fine-tuned checkpoints), LoRA adapter merging (linear combination in adapter space), DARE (drop and rescale). Trade-offs: merged models often beat fine-tuned models at zero marginal training cost. Practical: how to pick merge ratios without running full evals (proxy tasks). Medium complexity to build — GT post + small Systems module.
 
@@ -424,16 +430,16 @@ Stage 3 (month 12–24): Team/org pricing for prep cohorts. Custom Defense Doc g
 
 **Scale:**
 - 13 tabs
-- 120+ interactive modules
-- 165+ Ground Truth posts across 21 categories (new: frontier, perspectives series)
+- 126+ interactive modules
+- 169+ Ground Truth posts across 21 categories (new: frontier, perspectives series, data flywheel series, model merging post)
 - 57-question PrepLab question bank (needs update for new modules)
 - 5 RAG Lab production failure scenarios
 - 30 prompt library entries
 - 5 debug trace challenges
 - PWA installable, offline service worker, RSS feed, sitemap with 140+ URLs
 - Agents tab: 10 modules (added A2A Protocol)
-- Systems tab: 25+ modules (added KV Cache, Guardrails, Traps Lab, MoE)
-- Explore tab: 13 tools (added Semantic Caching, LLMOps Comparison)
+- Systems tab: 36+ modules (added KV Cache, Guardrails, Traps Lab, MoE, Speculative Decoding, Streaming, Embedding Models, Model Merging)
+- Explore tab: 14 tools (added Semantic Caching, LLMOps Comparison, Embedding Model Selector)
 - PrepLab: 5 modes (added Defense Doc)
 
 **Architecture status:**
