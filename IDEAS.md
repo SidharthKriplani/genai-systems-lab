@@ -9,7 +9,7 @@ Prioritized backlog of ideas not yet built. Organized by effort and impact. Upda
 ## Tier 1 — High Impact, Buildable Now
 
 ### Systems modules (new)
-- **GRPO / Agent RL Training** — Group Relative Policy Optimization (DeepSeek-R1, Qwen3), how it differs from PPO/DPO, RULER pattern (LLM-as-reward-model: reward criteria in plain English, LLM evaluates agent trajectories). Direct extension of RLHF module. Increasingly standard at frontier labs. *(inspired by OpenPipe ART / Karpathy's reward function critique)*
+- ~~**GRPO / Agent RL Training**~~ ✅ *built May 2026*
 - **Evaluation Metrics Deep-Dive** — ROUGE, BLEU, BERTScore, G-Eval, LLM-as-judge. Interactive metric comparison with example outputs. No module covers this well yet.
 - **Long Context Patterns** — Needle-in-haystack, chunk-then-summarize, map-reduce. The practical engineering patterns for 100K+ token contexts.
 - **AI Safety Engineering** — Jailbreak patterns, adversarial prompts, red-teaming frameworks. Different from the existing AI Red Teaming module (which is strategy) — this is implementation.
@@ -31,8 +31,8 @@ Prioritized backlog of ideas not yet built. Organized by effort and impact. Upda
 - **More system design text questions** — Cover: vector DB selection, agent reliability, eval harness design, fine-tuning decision framework.
 
 ### Ground Truth posts
-- **"Why the Best Model on the Benchmark Isn't the Best Model for Your Product"** — The benchmark vs business metric tension. TinyBERT (4M params) beating ModernBERT (100M params) on actual outcomes at Zepto. Goodhart's Law applied to model selection. Opinionated take, high shareability. *(inspired by Zepto search ranking post)*
-- **"Hard Negatives: The Training Trick That Actually Improves Retrieval"** — What hard negatives are (semantically close but intent-misaligned pairs), why they matter for cross-encoders and bi-encoders, how to mine them at scale (teacher LLM labeling, BM25 top-k, in-batch). Pairs well with RAG Playbook series. *(inspired by Zepto cross-encoder pipeline)*
+- ~~**"Why the Best Model on the Benchmark Isn't the Best Model for Your Product"**~~ ✅ *built May 2026 — id: benchmark-vs-business*
+- ~~**"Hard Negatives: The Training Trick That Actually Improves Retrieval"**~~ ✅ *built May 2026 — id: hard-negatives-retrieval*
 - **"What Actually Happens During Pretraining"** — Data curation, tokenizer training, architecture decisions, compute budget. The upstream of everything else.
 - **"The Eval Crisis: Why Most AI Evals Are Wrong"** — Benchmark contamination, eval-train leakage, Goodhart's Law in AI. Opinionated take.
 - **"Why Your RAG System Lies"** — Faithfulness failures, hallucination in retrieval-augmented contexts, practical mitigations.
