@@ -22,7 +22,7 @@
 <br/>
 
 ```
-13 tabs  ·  140+ modules  ·  178+ posts  ·  120+ PrepLab questions  ·  zero backend  ·  no login
+14 tabs  ·  140+ modules  ·  202+ posts  ·  183+ PrepLab questions  ·  zero backend  ·  no login
 ```
 
 </div>
@@ -35,7 +35,7 @@ The answer is wrong. Nobody catches it until the complaint arrives.
 
 **This lab teaches you to catch it before it ships.**
 
-Five curated RAG failure scenarios. Inference bottleneck diagnosis. Agent loop step-through. Eval design. MCP protocol. Context compaction. 100+ production systems modules. All interactive. All in your browser. No account, no backend, no cost.
+Five curated RAG failure scenarios. Inference bottleneck diagnosis. Agent loop step-through. Eval design. MCP protocol. Context compaction. 140+ production systems modules. All interactive. All in your browser. No account, no backend, no cost.
 
 → [**Open the lab**](https://genai-systems-lab-ivory.vercel.app)
 
@@ -78,14 +78,14 @@ Not a video. Not a blog post. Not a quiz. You make decisions, the system respond
 | 💬 **Fluency** | 5 | Phrase bank, timed drills, mock interview (20 questions, 90s each), company case arena, prompt engineering lab |
 | 📋 **AI Product** | 5 | PRD simulator, roadmap prioritizer, stakeholder explainer, launch checklist, AI-or-not? decision framework |
 | 🚀 **Career** | 5 | System design interviews, take-home challenges, negotiation flashcards, benchmark literacy |
-| 💡 **Ask** | — | Consultation space — keyword search over 178+ posts + all module descriptions. Conversational UI. LLM-upgrade-ready |
+| 💡 **Ask** | — | Consultation space — keyword search over 202+ posts + all module descriptions. Conversational UI. LLM-upgrade-ready |
 | 📝 **PrepLab** | 3 modes | Assessment (timed exam, 15/30/60 min), Trainer (immediate feedback + weak topic tracking), JD Prep (paste JD → skill gap → targeted drill) |
 
 ---
 
 ## PrepLab — what makes it different
 
-**Assessment Mode:** Timed exam (15/30/60 min). 120+ questions across 8 skill categories. Scores hidden until end — final reveal shows per-category breakdown and "Strong in / Needs work" callout.
+**Assessment Mode:** Timed exam (15/30/60 min). 183+ questions across 8 skill categories. Scores hidden until end — final reveal shows per-category breakdown and "Strong in / Needs work" callout.
 
 **Trainer Mode:** Immediate feedback after each answer. Optional speech input (Web Speech API). Tracks weak topics. Session summary with "Study these next" recommendations.
 
@@ -107,7 +107,7 @@ Not available anywhere else for this audience, for free.
 | Honest fidelity disclosure | ✗ | ✗ | ✗ | ✓ |
 | No ads, no upsells | ✓ | ✗ | ✗ | ✓ |
 | Covers evals, inference, agents, MCP | ✗ | Partial | ✗ | ✓ |
-| 178+ production-depth posts | ✗ | ✗ | ✗ | ✓ |
+| 202+ production-depth posts | ✗ | ✗ | ✗ | ✓ |
 | Free forever | ✓ | ✗ | ✓ | ✓ |
 
 The gap that matters: every other resource **shows** you what to do. This one puts you in the seat and makes you decide — then shows you what broke and why.
@@ -157,7 +157,7 @@ Progress tracking, challenge scores, bookmarks, streaks, recently viewed posts, 
 
 | Feature | How to access |
 |---------|--------------|
-| **⌘K search** | Jump to any of the 100+ modules instantly |
+| **⌘K search** | Jump to any of the 140+ modules instantly |
 | **Start Here journey** | 7-step strip on the home page — Begin → |
 | **PrepLab** | 📝 in the nav — assessment, trainer, JD prep |
 | **Ask / Consultation** | 💡 in the nav — search all posts + modules |
@@ -216,34 +216,29 @@ Requires Node 18+. No environment variables. No API keys. No backend setup.
 
 ```
 src/
-├── App.jsx                 # Root — nav, routing, ⌘K search, challenge log, what's new
-├── Home.jsx                # Hero, Start Here journey, learning paths, about section
-├── Concepts.jsx            # 11 concept modules with fidelity tags
-├── Flows.jsx               # 6 animated pipeline diagrams incl. RAG Architectures
-├── Flows_RAGLab.jsx        # RAG Lab — 5 production failure scenarios
-├── Agents.jsx              # 7 agent modules + loop simulator + MCP protocol tab
-├── Systems.jsx             # 30+ systems modules — evals through debug traces
-├── InferenceOptimizer.jsx  # Inference decision framework (extracted)
-├── IndiaScale.jsx          # India-scale cost lab (extracted)
-├── ModelRouter.jsx         # Model router lab (extracted)
-├── MLCiCd.jsx              # ML CI/CD lab (extracted)
-├── Explore.jsx             # 8 exploration tools with fidelity tags + LLM matrix
-├── Playground.jsx          # 5 hands-on challenge modules + prompt library
-├── Fluency.jsx             # Fluency gym + mock interview + AI readiness assessment
-├── AIPM.jsx                # AI product manager track
-├── Career.jsx              # Career track — system design + negotiation
-├── GroundTruth.jsx         # 178+ posts — ELI5, search, reactions, quiz-me, ToC
-├── Consultation.jsx        # Ask tab — keyword retrieval over all posts + modules
-├── PrepLab.jsx             # Assessment exam, Trainer mode, JD+resume prep
-├── HowTo.jsx               # Shared objective-first component used across all modules
-├── analytics.js            # PostHog event tracking (fails silently if unconfigured)
-├── constants.js            # Shared constants (tab IDs, locked tabs, etc.)
-├── groundTruthPosts.js     # All 178+ post content as typed block arrays
-└── groundTruthIndex.js     # Search index built from post metadata
+├── App.jsx                  # Root — nav, routing, ⌘K search, challenge log, what's new
+├── Home.jsx                 # Hero, Start Here journey, learning paths, about section
+├── Concepts.jsx             # 11 concept modules with fidelity tags
+├── Flows.jsx                # 6 animated pipeline diagrams incl. RAG Architectures
+├── Agents.jsx               # Agents tab — 15 modules + AGENTS_RELATED_GT map
+├── Systems.jsx              # Systems tab shell + SYSTEMS_MODULES registry
+├── systems/
+│   └── modules.jsx          # All 48+ Systems module components
+├── Explore.jsx              # 19 exploration tools with fidelity tags + LLM matrix
+├── Playground.jsx           # Prompt injection, chunking, hallucination, bias labs
+├── Fluency.jsx              # Phrase bank, drills, mock interview
+├── AIPM.jsx                 # AI product manager track — PRD, roadmap, stakeholder
+├── Career.jsx               # Career track — system design, take-home, salary calc
+├── GroundTruth.jsx          # GT post renderer — ELI5, search, reactions, quiz-me
+├── groundTruthIndex.js      # Post metadata + related[] arrays
+├── groundTruthPosts.js      # All 202+ post content as typed block arrays
+├── PrepLab.jsx              # Assessment exam, Trainer mode, JD+resume prep (183+ questions)
+├── LearningPaths.jsx        # 6 curated multi-tab learning paths
+├── Consultation.jsx         # Ask tab — keyword retrieval over all posts + modules
+├── Playground.jsx           # 5 hands-on challenge modules + prompt library
+└── analytics.js             # PostHog event tracking (fails silently if unconfigured)
 public/
-├── og-image.png            # Open Graph image for link previews
-├── og-failures.png         # OG image for RAG failure content
-└── og-start.png            # OG image for /start landing page
+└── og-image.png             # 1200×630 Open Graph image for link previews
 ```
 
 ---
