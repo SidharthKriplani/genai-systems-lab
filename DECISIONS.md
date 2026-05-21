@@ -227,11 +227,15 @@ Knowledge base built client-side on first render: all 140+ GT posts (title × 3,
 | AI Red Teaming (Systems) | 4 tabs: Attack Taxonomy (6 attacks filterable by category: direct injection, indirect injection, roleplay jailbreak, many-shot, system prompt extraction, false context — with example attacks + defenses), Defense Patterns (4 layers: input guardrails, context isolation, output guardrails, structural defenses), Eval Methods (4 methods: manual, automated fuzzing, benchmarks, adversarial examples), Red Team Checklist (5-phase pre-launch checklist). |
 | AI Deployment Architecture (Systems) | 3 tabs: Serving Stack (4 options: vLLM, TGI, Triton, managed APIs — with perf, deployment, when-to-use), Batching Strategies (4 types: static, dynamic, continuous, speculative decoding — with throughput/latency tradeoffs), Scaling Playbook (4 autoscaling metrics + 7-item deployment architecture checklist). |
 | Agentic Reliability (Agents) | 4 tabs: Failure Taxonomy (6 failure modes: infinite loop, cascade failure, scope creep, tool confabulation, premature termination, hallucinated tool calls — each with detection signals + fixes), Reliability Patterns (6 patterns: step budget, idempotent tools, duplicate detection, rollback, context pruning, self-critique), Human-in-the-Loop (4 HITL patterns with code: confirmation gate, escalation threshold, checkpoint review, ambiguity surfacing), Production Checklist (5-phase: loop control, tool safety, HITL, state management, observability). |
-| Embedding Space Explorer redesign (Explore) | Full redesign: 600×420 canvas with deliberate cluster separation, radial gradient halos behind each cluster, always-visible micro labels for non-dimmed points, CSS keyframe animated connection lines (stroke-dashoffset), cosine similarity scores (0.93 format) replacing raw distance, similarity bar visualizations in results panel. |
+| Embedding Space Explorer redesign (Explore) | Radial constellation layout: query always at center, 30 concept nodes in 6 sectors (RAG/arch/safety/ops/agents/multi) at scaled radii ~111/140/170px, animated rays from center to matched nodes, cosine similarity scores, sector labels, viewBox zoomed to "25 25 450 450". |
 | GT Model Deep Dives series | 5 posts (rose, #f43f5e series): Claude (Constitutional AI, model family table, extended thinking, production strengths), GPT-4o (native multimodality, o1/o3 reasoning branch, vs-Claude comparison), Gemini (MoE architecture, 1M context use cases, where it leads/lags), Grok (real-time X data moat, Grok 3 benchmarks, when to use vs. managed APIs), Llama (open weights licensing, model family, self-host vs. API decision table). |
 | Transformer Architecture visual (Systems) | 4-view SVG module: Full Architecture (encoder-decoder with cross-attention arrow), Self-Attention (CSS-animated arrows from Q to each K, weight-fill bars, Q/K/V explainer), Transformer Block (static SVG with residual connection paths, block diagram), Decoder-Only (causal mask triangle heatmap, KV cache callout, next-token prediction flow). Animation used only where it clarifies mechanism. |
 | Structured Output Engineering (Systems) | 3 tabs: Strategies (4 methods with reliability bar: tool calling/10, JSON mode/9, Pydantic+Instructor/9, XML+regex/7 — expandable with code), Failure Modes (5 failure patterns: schema drift, nested failures, type coercion, markdown leakage, truncation), Production Checklist (3 phases: schema design, validation layer, error handling). |
 | Synthetic Data Generation (Systems) | 3 tabs: Generation Methods (4 methods: self-instruct, persona-driven, LLM-as-judge filtering, evol-instruct — expandable with code), Quality Checklist (5 checks: deduplication, format consistency, factual verification, distribution coverage, held-out eval), Full Pipeline (8-step production pipeline from taxonomy to held-out eval). |
+| Fine-Tuning Pipeline Flow (Flows) | New FLOW_TABS entry. 2 tabs: "Pipeline" (6 stages: raw data → synthetic aug → SFT → DPO → eval → merge/deploy, each with failure mode), "DPO vs RLHF" (comparison table + when to use GRPO for reasoning models). FT_STAGES array. |
+| Computer Use Agents (Agents) | New AGENTS_MODULES entry (group: SCALE). 4 tabs: "Architectures" (Anthropic API/Operator/browser-use OSS/OmniParser), "Observe→Act Loop" (4 steps: Observe/Ground/Act/Verify), "Action Space" (5 categories: Mouse/Keyboard/Navigation/Observation/System), "Failure Modes" (6: coordinate drift, grounding hallucination, state divergence, infinite loop, scope creep, auth exposure). |
+| Long-Running Workflows (Agents) | New AGENTS_MODULES entry (group: SCALE). 3 tabs: "Patterns" (4 patterns with expandable code: checkpoint/resume, Temporal durable execution, event-driven handoffs, task queue), "Tools" (5: Temporal/LangGraph/Celery/BullMQ/Step Functions), "Decision Framework". |
+| 5 Production ML Ops GT posts | Series: "Production ML Ops" (lime, #84cc16). Posts: "DPO vs RLHF vs GRPO" (alignment method comparison, when to use each, GRPO for verifiable rewards), "Quantization Deep Dive" (GPTQ/AWQ/GGUF, GPU vs CPU inference, latency/quality table), "AI Governance in Production" (model cards, audit trails, drift detection, compliance), "Multimodal RAG in Production" (ColPali, late fusion, captioning approaches, failure modes), "Production Fine-Tuning Case Study" (end-to-end: data → SFT → DPO → eval → deploy, real numbers). |
 
 ---
 
@@ -313,27 +317,96 @@ GitHub Discussions-based comments. Zero backend, free, spam-resistant. Requires 
 
 ### P10 — More Ground Truth posts
 
-Topics with no coverage yet: RLHF implementation walkthrough (detailed), Constitutional AI deep dive (done), GPT-4 technical report analysis, Gemini architecture, "How I'd build X" series (AI search, code review bot, real-time document analysis), multi-agent debugging patterns.
+Topics with no coverage yet: RLHF implementation walkthrough (detailed), Gemini architecture deep dive, "How I'd build X" series (AI search, code review bot, real-time document analysis), multi-agent debugging patterns, speculative decoding mechanics, KV cache engineering, A2A protocol, world models primer.
 
-### P11 — LLM Memory Architecture deep-dive module (Agents tab)
+### P11 — LLM Memory Architecture deep-dive module (Agents tab) ✓ DONE
 
-Currently Agent Memory module is surface-level. Needs a full interactive module covering: short-term vs. long-term vs. episodic vs. semantic vs. procedural memory, implementation patterns for each (in-context, external DB, summary compression, retrieval-augmented), library comparison (LangMem, Mem0, MemGPT), and a decision wizard ("what type of memory does your agent need?"). Inspired by awesome-llm-apps LLM memory apps section.
+### P12 — Voice AI agent flow (Flows tab) ✓ DONE
 
-### P12 — Voice AI agent flow (Flows tab)
+### P13 — "Build This" module (new Systems or standalone tab) ✓ DONE
 
-Animated pipeline: microphone → VAD (voice activity detection) → STT (Whisper) → LLM → TTS → speaker. Key production decisions: streaming at each step (don't wait for full STT before starting LLM), VAD sensitivity, word error rate, TTS latency. Applicable to any voice AI product (customer support bots, voice assistants, real-time transcription). Source: awesome-llm-apps Voice AI agents section.
+### P14 — Incident Room expansion (Systems tab) ✓ DONE
 
-### P13 — "Build This" module (new Systems or standalone tab)
+### P15 — Company prep tracks in PrepLab ✓ DONE
 
-End-to-end build walkthroughs for 3 production patterns: (1) Production RAG system — from ingestion schedule to eval pipeline, (2) LangGraph multi-agent — planner + retriever + synthesizer with checkpointing, (3) Eval pipeline — from trace collection to regression detection. Format: not code to copy, but architecture decisions + failure points + pseudocode + lab cross-links. Philosophy stolen from jamwithai's "one deep production project" approach.
+### P16 — A2A Protocol module (Agents tab)
 
-### P14 — Incident Room expansion (Systems tab)
+The Agent-to-Agent protocol (Google ADK, May 2025) solves inter-agent communication the same way MCP solves tool integration: N×M → N+M. An ADK agent can discover and invoke a LangGraph or CrewAI agent through A2A's standardized task interface. Already: CrewAI has added A2A support, OpenAgents is natively dual MCP+A2A. Natural companion to the existing MCP Deep Dive module.
 
-Current Incident Room has ~20 cases. Target 50+ organized by failure category: retrieval failure, hallucination, cost explosion, latency regression, prompt injection, context overflow, agent loop failure, embedding drift. Each case should include: symptoms, root cause, what monitoring would have caught it, the fix. High-signal for senior engineers and system design interviewers.
+Format: 3 tabs — "What A2A Solves" (N×M diagram → N+M with protocol), "A2A vs MCP" (side-by-side comparison: scope/transport/discovery/security), "Framework Support Matrix" (LangGraph/CrewAI/ADK/OpenAgents/AutoGen + which natively support A2A today).
 
-### P15 — Company prep tracks in PrepLab
+### P17 — Semantic Caching Explorer (Explore tab)
 
-Filter PrepLab JD Prep by company archetype: Big Tech AI (Google, Meta, Apple), AI-native startups (Anthropic, OpenAI, Perplexity, Cursor), Indian tech (Flipkart, Swiggy, Zepto AI teams), Enterprise AI (McKinsey, Accenture AI). Each track weights the 8 skill categories differently and surfaces company-specific system design prompts. Currently JD Prep is company-agnostic.
+Interactive demo of semantic caching: user types a query → similarity check against cache (cosine sim threshold slider 0.80–0.99) → cache HIT (show saved cost + latency) vs. MISS (LLM call fires). Demo second query that's semantically similar but differently worded — show it hits cache. Show cumulative savings counter. Covers GPTCache / vLLM Semantic Router (Iris release, Jan 2026) mechanics.
+
+This is genuinely cutting-edge infra (vLLM now ships a Semantic Router as a first-class feature). Complements the existing Embedding Space and Vector DB tools in Explore.
+
+### P18 — KV Cache Engineering (Systems tab)
+
+Unified module covering the spectrum from prompt caching to prefix caching to cache-aware routing. 3 tabs:
+- "How It Works" — KV block hashing, automatic prefix caching (vLLM/SGLang), explicit cache markers (Anthropic `cache_control`), all major APIs that ship it (Anthropic/OpenAI/Gemini/DeepSeek)
+- "Cost Math" — interactive: input tokens × cached ratio × price → savings calculator. Rule: only optimization that gets cheaper with longer context.
+- "Cache-Aware Routing" — llm-d pattern: route to the pod that already has the most relevant KV blocks for your request. EPLB (Expert-Level Load Balancing) for MoE.
+
+Natural extension of the existing Context Window Engineering module.
+
+### P19 — AI Guardrails Engineering (Systems tab)
+
+Dedicated module on production-grade guardrails — separate from the current AI Red Teaming module (which focuses on attacks). This covers the defense architecture in depth.
+
+3 tabs:
+- "Dual-Stage Architecture" — input guardrails (before LLM) + output guardrails (before user), with animated flow showing where each check fires
+- "Guardrail Providers" — AWS Bedrock Guardrails / Azure Content Safety / Lakera / NeMo Guardrails / Patronus AI — dimensions: latency, PII detection, jailbreak shield, self-hosted option, price
+- "Reality Check" — 2026 data: 90–99% jailbreak success rates on open-weight models, 80–94% on proprietary. Why defense-in-depth is the only viable posture.
+
+### P20 — Vibe Coding & Agentic Development (Explore or Systems tab)
+
+"Vibe Coding" coined by Karpathy, Collins Word of the Year 2025. 92% of US developers have adopted it. Cursor hit $2B ARR in 24 months. 60% of new code in 2026 is AI-generated. This belongs in the app as a first-class concept.
+
+3 tabs:
+- "What Changed" — natural language → code, agent mode (multi-file autonomous editing), Objective-Validation Protocol (set goal, validate progress, agent executes)
+- "Tool Landscape" — Cursor vs Windsurf vs GitHub Copilot vs Claude Code: agent mode, context window, self-hosted, pricing, best-for
+- "Engineering Implications" — what a senior AI engineer needs to know about evaluating, reviewing, and shipping AI-generated code at scale
+
+### P21 — LLMOps Tool Comparison (Explore tab)
+
+Interactive comparison table: Langfuse (acquired by Clickhouse Jan 2026, MIT license) vs Braintrust (eval-first) vs Arize Phoenix (Elastic License, RAGAS native) vs LangSmith (LangGraph-native) vs Laminar (Apache 2.0, agent-focused).
+
+Dimensions: pricing model, self-host support, prompt versioning, eval harness, agent trace depth, RAGAS support, license. Filterable. Decision wizard: "what's your primary need?" → ranked recommendation.
+
+Complements the existing LangSmith Lab module by giving the full competitive landscape.
+
+### P22 — Thought Leader Reading Room (Ground Truth or standalone Explore tool)
+
+Annotated reading lists per AI thought leader — not a live feed (stale problem), but evergreen curation. Format per person: 3–5 of their most important pieces with a 2-sentence "why it matters + what to question" annotation.
+
+Candidates: Andrej Karpathy (now at Anthropic, pre-training team, May 2026), Simon Willison (LLM safety + practical AI, simonwillison.net), swyx/Shawn Wang (AI Engineer newsletter + Latent.Space podcast), Hamel Husain (LLM evals, the definitive Evals FAQ), François Chollet (ARC-AGI, reasoning vs. memorization), Yann LeCun (JEPA / world models skeptic of LLM AGI).
+
+Could live as a new section in GT sidebar, or as a dedicated "Perspectives" Explore tool with person-switcher.
+
+### P23 — World Models primer (Ground Truth post or Concepts module)
+
+2026 is being called the breakthrough year for world models. World Action Models (WAMs) unify predictive state modeling with action generation. Video generation models are being repurposed as world simulators for embodied AI training. This is the frontier that explains where the field goes after transformer scaling.
+
+Content: what a world model is vs. an LLM, JEPA architecture (LeCun), video-as-world-model (Genie, Sora), WAMs, why this matters for robotics and agent planning, the gap between language-world models and physics-aware world models.
+
+Format: 1 GT post (foundational) + potentially a Concepts module if it becomes central to production AI engineering (it will).
+
+### P24 — MoE Architecture deep-dive (Systems or Concepts)
+
+Mixture of Experts is now mainstream infrastructure — Gemma 4 26B MoE, Mixtral, DeepSeek-V3 all ship it. vLLM v0.19 has EPLB (Expert-Level Load Balancing). Production engineers need to understand: sparse activation, expert routing, load balancing, why MoE is cheaper to run at inference despite having more parameters, and failure modes (expert collapse, load skew).
+
+Currently only mentioned in the Gemini GT post. Deserves a Systems module.
+
+### P25 — Defense Doc (highest priority — see P1)
+
+Still unbuilt. Still the strongest pending idea. Personalized interview brief from JD paste: Topic Priority Table, 8 must-know concepts cold, system design cheat sheet, STAR story prompts, production gotchas, questions to ask the interviewer. Two formats: platform-rendered + PDF download (jsPDF, no backend).
+
+Clear paid tier hook: free = platform render, paid = download PDF.
+
+### P26 — "Traps & Bug Catching" (see P2)
+
+Still unbuilt. Find-the-flaw challenge format. ~15–20 challenges across: broken system diagrams, eval frameworks with subtle errors, Python LLM functions with bugs, "a candidate said X — what's wrong?" Directly maps to how Staff-level interviews actually work.
 
 ---
 
@@ -362,13 +435,15 @@ Stage 3 (month 12–24): Team/org pricing for prep cohorts. Custom Defense Doc g
 
 **Scale:**
 - 13 tabs
-- 100+ interactive modules
-- 150+ Ground Truth posts across 19 categories
+- 110+ interactive modules
+- 160+ Ground Truth posts across 20 categories (new: production-mlops series)
 - 57-question PrepLab question bank
 - 5 RAG Lab production failure scenarios
 - 30 prompt library entries
 - 5 debug trace challenges
 - PWA installable, offline service worker, RSS feed, sitemap with 140+ URLs
+- Agents tab: 9 modules (added Computer Use, Long-Running Workflows)
+- Flows tab: 7 flows (added Fine-Tuning Pipeline)
 
 **Architecture status:**
 - Zero backend ✓
@@ -408,6 +483,20 @@ The positioning: *"The only place you practice diagnosing production GenAI failu
 - Agents.jsx: `ComputerUseAgents` (4 architectures, observe→act loop, action space × 5, 6 failure modes) + `LongRunningWorkflows` (4 patterns with code, 5 tools, decision framework) — both in AGENTS_MODULES under SCALE group
 - groundTruthIndex.js + groundTruthPosts.js: 5 new posts in "production-mlops" series (ft-dpo-vs-grpo, ft-quantization, ft-governance, ft-multimodal-rag, ft-case-study)
 - GroundTruth.jsx: "production-mlops" series added to SERIES_META
+- Explore.jsx: Embedding Space radial constellation — scale 1.17x, viewBox "25 25 450 450", fixed angular spread for Ops/Agents queries
+- DECISIONS.md: AI landscape research pass — 11 new pending ideas (P16–P26) added based on 2026 landscape: A2A protocol, semantic caching, KV cache engineering, AI guardrails, vibe coding/agentic dev, LLMOps tool comparison, thought leader reading room, world models, MoE deep dive, Defense Doc (P1/P25), Traps & Bug Catching (P2/P26)
+
+**Notable 2026 AI landscape shifts (research pass May 21 2026):**
+- Andrej Karpathy joined Anthropic (May 19, 2026) — pre-training team
+- vLLM ships Semantic Router as first-class feature (Iris release, Jan 2026) — semantic caching, safety, memory, retrieval routing
+- A2A (Agent-to-Agent) protocol by Google ADK — inter-agent communication standard; CrewAI/OpenAgents adopted, LangGraph/AutoGen not yet
+- Langfuse acquired by Clickhouse (Jan 2026), remains MIT/open-source
+- Cursor crossed $2B ARR in 24 months — "vibe coding" now mainstream (Collins Word of the Year 2025)
+- 60% of new code written in 2026 is AI-generated (per multiple surveys)
+- Hallucination rates 3–8× lower than 2024 baselines but still 4–19% range across frontier models
+- World models: 2026 declared breakthrough year; World Action Models (WAMs) unify state prediction + action generation
+- LLM inference costs dropped 10–100× over 2 years; 2026 called "Year of AI Inference"
+- KV cache-aware routing (llm-d) and EPLB (Expert-Level Load Balancing for MoE) now production infrastructure
 
 *Last updated: May 2026*
 *Maintained by: Sidharth Kriplani*
