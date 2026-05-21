@@ -175,26 +175,32 @@ function Block({ b, onNavigate, color, postSearch }) {
           </button>
         </div>
       );
-    case "video":
+    case "video": {
+      const ytId = b.youtubeId || b.id;
+      const ytTitle = b.title || b.label || "";
+      const ytChannel = b.channel || b.desc || "";
+      const ytThumb = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
       return (
-        <div className="rounded-xl overflow-hidden border border-zinc-800">
-          <div className="aspect-video w-full bg-zinc-900">
-            <iframe
-              src={`https://www.youtube.com/embed/${b.youtubeId}`}
-              title={b.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            />
-          </div>
-          {(b.title || b.desc) && (
-            <div className="px-4 py-3 bg-zinc-900/60 border-t border-zinc-800">
-              {b.title && <p className="text-xs font-bold text-zinc-300 mb-0.5">{b.title}</p>}
-              {b.desc  && <p className="text-[11px] text-zinc-500">{b.desc}</p>}
+        <a href={`https://www.youtube.com/watch?v=${ytId}`} target="_blank" rel="noopener noreferrer"
+          className="group flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 hover:border-zinc-600 hover:bg-zinc-900/70 transition-all no-underline">
+          <div className="relative shrink-0 w-28 rounded-lg overflow-hidden aspect-video bg-zinc-800">
+            <img src={ytThumb} alt={ytTitle} className="w-full h-full object-cover" onError={e => { e.target.style.display = "none"; }} />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-colors">
+              <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4 ml-0.5"><polygon points="5,3 19,12 5,21"/></svg>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-red-950/60 text-red-400 border border-red-900/50">YouTube</span>
+            </div>
+            {ytTitle && <p className="text-xs font-bold text-zinc-200 group-hover:text-white transition-colors leading-snug mb-0.5">{ytTitle}</p>}
+            {ytChannel && <p className="text-[10px] text-zinc-500 font-mono">{ytChannel}</p>}
+          </div>
+        </a>
       );
+    }
     case "animation":
       if (b.name === "transformer") return <TransformerWalkthrough />;
       if (b.name === "salary-calc") return <SalaryCalculator />;
@@ -227,6 +233,48 @@ function Block({ b, onNavigate, color, postSearch }) {
           </ul>
         </div>
       );
+    case "refs": {
+      function refPlatform(url = "") {
+        if (url.includes("youtube.com") || url.includes("youtu.be")) return { label: "YouTube",   cls: "bg-red-950/60 text-red-400 border-red-900/50" };
+        if (url.includes("arxiv.org"))       return { label: "arXiv",     cls: "bg-amber-950/40 text-amber-400 border-amber-800/50" };
+        if (url.includes("anthropic.com"))   return { label: "Anthropic", cls: "bg-violet-950/40 text-violet-400 border-violet-800/50" };
+        if (url.includes("openai.com"))      return { label: "OpenAI",    cls: "bg-emerald-950/40 text-emerald-400 border-emerald-800/50" };
+        if (url.includes("huggingface.co"))  return { label: "HuggingFace", cls: "bg-yellow-950/40 text-yellow-400 border-yellow-800/50" };
+        if (url.includes("github.com"))      return { label: "GitHub",    cls: "bg-zinc-800 text-zinc-300 border-zinc-700" };
+        if (url.includes("lilianweng"))      return { label: "Lil'Log",   cls: "bg-pink-950/40 text-pink-400 border-pink-800/50" };
+        if (url.includes("huyenchip") || url.includes("chiphuyen")) return { label: "Chip Huyen", cls: "bg-fuchsia-950/40 text-fuchsia-400 border-fuchsia-800/50" };
+        if (url.includes("towardsdatascience") || url.includes("medium.com")) return { label: "Medium", cls: "bg-green-950/40 text-green-400 border-green-800/50" };
+        if (url.includes("deeplearning.ai")) return { label: "DeepLearning.AI", cls: "bg-blue-950/40 text-blue-400 border-blue-800/50" };
+        if (url.includes("paperswithcode")) return { label: "Papers with Code", cls: "bg-cyan-950/40 text-cyan-400 border-cyan-800/50" };
+        return { label: "Link", cls: "bg-zinc-800 text-zinc-400 border-zinc-700" };
+      }
+      return (
+        <div className="rounded-xl border border-zinc-800 overflow-hidden">
+          <div className="px-4 py-2 bg-zinc-900/80 border-b border-zinc-800">
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">References &amp; Further Reading</p>
+          </div>
+          <div className="divide-y divide-zinc-800/60">
+            {b.items.map((ref, i) => {
+              const label = ref.label || ref.title || "";
+              const plt = refPlatform(ref.url);
+              return (
+                <div key={i} className="px-4 py-2.5 flex items-center gap-3 hover:bg-zinc-900/40 transition-colors">
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border shrink-0 ${plt.cls}`}>{plt.label}</span>
+                  {ref.url ? (
+                    <a href={ref.url} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-zinc-300 hover:text-white transition-colors leading-relaxed flex-1">
+                      {label} <span className="text-zinc-600">↗</span>
+                    </a>
+                  ) : (
+                    <span className="text-xs text-zinc-500 leading-relaxed flex-1">{label}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
     default:
       return null;
   }
@@ -265,8 +313,10 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
     });
   }
 
-  // Related posts — same category, excluding current, max 3
-  const related = POSTS.filter(p => p.id !== post.id && p.category === post.category && !!POST_CONTENT[p.id]).slice(0, 3);
+  // Related posts — curated list from index first, fall back to same-category
+  const related = post.related
+    ? post.related.map(id => POSTS.find(p => p.id === id)).filter(p => p && POST_CONTENT[p.id])
+    : POSTS.filter(p => p.id !== post.id && p.category === post.category && !!POST_CONTENT[p.id]).slice(0, 4);
 
   // Series navigation
   const postSeriesId = Object.keys(SERIES_META).find(sid => SERIES_META[sid].postIds.includes(post.id));
@@ -554,18 +604,31 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
         {/* Related posts */}
         {related.length > 0 && (
           <div className="mt-12 pt-8 border-t border-zinc-800">
-            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-4">Read next</p>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="flex items-center gap-2 mb-4">
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Keep reading</p>
+              <div className="flex-1 h-px bg-zinc-800" />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
               {related.map(r => {
                 const rc = CAT_COLORS[r.category] || "#6366f1";
+                const catLbl = CATEGORIES.find(c => c.id === r.category)?.label || r.category;
+                const isCross = r.category !== post.category;
                 return (
                   <button key={r.id}
                     onClick={() => { track("related_post_clicked", { from: post.id, to: r.id }); onOpenPost(r); window.scrollTo(0, 0); }}
-                    className="text-left rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 hover:border-zinc-600 transition-all relative overflow-hidden">
+                    className="text-left rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 hover:border-zinc-600 hover:bg-zinc-900/60 transition-all relative overflow-hidden group">
                     <div className="absolute top-0 left-0 right-0 h-[2px]"
-                      style={{ background: `linear-gradient(90deg, ${rc}99, transparent)` }} />
-                    <p className="text-xs font-bold text-white leading-snug mb-1 line-clamp-2">{r.title}</p>
-                    <p className="text-[10px] text-zinc-600 font-mono">{r.readMin} min read</p>
+                      style={{ background: `linear-gradient(90deg, ${rc}bb, transparent)` }} />
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border"
+                        style={{ color: rc, borderColor: rc + "44", background: rc + "15" }}>
+                        {catLbl}
+                      </span>
+                      {isCross && <span className="text-[9px] text-zinc-600 font-mono">related topic</span>}
+                    </div>
+                    <p className="text-xs font-bold text-white leading-snug mb-1.5 line-clamp-2 group-hover:text-white/90">{r.title}</p>
+                    <p className="text-[10px] text-zinc-500 leading-relaxed line-clamp-2 mb-2">{r.desc}</p>
+                    <p className="text-[9px] text-zinc-600 font-mono">{r.readMin} min read</p>
                   </button>
                 );
               })}

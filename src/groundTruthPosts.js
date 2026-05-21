@@ -88,6 +88,12 @@ print(f"Estimated cost at $0.01/1K: \${len(tokens) / 1000 * 0.01:.4f}")` },
       { label: "SentencePiece: Google's tokenizer library", url: "https://github.com/google/sentencepiece" },
       { label: "Token inequality: How LLM tokenizers disadvantage non-English languages", url: "https://arxiv.org/abs/2311.01520" },
     ]},
+    { t: "refs", items: [
+      { label: "BPE: Neural Machine Translation with Rare Words using Subword Units (Sennrich et al., 2016)", url: "https://arxiv.org/abs/1508.07909" },
+      { label: "SentencePiece: A simple and language-independent subword tokenizer (Kudo & Richardson, 2018)", url: "https://arxiv.org/abs/1808.06226" },
+      { label: "Tokenization Is More Than Compression — Anthropic", url: "https://www.anthropic.com/research/tokenization-is-more-than-compression" },
+    ]},
+
   ],
 
 
@@ -236,6 +242,12 @@ Which one gets chosen? Depends on your sampling strategy.` },
     { t: "p", text: "Prompt caching can dramatically reduce costs on repeated large system prompts: if the first 90K tokens are identical across requests, only the final 10K needs to be freshly computed. Cache hit rates above 80% are achievable in well-designed systems." },
 
     { t: "lab", tab: "concepts", label: "Test Context Window & Cost →", desc: "See how context fills up across a conversation, and what gets dropped when you overflow." },
+    { t: "refs", items: [
+      { label: "Lost in the Middle: How Language Models Use Long Contexts (Liu et al., 2023)", url: "https://arxiv.org/abs/2307.03172" },
+      { label: "LongBench: A Bilingual, Multitask Benchmark for Long Context Understanding", url: "https://arxiv.org/abs/2308.14508" },
+      { label: "Context Compaction — Anthropic Research", url: "https://www.anthropic.com/research/in-context-reinforcement-learning" },
+    ]},
+
   ],
 
 
@@ -320,6 +332,13 @@ Which one gets chosen? Depends on your sampling strategy.` },
       { label: "Anthropic — Contextual Retrieval: improving chunk relevance with prepended context", url: "https://www.anthropic.com/news/contextual-retrieval" },
     ]},
     { t: "lab", tab: "lab", label: "Try it: Build a RAG configuration that avoids these failure modes →" },
+    { t: "video", youtubeId: "kCc8FmEb1nY", title: "Build your own RAG — end-to-end implementation walkthrough", channel: "Andrej Karpathy (GPT internals context)" },
+    { t: "refs", items: [
+      { label: "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (Lewis et al., 2020)", url: "https://arxiv.org/abs/2005.11401" },
+      { label: "Contextual Retrieval — Anthropic Research", url: "https://www.anthropic.com/research/contextual-retrieval" },
+      { label: "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection (2023)", url: "https://arxiv.org/abs/2310.11511" },
+    ]},
+
   ],
 
 
@@ -396,6 +415,12 @@ Which one gets chosen? Depends on your sampling strategy.` },
     { t: "p", text: "The Open Web Application Security Project (OWASP) maintains an LLM-specific Top 10 security risk list. Prompt injection is #1. Insecure output handling (treating model output as trusted code or SQL) is #2. Both are direct consequences of the same root issue: the model's inability to distinguish trusted from untrusted content." },
 
     { t: "lab", tab: "playground", label: "Craft live injection attacks in Playground →", desc: "Try direct and indirect injection patterns. See which ones work and which get caught by the guardrail pipeline." },
+    { t: "refs", items: [
+      { label: "Prompt Injection Attacks Against GPT-Integrated Applications (Greshake et al., 2023)", url: "https://arxiv.org/abs/2302.12173" },
+      { label: "Ignore Previous Prompt: Attack Techniques for Language Models (Perez & Ribeiro, 2022)", url: "https://arxiv.org/abs/2211.09527" },
+      { label: "Rebuff: Detecting Prompt Injection Attacks — GitHub", url: "https://github.com/protectai/rebuff" },
+    ]},
+
   ],
 
   // ─── TRANSFORMER ARCHITECTURE ─────────────────────────────────────────────
@@ -497,6 +522,13 @@ def attention(Q, K, V, mask=None):
     ]},
 
     { t: "lab", tab: "concepts", label: "Explore transformer concepts interactively →", desc: "See tokenization, attention patterns, and embedding spaces live in the Concepts module." },
+    { t: "video", youtubeId: "kCc8FmEb1nY", title: "Let's build GPT from scratch, in code, spelled out", channel: "Andrej Karpathy · 2h walkthrough" },
+    { t: "refs", items: [
+      { label: "Attention Is All You Need (Vaswani et al., 2017)", url: "https://arxiv.org/abs/1706.03762" },
+      { label: "The Illustrated Transformer — Jay Alammar", url: "https://jalammar.github.io/illustrated-transformer/" },
+      { label: "Lilian Weng: The Transformer Family", url: "https://lilianweng.github.io/posts/2020-04-07-the-transformer-family/" },
+    ]},
+
   ],
 
   // ─── EMBEDDINGS ──────────────────────────────────────────────────────────────
@@ -561,6 +593,12 @@ print(cosine_sim(a, c))  # ~0.05 — unrelated` },
       { label: "OpenAI Text Embedding Models — documentation and pricing", url: "https://platform.openai.com/docs/guides/embeddings" },
       { label: "nomic-embed-text: a truly open embedding model", url: "https://huggingface.co/nomic-ai/nomic-embed-text-v1" },
     ]},
+    { t: "refs", items: [
+      { label: "Embeddings in ML: A Comprehensive Introduction — Google Developers", url: "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture" },
+      { label: "BEIR: Benchmarking Information Retrieval (Thakur et al., 2021)", url: "https://arxiv.org/abs/2104.08663" },
+      { label: "text-embedding-3 Technical Report — OpenAI", url: "https://openai.com/blog/new-embedding-models-and-api-updates" },
+    ]},
+
   ],
 
   // ─── PROMPTING & TOKEN ECONOMICS ─────────────────────────────────────────────
@@ -656,6 +694,12 @@ chunks = splitter.split_text(document)` },
     ]},
 
     { t: "lab", tab: "lab", label: "Compare chunk strategies in RAG Lab →", desc: "Index the same document with different strategies and see how retrieval precision changes." },
+    { t: "refs", items: [
+      { label: "Contextual Retrieval — Anthropic (chunk-level context injection)", url: "https://www.anthropic.com/research/contextual-retrieval" },
+      { label: "Chunking Strategies for LLM Applications — Pinecone", url: "https://www.pinecone.io/learn/chunking-strategies/" },
+      { label: "RAPTOR: Recursive Abstractive Processing for Tree-Organized Retrieval (2024)", url: "https://arxiv.org/abs/2401.18059" },
+    ]},
+
   ],
 
   // ─── REACT AGENT PATTERN ────────────────────────────────────────────────────
@@ -699,6 +743,12 @@ Final Answer: The capital of France is Paris, with a population of ~2.1 million.
     { t: "callout", v: "warning", text: "Always set a max_steps limit. An uncapped ReAct loop will happily call tools 50 times and burn through your budget before timing out. 10–15 steps covers 95% of real-world agent tasks." },
 
     { t: "lab", tab: "agents", label: "Step through a ReAct trace →", desc: "Run the Agent Loop Simulator and watch Thought-Action-Observation unfold step by step." },
+    { t: "refs", items: [
+      { label: "ReAct: Synergizing Reasoning and Acting in Language Models (Yao et al., 2022)", url: "https://arxiv.org/abs/2210.03629" },
+      { label: "Lilian Weng: LLM-Powered Autonomous Agents", url: "https://lilianweng.github.io/posts/2023-06-23-agent/" },
+      { label: "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models (Wei et al., 2022)", url: "https://arxiv.org/abs/2201.11903" },
+    ]},
+
   ],
 
   // ─── AGENT MEMORY ────────────────────────────────────────────────────────────
@@ -747,6 +797,12 @@ context = "\\n".join([m["summary"] for m in relevant])` },
     { t: "callout", v: "tip", text: "For most production agents, you only need two: in-context memory for the current session and a vector-backed episodic store for user history. Don't over-engineer memory before you've identified which type is actually failing." },
 
     { t: "lab", tab: "agents", label: "Explore memory patterns in Agents Lab →", desc: "See how different memory strategies affect agent behaviour on multi-turn tasks." },
+    { t: "refs", items: [
+      { label: "Lilian Weng: LLM-Powered Autonomous Agents — memory section", url: "https://lilianweng.github.io/posts/2023-06-23-agent/#memory" },
+      { label: "MemGPT: Towards LLMs as Operating Systems (Packer et al., 2023)", url: "https://arxiv.org/abs/2310.08560" },
+      { label: "Cognitive Architectures for Language Agents (Sumers et al., 2023)", url: "https://arxiv.org/abs/2309.02427" },
+    ]},
+
   ],
 
   // ─── HALLUCINATION DETECTION ─────────────────────────────────────────────────
@@ -938,6 +994,12 @@ print(f"Cache write tokens: {usage.cache_creation_input_tokens}")` },
     { t: "callout", v: "warning", text: "Cache misses are more expensive than normal calls — you pay a cache write premium (~25% extra for Anthropic) on the first call that populates the cache. Design your prompt so the cacheable prefix is truly static, or you'll write more than you read." },
 
     { t: "lab", tab: "systems", label: "Model caching ROI in Systems →", desc: "Calculate your potential caching savings based on your actual call volume and prompt structure." },
+    { t: "refs", items: [
+      { label: "Prompt Caching — Anthropic Documentation", url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" },
+      { label: "KV Cache Compression Survey (Shi et al., 2024)", url: "https://arxiv.org/abs/2403.05919" },
+      { label: "Semantic Caching for LLMs — GPTCache", url: "https://github.com/zilliztech/GPTCache" },
+    ]},
+
   ],
 
   // ─── MODEL ROUTING ───────────────────────────────────────────────────────────
@@ -1006,6 +1068,12 @@ print(f"Cache write tokens: {usage.cache_creation_input_tokens}")` },
     { t: "p", text: "Pure vector similarity is rarely enough. You almost always need to filter by user_id, document_type, date range, or permission level. How a vector DB handles filtered search dramatically affects both latency and precision — some filter post-retrieval (lossy), others filter pre-retrieval (correct but slower), and the best ones (Qdrant, Weaviate, Pinecone) support efficient pre-filter + ANN." },
 
     { t: "lab", tab: "lab", label: "Compare retrieval strategies in RAG Lab →", desc: "See how vector database configuration choices affect retrieval quality on real queries." },
+    { t: "refs", items: [
+      { label: "ANN Benchmarks — ann-benchmarks.com (latency/recall tradeoffs)", url: "https://ann-benchmarks.com" },
+      { label: "Approximate Nearest Neighbor Oh Yeah (ANNOY) — Spotify Engineering", url: "https://github.com/spotify/annoy" },
+      { label: "pgvector: Open-source vector similarity search for Postgres", url: "https://github.com/pgvector/pgvector" },
+    ]},
+
   ],
 
   // ─── LLM EVALUATION ──────────────────────────────────────────────────────────
@@ -1051,6 +1119,13 @@ Respond in JSON: {"faithfulness": 0.X, "relevance": 0.X, "completeness": 0.X, "r
     { t: "lab", tab: "systems", label: "Build your eval pipeline →", desc: "Set up an automated eval suite on the Systems module with your own golden test cases." },
 
     { t: "callout", text: "→ Interactive: The Evals Lab and Eval Metrics modules in Systems Lab let you practice eval design and compare ROUGE/BERTScore/G-Eval hands-on." },
+    { t: "refs", items: [
+      { label: "RAGAS: Automated Evaluation of Retrieval Augmented Generation (Es et al., 2023)", url: "https://arxiv.org/abs/2309.15217" },
+      { label: "G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment (Liu et al., 2023)", url: "https://arxiv.org/abs/2303.16634" },
+      { label: "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena (Zheng et al., 2023)", url: "https://arxiv.org/abs/2306.05685" },
+      { label: "LM-Evaluation-Harness — EleutherAI", url: "https://github.com/EleutherAI/lm-evaluation-harness" },
+    ]},
+
   ],
 
   // ─── TOOL USE DESIGN ─────────────────────────────────────────────────────────
@@ -1093,6 +1168,12 @@ def get_weather(city: str) -> dict:
     { t: "p", text: "Agents retry failed tool calls. If your tool is not idempotent, a network error followed by a retry can create duplicate records, double charges, or duplicate emails. Make write operations idempotent by accepting an idempotency key, or gate retries at the orchestration layer." },
 
     { t: "lab", tab: "agents", label: "Design tools in the Agents Lab →", desc: "Build and test tool definitions and see how the agent decides when to call them." },
+    { t: "refs", items: [
+      { label: "Model Context Protocol — Anthropic", url: "https://www.anthropic.com/news/model-context-protocol" },
+      { label: "Tool Use in Claude — Anthropic Documentation", url: "https://docs.anthropic.com/en/docs/tool-use" },
+      { label: "Toolformer: Language Models Can Teach Themselves to Use Tools (Schick et al., 2023)", url: "https://arxiv.org/abs/2302.04761" },
+    ]},
+
   ],
 
   // ─── INFERENCE OPTIMISATION ──────────────────────────────────────────────────
@@ -1125,6 +1206,13 @@ def get_weather(city: str) -> dict:
     { t: "lab", tab: "systems", label: "Model inference tradeoffs in Systems →", desc: "Compare latency, throughput, and cost across quantisation levels and serving strategies." },
 
     { t: "callout", text: "→ Interactive: Systems Lab covers Speculative Decoding, Flash Attention, KV Cache Engineering, and Serving Infrastructure as separate interactive modules." },
+    { t: "refs", items: [
+      { label: "Flash Attention: Fast and Memory-Efficient Exact Attention (Dao et al., 2022)", url: "https://arxiv.org/abs/2205.14135" },
+      { label: "Flash Attention 2: Faster Attention with Better Parallelism (Dao, 2023)", url: "https://arxiv.org/abs/2307.08691" },
+      { label: "Speculative Decoding: Fast Inference from Transformers via Speculative Decoding (Leviathan et al., 2023)", url: "https://arxiv.org/abs/2211.17192" },
+      { label: "Continuous Batching: How continuous batching enables 23x throughput — Anyscale", url: "https://www.anyscale.com/blog/continuous-batching-llm-inference" },
+    ]},
+
   ],
 
   // ─── RERANKING ───────────────────────────────────────────────────────────────
@@ -1164,6 +1252,12 @@ top_5 = [chunk for _, chunk in ranked[:5]]` },
     ]},
 
     { t: "lab", tab: "lab", label: "Toggle reranking in RAG Lab →", desc: "See how reranking changes which chunks are selected and how answer quality changes." },
+    { t: "refs", items: [
+      { label: "Cross-Encoder vs Bi-Encoder for Sentence Similarity — SBERT.net", url: "https://www.sbert.net/examples/applications/cross-encoder/README.html" },
+      { label: "ColBERT: Efficient and Effective Passage Search (Khattab & Zaharia, 2020)", url: "https://arxiv.org/abs/2004.12832" },
+      { label: "RankGPT: Large Language Models as Rerankers (Sun et al., 2023)", url: "https://arxiv.org/abs/2304.09542" },
+    ]},
+
   ],
 
   // ─── HOW CLAUDE WORKS ────────────────────────────────────────────────────────
@@ -1652,6 +1746,13 @@ def self_attention(X, W_Q, W_K, W_V, mask=None):
       { label: "An Overview of Early Vision in InceptionV1 (mechanistic interpretability intro, Anthropic)", url: "https://distill.pub/2020/circuits/early-vision/" },
       { label: "In-context Learning and Induction Heads (Anthropic) — attention head specialisation", url: "https://transformer-circuits.pub/2022/in-context-learning-and-induction-heads/index.html" },
     ]},
+    { t: "video", youtubeId: "kCc8FmEb1nY", title: "Let's build GPT from scratch — attention mechanism deep-dive", channel: "Andrej Karpathy" },
+    { t: "refs", items: [
+      { label: "Attention Is All You Need (Vaswani et al., 2017)", url: "https://arxiv.org/abs/1706.03762" },
+      { label: "The Illustrated GPT-2 — Jay Alammar", url: "https://jalammar.github.io/illustrated-gpt2/" },
+      { label: "Flash Attention: Fast and Memory-Efficient Exact Attention (Dao et al., 2022)", url: "https://arxiv.org/abs/2205.14135" },
+    ]},
+
   ],
 
   // ─── RAG ARCHITECTURES ───────────────────────────────────────────────────────
@@ -1708,6 +1809,13 @@ def self_attention(X, W_Q, W_K, W_V, mask=None):
       { label: "Corrective RAG (CRAG): maintaining answer quality with fallback retrieval strategies", url: "https://arxiv.org/abs/2401.15884" },
       { label: "LlamaIndex — modular RAG pipeline documentation", url: "https://docs.llamaindex.ai/en/stable/" },
     ]},
+    { t: "refs", items: [
+      { label: "Retrieval-Augmented Generation (RAG) — original paper (Lewis et al., 2020)", url: "https://arxiv.org/abs/2005.11401" },
+      { label: "Corrective Retrieval Augmented Generation (Yan et al., 2024)", url: "https://arxiv.org/abs/2401.15884" },
+      { label: "Agentic RAG: How agents can improve RAG — Anthropic", url: "https://www.anthropic.com/research/swe-bench-sonnet" },
+      { label: "Survey of RAG Techniques — arXiv (2024)", url: "https://arxiv.org/abs/2312.10997" },
+    ]},
+
   ],
 
   // ─── GUARDRAILS FOR LLMS ─────────────────────────────────────────────────────
@@ -1781,6 +1889,12 @@ def self_attention(X, W_Q, W_K, W_V, mask=None):
       { label: "Guardrails AI — framework for structured and safe LLM outputs", url: "https://www.guardrailsai.com/" },
       { label: "Azure AI Content Safety — API documentation", url: "https://learn.microsoft.com/en-us/azure/ai-services/content-safety/" },
     ]},
+    { t: "refs", items: [
+      { label: "Constitutional AI: Harmlessness from AI Feedback — Anthropic, 2022", url: "https://arxiv.org/abs/2212.08073" },
+      { label: "NVIDIA NeMo Guardrails — GitHub", url: "https://github.com/NVIDIA/NeMo-Guardrails" },
+      { label: "Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations (Inan et al., 2023)", url: "https://arxiv.org/abs/2312.06674" },
+    ]},
+
   ],
 
   // ─── AI SYSTEM DESIGN FRAMEWORK ──────────────────────────────────────────────
@@ -1828,6 +1942,12 @@ def self_attention(X, W_Q, W_K, W_V, mask=None):
     { t: "callout", v: "key", text: "The question interviewers are really asking: do you think about AI systems like a production engineer or like someone who's only built demos? Talking about eval pipelines, failure modes, and cost budgets unprompted is the signal that separates principal engineers from senior ones." },
 
     { t: "lab", tab: "systems", label: "Practice system design →", desc: "Work through AI system design scenarios in the Systems module with structured feedback." },
+    { t: "refs", items: [
+      { label: "Chip Huyen: Building LLM applications for production", url: "https://huyenchip.com/2023/04/11/llm-engineering.html" },
+      { label: "ML System Design Interview — Stanford CS329S", url: "https://stanford-cs329s.github.io/syllabus.html" },
+      { label: "Lilian Weng: LLM-Powered Autonomous Agents (architecture section)", url: "https://lilianweng.github.io/posts/2023-06-23-agent/" },
+    ]},
+
   ],
 
   // ─── LLM INTERVIEW QUESTION PATTERNS ─────────────────────────────────────────
@@ -1967,6 +2087,12 @@ def self_attention(X, W_Q, W_K, W_V, mask=None):
     { t: "callout", v: "key", text: "In Weaviate and Qdrant, hybrid search is built-in. In pgvector, combine with Postgres full-text search (tsvector). In Pinecone, their sparse-dense index supports hybrid natively. The routing logic is trivial — the infrastructure is already there." },
 
     { t: "lab", tab: "lab", label: "Toggle hybrid search in RAG Lab →", desc: "Compare dense-only vs. hybrid retrieval on queries that require exact matching." },
+    { t: "refs", items: [
+      { label: "Reciprocal Rank Fusion (RRF) outperforms Condorcet and individual rank learning methods (Cormack et al., 2009)", url: "https://dl.acm.org/doi/10.1145/1571941.1572114" },
+      { label: "SPLADE: Sparse Lexical and Expansion Model for First Stage Ranking (Formal et al., 2021)", url: "https://arxiv.org/abs/2107.05720" },
+      { label: "BM25 and Beyond: Okapi BM25 Explanation — Elastic", url: "https://www.elastic.co/blog/practical-bm25-part-2-the-bm25-algorithm-and-its-variables" },
+    ]},
+
   ],
 
   // ─── BREAKING INTO AI ────────────────────────────────────────────────────────
@@ -2075,6 +2201,12 @@ def self_attention(X, W_Q, W_K, W_V, mask=None):
       { label: "Phoenix (Arize) — open-source LLM tracing and evaluation", url: "https://docs.arize.com/phoenix" },
       { label: "PromptLayer — prompt versioning and A/B testing for LLMs", url: "https://promptlayer.com/" },
     ]},
+    { t: "refs", items: [
+      { label: "Chip Huyen: Building LLM applications for production", url: "https://huyenchip.com/2023/04/11/llm-engineering.html" },
+      { label: "LLMOps: Operationalizing Large Language Models — Google Cloud", url: "https://cloud.google.com/blog/products/ai-machine-learning/best-practices-for-llmops" },
+      { label: "Monitoring ML Models in Production — Evidently AI", url: "https://evidentlyai.com/blog/ml-model-monitoring-best-practices" },
+    ]},
+
   ],
 
 
@@ -2869,6 +3001,12 @@ garak --model_type openai --model_name gpt-4o-mini \\
     ]},
 
     { t: "lab", tab: "systems", label: "Model cost calculator →", desc: "Estimate monthly costs across model tiers and request volumes in the Systems module." },
+    { t: "refs", items: [
+      { label: "LLM Inference Performance Engineering — MosaicML", url: "https://www.mosaicml.com/blog/llm-inference-performance-engineering-best-practices" },
+      { label: "Scaling Laws for Neural Language Models (Kaplan et al., 2020)", url: "https://arxiv.org/abs/2001.08361" },
+      { label: "Model Routing with RouteLLM — LMSYS (2024)", url: "https://arxiv.org/abs/2406.18665" },
+    ]},
+
   ],
 
 
@@ -3009,6 +3147,12 @@ garak --model_type openai --model_name gpt-4o-mini \\
       { label: "OWASP LLM Top 10 — Prompt Injection (#1)", url: "https://owasp.org/www-project-top-10-for-large-language-model-applications/" },
       { label: "Tree of Thoughts: Deliberate Problem Solving with Large Language Models", url: "https://arxiv.org/abs/2305.10601" },
     ]},
+    { t: "refs", items: [
+      { label: "Lilian Weng: LLM-Powered Autonomous Agents — failure modes", url: "https://lilianweng.github.io/posts/2023-06-23-agent/#challenges" },
+      { label: "AgentBench: Evaluating LLMs as Agents (Liu et al., 2023)", url: "https://arxiv.org/abs/2308.03688" },
+      { label: "Prompt Injection Attacks Against GPT-integrated Applications (Greshake et al., 2023)", url: "https://arxiv.org/abs/2302.12173" },
+    ]},
+
   ],
 
 
@@ -3649,6 +3793,13 @@ response = client.messages.create(
       { label: "ReAct: Synergizing Reasoning and Acting in Language Models", url: "https://arxiv.org/abs/2210.03629" },
     ]},
     { t: "lab", tab: "agents", label: "Build a planning agent →", desc: "Implement ToT-style branching in the Agents module." },
+    { t: "refs", items: [
+      { label: "Tree of Thoughts: Deliberate Problem Solving with LLMs (Yao et al., 2023)", url: "https://arxiv.org/abs/2305.10601" },
+      { label: "Graph of Thoughts: Solving Elaborate Problems with LLMs (Besta et al., 2024)", url: "https://arxiv.org/abs/2308.09687" },
+      { label: "Language Agent Tree Search (LATS) — Zhou et al., 2023", url: "https://arxiv.org/abs/2310.04406" },
+      { label: "Reflexion: Language Agents with Verbal Reinforcement Learning (Shinn et al., 2023)", url: "https://arxiv.org/abs/2303.11366" },
+    ]},
+
   ],
 
   "ab-testing-llms": [
@@ -4568,6 +4719,12 @@ async def agent_step(step_num, messages, available_tools):
       { label: "Arize Phoenix — AI observability platform", url: "https://phoenix.arize.com/" },
     ]},
     { t: "lab", tab: "agents", label: "Trace agent loops →", desc: "Step through agent execution traces in the Agents module." },
+    { t: "refs", items: [
+      { label: "LangSmith: LLM Application Observability — LangChain", url: "https://docs.smith.langchain.com/" },
+      { label: "OpenTelemetry for LLMs — OpenLLMetry", url: "https://github.com/traceloop/openllmetry" },
+      { label: "Arize Phoenix: ML Observability for LLMs", url: "https://github.com/Arize-ai/phoenix" },
+    ]},
+
   ],
 
   "ml-cicd": [
@@ -5703,6 +5860,13 @@ class StateManager:
       { label: "PEFT: State-of-the-art Parameter-Efficient Fine-Tuning — Hugging Face", url: "https://github.com/huggingface/peft" },
       { label: "Scaling Down to Scale Up: A Guide to Parameter-Efficient Fine-Tuning — Lialin et al. (2023)", url: "https://arxiv.org/abs/2303.15647" },
     ]},
+    { t: "refs", items: [
+      { label: "LoRA: Low-Rank Adaptation of Large Language Models (Hu et al., 2022)", url: "https://arxiv.org/abs/2106.09685" },
+      { label: "QLoRA: Efficient Finetuning of Quantized LLMs (Dettmers et al., 2023)", url: "https://arxiv.org/abs/2305.14314" },
+      { label: "The Power of Scale for Parameter-Efficient Prompt Tuning (Lester et al., 2021)", url: "https://arxiv.org/abs/2104.08691" },
+      { label: "Chip Huyen: Fine-tuning LLMs", url: "https://huyenchip.com/2023/04/11/llm-engineering.html" },
+    ]},
+
   ],
 
   "lora-in-practice": [
@@ -8111,6 +8275,14 @@ Where:
       { label: "RLHF Workflow: From Reward Modeling to Online RLHF (Dong et al., 2024)", url: "https://arxiv.org/abs/2405.07863" },
       { label: "Anthropic model training blog", url: "https://www.anthropic.com/research" },
     ]},
+    { t: "video", youtubeId: "kCc8FmEb1nY", title: "nanoGPT: Reproducing GPT-2 with RLHF context", channel: "Andrej Karpathy" },
+    { t: "refs", items: [
+      { label: "InstructGPT: Training Language Models to Follow Instructions with Human Feedback (Ouyang et al., 2022)", url: "https://arxiv.org/abs/2203.02155" },
+      { label: "Direct Preference Optimization (DPO) — Rafailov et al., 2023", url: "https://arxiv.org/abs/2305.18290" },
+      { label: "Lilian Weng: Reinforcement Learning from Human Feedback", url: "https://lilianweng.github.io/posts/2021-01-02-rlhf/" },
+      { label: "Constitutional AI: Harmlessness from AI Feedback — Anthropic, 2022", url: "https://arxiv.org/abs/2212.08073" },
+    ]},
+
   ],
 
   // ─── CONSTITUTIONAL AI EXPLAINED ─────────────────────────────────────────
