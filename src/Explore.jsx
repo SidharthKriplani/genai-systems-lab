@@ -16,100 +16,90 @@ function proj3D(x, y, z, rx, ry, scale = 90) {
 const EMB_CAT_COLOR = { rag:"#3b82f6", arch:"#f59e0b", safety:"#ef4444", ops:"#10b981", agents:"#8b5cf6", multi:"#38bdf8" };
 const EMB_CAT_LABEL = { rag:"RAG", arch:"Architecture", safety:"Safety", ops:"Ops", agents:"Agents", multi:"Multimodal" };
 
-// Redesigned embedding space — wider canvas, cluster halos, always-visible labels,
-// cosine similarity scores, animated connection lines via CSS keyframes
-
-// 30 points spread across a 620×440 canvas — each cluster spans ~110×90px for clear visual separation
+// Radial constellation — 30 concepts arranged in 6 sectors around center query
+// Sector order (clockwise from North): RAG, Architecture, Safety, Ops, Agents, Multimodal
+// Radii: inner ~95, mid ~120, outer ~145 from center (250,250)
 const EMB_POINTS = [
-  // RAG — top-left (cluster spans x:44-162, y:62-172)
-  { id:"r1", label:"What is RAG?",             cat:"rag",    x:  50, y:  68 },
-  { id:"r2", label:"Vector DB indexing",        cat:"rag",    x: 158, y:  62 },
-  { id:"r3", label:"Chunking strategies",       cat:"rag",    x:  44, y: 150 },
-  { id:"r4", label:"Retrieval pipeline",        cat:"rag",    x: 155, y: 145 },
-  { id:"r5", label:"Hybrid search",             cat:"rag",    x:  98, y: 172 },
-  // Architecture — top-right (cluster spans x:428-568, y:52-168)
-  { id:"a1", label:"Transformer architecture",  cat:"arch",   x: 432, y:  58 },
-  { id:"a2", label:"Attention mechanism",       cat:"arch",   x: 564, y:  56 },
-  { id:"a3", label:"KV cache & inference",      cat:"arch",   x: 436, y: 152 },
-  { id:"a4", label:"Tokenization deep dive",    cat:"arch",   x: 560, y: 150 },
-  { id:"a5", label:"Positional encoding",       cat:"arch",   x: 498, y: 168 },
-  // Safety — center-right (cluster spans x:444-576, y:202-286)
-  { id:"s1", label:"RLHF alignment",            cat:"safety", x: 448, y: 208 },
-  { id:"s2", label:"Red teaming",               cat:"safety", x: 572, y: 206 },
-  { id:"s3", label:"Jailbreaks & injection",    cat:"safety", x: 450, y: 282 },
-  { id:"s4", label:"Constitutional AI",         cat:"safety", x: 570, y: 280 },
-  { id:"s5", label:"DPO preference learning",   cat:"safety", x: 510, y: 252 },
-  // Ops — bottom-center (cluster spans x:210-362, y:306-400)
-  { id:"o1", label:"Model quantization",        cat:"ops",    x: 215, y: 312 },
-  { id:"o2", label:"Cost optimization",         cat:"ops",    x: 358, y: 308 },
-  { id:"o3", label:"Inference at scale",        cat:"ops",    x: 218, y: 396 },
-  { id:"o4", label:"Latency budgets & SLAs",    cat:"ops",    x: 360, y: 392 },
-  { id:"o5", label:"GPU memory management",     cat:"ops",    x: 286, y: 404 },
-  // Agents — bottom-right (cluster spans x:398-546, y:306-402)
-  { id:"ag1", label:"Agent reasoning loops",    cat:"agents", x: 402, y: 310 },
-  { id:"ag2", label:"Tool calling patterns",    cat:"agents", x: 542, y: 308 },
-  { id:"ag3", label:"ReAct framework",          cat:"agents", x: 400, y: 396 },
-  { id:"ag4", label:"AI planning systems",      cat:"agents", x: 544, y: 394 },
-  { id:"ag5", label:"Multi-agent systems",      cat:"agents", x: 472, y: 404 },
-  // Multimodal — bottom-left (cluster spans x:38-162, y:306-402)
-  { id:"m1", label:"CLIP embeddings",           cat:"multi",  x:  42, y: 310 },
-  { id:"m2", label:"Vision Transformers (ViT)", cat:"multi",  x: 158, y: 308 },
-  { id:"m3", label:"Image-text search",         cat:"multi",  x:  40, y: 394 },
-  { id:"m4", label:"Diffusion models",          cat:"multi",  x: 160, y: 392 },
-  { id:"m5", label:"Multimodal RAG",            cat:"multi",  x:  98, y: 404 },
+  // RAG — top sector
+  { id:"r1", cat:"rag",    x:218, y:161, label:"What is RAG?"            },
+  { id:"r2", cat:"rag",    x:225, y:107, label:"Vector DB indexing"       },
+  { id:"r3", cat:"rag",    x:250, y:130, label:"Chunking strategies"      },
+  { id:"r4", cat:"rag",    x:275, y:158, label:"Retrieval pipeline"       },
+  { id:"r5", cat:"rag",    x:311, y:119, label:"Hybrid search"            },
+  // Architecture — top-right sector
+  { id:"a1", cat:"arch",   x:308, y:175, label:"Transformer arch."        },
+  { id:"a2", cat:"arch",   x:358, y:153, label:"Attention mechanism"      },
+  { id:"a3", cat:"arch",   x:354, y:190, label:"KV cache & inference"     },
+  { id:"a4", cat:"arch",   x:340, y:221, label:"Tokenization deep dive"   },
+  { id:"a5", cat:"arch",   x:394, y:230, label:"Positional encoding"      },
+  // Safety — right sector
+  { id:"s1", cat:"safety", x:344, y:263, label:"RLHF alignment"           },
+  { id:"s2", cat:"safety", x:388, y:295, label:"Red teaming"              },
+  { id:"s3", cat:"safety", x:354, y:310, label:"Jailbreaks & injection"   },
+  { id:"s4", cat:"safety", x:321, y:314, label:"Constitutional AI"        },
+  { id:"s5", cat:"safety", x:339, y:364, label:"DPO preference learning"  },
+  // Ops — bottom sector
+  { id:"o1", cat:"ops",    x:286, y:338, label:"Model quantization"       },
+  { id:"o2", cat:"ops",    x:280, y:392, label:"Cost optimization"        },
+  { id:"o3", cat:"ops",    x:250, y:370, label:"Inference at scale"       },
+  { id:"o4", cat:"ops",    x:230, y:343, label:"Latency budgets & SLAs"   },
+  { id:"o5", cat:"ops",    x:196, y:384, label:"GPU memory management"    },
+  // Agents — left sector
+  { id:"ag1", cat:"agents", x:191, y:325, label:"Agent reasoning loops"  },
+  { id:"ag2", cat:"agents", x:142, y:347, label:"Tool calling patterns"  },
+  { id:"ag3", cat:"agents", x:146, y:310, label:"ReAct framework"        },
+  { id:"ag4", cat:"agents", x:160, y:279, label:"AI planning systems"    },
+  { id:"ag5", cat:"agents", x:106, y:270, label:"Multi-agent systems"    },
+  // Multimodal — top-left sector
+  { id:"m1", cat:"multi",  x:156, y:237, label:"CLIP embeddings"          },
+  { id:"m2", cat:"multi",  x:112, y:205, label:"Vision Transformers"      },
+  { id:"m3", cat:"multi",  x:146, y:190, label:"Image-text search"        },
+  { id:"m4", cat:"multi",  x:179, y:186, label:"Diffusion models"         },
+  { id:"m5", cat:"multi",  x:161, y:136, label:"Multimodal RAG"           },
 ];
 
-// Cluster centroids for halos and labels
-const EMB_CLUSTERS = [
-  { cat:"rag",    cx: 101, cy: 111, rx: 78, ry: 68, label:"RAG",          labelY:  26 },
-  { cat:"arch",   cx: 498, cy: 111, rx: 80, ry: 68, label:"Architecture", labelY:  24 },
-  { cat:"safety", cx: 510, cy: 245, rx: 76, ry: 58, label:"Safety",       labelY: 175 },
-  { cat:"ops",    cx: 287, cy: 360, rx: 88, ry: 58, label:"Ops",          labelY: 287 },
-  { cat:"agents", cx: 472, cy: 362, rx: 86, ry: 58, label:"Agents",       labelY: 287 },
-  { cat:"multi",  cx: 100, cy: 362, rx: 80, ry: 58, label:"Multimodal",   labelY: 290 },
+// Category labels at sector midpoints, r~205 from center (250,250)
+const EMB_SECTOR_LABELS = [
+  { cat:"rag",    x:250, y: 44, anchor:"middle" },
+  { cat:"arch",   x:428, y:148, anchor:"start"  },
+  { cat:"safety", x:428, y:355, anchor:"start"  },
+  { cat:"ops",    x:250, y:458, anchor:"middle" },
+  { cat:"agents", x: 72, y:355, anchor:"end"    },
+  { cat:"multi",  x: 72, y:148, anchor:"end"    },
 ];
 
-// Queries with precomputed nearest IDs and cosine similarities
 const EMB_QUERIES = [
-  {
-    id:"q1", x:498, y:111,
-    text:"How much text can a model process?",
+  { id:"q1", text:"How much text can a model process?",
     nearIds:["a3","a4","a1"], sims:[0.93,0.89,0.85],
-    note:'"text" and "process" match zero keywords — the model mapped everyday language to KV cache, tokenization, and architecture by meaning alone.',
+    note:'"text" and "process" share zero words with KV cache, tokenization, or transformer architecture. The embedding captured intent, not vocabulary.',
   },
-  {
-    id:"q2", x:510, y:245,
-    text:"Teaching AI to prefer better answers",
+  { id:"q2", text:"Teaching AI to prefer better answers",
     nearIds:["s1","s5","s4"], sims:[0.94,0.91,0.87],
-    note:'"prefer better answers" shares no words with "RLHF", "DPO", or "Constitutional AI" — pure conceptual alignment.',
+    note:'"prefer better answers" shares no words with RLHF, DPO, or Constitutional AI — the concept of preference alignment was found purely by meaning.',
   },
-  {
-    id:"q3", x:287, y:358,
-    text:"Making models cheaper to deploy",
+  { id:"q3", text:"Making models cheaper to deploy",
     nearIds:["o2","o3","o1"], sims:[0.95,0.90,0.88],
-    note:'"cheaper to deploy" isn\'t in "quantization", "inference at scale", or "cost optimization" — intent matched, zero keywords.',
+    note:'"cheaper to deploy" does not appear in quantization, inference at scale, or cost optimization — the cost-reduction intent bridged the vocabulary gap.',
   },
-  {
-    id:"q4", x:100, y:360,
-    text:"Looking up pictures by describing them",
+  { id:"q4", text:"Looking up pictures by describing them",
     nearIds:["m3","m1","m2"], sims:[0.96,0.91,0.87],
-    note:'"pictures" and "describing" don\'t appear in "CLIP", "ViT", or "image-text search" — the model bridged everyday language to precise concepts.',
+    note:'"pictures" and "describing" do not appear in CLIP, ViT, or image-text search — cross-modal retrieval concept found with zero keyword overlap.',
   },
-  {
-    id:"q5", x:472, y:360,
-    text:"Software that decides what to do next",
+  { id:"q5", text:"Software that decides what to do next",
     nearIds:["ag1","ag3","ag4"], sims:[0.94,0.90,0.86],
-    note:'"decides what to do" shares zero words with "agent reasoning loops", "ReAct", or "AI planning" — pure conceptual match.',
+    note:'"decides what to do" shares zero words with agent reasoning, ReAct, or AI planning — autonomous decision-making found by concept alone.',
   },
 ];
+
+const CX = 250, CY = 250;
 
 function EmbeddingExplorer() {
-  const [activeQuery, setActiveQuery] = useState(EMB_QUERIES[0]);
+  const [activeQuery, setActiveQuery] = useState(null);
   const [animKey, setAnimKey] = useState(0);
 
   function selectQuery(q) {
     setActiveQuery(prev => {
-      if (prev?.id === q.id) return null;
+      if (prev && prev.id === q.id) { return null; }
       setAnimKey(k => k + 1);
       return q;
     });
@@ -124,26 +114,23 @@ function EmbeddingExplorer() {
     }));
   }, [activeQuery]);
 
-  const nearSet = useMemo(() => new Set(activeQuery?.nearIds || []), [activeQuery]);
-
   return (
     <div className="space-y-4">
       <HowTo
         objective="Pick a query. Watch semantic search find conceptually matching results — without matching a single keyword."
         steps={[
-          "Click any query button — note the words it uses",
-          "Animated lines connect it to the 3 nearest points by meaning",
-          "Read the matched labels: none share words with your query",
-          "This is the aha moment — embeddings encode meaning, not text",
+          "Click a query — written in plain everyday English",
+          "Rays shoot from center to 3 matched concepts by meaning",
+          "Read the matched labels: zero shared words with your query",
+          "Embeddings encode MEANING as coordinates, not text",
         ]}
       />
 
-      {/* Query pills */}
       <div className="flex flex-wrap gap-2">
         {EMB_QUERIES.map(q => (
           <button key={q.id} onClick={() => selectQuery(q)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-              activeQuery?.id === q.id
+              activeQuery && activeQuery.id === q.id
                 ? "bg-white text-zinc-900 font-bold border-white"
                 : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border-zinc-700 hover:border-zinc-500"
             }`}>
@@ -152,188 +139,219 @@ function EmbeddingExplorer() {
         ))}
       </div>
 
-      {/* SVG map */}
       <style>{`
-        @keyframes dash-draw {
-          from { stroke-dashoffset: 120; opacity: 0; }
-          to   { stroke-dashoffset: 0;   opacity: 0.85; }
+        @keyframes ray-out {
+          from { stroke-dashoffset: 220; opacity: 0; }
+          to   { stroke-dashoffset: 0;   opacity: 0.88; }
         }
-        @keyframes sim-pop {
-          from { opacity: 0; transform: scale(0.6); }
+        @keyframes node-in {
+          from { opacity: 0; transform: scale(0.4); }
           to   { opacity: 1; transform: scale(1); }
         }
-        .emb-line { animation: dash-draw 0.5s ease-out forwards; }
-        .emb-sim  { animation: sim-pop 0.3s 0.4s ease-out both; }
+        @keyframes pulse-ring {
+          0%   { r: 10; opacity: 0.5; }
+          100% { r: 24; opacity: 0;   }
+        }
+        .emb-ray     { animation: ray-out   0.55s ease-out forwards; }
+        .emb-node-in { animation: node-in   0.3s  ease-out both; }
+        .emb-pulse   { animation: pulse-ring 1.3s ease-out infinite; }
       `}</style>
 
-      <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background: "#08080a" }}>
-        <svg viewBox="0 0 620 430" className="w-full" style={{ display:"block" }}>
+      <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#07070a" }}>
+        <svg viewBox="0 0 500 500" className="w-full" style={{ display:"block" }}>
           <defs>
-            <pattern id="eg2" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
-              <circle cx="0.5" cy="0.5" r="0.6" fill="#1f1f23"/>
-            </pattern>
-            {/* Radial gradients for cluster halos */}
-            {EMB_CLUSTERS.map(c => (
-              <radialGradient key={c.cat + "-g"} id={"hg-" + c.cat} cx="50%" cy="50%" r="50%">
-                <stop offset="0%"   stopColor={EMB_CAT_COLOR[c.cat]} stopOpacity="0.13"/>
-                <stop offset="100%" stopColor={EMB_CAT_COLOR[c.cat]} stopOpacity="0"/>
-              </radialGradient>
-            ))}
+            <radialGradient id="bg-g" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stopColor="#12121a"/>
+              <stop offset="100%" stopColor="#07070a"/>
+            </radialGradient>
+            <filter id="emb-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
           </defs>
 
-          <rect width="620" height="430" fill="url(#eg2)"/>
+          <rect width="500" height="500" fill="url(#bg-g)"/>
 
-          {/* Cluster halos */}
-          {EMB_CLUSTERS.map(c => (
-            <ellipse key={c.cat}
-              cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry}
-              fill={`url(#hg-${c.cat})`}/>
-          ))}
+          <circle cx={CX} cy={CY} r="95"  fill="none" stroke="#ffffff05" strokeWidth="1" strokeDasharray="3 9"/>
+          <circle cx={CX} cy={CY} r="145" fill="none" stroke="#ffffff05" strokeWidth="1" strokeDasharray="3 9"/>
 
-          {/* Cluster labels — always visible */}
-          {EMB_CLUSTERS.map(c => (
-            <text key={c.cat + "-lbl"}
-              x={c.cx} y={c.labelY}
-              textAnchor="middle" fontSize="9.5" fontFamily="ui-monospace, monospace"
-              letterSpacing="0.08em" fontWeight="600"
-              fill={EMB_CAT_COLOR[c.cat]} opacity="0.7">
-              {c.label.toUpperCase()}
+          {[0,60,120,180,240,300].map(deg => {
+            const rad = (deg - 90) * Math.PI / 180;
+            return (
+              <line key={deg}
+                x1={CX} y1={CY}
+                x2={CX + 215 * Math.cos(rad)}
+                y2={CY + 215 * Math.sin(rad)}
+                stroke="#ffffff04" strokeWidth="1"/>
+            );
+          })}
+
+          {EMB_SECTOR_LABELS.map(s => (
+            <text key={s.cat}
+              x={s.x} y={s.y}
+              textAnchor={s.anchor} dominantBaseline="middle"
+              fontSize="8" fontFamily="ui-monospace,monospace"
+              letterSpacing="0.14em" fontWeight="700"
+              fill={EMB_CAT_COLOR[s.cat]}
+              opacity={activeQuery ? 0.28 : 0.62}>
+              {EMB_CAT_LABEL[s.cat].toUpperCase()}
             </text>
           ))}
 
-          {/* Animated connection lines */}
           {activeQuery && nearestPoints.map((n, i) => {
-            const len = Math.hypot(n.x - activeQuery.x, n.y - activeQuery.y);
+            const len = Math.hypot(n.x - CX, n.y - CY);
             return (
-              <line key={animKey + "-" + n.id}
-                className="emb-line"
-                x1={activeQuery.x} y1={activeQuery.y}
-                x2={n.x} y2={n.y}
+              <line key={animKey + "-ray-" + n.id}
+                className="emb-ray"
+                x1={CX} y1={CY} x2={n.x} y2={n.y}
                 stroke={EMB_CAT_COLOR[n.cat]}
-                strokeWidth={i === 0 ? 2 : 1.5}
+                strokeWidth={i === 0 ? 2.5 : 1.5}
                 strokeDasharray={len}
                 strokeDashoffset={len}
-                style={{ animationDelay: `${i * 0.12}s` }}
+                style={{ animationDelay: i * 0.15 + "s" }}
               />
             );
           })}
 
-          {/* Cosine similarity labels on lines */}
           {activeQuery && nearestPoints.map((n, i) => (
             <text key={animKey + "-sim-" + n.id}
-              className="emb-sim"
-              x={(activeQuery.x + n.x) / 2}
-              y={(activeQuery.y + n.y) / 2 - 7}
-              textAnchor="middle" fontSize="8.5" fontFamily="ui-monospace, monospace"
-              fontWeight="700" fill={EMB_CAT_COLOR[n.cat]}
-              style={{ animationDelay: `${0.4 + i * 0.1}s` }}>
+              className="emb-node-in"
+              x={(CX + n.x) / 2} y={(CY + n.y) / 2 - 9}
+              textAnchor="middle"
+              fontSize="8" fontFamily="ui-monospace,monospace" fontWeight="700"
+              fill={EMB_CAT_COLOR[n.cat]}
+              style={{ animationDelay: (0.5 + i * 0.12) + "s" }}>
               {n.sim.toFixed(2)}
             </text>
           ))}
 
-          {/* Data points */}
           {EMB_POINTS.map(pt => {
             const col = EMB_CAT_COLOR[pt.cat];
             const rankIdx = activeQuery ? activeQuery.nearIds.indexOf(pt.id) : -1;
             const isNearest = rankIdx !== -1;
             const dimmed = !!activeQuery && !isNearest;
+            const dx = pt.x - CX, dy = pt.y - CY;
+            const dist = Math.hypot(dx, dy) || 1;
+            const lx = pt.x + (dx / dist) * 13;
+            const ly = pt.y + (dy / dist) * 13;
+            const anchor = pt.x < CX - 18 ? "end" : pt.x > CX + 18 ? "start" : "middle";
             return (
               <g key={pt.id}>
-                {isNearest && <circle cx={pt.x} cy={pt.y} r="11" fill={col} opacity="0.15"/>}
-                <circle cx={pt.x} cy={pt.y} r={isNearest ? 6 : 4}
-                  fill={col} opacity={dimmed ? 0.1 : isNearest ? 1 : 0.75}
+                {isNearest && (
+                  <circle key={animKey + "-p-" + pt.id}
+                    className="emb-pulse"
+                    cx={pt.x} cy={pt.y} r="10"
+                    fill="none" stroke={col} strokeWidth="1.5"
+                    style={{ animationDelay: (rankIdx * 0.15) + "s" }}/>
+                )}
+                {isNearest && (
+                  <circle cx={pt.x} cy={pt.y} r="16"
+                    fill={col} opacity="0.1" filter="url(#emb-glow)"/>
+                )}
+                <circle cx={pt.x} cy={pt.y} r={isNearest ? 7 : 4}
+                  fill={col}
+                  opacity={dimmed ? 0.07 : isNearest ? 1 : 0.6}
                   stroke={isNearest ? "#fff" : "none"} strokeWidth="1.5"/>
-                {/* Always-visible micro label for non-dimmed points */}
-                {!dimmed && (
-                  <text x={pt.x + 8} y={pt.y + 3.5}
-                    fontSize="7.5" fontFamily="ui-sans-serif, sans-serif"
-                    fill={isNearest ? "#f4f4f5" : col} opacity={isNearest ? 1 : 0.55}
-                    style={{ pointerEvents:"none" }}>
+                {isNearest && (
+                  <text className="emb-node-in"
+                    x={lx} y={ly}
+                    textAnchor={anchor} dominantBaseline="middle"
+                    fontSize="8.5" fontFamily="ui-sans-serif,sans-serif"
+                    fill="#f4f4f5" fontWeight="600"
+                    style={{ animationDelay: (0.4 + rankIdx * 0.12) + "s", pointerEvents:"none" }}>
                     {pt.label}
                   </text>
                 )}
-                {/* Rank badge */}
                 {isNearest && (
-                  <text x={pt.x} y={pt.y - 10}
-                    textAnchor="middle" fontSize="10" fill="#fff" fontWeight="700">
-                    {["①","②","③"][rankIdx]}
+                  <text className="emb-node-in"
+                    x={pt.x} y={pt.y - 14}
+                    textAnchor="middle" fontSize="11" fill="#fff" fontWeight="700"
+                    style={{ animationDelay: (0.35 + rankIdx * 0.12) + "s" }}>
+                    {["\u2460","\u2461","\u2462"][rankIdx]}
                   </text>
                 )}
               </g>
             );
           })}
 
-          {/* Query marker */}
-          {activeQuery && (() => {
-            const { x, y } = activeQuery;
-            return (
-              <g>
-                <circle cx={x} cy={y} r="10" fill="#fff" opacity="0.15"/>
-                <circle cx={x} cy={y} r="6"  fill="#fff"/>
-                <text x={x} y={y+3.5} textAnchor="middle"
-                  fontSize="6.5" fontFamily="ui-monospace, monospace" fontWeight="800" fill="#08080a">Q</text>
-              </g>
-            );
-          })()}
+          <circle cx={CX} cy={CY} r="42" fill="#07070a" stroke="#2a2a35" strokeWidth="1.5"/>
+          {activeQuery ? (
+            <g>
+              <text x={CX} y={CY - 18} textAnchor="middle"
+                fontSize="6.5" fontFamily="ui-monospace,monospace" letterSpacing="0.1em" fill="#52525b">QUERY</text>
+              {(() => {
+                const words = activeQuery.text.split(" ");
+                const half = Math.ceil(words.length / 2);
+                return (
+                  <g>
+                    <text x={CX} y={CY - 4} textAnchor="middle" dominantBaseline="middle"
+                      fontSize="7.5" fontFamily="ui-sans-serif,sans-serif" fill="#e4e4e7" fontWeight="600">
+                      {words.slice(0, half).join(" ")}
+                    </text>
+                    <text x={CX} y={CY + 9} textAnchor="middle" dominantBaseline="middle"
+                      fontSize="7.5" fontFamily="ui-sans-serif,sans-serif" fill="#e4e4e7" fontWeight="600">
+                      {words.slice(half).join(" ")}
+                    </text>
+                  </g>
+                );
+              })()}
+              <text x={CX} y={CY + 25} textAnchor="middle"
+                fontSize="7" fontFamily="ui-monospace,monospace" fontWeight="800" fill="#ef4444">0 KEYWORDS</text>
+            </g>
+          ) : (
+            <g>
+              <text x={CX} y={CY - 5} textAnchor="middle" dominantBaseline="middle"
+                fontSize="9" fontFamily="ui-sans-serif,sans-serif" fill="#3f3f46">pick a</text>
+              <text x={CX} y={CY + 9} textAnchor="middle" dominantBaseline="middle"
+                fontSize="9" fontFamily="ui-sans-serif,sans-serif" fill="#3f3f46">query</text>
+            </g>
+          )}
         </svg>
       </div>
 
-      {/* Results panel */}
       {activeQuery ? (
         <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4 space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div>
               <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Query</p>
               <p className="text-sm font-bold text-white">"{activeQuery.text}"</p>
             </div>
             <div className="text-right shrink-0">
               <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Keyword hits</p>
-              <p className="text-sm font-bold text-red-400">0</p>
+              <p className="text-lg font-bold text-red-400">0</p>
             </div>
           </div>
-
           <div>
-            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Top matches · cosine similarity</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Semantic matches</p>
             <div className="space-y-2">
               {nearestPoints.map((pt, i) => (
                 <div key={pt.id} className="flex items-center gap-3">
-                  <span className="text-xs text-zinc-600 w-3 shrink-0">{i+1}</span>
+                  <span className="text-zinc-600 text-xs w-3 shrink-0">{i + 1}</span>
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ background: EMB_CAT_COLOR[pt.cat] }}/>
-                  <span className="text-sm text-zinc-200 flex-1 min-w-0 truncate">{pt.label}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0"
+                  <span className="text-sm text-zinc-200 flex-1">{pt.label}</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0"
                     style={{ background: EMB_CAT_COLOR[pt.cat] + "22", color: EMB_CAT_COLOR[pt.cat] }}>
                     {EMB_CAT_LABEL[pt.cat]}
                   </span>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="w-16 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${pt.sim * 100}%`, background: EMB_CAT_COLOR[pt.cat] }}/>
+                    <div className="w-14 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: pt.sim * 100 + "%", background: EMB_CAT_COLOR[pt.cat] }}/>
                     </div>
-                    <span className="font-mono text-xs font-bold text-zinc-300 w-8">{pt.sim.toFixed(2)}</span>
+                    <span className="text-xs font-mono font-bold w-8" style={{ color: EMB_CAT_COLOR[pt.cat] }}>{pt.sim.toFixed(2)}</span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-
-          <div className="border-t border-zinc-800 pt-3">
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              <span className="text-amber-400 font-semibold">Why this works: </span>{activeQuery.note}
-            </p>
-          </div>
+          <p className="text-xs text-zinc-500 border-t border-zinc-800 pt-3 leading-relaxed">
+            <span className="text-amber-400 font-semibold">Why: </span>{activeQuery.note}
+          </p>
         </div>
       ) : (
-        <p className="text-xs text-zinc-600 text-center py-2">← Select a query to see semantic search in action</p>
+        <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-3 text-center text-zinc-600 text-xs">
+          Select a query — zero keyword overlap, pure meaning match
+        </div>
       )}
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-x-5 gap-y-1.5 justify-center">
-        {Object.entries(EMB_CAT_LABEL).map(([k, v]) => (
-          <div key={k} className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full" style={{ background: EMB_CAT_COLOR[k] }}/>
-            <span className="text-xs text-zinc-500">{v}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
