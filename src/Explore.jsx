@@ -21,41 +21,41 @@ const EMB_CAT_LABEL = { rag:"RAG", arch:"Architecture", safety:"Safety", ops:"Op
 // Radii: inner ~95, mid ~120, outer ~145 from center (250,250)
 const EMB_POINTS = [
   // RAG — top sector
-  { id:"r1", cat:"rag",    x:218, y:161, label:"What is RAG?"            },
-  { id:"r2", cat:"rag",    x:225, y:107, label:"Vector DB indexing"       },
-  { id:"r3", cat:"rag",    x:250, y:130, label:"Chunking strategies"      },
-  { id:"r4", cat:"rag",    x:275, y:158, label:"Retrieval pipeline"       },
-  { id:"r5", cat:"rag",    x:311, y:119, label:"Hybrid search"            },
+  { id:"r1", cat:"rag",    x:212, y:146, label:"What is RAG?"            },
+  { id:"r2", cat:"rag",    x:221, y:82, label:"Vector DB indexing"       },
+  { id:"r3", cat:"rag",    x:250, y:109, label:"Chunking strategies"      },
+  { id:"r4", cat:"rag",    x:279, y:142, label:"Retrieval pipeline"       },
+  { id:"r5", cat:"rag",    x:321, y:96, label:"Hybrid search"            },
   // Architecture — top-right sector
-  { id:"a1", cat:"arch",   x:308, y:175, label:"Transformer arch."        },
-  { id:"a2", cat:"arch",   x:358, y:153, label:"Attention mechanism"      },
-  { id:"a3", cat:"arch",   x:354, y:190, label:"KV cache & inference"     },
-  { id:"a4", cat:"arch",   x:340, y:221, label:"Tokenization deep dive"   },
-  { id:"a5", cat:"arch",   x:394, y:230, label:"Positional encoding"      },
+  { id:"a1", cat:"arch",   x:318, y:162, label:"Transformer arch."        },
+  { id:"a2", cat:"arch",   x:377, y:136, label:"Attention mechanism"      },
+  { id:"a3", cat:"arch",   x:372, y:180, label:"KV cache & inference"     },
+  { id:"a4", cat:"arch",   x:355, y:216, label:"Tokenization deep dive"   },
+  { id:"a5", cat:"arch",   x:419, y:227, label:"Positional encoding"      },
   // Safety — right sector
-  { id:"s1", cat:"safety", x:344, y:263, label:"RLHF alignment"           },
-  { id:"s2", cat:"safety", x:388, y:295, label:"Red teaming"              },
-  { id:"s3", cat:"safety", x:354, y:310, label:"Jailbreaks & injection"   },
-  { id:"s4", cat:"safety", x:321, y:314, label:"Constitutional AI"        },
-  { id:"s5", cat:"safety", x:339, y:364, label:"DPO preference learning"  },
+  { id:"s1", cat:"safety", x:360, y:265, label:"RLHF alignment"           },
+  { id:"s2", cat:"safety", x:412, y:303, label:"Red teaming"              },
+  { id:"s3", cat:"safety", x:372, y:320, label:"Jailbreaks & injection"   },
+  { id:"s4", cat:"safety", x:333, y:325, label:"Constitutional AI"        },
+  { id:"s5", cat:"safety", x:354, y:384, label:"DPO preference learning"  },
   // Ops — bottom sector
-  { id:"o1", cat:"ops",    x:286, y:338, label:"Model quantization"       },
-  { id:"o2", cat:"ops",    x:280, y:392, label:"Cost optimization"        },
-  { id:"o3", cat:"ops",    x:250, y:370, label:"Inference at scale"       },
-  { id:"o4", cat:"ops",    x:230, y:343, label:"Latency budgets & SLAs"   },
-  { id:"o5", cat:"ops",    x:196, y:384, label:"GPU memory management"    },
+  { id:"o1", cat:"ops",    x:292, y:353, label:"Model quantization"       },
+  { id:"o2", cat:"ops",    x:285, y:416, label:"Cost optimization"        },
+  { id:"o3", cat:"ops",    x:250, y:391, label:"Inference at scale"       },
+  { id:"o4", cat:"ops",    x:227, y:359, label:"Latency budgets & SLAs"   },
+  { id:"o5", cat:"ops",    x:187, y:407, label:"GPU memory management"    },
   // Agents — left sector
-  { id:"ag1", cat:"agents", x:191, y:325, label:"Agent reasoning loops"  },
-  { id:"ag2", cat:"agents", x:142, y:347, label:"Tool calling patterns"  },
-  { id:"ag3", cat:"agents", x:146, y:310, label:"ReAct framework"        },
-  { id:"ag4", cat:"agents", x:160, y:279, label:"AI planning systems"    },
-  { id:"ag5", cat:"agents", x:106, y:270, label:"Multi-agent systems"    },
+  { id:"ag1", cat:"agents", x:181, y:338, label:"Agent reasoning loops"  },
+  { id:"ag2", cat:"agents", x:123, y:364, label:"Tool calling patterns"  },
+  { id:"ag3", cat:"agents", x:128, y:320, label:"ReAct framework"        },
+  { id:"ag4", cat:"agents", x:145, y:284, label:"AI planning systems"    },
+  { id:"ag5", cat:"agents", x:81, y:273, label:"Multi-agent systems"    },
   // Multimodal — top-left sector
-  { id:"m1", cat:"multi",  x:156, y:237, label:"CLIP embeddings"          },
-  { id:"m2", cat:"multi",  x:112, y:205, label:"Vision Transformers"      },
-  { id:"m3", cat:"multi",  x:146, y:190, label:"Image-text search"        },
-  { id:"m4", cat:"multi",  x:179, y:186, label:"Diffusion models"         },
-  { id:"m5", cat:"multi",  x:161, y:136, label:"Multimodal RAG"           },
+  { id:"m1", cat:"multi",  x:140, y:235, label:"CLIP embeddings"          },
+  { id:"m2", cat:"multi",  x:88, y:197, label:"Vision Transformers"      },
+  { id:"m3", cat:"multi",  x:128, y:180, label:"Image-text search"        },
+  { id:"m4", cat:"multi",  x:167, y:175, label:"Diffusion models"         },
+  { id:"m5", cat:"multi",  x:146, y:116, label:"Multimodal RAG"           },
 ];
 
 // Category labels at sector midpoints, r~205 from center (250,250)
@@ -78,7 +78,7 @@ const EMB_QUERIES = [
     note:'"prefer better answers" shares no words with RLHF, DPO, or Constitutional AI — the concept of preference alignment was found purely by meaning.',
   },
   { id:"q3", text:"Making models cheaper to deploy",
-    nearIds:["o2","o3","o1"], sims:[0.95,0.90,0.88],
+    nearIds:["o1","o3","o5"], sims:[0.95,0.90,0.88],
     note:'"cheaper to deploy" does not appear in quantization, inference at scale, or cost optimization — the cost-reduction intent bridged the vocabulary gap.',
   },
   { id:"q4", text:"Looking up pictures by describing them",
@@ -86,7 +86,7 @@ const EMB_QUERIES = [
     note:'"pictures" and "describing" do not appear in CLIP, ViT, or image-text search — cross-modal retrieval concept found with zero keyword overlap.',
   },
   { id:"q5", text:"Software that decides what to do next",
-    nearIds:["ag1","ag3","ag4"], sims:[0.94,0.90,0.86],
+    nearIds:["ag1","ag3","ag5"], sims:[0.94,0.90,0.86],
     note:'"decides what to do" shares zero words with agent reasoning, ReAct, or AI planning — autonomous decision-making found by concept alone.',
   },
 ];
@@ -158,7 +158,7 @@ function EmbeddingExplorer() {
       `}</style>
 
       <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#07070a" }}>
-        <svg viewBox="0 0 500 500" className="w-full" style={{ display:"block" }}>
+        <svg viewBox="25 25 450 450" className="w-full" style={{ display:"block" }}>
           <defs>
             <radialGradient id="bg-g" cx="50%" cy="50%" r="50%">
               <stop offset="0%"   stopColor="#12121a"/>
@@ -172,16 +172,16 @@ function EmbeddingExplorer() {
 
           <rect width="500" height="500" fill="url(#bg-g)"/>
 
-          <circle cx={CX} cy={CY} r="95"  fill="none" stroke="#ffffff05" strokeWidth="1" strokeDasharray="3 9"/>
-          <circle cx={CX} cy={CY} r="145" fill="none" stroke="#ffffff05" strokeWidth="1" strokeDasharray="3 9"/>
+          <circle cx={CX} cy={CY} r="110" fill="none" stroke="#ffffff05" strokeWidth="1" strokeDasharray="3 9"/>
+          <circle cx={CX} cy={CY} r="170" fill="none" stroke="#ffffff05" strokeWidth="1" strokeDasharray="3 9"/>
 
           {[0,60,120,180,240,300].map(deg => {
             const rad = (deg - 90) * Math.PI / 180;
             return (
               <line key={deg}
                 x1={CX} y1={CY}
-                x2={CX + 215 * Math.cos(rad)}
-                y2={CY + 215 * Math.sin(rad)}
+                x2={CX + 185 * Math.cos(rad)}
+                y2={CY + 185 * Math.sin(rad)}
                 stroke="#ffffff04" strokeWidth="1"/>
             );
           })}
@@ -248,7 +248,7 @@ function EmbeddingExplorer() {
                   <circle cx={pt.x} cy={pt.y} r="16"
                     fill={col} opacity="0.1" filter="url(#emb-glow)"/>
                 )}
-                <circle cx={pt.x} cy={pt.y} r={isNearest ? 7 : 4}
+                <circle cx={pt.x} cy={pt.y} r={isNearest ? 8 : 5}
                   fill={col}
                   opacity={dimmed ? 0.07 : isNearest ? 1 : 0.6}
                   stroke={isNearest ? "#fff" : "none"} strokeWidth="1.5"/>
