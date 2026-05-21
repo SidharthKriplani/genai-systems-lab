@@ -18,6 +18,7 @@ const ExploreApp     = lazy(() => import("./Explore"));
 const AgentsApp      = lazy(() => import("./Agents"));
 const ConsultationApp = lazy(() => import("./Consultation"));
 const PrepLabApp      = lazy(() => import("./PrepLab"));
+const LearningPathsApp = lazy(() => import("./LearningPaths"));
 
 // ─── SCENARIO DATA ────────────────────────────────────────────────────────────
 
@@ -1185,6 +1186,7 @@ const ALL_TABS = [
   { id: "aipm",        label: "AI Product",  group: "GROW",   audience: "Product managers" },
   { id: "career",      label: "Career",      group: "GROW",   audience: "Job seekers" },
   { id: "preplab",     label: "Prep Lab",    group: "GROW",   audience: "Interview prep" },
+  { id: "paths",       label: "Paths",       group: "GROW",   audience: "All levels" },
   { id: "groundtruth", label: "Ground Truth",group: "READ",   audience: "All levels" },
 ];
 
@@ -1709,7 +1711,17 @@ export default function App() {
       localStorage.setItem("genai_streak", JSON.stringify({ count, lastVisit: today }));
     } catch {}
   }, []);
-  const SHORTCUT_TABS = ["home","concepts","flows","lab","agents","systems","playground","explore","fluency","aipm","career"];
+  const SHORTCUT_TABS = ["home","concepts","flows","lab","agents","systems","playground","explore","fluency","aipm","career","paths"];
+
+  function navigateTo({ tab, moduleId, postId, topic, diff }) {
+    if (moduleId) {
+      if (tab === "systems")  setSystemsModule(moduleId);
+      if (tab === "explore")  setExploreModule(moduleId);
+      if (tab === "agents")   setAgentsModule(moduleId);
+    }
+    if (postId) setGtPostId(postId);
+    navigate(tab);
+  }
   useEffect(() => {
     function onKey(e) {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
@@ -2118,6 +2130,7 @@ export default function App() {
           {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} onNavigate={(tab, postId) => { if (postId) setGtPostId(postId); navigate(tab); }} />}
           {topView === "career"     && <CareerApp />}
           {topView === "preplab"    && <PrepLabApp onNavigate={navigate} />}
+          {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} />}
 
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} />}
