@@ -5871,6 +5871,648 @@ function AIDeploymentArchitecture() {
   );
 }
 
+// ─── TRANSFORMER ARCHITECTURE VISUAL ─────────────────────────────────────────
+
+const TX_VIEWS = [
+  { id: "full",      label: "Full Architecture" },
+  { id: "attn",      label: "Self-Attention" },
+  { id: "block",     label: "Transformer Block" },
+  { id: "deconly",   label: "Decoder-Only" },
+];
+
+// Attention animation: CSS-driven, no JS timers needed
+// Static SVGs for everything else — deliberate decision to avoid fake interactivity
+
+function TransformerArchitecture() {
+  const [view, setView] = useState("full");
+  const [animKey, setAnimKey] = useState(0);
+
+  function switchView(v) { setView(v); setAnimKey(k => k + 1); }
+
+  return (
+    <div className="space-y-4">
+      <style>{`
+        @keyframes tx-flow {
+          0%   { opacity: 0; transform: translateY(8px); }
+          15%  { opacity: 1; transform: translateY(0); }
+          85%  { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-8px); }
+        }
+        @keyframes attn-pulse {
+          0%, 100% { opacity: 0.15; }
+          50%       { opacity: 0.9; }
+        }
+        @keyframes attn-line {
+          from { stroke-dashoffset: 60; opacity: 0; }
+          to   { stroke-dashoffset: 0;  opacity: 1; }
+        }
+        @keyframes weight-fill {
+          from { width: 0%; }
+          to   { width: var(--w); }
+        }
+        .tx-block { animation: tx-flow 3s ease-in-out infinite; }
+        .attn-weight { animation: attn-pulse 2s ease-in-out infinite; }
+        .attn-arrow  { animation: attn-line  0.6s ease-out forwards; }
+        .w-fill      { animation: weight-fill 1s ease-out forwards; }
+      `}</style>
+
+      {/* View tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {TX_VIEWS.map(v => (
+          <button key={v.id} onClick={() => switchView(v.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${view === v.id ? "bg-amber-600 border-amber-500 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── FULL ARCHITECTURE ── */}
+      {view === "full" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">The encoder-decoder Transformer (original "Attention Is All You Need"). Modern LLMs use decoder-only — see that view.</p>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#08080a" }}>
+            <svg viewBox="0 0 560 400" className="w-full" style={{ display:"block" }}>
+              {/* Left: Encoder */}
+              <text x="140" y="24" textAnchor="middle" fontSize="11" fontFamily="ui-monospace,monospace" fill="#a1a1aa" fontWeight="600" letterSpacing="0.1em">ENCODER</text>
+              {[
+                { label:"Input Embedding", y:48,  fill:"#27272a", text:"#e4e4e7" },
+                { label:"Positional Encoding", y:90, fill:"#1c1c22", text:"#a1a1aa" },
+                { label:"Multi-Head Attention", y:140, fill:"#1e3a5f", text:"#93c5fd" },
+                { label:"Add & Norm",        y:190, fill:"#1c2a1c", text:"#86efac" },
+                { label:"Feed-Forward (FFN)", y:232, fill:"#2a1c2a", text:"#d8b4fe" },
+                { label:"Add & Norm",        y:274, fill:"#1c2a1c", text:"#86efac" },
+              ].map((b, i) => (
+                <g key={i}>
+                  <rect x="40" y={b.y} width="200" height="32" rx="6" fill={b.fill} stroke="#3f3f46" strokeWidth="1"/>
+                  <text x="140" y={b.y + 20} textAnchor="middle" fontSize="10" fontFamily="ui-sans-serif,sans-serif" fill={b.text}>{b.label}</text>
+                </g>
+              ))}
+              <text x="140" y="330" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">× N layers</text>
+
+              {/* Right: Decoder */}
+              <text x="420" y="24" textAnchor="middle" fontSize="11" fontFamily="ui-monospace,monospace" fill="#a1a1aa" fontWeight="600" letterSpacing="0.1em">DECODER</text>
+              {[
+                { label:"Output Embedding (shifted)", y:48,  fill:"#27272a", text:"#e4e4e7" },
+                { label:"Positional Encoding",         y:90,  fill:"#1c1c22", text:"#a1a1aa" },
+                { label:"Masked Multi-Head Attention", y:140, fill:"#1e3a5f", text:"#93c5fd" },
+                { label:"Add & Norm",                  y:190, fill:"#1c2a1c", text:"#86efac" },
+                { label:"Cross-Attention (enc→dec)",   y:232, fill:"#2a2a1c", text:"#fde68a" },
+                { label:"Feed-Forward (FFN)",          y:274, fill:"#2a1c2a", text:"#d8b4fe" },
+              ].map((b, i) => (
+                <g key={i}>
+                  <rect x="320" y={b.y} width="200" height="32" rx="6" fill={b.fill} stroke="#3f3f46" strokeWidth="1"/>
+                  <text x="420" y={b.y + 20} textAnchor="middle" fontSize="10" fontFamily="ui-sans-serif,sans-serif" fill={b.text}>{b.label}</text>
+                </g>
+              ))}
+              <text x="420" y="330" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">× N layers</text>
+
+              {/* Cross-attention arrow */}
+              <path d="M240 246 Q280 246 320 248" stroke="#fde68a" strokeWidth="1.5" fill="none" strokeDasharray="4 2" opacity="0.6"/>
+              <polygon points="316,244 324,248 316,252" fill="#fde68a" opacity="0.6"/>
+              <text x="280" y="240" textAnchor="middle" fontSize="8" fill="#fde68a" opacity="0.7">cross-attn</text>
+
+              {/* Output */}
+              <rect x="320" y="354" width="200" height="32" rx="6" fill="#1c2a1c" stroke="#3f3f46" strokeWidth="1"/>
+              <text x="420" y="374" textAnchor="middle" fontSize="10" fontFamily="ui-sans-serif,sans-serif" fill="#86efac">Linear + Softmax → Probabilities</text>
+
+              {/* Arrows */}
+              {[[140,80,140,140],[140,222,140,232],[140,264,140,274],
+                [420,80,420,140],[420,222,420,232],[420,306,420,354]].map(([x1,y1,x2,y2],i) => (
+                <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#52525b" strokeWidth="1" markerEnd="url(#arr)"/>
+              ))}
+              <defs>
+                <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#52525b"/>
+                </marker>
+              </defs>
+            </svg>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { k:"Encoder", v:"Processes input sequence bidirectionally" },
+              { k:"Decoder", v:"Generates output token by token, auto-regressive" },
+              { k:"Cross-Attention", v:"Decoder attends to encoder's output at each layer" },
+            ].map(c => (
+              <div key={c.k} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+                <p className="text-[10px] font-bold text-zinc-500 uppercase mb-1">{c.k}</p>
+                <p className="text-xs text-zinc-300">{c.v}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── SELF-ATTENTION (ANIMATED) ── */}
+      {view === "attn" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Self-attention lets every token attend to every other token. The weights show which tokens are most relevant to each other — this is where context understanding happens.</p>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#08080a" }}>
+            <svg key={animKey} viewBox="0 0 560 340" className="w-full" style={{ display:"block" }}>
+              <defs>
+                <marker id="attn-arr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto">
+                  <path d="M0,0 L5,2.5 L0,5 Z" fill="#fbbf24"/>
+                </marker>
+              </defs>
+
+              {/* Tokens — input row */}
+              {["The","cat","sat","on","mat"].map((tok, i) => (
+                <g key={i}>
+                  <rect x={60 + i*90} y={20} width={70} height={28} rx="5" fill="#1e293b" stroke="#334155" strokeWidth="1"/>
+                  <text x={95 + i*90} y={38} textAnchor="middle" fontSize="11" fontFamily="ui-sans-serif,sans-serif" fill="#cbd5e1">{tok}</text>
+                </g>
+              ))}
+              <text x="20" y="38" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">input</text>
+
+              {/* Q K V rows */}
+              {[
+                { label:"Q", y:90,  color:"#93c5fd", bg:"#1e3a5f" },
+                { label:"K", y:130, color:"#fde68a", bg:"#2a2a1c" },
+                { label:"V", y:170, color:"#86efac", bg:"#1c2a1c" },
+              ].map(row => (
+                <g key={row.label}>
+                  <text x="30" y={row.y+16} textAnchor="middle" fontSize="12" fontFamily="ui-monospace,monospace" fontWeight="700" fill={row.color}>{row.label}</text>
+                  {[0,1,2,3,4].map(i => (
+                    <rect key={i} x={60+i*90} y={row.y} width={70} height={24} rx="4" fill={row.bg} stroke={row.color} strokeWidth="0.5" opacity="0.8"/>
+                  ))}
+                </g>
+              ))}
+
+              {/* Attention weight heatmap for "cat" */}
+              <text x="280" y="222" textAnchor="middle" fontSize="9" fill="#a1a1aa" fontFamily="ui-monospace,monospace">attention weights for "cat"</text>
+              {[
+                { tok:"The", w:0.08, idx:0 },
+                { tok:"cat", w:0.55, idx:1 },
+                { tok:"sat", w:0.22, idx:2 },
+                { tok:"on",  w:0.07, idx:3 },
+                { tok:"mat", w:0.08, idx:4 },
+              ].map(a => (
+                <g key={a.tok}>
+                  <rect x={60+a.idx*90} y={234} width={70} height={14} rx="3" fill="#27272a"/>
+                  <rect x={60+a.idx*90} y={234} width={0} height={14} rx="3" fill="#fbbf24"
+                    style={{"--w":`${a.w*100}%`} as React.CSSProperties}
+                    className="w-fill"/>
+                  <text x={95+a.idx*90} y={244} textAnchor="middle" fontSize="8" fill="#e4e4e7">{a.w.toFixed(2)}</text>
+                </g>
+              ))}
+
+              {/* Animated arrows from "cat" Q to each K */}
+              {[0,1,2,3,4].map((i, idx) => (
+                <line key={i}
+                  className="attn-arrow"
+                  x1={185} y1={102}
+                  x2={95+i*90} y2={130}
+                  stroke="#fbbf24" strokeWidth={i===1?2:0.8}
+                  strokeDasharray="60" strokeDashoffset="60"
+                  opacity="0"
+                  markerEnd="url(#attn-arr)"
+                  style={{ animationDelay:`${idx*0.15}s` }}
+                />
+              ))}
+
+              {/* Weighted sum arrow */}
+              <line x1="185" y1="194" x2="185" y2="218" stroke="#86efac" strokeWidth="2" markerEnd="url(#attn-arr)" opacity="0.8"/>
+              <text x="200" y="213" fontSize="9" fill="#86efac">weighted sum of V</text>
+
+              {/* Output */}
+              <rect x="150" y="260" width="70" height="28" rx="5" fill="#1c2a1c" stroke="#86efac" strokeWidth="1.5"/>
+              <text x="185" y="278" textAnchor="middle" fontSize="11" fill="#86efac">cat′</text>
+              <text x="185" y="308" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">context-enriched "cat"</text>
+            </svg>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { k:"Q (Query)", v:"What am I looking for?", color:"#93c5fd" },
+              { k:"K (Key)",   v:"What do I offer?",      color:"#fde68a" },
+              { k:"V (Value)", v:"What do I contribute?", color:"#86efac" },
+            ].map(c => (
+              <div key={c.k} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+                <p className="text-[10px] font-bold uppercase mb-1" style={{ color:c.color }}>{c.k}</p>
+                <p className="text-xs text-zinc-300">{c.v}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TRANSFORMER BLOCK (STATIC) ── */}
+      {view === "block" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">One Transformer block. Stacked N times to form the model. Each block adds context (attention) then transforms (FFN). Residual connections prevent vanishing gradients.</p>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#08080a" }}>
+            <svg viewBox="0 0 360 420" className="w-full" style={{ display:"block" }}>
+              <defs>
+                <marker id="blk-arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#52525b"/>
+                </marker>
+              </defs>
+              {/* Input x */}
+              <circle cx="180" cy="30" r="16" fill="#27272a" stroke="#3f3f46" strokeWidth="1"/>
+              <text x="180" y="35" textAnchor="middle" fontSize="13" fill="#e4e4e7" fontWeight="700">x</text>
+
+              {/* Multi-Head Attention */}
+              <rect x="80" y="70" width="200" height="44" rx="8" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1"/>
+              <text x="180" y="90" textAnchor="middle" fontSize="11" fill="#93c5fd" fontWeight="600">Multi-Head Attention</text>
+              <text x="180" y="106" textAnchor="middle" fontSize="9" fill="#6a9fce">(h parallel attention heads)</text>
+
+              {/* Add & Norm */}
+              <rect x="80" y="132" width="200" height="32" rx="6" fill="#1c2a1c" stroke="#22c55e" strokeWidth="1"/>
+              <text x="180" y="152" textAnchor="middle" fontSize="10" fill="#86efac">Add (residual) & LayerNorm</text>
+
+              {/* FFN */}
+              <rect x="80" y="184" width="200" height="44" rx="8" fill="#2a1c2a" stroke="#a855f7" strokeWidth="1"/>
+              <text x="180" y="204" textAnchor="middle" fontSize="11" fill="#d8b4fe" fontWeight="600">Feed-Forward Network</text>
+              <text x="180" y="220" textAnchor="middle" fontSize="9" fill="#a78abc">Linear → GELU → Linear (dim ×4)</text>
+
+              {/* Add & Norm 2 */}
+              <rect x="80" y="248" width="200" height="32" rx="6" fill="#1c2a1c" stroke="#22c55e" strokeWidth="1"/>
+              <text x="180" y="268" textAnchor="middle" fontSize="10" fill="#86efac">Add (residual) & LayerNorm</text>
+
+              {/* Output */}
+              <circle cx="180" cy="320" r="16" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1"/>
+              <text x="180" y="325" textAnchor="middle" fontSize="13" fill="#93c5fd" fontWeight="700">x′</text>
+
+              {/* Main flow arrows */}
+              {[[180,46,180,70],[180,114,180,132],[180,164,180,184],[180,228,180,248],[180,280,180,304]].map(([x1,y1,x2,y2],i) => (
+                <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#52525b" strokeWidth="1.5" markerEnd="url(#blk-arr)"/>
+              ))}
+
+              {/* Residual skip connections */}
+              <path d="M60,46 Q40,46 40,148 Q40,164 80,164" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeDasharray="4 2" opacity="0.7"/>
+              <path d="M60,164 Q36,164 36,264 Q36,280 80,280" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeDasharray="4 2" opacity="0.7"/>
+
+              <text x="24" y="136" fontSize="8" fill="#22c55e" opacity="0.8" transform="rotate(-90 24 136)">residual</text>
+              <text x="20" y="240" fontSize="8" fill="#22c55e" opacity="0.8" transform="rotate(-90 20 240)">residual</text>
+
+              {/* Repeat indicator */}
+              <text x="180" y="370" textAnchor="middle" fontSize="10" fill="#52525b" fontFamily="ui-monospace,monospace">↑ repeat × N layers ↑</text>
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* ── DECODER-ONLY ── */}
+      {view === "deconly" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">GPT-4o, Claude, Llama, Gemini — all decoder-only Transformers. No encoder. The model generates one token at a time, attending only to previous tokens (causal masking).</p>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background:"#08080a" }}>
+            <svg viewBox="0 0 560 260" className="w-full" style={{ display:"block" }}>
+              {/* Tokens left to right */}
+              {["The","Eiffel","Tower","is","in","___"].map((tok, i) => {
+                const isNext = i === 5;
+                return (
+                  <g key={i}>
+                    <rect x={30+i*84} y={20} width={74} height={30} rx="5"
+                      fill={isNext ? "#1e3a5f" : "#1c1c22"}
+                      stroke={isNext ? "#3b82f6" : "#3f3f46"} strokeWidth="1"/>
+                    <text x={67+i*84} y={39} textAnchor="middle" fontSize={isNext?12:11}
+                      fontFamily="ui-sans-serif,sans-serif"
+                      fill={isNext?"#93c5fd":"#9ca3af"}
+                      fontWeight={isNext?"700":"400"}>
+                      {tok}
+                    </text>
+                  </g>
+                );
+              })}
+              <text x="527" y="36" fontSize="10" fill="#fbbf24">← predict</text>
+
+              {/* Causal mask — triangle */}
+              <text x="280" y="80" textAnchor="middle" fontSize="9" fill="#52525b" fontFamily="ui-monospace,monospace">causal mask (each token sees only previous tokens)</text>
+              <g opacity="0.5">
+                {[0,1,2,3,4,5].map(row =>
+                  [0,1,2,3,4,5].map(col => {
+                    const canAttend = col <= row;
+                    return (
+                      <rect key={`${row}-${col}`}
+                        x={142+col*36} y={92+row*22} width={32} height={18} rx="2"
+                        fill={canAttend ? "#3b82f6" : "#1c1c22"}
+                        opacity={canAttend ? (col===row?0.9:0.35) : 0.05}/>
+                    );
+                  })
+                )}
+              </g>
+              <text x="142" y="88" fontSize="8" fill="#52525b" fontFamily="ui-monospace,monospace">Q\K→</text>
+              {["The","Eiffel","Tower","is","in","___"].map((t,i) => (
+                <text key={i} x={158+i*36} y={88} textAnchor="middle" fontSize="7" fill="#52525b">{t.slice(0,3)}</text>
+              ))}
+              {["The","Eiffel","Tower","is","in","___"].map((t,i) => (
+                <text key={i} x={136} y={105+i*22} textAnchor="end" fontSize="7" fill="#52525b">{t.slice(0,3)}</text>
+              ))}
+
+              {/* KV Cache callout */}
+              <rect x="360" y="92" width="180" height="76" rx="8" fill="#2a2a1c" stroke="#fde68a" strokeWidth="1"/>
+              <text x="450" y="110" textAnchor="middle" fontSize="10" fill="#fde68a" fontWeight="600">KV Cache</text>
+              <text x="450" y="128" textAnchor="middle" fontSize="8.5" fill="#a1a1aa">Previous tokens' K and V</text>
+              <text x="450" y="144" textAnchor="middle" fontSize="8.5" fill="#a1a1aa">vectors are cached — not</text>
+              <text x="450" y="160" textAnchor="middle" fontSize="8.5" fill="#a1a1aa">recomputed each step.</text>
+
+              {/* Output label */}
+              <text x="280" y="234" textAnchor="middle" fontSize="10" fill="#52525b" fontFamily="ui-monospace,monospace">next-token prediction: "Paris" (argmax or temperature sampling)</text>
+            </svg>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { k:"Causal masking", v:"Token at position i can only attend to positions 0…i. Prevents cheating by looking at future tokens." },
+              { k:"KV Cache", v:"Keys and values from previous tokens are cached. Only the new token's Q,K,V are computed — reduces inference cost dramatically." },
+              { k:"Autoregressive generation", v:"One token generated at a time. The output is fed back as input for the next step." },
+              { k:"Why decoder-only?", v:"Simpler, more efficient to train at scale than encoder-decoder. GPT, Claude, Llama all dropped the encoder after 2020." },
+            ].map(c => (
+              <div key={c.k} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+                <p className="text-[10px] font-bold text-amber-400 uppercase mb-1">{c.k}</p>
+                <p className="text-xs text-zinc-300">{c.v}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── STRUCTURED OUTPUT ENGINEERING ────────────────────────────────────────────
+
+const SO_STRATEGIES = [
+  { name: "JSON Mode", reliability: 9, desc: "Set response_format={type:'json_object'}. Model is constrained to output valid JSON. Does not guarantee schema compliance — only valid JSON.", code: `client.messages.create(
+  model="claude-3-5-sonnet-20241022",
+  max_tokens=1024,
+  system="Output valid JSON only.",
+  messages=[{"role":"user","content":"Extract name and age from: John Smith, 34"}]
+)
+# Returns: {"name": "John Smith", "age": 34}`, when: "Simple extraction, no strict schema needed. Fastest approach." },
+  { name: "Tool / Function Calling", reliability: 10, desc: "Define a tool schema. Model is forced to call it with arguments matching the schema exactly. Most reliable structured output method.", code: `tools = [{
+  "name": "extract_person",
+  "description": "Extract structured person data",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "name":  {"type": "string"},
+      "age":   {"type": "integer", "minimum": 0},
+      "email": {"type": "string", "format": "email"}
+    },
+    "required": ["name", "age"]
+  }
+}]
+# Model MUST call extract_person — no free-form text`, when: "Production use. Schema is fixed and known upfront. Highest reliability." },
+  { name: "Pydantic + Instructor", reliability: 9, desc: "Use the Instructor library to automatically retry on schema validation failure. Define schema as a Pydantic model.", code: `import instructor
+from pydantic import BaseModel
+from anthropic import Anthropic
+
+class Person(BaseModel):
+    name: str
+    age: int
+    email: str | None = None
+
+client = instructor.from_anthropic(Anthropic())
+person = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    response_model=Person,  # <— Pydantic model
+    messages=[{"role":"user","content":"Extract: John Smith, 34, john@email.com"}]
+)
+# person.name == "John Smith", person.age == 34`, when: "Complex nested schemas. Need automatic validation + retry on failure." },
+  { name: "XML + Regex Parsing", reliability: 7, desc: "Ask model to wrap output in XML tags. Parse with regex or BeautifulSoup. Works without any special API features.", code: `system = """
+Respond ONLY in this format:
+<person>
+  <name>...</name>
+  <age>...</age>
+</person>
+"""
+# Parse response:
+import re
+name = re.search(r"<name>(.*?)</name>", response).group(1)
+age  = int(re.search(r"<age>(.*?)</age>",  response).group(1))`, when: "Older models without JSON mode. Simple extraction. Claude responds especially well to XML tags." },
+];
+
+const SO_FAILURE_MODES = [
+  { issue: "Schema drift", cause: "Model generates valid JSON but ignores required fields or adds unexpected ones.", fix: "Always validate against schema after generation. Never trust unvalidated LLM output in production." },
+  { issue: "Nested object failures", cause: "Complex nested schemas with many levels of nesting exceed model's ability to track structure consistently.", fix: "Flatten where possible. Split into multiple calls for deeply nested schemas. Use tool calling (most reliable for complex schemas)." },
+  { issue: "Type coercion errors", cause: "Model outputs '34' (string) instead of 34 (integer). Pydantic will catch this; raw JSON parsing won't.", fix: "Use Pydantic or a JSON schema validator (jsonschema library). Never rely on implicit type coercion." },
+  { issue: "Markdown leakage", cause: "Model wraps JSON in ```json code fences. json.loads() fails.", fix: "Strip markdown: re.sub(r'```json\\s*|```', '', response). Or use JSON mode which eliminates this." },
+  { issue: "Long extraction truncation", cause: "Max_tokens reached mid-JSON — output is incomplete and unparseable.", fix: "Set max_tokens generously. Check finish_reason='stop' not 'max_tokens'. Use streaming + detect truncation." },
+];
+
+function StructuredOutputEngineering() {
+  const [tab, setTab] = useState("strategies");
+  const [selStrategy, setSelStrategy] = useState(null);
+  const TABS = [{ id:"strategies", label:"Strategies" }, { id:"failures", label:"Failure Modes" }, { id:"checklist", label:"Production Checklist" }];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${tab === t.id ? "bg-teal-700 border-teal-600 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "strategies" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Four strategies ranked by reliability. Tool calling is the production standard — use XML only when APIs don't support function calling.</p>
+          {SO_STRATEGIES.map((s, i) => (
+            <div key={i} onClick={() => setSelStrategy(selStrategy === i ? null : i)}
+              className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all ${selStrategy === i ? "border-teal-500/50" : "border-zinc-800 hover:border-zinc-600"}`}>
+              <div className="flex items-start justify-between gap-3 mb-1">
+                <p className="text-sm font-bold text-zinc-100">{s.name}</p>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex gap-0.5">
+                    {Array.from({length:10}).map((_,j) => (
+                      <div key={j} className="w-2 h-2 rounded-sm" style={{ background: j < s.reliability ? "#14b8a6" : "#27272a" }}/>
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-zinc-500">{s.reliability}/10</span>
+                </div>
+              </div>
+              <p className="text-xs text-zinc-400 mb-1">{s.desc}</p>
+              <p className="text-[10px] text-teal-400"><span className="font-semibold">Use when:</span> {s.when}</p>
+              {selStrategy === i && (
+                <pre className="mt-3 bg-zinc-950 rounded-lg p-3 text-[10px] text-zinc-300 font-mono overflow-x-auto whitespace-pre border border-zinc-800">{s.code}</pre>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "failures" && (
+        <div className="space-y-3">
+          {SO_FAILURE_MODES.map((f, i) => (
+            <div key={i} className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+              <p className="text-sm font-bold text-zinc-100 mb-1">{f.issue}</p>
+              <p className="text-xs text-zinc-500 mb-2"><span className="text-zinc-400">Cause:</span> {f.cause}</p>
+              <p className="text-xs text-emerald-400"><span className="font-semibold">Fix:</span> {f.fix}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "checklist" && (
+        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-4">
+          {[
+            { phase:"Schema design", items:["Use tool calling / function calling as default — not JSON mode","Keep schemas flat where possible (< 3 levels of nesting)","Mark all truly required fields as required — optional fields cause hallucination","Add description to every field — the model reads them","Test schema with 50+ diverse inputs before shipping"] },
+            { phase:"Validation layer", items:["Never use LLM output without validation in production","Use Pydantic or jsonschema for schema validation","Validate types explicitly — '34' ≠ 34","Check finish_reason: if 'max_tokens', output is truncated — retry or increase limit"] },
+            { phase:"Error handling", items:["Retry up to 3× on validation failure — use Instructor for automatic retry","Log every validation failure with input + output — your training data for future fine-tuning","Alert on validation failure rate > 2% — something changed in model behavior","Have a fallback: if structured extraction fails 3×, surface raw text to human review"] },
+          ].map(phase => (
+            <div key={phase.phase}>
+              <p className="text-xs font-bold text-teal-400 uppercase tracking-wide mb-2">{phase.phase}</p>
+              {phase.items.map((item, i) => (
+                <div key={i} className="flex gap-2 mb-1.5">
+                  <span className="text-zinc-600 text-xs mt-0.5 shrink-0">☐</span>
+                  <p className="text-xs text-zinc-300">{item}</p>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── SYNTHETIC DATA GENERATION ────────────────────────────────────────────────
+
+const SYNTH_METHODS = [
+  { name: "Self-Instruct", complexity: "Low", output: "Instruction-response pairs", desc: "Use a capable LLM to generate diverse instructions from a small seed set, then generate responses. Bootstraps training data from nothing.", code: `# Simplified self-instruct loop
+seed_tasks = ["Summarize this text", "Write a SQL query", "Explain this error"]
+
+def generate_new_task(seed_tasks, llm):
+    prompt = f"""
+Generate 5 new diverse instruction tasks different from these examples:
+{seed_tasks[:3]}
+Each task should be on a different topic. Output as JSON array.
+"""
+    new_tasks = llm(prompt)
+    responses = [llm(task) for task in new_tasks]
+    return list(zip(new_tasks, responses))`, when: "No training data exists. Need instruction-following data fast." },
+  { name: "Persona-Driven Generation", complexity: "Medium", output: "Diverse, realistic user inputs", desc: "Generate a corpus of personas (demographics, expertise levels, writing styles). Have each persona generate inputs. Creates realistic distribution of user behavior.", code: `personas = [
+  {"role":"senior engineer","style":"terse, technical","context":"debugging prod"},
+  {"role":"student","style":"verbose, uncertain","context":"learning basics"},
+  {"role":"PM","style":"business-focused","context":"evaluating tool"},
+]
+
+for persona in personas:
+    prompt = f"""You are: {persona['role']}
+Writing style: {persona['style']}
+Context: {persona['context']}
+Generate 10 realistic questions you would ask an AI assistant."""
+    inputs = llm(prompt)
+    # Now generate ground-truth answers and store as training pairs`, when: "Need realistic user distribution. Building a customer-facing product with diverse users." },
+  { name: "LLM-as-Judge Filtering", complexity: "High", output: "Filtered high-quality subset", desc: "Generate N samples, use a separate (or same) LLM to score quality. Keep only top-K. Reduces noise before fine-tuning.", code: `def quality_filter(samples, judge_llm, threshold=0.8):
+    filtered = []
+    for sample in samples:
+        score_prompt = f"""
+Rate the quality of this instruction-response pair (0.0-1.0):
+Instruction: {sample['instruction']}
+Response: {sample['response']}
+
+Score on: accuracy, clarity, completeness, no hallucination.
+Output JSON: {{"score": 0.0-1.0, "reason": "..."}}
+"""
+        result = judge_llm(score_prompt)
+        if result["score"] >= threshold:
+            filtered.append(sample)
+    return filtered  # typically keeps 40-70% of generated data`, when: "Quality matters more than quantity. You have a small fine-tuning budget." },
+  { name: "Evol-Instruct (WizardLM)", complexity: "High", output: "Progressively harder instructions", desc: "Iteratively evolve simple instructions into more complex ones. Start with 'Write a function', evolve to 'Write a thread-safe function with error handling and unit tests'.", code: `def evolve_instruction(instruction, llm, evolution_type="depth"):
+    if evolution_type == "depth":
+        prompt = f"""Make this instruction more complex by adding constraints:
+Original: {instruction}
+Add: error handling requirements, edge cases, performance constraints.
+Output only the evolved instruction."""
+    elif evolution_type == "breadth":
+        prompt = f"""Create a NEW instruction on a related but different topic:
+Original topic: {instruction}
+New instruction should be at similar difficulty level."""
+    return llm(prompt)`, when: "Need to train models to handle hard/nuanced instructions. Building coding or reasoning datasets." },
+];
+
+const SYNTH_QUALITY = [
+  { check: "Deduplication", why: "LLMs generate near-duplicate instructions. Duplicates waste compute and cause overfitting.", how: "MinHash LSH or embedding similarity > 0.95 → drop. Target < 5% near-duplicate rate." },
+  { check: "Format consistency", why: "Mixing response styles confuses fine-tuning.", how: "Standardize: same system prompt format, consistent response length range, uniform handling of code blocks." },
+  { check: "Factual verification", why: "LLM-generated ground truth can be wrong — especially for math, dates, specific facts.", how: "For factual domains: generate, then verify with a separate judge prompt. Or use structured tasks where correctness is deterministic (code execution)." },
+  { check: "Distribution coverage", why: "LLMs over-generate common patterns and under-generate edge cases.", how: "Track topic distribution. Explicitly generate underrepresented categories. Target at least 100 examples per category." },
+  { check: "Held-out validation set", why: "Can't measure fine-tuning impact without a real eval set.", how: "Never include synthetic validation data in training. Use human-labeled examples as the ground truth eval set." },
+];
+
+function SyntheticDataGeneration() {
+  const [tab, setTab] = useState("methods");
+  const [selMethod, setSelMethod] = useState(null);
+  const TABS = [{ id:"methods", label:"Generation Methods" }, { id:"quality", label:"Quality Checklist" }, { id:"pipeline", label:"Full Pipeline" }];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${tab === t.id ? "bg-pink-700 border-pink-600 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "methods" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Four methods used at frontier labs to generate training and eval data. Click for code.</p>
+          {SYNTH_METHODS.map((m, i) => (
+            <div key={i} onClick={() => setSelMethod(selMethod === i ? null : i)}
+              className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all ${selMethod === i ? "border-pink-500/50" : "border-zinc-800 hover:border-zinc-600"}`}>
+              <div className="flex items-start gap-3 mb-1">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded border shrink-0 ${m.complexity==="Low"?"bg-emerald-900/40 text-emerald-300 border-emerald-700/40":m.complexity==="Medium"?"bg-amber-900/40 text-amber-300 border-amber-700/40":"bg-red-900/40 text-red-300 border-red-700/40"}`}>{m.complexity}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-zinc-100">{m.name}</p>
+                  <p className="text-[10px] text-zinc-600">Output: {m.output}</p>
+                </div>
+              </div>
+              <p className="text-xs text-zinc-400 mb-1">{m.desc}</p>
+              <p className="text-[10px] text-pink-400"><span className="font-semibold">Use when:</span> {m.when}</p>
+              {selMethod === i && (
+                <pre className="mt-3 bg-zinc-950 rounded-lg p-3 text-[10px] text-zinc-300 font-mono overflow-x-auto whitespace-pre border border-zinc-800">{m.code}</pre>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "quality" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Bad synthetic data produces models that fail in subtle ways. These checks prevent the most common quality failures.</p>
+          {SYNTH_QUALITY.map((q, i) => (
+            <div key={i} className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+              <p className="text-sm font-bold text-zinc-100 mb-1">{q.check}</p>
+              <p className="text-xs text-zinc-500 mb-2"><span className="text-zinc-400">Why it matters:</span> {q.why}</p>
+              <p className="text-xs text-emerald-400"><span className="font-semibold">How to check:</span> {q.how}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "pipeline" && (
+        <div className="space-y-3">
+          <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-3">
+            <h3 className="text-sm font-bold text-zinc-200">Production Synthetic Data Pipeline</h3>
+            {[
+              { step:"1. Define task taxonomy", detail:"List every task type your model needs to handle. Aim for 20–50 categories. This is your coverage target." },
+              { step:"2. Generate seed examples", detail:"Write 5–10 high-quality human examples per category. These are your quality anchors and few-shot examples for generation." },
+              { step:"3. Generate at scale", detail:"Use self-instruct or persona-driven generation with the seed examples as few-shot prompts. Target 500–2000 examples per category." },
+              { step:"4. Evolve for difficulty", detail:"Apply Evol-Instruct to create a difficulty gradient. 60% easy, 30% medium, 10% hard." },
+              { step:"5. Filter with LLM-as-judge", detail:"Score all generated examples. Drop anything below 0.75/1.0. Expect to keep 50–70% of generated data." },
+              { step:"6. Deduplicate", detail:"MinHash LSH or cosine similarity on embeddings. Drop near-duplicates (sim > 0.95)." },
+              { step:"7. Human spot-check", detail:"Manually review 5% of the final dataset. Check for factual errors, format issues, and bias patterns." },
+              { step:"8. Create held-out eval", detail:"10% of data becomes eval — never seen during training. Human-labeled eval beats synthetic eval for trustworthiness." },
+            ].map((s, i) => (
+              <div key={i} className="flex gap-3">
+                <span className="w-5 h-5 rounded-full bg-pink-900/50 border border-pink-700/40 text-pink-300 text-[10px] flex items-center justify-center shrink-0 mt-0.5 font-bold">{i+1}</span>
+                <div>
+                  <p className="text-xs font-semibold text-zinc-200">{s.step}</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">{s.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 const SYSTEMS_MODULES = [
   { id: "evals",         label: "Evals Lab",          tag: "DESIGN",     group: "DESIGN",  component: EvalsLab           },
@@ -5897,6 +6539,9 @@ const SYSTEMS_MODULES = [
   { id: "promptlab",    label: "Prompt Engineering Lab",  tag: "PROMPT",   group: "DESIGN",  component: PromptEngineeringLab },
   { id: "redteam",      label: "AI Red Teaming",          tag: "SECURITY", group: "OPS",     component: AIRedTeaming },
   { id: "deploy",       label: "Deployment Architecture", tag: "INFRA",    group: "OPS",     component: AIDeploymentArchitecture },
+  { id: "txarch",       label: "Transformer Architecture",tag: "VISUAL",   group: "DESIGN",  component: TransformerArchitecture },
+  { id: "structout",    label: "Structured Outputs",      tag: "SCHEMA",   group: "DESIGN",  component: StructuredOutputEngineering },
+  { id: "synthdata",    label: "Synthetic Data",          tag: "DATA",     group: "DESIGN",  component: SyntheticDataGeneration },
   { id: "buildthis",    label: "Build This",              tag: "BUILD",    group: "BUILD",   component: BuildThis },
 ];
 

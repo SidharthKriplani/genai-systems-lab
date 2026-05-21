@@ -16,107 +16,115 @@ function proj3D(x, y, z, rx, ry, scale = 90) {
 const EMB_CAT_COLOR = { rag:"#3b82f6", arch:"#f59e0b", safety:"#ef4444", ops:"#10b981", agents:"#8b5cf6", multi:"#38bdf8" };
 const EMB_CAT_LABEL = { rag:"RAG", arch:"Architecture", safety:"Safety", ops:"Ops", agents:"Agents", multi:"Multimodal" };
 
-// 30 points in 6 clusters — 2D positions in a 520×360 SVG viewBox
+// Redesigned embedding space — wider canvas, cluster halos, always-visible labels,
+// cosine similarity scores, animated connection lines via CSS keyframes
+
+// 30 points spread across a 600×420 canvas with deliberate cluster separation
 const EMB_POINTS = [
-  // RAG  top-left
-  { id:"r1", label:"What is RAG?",              cat:"rag",    sx: 100, sy: 118 },
-  { id:"r2", label:"Vector DB indexing",         cat:"rag",    sx: 138, sy: 128 },
-  { id:"r3", label:"Chunking strategies",        cat:"rag",    sx: 108, sy: 146 },
-  { id:"r4", label:"Retrieval pipeline",         cat:"rag",    sx: 130, sy: 112 },
-  { id:"r5", label:"Context window limits",      cat:"rag",    sx: 118, sy: 135 },
-  // Architecture  top-right
-  { id:"a1", label:"Transformer architecture",   cat:"arch",   sx: 372, sy: 104 },
-  { id:"a2", label:"Attention mechanism",        cat:"arch",   sx: 400, sy: 122 },
-  { id:"a3", label:"KV cache & inference",       cat:"arch",   sx: 376, sy: 130 },
-  { id:"a4", label:"Tokenization deep dive",     cat:"arch",   sx: 396, sy: 104 },
-  { id:"a5", label:"Prompt budget planning",     cat:"arch",   sx: 384, sy: 118 },
-  // Safety  right-middle
-  { id:"s1", label:"RLHF alignment",             cat:"safety", sx: 428, sy: 212 },
-  { id:"s2", label:"Red teaming",                cat:"safety", sx: 448, sy: 230 },
-  { id:"s3", label:"Jailbreaks & injection",     cat:"safety", sx: 422, sy: 234 },
-  { id:"s4", label:"Constitutional AI",          cat:"safety", sx: 442, sy: 210 },
-  { id:"s5", label:"DPO preference learning",    cat:"safety", sx: 448, sy: 222 },
-  // Ops  bottom-center
-  { id:"o1", label:"Model quantization",         cat:"ops",    sx: 238, sy: 294 },
-  { id:"o2", label:"Cost optimization",          cat:"ops",    sx: 264, sy: 312 },
-  { id:"o3", label:"Inference at scale",         cat:"ops",    sx: 240, sy: 318 },
-  { id:"o4", label:"Latency budgets & SLAs",     cat:"ops",    sx: 260, sy: 296 },
-  { id:"o5", label:"GPU memory management",      cat:"ops",    sx: 250, sy: 310 },
-  // Agents  bottom-right
-  { id:"ag1", label:"Agent reasoning loops",     cat:"agents", sx: 375, sy: 296 },
-  { id:"ag2", label:"Tool calling patterns",     cat:"agents", sx: 400, sy: 316 },
-  { id:"ag3", label:"ReAct framework",           cat:"agents", sx: 372, sy: 318 },
-  { id:"ag4", label:"AI planning systems",       cat:"agents", sx: 394, sy: 294 },
-  { id:"ag5", label:"Multi-agent coordination",  cat:"agents", sx: 386, sy: 308 },
-  // Multimodal  bottom-left
-  { id:"m1", label:"CLIP embeddings",            cat:"multi",  sx:  92, sy: 280 },
-  { id:"m2", label:"Vision Transformers (ViT)",  cat:"multi",  sx: 118, sy: 298 },
-  { id:"m3", label:"Image-text search",          cat:"multi",  sx:  88, sy: 298 },
-  { id:"m4", label:"Diffusion models",           cat:"multi",  sx: 110, sy: 278 },
-  { id:"m5", label:"Multimodal RAG",             cat:"multi",  sx: 104, sy: 294 },
+  // RAG — top-left
+  { id:"r1", label:"What is RAG?",             cat:"rag",    x:  82, y:  90 },
+  { id:"r2", label:"Vector DB indexing",        cat:"rag",    x: 122, y: 106 },
+  { id:"r3", label:"Chunking strategies",       cat:"rag",    x:  74, y: 120 },
+  { id:"r4", label:"Retrieval pipeline",        cat:"rag",    x: 108, y:  78 },
+  { id:"r5", label:"Hybrid search",             cat:"rag",    x:  96, y: 132 },
+  // Architecture — top-right
+  { id:"a1", label:"Transformer architecture",  cat:"arch",   x: 468, y:  80 },
+  { id:"a2", label:"Attention mechanism",       cat:"arch",   x: 504, y: 100 },
+  { id:"a3", label:"KV cache & inference",      cat:"arch",   x: 476, y: 116 },
+  { id:"a4", label:"Tokenization deep dive",    cat:"arch",   x: 500, y:  72 },
+  { id:"a5", label:"Positional encoding",       cat:"arch",   x: 488, y: 104 },
+  // Safety — center-right
+  { id:"s1", label:"RLHF alignment",            cat:"safety", x: 504, y: 222 },
+  { id:"s2", label:"Red teaming",               cat:"safety", x: 530, y: 244 },
+  { id:"s3", label:"Jailbreaks & injection",    cat:"safety", x: 498, y: 252 },
+  { id:"s4", label:"Constitutional AI",         cat:"safety", x: 524, y: 216 },
+  { id:"s5", label:"DPO preference learning",   cat:"safety", x: 516, y: 238 },
+  // Ops — bottom-center
+  { id:"o1", label:"Model quantization",        cat:"ops",    x: 268, y: 354 },
+  { id:"o2", label:"Cost optimization",         cat:"ops",    x: 304, y: 374 },
+  { id:"o3", label:"Inference at scale",        cat:"ops",    x: 276, y: 374 },
+  { id:"o4", label:"Latency budgets & SLAs",    cat:"ops",    x: 300, y: 348 },
+  { id:"o5", label:"GPU memory management",     cat:"ops",    x: 286, y: 362 },
+  // Agents — bottom-right
+  { id:"ag1", label:"Agent reasoning loops",    cat:"agents", x: 456, y: 348 },
+  { id:"ag2", label:"Tool calling patterns",    cat:"agents", x: 490, y: 366 },
+  { id:"ag3", label:"ReAct framework",          cat:"agents", x: 452, y: 368 },
+  { id:"ag4", label:"AI planning systems",      cat:"agents", x: 484, y: 344 },
+  { id:"ag5", label:"Multi-agent systems",      cat:"agents", x: 470, y: 358 },
+  // Multimodal — bottom-left
+  { id:"m1", label:"CLIP embeddings",           cat:"multi",  x:  84, y: 340 },
+  { id:"m2", label:"Vision Transformers (ViT)", cat:"multi",  x: 114, y: 358 },
+  { id:"m3", label:"Image-text search",         cat:"multi",  x:  78, y: 360 },
+  { id:"m4", label:"Diffusion models",          cat:"multi",  x: 108, y: 334 },
+  { id:"m5", label:"Multimodal RAG",            cat:"multi",  x:  96, y: 372 },
 ];
 
-// 5 queries — placed at cluster centers for high similarity scores
+// Cluster centroids for halos and labels
+const EMB_CLUSTERS = [
+  { cat:"rag",    cx:  96, cy: 105, rx: 58, ry: 42, label:"RAG",         labelY:  52 },
+  { cat:"arch",   cx: 490, cy:  94, rx: 50, ry: 38, label:"Architecture", labelY:  42 },
+  { cat:"safety", cx: 514, cy: 234, rx: 44, ry: 38, label:"Safety",      labelY: 182 },
+  { cat:"ops",    cx: 287, cy: 362, rx: 54, ry: 30, label:"Ops",         labelY: 318 },
+  { cat:"agents", cx: 470, cy: 357, rx: 54, ry: 30, label:"Agents",      labelY: 314 },
+  { cat:"multi",  cx:  96, cy: 353, rx: 54, ry: 32, label:"Multimodal",  labelY: 308 },
+];
+
+// Queries with precomputed nearest IDs and cosine similarities
 const EMB_QUERIES = [
   {
-    id: "q1", sx: 384, sy: 116,   // Architecture cluster
-    text: "How much text can a model process?",
-    note: '"text" and "process" appear in NONE of the results — the model mapped everyday language to ML concepts (KV cache, tokenization, prompt budgeting) by meaning alone.',
+    id:"q1", x:490, y:94,
+    text:"How much text can a model process?",
+    nearIds:["a3","a4","a1"], sims:[0.93,0.89,0.85],
+    note:'"text" and "process" match zero keywords — the model mapped everyday language to KV cache, tokenization, and architecture by meaning alone.',
   },
   {
-    id: "q2", sx: 436, sy: 220,   // Safety cluster
-    text: "Teaching AI to prefer better answers",
-    note: '"prefer better answers" shares zero words with "RLHF", "DPO", or "Constitutional AI" — the model understood preference alignment without any keyword match.',
+    id:"q2", x:514, y:234,
+    text:"Teaching AI to prefer better answers",
+    nearIds:["s1","s5","s4"], sims:[0.94,0.91,0.87],
+    note:'"prefer better answers" shares no words with "RLHF", "DPO", or "Constitutional AI" — pure conceptual alignment.',
   },
   {
-    id: "q3", sx: 250, sy: 306,   // Ops cluster
-    text: "Making models cheaper to deploy",
-    note: '"cheaper to deploy" doesn\'t appear in "quantization", "inference at scale", or "cost optimization" — the model found cost-reduction concepts from intent alone.',
+    id:"q3", x:287, y:362,
+    text:"Making models cheaper to deploy",
+    nearIds:["o2","o3","o1"], sims:[0.95,0.90,0.88],
+    note:'"cheaper to deploy" isn\'t in "quantization", "inference at scale", or "cost optimization" — intent matched, zero keywords.',
   },
   {
-    id: "q4", sx: 104, sy: 290,   // Multimodal cluster
-    text: "Looking up pictures by describing them",
-    note: '"pictures" and "describing" don\'t appear in "CLIP embeddings", "ViT", or "image-text search" — the model bridged everyday language to precise technical concepts.',
+    id:"q4", x:96, y:353,
+    text:"Looking up pictures by describing them",
+    nearIds:["m3","m1","m2"], sims:[0.96,0.91,0.87],
+    note:'"pictures" and "describing" don\'t appear in "CLIP", "ViT", or "image-text search" — the model bridged everyday language to precise concepts.',
   },
   {
-    id: "q5", sx: 386, sy: 308,   // Agents cluster
-    text: "Software that decides what to do next",
-    note: '"decides what to do" shares zero words with "agent reasoning loops", "ReAct framework", or "AI planning systems" — pure conceptual match, zero lexical overlap.',
+    id:"q5", x:470, y:357,
+    text:"Software that decides what to do next",
+    nearIds:["ag1","ag3","ag4"], sims:[0.94,0.90,0.86],
+    note:'"decides what to do" shares zero words with "agent reasoning loops", "ReAct", or "AI planning" — pure conceptual match.',
   },
 ];
 
 function EmbeddingExplorer() {
   const [activeQuery, setActiveQuery] = useState(EMB_QUERIES[0]);
-  const [hovered, setHovered]         = useState(null);
-
-  const nearest = useMemo(() => {
-    if (!activeQuery) return [];
-    return [...EMB_POINTS]
-      .map(pt => {
-        const dx = pt.sx - activeQuery.sx, dy = pt.sy - activeQuery.sy;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const sim = +Math.max(0.62, Math.min(0.97, 1 - dist * 0.006)).toFixed(2);
-        return { ...pt, dist, sim };
-      })
-      .sort((a, b) => a.dist - b.dist)
-      .slice(0, 3);
-  }, [activeQuery]);
-
-  const nearIds = useMemo(() => new Set(nearest.map(n => n.id)), [nearest]);
+  const [animKey, setAnimKey] = useState(0);
 
   function selectQuery(q) {
-    setActiveQuery(prev => prev?.id === q.id ? null : q);
+    setActiveQuery(prev => {
+      if (prev?.id === q.id) return null;
+      setAnimKey(k => k + 1);
+      return q;
+    });
   }
 
-  // Cluster label positions (centroid of each cluster)
-  const CLUSTER_LABELS = [
-    { cat:"rag",    cx:119, cy:104 },
-    { cat:"arch",   cx:386, cy:90  },
-    { cat:"safety", cx:438, cy:198 },
-    { cat:"ops",    cx:250, cy:280 },
-    { cat:"agents", cx:385, cy:280 },
-    { cat:"multi",  cx:103, cy:264 },
-  ];
+  const nearestPoints = useMemo(() => {
+    if (!activeQuery) return [];
+    return activeQuery.nearIds.map((id, i) => ({
+      ...EMB_POINTS.find(p => p.id === id),
+      sim: activeQuery.sims[i],
+      rank: i,
+    }));
+  }, [activeQuery]);
+
+  const nearSet = useMemo(() => new Set(activeQuery?.nearIds || []), [activeQuery]);
 
   return (
     <div className="space-y-4">
@@ -124,181 +132,204 @@ function EmbeddingExplorer() {
         objective="Pick a query. Watch semantic search find conceptually matching results — without matching a single keyword."
         steps={[
           "Click any query button — note the words it uses",
-          "Lines appear connecting it to the 3 nearest points in embedding space",
+          "Animated lines connect it to the 3 nearest points by meaning",
           "Read the matched labels: none share words with your query",
           "This is the aha moment — embeddings encode meaning, not text",
         ]}
       />
-      <p className="text-[11px] text-zinc-600 font-mono">◌ 2D projection of precomputed embedding coordinates — hover points to see labels.</p>
 
-      {/* Query selector */}
+      {/* Query pills */}
       <div className="flex flex-wrap gap-2">
         {EMB_QUERIES.map(q => (
           <button key={q.id} onClick={() => selectQuery(q)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
               activeQuery?.id === q.id
-                ? "bg-white text-zinc-900 font-bold"
-                : "bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700"
+                ? "bg-white text-zinc-900 font-bold border-white"
+                : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border-zinc-700 hover:border-zinc-500"
             }`}>
             {q.text}
           </button>
         ))}
       </div>
 
-      {/* SVG scatter map */}
-      <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background: "#09090b" }}>
-        <svg viewBox="0 0 520 360" className="w-full" style={{ display: "block" }}>
-          {/* Subtle dot-grid background */}
-          <defs>
-            <pattern id="emb-grid" x="0" y="0" width="26" height="26" patternUnits="userSpaceOnUse">
-              <circle cx="1" cy="1" r="0.7" fill="#27272a" />
-            </pattern>
-          </defs>
-          <rect width="520" height="360" fill="url(#emb-grid)" />
+      {/* SVG map */}
+      <style>{`
+        @keyframes dash-draw {
+          from { stroke-dashoffset: 120; opacity: 0; }
+          to   { stroke-dashoffset: 0;   opacity: 0.85; }
+        }
+        @keyframes sim-pop {
+          from { opacity: 0; transform: scale(0.6); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        .emb-line { animation: dash-draw 0.5s ease-out forwards; }
+        .emb-sim  { animation: sim-pop 0.3s 0.4s ease-out both; }
+      `}</style>
 
-          {/* Cluster labels */}
-          {CLUSTER_LABELS.map(l => (
-            <text key={l.cat} x={l.cx} y={l.cy}
-              textAnchor="middle" fontSize="9" fontFamily="monospace"
-              fill={EMB_CAT_COLOR[l.cat]} opacity="0.55">
-              {EMB_CAT_LABEL[l.cat]}
+      <div className="rounded-xl border border-zinc-800 overflow-hidden" style={{ background: "#08080a" }}>
+        <svg viewBox="0 0 600 420" className="w-full" style={{ display:"block" }}>
+          <defs>
+            <pattern id="eg2" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+              <circle cx="0.5" cy="0.5" r="0.6" fill="#1f1f23"/>
+            </pattern>
+            {/* Radial gradients for cluster halos */}
+            {EMB_CLUSTERS.map(c => (
+              <radialGradient key={c.cat + "-g"} id={"hg-" + c.cat} cx="50%" cy="50%" r="50%">
+                <stop offset="0%"   stopColor={EMB_CAT_COLOR[c.cat]} stopOpacity="0.13"/>
+                <stop offset="100%" stopColor={EMB_CAT_COLOR[c.cat]} stopOpacity="0"/>
+              </radialGradient>
+            ))}
+          </defs>
+
+          <rect width="600" height="420" fill="url(#eg2)"/>
+
+          {/* Cluster halos */}
+          {EMB_CLUSTERS.map(c => (
+            <ellipse key={c.cat}
+              cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry}
+              fill={`url(#hg-${c.cat})`}/>
+          ))}
+
+          {/* Cluster labels — always visible */}
+          {EMB_CLUSTERS.map(c => (
+            <text key={c.cat + "-lbl"}
+              x={c.cx} y={c.labelY}
+              textAnchor="middle" fontSize="9.5" fontFamily="ui-monospace, monospace"
+              letterSpacing="0.08em" fontWeight="600"
+              fill={EMB_CAT_COLOR[c.cat]} opacity="0.7">
+              {c.label.toUpperCase()}
             </text>
           ))}
 
-          {/* Connection lines (query → nearest) */}
-          {activeQuery && nearest.map((n, i) => (
-            <g key={n.id}>
-              <line x1={activeQuery.sx} y1={activeQuery.sy} x2={n.sx} y2={n.sy}
-                stroke={EMB_CAT_COLOR[n.cat]} strokeWidth="1.5" strokeDasharray="5 3" opacity="0.7" />
-              {/* Sim score at midpoint */}
-              <text
-                x={(activeQuery.sx + n.sx) / 2}
-                y={(activeQuery.sy + n.sy) / 2 - 5}
-                textAnchor="middle" fontSize="8" fontFamily="monospace" fontWeight="bold"
-                fill={EMB_CAT_COLOR[n.cat]}>
-                {n.dist.toFixed(1)}
-              </text>
-            </g>
+          {/* Animated connection lines */}
+          {activeQuery && nearestPoints.map((n, i) => {
+            const len = Math.hypot(n.x - activeQuery.x, n.y - activeQuery.y);
+            return (
+              <line key={animKey + "-" + n.id}
+                className="emb-line"
+                x1={activeQuery.x} y1={activeQuery.y}
+                x2={n.x} y2={n.y}
+                stroke={EMB_CAT_COLOR[n.cat]}
+                strokeWidth={i === 0 ? 2 : 1.5}
+                strokeDasharray={len}
+                strokeDashoffset={len}
+                style={{ animationDelay: `${i * 0.12}s` }}
+              />
+            );
+          })}
+
+          {/* Cosine similarity labels on lines */}
+          {activeQuery && nearestPoints.map((n, i) => (
+            <text key={animKey + "-sim-" + n.id}
+              className="emb-sim"
+              x={(activeQuery.x + n.x) / 2}
+              y={(activeQuery.y + n.y) / 2 - 7}
+              textAnchor="middle" fontSize="8.5" fontFamily="ui-monospace, monospace"
+              fontWeight="700" fill={EMB_CAT_COLOR[n.cat]}
+              style={{ animationDelay: `${0.4 + i * 0.1}s` }}>
+              {n.sim.toFixed(2)}
+            </text>
           ))}
 
-          {/* Points */}
+          {/* Data points */}
           {EMB_POINTS.map(pt => {
             const col = EMB_CAT_COLOR[pt.cat];
-            const nearIdx = nearest.findIndex(n => n.id === pt.id);
-            const isNearest = nearIdx !== -1;
-            const dimmed = activeQuery && !isNearest;
-            const r = isNearest ? 7 : 5;
-            const isHov = hovered === pt.id;
+            const rankIdx = activeQuery ? activeQuery.nearIds.indexOf(pt.id) : -1;
+            const isNearest = rankIdx !== -1;
+            const dimmed = !!activeQuery && !isNearest;
             return (
-              <g key={pt.id}
-                onMouseEnter={() => setHovered(pt.id)}
-                onMouseLeave={() => setHovered(null)}
-                style={{ cursor: "default" }}>
-                {isNearest && (
-                  <circle cx={pt.sx} cy={pt.sy} r={r + 5} fill={col} opacity="0.18" />
-                )}
-                <circle cx={pt.sx} cy={pt.sy} r={r}
-                  fill={col} opacity={dimmed ? 0.12 : 1}
-                  stroke={isNearest ? "#fff" : "none"} strokeWidth="1.5" />
-                {/* Rank badge */}
-                {isNearest && (
-                  <text x={pt.sx} y={pt.sy - r - 4}
-                    textAnchor="middle" fontSize="9" fill="#fff" fontWeight="bold">
-                    {["①","②","③"][nearIdx]}
+              <g key={pt.id}>
+                {isNearest && <circle cx={pt.x} cy={pt.y} r="11" fill={col} opacity="0.15"/>}
+                <circle cx={pt.x} cy={pt.y} r={isNearest ? 6 : 4}
+                  fill={col} opacity={dimmed ? 0.1 : isNearest ? 1 : 0.75}
+                  stroke={isNearest ? "#fff" : "none"} strokeWidth="1.5"/>
+                {/* Always-visible micro label for non-dimmed points */}
+                {!dimmed && (
+                  <text x={pt.x + 8} y={pt.y + 3.5}
+                    fontSize="7.5" fontFamily="ui-sans-serif, sans-serif"
+                    fill={isNearest ? "#f4f4f5" : col} opacity={isNearest ? 1 : 0.55}
+                    style={{ pointerEvents:"none" }}>
+                    {pt.label}
                   </text>
                 )}
-                {/* Hover label — only on explicit hover to avoid overlap */}
-                {isHov && (
-                  <text x={pt.sx + r + 5} y={pt.sy + 3.5}
-                    fontSize="9" fontFamily="sans-serif" fill="#e4e4e7"
-                    style={{ pointerEvents: "none" }}>
-                    {pt.label}
+                {/* Rank badge */}
+                {isNearest && (
+                  <text x={pt.x} y={pt.y - 10}
+                    textAnchor="middle" fontSize="10" fill="#fff" fontWeight="700">
+                    {["①","②","③"][rankIdx]}
                   </text>
                 )}
               </g>
             );
           })}
 
-          {/* Query diamond */}
+          {/* Query marker */}
           {activeQuery && (() => {
-            const { sx, sy } = activeQuery;
-            const s = 8;
+            const { x, y } = activeQuery;
             return (
               <g>
-                <polygon
-                  points={`${sx},${sy-s} ${sx+s},${sy} ${sx},${sy+s} ${sx-s},${sy}`}
-                  fill="#ffffff" />
-                <text x={sx} y={sy + 3} textAnchor="middle"
-                  fontSize="6" fontFamily="monospace" fontWeight="bold" fill="#09090b">
-                  Q
-                </text>
+                <circle cx={x} cy={y} r="10" fill="#fff" opacity="0.15"/>
+                <circle cx={x} cy={y} r="6"  fill="#fff"/>
+                <text x={x} y={y+3.5} textAnchor="middle"
+                  fontSize="6.5" fontFamily="ui-monospace, monospace" fontWeight="800" fill="#08080a">Q</text>
               </g>
             );
           })()}
-
-          {/* (labels already rendered above points via CLUSTER_LABELS) */}
-          {[].map(h => (
-            <text key={h.cat + "-lbl"}
-              x={h.cx} y={h.cy}
-              textAnchor="middle" fontSize="8" fontFamily="monospace"
-              fill={EMB_CAT_COLOR[h.cat]} opacity="0.6">
-              {EMB_CAT_LABEL[h.cat]}
-            </text>
-          ))}
         </svg>
       </div>
 
-      {/* ── THE AHA MOMENT ── */}
-      {activeQuery && nearest.length > 0 ? (
+      {/* Results panel */}
+      {activeQuery ? (
         <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4 space-y-3">
-          <div>
-            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Query</div>
-            <div className="text-sm font-bold text-white">"{activeQuery.text}"</div>
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Query</p>
+              <p className="text-sm font-bold text-white">"{activeQuery.text}"</p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Keyword hits</p>
+              <p className="text-sm font-bold text-red-400">0</p>
+            </div>
           </div>
 
           <div>
-            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Top matches · distance <span className="normal-case tracking-normal font-sans text-zinc-600">(smaller = more similar)</span></div>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Top matches · cosine similarity</p>
             <div className="space-y-2">
-              {nearest.map((pt, i) => (
+              {nearestPoints.map((pt, i) => (
                 <div key={pt.id} className="flex items-center gap-3">
-                  <span className="text-xs text-zinc-600 w-4 flex-shrink-0">{i + 1}</span>
-                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: EMB_CAT_COLOR[pt.cat] }} />
-                  <span className="text-sm text-zinc-200 flex-1 min-w-0">{pt.label}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded font-mono flex-shrink-0"
+                  <span className="text-xs text-zinc-600 w-3 shrink-0">{i+1}</span>
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: EMB_CAT_COLOR[pt.cat] }}/>
+                  <span className="text-sm text-zinc-200 flex-1 min-w-0 truncate">{pt.label}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0"
                     style={{ background: EMB_CAT_COLOR[pt.cat] + "22", color: EMB_CAT_COLOR[pt.cat] }}>
                     {EMB_CAT_LABEL[pt.cat]}
                   </span>
-                  <span className="font-mono text-sm font-bold text-amber-400 w-14 text-right flex-shrink-0">{pt.dist.toFixed(1)}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="w-16 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pt.sim * 100}%`, background: EMB_CAT_COLOR[pt.cat] }}/>
+                    </div>
+                    <span className="font-mono text-xs font-bold text-zinc-300 w-8">{pt.sim.toFixed(2)}</span>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="border-t border-zinc-800 pt-3 space-y-2">
+          <div className="border-t border-zinc-800 pt-3">
             <p className="text-xs text-zinc-400 leading-relaxed">
-              <span className="text-amber-400 mr-1">💡</span>{activeQuery.note}
+              <span className="text-amber-400 font-semibold">Why this works: </span>{activeQuery.note}
             </p>
-            <div className="flex gap-5 pt-1">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                <span className="text-xs text-zinc-500">Keyword search: <span className="text-red-400 font-bold font-mono">0 results</span></span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                <span className="text-xs text-zinc-500">Semantic search: <span className="text-emerald-400 font-bold font-mono">3 results</span></span>
-              </div>
-            </div>
           </div>
         </div>
       ) : (
-        <p className="text-xs text-zinc-600 text-center">← Click a query above to see semantic search in action</p>
+        <p className="text-xs text-zinc-600 text-center py-2">← Select a query to see semantic search in action</p>
       )}
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 justify-center">
+      <div className="flex flex-wrap gap-x-5 gap-y-1.5 justify-center">
         {Object.entries(EMB_CAT_LABEL).map(([k, v]) => (
           <div key={k} className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full" style={{ background: EMB_CAT_COLOR[k] }} />
+            <div className="w-2 h-2 rounded-full" style={{ background: EMB_CAT_COLOR[k] }}/>
             <span className="text-xs text-zinc-500">{v}</span>
           </div>
         ))}

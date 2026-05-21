@@ -720,6 +720,12 @@ const SERIES_META = {
     color: "#a855f7",
     postIds: ["mcp-what-is", "mcp-build-server", "mcp-vs-functions"],
   },
+  "model-deep-dive": {
+    title: "Model Deep Dives",
+    desc: "Under the hood of the frontier models — Claude, GPT-4o, Gemini, Grok, and Llama. Architecture, training philosophy, benchmark reality, and when each model is the right choice.",
+    color: "#f43f5e",
+    postIds: ["model-claude", "model-gpt4o", "model-gemini", "model-grok", "model-llama"],
+  },
 };
 
 export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {

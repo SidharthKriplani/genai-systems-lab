@@ -9291,6 +9291,168 @@ if __name__ == "__main__":
     ]},
   ],
 
+  // ─── MODEL DEEP DIVES ─────────────────────────────────────────────────────────
+
+  "model-claude": [
+    { t: "p", text: "Claude is Anthropic's frontier model family, built around a single thesis: safety and capability are not opposed — they're reinforcing. Understanding Claude's architecture and philosophy tells you a lot about where production AI is heading." },
+    { t: "h2", text: "The Constitutional AI foundation" },
+    { t: "p", text: "Claude isn't aligned through pure RLHF. Anthropic introduced Constitutional AI (CAI): a set of principles that the model is trained to follow through self-critique and self-revision, using RLAIF (RL from AI Feedback) instead of solely human labelers. This makes alignment more scalable and consistent than relying on individual human preferences." },
+    { t: "h2", text: "The Claude model family (2025)" },
+    { t: "table", headers: ["Model", "Best for", "Context", "Reasoning"], rows: [
+      ["Claude Haiku 3.5", "High-volume, low-latency, cost-sensitive tasks", "200K", "Standard"],
+      ["Claude Sonnet 3.7", "Best all-round — coding, analysis, complex instruction following", "200K", "Extended thinking"],
+      ["Claude Opus 4", "Most capable — complex reasoning, research, nuanced writing", "200K", "Extended thinking"],
+    ]},
+    { t: "h2", text: "What Claude does better than GPT-4o" },
+    { t: "list", items: [
+      "Document understanding: Claude consistently outperforms on long-document comprehension, especially legal, medical, and technical documents where nuance matters.",
+      "Instruction following: Claude is less likely to hallucinate an answer when it's uncertain — it says 'I don't know' more reliably.",
+      "Code safety: Claude refuses to write exploit code more consistently. Better for enterprise security-sensitive contexts.",
+      "Structured outputs: Claude's XML-tag handling is native and extremely reliable for complex structured extraction tasks.",
+    ]},
+    { t: "h2", text: "Extended thinking: Claude's reasoning mode" },
+    { t: "p", text: "Claude 3.7 Sonnet and Opus support extended thinking — a configurable thinking token budget where the model reasons internally before answering. Unlike OpenAI's o1 (where thinking is completely hidden), Claude's thinking is visible, which helps with debugging and trust. Set thinking budget via the API with a token limit (1K–32K thinking tokens)." },
+    { t: "h2", text: "Production use cases where Claude leads" },
+    { t: "list", items: [
+      "Enterprise document Q&A (200K context, strong grounding)",
+      "Code review and security audit (refuses to generate attack code, catches vulnerabilities)",
+      "Legal/compliance analysis (nuanced instruction following, reliable uncertainty expression)",
+      "Agentic workflows (MCP-native, strong tool use, reliable output formats)",
+    ]},
+    { t: "callout", text: "Claude's pricing is competitive with GPT-4o on a per-task basis for document-heavy workloads where context efficiency matters. The 200K window reduces the need for chunking." },
+    { t: "refs", items: [
+      { label: "Anthropic: Claude model overview", url: "https://docs.anthropic.com/en/docs/about-claude/models/overview" },
+      { label: "Constitutional AI paper", url: "https://arxiv.org/abs/2212.08073" },
+    ]},
+  ],
+
+  "model-gpt4o": [
+    { t: "p", text: "GPT-4o (o = 'omni') is OpenAI's flagship model — the first to natively process and generate text, audio, and images in a single end-to-end model rather than a pipeline of separate models stitched together." },
+    { t: "h2", text: "What 'native multimodality' actually means" },
+    { t: "p", text: "Before GPT-4o, GPT-4V processed images by running a separate vision model and injecting the output as text. GPT-4o is trained end-to-end on all modalities simultaneously, meaning it understands audio tone, image context, and text semantics in a unified representation. This enables: real-time voice conversation (no STT→LLM→TTS pipeline), image generation guided by text context, and faster audio responses (~300ms vs ~3s for pipeline systems)." },
+    { t: "h2", text: "The OpenAI model family (2025)" },
+    { t: "table", headers: ["Model", "Best for", "Reasoning", "Cost"], rows: [
+      ["GPT-4o mini", "High-volume, simple tasks, classification", "Standard", "Cheap"],
+      ["GPT-4o", "General-purpose flagship — coding, analysis, vision", "Standard", "Mid"],
+      ["o1", "Hard reasoning: math, code, legal — slower, expensive", "Chain-of-thought", "High"],
+      ["o3", "Frontier reasoning — best accuracy on hard tasks", "Extended CoT", "Very high"],
+    ]},
+    { t: "h2", text: "GPT-4o vs. Claude: the real differences" },
+    { t: "list", items: [
+      "Multimodal: GPT-4o is ahead on audio (native real-time voice). Claude has no audio support.",
+      "Coding: Roughly equivalent on SWE-bench. GPT-4o slightly better on self-contained coding tasks; Claude slightly better on large-codebase understanding.",
+      "Context: Claude's 200K window and memory of context is more reliable. GPT-4o at 128K shows more lost-in-the-middle issues.",
+      "Safety: Claude is more conservative by default. GPT-4o is more permissive — better for creative use cases, worse for enterprise safety requirements.",
+    ]},
+    { t: "h2", text: "The o1/o3 reasoning branch" },
+    { t: "p", text: "OpenAI's reasoning models (o1, o1-mini, o3, o3-mini) are a separate model family trained to reason via long chain-of-thought before answering. o3 is currently the best model in the world on math olympiad, competitive programming, and PhD-level science benchmarks. The tradeoff: 10–30 seconds to first token, 15–30× cost premium over GPT-4o." },
+    { t: "callout", text: "Use GPT-4o for general-purpose production. Route to o3 only for tasks where accuracy on hard reasoning is worth the cost — PhD-level science, competition math, complex debugging." },
+    { t: "refs", items: [
+      { label: "OpenAI model docs", url: "https://platform.openai.com/docs/models" },
+      { label: "GPT-4o system card", url: "https://openai.com/index/gpt-4o-system-card/" },
+    ]},
+  ],
+
+  "model-gemini": [
+    { t: "p", text: "Gemini is Google DeepMind's frontier model family. It entered the race as a strong multimodal model and has since become a serious competitor to GPT-4o and Claude — particularly on long-context tasks and video understanding." },
+    { t: "h2", text: "What makes Gemini architecturally different" },
+    { t: "list", items: [
+      "Native multimodal pretraining: Like GPT-4o, Gemini was designed for multimodal inputs from scratch — not a language model with a bolted-on vision encoder.",
+      "1M token context window (Gemini 1.5): The largest context window of any production model, enabling processing of entire codebases, hour-long videos, or thousands of documents in a single call.",
+      "Mixture of Experts (MoE): Gemini 1.5 uses a sparse MoE architecture — activating only a subset of parameters per token. Enables higher capability at lower inference cost.",
+      "On-device models: Gemini Nano runs on Pixel and Android devices — Google's strategy for edge AI.",
+    ]},
+    { t: "h2", text: "The Gemini model family (2025)" },
+    { t: "table", headers: ["Model", "Context", "Best for"], rows: [
+      ["Gemini 2.0 Flash", "1M tokens", "Fast, cheap, long-context, multimodal"],
+      ["Gemini 2.0 Pro", "1M tokens", "Best Gemini all-round — complex reasoning"],
+      ["Gemini 1.5 Flash", "1M tokens", "High-throughput production workloads"],
+      ["Gemini Nano", "Short", "On-device inference, Android apps"],
+    ]},
+    { t: "h2", text: "Where Gemini leads" },
+    { t: "list", items: [
+      "Long video understanding: 1M context + native video tokens → analyze a 90-minute meeting recording in one call",
+      "Long-document RAG: When the entire corpus fits in context, Gemini's 1M window can avoid RAG complexity entirely",
+      "Code in long codebases: Full repo analysis without chunking",
+      "Google ecosystem integration: Native Workspace integration, Gmail/Drive access via Google AI Studio",
+    ]},
+    { t: "h2", text: "Where Gemini lags" },
+    { t: "list", items: [
+      "Instruction following consistency: Early Gemini versions had more format reliability issues than Claude; improving with 2.0",
+      "Safety configuration: Less fine-grained safety control than Claude's API for enterprise deployments",
+      "Ecosystem: Smaller third-party tool and framework support vs. OpenAI and Anthropic",
+    ]},
+    { t: "callout", text: "Gemini's 1M context window is its biggest technical advantage. If your use case needs more context than Claude's 200K or GPT-4o's 128K — video analysis, whole-repo code review, book-length documents — Gemini 1.5 is the right call." },
+    { t: "refs", items: [
+      { label: "Google AI Gemini docs", url: "https://ai.google.dev/gemini-api/docs/models/gemini" },
+      { label: "Gemini 1.5 technical report", url: "https://arxiv.org/abs/2403.05530" },
+    ]},
+  ],
+
+  "model-grok": [
+    { t: "p", text: "Grok is xAI's frontier model — the company founded by Elon Musk in 2023 to compete with OpenAI. Grok 3 is now a serious technical competitor, not just a marketing story. Here's what actually differentiates it." },
+    { t: "h2", text: "The real technical differentiator: real-time X data" },
+    { t: "p", text: "Every major LLM has a training cutoff date. Grok has direct access to X (Twitter) data in near real-time — giving it a different knowledge profile than other models on current events, trending topics, and breaking news. This is meaningful for: financial analysis of market sentiment, tracking emerging technical discussions, real-time narrative monitoring." },
+    { t: "h2", text: "Grok model family (2025)" },
+    { t: "table", headers: ["Model", "Context", "Notable"], rows: [
+      ["Grok 3", "131K", "xAI's flagship — competitive with GPT-4o on coding, math"],
+      ["Grok 3 mini", "131K", "Fast, cheap, reasoning-focused"],
+      ["Grok 2 Vision", "32K", "Multimodal — image understanding"],
+    ]},
+    { t: "h2", text: "Benchmark reality check" },
+    { t: "p", text: "Grok 3 is competitive with GPT-4o and Claude Sonnet on standard benchmarks (MMLU, HumanEval, MATH). It's not clearly better than frontier models overall, but it's no longer clearly worse — which is notable given xAI's much smaller team and shorter runway than OpenAI or Google." },
+    { t: "h2", text: "When Grok is actually the right choice" },
+    { t: "list", items: [
+      "Real-time X/Twitter data analysis: unique access no other model has",
+      "X/Twitter platform integrations: deep integration with X API ecosystem",
+      "Avoiding OpenAI/Anthropic/Google vendor lock-in: viable alternative for cost or compliance reasons",
+      "Permissive content policies: Grok allows some content other models refuse — relevant for creative or research contexts",
+    ]},
+    { t: "h2", text: "When to stick with Claude/GPT-4o" },
+    { t: "list", items: [
+      "Production reliability: GPT-4o and Claude have longer track records, better SLAs, and more mature APIs",
+      "Third-party tooling: LangChain, LlamaIndex, and most agentic frameworks have first-class OpenAI/Anthropic support",
+      "Enterprise compliance: Anthropic and OpenAI have more established compliance frameworks (SOC2, HIPAA BAAs, etc.)",
+    ]},
+    { t: "callout", text: "Grok's real-time X data is a genuine moat. For anything involving current events, social signals, or X platform data, Grok should be in your model evaluation. For general production workloads, it's now competitive enough to benchmark." },
+    { t: "refs", items: [
+      { label: "xAI Grok documentation", url: "https://docs.x.ai/" },
+    ]},
+  ],
+
+  "model-llama": [
+    { t: "p", text: "Llama is Meta's open-weight model family — the most important open-source contribution to AI in the last decade. Llama 3 changed the economics of AI by making a GPT-4-class model freely available for download, fine-tuning, and self-hosting." },
+    { t: "h2", text: "What 'open weights' actually means" },
+    { t: "p", text: "Open weights ≠ fully open source. Meta releases the trained model weights under a custom license (not Apache/MIT). You can: run it locally, fine-tune it, deploy it commercially (with restrictions for large deployments > 700M monthly users). You cannot: modify and redistribute as a closed product, train a new model using Llama outputs at scale." },
+    { t: "h2", text: "Llama 3 model family (2025)" },
+    { t: "table", headers: ["Model", "Params", "Best for"], rows: [
+      ["Llama 3.2 1B/3B", "1B, 3B", "On-device, edge, mobile, extremely cost-sensitive"],
+      ["Llama 3.1 8B", "8B", "Self-hosted, low-cost API, fine-tuning base"],
+      ["Llama 3.1 70B", "70B", "High-quality open-weight, competitive with GPT-3.5-Turbo"],
+      ["Llama 3.1 405B", "405B", "Competitive with GPT-4o on many benchmarks — self-hostable"],
+    ]},
+    { t: "h2", text: "Why Llama matters for production" },
+    { t: "list", items: [
+      "Cost: Self-hosting Llama 3.1 70B on a single A100 costs ~$2–5/hour for unlimited inference. At scale, this beats OpenAI API costs by 10–50x.",
+      "Data privacy: Weights run on your infrastructure. No data leaves your VPC. Critical for healthcare, finance, legal.",
+      "Fine-tuning: Llama is the dominant base model for domain fine-tuning. The LoRA/QLoRA ecosystem is built around it.",
+      "No rate limits: Self-hosted Llama has no API rate limits — critical for high-throughput batch workloads.",
+    ]},
+    { t: "h2", text: "When to use Llama vs. managed APIs" },
+    { t: "table", headers: ["Use managed API", "Use Llama"], rows: [
+      ["API spend < $10K/month", "API spend > $50K/month"],
+      ["Need latest capabilities", "Need data sovereignty / privacy"],
+      ["No ML infra team", "Have GPU infrastructure"],
+      ["Variable traffic", "High, predictable volume"],
+      ["Regulated — need BAA/SLAs", "Want to fine-tune on proprietary data"],
+    ]},
+    { t: "callout", text: "Llama 3.1 405B running on vLLM is the correct alternative when: API spend is high, data privacy requirements preclude sending data to third parties, or you need to fine-tune a foundation model on your domain." },
+    { t: "refs", items: [
+      { label: "Meta Llama official page", url: "https://llama.meta.com/" },
+      { label: "Llama 3 technical report", url: "https://arxiv.org/abs/2407.21783" },
+    ]},
+  ],
+
   "mcp-vs-functions": [
     { t: "p", text: "Both MCP and function calling let LLMs use external tools. But they're architecturally different and solve different problems. Here's when to use each." },
     { t: "h2", text: "What they have in common" },
