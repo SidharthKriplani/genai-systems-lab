@@ -630,7 +630,18 @@ const CATEGORIES = [
   { id: "interview",   label: "Interview Prep" },
   { id: "research",    label: "Research Papers" },
   { id: "finetuning",  label: "Fine-Tuning & Training" },
-  { id: "multimodal",  label: "Multimodal" },
+  { id: "multimodal",         label: "Multimodal" },
+  { id: "strategy",           label: "Strategy" },
+  { id: "retrieval",          label: "Retrieval" },
+  { id: "reasoning-inference", label: "Reasoning & Inference" },
+  { id: "model-deep-dive",    label: "Model Deep-Dives" },
+  { id: "how-i-build",        label: "How I'd Build X" },
+  { id: "paper-to-production", label: "Paper → Production" },
+  { id: "data-flywheel",      label: "Data Flywheel" },
+  { id: "perspectives",       label: "Perspectives" },
+  { id: "training-stack",     label: "Training Stack" },
+  { id: "mcp-protocol",       label: "MCP Protocol" },
+  { id: "frontier",           label: "Frontier Models" },
 ];
 
 const CAT_COLORS = {
@@ -650,7 +661,18 @@ const CAT_COLORS = {
   interview:   "#ec4899",
   research:    "#a78bfa",
   finetuning:  "#34d399",
-  multimodal:  "#38bdf8",
+  multimodal:        "#38bdf8",
+  strategy:          "#f59e0b",
+  retrieval:         "#06b6d4",
+  "reasoning-inference": "#8b5cf6",
+  "model-deep-dive": "#ec4899",
+  "how-i-build":     "#10b981",
+  "paper-to-production": "#f97316",
+  "data-flywheel":   "#14b8a6",
+  perspectives:      "#a78bfa",
+  "training-stack":  "#ef4444",
+  "mcp-protocol":    "#6366f1",
+  frontier:          "#d946ef",
 };
 
 
