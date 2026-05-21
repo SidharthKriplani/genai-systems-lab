@@ -9501,8 +9501,231 @@ function AgentArchitecture() {
   );
 }
 
+// ─── EVAL METRICS DEEP-DIVE ──────────────────────────────────────────────────
+
+const EVAL_METRICS = [
+  {
+    id: "rouge",
+    name: "ROUGE-L",
+    type: "Lexical overlap",
+    speed: "Instant",
+    cost: "Free",
+    bestFor: "Summarization, extractive tasks",
+    weaknesses: "Ignores meaning — high score for wrong words, low score for paraphrases",
+    formula: "LCS(reference, candidate) / len(reference)",
+    range: "0–1",
+    humanCorr: "Medium",
+  },
+  {
+    id: "bleu",
+    name: "BLEU",
+    type: "N-gram precision",
+    speed: "Instant",
+    cost: "Free",
+    bestFor: "Machine translation (designed for it)",
+    weaknesses: "Precision only — no recall. Terrible for open-ended generation.",
+    formula: "BP × exp(Σ wₙ log pₙ)",
+    range: "0–1",
+    humanCorr: "Low–Medium",
+  },
+  {
+    id: "bertscore",
+    name: "BERTScore",
+    type: "Semantic similarity",
+    speed: "~1s/sample",
+    cost: "Free (local model)",
+    bestFor: "When paraphrases should score well, semantic equivalence",
+    weaknesses: "Slow, requires embedding model, doesn't catch factual errors",
+    formula: "F1 of token-level cosine similarities (BERT embeddings)",
+    range: "0–1",
+    humanCorr: "High",
+  },
+  {
+    id: "meteor",
+    name: "METEOR",
+    type: "Lexical + synonym",
+    speed: "Fast",
+    cost: "Free",
+    bestFor: "Translation, when synonym matching matters",
+    weaknesses: "Language-specific (stemmer + wordnet), English-centric",
+    formula: "F-mean(precision, recall) × (1 − penalty)",
+    range: "0–1",
+    humanCorr: "Medium–High",
+  },
+  {
+    id: "geval",
+    name: "G-Eval",
+    type: "LLM-as-judge (rubric)",
+    speed: "2–5s/sample",
+    cost: "$0.001–0.01/sample",
+    bestFor: "Open-ended quality: coherence, fluency, relevance",
+    weaknesses: "Expensive at scale, positional bias, verbose ≠ good",
+    formula: "LLM scores output on 1–5 rubric, weighted by token probabilities",
+    range: "1–5",
+    humanCorr: "Very High",
+  },
+  {
+    id: "llmjudge",
+    name: "LLM-as-Judge (pairwise)",
+    speed: "3–8s/pair",
+    cost: "$0.002–0.02/pair",
+    bestFor: "A/B comparisons, regression testing between model versions",
+    weaknesses: "Self-preference bias, position bias (prefers response A), expensive",
+    formula: "Judge chooses winner or tie; aggregate win rate",
+    range: "Win/Tie/Lose",
+    humanCorr: "Very High",
+  },
+  {
+    id: "passk",
+    name: "pass@k",
+    type: "Functional correctness",
+    speed: "Depends on test runtime",
+    cost: "Compute only",
+    bestFor: "Code generation — the only metric that actually matters for code",
+    weaknesses: "Requires executable tests; can't measure explanation quality",
+    formula: "P(at least 1 of k samples passes all tests)",
+    range: "0–1",
+    humanCorr: "N/A (ground truth)",
+  },
+];
+
+const EXAMPLE_OUTPUTS = {
+  reference: "The transformer architecture uses self-attention to process sequences in parallel, enabling efficient training on long contexts.",
+  candidate_good: "Transformers leverage self-attention mechanisms to handle sequences simultaneously, making long-context training efficient.",
+  candidate_bad: "Neural networks are very powerful and can learn many things from data using matrix operations.",
+  candidate_tricky: "The transformer uses self-attention and processes sequences in parallel for efficient long-context training.",
+};
+
+const EXAMPLE_SCORES = {
+  candidate_good:  { rouge: 0.41, bleu: 0.28, bertscore: 0.94, meteor: 0.61, geval: 4.5 },
+  candidate_bad:   { rouge: 0.08, bleu: 0.02, bertscore: 0.71, meteor: 0.10, geval: 1.8 },
+  candidate_tricky:{ rouge: 0.87, bleu: 0.72, bertscore: 0.97, meteor: 0.89, geval: 4.8 },
+};
+
+function EvalMetricsTable() {
+  const [sortCol, setSortCol] = useState("humanCorr");
+  const cols = ["name","type","speed","cost","humanCorr","bestFor"];
+  const labels = { name:"Metric", type:"Type", speed:"Speed", cost:"Cost/sample", humanCorr:"Human Corr.", bestFor:"Best For" };
+  const corrOrder = { "Low–Medium":1,"Medium":2,"Medium–High":3,"High":4,"Very High":5,"N/A (ground truth)":6 };
+  const sorted = [...EVAL_METRICS].sort((a,b) => sortCol === "humanCorr"
+    ? (corrOrder[a.humanCorr]||0) - (corrOrder[b.humanCorr]||0)
+    : String(a[sortCol]).localeCompare(String(b[sortCol])));
+  const corrColor = (v) => ({
+    "Low–Medium":"text-red-400","Medium":"text-yellow-400","Medium–High":"text-yellow-300",
+    "High":"text-green-400","Very High":"text-emerald-400","N/A (ground truth)":"text-blue-400"
+  }[v] || "text-zinc-400");
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-zinc-500">Click column headers to sort.</p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="border-b border-zinc-800">
+              {cols.map(c => (
+                <th key={c} onClick={() => setSortCol(c)}
+                  className={`text-left py-2 pr-3 font-semibold cursor-pointer whitespace-nowrap transition-colors ${sortCol===c ? "text-indigo-400" : "text-zinc-500 hover:text-zinc-300"}`}>
+                  {labels[c]} {sortCol===c && "↓"}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map(m => (
+              <tr key={m.id} className="border-b border-zinc-900 hover:bg-zinc-900/40">
+                <td className="py-2 pr-3 font-bold text-zinc-200 whitespace-nowrap">{m.name}</td>
+                <td className="py-2 pr-3 text-zinc-400 whitespace-nowrap">{m.type}</td>
+                <td className="py-2 pr-3 text-zinc-400 whitespace-nowrap">{m.speed}</td>
+                <td className="py-2 pr-3 text-zinc-400 whitespace-nowrap">{m.cost}</td>
+                <td className={`py-2 pr-3 font-semibold whitespace-nowrap ${corrColor(m.humanCorr)}`}>{m.humanCorr}</td>
+                <td className="py-2 text-zinc-500 text-[11px]">{m.bestFor}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 text-xs text-zinc-400 space-y-1">
+        <div className="font-semibold text-zinc-300">When to use what</div>
+        <div><span className="text-zinc-300">Code generation:</span> pass@k — nothing else is meaningful</div>
+        <div><span className="text-zinc-300">Summarization:</span> ROUGE-L + BERTScore together</div>
+        <div><span className="text-zinc-300">Open-ended quality:</span> G-Eval or LLM-as-judge</div>
+        <div><span className="text-zinc-300">A/B model comparison:</span> LLM-as-judge pairwise win rate</div>
+        <div><span className="text-zinc-300">Translation:</span> BLEU (legacy) + METEOR + BERTScore</div>
+      </div>
+    </div>
+  );
+}
+
+function EvalMetricsSamples() {
+  const [cand, setCand] = useState("candidate_good");
+  const candidates = [
+    { id:"candidate_good",   label:"Good paraphrase" },
+    { id:"candidate_bad",    label:"Wrong answer" },
+    { id:"candidate_tricky", label:"Near-copy" },
+  ];
+  const scores = EXAMPLE_SCORES[cand];
+  const scoreColor = (metric, val) => {
+    const thresholds = { rouge:[0.3,0.6], bleu:[0.2,0.5], bertscore:[0.8,0.92], meteor:[0.3,0.6], geval:[2.5,4] };
+    const [lo,hi] = thresholds[metric] || [0.33,0.66];
+    return val < lo ? "text-red-400" : val < hi ? "text-yellow-400" : "text-green-400";
+  };
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="text-xs font-semibold text-zinc-400 mb-1">Reference output</div>
+        <div className="rounded-lg bg-zinc-900 border border-zinc-700 p-3 text-xs text-zinc-300 leading-relaxed">{EXAMPLE_OUTPUTS.reference}</div>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {candidates.map(c => (
+          <button key={c.id} onClick={() => setCand(c.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${cand===c.id ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {c.label}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 text-xs text-zinc-300 leading-relaxed">
+        <span className="text-zinc-500 font-semibold mr-2">Candidate:</span>{EXAMPLE_OUTPUTS[cand]}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        {[["rouge","ROUGE-L"],["bleu","BLEU"],["bertscore","BERTScore"],["meteor","METEOR"],["geval","G-Eval"]].map(([k,label]) => (
+          <div key={k} className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 text-center">
+            <div className="text-[10px] text-zinc-500 font-semibold mb-1">{label}</div>
+            <div className={`text-lg font-black ${scoreColor(k, scores[k])}`}>
+              {k==="geval" ? scores[k].toFixed(1) : scores[k].toFixed(2)}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-lg bg-amber-950/30 border border-amber-800/30 p-3 text-xs text-amber-300">
+        <span className="font-bold">Notice: </span>
+        {cand==="candidate_good" && "Good paraphrase scores low on ROUGE/BLEU (different words) but high on BERTScore (same meaning). Lexical metrics fail here."}
+        {cand==="candidate_bad" && "Wrong answer scores near-zero on all metrics — even ROUGE and BLEU catch this. Any metric works when the answer is clearly wrong."}
+        {cand==="candidate_tricky" && "Near-copy scores highest on everything. ROUGE/BLEU reward verbatim overlap. This exposes the risk: a model that copies the context will score well on all lexical metrics."}
+      </div>
+    </div>
+  );
+}
+
+function EvalMetrics() {
+  const [tab, setTab] = useState(0);
+  const tabs = ["Metric Comparison", "Live Scoring Examples"];
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t,i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium transition-all ${tab===i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+      {tab===0 && <EvalMetricsTable />}
+      {tab===1 && <EvalMetricsSamples />}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
+  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
 };
