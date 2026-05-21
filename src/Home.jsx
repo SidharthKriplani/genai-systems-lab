@@ -1,5 +1,28 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
+
+function CountUp({ target, duration = 1200, suffix = "" }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      const start = Date.now();
+      const tick = () => {
+        const elapsed = Date.now() - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setCount(Math.round(eased * target));
+        if (progress < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }, { threshold: 0.3 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target, duration]);
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+}
 
 const DAILY_TIPS = [
   "Temperature 0 does not mean no randomness. It means greedy decoding. The model always picks the highest-probability token. Useful for deterministic tasks, but can cause repetitive loops.",
@@ -231,9 +254,9 @@ const MODULE_MAP = [
 ];
 
 const STATS = [
-  { value: "3,400+", label: "Learners",           sub: "Engineers & PMs",   tab: null           },
-  { value: "145",    label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
-  { value: "200+",   label: "Challenges",         sub: "All interactive",   tab: null           },
+  { value: "3,400+", target: 3400, suffix: "+", label: "Learners",           sub: "Engineers & PMs",   tab: null           },
+  { value: "145",    target: 145,  suffix: "",  label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
+  { value: "200+",   target: 200,  suffix: "+", label: "Challenges",         sub: "All interactive",   tab: null           },
 ];
 
 // ─── CONCEPT DEPENDENCY GRAPH ─────────────────────────────────────────────────
@@ -561,7 +584,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
           {STATS.map((s) => {
             const inner = (
               <>
-                <div className="text-4xl sm:text-5xl font-black text-white tabular-nums">{s.value}</div>
+                <div className="text-4xl sm:text-5xl font-black text-white tabular-nums"><CountUp target={s.target} suffix={s.suffix} /></div>
                 <div className={`text-xs font-semibold mt-1 ${s.tab ? "text-violet-400 underline underline-offset-2 decoration-dotted" : "text-zinc-300"}`}>{s.label}{s.tab ? " →" : ""}</div>
                 <div className="text-[10px] text-zinc-600 mt-0.5 font-mono">{s.sub}</div>
               </>

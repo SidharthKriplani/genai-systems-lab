@@ -2015,9 +2015,9 @@ function QuestionCard({ q, gaps = [] }) {
   );
 }
 
-function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate }) {
+function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, animKey }) {
   return (
-    <div className={`rounded-xl p-5 border space-y-3 transition-all duration-300 ${isCorrect ? "bg-emerald-500/10 border-emerald-500/40" : "bg-red-500/10 border-red-500/40"}`}>
+    <div key={animKey} className={`rounded-xl p-5 border space-y-3 transition-all duration-300 ${isCorrect ? "animate-correctPulse bg-emerald-500/10 border-emerald-500/40" : "animate-wrongShake bg-red-500/10 border-red-500/40"}`}>
       <span className={`font-bold text-lg ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>
         {isCorrect ? "✓ Correct!" : "✗ Incorrect"}
       </span>
@@ -2439,7 +2439,7 @@ function TrainerMode({ onExit, onNavigate }) {
             {submitted && (
               <RevealCard isCorrect={isCorrect} q={q} onNext={next}
                 nextLabel={current >= questions.length - 1 ? "See Results" : "Next Question →"}
-                onNavigate={onNavigate} />
+                onNavigate={onNavigate} animKey={current} />
             )}
           </>
         )}
@@ -2567,7 +2567,7 @@ function JDPrepMode({ onExit, onNavigate }) {
           {submitted && (
             <RevealCard isCorrect={isCorrect} q={q} onNext={next}
               nextLabel={current >= sessionQs.length - 1 ? "See Results" : "Next →"}
-              onNavigate={onNavigate} />
+              onNavigate={onNavigate} animKey={current} />
           )}
         </div>
       </div>

@@ -139,14 +139,20 @@ function saveProgress(data) {
 export default function LearningPaths({ onNavigateTo }) {
   const [activePath, setActivePath] = useState(null);
   const [progress, setProgress] = useState(loadProgress);
+  const [justCompleted, setJustCompleted] = useState(null);
 
   function toggleStep(pathId, stepIdx) {
     setProgress(prev => {
       const pathDone = new Set(prev[pathId] || []);
+      const wasComplete = pathDone.has(stepIdx);
       if (pathDone.has(stepIdx)) pathDone.delete(stepIdx);
       else pathDone.add(stepIdx);
       const next = { ...prev, [pathId]: [...pathDone] };
       saveProgress(next);
+      if (!wasComplete) {
+        setJustCompleted(`${pathId}-${stepIdx}`);
+        setTimeout(() => setJustCompleted(null), 500);
+      }
       return next;
     });
   }
@@ -245,6 +251,8 @@ export default function LearningPaths({ onNavigateTo }) {
                   <button
                     onClick={() => toggleStep(path.id, idx)}
                     className={`shrink-0 w-6 h-6 mt-0.5 rounded-full border text-xs font-bold flex items-center justify-center transition-all ${
+                      justCompleted === `${path.id}-${idx}` ? "animate-stepDone" : ""
+                    } ${
                       isDone
                         ? "bg-emerald-600 border-emerald-600 text-white"
                         : "border-zinc-600 text-zinc-500 hover:border-zinc-400"
