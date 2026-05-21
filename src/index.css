@@ -38,3 +38,17 @@
   --color-violet-900: var(--color-amber-900);
   --color-violet-950: var(--color-amber-950);
 }
+
+/* Global button press feedback */
+button {
+  transition-property: transform, background-color, border-color, color, opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+button:active {
+  transform: scale(0.96);
+}
+/* Don't apply to disabled buttons */
+button:disabled:active {
+  transform: none;
+}

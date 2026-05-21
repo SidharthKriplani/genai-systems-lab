@@ -3457,7 +3457,7 @@ function RAGArchitecturePatterns() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 bg-zinc-700 text-zinc-500 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -3539,7 +3539,7 @@ function APIModelPricing() {
       <div className="flex gap-2 flex-wrap">
         {filterBtns.map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-3 py-1 rounded text-sm font-medium capitalize ${filter === f ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium capitalize ${filter === f ? "bg-indigo-600 text-white" : "bg-zinc-800 bg-zinc-700 text-zinc-500 text-zinc-300"}`}>
             {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
@@ -3641,7 +3641,7 @@ function PromptPatternLibrary() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 bg-zinc-700 text-zinc-500 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -3753,7 +3753,7 @@ function BenchmarkBrowser() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 bg-zinc-700 text-zinc-500 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -3833,7 +3833,7 @@ function ContextWindowEngineering() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 bg-zinc-700 text-zinc-500 text-zinc-300"}`}>
             {t}
           </button>
         ))}
