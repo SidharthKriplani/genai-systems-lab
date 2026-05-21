@@ -10544,4 +10544,195 @@ def slerp(w1, w2, t):
     { t: "refs", items: [{ label: "Google A2A Protocol", url: "https://google.github.io/A2A/" }, { label: "AutoGen — multi-agent framework", url: "https://microsoft.github.io/autogen/" }, { label: "CrewAI — role-based agents", url: "https://crewai.com" }] },
   ],
 
+  // ─── STRATEGY ────────────────────────────────────────────────────────────────
+
+  "benchmark-vs-business": [
+    { t: "p", text: "Every quarter, a new model tops the MMLU leaderboard. Every quarter, product teams swap it in, run it for a few days, and quietly swap it back out. The model that wins the benchmark isn't the model that wins in production. This is Goodhart's Law applied to AI: when a measure becomes a target, it ceases to be a good measure." },
+    { t: "p", text: "This post is about why benchmark performance and business performance diverge, and what to do instead of relying on leaderboards for model selection." },
+
+    { t: "h2", text: "The benchmark contamination problem" },
+    { t: "p", text: "MMLU, HumanEval, and GSM8K are public. Every model released in 2024 was trained on the internet, which contains solutions, walkthroughs, and discussions of every benchmark dataset ever published. When OpenAI, Anthropic, or Google reports a benchmark score, you have no way to verify whether those questions appeared in the training data. Some labs are rigorous about contamination detection. Others are not. And even the rigorous ones can't fully control what's in a 15-trillion-token pretraining corpus." },
+    { t: "callout", text: "A model scoring 90% on MMLU has been trained on the internet — which contains MMLU. This doesn't mean the score is meaningless, but it means you cannot assume it transfers to your task. Treat public benchmark scores as a rough prior, not a buying decision." },
+
+    { t: "h2", text: "Task-distribution mismatch" },
+    { t: "p", text: "MMLU tests 57 academic subjects in multiple-choice format. HumanEval tests Python function completion. GSM8K tests grade-school arithmetic word problems. None of these are your task. Unless you're building a trivia app or a Python tutorial tool, the correlation between benchmark performance and your actual task performance is weak — and for domain-specific tasks, it can be negative." },
+    { t: "p", text: "The canonical example: TinyBERT and DistilBERT consistently outperform models 10–50× their size on domain-specific NLP tasks at production companies. Insurance claim classification, medical coding, legal contract parsing — small models fine-tuned on domain data beat frontier models on general benchmarks. The model that scores 90 on MMLU and costs $15/million tokens often loses to the model that scores 72 and costs $0.20/million tokens on the task you actually care about." },
+    { t: "table", headers: ["What benchmarks measure", "What your product needs"], rows: [
+      ["Breadth across 57 academic subjects", "Depth in your specific domain"],
+      ["Multiple-choice format", "Open-ended generation or structured output"],
+      ["Single-turn questions", "Multi-turn conversation or complex pipelines"],
+      ["Aggregate accuracy", "Specific failure modes that matter for your users"],
+      ["Latency-agnostic", "P95 latency under 800ms to keep users engaged"],
+      ["Cost-agnostic", "Cost per query that fits your unit economics"],
+    ]},
+
+    { t: "h2", text: "What benchmarks don't capture" },
+    { t: "list", items: [
+      "Latency: MMLU doesn't care if the model takes 8 seconds to answer. Your users do. A model that scores 3% lower on benchmarks but delivers responses in 400ms instead of 1200ms will have significantly better engagement metrics.",
+      "Cost: Frontier model benchmark scores assume you have unlimited inference budget. Most products don't. A 3% accuracy gain that costs 20× more per query is not a business improvement.",
+      "Instruction following reliability: How consistently does the model obey formatting instructions, output constraints, and system prompt directives? Benchmarks don't measure this. Production breaks on it.",
+      "Hallucination rate on your domain: A model that's well-calibrated on Wikipedia-style facts may hallucinate confidently on your industry's terminology, regulations, or product-specific knowledge.",
+      "Refusal rate: Some models refuse too much and frustrate users. Others refuse too little and create safety risk. Benchmarks measure neither.",
+    ]},
+
+    { t: "h2", text: "How to build a task-specific eval instead" },
+    { t: "p", text: "The right approach is to treat model selection as an empirical engineering problem, not a benchmark-reading exercise. Here's the process:" },
+    { t: "list", items: [
+      "Step 1 — Define your task distribution: Collect 200–500 real queries from your users (or simulate them if you're pre-launch). This is your eval set. It should mirror the actual distribution of what your system will handle, including edge cases.",
+      "Step 2 — Define what 'correct' means: For each query, define a rubric. This might be exact match (structured output), human preference (open-ended), or LLM-as-judge (factual accuracy against a reference). Be specific — 'good answer' is not a rubric.",
+      "Step 3 — Run all candidate models on your eval set: Test every model you're considering. Include cost and latency in the measurement, not just quality.",
+      "Step 4 — Analyze failure modes, not just aggregate scores: A model that fails 8% of the time uniformly is different from a model that fails 0% on easy queries and 40% on a specific failure category. Know which failure modes matter for your product.",
+      "Step 5 — Build a regression gate: Once you've chosen a model and baseline, automate the eval so you can detect regressions when you change prompts, upgrade models, or modify the pipeline.",
+    ]},
+    { t: "code", text: `# Minimal task-specific eval harness
+
+import json
+from anthropic import Anthropic
+
+client = Anthropic()
+
+def run_eval(model: str, eval_cases: list[dict]) -> dict:
+    results = []
+    for case in eval_cases:
+        response = client.messages.create(
+            model=model,
+            max_tokens=1024,
+            messages=[{"role": "user", "content": case["query"]}]
+        )
+        output = response.content[0].text
+        # LLM-as-judge scoring
+        score = judge_response(output, case["reference"], case["rubric"])
+        results.append({
+            "query": case["query"],
+            "output": output,
+            "score": score,
+            "input_tokens": response.usage.input_tokens,
+            "output_tokens": response.usage.output_tokens,
+        })
+
+    pass_rate = sum(r["score"] >= 0.7 for r in results) / len(results)
+    avg_cost = sum(r["input_tokens"] * 0.000003 + r["output_tokens"] * 0.000015 for r in results) / len(results)
+    return {"model": model, "pass_rate": pass_rate, "avg_cost_usd": avg_cost, "results": results}` },
+
+    { t: "h2", text: "The practical model selection decision" },
+    { t: "callout", text: "Opinionated take: start with the cheapest model that's fast enough. Run your eval. Move up the capability ladder only when you can prove the cheaper model fails on cases that matter. Most products don't need frontier model intelligence — they need reliable instruction following, low latency, and domain accuracy on a narrow task distribution." },
+    { t: "p", text: "The benchmark leaderboard is useful for one thing: establishing which models are worth evaluating. A model that scores in the bottom quartile on all public benchmarks probably isn't worth your evaluation time. But among the top tier, the benchmark gap between models is almost always smaller than the gap your task-specific eval will reveal — in either direction." },
+
+    { t: "refs", items: [
+      { label: "MMLU — Massive Multitask Language Understanding benchmark", url: "https://arxiv.org/abs/2009.03300" },
+      { label: "HumanEval — OpenAI code generation benchmark", url: "https://arxiv.org/abs/2107.03374" },
+      { label: "Goodhart's Law and how it applies to AI evals", url: "https://en.wikipedia.org/wiki/Goodhart%27s_law" },
+      { label: "HELM — Holistic Evaluation of Language Models (Stanford)", url: "https://crfm.stanford.edu/helm/latest/" },
+      { label: "Chatbot Arena — preference-based human evaluation", url: "https://chat.lmsys.org/" },
+    ]},
+  ],
+
+  // ─── RETRIEVAL ───────────────────────────────────────────────────────────────
+
+  "hard-negatives-retrieval": [
+    { t: "p", text: "If you've trained or fine-tuned a retrieval model and it still underperforms on your dataset, the problem is almost certainly your negatives. Specifically: your negatives are too easy. A model that's never had to distinguish between documents that look similar but mean different things will never learn to make that distinction. Hard negatives are the training signal that forces it to." },
+    { t: "p", text: "This post covers what hard negatives are, why they're the highest-leverage improvement you can make to retrieval training, and three concrete mining strategies you can implement today." },
+
+    { t: "h2", text: "Easy negatives vs. hard negatives" },
+    { t: "p", text: "A training example for a retrieval model consists of a query, a positive document (relevant), and one or more negative documents (not relevant). The quality of your negatives determines how much the model learns from each example." },
+    { t: "table", headers: ["Negative type", "Example", "What the model learns"], rows: [
+      ["Random/easy", "Query: 'return policy' → Negative: a recipe for chocolate cake", "Almost nothing — the difference is obvious without learning"],
+      ["Semi-hard", "Query: 'return policy' → Negative: a shipping policy document", "Some discriminative features — different topic, similar domain"],
+      ["Hard negative", "Query: 'how do I return a damaged item?' → Negative: 'return policy for unopened items'", "Fine-grained intent distinction — same topic, different user need"],
+    ]},
+    { t: "callout", text: "Hard negatives are semantically close to the query but intent-misaligned. They share surface-level vocabulary and topic with the positive, but don't actually answer the user's question. Training on these forces the model to encode intent, not just topic similarity." },
+
+    { t: "h2", text: "Why hard negatives matter for bi-encoders" },
+    { t: "p", text: "Bi-encoders (the architecture used by models like sentence-transformers, OpenAI's text-embedding-3, and Cohere's embed models) encode queries and documents independently into dense vectors. Similarity is computed by dot product or cosine similarity at query time." },
+    { t: "p", text: "The fundamental problem: a bi-encoder trained only on easy negatives learns to separate topics, not intents. It will correctly retrieve documents about 'return policies' for a query about returns — but it won't correctly rank 'return damaged items' above 'return unopened items' for a user who needs the former. The vectors for these two documents are nearly identical in topic space but diverge in intent space. Hard negative training is what teaches the model to encode that intent distinction." },
+    { t: "p", text: "Cross-encoders, used in reranking, jointly encode the query and document and are inherently better at fine-grained relevance judgments. But they're too slow for first-stage retrieval. The practical pipeline is: bi-encoder retrieval (fast, approximate) → cross-encoder reranking (slow, precise). Hard negative training improves the bi-encoder so fewer relevant documents are missed before reranking even runs." },
+
+    { t: "h2", text: "Mining strategy 1: In-batch negatives" },
+    { t: "p", text: "The simplest strategy: treat every other positive in the batch as a negative for each query. If your batch contains 64 (query, positive) pairs, each query gets 63 in-batch negatives." },
+    { t: "p", text: "This works because a large, well-sampled batch will contain documents that are topically similar to any given query's positive — making them semi-hard to hard negatives naturally. The MultipleNegativesRankingLoss (used in sentence-transformers) implements this directly." },
+    { t: "code", text: `from sentence_transformers import SentenceTransformer, losses
+from torch.utils.data import DataLoader
+from sentence_transformers import InputExample
+
+model = SentenceTransformer("BAAI/bge-base-en-v1.5")
+
+# Each InputExample: (query, positive_doc) — negatives are all other positives in the batch
+train_examples = [
+    InputExample(texts=["how do I return a damaged item?", "Return policy for damaged goods: ..."]),
+    InputExample(texts=["return policy for gifts", "Gift return policy: items can be returned within 60 days..."]),
+    # ... more (query, positive) pairs
+]
+
+train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=64)
+train_loss = losses.MultipleNegativesRankingLoss(model)
+
+model.fit(
+    train_objectives=[(train_dataloader, train_loss)],
+    epochs=3,
+    warmup_steps=100,
+)` },
+    { t: "p", text: "Limitation: in-batch negatives are only as hard as your batch is large and topically diverse. With small batches or narrow corpora, most in-batch negatives are still easy." },
+
+    { t: "h2", text: "Mining strategy 2: BM25 top-k negatives" },
+    { t: "p", text: "BM25 retrieves documents that share keywords with the query but may not be semantically relevant. These are excellent hard negatives: they look like they match (keyword overlap), but the bi-encoder needs to learn they don't actually answer the query." },
+    { t: "list", items: [
+      "For each training query, run BM25 over your corpus",
+      "Retrieve the top-k documents (e.g., top 20)",
+      "Remove any documents that are known positives",
+      "Use the remaining BM25 hits as hard negatives in training",
+    ]},
+    { t: "code", text: `from rank_bm25 import BM25Okapi
+import numpy as np
+
+def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
+    """
+    queries: list of query strings
+    positives: list of sets of positive doc IDs per query
+    corpus: list of (doc_id, doc_text) tuples
+    """
+    tokenized_corpus = [doc_text.split() for _, doc_text in corpus]
+    bm25 = BM25Okapi(tokenized_corpus)
+    doc_ids = [doc_id for doc_id, _ in corpus]
+
+    hard_negatives = []
+    for query, pos_ids in zip(queries, positives):
+        scores = bm25.get_scores(query.split())
+        top_k_indices = np.argsort(scores)[::-1][:top_k]
+        top_k_doc_ids = [doc_ids[i] for i in top_k_indices]
+        # Exclude known positives
+        negatives = [doc_id for doc_id in top_k_doc_ids if doc_id not in pos_ids]
+        hard_negatives.append(negatives[:5])  # Take top 5 hard negatives per query
+
+    return hard_negatives` },
+
+    { t: "h2", text: "Mining strategy 3: Teacher LLM labeling" },
+    { t: "p", text: "The highest-quality hard negatives come from using a strong model (a cross-encoder or an LLM) to identify which retrieved documents are near-misses. The workflow:" },
+    { t: "list", items: [
+      "Retrieve top-100 documents per query using your current bi-encoder",
+      "Score each (query, document) pair with a cross-encoder or LLM judge",
+      "Documents scored 0.3–0.7 (uncertain relevance) are your best hard negatives — close enough to be confusing, but ultimately not relevant",
+      "Documents scored >0.8 are additional positives — add them to your positive set",
+      "Use the 0.3–0.7 range documents as hard negatives in the next training round",
+    ]},
+    { t: "p", text: "This iterative approach — mine with current model, label with teacher, retrain — is called iterative hard negative mining and is the method used by state-of-the-art retrieval systems like the ones behind E5, BGE, and GTE models." },
+
+    { t: "h2", text: "Practical tips and common mistakes" },
+    { t: "list", items: [
+      "Don't use too many hard negatives per query early in training. Start with 1–2 hard negatives and increase as the model improves. Too many hard negatives too early causes training instability — the loss spikes and the model collapses.",
+      "Always verify your positives before mining negatives. A noisy positive set means some of your 'hard negatives' are actually positives — this confuses the model significantly.",
+      "Mix easy and hard negatives in each batch. A ratio of roughly 70% in-batch negatives + 30% mined hard negatives tends to work well. Pure hard negative training can make the model overfit to the specific patterns in your mined set.",
+      "Evaluate on a held-out set with hard negatives too. Standard retrieval evals use random negatives, which makes models look better than they are. Build an eval set that includes BM25-retrieved false positives to measure real retrieval quality.",
+    ]},
+
+    { t: "callout", text: "The single highest-ROI change you can make to a retrieval system: switch from random negatives to BM25-mined hard negatives. In most domain-specific fine-tuning experiments, this alone improves NDCG@10 by 8–15 points without changing model architecture, training duration, or dataset size." },
+
+    { t: "refs", items: [
+      { label: "Dense Passage Retrieval (DPR) — the paper that popularized in-batch negatives", url: "https://arxiv.org/abs/2004.04906" },
+      { label: "BEIR — Benchmarking IR models including hard negative analysis", url: "https://arxiv.org/abs/2104.08663" },
+      { label: "E5 — Text Embeddings by Weakly-supervised Contrastive Pre-training", url: "https://arxiv.org/abs/2212.03533" },
+      { label: "Sentence Transformers — MultipleNegativesRankingLoss documentation", url: "https://www.sbert.net/docs/package_reference/losses.html" },
+      { label: "BGE — BAAI General Embedding with hard negative mining", url: "https://arxiv.org/abs/2309.07597" },
+    ]},
+  ],
+
 };

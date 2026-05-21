@@ -340,4 +340,8 @@ export const POSTS = [
     series: null,
   },
 
+  // ─── STRATEGY / RETRIEVAL (May 2026) ─────────────────────────────────────────
+  { id: "benchmark-vs-business", category: "strategy", title: "Why the Best Model on the Benchmark Isn't the Best Model for Your Product", desc: "Goodhart's Law applied to model selection. Why MMLU and HumanEval winners lose in production, and how to build a task-specific eval that actually predicts business outcomes.", tags: ["EVAL", "STRATEGY", "BENCHMARKS"], readMin: 6, date: "May 2026", series: null },
+  { id: "hard-negatives-retrieval", category: "retrieval", title: "Hard Negatives: The Training Trick That Actually Improves Retrieval", desc: "Hard negatives — semantically close but intent-misaligned pairs — are the highest-ROI training signal for retrieval models. Three mining strategies with code.", tags: ["RETRIEVAL", "TRAINING", "RAG", "EMBEDDINGS"], readMin: 7, date: "May 2026", series: null },
+
 ];
