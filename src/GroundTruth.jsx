@@ -742,7 +742,7 @@ const SERIES_META = {
     title: "How I'd Build X",
     desc: "Opinionated, first-person walkthroughs of production AI systems — architecture decisions, failure modes, and the tradeoffs you actually face when building for real users.",
     color: "#f59e0b",
-    postIds: ["build-ai-search","build-code-review-bot","build-customer-support-ai"],
+    postIds: ["build-ai-search","build-code-review-bot","build-customer-support-ai","build-voice-ai","build-document-intelligence","build-coding-assistant"],
   },
   "data-flywheel": {
     title: "The Data Flywheel",

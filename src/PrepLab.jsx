@@ -1177,6 +1177,147 @@ const PREP_QUESTIONS = [
     correct: 1, keywords: [],
     explanation: "A 336×336 image with patch size 14 produces 576 visual tokens. At 1344×1344 (4× resolution), that's 9,216 tokens — each added to the text tokens, making the total sequence very long. Attention is O(N²), so 9K visual tokens dramatically increases compute and memory. Solutions: LLaVA-HD uses dynamic tiling, InternVL uses pixel shuffle compression, mPLUG-Owl uses abstractor modules to compress visual tokens before passing to the LLM.",
     readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+
+  // ─── RAG ──────────────────────────────────────────────────────────────────────
+
+  {
+    id: "rag-1", topic: "rag", difficulty: "medium", type: "mcq",
+    question: "In a RAG system, what is the primary purpose of the 'reranker' step after initial retrieval?",
+    options: [
+      "To reduce the number of API calls to the embedding model",
+      "To reorder retrieved chunks by relevance to the query using a cross-encoder",
+      "To merge overlapping chunks before passing to the LLM",
+      "To translate retrieved documents into the query language"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Initial retrieval (bi-encoder / vector search) is fast but approximate. A reranker (typically a cross-encoder) scores each (query, chunk) pair jointly — much more accurate but too slow to run over the full index. The two-stage approach gives recall of bi-encoder + precision of cross-encoder. Popular rerankers: Cohere Rerank, BGE-Reranker, Jina Reranker.",
+    readMore: { label: "RAG Patterns →", tab: "systems" }
+  },
+  {
+    id: "rag-2", topic: "rag", difficulty: "hard", type: "mcq",
+    question: "Hypothetical Document Embeddings (HyDE) improves RAG retrieval quality by:",
+    options: [
+      "Generating hypothetical questions from each document chunk at index time",
+      "Having the LLM generate a hypothetical answer first, then embedding that for retrieval",
+      "Embedding documents at multiple chunk sizes and taking the max similarity",
+      "Using the LLM's attention weights to weight chunk embeddings"
+    ],
+    correct: 1, keywords: [],
+    explanation: "HyDE addresses the query-document embedding mismatch: user queries are short and vague, documents are dense and specific. HyDE asks the LLM to generate a hypothetical document that would answer the query, then embeds that hypothetical document for retrieval. The hypothetical document lives in the same embedding space as real documents, dramatically improving recall on factual and technical queries.",
+    readMore: { label: "RAG Patterns →", tab: "systems" }
+  },
+  {
+    id: "rag-3", topic: "rag", difficulty: "medium", type: "mcq",
+    question: "'Lost in the middle' is a RAG failure mode where:",
+    options: [
+      "Retrieved chunks are not relevant to the query",
+      "The LLM ignores information placed in the middle of a long context window",
+      "The embedding model loses semantic meaning for long documents",
+      "Chunk boundaries split key sentences across adjacent chunks"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Research shows LLMs attend more strongly to information at the beginning and end of the context window, and underweight content in the middle. In RAG, placing the most relevant chunks in the middle of a 10+ chunk context window degrades answer quality. Mitigation: put most relevant chunks at the start or end, use Lost-In-The-Middle-aware ordering, or reduce context size.",
+    readMore: { label: "RAG Patterns →", tab: "systems" }
+  },
+  {
+    id: "rag-4", topic: "rag", difficulty: "hard", type: "mcq",
+    question: "Parent-child chunking in RAG addresses which specific problem?",
+    options: [
+      "Embedding models having a maximum token limit",
+      "Small chunks losing context needed for accurate embedding; large chunks being too noisy for generation",
+      "The reranker being unable to handle chunks longer than 512 tokens",
+      "Vector databases not supporting variable-length embeddings"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Small chunks (128 tokens) embed well — they capture specific facts without noise — but lack surrounding context. Large chunks (1024 tokens) provide context but embed poorly as averaged-meaning representations. Parent-child chunking embeds small child chunks for retrieval precision, then returns the parent chunk (with full context) to the LLM. This gives the best of both: accurate retrieval + rich generation context.",
+    readMore: { label: "RAG Patterns →", tab: "systems" }
+  },
+
+  // ─── CONTEXT WINDOW ENGINEERING ───────────────────────────────────────────────
+
+  {
+    id: "ctx-1", topic: "context", difficulty: "medium", type: "mcq",
+    question: "The primary reason not to always fill the full context window in LLM applications is:",
+    options: [
+      "API cost increases linearly with context length",
+      "Attention quality degrades and latency increases super-linearly with context length",
+      "Most LLMs have a hard token cap that causes errors if exceeded",
+      "Longer contexts prevent the model from using chain-of-thought reasoning"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Attention is O(N²) in sequence length — doubling context length quadruples attention compute and increases latency significantly. More critically, empirical research shows LLM recall and reasoning quality degrade with very long contexts (lost-in-the-middle, attention dilution). Cost is a secondary concern. The right approach is to retrieve/filter aggressively so only the most relevant content fills the window.",
+    readMore: { label: "Context Engineering →", tab: "systems" }
+  },
+  {
+    id: "ctx-2", topic: "context", difficulty: "hard", type: "mcq",
+    question: "Sliding window attention (used in Mistral) reduces memory complexity by:",
+    options: [
+      "Caching only the last N tokens' KV states and attending only to those",
+      "Compressing the context window using a learned summarization model",
+      "Using INT4 quantization for the KV cache of distant tokens",
+      "Replacing full attention with linear attention for tokens beyond a fixed distance"
+    ],
+    correct: 0, keywords: [],
+    explanation: "Sliding window attention restricts each token to attend only to the W most recent tokens (the window), keeping KV cache size at O(W) rather than O(sequence length). Tokens beyond W still influence later tokens through cascading windows across layers. Mistral uses W=4096 with rotary embeddings that handle relative positions within the window. GQA is used alongside to further reduce KV cache size.",
+    readMore: { label: "Context Engineering →", tab: "systems" }
+  },
+  {
+    id: "ctx-3", topic: "context", difficulty: "medium", type: "mcq",
+    question: "Context distillation / compression techniques like LLMLingua work by:",
+    options: [
+      "Fine-tuning the LLM on shorter versions of the training data",
+      "Removing tokens from the prompt that have low importance scores while preserving semantic content",
+      "Summarizing the context using a separate smaller model before passing to the main LLM",
+      "Converting the context to a structured format (JSON) to reduce token count"
+    ],
+    correct: 1, keywords: [],
+    explanation: "LLMLingua and similar tools score each token in the prompt by its importance (using a small proxy LM's perplexity), then drop low-importance tokens at a target compression ratio (e.g., 4×). The compressed prompt is often 50-80% shorter with less than 5% quality loss on downstream tasks. This is different from summarization — it's token-level pruning that preserves the original wording of retained content.",
+    readMore: { label: "Context Engineering →", tab: "systems" }
+  },
+  {
+    id: "ctx-4", topic: "context", difficulty: "hard", type: "mcq",
+    question: "In multi-turn applications, the most effective strategy for managing context growth is:",
+    options: [
+      "Always truncating from the beginning of the conversation",
+      "Keeping a fixed summary of distant turns + full recent turns + retrieved relevant turns",
+      "Using the full conversation history until hitting the context limit, then starting a new session",
+      "Embedding each turn and retrieving the top-K most relevant turns per new message"
+    ],
+    correct: 1, keywords: [],
+    explanation: "The hybrid approach outperforms any single strategy: a rolling summary captures what's been discussed without exact tokens, recent turns (last 3-5) are kept verbatim for coherence, and a retrieval step pulls turns specifically relevant to the current message. Truncating from the beginning loses critical early context (user goals, established facts). The retrieval-only approach misses conversational flow.",
+    readMore: { label: "Context Engineering →", tab: "systems" }
+  },
+
+  // ─── SYSTEM DESIGN (OPEN-ENDED) ───────────────────────────────────────────────
+
+  {
+    id: "design-1", topic: "design", difficulty: "hard", type: "text",
+    question: "Design a RAG system for a legal document Q&A product. Walk through your chunking strategy, embedding choices, retrieval pipeline, and how you'd handle citations.",
+    keywords: ["chunking", "embedding", "reranker", "citations", "metadata filtering", "parent-child", "cross-encoder"],
+    explanation: "Model answer: Use semantic chunking (split on section boundaries, not fixed tokens) with parent-child storage — small chunks for retrieval, full sections for generation. Choose a legal-domain embedding model (voyage-law-2 or fine-tuned on legal corpora). Two-stage retrieval: dense vector search → cross-encoder reranker. Add metadata filters for document type, jurisdiction, date. For citations, store chunk source (document ID, section, page) and surface them in the response with exact quotes. Evaluate with a human-labeled set of legal QA pairs measuring precision@5 and answer faithfulness.",
+    readMore: { label: "RAG Patterns →", tab: "systems" }
+  },
+  {
+    id: "design-2", topic: "design", difficulty: "hard", type: "text",
+    question: "Your LLM-powered feature is costing $50K/month at current scale. Walk through your cost reduction strategy without degrading user-facing quality.",
+    keywords: ["prompt caching", "model routing", "smaller model", "quantization", "batching", "caching", "distillation"],
+    explanation: "Model answer: First instrument — break down cost by feature/endpoint to find the 20% of calls driving 80% of cost. Then apply in order: (1) prompt caching for shared system prompts/few-shot examples (immediate 60-80% reduction on repeated prefixes); (2) model routing — classify query complexity and route simple queries to a 4× cheaper small model; (3) output caching for deterministic queries; (4) context compression (LLMLingua) to reduce input tokens; (5) async batching for non-latency-sensitive features. Fine-tuning a smaller model on production data is the highest-effort but highest-ceiling option.",
+    readMore: { label: "Cost Engineering →", tab: "systems" }
+  },
+  {
+    id: "design-3", topic: "design", difficulty: "hard", type: "text",
+    question: "How would you design an eval harness for a customer support AI agent that handles refunds, escalations, and general inquiries?",
+    keywords: ["intent classification", "task success", "golden dataset", "LLM judge", "regression", "coverage", "edge cases"],
+    explanation: "Model answer: Define success per task type — refunds (did it resolve correctly per policy?), escalations (did it escalate when it should?), general (did it answer accurately?). Build a golden dataset: 50-100 examples per intent with expected outputs and edge cases. Use LLM-as-judge for open-ended quality, deterministic checks for policy compliance. Run on every PR (regression suite) and weekly against new production samples. Track: task success rate, refusal rate, hallucination rate, escalation precision/recall. Add a canary deployment step where 1% of real traffic routes to the new model with human review.",
+    readMore: { label: "Evals →", tab: "systems" }
+  },
+  {
+    id: "design-4", topic: "design", difficulty: "hard", type: "text",
+    question: "You're asked to add tool use to an existing LLM product. What's your architecture for reliable tool calling, and how do you handle failures?",
+    keywords: ["function calling", "schema", "validation", "retry", "fallback", "observability", "timeout"],
+    explanation: "Model answer: Define tools as strict JSON schemas — the model generates structured calls, not free text. Validate every tool call against the schema before execution (reject malformed calls and retry with error feedback, max 2 retries). For each tool: set timeouts (e.g., 5s for search, 30s for code execution), implement idempotency for write operations, log all calls and results for observability. Failure handling: malformed call → re-prompt with schema; tool error → surface to model with error message; timeout → graceful fallback to no-tool response. Monitor tool call rate, success rate, and fallback rate per tool in production.",
+    readMore: { label: "Agents →", tab: "systems" }
   }
 ];
 

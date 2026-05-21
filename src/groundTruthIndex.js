@@ -297,4 +297,47 @@ export const POSTS = [
     series: "training-stack",
   },
 
+  // How I'd Build X — additional posts
+  {
+    id: "build-voice-ai",
+    category: "how-i-build",
+    title: "How I'd Build a Voice AI Pipeline",
+    desc: "STT → LLM → TTS architecture, latency budget breakdown, streaming strategies, and where it actually breaks in production.",
+    tags: ["voice", "streaming", "STT", "TTS", "latency"],
+    readMin: 10,
+    date: "2025-07-08",
+    series: "how-i-build",
+  },
+  {
+    id: "build-document-intelligence",
+    category: "how-i-build",
+    title: "How I'd Build Document Intelligence",
+    desc: "Parsing PDFs, tables, and images; chunking strategies for structured documents; extraction pipelines with citations.",
+    tags: ["documents", "PDF", "extraction", "RAG", "citations"],
+    readMin: 11,
+    date: "2025-07-15",
+    series: "how-i-build",
+  },
+  {
+    id: "build-coding-assistant",
+    category: "how-i-build",
+    title: "How I'd Build an AI Coding Assistant",
+    desc: "Repository-aware context, diff-aware completion, retrieval over codebases, and the eval harness that actually catches regressions.",
+    tags: ["coding", "code completion", "RAG", "evals", "context"],
+    readMin: 12,
+    date: "2025-07-22",
+    series: "how-i-build",
+  },
+  // Agents series
+  {
+    id: "building-reliable-agents",
+    category: "agents",
+    title: "Building Reliable Agents: Loops, Tools, and Failure Modes",
+    desc: "How to structure agent loops, tool calling patterns, retry logic, and the five failure modes that kill agent reliability in production.",
+    tags: ["agents", "tool use", "ReAct", "reliability", "failure modes"],
+    readMin: 12,
+    date: "2025-07-29",
+    series: null,
+  },
+
 ];

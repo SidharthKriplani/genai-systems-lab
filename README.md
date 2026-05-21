@@ -22,7 +22,7 @@
 <br/>
 
 ```
-13 tabs  ·  126+ modules  ·  169+ posts  ·  80+ PrepLab questions  ·  zero backend  ·  no login
+13 tabs  ·  140+ modules  ·  178+ posts  ·  120+ PrepLab questions  ·  zero backend  ·  no login
 ```
 
 </div>
@@ -72,20 +72,20 @@ Not a video. Not a blog post. Not a quiz. You make decisions, the system respond
 | 🌊 **Flows** | 6 | Animated pipelines: RAG, Agent Loop, Context Window, Guardrail Pipeline, Transformer Block, RAG Architectures (Hybrid / CRAG / Agentic) |
 | 🔬 **RAG Lab** | 5 scenarios | Production failure simulator — stale retrieval, hallucination, prompt injection, context overflow, multi-hop. Configure → observe → diagnose. Junior→Staff tiered scoring |
 | 🤖 **Agents** | 7 | ReAct Pattern, Tool Use Design + MCP Protocol, Agent Memory, Multi-Agent Patterns, Failure Modes, Planning Patterns, Loop Simulator |
-| ⚙️ **Systems** | 30+ | Evals, Eval Frameworks, Model Strategy, Cost/Latency, Fine-Tuning, India Scale, Prompt Caching, Model Router, Inference Optimizer, Context Compaction, Incident Room, Observability, A/B Testing, ML CI/CD, Debug Traces, Speculative Decoding, Streaming Patterns, Constrained Generation, Model Merging, and more |
+| ⚙️ **Systems** | 37+ | Evals, Eval Frameworks, Model Strategy, Cost/Latency, Fine-Tuning, India Scale, Prompt Caching, Model Router, Inference Optimizer, Context Compaction, Incident Room, Observability, A/B Testing, ML CI/CD, Debug Traces, Speculative Decoding, Streaming Patterns, Constrained Generation, Model Merging, and more |
 | 🛝 **Playground** | 5 | Injection attacks, chunking comparison, reranker, hallucination spotting, bias detection + 30-entry prompt library |
-| 🔭 **Explore** | 9 | Embedding Space, Shadow A/B, Latency Planner, Tokenizer Explorer, Model Card Reader, Vector DB Comparison, Structured Outputs, Red Teaming Lab, Embedding Model Selection + LLM Comparison Matrix |
+| 🔭 **Explore** | 14 | Embedding Space, Shadow A/B, Latency Planner, Tokenizer Explorer, Model Card Reader, Vector DB Comparison, Structured Outputs, Red Teaming Lab, Embedding Model Selection + LLM Comparison Matrix |
 | 💬 **Fluency** | 5 | Phrase bank, timed drills, mock interview (20 questions, 90s each), company case arena, prompt engineering lab |
 | 📋 **AI Product** | 5 | PRD simulator, roadmap prioritizer, stakeholder explainer, launch checklist, AI-or-not? decision framework |
 | 🚀 **Career** | 5 | System design interviews, take-home challenges, negotiation flashcards, benchmark literacy |
-| 💡 **Ask** | — | Consultation space — keyword search over 169+ posts + all module descriptions. Conversational UI. LLM-upgrade-ready |
+| 💡 **Ask** | — | Consultation space — keyword search over 178+ posts + all module descriptions. Conversational UI. LLM-upgrade-ready |
 | 📝 **PrepLab** | 3 modes | Assessment (timed exam, 15/30/60 min), Trainer (immediate feedback + weak topic tracking), JD Prep (paste JD → skill gap → targeted drill) |
 
 ---
 
 ## PrepLab — what makes it different
 
-**Assessment Mode:** Timed exam (15/30/60 min). 80+ questions across 8 skill categories. Scores hidden until end — final reveal shows per-category breakdown and "Strong in / Needs work" callout.
+**Assessment Mode:** Timed exam (15/30/60 min). 120+ questions across 8 skill categories. Scores hidden until end — final reveal shows per-category breakdown and "Strong in / Needs work" callout.
 
 **Trainer Mode:** Immediate feedback after each answer. Optional speech input (Web Speech API). Tracks weak topics. Session summary with "Study these next" recommendations.
 
@@ -107,7 +107,7 @@ Not available anywhere else for this audience, for free.
 | Honest fidelity disclosure | ✗ | ✗ | ✗ | ✓ |
 | No ads, no upsells | ✓ | ✗ | ✗ | ✓ |
 | Covers evals, inference, agents, MCP | ✗ | Partial | ✗ | ✓ |
-| 169+ production-depth posts | ✗ | ✗ | ✗ | ✓ |
+| 178+ production-depth posts | ✗ | ✗ | ✗ | ✓ |
 | Free forever | ✓ | ✗ | ✓ | ✓ |
 
 The gap that matters: every other resource **shows** you what to do. This one puts you in the seat and makes you decide — then shows you what broke and why.
@@ -232,13 +232,13 @@ src/
 ├── Fluency.jsx             # Fluency gym + mock interview + AI readiness assessment
 ├── AIPM.jsx                # AI product manager track
 ├── Career.jsx              # Career track — system design + negotiation
-├── GroundTruth.jsx         # 169+ posts — ELI5, search, reactions, quiz-me, ToC
+├── GroundTruth.jsx         # 178+ posts — ELI5, search, reactions, quiz-me, ToC
 ├── Consultation.jsx        # Ask tab — keyword retrieval over all posts + modules
 ├── PrepLab.jsx             # Assessment exam, Trainer mode, JD+resume prep
 ├── HowTo.jsx               # Shared objective-first component used across all modules
 ├── analytics.js            # PostHog event tracking (fails silently if unconfigured)
 ├── constants.js            # Shared constants (tab IDs, locked tabs, etc.)
-├── groundTruthPosts.js     # All 169+ post content as typed block arrays
+├── groundTruthPosts.js     # All 178+ post content as typed block arrays
 └── groundTruthIndex.js     # Search index built from post metadata
 public/
 ├── og-image.png            # Open Graph image for link previews

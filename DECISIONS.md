@@ -495,3 +495,39 @@ The positioning: *"The only place you practice diagnosing production GenAI failu
 
 *Last updated: May 2026*
 *Maintained by: Sidharth Kriplani*
+
+---
+
+## Session: May 2026 — Scale & Architecture Sprint
+
+### Scale reached
+- Systems modules: 37+ (added Flash Attention, Quantization, Serving Infrastructure, Prompt Caching, Fine-Tuning Workflows, RLHF/DPO/PPO, Multimodal Systems, Agents Architecture)
+- PrepLab questions: 120+ (added RAG, context engineering, alignment, multimodal, system design text questions)
+- Ground Truth posts: 178+ (added Training Stack series, How I'd Build X expansion, Agents posts)
+- Explore modules: 14 (added RAG Architecture, API Pricing, Prompt Patterns, Benchmark Browser, Context Engineering)
+
+### Decision: localStorage progress tracking in Systems
+- **What**: Mark-as-done per module, persisted to localStorage key `gsl-systems-done`
+- **Why**: Users asked for a way to track what they'd covered. localStorage is zero-infrastructure.
+- **Trade-off**: Clears on browser data wipe; not cross-device. Acceptable for a learning tool.
+- **Implementation**: `useState` initialized from `localStorage`, `toggleDone(id)` writes back on each toggle, progress bar + counter in header, ✓ on module pills, "Mark as done" button at bottom of each module.
+
+### Decision: Systems.jsx split into src/systems/ files (pending)
+- **Why**: File hit 9,500+ lines. One bad edit breaks the whole module. Edit tooling (Read/Edit) requires offset+limit navigation.
+- **Plan**: Split by group — `build.jsx`, `ops.jsx`, `design.jsx`, `core.jsx` under `src/systems/`. Systems.jsx becomes the registry (SYSTEMS_MODULES array + SYSTEMS_GROUPS) + SystemsApp shell only.
+- **Risk**: Import reorganization. All components need to be exported from subfiles and imported into Systems.jsx. Vite handles this without performance impact (still bundles to one chunk).
+
+### Decision: Explore as reference tab (not interactive)
+- **What**: New Explore modules are predominantly static reference tables (API pricing, benchmark scores, context limits) rather than interactive simulators.
+- **Why**: Explore is for "I need to look something up" not "I want to practice." Different user intent than Systems.
+- **Pattern**: Each Explore module = 2-3 tabs, first tab is primary reference table, second tab is explanation/context.
+
+### Decision: PrepLab text-type questions for system design
+- **What**: Added `type: "text"` open-ended questions alongside MCQs.
+- **Why**: Real interviews include system design questions that can't be assessed by multiple choice. Text questions show a model answer via the `explanation` field — users compare their answer to it.
+- **Note**: No automated grading. Self-assessment model. Works for the use case (interview prep, not certification).
+
+### Decision: GT series strategy
+- **Series added**: Training Stack (SFT → RLHF → DPO → distillation), How I'd Build X expanded to 6 posts, Agents posts added.
+- **Pattern**: Each series = 3-6 posts, cohesive theme, posts work standalone or as sequence.
+- **Not done**: ROADMAP.md and CHANGELOG.md — too high maintenance relative to value for a fast-moving solo project.

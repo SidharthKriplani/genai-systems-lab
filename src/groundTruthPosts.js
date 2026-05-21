@@ -1701,59 +1701,6 @@ def self_attention(X, W_Q, W_K, W_V, mask=None):
     ]},
   ],
 
-  // ─── MULTI-AGENT ORCHESTRATION ───────────────────────────────────────────────
-
-  "multi-agent-orchestration": [
-    { t: "p", text: "A single agent has limited context, limited specialisation, and a single point of failure. Multi-agent systems split work across specialised agents, run tasks in parallel, and implement checks and balances. They're also significantly harder to build correctly." },
-
-    { t: "h2", text: "When to go multi-agent" },
-    { t: "list", items: [
-      "The task is too long for a single context window",
-      "Different subtasks require different specialisations or tools",
-      "Parallelisation would meaningfully reduce wall-clock time",
-      "You want verification: one agent produces, another checks",
-      "The domain has natural decomposition (research agent → writer agent → editor agent)",
-    ]},
-    { t: "callout", v: "warning", text: "Multi-agent adds coordination overhead, inter-agent communication failures, and compound reliability problems. A system of 3 agents each with 95% per-step reliability has a 77% success rate across 6 steps combined. Start single-agent and only add agents when you've hit a concrete wall." },
-
-    { t: "h2", text: "Pattern 1: Supervisor / subagent" },
-    { t: "p", text: "One orchestrator agent receives the task, plans the decomposition, and delegates to specialised subagents. The orchestrator waits for results and synthesises them. This is the most common production pattern — the orchestrator maintains state and handles failures." },
-    { t: "code", lang: "python", label: "Supervisor pattern (LangGraph sketch)", text: `# Supervisor decides which worker to call next
-def supervisor(state):
-    task = state["task"]
-    history = state["history"]
-    # LLM decides: researcher | writer | editor | FINISH
-    next_worker = llm.invoke(supervisor_prompt.format(task=task, history=history))
-    return {"next": next_worker}
-
-graph.add_node("supervisor", supervisor)
-graph.add_node("researcher", researcher_agent)
-graph.add_node("writer", writer_agent)
-graph.add_conditional_edges("supervisor",
-    lambda s: s["next"],
-    {"researcher": "researcher", "writer": "writer", "FINISH": END})` },
-
-    { t: "h2", text: "Pattern 2: Pipeline" },
-    { t: "p", text: "Agents are chained sequentially — the output of each becomes the input of the next. No central orchestrator. Simple to reason about, easy to debug, but inflexible: if step 3 fails, you can't route back to step 1 without restarting the whole pipeline." },
-
-    { t: "h2", text: "Pattern 3: Mesh / peer-to-peer" },
-    { t: "p", text: "Agents communicate directly with each other, dynamically choosing who to consult. Most flexible, most complex. Used in research systems (AutoGen, CAMEL). Rarely seen in production due to unpredictable communication patterns and cost." },
-
-    { t: "h2", text: "Inter-agent communication" },
-    { t: "p", text: "Agents can communicate via shared memory (a common state object), message passing (explicit messages), or tool calls (agent A exposes itself as a tool that agent B can call). Shared state is easiest to implement; message passing is most explicit and debuggable." },
-
-    { t: "h2", text: "Failure budgets and guardrails" },
-    { t: "list", items: [
-      "Set max_steps per agent and max_total_steps for the whole system",
-      "Checkpoint shared state so partial failures can be resumed, not restarted",
-      "Build a \"stuck\" detector: if two consecutive steps produce identical state, escalate to human",
-      "Rate-limit inter-agent calls to prevent runaway message loops",
-      "Define a clear success condition — agents should self-terminate, not rely on step exhaustion",
-    ]},
-
-    { t: "lab", tab: "agents", label: "Trace multi-agent execution →", desc: "Watch supervisor and subagent interactions step by step in the Agents Lab." },
-  ],
-
   // ─── GUARDRAILS FOR LLMS ─────────────────────────────────────────────────────
 
   "guardrails-for-llms": [
@@ -10488,5 +10435,94 @@ def slerp(w1, w2, t):
       { t: "refs", items: [{ label: "Distilling the Knowledge in a Neural Network (Hinton et al., 2015)", url: "https://arxiv.org/abs/1503.02531" }, { label: "Sequence-Level Knowledge Distillation (Kim & Rush, 2016)", url: "https://arxiv.org/abs/1606.07947" }, { label: "Alpaca (Taori et al., 2023)", url: "https://crfm.stanford.edu/2023/03/13/alpaca.html" }] },
     ],
   },
+
+  "build-voice-ai": [
+    { t: "p", text: "Voice AI has a deceptively simple stack: speech-to-text → LLM → text-to-speech. The hard part is doing it fast enough that it feels like a conversation and reliable enough that it doesn't break in a noisy environment. Here's how I'd build it." },
+    { t: "h2", text: "The Latency Budget" },
+    { t: "p", text: "Human conversation feels natural under 500ms end-to-end. Your budget: STT ~150ms, LLM first token ~200ms, TTS first audio chunk ~100ms, network ~50ms. Every component needs to stream — you can't batch any stage." },
+    { t: "table", headers: ["Stage", "Target Latency", "Tool Options", "Bottleneck Risk"], rows: [["STT", "100–200ms", "Deepgram Nova, Whisper Streaming, AssemblyAI", "Accuracy on accents"], ["LLM", "150–300ms TTFT", "GPT-4o, Gemini Flash, Groq", "Context length, streaming setup"], ["TTS", "80–150ms", "ElevenLabs, Cartesia, PlayHT", "Voice cloning quality"], ["Network", "50–100ms", "WebSockets (required)", "Regional latency"]] },
+    { t: "h2", text: "Streaming Is Non-Negotiable" },
+    { t: "p", text: "Every stage must stream. STT streams partial transcripts as the user speaks. The LLM starts generating before the full transcript arrives (using interim results). TTS synthesizes and plays audio as the LLM generates tokens — sentence by sentence, not waiting for the full response. Without streaming, your latency is the sum of all stages. With streaming, it's the latency of the first stage that produces output." },
+    { t: "h2", text: "Turn Detection" },
+    { t: "p", text: "The hardest problem in voice AI isn't latency — it's knowing when the user has finished speaking. VAD (Voice Activity Detection) detects silence, but silence isn't always the end of a turn. Build a two-stage system: VAD triggers a 500ms silence window, then a small classifier decides if it's a natural pause (within a sentence) or a turn end. Without this, your agent constantly interrupts users mid-thought." },
+    { t: "h2", text: "Interruption Handling" },
+    { t: "p", text: "Users interrupt. When the user speaks while the AI is talking, you need to: (1) detect the interruption via VAD, (2) stop TTS audio immediately, (3) cancel the pending LLM generation, (4) process the new user input. This requires coordinated cancellation across all three pipeline stages — a complexity that's easy to underestimate." },
+    { t: "h2", text: "The Architecture" },
+    { t: "code", lang: "python", text: "# Simplified voice pipeline\nasync def voice_pipeline(audio_stream):\n    async for transcript in stt.stream(audio_stream):  # streaming STT\n        if is_turn_end(transcript):\n            async for token in llm.stream(transcript.text):  # streaming LLM\n                sentence = buffer.add(token)\n                if sentence:  # sentence boundary\n                    audio = await tts.synthesize(sentence)  # streaming TTS\n                    await websocket.send(audio)" },
+    { t: "h2", text: "Where It Breaks" },
+    { t: "list", items: ["Noisy environments: STT accuracy drops. Use noise-robust models (Deepgram Nova-3) and consider a denoising preprocessor.", "Accents and domain vocabulary: Fine-tune STT on your domain or use custom vocabulary hints.", "Latency spikes: P99 matters more than P50. One slow LLM response breaks the conversation feel. Use timeout + fallback.", "Context management: Voice conversations can be long. Summarize older turns, keep recent turns verbatim — same as text multi-turn."] },
+    { t: "divider" },
+    { t: "refs", items: [{ label: "Deepgram Streaming API", url: "https://developers.deepgram.com/docs/streaming" }, { label: "Cartesia TTS (low latency)", url: "https://cartesia.ai" }, { label: "Pipecat — voice AI framework", url: "https://github.com/pipecat-ai/pipecat" }] },
+  ],
+
+  "build-document-intelligence": [
+    { t: "p", text: "Document intelligence is harder than it looks. PDFs aren't text files — they're a layout format. Tables, headers, footers, multi-column layouts, embedded images, and scanned pages all require different handling. Here's the pipeline I'd build." },
+    { t: "h2", text: "Parsing: Don't Use PyPDF2" },
+    { t: "p", text: "PyPDF2 and pdfplumber work for simple text-only PDFs. For anything else — forms, tables, scanned pages, multi-column layouts — use a purpose-built parser. PDFMiner for layout-aware extraction, Camelot/pdfplumber for tables, Docling or Unstructured.io for mixed content. For scanned PDFs, you need OCR: Tesseract is free, AWS Textract and Azure Document Intelligence are better for complex layouts." },
+    { t: "table", headers: ["Document Type", "Parser", "Table Extraction", "Notes"], rows: [["Text PDF", "pdfplumber", "Camelot", "Fast, accurate for clean PDFs"], ["Scanned PDF", "AWS Textract / Azure DI", "Built-in", "OCR quality matters"], ["Mixed content", "Unstructured.io / Docling", "Built-in", "Best for mixed layouts"], ["Word/Excel", "python-docx / openpyxl", "Native", "Preserve structure"], ["HTML", "BeautifulSoup", "pandas.read_html", "Clean semantic structure"]] },
+    { t: "h2", text: "Chunking Strategy for Structured Documents" },
+    { t: "p", text: "Don't apply generic chunking to structured documents. Respect document structure: chunk at section boundaries (identified by heading hierarchy), never split tables across chunks, keep figure captions with their associated image/table. For financial reports or legal documents, the section hierarchy is semantic information — losing it degrades retrieval quality significantly." },
+    { t: "h2", text: "Handling Tables" },
+    { t: "p", text: "Tables are the hardest part. A table cell that says '14.2%' means nothing without the row label ('Gross Margin') and column header ('Q3 2024'). Strategies: serialize tables to Markdown before embedding (preserves structure, works well with LLMs), store tables separately in a structured store and query them with SQL or pandas, or use a multimodal model that can 'see' the table as an image." },
+    { t: "h2", text: "Citations and Provenance" },
+    { t: "p", text: "Every extracted claim must be traceable. Store with each chunk: document ID, page number, section heading, and character offset. When generating answers, require the LLM to cite sources inline and verify each citation against the stored chunks. This is the difference between a demo and a production document intelligence system." },
+    { t: "code", lang: "python", text: "# Chunk with provenance metadata\nchunks = []\nfor section in parsed_doc.sections:\n    chunk_text = section.text\n    chunks.append({\n        \"text\": chunk_text,\n        \"metadata\": {\n            \"doc_id\": doc_id,\n            \"page\": section.page_number,\n            \"section\": section.heading,\n            \"char_offset\": section.start_char,\n        }\n    })" },
+    { t: "h2", text: "Eval: What to Measure" },
+    { t: "list", items: ["Extraction accuracy: Do key fields (dates, amounts, names) extract correctly? Test on 50+ labeled documents.", "Citation precision: Are cited sources actually the source of the claim? Human eval sample.", "Table QA accuracy: Ask factual questions about tables, verify against ground truth.", "Hallucination rate: Does the system answer questions not answerable from the document? Should refuse, not hallucinate."] },
+    { t: "divider" },
+    { t: "refs", items: [{ label: "Unstructured.io", url: "https://unstructured.io" }, { label: "Docling (IBM)", url: "https://github.com/DS4SD/docling" }, { label: "Camelot — PDF table extraction", url: "https://camelot-py.readthedocs.io" }] },
+  ],
+
+  "build-coding-assistant": [
+    { t: "p", text: "The gap between a coding assistant demo and one engineers actually use daily is huge. Here's what separates them: repository awareness, diff-aware context, and evals that catch regressions before users do." },
+    { t: "h2", text: "The Context Problem" },
+    { t: "p", text: "Naive coding assistants stuff the current file into the context window. Good ones retrieve relevant context from across the repository: related files, function definitions, type signatures, test files for the function being edited. The retrieval problem for code is different from text RAG — you want structural relevance (imports, call graphs) not just semantic similarity." },
+    { t: "h2", text: "What to Index" },
+    { t: "list", items: ["Symbol index: function/class definitions with their signatures, docstrings, and file location. Use Tree-sitter for language-aware parsing.", "Import graph: what files import what. Critical for understanding dependencies and finding related code.", "Recent git history: files changed together often belong together semantically.", "Test files: always retrieve tests alongside implementation. Prevents generating code that breaks existing tests."] },
+    { t: "h2", text: "Diff-Aware Completion" },
+    { t: "p", text: "When the user is editing code, the context should reflect the current diff — not just the current file state. Include: the git diff of modified files, the surrounding unchanged code for context, and any type errors or linter warnings in the current state. This lets the model generate completions that fix the error, not just continue from the last character." },
+    { t: "h2", text: "The Retrieval Stack" },
+    { t: "table", headers: ["Context Type", "Retrieval Method", "Priority"], rows: [["Current file", "Direct (always included)", "Highest"], ["Called functions", "Symbol index lookup", "High"], ["Imported modules", "Import graph traversal", "High"], ["Semantically similar code", "Embedding search over codebase", "Medium"], ["Recent git changes", "git log --diff-filter=M", "Medium"], ["Test files", "Symbol index (test_ prefix)", "Medium"]] },
+    { t: "h2", text: "Eval Harness" },
+    { t: "p", text: "The eval that actually matters: generate code with the assistant, run the existing test suite, measure pass rate. Simple, but most teams don't do it. Add: a regression test (does today's model score lower than last week?), a latency benchmark (P50/P99 completion time), and a user acceptance test (do engineers accept or reject the suggestion?). Track acceptance rate in production — it's your most honest signal." },
+    { t: "code", lang: "python", text: "# Coding assistant eval\nresults = []\nfor test_case in eval_dataset:\n    completion = assistant.complete(test_case.prefix, test_case.repo_context)\n    full_code = test_case.prefix + completion\n    passed = run_tests(full_code, test_case.tests)\n    results.append({\"id\": test_case.id, \"passed\": passed, \"completion\": completion})\n\npass_rate = sum(r[\"passed\"] for r in results) / len(results)\nprint(f\"Pass@1: {pass_rate:.1%}\")" },
+    { t: "h2", text: "Model Selection" },
+    { t: "p", text: "For code completion: Claude Sonnet 4 and GPT-4o lead on complex multi-file tasks. For autocomplete (< 50ms latency requirement): distilled models like Codestral, StarCoder2-3B, or Qwen2.5-Coder-1.5B running locally. Don't use a frontier model for single-line completions — the latency kills the UX." },
+    { t: "divider" },
+    { t: "refs", items: [{ label: "Tree-sitter — language parsing", url: "https://tree-sitter.github.io" }, { label: "Continue.dev — open source coding assistant", url: "https://continue.dev" }, { label: "SWE-bench — coding eval benchmark", url: "https://swebench.com" }] },
+  ],
+
+  "building-reliable-agents": [
+    { t: "p", text: "Most agent demos work. Most agents in production fail. The gap is reliability — and reliability comes from how you structure the loop, handle failures, and constrain the action space. Here's what I've learned." },
+    { t: "h2", text: "The Agent Loop" },
+    { t: "p", text: "A reliable agent loop has four components: observe (what's the current state?), plan (what action should I take?), act (execute the action), and verify (did it work?). Most agents skip verify — they generate an action, execute it, and move to the next step regardless of outcome. That's where cascading failures start." },
+    { t: "code", lang: "python", text: "async def agent_loop(task, tools, max_steps=10):\n    memory = []\n    for step in range(max_steps):\n        # Observe\n        state = build_state(task, memory)\n        # Plan + Act\n        action = await llm.generate(state, tools)\n        if action.type == \"final_answer\":\n            return action.content\n        # Execute with timeout\n        try:\n            result = await asyncio.wait_for(tools[action.name](**action.args), timeout=30)\n        except asyncio.TimeoutError:\n            result = {\"error\": \"Tool timed out\"}\n        except Exception as e:\n            result = {\"error\": str(e)}\n        # Verify + remember\n        memory.append({\"action\": action, \"result\": result})\n    return \"Max steps reached — partial result\"" },
+    { t: "h2", text: "Tool Design" },
+    { t: "p", text: "Good tools are narrow, idempotent, and return structured errors. Bad tools are broad (do_everything), have side effects that can't be retried, and return vague error messages. The model will misuse broad tools. It needs to call narrow tools correctly to make progress — which is actually a feature, not a bug, because you can validate narrow calls more easily." },
+    { t: "h2", text: "The Five Failure Modes" },
+    { t: "list", items: ["Infinite loops: Agent repeats the same action because it doesn't detect it's not making progress. Fix: track action history, detect repetition, break loop after N identical actions.", "Tool misuse: Wrong arguments, wrong tool for the task. Fix: strict JSON schema validation, retry with error feedback (max 2 retries).", "Context overflow: Long tasks exhaust the context window. Fix: summarize memory periodically, keep only recent + relevant steps.", "Hallucinated tool calls: Model invents tools that don't exist. Fix: constrained generation or explicit 'available tools only' instruction.", "Goal drift: Agent pursues sub-goals that diverge from the original task. Fix: re-inject the original task at every step, add a 'goal check' before executing actions."] },
+    { t: "h2", text: "Observability Is Not Optional" },
+    { t: "p", text: "Log every step: the full prompt, the generated action, the tool inputs and outputs, latency, and token count. Without this, debugging a failed agent run is guesswork. Use structured logging — not print statements — so you can trace specific run IDs across steps. Build a replay tool: given a run ID, reconstruct exactly what the agent saw and did at each step." },
+    { t: "callout", text: "Production rule: never deploy an agent without a max_steps limit, per-tool timeout, total cost budget, and a human escalation path. Any agent that can spend money or modify data needs all four." },
+    { t: "divider" },
+    { t: "refs", items: [{ label: "ReAct: Synergizing Reasoning and Acting (Yao et al.)", url: "https://arxiv.org/abs/2210.03629" }, { label: "Toolformer (Schick et al.)", url: "https://arxiv.org/abs/2302.04761" }, { label: "LangGraph — stateful agent framework", url: "https://langchain-ai.github.io/langgraph/" }] },
+  ],
+
+  "multi-agent-orchestration": [
+    { t: "p", text: "Multi-agent systems get hyped as the path to AGI and dismissed as unnecessary complexity. The truth: they're the right tool for a narrow set of problems, and the wrong tool for most of what people use them for. Here's how to tell the difference." },
+    { t: "h2", text: "When Multi-Agent Actually Helps" },
+    { t: "list", items: ["Parallelism: Tasks that can run concurrently (research 5 topics simultaneously) benefit enormously. One agent is inherently sequential.", "Specialization: Domain-specific agents (legal, financial, code) that each have tailored tools, context, and prompts outperform a generalist agent on complex domains.", "Scale beyond context: Tasks that exceed a single context window (process 1000 documents) need multiple agents working across the corpus.", "Verification: A separate critic/verifier agent reviewing another agent's output catches more errors than self-reflection."] },
+    { t: "h2", text: "The Three Patterns" },
+    { t: "table", headers: ["Pattern", "Structure", "Best For", "Complexity"], rows: [["Orchestrator-Worker", "One planner dispatches tasks to specialized workers", "Parallelizable tasks, domain specialization", "Medium"], ["Peer-to-Peer", "Agents communicate directly, no central coordinator", "Collaborative writing, debate/critique", "High"], ["Hierarchical", "Multiple levels: planner → sub-planners → workers", "Very complex tasks, enterprise workflows", "Very High"]] },
+    { t: "h2", text: "Orchestrator-Worker: The Default Choice" },
+    { t: "p", text: "Start here. The orchestrator receives the task, breaks it into subtasks, dispatches to workers, collects results, and synthesizes. Workers are stateless — they receive a task, execute it, return a result. This is easy to debug, easy to scale, and easy to reason about. The orchestrator's prompt is the hardest part to write: it needs to decompose tasks well and know when to retry vs give up." },
+    { t: "h2", text: "Communication: A2A vs Shared Memory" },
+    { t: "p", text: "Two ways agents coordinate: A2A (agent-to-agent) direct messaging (Google's A2A protocol, custom message passing) or shared memory (all agents read/write to a common state store). Shared memory is simpler but creates race conditions. A2A is cleaner but requires explicit message schemas. For most teams: shared memory with optimistic locking is the pragmatic choice. A2A shines when agents run across different services or organizations." },
+    { t: "h2", text: "What Actually Goes Wrong" },
+    { t: "list", items: ["Error propagation: one worker fails, orchestrator doesn't handle it, whole pipeline returns garbage. Build explicit error contracts between agents.", "Cost explosion: 10 parallel agents × 10 steps each = 100 LLM calls. Budget and monitor before running at scale.", "Coordination overhead: orchestrators that decompose too granularly spend more tokens on coordination than the workers spend on work.", "Debugging nightmare: tracing a failure across 5 agents without good observability is hours of work. Instrument before you build."] },
+    { t: "callout", text: "Honest take: most tasks that teams try to solve with multi-agent systems can be solved with a single well-structured agent + good tooling. Multi-agent adds value only when you genuinely need parallelism, specialization, or scale beyond one context window." },
+    { t: "divider" },
+    { t: "refs", items: [{ label: "Google A2A Protocol", url: "https://google.github.io/A2A/" }, { label: "AutoGen — multi-agent framework", url: "https://microsoft.github.io/autogen/" }, { label: "CrewAI — role-based agents", url: "https://crewai.com" }] },
+  ],
 
 };

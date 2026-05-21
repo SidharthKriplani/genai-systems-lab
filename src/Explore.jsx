@@ -3431,6 +3431,466 @@ function EmbeddingModelSelector() {
 }
 
 
+// ─── RAG ARCHITECTURE PATTERNS ───────────────────────────────────────────────
+
+function RAGArchitecturePatterns() {
+  const [tab, setTab] = useState(0);
+  const tabs = ["Chunking Strategies", "Retrieval Pipeline"];
+
+  const chunkingRows = [
+    { strategy: "Fixed-size", size: "256–512 tokens", overlap: "10–20%", bestFor: "Simple docs, fast setup", pitfall: "Splits sentences mid-thought" },
+    { strategy: "Semantic", size: "Variable", overlap: "None", bestFor: "Technical docs, legal", pitfall: "Slower, needs NLP" },
+    { strategy: "Parent-child", size: "Small child / large parent", overlap: "None", bestFor: "Q&A over long docs", pitfall: "More storage, complex retrieval" },
+    { strategy: "Sentence window", size: "1–3 sentences", overlap: "1 sentence", bestFor: "Conversational content", pitfall: "Many small chunks" },
+    { strategy: "Document-level", size: "Full doc", overlap: "None", bestFor: "Short docs, summaries", pitfall: "Too noisy for dense retrieval" },
+  ];
+
+  const pipelineSteps = [
+    { step: 1, name: "Dense Retrieval", color: "border-indigo-500", detail: "Embed query → cosine similarity over vector index. Fast. ~1000ms p99." },
+    { step: 2, name: "Sparse Retrieval (BM25)", color: "border-blue-500", detail: "Keyword overlap, handles exact terms dense misses. Often run in parallel." },
+    { step: 3, name: "Hybrid Fusion", color: "border-violet-500", detail: "RRF (Reciprocal Rank Fusion) merges dense + sparse results. Simple, effective." },
+    { step: 4, name: "Reranker", color: "border-purple-500", detail: "Cross-encoder scores top-50 results. Returns top-5. +50–200ms latency, +15–25% precision." },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-zinc-800 text-zinc-300">
+                <th className="px-3 py-2 text-left font-semibold">Strategy</th>
+                <th className="px-3 py-2 text-left font-semibold">Chunk Size</th>
+                <th className="px-3 py-2 text-left font-semibold">Overlap</th>
+                <th className="px-3 py-2 text-left font-semibold">Best For</th>
+                <th className="px-3 py-2 text-left font-semibold">Pitfall</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chunkingRows.map((r, i) => (
+                <tr key={i} className={i % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800/50"}>
+                  <td className="px-3 py-2 font-medium text-white">{r.strategy}</td>
+                  <td className="px-3 py-2 text-zinc-300">{r.size}</td>
+                  <td className="px-3 py-2 text-zinc-300">{r.overlap}</td>
+                  <td className="px-3 py-2 text-zinc-300">{r.bestFor}</td>
+                  <td className="px-3 py-2 text-amber-400">{r.pitfall}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {tab === 1 && (
+        <div className="space-y-3">
+          {pipelineSteps.map((s) => (
+            <div key={s.step} className={`border-l-4 ${s.color} bg-zinc-800/60 rounded-r-lg px-4 py-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-mono bg-zinc-700 text-zinc-300 px-1.5 py-0.5 rounded">Step {s.step}</span>
+                <span className="font-semibold text-white text-sm">{s.name}</span>
+              </div>
+              <p className="text-zinc-400 text-sm">{s.detail}</p>
+            </div>
+          ))}
+          <div className="bg-amber-950/40 border border-amber-700/50 rounded-lg px-4 py-3 mt-2">
+            <p className="text-amber-300 text-xs font-semibold mb-1">When to skip reranker</p>
+            <p className="text-amber-200/80 text-sm">Latency &lt; 500ms budget, corpus &lt; 10K chunks, queries are keyword-heavy.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ─── API MODEL PRICING ────────────────────────────────────────────────────────
+
+function APIModelPricing() {
+  const [filter, setFilter] = useState("all");
+
+  const MODELS_PRICING = [
+    { name: "GPT-4o", provider: "OpenAI", tier: "frontier", inputPer1M: 2.50, outputPer1M: 10.00, contextK: 128, notes: "Default for most tasks" },
+    { name: "GPT-4o mini", provider: "OpenAI", tier: "small", inputPer1M: 0.15, outputPer1M: 0.60, contextK: 128, notes: "Best price/quality small" },
+    { name: "o3", provider: "OpenAI", tier: "frontier", inputPer1M: 10.00, outputPer1M: 40.00, contextK: 200, notes: "Reasoning, slow" },
+    { name: "Claude Sonnet 4", provider: "Anthropic", tier: "frontier", inputPer1M: 3.00, outputPer1M: 15.00, contextK: 200, notes: "Best for coding/analysis" },
+    { name: "Claude Haiku 3.5", provider: "Anthropic", tier: "small", inputPer1M: 0.80, outputPer1M: 4.00, contextK: 200, notes: "Fast, cheap" },
+    { name: "Gemini 2.0 Flash", provider: "Google", tier: "mid", inputPer1M: 0.10, outputPer1M: 0.40, contextK: 1000, notes: "Long context, cheap" },
+    { name: "Gemini 2.5 Pro", provider: "Google", tier: "frontier", inputPer1M: 1.25, outputPer1M: 10.00, contextK: 1000, notes: "Best long context" },
+    { name: "Llama 3.3 70B", provider: "Meta (OSS)", tier: "mid", inputPer1M: 0.23, outputPer1M: 0.40, contextK: 128, notes: "Self-host or via Groq" },
+    { name: "Mistral Large", provider: "Mistral", tier: "mid", inputPer1M: 2.00, outputPer1M: 6.00, contextK: 128, notes: "EU-based, GDPR" },
+    { name: "Deepseek V3", provider: "Deepseek", tier: "frontier", inputPer1M: 0.27, outputPer1M: 1.10, contextK: 64, notes: "Frontier quality, low cost" },
+  ];
+
+  const tierBadge = { frontier: "bg-purple-900/60 text-purple-300 border border-purple-700/50", mid: "bg-blue-900/60 text-blue-300 border border-blue-700/50", small: "bg-green-900/60 text-green-300 border border-green-700/50" };
+  const filterBtns = ["all", "frontier", "mid", "small"];
+  const visible = filter === "all" ? MODELS_PRICING : MODELS_PRICING.filter(m => m.tier === filter);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {filterBtns.map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={`px-3 py-1 rounded text-sm font-medium capitalize ${filter === f ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-zinc-800 text-zinc-300">
+              <th className="px-3 py-2 text-left font-semibold">Model</th>
+              <th className="px-3 py-2 text-left font-semibold">Provider</th>
+              <th className="px-3 py-2 text-right font-semibold">Input $/1M</th>
+              <th className="px-3 py-2 text-right font-semibold">Output $/1M</th>
+              <th className="px-3 py-2 text-right font-semibold">Context</th>
+              <th className="px-3 py-2 text-left font-semibold">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((m, i) => (
+              <tr key={i} className={i % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800/50"}>
+                <td className="px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-white">{m.name}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${tierBadge[m.tier]}`}>{m.tier}</span>
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-zinc-300">{m.provider}</td>
+                <td className="px-3 py-2 text-right text-emerald-400 font-mono">${m.inputPer1M.toFixed(2)}</td>
+                <td className="px-3 py-2 text-right text-emerald-400 font-mono">${m.outputPer1M.toFixed(2)}</td>
+                <td className="px-3 py-2 text-right text-zinc-300 font-mono">{m.contextK}K</td>
+                <td className="px-3 py-2 text-zinc-400 text-xs">{m.notes}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-zinc-500 text-xs text-center">Prices as of mid-2025. Always check provider docs for current pricing.</p>
+    </div>
+  );
+}
+
+
+// ─── PROMPT PATTERN LIBRARY ───────────────────────────────────────────────────
+
+function PromptPatternLibrary() {
+  const [tab, setTab] = useState(0);
+  const [selectedPattern, setSelectedPattern] = useState(null);
+  const [templateIdx, setTemplateIdx] = useState(0);
+  const tabs = ["Patterns", "Templates", "Anti-Patterns"];
+
+  const PROMPT_PATTERNS = [
+    {
+      id: "few-shot",
+      name: "Few-Shot",
+      when: "Model needs format/style examples, classification tasks",
+      template: `You are a [role]. Here are examples:\n\nInput: [example 1]\nOutput: [expected 1]\n\nInput: [example 2]\nOutput: [expected 2]\n\nInput: {user_input}\nOutput:`,
+      tips: ["3–5 examples is usually enough", "Order matters: put hardest example last", "Examples should cover edge cases"],
+    },
+    {
+      id: "chain-of-thought",
+      name: "Chain of Thought",
+      when: "Multi-step reasoning, math, logic problems",
+      template: `Solve this step by step.\n\nProblem: {problem}\n\nLet me think through this carefully:\n1.`,
+      tips: ["Add 'think step by step' or 'let's reason through this'", "Works best with larger models", "Zero-shot CoT ('think step by step') often sufficient"],
+    },
+    {
+      id: "structured-output",
+      name: "Structured Output",
+      when: "Downstream parsing, API responses, data extraction",
+      template: `Extract the following from the text below. Return ONLY valid JSON with no explanation.\n\nSchema:\n{\n  "field1": "string",\n  "field2": "number",\n  "field3": ["array"]\n}\n\nText: {input}`,
+      tips: ["Use constrained generation (Outlines/Guidance) when reliability matters", "Ask for JSON, not 'formatted data'", "Validate output schema before using"],
+    },
+    {
+      id: "role-persona",
+      name: "Role + Persona",
+      when: "Tone control, domain expertise, consistent voice",
+      template: `You are a [specific role] with [years] of experience in [domain]. You [key trait 1] and [key trait 2]. You never [anti-pattern].\n\n{user_message}`,
+      tips: ["Be specific about the anti-patterns ('never hedge', 'never use bullet points')", "Add constraints, not just descriptions", "Test persona drift over long conversations"],
+    },
+    {
+      id: "self-consistency",
+      name: "Self-Consistency",
+      when: "High-stakes decisions, math, factual claims",
+      template: `[Same prompt, run N times with temperature > 0]\n\n// Then: pick majority answer or synthesize\nconst answers = await Promise.all(Array(5).fill(prompt).map(p => llm(p)));\nconst majority = mostCommon(answers);`,
+      tips: ["Run 5–10 samples, majority vote", "Expensive but reliable for critical paths", "Use for eval generation, not production serving"],
+    },
+  ];
+
+  const antiPatterns = [
+    { problem: "Vague instructions", fix: "Add explicit format spec" },
+    { problem: "No examples for format tasks", fix: "Add 2-3 examples" },
+    { problem: "Asking for multiple things at once", fix: "One task per prompt" },
+    { problem: "No negative examples", fix: "Add 'don't do X' constraints" },
+    { problem: "Temperature 1.0 for factual tasks", fix: "Use 0–0.3" },
+    { problem: "No output validation", fix: "Always parse/validate LLM output" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {PROMPT_PATTERNS.map((p) => (
+            <div key={p.id}
+              onClick={() => setSelectedPattern(selectedPattern === p.id ? null : p.id)}
+              className="bg-zinc-800/60 rounded-lg p-3 cursor-pointer hover:bg-zinc-700/60 transition-colors border border-zinc-700/50">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-semibold text-white text-sm">{p.name}</span>
+                <span className="text-zinc-500 text-xs">{selectedPattern === p.id ? "▲" : "▼"}</span>
+              </div>
+              <p className="text-zinc-400 text-xs mb-2">{p.when}</p>
+              {selectedPattern === p.id && (
+                <div className="mt-2 space-y-2">
+                  <pre className="bg-zinc-900 rounded p-2 text-xs text-emerald-300 overflow-x-auto whitespace-pre-wrap">{p.template}</pre>
+                  <ul className="space-y-1">
+                    {p.tips.map((tip, i) => (
+                      <li key={i} className="text-xs text-zinc-300 flex gap-1"><span className="text-indigo-400">•</span>{tip}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 1 && (
+        <div className="space-y-3">
+          <select
+            value={templateIdx}
+            onChange={e => setTemplateIdx(Number(e.target.value))}
+            className="bg-zinc-800 text-zinc-200 rounded px-3 py-2 text-sm border border-zinc-700 w-full">
+            {PROMPT_PATTERNS.map((p, i) => <option key={p.id} value={i}>{p.name}</option>)}
+          </select>
+          <pre className="bg-zinc-900 border border-zinc-700 rounded-lg p-4 text-xs text-emerald-300 overflow-x-auto whitespace-pre-wrap">{PROMPT_PATTERNS[templateIdx].template}</pre>
+          <ul className="space-y-1">
+            {PROMPT_PATTERNS[templateIdx].tips.map((tip, i) => (
+              <li key={i} className="text-xs text-zinc-300 flex gap-1"><span className="text-indigo-400">•</span>{tip}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {tab === 2 && (
+        <div className="space-y-2">
+          {antiPatterns.map((a, i) => (
+            <div key={i} className="flex items-start gap-3 bg-zinc-800/60 rounded-lg px-4 py-3 border border-zinc-700/40">
+              <span className="text-zinc-500 text-xs font-mono mt-0.5 shrink-0">{i + 1}.</span>
+              <div>
+                <span className="text-red-400 text-sm font-medium">{a.problem}</span>
+                <span className="text-zinc-500 text-sm mx-2">→</span>
+                <span className="text-emerald-400 text-sm">{a.fix}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ─── BENCHMARK BROWSER ────────────────────────────────────────────────────────
+
+function BenchmarkBrowser() {
+  const [tab, setTab] = useState(0);
+  const [sortCol, setSortCol] = useState("mmlu");
+  const tabs = ["Scores Table", "What Each Benchmark Tests"];
+
+  const BENCHMARK_DATA = [
+    { model: "GPT-4o", provider: "OpenAI", mmlu: 88.7, humaneval: 90.2, mtbench: 9.1, math: 76.6, gpqa: 53.6 },
+    { model: "Claude Sonnet 4", provider: "Anthropic", mmlu: 88.3, humaneval: 92.0, mtbench: 9.0, math: 78.1, gpqa: 59.4 },
+    { model: "Gemini 2.5 Pro", provider: "Google", mmlu: 91.0, humaneval: 87.0, mtbench: 9.2, math: 91.0, gpqa: 84.0 },
+    { model: "o3", provider: "OpenAI", mmlu: 92.0, humaneval: 96.7, mtbench: 9.4, math: 97.9, gpqa: 87.7 },
+    { model: "Llama 3.3 70B", provider: "Meta", mmlu: 86.0, humaneval: 88.4, mtbench: 8.7, math: 77.0, gpqa: 50.1 },
+    { model: "Deepseek V3", provider: "Deepseek", mmlu: 88.5, humaneval: 89.1, mtbench: 8.8, math: 75.3, gpqa: 59.1 },
+    { model: "Mistral Large 2", provider: "Mistral", mmlu: 84.0, humaneval: 92.1, mtbench: 8.6, math: 70.0, gpqa: 48.3 },
+    { model: "GPT-4o mini", provider: "OpenAI", mmlu: 82.0, humaneval: 87.2, mtbench: 8.4, math: 70.2, gpqa: 40.2 },
+  ];
+
+  const cols = ["mmlu", "humaneval", "mtbench", "math", "gpqa"];
+  const colLabels = { mmlu: "MMLU", humaneval: "HumanEval", mtbench: "MT-Bench", math: "MATH", gpqa: "GPQA" };
+  const topScores = useMemo(() => {
+    const t = {};
+    cols.forEach(c => { t[c] = Math.max(...BENCHMARK_DATA.map(r => r[c])); });
+    return t;
+  }, []);
+
+  const sorted = useMemo(() =>
+    [...BENCHMARK_DATA].sort((a, b) => b[sortCol] - a[sortCol]),
+    [sortCol]
+  );
+
+  const benchInfo = [
+    { name: "MMLU", desc: "57-subject multiple choice, knowledge breadth. GPT-4 level ≈ 86%." },
+    { name: "HumanEval", desc: "164 Python coding problems, functional correctness, pass@1." },
+    { name: "MT-Bench", desc: "80 multi-turn conversation quality, GPT-4 judge, 1–10 scale." },
+    { name: "MATH", desc: "Competition math problems, 5 difficulty levels, exact answer matching." },
+    { name: "GPQA", desc: "Graduate-level science questions, PhD annotators, hard reasoning." },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-zinc-800 text-zinc-300">
+                <th className="px-3 py-2 text-left font-semibold">Model</th>
+                <th className="px-3 py-2 text-left font-semibold">Provider</th>
+                {cols.map(c => (
+                  <th key={c} onClick={() => setSortCol(c)}
+                    className={`px-3 py-2 text-right font-semibold cursor-pointer hover:text-white transition-colors ${sortCol === c ? "text-indigo-400" : ""}`}>
+                    {colLabels[c]} {sortCol === c ? "▼" : ""}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((r, i) => (
+                <tr key={i} className={i % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800/50"}>
+                  <td className="px-3 py-2 font-medium text-white">{r.model}</td>
+                  <td className="px-3 py-2 text-zinc-400 text-xs">{r.provider}</td>
+                  {cols.map(c => (
+                    <td key={c} className={`px-3 py-2 text-right font-mono text-sm ${r[c] === topScores[c] ? "text-emerald-400 font-bold" : "text-zinc-300"}`}>
+                      {r[c]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-zinc-500 text-xs text-center mt-2">Click a column header to sort. Green = top score. Scores approximate, mid-2025.</p>
+        </div>
+      )}
+
+      {tab === 1 && (
+        <div className="space-y-3">
+          {benchInfo.map((b, i) => (
+            <div key={i} className="bg-zinc-800/60 rounded-lg px-4 py-3 border border-zinc-700/40">
+              <span className="font-bold text-indigo-400 text-sm mr-2">{b.name}</span>
+              <span className="text-zinc-300 text-sm">{b.desc}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ─── CONTEXT WINDOW ENGINEERING ───────────────────────────────────────────────
+
+function ContextWindowEngineering() {
+  const [tab, setTab] = useState(0);
+  const tabs = ["Strategies", "Context Limits"];
+
+  const strategies = [
+    { name: "Retrieval-First", color: "border-green-500", desc: "Don't stuff context — retrieve only what's needed. Keeps window < 20% full for headroom." },
+    { name: "Hierarchical Summary", color: "border-blue-500", desc: "Summarize distant turns, keep recent verbatim. Best for multi-turn chat." },
+    { name: "Compression", color: "border-purple-500", desc: "LLMLingua/Selective Context — drop low-importance tokens. 4× compression, <5% quality loss." },
+    { name: "Chunked Processing", color: "border-orange-500", desc: "For very long docs, process in chunks and merge answers. Map-reduce pattern." },
+  ];
+
+  const contextLimits = [
+    { model: "GPT-4o", maxK: "128K", sweetSpot: "32–64K", notes: "Quality drops beyond 64K" },
+    { model: "Claude Sonnet 4", maxK: "200K", sweetSpot: "64–100K", notes: "Best long-context recall" },
+    { model: "Gemini 2.5 Pro", maxK: "1M", sweetSpot: "128–256K", notes: "Needle-in-haystack strong" },
+    { model: "Llama 3.3 70B", maxK: "128K", sweetSpot: "32K", notes: "Open source, self-hostable" },
+    { model: "Mistral Large", maxK: "128K", sweetSpot: "32K", notes: "EU-compliant" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === 0 && (
+        <div className="space-y-3">
+          {strategies.map((s, i) => (
+            <div key={i} className={`border-l-4 ${s.color} bg-zinc-800/60 rounded-r-lg px-4 py-3`}>
+              <p className="font-semibold text-white text-sm mb-1">{s.name}</p>
+              <p className="text-zinc-400 text-sm">{s.desc}</p>
+            </div>
+          ))}
+          <div className="bg-zinc-800/80 border border-zinc-600/50 rounded-lg px-4 py-3 mt-2">
+            <p className="text-zinc-300 text-xs font-semibold mb-2">Decision Guide</p>
+            <ul className="space-y-1 text-xs text-zinc-400">
+              <li><span className="text-zinc-200">&lt; 50K tokens and static</span> → stuff it all</li>
+              <li><span className="text-zinc-200">&gt; 50K or dynamic</span> → use retrieval</li>
+              <li><span className="text-zinc-200">Multi-turn</span> → hierarchical summary</li>
+              <li><span className="text-zinc-200">Cost-sensitive</span> → compression first</li>
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {tab === 1 && (
+        <div className="space-y-3">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-zinc-800 text-zinc-300">
+                  <th className="px-3 py-2 text-left font-semibold">Model</th>
+                  <th className="px-3 py-2 text-right font-semibold">Max Context</th>
+                  <th className="px-3 py-2 text-right font-semibold">Practical Sweet Spot</th>
+                  <th className="px-3 py-2 text-left font-semibold">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contextLimits.map((r, i) => (
+                  <tr key={i} className={i % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800/50"}>
+                    <td className="px-3 py-2 font-medium text-white">{r.model}</td>
+                    <td className="px-3 py-2 text-right text-indigo-400 font-mono">{r.maxK}</td>
+                    <td className="px-3 py-2 text-right text-emerald-400 font-mono">{r.sweetSpot}</td>
+                    <td className="px-3 py-2 text-zinc-400 text-xs">{r.notes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-zinc-500 text-xs text-center">Practical sweet spot = where the model reliably recalls information. Max context ≠ reliable context.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
@@ -3448,6 +3908,11 @@ const EXPLORE_MODULES = [
   { id: "semcache",   label: "Semantic Caching",    tag: "CACHE",    component: SemanticCachingExplorer, fidelity: { tier: "simplified", note: "Illustrative similarity scores — precomputed, not live embedding comparison" } },
   { id: "llmops",  label: "LLMOps Tool Comparison", tag: "OBSERVE", component: LLMOpsComparison, fidelity: { tier: "simplified", note: "Based on published documentation and benchmarks as of mid-2026" } },
   { id: "embmodels", label: "Embedding Models", tag: "EMBED", component: EmbeddingModelSelector, fidelity: { tier: "simplified", note: "MTEB scores and specs from published benchmarks — model availability changes; verify before production use" } },
+  { id: "ragpatterns", label: "RAG Architecture", tag: "RAG", component: RAGArchitecturePatterns, fidelity: { tier: "reference", note: "Chunking + retrieval pipeline patterns" } },
+  { id: "apipricing", label: "API Model Pricing", tag: "COST", component: APIModelPricing, fidelity: { tier: "reference", note: "Major model API pricing comparison" } },
+  { id: "promptpatterns", label: "Prompt Pattern Library", tag: "PROMPT", component: PromptPatternLibrary, fidelity: { tier: "reference", note: "Templates and anti-patterns" } },
+  { id: "benchmarks", label: "Benchmark Browser", tag: "EVAL", component: BenchmarkBrowser, fidelity: { tier: "reference", note: "MMLU/HumanEval/MT-Bench/MATH/GPQA scores" } },
+  { id: "contexteng", label: "Context Engineering", tag: "CONTEXT", component: ContextWindowEngineering, fidelity: { tier: "reference", note: "Window strategies + model limits" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {
