@@ -204,6 +204,10 @@ Knowledge base built client-side on first render: all 140+ GT posts (title × 3,
 | 2 new Agent scenarios | Multi-agent debate, memory-enabled agent |
 | Sitemap (140+ posts) | All GT posts indexed for Google |
 | Mobile responsive pass | PrepLab + Fluency: responsive padding, score font scaling (text-7xl → text-5xl sm:text-7xl), sticky header px fix, JD gap table spacing |
+| AI System Design Canvas (Systems) | Problem type selector (6 types) → failure modes, model tier, evals, latency/cost/context budget. Constraint toggles: cost-sensitive, high-stakes. RAG cross-links. |
+| Framework Landscape (Agents) | LangChain / LangGraph / LangSmith / OpenAI Agents SDK / Google ADK — strengths, weaknesses, when-to-use. Decision Wizard: 3 questions → ranked recommendation. |
+| Production RAG Flow (Flows) | Two animated pipelines: ingestion (Airflow → chunk → embed → vector DB → monitor) + query (embed → LangGraph → rerank → LLM → LangSmith). Production detail per stage. |
+| LangSmith Lab (Systems) | Trace Anatomy (interactive span explorer), Feedback Loops (4 patterns with SDK code), Eval Dataset flywheel (4-step with API examples), Prompt Versioning (push/pull/rollback). |
 
 ---
 
