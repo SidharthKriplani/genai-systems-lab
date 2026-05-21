@@ -1313,6 +1313,288 @@ function JDPrepMode({ onExit, onNavigate }) {
   );
 }
 
+// ─── MODE 4: COMPANY PREP ─────────────────────────────────────────────────────
+
+const COMPANY_ARCHETYPES = [
+  {
+    id: "bigtech",
+    icon: "🏢",
+    label: "Big Tech AI",
+    companies: ["Google DeepMind", "Meta AI", "Amazon AI", "Apple ML"],
+    color: "indigo",
+    topicWeights: { rag: 3, agents: 3, evals: 4, latency: 3, fine_tuning: 2, safety: 3, mlops: 4, multimodal: 2 },
+    traits: ["Scale-first thinking", "Infra ownership", "Distributed systems depth", "Eval culture"],
+    sysDesignPrompts: [
+      "Design Google Search's AI answer layer — how do you avoid hallucination at 8B queries/day?",
+      "Build Meta's content moderation pipeline for a billion-user platform using LLMs.",
+      "Design Amazon Alexa's next-gen reasoning layer — latency < 200 ms, runs on-device + cloud hybrid.",
+      "Apple wants on-device LLM inference for Siri. Design the model serving and fallback architecture.",
+    ],
+    mustKnow: ["RLHF at scale", "Distributed training orchestration", "Eval harness design", "Latency SLOs", "Feature stores"],
+  },
+  {
+    id: "ainative",
+    icon: "🚀",
+    label: "AI-Native Startups",
+    companies: ["Anthropic", "OpenAI", "Perplexity", "Cursor"],
+    color: "emerald",
+    topicWeights: { rag: 4, agents: 4, evals: 5, safety: 5, latency: 3, fine_tuning: 3, mlops: 2, multimodal: 2 },
+    traits: ["Safety-aware reasoning", "Agentic system design", "Eval obsession", "Research ↔ product bridge"],
+    sysDesignPrompts: [
+      "Design Anthropic's Constitutional AI feedback loop — how does RLAIF scale beyond human labelers?",
+      "Build Perplexity's answer engine: real-time retrieval + citation grounding + < 3 s TTFT.",
+      "Design Cursor's code agent: context management across 100k-token repos, edit diffing, rollback.",
+      "OpenAI needs a plugin/tool orchestration layer for GPT-5 that handles 1M parallel agent sessions.",
+    ],
+    mustKnow: ["Constitutional AI / RLAIF", "Agentic loops & tool use", "Evals as product quality signal", "MCP / function calling", "Streaming UX"],
+  },
+  {
+    id: "indiantech",
+    icon: "🇮🇳",
+    label: "Indian Tech",
+    companies: ["Flipkart", "Swiggy", "Zepto", "Razorpay"],
+    color: "orange",
+    topicWeights: { rag: 3, agents: 2, evals: 2, latency: 5, fine_tuning: 3, safety: 1, mlops: 4, multimodal: 2 },
+    traits: ["Cost efficiency", "Low-latency at scale", "Hindi/regional language NLP", "Mobile-first constraints"],
+    sysDesignPrompts: [
+      "Flipkart: Build a product search + recommendation system that works across 500M SKUs with multilingual queries.",
+      "Swiggy: Design an ETA prediction system using LLM reasoning over real-time GPS + historical data.",
+      "Zepto: Build an LLM-powered ops assistant that reduces support tickets using conversation history.",
+      "Razorpay: Design a fraud detection system using LLM reasoning over transaction graphs.",
+    ],
+    mustKnow: ["Multilingual embeddings", "Cost-optimized inference", "MLOps on tight budgets", "Real-time feature pipelines", "Fine-tuning for domain adaptation"],
+  },
+  {
+    id: "enterprise",
+    icon: "🏦",
+    label: "Enterprise AI",
+    companies: ["McKinsey QuantumBlack", "Accenture AI", "Deloitte AI", "IBM watsonx"],
+    color: "violet",
+    topicWeights: { rag: 5, agents: 3, evals: 3, latency: 2, fine_tuning: 2, safety: 4, mlops: 3, multimodal: 1 },
+    traits: ["Governance & compliance", "Private deployment", "Client communication", "ROI framing"],
+    sysDesignPrompts: [
+      "A bank wants to deploy an LLM for internal policy Q&A. Design the RAG system with access control and audit trail.",
+      "McKinsey client: Replace a 200-person analyst team with an AI research synthesis pipeline. Design it.",
+      "Accenture: Build an enterprise AI governance layer — model cards, drift detection, bias auditing.",
+      "IBM: Design a private LLM deployment for a pharmaceutical company with HIPAA/GDPR constraints.",
+    ],
+    mustKnow: ["Private RAG with access control", "Model governance & audit logs", "On-prem/VPC deployment", "Prompt injection defenses", "Explainability requirements"],
+  },
+];
+
+function CompanyPrepMode({ onExit, onNavigate }) {
+  const [archetype, setArchetype] = useState(null);
+  const [view, setView] = useState("overview"); // overview | questions | sysdesign
+  const [qIdx, setQIdx] = useState(0);
+  const [answer, setAnswer] = useState("");
+  const [revealed, setRevealed] = useState(false);
+  const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [done, setDone] = useState(false);
+  const [sessionQs, setSessionQs] = useState([]);
+
+  function startQuestions(arc) {
+    const wt = arc.topicWeights;
+    let pool = [];
+    for (const q of PREP_QUESTIONS) {
+      const w = wt[q.topic] || 0;
+      for (let i = 0; i < w; i++) pool.push(q);
+    }
+    const seen = new Set(); const uniq = [];
+    for (const q of shuffle(pool)) {
+      if (!seen.has(q.id)) { seen.add(q.id); uniq.push(q); }
+      if (uniq.length >= 15) break;
+    }
+    setSessionQs(uniq);
+    setQIdx(0); setAnswer(""); setRevealed(false); setScore({ correct: 0, total: 0 }); setDone(false);
+    setView("questions");
+  }
+
+  if (!archetype) {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center gap-3 pt-4">
+            <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Back</button>
+            <div>
+              <h1 className="text-2xl font-bold">Company Prep Tracks</h1>
+              <p className="text-zinc-500 text-sm">Questions + system design prompts weighted to each archetype</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {COMPANY_ARCHETYPES.map(arc => (
+              <div key={arc.id} onClick={() => setArchetype(arc)}
+                className={`bg-zinc-900 border border-${arc.color}-500/30 hover:border-${arc.color}-400/60 rounded-2xl p-5 cursor-pointer transition-all`}>
+                <div className="text-3xl mb-3">{arc.icon}</div>
+                <h3 className="font-bold text-lg mb-1">{arc.label}</h3>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {arc.companies.map(c => (
+                    <span key={c} className={`text-xs px-2 py-0.5 rounded-full bg-${arc.color}-900/40 text-${arc.color}-300 border border-${arc.color}-500/20`}>{c}</span>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {arc.traits.map(t => (
+                    <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">{t}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "overview") {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="flex items-center gap-3 pt-4">
+            <button onClick={() => setArchetype(null)} className="text-zinc-500 hover:text-zinc-300 text-sm">← Archetypes</button>
+            <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm ml-auto">Exit</button>
+          </div>
+          <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-700">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-4xl">{archetype.icon}</span>
+              <div>
+                <h2 className="text-xl font-bold">{archetype.label}</h2>
+                <p className="text-zinc-500 text-sm">{archetype.companies.join(" · ")}</p>
+              </div>
+            </div>
+            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-2">Must-Know Topics</h3>
+            <ul className="space-y-1 mb-5">
+              {archetype.mustKnow.map(k => (
+                <li key={k} className="flex items-start gap-2 text-sm text-zinc-300"><span className="text-green-400 mt-0.5">✓</span>{k}</li>
+              ))}
+            </ul>
+            <div className="flex gap-3 flex-wrap">
+              <button onClick={() => startQuestions(archetype)}
+                className={`px-5 py-2.5 rounded-xl bg-${archetype.color}-600 hover:bg-${archetype.color}-500 text-white font-semibold text-sm transition-colors`}>
+                Practice Questions (15)
+              </button>
+              <button onClick={() => setView("sysdesign")}
+                className="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-sm transition-colors">
+                System Design Prompts
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "sysdesign") {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
+        <div className="max-w-3xl mx-auto space-y-5">
+          <div className="flex items-center gap-3 pt-4">
+            <button onClick={() => setView("overview")} className="text-zinc-500 hover:text-zinc-300 text-sm">← Overview</button>
+          </div>
+          <h2 className="text-xl font-bold">{archetype.icon} {archetype.label} — System Design Prompts</h2>
+          <p className="text-zinc-500 text-sm">Use these as 30–45 min design challenges. Focus on: scope → components → tradeoffs → failure modes.</p>
+          {archetype.sysDesignPrompts.map((prompt, i) => (
+            <div key={i} className={`bg-zinc-900 border border-${archetype.color}-500/20 rounded-xl p-5`}>
+              <div className="flex items-start gap-3">
+                <span className={`text-xs font-bold px-2 py-0.5 rounded bg-${archetype.color}-900/50 text-${archetype.color}-300 mt-0.5 shrink-0`}>Q{i+1}</span>
+                <p className="text-zinc-200 leading-relaxed text-sm">{prompt}</p>
+              </div>
+              <div className="mt-3 pl-8 space-y-1">
+                <p className="text-xs text-zinc-600">Consider: scale, latency, cost, failure modes, observability</p>
+              </div>
+            </div>
+          ))}
+          <button onClick={() => startQuestions(archetype)}
+            className={`w-full py-3 rounded-xl bg-${archetype.color}-700 hover:bg-${archetype.color}-600 text-white font-semibold text-sm transition-colors`}>
+            Practice Questions Next →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "questions") {
+    if (done) {
+      return (
+        <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6 flex items-center justify-center">
+          <div className="max-w-md w-full bg-zinc-900 rounded-2xl p-8 border border-zinc-700 text-center space-y-4">
+            <div className="text-5xl">{archetype.icon}</div>
+            <h2 className="text-2xl font-bold">{archetype.label} Session Complete</h2>
+            <p className="text-zinc-400">{score.correct} / {score.total} correct</p>
+            <div className="text-3xl font-black text-emerald-400">{Math.round((score.correct/score.total)*100)}%</div>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <button onClick={() => { startQuestions(archetype); }} className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm">Retry</button>
+              <button onClick={() => setView("sysdesign")} className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm">System Design</button>
+              <button onClick={() => setArchetype(null)} className="px-4 py-2 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-sm">Change Archetype</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const q = sessionQs[qIdx];
+    if (!q) return null;
+
+    function submit() {
+      const correct = answer.trim().toLowerCase() === q.answer.toLowerCase();
+      setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+      setRevealed(true);
+    }
+
+    function next() {
+      if (qIdx + 1 >= sessionQs.length) { setDone(true); return; }
+      setQIdx(i => i + 1); setAnswer(""); setRevealed(false);
+    }
+
+    const isCorrect = revealed && answer.trim().toLowerCase() === q.answer.toLowerCase();
+
+    return (
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
+        <div className="max-w-2xl mx-auto space-y-5">
+          <div className="flex items-center justify-between pt-4">
+            <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
+            <span className="text-xs text-zinc-600">{archetype.icon} {archetype.label} · Q{qIdx+1}/{sessionQs.length} · {score.correct} correct</span>
+          </div>
+          <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
+            <div className="flex gap-2 mb-3 flex-wrap">
+              <span className={`text-xs px-2 py-0.5 rounded-full border ${TOPIC_COLORS[q.topic]}`}>{TOPIC_LABELS[q.topic]}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-500 border border-zinc-700">{q.difficulty}</span>
+            </div>
+            <p className="text-zinc-100 font-medium leading-relaxed mb-4">{q.question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {q.options.map(opt => {
+                let cls = "w-full text-left px-4 py-2.5 rounded-xl border text-sm transition-colors ";
+                if (!revealed) cls += "border-zinc-700 bg-zinc-800 hover:border-zinc-500 text-zinc-300";
+                else if (opt === q.answer) cls += "border-emerald-500 bg-emerald-900/30 text-emerald-200";
+                else if (opt === answer && opt !== q.answer) cls += "border-red-500 bg-red-900/30 text-red-300";
+                else cls += "border-zinc-800 bg-zinc-900 text-zinc-600";
+                return (
+                  <button key={opt} disabled={revealed} onClick={() => setAnswer(opt)} className={cls}>
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+            {!revealed && (
+              <button onClick={submit} disabled={!answer}
+                className="mt-4 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors">
+                Submit
+              </button>
+            )}
+            {revealed && (
+              <div className={`mt-4 p-4 rounded-xl border ${isCorrect ? "border-emerald-700 bg-emerald-900/20" : "border-red-700 bg-red-900/20"}`}>
+                <p className="text-sm font-semibold mb-1 {isCorrect ? 'text-emerald-400' : 'text-red-400'}">{isCorrect ? "✓ Correct" : "✗ Incorrect"}</p>
+                <p className="text-zinc-300 text-sm">{q.explanation}</p>
+                <button onClick={next} className="mt-3 px-4 py-1.5 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-zinc-200 text-sm">
+                  {qIdx + 1 >= sessionQs.length ? "See Results" : "Next →"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
 // ─── HOME SCREEN ──────────────────────────────────────────────────────────────
 
 const MODE_CARDS = [
@@ -1330,6 +1612,11 @@ const MODE_CARDS = [
     id: "jdprep", icon: "📋", title: "JD + Resume Prep", subtitle: "Targeted Session",
     description: "Paste a job description to detect skill requirements. Optionally paste your resume for gap analysis. Get a 20-question drill weighted to your gaps.",
     border: "border-violet-500/40 hover:border-violet-400", badge: "bg-violet-500/20 text-violet-300 border-violet-500/30"
+  },
+  {
+    id: "companyprep", icon: "🏢", title: "Company Prep Tracks", subtitle: "Archetype Targeting",
+    description: "4 company archetypes: Big Tech AI, AI-native startups, Indian tech, Enterprise AI. Weighted question sets + company-specific system design challenges.",
+    border: "border-amber-500/40 hover:border-amber-400", badge: "bg-amber-500/20 text-amber-300 border-amber-500/30"
   }
 ];
 
@@ -1341,6 +1628,7 @@ export default function PrepLab({ onNavigate }) {
   if (mode === "exam") return <ExamMode onExit={() => setMode(null)} />;
   if (mode === "trainer") return <TrainerMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
   if (mode === "jdprep") return <JDPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
+  if (mode === "companyprep") return <CompanyPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
@@ -1355,7 +1643,7 @@ export default function PrepLab({ onNavigate }) {
           </div>
           <p className="text-zinc-600 text-sm">{PREP_QUESTIONS.length} questions across 8 topics</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {MODE_CARDS.map(card => (
             <div
               key={card.id}

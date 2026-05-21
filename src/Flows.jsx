@@ -1238,6 +1238,316 @@ function ProductionRAGFlow() {
   );
 }
 
+// ─── GRAPHRAG FLOW ────────────────────────────────────────────────────────────
+const GRAPHRAG_STAGES = [
+  { id: "ingest",   label: "Document Ingestion",  color: "#6366f1", icon: "📄",
+    flat: "Chunk → embed → store in vector DB",
+    graph: "Chunk → embed → extract entities + relationships with LLM",
+    detail: "GraphRAG adds an LLM extraction pass over every chunk: 'Extract all named entities and their relationships.' This produces structured (entity, relation, entity) triples — e.g. (OpenAI, founded_by, Sam Altman).",
+    cost: "3–8× ingestion cost vs. flat RAG. Acceptable for static corpora; painful for high-churn corpora." },
+  { id: "graph",    label: "Knowledge Graph Build", color: "#3b82f6", icon: "🕸️",
+    flat: "Vector index (no structure)",
+    graph: "Entity deduplication → graph DB (Neo4j / NetworkX) — nodes = entities, edges = relationships",
+    detail: "Deduplicate entities across chunks (GPT-4: 'Microsoft Corp' = 'Microsoft' = 'MSFT'). Build a directed graph where nodes are entities and edges carry relationship labels and source chunk references.",
+    cost: "Graph build is O(n²) for entity deduplication. Index partitioning (communities) reduces this." },
+  { id: "query",    label: "Query Understanding", color: "#06b6d4", icon: "🔍",
+    flat: "Embed query → cosine similarity search",
+    graph: "Extract query entities → identify relevant graph subgraph → traverse relationships",
+    detail: "For 'What companies did Sam Altman found before OpenAI?': extract entity=Sam Altman, relationship=founded_by, filter=before 2015. Graph traversal is exact — no similarity approximation.",
+    cost: "Query entity extraction adds ~100ms + one LLM call. Worth it for complex multi-hop questions." },
+  { id: "retrieve", label: "Retrieval", color: "#22c55e", icon: "📊",
+    flat: "Top-k chunks by embedding similarity",
+    graph: "Graph traversal → relevant subgraph → summarize community + retrieve supporting chunks",
+    detail: "GraphRAG uses two modes: local (specific entity traversal) and global (community summaries across the whole corpus). Global mode pre-summarizes graph communities offline — enabling corpus-level synthesis that flat RAG can't do.",
+    cost: "Global mode requires pre-computing community summaries — expensive offline but fast at query time." },
+  { id: "generate", label: "Generation", color: "#f59e0b", icon: "✨",
+    flat: "LLM(system + retrieved chunks + query)",
+    graph: "LLM(system + graph subgraph summary + supporting chunks + query)",
+    detail: "The LLM receives structured context: entity relationships + supporting text. For multi-hop queries ('Who are OpenAI's competitors that were founded by ex-Google employees?'), the graph gives the LLM the connection — flat RAG requires the LLM to infer it.",
+    cost: "Context is often longer than flat RAG (relationship summaries + chunks). Plan for 2–4× token cost on complex queries." },
+];
+
+const GRAPHRAG_WINS = [
+  { q: "Who are the competitors of Company X that share investors with Company Y?", winner: "graph", why: "Multi-hop relationship traversal. Flat RAG would need both answers in one chunk — unlikely." },
+  { q: "Summarize the key themes across all 500 research papers in the corpus.", winner: "graph", why: "GraphRAG's global mode pre-summarizes communities. Flat RAG has no corpus-level synthesis." },
+  { q: "What did the CEO say about Q3 earnings?", winner: "flat", why: "Direct semantic search. No relationship traversal needed. Graph adds cost with no benefit." },
+  { q: "Which regulations changed in the last 90 days?", winner: "flat", why: "Date-filtered semantic retrieval. GraphRAG's entity graph doesn't encode temporal metadata well." },
+  { q: "How does concept A relate to concept B across multiple documents?", winner: "graph", why: "Cross-document relationship is exactly what the graph encodes." },
+  { q: "Summarize this single document.", winner: "flat", why: "Single-document, no multi-hop needed. GraphRAG overhead is unjustified." },
+];
+
+function GraphRAGFlow() {
+  const [stage, setStage] = useState(0);
+  const [view, setView] = useState("pipeline");
+  const s = GRAPHRAG_STAGES[stage];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        {[{id:"pipeline",label:"Pipeline Comparison"},{id:"when",label:"Flat vs. GraphRAG"}].map(v => (
+          <button key={v.id} onClick={() => setView(v.id)}
+            className={`px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all ${view===v.id ? "bg-violet-600 border-violet-500 text-white" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {view === "pipeline" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Click each stage to compare flat RAG vs. GraphRAG side-by-side.</p>
+          {/* Stage selector */}
+          <div className="flex gap-1 flex-wrap">
+            {GRAPHRAG_STAGES.map((st, i) => (
+              <button key={st.id} onClick={() => setStage(i)}
+                className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all"
+                style={{ backgroundColor: stage===i ? st.color+"33" : "transparent", borderColor: stage===i ? st.color : "#3f3f46", color: stage===i ? st.color : "#71717a" }}>
+                {st.icon} {st.label}
+              </button>
+            ))}
+          </div>
+          {/* Comparison panel */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-xl border border-zinc-700 bg-zinc-900/40 p-4 space-y-2">
+              <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Flat RAG</p>
+              <p className="text-sm text-zinc-300 leading-relaxed">{s.flat}</p>
+            </div>
+            <div className="rounded-xl border p-4 space-y-2" style={{ borderColor: s.color+"60", backgroundColor: s.color+"0d" }}>
+              <p className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: s.color }}>GraphRAG</p>
+              <p className="text-sm text-zinc-300 leading-relaxed">{s.graph}</p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-2">
+            <p className="text-xs font-bold text-white">What's happening</p>
+            <p className="text-sm text-zinc-400 leading-relaxed">{s.detail}</p>
+            <p className="text-xs text-amber-400 mt-2">💰 Cost: {s.cost}</p>
+          </div>
+          {/* Mermaid-style graph sketch */}
+          <div className="bg-zinc-950 rounded-xl p-4 overflow-x-auto">
+            <div className="flex items-center gap-2 flex-nowrap min-w-max">
+              {GRAPHRAG_STAGES.map((st, i) => (
+                <div key={st.id} className="flex items-center gap-2">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="px-3 py-1.5 rounded-lg text-xs font-mono text-center transition-all"
+                      style={{ backgroundColor: i===stage ? st.color+"33" : "#1c1c1e", borderWidth:1, borderStyle:"solid", borderColor: i===stage ? st.color : "#3f3f46", color: i===stage ? st.color : "#71717a", minWidth:"90px" }}>
+                      {st.icon} {st.label.split(" ")[0]}
+                    </div>
+                  </div>
+                  {i < GRAPHRAG_STAGES.length-1 && <span className="text-zinc-600 text-lg">→</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {view === "when" && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4">
+            <p className="text-xs font-bold text-amber-400 mb-1">BUILD COST REALITY CHECK</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">GraphRAG ingestion costs 3–8× more than flat RAG. A 10,000-document corpus that costs $20 to index with flat RAG may cost $80–160 with GraphRAG. Justify this only when multi-hop or corpus-level synthesis is a core product requirement.</p>
+          </div>
+          <div className="space-y-2">
+            {GRAPHRAG_WINS.map((w, i) => (
+              <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-3">
+                <div className="flex items-start gap-3">
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5 ${w.winner==="graph" ? "bg-violet-900/40 text-violet-400" : "bg-zinc-800 text-zinc-400"}`}>
+                    {w.winner==="graph" ? "GRAPHRAG ✓" : "FLAT RAG ✓"}
+                  </span>
+                  <div>
+                    <p className="text-sm text-white italic mb-1">"{w.q}"</p>
+                    <p className="text-xs text-zinc-500 leading-relaxed">{w.why}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── VOICE AI FLOW ────────────────────────────────────────────────────────────
+const VOICE_STAGES = [
+  { id: "mic",    label: "Microphone",        color: "#6366f1", icon: "🎤", latency: "0ms",
+    what: "Raw PCM audio stream, 16kHz sample rate, 16-bit depth. Mono for most voice AI applications.",
+    prod: "Use WebRTC in the browser (getUserMedia API) or a native audio capture library on mobile. Stream audio in 100ms chunks — don't buffer the full utterance before processing.",
+    failure: "Background noise, mic permission denial, codec mismatch (Opus vs. PCM). Always show the user when audio is being captured.",
+    streaming: true },
+  { id: "vad",    label: "VAD",               color: "#3b82f6", icon: "📡", latency: "10–30ms",
+    what: "Voice Activity Detection — determines when the user starts and stops speaking. Without VAD, you'd send silence to STT continuously.",
+    prod: "Silero VAD (lightweight, open-source, runs in-browser with ONNX). Threshold: flag as speech if VAD score > 0.5 for 3 consecutive 30ms frames. End-of-speech: silence for 800ms.",
+    failure: "False positives on keyboard sounds, HVAC, background music. Tune sensitivity per deployment environment. The 800ms end-of-speech threshold is the main latency contributor here — too short = clipped responses.",
+    streaming: true },
+  { id: "stt",    label: "STT (Whisper)",     color: "#06b6d4", icon: "🗣️", latency: "200–600ms",
+    what: "Speech-to-Text transcription. Whisper large-v3 is the accuracy gold standard; Whisper tiny for edge/low-latency.",
+    prod: "For real-time: use streaming STT (Deepgram Nova-2, AssemblyAI, or WhisperLive). Don't wait for VAD end-of-speech to start transcribing — send audio chunks in real-time and stream partial transcripts. Final transcript arrives 200–400ms after speech ends.",
+    failure: "Accent mismatch, domain vocabulary (medical terms, product names). Fine-tune Whisper on domain data or use a specialized STT provider. Word error rate is your primary metric — benchmark on real user audio.",
+    streaming: true },
+  { id: "llm",    label: "LLM Inference",     color: "#22c55e", icon: "🧠", latency: "500–2000ms (TTFT)",
+    what: "The core reasoning step. The transcript + conversation history + system prompt → LLM → token stream.",
+    prod: "Stream the response — don't wait for full completion before starting TTS. Target TTFT (time to first token) < 300ms. Use prompt caching for the system prompt. For voice: use smaller/faster models (GPT-4o-mini, Claude Haiku) — voice users don't read long responses.",
+    failure: "Long responses are death for voice UX — users can't pause a voice response the way they can scroll text. Constrain: 'Respond in 2–3 sentences unless the user explicitly asks for detail.'",
+    streaming: true },
+  { id: "tts",    label: "TTS",               color: "#f59e0b", icon: "🔊", latency: "100–400ms",
+    what: "Text-to-Speech synthesis. Converts LLM token stream to audio. ElevenLabs, Cartesia, OpenAI TTS, or Kokoro (open-source).",
+    prod: "Stream TTS: start synthesizing as soon as the first sentence boundary arrives from the LLM — don't wait for the full LLM response. Sentence detection on the LLM token stream: flush to TTS at every period/question mark. This is the critical streaming optimization.",
+    failure: "TTS latency variance. Pre-warm the TTS connection. Use a TTS provider with a <100ms initial chunk guarantee. Cartesia and ElevenLabs both offer streaming APIs that return the first audio chunk in <80ms.",
+    streaming: true },
+  { id: "speaker", label: "Speaker",          color: "#ec4899", icon: "🔈", latency: "buffer: 20–50ms",
+    what: "Audio playback. The synthesized audio stream plays in real-time as TTS chunks arrive.",
+    prod: "Use a small playback buffer (50–100ms) to handle network jitter without underruns. Implement barge-in: if VAD detects the user speaking while audio is playing, interrupt playback immediately and start a new transcription cycle.",
+    failure: "Echo cancellation failure — the speaker output gets picked up by the mic, causing a feedback loop. Use AEC (Acoustic Echo Cancellation) — built into WebRTC, or use a headset in production deployments without AEC.",
+    streaming: false },
+];
+
+const VOICE_TOTAL_LATENCY = { realistic: "830–3080ms", target: "<1000ms", breakdown: "VAD(30) + STT(400) + LLM TTFT(300) + TTS first chunk(80) + buffer(50) = ~860ms best case with full streaming" };
+
+function VoiceAIFlow() {
+  const [activeStage, setActiveStage] = useState(null);
+  const [view, setView] = useState("pipeline");
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        {[{id:"pipeline",label:"Pipeline"},{id:"latency",label:"Latency Budget"},{id:"streaming",label:"Streaming Strategy"}].map(v => (
+          <button key={v.id} onClick={() => setView(v.id)}
+            className={`px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all ${view===v.id ? "bg-violet-600 border-violet-500 text-white" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {view === "pipeline" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Click any stage to see production details and failure modes.</p>
+          {/* Pipeline visual */}
+          <div className="bg-zinc-950 rounded-xl p-4 overflow-x-auto">
+            <div className="flex items-center gap-1 flex-nowrap min-w-max">
+              {VOICE_STAGES.map((s, i) => (
+                <div key={s.id} className="flex items-center gap-1">
+                  <button onClick={() => setActiveStage(activeStage===s.id ? null : s.id)}
+                    className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all"
+                    style={{ backgroundColor: activeStage===s.id ? s.color+"22" : "#18181b", borderColor: activeStage===s.id ? s.color : "#3f3f46" }}>
+                    <span className="text-xl">{s.icon}</span>
+                    <span className="text-[10px] font-mono whitespace-nowrap" style={{ color: activeStage===s.id ? s.color : "#a1a1aa" }}>{s.label}</span>
+                    <span className="text-[9px] text-zinc-600">{s.latency}</span>
+                  </button>
+                  {i < VOICE_STAGES.length-1 && (
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-zinc-600">→</span>
+                      {VOICE_STAGES[i].streaming && <span className="text-[8px] text-emerald-600">stream</span>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Stage detail */}
+          {activeStage && (() => {
+            const s = VOICE_STAGES.find(st => st.id === activeStage);
+            return (
+              <div className="rounded-xl border p-4 space-y-3" style={{ borderColor: s.color+"60", backgroundColor: s.color+"0d" }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{s.icon}</span>
+                  <div>
+                    <p className="text-white font-bold">{s.label}</p>
+                    <p className="text-xs font-mono" style={{ color: s.color }}>Latency: {s.latency}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-zinc-300 leading-relaxed">{s.what}</p>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-mono font-bold text-emerald-400 uppercase">Production</p>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{s.prod}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-mono font-bold text-red-400 uppercase">Failure Mode</p>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{s.failure}</p>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {view === "latency" && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+            <p className="text-xs font-mono font-bold text-zinc-500 uppercase">Total Round-Trip Latency</p>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div><p className="text-xl font-black text-white">{VOICE_TOTAL_LATENCY.target}</p><p className="text-[10px] text-zinc-500">Target (streaming)</p></div>
+              <div><p className="text-xl font-black text-zinc-400">{VOICE_TOTAL_LATENCY.realistic}</p><p className="text-[10px] text-zinc-500">Realistic range</p></div>
+              <div><p className="text-lg font-black text-amber-400">~860ms</p><p className="text-[10px] text-zinc-500">Best case</p></div>
+            </div>
+            <p className="text-xs text-zinc-500 leading-relaxed">{VOICE_TOTAL_LATENCY.breakdown}</p>
+          </div>
+          {/* Per-stage latency bars */}
+          <div className="space-y-2">
+            {VOICE_STAGES.map(s => {
+              const maxMs = 600;
+              const ms = parseInt(s.latency) || 30;
+              const pct = Math.min(100, (ms/maxMs)*100);
+              return (
+                <div key={s.id} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-400">{s.icon} {s.label}</span>
+                    <span className="text-xs font-mono text-zinc-500">{s.latency}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-zinc-800">
+                    <div className="h-1.5 rounded-full transition-all" style={{ width:`${pct}%`, backgroundColor: s.color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="rounded-xl border border-emerald-800/40 bg-emerald-900/10 p-4">
+            <p className="text-xs font-bold text-emerald-400 mb-1">THE KEY INSIGHT</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">The LLM TTFT is the dominant latency term. Everything else is optimizable. Use a faster model (Haiku/GPT-4o-mini) for voice — users tolerate a slightly lower IQ assistant far more than they tolerate 3-second pauses. Target TTFT {'<'} 300ms at all costs.</p>
+          </div>
+        </div>
+      )}
+
+      {view === "streaming" && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-violet-800/40 bg-violet-900/10 p-4">
+            <p className="text-xs font-bold text-violet-400 mb-2">THE STREAMING TRICK</p>
+            <p className="text-sm text-zinc-300 leading-relaxed mb-3">The naive implementation waits for each stage to fully complete before starting the next. The production implementation <strong className="text-white">starts each stage as soon as the first chunk arrives</strong> from the previous one.</p>
+            <div className="space-y-2 text-xs font-mono">
+              <p className="text-zinc-500">// Naive: sequential (3s+ latency)</p>
+              <p className="text-zinc-400">audio_full → whisper_full → llm_full → tts_full → play</p>
+              <p className="text-zinc-500 mt-2">// Production: streamed (~860ms latency)</p>
+              <p className="text-emerald-400">audio_stream → vad → whisper_stream ↘</p>
+              <p className="text-emerald-400 pl-10">llm_stream → sentence_detect ↘</p>
+              <p className="text-emerald-400 pl-20">tts_stream → play_buffer</p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+            <p className="text-xs font-bold text-white">Barge-in: The UX That Makes Voice Feel Alive</p>
+            <p className="text-sm text-zinc-400 leading-relaxed">Barge-in = the user can interrupt the AI while it's speaking. VAD runs continuously — even during TTS playback. When VAD detects speech during playback: (1) stop audio immediately, (2) cancel the LLM stream, (3) start a new transcription. Without barge-in, users feel trapped listening to a wrong or irrelevant response.</p>
+            <div className="bg-zinc-950 rounded-lg p-3">
+              <pre className="font-mono text-xs text-green-400 whitespace-pre-wrap">{`# Barge-in implementation sketch\nasync def voice_loop():\n    while True:\n        audio = await mic.read_chunk()  # 30ms\n        vad_score = vad.score(audio)\n        if vad_score > 0.5:\n            if tts_playing:\n                tts.stop()          # interrupt\n                llm_stream.cancel() # abort\n            transcription += await stt.stream(audio)\n        elif transcription and silence_duration > 800ms:\n            response = await llm.stream(transcription)\n            await tts.stream(response)  # pipe LLM→TTS\n            transcription = ""`}</pre>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "STT Provider", rec: "Deepgram Nova-2", why: "Best streaming latency + accuracy" },
+              { label: "TTS Provider", rec: "Cartesia / ElevenLabs", why: "<80ms first chunk, streaming API" },
+              { label: "LLM", rec: "GPT-4o-mini / Claude Haiku", why: "Fast TTFT, short responses, low cost" },
+              { label: "VAD", rec: "Silero VAD (ONNX)", why: "Runs in-browser, 10ms latency, open source" },
+            ].map(r => (
+              <div key={r.label} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+                <p className="text-[10px] text-zinc-500 font-mono uppercase">{r.label}</p>
+                <p className="text-sm font-bold text-white">{r.rec}</p>
+                <p className="text-[11px] text-zinc-500">{r.why}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── FLOWS APP ────────────────────────────────────────────────────────────────
 const FLOW_TABS = [
   { id: "rag",         label: "RAG Pipeline",        tag: "FLOW",    component: RAGFlowDiagram,
@@ -1261,6 +1571,12 @@ const FLOW_TABS = [
   { id: "prodrag",    label: "Production RAG",      tag: "PROD",     component: ProductionRAGFlow,
     desc: "A production RAG system has two distinct pipelines — ingestion (scheduled) and query (real-time). This shows both, stage by stage.",
     reflection: "If the embedding model was upgraded for new documents but old documents weren't re-embedded — what retrieval failure pattern would you expect?" },
+  { id: "graphrag",  label: "GraphRAG",            tag: "GRAPH",    component: GraphRAGFlow,
+    desc: "Entity extraction → knowledge graph → graph traversal for multi-hop retrieval. When flat vector RAG fails and GraphRAG wins.",
+    reflection: "What types of questions will GraphRAG always beat flat RAG on — and what does it cost to build the graph?" },
+  { id: "voiceai",   label: "Voice AI Pipeline",   tag: "VOICE",    component: VoiceAIFlow,
+    desc: "Microphone → VAD → STT → LLM → TTS → speaker. Every stage has a latency budget and a failure mode. Real-time voice AI in production.",
+    reflection: "Which stage has the highest latency variance — and how would you stream to hide it from the user?" },
 ];
 
 export default function FlowsApp() {

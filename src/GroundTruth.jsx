@@ -708,6 +708,18 @@ const SERIES_META = {
     color: "#f97316",
     postIds: ["iv-design-rag", "iv-explain-attention", "iv-eval-system", "iv-agents-screen", "iv-cost-reduction"],
   },
+  "reasoning-inference": {
+    title: "Reasoning at Inference Time",
+    desc: "What reasoning models actually do differently, how to control the thinking budget, when they're worth the cost, and production patterns for deploying them at scale.",
+    color: "#06b6d4",
+    postIds: ["reason-what-changed", "reason-thinking-budget", "reason-when-to-use", "reason-econ", "reason-prod-patterns"],
+  },
+  "mcp-protocol": {
+    title: "Model Context Protocol",
+    desc: "Anthropic's open standard for connecting LLMs to tools and data. What MCP is, how to build a server, and when to use MCP vs. function calling.",
+    color: "#a855f7",
+    postIds: ["mcp-what-is", "mcp-build-server", "mcp-vs-functions"],
+  },
 };
 
 export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {

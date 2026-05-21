@@ -4582,6 +4582,195 @@ function LangSmithTracingLab() {
   );
 }
 
+// ─── REASONING MODELS LAB ─────────────────────────────────────────────────────
+const REASONING_TASKS = [
+  { id: "math",    label: "Complex Math",        icon: "🧮", base: 52, reasoning: 94, cost: 18, desc: "Multi-step algebra, calculus, combinatorics. Base models often get intermediate steps right but propagate errors. Reasoning models backtrack.", winner: "reasoning" },
+  { id: "code",    label: "Complex Code Debug",  icon: "🐛", base: 61, reasoning: 89, cost: 12, desc: "Debugging across multiple files, understanding subtle race conditions. Base models pattern-match; reasoning models trace execution.", winner: "reasoning" },
+  { id: "logic",   label: "Multi-hop Logic",     icon: "🧩", base: 44, reasoning: 91, cost: 20, desc: "Constraints across multiple variables. Base models lose track of earlier conclusions. Reasoning models maintain a working memory of deductions.", winner: "reasoning" },
+  { id: "rag_qa",  label: "RAG Q&A",             icon: "📄", base: 84, reasoning: 86, cost: 15, desc: "Factual retrieval from context. Base models are nearly as good — the retrieved context does most of the work. Reasoning adds latency with marginal benefit.", winner: "base" },
+  { id: "chat",    label: "Conversational Chat",  icon: "💬", base: 88, reasoning: 87, cost: 25, desc: "Casual conversation, customer support. Base models are better here — faster, cheaper, more natural. Reasoning models can over-think simple responses.", winner: "base" },
+  { id: "summary", label: "Summarization",        icon: "📝", base: 82, reasoning: 83, cost: 14, desc: "Condensing long documents. Base models are comparable — summarization is a pattern-recognition task, not a reasoning task.", winner: "base" },
+  { id: "planning","label": "Agentic Planning",   icon: "🗺️", base: 55, reasoning: 92, cost: 22, desc: "Decomposing complex multi-step tasks, handling ambiguity in the goal. Reasoning models produce dramatically better plans with fewer dead ends.", winner: "reasoning" },
+  { id: "science", label: "Scientific Analysis",  icon: "🔬", base: 48, reasoning: 87, cost: 19, desc: "Analyzing experimental results, identifying confounds, generating hypotheses. Reasoning models apply systematic scientific reasoning; base models pattern-match from training data.", winner: "reasoning" },
+];
+
+const THINKING_LEVELS = [
+  { budget: 0,    label: "Off (base mode)",   tokenMult: 1,    qualityMod: 0,   costMod: 1,    desc: "No extended thinking. Standard next-token prediction. Fast, cheap, adequate for most tasks." },
+  { budget: 1024, label: "Low (1K tokens)",   tokenMult: 2.2,  qualityMod: 12,  costMod: 2.2,  desc: "Light deliberation. Checks the obvious failure cases. Good for moderate complexity tasks." },
+  { budget: 4096, label: "Medium (4K tokens)",tokenMult: 5.1,  qualityMod: 28,  costMod: 5.1,  desc: "Full chain-of-thought. Explores multiple approaches, backtracks on dead ends. Recommended default for reasoning tasks." },
+  { budget: 16000,"label": "High (16K tokens)",tokenMult: 14.3, qualityMod: 38,  costMod: 14.3, desc: "Deep deliberation. Tests edge cases, considers alternative interpretations. For highest-stakes tasks — research, complex debugging." },
+  { budget: 32000,"label": "Max (32K tokens)", tokenMult: 24.8, qualityMod: 42,  costMod: 24.8, desc: "Maximum thinking budget. Marginal quality gains over High for most tasks. Justified only for competition-level math or formal verification." },
+];
+
+function ReasoningModelsLab() {
+  const [tab, setTab] = useState("what");
+  const [selectedTask, setSelectedTask] = useState("math");
+  const [thinkingLevel, setThinkingLevel] = useState(2);
+  const task = REASONING_TASKS.find(t => t.id === selectedTask);
+  const level = THINKING_LEVELS[thinkingLevel];
+  const baseCostPerM = 3; // $/1M tokens
+  const qualityScore = Math.min(99, (task?.base || 70) + (level.qualityMod * (task?.winner === "reasoning" ? 1 : 0.2)));
+  const costRatio = level.costMod;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {[{id:"what",label:"What Changed"},{id:"budget",label:"Thinking Budget"},{id:"usecases",label:"Use-Case Matcher"},{id:"cost",label:"Economics"}].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all ${tab===t.id ? "bg-violet-600 border-violet-500 text-white" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "what" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-violet-800/40 bg-violet-900/10 p-5 space-y-3">
+            <p className="text-xs font-mono font-bold text-violet-400 uppercase tracking-widest">The Paradigm Shift</p>
+            <p className="text-white text-base font-bold leading-relaxed">Base LLMs scale quality by training more. Reasoning models scale quality by <span className="text-violet-400">thinking longer at inference time</span>. Same weights — more compute spent on the answer.</p>
+            <p className="text-sm text-zinc-400 leading-relaxed">OpenAI's o1/o3, Anthropic's extended thinking, Google's Gemini 2.0 Flash Thinking all implement this: before generating the final response, the model spends tokens on internal chain-of-thought — exploring, backtracking, verifying. You pay for thinking tokens; you get qualitatively better answers on hard tasks.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              { label: "Base LLM", color: "#3b82f6", items: ["Next-token prediction, left to right", "No backtracking — committed to first approach", "Quality scales with training data + parameters", "~50–200ms first token", "Cost: input + output tokens only", "Wins at: conversation, summarization, RAG Q&A"] },
+              { label: "Reasoning Model", color: "#8b5cf6", items: ["Generates hidden chain-of-thought before answering", "Can explore, backtrack, and self-correct", "Quality scales with thinking token budget at inference time", "~500ms–5s+ first visible token", "Cost: input + thinking tokens + output tokens", "Wins at: math, logic, planning, complex code"] },
+            ].map(col => (
+              <div key={col.label} className="rounded-xl border p-4 space-y-2" style={{ borderColor: col.color+"60", backgroundColor: col.color+"0d" }}>
+                <p className="font-bold text-white">{col.label}</p>
+                <ul className="space-y-1">
+                  {col.items.map((item, i) => <li key={i} className="text-xs text-zinc-400 flex gap-2"><span style={{ color: col.color }}>•</span>{item}</li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4">
+            <p className="text-xs font-bold text-amber-400 mb-1">THE HIDDEN THINKING</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">The chain-of-thought in reasoning models is typically hidden from the final output (Claude's extended thinking exposes it optionally). The model might spend 8,000 tokens internally exploring approaches before producing a 200-token final answer. You pay for those 8,000 thinking tokens.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "budget" && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-white">Thinking Budget</p>
+              <span className="text-xs font-mono text-violet-400">{level.label}</span>
+            </div>
+            <input type="range" min={0} max={4} value={thinkingLevel} onChange={e => setThinkingLevel(+e.target.value)}
+              className="w-full accent-violet-500" />
+            <p className="text-xs text-zinc-500 leading-relaxed">{level.desc}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+              <p className="text-2xl font-black text-white">{Math.round(qualityScore)}%</p>
+              <p className="text-[10px] text-zinc-500">Quality score (complex math)</p>
+              <div className="mt-2 h-1.5 rounded-full bg-zinc-800">
+                <div className="h-1.5 rounded-full bg-violet-500 transition-all" style={{ width: `${qualityScore}%` }} />
+              </div>
+            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+              <p className="text-2xl font-black text-white">{costRatio}×</p>
+              <p className="text-[10px] text-zinc-500">Cost vs. base model</p>
+              <div className="mt-2 h-1.5 rounded-full bg-zinc-800">
+                <div className="h-1.5 rounded-full bg-amber-500 transition-all" style={{ width: `${Math.min(100, (costRatio/25)*100)}%` }} />
+              </div>
+            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+              <p className="text-2xl font-black text-white">{level.budget === 0 ? '<200' : level.budget >= 16000 ? '5000+' : level.budget >= 4096 ? '1500' : '400'}ms</p>
+              <p className="text-[10px] text-zinc-500">Approx. TTFT</p>
+              <div className="mt-2 h-1.5 rounded-full bg-zinc-800">
+                <div className="h-1.5 rounded-full bg-emerald-500 transition-all" style={{ width: `${level.budget === 0 ? 5 : level.budget >= 16000 ? 95 : level.budget >= 4096 ? 55 : 20}%` }} />
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+            <p className="text-xs font-bold text-white mb-2">Rule of thumb</p>
+            <div className="space-y-1 text-xs text-zinc-400">
+              <p>• Off: conversation, summarization, RAG Q&A, simple classification</p>
+              <p>• Low (1K): code review, document analysis, structured extraction</p>
+              <p>• Medium (4K): complex debugging, research synthesis, multi-step planning</p>
+              <p>• High (16K): competition math, formal reasoning, highest-stakes code</p>
+              <p>• Max (32K): marginal improvement over High — rarely justified on cost basis</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "usecases" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Select a task type to see reasoning model vs. base model performance and the reason.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {REASONING_TASKS.map(t => (
+              <button key={t.id} onClick={() => setSelectedTask(t.id)}
+                className={`p-2 rounded-lg border text-xs text-left transition-all ${selectedTask===t.id ? "border-violet-500 bg-violet-900/20" : "border-zinc-800 hover:border-zinc-600"}`}>
+                <div className="text-base mb-1">{t.icon}</div>
+                <p className="text-white font-medium text-[11px]">{t.label}</p>
+                <p className={`text-[10px] font-mono font-bold ${t.winner==="reasoning" ? "text-violet-400" : "text-zinc-400"}`}>{t.winner==="reasoning" ? "→ Reasoning wins" : "→ Base is fine"}</p>
+              </button>
+            ))}
+          </div>
+          {task && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+              <p className="text-white font-bold">{task.icon} {task.label}</p>
+              <p className="text-sm text-zinc-400 leading-relaxed">{task.desc}</p>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Base LLM", score: task.base, color: "#3b82f6" },
+                  { label: "Reasoning", score: task.reasoning, color: "#8b5cf6" },
+                  { label: "Cost ratio", score: null, extra: `${task.cost}× tokens`, color: "#f59e0b" },
+                ].map(m => (
+                  <div key={m.label} className="text-center">
+                    <p className="text-lg font-black" style={{ color: m.color }}>{m.score ? `${m.score}%` : m.extra}</p>
+                    <p className="text-[10px] text-zinc-500">{m.label}</p>
+                    {m.score && <div className="mt-1 h-1 rounded-full bg-zinc-800"><div className="h-1 rounded-full" style={{ width:`${m.score}%`, backgroundColor: m.color }} /></div>}
+                  </div>
+                ))}
+              </div>
+              <div className={`rounded-lg p-3 ${task.winner==="reasoning" ? "bg-violet-900/20 border border-violet-800/40" : "bg-zinc-900/60 border border-zinc-700"}`}>
+                <p className="text-xs font-bold mb-1" style={{ color: task.winner==="reasoning" ? "#a78bfa" : "#71717a" }}>
+                  {task.winner==="reasoning" ? "✓ Use a reasoning model" : "✗ Save your money — use a base model"}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "cost" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+            <p className="text-xs font-bold text-white">Pricing reality (approx. May 2026)</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead><tr className="border-b border-zinc-800">{["Model","Input $/1M","Output $/1M","Thinking $/1M","Latency"].map(h=><th key={h} className="text-left py-1.5 px-2 text-zinc-500 text-[10px]">{h}</th>)}</tr></thead>
+                <tbody>
+                  {[
+                    { model:"Claude Haiku 4",     inp:"0.80",  out:"4.00",  think:"—",     lat:"<200ms" },
+                    { model:"Claude Sonnet 4",    inp:"3.00",  out:"15.00", think:"3.00",  lat:"300ms–2s" },
+                    { model:"Claude Opus 4",      inp:"15.00", out:"75.00", think:"15.00", lat:"500ms–5s+" },
+                    { model:"GPT-4o",             inp:"2.50",  out:"10.00", think:"—",     lat:"200–800ms" },
+                    { model:"o1",                 inp:"15.00", out:"60.00", think:"15.00", lat:"1–15s" },
+                    { model:"o3",                 inp:"10.00", out:"40.00", think:"10.00", lat:"500ms–10s" },
+                  ].map(r => <tr key={r.model} className="border-b border-zinc-800/50 hover:bg-zinc-800/20">{[r.model,r.inp,r.out,r.think,r.lat].map((v,i)=><td key={i} className={`py-2 px-2 ${i===0?"text-zinc-200 font-medium":"text-zinc-500"}`}>{i===1||i===2||i===3 ? `$${v}` : v}</td>)}</tr>)}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="rounded-xl border border-red-900/40 bg-red-950/10 p-4">
+            <p className="text-xs font-bold text-red-400 mb-2">COST CALCULATION: When reasoning breaks the budget</p>
+            <p className="text-sm text-zinc-400 leading-relaxed">At 10,000 queries/day with avg 500 input tokens + 4K thinking tokens + 300 output tokens at o1 pricing: <span className="text-white font-mono">($15/1M × 0.5K) + ($15/1M × 4K) + ($60/1M × 0.3K) = $0.0075 + $0.06 + $0.018 = $0.086/query × 10,000 = $860/day = $25,800/month</span>. The same workload on GPT-4o without thinking: ~$155/month. Reasoning is 166× more expensive at this volume.</p>
+          </div>
+          <div className="rounded-xl border border-emerald-800/40 bg-emerald-900/10 p-4">
+            <p className="text-xs font-bold text-emerald-400 mb-1">THE ROUTING ANSWER</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">Don't use a reasoning model by default. Build a router: classify query complexity → send simple queries to Haiku/GPT-4o-mini, medium to Sonnet/GPT-4o, only provably hard queries to reasoning models. Targeting 5% of queries to reasoning models typically delivers 80% of the quality benefit at 15% of the cost of sending all queries.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── BUILD THIS ───────────────────────────────────────────────────────────────
 const BUILD_PROJECTS = [
   {
@@ -4884,6 +5073,7 @@ const SYSTEMS_MODULES = [
   { id: "compaction",    label: "Context Compaction",  tag: "CONTEXT",  group: "BUILD",   component: ContextCompaction },
   { id: "canvas",        label: "System Design Canvas",tag: "CANVAS",   group: "DESIGN",  component: AISystemDesignCanvas },
   { id: "langsmith",     label: "LangSmith Lab",       tag: "OBSERVE",  group: "OPS",     component: LangSmithTracingLab },
+  { id: "reasoning",     label: "Reasoning Models Lab", tag: "REASON",   group: "DESIGN",  component: ReasoningModelsLab },
   { id: "buildthis",     label: "Build This",          tag: "BUILD",    group: "BUILD",   component: BuildThis },
 ];
 

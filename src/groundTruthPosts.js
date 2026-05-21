@@ -9057,4 +9057,272 @@ for chunk in header_chunks:
     ]},
   ],
 
+  // ─── REASONING AT INFERENCE TIME ─────────────────────────────────────────────
+
+  "reason-what-changed": [
+    { t: "p", text: "OpenAI o1. o3. Claude 3.7 Sonnet. Gemini 2.0 Flash Thinking. A new class of model appeared in 2024—one that doesn't just predict the next token, but spends extra compute thinking before answering. Here's exactly what changed." },
+    { t: "h2", text: "The core shift: inference-time compute scaling" },
+    { t: "p", text: "Standard LLMs scale quality by making the model bigger (more parameters) or training it on more data. Reasoning models add a third axis: they spend more compute at inference time. Instead of generating one answer pass, they generate a long internal chain-of-thought first—then the final answer." },
+    { t: "h2", text: "What's actually different architecturally?" },
+    { t: "list", items: [
+      "Hidden scratchpad: the model generates intermediate reasoning tokens that are never shown to the user. These are real tokens—they take time and cost money.",
+      "Trained on thinking traces: reasoning models are fine-tuned on datasets where the model explicitly reasons step-by-step before answering, via RL with process-level rewards.",
+      "Longer TTFT: because the model generates thousands of thinking tokens before the first response token, Time To First Token is dramatically higher than standard models.",
+      "Better on multi-step problems: math olympiad, competitive coding, legal reasoning, complex debugging—tasks that require planning and error-correction benefit most.",
+    ]},
+    { t: "h2", text: "What it means for your system" },
+    { t: "table", headers: ["Dimension", "Base LLM (e.g. GPT-4o)", "Reasoning Model (e.g. o3)"], rows: [
+      ["TTFT", "< 1 second", "5–30 seconds"],
+      ["Cost/query", "Low", "10–20x higher"],
+      ["Accuracy (math/code)", "Moderate", "State-of-art"],
+      ["Accuracy (simple tasks)", "Same", "Same or slower"],
+      ["Context window", "128K–200K", "128K–200K"],
+    ]},
+    { t: "callout", text: "Use reasoning models when accuracy on a hard task is worth paying for. Use standard models for everything else. The key skill is routing correctly." },
+    { t: "refs", items: [
+      { label: "OpenAI o1 System Card", url: "https://openai.com/index/openai-o1-system-card/" },
+      { label: "Anthropic Claude Extended Thinking", url: "https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking" },
+    ]},
+  ],
+
+  "reason-thinking-budget": [
+    { t: "p", text: "Reasoning models expose a knob: how many thinking tokens to use. More tokens = more compute = better answers = higher cost. Understanding this frontier is the key to using reasoning models economically." },
+    { t: "h2", text: "What thinking tokens are" },
+    { t: "p", text: "When you set a thinking budget (e.g. 16,000 tokens), the model is allowed to generate up to that many internal reasoning tokens before producing the final answer. These tokens are billed at the model's standard rate but are hidden from the final output." },
+    { t: "h2", text: "The quality-cost frontier" },
+    { t: "table", headers: ["Thinking Budget", "Relative Cost", "Best For"], rows: [
+      ["Off (0 tokens)", "1×", "Simple tasks, classification, summarization"],
+      ["Low (1K tokens)", "1.5×", "Short reasoning, single-step math"],
+      ["Medium (4K tokens)", "2–3×", "Multi-step problems, code debugging"],
+      ["High (16K tokens)", "5–8×", "Hard math, complex coding, legal analysis"],
+      ["Max (32K tokens)", "10–15×", "Olympiad-level reasoning, frontier tasks"],
+    ]},
+    { t: "h2", text: "Dynamic budget allocation" },
+    { t: "p", text: "The most sophisticated pattern is dynamic routing: classify incoming queries by difficulty, then assign a thinking budget tier. A classifier LLM (fast, cheap) decides which budget tier to use before routing to the reasoning model." },
+    { t: "code", text: `def route_with_budget(query: str) -> dict:
+    difficulty = classify_query_difficulty(query)  # "simple" | "medium" | "hard"
+    budgets = {"simple": 0, "medium": 4096, "hard": 16384}
+    budget = budgets[difficulty]
+    return call_reasoning_model(query, thinking_tokens=budget)` },
+    { t: "callout", text: "Don't default to max thinking tokens. Profile accuracy vs. cost for your specific task distribution—most production workloads don't need more than 4K thinking tokens." },
+    { t: "refs", items: [
+      { label: "Anthropic Extended Thinking: Controlling Budget", url: "https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking" },
+      { label: "Scaling LLM Test-Time Compute (DeepMind)", url: "https://arxiv.org/abs/2408.03314" },
+    ]},
+  ],
+
+  "reason-when-to-use": [
+    { t: "p", text: "Reasoning models are not universally better. They're better on specific task types at a significant cost premium. Using them indiscriminately is one of the most common and expensive mistakes in production AI systems." },
+    { t: "h2", text: "When reasoning models clearly win" },
+    { t: "list", items: [
+      "Multi-step mathematical reasoning: olympiad problems, financial modelling, symbolic math",
+      "Competitive programming: problems requiring algorithm design + edge case reasoning",
+      "Legal and compliance analysis: multi-clause contract review, regulatory interpretation",
+      "Complex debugging: root cause analysis across 1000+ line codebases",
+      "Strategic planning: business strategy, scientific hypothesis generation",
+    ]},
+    { t: "h2", text: "When reasoning models are overkill" },
+    { t: "list", items: [
+      "Text classification: sentiment, intent, category — a fine-tuned small model beats o3 at 100x cheaper",
+      "Information extraction: pulling structured fields from documents — no reasoning needed",
+      "Summarization: unless the document requires multi-hop reasoning across sections",
+      "Simple Q&A: factual questions with clear answers",
+      "High-volume customer-facing calls: latency is intolerable for UX",
+    ]},
+    { t: "h2", text: "Decision heuristic" },
+    { t: "p", text: "Ask: does the correct answer require planning ahead, backtracking, or checking multiple sub-conditions? If yes → reasoning model. If the answer is pattern-match or recall → standard model." },
+    { t: "callout", text: "Build an eval on your actual task distribution. If a standard GPT-4o-class model gets 85% accuracy and reasoning gets 92%, decide whether 7% lift is worth 10x cost given your use case." },
+    { t: "refs", items: [
+      { label: "OpenAI: When to use o1", url: "https://platform.openai.com/docs/guides/reasoning" },
+    ]},
+  ],
+
+  "reason-econ": [
+    { t: "p", text: "o3 costs roughly $10–$20 per million output tokens. GPT-4o costs ~$0.60. That's a 15–30x price gap. The question isn't whether reasoning models are better—it's whether the accuracy lift is worth that multiplier for your specific use case." },
+    { t: "h2", text: "The right metric: cost per correct answer" },
+    { t: "p", text: "Don't compare cost per token. Compare cost per correct answer. If a standard model gets 70% accuracy at $0.001/query and a reasoning model gets 95% at $0.015/query, the cost per correct answer is $0.00143 vs. $0.0158. The reasoning model is 11x more expensive per correct answer—worth it for high-stakes tasks, not for volume tasks." },
+    { t: "h2", text: "Model pricing landscape (mid-2025)" },
+    { t: "table", headers: ["Model", "Input $/M tokens", "Output $/M tokens", "Reasoning Tokens Billed?"], rows: [
+      ["GPT-4o", "$2.50", "$10.00", "N/A"],
+      ["o1", "$15.00", "$60.00", "Yes (hidden)"],
+      ["o3", "$10.00", "$40.00", "Yes (hidden)"],
+      ["Claude Sonnet 3.7", "$3.00", "$15.00", "Yes (visible)"],
+      ["Claude Haiku 3.5", "$0.80", "$4.00", "No reasoning"],
+    ]},
+    { t: "h2", text: "The escalation routing pattern" },
+    { t: "p", text: "Run the cheap model first. If confidence is high, return the answer. If low, escalate to reasoning model. This hybrid approach typically achieves 90%+ of reasoning model quality at 30–40% of the cost." },
+    { t: "code", text: `def escalating_inference(query):
+    result, confidence = call_fast_model(query)
+    if confidence > 0.85:
+        return result  # ~70% of queries exit here
+    return call_reasoning_model(query)  # only 30% escalate` },
+    { t: "refs", items: [
+      { label: "OpenAI Pricing", url: "https://openai.com/api/pricing/" },
+      { label: "Anthropic Pricing", url: "https://www.anthropic.com/pricing" },
+    ]},
+  ],
+
+  "reason-prod-patterns": [
+    { t: "p", text: "Deploying reasoning models in production requires new architectural patterns. Slow TTFT, expensive tokens, and long scratchpads change how you design your system. Here are the patterns that work at scale." },
+    { t: "h2", text: "Pattern 1: Confidence-based routing" },
+    { t: "p", text: "Classify queries before routing. Use a fast classifier to determine if reasoning is needed. Send only high-complexity queries to the reasoning model. This is the single highest-ROI optimization for reasoning model deployments." },
+    { t: "h2", text: "Pattern 2: Result caching for deterministic queries" },
+    { t: "p", text: "For queries that repeat (FAQ, fixed reports, common code patterns), cache reasoning model outputs. Semantic caching with embedding similarity > 0.97 can achieve 40–60% cache hit rates on typical enterprise workloads." },
+    { t: "h2", text: "Pattern 3: Streaming UX for slow TTFT" },
+    { t: "p", text: "Reasoning models take 10–30 seconds before the first output token. Stream a 'thinking...' indicator with elapsed time. Show a progress hint if you know the expected thinking budget. Users tolerate latency much better when something is visibly happening." },
+    { t: "h2", text: "Pattern 4: Structured output extraction from scratchpads" },
+    { t: "p", text: "Reasoning model outputs are verbose. Always request structured output (JSON mode or tool use) so you can parse the final answer cleanly without depending on the scratchpad text format, which can vary." },
+    { t: "h2", text: "Pattern 5: Graceful fallback" },
+    { t: "p", text: "Reasoning models have timeout limits and can fail on extremely long thinking chains. Always implement a fallback to a standard model with a 30-second timeout. Log failures to identify task types the reasoning model struggles with." },
+    { t: "callout", text: "The most impactful production decision is routing. Get your routing classifier to 90%+ accuracy and you'll reduce reasoning model spend by 50–70% with minimal quality loss." },
+    { t: "refs", items: [
+      { label: "Claude Extended Thinking best practices", url: "https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking" },
+      { label: "Semantic caching with LangChain", url: "https://python.langchain.com/docs/integrations/llm_caching/" },
+    ]},
+  ],
+
+  // ─── MODEL CONTEXT PROTOCOL ──────────────────────────────────────────────────
+
+  "mcp-what-is": [
+    { t: "p", text: "In November 2024, Anthropic open-sourced the Model Context Protocol — a standard for connecting LLMs to external tools and data sources. Within six months, it was adopted by VS Code, Cursor, Zed, Replit, Sourcegraph, Block, and dozens more. Here's why it matters." },
+    { t: "h2", text: "The problem MCP solves" },
+    { t: "p", text: "Every AI assistant that integrates with external tools reinvents the same integration layer: authentication, serialization, error handling, discovery. Without a standard, every LLM application builds N×M integrations — N models × M tools. MCP turns this into N + M: each tool builds one MCP server, each model builds one MCP client." },
+    { t: "h2", text: "The architecture: host, client, server" },
+    { t: "list", items: [
+      "Host: the application the user interacts with (Claude Desktop, VS Code, Cursor). Manages connections and permissions.",
+      "Client: runs inside the host, maintains a 1:1 connection with one MCP server.",
+      "Server: an external process that exposes tools, resources, or prompts over the MCP protocol.",
+    ]},
+    { t: "h2", text: "The four MCP primitives" },
+    { t: "table", headers: ["Primitive", "What it is", "Example"], rows: [
+      ["Tools", "Functions the LLM can call (model-controlled)", "search_web(), run_query(), send_email()"],
+      ["Resources", "Data the host can read (app-controlled)", "File contents, database rows, API responses"],
+      ["Prompts", "Reusable prompt templates", "code-review, summarize-doc, explain-error"],
+      ["Sampling", "Server asks the LLM to generate text", "Agentic servers requesting model inference"],
+    ]},
+    { t: "h2", text: "Transport: stdio vs. SSE" },
+    { t: "p", text: "Local MCP servers communicate over stdio (stdin/stdout) — simple and zero-configuration. Remote servers use Server-Sent Events (SSE) over HTTP for network deployment. The protocol itself is JSON-RPC 2.0 in both cases." },
+    { t: "callout", text: "MCP is the USB-C of AI tool integration. Once a tool has an MCP server, it works with any MCP-compatible host — without custom per-application integration code." },
+    { t: "refs", items: [
+      { label: "MCP Official Docs", url: "https://modelcontextprotocol.io/introduction" },
+      { label: "Anthropic MCP Announcement", url: "https://www.anthropic.com/news/model-context-protocol" },
+    ]},
+  ],
+
+  "mcp-build-server": [
+    { t: "p", text: "The fastest way to understand MCP is to build a server. This walkthrough takes you from zero to a working MCP server registered with Claude Desktop — with every line of code explained." },
+    { t: "h2", text: "Step 1: Install the Python SDK" },
+    { t: "code", text: `pip install mcp` },
+    { t: "h2", text: "Step 2: Define the server and expose a tool" },
+    { t: "code", text: `from mcp.server import Server
+from mcp.server.models import InitializationOptions
+from mcp import types
+import mcp.server.stdio
+
+app = Server("my-tools")
+
+@app.list_tools()
+async def list_tools() -> list[types.Tool]:
+    return [
+        types.Tool(
+            name="get_weather",
+            description="Get current weather for a city",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "City name"}
+                },
+                "required": ["city"]
+            }
+        )
+    ]
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
+    if name == "get_weather":
+        city = arguments["city"]
+        # Your real API call here
+        return [types.TextContent(type="text", text=f"Weather in {city}: 22°C, partly cloudy")]
+    raise ValueError(f"Unknown tool: {name}")` },
+    { t: "h2", text: "Step 3: Add a resource" },
+    { t: "code", text: `@app.list_resources()
+async def list_resources() -> list[types.Resource]:
+    return [
+        types.Resource(
+            uri="weather://forecast/today",
+            name="Today's Forecast",
+            description="Current day weather summary",
+            mimeType="text/plain"
+        )
+    ]
+
+@app.read_resource()
+async def read_resource(uri: str) -> str:
+    if uri == "weather://forecast/today":
+        return "Mostly sunny, high 24°C, low 15°C"
+    raise ValueError(f"Unknown resource: {uri}")` },
+    { t: "h2", text: "Step 4: Run the server" },
+    { t: "code", text: `async def main():
+    async with mcp.server.stdio.stdio_server() as (read, write):
+        await app.run(read, write, InitializationOptions(
+            server_name="my-tools",
+            server_version="0.1.0",
+            capabilities=app.get_capabilities()
+        ))
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())` },
+    { t: "h2", text: "Step 5: Register with Claude Desktop" },
+    { t: "p", text: "Edit ~/Library/Application Support/Claude/claude_desktop_config.json:" },
+    { t: "code", text: `{
+  "mcpServers": {
+    "my-tools": {
+      "command": "python",
+      "args": ["/absolute/path/to/your/server.py"]
+    }
+  }
+}` },
+    { t: "p", text: "Restart Claude Desktop. Claude now has access to your tool and can call it mid-conversation." },
+    { t: "callout", text: "The full server is ~60 lines of Python. MCP is intentionally simple — the protocol complexity lives in the SDK, not your code." },
+    { t: "refs", items: [
+      { label: "MCP Python SDK", url: "https://github.com/modelcontextprotocol/python-sdk" },
+      { label: "MCP Quickstart", url: "https://modelcontextprotocol.io/quickstart" },
+    ]},
+  ],
+
+  "mcp-vs-functions": [
+    { t: "p", text: "Both MCP and function calling let LLMs use external tools. But they're architecturally different and solve different problems. Here's when to use each." },
+    { t: "h2", text: "What they have in common" },
+    { t: "p", text: "Both define tools as JSON schemas. Both let the LLM decide when to call a tool. Both support structured input/output. The user experience looks identical from the outside." },
+    { t: "h2", text: "The key differences" },
+    { t: "table", headers: ["Dimension", "Function Calling", "MCP"], rows: [
+      ["Where tools are defined", "In your API call (inline)", "In an external server process"],
+      ["Who can use the tools", "One application", "Any MCP-compatible host"],
+      ["Discovery", "Static list in prompt", "Dynamic via list_tools()"],
+      ["Transport", "HTTP to LLM API", "stdio or SSE to MCP server"],
+      ["State", "Stateless per call", "Server can maintain session state"],
+      ["Resources", "Not supported", "First-class primitive"],
+      ["Multi-client", "No", "Yes — N clients, one server"],
+    ]},
+    { t: "h2", text: "When to use function calling" },
+    { t: "list", items: [
+      "You're building a single application and the tools are tightly coupled to your app logic",
+      "You need maximum portability across different LLM providers (OpenAI, Anthropic, Gemini all support function calling)",
+      "Your tools are simple, stateless functions with no need for resource access",
+    ]},
+    { t: "h2", text: "When to use MCP" },
+    { t: "list", items: [
+      "You're building a tool that multiple AI assistants should be able to use (VS Code + Claude Desktop + Cursor)",
+      "Your tool needs to expose resources (files, database views) not just callable functions",
+      "You want the tool to be independently deployable and versioned outside your main app",
+      "You're building an internal enterprise tool catalogue that multiple teams' AI agents should access",
+    ]},
+    { t: "callout", text: "Default to function calling for application-specific tools. Default to MCP when you're building a tool that deserves its own deployment — think of it as: function calling is a library, MCP is a microservice." },
+    { t: "refs", items: [
+      { label: "MCP vs. Function Calling (Anthropic blog)", url: "https://modelcontextprotocol.io/docs/concepts/tools" },
+      { label: "OpenAI Function Calling docs", url: "https://platform.openai.com/docs/guides/function-calling" },
+    ]},
+  ],
+
 };

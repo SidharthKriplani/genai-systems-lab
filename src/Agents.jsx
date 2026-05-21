@@ -2243,6 +2243,202 @@ function LLMMemoryArchitecture() {
   );
 }
 
+// ─── MCP DEEP DIVE ────────────────────────────────────────────────────────────
+const MCP_PRIMITIVES = [
+  { id: "tools",     label: "Tools",     color: "#6366f1", icon: "🔧",
+    what: "Functions the server exposes that the LLM can call. Identical to function calling — but defined in the MCP server, not in the client application.",
+    example: "get_weather(city: str) → WeatherData\nsearch_files(query: str, path: str) → list[File]\ncreate_issue(title: str, body: str, labels: list) → Issue",
+    when: "Anything the agent needs to DO: search, write, compute, call APIs." },
+  { id: "resources", label: "Resources", color: "#3b82f6", icon: "📁",
+    what: "Data sources the LLM can READ. Files, database rows, API responses — exposed as URI-addressed resources. Read-only by convention.",
+    example: "file:///home/user/project/README.md\ndb://customers/id/12345\ngithub://repos/anthropics/mcp/issues/42",
+    when: "Context injection: let the model read a file, a database record, or a remote resource without a tool call round-trip." },
+  { id: "prompts",   label: "Prompts",   color: "#06b6d4", icon: "💬",
+    what: "Reusable prompt templates with parameters. The server defines prompt workflows; the host (Claude Desktop, IDE) surfaces them as slash commands or menu items.",
+    example: '/summarize_pr(pr_url: str)\n/explain_error(stack_trace: str)\n/generate_tests(file_path: str, coverage_target: int)',
+    when: "Repeatable workflows where the prompt structure is known but the parameters vary per invocation." },
+  { id: "sampling",  label: "Sampling",  color: "#22c55e", icon: "🎲",
+    what: "Allows MCP servers to request LLM completions from the host. The server can ask Claude to generate text as part of its own workflow — without managing an LLM API key.",
+    example: "Server: 'I extracted this code. Please explain it.'\nHost: [calls Claude, returns explanation]\nServer: [uses explanation in its response]",
+    when: "Servers that need LLM-in-the-loop processing: summarization during ingestion, classification, code explanation." },
+];
+
+const MCP_ECOSYSTEM = [
+  { name: "Claude Desktop", type: "Host", color: "#ec4899", desc: "The reference MCP host. Connects to local MCP servers via stdio. Any MCP server you write works here immediately." },
+  { name: "Cursor / Windsurf", type: "Host", color: "#6366f1", desc: "IDE hosts. MCP servers for code search, git, testing, deployment — all wired through the same protocol." },
+  { name: "filesystem", type: "Server (official)", color: "#3b82f6", desc: "Official Anthropic server. Exposes local file system as MCP resources + tools (read, write, move, search)." },
+  { name: "github", type: "Server (official)", color: "#3b82f6", desc: "Issues, PRs, repos, code search — all as MCP tools. Works with any MCP host." },
+  { name: "postgres / sqlite", type: "Server (official)", color: "#3b82f6", desc: "Database query and schema inspection as MCP tools. The model can write and execute SQL." },
+  { name: "brave-search", type: "Server (official)", color: "#3b82f6", desc: "Web search as an MCP tool. Real-time results without building a search integration." },
+  { name: "Your custom server", type: "Server (custom)", color: "#22c55e", desc: "Any Python/TypeScript process that speaks the MCP protocol. Expose your internal APIs, databases, or workflows." },
+];
+
+const MCP_VS_FUNCTIONS = [
+  { aspect: "Defined by", functions: "The client application (your code)", mcp: "The MCP server (separate process/service)" },
+  { aspect: "Reusability", functions: "Per-application — must redefine for each LLM integration", mcp: "Cross-host — one server works with Claude Desktop, Cursor, any MCP host" },
+  { aspect: "Transport", functions: "Inline in the API call", mcp: "stdio (local) or SSE/HTTP (remote)" },
+  { aspect: "Auth", functions: "Client manages API keys", mcp: "Server manages credentials — client never sees them" },
+  { aspect: "Resources", functions: "Not supported — tools only", mcp: "Tools + Resources + Prompts + Sampling" },
+  { aspect: "Discovery", functions: "Hardcoded in client", mcp: "Dynamic — host discovers tools at connection time" },
+  { aspect: "When to use", functions: "Single-app tool use, quick prototypes", mcp: "Reusable tooling, sharing across multiple LLM hosts, production tool ecosystems" },
+];
+
+function MCPDeepDive() {
+  const [tab, setTab] = useState("arch");
+  const [selectedPrim, setSelectedPrim] = useState(null);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {[{id:"arch",label:"Architecture"},{id:"primitives",label:"4 Primitives"},{id:"build",label:"Build a Server"},{id:"vs",label:"MCP vs. Function Calling"}].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all ${tab===t.id ? "bg-violet-600 border-violet-500 text-white" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "arch" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-3">
+            <p className="text-xs font-mono font-bold text-violet-400 uppercase tracking-widest">THE ONE-SENTENCE EXPLANATION</p>
+            <p className="text-lg text-white font-bold leading-relaxed">MCP is a standard protocol that separates <span className="text-violet-400">what tools exist</span> (MCP servers) from <span className="text-emerald-400">which LLM uses them</span> (MCP hosts) — so you build a tool once and any LLM host can use it.</p>
+          </div>
+          {/* Architecture diagram */}
+          <div className="bg-zinc-950 rounded-xl p-4">
+            <div className="grid grid-cols-3 gap-3 text-center text-xs">
+              <div className="space-y-2">
+                <div className="rounded-lg border border-violet-700/50 bg-violet-900/20 p-3">
+                  <p className="font-bold text-violet-300 text-sm">MCP Host</p>
+                  <p className="text-violet-400 text-[10px] mt-1">Claude Desktop, Cursor, your app</p>
+                  <p className="text-zinc-500 text-[10px] mt-2">Manages LLM + UI. Connects to servers. Routes tool calls.</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-center gap-1">
+                <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-2 w-full">
+                  <p className="font-bold text-zinc-300 text-[10px] text-center">MCP Client</p>
+                  <p className="text-zinc-500 text-[10px] text-center mt-1">Inside the host. Speaks the protocol.</p>
+                </div>
+                <div className="flex items-center gap-2 text-zinc-600 text-[10px]">
+                  <span>←→</span>
+                  <span>JSON-RPC 2.0</span>
+                  <span>←→</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="rounded-lg border border-emerald-700/50 bg-emerald-900/20 p-3">
+                  <p className="font-bold text-emerald-300 text-sm">MCP Server</p>
+                  <p className="text-emerald-400 text-[10px] mt-1">filesystem, github, your-api</p>
+                  <p className="text-zinc-500 text-[10px] mt-2">Exposes Tools, Resources, Prompts. Owns its own credentials.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {MCP_ECOSYSTEM.map(e => (
+              <div key={e.name} className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: e.color, backgroundColor: e.color+"22" }}>{e.type}</span>
+                  <span className="text-sm font-bold text-white font-mono">{e.name}</span>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">{e.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "primitives" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">MCP servers expose 4 primitives. Click any to see examples.</p>
+          <div className="grid grid-cols-2 gap-3">
+            {MCP_PRIMITIVES.map(p => (
+              <div key={p.id} onClick={() => setSelectedPrim(selectedPrim===p.id ? null : p.id)}
+                className="rounded-xl border p-4 cursor-pointer transition-all"
+                style={{ borderColor: selectedPrim===p.id ? p.color : "#3f3f46", backgroundColor: selectedPrim===p.id ? p.color+"0d" : "transparent" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">{p.icon}</span>
+                  <span className="font-bold text-white">{p.label}</span>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">{p.what}</p>
+                {selectedPrim === p.id && (
+                  <div className="mt-3 space-y-2">
+                    <div className="bg-zinc-950 rounded-lg p-3">
+                      <pre className="font-mono text-xs text-green-400 whitespace-pre-wrap">{p.example}</pre>
+                    </div>
+                    <p className="text-[11px] text-emerald-400">✓ Use when: {p.when}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "build" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+            <p className="text-sm text-zinc-300 leading-relaxed">A minimal MCP server is a process that speaks JSON-RPC 2.0 over stdio. The Python SDK reduces this to a decorator pattern. Here's a complete working server that exposes a web search tool and a file resource:</p>
+          </div>
+          <div className="space-y-3">
+            {[
+              { step: "01", label: "Install the SDK", code: `pip install mcp` },
+              { step: "02", label: "Define your server", code: `from mcp.server import Server\nfrom mcp.server.stdio import stdio_server\nfrom mcp import types\n\napp = Server("my-search-server")` },
+              { step: "03", label: "Expose a Tool", code: `@app.tool()\nasync def web_search(query: str, max_results: int = 5) -> list[dict]:\n    """Search the web and return results.\n    \n    Args:\n        query: The search query\n        max_results: Number of results (1-20)\n    \"\"\"\n    results = await brave_api.search(query, count=max_results)\n    return [{"title": r.title, "url": r.url, "snippet": r.snippet}\n            for r in results]` },
+              { step: "04", label: "Expose a Resource", code: `@app.resource("file://{path}")\nasync def read_file(path: str) -> str:\n    """Read a file from the local filesystem.\"\"\"\n    with open(path) as f:\n        return f.read()` },
+              { step: "05", label: "Run it", code: `async def main():\n    async with stdio_server() as (read, write):\n        await app.run(read, write, app.create_initialization_options())\n\nimport asyncio\nasyncio.run(main())` },
+              { step: "06", label: "Register in Claude Desktop (claude_desktop_config.json)", code: `{\n  "mcpServers": {\n    "my-search-server": {\n      "command": "python",\n      "args": ["/path/to/your/server.py"]\n    }\n  }\n}` },
+            ].map(s => (
+              <div key={s.step} className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold text-violet-400">STEP {s.step}</span>
+                  <span className="text-xs text-zinc-300">{s.label}</span>
+                </div>
+                <div className="bg-zinc-950 rounded-lg p-3">
+                  <pre className="font-mono text-xs text-green-400 whitespace-pre-wrap">{s.code}</pre>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl border border-emerald-800/40 bg-emerald-900/10 p-4">
+            <p className="text-xs font-bold text-emerald-400 mb-1">THAT'S IT</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">The server above works with Claude Desktop, Cursor, and any other MCP host. You wrote the tool once. It works everywhere. Your API credentials stay in the server — the host never sees them.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "vs" && (
+        <div className="space-y-3">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  {["Aspect","Function Calling","MCP"].map(h => (
+                    <th key={h} className="text-left py-2 px-3 text-zinc-500 font-mono uppercase text-[10px] tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {MCP_VS_FUNCTIONS.map((row, i) => (
+                  <tr key={i} className="border-b border-zinc-800/50 hover:bg-zinc-800/20">
+                    <td className="py-2 px-3 text-zinc-400 font-medium">{row.aspect}</td>
+                    <td className="py-2 px-3 text-zinc-500">{row.functions}</td>
+                    <td className="py-2 px-3 text-emerald-400">{row.mcp}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4">
+            <p className="text-xs font-bold text-amber-400 mb-1">WHEN NOT TO USE MCP</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">Prototyping a single LLM feature in your app? Use function calling — less overhead. MCP pays off when you want the same tooling to work across multiple LLM hosts, or when you want to share tools across your team without each integration reimplementing them.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const AGENTS_MODULES = [
   { id: "react",      label: "ReAct Pattern",       tag: "LOOP",   group: "CORE",      component: ReActPattern        },
   { id: "tools",      label: "Tool Use Design",     tag: "TOOLS",  group: "CORE",      component: ToolUseDesign       },
@@ -2254,6 +2450,7 @@ const AGENTS_MODULES = [
   { id: "design",     label: "Design Challenge",    tag: "BUILD",  group: "SIM",       component: AgentDesignChallenge },
   { id: "simulator",  label: "Loop Simulator",      tag: "PLAY",   group: "SIM",       component: AgentLoopSimulator  },
   { id: "frameworks", label: "Framework Landscape", tag: "STACK",  group: "ECOSYSTEM", component: FrameworkLandscape  },
+  { id: "mcp",        label: "MCP Deep Dive",       tag: "MCP",    group: "ECOSYSTEM", component: MCPDeepDive         },
 ];
 
 const AGENTS_GROUPS = [
