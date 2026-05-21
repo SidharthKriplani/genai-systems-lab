@@ -2117,9 +2117,9 @@ export default function App() {
             </div>
           </div>
         }>
-          {topView === "concepts"   && <ConceptsApp />}
-          {topView === "flows"      && <FlowsApp />}
-          {topView === "consult"    && <ConsultationApp onNavigate={navigate} />}
+          {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} />}
+          {topView === "flows"      && <FlowsApp onNavigate={navigateTo} />}
+          {topView === "consult"    && <ConsultationApp onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
 
           {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
@@ -2131,7 +2131,7 @@ export default function App() {
           {topView === "preplab"    && <PrepLabApp onNavigate={navigate} />}
           {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} />}
 
-          {topView === "groundtruth" && <GroundTruth onNavigate={navigate} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
+          {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} />}
         </Suspense>
       </TabErrorBoundary>
