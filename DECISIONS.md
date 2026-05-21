@@ -345,84 +345,17 @@ Topics with no coverage yet: RLHF implementation walkthrough (detailed), Gemini 
 
 ### P15 — Company prep tracks in PrepLab ✓ DONE
 
-### P16 — A2A Protocol module (Agents tab)
-
-The Agent-to-Agent protocol (Google ADK, May 2025) solves inter-agent communication the same way MCP solves tool integration: N×M → N+M. An ADK agent can discover and invoke a LangGraph or CrewAI agent through A2A's standardized task interface. Already: CrewAI has added A2A support, OpenAgents is natively dual MCP+A2A. Natural companion to the existing MCP Deep Dive module.
-
-Format: 3 tabs — "What A2A Solves" (N×M diagram → N+M with protocol), "A2A vs MCP" (side-by-side comparison: scope/transport/discovery/security), "Framework Support Matrix" (LangGraph/CrewAI/ADK/OpenAgents/AutoGen + which natively support A2A today).
-
-### P17 — Semantic Caching Explorer (Explore tab)
-
-Interactive demo of semantic caching: user types a query → similarity check against cache (cosine sim threshold slider 0.80–0.99) → cache HIT (show saved cost + latency) vs. MISS (LLM call fires). Demo second query that's semantically similar but differently worded — show it hits cache. Show cumulative savings counter. Covers GPTCache / vLLM Semantic Router (Iris release, Jan 2026) mechanics.
-
-This is genuinely cutting-edge infra (vLLM now ships a Semantic Router as a first-class feature). Complements the existing Embedding Space and Vector DB tools in Explore.
-
-### P18 — KV Cache Engineering (Systems tab)
-
-Unified module covering the spectrum from prompt caching to prefix caching to cache-aware routing. 3 tabs:
-- "How It Works" — KV block hashing, automatic prefix caching (vLLM/SGLang), explicit cache markers (Anthropic `cache_control`), all major APIs that ship it (Anthropic/OpenAI/Gemini/DeepSeek)
-- "Cost Math" — interactive: input tokens × cached ratio × price → savings calculator. Rule: only optimization that gets cheaper with longer context.
-- "Cache-Aware Routing" — llm-d pattern: route to the pod that already has the most relevant KV blocks for your request. EPLB (Expert-Level Load Balancing) for MoE.
-
-Natural extension of the existing Context Window Engineering module.
-
-### P19 — AI Guardrails Engineering (Systems tab)
-
-Dedicated module on production-grade guardrails — separate from the current AI Red Teaming module (which focuses on attacks). This covers the defense architecture in depth.
-
-3 tabs:
-- "Dual-Stage Architecture" — input guardrails (before LLM) + output guardrails (before user), with animated flow showing where each check fires
-- "Guardrail Providers" — AWS Bedrock Guardrails / Azure Content Safety / Lakera / NeMo Guardrails / Patronus AI — dimensions: latency, PII detection, jailbreak shield, self-hosted option, price
-- "Reality Check" — 2026 data: 90–99% jailbreak success rates on open-weight models, 80–94% on proprietary. Why defense-in-depth is the only viable posture.
-
-### P20 — Vibe Coding & Agentic Development (Explore or Systems tab)
-
-"Vibe Coding" coined by Karpathy, Collins Word of the Year 2025. 92% of US developers have adopted it. Cursor hit $2B ARR in 24 months. 60% of new code in 2026 is AI-generated. This belongs in the app as a first-class concept.
-
-3 tabs:
-- "What Changed" — natural language → code, agent mode (multi-file autonomous editing), Objective-Validation Protocol (set goal, validate progress, agent executes)
-- "Tool Landscape" — Cursor vs Windsurf vs GitHub Copilot vs Claude Code: agent mode, context window, self-hosted, pricing, best-for
-- "Engineering Implications" — what a senior AI engineer needs to know about evaluating, reviewing, and shipping AI-generated code at scale
-
-### P21 — LLMOps Tool Comparison (Explore tab)
-
-Interactive comparison table: Langfuse (acquired by Clickhouse Jan 2026, MIT license) vs Braintrust (eval-first) vs Arize Phoenix (Elastic License, RAGAS native) vs LangSmith (LangGraph-native) vs Laminar (Apache 2.0, agent-focused).
-
-Dimensions: pricing model, self-host support, prompt versioning, eval harness, agent trace depth, RAGAS support, license. Filterable. Decision wizard: "what's your primary need?" → ranked recommendation.
-
-Complements the existing LangSmith Lab module by giving the full competitive landscape.
-
-### P22 — Thought Leader Reading Room (Ground Truth or standalone Explore tool)
-
-Annotated reading lists per AI thought leader — not a live feed (stale problem), but evergreen curation. Format per person: 3–5 of their most important pieces with a 2-sentence "why it matters + what to question" annotation.
-
-Candidates: Andrej Karpathy (now at Anthropic, pre-training team, May 2026), Simon Willison (LLM safety + practical AI, simonwillison.net), swyx/Shawn Wang (AI Engineer newsletter + Latent.Space podcast), Hamel Husain (LLM evals, the definitive Evals FAQ), François Chollet (ARC-AGI, reasoning vs. memorization), Yann LeCun (JEPA / world models skeptic of LLM AGI).
-
-Could live as a new section in GT sidebar, or as a dedicated "Perspectives" Explore tool with person-switcher.
-
-### P23 — World Models primer (Ground Truth post or Concepts module)
-
-2026 is being called the breakthrough year for world models. World Action Models (WAMs) unify predictive state modeling with action generation. Video generation models are being repurposed as world simulators for embodied AI training. This is the frontier that explains where the field goes after transformer scaling.
-
-Content: what a world model is vs. an LLM, JEPA architecture (LeCun), video-as-world-model (Genie, Sora), WAMs, why this matters for robotics and agent planning, the gap between language-world models and physics-aware world models.
-
-Format: 1 GT post (foundational) + potentially a Concepts module if it becomes central to production AI engineering (it will).
-
-### P24 — MoE Architecture deep-dive (Systems or Concepts)
-
-Mixture of Experts is now mainstream infrastructure — Gemma 4 26B MoE, Mixtral, DeepSeek-V3 all ship it. vLLM v0.19 has EPLB (Expert-Level Load Balancing). Production engineers need to understand: sparse activation, expert routing, load balancing, why MoE is cheaper to run at inference despite having more parameters, and failure modes (expert collapse, load skew).
-
-Currently only mentioned in the Gemini GT post. Deserves a Systems module.
-
-### P25 — Defense Doc (highest priority — see P1)
-
-Still unbuilt. Still the strongest pending idea. Personalized interview brief from JD paste: Topic Priority Table, 8 must-know concepts cold, system design cheat sheet, STAR story prompts, production gotchas, questions to ask the interviewer. Two formats: platform-rendered + PDF download (jsPDF, no backend).
-
-Clear paid tier hook: free = platform render, paid = download PDF.
-
-### P26 — "Traps & Bug Catching" (see P2)
-
-Still unbuilt. Find-the-flaw challenge format. ~15–20 challenges across: broken system diagrams, eval frameworks with subtle errors, Python LLM functions with bugs, "a candidate said X — what's wrong?" Directly maps to how Staff-level interviews actually work.
+### P16 — A2A Protocol module (Agents tab) ✓ DONE
+### P17 — Semantic Caching Explorer (Explore tab) ✓ DONE
+### P18 — KV Cache Engineering (Systems tab) ✓ DONE
+### P19 — AI Guardrails Engineering (Systems tab) ✓ DONE
+### P20 — Vibe Coding & Agentic Development (Systems tab) ✓ DONE
+### P21 — LLMOps Tool Comparison (Explore tab) ✓ DONE
+### P22 — Thought Leader Reading Room (GT Perspectives series) ✓ DONE
+### P23 — World Models primer (GT post) ✓ DONE
+### P24 — MoE Architecture (Systems module) ✓ DONE
+### P25 — Defense Doc (PrepLab mode) ✓ DONE
+### P26 — Traps Lab / Bug Catching (Systems/OPS module, 8 challenges) ✓ DONE
 
 ### P27 — Open-ended Take-homes (Career/PrepLab)
 
@@ -443,6 +376,26 @@ Speculative decoding is now production infrastructure (vLLM, TGI both ship it). 
 ### P31 — A2A Protocol GT companion post
 
 The A2A Protocol Agents module needs a GT post companion. 8-min read covering: the N×M problem, Agent Card format, Task lifecycle, push notifications, transport layer, current framework adoption (CrewAI ✓, OpenAgents ✓, LangGraph 🔄, AutoGen 🔄), and how A2A + MCP compose into a full agent integration architecture.
+
+### P32 — Embedding Model Selection (Explore or Systems module)
+
+Gap: app teaches what embeddings are and how retrieval works, but never helps engineers pick the right embedding model. Cover: Voyage AI vs Cohere Embed vs OpenAI text-embedding-3 vs BGE — benchmark dimensions (MTEB score, dimensionality, max tokens, cost, latency). Matryoshka Representation Learning (truncate dimensions for speed). Fine-tuning embedding models (contrastive loss, triplet loss, hard negative mining). Interactive: model × use-case selection wizard. High job-relevance — this comes up in every RAG system design interview.
+
+### P33 — Streaming & Real-time Production Patterns (Systems/DESIGN)
+
+Gap: streaming is universally deployed but the app has no treatment of it. Cover: SSE vs WebSockets for LLM streaming, first-token latency vs throughput tradeoff, streaming structured output (partial JSON validation), barge-in and interruption handling in voice, streaming tool calls (partial tool arguments), back-pressure and client-side buffering. Interactive: latency waterfall diagram with configurable streaming vs batching. Highly practical — every production LLM app does streaming.
+
+### P34 — Data Flywheel from Production (Systems or GT series)
+
+Gap: feedback loops from live traffic are the compounding advantage nobody talks about in early-career resources. Cover: implicit feedback signals (thumbs, dwell time, reformulation rate), reward modeling from logs (Bradley-Terry, DPO from preference logs), online vs offline evaluation pipelines, the "shadow mode" deployment pattern for collecting ground truth, dataset versioning and contamination. GT series: "Closing the Loop — Building Self-Improving AI Systems." This is senior-level knowledge that differentiates candidates.
+
+### P35 — Constrained / Grammar-Based Generation (Systems/BUILD)
+
+Gap: structured output at the API level (json_mode, function calling) is covered implicitly, but below-API structured generation isn't. Cover: Outlines / llama.cpp grammar — GBNF grammars, context-free grammar → logit masking, speed overhead vs reliability gain. Guidance (Microsoft) — control flow inside the LLM generation loop. Use cases: guaranteed schema adherence for tool-call parsers, form extraction, SQL generation. Interactive: grammar editor → watch token probability collapse on invalid continuations. Useful for inference engineers and ML platform folks.
+
+### P36 — Model Merging (Systems/DESIGN or GT post)
+
+Gap: model merging went mainstream in 2025 (Mistral, community models on HuggingFace are routinely merged). Cover: SLERP (spherical linear interpolation in weight space), TIES merging (task vector interference resolution), model soup (average of fine-tuned checkpoints), LoRA adapter merging (linear combination in adapter space), DARE (drop and rescale). Trade-offs: merged models often beat fine-tuned models at zero marginal training cost. Practical: how to pick merge ratios without running full evals (proxy tasks). Medium complexity to build — GT post + small Systems module.
 
 ---
 
