@@ -3951,7 +3951,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
           <span className="text-[10px] text-zinc-600">{m.fidelity.note}</span>
         </div>
       ) : null; })()}
-      <ActiveComponent onNavigate={activeModule === 'embeddings' ? onNavigate : undefined} />
+      <ActiveComponent onNavigate={onNavigate} />
     </div>
   );
 }

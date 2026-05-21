@@ -3180,7 +3180,25 @@ const AGENTS_GROUPS = [
   { id: "ECOSYSTEM", label: "ECOSYSTEM", color: "#06b6d4" },
 ];
 
-export default function AgentsApp({ initialModule, onModuleVisit }) {
+const AGENTS_RELATED_GT = {
+  react:       [{ id: "react-pattern",          title: "The ReAct Pattern" }, { id: "react-reasoning-acting", title: "ReAct: The Paper" }, { id: "tracing-agent-loops", title: "Tracing Agent Loops" }],
+  tools:       [{ id: "tool-use-design",         title: "Tool Use Design" }, { id: "agent-failure-modes", title: "How Agents Fail" }, { id: "prompt-injection-production", title: "Prompt Injection in Prod" }],
+  memory:      [{ id: "agent-memory-types",      title: "6 Types of Agent Memory" }, { id: "context-compaction", title: "Context Compaction" }],
+  memarch:     [{ id: "agent-memory-types",      title: "6 Types of Agent Memory" }, { id: "context-compaction", title: "Context Compaction" }],
+  multiagent:  [{ id: "multi-agent-orchestration", title: "Multi-Agent Orchestration" }, { id: "agent-system-design", title: "Designing an Agent System" }, { id: "cascade-failure", title: "Cascade Failure" }],
+  failures:    [{ id: "agent-failure-modes",     title: "How Agents Fail in Production" }, { id: "tool-loop-failure", title: "Tool Loop Failure" }, { id: "cascade-failure", title: "Cascade Failure" }],
+  planning:    [{ id: "planning-patterns",       title: "Planning Patterns: ToT, GoT, LATS" }, { id: "agent-system-design", title: "Designing an Agent System" }],
+  design:      [{ id: "ai-system-design-framework", title: "AI System Design Framework" }, { id: "agent-system-design", title: "Designing an Agent System" }],
+  simulator:   [{ id: "tracing-agent-loops",     title: "Tracing Agent Loops" }, { id: "agent-failure-modes", title: "How Agents Fail" }],
+  frameworks:  [{ id: "agent-system-design",     title: "Designing an Agent System" }, { id: "build-code-review-bot", title: "How I'd Build a Code Review Bot" }],
+  mcp:         [{ id: "mcp-what-is",             title: "MCP: What It Is and Why It Matters" }, { id: "mcp-build-server", title: "Build Your First MCP Server" }, { id: "tool-use-design", title: "Tool Use Design" }],
+  reliability: [{ id: "agent-failure-modes",     title: "How Agents Fail in Production" }, { id: "tool-loop-failure", title: "Tool Loop Failure" }, { id: "cascade-failure", title: "Cascade Failure" }],
+  computeruse: [{ id: "agent-failure-modes",     title: "How Agents Fail in Production" }, { id: "build-code-review-bot", title: "How I'd Build a Code Review Bot" }],
+  longrunning: [{ id: "context-compaction",      title: "Context Compaction" }, { id: "agent-failure-modes", title: "How Agents Fail in Production" }],
+  a2a:         [{ id: "a2a-protocol-guide",      title: "A2A Protocol: How Agents Talk" }, { id: "mcp-what-is", title: "MCP: What It Is" }, { id: "multi-agent-orchestration", title: "Multi-Agent Orchestration" }],
+};
+
+export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) {
   const [activeModule, setActiveModule] = useState(initialModule || "react");
   useEffect(() => { if (initialModule) setActiveModule(initialModule); }, [initialModule]);
 
@@ -3217,7 +3235,25 @@ export default function AgentsApp({ initialModule, onModuleVisit }) {
           </div>
         ))}
       </div>
-      <ActiveComponent />
+      <ActiveComponent onNavigate={onNavigate} />
+
+      {/* Related GT reading */}
+      {AGENTS_RELATED_GT[activeModule]?.length > 0 && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">📖 Related reading in Ground Truth</div>
+          <div className="flex flex-wrap gap-2">
+            {AGENTS_RELATED_GT[activeModule].map(post => (
+              <button
+                key={post.id}
+                onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: post.id })}
+                className="text-xs text-indigo-400 bg-indigo-950/40 border border-indigo-900/50 px-2.5 py-1 rounded-lg font-medium hover:bg-indigo-900/40 hover:text-indigo-300 transition-colors cursor-pointer"
+              >
+                {post.title} →
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

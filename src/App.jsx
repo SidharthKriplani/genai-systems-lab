@@ -2120,12 +2120,12 @@ export default function App() {
           {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} />}
           {topView === "flows"      && <FlowsApp onNavigate={navigateTo} />}
           {topView === "consult"    && <ConsultationApp onNavigate={navigate} onNavigateTo={navigateTo} />}
-          {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} />}
+          {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
 
           {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "fluency"    && <FluencyApp />}
           {topView === "aipm"       && <AIPMApp />}
-          {topView === "playground" && <PlaygroundApp />}
+          {topView === "playground" && <PlaygroundApp onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} onNavigate={(tab, postId) => { if (postId) setGtPostId(postId); navigate(tab); }} />}
           {topView === "career"     && <CareerApp />}
           {topView === "preplab"    && <PrepLabApp onNavigate={navigate} />}

@@ -8582,12 +8582,12 @@ function ConstrainedGeneration() {
 function FlashAttentionHowItWorks() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 space-y-3">
-        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm uppercase tracking-wide">Memory Access Pattern</h3>
+      <div className="bg-zinc-800/60 rounded-xl p-5 space-y-3">
+        <h3 className="font-bold text-zinc-100 text-sm uppercase tracking-wide">Memory Access Pattern</h3>
         <div className="space-y-3">
           <div className="border border-red-300 dark:border-red-700 rounded-lg p-3 bg-red-50 dark:bg-red-900/20">
             <div className="text-xs font-bold text-red-700 dark:text-red-400 mb-1">Standard Attention: O(N²) HBM reads</div>
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-xs text-zinc-400">
               <span className="bg-red-200 dark:bg-red-800 px-2 py-1 rounded font-mono">HBM</span>
               <span>→</span>
               <span className="bg-orange-200 dark:bg-orange-800 px-2 py-1 rounded font-mono">N×N Matrix</span>
@@ -8598,7 +8598,7 @@ function FlashAttentionHowItWorks() {
           </div>
           <div className="border border-green-300 dark:border-green-700 rounded-lg p-3 bg-green-50 dark:bg-green-900/20">
             <div className="text-xs font-bold text-green-700 dark:text-green-400 mb-1">Flash Attention: tiled, O(N) HBM reads</div>
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-xs text-zinc-400">
               <span className="bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono">HBM</span>
               <span>→</span>
               <span className="bg-blue-200 dark:bg-blue-800 px-2 py-1 rounded font-mono">SRAM tile</span>
@@ -8610,7 +8610,7 @@ function FlashAttentionHowItWorks() {
         </div>
       </div>
       <div className="space-y-3">
-        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm uppercase tracking-wide">Key Ideas</h3>
+        <h3 className="font-bold text-zinc-100 text-sm uppercase tracking-wide">Key Ideas</h3>
         {[
           { title: "Tiling", desc: "Q, K, V split into blocks that fit in on-chip SRAM. Attention computed block-by-block, eliminating large intermediate reads/writes." },
           { title: "Recomputation", desc: "Forward pass saves only softmax statistics (not full attention matrix). Backward pass recomputes attention from tiles — trades compute for memory." },
@@ -8620,8 +8620,8 @@ function FlashAttentionHowItWorks() {
           <div key={i} className="flex gap-3">
             <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{i + 1}</div>
             <div>
-              <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">{item.title}</div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">{item.desc}</div>
+              <div className="text-sm font-semibold text-zinc-100">{item.title}</div>
+              <div className="text-xs text-zinc-400">{item.desc}</div>
             </div>
           </div>
         ))}
@@ -8648,19 +8648,19 @@ function FlashAttentionVersions() {
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-gray-100 dark:bg-gray-800">
+            <tr className="bg-zinc-800">
               {["Version", "Key Innovation", "Speed vs Baseline", "Notes"].map(h => (
-                <th key={h} className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">{h}</th>
+                <th key={h} className="text-left px-3 py-2 font-semibold text-zinc-300">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
-                <td className="px-3 py-2 font-medium text-gray-800 dark:text-gray-200">{r.v}</td>
-                <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.key}</td>
-                <td className="px-3 py-2 text-indigo-600 dark:text-indigo-400 font-mono">{r.speed}</td>
-                <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{r.notes}</td>
+              <tr key={i} className="border-t border-zinc-800">
+                <td className="px-3 py-2 font-medium text-zinc-200">{r.v}</td>
+                <td className="px-3 py-2 text-zinc-400">{r.key}</td>
+                <td className="px-3 py-2 text-indigo-400 font-mono">{r.speed}</td>
+                <td className="px-3 py-2 text-zinc-500">{r.notes}</td>
               </tr>
             ))}
           </tbody>
@@ -8669,9 +8669,9 @@ function FlashAttentionVersions() {
       <div className="grid grid-cols-3 gap-3">
         {variants.map((v, i) => (
           <div key={i} className={`border rounded-lg p-3 ${v.color}`}>
-            <div className="font-bold text-sm text-gray-800 dark:text-gray-100">{v.name}</div>
-            <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{v.desc}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">{v.heads}</div>
+            <div className="font-bold text-sm text-zinc-100">{v.name}</div>
+            <div className="text-xs font-medium text-zinc-300">{v.desc}</div>
+            <div className="text-xs text-zinc-500 font-mono mt-1">{v.heads}</div>
           </div>
         ))}
       </div>
@@ -8687,7 +8687,7 @@ function FlashAttention() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -8712,20 +8712,20 @@ function QuantizationMethods() {
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-gray-100 dark:bg-gray-800">
+          <tr className="bg-zinc-800">
             {["Method", "Bits", "VRAM vs FP16", "Quality Loss", "Best For"].map(h => (
-              <th key={h} className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">{h}</th>
+              <th key={h} className="text-left px-3 py-2 font-semibold text-zinc-300">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
-              <td className="px-3 py-2 font-medium text-gray-800 dark:text-gray-200">{r.method}</td>
-              <td className="px-3 py-2 font-mono text-indigo-600 dark:text-indigo-400">{r.bits}</td>
-              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.vram}</td>
-              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.quality}</td>
-              <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{r.best}</td>
+            <tr key={i} className="border-t border-zinc-800">
+              <td className="px-3 py-2 font-medium text-zinc-200">{r.method}</td>
+              <td className="px-3 py-2 font-mono text-indigo-400">{r.bits}</td>
+              <td className="px-3 py-2 text-zinc-400">{r.vram}</td>
+              <td className="px-3 py-2 text-zinc-400">{r.quality}</td>
+              <td className="px-3 py-2 text-zinc-500">{r.best}</td>
             </tr>
           ))}
         </tbody>
@@ -8756,27 +8756,27 @@ function QuantizationCalculator() {
     <div className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Model params: <span className="font-bold text-indigo-600 dark:text-indigo-400">{params}B</span></label>
+          <label className="text-sm font-medium text-zinc-300">Model params: <span className="font-bold text-indigo-400">{params}B</span></label>
           <input type="range" min={1} max={70} step={1} value={params} onChange={e => setParams(Number(e.target.value))}
             className="w-full accent-indigo-600" />
-          <div className="flex justify-between text-xs text-gray-400">
+          <div className="flex justify-between text-xs text-zinc-500">
             <span>1B</span><span>70B</span>
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Precision</label>
+          <label className="text-sm font-medium text-zinc-300">Precision</label>
           <select value={precision} onChange={e => setPrecision(e.target.value)}
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+            className="w-full border border-zinc-700 rounded-lg px-3 py-2 text-sm bg-zinc-900 text-zinc-200">
             {precisions.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
           </select>
         </div>
       </div>
       <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 text-center">
-        <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{gb.toFixed(1)} GB</div>
-        <div className="text-sm text-gray-600 dark:text-gray-400">{params}B params × {sel.bytes} bytes = {gb.toFixed(1)} GB VRAM needed</div>
+        <div className="text-3xl font-bold text-indigo-400">{gb.toFixed(1)} GB</div>
+        <div className="text-sm text-zinc-400">{params}B params × {sel.bytes} bytes = {gb.toFixed(1)} GB VRAM needed</div>
       </div>
       <div className="space-y-2">
-        <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">Fits on:</div>
+        <div className="text-sm font-semibold text-zinc-300">Fits on:</div>
         {fits.map((f, i) => (
           <div key={i} className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg ${f.ok ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"}`}>
             <span>{f.ok ? "✓" : "✗"}</span>
@@ -8796,7 +8796,7 @@ function QuantizationEngineering() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -8820,20 +8820,20 @@ function ServingFrameworks() {
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-gray-100 dark:bg-gray-800">
+          <tr className="bg-zinc-800">
             {["Framework", "Batching", "Backend", "Throughput", "Best For"].map(h => (
-              <th key={h} className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">{h}</th>
+              <th key={h} className="text-left px-3 py-2 font-semibold text-zinc-300">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
-              <td className="px-3 py-2 font-bold text-gray-800 dark:text-gray-200">{r.name}</td>
-              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.batching}</td>
-              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.backend}</td>
+            <tr key={i} className="border-t border-zinc-800">
+              <td className="px-3 py-2 font-bold text-zinc-200">{r.name}</td>
+              <td className="px-3 py-2 text-zinc-400">{r.batching}</td>
+              <td className="px-3 py-2 text-zinc-400">{r.backend}</td>
               <td className="px-3 py-2 text-yellow-500">{r.throughput}</td>
-              <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{r.best}</td>
+              <td className="px-3 py-2 text-zinc-500">{r.best}</td>
             </tr>
           ))}
         </tbody>
@@ -8874,11 +8874,11 @@ function ServingConcepts() {
       {concepts.map((c, i) => (
         <div key={i} className={`border-l-4 ${c.color} rounded-lg overflow-hidden`}>
           <div className={`${c.header} px-4 py-2 flex items-center justify-between`}>
-            <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{c.title}</span>
-            <span className="text-xs bg-white dark:bg-gray-800 px-2 py-0.5 rounded text-gray-600 dark:text-gray-400">{c.tag}</span>
+            <span className="font-bold text-sm text-zinc-100">{c.title}</span>
+            <span className="text-xs bg-zinc-900 px-2 py-0.5 rounded text-zinc-400">{c.tag}</span>
           </div>
           <div className="px-4 py-3 space-y-1">
-            <p className="text-sm text-gray-700 dark:text-gray-300">{c.desc}</p>
+            <p className="text-sm text-zinc-300">{c.desc}</p>
             <p className="text-xs font-medium text-green-700 dark:text-green-400">{c.impact}</p>
           </div>
         </div>
@@ -8895,7 +8895,7 @@ function ServingInfra() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -8922,17 +8922,17 @@ function PromptCachingHowItWorks() {
             <div className="text-center">
               <div className="w-28 bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300 dark:border-indigo-700 rounded-lg p-3">
                 <div className="text-xs font-bold text-indigo-700 dark:text-indigo-300">{s.label}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{s.desc}</div>
+                <div className="text-xs text-zinc-400 mt-1">{s.desc}</div>
               </div>
             </div>
-            {i < steps.length - 1 && <span className="text-gray-400 text-lg flex-shrink-0">→</span>}
+            {i < steps.length - 1 && <span className="text-zinc-500 text-lg flex-shrink-0">→</span>}
           </div>
         ))}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 space-y-2">
           <div className="font-bold text-sm text-red-700 dark:text-red-400">Without Caching</div>
-          <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
+          <div className="text-xs space-y-1 text-zinc-400">
             <div>TTFT: full prefix recomputed every call</div>
             <div>Cost: 100% of prefix tokens charged each time</div>
             <div>Tokens processed: N × requests</div>
@@ -8940,7 +8940,7 @@ function PromptCachingHowItWorks() {
         </div>
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 space-y-2">
           <div className="font-bold text-sm text-green-700 dark:text-green-400">With Caching</div>
-          <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
+          <div className="text-xs space-y-1 text-zinc-400">
             <div>TTFT: dramatically reduced on cache hit</div>
             <div>Cost: Anthropic 0.1×, OpenAI 0.5× on cached tokens</div>
             <div>Tokens processed: only new tokens per request</div>
@@ -8969,35 +8969,35 @@ function PromptCachingSavings() {
     <div className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Repeated prefix: <span className="font-bold text-indigo-600 dark:text-indigo-400">{pct}%</span></label>
+          <label className="text-xs font-medium text-zinc-300">Repeated prefix: <span className="font-bold text-indigo-400">{pct}%</span></label>
           <input type="range" min={0} max={100} step={5} value={pct} onChange={e => setPct(Number(e.target.value))} className="w-full accent-indigo-600" />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Requests / day</label>
+          <label className="text-xs font-medium text-zinc-300">Requests / day</label>
           <input type="number" value={rps} onChange={e => setRps(Number(e.target.value))}
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200" />
+            className="w-full border border-zinc-700 rounded-lg px-3 py-1.5 text-sm bg-zinc-900 text-zinc-200" />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Cost per 1M tokens ($)</label>
+          <label className="text-xs font-medium text-zinc-300">Cost per 1M tokens ($)</label>
           <input type="number" value={costPer1M} step={0.5} onChange={e => setCostPer1M(Number(e.target.value))}
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200" />
+            className="w-full border border-zinc-700 rounded-lg px-3 py-1.5 text-sm bg-zinc-900 text-zinc-200" />
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 text-center">
           <div className="text-xl font-bold text-red-600 dark:text-red-400">${dailyCostNoCache.toFixed(2)}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Daily cost (no cache)</div>
+          <div className="text-xs text-zinc-500">Daily cost (no cache)</div>
         </div>
         <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center">
           <div className="text-xl font-bold text-green-600 dark:text-green-400">${dailyCostWithCache.toFixed(2)}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Daily cost (with cache)</div>
+          <div className="text-xs text-zinc-500">Daily cost (with cache)</div>
         </div>
         <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 text-center">
-          <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">${savings.toFixed(2)}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Daily savings</div>
+          <div className="text-xl font-bold text-indigo-400">${savings.toFixed(2)}</div>
+          <div className="text-xs text-zinc-500">Daily savings</div>
         </div>
       </div>
-      <div className="text-xs text-gray-400 dark:text-gray-500">Assumes avg 2,000 tokens/request. Cache read cost = 0.1× (Anthropic pricing).</div>
+      <div className="text-xs text-zinc-500">Assumes avg 2,000 tokens/request. Cache read cost = 0.1× (Anthropic pricing).</div>
     </div>
   );
 }
@@ -9010,7 +9010,7 @@ function PromptCaching() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -9034,20 +9034,20 @@ function FineTuningMethodsTable() {
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-gray-100 dark:bg-gray-800">
+          <tr className="bg-zinc-800">
             {["Method", "Trainable Params", "VRAM", "Data Needed", "Use Case"].map(h => (
-              <th key={h} className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">{h}</th>
+              <th key={h} className="text-left px-3 py-2 font-semibold text-zinc-300">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
-              <td className="px-3 py-2 font-bold text-gray-800 dark:text-gray-200">{r.method}</td>
-              <td className="px-3 py-2 font-mono text-indigo-600 dark:text-indigo-400">{r.trainable}</td>
-              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.vram}</td>
-              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.data}</td>
-              <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{r.use}</td>
+            <tr key={i} className="border-t border-zinc-800">
+              <td className="px-3 py-2 font-bold text-zinc-200">{r.method}</td>
+              <td className="px-3 py-2 font-mono text-indigo-400">{r.trainable}</td>
+              <td className="px-3 py-2 text-zinc-400">{r.vram}</td>
+              <td className="px-3 py-2 text-zinc-400">{r.data}</td>
+              <td className="px-3 py-2 text-zinc-500">{r.use}</td>
             </tr>
           ))}
         </tbody>
@@ -9071,10 +9071,10 @@ function FineTuningWorkflowChecklist() {
     <div className="space-y-2">
       {stages.map((s, i) => (
         <div key={i} className={`border-l-4 ${s.color} rounded-lg px-4 py-2 flex gap-3 items-start`}>
-          <span className="font-black text-lg text-gray-400 dark:text-gray-500 flex-shrink-0 leading-tight">{s.n}</span>
+          <span className="font-black text-lg text-zinc-500 flex-shrink-0 leading-tight">{s.n}</span>
           <div>
-            <div className="font-semibold text-sm text-gray-800 dark:text-gray-100">{s.label}</div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">{s.note}</div>
+            <div className="font-semibold text-sm text-zinc-100">{s.label}</div>
+            <div className="text-xs text-zinc-400">{s.note}</div>
           </div>
         </div>
       ))}
@@ -9090,7 +9090,7 @@ function FineTuningWorkflows() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -9131,12 +9131,12 @@ function RLHFPipeline() {
       {stages.map((s, i) => (
         <div key={i} className={`border-l-4 ${s.color} ${s.bg} rounded-r-xl p-4`}>
           <div className="flex items-center gap-3 mb-2">
-            <span className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 text-xs font-black flex items-center justify-center text-gray-700 dark:text-gray-200">{s.n}</span>
-            <span className="font-bold text-gray-800 dark:text-gray-100 text-sm">{s.full}</span>
-            <span className="text-xs bg-white dark:bg-gray-800 px-2 py-0.5 rounded text-gray-500 dark:text-gray-400 ml-auto">"{s.tag}"</span>
+            <span className="w-7 h-7 rounded-full bg-zinc-800 text-xs font-black flex items-center justify-center text-zinc-200">{s.n}</span>
+            <span className="font-bold text-zinc-100 text-sm">{s.full}</span>
+            <span className="text-xs bg-zinc-900 px-2 py-0.5 rounded text-zinc-500 ml-auto">"{s.tag}"</span>
           </div>
-          <p className="text-sm text-gray-700 dark:text-gray-300">{s.desc}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">{s.params}</p>
+          <p className="text-sm text-zinc-300">{s.desc}</p>
+          <p className="text-xs text-zinc-500 font-mono mt-1">{s.params}</p>
         </div>
       ))}
     </div>
@@ -9155,7 +9155,7 @@ function PPOvsDPO() {
             "Higher compute and engineering complexity",
             "Better peak quality — used by frontier labs (GPT-4, Claude, Gemini)",
             "Complex to tune (reward hacking, KL collapse risks)",
-          ].map((pt, i) => <div key={i} className="text-xs text-gray-600 dark:text-gray-400 flex gap-2"><span className="text-orange-500">•</span>{pt}</div>)}
+          ].map((pt, i) => <div key={i} className="text-xs text-zinc-400 flex gap-2"><span className="text-orange-500">•</span>{pt}</div>)}
         </div>
         <div className="border border-blue-300 dark:border-blue-700 rounded-xl p-4 space-y-2">
           <div className="font-bold text-blue-700 dark:text-blue-400 text-sm">DPO (Offline, Preference)</div>
@@ -9165,7 +9165,7 @@ function PPOvsDPO() {
             "Simpler to implement, numerically stable",
             "Quality nearly matches PPO on most benchmarks",
             "Used by: Zephyr, Tulu, many open-source aligned models",
-          ].map((pt, i) => <div key={i} className="text-xs text-gray-600 dark:text-gray-400 flex gap-2"><span className="text-blue-500">•</span>{pt}</div>)}
+          ].map((pt, i) => <div key={i} className="text-xs text-zinc-400 flex gap-2"><span className="text-blue-500">•</span>{pt}</div>)}
         </div>
       </div>
       <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-xl px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
@@ -9184,7 +9184,7 @@ function RLHFAlignment() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -9231,16 +9231,16 @@ function MultimodalArchitectures() {
           <button className="w-full px-4 py-3 flex items-center justify-between text-left"
             onClick={() => setExpanded(expanded === i ? null : i)}>
             <div className="flex items-center gap-3">
-              <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{a.name}</span>
-              <span className="text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2 py-0.5 rounded text-gray-500 dark:text-gray-400">{a.tag}</span>
+              <span className="font-bold text-sm text-zinc-100">{a.name}</span>
+              <span className="text-xs bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded text-zinc-500">{a.tag}</span>
             </div>
-            <span className="text-gray-400 text-sm">{expanded === i ? "▲" : "▼"}</span>
+            <span className="text-zinc-500 text-sm">{expanded === i ? "▲" : "▼"}</span>
           </button>
-          <div className="px-4 pb-1 text-xs text-gray-600 dark:text-gray-400">{a.summary}</div>
+          <div className="px-4 pb-1 text-xs text-zinc-400">{a.summary}</div>
           {expanded === i && (
             <div className="px-4 pb-4 space-y-2 mt-2">
-              <p className="text-sm text-gray-700 dark:text-gray-300">{a.detail}</p>
-              <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400">{a.use}</p>
+              <p className="text-sm text-zinc-300">{a.detail}</p>
+              <p className="text-xs font-medium text-indigo-400">{a.use}</p>
             </div>
           )}
         </div>
@@ -9278,8 +9278,8 @@ function MultimodalFusionPatterns() {
       <div className="space-y-3">
         {patterns.map((p, i) => (
           <div key={i} className={`border ${p.color} rounded-xl p-4 space-y-2`}>
-            <div className="font-bold text-sm text-gray-800 dark:text-gray-100">{p.name}</div>
-            <p className="text-sm text-gray-700 dark:text-gray-300">{p.desc}</p>
+            <div className="font-bold text-sm text-zinc-100">{p.name}</div>
+            <p className="text-sm text-zinc-300">{p.desc}</p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="text-green-700 dark:text-green-400"><span className="font-medium">Pro:</span> {p.pros}</div>
               <div className="text-red-600 dark:text-red-400"><span className="font-medium">Con:</span> {p.cons}</div>
@@ -9303,7 +9303,7 @@ function MultimodalSystems() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -9489,7 +9489,7 @@ function AgentArchitecture() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium transition-all ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium transition-all ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
             {t}
           </button>
         ))}
@@ -9713,7 +9713,7 @@ function EvalMetrics() {
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t,i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium transition-all ${tab===i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            className={`px-3 py-1 rounded text-sm font-medium transition-all ${tab===i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
             {t}
           </button>
         ))}

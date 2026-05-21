@@ -96,7 +96,7 @@ const RELATED_GT = {
   quantization: [{ id: "ft-quantization", title: "Quantization Deep-Dive" }],
   serving:      [{ id: "inference-optimisation", title: "Inference Optimisation" }],
   promptcaching:[{ id: "prompt-caching-guide", title: "Prompt Caching Guide" }],
-  finetuning:   [{ id: "full-vs-peft-vs-prompting", title: "Full FT vs PEFT vs Prompting" }, { id: "lora-in-practice", title: "LoRA in Practice" }],
+  finetuning:   [{ id: "finetune-playbook", title: "Fine-Tuning Playbook" }, { id: "full-vs-peft-vs-prompting", title: "Full FT vs PEFT vs Prompting" }, { id: "lora-in-practice", title: "LoRA in Practice" }],
   modelmerging: [{ id: "model-merging-guide", title: "Model Merging Guide" }],
   constrained:  [{ id: "structured-outputs", title: "Structured Outputs" }],
   ctxwindow:    [{ id: "context-window-guide", title: "Context Window Guide" }],
@@ -110,7 +110,9 @@ const RELATED_GT = {
   shouldai:    [{ id: "ai-or-not", title: "AI or Not?" }, { id: "benchmark-vs-business", title: "Benchmark vs Business Metric" }],
   synthdata:   [{ id: "instruction-tuning-datasets", title: "Instruction Tuning Datasets" }],
   vibecoding:  [{ id: "persp-karpathy", title: "Karpathy on Software 2.0" }],
-  finetuning:  [{ id: "finetune-playbook", title: "Fine-Tuning Playbook" }, { id: "full-vs-peft-vs-prompting", title: "Full FT vs PEFT vs Prompting" }],
+  indiascale:  [{ id: "llm-cost-optimization", title: "LLM Cost Optimization" }, { id: "cost-latency-tradeoffs", title: "Cost vs Latency Trade-offs" }],
+  inference:   [{ id: "inference-optimisation", title: "Inference Optimisation" }],
+  buildthis:   [{ id: "ai-system-design-framework", title: "AI System Design Framework" }],
 };
 
 export default function SystemsApp({ initialModule, onModuleVisit, onNavigate }) {
