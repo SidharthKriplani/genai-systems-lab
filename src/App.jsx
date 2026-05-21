@@ -2012,7 +2012,7 @@ export default function App() {
           </div>
         </div>
       )}
-      <header className="border-b border-zinc-800">
+      <header role="banner" className="border-b border-zinc-800">
         {/* Row 1: Logo + Search + Utilities */}
         <div className="px-4 py-2 flex items-center gap-3 max-w-7xl mx-auto">
           <button onClick={() => navigate("home")} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
@@ -2021,6 +2021,7 @@ export default function App() {
           </button>
           {/* Search bar — center, grows to fill space */}
           <button onClick={() => setSearchOpen(true)}
+            aria-label="Search modules"
             className="hidden lg:flex flex-1 items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-left">
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-zinc-600 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
             <span className="text-xs text-zinc-600 flex-1">Search modules…</span>
@@ -2055,13 +2056,13 @@ export default function App() {
               </span>
             )}
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono" aria-label="Keyboard shortcuts">?</button>
-            <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all" aria-label="Open navigation menu">
+            <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all" aria-label="Open navigation menu" aria-expanded={mobileMenuOpen}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
             </button>
           </div>
         </div>
         {/* Row 2: Tab navigation (desktop only) */}
-        <div className="hidden lg:flex items-center gap-0.5 px-4 pb-1.5 max-w-7xl mx-auto overflow-x-auto scrollbar-hide">
+        <nav role="navigation" aria-label="Main navigation" className="hidden lg:flex items-center gap-0.5 px-4 pb-1.5 max-w-7xl mx-auto overflow-x-auto scrollbar-hide">
           {NAV_GROUPS.map((group, gi) => (
             <div key={gi} className="flex items-center gap-0.5 shrink-0">
               {gi > 0 && <div className="w-px h-4 bg-zinc-800 mx-1" />}
@@ -2070,6 +2071,7 @@ export default function App() {
               )}
               {group.items.map(item => (
                 <button key={item.id} onClick={() => navigate(item.id)}
+                  aria-current={topView === item.id ? "page" : undefined}
                   title={item.audience ? `For: ${item.audience}` : undefined}
                   className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${
                     topView === item.id
@@ -2087,11 +2089,12 @@ export default function App() {
               ))}
             </div>
           ))}
-        </div>
+        </nav>
       </header>
 
       {topView === "home" && <HomePage onNavigate={navigate} visited={visited} onFeedback={openFeedback} />}
 
+      <main role="main" id="main-content">
       <TabErrorBoundary>
         <Suspense fallback={
           <div className="flex-1 p-6 space-y-4 animate-pulse">
@@ -2120,6 +2123,7 @@ export default function App() {
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} />}
         </Suspense>
       </TabErrorBoundary>
+      </main>
 
 
       {/* Scenario tabs */}

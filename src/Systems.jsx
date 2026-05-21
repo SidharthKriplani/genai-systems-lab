@@ -8369,6 +8369,219 @@ function ModelMerging() {
   );
 }
 
+// ─── CONSTRAINED / GRAMMAR-BASED GENERATION ──────────────────────────────────
+
+const CONSTRAINED_TOOLS = [
+  { name: "Outlines",           maker: "dottxt-ai",  approach: "Regex + CFG → logit masks",          latency: "+5-15ms",  lang: "Python", bestFor: "Structured JSON extraction, schema enforcement", oss: true  },
+  { name: "Guidance",           maker: "Microsoft",  approach: "Template interleaving + logit bias",  latency: "+10-30ms", lang: "Python", bestFor: "Constrained generation within prose templates",   oss: true  },
+  { name: "llama.cpp grammar",  maker: "ggerganov", approach: "GBNF grammar → token allowlist",       latency: "+2-8ms",   lang: "C++",    bestFor: "Local inference, GGUF models, CLI pipelines",     oss: true  },
+  { name: "LM Format Enforcer", maker: "noamgat",   approach: "JSON Schema / regex → token filter",   latency: "+3-10ms",  lang: "Python", bestFor: "HuggingFace + vLLM integration, JSON mode",       oss: true  },
+  { name: "SGLang structured",  maker: "LMSYS",     approach: "Jump forward decoding (regex skip)",   latency: "near-zero",lang: "Python", bestFor: "High-throughput serving with near-zero overhead",  oss: true  },
+];
+
+const GBNF_EXAMPLES = [
+  {
+    label: "Simple JSON object",
+    grammar: `root   ::= "{" ws "\\"name\\"" ws ":" ws string ws "," ws "\\"age\\"" ws ":" ws number ws "}"
+string ::= "\\"" ([^"\\\\] | "\\\\" .)* "\\""
+number ::= [0-9]+
+ws     ::= [ \\t\\n]*`,
+    output: '{"name": "Alice", "age": 30}',
+    note: "Every token the model generates must match the next allowed terminal in the grammar. Non-conforming tokens get logit -inf.",
+  },
+  {
+    label: "Enum / classification",
+    grammar: `root ::= "positive" | "negative" | "neutral"`,
+    output: '"positive"',
+    note: "The model can only output one of three tokens. 100% guarantee — not a prompt instruction, a hard constraint on the logit layer.",
+  },
+  {
+    label: "Structured extraction",
+    grammar: `root     ::= "{" ws "\\"intent\\"" ws ":" ws intent ws "," ws "\\"confidence\\"" ws ":" ws float ws "}"
+intent   ::= "\\"" ("order" | "refund" | "complaint" | "other") "\\""
+float    ::= [0-9] "." [0-9][0-9]
+ws       ::= [ ]*`,
+    output: '{"intent": "refund", "confidence": 0.94}',
+    note: "Structured extraction with typed fields. The float rule guarantees a valid decimal — no hallucinated confidence scores.",
+  },
+];
+
+function ConstrainedHowItWorks() {
+  const steps = [
+    { n: "1", label: "Token generation step", color: "#6366f1" },
+    { n: "2", label: "Compute raw logits",     color: "#3b82f6" },
+    { n: "3", label: "Apply grammar mask — invalid tokens → -∞", color: "#ef4444" },
+    { n: "4", label: "Softmax → sample from valid tokens only",   color: "#10b981" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-zinc-300 leading-relaxed">
+        Constrained generation doesn't prompt the model to follow a format — it makes following the format <span className="text-emerald-400 font-semibold">mathematically inevitable</span> by masking invalid tokens to -∞ before the softmax.
+      </p>
+
+      {/* Step flow */}
+      <div className="space-y-2">
+        {steps.map((s, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0" style={{ background: s.color + "22", color: s.color }}>{s.n}</span>
+            <div className="flex-1 bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-800">
+              <p className="text-xs text-zinc-200">{s.label}</p>
+            </div>
+            {i < steps.length - 1 && <span className="text-zinc-600 text-xs shrink-0">↓</span>}
+          </div>
+        ))}
+      </div>
+
+      {/* Tip callout */}
+      <div className="rounded-lg border border-emerald-800/40 bg-emerald-950/20 px-4 py-3">
+        <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mb-1">Tip</p>
+        <p className="text-xs text-zinc-300 leading-relaxed">The model still uses all its knowledge — it just can't express it in invalid ways. Quality doesn't drop; invalid outputs become structurally impossible.</p>
+      </div>
+
+      {/* 2-column comparison */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-zinc-900 rounded-lg p-3 border border-red-800/30">
+          <p className="text-[10px] font-bold text-red-400 uppercase tracking-wide mb-2">Without constraint</p>
+          <ul className="space-y-1">
+            {["Model may add prose between fields", "Wrong types (string where int expected)", "Missing required fields", "Validation errors → retry loops"].map((item, i) => (
+              <li key={i} className="text-[10px] text-zinc-400 flex items-start gap-1.5">
+                <span className="text-red-500 mt-0.5 shrink-0">✗</span>{item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="bg-zinc-900 rounded-lg p-3 border border-emerald-800/30">
+          <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mb-2">With constraint</p>
+          <ul className="space-y-1">
+            {["100% schema adherence guaranteed", "Zero validation errors", "No retry loops needed", "Invalid outputs structurally impossible"].map((item, i) => (
+              <li key={i} className="text-[10px] text-zinc-400 flex items-start gap-1.5">
+                <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>{item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConstrainedGrammarExplorer() {
+  const [activeEx, setActiveEx] = useState(0);
+  const ex = GBNF_EXAMPLES[activeEx];
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2 flex-wrap">
+        {GBNF_EXAMPLES.map((g, i) => (
+          <button key={i} onClick={() => setActiveEx(i)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${activeEx === i ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {g.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {/* Left: grammar */}
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">GBNF Grammar</p>
+          <pre className="bg-zinc-950 text-emerald-300 font-mono text-[10px] leading-relaxed rounded-lg p-3 border border-zinc-800 overflow-x-auto whitespace-pre-wrap">{ex.grammar}</pre>
+        </div>
+        {/* Right: output + note */}
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">Guaranteed Output Shape</p>
+          <pre className="bg-zinc-950 text-blue-300 font-mono text-[10px] leading-relaxed rounded-lg p-3 border border-zinc-800">{ex.output}</pre>
+          <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2">
+            <p className="text-[10px] text-zinc-400 leading-relaxed">{ex.note}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Why GBNF over regex */}
+      <div className="rounded-lg border border-blue-800/40 bg-blue-950/20 px-4 py-3">
+        <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wide mb-1">Why GBNF over regex?</p>
+        <p className="text-xs text-zinc-300 leading-relaxed">GBNF can express recursive structures (nested JSON), context-free grammars (balanced brackets), and multi-field dependencies that regex can't handle. Regex is flat; GBNF is hierarchical — exactly what JSON and structured data require.</p>
+      </div>
+    </div>
+  );
+}
+
+function ConstrainedToolsTable() {
+  return (
+    <div className="space-y-3">
+      <div className="overflow-x-auto rounded-lg border border-zinc-800">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-zinc-800 bg-zinc-900">
+              {["Tool", "Maker", "Approach", "Latency overhead", "Best for"].map(h => (
+                <th key={h} className="px-3 py-2 text-left text-[10px] font-bold text-zinc-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {CONSTRAINED_TOOLS.map((t, i) => (
+              <tr key={i}
+                className={`border-b border-zinc-800/50 last:border-b-0 ${t.latency === "near-zero" ? "border-l-2 border-l-emerald-500" : ""}`}>
+                <td className="px-3 py-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-zinc-100">{t.name}</span>
+                    {t.oss && <span className="text-[9px] px-1 py-0.5 rounded font-mono bg-emerald-900/40 text-emerald-400">OSS</span>}
+                  </div>
+                </td>
+                <td className="px-3 py-2.5 text-zinc-400 font-mono text-[10px]">{t.maker}</td>
+                <td className="px-3 py-2.5 text-zinc-300 text-[10px]">{t.approach}</td>
+                <td className="px-3 py-2.5">
+                  <span className={`font-mono text-[10px] font-bold ${t.latency === "near-zero" ? "text-emerald-400" : "text-amber-400"}`}>{t.latency}</span>
+                </td>
+                <td className="px-3 py-2.5 text-zinc-400 text-[10px]">{t.bestFor}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rounded-lg border border-violet-800/40 bg-violet-950/20 px-4 py-3">
+        <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wide mb-1">Decision tip</p>
+        <p className="text-xs text-zinc-300 leading-relaxed">For HuggingFace/vLLM: <span className="text-violet-300 font-semibold">LM Format Enforcer</span>. For llama.cpp/local: <span className="text-violet-300 font-semibold">GBNF grammars</span>. For highest throughput serving: <span className="text-violet-300 font-semibold">SGLang</span>. For template-style generation: <span className="text-violet-300 font-semibold">Guidance</span>.</p>
+      </div>
+    </div>
+  );
+}
+
+function ConstrainedGeneration() {
+  const TABS = [
+    { id: "how",     tag: "CORE",  label: "How Logit Masking Works" },
+    { id: "grammar", tag: "GBNF",  label: "Grammar Explorer"        },
+    { id: "tools",   tag: "TOOLS", label: "Production Tools"        },
+  ];
+  const [tab, setTab] = useState("how");
+
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="Understand constrained generation — how logit masking guarantees schema adherence, when it's the right tool, and which library fits your stack."
+        steps={[
+          "How It Works: understand the logit mask mechanism that makes invalid tokens impossible",
+          "Grammar Explorer: read three GBNF examples from simple to complex structured extraction",
+          "Production Tools: compare 5 libraries on latency overhead, language, and best use case",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "how"     && <ConstrainedHowItWorks />}
+      {tab === "grammar" && <ConstrainedGrammarExplorer />}
+      {tab === "tools"   && <ConstrainedToolsTable />}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 const SYSTEMS_MODULES = [
   { id: "evals",         label: "Evals Lab",          tag: "DESIGN",     group: "DESIGN",  component: EvalsLab           },
@@ -8406,6 +8619,7 @@ const SYSTEMS_MODULES = [
   { id: "moe",          label: "MoE Architecture",        tag: "MOE",      group: "DESIGN",  component: MoEArchitecture },
   { id: "specdecoding", label: "Speculative Decoding",    tag: "SPEED",    group: "BUILD",   component: SpeculativeDecoding },
   { id: "streaming",    label: "Streaming Patterns",      tag: "STREAM",   group: "BUILD",   component: StreamingPatterns },
+  { id: "constrained", label: "Constrained Generation", tag: "SCHEMA",   group: "BUILD",   component: ConstrainedGeneration },
   { id: "modelmerging", label: "Model Merging", tag: "MERGE", group: "DESIGN", component: ModelMerging },
 ];
 
