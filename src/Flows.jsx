@@ -146,7 +146,7 @@ const RAG_METRICS = {
   overflow:   { groundedness: 67, latencyMs: 2400, costCents: 0.7, risk: "MEDIUM",   riskC: "#f59e0b" },
 };
 
-function RAGFlowDiagram() {
+function RAGFlowDiagram({ onNavigate }) {
   const [step, setStep] = useState(-1);
   const [playing, setPlaying] = useState(false);
   const [mode, setMode] = useState("none");
@@ -286,16 +286,16 @@ function RAGFlowDiagram() {
       {/* Go deeper cross-links */}
       <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
         <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
-          <button onClick={() => window.location.hash = "concepts"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: RAG</button>
-          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: How RAG Works</button>
-          <button onClick={() => window.location.hash = "systems"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Systems: RAG Lab</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "concepts" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: RAG</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: How RAG Works</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "systems" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Systems: RAG Lab</button>
       </div>
     </div>
   );
 }
 
 // ─── 2. CONTEXT WINDOW DIAGRAM ────────────────────────────────────────────────
-function ContextWindowDiagram() {
+function ContextWindowDiagram({ onNavigate }) {
   const [tokens, setTokens] = useState(512);
   const MAX = 8192;
   const VISIBLE = 64; // visual token slots
@@ -428,9 +428,9 @@ function ContextWindowDiagram() {
       {/* Go deeper cross-links */}
       <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
         <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
-          <button onClick={() => window.location.hash = "concepts"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Context Window</button>
-          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: Context Window Guide</button>
-          <button onClick={() => window.location.hash = "flows"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Flows: Transformer Block</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "concepts" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Context Window</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: Context Window Guide</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "flows" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Flows: Transformer Block</button>
       </div>
     </div>
   );
@@ -456,7 +456,7 @@ const LOOP_STAGES = [
   },
 ];
 
-function AgentLoopDiagram() {
+function AgentLoopDiagram({ onNavigate }) {
   const [iter, setIter] = useState(0);
   const [subStep, setSubStep] = useState(-1);
   const [playing, setPlaying] = useState(false);
@@ -569,9 +569,9 @@ function AgentLoopDiagram() {
       {/* Go deeper cross-links */}
       <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
         <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
-          <button onClick={() => window.location.hash = "concepts"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Agent Loop</button>
-          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: ReAct Pattern</button>
-          <button onClick={() => window.location.hash = "agents"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Agents Lab</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "concepts" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Agent Loop</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: ReAct Pattern</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "agents" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Agents Lab</button>
       </div>
     </div>
   );
@@ -593,7 +593,7 @@ const GUARD_OUTCOMES = {
   pii:       { input: "pass", llm: "Generating response… (PII in context window)", output: "pass_miss", result: "⚠ PII in response — both layers missed it", resultC: "#ef4444" },
 };
 
-function GuardrailDiagram() {
+function GuardrailDiagram({ onNavigate }) {
   const [inputType, setInputType] = useState("safe");
   const [step, setStep] = useState(-1);
   const [playing, setPlaying] = useState(false);
@@ -735,9 +735,9 @@ function GuardrailDiagram() {
       {/* Go deeper cross-links */}
       <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
         <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
-          <button onClick={() => window.location.hash = "concepts"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Guardrails</button>
-          <button onClick={() => window.location.hash = "systems"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Systems: Systems Lab</button>
-          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: Guardrail Patterns</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "concepts" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Guardrails</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "systems" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Systems: Systems Lab</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "guardrails-for-llms" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: Guardrail Patterns</button>
       </div>
     </div>
   );
@@ -755,7 +755,7 @@ const TRANSFORMER_STAGES = [
   { label: "Output Logits", sub: "vocab × prob", detail: "Linear project → vocab size (50k) → softmax → probability distribution over next tokens.", color: "#4c1d95" },
 ];
 
-function TransformerBlockDiagram() {
+function TransformerBlockDiagram({ onNavigate }) {
   const [step, setStep] = useState(-1);
   const [playing, setPlaying] = useState(false);
 
@@ -811,9 +811,9 @@ function TransformerBlockDiagram() {
       {/* Go deeper cross-links */}
       <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
         <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
-          <button onClick={() => window.location.hash = "concepts"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Transformer</button>
-          <button onClick={() => window.location.hash = "explore"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Explore: Attention Viz</button>
-          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: What is a Transformer</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "concepts" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Concepts: Transformer</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "explore" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Explore: Attention Viz</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: What is a Transformer</button>
       </div>
     </div>
   );
@@ -868,7 +868,7 @@ const RAG_ARCHS = [
   },
 ];
 
-function RAGArchitecturesDiagram() {
+function RAGArchitecturesDiagram({ onNavigate }) {
   const [archId, setArchId] = useState("hybrid");
   const [step, setStep] = useState(-1);
   const [playing, setPlaying] = useState(false);
@@ -1075,9 +1075,9 @@ function RAGArchitecturesDiagram() {
       {/* Go deeper cross-links */}
       <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-zinc-800">
         <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
-          <button onClick={() => window.location.hash = "groundtruth"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: RAG Architectures</button>
-          <button onClick={() => window.location.hash = "explore"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Explore: Vector DB</button>
-          <button onClick={() => window.location.hash = "systems"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Systems: RAG Lab</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Ground Truth: RAG Architectures</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "explore" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Explore: Vector DB</button>
+          <button onClick={() => onNavigate && onNavigate({ tab: "systems" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-all">Systems: RAG Lab</button>
       </div>
     </div>
   );
@@ -1127,7 +1127,7 @@ const PROD_RAG_QUERY_STAGES = [
     detail: "Every production query should produce a LangSmith trace. Low user feedback scores surface bad retrievals automatically." },
 ];
 
-function ProductionRAGFlow() {
+function ProductionRAGFlow({ onNavigate }) {
   const [mode, setMode] = useState("ingest");
   const [step, setStep] = useState(-1);
   const [playing, setPlaying] = useState(false);
@@ -1230,9 +1230,9 @@ function ProductionRAGFlow() {
 
       <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-800">
         <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
-        <button onClick={() => window.location.hash = "agents"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Agents: Framework Landscape</button>
-        <button onClick={() => window.location.hash = "systems"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Systems: LangSmith Lab</button>
-        <button onClick={() => window.location.hash = "systems"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Systems: RAG Lab</button>
+        <button onClick={() => onNavigate && onNavigate({ tab: "agents" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Agents: Framework Landscape</button>
+        <button onClick={() => onNavigate && onNavigate({ tab: "systems" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Systems: LangSmith Lab</button>
+        <button onClick={() => onNavigate && onNavigate({ tab: "systems" })} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Systems: RAG Lab</button>
       </div>
     </div>
   );
@@ -1276,7 +1276,7 @@ const GRAPHRAG_WINS = [
   { q: "Summarize this single document.", winner: "flat", why: "Single-document, no multi-hop needed. GraphRAG overhead is unjustified." },
 ];
 
-function GraphRAGFlow() {
+function GraphRAGFlow({ onNavigate }) {
   const [stage, setStage] = useState(0);
   const [view, setView] = useState("pipeline");
   const s = GRAPHRAG_STAGES[stage];
@@ -1403,7 +1403,7 @@ const VOICE_STAGES = [
 
 const VOICE_TOTAL_LATENCY = { realistic: "830–3080ms", target: "<1000ms", breakdown: "VAD(30) + STT(400) + LLM TTFT(300) + TTS first chunk(80) + buffer(50) = ~860ms best case with full streaming" };
 
-function VoiceAIFlow() {
+function VoiceAIFlow({ onNavigate }) {
   const [activeStage, setActiveStage] = useState(null);
   const [view, setView] = useState("pipeline");
 
@@ -1544,6 +1544,19 @@ function VoiceAIFlow() {
           </div>
         </div>
       )}
+
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60 flex flex-wrap gap-2">
+          <button onClick={() => onNavigate({ tab: "groundtruth", postId: "build-voice-ai" })}
+            className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+            📖 How I'd Build Voice AI
+          </button>
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "multimodal2" })}
+            className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+            ⚙️ Multimodal Systems
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1621,7 +1634,7 @@ const DPO_VS_RLHF = [
   { dim: "Data format", dpo: "(prompt, chosen, rejected) triplets", rlhf: "(prompt, response, human score)" },
 ];
 
-function FineTuningPipelineFlow() {
+function FineTuningPipelineFlow({ onNavigate }) {
   const [activeStage, setActiveStage] = useState(null);
   const [tab, setTab] = useState("pipeline");
   const TABS = [{ id: "pipeline", label: "Pipeline" }, { id: "dpo", label: "DPO vs RLHF" }, { id: "checklist", label: "Pre-Deploy Checklist" }];
@@ -1740,6 +1753,23 @@ function FineTuningPipelineFlow() {
           ))}
         </div>
       )}
+
+      {onNavigate && (
+        <div className="mt-6 pt-4 border-t border-zinc-800/60 flex flex-wrap gap-2">
+          <button onClick={() => onNavigate({ tab: "groundtruth", postId: "finetune-playbook" })}
+            className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+            📖 Fine-Tuning Playbook
+          </button>
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "finetuning" })}
+            className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+            ⚙️ Fine-Tuning Workflows
+          </button>
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "rlhf" })}
+            className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+            ⚙️ RLHF / DPO / PPO
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1778,7 +1808,7 @@ const FLOW_TABS = [
     reflection: "Why is DPO preferred over RLHF for most production fine-tuning — and when would you still use RLHF or GRPO?" },
 ];
 
-export default function FlowsApp() {
+export default function FlowsApp({ onNavigate }) {
   const [activeTab, setActiveTab] = useState("rag");
   const tab = FLOW_TABS.find(t => t.id === activeTab);
   const Component = tab.component;
@@ -1805,7 +1835,7 @@ export default function FlowsApp() {
         <p className="text-sm text-zinc-400">{tab.desc}</p>
       </div>
 
-      <Component key={activeTab} />
+      <Component key={activeTab} onNavigate={onNavigate} />
 
       {tab?.reflection && (
         <div className="mt-4 rounded-xl border border-indigo-800/40 bg-indigo-950/20 p-4">
