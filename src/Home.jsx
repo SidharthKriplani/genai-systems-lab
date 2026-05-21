@@ -236,6 +236,155 @@ const STATS = [
   { value: "200+",   label: "Challenges",         sub: "All interactive",   tab: null           },
 ];
 
+// ─── CONCEPT DEPENDENCY GRAPH ─────────────────────────────────────────────────
+const NODE_W = 108, NODE_H = 26;
+const DEP_NODES = [
+  { id: "tokenizer",  label: "Tokenization",  tab: "concepts", x: 75,  y: 22,  color: "#6366f1" },
+  { id: "embeddings", label: "Embeddings",    tab: "concepts", x: 75,  y: 93,  color: "#6366f1" },
+  { id: "attention",  label: "Attention",     tab: "concepts", x: 75,  y: 163, color: "#6366f1" },
+  { id: "context",    label: "Context Window",tab: "concepts", x: 218, y: 57,  color: "#3b82f6" },
+  { id: "sampling",   label: "Sampling",      tab: "concepts", x: 218, y: 127, color: "#3b82f6" },
+  { id: "rag_flow",   label: "RAG Pipeline",  tab: "flows",    x: 370, y: 22,  color: "#06b6d4" },
+  { id: "agent_flow", label: "Agent Loop",    tab: "flows",    x: 370, y: 93,  color: "#06b6d4" },
+  { id: "guardrail",  label: "Guardrails",    tab: "flows",    x: 370, y: 163, color: "#06b6d4" },
+  { id: "rag_lab",    label: "RAG Lab",       tab: "lab",      x: 522, y: 57,  color: "#22c55e" },
+  { id: "agent_lab",  label: "Agent Lab",     tab: "agents",   x: 522, y: 135, color: "#22c55e" },
+  { id: "evals",      label: "Evals Lab",     tab: "systems",  x: 672, y: 30,  color: "#f59e0b" },
+  { id: "finetune",   label: "Fine-Tuning",   tab: "systems",  x: 672, y: 103, color: "#f59e0b" },
+  { id: "systems",    label: "Systems",       tab: "systems",  x: 672, y: 173, color: "#f59e0b" },
+];
+const DEP_EDGES = [
+  { from: "tokenizer",  to: "context"    },
+  { from: "tokenizer",  to: "sampling"   },
+  { from: "embeddings", to: "context"    },
+  { from: "embeddings", to: "rag_flow"   },
+  { from: "attention",  to: "agent_flow" },
+  { from: "attention",  to: "guardrail"  },
+  { from: "context",    to: "rag_flow"   },
+  { from: "context",    to: "agent_flow" },
+  { from: "sampling",   to: "rag_flow"   },
+  { from: "rag_flow",   to: "rag_lab"    },
+  { from: "agent_flow", to: "agent_lab"  },
+  { from: "guardrail",  to: "agent_lab"  },
+  { from: "rag_lab",    to: "evals"      },
+  { from: "rag_lab",    to: "finetune"   },
+  { from: "agent_lab",  to: "evals"      },
+  { from: "evals",      to: "systems"    },
+  { from: "finetune",   to: "systems"    },
+];
+function ConceptGraph({ onNavigate }) {
+  const [selected, setSelected] = useState(null);
+  const nodeMap = useMemo(() => Object.fromEntries(DEP_NODES.map(n => [n.id, n])), []);
+  const prereqs    = selected ? DEP_EDGES.filter(e => e.to   === selected).map(e => e.from) : [];
+  const dependents = selected ? DEP_EDGES.filter(e => e.from === selected).map(e => e.to)   : [];
+  const sel = selected ? DEP_NODES.find(n => n.id === selected) : null;
+
+  function edgeState(e) {
+    if (!selected) return "idle";
+    if (e.from === selected) return "unlocks";
+    if (e.to   === selected) return "prereq";
+    return "dim";
+  }
+  function nodeOpacity(n) {
+    if (!selected) return 1;
+    if (n.id === selected || prereqs.includes(n.id) || dependents.includes(n.id)) return 1;
+    return 0.2;
+  }
+  function nodeStroke(n) {
+    if (n.id === selected) return n.color;
+    if (prereqs.includes(n.id))    return "#f59e0b";
+    if (dependents.includes(n.id)) return "#22c55e";
+    return "#3f3f46";
+  }
+  function nodeFill(n) {
+    if (n.id === selected) return n.color + "33";
+    if (prereqs.includes(n.id))    return "#f59e0b18";
+    if (dependents.includes(n.id)) return "#22c55e18";
+    return "#18181b";
+  }
+  function nodeTextFill(n) {
+    if (n.id === selected) return "#fff";
+    if (prereqs.includes(n.id))    return "#f59e0b";
+    if (dependents.includes(n.id)) return "#22c55e";
+    return "#71717a";
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/40">
+        <svg viewBox="0 0 762 205" className="w-full min-w-[600px]" style={{ height: 205 }}>
+          {/* Column labels */}
+          {[
+            { label: "FOUNDATION", x: 75,  c: "#6366f1" },
+            { label: "CONCEPTS",   x: 218, c: "#3b82f6" },
+            { label: "PATTERNS",   x: 370, c: "#06b6d4" },
+            { label: "PRACTICE",   x: 522, c: "#22c55e" },
+            { label: "ADVANCED",   x: 672, c: "#f59e0b" },
+          ].map(col => (
+            <text key={col.label} x={col.x} y={11} textAnchor="middle" fontSize="7.5"
+              fontFamily="monospace" fontWeight="700" letterSpacing="0.08em" fill={col.c + "88"}>{col.label}</text>
+          ))}
+          {/* Edges */}
+          {DEP_EDGES.map((e, i) => {
+            const s = nodeMap[e.from], d = nodeMap[e.to];
+            if (!s || !d) return null;
+            const x1 = s.x + NODE_W / 2, y1 = s.y + NODE_H / 2;
+            const x2 = d.x - NODE_W / 2, y2 = d.y + NODE_H / 2;
+            const cx = (x1 + x2) / 2;
+            const st = edgeState(e);
+            const col = st === "unlocks" ? "#22c55e" : st === "prereq" ? "#f59e0b" : st === "dim" ? "#27272a" : "#3f3f46";
+            return (
+              <path key={i} d={`M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`}
+                fill="none" stroke={col} strokeWidth={st !== "idle" && st !== "dim" ? 1.5 : 1}
+                strokeOpacity={st === "dim" ? 0.3 : 0.7}
+                style={{ transition: "stroke 0.18s, stroke-opacity 0.18s" }} />
+            );
+          })}
+          {/* Nodes */}
+          {DEP_NODES.map(n => (
+            <g key={n.id} style={{ opacity: nodeOpacity(n), cursor: "pointer", transition: "opacity 0.18s" }}
+              onClick={() => setSelected(prev => prev === n.id ? null : n.id)}
+              onDoubleClick={() => onNavigate(n.tab)}>
+              <rect x={n.x - NODE_W / 2} y={n.y} width={NODE_W} height={NODE_H} rx={5}
+                fill={nodeFill(n)} stroke={nodeStroke(n)} strokeWidth={n.id === selected ? 1.5 : 1}
+                style={{ transition: "fill 0.18s, stroke 0.18s" }} />
+              <text x={n.x} y={n.y + NODE_H / 2 + 4} textAnchor="middle" fontSize="9.5"
+                fontFamily="ui-sans-serif,system-ui,sans-serif"
+                fontWeight={n.id === selected ? "700" : "500"}
+                fill={nodeTextFill(n)}
+                style={{ transition: "fill 0.18s", pointerEvents: "none", userSelect: "none" }}>{n.label}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+      <div className="flex items-center flex-wrap gap-3 px-0.5 min-h-[24px]">
+        {sel ? (
+          <>
+            <span className="text-xs text-zinc-300">
+              <span className="font-bold text-white">{sel.label}</span>
+              {prereqs.length > 0 && <> · learn first: <span className="text-amber-400 font-semibold">{prereqs.map(id => DEP_NODES.find(n => n.id === id)?.label).join(", ")}</span></>}
+              {dependents.length > 0 && <> · unlocks: <span className="text-emerald-400 font-semibold">{dependents.map(id => DEP_NODES.find(n => n.id === id)?.label).join(", ")}</span></>}
+            </span>
+            <button onClick={() => onNavigate(sel.tab)}
+              className="text-[11px] px-2.5 py-1 rounded border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-300 transition-all ml-auto">
+              Open →
+            </button>
+            <button onClick={() => setSelected(null)} className="text-[11px] text-zinc-700 hover:text-zinc-400 transition-colors">✕</button>
+          </>
+        ) : (
+          <>
+            <span className="text-[11px] text-zinc-600">Click any node · see what to learn first and what it unlocks · double-click to open</span>
+            <div className="flex items-center gap-3 ml-auto">
+              <span className="flex items-center gap-1 text-[10px] text-amber-400"><span className="w-4 h-px bg-amber-400 inline-block rounded" /> prerequisite</span>
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400"><span className="w-4 h-px bg-emerald-400 inline-block rounded" /> unlocks</span>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage({ onNavigate, visited = new Set(), onFeedback }) {
   function handleFeedback(location) {
     track("feedback_clicked", { location });
@@ -604,6 +753,15 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             ))}
           </div>
           {showPath && pathRole && <SuggestedPath role={pathRole} onNavigate={onNavigate} />}
+        </div>
+
+        {/* ── CONCEPT DEPENDENCY GRAPH ────────────────────────────────────── */}
+        <div className="space-y-2 pt-4">
+          <div className="text-center space-y-1 mb-3">
+            <h2 className="text-xl font-black text-white">Concept Dependency Graph</h2>
+            <p className="text-sm text-zinc-500">Click a node to see prerequisites · Double-click to navigate</p>
+          </div>
+          <ConceptGraph onNavigate={onNavigate} />
         </div>
 
         {/* ── MODULE MAP ──────────────────────────────────────────────────── */}

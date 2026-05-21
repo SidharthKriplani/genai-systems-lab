@@ -696,6 +696,18 @@ const SERIES_META = {
     color: "#8b5cf6",
     postIds: ["case-notion-ai", "case-perplexity", "case-cursor", "case-github-copilot", "case-spotify-ai"],
   },
+  "paper-to-production": {
+    title: "Paper → Production",
+    desc: "Five landmark AI papers and the engineering gap between what they proposed and what the industry actually ships. Attention, RLHF, RAG, LoRA, and Constitutional AI.",
+    color: "#ec4899",
+    postIds: ["p2p-attention", "p2p-rlhf", "p2p-rag-paper", "p2p-lora", "p2p-constitutional-ai"],
+  },
+  "interview-ready": {
+    title: "Interview Ready",
+    desc: "How to answer the hardest AI system design and technical screen questions — RAG design, attention explanation, evaluation, agents, and cost reduction.",
+    color: "#f97316",
+    postIds: ["iv-design-rag", "iv-explain-attention", "iv-eval-system", "iv-agents-screen", "iv-cost-reduction"],
+  },
 };
 
 export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {
