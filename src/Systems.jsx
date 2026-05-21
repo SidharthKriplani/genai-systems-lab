@@ -3760,6 +3760,411 @@ function DebugTraces() {
 
 // ─── SYSTEMS APP ─────────────────────────────────────────────────────────────
 
+// ─── AI SYSTEM DESIGN CANVAS ──────────────────────────────────────────────────
+const PROBLEM_TYPES = [
+  {
+    id: "qa", label: "Q&A / Doc Search", icon: "🔍",
+    desc: "Answer queries from a corpus",
+    failureModes: ["Stale retrieval (top_k too low)", "Context overflow (chunks too large)", "Groundedness failure (model ignores retrieved context)", "Query-document embedding mismatch"],
+    model: "Mid-tier: Claude Haiku / GPT-4o-mini",
+    modelReason: "High query volume, latency-sensitive. Frontier model adds little value over good retrieval.",
+    evals: ["Retrieval recall@k", "Groundedness (NLI)", "Query-answer relevance", "No-answer detection"],
+    latency: "1–3s P99", cost: "$0.001–0.01/q", contextBudget: "4K–16K tokens", ragNeeded: true,
+    scalingNote: "Vector index rebuild cost grows with corpus size. Plan incremental re-embedding from day 1.",
+    highStakes: "Add citation verification + periodic human spot-check loop. Every answer should be traceable to a source chunk.",
+  },
+  {
+    id: "generation", label: "Long-form Generation", icon: "✍️",
+    desc: "Reports, summaries, multi-paragraph output",
+    failureModes: ["Hallucination mid-document", "Instruction drift over long output", "Formatting failure (JSON/Markdown breaks at length)", "Coherence degradation after ~2K output tokens"],
+    model: "Frontier: Claude Sonnet / GPT-4o",
+    modelReason: "Output quality at length degrades fast on smaller models. The cost difference is worth it here.",
+    evals: ["Factual consistency", "Format compliance", "Human coherence rating", "Instruction adherence"],
+    latency: "5–30s (streaming required)", cost: "$0.05–0.50/req", contextBudget: "32K–200K tokens", ragNeeded: false,
+    scalingNote: "Output token cost dominates. Set hard max_tokens. Monitor p90 output length weekly — model verbosity drifts.",
+    highStakes: "Human review before any publish step. Automated publish of AI-generated long-form is a liability.",
+  },
+  {
+    id: "classification", label: "Classification / Routing", icon: "🏷️",
+    desc: "Label inputs into categories (intent, sentiment, topic)",
+    failureModes: ["Class imbalance in training data", "OOD inputs misclassified confidently", "Label drift as user language evolves", "Threshold miscalibration"],
+    model: "Small or fine-tuned: Haiku / fine-tuned Llama",
+    modelReason: "Classification is constrained output. Fine-tuning a small model beats prompt-engineering frontier at 10× lower cost.",
+    evals: ["Precision/Recall per class", "Confusion matrix audit", "OOD detection rate", "Calibration (confidence vs accuracy)"],
+    latency: "<500ms target", cost: "$0.0001–0.001/req", contextBudget: "512–2K tokens", ragNeeded: false,
+    scalingNote: "Latency budget is tight. Distill to smaller model or use structured outputs to skip parsing overhead.",
+    highStakes: "Maintain a human review queue for confidence < threshold. Never auto-act on low-confidence predictions.",
+  },
+  {
+    id: "extraction", label: "Structured Extraction", icon: "📋",
+    desc: "Pull entities, fields, schemas from unstructured text",
+    failureModes: ["Missing optional fields (model skips them)", "Type coercion errors (dates, numbers)", "Nested schema failures", "Hallucinated values for absent fields"],
+    model: "Mid-tier + JSON mode: GPT-4o-mini / Claude Haiku",
+    modelReason: "Structured outputs + JSON mode handles most extraction. Frontier model needed only for ambiguous or deeply nested schemas.",
+    evals: ["Schema validation pass rate", "Field-level recall", "Null vs hallucinated field audit", "Type correctness"],
+    latency: "1–5s", cost: "$0.002–0.02/doc", contextBudget: "8K–32K tokens", ragNeeded: false,
+    scalingNote: "Use structured outputs / tool use to force schema compliance. Prompt-only JSON extraction fails silently at scale.",
+    highStakes: "Build a schema validator as final step. Fail fast rather than persist a bad extraction to downstream systems.",
+  },
+  {
+    id: "agent", label: "Agentic Task Completion", icon: "🤖",
+    desc: "Multi-step task with tool use — APIs, code, browsing",
+    failureModes: ["Infinite loop (no exit condition)", "Tool hallucination (wrong args)", "Context overflow over long runs", "State corruption across turns"],
+    model: "Frontier: Claude Sonnet/Opus / GPT-4o",
+    modelReason: "Tool selection + multi-step reasoning degrade sharply on smaller models. This is the one case where frontier cost is clearly justified.",
+    evals: ["Task completion rate", "Tool call accuracy", "Step efficiency (vs. optimal path)", "Loop detection (max_steps hit rate)"],
+    latency: "2–60s (streaming + progress UI required)", cost: "$0.10–5.00/task", contextBudget: "32K–200K tokens", ragNeeded: false,
+    scalingNote: "Cost is highly variable. Instrument every tool call. Set max_steps hard limit. Use checkpointing for tasks > 5 steps.",
+    highStakes: "Never give irreversible tool access (delete, send, purchase) without an explicit human confirmation step in the loop.",
+  },
+  {
+    id: "conversation", label: "Multi-turn Conversation", icon: "💬",
+    desc: "Ongoing dialogue with memory across turns",
+    failureModes: ["Context window overflow (history too long)", "Persona drift over long conversations", "User intent misread after topic switch", "Memory retrieval failure"],
+    model: "Mid-tier: Claude Haiku / GPT-4o-mini + compaction",
+    modelReason: "Most turns are low-complexity. Compaction strategy matters more than model tier here.",
+    evals: ["Turn-level relevance", "Memory recall accuracy", "Context compaction quality", "Topic transition handling"],
+    latency: "<2s per turn", cost: "$0.005–0.05/conversation", contextBudget: "16K–32K + rolling window", ragNeeded: false,
+    scalingNote: "History management is the scaling problem, not model capacity. Rolling window + summary compaction is standard.",
+    highStakes: "Log full conversation state. Ability to replay + audit any conversation is a compliance requirement.",
+  },
+];
+
+function AISystemDesignCanvas() {
+  const [selectedId, setSelectedId] = useState("qa");
+  const [highStakes, setHighStakes] = useState(false);
+  const [costSensitive, setCostSensitive] = useState(false);
+  const p = PROBLEM_TYPES.find(x => x.id === selectedId);
+
+  const modelRec = costSensitive && selectedId !== "agent"
+    ? "Downgrade recommendation: small/fine-tuned model — cost constraint overrides default"
+    : p.model;
+
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Map any AI problem to the right architecture before you write a single line of code."
+        steps={[
+          "Select your problem type — what is the primary task the AI needs to do?",
+          "Toggle constraints — cost-sensitive or high-stakes changes the recommendations",
+          "Read the failure modes, eval approach, and scaling notes before designing",
+        ]}
+      />
+
+      <div>
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">What are you building?</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {PROBLEM_TYPES.map(pt => (
+            <button key={pt.id} onClick={() => setSelectedId(pt.id)}
+              className={`text-left rounded-xl border px-3 py-2.5 transition-all ${selectedId === pt.id ? "border-violet-500 bg-violet-950/30" : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"}`}>
+              <div className="text-base mb-0.5">{pt.icon}</div>
+              <div className="text-xs font-bold text-white leading-tight">{pt.label}</div>
+              <div className="text-[10px] text-zinc-500 mt-0.5 leading-tight">{pt.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => setCostSensitive(v => !v)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${costSensitive ? "border-amber-500 bg-amber-950/30 text-amber-300" : "border-zinc-700 bg-zinc-900 text-zinc-400"}`}>
+          💰 Cost-sensitive
+        </button>
+        <button onClick={() => setHighStakes(v => !v)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${highStakes ? "border-red-500 bg-red-950/30 text-red-300" : "border-zinc-700 bg-zinc-900 text-zinc-400"}`}>
+          🔴 High-stakes domain
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        <div className="rounded-xl border border-violet-800/40 bg-violet-950/10 p-4">
+          <div className="text-[10px] font-bold text-violet-400 uppercase tracking-wide mb-1">Model Tier</div>
+          <div className="text-sm font-bold text-white">{modelRec}</div>
+          <div className="text-xs text-zinc-400 mt-1">{p.modelReason}</div>
+        </div>
+
+        <div className="rounded-xl border border-red-800/30 bg-red-950/10 p-4">
+          <div className="text-[10px] font-bold text-red-400 uppercase tracking-wide mb-2">Failure Modes to Design Against</div>
+          <div className="space-y-1">
+            {p.failureModes.map((fm, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs text-zinc-300">
+                <span className="text-red-500 mt-0.5 shrink-0">✗</span>{fm}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-emerald-800/30 bg-emerald-950/10 p-4">
+          <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mb-2">Evals You Need</div>
+          <div className="flex flex-wrap gap-1.5">
+            {p.evals.map((ev, i) => (
+              <span key={i} className="text-[11px] px-2 py-1 rounded-full bg-emerald-900/30 border border-emerald-800/40 text-emerald-300">{ev}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: "Target latency", value: p.latency, color: "#3b82f6" },
+            { label: "Cost range", value: p.cost, color: "#f59e0b" },
+            { label: "Context budget", value: p.contextBudget, color: "#8b5cf6" },
+          ].map(m => (
+            <div key={m.label} className="rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-center">
+              <div className="text-[10px] text-zinc-500 uppercase tracking-wide mb-1">{m.label}</div>
+              <div className="text-[11px] font-bold font-mono leading-tight" style={{ color: m.color }}>{m.value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-xl border border-amber-800/30 bg-amber-950/10 p-4">
+          <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mb-1">Scaling Reality</div>
+          <p className="text-xs text-zinc-300 leading-relaxed">{p.scalingNote}</p>
+        </div>
+
+        {highStakes && (
+          <div className="rounded-xl border border-red-600/50 bg-red-950/20 p-4">
+            <div className="text-[10px] font-bold text-red-300 uppercase tracking-wide mb-1">⚠️ High-Stakes Requirements</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{p.highStakes}</p>
+          </div>
+        )}
+
+        {p.ragNeeded && (
+          <div className="rounded-xl border border-blue-800/30 bg-blue-950/10 p-3 flex items-center gap-2">
+            <span className="text-blue-400 shrink-0">📦</span>
+            <p className="text-xs text-zinc-300">This problem type requires a retrieval layer. See <button onClick={() => window.location.hash = "flows"} className="text-blue-400 hover:underline">Flows → Production RAG</button> and <button onClick={() => window.location.hash = "flows"} className="text-blue-400 hover:underline">RAG Architectures</button>.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── LANGSMITH TRACING LAB ─────────────────────────────────────────────────────
+const TRACE_SPANS = [
+  {
+    id: "root", indent: 0, label: "chain.invoke()", type: "CHAIN", duration: "2340ms", tokens: 847, cost: "$0.000428",
+    detail: "Root span — wraps the full chain execution. Total wall time including all sub-spans. This is what your user experiences end-to-end.",
+    insight: "If this is slow, look at sub-spans to find the bottleneck. Often it's the LLM call, sometimes retrieval on a cold index.",
+  },
+  {
+    id: "retriever", indent: 1, label: "retriever.get_relevant_docs()", type: "RETRIEVER", duration: "348ms", tokens: null, cost: null,
+    detail: "Vector similarity search. Duration = embedding the query + ANN index lookup + fetch. 348ms is acceptable; watch for p99 > 500ms.",
+    insight: "Slow retriever → index needs rebuild or k is too high. Check whether ANN is approximating or doing exact brute-force scan.",
+  },
+  {
+    id: "embed", indent: 2, label: "embeddings.embed_query()", type: "EMBED", duration: "112ms", tokens: 12, cost: "$0.000001",
+    detail: "Embeds the user query into a vector. 12 tokens. Should complete in < 200ms. If slow, check embedding model rate limits.",
+    insight: "This is cheap and fast. If it's a bottleneck, you're likely hitting rate limits on the embedding API — batch or cache embeddings.",
+  },
+  {
+    id: "llm", indent: 1, label: "ChatOpenAI.invoke()", type: "LLM", duration: "1964ms", tokens: 835, cost: "$0.000427",
+    detail: "LLM call. Input: 823 tokens (system prompt + retrieved context + user query). Output: 12 tokens. TTFT ~400ms, full generation ~1.9s.",
+    insight: "93% of total cost is in this span. 99% of total latency. Optimization: streaming TTFT (start rendering at 400ms), or prompt compression to reduce input tokens.",
+  },
+];
+
+const FEEDBACK_FLOWS = [
+  {
+    id: "thumb", label: "Thumbs Up/Down", tag: "EASIEST",
+    where: "After LLM response in your UI",
+    signal: "Binary positive/negative signal on run",
+    langsmith: "client.create_feedback(run_id, key='user_rating', score=1/0)",
+    use: "Surface worst-performing queries. Filter traces where score=0 to build eval datasets.",
+    effort: "1 day",
+  },
+  {
+    id: "correction", label: "User Correction", tag: "HIGH VALUE",
+    where: "Editable response output in UI",
+    signal: "User's corrected answer paired with original",
+    langsmith: "Attach correction as feedback note; build (input, bad_output, good_output) triplets",
+    use: "Gold dataset for fine-tuning or RLHF. Every correction is a labeled training example.",
+    effort: "2–3 days",
+  },
+  {
+    id: "llm_judge", label: "LLM-as-Judge Auto-eval", tag: "SCALABLE",
+    where: "Post-run async evaluation job",
+    signal: "Automated groundedness/relevance score on every trace",
+    langsmith: "Use LangSmith evaluators or custom chain that scores run output + input",
+    use: "Catch regressions automatically. Alert when average score drops > 5% week-over-week.",
+    effort: "1 week",
+  },
+  {
+    id: "expert", label: "Expert Review Queue", tag: "HIGHEST SIGNAL",
+    where: "Internal review tool — filter low-score traces",
+    signal: "Human expert labels on edge cases and failures",
+    langsmith: "Use LangSmith annotation queues to route flagged runs to reviewers",
+    use: "Gold eval set for high-stakes domains. Every expert annotation is 100× more valuable than a thumbs-down.",
+    effort: "Ongoing",
+  },
+];
+
+function LangSmithTracingLab() {
+  const [activeView, setActiveView] = useState("traces");
+  const [expandedSpan, setExpandedSpan] = useState(null);
+  const [expandedFeedback, setExpandedFeedback] = useState(null);
+
+  const VIEWS = [
+    { id: "traces", label: "Trace Anatomy" },
+    { id: "feedback", label: "Feedback Loops" },
+    { id: "datasets", label: "Eval Datasets" },
+    { id: "versioning", label: "Prompt Versioning" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Understand LangSmith as an observability layer — what it captures, how to add feedback, and how to build eval datasets from production traffic."
+        steps={[
+          "Explore the Trace Anatomy — understand what every span in a LangChain/LangGraph run represents",
+          "See how to wire up feedback signals from your UI back into traces",
+          "Learn how to build eval datasets from production traces and set up regression detection",
+        ]}
+      />
+
+      <div className="flex gap-1.5 flex-wrap">
+        {VIEWS.map(v => (
+          <button key={v.id} onClick={() => setActiveView(v.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${activeView === v.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {activeView === "traces" && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-3 text-xs text-zinc-400">
+            Click any span to see what LangSmith captures and what it tells you.
+          </div>
+          <div className="space-y-1">
+            {TRACE_SPANS.map(span => (
+              <div key={span.id}>
+                <button onClick={() => setExpandedSpan(expandedSpan === span.id ? null : span.id)}
+                  className={`w-full text-left rounded-xl border px-3 py-2.5 transition-all ${expandedSpan === span.id ? "border-violet-500 bg-violet-950/20" : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"}`}
+                  style={{ marginLeft: `${span.indent * 20}px`, width: `calc(100% - ${span.indent * 20}px)` }}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-mono shrink-0 ${
+                        span.type === "CHAIN" ? "bg-violet-900/50 text-violet-300" :
+                        span.type === "LLM" ? "bg-blue-900/50 text-blue-300" :
+                        span.type === "RETRIEVER" ? "bg-amber-900/50 text-amber-300" :
+                        "bg-emerald-900/50 text-emerald-300"
+                      }`}>{span.type}</span>
+                      <span className="text-xs font-mono text-zinc-300 truncate">{span.label}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 text-[10px] font-mono">
+                      <span className="text-zinc-500">{span.duration}</span>
+                      {span.tokens && <span className="text-blue-400">{span.tokens}tok</span>}
+                      {span.cost && <span className="text-amber-400">{span.cost}</span>}
+                    </div>
+                  </div>
+                  {expandedSpan === span.id && (
+                    <div className="mt-3 space-y-2 text-left">
+                      <p className="text-xs text-zinc-300 leading-relaxed">{span.detail}</p>
+                      <div className="rounded-lg bg-emerald-950/20 border border-emerald-800/30 p-2">
+                        <span className="text-[10px] font-bold text-emerald-400 uppercase">Optimization signal: </span>
+                        <span className="text-xs text-zinc-300">{span.insight}</span>
+                      </div>
+                    </div>
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="text-xs text-zinc-500 px-1">↳ LangSmith captures this automatically when you wrap your chain with <code className="bg-zinc-800 px-1 rounded">langsmith.Client()</code> or set <code className="bg-zinc-800 px-1 rounded">LANGCHAIN_TRACING_V2=true</code>.</div>
+        </div>
+      )}
+
+      {activeView === "feedback" && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-3 text-xs text-zinc-400">
+            Feedback loops turn passive traces into a labeled dataset. Click each to see implementation details.
+          </div>
+          {FEEDBACK_FLOWS.map(fb => (
+            <button key={fb.id} onClick={() => setExpandedFeedback(expandedFeedback === fb.id ? null : fb.id)}
+              className={`w-full text-left rounded-xl border px-4 py-3 transition-all ${expandedFeedback === fb.id ? "border-violet-500 bg-violet-950/20" : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-mono ${
+                    fb.tag === "EASIEST" ? "bg-emerald-900/50 text-emerald-300" :
+                    fb.tag === "HIGH VALUE" ? "bg-blue-900/50 text-blue-300" :
+                    fb.tag === "SCALABLE" ? "bg-amber-900/50 text-amber-300" :
+                    "bg-violet-900/50 text-violet-300"
+                  }`}>{fb.tag}</span>
+                  <span className="text-xs font-bold text-white">{fb.label}</span>
+                </div>
+                <span className="text-[10px] text-zinc-500">{fb.effort}</span>
+              </div>
+              {expandedFeedback === fb.id && (
+                <div className="mt-3 space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div><span className="text-zinc-500">Where: </span><span className="text-zinc-300">{fb.where}</span></div>
+                    <div><span className="text-zinc-500">Signal: </span><span className="text-zinc-300">{fb.signal}</span></div>
+                  </div>
+                  <div className="rounded-lg bg-zinc-800/60 border border-zinc-700 p-2 font-mono text-[11px] text-blue-300">{fb.langsmith}</div>
+                  <div className="text-xs text-zinc-300"><span className="text-emerald-400 font-bold">Use: </span>{fb.use}</div>
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {activeView === "datasets" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/10 p-4">
+            <div className="text-xs font-bold text-amber-400 uppercase mb-2">The Dataset Flywheel</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">Production traces → filter by low feedback score → human review → labeled examples → eval dataset → run evals on every deploy → catch regressions before users do.</p>
+          </div>
+          <div className="space-y-3">
+            {[
+              { step: "1", action: "Filter traces", detail: "Query LangSmith for runs where user_rating=0 or llm_judge_score < 0.7", code: 'client.list_runs(project_name="prod", filter="feedback.score < 0.7")' },
+              { step: "2", action: "Create dataset", detail: "Push filtered runs into a named dataset — input/output pairs with your labels", code: 'client.create_dataset("regression-set-v1", description="Low-score production runs")' },
+              { step: "3", action: "Add examples", detail: "Each run becomes an (input, expected_output) example in the dataset", code: 'client.create_example(inputs=run.inputs, outputs=corrected_output, dataset_id=ds.id)' },
+              { step: "4", action: "Run evaluations", detail: "Evaluate any new prompt or model version against this dataset before deploy", code: 'client.run_on_dataset(dataset_name="regression-set-v1", llm_or_chain=new_chain)' },
+            ].map(s => (
+              <div key={s.step} className="rounded-xl border border-zinc-700 bg-zinc-900 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] font-black flex items-center justify-center shrink-0">{s.step}</span>
+                  <span className="text-xs font-bold text-white">{s.action}</span>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed pl-7">{s.detail}</p>
+                <div className="ml-7 rounded-lg bg-zinc-800/60 border border-zinc-700 p-2 font-mono text-[10px] text-blue-300 overflow-x-auto">{s.code}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeView === "versioning" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-blue-800/40 bg-blue-950/10 p-4">
+            <div className="text-xs font-bold text-blue-400 uppercase mb-2">Why Prompt Versioning Matters</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">A prompt is configuration, not code. Without versioning, a prompt change ships silently, scores drop, and you spend a week debugging what changed. LangSmith Hub gives you git-style history for prompts with A/B comparison.</p>
+          </div>
+          <div className="space-y-3">
+            {[
+              { icon: "📤", title: "Push a prompt version", detail: "Any prompt change gets a commit hash. You can reference a specific version in production.", code: 'hub.push("my-org/rag-system-prompt:v3", prompt_template)' },
+              { icon: "📥", title: "Pull a specific version in prod", detail: "Pin production to a known-good version while testing v4 in staging.", code: 'prompt = hub.pull("my-org/rag-system-prompt:v3")' },
+              { icon: "📊", title: "Compare versions on a dataset", detail: "Run v3 and v4 against your regression dataset. See side-by-side scores before promoting.", code: 'client.run_on_dataset(..., llm_or_chain=chain_v4)  # compare with v3 run' },
+              { icon: "🔁", title: "Rollback instantly", detail: "Score dropped after deploy? Pull the previous version tag. No code change needed.", code: 'prompt = hub.pull("my-org/rag-system-prompt:v2")  # instant rollback' },
+            ].map(item => (
+              <div key={item.title} className="rounded-xl border border-zinc-700 bg-zinc-900 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{item.icon}</span>
+                  <span className="text-xs font-bold text-white">{item.title}</span>
+                </div>
+                <p className="text-xs text-zinc-400 pl-7">{item.detail}</p>
+                <div className="ml-7 rounded-lg bg-zinc-800/60 border border-zinc-700 p-2 font-mono text-[10px] text-blue-300 overflow-x-auto">{item.code}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 const SYSTEMS_MODULES = [
   { id: "evals",         label: "Evals Lab",          tag: "DESIGN",     group: "DESIGN",  component: EvalsLab           },
   { id: "evalfw",        label: "Eval Frameworks",    tag: "FRAMEWORK",  group: "DESIGN",  component: EvalFrameworksLab  },
@@ -3777,6 +4182,8 @@ const SYSTEMS_MODULES = [
   { id: "mlcicd",        label: "ML CI/CD",           tag: "DEPLOY",   group: "OPS",     component: MLCiCdLab        },
   { id: "debug_traces",  label: "Debug This",         tag: "DIAGNOSE", group: "OPS",     component: DebugTraces       },
   { id: "compaction",    label: "Context Compaction",  tag: "CONTEXT",  group: "BUILD",   component: ContextCompaction },
+  { id: "canvas",        label: "System Design Canvas",tag: "CANVAS",   group: "DESIGN",  component: AISystemDesignCanvas },
+  { id: "langsmith",     label: "LangSmith Lab",       tag: "OBSERVE",  group: "OPS",     component: LangSmithTracingLab },
 ];
 
 const SYSTEMS_GROUPS = [

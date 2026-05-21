@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import HowTo from "./HowTo";
 
 // ─── REACT PATTERN ────────────────────────────────────────────────────────────
@@ -1783,6 +1783,279 @@ function AgentLoopSimulator() {
 
 // ─── AGENTS APP ───────────────────────────────────────────────────────────────
 
+// ─── FRAMEWORK LANDSCAPE ──────────────────────────────────────────────────────
+const FRAMEWORKS = [
+  {
+    id: "langchain", name: "LangChain", tag: "CHAINS", color: "#22c55e",
+    tagline: "The composition layer — chains, tools, memory, retrievers",
+    use: "Wrapping LLM calls in reusable components. Building RAG pipelines, tool-using agents, and document chains. Most tutorials and community examples use it.",
+    avoid: "When you need stateful multi-agent graphs with cycles. LangChain chains are DAGs — no loops, no conditional branching between agents.",
+    strengths: ["Huge ecosystem — connectors for 200+ LLMs, VDBs, tools", "Document loaders, text splitters, retrievers built-in", "LCEL (LangChain Expression Language) for chain composition", "Most Stack Overflow answers, most blog posts"],
+    weaknesses: ["Abstraction leaks — debugging a LangChain agent is painful", "Overhead for simple use cases", "Versioning changes have been breaking — pin your version"],
+    whenToUse: "Prototyping. RAG pipelines. Tool-using single agents. When you want batteries included.",
+    stacksWith: "LangSmith (observability), any vector DB, any LLM API",
+  },
+  {
+    id: "langgraph", name: "LangGraph", tag: "GRAPHS", color: "#6366f1",
+    tagline: "Stateful agents as graphs — nodes, edges, cycles, checkpointing",
+    use: "Multi-agent orchestration with complex control flow. Agents that loop, branch, retry, or hand off to each other. Production agent pipelines that need checkpointing and human-in-the-loop.",
+    avoid: "Simple single-turn chains. The overhead of defining nodes/edges is overkill for a RAG Q&A bot.",
+    strengths: ["Explicit state machine — you own the control flow", "Cycles and conditional branching (what LangChain can't do)", "Built-in checkpointing for long-running tasks", "Human-in-the-loop interrupts at any node", "Production-grade — used by companies running real agent workflows"],
+    weaknesses: ["Steeper learning curve than LangChain", "Graph definition is verbose for simple cases", "Still evolving — API changes between minor versions"],
+    whenToUse: "Agentic RAG. Multi-agent teams. Tasks with retry loops, human approval gates, or parallel sub-agents.",
+    stacksWith: "LangSmith (native), LangChain components, any LLM",
+  },
+  {
+    id: "langsmith", name: "LangSmith", tag: "OBSERVE", color: "#f59e0b",
+    tagline: "Observability, evals, and datasets for LLM applications",
+    use: "Tracing every LangChain/LangGraph run. Building eval datasets from production traffic. Detecting regressions before deploy. Prompt versioning with Hub.",
+    avoid: "It's not a framework for building agents — it's the observability layer on top. Don't confuse it with LangChain/LangGraph.",
+    strengths: ["Automatic tracing with LANGCHAIN_TRACING_V2=true", "Feedback API — attach user signals to traces", "Dataset management — build eval sets from production runs", "LangSmith Hub — versioned prompt registry", "Run evaluators on any dataset before deploy"],
+    weaknesses: ["Cost at high trace volume — free tier limits", "Requires LangChain/LangGraph for full auto-tracing (manual SDK for others)", "Eval quality depends on your evaluator quality"],
+    whenToUse: "Any production LLM system. Non-optional if you care about quality over time.",
+    stacksWith: "LangChain, LangGraph (native), custom apps via LangSmith SDK",
+  },
+  {
+    id: "openai_sdk", name: "OpenAI Agents SDK", tag: "AGENTS", color: "#10b981",
+    tagline: "OpenAI's native SDK for building multi-agent systems",
+    use: "Building agents that handoff between specialized sub-agents. Function calling + tool use natively. Best-in-class when your stack is OpenAI models.",
+    avoid: "Non-OpenAI model stacks. It's designed around GPT-4o's tool calling and Assistants API.",
+    strengths: ["Native OpenAI tool calling integration", "Built-in handoffs between agents", "Tracing via OpenAI's dashboard", "Minimal boilerplate for OpenAI-native stacks", "Managed threads with Assistants API"],
+    weaknesses: ["OpenAI-only — not portable to other providers", "Less flexible than LangGraph for complex graphs", "Smaller community ecosystem vs LangChain"],
+    whenToUse: "OpenAI-only stacks. Teams that want minimal abstraction and tight OpenAI integration.",
+    stacksWith: "OpenAI API, function calling, Assistants API",
+  },
+  {
+    id: "google_adk", name: "Google ADK", tag: "AGENTS", color: "#ef4444",
+    tagline: "Google's Agent Development Kit — Gemini-native agents",
+    use: "Building agents on Gemini models. Native integration with Google Cloud, Vertex AI, and Google Search. Multi-agent orchestration within Google's ecosystem.",
+    avoid: "Non-Google stacks. Still early — ecosystem is much smaller than LangChain.",
+    strengths: ["Native Gemini tool calling and multimodal support", "Tight integration with Vertex AI, BigQuery, Google Search", "Deployment-ready with Cloud Run / Vertex AI Agent Engine", "Growing fast — Google is investing heavily"],
+    weaknesses: ["Gemini-centric — limited portability", "Smaller community than LangChain", "Docs and examples are thinner than alternatives", "Fewer connectors to non-Google data sources"],
+    whenToUse: "Gemini model stacks. Google Cloud infrastructure. Teams building on Workspace / GCP.",
+    stacksWith: "Gemini, Vertex AI, Google Cloud, BigQuery",
+  },
+];
+
+const DECISION_QUESTIONS = [
+  {
+    id: "q1", question: "What's your primary use case?",
+    options: [
+      { label: "RAG / Q&A pipeline", maps: ["langchain", "langsmith"] },
+      { label: "Multi-step agent with loops", maps: ["langgraph", "langsmith"] },
+      { label: "Single agent with tool use", maps: ["openai_sdk", "langchain"] },
+      { label: "Google Cloud / Gemini stack", maps: ["google_adk", "langsmith"] },
+    ],
+  },
+  {
+    id: "q2", question: "Do you need observability and evals?",
+    options: [
+      { label: "Yes — production system", maps: ["langsmith"] },
+      { label: "Not yet — still prototyping", maps: [] },
+    ],
+  },
+  {
+    id: "q3", question: "Which LLM provider are you using?",
+    options: [
+      { label: "OpenAI (GPT-4o etc.)", maps: ["openai_sdk", "langchain", "langgraph"] },
+      { label: "Anthropic (Claude)", maps: ["langchain", "langgraph", "langsmith"] },
+      { label: "Google (Gemini)", maps: ["google_adk", "langchain"] },
+      { label: "Multiple / open source", maps: ["langchain", "langgraph"] },
+    ],
+  },
+];
+
+function FrameworkLandscape() {
+  const [view, setView] = useState("compare");
+  const [selectedFw, setSelectedFw] = useState("langchain");
+  const [answers, setAnswers] = useState({});
+  const [showResult, setShowResult] = useState(false);
+
+  const fw = FRAMEWORKS.find(f => f.id === selectedFw);
+
+  // Compute recommendation from wizard answers
+  const scoredFws = useMemo(() => {
+    const scores = {};
+    FRAMEWORKS.forEach(f => { scores[f.id] = 0; });
+    Object.values(answers).forEach(maps => {
+      maps.forEach(id => { if (scores[id] !== undefined) scores[id]++; });
+    });
+    return FRAMEWORKS.map(f => ({ ...f, score: scores[f.id] })).sort((a, b) => b.score - a.score);
+  }, [answers]);
+
+  const allAnswered = Object.keys(answers).length === DECISION_QUESTIONS.length;
+
+  return (
+    <div className="space-y-5">
+      <HowTo
+        objective="Understand which AI agent framework fits your use case — and how LangChain, LangGraph, LangSmith, OpenAI SDK, and Google ADK relate to each other."
+        steps={[
+          "Browse the comparison table to understand what each framework actually does",
+          "Click any framework for strengths, weaknesses, and when to use it",
+          "Or use the Decision Wizard — answer 3 questions to get a recommendation",
+        ]}
+      />
+
+      <div className="flex gap-1.5">
+        {[{id:"compare",label:"Framework Deep-Dive"},{id:"wizard",label:"Decision Wizard"}].map(v => (
+          <button key={v.id} onClick={() => { setView(v.id); setShowResult(false); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === v.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {view === "compare" && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-1.5">
+            {FRAMEWORKS.map(f => (
+              <button key={f.id} onClick={() => setSelectedFw(f.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${selectedFw === f.id ? "text-white" : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-white"}`}
+                style={selectedFw === f.id ? { borderColor: f.color, background: f.color + "22" } : {}}>
+                <span className="text-[9px] font-mono px-1 py-0.5 rounded mr-1.5" style={{ background: f.color + "33", color: f.color }}>{f.tag}</span>
+                {f.name}
+              </button>
+            ))}
+          </div>
+
+          {fw && (
+            <div className="space-y-3">
+              <div className="rounded-xl border p-4 space-y-1" style={{ borderColor: fw.color + "44", background: fw.color + "0d" }}>
+                <div className="text-sm font-black text-white">{fw.name}</div>
+                <div className="text-xs text-zinc-400">{fw.tagline}</div>
+                <div className="text-xs text-zinc-300 mt-2 leading-relaxed">{fw.use}</div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-xl border border-emerald-800/30 bg-emerald-950/10 p-3">
+                  <div className="text-[10px] font-bold text-emerald-400 uppercase mb-2">Strengths</div>
+                  <div className="space-y-1">
+                    {fw.strengths.map((s, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-xs text-zinc-300">
+                        <span className="text-emerald-500 shrink-0 mt-0.5">✓</span>{s}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-red-800/30 bg-red-950/10 p-3">
+                  <div className="text-[10px] font-bold text-red-400 uppercase mb-2">Weaknesses</div>
+                  <div className="space-y-1">
+                    {fw.weaknesses.map((w, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-xs text-zinc-300">
+                        <span className="text-red-500 shrink-0 mt-0.5">✗</span>{w}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-3">
+                  <div className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Don't use for</div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">{fw.avoid}</p>
+                </div>
+                <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-3">
+                  <div className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Stacks with</div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">{fw.stacksWith}</p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-violet-800/30 bg-violet-950/10 p-3">
+                <span className="text-[10px] font-bold text-violet-400 uppercase">When to use: </span>
+                <span className="text-xs text-zinc-300">{fw.whenToUse}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Quick comparison table */}
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 overflow-x-auto">
+            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-3">Quick Comparison</div>
+            <table className="w-full text-xs min-w-[480px]">
+              <thead>
+                <tr className="border-b border-zinc-700">
+                  <th className="text-left text-zinc-500 pb-2 pr-4">Framework</th>
+                  <th className="text-center text-zinc-500 pb-2 px-2">Type</th>
+                  <th className="text-center text-zinc-500 pb-2 px-2">Best for</th>
+                  <th className="text-center text-zinc-500 pb-2 px-2">LLM-agnostic</th>
+                  <th className="text-center text-zinc-500 pb-2 pl-2">Maturity</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800">
+                {[
+                  { name: "LangChain", type: "Framework", best: "RAG, single agents", agnostic: "✓", maturity: "★★★★★" },
+                  { name: "LangGraph", type: "Orchestration", best: "Multi-agent graphs", agnostic: "✓", maturity: "★★★★☆" },
+                  { name: "LangSmith", type: "Observability", best: "Tracing + evals", agnostic: "✓", maturity: "★★★★☆" },
+                  { name: "OpenAI SDK", type: "Framework", best: "OpenAI-native agents", agnostic: "✗", maturity: "★★★☆☆" },
+                  { name: "Google ADK", type: "Framework", best: "Gemini + GCP agents", agnostic: "✗", maturity: "★★★☆☆" },
+                ].map(row => (
+                  <tr key={row.name}>
+                    <td className="py-2 pr-4 text-zinc-200 font-semibold">{row.name}</td>
+                    <td className="py-2 px-2 text-center text-zinc-400">{row.type}</td>
+                    <td className="py-2 px-2 text-center text-zinc-400">{row.best}</td>
+                    <td className="py-2 px-2 text-center">{row.agnostic === "✓" ? <span className="text-emerald-400">✓</span> : <span className="text-red-400">✗</span>}</td>
+                    <td className="py-2 pl-2 text-center text-amber-400 font-mono text-[10px]">{row.maturity}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {view === "wizard" && (
+        <div className="space-y-4">
+          {DECISION_QUESTIONS.map((q, qi) => (
+            <div key={q.id} className="space-y-2">
+              <div className="text-xs font-bold text-white">{qi + 1}. {q.question}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {q.options.map(opt => {
+                  const isSelected = answers[q.id] === opt.maps;
+                  return (
+                    <button key={opt.label}
+                      onClick={() => { setAnswers(prev => ({ ...prev, [q.id]: opt.maps })); setShowResult(false); }}
+                      className={`text-left rounded-xl border px-3 py-2 text-xs transition-all ${isSelected ? "border-violet-500 bg-violet-950/30 text-white" : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-600"}`}>
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {allAnswered && !showResult && (
+            <button onClick={() => setShowResult(true)}
+              className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold transition-all">
+              Get Recommendation →
+            </button>
+          )}
+
+          {showResult && (
+            <div className="space-y-2">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Recommended stack:</div>
+              {scoredFws.filter(f => f.score > 0).map((f, i) => (
+                <div key={f.id} className={`rounded-xl border p-3 ${i === 0 ? "" : "opacity-70"}`}
+                  style={{ borderColor: f.color + (i === 0 ? "88" : "33"), background: f.color + (i === 0 ? "18" : "0a") }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {i === 0 && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-violet-600 text-white">PRIMARY</span>}
+                      <span className="text-xs font-bold text-white">{f.name}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-zinc-400">{f.score} match{f.score !== 1 ? "es" : ""}</span>
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-1">{f.whenToUse}</p>
+                </div>
+              ))}
+              {scoredFws.every(f => f.score === 0) && (
+                <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-xs text-zinc-400">Answer all questions above to get a recommendation.</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const AGENTS_MODULES = [
   { id: "react",      label: "ReAct Pattern",     tag: "LOOP",   group: "CORE",  component: ReActPattern        },
   { id: "tools",      label: "Tool Use Design",   tag: "TOOLS",  group: "CORE",  component: ToolUseDesign       },
@@ -1792,12 +2065,14 @@ const AGENTS_MODULES = [
   { id: "planning",   label: "Planning Patterns", tag: "PLAN",   group: "SCALE", component: PlanningPatterns    },
   { id: "design",     label: "Design Challenge",  tag: "BUILD",  group: "SIM",   component: AgentDesignChallenge },
   { id: "simulator",  label: "Loop Simulator",    tag: "PLAY",   group: "SIM",   component: AgentLoopSimulator  },
+  { id: "frameworks", label: "Framework Landscape", tag: "STACK", group: "ECOSYSTEM", component: FrameworkLandscape },
 ];
 
 const AGENTS_GROUPS = [
-  { id: "CORE",  label: "CORE",  color: "#6366f1" },
-  { id: "SCALE", label: "SCALE", color: "#f59e0b" },
-  { id: "SIM",   label: "SIM",   color: "#22c55e" },
+  { id: "CORE",      label: "CORE",      color: "#6366f1" },
+  { id: "SCALE",     label: "SCALE",     color: "#f59e0b" },
+  { id: "SIM",       label: "SIM",       color: "#22c55e" },
+  { id: "ECOSYSTEM", label: "ECOSYSTEM", color: "#06b6d4" },
 ];
 
 export default function AgentsApp({ initialModule, onModuleVisit }) {

@@ -1083,6 +1083,161 @@ function RAGArchitecturesDiagram() {
   );
 }
 
+// ─── 7. PRODUCTION RAG FLOW ──────────────────────────────────────────────────
+const PROD_RAG_MODES = ["ingest", "query"];
+const PROD_RAG_INGEST_STAGES = [
+  { id: "scheduler", label: "Scheduler", sublabel: "Airflow / cron", color: "#06b6d4",
+    desc: "Triggers incremental ingestion jobs — daily or on document update. Tracks which docs are new/changed since last run.",
+    detail: "Production pattern: never full re-index on every run. Delta ingestion only — compare doc hashes to detect changes." },
+  { id: "loader", label: "Doc Loader", sublabel: "S3 / GDrive / DB", color: "#3b82f6",
+    desc: "Pulls raw documents from your source systems — PDFs, web pages, database rows, Notion pages.",
+    detail: "Connector quality matters. A slow or flaky loader is the #1 source of missing documents in production RAG." },
+  { id: "splitter", label: "Chunker", sublabel: "recursive / semantic", color: "#8b5cf6",
+    desc: "Splits documents into chunks. Strategy affects retrieval quality more than almost any other config choice.",
+    detail: "Recursive splitting by sentence/paragraph boundary beats fixed-size. chunk_size=512, chunk_overlap=50 is a reasonable starting point. Test on your actual documents." },
+  { id: "embedder", label: "Embedder", sublabel: "text-embedding-3", color: "#f59e0b",
+    desc: "Encodes each chunk into a dense vector. This step is batched — 100s of chunks per API call.",
+    detail: "Cost: ~$0.02 per 1M tokens with text-embedding-3-small. Cache embeddings for unchanged chunks — re-embedding is waste." },
+  { id: "vdb_write", label: "Vector DB", sublabel: "Pinecone / Weaviate / pgvector", color: "#22c55e",
+    desc: "Upserts vectors with metadata — source URL, timestamp, doc_id. Metadata is critical for filtering and staleness detection.",
+    detail: "Always store: doc_id, chunk_index, ingested_at, source. Without these, you can't do targeted re-ingestion or staleness checks." },
+  { id: "monitor_i", label: "Monitoring", sublabel: "LangSmith + alerts", color: "#6366f1",
+    desc: "Tracks ingestion job health — docs processed, failures, chunk count, embedding cost. Alerts on drift.",
+    detail: "Alert on: job failure, corpus size shrink (accidental deletion), embedding cost spike (document format change)." },
+];
+
+const PROD_RAG_QUERY_STAGES = [
+  { id: "query_in", label: "User Query", sublabel: "UI / API", color: "#06b6d4",
+    desc: "Incoming query from user or downstream system. Validate, sanitize, log.",
+    detail: "Log every query with a trace_id from the start. If something breaks downstream, you need to trace back to the original input." },
+  { id: "embed_q", label: "Query Embed", sublabel: "same model as index", color: "#f59e0b",
+    desc: "Embed the query using the same model used to index the corpus. Model mismatch = retrieval failure.",
+    detail: "Critical: if you upgrade the embedding model for new documents, you must re-embed everything. Partial migration breaks retrieval silently." },
+  { id: "retriever_q", label: "LangGraph Agent", sublabel: "plan → retrieve → reflect", color: "#6366f1",
+    desc: "A LangGraph node decides retrieval strategy — simple lookup, multi-hop, or tool call. Can loop if first retrieval is insufficient.",
+    detail: "Production pattern: retrieval agent checks retrieved context quality. Low-confidence retrieval triggers a second pass with a rewritten query." },
+  { id: "reranker", label: "Reranker", sublabel: "cross-encoder optional", color: "#8b5cf6",
+    desc: "Re-scores retrieved chunks by relevance to the query. Improves precision, adds ~100ms.",
+    detail: "Worth the latency when top_k > 5 and precision matters. Skip for low-stakes or latency-sensitive use cases." },
+  { id: "llm_q", label: "LLM", sublabel: "Claude / GPT-4o", color: "#3b82f6",
+    desc: "Generates the final answer from retrieved context. System prompt enforces groundedness: 'Only answer from the provided context.'",
+    detail: "Always include: instructions to say 'I don't know' when context is insufficient. Never let the model extrapolate beyond retrieved context." },
+  { id: "langsmith_q", label: "LangSmith", sublabel: "trace + feedback", color: "#22c55e",
+    desc: "Full trace logged — query, retrieved chunks, LLM input/output, latency breakdown, token cost.",
+    detail: "Every production query should produce a LangSmith trace. Low user feedback scores surface bad retrievals automatically." },
+];
+
+function ProductionRAGFlow() {
+  const [mode, setMode] = useState("ingest");
+  const [step, setStep] = useState(-1);
+  const [playing, setPlaying] = useState(false);
+  const intervalRef = useRef(null);
+
+  const stages = mode === "ingest" ? PROD_RAG_INGEST_STAGES : PROD_RAG_QUERY_STAGES;
+
+  function start() { setStep(0); setPlaying(true); }
+  function reset() { setStep(-1); setPlaying(false); clearInterval(intervalRef.current); }
+
+  useEffect(() => {
+    if (playing) {
+      intervalRef.current = setInterval(() => {
+        setStep(prev => {
+          if (prev >= stages.length - 1) { setPlaying(false); return prev; }
+          return prev + 1;
+        });
+      }, 1800);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [playing, stages.length]);
+
+  useEffect(() => { reset(); }, [mode]);
+
+  const currentStage = step >= 0 && step < stages.length ? stages[step] : null;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-2">
+        {[{id:"ingest",label:"Ingestion Pipeline"},{id:"query",label:"Query Pipeline"}].map(m => (
+          <button key={m.id} onClick={() => setMode(m.id)}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Stage flow */}
+      <div className="overflow-x-auto pb-2">
+        <div className="flex items-center gap-1 min-w-max">
+          {stages.map((s, i) => (
+            <div key={s.id} className="flex items-center gap-1">
+              <StageBox label={s.label} sublabel={s.sublabel} active={step >= i} color={s.color} pulse={step === i} minW="86px">
+                {step === i && <div className="text-[10px] text-zinc-400 leading-tight mt-1">{s.desc}</div>}
+              </StageBox>
+              {i < stages.length - 1 && <Arrow active={step > i} color={stages[i + 1].color} />}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Active stage detail */}
+      {currentStage && (
+        <div className="rounded-xl border p-4 space-y-2 flow-fadein"
+          style={{ borderColor: currentStage.color + "55", background: currentStage.color + "0d" }}>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-white">{currentStage.label}</span>
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ background: currentStage.color + "33", color: currentStage.color }}>{currentStage.sublabel}</span>
+          </div>
+          <p className="text-xs text-zinc-300 leading-relaxed">{currentStage.detail}</p>
+        </div>
+      )}
+
+      {step === -1 && (
+        <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 text-xs text-zinc-400">
+          {mode === "ingest"
+            ? "The ingestion pipeline runs on a schedule — not per query. Its quality determines everything downstream. A bad chunk that enters the index will return bad answers indefinitely."
+            : "The query pipeline runs on every user request. Latency here is visible to the user. LangGraph agent adds intelligence — it can retry retrieval, rewrite queries, or call tools."}
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        {step === -1 && <button onClick={start} className="px-4 py-1.5 rounded text-white text-xs font-bold bg-violet-600 hover:bg-violet-500 transition-all">▶ Run pipeline</button>}
+        {playing && <button onClick={() => { setPlaying(false); clearInterval(intervalRef.current); }} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">⏸ Pause</button>}
+        {!playing && step > 0 && step < stages.length - 1 && <button onClick={() => setPlaying(true)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">▶ Resume</button>}
+        {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold">↺ Reset</button>}
+      </div>
+
+      {/* Architecture callouts */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="rounded-xl border border-amber-800/30 bg-amber-950/10 p-4">
+          <div className="text-[10px] font-bold text-amber-400 uppercase mb-2">Key production decisions</div>
+          <div className="space-y-1 text-xs text-zinc-300">
+            <div>• <strong>Delta ingestion</strong> — never full re-index unless corpus changes</div>
+            <div>• <strong>Embedding cache</strong> — skip re-embedding unchanged documents</div>
+            <div>• <strong>LangGraph for retrieval</strong> — enables query rewriting and multi-hop</div>
+            <div>• <strong>LangSmith on every run</strong> — trace both pipelines, not just queries</div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-red-800/30 bg-red-950/10 p-4">
+          <div className="text-[10px] font-bold text-red-400 uppercase mb-2">What breaks in production</div>
+          <div className="space-y-1 text-xs text-zinc-300">
+            <div>• Embedding model upgrade without full re-index</div>
+            <div>• Scheduler silently failing — stale index undetected</div>
+            <div>• Metadata not stored — can't filter by date or source</div>
+            <div>• No LangSmith tracing — can't diagnose retrieval failures</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-800">
+        <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mr-1 self-center">Go deeper →</span>
+        <button onClick={() => window.location.hash = "agents"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Agents: Framework Landscape</button>
+        <button onClick={() => window.location.hash = "systems"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Systems: LangSmith Lab</button>
+        <button onClick={() => window.location.hash = "systems"} className="text-[11px] px-3 py-1 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400 transition-all">Systems: RAG Lab</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── FLOWS APP ────────────────────────────────────────────────────────────────
 const FLOW_TABS = [
   { id: "rag",         label: "RAG Pipeline",        tag: "FLOW",    component: RAGFlowDiagram,
@@ -1103,6 +1258,9 @@ const FLOW_TABS = [
   { id: "ragarch",    label: "RAG Architectures",   tag: "PATTERNS", component: RAGArchitecturesDiagram,
     desc: "Hybrid RAG, Corrective RAG, and Agentic RAG — animated pipelines with when-to-use guidance for each.",
     reflection: "When would Corrective RAG hurt performance compared to vanilla RAG — not help it?" },
+  { id: "prodrag",    label: "Production RAG",      tag: "PROD",     component: ProductionRAGFlow,
+    desc: "A production RAG system has two distinct pipelines — ingestion (scheduled) and query (real-time). This shows both, stage by stage.",
+    reflection: "If the embedding model was upgraded for new documents but old documents weren't re-embedded — what retrieval failure pattern would you expect?" },
 ];
 
 export default function FlowsApp() {
