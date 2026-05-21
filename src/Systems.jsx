@@ -6049,7 +6049,7 @@ function TransformerArchitecture() {
                 <g key={a.tok}>
                   <rect x={60+a.idx*90} y={234} width={70} height={14} rx="3" fill="#27272a"/>
                   <rect x={60+a.idx*90} y={234} width={0} height={14} rx="3" fill="#fbbf24"
-                    style={{"--w":`${a.w*100}%`} as React.CSSProperties}
+                    style={{"--w":`${a.w*100}%`}}
                     className="w-fill"/>
                   <text x={95+a.idx*90} y={244} textAnchor="middle" fontSize="8" fill="#e4e4e7">{a.w.toFixed(2)}</text>
                 </g>
