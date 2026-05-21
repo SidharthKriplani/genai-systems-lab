@@ -183,9 +183,8 @@ onNavigate({ tab: "groundtruth", postId: "post-id" })
 
 ## Known open issues (check AUDITS.md for full list)
 
-- Stat numbers stale in `index.html` and `og:description` — say "126+" but should be 140+
 - PrepLab text question keyword grading marks correct answers wrong if vocabulary differs
 - PrepLab → GT `readMore` links open the tab, not the specific post (needs `postId`)
 - Module endings are silent — no ✓ Done state, no next-step CTA inside module pages
 - `consult` tab exists in App.jsx but has no nav entry point — effectively hidden
-- Hero "Learn exactly why." uses `text-violet-400` in app but cyan in OG image — decision pending
+- Home.jsx STATS array GT count not yet synced (index.html fixed; Home.jsx still needs recount)

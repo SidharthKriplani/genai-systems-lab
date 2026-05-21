@@ -113,8 +113,8 @@ Run these periodically. Pick one per session, or stack them after major build ph
 | 2 | Duplicate post keys in groundTruthPosts.js — later key silently overwrote earlier | groundTruthPosts.js | Pre-May 2026 | ✅ Fixed |
 | 3 | `finetuning` RELATED_GT key defined twice in Systems.jsx — second definition overwrote first, losing `lora-in-practice` from cross-links | Systems.jsx | May 2026 | ✅ Fixed |
 | 4 | `case "refs":` block in GroundTruth.jsx renderer was a dead branch — all `{ t: "refs" }` blocks rendered nothing silently | GroundTruth.jsx | May 2026 | ✅ Fixed (case renamed + styled renderer added) |
-| 5 | Stat numbers inconsistent across files: index.html says "126+ modules", Home.jsx STATS says 145 GT posts, IDEAS.md says 202+ posts | Multiple | May 2026 | ⚠️ Open |
-| 6 | `og:description` in index.html still says "126+ interactive modules" — months out of date | index.html | May 2026 | ⚠️ Open |
+| 5 | Stat numbers inconsistent across files: index.html says "126+ modules", Home.jsx STATS says 145 GT posts, IDEAS.md says 202+ posts | Multiple | May 2026 | ✅ Fixed — index.html updated to 140+ modules, 202+ posts |
+| 6 | `og:description` in index.html still says "126+ interactive modules" — months out of date | index.html | May 2026 | ✅ Fixed |
 
 **Outstanding:**
 - A quarterly stat sync pass is needed across: `index.html` meta description, `og:description`, `Home.jsx` STATS array, `twitter:description`, structured data JSON-LD.
@@ -195,7 +195,7 @@ Run these periodically. Pick one per session, or stack them after major build ph
 | 2 | Tab sequence was historical order of building — not user journey order | ✅ Resequenced to LEARN → BUILD → GROW flow |
 | 3 | Tab labels were technical ("Agents", "Fluency") with no context | ✅ Renamed with sub-labels in home module map |
 | 4 | No visual group separation in the nav bar | ✅ Added group headers (LEARN / BUILD / GROW) in desktop nav |
-| 5 | PrepLab not in SHORTCUT_TABS keyboard shortcuts | ⚠️ Still open — PrepLab missing from `SHORTCUT_TABS` array |
+| 5 | PrepLab not in SHORTCUT_TABS keyboard shortcuts | ✅ Fixed — `"preplab"` added to `SHORTCUT_TABS` array in App.jsx |
 
 **Outstanding:**
 - 14 tabs is still too many for a flat list. GROUP headers exist in the sidebar but the top nav bar remains flat. (See Creativity Audit, Section B1.)
@@ -280,10 +280,10 @@ Run these periodically. Pick one per session, or stack them after major build ph
 |---|---|---|
 | 1 | `public/og-image.png` was a screenshot of the app UI — showed the old "11 Tabs, 75+ Modules" design, not the current hero | ✅ Replaced with bold hero design: "AI systems break in production. Learn exactly why." in PIL-generated 1200×630 PNG |
 | 2 | `og:image` and `twitter:image` both pointed to `/og-image.png` — now updated | ✅ Resolved (same file) |
-| 3 | Meta description in `index.html` still says "126+ interactive modules" | ⚠️ Open |
-| 4 | `og:description` still says "126+ interactive modules" | ⚠️ Open |
-| 5 | Hero text in live app uses `text-violet-400`; OG image uses cyan — color inconsistency | ⚠️ Open — decision pending (commit to violet or introduce cyan consistently) |
-| 6 | `twitter:description` says "169+ Ground Truth posts" — now 202+ | ⚠️ Open |
+| 3 | Meta description in `index.html` still says "126+ interactive modules" | ✅ Fixed — updated to 140+ modules, 202+ posts |
+| 4 | `og:description` still says "126+ interactive modules" | ✅ Fixed — updated to 140+ modules, 202+ posts |
+| 5 | Hero text in live app uses `text-violet-400`; OG image uses cyan — color inconsistency | ✅ Fixed — Home.jsx changed to `text-cyan-400` to match OG image |
+| 6 | `twitter:description` says "169+ Ground Truth posts" — now 202+ | ✅ Fixed — updated to 202+ |
 
 ---
 
@@ -317,7 +317,7 @@ Run these periodically. Pick one per session, or stack them after major build ph
 
 **A1. Hero color inconsistency between live app and OG image**
 Live app: `text-violet-400`. OG image (now updated): cyan. Decision needed — commit to one.
-*Status: ⚠️ Open*
+*Status: ✅ Fixed — Home.jsx changed to `text-cyan-400`; both now cyan*
 
 **A2. Home page scroll is a marathon**
 Hero → Start Here Journey → Stats → Failure Mode Chips → Social Proof → Daily Tip → Learning Paths → Module Map → Role Toggle → Concept Graph → Newsletter → Footer. Fold should end at primary CTA + concept graph.
@@ -351,7 +351,7 @@ LEARN / BUILD / GROW grouping from home page doesn't carry through to the nav ba
 
 **B2. PrepLab not in SHORTCUT_TABS**
 183 questions + spaced repetition is a flagship feature. `SHORTCUT_TABS` array doesn't include it — not keyboard-accessible and harder to discover.
-*Status: ⚠️ Open*
+*Status: ✅ Fixed — `"preplab"` added to App.jsx SHORTCUT_TABS*
 
 **B3. Consultation tab is dead weight**
 `consult` topView exists, has a component, is not in SHORTCUT_TABS, not in any learning path, not on home page. Either remove or give a visible entry point.
@@ -415,7 +415,7 @@ PrepLab has curated hand-written questions. GT `generateQuiz` auto-generates low
 
 **F1. Stat numbers stale and inconsistent**
 `index.html`: "126+ modules." `og:description`: "126+ modules." `Home.jsx STATS`: 145 GT posts. `IDEAS.md`: 202+ posts. None agree. Need a quarterly sync.
-*Status: ⚠️ Open*
+*Status: ✅ Fixed — index.html (meta, og, twitter) updated to 140+ modules, 202+ posts. Home.jsx STATS still needs a manual count check.*
 
 **F2. SalaryCalculator is the most shareable tool and is buried**
 Imported in Career.jsx and AIPM.jsx — doesn't appear in hero, stats, or home module map. If it has real India AI salary data, this is a viral shareable tool that's invisible.
