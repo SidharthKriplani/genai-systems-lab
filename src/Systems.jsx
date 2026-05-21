@@ -8582,6 +8582,742 @@ function ConstrainedGeneration() {
   );
 }
 
+// ─── FLASH ATTENTION ──────────────────────────────────────────────────────────
+function FlashAttentionHowItWorks() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 space-y-3">
+        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm uppercase tracking-wide">Memory Access Pattern</h3>
+        <div className="space-y-3">
+          <div className="border border-red-300 dark:border-red-700 rounded-lg p-3 bg-red-50 dark:bg-red-900/20">
+            <div className="text-xs font-bold text-red-700 dark:text-red-400 mb-1">Standard Attention: O(N²) HBM reads</div>
+            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+              <span className="bg-red-200 dark:bg-red-800 px-2 py-1 rounded font-mono">HBM</span>
+              <span>→</span>
+              <span className="bg-orange-200 dark:bg-orange-800 px-2 py-1 rounded font-mono">N×N Matrix</span>
+              <span>→</span>
+              <span className="bg-red-200 dark:bg-red-800 px-2 py-1 rounded font-mono">HBM</span>
+            </div>
+            <div className="text-xs text-red-600 dark:text-red-400 mt-1">Full attention matrix materialized in slow HBM</div>
+          </div>
+          <div className="border border-green-300 dark:border-green-700 rounded-lg p-3 bg-green-50 dark:bg-green-900/20">
+            <div className="text-xs font-bold text-green-700 dark:text-green-400 mb-1">Flash Attention: tiled, O(N) HBM reads</div>
+            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+              <span className="bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono">HBM</span>
+              <span>→</span>
+              <span className="bg-blue-200 dark:bg-blue-800 px-2 py-1 rounded font-mono">SRAM tile</span>
+              <span>→</span>
+              <span className="bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono">HBM</span>
+            </div>
+            <div className="text-xs text-green-600 dark:text-green-400 mt-1">Tiles computed in fast SRAM, never full matrix in HBM</div>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm uppercase tracking-wide">Key Ideas</h3>
+        {[
+          { title: "Tiling", desc: "Q, K, V split into blocks that fit in on-chip SRAM. Attention computed block-by-block, eliminating large intermediate reads/writes." },
+          { title: "Recomputation", desc: "Forward pass saves only softmax statistics (not full attention matrix). Backward pass recomputes attention from tiles — trades compute for memory." },
+          { title: "No N×N materialization", desc: "The O(N²) attention score matrix is never written to HBM. Peak memory drops from O(N²) to O(N), enabling much longer sequences." },
+          { title: "IO Complexity", desc: "Standard attention: O(N² / M) HBM reads where M = SRAM size. FlashAttention: O(N²d / M) — IO-optimal for standard attention." },
+        ].map((item, i) => (
+          <div key={i} className="flex gap-3">
+            <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{i + 1}</div>
+            <div>
+              <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">{item.title}</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">{item.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FlashAttentionVersions() {
+  const rows = [
+    { v: "FlashAttention v1 (2022)", key: "Tiling + recomputation, exact attention", speed: "2–4×", notes: "First IO-optimal impl, A100 optimized" },
+    { v: "FlashAttention v2 (2023)", key: "Better parallelism, fewer non-matmul ops", speed: "2×v1 (≈9× PyTorch)", notes: "Splits Q across thread blocks, less warp sync" },
+    { v: "FlashAttention v3 (2024)", key: "Async pipeline, FP8 support, Hopper GPU", speed: "1.5–2×v2", notes: "H100 only, uses Tensor Memory Accelerator" },
+    { v: "MQA (Multi-Query Attn)", key: "Single K/V head shared across all Q heads", speed: "↑ KV cache throughput", notes: "PaLM, Falcon — smaller KV cache" },
+    { v: "GQA (Grouped-Query Attn)", key: "G groups of K/V heads for Q heads", speed: "↑ Quality vs MQA", notes: "LLaMA-2/3, Mistral — best of both" },
+  ];
+  const variants = [
+    { name: "MHA", desc: "Multi-Head Attention", heads: "H Q = H K = H V", color: "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700" },
+    { name: "MQA", desc: "Multi-Query Attention", heads: "H Q heads, 1 K/V", color: "bg-orange-100 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700" },
+    { name: "GQA", desc: "Grouped-Query Attention", heads: "H Q heads, G K/V groups", color: "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700" },
+  ];
+  return (
+    <div className="space-y-5">
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-gray-100 dark:bg-gray-800">
+              {["Version", "Key Innovation", "Speed vs Baseline", "Notes"].map(h => (
+                <th key={h} className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
+                <td className="px-3 py-2 font-medium text-gray-800 dark:text-gray-200">{r.v}</td>
+                <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.key}</td>
+                <td className="px-3 py-2 text-indigo-600 dark:text-indigo-400 font-mono">{r.speed}</td>
+                <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{r.notes}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {variants.map((v, i) => (
+          <div key={i} className={`border rounded-lg p-3 ${v.color}`}>
+            <div className="font-bold text-sm text-gray-800 dark:text-gray-100">{v.name}</div>
+            <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{v.desc}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">{v.heads}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FlashAttention() {
+  const [tab, setTab] = useState(0);
+  const tabs = ["How It Works", "v1→v3 + MHA/GQA"];
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+      {tab === 0 && <FlashAttentionHowItWorks />}
+      {tab === 1 && <FlashAttentionVersions />}
+    </div>
+  );
+}
+
+// ─── QUANTIZATION ENGINEERING ─────────────────────────────────────────────────
+function QuantizationMethods() {
+  const rows = [
+    { method: "FP16 (baseline)", bits: "16", vram: "1×", quality: "None", best: "Training, high-quality inference" },
+    { method: "INT8 (bitsandbytes)", bits: "8", vram: "0.5×", quality: "Minimal", best: "Large models on smaller GPUs" },
+    { method: "GPTQ (4-bit)", bits: "4", vram: "0.25×", quality: "Low", best: "Post-training quant, GPU serving" },
+    { method: "AWQ (4-bit)", bits: "4", vram: "0.25×", quality: "Very low", best: "Activation-aware, better than GPTQ" },
+    { method: "GGUF (2–8 bit)", bits: "2–8", vram: "0.1–0.5×", quality: "Varies", best: "CPU/llama.cpp, local inference" },
+    { method: "NF4 (QLoRA)", bits: "4", vram: "0.25×", quality: "Low", best: "Fine-tuning on consumer GPU" },
+  ];
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="bg-gray-100 dark:bg-gray-800">
+            {["Method", "Bits", "VRAM vs FP16", "Quality Loss", "Best For"].map(h => (
+              <th key={h} className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
+              <td className="px-3 py-2 font-medium text-gray-800 dark:text-gray-200">{r.method}</td>
+              <td className="px-3 py-2 font-mono text-indigo-600 dark:text-indigo-400">{r.bits}</td>
+              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.vram}</td>
+              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.quality}</td>
+              <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{r.best}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function QuantizationCalculator() {
+  const [params, setParams] = useState(7);
+  const [precision, setPrecision] = useState("fp16");
+  const precisions = [
+    { value: "fp32", label: "FP32 (4 bytes)", bytes: 4 },
+    { value: "fp16", label: "FP16 (2 bytes)", bytes: 2 },
+    { value: "int8", label: "INT8 (1 byte)", bytes: 1 },
+    { value: "int4", label: "INT4 (0.5 bytes)", bytes: 0.5 },
+  ];
+  const sel = precisions.find(p => p.value === precision);
+  const gb = (params * 1e9 * sel.bytes) / 1e9;
+  const fits = [
+    { label: "8 GB GPU (RTX 3070/4060)", ok: gb <= 8 },
+    { label: "16 GB GPU (RTX 3080/4080)", ok: gb <= 16 },
+    { label: "24 GB GPU (RTX 3090/4090)", ok: gb <= 24 },
+    { label: "40 GB GPU (A100-40)", ok: gb <= 40 },
+    { label: "80 GB GPU (A100-80/H100)", ok: gb <= 80 },
+  ];
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Model params: <span className="font-bold text-indigo-600 dark:text-indigo-400">{params}B</span></label>
+          <input type="range" min={1} max={70} step={1} value={params} onChange={e => setParams(Number(e.target.value))}
+            className="w-full accent-indigo-600" />
+          <div className="flex justify-between text-xs text-gray-400">
+            <span>1B</span><span>70B</span>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Precision</label>
+          <select value={precision} onChange={e => setPrecision(e.target.value)}
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+            {precisions.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 text-center">
+        <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{gb.toFixed(1)} GB</div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">{params}B params × {sel.bytes} bytes = {gb.toFixed(1)} GB VRAM needed</div>
+      </div>
+      <div className="space-y-2">
+        <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">Fits on:</div>
+        {fits.map((f, i) => (
+          <div key={i} className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg ${f.ok ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"}`}>
+            <span>{f.ok ? "✓" : "✗"}</span>
+            <span>{f.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QuantizationEngineering() {
+  const [tab, setTab] = useState(0);
+  const tabs = ["Methods", "Memory Calculator"];
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+      {tab === 0 && <QuantizationMethods />}
+      {tab === 1 && <QuantizationCalculator />}
+    </div>
+  );
+}
+
+// ─── SERVING INFRASTRUCTURE ───────────────────────────────────────────────────
+function ServingFrameworks() {
+  const rows = [
+    { name: "vLLM", batching: "Continuous", backend: "PagedAttention", throughput: "★★★★★", best: "General GPU serving" },
+    { name: "SGLang", batching: "RadixAttention", backend: "CUDA graphs", throughput: "★★★★★", best: "Multi-call / agents" },
+    { name: "TensorRT-LLM", batching: "Dynamic", backend: "TensorRT", throughput: "★★★★★", best: "NVIDIA production" },
+    { name: "Triton Inference", batching: "Static", backend: "Custom", throughput: "★★★☆☆", best: "Custom kernels" },
+    { name: "Ollama", batching: "Static", backend: "llama.cpp", throughput: "★★★☆☆", best: "Local / laptop" },
+  ];
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="bg-gray-100 dark:bg-gray-800">
+            {["Framework", "Batching", "Backend", "Throughput", "Best For"].map(h => (
+              <th key={h} className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
+              <td className="px-3 py-2 font-bold text-gray-800 dark:text-gray-200">{r.name}</td>
+              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.batching}</td>
+              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.backend}</td>
+              <td className="px-3 py-2 text-yellow-500">{r.throughput}</td>
+              <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{r.best}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ServingConcepts() {
+  const concepts = [
+    {
+      title: "PagedAttention",
+      tag: "vLLM",
+      color: "border-indigo-400 dark:border-indigo-600",
+      header: "bg-indigo-50 dark:bg-indigo-900/20",
+      desc: "KV cache stored in non-contiguous memory \"pages\" (like OS virtual memory). Eliminates fragmentation and reservation waste.",
+      impact: "GPU memory utilization ↑40%, enables 24× more concurrent sequences",
+    },
+    {
+      title: "Continuous Batching",
+      tag: "vLLM / SGLang",
+      color: "border-blue-400 dark:border-blue-600",
+      header: "bg-blue-50 dark:bg-blue-900/20",
+      desc: "New requests join in-flight batches mid-sequence as slots free up. Removes padding waste from static batching.",
+      impact: "2–23× throughput improvement vs static batching at high load",
+    },
+    {
+      title: "Prefix Caching",
+      tag: "vLLM / SGLang",
+      color: "border-green-400 dark:border-green-600",
+      header: "bg-green-50 dark:bg-green-900/20",
+      desc: "Common prompt prefixes (system prompts, RAG context) cached across requests. KV states reused without recomputation.",
+      impact: "Reduces TTFT for repeated system prompts by 60–80%",
+    },
+  ];
+  return (
+    <div className="space-y-4">
+      {concepts.map((c, i) => (
+        <div key={i} className={`border-l-4 ${c.color} rounded-lg overflow-hidden`}>
+          <div className={`${c.header} px-4 py-2 flex items-center justify-between`}>
+            <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{c.title}</span>
+            <span className="text-xs bg-white dark:bg-gray-800 px-2 py-0.5 rounded text-gray-600 dark:text-gray-400">{c.tag}</span>
+          </div>
+          <div className="px-4 py-3 space-y-1">
+            <p className="text-sm text-gray-700 dark:text-gray-300">{c.desc}</p>
+            <p className="text-xs font-medium text-green-700 dark:text-green-400">{c.impact}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ServingInfra() {
+  const [tab, setTab] = useState(0);
+  const tabs = ["Frameworks", "Key Concepts"];
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+      {tab === 0 && <ServingFrameworks />}
+      {tab === 1 && <ServingConcepts />}
+    </div>
+  );
+}
+
+// ─── PROMPT CACHING ───────────────────────────────────────────────────────────
+function PromptCachingHowItWorks() {
+  const steps = [
+    { label: "Request", desc: "User sends prompt with large prefix" },
+    { label: "Hash prefix", desc: "System hashes the prefix tokens" },
+    { label: "Cache hit?", desc: "Check if KV states exist in cache" },
+    { label: "Serve / Compute", desc: "Return cached KV or compute fresh" },
+  ];
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start gap-2 overflow-x-auto pb-2">
+        {steps.map((s, i) => (
+          <div key={i} className="flex items-center gap-2 flex-shrink-0">
+            <div className="text-center">
+              <div className="w-28 bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300 dark:border-indigo-700 rounded-lg p-3">
+                <div className="text-xs font-bold text-indigo-700 dark:text-indigo-300">{s.label}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{s.desc}</div>
+              </div>
+            </div>
+            {i < steps.length - 1 && <span className="text-gray-400 text-lg flex-shrink-0">→</span>}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 space-y-2">
+          <div className="font-bold text-sm text-red-700 dark:text-red-400">Without Caching</div>
+          <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
+            <div>TTFT: full prefix recomputed every call</div>
+            <div>Cost: 100% of prefix tokens charged each time</div>
+            <div>Tokens processed: N × requests</div>
+          </div>
+        </div>
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 space-y-2">
+          <div className="font-bold text-sm text-green-700 dark:text-green-400">With Caching</div>
+          <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
+            <div>TTFT: dramatically reduced on cache hit</div>
+            <div>Cost: Anthropic 0.1×, OpenAI 0.5× on cached tokens</div>
+            <div>Tokens processed: only new tokens per request</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg px-4 py-2 text-xs text-yellow-800 dark:text-yellow-300">
+        Prefix must be ≥1024 tokens (Anthropic) to be eligible for caching. OpenAI caches automatically for prompts ≥1024 tokens.
+      </div>
+    </div>
+  );
+}
+
+function PromptCachingSavings() {
+  const [pct, setPct] = useState(70);
+  const [rps, setRps] = useState(1000);
+  const [costPer1M, setCostPer1M] = useState(3);
+  const avgTokens = 2000;
+  const totalTokensPerDay = rps * avgTokens;
+  const dailyCostNoCache = (totalTokensPerDay / 1e6) * costPer1M;
+  const cachedTokensPerDay = totalTokensPerDay * (pct / 100);
+  const uncachedTokensPerDay = totalTokensPerDay - cachedTokensPerDay;
+  const dailyCostWithCache = ((uncachedTokensPerDay / 1e6) * costPer1M) + ((cachedTokensPerDay / 1e6) * costPer1M * 0.1);
+  const savings = dailyCostNoCache - dailyCostWithCache;
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Repeated prefix: <span className="font-bold text-indigo-600 dark:text-indigo-400">{pct}%</span></label>
+          <input type="range" min={0} max={100} step={5} value={pct} onChange={e => setPct(Number(e.target.value))} className="w-full accent-indigo-600" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Requests / day</label>
+          <input type="number" value={rps} onChange={e => setRps(Number(e.target.value))}
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Cost per 1M tokens ($)</label>
+          <input type="number" value={costPer1M} step={0.5} onChange={e => setCostPer1M(Number(e.target.value))}
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200" />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 text-center">
+          <div className="text-xl font-bold text-red-600 dark:text-red-400">${dailyCostNoCache.toFixed(2)}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Daily cost (no cache)</div>
+        </div>
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center">
+          <div className="text-xl font-bold text-green-600 dark:text-green-400">${dailyCostWithCache.toFixed(2)}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Daily cost (with cache)</div>
+        </div>
+        <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 text-center">
+          <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">${savings.toFixed(2)}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Daily savings</div>
+        </div>
+      </div>
+      <div className="text-xs text-gray-400 dark:text-gray-500">Assumes avg 2,000 tokens/request. Cache read cost = 0.1× (Anthropic pricing).</div>
+    </div>
+  );
+}
+
+function PromptCaching() {
+  const [tab, setTab] = useState(0);
+  const tabs = ["How It Works", "Savings Calculator"];
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+      {tab === 0 && <PromptCachingHowItWorks />}
+      {tab === 1 && <PromptCachingSavings />}
+    </div>
+  );
+}
+
+// ─── FINE-TUNING WORKFLOWS ────────────────────────────────────────────────────
+function FineTuningMethodsTable() {
+  const rows = [
+    { method: "Full Fine-tune", trainable: "100%", vram: "4× model size", data: "10K–1M examples", use: "Max quality, large budget" },
+    { method: "LoRA", trainable: "0.1–1%", vram: "1.2× model size", data: "1K–100K", use: "Custom behavior, production" },
+    { method: "QLoRA", trainable: "0.1–1%", vram: "0.4× model size", data: "1K–100K", use: "Consumer GPU (24GB)" },
+    { method: "Prompt tuning", trainable: "<0.01%", vram: "1× model size", data: "100–10K", use: "Task prefix, frozen model" },
+    { method: "PEFT (IA³)", trainable: "~0.01%", vram: "1× model size", data: "100–1K", use: "Ultra-cheap adaptation" },
+  ];
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="bg-gray-100 dark:bg-gray-800">
+            {["Method", "Trainable Params", "VRAM", "Data Needed", "Use Case"].map(h => (
+              <th key={h} className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
+              <td className="px-3 py-2 font-bold text-gray-800 dark:text-gray-200">{r.method}</td>
+              <td className="px-3 py-2 font-mono text-indigo-600 dark:text-indigo-400">{r.trainable}</td>
+              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.vram}</td>
+              <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{r.data}</td>
+              <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{r.use}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function FineTuningWorkflowChecklist() {
+  const stages = [
+    { n: 1, label: "Curate dataset", note: "Quality > quantity. 1K clean examples beats 100K noisy ones.", color: "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-600" },
+    { n: 2, label: "Format to instruction format", note: "Alpaca / ChatML / ShareGPT — match the base model's expected format.", color: "bg-indigo-100 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-600" },
+    { n: 3, label: "Choose method", note: "QLoRA for 24GB GPUs. LoRA for production. Full FT for max quality.", color: "bg-violet-100 dark:bg-violet-900/30 border-violet-300 dark:border-violet-600" },
+    { n: 4, label: "Set hyperparams", note: "lr 1e-4 to 3e-4, epochs 1–3, LoRA rank 16–64, alpha = 2× rank.", color: "bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-600" },
+    { n: 5, label: "Train + monitor loss curve", note: "Watch for divergence or plateaus. Log with W&B or MLflow.", color: "bg-pink-100 dark:bg-pink-900/30 border-pink-300 dark:border-pink-600" },
+    { n: 6, label: "Evaluate on held-out set + benchmarks", note: "Use task-specific metrics + general benchmarks (MT-Bench, MMLU).", color: "bg-rose-100 dark:bg-rose-900/30 border-rose-300 dark:border-rose-600" },
+    { n: 7, label: "Merge LoRA → base (if applicable)", note: "Use merge_and_unload() for single model artifact before deployment.", color: "bg-orange-100 dark:bg-orange-900/30 border-orange-300 dark:border-orange-600" },
+    { n: 8, label: "Run safety evals before deployment", note: "Red-team, bias checks, refusal testing on adversarial inputs.", color: "bg-yellow-100 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-600" },
+  ];
+  return (
+    <div className="space-y-2">
+      {stages.map((s, i) => (
+        <div key={i} className={`border-l-4 ${s.color} rounded-lg px-4 py-2 flex gap-3 items-start`}>
+          <span className="font-black text-lg text-gray-400 dark:text-gray-500 flex-shrink-0 leading-tight">{s.n}</span>
+          <div>
+            <div className="font-semibold text-sm text-gray-800 dark:text-gray-100">{s.label}</div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">{s.note}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FineTuningWorkflows() {
+  const [tab, setTab] = useState(0);
+  const tabs = ["Methods Comparison", "Training Checklist"];
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+      {tab === 0 && <FineTuningMethodsTable />}
+      {tab === 1 && <FineTuningWorkflowChecklist />}
+    </div>
+  );
+}
+
+// ─── RLHF / DPO / PPO ────────────────────────────────────────────────────────
+function RLHFPipeline() {
+  const stages = [
+    {
+      n: "1", label: "SFT", full: "Supervised Fine-Tuning",
+      desc: "Train on high-quality human demonstrations. Model learns to follow instructions and match the expected response format.",
+      params: "lr 1e-5, 1–3 epochs, ~10K–100K examples",
+      color: "border-blue-400 dark:border-blue-600", bg: "bg-blue-50 dark:bg-blue-900/20",
+      tag: "Model learns the format",
+    },
+    {
+      n: "2", label: "RM", full: "Reward Model",
+      desc: "Train a separate model on human preference pairs (chosen > rejected). Outputs a scalar reward score for any response.",
+      params: "Same arch as SFT model, linear reward head, ~100K preference pairs",
+      color: "border-orange-400 dark:border-orange-600", bg: "bg-orange-50 dark:bg-orange-900/20",
+      tag: "Model learns what humans prefer",
+    },
+    {
+      n: "3", label: "PPO", full: "Proximal Policy Optimization",
+      desc: "Optimize the SFT model (policy) to maximize reward model scores while staying close to SFT baseline via KL penalty.",
+      params: "KL coeff 0.01–0.05, clip ratio 0.2, value loss coeff 0.1",
+      color: "border-green-400 dark:border-green-600", bg: "bg-green-50 dark:bg-green-900/20",
+      tag: "Model learns to maximize reward",
+    },
+  ];
+  return (
+    <div className="space-y-4">
+      {stages.map((s, i) => (
+        <div key={i} className={`border-l-4 ${s.color} ${s.bg} rounded-r-xl p-4`}>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 text-xs font-black flex items-center justify-center text-gray-700 dark:text-gray-200">{s.n}</span>
+            <span className="font-bold text-gray-800 dark:text-gray-100 text-sm">{s.full}</span>
+            <span className="text-xs bg-white dark:bg-gray-800 px-2 py-0.5 rounded text-gray-500 dark:text-gray-400 ml-auto">"{s.tag}"</span>
+          </div>
+          <p className="text-sm text-gray-700 dark:text-gray-300">{s.desc}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">{s.params}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PPOvsDPO() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="border border-orange-300 dark:border-orange-700 rounded-xl p-4 space-y-2">
+          <div className="font-bold text-orange-700 dark:text-orange-400 text-sm">PPO (Online RL)</div>
+          {[
+            "Requires RM + reference model + value model + policy = 4 models in memory",
+            "Online: generates new samples, scores them, updates policy",
+            "Higher compute and engineering complexity",
+            "Better peak quality — used by frontier labs (GPT-4, Claude, Gemini)",
+            "Complex to tune (reward hacking, KL collapse risks)",
+          ].map((pt, i) => <div key={i} className="text-xs text-gray-600 dark:text-gray-400 flex gap-2"><span className="text-orange-500">•</span>{pt}</div>)}
+        </div>
+        <div className="border border-blue-300 dark:border-blue-700 rounded-xl p-4 space-y-2">
+          <div className="font-bold text-blue-700 dark:text-blue-400 text-sm">DPO (Offline, Preference)</div>
+          {[
+            "Only 2 models: policy + frozen reference. No separate reward model",
+            "Offline: directly maximizes likelihood of preferred over rejected",
+            "Simpler to implement, numerically stable",
+            "Quality nearly matches PPO on most benchmarks",
+            "Used by: Zephyr, Tulu, many open-source aligned models",
+          ].map((pt, i) => <div key={i} className="text-xs text-gray-600 dark:text-gray-400 flex gap-2"><span className="text-blue-500">•</span>{pt}</div>)}
+        </div>
+      </div>
+      <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-xl px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
+        <span className="font-bold">When to use DPO:</span> most production cases — simpler, cheaper, nearly as good.
+        <span className="font-bold ml-2">PPO:</span> frontier labs with large compute budgets when peak quality is critical.
+      </div>
+    </div>
+  );
+}
+
+function RLHFAlignment() {
+  const [tab, setTab] = useState(0);
+  const tabs = ["RLHF Pipeline", "PPO vs DPO"];
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+      {tab === 0 && <RLHFPipeline />}
+      {tab === 1 && <PPOvsDPO />}
+    </div>
+  );
+}
+
+// ─── MULTIMODAL SYSTEMS ───────────────────────────────────────────────────────
+function MultimodalArchitectures() {
+  const [expanded, setExpanded] = useState(null);
+  const archs = [
+    {
+      name: "CLIP",
+      tag: "Dual Encoder",
+      summary: "Contrastive pretraining aligns image + text embeddings in shared space.",
+      detail: "Two separate encoders (ViT for images, Transformer for text) trained contrastively on 400M image-text pairs. Images and captions with similar meaning are pulled together in embedding space. No decoder — embeddings used for zero-shot classification and retrieval.",
+      use: "Best for: image retrieval, zero-shot classification, embedding similarity",
+      color: "border-blue-400 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/10",
+    },
+    {
+      name: "LLaVA / LLaVA-style",
+      tag: "Projector Architecture",
+      summary: "CLIP ViT → MLP projector → LLM. Trained on visual instruction data.",
+      detail: "Vision encoder (frozen CLIP ViT-L) extracts image features. A small MLP projector maps visual tokens into the LLM's embedding space. The LLM (LLaMA, Mistral, etc.) is then fine-tuned end-to-end on visual instruction data. Simple, effective, widely adopted by open-source community.",
+      use: "Best for: visual QA, image captioning, document understanding, production open-source deployment",
+      color: "border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/10",
+    },
+    {
+      name: "GPT-4V / Gemini Style",
+      tag: "Native Multimodal",
+      summary: "Image tokens interleaved with text tokens in a unified transformer.",
+      detail: "Images processed into discrete tokens (VQ-VAE or continuous embeddings) and interleaved directly with text tokens. Full self-attention across both modalities — or cross-attention layers (Flamingo). Trained from scratch on massive multimodal corpora. Most expressive but most compute-intensive approach.",
+      use: "Best for: complex reasoning over images + text, OCR-heavy tasks, frontier model quality",
+      color: "border-violet-400 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/10",
+    },
+  ];
+  return (
+    <div className="space-y-3">
+      {archs.map((a, i) => (
+        <div key={i} className={`border-l-4 ${a.color} rounded-r-xl overflow-hidden`}>
+          <button className="w-full px-4 py-3 flex items-center justify-between text-left"
+            onClick={() => setExpanded(expanded === i ? null : i)}>
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{a.name}</span>
+              <span className="text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2 py-0.5 rounded text-gray-500 dark:text-gray-400">{a.tag}</span>
+            </div>
+            <span className="text-gray-400 text-sm">{expanded === i ? "▲" : "▼"}</span>
+          </button>
+          <div className="px-4 pb-1 text-xs text-gray-600 dark:text-gray-400">{a.summary}</div>
+          {expanded === i && (
+            <div className="px-4 pb-4 space-y-2 mt-2">
+              <p className="text-sm text-gray-700 dark:text-gray-300">{a.detail}</p>
+              <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400">{a.use}</p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MultimodalFusionPatterns() {
+  const patterns = [
+    {
+      name: "Early Fusion",
+      desc: "Image tokens concatenated with text tokens. Full self-attention across all tokens. Expensive but maximally expressive.",
+      pros: "Full cross-modal attention at every layer",
+      cons: "O((N_img + N_text)²) compute — expensive for large images",
+      color: "border-blue-300 dark:border-blue-700",
+    },
+    {
+      name: "Late Fusion",
+      desc: "Separate encoders for image and text, combined only at the classification or generation head.",
+      pros: "Cheap — encoders run independently, good for retrieval",
+      cons: "No cross-modal interaction until the very end",
+      color: "border-green-300 dark:border-green-700",
+    },
+    {
+      name: "Cross-Attention Fusion",
+      desc: "Text attends to image features at each transformer layer via cross-attention (Flamingo architecture). Good balance of cost and expressiveness.",
+      pros: "Rich cross-modal interaction without full concatenation",
+      cons: "More parameters, more complex architecture",
+      color: "border-violet-300 dark:border-violet-700",
+    },
+  ];
+  return (
+    <div className="space-y-4">
+      <div className="space-y-3">
+        {patterns.map((p, i) => (
+          <div key={i} className={`border ${p.color} rounded-xl p-4 space-y-2`}>
+            <div className="font-bold text-sm text-gray-800 dark:text-gray-100">{p.name}</div>
+            <p className="text-sm text-gray-700 dark:text-gray-300">{p.desc}</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="text-green-700 dark:text-green-400"><span className="font-medium">Pro:</span> {p.pros}</div>
+              <div className="text-red-600 dark:text-red-400"><span className="font-medium">Con:</span> {p.cons}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-xl px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
+        <span className="font-bold">For production:</span> LLaVA-style projector is simplest and most widely supported.
+        <span className="font-bold ml-2">For frontier quality:</span> interleaved tokens with full cross-modal attention.
+      </div>
+    </div>
+  );
+}
+
+function MultimodalSystems() {
+  const [tab, setTab] = useState(0);
+  const tabs = ["Architectures", "Fusion Patterns"];
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+      {tab === 0 && <MultimodalArchitectures />}
+      {tab === 1 && <MultimodalFusionPatterns />}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 const SYSTEMS_MODULES = [
   { id: "evals",         label: "Evals Lab",          tag: "DESIGN",     group: "DESIGN",  component: EvalsLab           },
@@ -8621,6 +9357,13 @@ const SYSTEMS_MODULES = [
   { id: "streaming",    label: "Streaming Patterns",      tag: "STREAM",   group: "BUILD",   component: StreamingPatterns },
   { id: "constrained", label: "Constrained Generation", tag: "SCHEMA",   group: "BUILD",   component: ConstrainedGeneration },
   { id: "modelmerging", label: "Model Merging", tag: "MERGE", group: "DESIGN", component: ModelMerging },
+  { id: "flashattn", label: "Flash Attention", tag: "ATTN", group: "OPS", component: FlashAttention },
+  { id: "quantization", label: "Quantization Engineering", tag: "QUANT", group: "OPS", component: QuantizationEngineering },
+  { id: "serving", label: "Serving Infrastructure", tag: "INFRA", group: "OPS", component: ServingInfra },
+  { id: "promptcaching", label: "Prompt Caching", tag: "CACHE", group: "OPS", component: PromptCaching },
+  { id: "finetuning", label: "Fine-Tuning Workflows", tag: "TRAIN", group: "BUILD", component: FineTuningWorkflows },
+  { id: "rlhf", label: "RLHF / DPO / PPO", tag: "ALIGN", group: "BUILD", component: RLHFAlignment },
+  { id: "multimodal2", label: "Multimodal Systems", tag: "VISION", group: "DESIGN", component: MultimodalSystems },
 ];
 
 const SYSTEMS_GROUPS = [
@@ -8631,15 +9374,37 @@ const SYSTEMS_GROUPS = [
 
 export default function SystemsApp({ initialModule, onModuleVisit }) {
   const [activeModule, setActiveModule] = useState(initialModule || "evals");
+  const [done, setDone] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("gsl-systems-done") || "[]")); }
+    catch { return new Set(); }
+  });
   useEffect(() => { if (initialModule) setActiveModule(initialModule); }, [initialModule]);
   function switchModule(id) { setActiveModule(id); if (onModuleVisit) onModuleVisit("systems", id); }
+  function toggleDone(id) {
+    setDone(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      try { localStorage.setItem("gsl-systems-done", JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }
   const ActiveComponent = SYSTEMS_MODULES.find(m => m.id === activeModule)?.component || EvalsLab;
+  const total = SYSTEMS_MODULES.length;
+  const doneCount = done.size;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-black text-white tracking-tight">Systems Lab</h1>
         <p className="text-sm text-zinc-400">Production AI systems thinking — evals, strategy, and architecture decisions</p>
+        {doneCount > 0 && (
+          <div className="flex items-center justify-center gap-2">
+            <div className="h-1.5 w-32 rounded-full bg-zinc-800 overflow-hidden">
+              <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${(doneCount / total) * 100}%` }} />
+            </div>
+            <span className="text-xs text-zinc-500">{doneCount}/{total} done</span>
+          </div>
+        )}
       </div>
 
       {/* Module switcher — grouped */}
@@ -8655,6 +9420,7 @@ export default function SystemsApp({ initialModule, onModuleVisit }) {
                     onClick={() => switchModule(m.id)}
                     className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
                   >
+                    {done.has(m.id) && <span className="text-green-400 text-[10px]">✓</span>}
                     <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
                     {m.label}
                   </button>
@@ -8667,6 +9433,16 @@ export default function SystemsApp({ initialModule, onModuleVisit }) {
       </div>
 
       <ActiveComponent />
+
+      {/* Mark as done */}
+      <div className="flex justify-end pt-2 border-t border-zinc-800">
+        <button
+          onClick={() => toggleDone(activeModule)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${done.has(activeModule) ? "bg-green-900/40 text-green-400 hover:bg-red-900/30 hover:text-red-400" : "bg-zinc-800 text-zinc-400 hover:bg-green-900/40 hover:text-green-400"}`}
+        >
+          {done.has(activeModule) ? "✓ Done — click to unmark" : "Mark as done"}
+        </button>
+      </div>
     </div>
   );
 }

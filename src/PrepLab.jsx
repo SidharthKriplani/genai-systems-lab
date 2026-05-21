@@ -953,6 +953,230 @@ const PREP_QUESTIONS = [
     correct: 1, keywords: [],
     explanation: "Long agent trajectories accumulate context. The original task specification, key constraints, and early tool results drift toward the middle of an ever-growing context. LLMs underweight middle-context content (Liu et al. 2023). Fix: periodic re-anchoring (re-inject the original goal every N steps), summarize completed sub-tasks, keep running context under 40K tokens with a sliding summary buffer.",
     readMore: { label: "Traps Lab →", tab: "systems" }
+  },
+  {
+    id: "flashattn-1", topic: "attention", difficulty: "hard", type: "mcq",
+    question: "Flash Attention achieves sub-quadratic HBM I/O complexity primarily through:",
+    options: ["Approximate attention with locality-sensitive hashing", "Tiling inputs into SRAM blocks and avoiding full N×N materialization", "Sparse attention patterns that skip non-local tokens", "Quantizing the attention weights to INT8"],
+    correct: 1, keywords: [],
+    explanation: "Flash Attention tiles the query/key/value matrices into SRAM-sized blocks and computes attention incrementally using the online softmax trick. This avoids writing the O(N²) attention matrix to HBM, reducing memory I/O from O(N²) to O(N). LSH attention (Reformer) is a different approach. Sparsity and quantization are orthogonal techniques.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "flashattn-2", topic: "attention", difficulty: "medium", type: "mcq",
+    question: "Grouped Query Attention (GQA) improves inference efficiency by:",
+    options: ["Increasing the number of attention heads", "Sharing key-value heads across multiple query heads", "Applying flash attention to grouped token windows", "Removing the value projection matrix"],
+    correct: 1, keywords: [],
+    explanation: "GQA groups multiple query heads to share a single KV head, reducing KV cache size proportionally. For example, with 32 query heads and 8 KV heads, KV cache is 4× smaller. This is the default in Llama-3 and Mistral. It's orthogonal to Flash Attention (which is about IO complexity, not head count).",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "flashattn-3", topic: "attention", difficulty: "hard", type: "mcq",
+    question: "The 'online softmax' trick in Flash Attention allows:",
+    options: ["Fusing the softmax and matmul into a single kernel", "Computing softmax without seeing all attention scores simultaneously", "Replacing softmax with a linear approximation", "Parallelizing softmax across multiple GPUs"],
+    correct: 1, keywords: [],
+    explanation: "Online softmax maintains a running max and running sum as it processes tiles, allowing it to compute numerically stable softmax incrementally. This means Flash Attention never needs to materialize the full N×N score matrix — it can compute the output tile-by-tile. This is the key algorithmic insight that enables O(N) HBM reads.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "flashattn-4", topic: "attention", difficulty: "medium", type: "mcq",
+    question: "Flash Attention v2 improved over v1 primarily by:",
+    options: ["Supporting longer sequence lengths via disk offloading", "Better parallelization across attention heads and sequence length dimension", "Switching from FP16 to INT8 arithmetic", "Adding support for causal masking for the first time"],
+    correct: 1, keywords: [],
+    explanation: "Flash Attention v2 introduced better work partitioning: parallelism across both attention heads AND the sequence length dimension (using warp-level parallelism). It also reduced non-matmul FLOPs. v1 only parallelized across the batch and head dimensions, leaving GPU utilization on the table for long sequences.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "quant-1", topic: "quantization", difficulty: "medium", type: "mcq",
+    question: "GPTQ differs from standard post-training quantization by:",
+    options: ["Quantizing one layer at a time using second-order information to minimize output error", "Using QAT (quantization-aware training) with gradient checkpointing", "Applying quantization only to attention weights, not FFN weights", "Requiring a labeled dataset of 10K+ examples"],
+    correct: 0, keywords: [],
+    explanation: "GPTQ uses an OBQ (Optimal Brain Quantization) approach: it quantizes weights one-by-one per layer, using the Hessian (second-order information) to compensate for quantization error in remaining weights. This gives better quality than naive round-to-nearest. It only needs a small calibration set (~128 samples), not labeled data.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "quant-2", topic: "quantization", difficulty: "hard", type: "mcq",
+    question: "AWQ (Activation-aware Weight Quantization) achieves better quality than GPTQ by:",
+    options: ["Keeping 1% of weights in FP16 based on activation magnitude", "Using 3-bit quantization instead of 4-bit", "Applying quantization after each training step", "Reducing the model's vocabulary size before quantization"],
+    correct: 0, keywords: [],
+    explanation: "AWQ observes that a small subset of weights (~1%) are 'salient' — their corresponding input activations have large magnitudes, making them highly sensitive to quantization error. AWQ protects these weights by keeping them in FP16 or scaling them before quantization. This preserves model quality without requiring the complex per-weight Hessian computation of GPTQ.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "quant-3", topic: "quantization", difficulty: "medium", type: "mcq",
+    question: "A 7B parameter model in FP16 requires approximately how much VRAM?",
+    options: ["~3.5 GB", "~7 GB", "~14 GB", "~28 GB"],
+    correct: 2, keywords: [],
+    explanation: "FP16 uses 2 bytes per parameter. 7B × 2 bytes = 14 GB for weights alone. During inference you also need activation memory (~1-2 GB), so ~15-16 GB total. This is why a 7B model fits on a 24GB consumer GPU (RTX 3090/4090) in FP16 but not INT4 (~4 GB for weights), which enables it to run even on 8GB GPUs.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "quant-4", topic: "quantization", difficulty: "hard", type: "mcq",
+    question: "NF4 (Normal Float 4) used in QLoRA is specifically designed to:",
+    options: ["Minimize rounding error for uniformly distributed weights", "Optimally quantize weights that follow a normal distribution", "Support hardware-native 4-bit arithmetic on H100s", "Replace FP16 activations to reduce memory bandwidth"],
+    correct: 1, keywords: [],
+    explanation: "NF4 is an information-theoretically optimal quantization for normally distributed data. It places quantization levels non-uniformly: more levels near zero (where most weights cluster) and fewer at extremes. This minimizes quantization error for pretrained model weights, which empirically follow a normal distribution. It's not a hardware format — operations are dequantized to BF16 for actual compute.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "serving-1", topic: "serving", difficulty: "medium", type: "mcq",
+    question: "PagedAttention (used in vLLM) solves which core serving problem?",
+    options: ["Slow tokenization for long prompts", "KV cache memory fragmentation and waste from pre-allocation", "Load imbalancing across multiple GPUs", "Slow attention computation for long sequences"],
+    correct: 1, keywords: [],
+    explanation: "Before PagedAttention, serving systems pre-allocated a contiguous KV cache block for each request's maximum sequence length. This caused internal fragmentation (reserved but unused memory) and made it impossible to share KV cache across requests. PagedAttention stores KV cache in non-contiguous 'pages' (like OS virtual memory), enabling near-zero waste and 2-4× more concurrent requests.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "serving-2", topic: "serving", difficulty: "hard", type: "mcq",
+    question: "Continuous batching improves GPU throughput over static batching by:",
+    options: ["Running smaller batch sizes to reduce memory pressure", "Allowing new requests to join the batch as sequences complete mid-iteration", "Pre-computing KV caches for all requests before starting generation", "Quantizing the KV cache to INT8 during serving"],
+    correct: 1, keywords: [],
+    explanation: "Static batching must wait for the longest sequence in a batch to finish before accepting new requests, leaving GPUs idle. Continuous (or iteration-level) batching processes one token generation step per iteration and immediately adds new requests as slots free up. This keeps GPU utilization near 100% and dramatically improves throughput (2-4×) for heterogeneous sequence lengths.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "serving-3", topic: "serving", difficulty: "medium", type: "mcq",
+    question: "SGLang's RadixAttention outperforms standard prefix caching when:",
+    options: ["Serving very short prompts under 100 tokens", "Multiple requests share multi-level common prefixes in a tree structure", "Running on CPUs rather than GPUs", "Using INT4 quantized models"],
+    correct: 1, keywords: [],
+    explanation: "RadixAttention organizes cached KV states in a radix tree, enabling efficient reuse even when prefixes share only partial overlaps (e.g., same system prompt + different few-shot examples). Standard prefix caching only handles exact prefix matches. For agent systems and multi-turn conversations with branching contexts, RadixAttention achieves much higher cache hit rates.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "serving-4", topic: "serving", difficulty: "hard", type: "mcq",
+    question: "When choosing between vLLM and TensorRT-LLM for production, the primary differentiator is:",
+    options: ["vLLM supports more model architectures; TRT-LLM gives higher throughput on NVIDIA hardware with more engineering", "TRT-LLM is open source; vLLM is proprietary", "vLLM only supports A100 GPUs; TRT-LLM supports all NVIDIA GPUs", "TRT-LLM uses continuous batching; vLLM uses static batching"],
+    correct: 0, keywords: [],
+    explanation: "vLLM is the most flexible framework (wide model support, simple deployment, excellent for most teams) while TensorRT-LLM requires model-specific engine compilation but achieves higher raw throughput on NVIDIA GPUs via custom CUDA kernels and TensorRT optimization. For most teams vLLM is the right starting point; TRT-LLM is worth the complexity only at very high scale.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "cache-1", topic: "caching", difficulty: "medium", type: "mcq",
+    question: "Prompt caching works by storing and reusing which part of the inference computation?",
+    options: ["The model weights compressed to FP8", "The KV cache for the common prefix of a prompt", "The logit distribution for common output tokens", "The tokenized representation of the system prompt"],
+    correct: 1, keywords: [],
+    explanation: "When requests share a common prefix (system prompt, few-shot examples, document), the KV cache computed for that prefix can be stored server-side and reused. On a cache hit, the model skips computing attention over those tokens entirely, reducing both TTFT and cost. Only the KV tensors are cached — not weights or logits.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "cache-2", topic: "caching", difficulty: "hard", type: "mcq",
+    question: "For prompt caching to activate on Anthropic's API, the minimum cache-eligible prefix length is:",
+    options: ["128 tokens", "512 tokens", "1024 tokens", "4096 tokens"],
+    correct: 2, keywords: [],
+    explanation: "Anthropic requires a minimum of 1024 tokens in the cache-eligible prefix (the part marked with cache_control: ephemeral or in the system prompt). OpenAI's automatic prefix caching activates at 1024 tokens as well. Shorter prefixes aren't worth caching because the overhead of cache lookup and storage management exceeds the savings.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "cache-3", topic: "caching", difficulty: "medium", type: "mcq",
+    question: "The cost structure for prompt caching on Anthropic's API is:",
+    options: ["Cache reads are free; cache writes cost 2× normal input price", "Cache writes cost 1.25× normal input price; cache reads cost 0.1×", "Cache reads and writes both cost 0.5× normal input price", "Caching requires a separate API tier with flat monthly pricing"],
+    correct: 1, keywords: [],
+    explanation: "Anthropic charges 1.25× input token price for cache writes (computing and storing the KV cache) and 0.1× for cache reads (retrieving it). So caching saves money when the same prefix is read many times — the break-even is roughly 9 reads to recoup the write premium. For system prompts used across thousands of requests, savings are 80-90%.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "cache-4", topic: "caching", difficulty: "hard", type: "mcq",
+    question: "Prompt caching is most cost-effective for which workload pattern?",
+    options: ["Short single-turn queries with no system prompt", "Long unique documents where each user sends a different file", "High-volume requests sharing a long common prefix (system prompt + few-shot examples)", "Streaming responses with very low TTFT requirements"],
+    correct: 2, keywords: [],
+    explanation: "Caching's ROI is proportional to (prefix length × request volume). A 10K-token system prompt shared across 10K daily requests saves ~90% of input costs. Unique per-request context has no cache reuse. Short prompts don't exceed the minimum threshold. Streaming benefits from caching (lower TTFT) but it's the long shared prefix pattern that drives maximum cost savings.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "finetune-1", topic: "finetuning", difficulty: "medium", type: "mcq",
+    question: "LoRA (Low-Rank Adaptation) reduces trainable parameters by:",
+    options: ["Pruning 90% of attention heads before training", "Decomposing weight updates into two low-rank matrices A and B", "Quantizing gradients to INT8 during backpropagation", "Sharing weights across transformer layers during training"],
+    correct: 1, keywords: [],
+    explanation: "LoRA freezes the pretrained weights W and learns ΔW = BA where B ∈ R^(d×r) and A ∈ R^(r×k) with rank r << min(d,k). For a 4096×4096 weight matrix with r=16, trainable params drop from 16.7M to 131K (99.2% reduction). At inference, BA is merged back into W with zero latency overhead. QLoRA adds quantization of the base model to NF4.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "finetune-2", topic: "finetuning", difficulty: "hard", type: "mcq",
+    question: "When fine-tuning on instruction data, 'catastrophic forgetting' refers to:",
+    options: ["The model forgetting to follow the instruction format after a few epochs", "Loss of general capabilities acquired during pretraining due to narrow fine-tuning distribution", "GPU memory overflow causing training to restart from checkpoint", "The optimizer forgetting gradient history when learning rate is reset"],
+    correct: 1, keywords: [],
+    explanation: "Catastrophic forgetting occurs when fine-tuning on a narrow task distribution overwrites the broader knowledge learned during pretraining. The model may become excellent at the specific task but lose capabilities like coding, math, or multilingual understanding. Mitigations: use LoRA (frozen base), include diverse data, train for fewer epochs, use a small learning rate.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "finetune-3", topic: "finetuning", difficulty: "medium", type: "mcq",
+    question: "The key advantage of QLoRA over LoRA is:",
+    options: ["QLoRA trains faster due to quantized gradient computation", "QLoRA enables fine-tuning 65B+ models on a single 48GB GPU", "QLoRA produces higher quality results on all downstream tasks", "QLoRA doesn't require a calibration dataset"],
+    correct: 1, keywords: [],
+    explanation: "QLoRA quantizes the frozen base model weights to NF4 (4-bit), reducing VRAM by ~4× compared to FP16 LoRA. This makes it possible to fine-tune large models on consumer hardware — a 65B model needs ~40GB in QLoRA vs ~130GB for FP16 LoRA. Training speed is slightly slower (dequantize to BF16 for compute) but the VRAM savings enable otherwise impossible fine-tunes.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "finetune-4", topic: "finetuning", difficulty: "hard", type: "mcq",
+    question: "For instruction fine-tuning, the recommended dataset size to see meaningful behavioral change without degrading base capabilities is:",
+    options: ["100–500 examples", "1,000–10,000 high-quality examples", "100,000+ examples required", "Dataset size doesn't matter; only format matters"],
+    correct: 1, keywords: [],
+    explanation: "Research (LIMA, Alpaca, OpenHermes) consistently shows that 1K–10K high-quality, diverse instruction pairs produce strong behavioral fine-tuning. The LIMA paper demonstrated that 1,000 carefully curated examples match models fine-tuned on 50K+ examples. Quality and diversity matter far more than quantity. Below 500 examples, results are inconsistent. Above 50K, you risk catastrophic forgetting.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "rlhf-1", topic: "alignment", difficulty: "hard", type: "mcq",
+    question: "In PPO-based RLHF, the KL divergence penalty between the policy and reference model serves to:",
+    options: ["Speed up convergence by regularizing the reward signal", "Prevent reward hacking by keeping the policy close to the SFT model", "Reduce memory usage during training by sharing weights", "Normalize the reward signal across different response lengths"],
+    correct: 1, keywords: [],
+    explanation: "Without the KL penalty, the policy can exploit weaknesses in the reward model (reward hacking) — generating responses that score highly but are nonsensical or degenerate. The KL term penalizes divergence from the SFT reference model, keeping the policy in a reasonable distribution. The coefficient β controls the trade-off: low β = more optimization, high β = more conservative.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "rlhf-2", topic: "alignment", difficulty: "medium", type: "mcq",
+    question: "DPO (Direct Preference Optimization) eliminates the need for which component of standard RLHF?",
+    options: ["The supervised fine-tuning (SFT) stage", "A separate reward model and RL training loop", "Human preference data collection", "The KL divergence regularization term"],
+    correct: 1, keywords: [],
+    explanation: "DPO shows that the optimal policy under the RLHF objective can be derived directly from preference data (chosen/rejected pairs) without explicitly training a reward model. The reward model is implicitly defined by the ratio of policy to reference model probabilities. This makes alignment training much simpler: just supervised learning on preference pairs. SFT is still needed as initialization.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "rlhf-3", topic: "alignment", difficulty: "hard", type: "mcq",
+    question: "A key practical failure mode of RLHF reward models in production is:",
+    options: ["Reward models being too slow to query during PPO training", "Reward hacking: policies finding inputs that score highly but are low quality", "Reward models generalizing too well and making PPO unstable", "Preference data being too expensive to collect at scale"],
+    correct: 1, keywords: [],
+    explanation: "Reward hacking occurs because the reward model is an imperfect proxy trained on limited data. The policy discovers inputs in the tails of the reward model's training distribution where it makes errors — outputs that are verbose, sycophantic, or contain specific phrases that correlate with high rewards in training data but aren't genuinely good. Mitigation: diverse preference data, KL penalty, iterative reward model updates.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "rlhf-4", topic: "alignment", difficulty: "medium", type: "mcq",
+    question: "Compared to PPO, DPO training is preferred in practice primarily because:",
+    options: ["DPO consistently produces higher quality models across all tasks", "DPO is simpler (no RL loop, no reward model), more stable, and nearly as good", "DPO requires 10× less preference data than PPO", "DPO supports online data collection during training"],
+    correct: 1, keywords: [],
+    explanation: "DPO's main advantage is simplicity and stability: it's just a classification-style loss on preference pairs, requires no separate RM, no PPO hyperparameter tuning, no reward hacking concerns. Quality is slightly below PPO in controlled experiments but close enough that the engineering simplicity wins for most teams. PPO's advantages (online sampling, iterative improvement) matter most at frontier scale.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "multimodal-1", topic: "multimodal", difficulty: "medium", type: "mcq",
+    question: "CLIP achieves vision-language alignment by:",
+    options: ["Fine-tuning a pretrained image classifier on text captions", "Contrastive learning to match images and their text descriptions in a shared embedding space", "Using cross-attention between a frozen ViT and a frozen LLM", "Generating captions autoregressively and using them as image representations"],
+    correct: 1, keywords: [],
+    explanation: "CLIP trains a dual encoder (ViT for images, transformer for text) with a contrastive loss: the image and its matching caption should have high cosine similarity, while mismatched pairs should have low similarity. Trained on 400M image-text pairs, CLIP learns rich visual representations without any labeled classification data. The shared embedding space enables zero-shot classification, retrieval, and is used as the vision encoder in LLaVA-style models.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "multimodal-2", topic: "multimodal", difficulty: "hard", type: "mcq",
+    question: "LLaVA-style models connect a vision encoder to an LLM using:",
+    options: ["Fine-tuning both the vision encoder and LLM end-to-end from scratch", "A lightweight MLP projector that maps visual features into the LLM's token embedding space", "Cross-attention layers inserted into every transformer block", "Replacing the image with a BLIP-2 generated caption"],
+    correct: 1, keywords: [],
+    explanation: "LLaVA uses a frozen CLIP vision encoder + a trainable linear projection (or small MLP) that maps visual patch features into vectors with the same dimension as the LLM's word embeddings. These 'visual tokens' are prepended to the text token sequence and processed by the LLM normally. Only the projection (and optionally the LLM) is trained. This is the dominant approach for its simplicity and strong performance.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "multimodal-3", topic: "multimodal", difficulty: "medium", type: "mcq",
+    question: "The primary trade-off of late fusion vs. early fusion in multimodal architectures is:",
+    options: ["Late fusion is cheaper but can't model fine-grained image-text interactions", "Early fusion is cheaper but loses modality-specific representations", "Late fusion requires more GPU memory; early fusion requires less", "There is no meaningful quality difference between them"],
+    correct: 0, keywords: [],
+    explanation: "Late fusion (separate encoders, combined at the output) is computationally efficient and easy to train per-modality. But it can't model token-level interactions between image patches and text — e.g., 'the red car on the left' requires attending to specific image regions while reading each word. Early fusion (interleaved tokens from the start) or cross-attention fusion handles this but at higher compute cost.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "multimodal-4", topic: "multimodal", difficulty: "hard", type: "mcq",
+    question: "Processing high-resolution images in LLaVA-style models is challenging because:",
+    options: ["High-res images require retraining CLIP from scratch", "More visual tokens increase the LLM's sequence length quadratically in attention cost", "JPEG compression artifacts confuse the vision encoder", "LLMs cannot process more than 256 image tokens"],
+    correct: 1, keywords: [],
+    explanation: "A 336×336 image with patch size 14 produces 576 visual tokens. At 1344×1344 (4× resolution), that's 9,216 tokens — each added to the text tokens, making the total sequence very long. Attention is O(N²), so 9K visual tokens dramatically increases compute and memory. Solutions: LLaVA-HD uses dynamic tiling, InternVL uses pixel shuffle compression, mPLUG-Owl uses abstractor modules to compress visual tokens before passing to the LLM.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
   }
 ];
 

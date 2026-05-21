@@ -750,6 +750,12 @@ const SERIES_META = {
     color: "#10b981",
     postIds: ["flywheel-implicit-feedback", "flywheel-reward-modeling", "flywheel-online-eval"],
   },
+  "training-stack": {
+    title: "The Training Stack",
+    desc: "From supervised fine-tuning to RLHF to distillation — how models are shaped after pretraining.",
+    color: "#8b5cf6",
+    postIds: ["finetune-playbook", "rlhf-production", "dpo-vs-ppo", "knowledge-distillation"],
+  },
 };
 
 export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {

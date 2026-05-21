@@ -255,5 +255,46 @@ export const POSTS = [
   // ─── MODEL MERGING ────────────────────────────────────────────────────────────
   { id: "model-merging-guide",  category: "frontier", title: "Model Merging: Getting SOTA Quality at Zero Training Cost", desc: "SLERP, TIES, DARE, model soup, and LoRA adapter merging — how the open-source community routinely beats fine-tuned models by merging weights in parameter space. What works, what doesn't, and how to pick merge ratios without running full evals.", readMin: 10, labLink: "systems", labLabel: "Deployment Architecture →", tags: ["model merging","SLERP","TIES","DARE","LoRA","open-source"] },
 
+  // Training Stack series
+  {
+    id: "finetune-playbook",
+    category: "training-stack",
+    title: "The Fine-Tuning Playbook: LoRA, QLoRA, and When to Use Each",
+    desc: "A practical decision framework for fine-tuning LLMs — from full parameter training to 4-bit QLoRA on consumer GPUs.",
+    tags: ["fine-tuning", "LoRA", "QLoRA", "training"],
+    readMin: 11,
+    date: "2025-06-10",
+    series: "training-stack",
+  },
+  {
+    id: "rlhf-production",
+    category: "training-stack",
+    title: "RLHF in Production: What Actually Works",
+    desc: "Reward models, PPO instability, reward hacking, and the lessons learned shipping alignment training at scale.",
+    tags: ["RLHF", "PPO", "reward model", "alignment"],
+    readMin: 12,
+    date: "2025-06-17",
+    series: "training-stack",
+  },
+  {
+    id: "dpo-vs-ppo",
+    category: "training-stack",
+    title: "DPO vs PPO: The Training Alignment Debate",
+    desc: "Why Direct Preference Optimization is replacing PPO in most teams — and the edge cases where PPO still wins.",
+    tags: ["DPO", "PPO", "RLHF", "alignment"],
+    readMin: 10,
+    date: "2025-06-24",
+    series: "training-stack",
+  },
+  {
+    id: "knowledge-distillation",
+    category: "training-stack",
+    title: "Knowledge Distillation at Scale: Teaching Small Models to Think Big",
+    desc: "How to transfer capabilities from large frontier models to smaller, cheaper, deployable ones — and where it breaks down.",
+    tags: ["distillation", "knowledge transfer", "model compression"],
+    readMin: 9,
+    date: "2025-07-01",
+    series: "training-stack",
+  },
 
 ];
