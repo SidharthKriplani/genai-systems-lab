@@ -10554,7 +10554,7 @@ def slerp(w1, w2, t):
     { t: "h2", text: "Observability Is Not Optional" },
     { t: "p", text: "Log every step: the full prompt, the generated action, the tool inputs and outputs, latency, and token count. Without this, debugging a failed agent run is guesswork. Use structured logging — not print statements — so you can trace specific run IDs across steps. Build a replay tool: given a run ID, reconstruct exactly what the agent saw and did at each step." },
     { t: "callout", text: "Production rule: never deploy an agent without a max_steps limit, per-tool timeout, total cost budget, and a human escalation path. Any agent that can spend money or modify data needs all four." },
-    { t: "callout", text: "→ Interactive: The Agent Architecture module in Systems Lab has a clickable ReAct loop, planning pattern comparison, and tool design reference." },
+    { t: "lab", tab: "agents", label: "Explore agent reliability patterns in the Agents Lab →" },
     { t: "divider" },
     { t: "refs", items: [{ label: "ReAct: Synergizing Reasoning and Acting (Yao et al.)", url: "https://arxiv.org/abs/2210.03629" }, { label: "Toolformer (Schick et al.)", url: "https://arxiv.org/abs/2302.04761" }, { label: "LangGraph — stateful agent framework", url: "https://langchain-ai.github.io/langgraph/" }] },
   ],
@@ -10584,7 +10584,7 @@ def slerp(w1, w2, t):
 
     { t: "h2", text: "The benchmark contamination problem" },
     { t: "p", text: "MMLU, HumanEval, and GSM8K are public. Every model released in 2024 was trained on the internet, which contains solutions, walkthroughs, and discussions of every benchmark dataset ever published. When OpenAI, Anthropic, or Google reports a benchmark score, you have no way to verify whether those questions appeared in the training data. Some labs are rigorous about contamination detection. Others are not. And even the rigorous ones can't fully control what's in a 15-trillion-token pretraining corpus." },
-    { t: "callout", text: "A model scoring 90% on MMLU has been trained on the internet — which contains MMLU. This doesn't mean the score is meaningless, but it means you cannot assume it transfers to your task. Treat public benchmark scores as a rough prior, not a buying decision." },
+    { t: "callout", v: "tip", text: "A model scoring 90% on MMLU has been trained on the internet — which contains MMLU. This doesn't mean the score is meaningless, but it means you cannot assume it transfers to your task. Treat public benchmark scores as a rough prior, not a buying decision." },
 
     { t: "h2", text: "Task-distribution mismatch" },
     { t: "p", text: "MMLU tests 57 academic subjects in multiple-choice format. HumanEval tests Python function completion. GSM8K tests grade-school arithmetic word problems. None of these are your task. Unless you're building a trivia app or a Python tutorial tool, the correlation between benchmark performance and your actual task performance is weak — and for domain-specific tasks, it can be negative." },
@@ -10647,7 +10647,7 @@ def run_eval(model: str, eval_cases: list[dict]) -> dict:
     return {"model": model, "pass_rate": pass_rate, "avg_cost_usd": avg_cost, "results": results}` },
 
     { t: "h2", text: "The practical model selection decision" },
-    { t: "callout", text: "Opinionated take: start with the cheapest model that's fast enough. Run your eval. Move up the capability ladder only when you can prove the cheaper model fails on cases that matter. Most products don't need frontier model intelligence — they need reliable instruction following, low latency, and domain accuracy on a narrow task distribution." },
+    { t: "callout", v: "tip", text: "Opinionated take: start with the cheapest model that's fast enough. Run your eval. Move up the capability ladder only when you can prove the cheaper model fails on cases that matter. Most products don't need frontier model intelligence — they need reliable instruction following, low latency, and domain accuracy on a narrow task distribution." },
     { t: "p", text: "The benchmark leaderboard is useful for one thing: establishing which models are worth evaluating. A model that scores in the bottom quartile on all public benchmarks probably isn't worth your evaluation time. But among the top tier, the benchmark gap between models is almost always smaller than the gap your task-specific eval will reveal — in either direction." },
 
     { t: "refs", items: [
