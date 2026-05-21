@@ -1318,6 +1318,296 @@ const PREP_QUESTIONS = [
     keywords: ["function calling", "schema", "validation", "retry", "fallback", "observability", "timeout"],
     explanation: "Model answer: Define tools as strict JSON schemas — the model generates structured calls, not free text. Validate every tool call against the schema before execution (reject malformed calls and retry with error feedback, max 2 retries). For each tool: set timeouts (e.g., 5s for search, 30s for code execution), implement idempotency for write operations, log all calls and results for observability. Failure handling: malformed call → re-prompt with schema; tool error → surface to model with error message; timeout → graceful fallback to no-tool response. Monitor tool call rate, success rate, and fallback rate per tool in production.",
     readMore: { label: "Agents →", tab: "systems" }
+  },
+
+  // ─── TRANSFORMER ARCHITECTURE ────────────────────────────────────────────────
+  {
+    id: "txarch-1", topic: "transformers", difficulty: "medium", type: "mcq",
+    question: "In the transformer's multi-head attention, why use multiple heads instead of one large attention operation?",
+    options: [
+      "Reduces total parameter count vs single-head attention",
+      "Allows the model to attend to information from different representation subspaces simultaneously",
+      "Enables processing tokens in parallel across the sequence",
+      "Prevents gradient vanishing in deep transformer stacks"
+    ],
+    correct: 1,
+    keywords: ["multi-head attention", "subspace", "representation", "transformer"],
+    explanation: "Each attention head learns to focus on different aspects of the input — one head might track syntactic dependencies, another coreference, another positional patterns. Single-head attention collapses all these into one weighted sum, losing representational diversity. Multiple heads then concatenate their outputs, giving the model richer, multi-faceted token representations.",
+    readMore: { label: "Transformer Architecture →", tab: "systems" }
+  },
+  {
+    id: "txarch-2", topic: "transformers", difficulty: "hard", type: "mcq",
+    question: "Rotary Position Embeddings (RoPE) improve upon learned absolute position embeddings by:",
+    options: [
+      "Requiring fewer parameters since position is computed not learned",
+      "Encoding relative position directly into the attention score via rotation in embedding space",
+      "Allowing the model to generalize to sequences longer than seen during training without fine-tuning",
+      "Eliminating the need for positional information entirely in decoder-only models"
+    ],
+    correct: 1,
+    keywords: ["RoPE", "rotary position embeddings", "relative position", "LLaMA", "Mistral"],
+    explanation: "RoPE applies a rotation matrix to query and key vectors before computing attention, where the rotation angle depends on the position. This makes the dot product between Q and K naturally encode the relative distance between positions — closer tokens produce higher dot products. Unlike absolute embeddings, RoPE's relative nature enables better length generalization and is now standard in LLaMA, Mistral, and most modern LLMs.",
+    readMore: { label: "Transformer Architecture →", tab: "systems" }
+  },
+  {
+    id: "txarch-3", topic: "transformers", difficulty: "hard", type: "mcq",
+    question: "SwiGLU activation (used in LLaMA FFN layers) outperforms ReLU because:",
+    options: [
+      "It is computationally cheaper, requiring one fewer matrix multiply",
+      "It gates the activation with a learned sigmoid, allowing smooth, content-dependent filtering",
+      "It eliminates the dying neuron problem by ensuring all activations are non-zero",
+      "It enables integer quantization of FFN weights without quality loss"
+    ],
+    correct: 1,
+    keywords: ["SwiGLU", "activation", "FFN", "gating", "LLaMA", "ReLU"],
+    explanation: "SwiGLU computes FFN(x) = (xW₁ ⊗ σ(xW₃)) W₂ — the first linear projection is multiplied element-wise with a gated version of a second projection. This learned gating allows the network to suppress less useful activations in a soft, differentiable way, giving richer representations than ReLU's hard threshold. It consistently scores 1-2 points higher on downstream benchmarks at no extra inference cost.",
+    readMore: { label: "Transformer Architecture →", tab: "systems" }
+  },
+  {
+    id: "txarch-4", topic: "transformers", difficulty: "medium", type: "mcq",
+    question: "The causal mask in decoder-only transformer training ensures:",
+    options: [
+      "Tokens only attend to tokens that are semantically similar",
+      "Each token can only attend to itself and preceding tokens, enabling parallel training on next-token prediction",
+      "The model ignores padding tokens when computing attention over variable-length inputs",
+      "Attention weights sum to 1 across the key dimension for numerical stability"
+    ],
+    correct: 1,
+    keywords: ["causal mask", "autoregressive", "decoder-only", "parallel training", "next-token"],
+    explanation: "Without the causal mask, each token during training could attend to future tokens, effectively leaking the answer. By masking future positions to -∞ before softmax, each position only sees the prefix, making it equivalent to training N separate left-to-right language models simultaneously. This is what enables efficient parallel training on all token positions at once while maintaining the autoregressive property at inference.",
+    readMore: { label: "Transformer Architecture →", tab: "systems" }
+  },
+
+  // ─── SPECULATIVE DECODING ────────────────────────────────────────────────────
+  {
+    id: "spec-1", topic: "inference", difficulty: "medium", type: "mcq",
+    question: "Speculative decoding improves LLM throughput by:",
+    options: [
+      "Running the large model on fewer tokens by skipping low-confidence positions",
+      "Using a small draft model to propose multiple tokens, then verifying in parallel with the large model",
+      "Caching the large model's KV states across requests to avoid recomputation",
+      "Quantizing the large model to INT4 for draft generation and INT8 for verification"
+    ],
+    correct: 1,
+    keywords: ["speculative decoding", "draft model", "verification", "throughput", "parallel"],
+    explanation: "The small draft model generates k candidate tokens autoregressively (fast). The large target model then verifies all k tokens in a single forward pass (since verification is parallelizable unlike generation). Accepted tokens are kept; the first rejected token is resampled from the target distribution. Net effect: multiple tokens per large-model forward pass, 2-4× speedup with zero quality loss.",
+    readMore: { label: "Speculative Decoding →", tab: "systems" }
+  },
+  {
+    id: "spec-2", topic: "inference", difficulty: "hard", type: "mcq",
+    question: "The acceptance rate α in speculative decoding determines throughput. It depends primarily on:",
+    options: [
+      "The size ratio between the draft and target model",
+      "How well the draft model's token distribution matches the target model's distribution",
+      "The hardware memory bandwidth available for the draft model",
+      "The temperature setting used for draft model sampling"
+    ],
+    correct: 1,
+    keywords: ["acceptance rate", "speculative decoding", "draft distribution", "target distribution"],
+    explanation: "α is the probability that the target model accepts a draft token. If the draft distribution closely matches the target's (similar training data, same family), α is high (0.8-0.9) and you get near-maximum speedup. If the draft is misaligned (different domain, different training), α drops and you pay draft overhead with little gain. This is why using a smaller version of the same model family (e.g., LLaMA-68M → LLaMA-70B) works best.",
+    readMore: { label: "Speculative Decoding →", tab: "systems" }
+  },
+  {
+    id: "spec-3", topic: "inference", difficulty: "hard", type: "mcq",
+    question: "Medusa-style speculative decoding differs from standard draft-model speculative decoding by:",
+    options: [
+      "Using INT4 quantization on the target model to enable faster verification",
+      "Adding multiple prediction heads to the target model that predict future tokens simultaneously",
+      "Running speculative decoding only on the prefill phase, not the generation phase",
+      "Using beam search instead of sampling for draft token generation"
+    ],
+    correct: 1,
+    keywords: ["Medusa", "speculative decoding", "prediction heads", "draft model"],
+    explanation: "Medusa adds K extra linear 'heads' to the target LLM, each predicting the token at offset +1, +2, ..., +K positions from the current token. These heads are trained while the base model is frozen. At inference, all K predictions are verified in one forward pass of the base model. Medusa eliminates the need for a separate draft model entirely, at the cost of adding K small linear heads to the existing model.",
+    readMore: { label: "Speculative Decoding →", tab: "systems" }
+  },
+  {
+    id: "spec-4", topic: "inference", difficulty: "medium", type: "mcq",
+    question: "Speculative decoding achieves lossless speedup (identical output distribution to the target model) because:",
+    options: [
+      "Draft tokens are only proposed, never accepted, without target model verification",
+      "The rejection sampling scheme corrects for discrepancies between draft and target distributions",
+      "Draft and target models are always from the same model family with identical weights",
+      "The draft model uses greedy decoding which always matches the target's top-1 token"
+    ],
+    correct: 1,
+    keywords: ["lossless", "rejection sampling", "speculative decoding", "output distribution"],
+    explanation: "When the target model rejects a draft token, it doesn't use the draft's token — it samples from a corrected distribution: max(0, p_target - p_draft) normalized. This rejection sampling ensures the final token distribution is exactly the target model's distribution, not the draft's. The output is mathematically identical to sampling directly from the target model, just faster.",
+    readMore: { label: "Speculative Decoding →", tab: "systems" }
+  },
+
+  // ─── STREAMING PATTERNS ──────────────────────────────────────────────────────
+  {
+    id: "stream-1", topic: "streaming", difficulty: "medium", type: "mcq",
+    question: "Server-Sent Events (SSE) is preferred over WebSockets for LLM streaming responses because:",
+    options: [
+      "SSE supports bidirectional communication, reducing round trips",
+      "SSE is a simpler unidirectional protocol — the server pushes tokens as they generate, no client-side socket management needed",
+      "SSE compresses tokens more efficiently than WebSocket binary frames",
+      "SSE works without HTTP/2, making it compatible with more CDN providers"
+    ],
+    correct: 1,
+    keywords: ["SSE", "Server-Sent Events", "WebSocket", "streaming", "unidirectional"],
+    explanation: "LLM streaming is inherently unidirectional: the server generates tokens and pushes them to the client. SSE is purpose-built for this — it's a simple HTTP response with Content-Type: text/event-stream, no handshake protocol, automatic reconnection, and works through standard HTTP infrastructure (load balancers, CDNs). WebSockets add bidirectional complexity that streaming LLM responses don't need.",
+    readMore: { label: "Streaming Patterns →", tab: "systems" }
+  },
+  {
+    id: "stream-2", topic: "streaming", difficulty: "hard", type: "mcq",
+    question: "'Time to First Token' (TTFT) and 'Time Between Tokens' (TBT) are distinct metrics because:",
+    options: [
+      "TTFT measures GPU utilization; TBT measures memory bandwidth",
+      "TTFT is dominated by the prefill phase (processing the full prompt); TBT is dominated by memory bandwidth during autoregressive generation",
+      "TTFT only applies to streaming responses; TBT applies to both streaming and batch responses",
+      "TTFT improves with larger models; TBT improves with smaller models"
+    ],
+    correct: 1,
+    keywords: ["TTFT", "TBT", "time to first token", "prefill", "memory bandwidth", "latency"],
+    explanation: "Prefill (computing KV cache for the input prompt) is a compute-bound operation that scales with prompt length — this is TTFT. Generation (producing each output token autoregressively) is memory-bandwidth-bound — the bottleneck is loading model weights from HBM per token, not compute. Optimizing one doesn't necessarily help the other: Flash Attention improves TTFT, speculative decoding improves TBT.",
+    readMore: { label: "Streaming Patterns →", tab: "systems" }
+  },
+  {
+    id: "stream-3", topic: "streaming", difficulty: "medium", type: "mcq",
+    question: "For a streaming chat UI, the optimal token rendering strategy to avoid layout thrashing is:",
+    options: [
+      "Render each token immediately as it arrives using innerHTML append",
+      "Buffer tokens into complete words or sentences before updating the DOM",
+      "Use requestAnimationFrame to batch DOM updates at 60fps regardless of token arrival rate",
+      "Store all tokens in state and re-render the full message on each token arrival"
+    ],
+    correct: 1,
+    keywords: ["streaming", "DOM", "layout thrashing", "token rendering", "buffering"],
+    explanation: "Updating the DOM on every single token (~5-20ms intervals) causes excessive reflows and can make the UI feel choppy, especially with markdown rendering. Buffering to word boundaries (space character) or sentence boundaries reduces DOM updates by 5-10× with no perceptible quality loss to the user. Full re-render on each token (option D) is particularly bad — it defeats React's virtual DOM optimization by invalidating the entire component tree.",
+    readMore: { label: "Streaming Patterns →", tab: "systems" }
+  },
+  {
+    id: "stream-4", topic: "streaming", difficulty: "hard", type: "mcq",
+    question: "When streaming structured JSON output from an LLM, the key challenge is:",
+    options: [
+      "JSON requires knowing the full output before validation, conflicting with incremental streaming",
+      "Streaming increases the probability of malformed JSON due to token boundary effects",
+      "SSE cannot transmit binary-encoded JSON efficiently",
+      "JSON structure requires the client to buffer the entire response before parsing any field"
+    ],
+    correct: 0,
+    keywords: ["JSON", "streaming", "validation", "structured output", "incremental parsing"],
+    explanation: "JSON validation requires a complete, closed document — you can't validate partial JSON. This creates a tension: you want to stream tokens for latency, but you need complete JSON for your downstream code. Solutions: stream raw tokens to the UI for display while buffering for validation, use streaming JSON parsers (like jsonstream) that parse incrementally, or use structured generation (Outlines/Guidance) to guarantee valid JSON token-by-token via logit masking.",
+    readMore: { label: "Streaming Patterns →", tab: "systems" }
+  },
+
+  // ─── MODEL MERGING ───────────────────────────────────────────────────────────
+  {
+    id: "merge-1", topic: "merging", difficulty: "medium", type: "mcq",
+    question: "SLERP (Spherical Linear Interpolation) is preferred over simple linear interpolation for model merging because:",
+    options: [
+      "SLERP is faster to compute for large weight matrices",
+      "SLERP interpolates along the surface of a hypersphere, preserving the magnitude of weight vectors throughout the merge",
+      "SLERP automatically identifies and removes conflicting parameters before merging",
+      "SLERP requires no calibration data, unlike linear interpolation methods"
+    ],
+    correct: 1,
+    keywords: ["SLERP", "model merging", "interpolation", "weight magnitude", "hypersphere"],
+    explanation: "Simple linear interpolation (lerp) shrinks weight magnitudes — the interpolated vector has smaller norm than either endpoint. SLERP maintains constant magnitude by traversing the geodesic path on the unit hypersphere, which better preserves the feature norms that pretrained models rely on. In practice this produces higher quality merged models, especially when merging models trained on different domains.",
+    readMore: { label: "Model Merging →", tab: "systems" }
+  },
+  {
+    id: "merge-2", topic: "merging", difficulty: "hard", type: "mcq",
+    question: "TIES-Merging addresses which core failure mode of naive model averaging?",
+    options: [
+      "Models trained on different datasets having incompatible tokenizers",
+      "Parameter interference: signs of weight deltas conflict across models, causing cancellation",
+      "Memory requirements of loading all source models simultaneously during merging",
+      "Catastrophic forgetting of the base model's capabilities after merging"
+    ],
+    correct: 1,
+    keywords: ["TIES-Merging", "parameter interference", "weight delta", "sign conflict", "model merging"],
+    explanation: "When averaging weight deltas (ΔW = fine-tuned - base) across multiple models, parameters where one model increased a weight and another decreased it partially cancel out, degrading both capabilities. TIES-Merging resolves this by: (1) trimming small deltas (noise), (2) electing the majority sign per parameter across models, (3) only merging parameters that agree on sign. This reduces destructive interference and preserves each model's specialized capabilities better.",
+    readMore: { label: "Model Merging →", tab: "systems" }
+  },
+  {
+    id: "merge-3", topic: "merging", difficulty: "medium", type: "mcq",
+    question: "Model merging (vs ensemble or fine-tuning) is most useful when:",
+    options: [
+      "You need maximum quality and have abundant compute for ensembling",
+      "You have two specialized fine-tuned models and want their capabilities in one model at zero training cost",
+      "You want to merge models from different architecture families (e.g., LLaMA + Mistral)",
+      "You need to compress a large model into a smaller one for deployment"
+    ],
+    correct: 1,
+    keywords: ["model merging", "fine-tuned", "zero training", "ensemble", "architecture"],
+    explanation: "Model merging's sweet spot is combining same-architecture models fine-tuned for different tasks (e.g., a coding model + an instruction-following model) without additional training. The result often retains 80-90% of both capabilities. It requires the models to share the same base architecture and tokenizer. It doesn't compress models (same size as inputs) and doesn't work across architectures — for that you'd need distillation.",
+    readMore: { label: "Model Merging →", tab: "systems" }
+  },
+  {
+    id: "merge-4", topic: "merging", difficulty: "hard", type: "mcq",
+    question: "The 'Model Soup' merging approach (Wortsman et al.) achieves better generalization than any individual fine-tuned model by:",
+    options: [
+      "Training multiple models with different random seeds and selecting the best one",
+      "Averaging weights of multiple models fine-tuned with different hyperparameters on the same task",
+      "Using a meta-learning algorithm to find optimal merge coefficients per layer",
+      "Merging only the attention weights while keeping FFN weights from a single best model"
+    ],
+    correct: 1,
+    keywords: ["Model Soup", "weight averaging", "hyperparameters", "generalization", "loss basin"],
+    explanation: "Model Soup averages the weights of multiple models fine-tuned from the same pretrained base, each with different hyperparameters (learning rate, augmentation, etc.). Because fine-tuned models from the same base tend to reside in the same loss basin, their average lies in a flat region of the loss landscape — giving better generalization than any individual model. This is weight-space ensembling without the inference cost of a traditional ensemble.",
+    readMore: { label: "Model Merging →", tab: "systems" }
+  },
+
+  // ─── CONSTRAINED GENERATION ──────────────────────────────────────────────────
+  {
+    id: "constrain-1", topic: "constrained", difficulty: "medium", type: "mcq",
+    question: "Constrained generation tools like Outlines and Guidance enforce output structure by:",
+    options: [
+      "Post-processing the LLM's full output to fix schema violations after generation",
+      "Masking logits at each generation step so only valid next tokens have non-zero probability",
+      "Fine-tuning the model on structured output examples to teach JSON generation",
+      "Using beam search with a validity checker to reject invalid token sequences"
+    ],
+    correct: 1,
+    keywords: ["constrained generation", "Outlines", "Guidance", "logit masking", "schema"],
+    explanation: "At each generation step, the constraint engine computes a binary mask over the vocabulary: tokens that would keep the partial output valid (per regex, JSON schema, or CFG) get logit 0, invalid tokens get -∞. After softmax, the model can only sample from the valid set. This is lossless — you get the model's original distribution restricted to valid tokens — and works with any LLM without fine-tuning.",
+    readMore: { label: "Constrained Generation →", tab: "systems" }
+  },
+  {
+    id: "constrain-2", topic: "constrained", difficulty: "hard", type: "mcq",
+    question: "GBNF (GGUF BNF format, used in llama.cpp) allows constrained generation by:",
+    options: [
+      "Converting JSON schemas to approximate regex patterns for fast masking",
+      "Defining a formal grammar that specifies exactly which token sequences are valid outputs",
+      "Sampling multiple outputs and selecting the one that passes schema validation",
+      "Using reinforcement learning to train the model to prefer structured outputs"
+    ],
+    correct: 1,
+    keywords: ["GBNF", "BNF", "llama.cpp", "grammar", "constrained generation", "finite automaton"],
+    explanation: "GBNF is a BNF-style grammar format that defines the complete syntactic structure of valid outputs. llama.cpp compiles this grammar into a finite automaton that tracks the current parse state during generation. At each step, the automaton determines which tokens are valid continuations, and those tokens' logits are kept while all others are masked. This guarantees 100% grammatically valid outputs at the cost of ~5-15ms per token overhead.",
+    readMore: { label: "Constrained Generation →", tab: "systems" }
+  },
+  {
+    id: "constrain-3", topic: "constrained", difficulty: "medium", type: "mcq",
+    question: "The primary trade-off of using constrained generation vs prompting for structured output is:",
+    options: [
+      "Constrained generation is slower and lower quality; prompting is always preferred",
+      "Constrained generation guarantees schema compliance with slight latency overhead; prompting is faster but has 1-5% failure rate even with strong models",
+      "Constrained generation requires GPU-only hardware; prompting works on any backend",
+      "Constrained generation is only available through open-source models, not API providers"
+    ],
+    correct: 1,
+    keywords: ["constrained generation", "prompting", "schema compliance", "failure rate", "latency"],
+    explanation: "Even GPT-4 with explicit JSON instructions fails 1-5% of the time on complex schemas — this is unacceptable for production pipelines that feed structured output to downstream code. Constrained generation eliminates this failure mode entirely. The cost is 5-15ms latency overhead per token (for logit masking) and added infrastructure complexity. For high-volume production use where schema failures cause pipeline errors, the reliability is worth the overhead.",
+    readMore: { label: "Constrained Generation →", tab: "systems" }
+  },
+  {
+    id: "constrain-4", topic: "constrained", difficulty: "hard", type: "mcq",
+    question: "SGLang's 'near-zero overhead' structured generation achieves efficiency by:",
+    options: [
+      "Pre-computing all possible valid token sets for a schema before generation begins",
+      "Compiling the constraint into a compressed finite automaton and caching token mask lookups",
+      "Using INT4 quantization specifically for the logit masking computation",
+      "Offloading constraint computation to CPU while GPU handles attention"
+    ],
+    correct: 1,
+    keywords: ["SGLang", "structured generation", "DFA", "token mask", "caching", "overhead"],
+    explanation: "SGLang compiles the JSON schema or regex into an efficient deterministic finite automaton (DFA) and pre-computes token masks for each DFA state. Since many states are visited repeatedly during generation (e.g., 'inside a string value'), the mask lookup becomes a simple array index — O(1) — rather than re-evaluating the constraint against the full vocabulary. This amortization reduces overhead from ~15ms to near-zero for common schema patterns.",
+    readMore: { label: "Constrained Generation →", tab: "systems" }
   }
 ];
 
