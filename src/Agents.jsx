@@ -2056,16 +2056,204 @@ function FrameworkLandscape() {
   );
 }
 
+// ─── LLM MEMORY ARCHITECTURE ─────────────────────────────────────────────────
+const MEM_TYPES = [
+  { id: "incontext", label: "In-Context", color: "#6366f1",
+    desc: "Everything in the current prompt window — messages, tool outputs, instructions. Gone when the session ends.",
+    storage: "Prompt (RAM)", persistence: "Session only", retrieval: "Always present", costTier: "High (scales O(n))",
+    example: "chat_history list passed on every request",
+    code: `# In-context memory — append each turn\nmessages = [\n  {"role":"system","content":system_prompt},\n  {"role":"user","content":"What did we discuss?"},\n  # ... all previous turns\n]\nresponse = client.chat(messages=messages)`,
+    when: "Single-session tasks, short conversations, when simplicity > cost.",
+    pitfall: "O(n) cost growth. A 300-turn conversation can cost 100× a 3-turn one." },
+  { id: "episodic", label: "Episodic", color: "#3b82f6",
+    desc: "Summaries of past conversations stored externally, retrieved at session start. The agent remembers what it talked about with you.",
+    storage: "SQLite / Redis / Postgres", persistence: "Across sessions", retrieval: "Fetched at session start", costTier: "Low (compressed summaries)",
+    example: "ChatGPT memory, LangMem conversation store",
+    code: `from langmem import EpisodicMemory\nmem = EpisodicMemory(backend="sqlite")\n# After session ends:\nawait mem.add(session_id=uid, messages=turns)\n# Before next session:\nhistory = await mem.get(session_id=uid, limit=5)`,
+    when: "Multi-session assistants — users expect: 'Remember when I mentioned X last week?'",
+    pitfall: "Summarization loses nuance. If the summary omits a detail, the agent won't remember it." },
+  { id: "semantic", label: "Semantic", color: "#06b6d4",
+    desc: "Facts about the user or domain stored as embeddings in a vector store. Queried per-turn for relevant context.",
+    storage: "Vector DB (Pinecone, pgvector)", persistence: "Permanent", retrieval: "Similarity search per query", costTier: "Medium (embedding cost per write)",
+    example: "User preference store, company knowledge base",
+    code: `# Store a fact\nvec = embed("User prefers Python over JS")\nvectordb.upsert(id=hash(fact), vector=vec, metadata={"text":fact})\n\n# Retrieve at query time\nrelevant = vectordb.query(embed(user_msg), top_k=5)\ncontext = [r.metadata["text"] for r in relevant]`,
+    when: "Personalized agents, domain RAG. User has persistent preferences or domain is too large for in-context.",
+    pitfall: "Facts that change (prices, policies) go stale unless you have an update pipeline." },
+  { id: "procedural", label: "Procedural", color: "#22c55e",
+    desc: "Skills and behaviors baked into model weights via fine-tuning. No retrieval needed — the model just knows how.",
+    storage: "Model weights", persistence: "Until retrained", retrieval: "None — always active", costTier: "Low at inference (upfront training cost)",
+    example: "Customer support tone, medical terminology, code style",
+    code: `# QLoRA fine-tune for procedural memory\ndataset = [\n  {"prompt": "Summarize this ticket",\n   "response": "...correct tone + format..."},\n  # 1k–10k high-quality examples\n]\ntrainer = SFTTrainer(\n  model, dataset,\n  peft_config=LoraConfig(r=16, target_modules=["q_proj","v_proj"])\n)`,
+    when: "Behavior needs to be consistent across all users, all sessions. Bake it in rather than retrieving it.",
+    pitfall: "Catastrophic forgetting: over-fine-tuning degrades base capability. Always benchmark both." },
+  { id: "working", label: "Working Memory", color: "#f59e0b",
+    desc: "Scratch-pad during a task: tool outputs, intermediate results, plan steps. Passed between tool calls within a session.",
+    storage: "Agent state dict / graph state", persistence: "Task duration only", retrieval: "Explicit state access", costTier: "Low (structured data, not tokens)",
+    example: "LangGraph state object, planner agent step buffer",
+    code: `# LangGraph working memory via state\nclass AgentState(TypedDict):\n    messages: list\n    plan: list[str]\n    tool_outputs: dict\n    current_step: int\n\ndef execute_step(state: AgentState):\n    result = run_tool(state["plan"][state["current_step"]])\n    state["tool_outputs"][state["current_step"]] = result\n    return state`,
+    when: "Multi-step tasks where each step depends on previous results: planning, research, code-writing agents.",
+    pitfall: "State can grow large for long tasks. Serialize to disk for tasks that may be interrupted or resumed." },
+  { id: "external", label: "External / Structured", color: "#ec4899",
+    desc: "Databases, APIs, calendars — exact lookup by key. The agent knows the schema and queries it directly.",
+    storage: "Postgres / MySQL / REST API", persistence: "Permanent (managed externally)", retrieval: "Deterministic SQL/API call", costTier: "Negligible",
+    example: "User account data, CRM records, calendar events, order history",
+    code: `# External memory via tool call\ndef get_user_orders(user_id: str) -> list:\n    """Retrieve order history. Call when user\n    asks about their purchases.\"\"\"\n    return db.execute(\n        "SELECT * FROM orders WHERE user_id = ?"\n        " ORDER BY created_at DESC LIMIT 10",\n        [user_id]\n    ).fetchall()`,
+    when: "Data that lives in an existing system of record. Never duplicate production DB data into a vector store.",
+    pitfall: "The agent needs well-designed tool schemas. Vague descriptions lead to wrong query parameters." },
+];
+
+const MEM_LIBS = [
+  { name: "LangMem", color: "#6366f1", bestFor: "LangGraph agents", types: "Episodic + Semantic", backend: "Vector + SQL", oss: true, note: "Native LangGraph integration. Best for agents already on the LangChain stack." },
+  { name: "Mem0", color: "#06b6d4", bestFor: "Personalized apps", types: "All 3 types", backend: "Vector + Graph", oss: true, note: "SaaS tier available. Easiest API for user-level memory. Good for chat products." },
+  { name: "MemGPT / Letta", color: "#22c55e", bestFor: "Long-horizon tasks", types: "In-context + External", backend: "Custom paging", oss: true, note: "OS-inspired memory paging. Overkill for most apps; powerful for very long tasks." },
+  { name: "Custom Vector Store", color: "#f59e0b", bestFor: "Production at scale", types: "Semantic", backend: "pgvector / Pinecone", oss: true, note: "Full control. Build when you need ACL, custom filtering, or scale the libs can't meet." },
+];
+
+const MEM_WIZARD_RESULTS = {
+  "000": { strategy: "In-Context Only",          lib: "None needed",                color: "#6366f1", desc: "Simplest, fastest, cheapest. Keep all context in the message list. Fine for most chatbots and task-specific agents.", code: `response = llm.chat(messages=[*history, user_msg])` },
+  "100": { strategy: "Episodic Memory",           lib: "LangMem or Mem0",            color: "#3b82f6", desc: "Summarize sessions and retrieve past conversations at the start of each new session.", code: `history = await mem.get(user_id=uid, limit=5)\nresponse = llm.chat(messages=[*history, user_msg])` },
+  "010": { strategy: "Semantic Memory",           lib: "Mem0 or pgvector",           color: "#06b6d4", desc: "Store user/domain facts as embeddings. Retrieve relevant facts on each query.", code: `facts = vectordb.query(embed(user_msg), k=5)\nresponse = llm.chat(messages=[system+facts, user_msg])` },
+  "110": { strategy: "Episodic + Semantic",       lib: "Mem0 (handles both)",        color: "#8b5cf6", desc: "Conversation history for continuity + fact store for personalization.", code: `history = await mem.get_episodes(uid)\nfacts = await mem.get_facts(uid, query=user_msg)\nresponse = llm.chat(messages=[system+facts+history, user_msg])` },
+  "001": { strategy: "Working Memory",            lib: "LangGraph state",            color: "#f59e0b", desc: "Structured state dict passed between tool calls within the session.", code: `state = {"plan": steps, "outputs": {}, "step": 0}\nwhile not done(state):\n    state = agent_step(state)` },
+  "101": { strategy: "Episodic + Working Memory", lib: "LangMem + LangGraph",        color: "#f59e0b", desc: "Cross-session recall + task-scoped scratch-pad.", code: `history = await mem.get(uid)\nstate = {"messages": history, "plan": [], "outputs": {}}` },
+  "011": { strategy: "Semantic + Working Memory", lib: "Mem0 + LangGraph",           color: "#22c55e", desc: "User facts retrieved per query + structured state for multi-step tasks.", code: `facts = await mem.get_facts(uid, query=msg)\nstate = {"facts": facts, "plan": [], "outputs": {}}` },
+  "111": { strategy: "Full Memory Stack",         lib: "Mem0 + LangGraph + Custom DB",color: "#ec4899", desc: "Episodic + Semantic + Working memory. For complex personal assistants that run long tasks and remember users across time.", code: `history = await mem.get_episodes(uid)\nfacts = await mem.get_facts(uid, query=msg)\nstate = {"messages": history, "facts": facts, "plan": [], "step": 0}` },
+};
+
+function LLMMemoryArchitecture() {
+  const [tab, setTab] = useState("types");
+  const [selectedMem, setSelectedMem] = useState(null);
+  const [wizardAnswers, setWizardAnswers] = useState({});
+  const wizardKey = ["q1","q2","q3"].map(k => wizardAnswers[k] === true ? "1" : wizardAnswers[k] === false ? "0" : null);
+  const wizardDone = wizardKey.every(v => v !== null);
+  const wizardResult = wizardDone ? MEM_WIZARD_RESULTS[wizardKey.join("")] : null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {[{id:"types",label:"6 Memory Types"},{id:"libs",label:"Library Comparison"},{id:"wizard",label:"Decision Wizard"}].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all ${tab===t.id ? "bg-violet-600 border-violet-500 text-white" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "types" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Click any type to see implementation details.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {MEM_TYPES.map(m => (
+              <div key={m.id} onClick={() => setSelectedMem(selectedMem === m.id ? null : m.id)}
+                className="rounded-xl border p-4 cursor-pointer transition-all hover:border-zinc-600"
+                style={{ borderColor: selectedMem===m.id ? m.color : "#3f3f46", backgroundColor: selectedMem===m.id ? "#18181b" : "transparent" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full" style={{ color: m.color, backgroundColor: m.color+"22" }}>{m.label}</span>
+                  <span className="text-[10px] text-zinc-600">{m.costTier}</span>
+                </div>
+                <p className="text-sm text-zinc-300 leading-relaxed mb-2">{m.desc}</p>
+                <div className="grid grid-cols-2 gap-1 text-[10px] text-zinc-500">
+                  <span>Storage: <span className="text-zinc-400">{m.storage}</span></span>
+                  <span>Persistence: <span className="text-zinc-400">{m.persistence}</span></span>
+                </div>
+                {selectedMem === m.id && (
+                  <div className="mt-3 space-y-2">
+                    <div className="bg-zinc-950 rounded-lg p-3">
+                      <pre className="font-mono text-xs text-green-400 whitespace-pre-wrap leading-relaxed">{m.code}</pre>
+                    </div>
+                    <p className="text-[11px] text-emerald-400">✓ Use when: {m.when}</p>
+                    <p className="text-[11px] text-amber-400">⚠ Pitfall: {m.pitfall}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "libs" && (
+        <div className="space-y-4">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  {["Library","Best for","Types","Backend","OSS","Notes"].map(h => (
+                    <th key={h} className="text-left py-2 px-3 text-zinc-500 font-mono uppercase text-[10px] tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {MEM_LIBS.map(lib => (
+                  <tr key={lib.name} className="border-b border-zinc-800/50 hover:bg-zinc-800/20">
+                    <td className="py-3 px-3"><span className="font-bold px-2 py-0.5 rounded-full text-sm" style={{ color: lib.color, backgroundColor: lib.color+"22" }}>{lib.name}</span></td>
+                    <td className="py-3 px-3 text-zinc-300">{lib.bestFor}</td>
+                    <td className="py-3 px-3 text-zinc-400">{lib.types}</td>
+                    <td className="py-3 px-3 text-zinc-400">{lib.backend}</td>
+                    <td className="py-3 px-3"><span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-900/40 text-emerald-400">OSS</span></td>
+                    <td className="py-3 px-3 text-zinc-500 text-[11px] leading-relaxed">{lib.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4">
+            <p className="text-xs font-bold text-amber-400 mb-1">RECOMMENDATION</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">Start with <span className="text-white font-bold">in-context only</span>. Add <span className="text-white font-bold">Mem0 or LangMem</span> when you need cross-session recall or user personalization. Roll a custom vector store only when you need access control, custom metadata filtering, or scale beyond what managed libraries support.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "wizard" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Answer 3 questions to get your memory architecture recommendation.</p>
+          {[
+            { key: "q1", q: "Does your agent need to persist knowledge across sessions (days or weeks apart)?" },
+            { key: "q2", q: "Does it need personalized facts about the user or domain (preferences, knowledge base, history)?" },
+            { key: "q3", q: "Does it run complex multi-step tasks within a single session (planning, tool chains, research loops)?" },
+          ].map(({key, q}, idx) => (
+            <div key={key} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+              <p className="text-sm text-white font-medium">Q{idx+1}: {q}</p>
+              <div className="flex gap-2">
+                {[{v:true,label:"Yes"},{v:false,label:"No"}].map(({v,label}) => (
+                  <button key={label} onClick={() => setWizardAnswers(a => ({...a,[key]:v}))}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold border transition-all ${wizardAnswers[key]===v ? (v ? "bg-emerald-700 border-emerald-600 text-white" : "bg-zinc-700 border-zinc-600 text-white") : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          {wizardResult && (
+            <div className="rounded-xl border p-5 space-y-3" style={{ borderColor: wizardResult.color+"60", backgroundColor: wizardResult.color+"0d" }}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: wizardResult.color+"33", color: wizardResult.color }}>RECOMMENDED</span>
+                <span className="text-lg font-black text-white">{wizardResult.strategy}</span>
+              </div>
+              <p className="text-sm text-zinc-300 leading-relaxed">{wizardResult.desc}</p>
+              <p className="text-xs text-zinc-500">Library: <span className="text-zinc-300 font-mono">{wizardResult.lib}</span></p>
+              <div className="bg-zinc-950 rounded-lg p-3">
+                <pre className="font-mono text-xs text-green-400 whitespace-pre-wrap leading-relaxed">{wizardResult.code}</pre>
+              </div>
+              <button onClick={() => setWizardAnswers({})} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">↺ Reset wizard</button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const AGENTS_MODULES = [
-  { id: "react",      label: "ReAct Pattern",     tag: "LOOP",   group: "CORE",  component: ReActPattern        },
-  { id: "tools",      label: "Tool Use Design",   tag: "TOOLS",  group: "CORE",  component: ToolUseDesign       },
-  { id: "memory",     label: "Agent Memory",      tag: "MEMORY", group: "CORE",  component: AgentMemory         },
-  { id: "multiagent", label: "Multi-Agent",       tag: "SCALE",  group: "SCALE", component: MultiAgentPatterns  },
-  { id: "failures",   label: "Failure Modes",     tag: "DEBUG",  group: "SCALE", component: AgentFailureModes   },
-  { id: "planning",   label: "Planning Patterns", tag: "PLAN",   group: "SCALE", component: PlanningPatterns    },
-  { id: "design",     label: "Design Challenge",  tag: "BUILD",  group: "SIM",   component: AgentDesignChallenge },
-  { id: "simulator",  label: "Loop Simulator",    tag: "PLAY",   group: "SIM",   component: AgentLoopSimulator  },
-  { id: "frameworks", label: "Framework Landscape", tag: "STACK", group: "ECOSYSTEM", component: FrameworkLandscape },
+  { id: "react",      label: "ReAct Pattern",       tag: "LOOP",   group: "CORE",      component: ReActPattern        },
+  { id: "tools",      label: "Tool Use Design",     tag: "TOOLS",  group: "CORE",      component: ToolUseDesign       },
+  { id: "memory",     label: "Agent Memory",        tag: "MEMORY", group: "CORE",      component: AgentMemory         },
+  { id: "memarch",    label: "Memory Architecture", tag: "ARCH",   group: "CORE",      component: LLMMemoryArchitecture },
+  { id: "multiagent", label: "Multi-Agent",         tag: "SCALE",  group: "SCALE",     component: MultiAgentPatterns  },
+  { id: "failures",   label: "Failure Modes",       tag: "DEBUG",  group: "SCALE",     component: AgentFailureModes   },
+  { id: "planning",   label: "Planning Patterns",   tag: "PLAN",   group: "SCALE",     component: PlanningPatterns    },
+  { id: "design",     label: "Design Challenge",    tag: "BUILD",  group: "SIM",       component: AgentDesignChallenge },
+  { id: "simulator",  label: "Loop Simulator",      tag: "PLAY",   group: "SIM",       component: AgentLoopSimulator  },
+  { id: "frameworks", label: "Framework Landscape", tag: "STACK",  group: "ECOSYSTEM", component: FrameworkLandscape  },
 ];
 
 const AGENTS_GROUPS = [
