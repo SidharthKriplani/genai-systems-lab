@@ -2,7 +2,40 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: May 2026 | Current scale: 38+ Systems modules, 14 Explore, 183+ PrepLab questions, 178+ GT posts*
+*Last updated: May 2026 | Current scale: 48+ Systems modules, 19 Explore, 183+ PrepLab questions, 202+ GT posts*
+
+---
+
+## Curriculum-Inspired Tracks (Idea Dump)
+
+Topics and structures borrowed from major AI curricula — not built yet, just captured for reference. These are content ideas that complement existing modules rather than replace them.
+
+### Stanford CS336 / CS324 (LLMs) — topics we can deepen
+- **Pretraining data pipelines** — Common Crawl filtering, deduplication, tokenizer training. CS336 covers this at implementation depth; we have nothing equivalent.
+- **Training at scale** — Gradient accumulation, mixed-precision (bf16/fp16), distributed training (DDP vs FSDP vs pipeline parallelism). Currently missing entirely.
+- **Scaling laws** — Chinchilla compute-optimal curves, how to pick model size vs. token budget. One of the most practically useful things to know.
+- **RLHF implementation depth** — We have the concept; CS336 goes into reward modelling, KL divergence penalty, online vs offline RLHF variants.
+- **Benchmark design** — MMLU, HellaSwag, BIG-Bench. How they work, why they fail, how to read them critically.
+
+### Stanford CS229 / Coursera ML Specialization — foundations we skip
+- **Bias-variance tradeoff in LLM context** — How this classic ML concept maps to prompting, few-shot, fine-tuning decisions.
+- **Cross-validation for LLM evals** — How to split train/test/eval properly when data is expensive.
+- **Regularization analogs** — Dropout in transformers, weight decay, early stopping. Useful for fine-tuning modules.
+
+### DeepLearning.AI Specializations — practical gaps
+- **MLOps for LLMs** — CI/CD for model changes, staging environments, canary deploys. Beyond our current observability module.
+- **Deployment patterns** — Blue-green for models, shadow mode testing, feature flags for model versions. High-frequency production decision.
+- **Data flywheel** — How to systematically collect user feedback to improve models over time. The product loop most teams skip.
+- **LangChain / LlamaIndex** — We deliberately stay framework-agnostic, but a "framework comparison" Explore module could be valuable.
+
+### fast.ai approach — intuition first
+- **Build before theory** — fast.ai starts with a working model then explains why. We could add a "build a tiny RAG in 20 lines" module that front-loads hands-on before any theory.
+- **Practical fine-tuning** — fast.ai covers learning rate finders, gradual unfreezing. These translate directly to LoRA fine-tuning decisions.
+
+### Missing from all curricula (our unique angle)
+- **Production incident retrospectives** — What Stanford/Coursera don't teach: how real systems fail at 2am and what the postmortem looks like. Our Incident Room is the seed of this.
+- **The PM × Engineer handoff** — No curriculum covers how to write specs that engineers can actually build, or how to challenge estimates. Our AIPM track is the only thing like it.
+- **Cost as a first-class concern** — Academic curricula ignore inference cost, token budgets, and batch vs. realtime tradeoffs entirely. We already cover this; it's a differentiator.
 
 ---
 
@@ -43,9 +76,9 @@ Prioritized backlog of ideas not yet built. Organized by effort and impact. Upda
 ## Tier 2 — High Impact, More Effort
 
 ### New features
-- **PrepLab spaced repetition** — Track which questions the user got wrong, resurface them more frequently. Would make PrepLab genuinely better than Anki for this domain. Requires localStorage-based question history.
-- **Module search** — Full-text search across all Systems modules and GT posts. Currently rely on the horizontal pill nav. At 38+ modules, discoverability is a real issue.
-- **"Learning paths"** — Curated sequences: "Prep for ML Eng interview", "Learn RAG engineering", "Ship your first agent". Each path is a sequence of modules + GT posts + PrepLab questions.
+- ~~**PrepLab spaced repetition**~~ ✅ *built*
+- ~~**Module search**~~ ✅ *built (Systems search bar)*
+- ~~**"Learning paths"**~~ ✅ *built (6 paths, Learning Paths tab)*
 - **GT reading mode improvements** — Table of contents per post, estimated reading time progress indicator, related posts sidebar.
 
 ### Systems improvements
