@@ -732,6 +732,12 @@ const SERIES_META = {
     color: "#84cc16",
     postIds: ["ft-dpo-vs-grpo", "ft-quantization", "ft-governance", "ft-multimodal-rag", "ft-case-study"],
   },
+  "perspectives": {
+    title: "Perspectives",
+    desc: "Annotated reading lists for the AI engineers and researchers shaping how the field thinks. Each entry: who they are, their core thesis, essential resources, and what to question.",
+    color: "#06b6d4",
+    postIds: ["persp-karpathy","persp-willison","persp-swyx","persp-hamel","persp-chollet","persp-lecun"],
+  },
 };
 
 export default function GroundTruth({ onNavigate, initialPostId, onPostOpened }) {

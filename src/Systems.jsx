@@ -6758,6 +6758,532 @@ function VibeCodingAndAgenticDev() {
 }
 
 
+
+// ─── KV CACHE ENGINEERING ─────────────────────────────────────────────────────
+const KV_CONCEPTS = [
+  { title: "What gets cached", icon: "📦",
+    desc: "The K (key) and V (value) matrices from attention layers for prefix tokens. If your system prompt is 10k tokens, those 10k tokens' KV computations are cached and reused on every call.",
+    detail: "KV cache stores computed attention keys and values for the prompt prefix. On subsequent requests with the same prefix, the model skips recomputing those layers. Memory cost: 2 × n_layers × n_heads × head_dim × seq_len × precision_bytes." },
+  { title: "Automatic prefix caching", icon: "⚡",
+    desc: "vLLM and SGLang detect shared prefixes automatically using hash-based block matching. No code changes needed — just send requests with the same prefix.",
+    detail: "Implemented via block-level KV sharing. Each block of tokens (e.g. 16 tokens) is hashed. Matching hash = cache hit. Radix attention (SGLang) extends this to tree-structured prefix matching for multi-turn." },
+  { title: "Explicit cache markers", icon: "🏷️",
+    desc: "Anthropic's cache_control, OpenAI's prompt caching, and Gemini's implicit caching let you mark specific breakpoints. Everything before the marker is cached.",
+    detail: 'Anthropic: add {"type":"text","text":"...","cache_control":{"type":"ephemeral"}} to mark cache boundary. OpenAI: prefix caching on by default for prompts >1024 tokens. Gemini: implicit on prompts >32k tokens. DeepSeek: explicit via API flag.' },
+  { title: "API support matrix", icon: "📊",
+    desc: "All major managed APIs now ship some form of KV caching. Prices and minimums vary.",
+    detail: "Anthropic: 90% cost reduction on cached tokens, min 1024 tokens, 5min TTL. OpenAI: 50% reduction, min 1024 tokens, automatic. Gemini: 75% reduction, min 32k tokens, explicit. DeepSeek: 75% reduction, min 64 tokens, explicit. vLLM/SGLang: free (self-hosted), automatic." },
+];
+
+function KVHowItWorks() {
+  const [open, setOpen] = React.useState(null);
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-zinc-400">KV cache reuses computed attention key/value matrices for repeated prefix tokens — the core mechanism behind 90% cost reductions on cached input.</p>
+      {KV_CONCEPTS.map((c, i) => (
+        <div key={i} className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+          <button onClick={() => setOpen(open === i ? null : i)} className="w-full flex items-center gap-3 p-4 text-left hover:bg-zinc-800/50 transition-colors">
+            <span className="text-xl">{c.icon}</span>
+            <span className="text-sm font-bold text-white flex-1">{c.title}</span>
+            <span className="text-zinc-500 text-xs">{open === i ? "▲" : "▼"}</span>
+          </button>
+          <div className="px-4 pb-3 text-xs text-zinc-400 leading-relaxed">{c.desc}</div>
+          {open === i && (
+            <div className="mx-4 mb-4 bg-zinc-800 rounded-lg p-3 border border-zinc-700">
+              <p className="text-xs text-zinc-300 leading-relaxed font-mono">{c.detail}</p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function KVCostMath() {
+  const [dailyTokens, setDailyTokens] = React.useState(5000000);
+  const [hitRate, setHitRate] = React.useState(60);
+  const [priceCents, setPriceCents] = React.useState(100);
+
+  const pricePerToken = priceCents / 100 / 1000000;
+  const cachedTokens = dailyTokens * (hitRate / 100);
+  const costWithout = dailyTokens * pricePerToken;
+  const cachedDiscount = 0.9;
+  const costWith = (cachedTokens * pricePerToken * (1 - cachedDiscount)) + ((dailyTokens - cachedTokens) * pricePerToken);
+  const dailySaving = costWithout - costWith;
+  const monthlySaving = dailySaving * 30;
+
+  const fmt = (n) => n >= 1000000 ? (n/1000000).toFixed(1)+"M" : n >= 1000 ? (n/1000).toFixed(0)+"K" : n.toFixed(0);
+  const fmtUSD = (n) => "$" + n.toFixed(2);
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 space-y-4">
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-zinc-400"><span>Daily input tokens</span><span className="font-mono text-white">{fmt(dailyTokens)}</span></div>
+          <input type="range" min={100000} max={100000000} step={100000} value={dailyTokens} onChange={e => setDailyTokens(+e.target.value)} className="w-full accent-violet-500" />
+        </div>
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-zinc-400"><span>Cache hit rate</span><span className="font-mono text-white">{hitRate}%</span></div>
+          <input type="range" min={10} max={90} step={5} value={hitRate} onChange={e => setHitRate(+e.target.value)} className="w-full accent-violet-500" />
+        </div>
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-zinc-400"><span>Price per 1M tokens (cents)</span><span className="font-mono text-white">{priceCents}¢</span></div>
+          <input type="range" min={10} max={500} step={10} value={priceCents} onChange={e => setPriceCents(+e.target.value)} className="w-full accent-violet-500" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-3 text-center">
+          <p className="text-xs text-zinc-500 mb-1">Tokens from cache/day</p>
+          <p className="text-lg font-black text-violet-400 font-mono">{fmt(cachedTokens)}</p>
+        </div>
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-3 text-center">
+          <p className="text-xs text-zinc-500 mb-1">Cost without caching</p>
+          <p className="text-lg font-black text-red-400 font-mono">{fmtUSD(costWithout)}</p>
+        </div>
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-3 text-center">
+          <p className="text-xs text-zinc-500 mb-1">Cost with caching</p>
+          <p className="text-lg font-black text-green-400 font-mono">{fmtUSD(costWith)}</p>
+        </div>
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-3 text-center">
+          <p className="text-xs text-zinc-500 mb-1">Daily saving</p>
+          <p className="text-lg font-black text-emerald-400 font-mono">{fmtUSD(dailySaving)}</p>
+        </div>
+      </div>
+
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-3 text-center">
+        <p className="text-xs text-zinc-500 mb-1">Monthly saving (30 days)</p>
+        <p className="text-2xl font-black text-emerald-300 font-mono">{fmtUSD(monthlySaving)}</p>
+      </div>
+
+      <div className="bg-violet-950/40 border border-violet-800/40 rounded-xl p-4">
+        <p className="text-xs text-violet-300 leading-relaxed">
+          <span className="font-bold">Rule of thumb:</span> KV caching is the only optimization that gets cheaper as your prompts get longer. A 50k-token system prompt costs the same as a 1k-token one on every subsequent turn.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function KVCacheAwareRouting() {
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-zinc-400 leading-relaxed">The llm-d pattern (Kubernetes-native LLM inference disaggregation) routes requests to the GPU pod that already holds the most relevant KV blocks for that prefix — maximizing cache hits across the fleet.</p>
+
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 space-y-3">
+        <p className="text-xs font-bold text-zinc-300 uppercase tracking-wide mb-3">Request Flow</p>
+        <div className="flex flex-col gap-2">
+          {[
+            { label: "Request", color: "#6366f1", desc: "Incoming user request with prefix" },
+            { label: "Prefix Hasher", color: "#8b5cf6", desc: "Hash each 16-token block of the prompt prefix" },
+            { label: "Router", color: "#3b82f6", desc: "Checks KV block registry across pod fleet" },
+            { label: "HIT → Matching Pod", color: "#10b981", desc: "Route to pod already holding those KV blocks" },
+            { label: "MISS → Any Pod", color: "#f59e0b", desc: "Route to any pod, loads KV from shared store" },
+          ].map((step, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className="flex flex-col items-center">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: step.color }}>{i + 1}</div>
+                {i < 4 && <div className="w-0.5 h-4 bg-zinc-700 mt-1" />}
+              </div>
+              <div className="pt-1">
+                <span className="text-xs font-bold text-white">{step.label}</span>
+                <p className="text-xs text-zinc-500 mt-0.5">{step.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-zinc-300 uppercase tracking-wide">3 Key Routing Decisions</p>
+        {[
+          { n: 1, title: "Hash granularity", body: "Per-token vs per-block (16 tokens). Per-token = higher accuracy, slower lookup. Per-block = faster, slight miss on partial blocks. Most systems use 16-token blocks." },
+          { n: 2, title: "Block eviction policy", body: "LRU evicts least-recently-used blocks. Frequency-weighted keeps hot blocks (e.g. system prompts used by every request) pinned. Long system prompts should never be evicted — pin them." },
+          { n: 3, title: "MoE routing (EPLB)", body: "For Mixture-of-Experts models, route to the pod that has the hot expert weights loaded. Expert Parallelism Load Balancing (EPLB) avoids expert cold-starts across pods." },
+        ].map(d => (
+          <div key={d.n} className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 flex gap-3">
+            <span className="text-xl font-black text-violet-400 shrink-0">{d.n}</span>
+            <div>
+              <p className="text-sm font-bold text-white mb-1">{d.title}</p>
+              <p className="text-xs text-zinc-400 leading-relaxed">{d.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KVCacheEngineering() {
+  const TABS = [
+    { id: "how", tag: "LEARN", label: "How It Works" },
+    { id: "cost", tag: "CALC", label: "Cost Math" },
+    { id: "routing", tag: "ARCH", label: "Cache-Aware Routing" },
+  ];
+  const [tab, setTab] = React.useState("how");
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="Master KV cache engineering — understand the mechanism, calculate real cost savings, and design cache-aware routing for production inference."
+        steps={[
+          "How It Works: explore the 4 core KV cache concepts with expandable deep-dives",
+          "Cost Math: use the interactive calculator to size savings for your actual token volumes",
+          "Cache-Aware Routing: learn the llm-d pattern and the 3 key routing decisions",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "how" && <KVHowItWorks />}
+      {tab === "cost" && <KVCostMath />}
+      {tab === "routing" && <KVCacheAwareRouting />}
+    </div>
+  );
+}
+
+// ─── AI GUARDRAILS ENGINEERING ────────────────────────────────────────────────
+const GUARD_INPUT = [
+  { name: "Prompt injection detection",  catches: "Direct & indirect injection attempts, jailbreak patterns", color: "#ef4444" },
+  { name: "PII scrubbing",              catches: "Emails, phone numbers, SSNs, credit cards before hitting LLM", color: "#f97316" },
+  { name: "Topic filtering",            catches: "Off-domain requests (e.g. competitor mentions, legal advice)", color: "#f59e0b" },
+  { name: "Toxicity / hate speech",     catches: "Harmful input before it influences the model's response", color: "#8b5cf6" },
+  { name: "Schema / format validation", catches: "Malformed inputs that could cause downstream parsing failures", color: "#3b82f6" },
+];
+
+const GUARD_OUTPUT = [
+  { name: "Hallucination detection",    catches: "Factual claims not grounded in retrieved context (RAG)", color: "#ef4444" },
+  { name: "PII leakage",               catches: "Model outputs that expose user data from context", color: "#f97316" },
+  { name: "Toxic / unsafe content",    catches: "Harmful, biased, or policy-violating generations", color: "#f59e0b" },
+  { name: "Schema conformance",        catches: "Structured output that doesn't match declared schema", color: "#8b5cf6" },
+  { name: "Citation / grounding check",catches: "Claims without source support in retrieval-augmented systems", color: "#3b82f6" },
+];
+
+const GUARD_PROVIDERS = [
+  { name: "AWS Bedrock Guardrails", focus: "PII + injection",       selfHost: false, latency: "~80ms",  price: "per-use",      strength: "Deep AWS integration, managed service, SOC2" },
+  { name: "Azure Content Safety",   focus: "Jailbreak + harm",      selfHost: false, latency: "~60ms",  price: "per-1k calls", strength: "Jailbreak shield + indirect injection shield, Azure-native" },
+  { name: "Lakera Guard",           focus: "Prompt injection",      selfHost: false, latency: "~30ms",  price: "per-call",     strength: "Lowest latency injection detection, battle-tested" },
+  { name: "NeMo Guardrails",        focus: "Dialogue control",      selfHost: true,  latency: "~200ms", price: "free/OSS",     strength: "Programmable conversation rails, Colang DSL" },
+  { name: "Patronus AI",            focus: "Hallucination + evals", selfHost: false, latency: "~150ms", price: "per-eval",     strength: "LLM-judge evaluation, integrated eval harness" },
+  { name: "Guardrails AI (OSS)",    focus: "Schema + format",       selfHost: true,  latency: "~50ms",  price: "free/OSS",     strength: "Pydantic-style output validators, 40+ validators" },
+];
+
+const GUARD_LAYERS = [
+  { layer: 1, name: "Input filtering",     what: "Block known-bad patterns before LLM sees them",                     fragility: "Bypassed by paraphrasing" },
+  { layer: 2, name: "Prompt architecture", what: "System prompt isolation, XML delimiters, role separation",           fragility: "Bypassed by context overflow" },
+  { layer: 3, name: "Model alignment",     what: "RLHF/DPO-trained refusal behavior baked into weights",              fragility: "Bypassed by many-shot jailbreaks" },
+  { layer: 4, name: "Output filtering",    what: "Post-generation check before user sees response",                    fragility: "Adds latency; can false-positive" },
+  { layer: 5, name: "Monitoring & logging",what: "Log all I/O, alert on anomaly clusters, human review queue",        fragility: "Reactive, not preventive" },
+];
+
+function GuardDualStage() {
+  return (
+    <div className="space-y-4">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4">
+        <div className="flex items-center gap-2 flex-wrap text-xs font-bold">
+          <span className="bg-zinc-700 text-zinc-300 px-2 py-1 rounded">User Input</span>
+          <span className="text-zinc-500">→</span>
+          <span className="bg-red-900/50 border border-red-700/50 text-red-300 px-2 py-1 rounded">INPUT GUARDRAILS</span>
+          <span className="text-zinc-500">→</span>
+          <span className="bg-violet-900/50 border border-violet-700/50 text-violet-300 px-2 py-1 rounded">LLM</span>
+          <span className="text-zinc-500">→</span>
+          <span className="bg-orange-900/50 border border-orange-700/50 text-orange-300 px-2 py-1 rounded">OUTPUT GUARDRAILS</span>
+          <span className="text-zinc-500">→</span>
+          <span className="bg-zinc-700 text-zinc-300 px-2 py-1 rounded">User</span>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-red-400 uppercase tracking-wide">Input Guardrails</p>
+        {GUARD_INPUT.map((g, i) => (
+          <div key={i} className="bg-zinc-900 rounded-xl border border-zinc-800 p-3 flex gap-3 items-start">
+            <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: g.color }} />
+            <div>
+              <p className="text-xs font-bold text-white">{g.name}</p>
+              <p className="text-xs text-zinc-500 mt-0.5">{g.catches}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-orange-400 uppercase tracking-wide">Output Guardrails</p>
+        {GUARD_OUTPUT.map((g, i) => (
+          <div key={i} className="bg-zinc-900 rounded-xl border border-zinc-800 p-3 flex gap-3 items-start">
+            <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: g.color }} />
+            <div>
+              <p className="text-xs font-bold text-white">{g.name}</p>
+              <p className="text-xs text-zinc-500 mt-0.5">{g.catches}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GuardProviders() {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-zinc-400">Six dominant guardrail providers as of 2026 — each with a distinct focus area, latency profile, and deployment model.</p>
+      {GUARD_PROVIDERS.map((p, i) => (
+        <div key={i} className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-bold text-white">{p.name}</p>
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-mono bg-violet-900/50 border border-violet-700/50 text-violet-300">{p.focus}</span>
+            {p.selfHost && <span className="text-[10px] px-1.5 py-0.5 rounded font-mono bg-zinc-700 text-zinc-300">self-host</span>}
+          </div>
+          <div className="flex gap-4 text-xs text-zinc-500">
+            <span>Latency: <span className="text-zinc-300 font-mono">{p.latency}</span></span>
+            <span>Price: <span className="text-zinc-300">{p.price}</span></span>
+          </div>
+          <p className="text-xs text-zinc-400 leading-relaxed">{p.strength}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GuardRealityCheck() {
+  return (
+    <div className="space-y-4">
+      <div className="bg-red-950/40 border border-red-800/40 rounded-xl p-4">
+        <p className="text-xs text-red-300 leading-relaxed">
+          <span className="font-bold">Uncomfortable truth:</span> 2026 research shows jailbreak attacks achieve 80–94% success on proprietary models and 90–99% on open-weight models. No single guardrail layer stops a determined attacker.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-xs font-bold text-zinc-300 uppercase tracking-wide">Defense-in-Depth Stack</p>
+        {GUARD_LAYERS.map((l, i) => (
+          <div key={i} className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 flex gap-3">
+            <div className="w-7 h-7 rounded-full bg-violet-900/60 border border-violet-700/50 flex items-center justify-center text-xs font-black text-violet-300 shrink-0">{l.layer}</div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-white">{l.name}</p>
+              <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{l.what}</p>
+              <p className="text-xs text-red-400 mt-1">Weakness: {l.fragility}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-4">
+        <p className="text-xs text-zinc-300 leading-relaxed">
+          Each layer is bypassable alone. The goal isn't to be unbreakable — it's to make attacks expensive enough that attackers move on.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AIGuardrailsEngineering() {
+  const TABS = [
+    { id: "dual", tag: "ARCH", label: "Dual-Stage Architecture" },
+    { id: "providers", tag: "TOOLS", label: "Provider Comparison" },
+    { id: "reality", tag: "TRUTH", label: "Reality Check" },
+  ];
+  const [tab, setTab] = React.useState("dual");
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="Design production-grade AI guardrail systems — understand the dual-stage architecture, pick the right providers, and build realistic defense-in-depth."
+        steps={[
+          "Dual-Stage Architecture: map the 10 guardrail checks across input and output pipeline stages",
+          "Provider Comparison: compare the 6 leading guardrail tools on latency, focus, and deployment",
+          "Reality Check: understand why no single guardrail is enough and how to layer defenses",
+        ]}
+      />
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "dual" && <GuardDualStage />}
+      {tab === "providers" && <GuardProviders />}
+      {tab === "reality" && <GuardRealityCheck />}
+    </div>
+  );
+}
+
+// ─── TRAPS LAB ────────────────────────────────────────────────────────────────
+const TRAP_CHALLENGES = [
+  {
+    id: "t1", cat: "System Design", difficulty: "Intermediate",
+    title: "The RAG pipeline with a flaw",
+    scenario: `A team builds a RAG system: documents → chunk at 512 tokens → embed with text-embedding-3-small → store in Pinecone → at query time, embed query → retrieve top-5 → append to prompt → generate.\n\nThey test it. Recall looks good on dev docs. They ship to production.\n\nOne week later: users report the system confidently cites documents that don't exist.`,
+    issues: [
+      { label: "No retrieval evaluation", detail: "They tested whether the system returned answers, not whether it retrieved the RIGHT chunks. RAGAS recall@k or MRR would have caught this." },
+      { label: "No hallucination guardrail on output", detail: "The generator has no grounding check — it can fabricate citations not present in the retrieved context." },
+      { label: "No chunking strategy evaluation", detail: "512-token chunks on dev docs may not be optimal for production documents (different lengths, formats). Chunk size should be tuned to the corpus." },
+    ],
+  },
+  {
+    id: "t2", cat: "System Design", difficulty: "Senior",
+    title: "The eval framework that games itself",
+    scenario: `A team uses GPT-4o as LLM-as-judge to evaluate their GPT-4o-powered product. They score responses on: helpfulness (1-5), accuracy (1-5), safety (1-5). Average score: 4.6/5. They declare the product production-ready.\n\nSix months later, safety incidents start appearing in logs.`,
+    issues: [
+      { label: "Evaluator-generator model collapse", detail: "Using the same model family to evaluate its own outputs creates systematic bias. GPT-4o will rate GPT-4o-style responses higher. Use a different model family (e.g. Claude as judge for GPT-4o outputs)." },
+      { label: "Safety score needs adversarial inputs", detail: "Scoring on benign test cases tells you nothing about safety on adversarial inputs. Red-team first, then evaluate on attack examples." },
+      { label: "No held-out eval set", detail: "If the eval set was seen during prompt development, scores are inflated. Eval sets must be held out and refreshed regularly." },
+    ],
+  },
+  {
+    id: "t3", cat: "LLM Code", difficulty: "Intermediate",
+    title: "The retry loop that never stops",
+    scenario: `async function callLLM(prompt) {\n  while (true) {\n    try {\n      const res = await openai.chat.completions.create({\n        model: "gpt-4o",\n        messages: [{ role: "user", content: prompt }]\n      });\n      return res.choices[0].message.content;\n    } catch (e) {\n      console.log("Error, retrying:", e.message);\n      await sleep(1000);\n    }\n  }\n}`,
+    issues: [
+      { label: "No retry limit", detail: "while(true) with no counter means a persistent API error causes infinite retries. Add maxRetries = 5 and throw after exhaustion." },
+      { label: "No exponential backoff", detail: "Fixed 1s sleep hammers a rate-limited API. Use exponential backoff: sleep(1000 * 2^attempt) with jitter." },
+      { label: "Catches all errors indiscriminately", detail: "4xx errors (bad request, invalid model) should not be retried — they'll never succeed. Only retry 429 (rate limit) and 5xx (server error)." },
+    ],
+  },
+  {
+    id: "t4", cat: "LLM Code", difficulty: "Intermediate",
+    title: "The context that grows forever",
+    scenario: `class ChatBot:\n  def __init__(self):\n    self.history = []\n\n  def chat(self, user_msg):\n    self.history.append({"role":"user","content":user_msg})\n    response = client.chat.completions.create(\n      model="gpt-4o",\n      messages=self.history\n    )\n    reply = response.choices[0].message.content\n    self.history.append({"role":"assistant","content":reply})\n    return reply`,
+    issues: [
+      { label: "Unbounded context window growth", detail: "history grows indefinitely. After ~100 turns it hits the context limit and crashes. Apply sliding window, summary compression, or token counting with truncation." },
+      { label: "No token counting before API call", detail: "No check that len(history_tokens) < max_context. Add tiktoken counting and trim oldest turns when approaching limit." },
+      { label: "No persistence", detail: "History lives in memory — lost on crash/restart. For production chatbots, persist to DB and reconstruct on session resume." },
+    ],
+  },
+  {
+    id: "t5", cat: "Evals", difficulty: "Intermediate",
+    title: "The eval that measures the wrong thing",
+    scenario: `A team evaluates their summarisation model using ROUGE-L score against human-written reference summaries. They iterate prompts until ROUGE-L > 0.45. They ship.\n\nUsers immediately complain the summaries are robotic and miss the key point.`,
+    issues: [
+      { label: "ROUGE measures n-gram overlap, not quality", detail: "ROUGE-L scores high for verbose summaries that copy phrases from source. A concise, insightful summary that paraphrases scores low. It's a proxy, not the goal." },
+      { label: "Reference summaries as ground truth is flawed", detail: "Human references reflect one person's judgment. LLM summaries may be better than the reference but score badly against it." },
+      { label: "No human preference eval", detail: "For generative tasks, A/B preference eval (which summary do you prefer?) correlates better with user satisfaction than automated metrics alone." },
+    ],
+  },
+  {
+    id: "t6", cat: "Evals", difficulty: "Senior",
+    title: "The benchmark that flatters your model",
+    scenario: `A team evaluates three candidate models on their internal QA benchmark before picking one for production. Model C scores 87% — highest by 4 points. They deploy Model C.\n\nThree weeks later, they discover their benchmark questions were generated by Model C itself.`,
+    issues: [
+      { label: "Data contamination / train-eval overlap", detail: "If the benchmark was generated by or trained on the same model being evaluated, the model has seen the questions. Scores are meaningless." },
+      { label: "No held-out external benchmark", detail: "Always include established external benchmarks (MMLU, HellaSwag, domain-specific) that the model couldn't have been trained on." },
+      { label: "No inter-rater reliability check", detail: "Before trusting a benchmark, check that different annotators (or judges) agree on the correct answers. Low IRR = noisy benchmark." },
+    ],
+  },
+  {
+    id: "t7", cat: "Interview Critique", difficulty: "Senior",
+    title: "The candidate's RAG answer",
+    scenario: `Interviewer: "How would you improve retrieval quality in a RAG system?"\n\nCandidate: "I'd increase the chunk size to 2048 tokens so each chunk has more context, and retrieve more chunks — top-20 instead of top-5. More context is always better for the LLM."`,
+    issues: [
+      { label: "Larger chunks ≠ better retrieval", detail: "Larger chunks reduce precision — you retrieve more noise per chunk. The right chunk size depends on document structure and query type. Evaluate, don't assume." },
+      { label: "'More is always better' ignores lost-in-the-middle", detail: "Retrieving top-20 chunks often degrades performance — LLMs attend poorly to middle context. Reranking top-5 from top-20 candidates is better than passing all 20." },
+      { label: "No mention of actual retrieval improvements", detail: "Real improvements: hybrid search (BM25 + dense), reranking (Cohere, cross-encoders), query expansion, HyDE, metadata filtering, embedding model tuning." },
+    ],
+  },
+  {
+    id: "t8", cat: "Interview Critique", difficulty: "Senior",
+    title: "The candidate's cost reduction plan",
+    scenario: `Interviewer: "Your LLM API costs are $50k/month. How do you cut them in half?"\n\nCandidate: "I'd switch to GPT-4o-mini for everything. It's 20x cheaper. Problem solved."`,
+    issues: [
+      { label: "No task-level routing analysis", detail: "Not all tasks need the same model. Classify by complexity first: simple queries → mini, complex reasoning → full model. Blanket downgrade degrades quality on hard tasks." },
+      { label: "Ignores caching opportunities", detail: "If prompts have repeated prefixes (system prompts, few-shot examples), KV caching / prompt caching alone can cut 40-60% of costs without any quality change." },
+      { label: "No measurement before cutting", detail: "You need a cost attribution breakdown first: which endpoints, which users, which prompt patterns drive costs. Without data, you're guessing." },
+    ],
+  },
+];
+
+const TRAP_CAT_COLORS = {
+  "System Design": "#6366f1",
+  "LLM Code": "#f59e0b",
+  "Evals": "#10b981",
+  "Interview Critique": "#ef4444",
+};
+
+function TrapCard({ challenge, revealedIssues, onReveal }) {
+  const catColor = TRAP_CAT_COLORS[challenge.cat] || "#6366f1";
+  const revealed = revealedIssues.includes(challenge.id);
+  const isCode = challenge.cat === "LLM Code";
+
+  return (
+    <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+      <div className="p-4 space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded" style={{ color: catColor, background: catColor + "20", border: `1px solid ${catColor}40` }}>{challenge.cat}</span>
+          <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${challenge.difficulty === "Senior" ? "bg-red-900/40 text-red-300 border border-red-700/40" : "bg-zinc-800 text-zinc-400 border border-zinc-700"}`}>{challenge.difficulty}</span>
+        </div>
+        <p className="text-sm font-bold text-white">{challenge.title}</p>
+        <pre className={`text-xs leading-relaxed whitespace-pre-wrap rounded-lg p-3 ${isCode ? "bg-zinc-950 text-green-300 border border-zinc-700 font-mono" : "bg-zinc-800/60 text-zinc-300 font-sans"}`}>{challenge.scenario}</pre>
+        <button
+          onClick={() => onReveal(challenge.id)}
+          className={`w-full py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${revealed ? "bg-violet-900/40 text-violet-300 border border-violet-700/40 cursor-default" : "bg-violet-600 hover:bg-violet-500 text-white"}`}
+        >
+          {revealed ? "Issues Revealed" : "Show Issues"}
+        </button>
+        {revealed && (
+          <div className="space-y-2 mt-1">
+            {challenge.issues.map((issue, i) => (
+              <div key={i} className="bg-zinc-800 rounded-lg p-3 border border-zinc-700">
+                <p className="text-xs font-bold text-red-300 mb-1">{i + 1}. {issue.label}</p>
+                <p className="text-xs text-zinc-400 leading-relaxed">{issue.detail}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TrapsLab() {
+  const STORAGE_KEY = "trapslab_progress";
+  const [revealed, setRevealedRaw] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
+  });
+
+  function onReveal(id) {
+    setRevealedRaw(prev => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id];
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
+  const totalIssues = TRAP_CHALLENGES.length * 3;
+  const revealedIssues = revealed.length * 3;
+
+  return (
+    <div className="space-y-4">
+      <HowTo
+        objective="Find the flaws before the reveal. Each scenario has 2–3 real bugs that cause production failures or interview red flags."
+        steps={[
+          "Read the scenario carefully — something is wrong",
+          "Think through what you'd catch in a real code/design review",
+          "Click 'Show Issues' to reveal all problems with explanations",
+          "Senior engineers spot these before shipping — practice until you do too",
+        ]}
+      />
+
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 flex items-center justify-between">
+        <p className="text-xs text-zinc-400">Issues revealed</p>
+        <p className="text-lg font-black text-violet-400 font-mono">{revealedIssues} <span className="text-zinc-500 text-sm font-normal">/ {totalIssues}</span></p>
+      </div>
+
+      <div className="space-y-4">
+        {TRAP_CHALLENGES.map(c => (
+          <TrapCard key={c.id} challenge={c} revealedIssues={revealed} onReveal={onReveal} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 const SYSTEMS_MODULES = [
   { id: "evals",         label: "Evals Lab",          tag: "DESIGN",     group: "DESIGN",  component: EvalsLab           },
@@ -6789,6 +7315,9 @@ const SYSTEMS_MODULES = [
   { id: "synthdata",    label: "Synthetic Data",          tag: "DATA",     group: "DESIGN",  component: SyntheticDataGeneration },
   { id: "vibecoding",  label: "Vibe Coding & Agentic Dev", tag: "DEV",   group: "DESIGN",  component: VibeCodingAndAgenticDev },
   { id: "buildthis",    label: "Build This",              tag: "BUILD",    group: "BUILD",   component: BuildThis },
+  { id: "kvcache",    label: "KV Cache Engineering",    tag: "CACHE",    group: "BUILD",  component: KVCacheEngineering },
+  { id: "guardrails", label: "AI Guardrails",           tag: "GUARD",    group: "OPS",    component: AIGuardrailsEngineering },
+  { id: "trapslab",   label: "Traps Lab",               tag: "TRAP",     group: "OPS",    component: TrapsLab },
 ];
 
 const SYSTEMS_GROUPS = [

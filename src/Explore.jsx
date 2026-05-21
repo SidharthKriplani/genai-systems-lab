@@ -2523,6 +2523,510 @@ function SemanticCachingExplorer() {
 }
 
 
+// ─── LLMOPS COMPARISON ───────────────────────────────────────────────────────
+
+const LLMOPS_TOOLS = [
+  {
+    id: "langfuse",
+    name: "Langfuse",
+    tagline: "Open-source LLM engineering platform",
+    license: "MIT",
+    selfHost: true,
+    managedCloud: true,
+    founded: 2023,
+    acquiredBy: "Clickhouse (Jan 2026)",
+    color: "#f97316",
+    scores: { tracing: 5, evals: 4, promptMgmt: 5, agentSupport: 4, selfHostEase: 5, pricing: 5 },
+    strengths: ["Best-in-class prompt versioning & A/B", "Full MIT license — truly open", "Clickhouse-powered for high-volume analytics", "Nested span tracing for agents"],
+    weaknesses: ["Eval harness less opinionated than Braintrust", "UI can feel dense for newcomers"],
+    bestFor: "Teams who need full control, self-hosting, and production-grade prompt management",
+    pricingNote: "Free self-host; cloud free tier generous",
+  },
+  {
+    id: "braintrust",
+    name: "Braintrust",
+    tagline: "Eval-first AI product development platform",
+    license: "Proprietary",
+    selfHost: false,
+    managedCloud: true,
+    founded: 2023,
+    acquiredBy: null,
+    color: "#8b5cf6",
+    scores: { tracing: 4, evals: 5, promptMgmt: 4, agentSupport: 3, selfHostEase: 1, pricing: 3 },
+    strengths: ["Most opinionated eval harness", "Dataset versioning with diff views", "Human review UI built-in", "Strong CI/CD eval integration"],
+    weaknesses: ["No self-hosting", "Agent tracing less mature", "Expensive at scale"],
+    bestFor: "Teams that treat evals as their primary dev loop and want a managed platform",
+    pricingNote: "Usage-based; can get expensive at high eval volume",
+  },
+  {
+    id: "arize",
+    name: "Arize Phoenix",
+    tagline: "Open-source ML observability with RAGAS native",
+    license: "Elastic License 2.0",
+    selfHost: true,
+    managedCloud: true,
+    founded: 2020,
+    acquiredBy: null,
+    color: "#10b981",
+    scores: { tracing: 5, evals: 5, promptMgmt: 3, agentSupport: 4, selfHostEase: 4, pricing: 4 },
+    strengths: ["RAGAS eval metrics native", "OpenTelemetry-based tracing", "Best embedding drift detection", "Strong RAG-specific evals"],
+    weaknesses: ["Elastic license (not fully open)", "Prompt management not a focus", "Steeper learning curve"],
+    bestFor: "Teams running RAG systems who need retrieval quality + embedding drift monitoring",
+    pricingNote: "OSS free; Arize cloud usage-based",
+  },
+  {
+    id: "langsmith",
+    name: "LangSmith",
+    tagline: "LangChain-native observability and eval",
+    license: "Proprietary",
+    selfHost: false,
+    managedCloud: true,
+    founded: 2023,
+    acquiredBy: null,
+    color: "#3b82f6",
+    scores: { tracing: 4, evals: 4, promptMgmt: 4, agentSupport: 5, selfHostEase: 1, pricing: 3 },
+    strengths: ["Deepest LangGraph agent tracing", "Integrated with LangChain ecosystem", "Human annotation UI solid", "Dataset hub with community evals"],
+    weaknesses: ["No self-hosting", "Best experience requires LangChain stack", "Vendor lock-in risk"],
+    bestFor: "Teams already on LangChain/LangGraph who want zero-config observability",
+    pricingNote: "Free tier limited; scales by trace volume",
+  },
+  {
+    id: "laminar",
+    name: "Laminar",
+    tagline: "Open-source agent-focused tracing and evals",
+    license: "Apache 2.0",
+    selfHost: true,
+    managedCloud: true,
+    founded: 2024,
+    acquiredBy: null,
+    color: "#06b6d4",
+    scores: { tracing: 4, evals: 3, promptMgmt: 3, agentSupport: 5, selfHostEase: 4, pricing: 5 },
+    strengths: ["Built for agentic workflows from day one", "Apache 2.0 — most permissive OSS license", "Low latency instrumentation", "Pipeline visualization for multi-agent flows"],
+    weaknesses: ["Smaller ecosystem + community", "Eval features still maturing", "Less established than others"],
+    bestFor: "Teams building complex multi-agent systems who want Apache-licensed observability",
+    pricingNote: "Open-source free; cloud tier competitive",
+  },
+];
+
+const LLMOPS_DIMENSIONS = [
+  { id: "tracing",       label: "Tracing depth",       desc: "Span-level trace detail, nested agents, latency breakdown" },
+  { id: "evals",         label: "Eval harness",        desc: "Built-in metrics, LLM-as-judge, dataset management" },
+  { id: "promptMgmt",    label: "Prompt management",   desc: "Versioning, A/B testing, production deployment" },
+  { id: "agentSupport",  label: "Agent tracing",       desc: "Multi-step agent loop visibility, tool call tracing" },
+  { id: "selfHostEase",  label: "Self-host ease",      desc: "Docker compose setup, documentation, community support" },
+  { id: "pricing",       label: "Pricing friendliness",desc: "Free tier generosity, predictable costs at scale" },
+];
+
+function licenseBadgeClass(license) {
+  if (license === "MIT") return "bg-emerald-900/60 text-emerald-300 border border-emerald-700";
+  if (license === "Apache 2.0") return "bg-cyan-900/60 text-cyan-300 border border-cyan-700";
+  if (license === "Proprietary") return "bg-violet-900/60 text-violet-300 border border-violet-700";
+  return "bg-amber-900/60 text-amber-300 border border-amber-700";
+}
+
+function ScoreDots({ score, color }) {
+  return (
+    <span className="inline-flex items-center gap-[3px]">
+      {[1, 2, 3, 4, 5].map(i => (
+        <span
+          key={i}
+          className="inline-block w-2.5 h-2.5 rounded-full"
+          style={{ background: i <= score ? color : "#3f3f46" }}
+        />
+      ))}
+      <span className="ml-1 text-[11px] font-mono text-zinc-400">{score}</span>
+    </span>
+  );
+}
+
+const WIZARD_STEPS = [
+  {
+    id: "eval_focus",
+    question: "Is your primary concern eval quality over raw tracing?",
+    yes: "braintrust_or_arize",
+    no: "self_host",
+  },
+  {
+    id: "self_host",
+    question: "Do you need to self-host (compliance / cost)?",
+    yes: "langchain_stack_sh",
+    no: "langchain_stack",
+  },
+  {
+    id: "langchain_stack",
+    question: "Are you on the LangChain / LangGraph stack?",
+    yes: "langsmith",
+    no: "agent_complexity",
+  },
+  {
+    id: "langchain_stack_sh",
+    question: "Are you on the LangChain / LangGraph stack?",
+    yes: "langsmith_no_sh",
+    no: "agent_complexity_sh",
+  },
+  {
+    id: "braintrust_or_arize",
+    question: "Do you need to self-host?",
+    yes: "arize",
+    no: "braintrust",
+  },
+  {
+    id: "agent_complexity",
+    question: "Building complex multi-agent systems?",
+    yes: "laminar",
+    no: "langfuse",
+  },
+  {
+    id: "agent_complexity_sh",
+    question: "Building complex multi-agent systems?",
+    yes: "laminar",
+    no: "langfuse",
+  },
+];
+
+const WIZARD_TERMINAL = new Set(["langsmith", "langsmith_no_sh", "arize", "braintrust", "laminar", "langfuse"]);
+
+const WIZARD_RECOMMENDATION = {
+  langsmith: "langsmith",
+  langsmith_no_sh: "langsmith",
+  arize: "arize",
+  braintrust: "braintrust",
+  laminar: "laminar",
+  langfuse: "langfuse",
+};
+
+function LLMOpsComparison() {
+  const [view, setView] = useState("table");
+  const [expandedTool, setExpandedTool] = useState(null);
+  const [wizardStep, setWizardStep] = useState("eval_focus");
+  const [wizardHistory, setWizardHistory] = useState([]);
+  const [wizardDone, setWizardDone] = useState(false);
+  const [recommendedId, setRecommendedId] = useState(null);
+
+  function handleWizardAnswer(answer) {
+    const step = WIZARD_STEPS.find(s => s.id === wizardStep);
+    if (!step) return;
+    const next = answer === "yes" ? step.yes : step.no;
+    setWizardHistory(h => [...h, { stepId: wizardStep, answer }]);
+    if (WIZARD_TERMINAL.has(next)) {
+      setRecommendedId(WIZARD_RECOMMENDATION[next]);
+      setWizardDone(true);
+    } else {
+      setWizardStep(next);
+    }
+  }
+
+  function resetWizard() {
+    setWizardStep("eval_focus");
+    setWizardHistory([]);
+    setWizardDone(false);
+    setRecommendedId(null);
+  }
+
+  const recommendedTool = useMemo(
+    () => LLMOPS_TOOLS.find(t => t.id === recommendedId),
+    [recommendedId]
+  );
+
+  const currentWizardStep = WIZARD_STEPS.find(s => s.id === wizardStep);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <HowTo
+        objective="Compare the top 5 LLMOps platforms across 6 dimensions. Use the wizard to get a recommendation for your stack."
+        steps={[
+          "Browse the comparison table — scores are 1-5 across tracing, evals, prompt management, and more",
+          "Click any tool name to expand strengths, weaknesses, and pricing",
+          "Run the Decision Wizard to get a personalised recommendation",
+          "All scores based on public documentation and mid-2026 feature sets",
+        ]}
+      />
+
+      {/* View toggle */}
+      <div className="flex gap-2">
+        {[
+          { id: "table", label: "Comparison Table" },
+          { id: "wizard", label: "Decision Wizard" },
+        ].map(v => (
+          <button
+            key={v.id}
+            onClick={() => setView(v.id)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              view === v.id
+                ? "bg-zinc-100 text-zinc-900"
+                : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── TABLE VIEW ── */}
+      {view === "table" && (
+        <div className="flex flex-col gap-4">
+          <div className="overflow-x-auto rounded-xl border border-zinc-800">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  <th className="text-left px-4 py-3 text-zinc-500 font-medium w-36">Dimension</th>
+                  {LLMOPS_TOOLS.map(tool => (
+                    <th key={tool.id} className="px-3 py-3 text-center min-w-[130px]">
+                      <div className="flex flex-col items-center gap-1.5">
+                        <button
+                          onClick={() => setExpandedTool(expandedTool === tool.id ? null : tool.id)}
+                          className="flex items-center gap-1.5 group"
+                        >
+                          <span
+                            className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                            style={{ background: tool.color }}
+                          />
+                          <span
+                            className="font-semibold text-white group-hover:underline text-[13px] leading-tight"
+                            style={{ color: tool.color }}
+                          >
+                            {tool.name}
+                          </span>
+                        </button>
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${licenseBadgeClass(tool.license)}`}>
+                            {tool.license}
+                          </span>
+                          {tool.selfHost && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+                              Self-host
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {LLMOPS_DIMENSIONS.map((dim, di) => (
+                  <tr
+                    key={dim.id}
+                    className={`border-b border-zinc-800/60 ${di % 2 === 0 ? "bg-zinc-900/30" : ""}`}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-zinc-300 text-xs leading-tight">{dim.label}</div>
+                      <div className="text-[10px] text-zinc-600 mt-0.5 leading-snug">{dim.desc}</div>
+                    </td>
+                    {LLMOPS_TOOLS.map(tool => (
+                      <td key={tool.id} className="px-3 py-3 text-center">
+                        <ScoreDots score={tool.scores[dim.id]} color={tool.color} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                {/* Acquired / Status row */}
+                <tr className="border-t border-zinc-700 bg-zinc-900/60">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-zinc-400 text-xs">Acquired / Status</div>
+                  </td>
+                  {LLMOPS_TOOLS.map(tool => (
+                    <td key={tool.id} className="px-3 py-3 text-center">
+                      {tool.acquiredBy ? (
+                        <span className="text-[10px] text-amber-400 font-medium leading-tight">{tool.acquiredBy}</span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-600">Independent</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Expanded tool detail card */}
+          {expandedTool && (() => {
+            const tool = LLMOPS_TOOLS.find(t => t.id === expandedTool);
+            if (!tool) return null;
+            return (
+              <div
+                className="rounded-xl border p-5 flex flex-col gap-4"
+                style={{ borderColor: tool.color + "55", background: tool.color + "0a" }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-3 h-3 rounded-full inline-block flex-shrink-0" style={{ background: tool.color }} />
+                      <span className="font-bold text-white text-base">{tool.name}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${licenseBadgeClass(tool.license)}`}>
+                        {tool.license}
+                      </span>
+                    </div>
+                    <p className="text-zinc-400 text-[13px]">{tool.tagline}</p>
+                  </div>
+                  <button
+                    onClick={() => setExpandedTool(null)}
+                    className="text-zinc-500 hover:text-zinc-300 text-lg leading-none flex-shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <div className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-2">Strengths</div>
+                    <ul className="flex flex-col gap-1">
+                      {tool.strengths.map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-[12px] text-zinc-300">
+                          <span className="text-emerald-400 mt-0.5 flex-shrink-0">+</span>
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold text-red-400 uppercase tracking-wider mb-2">Weaknesses</div>
+                    <ul className="flex flex-col gap-1">
+                      {tool.weaknesses.map((w, i) => (
+                        <li key={i} className="flex items-start gap-2 text-[12px] text-zinc-300">
+                          <span className="text-red-400 mt-0.5 flex-shrink-0">−</span>
+                          <span>{w}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-800 pt-3 flex flex-col gap-1.5">
+                  <div className="text-[11px] text-zinc-500 font-medium uppercase tracking-wider">Best for</div>
+                  <p className="text-[13px] text-zinc-300">{tool.bestFor}</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Pricing</span>
+                    <span className="text-[12px] text-zinc-400">{tool.pricingNote}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ── WIZARD VIEW ── */}
+      {view === "wizard" && (
+        <div className="flex flex-col gap-5 max-w-xl">
+          {!wizardDone ? (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6 flex flex-col gap-5">
+              <div className="flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
+                <span>DECISION WIZARD</span>
+                <span className="text-zinc-700">·</span>
+                <span>Step {wizardHistory.length + 1}</span>
+              </div>
+
+              {wizardHistory.length > 0 && (
+                <div className="flex flex-col gap-1.5 border-b border-zinc-800 pb-4">
+                  {wizardHistory.map((h, i) => {
+                    const s = WIZARD_STEPS.find(st => st.id === h.stepId);
+                    return (
+                      <div key={i} className="flex items-start gap-2 text-[12px]">
+                        <span className={`flex-shrink-0 font-semibold ${h.answer === "yes" ? "text-emerald-400" : "text-zinc-500"}`}>
+                          {h.answer === "yes" ? "YES" : "NO"}
+                        </span>
+                        <span className="text-zinc-500">{s?.question}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <p className="text-white text-base font-medium leading-snug">
+                {currentWizardStep?.question}
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleWizardAnswer("yes")}
+                  className="flex-1 py-2.5 rounded-lg bg-emerald-800/60 text-emerald-300 font-semibold text-sm hover:bg-emerald-700/60 border border-emerald-700/50 transition-colors"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => handleWizardAnswer("no")}
+                  className="flex-1 py-2.5 rounded-lg bg-zinc-800 text-zinc-300 font-semibold text-sm hover:bg-zinc-700 border border-zinc-700 transition-colors"
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          ) : (
+            recommendedTool && (
+              <div
+                className="rounded-xl border p-6 flex flex-col gap-4"
+                style={{ borderColor: recommendedTool.color + "66", background: recommendedTool.color + "12" }}
+              >
+                <div className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">Recommended for your stack</div>
+
+                <div className="flex items-center gap-3">
+                  <span
+                    className="w-4 h-4 rounded-full flex-shrink-0"
+                    style={{ background: recommendedTool.color }}
+                  />
+                  <span className="text-2xl font-bold" style={{ color: recommendedTool.color }}>
+                    {recommendedTool.name}
+                  </span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${licenseBadgeClass(recommendedTool.license)}`}>
+                    {recommendedTool.license}
+                  </span>
+                </div>
+
+                <p className="text-zinc-300 text-sm">{recommendedTool.tagline}</p>
+
+                <div className="border-t border-zinc-800 pt-3 flex flex-col gap-2">
+                  <div>
+                    <span className="text-[11px] text-zinc-500 font-medium uppercase tracking-wider">Best for</span>
+                    <p className="text-[13px] text-zinc-300 mt-0.5">{recommendedTool.bestFor}</p>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-zinc-500 font-medium uppercase tracking-wider">Pricing</span>
+                    <p className="text-[13px] text-zinc-400 mt-0.5">{recommendedTool.pricingNote}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <div className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Strengths</div>
+                    <ul className="flex flex-col gap-1">
+                      {recommendedTool.strengths.map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-[12px] text-zinc-300">
+                          <span className="text-emerald-400 mt-0.5 flex-shrink-0">+</span>
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold text-red-400 uppercase tracking-wider mb-1.5">Weaknesses</div>
+                    <ul className="flex flex-col gap-1">
+                      {recommendedTool.weaknesses.map((w, i) => (
+                        <li key={i} className="flex items-start gap-2 text-[12px] text-zinc-300">
+                          <span className="text-red-400 mt-0.5 flex-shrink-0">−</span>
+                          <span>{w}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <button
+                  onClick={resetWizard}
+                  className="self-start mt-1 px-4 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 border border-zinc-700 transition-colors"
+                >
+                  Start over
+                </button>
+              </div>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
@@ -2538,6 +3042,7 @@ const EXPLORE_MODULES = [
   { id: "diffusion3d", label: "3D Diffusion",          tag: "3D DIFF",  component: DiffusionViz3D,    fidelity: { tier: "conceptual",  note: "Conceptual particle simulation — illustrates forward/reverse diffusion" } },
   { id: "llm_matrix",  label: "Model Matrix",          tag: "COMPARE",  component: LLMMatrixExplorer, fidelity: { tier: "simplified",  note: "Curated comparison based on published benchmarks — not live API data" } },
   { id: "semcache",   label: "Semantic Caching",    tag: "CACHE",    component: SemanticCachingExplorer, fidelity: { tier: "simplified", note: "Illustrative similarity scores — precomputed, not live embedding comparison" } },
+  { id: "llmops",  label: "LLMOps Tool Comparison", tag: "OBSERVE", component: LLMOpsComparison, fidelity: { tier: "simplified", note: "Based on published documentation and benchmarks as of mid-2026" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {

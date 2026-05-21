@@ -2930,6 +2930,231 @@ function LongRunningWorkflows() {
   );
 }
 
+const A2A_CONCEPTS = [
+  { title: "Agent Card", icon: "🪪", desc: "A JSON manifest each agent publishes describing its capabilities, endpoints, and supported input/output formats. Discovery starts here.", code: `{ "name": "ResearchAgent",\n  "version": "1.0",\n  "capabilities": ["web_search", "summarise"],\n  "endpoint": "https://agents.myco.com/research",\n  "inputFormats": ["text"],\n  "outputFormats": ["text", "json"] }` },
+  { title: "Task", icon: "📋", desc: "The unit of work. A calling agent sends a Task to a remote agent. Tasks have ID, input, context, and expected output schema.", code: `{ "taskId": "t-8f2a",\n  "input": { "query": "Summarise Q1 earnings" },\n  "context": { "sessionId": "s-91b2" },\n  "expectedOutput": { "format": "markdown" } }` },
+  { title: "Push Notifications", icon: "🔔", desc: "Long-running tasks use push notifications over webhooks or SSE. The calling agent registers a callback URL and gets status updates asynchronously.", code: `// Register callback\nPOST /tasks/t-8f2a/subscribe\n{ "callbackUrl": "https://myapp.com/hooks/a2a" }\n\n// Receive update\nPOST https://myapp.com/hooks/a2a\n{ "taskId": "t-8f2a", "status": "completed",\n  "output": { ... } }` },
+  { title: "Transport", icon: "🔌", desc: "A2A runs over HTTPS with JSON payloads. Supports both synchronous (request/response) and asynchronous (webhook/SSE) patterns. No special runtime required.", code: `// Sync invocation\nPOST https://agents.myco.com/research/tasks\nAuthorization: Bearer <token>\nContent-Type: application/json\n{ "taskId": "t-8f2a", "input": { ... } }` },
+];
+
+const A2A_VS_MCP = [
+  { dim: "Primary purpose",    a2a: "Agent ↔ Agent communication",         mcp: "Agent ↔ Tool/Resource access"         },
+  { dim: "Abstraction level",  a2a: "Peer agents with capabilities",        mcp: "Tools, resources, prompts, sampling"  },
+  { dim: "Discovery",          a2a: "Agent Cards (JSON manifests)",         mcp: "list_tools / list_resources calls"    },
+  { dim: "Execution model",    a2a: "Task-based (async + sync)",            mcp: "Function call (sync)"                 },
+  { dim: "Long-running tasks", a2a: "Native — push notifications / SSE",   mcp: "Not designed for this"                },
+  { dim: "Auth",               a2a: "OAuth 2.0 / bearer tokens",           mcp: "Transport-level (stdio / SSE)"        },
+  { dim: "Best for",           a2a: "Multi-framework agent networks",       mcp: "Single-agent tool integration"        },
+];
+
+const A2A_FRAMEWORKS = [
+  { name: "Google ADK",        a2a: "native",   mcp: "partial",   notes: "A2A originated here — ADK agents are A2A-first" },
+  { name: "OpenAgents",        a2a: "native",   mcp: "native",    notes: "Only framework with full native MCP + A2A" },
+  { name: "CrewAI",            a2a: "added",    mcp: "partial",   notes: "A2A support added 2025; MCP integration in beta" },
+  { name: "LangGraph",         a2a: "planned",  mcp: "via tool",  notes: "A2A on roadmap; MCP usable as custom tool" },
+  { name: "AutoGen",           a2a: "planned",  mcp: "none",      notes: "Microsoft; A2A and MCP both planned, not shipped" },
+  { name: "OpenAI Agents SDK", a2a: "none",     mcp: "native",    notes: "MCP first-class; A2A not yet on roadmap" },
+];
+
+function A2AProtocol() {
+  const [tab, setTab] = useState("solves");
+  const [openConcept, setOpenConcept] = useState(null);
+  const [answers, setAnswers] = useState({ q1: null, q2: null, q3: null });
+
+  const TABS = [
+    { id: "solves",     label: "What A2A Solves" },
+    { id: "vs",         label: "A2A vs MCP" },
+    { id: "frameworks", label: "Framework Support" },
+  ];
+
+  const badgeColor = (status) => {
+    if (status === "native")   return "bg-emerald-900 text-emerald-300 border border-emerald-700";
+    if (status === "added")    return "bg-blue-900 text-blue-300 border border-blue-700";
+    if (status === "partial")  return "bg-amber-900 text-amber-300 border border-amber-700";
+    if (status === "via tool") return "bg-amber-900 text-amber-300 border border-amber-700";
+    if (status === "planned")  return "bg-violet-900 text-violet-300 border border-violet-700";
+    return "bg-zinc-800 text-zinc-400 border border-zinc-700";
+  };
+
+  const decisionResult = () => {
+    const yeses = [answers.q1, answers.q2, answers.q3].filter(a => a === "yes").length;
+    if (yeses === 0) return { label: "A2A not yet needed", color: "text-zinc-400", desc: "Single-framework, short-lived, internal agent — MCP alone is sufficient for now." };
+    if (yeses === 1) return { label: "A2A worth evaluating", color: "text-amber-400", desc: "One signal present. Design your agent interface to be A2A-compatible even if you don't activate it yet." };
+    if (yeses === 2) return { label: "A2A recommended", color: "text-blue-400", desc: "Two signals present. A2A will save significant integration work and enable async patterns." };
+    return { label: "A2A is the right call", color: "text-emerald-400", desc: "All three signals. A2A was built for exactly this scenario — multi-framework, long-running, cross-team discovery." };
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-white mb-1">A2A Protocol</h2>
+        <p className="text-zinc-400 text-sm">Agent-to-Agent protocol (Google ADK, May 2025) — standardises how agents from different frameworks discover and call each other. Turns N×M custom integrations into N+M.</p>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${tab === t.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "solves" && (
+        <div className="space-y-6">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+            <div className="text-zinc-500 text-xs font-mono font-bold mb-4">THE INTEGRATION PROBLEM</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div className="text-xs font-bold text-red-400 mb-3 text-center">Without A2A — N×M integrations</div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {["AgentA", "AgentB", "AgentC"].map(src => (
+                    ["FwkX", "FwkY", "FwkZ"].map(dst => (
+                      <div key={src+dst} className="bg-red-950 border border-red-800 rounded p-1.5 text-center">
+                        <div className="text-[9px] text-red-300 font-mono leading-tight">{src}</div>
+                        <div className="text-red-500 text-[10px]">→</div>
+                        <div className="text-[9px] text-red-300 font-mono leading-tight">{dst}</div>
+                      </div>
+                    ))
+                  ))}
+                </div>
+                <div className="text-center text-xs text-red-400 mt-2 font-mono">9 custom integrations</div>
+              </div>
+              <div>
+                <div className="text-xs font-bold text-emerald-400 mb-3 text-center">With A2A — N+M integrations</div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex gap-2">
+                    {["AgentA", "AgentB", "AgentC"].map(a => (
+                      <div key={a} className="bg-emerald-950 border border-emerald-700 rounded px-2 py-1 text-[9px] text-emerald-300 font-mono">{a}</div>
+                    ))}
+                  </div>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex gap-4 text-emerald-500 text-xs">↓ ↓ ↓</div>
+                    <div className="bg-emerald-900 border border-emerald-600 rounded-lg px-4 py-1.5 text-xs font-bold text-emerald-300">A2A Hub</div>
+                    <div className="flex gap-4 text-emerald-500 text-xs">↓ ↓ ↓</div>
+                  </div>
+                  <div className="flex gap-2">
+                    {["FwkX", "FwkY", "FwkZ"].map(f => (
+                      <div key={f} className="bg-emerald-950 border border-emerald-700 rounded px-2 py-1 text-[9px] text-emerald-300 font-mono">{f}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="text-center text-xs text-emerald-400 mt-2 font-mono">6 standard integrations</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-zinc-500 text-xs font-mono font-bold mb-3">CORE CONCEPTS</div>
+            <div className="space-y-2">
+              {A2A_CONCEPTS.map((c, i) => (
+                <div key={i} className="bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => setOpenConcept(openConcept === i ? null : i)}
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-800 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{c.icon}</span>
+                      <div>
+                        <div className="text-white font-bold text-sm">{c.title}</div>
+                        <div className="text-zinc-400 text-xs mt-0.5">{c.desc}</div>
+                      </div>
+                    </div>
+                    <span className="text-zinc-500 text-xs ml-4 shrink-0">{openConcept === i ? "▲" : "▼"}</span>
+                  </button>
+                  {openConcept === i && (
+                    <div className="border-t border-zinc-700 bg-zinc-950 p-4">
+                      <pre className="text-xs text-emerald-300 font-mono whitespace-pre-wrap leading-relaxed">{c.code}</pre>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "vs" && (
+        <div className="space-y-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden">
+            <div className="grid grid-cols-3 text-xs font-mono font-bold text-zinc-500 border-b border-zinc-700">
+              <div className="p-3">DIMENSION</div>
+              <div className="p-3 text-blue-400 border-l border-zinc-700">A2A</div>
+              <div className="p-3 text-purple-400 border-l border-zinc-700">MCP</div>
+            </div>
+            {A2A_VS_MCP.map((row, i) => (
+              <div key={i} className={`grid grid-cols-3 text-xs border-b border-zinc-800 ${i % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800/40"}`}>
+                <div className="p-3 text-zinc-400 font-medium">{row.dim}</div>
+                <div className="p-3 text-blue-300 border-l border-zinc-700">{row.a2a}</div>
+                <div className="p-3 text-purple-300 border-l border-zinc-700">{row.mcp}</div>
+              </div>
+            ))}
+          </div>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+            <div className="text-zinc-500 text-xs font-mono font-bold mb-2">THE BOTTOM LINE</div>
+            <p className="text-zinc-300 text-sm">They're complementary, not competing. An agent can use MCP to access tools AND expose itself via A2A so other agents can call it.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "frameworks" && (
+        <div className="space-y-6">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden">
+            <div className="grid grid-cols-4 text-xs font-mono font-bold text-zinc-500 border-b border-zinc-700">
+              <div className="p-3">FRAMEWORK</div>
+              <div className="p-3 text-blue-400 border-l border-zinc-700">A2A</div>
+              <div className="p-3 text-purple-400 border-l border-zinc-700">MCP</div>
+              <div className="p-3 text-zinc-400 border-l border-zinc-700">NOTES</div>
+            </div>
+            {A2A_FRAMEWORKS.map((fw, i) => (
+              <div key={i} className={`grid grid-cols-4 text-xs border-b border-zinc-800 ${i % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800/40"}`}>
+                <div className="p-3 text-white font-bold">{fw.name}</div>
+                <div className="p-3 border-l border-zinc-700">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${badgeColor(fw.a2a)}`}>{fw.a2a}</span>
+                </div>
+                <div className="p-3 border-l border-zinc-700">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${badgeColor(fw.mcp)}`}>{fw.mcp}</span>
+                </div>
+                <div className="p-3 text-zinc-400 border-l border-zinc-700">{fw.notes}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+            <div className="text-zinc-500 text-xs font-mono font-bold mb-4">WHEN TO ADD A2A — DECISION GUIDE</div>
+            <div className="space-y-4">
+              {[
+                { key: "q1", q: "Are multiple agent frameworks involved?" },
+                { key: "q2", q: "Do your agents run as long tasks (>10s)?" },
+                { key: "q3", q: "Do you need agent discovery across teams/orgs?" },
+              ].map(({ key, q }) => (
+                <div key={key} className="space-y-1.5">
+                  <div className="text-zinc-300 text-sm font-medium">{q}</div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setAnswers(a => ({ ...a, [key]: "yes" }))}
+                      className={`px-3 py-1 rounded text-xs font-bold transition-all ${answers[key] === "yes" ? "bg-emerald-700 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                      YES
+                    </button>
+                    <button onClick={() => setAnswers(a => ({ ...a, [key]: "no" }))}
+                      className={`px-3 py-1 rounded text-xs font-bold transition-all ${answers[key] === "no" ? "bg-zinc-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                      NO
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {(answers.q1 || answers.q2 || answers.q3) && (
+                <div className="mt-4 bg-zinc-800 border border-zinc-600 rounded-lg p-3">
+                  <div className={`text-sm font-bold mb-1 ${decisionResult().color}`}>{decisionResult().label}</div>
+                  <div className="text-zinc-400 text-xs">{decisionResult().desc}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const AGENTS_MODULES = [
   { id: "react",      label: "ReAct Pattern",       tag: "LOOP",   group: "CORE",      component: ReActPattern        },
   { id: "tools",      label: "Tool Use Design",     tag: "TOOLS",  group: "CORE",      component: ToolUseDesign       },
@@ -2945,6 +3170,7 @@ const AGENTS_MODULES = [
   { id: "reliability", label: "Agentic Reliability",  tag: "RELIABLE", group: "SCALE",     component: AgenticReliability  },
   { id: "computeruse", label: "Computer Use",          tag: "CU",       group: "SCALE",     component: ComputerUseAgents   },
   { id: "longrunning", label: "Long-Running Workflows",tag: "DURABLE",  group: "SCALE",     component: LongRunningWorkflows},
+  { id: "a2a",         label: "A2A Protocol",          tag: "A2A",      group: "ECOSYSTEM", component: A2AProtocol          },
 ];
 
 const AGENTS_GROUPS = [
