@@ -471,6 +471,53 @@ Violet=LEARN, blue=BUILD, green=GROW on home page. Inside tabs, associations dis
 
 ---
 
+## Audit 16 — Quick Scan Batch (BUILD + Content + Navigation)
+
+**Date:** May 2026
+**Scope:** Color drift, hook correctness, orphaned content, GT related-graph coverage, SHORTCUT_TABS completeness, missing labLinks
+**Method:** grep + python3 counts across all src/ files. No file read required — all findings are machine-countable.
+**Status:** Findings documented. Items marked ✅ acted on immediately.
+
+### Findings
+
+| # | Finding | File | Severity | Status |
+|---|---|---|---|---|
+| 1 | **1 remaining `slate-*` class** — `text-slate-400` and `bg-slate-900/60` in MCP protocol layer data object | `Concepts.jsx` line 224 | Low | ⚠️ Open |
+| 2 | **No `React.useState` / `React.useEffect` remaining** — clean | All `.jsx` | — | ✅ Clean |
+| 3 | **No duplicate IDs in groundTruthIndex.js** — clean | `groundTruthIndex.js` | — | ✅ Clean |
+| 4 | **134 GT posts have no `related[]` array** — only 58 of 192 posts have "Keep reading" navigation. The other 134 are dead ends after a read. | `groundTruthIndex.js` | High | ⚠️ Open |
+| 5 | **10 orphaned post IDs** — content written in `groundTruthPosts.js`, no index entry, invisible to users: `prompt-cost-engineering`, `rlhf-dpo-explained-v2`, `finetune-playbook`, `rlhf-production`, `dpo-vs-ppo`, `knowledge-distillation`, `build-voice-ai`, `build-document-intelligence`, `build-coding-assistant`, `building-reliable-agents` | `groundTruthPosts.js` / `groundTruthIndex.js` | High | ⚠️ Open |
+| 6 | **`groundtruth` tab not in SHORTCUT_TABS** — the GT posts grid is a primary content surface but not keyboard-navigable via number shortcuts | `App.jsx` | Medium | ⚠️ Open |
+| 7 | **`consult` tab not in SHORTCUT_TABS** — already documented in Audit 8/B3; confirmed still missing | `App.jsx` | Low | ⚠️ Open (known) |
+| 8 | **All 45 Systems modules have RELATED_GT entries** — cross-link coverage complete | `Systems.jsx` | — | ✅ Clean |
+| 9 | **7 posts have no `labLink`** — `persp-karpathy`, `persp-willison`, `persp-swyx`, `persp-hamel`, `persp-chollet`, `persp-lecun`, `world-models-primer`. Perspective posts intentionally have no lab; `world-models-primer` may need one. | `groundTruthIndex.js` | Low | ⚠️ Open (mostly intentional) |
+
+### Key numbers verified
+
+| Metric | Count |
+|---|---|
+| GT posts indexed (visible) | 192 |
+| GT posts with `related[]` | 58 |
+| GT posts with no `related[]` | 134 |
+| Orphaned post content entries | 10 |
+| Systems modules with RELATED_GT | 45 / 45 |
+| Posts with no `labLink` | 7 (all `persp-*` + world-models-primer) |
+| Remaining `slate-*` / `gray-*` classes | 1 |
+| Remaining `React.useState` violations | 0 |
+| Duplicate groundTruthIndex IDs | 0 |
+
+### Priority actions from this audit
+
+**Finding 5 (10 orphaned posts)** — highest ROI: add index entries for each of the 10 posts. Content already written, just needs metadata in `groundTruthIndex.js`. Would immediately surface 10 additional posts to users.
+
+**Finding 4 (134 posts with no related[])** — medium effort: run a batch script to inject plausible `related` arrays using category + tag matching. Audit 6 proved this works.
+
+**Finding 1 (slate-* in Concepts.jsx)** — one-liner fix: change `text-slate-400` → `text-zinc-400` and `bg-slate-900/60` → `bg-zinc-900/60` on line 224.
+
+**Finding 6 (groundtruth not in SHORTCUT_TABS)** — one-liner fix: add `"groundtruth"` to the SHORTCUT_TABS array in App.jsx.
+
+---
+
 ## How to Use This File
 
 **Starting an audit session:**
