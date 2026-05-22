@@ -147,6 +147,7 @@ When the user shares a screenshot of a LinkedIn post, tweet, or practitioner wri
 - LuMay AI diagram (May 2026) — agent dev kit layers (CLAUDE.md, Skills, Hooks, Subagents, Plugins)
 - Sairam Thonupunuri post (May 2026) — AI PM career break-in, technical credibility for PMs
 - Anonymous "Type A vs Type B" post (May 2026) — systems thinking vs model obsession, salary differential
+- Anonymous DS → AI Engineer arc post (May 2026) — market forces behind role fragmentation, ChatGPT as demand reset, agentic surge numbers
 
 ---
 
