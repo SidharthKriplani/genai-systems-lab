@@ -71,6 +71,15 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 - **Scenario-type questions** — Multi-turn conversational scenarios where the user debugs a failing system across 3-4 exchanges. Higher fidelity than MCQ.
 - **More system design text questions** — Cover: vector DB selection, agent reliability, eval harness design, fine-tuning decision framework.
 
+### Agent Development Kit patterns (new cluster — from LuMay AI diagram, May 2026)
+
+The 5-layer framework (CLAUDE.md → Skills → Hooks → Subagents → Plugins) surfaces production patterns the lab doesn't teach as named concepts. The underlying ideas are tool-agnostic and interview-relevant.
+
+- **GT post: "The Agent Memory Layer — Why CLAUDE.md Is Architecture, Not Documentation"** — CLAUDE.md as a persistent context injection mechanism. Global vs project-level. What belongs there, what doesn't, and how it shapes agent behavior at runtime. Tool-agnostic (applies to any agent framework with persistent memory).
+- **GT post: "Deterministic Guardrails: Hooks vs LLM-Based Safety"** — The distinction between rule-based hooks (pre/post tool use, auto-lint, block destructive commands) and probabilistic LLM guardrails. Why you want both layers and where each fails. Hooks as the `git hooks` mental model for agents.
+- **GT post: "Context Isolation in Multi-Agent Systems"** — "Main context stays clean" as a production principle. Why spawning subagents with forked context (rather than running everything in one context) prevents drift, reduces hallucination, and caps cost. No-infinite-loops constraint and why it matters.
+- **Systems module: "Agent Context Architecture"** — Interactive: configure which layers your agent uses (persistent memory / skill injection / delegation / hooks), see how context size, cost, and failure modes change. Sits alongside the existing Agent Memory Types module but covers the system design level.
+
 ### Ground Truth posts
 - ~~**"Why the Best Model on the Benchmark Isn't the Best Model for Your Product"**~~ ✅ *built May 2026 — id: benchmark-vs-business*
 - ~~**"Hard Negatives: The Training Trick That Actually Improves Retrieval"**~~ ✅ *built May 2026 — id: hard-negatives-retrieval*
