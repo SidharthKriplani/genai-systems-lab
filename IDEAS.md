@@ -80,6 +80,15 @@ The 5-layer framework (CLAUDE.md → Skills → Hooks → Subagents → Plugins)
 - **GT post: "Context Isolation in Multi-Agent Systems"** — "Main context stays clean" as a production principle. Why spawning subagents with forked context (rather than running everything in one context) prevents drift, reduces hallucination, and caps cost. No-infinite-loops constraint and why it matters.
 - **Systems module: "Agent Context Architecture"** — Interactive: configure which layers your agent uses (persistent memory / skill injection / delegation / hooks), see how context size, cost, and failure modes change. Sits alongside the existing Agent Memory Types module but covers the system design level.
 
+### AI PM career track (new cluster — from real user persona signal, May 2026)
+
+A LinkedIn post from an AI PM aspirant breaking into Anthropic/Google/OpenAI surfaced specific content the lab is missing. The framing: "learning LLMs/RAG/prompt engineering — not to become an engineer, but to be a PM who engineers respect." This is the exact positioning the lab's AIPM track should own but currently doesn't state explicitly.
+
+- **GT post: "What AI PM Actually Requires at Anthropic, Google, and OpenAI"** — demystify the role: what's in the JD vs what actually gets you hired, the technical bar vs PM bar distinction, what "technical enough" means at each company tier. High search intent, no good resource exists for this.
+- **GT post: "The Technical Credibility Playbook for AI PMs"** — the minimum viable technical depth to earn engineer trust: what to learn (LLMs, RAG, evals), what to skip, how to ask questions in technical reviews without losing credibility. Framed for PMs, not engineers.
+- **GT post: "Breaking Into AI PM: What the Job Actually Requires vs What People Think"** — common misconceptions (you need to code, you need an ML degree), what actually matters (product instincts + ability to navigate ambiguity in a fast-moving technical domain), and a realistic 6-month ramp plan. High shareability.
+- **AIPM module: "What Gets You Hired at an AI-First Company"** — interactive self-assessment across: technical depth, product instincts, domain knowledge, communication, portfolio. With honest gap analysis and "study this next" output. Different from PrepLab — more directional, less exam-like.
+
 ### Ground Truth posts
 - ~~**"Why the Best Model on the Benchmark Isn't the Best Model for Your Product"**~~ ✅ *built May 2026 — id: benchmark-vs-business*
 - ~~**"Hard Negatives: The Training Trick That Actually Improves Retrieval"**~~ ✅ *built May 2026 — id: hard-negatives-retrieval*
