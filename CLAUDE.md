@@ -132,6 +132,24 @@ cd ~/Documents/GitHub/genai-systems-lab && git push origin main
 
 ---
 
+## Field intelligence workflow — LinkedIn / practitioner posts
+
+When the user shares a screenshot of a LinkedIn post, tweet, or practitioner writeup, treat it as a content sourcing signal, not just a conversation prompt. Apply this pattern:
+
+1. **Assess merit** — does it surface a real pain point, a named concept, a salary/market signal, or a framing gap the lab doesn't cover?
+2. **Identify the gap** — what specific GT post, Systems module, or AIPM/Career module is missing?
+3. **Add to IDEAS.md** — under the relevant Tier with a named cluster (e.g. "Type A/B engineer framing — from viral post, May 2026"). Include: post's key claim, why it resonates with the lab's audience, 2–5 specific buildable items.
+4. **Flag positioning opportunities** — if a post validates the lab's thesis, note whether a home page or module copy tweak would capitalize on it (zero build effort).
+
+**Why this works:** LinkedIn practitioners surface real market signal — salary data, hiring shifts, pain points — that academic curricula miss. The lab's audience reads these posts. Building content from this source means the lab speaks in the same voice the audience already trusts.
+
+**Running log of sources used:**
+- LuMay AI diagram (May 2026) — agent dev kit layers (CLAUDE.md, Skills, Hooks, Subagents, Plugins)
+- Sairam Thonupunuri post (May 2026) — AI PM career break-in, technical credibility for PMs
+- Anonymous "Type A vs Type B" post (May 2026) — systems thinking vs model obsession, salary differential
+
+---
+
 ## MD file guide — what each file is for
 
 | File | Purpose | Read when |
