@@ -189,6 +189,14 @@ The problem: people have zero clue which side project to build to match what emp
 
 ## Tier 3 — Interesting, Lower Priority
 
+### User accounts + Google login + customizable profile
+
+Individual login (Google OAuth or email) with a personal profile section. Progress, bookmarks, PrepLab scores, War Room (or a clean version of it), recently read GT posts, active learning path — all tied to an account rather than localStorage. Profile customizable: role (engineer/PM/student), current goal (interview prep/building/transitioning), experience level.
+
+**Why it matters:** right now progress doesn't sync across devices and is lost when localStorage is cleared. An account layer makes the lab sticky in a way that localStorage cannot. A profile also enables personalized path recommendations — "based on your goal and where you are, here's what's next."
+
+**The constraint:** this is the single biggest violation of the zero-backend principle. Needs auth infrastructure, a database, session management — none of which exist. This is not a tab addition, it is a product architecture change. Lives here until the backend decision is made. If the product ever moves off the pure static model, this becomes Tier 1 immediately.
+
 - **Community features** — Upvotes on GT posts, comments, "found this helpful". Needs backend. Out of scope for static app.
 - **Export** — "Export my PrepLab session" to PDF/CSV. Nice to have.
 - **Dark/light toggle** — Currently dark-only. Some users prefer light mode.

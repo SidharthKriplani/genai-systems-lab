@@ -220,6 +220,57 @@ onNavigate({ tab: "groundtruth", postId: "post-id" })
 
 ---
 
+## Structural Upgrade — Architecture Pending (do not build yet, think first)
+
+The current product was built organically. Every tab and module made sense when added. Cumulatively, a first-time visitor sees no coherent shape — no clear entry, no path, no sense of where to go. This section captures the concluded architecture that the product needs to evolve toward. Nothing here is implemented yet. When the time comes, this governs the rebuild.
+
+### The tree
+
+Every piece of content must attach to a branch. If it doesn't attach clearly, it doesn't go in — or it gets cut into PARKED.md under "implemented but cut down." The tree is not just navigation architecture, it is the editorial constitution of the product. All future additions are filtered through it.
+
+### Three real front doors
+
+**Build** — production systems, making things work, debugging failures. RAG Lab, Systems, Agents, Playground, Explore. The core and heaviest branch — needs its own internal structure, not a flat grid.
+
+**Prove** — interview readiness, assessment, demonstrating competence under pressure. PrepLab. (Fluency is a cut/park candidate — not coherent enough to anchor this branch.)
+
+**Navigate** — career clarity, role transitions, the PM track. AIPM, Career.
+
+"Understand" is NOT a front door. Nobody's terminal goal is understanding. It is a foundation layer that serves all three branches.
+
+### Foundation layer (beneath all three branches, not a front door)
+
+Concepts and Flows sit here — the architectural and mathematical knowledge base reached from any branch at the moment it's needed, not as a standalone destination.
+
+**Flows is a cut candidate.** Animated pipelines you watch. Passive consumption — the exact thing the lab's philosophy rejects. Unless redesigned around active interaction it goes to PARKED.md.
+
+### Knowledge layer — Ground Truth
+
+GT is not a branch. It is the knowledge layer the whole tree draws from. Three access modes:
+
+1. **Depth that finds you** — GT post surfaces contextually inside a module at the exact relevant moment. First encounter is earned by doing, not browsing.
+2. **Ask as the gateway** — Ask is the primary interface to the knowledge layer. You come with a question, GT answers it. Ask is no longer a hidden tab — it is the knowledge gateway with a real structural home.
+3. **"Explore all" nudge** — a gentle line under Ask reads: *"or explore all that we have to say on everything AI."* Full catalog accessible for deliberate browsing, one step deeper, not the primary surface.
+
+The GT tab in its current form (200 posts on a wall) does not survive the rebuild. The Ask-first model replaces it. Ask needs the embedding + generation upgrade to carry this weight properly — keyword search is insufficient for this role.
+
+### Learning Paths — promote from tab to architecture
+
+Currently a tab. Should be the connective tissue that runs through all three branches — the spine a user follows rather than a feature they discover. The front door IS the path selector. Paths cut across branches for specific user types ("interview in 3 weeks" cuts across Prove and Build; "DS transitioning to AI Engineer" cuts across Build and Navigate).
+
+### Connection principle
+
+Every piece of content surfaces exactly **one clear next step** — not a menu of related items. One GT post, one PrepLab question, one module. The current RELATED_GT arrays (3–5 items each) are menus. The rebuilt version is a single forward pointer.
+
+### What gets cut into PARKED.md
+
+- **Flows** — passive, anti-thesis of the lab's mechanic. Park unless redesigned.
+- **Fluency** — phrase bank + drills without coherent identity. Park or absorb into PrepLab as a mode.
+- **Ask/Consult as a tab** — the tab disappears; Ask becomes the knowledge gateway, not a navigation item.
+- **GT as a standalone tab** — replaced by the three-mode access model above.
+
+---
+
 ## Known open issues (check AUDITS.md for full list)
 
 - PrepLab text question keyword grading marks correct answers wrong if vocabulary differs
