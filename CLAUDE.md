@@ -148,6 +148,7 @@ When the user shares a screenshot of a LinkedIn post, tweet, or practitioner wri
 - Sairam Thonupunuri post (May 2026) — AI PM career break-in, technical credibility for PMs
 - Anonymous "Type A vs Type B" post (May 2026) — systems thinking vs model obsession, salary differential
 - Anonymous DS → AI Engineer arc post (May 2026) — market forces behind role fragmentation, ChatGPT as demand reset, agentic surge numbers
+- Job postings chart (May 2026, sources: Lightcast, Stanford HAI AI Index 2026, LinkedIn Economic Graph, Indeed, Revealera) — DS ~30K flat, GenAI engineer ~35K, Agentic AI engineer ~90K +280% YoY. Agentic already 2.5x larger than GenAI engineer. Confirms agentic as the fastest-growing role category.
 
 ---
 
