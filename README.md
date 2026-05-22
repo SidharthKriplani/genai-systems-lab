@@ -235,7 +235,6 @@ src/
 ├── PrepLab.jsx              # Assessment exam, Trainer mode, JD+resume prep (183+ questions)
 ├── LearningPaths.jsx        # 6 curated multi-tab learning paths
 ├── Consultation.jsx         # Ask tab — keyword retrieval over all posts + modules
-├── Playground.jsx           # 5 hands-on challenge modules + prompt library
 └── analytics.js             # PostHog event tracking (fails silently if unconfigured)
 public/
 └── og-image.png             # 1200×630 Open Graph image for link previews
