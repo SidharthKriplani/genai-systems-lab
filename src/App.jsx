@@ -1602,11 +1602,18 @@ export default function App() {
     function onKeyDown(e) {
       if (!BUILD_TABS.has(topView)) { seqBuf.current = ""; return; }
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
-      seqBuf.current = (seqBuf.current + e.key).slice(-SEQ.length);
+      const next = (seqBuf.current + e.key).slice(-SEQ.length);
+      // Once sequence has started, swallow keys that continue it before other handlers see them
+      if (seqBuf.current.length > 0 && SEQ.startsWith(seqBuf.current + e.key)) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+      }
+      seqBuf.current = next;
       if (seqBuf.current === SEQ) { setWarRoomOpen(true); seqBuf.current = ""; }
     }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    // capture:true — fires before bubble-phase listeners (shortcuts, nav handlers, etc.)
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
   }, [topView]);
 
   const [visited, setVisited] = useState(() => {
