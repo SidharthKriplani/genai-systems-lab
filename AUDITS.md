@@ -486,7 +486,7 @@ Violet=LEARN, blue=BUILD, green=GROW on home page. Inside tabs, associations dis
 | 2 | **No `React.useState` / `React.useEffect` remaining** — clean | All `.jsx` | — | ✅ Clean |
 | 3 | **No duplicate IDs in groundTruthIndex.js** — clean | `groundTruthIndex.js` | — | ✅ Clean |
 | 4 | **134 GT posts have no `related[]` array** — only 58 of 192 posts have "Keep reading" navigation. The other 134 are dead ends after a read. | `groundTruthIndex.js` | High | ⚠️ Open |
-| 5 | **10 orphaned post IDs** — content written in `groundTruthPosts.js`, no index entry, invisible to users: `prompt-cost-engineering`, `rlhf-dpo-explained-v2`, `finetune-playbook`, `rlhf-production`, `dpo-vs-ppo`, `knowledge-distillation`, `build-voice-ai`, `build-document-intelligence`, `build-coding-assistant`, `building-reliable-agents` | `groundTruthPosts.js` / `groundTruthIndex.js` | High | ⚠️ Open |
+| 5 | **10 orphaned post IDs** — ~~content written in `groundTruthPosts.js`, no index entry~~ — **SUPERSEDED by Audit 18**: 8 of 10 are indexed in multi-line format; true orphans are only `prompt-cost-engineering` and `rlhf-dpo-explained-v2` | `groundTruthPosts.js` / `groundTruthIndex.js` | High | ⚠️ Partially corrected — see Audit 18 |
 | 6 | **`groundtruth` tab not in SHORTCUT_TABS** — the GT posts grid is a primary content surface but not keyboard-navigable via number shortcuts | `App.jsx` | Medium | ⚠️ Open |
 | 7 | **`consult` tab not in SHORTCUT_TABS** — already documented in Audit 8/B3; confirmed still missing | `App.jsx` | Low | ⚠️ Open (known) |
 | 8 | **All 45 Systems modules have RELATED_GT entries** — cross-link coverage complete | `Systems.jsx` | — | ✅ Clean |
@@ -576,6 +576,53 @@ Violet=LEARN, blue=BUILD, green=GROW on home page. Inside tabs, associations dis
 **Finding 3 (PrepLab skew)** — add 4–8 questions each for `attention`, `transformers`, `context`, `serving` — all foundational topics that interview candidates are asked about.
 
 **Finding 4 (METRICS.md)** — sync METRICS.md to match what App.jsx actually fires. Low effort, high value for future analytics interpretation.
+
+---
+
+## Audit 18 — Format Consistency + Spine Sync + Structural Findings
+
+**Date:** May 2026
+**Scope:** `groundTruthIndex.js` format consistency, `DECISIONS.md` staleness, `CLAUDE.md` accuracy, lazy loading, fidelity badge coverage, true orphan count
+**Method:** python3 multi-pattern grep catching both single-line and multi-line post formats. Corrects Audit 16 findings.
+**Status:** 3 spine fixes applied. Findings documented.
+
+### Audit 16 correction — GT post count and orphan list
+
+Audit 16 used `{ id: "` to count GT posts, missing 8 posts formatted as multi-line objects. **True counts:**
+
+| Metric | Audit 16 claimed | Audit 18 corrected |
+|---|---|---|
+| GT posts indexed | 192 | **200** (192 single-line + 8 multi-line) |
+| Orphaned posts | 10 | **2** (`prompt-cost-engineering`, `rlhf-dpo-explained-v2`) |
+| GT stat claim | "190+" | **"200+"** — updated in README, Home.jsx, index.html |
+
+The 8 multi-line entries are: `finetune-playbook`, `rlhf-production`, `dpo-vs-ppo`, `knowledge-distillation`, `build-voice-ai`, `build-document-intelligence`, `build-coding-assistant`, `building-reliable-agents`. They are fully indexed — they were just formatted across multiple lines.
+
+### New findings
+
+| # | Finding | File(s) | Severity | Status |
+|---|---|---|---|---|
+| 1 | **DECISIONS.md "Tab structure (13 tabs)"** — listed 13 tabs, missing Learning Paths (the 14th) | `DECISIONS.md` line 73 | Medium | ✅ Fixed — updated to 14 tabs, added Learning Paths to tab list |
+| 2 | **DECISIONS.md tab list incomplete** — "Ask (Consultation), PrepLab" listed as last two but Learning Paths exists and is not mentioned | `DECISIONS.md` line 75 | Medium | ✅ Fixed |
+| 3 | **CLAUDE.md format note added** — documents the 192 single-line + 8 multi-line split so future AI sessions don't miscount | `CLAUDE.md` | Low | ✅ Fixed |
+| 4 | **2 true orphaned posts** — `prompt-cost-engineering` and `rlhf-dpo-explained-v2` have full content in `groundTruthPosts.js` but no index entry | `groundTruthIndex.js` | Medium | ⚠️ Open |
+| 5 | **8 multi-line formatted posts** — formatting inconsistency vs. the 192 single-line posts. Any grep/script using `{ id: "` as the pattern will undercount by 8. Scripts should use both `\{ id:` and `^\s+id:` patterns. | `groundTruthIndex.js` | Low | ⚠️ Open — cosmetic; no user impact |
+| 6 | **All 14 tab components are lazy-loaded** — `React.lazy` applied to all 14 | `App.jsx` | — | ✅ Clean |
+| 7 | **Fidelity badges present in Concepts + Explore** — "faithful/Simplified/Conceptual" labels appear throughout both files | `Concepts.jsx`, `Explore.jsx` | — | ✅ Clean |
+| 8 | **All labModuleId values are valid** — 29 cross-links from GT posts to module IDs; all resolve to real modules | `groundTruthIndex.js` | — | ✅ Clean |
+| 9 | **Learning Paths all valid** — 6 paths, 7–9 steps each, all tab references point to real tabs | `LearningPaths.jsx` | — | ✅ Clean |
+| 10 | **DECISIONS.md references "140+ GT posts"** (line 77) — stale; now 200 | `DECISIONS.md` | Low | ⚠️ Open |
+| 11 | **stale MLCiCd.jsx / IndiaScale.jsx / InferenceOptimizer.jsx files referenced by HowTo grep** — these appear to be extracted files no longer in the main src/ module system. Presence unclear. | `src/` | Low | ⚠️ Open — investigate if orphaned |
+
+### Verified clean areas (this session)
+
+- No `React.useState` violations
+- No duplicate GT IDs  
+- No broken `labLink` tab references
+- No broken `labModuleId` module references
+- No missing `alt=` on `<img>` tags
+- All 14 tab components lazy-loaded
+- All key files brace-balanced
 
 ---
 

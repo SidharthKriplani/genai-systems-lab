@@ -70,9 +70,9 @@ The original scope was Concepts + RAG Lab. Everything else grew organically from
 
 ## 3. Product decisions
 
-### Tab structure (13 tabs)
+### Tab structure (14 tabs)
 
-**Current tabs:** Home, Concepts, Flows, RAG Lab, Agents, Systems, Playground, Explore, Fluency, AI Product, Career, **Ask** (Consultation), **PrepLab**.
+**Current tabs:** Home, Concepts, Flows, RAG Lab, Agents, Systems, Playground, Explore, Fluency, AI Product, Career, **Ask** (Consultation), **PrepLab**, **Learning Paths**.
 
 **Ask** was added as a lightweight consultation space — keyword search over all 140+ GT posts + 57 module descriptions. Conversational UI. LLM-ready: swap the scoring function for embeddings + add a generation step without touching the UI.
 
