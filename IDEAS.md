@@ -118,6 +118,36 @@ A practitioner traced the full arc: DS peak during COVID → 90% demand drop + r
 - **"Why Your RAG System Lies"** — Faithfulness failures, hallucination in retrieval-augmented contexts, practical mitigations.
 - **Series: "The Inference Stack"** — Four posts covering the full serving pipeline: quantization → KV cache → speculative decoding → serving infrastructure. Already have individual modules, need the cohesive narrative.
 
+### Prompt management as infrastructure (new cluster — from Aryan Sharma post, May 2026)
+
+An AI/ML engineer shared how a one-line system prompt change caused a 23% quality drop for 11 days — undetected. No alert, no test, no one checking. Built PromptLab (open source, FastAPI + React + PostgreSQL) to solve it: full version history, A/B experiments, LLM-as-judge eval runs, serve-via-API. Core claim: prompts are code and deserve CI/CD treatment. The lab has zero content on prompt management as a DevOps discipline — only prompt engineering as a skill.
+
+- **GT post: "Your Prompt Is Code. Are You Treating It Like Code?"** — the 11-day silent regression story as the hook. Version control for prompts, A/B testing prompt changes, LLM-as-judge scoring, serving via API vs hardcoding. The systems-level case for prompt management infrastructure. Directly reinforces Type B thinking.
+- **GT post: "Prompt Regression Testing: How to Know When a Prompt Change Breaks Things"** — practical: what a prompt test suite looks like, what metrics to track (quality score, latency, cost), how to wire prompt testing into CI/CD. No existing lab resource covers this.
+- **Systems module: "Prompt Change Management"** — interactive: user edits a system prompt, sees quality score shift, triggers regression alert. Shows A/B split, eval run, rollback decision. Sits alongside existing Evals module.
+
+### Forward Deployed Engineer model (new cluster — from Khushboo Sharma post, May 2026)
+
+FDE postings grew 1,165% in one year. Palantir invented the model; OpenAI built a $10B deployment business around it; Anthropic launched a $1.5B JV on the same logic; Google is hiring hundreds. 95% of enterprise AI pilots produce zero measurable returns (MIT research) — FDEs fix this by embedding inside Fortune 500s and forcing AI out of demo phase into actual workflows. Critical gap identified: intelligence accumulates in the engineer, not the system. When the FDE rotates off, clients are left with a deployment they cannot maintain or explain. 40-60% of FDE time already bleeds into admin: chasing context, bridging disconnected tools.
+
+- **GT post: "The Forward Deployed Engineer: AI's Fastest-Growing Role Nobody's Training For"** — what the role actually is beyond the buzz, why it emerged, what it requires (systems depth + client communication + production debugging), and the dependency gap problem it creates. 1,165% posting growth gives this urgency.
+- **GT post: "Institutional Knowledge as Infrastructure: Why AI Deployments Fail After the FDE Leaves"** — the dependency gap problem in depth. Reusable eval harnesses, documented workflow logic, internal playbooks as the fix. The "machine behind the machine" framing. Connects directly to the lab's evals and observability content.
+- **Career module: "Is FDE Your Next Move? A Role Readiness Assessment"** — self-assessment across FDE-specific dimensions: systems depth, client-facing communication, production debugging, eval design. Gap analysis with module recommendations.
+
+### LLM loss functions and training signals (new cluster — from Utkarsh Mangal post, May 2026)
+
+A practitioner post in the Data Science Community frames Probability, Entropy, Cross-Entropy Loss, and KL Divergence around one unifying question: "How surprised is the model when it sees the correct answer?" Strong framing — makes the math approachable. The lab's Concepts tab covers attention and transformer architecture but has nothing on the mathematical training signal. This gap matters: engineers who understand loss functions reason better about fine-tuning decisions, RLHF reward design, and eval scoring.
+
+- **GT post: "How Surprised Is the Model? A Practical Guide to Cross-Entropy Loss"** — probability, entropy, cross-entropy, KL divergence built up from first principles. Framed for engineers who need the intuition to make better fine-tuning and RLHF decisions — not proofs, just the model of the world that makes everything else click.
+- **Concepts module: "The Training Signal — Entropy, Loss, and KL Divergence"** — interactive: user adjusts model confidence distribution, sees entropy change in real time, sees cross-entropy vs KL divergence. Sits alongside existing Attention and Transformer modules. Fills the gap between "architecture" and "training."
+
+### RNN to LSTM to Transformer architectural arc (new cluster — from Naresh Edagotti post, May 2026)
+
+A widely-shared educational post traces the full progression from RNN to LSTM to Transformer and explains why each transition was necessary — parallelism, long-range context, vanishing gradients. Covers encoder-only / decoder-only / encoder-decoder distinction. Key framing: "Transformers are not just a model choice. They are a systems-level breakthrough." The lab has transformer content but no narrative about the historical arc — why the transition happened, what each architecture hit its ceiling on, and why transformers unlocked scaling.
+
+- **GT post: "Why Transformers Won: The RNN to LSTM to Transformer Arc"** — the progression as a systems story. What each architecture solved and failed at. Why transformers unlocked scaling that LSTM could not. The encoder/decoder/encoder-decoder split and when each applies. Not "transformers are better" but "here's exactly where the previous generation hit its ceiling."
+- **Concepts module addition: "Sequential vs Parallel — The Architecture Transition"** — interactive visualization of token processing as sequential (RNN) vs parallel (Transformer). Show long-range dependency handling and vanishing gradient behavior. Could extend the existing Transformer module or stand as a new Explore module.
+
 ---
 
 ## Tier 2 — High Impact, More Effort

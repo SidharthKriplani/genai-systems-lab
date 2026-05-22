@@ -149,6 +149,10 @@ When the user shares a screenshot of a LinkedIn post, tweet, or practitioner wri
 - Anonymous "Type A vs Type B" post (May 2026) — systems thinking vs model obsession, salary differential
 - Anonymous DS → AI Engineer arc post (May 2026) — market forces behind role fragmentation, ChatGPT as demand reset, agentic surge numbers
 - Job postings chart (May 2026, sources: Lightcast, Stanford HAI AI Index 2026, LinkedIn Economic Graph, Indeed, Revealera) — DS ~30K flat, GenAI engineer ~35K, Agentic AI engineer ~90K +280% YoY. Agentic already 2.5x larger than GenAI engineer. Confirms agentic as the fastest-growing role category.
+- Aryan Sharma post (May 2026) — one-line prompt change caused 23% quality drop for 11 days undetected. Prompt management as DevOps discipline: versioning, A/B, LLM-as-judge eval, serve-via-API. Lab gap: no prompt CI/CD content.
+- Khushboo Sharma post (May 2026) — Forward Deployed Engineer model. FDE postings +1,165% YoY. 95% enterprise AI pilots produce zero returns (MIT). Dependency gap: intelligence in engineer, not system. Reusable evals and playbooks as the fix.
+- Utkarsh Mangal post (May 2026) — Probability, Entropy, Cross-Entropy Loss, KL Divergence framed as "how surprised is the model?" Lab gap: Concepts tab has architecture but no training signal math.
+- Naresh Edagotti post (May 2026) — RNN to LSTM to Transformer arc as systems-level story. Encoder/decoder/encoder-decoder split. Lab gap: no historical architecture progression narrative.
 
 ---
 
