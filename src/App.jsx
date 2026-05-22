@@ -1595,26 +1595,39 @@ export default function App() {
   const [warRoomOpen, setWarRoomOpen] = useState(false);
 
   // Secret key sequence: type "business2026" while in any BUILD-group tab
-  const BUILD_TABS = new Set(["lab", "agents", "playground", "explore", "systems"]);
-  const SEQ = "business2026";
+  // Refs pattern: listener registered once, reads current topView via ref — no stale closure
+  const topViewRef = useRef(topView);
+  useEffect(() => { topViewRef.current = topView; }, [topView]);
+  const warRoomOpenRef = useRef(false);
   const seqBuf = useRef("");
   useEffect(() => {
+    const BUILD_TABS = new Set(["lab", "agents", "playground", "explore", "systems"]);
+    const SEQ = "business2026";
     function onKeyDown(e) {
-      if (!BUILD_TABS.has(topView)) { seqBuf.current = ""; return; }
+      if (warRoomOpenRef.current) return;
+      if (!BUILD_TABS.has(topViewRef.current)) { seqBuf.current = ""; return; }
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
-      const next = (seqBuf.current + e.key).slice(-SEQ.length);
-      // Once sequence has started, swallow keys that continue it before other handlers see them
-      if (seqBuf.current.length > 0 && SEQ.startsWith(seqBuf.current + e.key)) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
+      const candidate = seqBuf.current + e.key;
+      if (SEQ.startsWith(candidate)) {
+        // Key continues the sequence — absorb it to prevent shortcut conflicts
+        if (candidate.length > 1) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+        seqBuf.current = candidate;
+        if (seqBuf.current === SEQ) {
+          warRoomOpenRef.current = true;
+          setWarRoomOpen(true);
+          seqBuf.current = "";
+        }
+      } else {
+        // Mistype — reset, but keep key if it starts a fresh attempt
+        seqBuf.current = SEQ.startsWith(e.key) ? e.key : "";
       }
-      seqBuf.current = next;
-      if (seqBuf.current === SEQ) { setWarRoomOpen(true); seqBuf.current = ""; }
     }
-    // capture:true — fires before bubble-phase listeners (shortcuts, nav handlers, etc.)
     window.addEventListener("keydown", onKeyDown, { capture: true });
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
-  }, [topView]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [visited, setVisited] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited") || '["home"]')); }
@@ -2418,7 +2431,7 @@ export default function App() {
       )}
 
       {/* War Room — secret overlay, triggered by typing "business2026" in any BUILD tab */}
-      {warRoomOpen && <WarRoom onClose={() => setWarRoomOpen(false)} />}
+      {warRoomOpen && <WarRoom onClose={() => { warRoomOpenRef.current = false; setWarRoomOpen(false); }} />}
 
       {/* QA corner link — fixed bottom-left, subtle but findable */}
       {topView !== "qa" && (
