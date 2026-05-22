@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock } from "./analytics";
+import WarRoom from "./WarRoom";
 import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
 import { POSTS as GT_POSTS } from "./groundTruthIndex"; // lightweight metadata — no content bodies
@@ -1591,6 +1592,23 @@ function getInitialView() {
 
 export default function App() {
   const [topView, setTopView] = useState(getInitialView);
+  const [warRoomOpen, setWarRoomOpen] = useState(false);
+
+  // Secret key sequence: type "business2026" while in any BUILD-group tab
+  const BUILD_TABS = new Set(["lab", "agents", "playground", "explore", "systems"]);
+  const SEQ = "business2026";
+  const seqBuf = useRef("");
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (!BUILD_TABS.has(topView)) { seqBuf.current = ""; return; }
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      seqBuf.current = (seqBuf.current + e.key).slice(-SEQ.length);
+      if (seqBuf.current === SEQ) { setWarRoomOpen(true); seqBuf.current = ""; }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [topView]);
+
   const [visited, setVisited] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited") || '["home"]')); }
     catch { return new Set(["home"]); }
@@ -2391,6 +2409,9 @@ export default function App() {
           />
         </Suspense>
       )}
+
+      {/* War Room — secret overlay, triggered by typing "business2026" in any BUILD tab */}
+      {warRoomOpen && <WarRoom onClose={() => setWarRoomOpen(false)} />}
 
       {/* QA corner link — fixed bottom-left, subtle but findable */}
       {topView !== "qa" && (
