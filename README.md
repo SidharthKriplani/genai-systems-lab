@@ -22,7 +22,7 @@
 <br/>
 
 ```
-14 tabs  ·  140+ modules  ·  202+ posts  ·  183+ PrepLab questions  ·  zero backend  ·  no login
+14 tabs  ·  140+ modules  ·  190+ posts  ·  190+ PrepLab questions  ·  zero backend  ·  no login
 ```
 
 </div>
@@ -35,7 +35,7 @@ The answer is wrong. Nobody catches it until the complaint arrives.
 
 **This lab teaches you to catch it before it ships.**
 
-Five curated RAG failure scenarios. Inference bottleneck diagnosis. Agent loop step-through. Eval design. MCP protocol. Context compaction. 140+ production systems modules. All interactive. All in your browser. No account, no backend, no cost.
+Five curated RAG failure scenarios. Inference bottleneck diagnosis. Agent loop step-through. Eval design. MCP protocol. Context compaction. 140+ production systems modules. 190+ Ground Truth posts. All interactive. All in your browser. No account, no backend, no cost.
 
 → [**Open the lab**](https://genai-systems-lab-ivory.vercel.app)
 
@@ -63,7 +63,7 @@ Not a video. Not a blog post. Not a quiz. You make decisions, the system respond
 
 ---
 
-## The 13 tabs
+## The 14 tabs
 
 | Tab | Modules | What you'll find |
 |-----|---------|-----------------|
@@ -78,14 +78,14 @@ Not a video. Not a blog post. Not a quiz. You make decisions, the system respond
 | 💬 **Fluency** | 5 | Phrase bank, timed drills, mock interview (20 questions, 90s each), company case arena, prompt engineering lab |
 | 📋 **AI Product** | 5 | PRD simulator, roadmap prioritizer, stakeholder explainer, launch checklist, AI-or-not? decision framework |
 | 🚀 **Career** | 5 | System design interviews, take-home challenges, negotiation flashcards, benchmark literacy |
-| 💡 **Ask** | — | Consultation space — keyword search over 202+ posts + all module descriptions. Conversational UI. LLM-upgrade-ready |
+| 💡 **Ask** | — | Consultation space — keyword search over 190+ posts + all module descriptions. Conversational UI. LLM-upgrade-ready |
 | 📝 **PrepLab** | 3 modes | Assessment (timed exam, 15/30/60 min), Trainer (immediate feedback + weak topic tracking), JD Prep (paste JD → skill gap → targeted drill) |
 
 ---
 
 ## PrepLab — what makes it different
 
-**Assessment Mode:** Timed exam (15/30/60 min). 183+ questions across 8 skill categories. Scores hidden until end — final reveal shows per-category breakdown and "Strong in / Needs work" callout.
+**Assessment Mode:** Timed exam (15/30/60 min). 190+ questions across 8 skill categories. Scores hidden until end — final reveal shows per-category breakdown and "Strong in / Needs work" callout.
 
 **Trainer Mode:** Immediate feedback after each answer. Optional speech input (Web Speech API). Tracks weak topics. Session summary with "Study these next" recommendations.
 
@@ -107,7 +107,7 @@ Not available anywhere else for this audience, for free.
 | Honest fidelity disclosure | ✗ | ✗ | ✗ | ✓ |
 | No ads, no upsells | ✓ | ✗ | ✗ | ✓ |
 | Covers evals, inference, agents, MCP | ✗ | Partial | ✗ | ✓ |
-| 202+ production-depth posts | ✗ | ✗ | ✗ | ✓ |
+| 190+ production-depth posts | ✗ | ✗ | ✗ | ✓ |
 | Free forever | ✓ | ✗ | ✓ | ✓ |
 
 The gap that matters: every other resource **shows** you what to do. This one puts you in the seat and makes you decide — then shows you what broke and why.
@@ -231,8 +231,8 @@ src/
 ├── Career.jsx               # Career track — system design, take-home, salary calc
 ├── GroundTruth.jsx          # GT post renderer — ELI5, search, reactions, quiz-me
 ├── groundTruthIndex.js      # Post metadata + related[] arrays
-├── groundTruthPosts.js      # All 202+ post content as typed block arrays
-├── PrepLab.jsx              # Assessment exam, Trainer mode, JD+resume prep (183+ questions)
+├── groundTruthPosts.js      # All 190+ post content as typed block arrays
+├── PrepLab.jsx              # Assessment exam, Trainer mode, JD+resume prep (190+ questions)
 ├── LearningPaths.jsx        # 6 curated multi-tab learning paths
 ├── Consultation.jsx         # Ask tab — keyword retrieval over all posts + modules
 └── analytics.js             # PostHog event tracking (fails silently if unconfigured)

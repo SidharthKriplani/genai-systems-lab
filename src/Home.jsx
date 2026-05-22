@@ -255,7 +255,7 @@ const MODULE_MAP = [
 
 const STATS = [
   { value: "3,400+", target: 3400, suffix: "+", label: "Learners",           sub: "Engineers & PMs",   tab: null           },
-  { value: "202+",   target: 202,  suffix: "+", label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
+  { value: "190+",   target: 190,  suffix: "+", label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
   { value: "200+",   target: 200,  suffix: "+", label: "Challenges",         sub: "All interactive",   tab: null           },
 ];
 

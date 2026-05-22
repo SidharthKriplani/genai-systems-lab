@@ -443,6 +443,34 @@ Violet=LEARN, blue=BUILD, green=GROW on home page. Inside tabs, associations dis
 
 ---
 
+## Audit 15 — Content Integrity Audit (Round 2)
+
+**Date:** May 2026
+**Scope:** `groundTruthIndex.js`, `groundTruthPosts.js`, `Home.jsx`, `index.html`, `README.md`
+**Trigger:** Systematic scan for big-win zero-effort errors — stale stats, mislabeled sections, factual overclaims.
+**Method:** grep + python3 line counts against all public-facing stat claims.
+
+### Findings & Resolutions
+
+| # | Finding | Files | Status |
+|---|---|---|---|
+| 1 | **GT post count overclaim** — `groundTruthIndex.js` has 192 posts; "202+" claimed everywhere | README, Home.jsx, index.html | ✅ Fixed — all changed to "190+" |
+| 2 | **README section header mismatch** — "## The 13 tabs" contradicts "14 tabs" on line 25 | README.md line 66 | ✅ Fixed — changed to "## The 14 tabs" |
+| 3 | **PrepLab question count stale** — 191 actual questions vs "183+" claimed | README, PrepLab.jsx | ✅ Fixed — updated to "190+" in README |
+| 4 | **57 unindexed GT posts** — `groundTruthPosts.js` has 249 content entries, only 192 are in `groundTruthIndex.js`. Posts with content but no metadata entry are invisible to users. | groundTruthPosts.js, groundTruthIndex.js | ⚠️ Open — requires identifying orphaned IDs and deciding: index them, delete them, or document them as stubs |
+
+**Verified counts as of May 2026:**
+- GT posts indexed (visible to users): 192
+- GT content entries in groundTruthPosts.js: 249 (57 unindexed)
+- PrepLab questions: 191
+- Systems modules (label: count in Systems.jsx): 50
+
+**Outstanding:**
+- Audit 4 quarterly note still applies: run a stat sync pass after every content sprint.
+- The 57 unindexed GT posts need a follow-up pass: list the orphan IDs, decide fate per-post.
+
+---
+
 ## How to Use This File
 
 **Starting an audit session:**
