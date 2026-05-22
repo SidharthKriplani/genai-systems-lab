@@ -10,7 +10,7 @@ Read this first at the start of every session. It contains everything needed to 
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of May 2026: 48+ Systems modules, 19 Explore modules, 183+ PrepLab questions, 202+ Ground Truth posts, 14 top-level tabs.
+Scale as of May 2026: 50 Systems modules, 19 Explore modules, 190+ PrepLab questions, 190+ Ground Truth posts, 14 top-level tabs.
 
 ---
 

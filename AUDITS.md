@@ -518,6 +518,67 @@ Violet=LEARN, blue=BUILD, green=GROW on home page. Inside tabs, associations dis
 
 ---
 
+## Audit 17 — Multi-Type Quick Scan Batch
+
+**Date:** May 2026
+**Scope:** Code hygiene, PrepLab topic balance, analytics event coverage, RSS freshness, GT post depth, CLAUDE.md sync, README dead links
+**Method:** grep + python3 across all src/ files and public/. No manual reading required.
+**Status:** Findings documented. CLAUDE.md stat fix applied.
+
+### Findings
+
+| # | Finding | File(s) | Severity | Status |
+|---|---|---|---|---|
+| 1 | **CLAUDE.md stats stale** — line 13 says "183+ PrepLab questions, 202+ Ground Truth posts" — both wrong vs actuals (191 and 192) | `CLAUDE.md` | Medium | ✅ Fixed — updated to 190+ / 190+ |
+| 2 | **RSS feed missing 30 recent posts** — `/rss.xml` has 20 items, hardcoded. 30 of the most recently added GT posts are not in the feed. Last RSS entry is "From Fine-Tuned Model to Production." All `persp-*`, `how-i-build`, `data-flywheel`, and `frontier` posts are absent. | `public/rss.xml` | High | ⚠️ Open |
+| 3 | **PrepLab topic distribution skew** — 11 topics are at the 4-question minimum: `attention`, `quantization`, `serving`, `caching`, `context`, `design`, `transformers`, `streaming`, `merging`, `constrained`, `sysdesign`. Meanwhile `agents` (26) and `llmops` (25) are 6× heavier. Foundational topics like `attention` and `transformers` are underrepresented for their importance. | `PrepLab.jsx` | Medium | ⚠️ Open |
+| 4 | **METRICS.md ↔ analytics.js gap** — 7 events fired in code but absent from METRICS.md: `assessment_completed`, `challenge_completed`, `evaluate_configuration_clicked`, `rag_lab_opened`, `scenario_solve_shared`, `search_performed`, `tab_navigated`. Also 24 events documented in METRICS.md that are not tracked in App.jsx (including `home_viewed`, `start_here_clicked`, `module_completed`, `post_opened`). METRICS.md is significantly out of sync. | `METRICS.md`, `App.jsx` | Medium | ⚠️ Open |
+| 5 | **3 thin GT posts** — indexed and visible but very few content blocks: `dpo-in-practice` (4 blocks), `llm-observability` (5 blocks), `instruction-tuning-datasets` (5 blocks). These feel like stubs in a full-depth post list. | `groundTruthPosts.js` | Low | ⚠️ Open |
+| 6 | **174/192 GT posts have no `date` field** — date field present on only 18 posts. Affects RSS quality, any "recently added" sort, and future date-filtering features. | `groundTruthIndex.js` | Low | ⚠️ Open |
+| 7 | **README feedback form is a dead placeholder** — `https://forms.gle/REPLACE_ME` links to nothing. Anyone clicking "Give feedback" in the README hits a broken URL. | `README.md` | Medium | ⚠️ Open — needs real form URL |
+| 8 | **All key files pass brace balance** — App.jsx, Home.jsx, groundTruthPosts.js, PrepLab.jsx, Agents.jsx, Explore.jsx all balanced | Multiple | — | ✅ Clean |
+| 9 | **console.log is clean** — 1 in `main.jsx` (service worker registration, expected); 1 inside a code snippet string in `modules.jsx` (not executed). No debug logs in app logic. | `src/` | — | ✅ Clean |
+| 10 | **No unused imports detected** — all named imports in key components are referenced at least once | Multiple | — | ✅ Clean |
+| 11 | **No `<img>` tags missing `alt=`** — accessibility baseline for images is clean | Multiple | — | ✅ Clean |
+
+### PrepLab topic counts (full breakdown)
+
+```
+  4  attention · quantization · serving · caching · context · design
+  4  transformers · streaming · merging · constrained · sysdesign
+  5  product · reasoning
+  6  behavioral
+  9  multimodal · inference
+ 10  alignment
+ 11  evaluation · safety
+ 12  finetuning
+ 18  rag
+ 25  llmops
+ 26  agents
+────
+191  total
+```
+
+### Analytics event gaps (events fired in code, absent from METRICS.md)
+
+`assessment_completed`, `challenge_completed`, `evaluate_configuration_clicked`, `rag_lab_opened`, `scenario_solve_shared`, `search_performed`, `tab_navigated`
+
+### Events documented in METRICS.md but NOT fired in code
+
+`home_viewed`, `start_here_clicked`, `module_completed`, `post_opened`, `search_query`, `assessment_finished`, `path_started`, `preplab_spaced`, `tab_viewed` (and ~15 more)
+
+### Priority actions from this audit
+
+**Finding 2 (RSS)** — high user-facing impact: regenerate `rss.xml` using all 192 GT index entries sorted by date or file order, capped at 20 most recent. One Python script.
+
+**Finding 7 (placeholder link)** — easy visibility fix: either remove the feedback section from README or replace with a real URL.
+
+**Finding 3 (PrepLab skew)** — add 4–8 questions each for `attention`, `transformers`, `context`, `serving` — all foundational topics that interview candidates are asked about.
+
+**Finding 4 (METRICS.md)** — sync METRICS.md to match what App.jsx actually fires. Low effort, high value for future analytics interpretation.
+
+---
+
 ## How to Use This File
 
 **Starting an audit session:**
