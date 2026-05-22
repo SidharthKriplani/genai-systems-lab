@@ -148,6 +148,15 @@ A widely-shared educational post traces the full progression from RNN to LSTM to
 - **GT post: "Why Transformers Won: The RNN to LSTM to Transformer Arc"** — the progression as a systems story. What each architecture solved and failed at. Why transformers unlocked scaling that LSTM could not. The encoder/decoder/encoder-decoder split and when each applies. Not "transformers are better" but "here's exactly where the previous generation hit its ceiling."
 - **Concepts module addition: "Sequential vs Parallel — The Architecture Transition"** — interactive visualization of token processing as sequential (RNN) vs parallel (Transformer). Show long-range dependency handling and vanishing gradient behavior. Could extend the existing Transformer module or stand as a new Explore module.
 
+### DE skill stack — 3-layer model (new cluster — from anonymous DE post, May 2026)
+
+A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL, Python, data modelling, Spark, Airflow, cloud — still 80% of your value), Layer 2 (AI productivity: prompt engineering, Cursor/Claude Code fluency, AI-generated SQL verification workflows), Layer 3 (AI infrastructure: vector DBs, embedding pipelines, RAG architecture, feature stores, LLM eval and observability, cloud AI services). Key claim: most engineers obsess over Layer 2 and forget Layer 1 — that's the trap. Layer 3 is currently scarce and what gets you the next senior/staff role. The lab is effectively a Layer 3 training ground but never frames itself that way — a direct positioning opportunity.
+
+- **GT post: "The Three-Layer DE Skill Stack — and Why Most Engineers Are Optimizing the Wrong One"** — the full 3-layer model with concrete examples at each layer. Why Layer 1 fundamentals are what let you tell when the AI is wrong. Why Layer 3 (RAG, vector DBs, evals, observability) is currently scarce and commands a premium. The "all three" thesis — speed without verification is dangerous, infrastructure depth without fundamentals is fragile.
+- **GT post: "Layer 3 Skills for Data Engineers: Vector DBs, Embedding Pipelines, and LLM Observability"** — practical breakdown of each Layer 3 skill: when you need it, what the learning curve looks like, what production looks like. Companion piece to the 3-layer post — goes deeper on the specific skills the lab already covers.
+- **Learning Path: "Data Engineer to AI Engineer"** — curated path through existing lab modules mapped to Layer 3 skills: RAG Lab → Vector DB Engineering → Evals → LLMOps Observability → Agent Architecture. Uses existing content, zero new builds required.
+- **Home page positioning tweak** — add one line near the hero explicitly claiming Layer 3 depth: "The lab that builds Layer 3 skills — RAG, evals, observability, agent architecture." Zero build effort, direct resonance with DEs reading that post.
+
 ---
 
 ## Tier 2 — High Impact, More Effort

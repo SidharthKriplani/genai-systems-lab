@@ -153,6 +153,7 @@ When the user shares a screenshot of a LinkedIn post, tweet, or practitioner wri
 - Khushboo Sharma post (May 2026) — Forward Deployed Engineer model. FDE postings +1,165% YoY. 95% enterprise AI pilots produce zero returns (MIT). Dependency gap: intelligence in engineer, not system. Reusable evals and playbooks as the fix.
 - Utkarsh Mangal post (May 2026) — Probability, Entropy, Cross-Entropy Loss, KL Divergence framed as "how surprised is the model?" Lab gap: Concepts tab has architecture but no training signal math.
 - Naresh Edagotti post (May 2026) — RNN to LSTM to Transformer arc as systems-level story. Encoder/decoder/encoder-decoder split. Lab gap: no historical architecture progression narrative.
+- Anonymous DE skills post (May 2026) — 3-layer DE stack: Layer 1 (SQL/Python/fundamentals, 80% of value), Layer 2 (AI productivity tools), Layer 3 (vector DBs, RAG, evals, observability — currently scarce). Lab is a Layer 3 training ground but never says so. Positioning opportunity.
 
 ---
 
