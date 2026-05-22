@@ -626,6 +626,41 @@ The 8 multi-line entries are: `finetune-playbook`, `rlhf-production`, `dpo-vs-pp
 
 ---
 
+## Audit 19 — SEO/PWA/Sitemap + Category Filter + Orphaned Files
+
+**Date:** May 2026
+**Scope:** `public/sitemap.xml`, `public/manifest.json`, `src/GroundTruth.jsx` CATEGORIES filter, orphaned JSX files, GT tag coverage
+**Method:** grep + python3 + file inspection. No manual reading.
+**Status:** Findings documented. No fixes applied — all require deliberate decisions.
+
+### Findings
+
+| # | Finding | File | Severity | Status |
+|---|---|---|---|---|
+| 1 | **Sitemap has 45 dead URLs on old domain** — `sitemap.xml` mixes 97 URLs on the live domain (`genai-systems-lab-ivory.vercel.app`) with 45 URLs on `genai-systems-lab.vercel.app/post/...` — a previous domain using `/post/` path routing that no longer works. These 45 entries are dead links crawled by Google, potentially splitting PageRank and generating 404s. | `public/sitemap.xml` | High | ⚠️ Open — remove or redirect the 45 old-domain entries |
+| 2 | **`production-mlops` category missing from CATEGORIES filter** — 5 posts use `category: "production-mlops"` (`ft-dpo-vs-grpo`, `ft-quantization`, `ft-governance`, `ft-multimodal-rag`, `ft-case-study`) but this category has no entry in the `CATEGORIES` array in `GroundTruth.jsx`. Users cannot filter to these posts; the category badge shows the raw id instead of a readable label. | `GroundTruth.jsx` line 691 | Medium | ⚠️ Open — add `{ id: "production-mlops", label: "Production MLOps" }` to CATEGORIES |
+| 3 | **PWA manifest icons claim wrong dimensions** — `manifest.json` lists `/og-image.png` at sizes `512x512` and `192x192` but the file is actually `1200×630` (landscape OG image). Browsers will scale a non-square 1200×630 PNG to square icon sizes, producing a distorted/cropped icon on PWA installs (Add to Home Screen). | `public/manifest.json` | Medium | ⚠️ Open — create a proper square icon (512×512 + 192×192) and update manifest |
+| 4 | **MLCiCd.jsx, IndiaScale.jsx, InferenceOptimizer.jsx, ModelRouter.jsx are active files** — all 4 have 2+ references each in App.jsx/Systems.jsx. Audit 18 suspicion was wrong — they are NOT orphaned. | `src/` | — | ✅ Clean (suspicion cleared) |
+| 5 | **All 200 GT posts have `tags[]` arrays** — tag coverage is complete | `groundTruthIndex.js` | — | ✅ Clean |
+| 6 | **Sitemap coverage gap** — 200 GT posts indexed; sitemap has only 97 GT post URLs on the correct domain. ~103 posts are not in the sitemap (including all recent `persp-*`, `data-flywheel`, `frontier`, `training-stack`, `how-i-build` posts). | `public/sitemap.xml` | Medium | ⚠️ Open — regenerate sitemap from groundTruthIndex.js |
+
+### Sitemap breakdown
+
+| Domain | Count | Status |
+|---|---|---|
+| `genai-systems-lab-ivory.vercel.app` (live) | 97 | Active — but incomplete (103 posts missing) |
+| `genai-systems-lab.vercel.app/post/...` (old) | 45 | Dead — old URL structure, 404s |
+
+### Priority actions
+
+**Finding 1+6 (sitemap)** — regenerate `sitemap.xml` from `groundTruthIndex.js`: one Python script outputs all 200 posts as `/#groundtruth/{id}` URLs on the correct domain only. Drop the 45 old `/post/` entries. This is a single-file replace.
+
+**Finding 2 (`production-mlops` filter)** — one-liner: add `{ id: "production-mlops", label: "Production MLOps" }` to the CATEGORIES array in `GroundTruth.jsx` around line 719.
+
+**Finding 3 (PWA icon)** — generate a 512×512 square icon from the project's visual identity (black bg, cyan text) using PIL. Update manifest to reference it.
+
+---
+
 ## How to Use This File
 
 **Starting an audit session:**
