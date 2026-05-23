@@ -62,6 +62,13 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 - **Context Compaction** — Add live compaction simulator: user adjusts conversation length, sees token count, triggers compaction, sees output quality change.
 - **Agent Architecture** — Add multi-agent orchestration interactive (orchestrator dispatches to workers, see the message flow). Currently only single-agent.
 
+### Cosine similarity + vector normalisation fundamentals (small cluster — from Nishit Jain interview post, May 2026)
+
+An AI interviewer found that candidates who claimed to have built 2-3 RAG systems couldn't explain cosine similarity pictorially — no cos θ, no angle, no vector multiplication. The lab covers RAG failure modes deeply but not the mathematical foundation of WHY similarity search works. This is a real gap: someone can follow a RAG tutorial without understanding what cosine similarity is doing or why normalisation matters.
+
+- **PrepLab questions (3–4)** — "Explain cosine similarity pictorially and why it's used for chunk retrieval." "What is vector normalisation and why does it matter in retrieval?" "What happens to similarity scores if you skip L2 normalisation?" "Why does cosine similarity care about direction and not magnitude?" These are genuine interview-differentiating questions the lab doesn't currently test.
+- **Explore module: "Cosine Similarity — The Geometry of Retrieval"** — interactive: drag two vectors in 2D space, watch the angle and cosine similarity update live, see why normalised dot product = cosine similarity, see what breaks when vectors aren't normalised. Tagged `✓ Mathematically faithful`. Fills the gap between "embeddings look like points in space" (current Embedding Space module, conceptual) and "here is the math your retrieval system runs on every query."
+
 ### Explore modules
 - **Model Architecture Comparison** — Encoder-only (BERT) vs Decoder-only (GPT) vs Encoder-Decoder (T5). When to use each. Static reference table + use-case wizard.
 - **Tokenizer Comparison** — BPE vs WordPiece vs SentencePiece vs tiktoken. Token counts for the same text across tokenizers. Interactive demo.
