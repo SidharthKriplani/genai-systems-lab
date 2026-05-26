@@ -1919,7 +1919,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white" data-palette={palette} style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif" }}>
+    <div className="min-h-screen bg-zinc-950 text-white flex" data-palette={palette} style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif" }}>
       {/* Feedback fallback modal */}
       {feedbackModalOpen && <FeedbackFallbackModal onClose={() => setFeedbackModalOpen(false)} />}
 
@@ -2061,27 +2061,81 @@ export default function App() {
           </div>
         </div>
       )}
+      {/* ── LEFT SIDEBAR (desktop only) ─────────────────────────────── */}
+      <aside className="hidden lg:flex flex-col w-48 shrink-0 border-r border-zinc-800 bg-zinc-950 sticky top-0 h-screen overflow-y-auto z-20">
+        {/* Logo */}
+        <button onClick={() => navigate("home")} className="flex items-center gap-2 px-4 py-4 hover:opacity-80 transition-opacity">
+          <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0">G</div>
+          <span className="text-sm font-bold tracking-wide text-white">GenAI Lab</span>
+        </button>
+        <div className="h-px bg-zinc-800 mx-3 mb-2" />
+        {/* Nav groups */}
+        <nav className="flex-1 px-2 pb-4 space-y-0.5">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi} className={gi > 0 ? "mt-3" : ""}>
+              {group.label && (
+                <div className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 mb-0.5" style={{ color: group.color + "99" }}>{group.label}</div>
+              )}
+              {group.items.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.id)}
+                  aria-current={topView === item.id ? "page" : undefined}
+                  className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all ${
+                    topView === item.id
+                      ? "bg-violet-600 text-white"
+                      : item.id === "lab"
+                        ? "text-amber-400 hover:bg-amber-900/20 hover:text-amber-300"
+                        : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                  }`}>
+                  <span className="flex items-center gap-1.5">
+                    {item.label}
+                    {item.id === "lab" && topView !== "lab" && <span className="text-amber-500 text-[10px]">★</span>}
+                  </span>
+                  {visited.has(item.id) && topView !== item.id && item.id !== "lab" && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />
+                  )}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+        {/* Bottom utilities */}
+        <div className="px-2 pb-3 border-t border-zinc-800 pt-2 space-y-1">
+          <button onClick={() => setSearchOpen(true)}
+            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-left transition-all">
+            <svg width="10" height="10" viewBox="0 0 11 11" fill="none" className="text-zinc-600 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+            <span className="text-[11px] text-zinc-600 flex-1">Search…</span>
+            <kbd className="text-[9px] border border-zinc-700 rounded px-1 text-zinc-600 font-mono">⌘K</kbd>
+          </button>
+          <button onClick={() => openFeedback("sidebar")}
+            className="w-full flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
+            💬 <span>Feedback</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── MAIN COLUMN ─────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0">
+
       <header role="banner" className="border-b border-zinc-800">
         {/* Row 1: Logo + Search + Utilities */}
         <div className="px-4 py-2 flex items-center gap-3 max-w-7xl mx-auto">
-          <button onClick={() => navigate("home")} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
+          <button onClick={() => navigate("home")} className="flex lg:hidden items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
             <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold text-white">G</div>
             <span className="hidden sm:block text-sm font-bold tracking-wide text-white">GenAI Lab</span>
           </button>
-          {/* Search bar — center, grows to fill space */}
+          {/* Search bar — mobile only; desktop has sidebar search */}
           <button onClick={() => setSearchOpen(true)}
             aria-label="Search modules"
-            className="hidden lg:flex flex-1 items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-left">
+            className="lg:hidden flex flex-1 items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-left">
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-zinc-600 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
             <span className="text-xs text-zinc-600 flex-1">Search modules…</span>
             <kbd className="text-[9px] border border-zinc-700 rounded px-1 text-zinc-600 font-mono">⌘K</kbd>
           </button>
           {/* Right utilities */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
-            <button onClick={() => openFeedback("header")}
-              className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-violet-700 hover:text-violet-400 transition-all font-mono text-zinc-500">
-              💬 Feedback
-            </button>
+            {/* Feedback button — desktop has it in sidebar */}
             <button onClick={() => setLeaderboardOpen(true)}
               className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
               title="Challenge Log" aria-label="Open challenge log">
@@ -2110,35 +2164,7 @@ export default function App() {
             </button>
           </div>
         </div>
-        {/* Row 2: Tab navigation (desktop only) */}
-        <nav role="navigation" aria-label="Main navigation" className="hidden lg:flex items-center gap-0.5 px-4 pb-1.5 max-w-7xl mx-auto overflow-x-auto scrollbar-hide">
-          {NAV_GROUPS.map((group, gi) => (
-            <div key={gi} className="flex items-center gap-0.5 shrink-0">
-              {gi > 0 && <div className="w-px h-4 bg-zinc-800 mx-1" />}
-              {group.label && (
-                <span className="text-[10px] font-mono font-bold px-1 mr-0.5" style={{ color: group.color + "99" }}>{group.label}</span>
-              )}
-              {group.items.map(item => (
-                <button key={item.id} onClick={() => navigate(item.id)}
-                  aria-current={topView === item.id ? "page" : undefined}
-                  title={item.audience ? `For: ${item.audience}` : undefined}
-                  className={`relative px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-all uppercase whitespace-nowrap flex items-center gap-1 ${
-                    topView === item.id
-                      ? "bg-violet-600 text-white"
-                      : item.id === "lab"
-                        ? "text-amber-500 hover:text-amber-300 hover:bg-amber-900/20 border border-amber-900/40"
-                        : "text-zinc-500 hover:text-white hover:bg-zinc-800"
-                  }`}>
-                  {item.label}
-                  {item.id === "lab" && topView !== "lab" && <span className="text-amber-600">★</span>}
-                  {visited.has(item.id) && topView !== item.id && item.id !== "lab" && (
-                    <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-500 opacity-80" />
-                  )}
-                </button>
-              ))}
-            </div>
-          ))}
-        </nav>
+        {/* Row 2: Tab navigation — desktop nav moved to left sidebar */}
       </header>
 
       {topView === "home" && <HomePage onNavigate={navigate} visited={visited} onFeedback={openFeedback} />}
@@ -2455,6 +2481,7 @@ export default function App() {
           ))}
         </div>
       )}
+      </div>{/* end main column */}
     </div>
   );
 }
