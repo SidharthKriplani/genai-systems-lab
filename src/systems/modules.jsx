@@ -9505,6 +9505,18 @@ function AgentArchitecture() {
 
 const EVAL_METRICS = [
   {
+    id: "exactmatch",
+    name: "Exact Match",
+    type: "Deterministic",
+    speed: "Instant",
+    cost: "Free",
+    bestFor: "Classification, short-answer QA with known correct string",
+    weaknesses: "Binary — 'Paris' and 'paris, france' both wrong. Useless for generation.",
+    formula: "1 if normalize(candidate) == normalize(reference) else 0",
+    range: "0 or 1",
+    humanCorr: "N/A (ground truth)",
+  },
+  {
     id: "rouge",
     name: "ROUGE-L",
     type: "Lexical overlap",
@@ -9567,6 +9579,7 @@ const EVAL_METRICS = [
   {
     id: "llmjudge",
     name: "LLM-as-Judge (pairwise)",
+    type: "LLM-as-judge",
     speed: "3–8s/pair",
     cost: "$0.002–0.02/pair",
     bestFor: "A/B comparisons, regression testing between model versions",
@@ -9587,6 +9600,42 @@ const EVAL_METRICS = [
     range: "0–1",
     humanCorr: "N/A (ground truth)",
   },
+  {
+    id: "ragas_faith",
+    name: "RAGAS Faithfulness",
+    type: "RAG-specific",
+    speed: "2–5s/sample",
+    cost: "$0.001–0.01/sample",
+    bestFor: "RAG hallucination detection — is every claim in the answer supported by retrieved context?",
+    weaknesses: "LLM-based — can miss subtle hallucinations; expensive at scale",
+    formula: "claims_supported_by_context / total_claims_in_answer",
+    range: "0–1",
+    humanCorr: "High",
+  },
+  {
+    id: "ragas_relevancy",
+    name: "RAGAS Answer Relevancy",
+    type: "RAG-specific",
+    speed: "2–5s/sample",
+    cost: "$0.001–0.01/sample",
+    bestFor: "Does the answer address the actual question? Catches verbose, off-topic answers.",
+    weaknesses: "Doesn't check factual accuracy — only topical alignment",
+    formula: "mean cosine similarity of generated questions (from answer) back to original query",
+    range: "0–1",
+    humanCorr: "High",
+  },
+  {
+    id: "ragas_ctx",
+    name: "RAGAS Context Precision",
+    type: "RAG-specific",
+    speed: "2–5s/sample",
+    cost: "$0.001–0.01/sample",
+    bestFor: "Retrieval quality — are the top-k chunks actually relevant to the question?",
+    weaknesses: "Measures position of relevant chunks, not whether answer is correct",
+    formula: "precision@k weighted by position of relevant chunks",
+    range: "0–1",
+    humanCorr: "Medium–High",
+  },
 ];
 
 const EXAMPLE_OUTPUTS = {
@@ -9594,13 +9643,61 @@ const EXAMPLE_OUTPUTS = {
   candidate_good: "Transformers leverage self-attention mechanisms to handle sequences simultaneously, making long-context training efficient.",
   candidate_bad: "Neural networks are very powerful and can learn many things from data using matrix operations.",
   candidate_tricky: "The transformer uses self-attention and processes sequences in parallel for efficient long-context training.",
+  candidate_hallucination: "The transformer architecture was invented by Yann LeCun in 2015. It uses self-attention to process sequences, which was first described in the famous 'Attention Is All You Need' paper by LeCun et al.",
 };
 
 const EXAMPLE_SCORES = {
-  candidate_good:  { rouge: 0.41, bleu: 0.28, bertscore: 0.94, meteor: 0.61, geval: 4.5 },
-  candidate_bad:   { rouge: 0.08, bleu: 0.02, bertscore: 0.71, meteor: 0.10, geval: 1.8 },
-  candidate_tricky:{ rouge: 0.87, bleu: 0.72, bertscore: 0.97, meteor: 0.89, geval: 4.8 },
+  candidate_good:        { rouge: 0.41, bleu: 0.28, bertscore: 0.94, meteor: 0.61, geval: 4.5 },
+  candidate_bad:         { rouge: 0.08, bleu: 0.02, bertscore: 0.71, meteor: 0.10, geval: 1.8 },
+  candidate_tricky:      { rouge: 0.87, bleu: 0.72, bertscore: 0.97, meteor: 0.89, geval: 4.8 },
+  candidate_hallucination:{ rouge: 0.44, bleu: 0.31, bertscore: 0.89, meteor: 0.52, geval: 3.9 },
 };
+
+const JUDGE_SCENARIOS = [
+  {
+    id: "rag_faithful",
+    label: "RAG: Is it faithful?",
+    context: "The transformer was introduced in the 2017 paper 'Attention Is All You Need' by Vaswani et al. It replaced recurrent layers with multi-head self-attention.",
+    question: "Who invented the transformer?",
+    answer: "The transformer was invented by Vaswani and colleagues, introduced in their 2017 paper.",
+    verdict: "PASS",
+    explanation: "Every claim in the answer is directly supported by the context. Faithfulness score: ~0.95.",
+    failAnswer: "The transformer was invented by Yann LeCun in 2015.",
+    failVerdict: "FAIL",
+    failExplanation: "Two factual claims (LeCun, 2015) directly contradict the context. Faithfulness score: ~0.10.",
+  },
+  {
+    id: "pairwise",
+    label: "A/B: Which response wins?",
+    context: null,
+    question: "Explain why a reranker improves RAG quality.",
+    answer: "A reranker is a cross-encoder that reads the query and each retrieved chunk together, capturing semantic interaction that a bi-encoder embedding model misses. It reorders the top-k results so the most relevant chunk appears first, which directly improves the LLM's answer quality since it anchors on early context.",
+    verdict: "A wins",
+    explanation: "Response A is specific, mechanistic, and explains causality (why position 1 matters). Preferred 82% of the time in human eval.",
+    failAnswer: "A reranker improves results by reranking the retrieved documents to put the best ones first. This makes the results better.",
+    failVerdict: "B loses",
+    failExplanation: "Response B is circular (reranker reranks) and adds no mechanistic explanation. Judges penalise vague answers heavily.",
+  },
+  {
+    id: "rubric",
+    label: "G-Eval rubric scoring",
+    context: null,
+    question: "What is the KV cache?",
+    answer: "The KV cache stores key and value matrices from previous tokens so they don't need to be recomputed on each forward pass. This reduces autoregressive generation from O(n²) to O(n) compute per token. Without it, generating 1000 tokens requires 1000 full forward passes through the entire sequence.",
+    verdict: "4.7 / 5",
+    explanation: "Coherence: 5 (clear structure). Relevance: 5 (directly answers). Correctness: 4.5 (accurate but omits memory trade-off). Fluency: 5. Weighted: 4.7.",
+    failAnswer: "The KV cache is a type of memory that makes transformers faster. It caches things so you don't have to compute them again.",
+    failVerdict: "2.1 / 5",
+    failExplanation: "Correct at a surface level but provides no mechanistic depth. 'Things' is vague. No mention of keys/values, no complexity analysis. Rubric penalises shallow answers.",
+  },
+];
+
+const BIAS_MITIGATIONS = [
+  { bias: "Position bias", desc: "Judge systematically prefers response A (shown first)", fix: "Swap A/B for 50% of samples, average both orderings" },
+  { bias: "Verbosity bias", desc: "Longer responses win even when they say less", fix: "Explicit rubric instruction: 'do not reward length unless it adds substance'" },
+  { bias: "Self-preference", desc: "GPT-4 judge prefers GPT-4 outputs over Claude outputs", fix: "Use a different model family as judge, or use multiple judges and average" },
+  { bias: "Sycophancy", desc: "Judge agrees with whatever is stated confidently", fix: "Include adversarial 'confident but wrong' examples in your rubric calibration set" },
+];
 
 function EvalMetricsTable() {
   const [sortCol, setSortCol] = useState("humanCorr");
@@ -9658,9 +9755,10 @@ function EvalMetricsTable() {
 function EvalMetricsSamples() {
   const [cand, setCand] = useState("candidate_good");
   const candidates = [
-    { id:"candidate_good",   label:"Good paraphrase" },
-    { id:"candidate_bad",    label:"Wrong answer" },
-    { id:"candidate_tricky", label:"Near-copy" },
+    { id:"candidate_good",        label:"Good paraphrase" },
+    { id:"candidate_bad",         label:"Wrong answer" },
+    { id:"candidate_tricky",      label:"Near-copy" },
+    { id:"candidate_hallucination", label:"Hallucination" },
   ];
   const scores = EXAMPLE_SCORES[cand];
   const scoreColor = (metric, val) => {
@@ -9700,6 +9798,77 @@ function EvalMetricsSamples() {
         {cand==="candidate_good" && "Good paraphrase scores low on ROUGE/BLEU (different words) but high on BERTScore (same meaning). Lexical metrics fail here."}
         {cand==="candidate_bad" && "Wrong answer scores near-zero on all metrics — even ROUGE and BLEU catch this. Any metric works when the answer is clearly wrong."}
         {cand==="candidate_tricky" && "Near-copy scores highest on everything. ROUGE/BLEU reward verbatim overlap. This exposes the risk: a model that copies the context will score well on all lexical metrics."}
+        {cand==="candidate_hallucination" && "This is the dangerous case. ROUGE, BLEU, and even BERTScore give medium-high scores because the answer shares vocabulary with the reference. G-Eval scores it 3.9/5 — fluent, confident, plausible. None of these metrics detect the factual errors. Only RAGAS Faithfulness or a fact-checking eval catches hallucinations."}
+      </div>
+    </div>
+  );
+}
+
+function EvalLLMJudge() {
+  const [scenario, setScenario] = useState(0);
+  const [showFail, setShowFail] = useState(false);
+  const sc = JUDGE_SCENARIOS[scenario];
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-4 text-xs text-zinc-400 leading-relaxed">
+        <span className="text-zinc-200 font-semibold">LLM-as-Judge</span> uses a capable model (GPT-4o, Claude Sonnet) to evaluate outputs — either on a rubric (G-Eval) or pairwise (which response is better). It correlates highly with human judgment but introduces systematic biases you must explicitly mitigate.
+      </div>
+
+      {/* Scenario picker */}
+      <div className="flex gap-2 flex-wrap">
+        {JUDGE_SCENARIOS.map((s,i) => (
+          <button key={s.id} onClick={() => { setScenario(i); setShowFail(false); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${scenario===i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Judge prompt anatomy */}
+      <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4 space-y-3">
+        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Judge prompt anatomy</div>
+        {sc.context && (
+          <div>
+            <div className="text-[10px] font-mono text-blue-400 mb-1">CONTEXT (retrieved chunk)</div>
+            <div className="bg-zinc-950 rounded p-2 text-xs text-zinc-300 leading-relaxed border border-zinc-800">{sc.context}</div>
+          </div>
+        )}
+        <div>
+          <div className="text-[10px] font-mono text-violet-400 mb-1">QUESTION</div>
+          <div className="bg-zinc-950 rounded p-2 text-xs text-zinc-300 border border-zinc-800">{sc.question}</div>
+        </div>
+        <div>
+          <div className="text-[10px] font-mono text-green-400 mb-1">{showFail ? "ANSWER TO EVALUATE (failing case)" : "ANSWER TO EVALUATE"}</div>
+          <div className="bg-zinc-950 rounded p-2 text-xs text-zinc-300 leading-relaxed border border-zinc-800">{showFail ? sc.failAnswer : sc.answer}</div>
+        </div>
+        <div className={`rounded-lg p-3 border text-xs ${showFail ? "bg-red-950/30 border-red-800/30 text-red-300" : "bg-green-950/30 border-green-800/30 text-green-300"}`}>
+          <span className="font-bold">Verdict: </span>
+          <span className="font-mono">{showFail ? sc.failVerdict : sc.verdict}</span>
+          <span className="text-zinc-400 ml-2">— {showFail ? sc.failExplanation : sc.explanation}</span>
+        </div>
+        <button onClick={() => setShowFail(p => !p)}
+          className="text-[11px] font-mono px-3 py-1.5 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-500 transition-all">
+          {showFail ? "Show passing case" : "Show failing case →"}
+        </button>
+      </div>
+
+      {/* Bias table */}
+      <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4">
+        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Known biases + mitigations</div>
+        <div className="space-y-2">
+          {BIAS_MITIGATIONS.map(b => (
+            <div key={b.bias} className="grid grid-cols-[120px_1fr_1fr] gap-3 text-xs border-b border-zinc-800 pb-2 last:border-0 last:pb-0">
+              <span className="text-amber-400 font-semibold">{b.bias}</span>
+              <span className="text-zinc-400">{b.desc}</span>
+              <span className="text-green-400">{b.fix}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Decision callout */}
+      <div className="rounded-lg bg-indigo-950/30 border border-indigo-800/30 p-3 text-xs text-indigo-300 leading-relaxed">
+        <span className="font-bold text-indigo-200">When to use LLM-as-Judge:</span> your task has no reference answer, quality is multi-dimensional, or you need to compare two model versions at scale. Cost rule of thumb: budget $10–50 per 1,000 evaluations with GPT-4o. For high-volume production evals, use a smaller judge model (Haiku, GPT-4o-mini) calibrated against a GPT-4o reference set.
       </div>
     </div>
   );
@@ -9707,9 +9876,13 @@ function EvalMetricsSamples() {
 
 function EvalMetrics() {
   const [tab, setTab] = useState(0);
-  const tabs = ["Metric Comparison", "Live Scoring Examples"];
+  const tabs = ["Metric Comparison", "Live Scoring", "LLM-as-Judge"];
   return (
     <div className="space-y-4">
+      <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-4">
+        <div className="text-sm font-bold text-white mb-1">Evaluation Metrics Deep-Dive</div>
+        <p className="text-xs text-zinc-400 leading-relaxed">Picking the wrong metric is one of the most common production mistakes — a model that scores well on ROUGE but hallucinates, or passes G-Eval while copying context verbatim. This module covers 10 metrics across lexical, semantic, LLM-based, and RAG-specific categories, with live scoring examples showing exactly where each metric fails.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t,i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -9720,6 +9893,7 @@ function EvalMetrics() {
       </div>
       {tab===0 && <EvalMetricsTable />}
       {tab===1 && <EvalMetricsSamples />}
+      {tab===2 && <EvalLLMJudge />}
     </div>
   );
 }
