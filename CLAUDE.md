@@ -24,7 +24,7 @@ Act as a product and engineering partner, not an assistant. That means:
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of May 2026: 53 Systems modules, 23 Explore modules, 231 PrepLab questions, 207 Ground Truth posts, 14 top-level tabs.
+Scale as of May 2026: 54 Systems modules, 23 Explore modules, 244 PrepLab questions, 212 Ground Truth posts, 14 top-level tabs.
 
 ---
 
@@ -301,3 +301,6 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 - Prompt Injection Defense Systems module built (5 attack patterns, 5 defense layers, hardening checklist)
 - GT posts written: The Eval Crisis (4 eval failure modes), The Reversal Curse (directional parametric memory)
 - Vector DB Engineering Systems module built (pgvector/Chroma/Pinecone/Weaviate/Qdrant comparison, HNSW/IVF index guide, hybrid search, decision wizard)
+- Agent Memory Architecture Systems module built (4 memory types, failure demos, production stack, decision layer)
+- GT posts written: Agent Memory (4 types + decision layer), How Surprised Is the Model (entropy/cross-entropy/KL), Why Transformers Won (RNN→LSTM→Transformer arc), Your Prompt Is Code (prompt CI/CD), Three-Layer DE Skill Stack
+- PrepLab questions: 231 → 244 (5 Vector DB questions added)

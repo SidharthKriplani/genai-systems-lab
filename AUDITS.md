@@ -801,10 +801,10 @@ The structural upgrade documented in CLAUDE.md (three front doors, GT as knowled
 
 ### Scale after sprint
 
-- GT posts: 207 (was 200)
+- GT posts: 212 (was 200)
 - Explore modules: 23 (was 19)
-- Systems modules: 53 (was 50)
-- PrepLab questions: 231 (was ~190)
+- Systems modules: 54 (was 50)
+- PrepLab questions: 244 (was ~190)
 
 ### Open findings from this sprint
 

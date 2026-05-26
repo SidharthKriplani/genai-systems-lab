@@ -151,14 +151,14 @@ Users rarely ask questions in the ideal retrieval form. "How do I lose weight?" 
 
 A practitioner post correctly frames the agent memory problem as four distinct types: short-term (current context, costs explode), long-term (vector search returns similar ≠ relevant), episodic (specific past events needing exact recall, not fuzzy matching), and semantic (learned user preferences that must persist across sessions). Their production stack: Redis (hot cache, last 10 interactions) → Postgres (structured episodic memory) → Vector DB (semantic retrieval) → LLM (decides what to fetch). Key insight: the real problem isn't storage, it's decision-making — knowing when to remember vs when to forget. An agent that remembers everything is as broken as one that remembers nothing. The lab has agent loop modules but zero content on agent memory architecture — one of the first production problems you hit when building real agents.
 
-- **GT post: "The Four Memory Problems Every Agent Has"** — short-term vs long-term vs episodic vs semantic, why each requires a different storage and retrieval strategy, why "just use a vector DB" fails for episodic recall, and why the decision layer (what to fetch, what to discard) is harder than the storage layer. Production-grounded, directly fills the gap.
-- **Systems module: "Agent Memory Architecture"** — interactive: user configures a memory stack (toggle Redis / Postgres / Vector DB), runs an agent through a multi-session scenario, observes what gets remembered, what gets lost, and where retrieval breaks. Shows the "similar ≠ relevant" failure in long-term memory, the exact-recall requirement for episodic, and what happens when the agent remembers too much. Sits alongside existing Agent Loop and Multi-Agent modules.
+- ~~**GT post: "The Four Memory Problems Every Agent Has"**~~ ✅ *built May 2026 — id: agent-memory-architecture*
+- ~~**Systems module: "Agent Memory Architecture"**~~ ✅ *built May 2026*
 
 ### Prompt management as infrastructure (new cluster — from Aryan Sharma post, May 2026)
 
 An AI/ML engineer shared how a one-line system prompt change caused a 23% quality drop for 11 days — undetected. No alert, no test, no one checking. Built PromptLab (open source, FastAPI + React + PostgreSQL) to solve it: full version history, A/B experiments, LLM-as-judge eval runs, serve-via-API. Core claim: prompts are code and deserve CI/CD treatment. The lab has zero content on prompt management as a DevOps discipline — only prompt engineering as a skill.
 
-- **GT post: "Your Prompt Is Code. Are You Treating It Like Code?"** — the 11-day silent regression story as the hook. Version control for prompts, A/B testing prompt changes, LLM-as-judge scoring, serving via API vs hardcoding. The systems-level case for prompt management infrastructure. Directly reinforces Type B thinking.
+- ~~**GT post: "Your Prompt Is Code"**~~ ✅ *built May 2026 — id: your-prompt-is-code*
 - **GT post: "Prompt Regression Testing: How to Know When a Prompt Change Breaks Things"** — practical: what a prompt test suite looks like, what metrics to track (quality score, latency, cost), how to wire prompt testing into CI/CD. No existing lab resource covers this.
 - **Systems module: "Prompt Change Management"** — interactive: user edits a system prompt, sees quality score shift, triggers regression alert. Shows A/B split, eval run, rollback decision. Sits alongside existing Evals module.
 
@@ -174,21 +174,21 @@ FDE postings grew 1,165% in one year. Palantir invented the model; OpenAI built 
 
 A practitioner post in the Data Science Community frames Probability, Entropy, Cross-Entropy Loss, and KL Divergence around one unifying question: "How surprised is the model when it sees the correct answer?" Strong framing — makes the math approachable. The lab's Concepts tab covers attention and transformer architecture but has nothing on the mathematical training signal. This gap matters: engineers who understand loss functions reason better about fine-tuning decisions, RLHF reward design, and eval scoring.
 
-- **GT post: "How Surprised Is the Model? A Practical Guide to Cross-Entropy Loss"** — probability, entropy, cross-entropy, KL divergence built up from first principles. Framed for engineers who need the intuition to make better fine-tuning and RLHF decisions — not proofs, just the model of the world that makes everything else click.
+- ~~**GT post: "How Surprised Is the Model?"**~~ ✅ *built May 2026 — id: how-surprised-is-the-model*
 - **Concepts module: "The Training Signal — Entropy, Loss, and KL Divergence"** — interactive: user adjusts model confidence distribution, sees entropy change in real time, sees cross-entropy vs KL divergence. Sits alongside existing Attention and Transformer modules. Fills the gap between "architecture" and "training."
 
 ### RNN to LSTM to Transformer architectural arc (new cluster — from Naresh Edagotti post, May 2026)
 
 A widely-shared educational post traces the full progression from RNN to LSTM to Transformer and explains why each transition was necessary — parallelism, long-range context, vanishing gradients. Covers encoder-only / decoder-only / encoder-decoder distinction. Key framing: "Transformers are not just a model choice. They are a systems-level breakthrough." The lab has transformer content but no narrative about the historical arc — why the transition happened, what each architecture hit its ceiling on, and why transformers unlocked scaling.
 
-- **GT post: "Why Transformers Won: The RNN to LSTM to Transformer Arc"** — the progression as a systems story. What each architecture solved and failed at. Why transformers unlocked scaling that LSTM could not. The encoder/decoder/encoder-decoder split and when each applies. Not "transformers are better" but "here's exactly where the previous generation hit its ceiling."
+- ~~**GT post: "Why Transformers Won"**~~ ✅ *built May 2026 — id: why-transformers-won*
 - **Concepts module addition: "Sequential vs Parallel — The Architecture Transition"** — interactive visualization of token processing as sequential (RNN) vs parallel (Transformer). Show long-range dependency handling and vanishing gradient behavior. Could extend the existing Transformer module or stand as a new Explore module.
 
 ### DE skill stack — 3-layer model (new cluster — from anonymous DE post, May 2026)
 
 A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL, Python, data modelling, Spark, Airflow, cloud — still 80% of your value), Layer 2 (AI productivity: prompt engineering, Cursor/Claude Code fluency, AI-generated SQL verification workflows), Layer 3 (AI infrastructure: vector DBs, embedding pipelines, RAG architecture, feature stores, LLM eval and observability, cloud AI services). Key claim: most engineers obsess over Layer 2 and forget Layer 1 — that's the trap. Layer 3 is currently scarce and what gets you the next senior/staff role. The lab is effectively a Layer 3 training ground but never frames itself that way — a direct positioning opportunity.
 
-- **GT post: "The Three-Layer DE Skill Stack — and Why Most Engineers Are Optimizing the Wrong One"** — the full 3-layer model with concrete examples at each layer. Why Layer 1 fundamentals are what let you tell when the AI is wrong. Why Layer 3 (RAG, vector DBs, evals, observability) is currently scarce and commands a premium. The "all three" thesis — speed without verification is dangerous, infrastructure depth without fundamentals is fragile.
+- ~~**GT post: "The Three-Layer DE Skill Stack"**~~ ✅ *built May 2026 — id: three-layer-de-skill-stack*
 - **GT post: "Layer 3 Skills for Data Engineers: Vector DBs, Embedding Pipelines, and LLM Observability"** — practical breakdown of each Layer 3 skill: when you need it, what the learning curve looks like, what production looks like. Companion piece to the 3-layer post — goes deeper on the specific skills the lab already covers.
 - **Learning Path: "Data Engineer to AI Engineer"** — curated path through existing lab modules mapped to Layer 3 skills: RAG Lab → Vector DB Engineering → Evals → LLMOps Observability → Agent Architecture. Uses existing content, zero new builds required.
 - **Home page positioning tweak** — add one line near the hero explicitly claiming Layer 3 depth: "The lab that builds Layer 3 skills — RAG, evals, observability, agent architecture." Zero build effort, direct resonance with DEs reading that post.
