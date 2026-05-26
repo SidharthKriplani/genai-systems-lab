@@ -11462,4 +11462,113 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+
+  "ab-testing-ai-systems": [
+    { t: "h2", text: "The assumption mismatch" },
+    { t: "p", text: "Classic A/B testing was designed for click-through rates, conversion percentages, and page dwell time. These metrics have low variance and respond to changes quickly. A 5% improvement in click-through rate is measurable in days with thousands of users." },
+    { t: "p", text: "AI quality metrics break this. CSAT scores have high variance. Task completion rates require longer sessions to observe. The effect of a better model may only become visible after a user has built trust over multiple sessions. Run a classic A/B test on a model swap for two weeks and you will likely see no statistically significant result — not because the model is not better, but because the experiment was under-powered for the metric you care about." },
+    { t: "callout", v: "insight", text: "Classic A/B is not wrong — it is misapplied. It is the right tool for session-level binary metrics. It is the wrong tool for AI quality metrics that take sessions, not clicks, to manifest." },
+
+    { t: "h2", text: "Interleaved testing: 50x more efficient" },
+    { t: "p", text: "For ranking and retrieval tasks, interleaved testing achieves roughly 50 times the statistical efficiency of classic A/B. Instead of splitting users between model A and model B, you mix results from both models in every response. Each user interaction contributes signal for both models simultaneously." },
+    { t: "p", text: "Airbnb published data showing that the same statistical power they achieved with interleaved tests required 50 times fewer user sessions than equivalent A/B tests on search ranking. The intuition is simple: in classic A/B, half your traffic produces no signal for the variant you care about. In interleaved testing, every impression is informative for both models." },
+    { t: "p", text: "The constraint is real: interleaving only works for ranked outputs — search results, recommendations, document retrieval. You cannot interleave two free-form generations of an AI summary. But for the RAG retrieval layer, the recommendation engine, or the reranker, it is the right default." },
+
+    { t: "h2", text: "Switchback testing: when users are not independent" },
+    { t: "p", text: "Classic A/B assumes users are independent. In marketplace systems, they are not. If you run Uber and assign 50% of drivers to a new route-optimization model, the drivers on the old model are competing with drivers on the new model for the same riders. The treatment group affects the control group's outcomes. User-level splits produce biased results." },
+    { t: "p", text: "Switchback testing solves this by treating time windows as the experimental unit instead of users. The entire system alternates between treatment and control on a fixed schedule — hourly, daily. Every user sees only one model at a time, eliminating cross-group interference. You measure the difference in aggregate metrics between treatment windows and control windows." },
+    { t: "p", text: "The design challenge is carryover effects: if treatment window effects bleed into the following control window, results are biased. Switchback windows must be long enough for effects to clear between switches, and the analysis must account for time-of-day patterns that correlate with window assignments." },
+
+    { t: "h2", text: "Multi-armed bandits: minimising regret" },
+    { t: "p", text: "Classic A/B allocates traffic 50/50 until the experiment ends, then switches everyone to the winner. For the duration of the experiment, 50% of your users are on an inferior experience. Multi-armed bandits continuously update traffic allocation as results come in, shifting more traffic toward the better-performing variant while maintaining enough exploration to reach statistical confidence." },
+    { t: "p", text: "For AI systems, MAB is appropriate when you have multiple known variants — different prompt versions, different model router configurations — and cannot afford to waste traffic on weak variants. The downside: the non-uniform traffic allocation makes clean frequentist significance testing harder. Bayesian approaches (Thompson Sampling) are more natural for MAB analysis." },
+
+    { t: "h2", text: "Permanent holdouts: the experiment most teams skip" },
+    { t: "p", text: "After six months of running A/B experiments and declaring winners, most teams cannot answer: has our AI product actually improved? Each experiment was run in isolation, declared a winner against the previous baseline, and shipped. The baselines keep shifting. There is no fixed reference point." },
+    { t: "p", text: "A permanent holdout is a group of users — typically 5 to 10 percent — who are excluded from all experiments permanently. This group never receives any treatment. At any point in time, you can compare current product metrics against the holdout and measure the cumulative quality lift from everything you shipped in the last 6 months. It is the only way to answer the cumulative question." },
+    { t: "callout", v: "warning", text: "The ethical tension is real: users in the holdout receive a deliberately degraded experience by design. For most consumer products, this is an acceptable trade-off. For safety-critical systems, it may not be. Decide this explicitly before setting up the holdout." },
+
+    { t: "h2", text: "The five ways classic A/B breaks for AI" },
+    { t: "list", items: [
+      "Novelty effect: users engage more with anything new. Early results are inflated. Run experiments for at least two weeks and check that engagement curves are stable before declaring a winner.",
+      "Network interference: in shared systems, treatment users affect control users. Switch to switchback testing or cluster-based splits.",
+      "Simpson's paradox: aggregate metrics can improve while degrading for every user segment. Always segment before declaring a winner.",
+      "Metric sensitivity: AI quality metrics have high variance. Standard A/B requires enormous sample sizes. Use interleaving for retrieval tasks and variance reduction (CUPED) for session-level metrics.",
+      "Evaluation lag: model quality may only be visible over multiple sessions. Short experiments miss this. Run long-horizon holdout analysis alongside short-term tests.",
+    ]},
+
+    { t: "callout", v: "tip", text: "The A/B Testing for AI Systems module walks through all five strategies with concrete scenario matching — which approach for which situation, and the anti-patterns that indicate you picked the wrong one." },
+
+    { t: "refs", items: [
+      { label: "Interleaving Methods for Offline Evaluation of Rankers — Chapelle et al.", url: "https://dl.acm.org/doi/10.1145/2484028.2484075" },
+      { label: "Switchback Tests and Randomized Experimentation Under Network Effects — Ugander et al.", url: "https://arxiv.org/abs/1310.6677" },
+    ]},
+  ],
+
+  "graceful-degradation": [
+    { t: "h2", text: "The failure mode nobody designs for" },
+    { t: "p", text: "Most AI system design sessions focus on the happy path: the user asks a question, the model retrieves context, generates a response, the user is satisfied. The conversation almost never gets to: what happens when the LLM returns nonsense? When it times out? When it hallucinates a confident wrong answer? When the retrieval layer returns zero relevant results?" },
+    { t: "p", text: "These failures are not edge cases. They are the norm at production scale. A system serving a million queries per day will see thousands of garbage outputs daily — from context overflow, adversarial inputs, unusual query patterns, and model degradation after updates. The difference between a 3-star AI product and a 4.5-star one is often not the quality of the happy path — it is what happens in these failure cases." },
+    { t: "callout", v: "insight", text: "Graceful degradation is not error handling. Error handling catches exceptions. Graceful degradation defines what the system should do when outputs are technically valid but not trustworthy — when there is no exception to catch, just a bad answer you need to recognise and route around." },
+
+    { t: "h2", text: "Fallback chains" },
+    { t: "p", text: "A fallback chain defines an ordered sequence of responses the system will attempt before returning an error or a generic failure. The most powerful model with the highest cost is tried first. If it fails (timeout, content policy, hallucination detected), the system falls back to a cheaper, more constrained model. If that fails, it falls back to a templated response. If that fails, it surfaces a graceful escalation path to a human." },
+    { t: "p", text: "The key design decision is what counts as a failure at each level. Timeout and API errors are easy. Hallucination detection is harder — it requires either a confidence score threshold (if the model exposes one), a secondary faithfulness check against retrieved context, or a latency budget for a lightweight verification call." },
+
+    { t: "h2", text: "Confidence thresholds" },
+    { t: "p", text: "Most LLMs do not expose reliable confidence scores for free-form generation. But you can construct proxy signals: retrieval score distribution (if all top-k chunks score below 0.6 similarity, the query may be out-of-distribution), response length relative to expected range, the model's own hedging language (detecting 'I'm not sure', 'I don't have information about', 'I cannot determine' patterns), and semantic similarity between the response and the retrieved context." },
+    { t: "p", text: "Set explicit thresholds for each signal. When a response falls below threshold, route it to a fallback path instead of serving it directly. The threshold calibration is empirical — set it too high and you are serving bad answers; too low and you are routing too many valid answers to fallback." },
+
+    { t: "h2", text: "Partial results over hard errors" },
+    { t: "p", text: "When a multi-step agent cannot complete a task, returning a partial result is almost always better than returning an error. If the agent was asked to summarise five documents and successfully processed three before hitting a context limit, return the three summaries with a clear note that two could not be processed. The user gets real value. The alternative — returning an error for the full task — gives them nothing and no signal about what succeeded." },
+    { t: "p", text: "This principle applies at every level of an AI system. Partial retrieval is better than no retrieval. A lower-confidence answer flagged as such is better than no answer. A templated response that acknowledges the limitation is better than a 500 error." },
+
+    { t: "h2", text: "Silent failure detection" },
+    { t: "p", text: "The most dangerous failure mode in AI systems is not the crash — it is the silent degradation. The model starts returning subtly wrong answers. Quality drops by 15%. Nobody notices for two weeks because there is no exception, no alert, no error log. Users just quietly stop using the feature or leave negative feedback that gets lost in the aggregate score." },
+    { t: "p", text: "Detecting silent failures requires active monitoring of output quality signals: response length distribution, hedging language frequency, faithfulness scores on a sampled subset, user correction rates (if you surface feedback mechanisms), and downstream task success rates. These signals need baselines and alert thresholds, not just dashboards." },
+    { t: "callout", v: "tip", text: "The LLM Observability and Incident Room modules cover the instrumentation layer for detecting these failures. Graceful degradation is the response architecture — observability is what tells you when to trigger it." },
+
+    { t: "refs", items: [
+      { label: "Designing for Failure: Lessons from Distributed Systems", url: "https://aws.amazon.com/builders-library/avoiding-fallback-in-distributed-systems/" },
+    ]},
+  ],
+
+  "monitoring-that-predicts": [
+    { t: "h2", text: "The dashboard problem" },
+    { t: "p", text: "Most AI observability setups are reactive. Someone files a support ticket about bad answers. An engineer opens the dashboard, finds that quality scores dropped three days ago, and starts investigating. By then, thousands of users have already seen degraded responses. The monitoring did its job — it recorded what happened — but it did not prevent the damage." },
+    { t: "p", text: "The engineers who earn the senior titles build systems where the dashboard triggers an alert before anyone files a ticket. The goal is not better recording — it is earlier detection. The difference requires thinking about monitoring as a prediction problem, not a logging problem." },
+    { t: "callout", v: "insight", text: "Reactive monitoring answers: what broke? Predictive monitoring answers: what is about to break? The gap between them is the difference between investigating an incident and preventing one." },
+
+    { t: "h2", text: "Drift detection" },
+    { t: "p", text: "Query distribution drift is one of the earliest signals that your AI system is about to fail in a new way. When the distribution of incoming queries shifts — new topics, different linguistic patterns, higher complexity — the model is being asked to operate outside its reliable range before quality metrics reflect this." },
+    { t: "p", text: "Detecting drift does not require labels. Compare the embedding distribution of today's queries against the trailing 30-day baseline. Statistical tests (KL divergence, Maximum Mean Discrepancy) on the embedding distributions will detect shifts before quality scores do. An alert when drift exceeds a threshold gives you a one-to-three day head start on investigating whether the model handles the new distribution." },
+
+    { t: "h2", text: "Latency trend alerts" },
+    { t: "p", text: "Latency spikes are well-monitored. Latency trends are not. A system that takes 800ms today, 850ms next week, and 920ms the week after is on a trajectory that will breach SLA within a month. No individual data point looks alarming. The trend is the signal." },
+    { t: "p", text: "Set up linear regression on a rolling 14-day latency window. Alert when the slope exceeds a threshold — say, more than 5% week-over-week increase sustained for 5 days. This catches infrastructure degradation, database index fragmentation, model serving bottlenecks, and context length creep (where average input length grows as users learn the system) before they become incidents." },
+
+    { t: "h2", text: "Hallucination rate canaries" },
+    { t: "p", text: "You cannot run a faithfulness eval on every production response — the cost and latency are prohibitive. You can run it on a 1-5% sample. The trick is treating this sample as a canary: a leading indicator of overall quality health, not a complete measurement." },
+    { t: "p", text: "Define a baseline hallucination rate on your sampled subset. Set alert thresholds at 1.5x and 2x baseline. When the canary trips, investigate whether a prompt change, model update, retrieval quality shift, or new query type is driving the increase. The canary does not tell you what is wrong — it tells you that something is wrong, days before aggregate CSAT metrics reflect it." },
+
+    { t: "h2", text: "Cost spike prediction" },
+    { t: "p", text: "Cost spikes rarely appear without warning. Average input token count, average output token count, and requests-per-minute all trend upward before a cost spike materialises. Monitor these as leading indicators rather than monitoring costs directly." },
+    { t: "p", text: "Specifically: alert when average context length grows more than 20% week-over-week. Alert when output length distribution shifts toward the long tail. Alert when a new query pattern (detectable through topic clustering) consumes significantly more tokens than baseline. These signals give you time to implement context truncation, output length caps, or caching before the billing cycle catches you by surprise." },
+
+    { t: "h2", text: "The four-layer stack" },
+    { t: "list", items: [
+      "Input layer: query distribution drift, average token count trends, anomalous query patterns",
+      "Model layer: latency P50/P95/P99 trends, error rates by model, context length creep",
+      "Output layer: hallucination canary rate, response length distribution, hedging language frequency, faithfulness score trends",
+      "Downstream layer: user correction rates, downstream task success rates, D7 retention on AI-assisted features",
+    ]},
+    { t: "p", text: "Most teams instrument only the model layer. The engineers who catch problems before users do instrument all four." },
+    { t: "callout", v: "tip", text: "The LLM Observability Systems module covers the instrumentation mechanics — tracing, cost monitoring, and latency profiling. This post covers what signals to watch and how to make them predictive rather than reactive." },
+
+    { t: "refs", items: [
+      { label: "Evidently AI — ML Monitoring Guide", url: "https://www.evidentlyai.com/ml-monitoring" },
+      { label: "LLM Observability — Arize AI Docs", url: "https://docs.arize.com/arize/llm-observability" },
+    ]},
+  ],
+
 };

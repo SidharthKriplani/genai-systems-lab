@@ -6,7 +6,7 @@ import InferenceOptimizer from "./InferenceOptimizer";
 import MLCiCdLab from "./MLCiCd";
 
 import {
-  ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
 } from "./systems/modules";
 
 const SYSTEMS_MODULES = [
@@ -62,6 +62,7 @@ const SYSTEMS_MODULES = [
   { id: "promptinjection", label: "Prompt Injection Defense", tag: "SECURITY", group: "OPS", component: PromptInjectionDefense },
   { id: "vectordb", label: "Vector DB Engineering", tag: "INFRA", group: "BUILD", component: VectorDBEngineering },
   { id: "mcp", label: "MCP vs API vs Function Calling", tag: "PROTOCOL", group: "BUILD", component: MCPDecisionFramework },
+  { id: "abtesting-ai", label: "A/B Testing for AI Systems", tag: "EXPERIMENT", group: "OPS", component: ABTestingForAI },
 ];
 
 const SYSTEMS_GROUPS = [

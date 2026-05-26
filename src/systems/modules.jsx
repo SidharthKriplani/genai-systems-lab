@@ -11519,6 +11519,195 @@ function AgentMemoryArchitecture({ onNavigate }) {
   );
 }
 
+
+// ─── A/B TESTING FOR AI SYSTEMS ───────────────────────────────────────────────
+
+const AB_STRATEGIES = [
+  {
+    id: "classic",
+    label: "Classic A/B",
+    color: "#6366f1",
+    when: "Two model versions, independent user sessions, metric is per-session",
+    how: "Split users 50/50. Each user sees only one version. Measure session-level metric (CSAT, task completion, conversion). Run until statistical significance.",
+    sampleSize: "Large — needs thousands of users per variant for typical AI quality metrics",
+    limitation: "Slow to reach significance when AI quality metrics have high variance. Novelty effects inflate early results. Cannot isolate shared resource effects.",
+    bestFor: "Model swap (GPT-4o → Claude), system prompt change, UI change affecting the full session",
+  },
+  {
+    id: "interleaving",
+    label: "Interleaved Testing",
+    color: "#3b82f6",
+    when: "Two ranking or retrieval models. You need faster results at lower traffic cost.",
+    how: "For each query, mix results from both models in a single response list. Track which results the user clicks. Attribution tells you which model produced the clicked items.",
+    sampleSize: "~50x more efficient than classic A/B — same statistical power with far fewer sessions",
+    limitation: "Only works for ranked/retrieval tasks. Cannot apply to free-form generation. Results may favour length or position bias if not corrected.",
+    bestFor: "RAG retrieval improvements, recommendation ranking, search result quality",
+  },
+  {
+    id: "mab",
+    label: "Multi-Armed Bandit",
+    color: "#22c55e",
+    when: "Multiple variants. You want to minimise regret — serve the best variant as often as possible while still learning.",
+    how: "Variants start with equal traffic. As results come in, traffic shifts toward the better-performing variant. Epsilon-greedy or Thompson Sampling are common policies.",
+    sampleSize: "Adaptive — less traffic wasted on inferior variants than classic A/B",
+    limitation: "Harder to reach clean statistical significance — traffic allocation is non-uniform. Not appropriate when context varies significantly across users.",
+    bestFor: "Prompt variant selection, model routing between known options, when you cannot afford to waste traffic on a weak variant",
+  },
+  {
+    id: "switchback",
+    label: "Switchback Testing",
+    color: "#f59e0b",
+    when: "Shared-resource or marketplace system where user-level splits create interference",
+    how: "Alternate the entire system between treatment and control on a fixed time schedule (e.g., hourly). Treat time windows as the experimental unit.",
+    sampleSize: "Depends on switchback frequency and effect size — typically weeks of data",
+    limitation: "Requires careful time-window design to avoid carryover effects. Only valid when treatment effects clear between windows.",
+    bestFor: "Marketplace AI (Uber driver matching, Airbnb pricing), shared LLM infrastructure where one model affects all users simultaneously",
+  },
+  {
+    id: "holdout",
+    label: "Permanent Holdout",
+    color: "#ef4444",
+    when: "You want a clean baseline that has never been exposed to any model experiments",
+    how: "Reserve 5–10% of users from all experiments permanently. This group never receives any treatment. Compare cumulative metrics against this holdout to measure total experiment impact.",
+    sampleSize: "Fixed — 5–10% of users, always",
+    limitation: "Users in the holdout receive a degraded experience by design. Ethically uncomfortable at scale. Not suitable for products with safety-critical quality requirements.",
+    bestFor: "Long-running AI products where you want to measure the cumulative quality lift from 6 months of experiments, not just individual tests",
+  },
+];
+
+const CLASSIC_AB_PROBLEMS = [
+  { problem: "Novelty effect", desc: "Users engage more with any new model simply because it is different. Early A/B results are inflated.", fix: "Run experiments for at least 2 weeks. Check engagement curves — true improvements are stable, novelty effects decay." },
+  { problem: "Network interference", desc: "In shared systems (recommendations, rankings), one user seeing model B can affect what model A users see through feedback loops.", fix: "Use switchback testing for marketplace systems. Cluster users by geography or cohort if network effects are localised." },
+  { problem: "Simpson's paradox", desc: "An aggregate metric improves while the metric degrades for every individual user segment.", fix: "Always segment results by key user dimensions (new vs returning, power vs casual, mobile vs desktop) before declaring a winner." },
+  { problem: "Metric sensitivity", desc: "AI quality metrics (CSAT, task completion rate) have high variance compared to click-through rates. Standard A/B requires enormous sample sizes.", fix: "Use interleaved testing for retrieval tasks. Use CUPED or variance reduction techniques for session-level metrics." },
+  { problem: "Evaluation lag", desc: "The value of a better AI model may only be visible after multiple sessions (user trust builds over time). Short experiments miss this.", fix: "Run long-horizon holdout analysis alongside short-term A/B. Measure D7 and D30 retention, not just same-session CSAT." },
+];
+
+function ABTestingForAI({ onNavigate }) {
+  const [strategy, setStrategy] = useState("classic");
+  const [activeTab, setActiveTab] = useState("strategies");
+  const sc = AB_STRATEGIES.find(s => s.id === strategy);
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
+        <h2 className="text-base font-bold text-white mb-1">A/B Testing for AI Systems</h2>
+        <p className="text-sm text-zinc-400">Classic A/B testing breaks for AI in ways most teams discover too late. Five testing strategies — each solving a different problem with AI quality metrics, shared infrastructure, or traffic economics.</p>
+      </div>
+
+      <div className="flex gap-1 border-b border-zinc-800">
+        {[["strategies", "Testing Strategies"], ["problems", "Why Classic A/B Breaks"], ["decision", "Decision Guide"]].map(([id, label]) => (
+          <button key={id} onClick={() => setActiveTab(id)}
+            className={}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "strategies" && (
+        <div className="space-y-4">
+          <div className="flex gap-2 flex-wrap">
+            {AB_STRATEGIES.map(s => (
+              <button key={s.id} onClick={() => setStrategy(s.id)}
+                className={}
+                style={strategy === s.id ? { background: s.color } : {}}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          {sc && (
+            <div className="space-y-3">
+              <div className="rounded-xl border bg-zinc-900/60 p-4 space-y-3" style={{ borderColor: sc.color + "40" }}>
+                <div className="text-xs font-bold uppercase tracking-widest" style={{ color: sc.color }}>{sc.label}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <div className="text-zinc-500 font-semibold mb-1">When to use</div>
+                    <div className="text-zinc-300">{sc.when}</div>
+                  </div>
+                  <div>
+                    <div className="text-zinc-500 font-semibold mb-1">Sample size</div>
+                    <div className="text-zinc-300">{sc.sampleSize}</div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="text-zinc-500 font-semibold mb-1">How it works</div>
+                    <div className="text-zinc-300">{sc.how}</div>
+                  </div>
+                  <div>
+                    <div className="text-zinc-500 font-semibold mb-1">Limitation</div>
+                    <div className="text-amber-400/90">{sc.limitation}</div>
+                  </div>
+                  <div>
+                    <div className="text-zinc-500 font-semibold mb-1">Best for</div>
+                    <div className="text-zinc-300">{sc.bestFor}</div>
+                  </div>
+                </div>
+              </div>
+
+              {sc.id === "interleaving" && (
+                <div className="rounded-xl border border-blue-800/40 bg-blue-950/20 p-4 space-y-2">
+                  <div className="text-xs font-bold text-blue-300">Why 50× more efficient?</div>
+                  <p className="text-xs text-zinc-400">Classic A/B splits users — each user sees only one model. Interleaving mixes both models in every response. This means every user interaction contributes signal for both models simultaneously. The result: the same statistical power requires ~50× fewer user sessions. Airbnb published this result comparing interleaved search ranking tests against traditional A/B.</p>
+                  <p className="text-xs text-zinc-500">Trade-off: you need a ranked output (search results, recommendations). Free-form generation cannot be interleaved.</p>
+                </div>
+              )}
+
+              {sc.id === "holdout" && (
+                <div className="rounded-xl border border-red-800/40 bg-red-950/20 p-4 space-y-2">
+                  <div className="text-xs font-bold text-red-400">The holdout most teams skip</div>
+                  <p className="text-xs text-zinc-400">Most teams run A/B experiments and declare individual winners. After a year they ask: has our AI product actually improved? Without a permanent holdout — a group never touched by any experiment — you cannot answer this question. The holdout is the only clean baseline against which you can measure cumulative improvement from all your experiments combined.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "problems" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Classic A/B testing was designed for web metrics (click-through rates, conversion). AI quality metrics break several of its assumptions.</p>
+          {CLASSIC_AB_PROBLEMS.map((p, i) => (
+            <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-1.5">
+              <div className="text-xs font-bold text-amber-400">{p.problem}</div>
+              <p className="text-xs text-zinc-400">{p.desc}</p>
+              <div className="flex gap-1.5 items-start">
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest shrink-0 mt-0.5">Fix</span>
+                <p className="text-xs text-zinc-400">{p.fix}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === "decision" && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+            <div className="text-xs font-bold text-white">Which strategy for your situation?</div>
+            {[
+              { q: "Is your output ranked (search, recommendations)??", a: "Interleaved testing", why: "50× efficiency gain — use it.", color: "#3b82f6" },
+              { q: "Is your system a marketplace or shared resource?", a: "Switchback testing", why: "User-level splits create interference — time windows are the right unit.", color: "#f59e0b" },
+              { q: "Do you have multiple prompt/model variants and can't afford wasted traffic?", a: "Multi-Armed Bandit", why: "MAB minimises regret — shifts traffic to winners as results come in.", color: "#22c55e" },
+              { q: "Do you want to measure cumulative experiment impact over months?", a: "Permanent holdout", why: "The only way to know if 6 months of experiments actually moved the needle.", color: "#ef4444" },
+              { q: "Are you testing a full session change (model swap, prompt rewrite, UI change)?", a: "Classic A/B", why: "The right default when interference and ranking concerns don't apply.", color: "#6366f1" },
+            ].map((row, i) => (
+              <div key={i} className="flex gap-3 items-start border-b border-zinc-800/60 pb-3 last:border-0 last:pb-0">
+                <div className="flex-1">
+                  <div className="text-xs text-zinc-400 mb-1">{row.q}</div>
+                  <div className="text-xs text-zinc-500">{row.why}</div>
+                </div>
+                <div className="shrink-0 px-2 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap" style={{ background: row.color + "20", color: row.color }}>{row.a}</div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 text-xs text-zinc-500">
+            These strategies are not mutually exclusive. Production AI teams commonly run classic A/B for session-level changes, interleaving for retrieval quality, and a permanent holdout simultaneously.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MCP VS API VS FUNCTION CALLING ──────────────────────────────────────────
 
 const MCP_SCENARIOS = [
@@ -11725,5 +11914,5 @@ function MCPDecisionFramework({ onNavigate }) {
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
 };

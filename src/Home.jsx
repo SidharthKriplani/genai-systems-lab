@@ -512,7 +512,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             className="flex flex-col items-start p-4 rounded-xl border border-green-900/40 bg-green-950/20 hover:border-green-700/50 hover:bg-green-950/40 transition-all">
             <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">Interview Prep</span>
             <span className="text-sm font-bold text-white mb-1.5">I'm prepping for interviews</span>
-            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">220+ questions across system design, evals, reasoning models, ML fundamentals.</span>
+            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">259+ questions across system design, evals, agents, RAG, and ML fundamentals.</span>
             <span className="mt-3 text-xs font-bold text-green-400">Open Prep Lab →</span>
           </button>
           <button
@@ -529,6 +529,13 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-500 font-mono">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
           Free · no login required · built for AI engineers &amp; PMs
+        </div>
+
+        {/* Layer 3 positioning */}
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/60 border border-zinc-800/60 text-[11px] text-zinc-500">
+          <span className="text-amber-400 font-bold">Layer 3</span>
+          <span>RAG · evals · vector DBs · observability · agent architecture</span>
+          <span className="text-zinc-600">— the scarce skills, not the table stakes</span>
         </div>
 
         {/* Continue where you left off — shown only to returning users */}
