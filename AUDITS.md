@@ -802,8 +802,8 @@ The structural upgrade documented in CLAUDE.md (three front doors, GT as knowled
 ### Scale after sprint
 
 - GT posts: 205 (was 200)
-- Explore modules: 22 (was 19)
-- Systems modules: 51 (was 50)
+- Explore modules: 23 (was 19)
+- Systems modules: 52 (was 50)
 - PrepLab questions: 231 (was ~190)
 
 ### Open findings from this sprint
@@ -811,8 +811,8 @@ The structural upgrade documented in CLAUDE.md (three front doors, GT as knowled
 | # | Finding | File | Status |
 |---|---|---|---|
 | 1 | PrepLab question count in Home.jsx door copy set to "220+" — actual count is 231. Minor over/under-count, acceptable. | Home.jsx | ⚠️ Minor — update next time counts are touched |
-| 2 | Prompt Injection Defense Systems module not yet built — remains Tier 1 | — | ⚠️ Open backlog |
-| 3 | Tokenizer Comparison Explore module not yet built — remains Tier 1 | — | ⚠️ Open backlog |
+| 2 | Prompt Injection Defense Systems module | systems/modules.jsx + Systems.jsx | ✅ Shipped |
+| 3 | Tokenizer Comparison Explore module | Explore.jsx | ✅ Shipped |
 | 4 | `consult` tab still missing from SHORTCUT_TABS | App.jsx | ⚠️ Open (low priority) |
 
 **Status:** Sprint complete ✅
