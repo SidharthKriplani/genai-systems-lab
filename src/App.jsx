@@ -1751,43 +1751,69 @@ export default function App() {
         </div>
       )}
       {/* ── MOBILE BOTTOM NAV (mobile only) ─────────────────────────── */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-zinc-950 border-t border-zinc-800" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30" style={{ paddingBottom: "env(safe-area-inset-bottom)", background: "rgba(9,9,11,0.97)", backdropFilter: "blur(12px)", borderTop: "1px solid #27272a" }}>
         {/* Slide-up tray */}
         {mobileNavGroup && (
-          <div className="border-b border-zinc-800 bg-zinc-900 px-2 py-2">
-            <div className="text-[9px] font-bold uppercase tracking-widest px-2 pb-1.5" style={{ color: (NAV_GROUPS.find(g => g.label === mobileNavGroup)?.color || "#fff") + "99" }}>{mobileNavGroup}</div>
-            {[...NAV_GROUPS.find(g => g.label === mobileNavGroup)?.items || []].map(item => (
-              <button key={item.id} onClick={() => { navigate(item.id); setMobileNavGroup(null); }}
-                className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold mb-0.5 flex items-center justify-between transition-all ${
-                  topView === item.id ? "bg-violet-600 text-white" : "text-zinc-400 hover:text-white hover:bg-zinc-800"
-                }`}>
-                {item.label}
-                {visited.has(item.id) && topView !== item.id && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />}
-              </button>
-            ))}
-            {mobileNavGroup === "GROW" && (
-              <button onClick={() => { navigate("progress"); setMobileNavGroup(null); }}
-                className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold mb-0.5 flex items-center justify-between transition-all ${
-                  topView === "progress" ? "bg-violet-600 text-white" : "text-zinc-400 hover:text-white hover:bg-zinc-800"
-                }`}>
-                My Progress
-              </button>
-            )}
+          <div className="border-b border-zinc-800 bg-zinc-900/80 px-3 py-2.5">
+            <div className="text-[9px] font-bold uppercase tracking-widest px-1 pb-2" style={{ color: (NAV_GROUPS.find(g => g.label === mobileNavGroup)?.color || "#fff") + "bb" }}>{mobileNavGroup}</div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[...NAV_GROUPS.find(g => g.label === mobileNavGroup)?.items || [], ...(mobileNavGroup === "GROW" ? [{ id: "progress", label: "My Progress" }] : [])].map(item => (
+                <button key={item.id} onClick={() => { navigate(item.id); setMobileNavGroup(null); }}
+                  className="text-left px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all"
+                  style={topView === item.id
+                    ? { background: (NAV_GROUPS.find(g => g.label === mobileNavGroup)?.color || "#6366f1") + "22", color: NAV_GROUPS.find(g => g.label === mobileNavGroup)?.color || "#6366f1", border: "1px solid " + (NAV_GROUPS.find(g => g.label === mobileNavGroup)?.color || "#6366f1") + "44" }
+                    : { background: "#18181b", color: "#a1a1aa", border: "1px solid #27272a" }}>
+                  {item.label}
+                  {visited.has(item.id) && topView !== item.id && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-70 shrink-0" />}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {/* 3 group buttons */}
         <div className="flex">
-          {["LEARN", "BUILD", "GROW"].map(group => {
+          {[
+            { label: "LEARN", icon: (
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M9 2L2 6l7 4 7-4-7-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+                <path d="M2 10l7 4 7-4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+              </svg>
+            )},
+            { label: "BUILD", icon: (
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect x="2" y="10" width="5" height="6" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+                <rect x="7" y="6" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+                <rect x="12" y="2" width="5" height="14" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+              </svg>
+            )},
+            { label: "GROW", icon: (
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M3 15c2-4 4-6 6-6s4 2 6-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <path d="M13 5h2v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )},
+          ].map(({ label: group, icon }) => {
             const grp = NAV_GROUPS.find(g => g.label === group);
             const color = grp?.color || "#6366f1";
             const isOpen = mobileNavGroup === group;
             const hasCurrent = grp?.items.some(i => i.id === topView) || (group === "GROW" && topView === "progress");
+            const active = isOpen || hasCurrent;
             return (
               <button key={group} onClick={() => setMobileNavGroup(isOpen ? null : group)}
-                className="flex-1 py-3 flex flex-col items-center gap-0.5 transition-all"
-                style={{ color: isOpen || hasCurrent ? color : "#52525b" }}>
-                <span className="text-[11px] font-bold tracking-wide">{group}</span>
-                {hasCurrent && !isOpen && <span className="w-1 h-1 rounded-full" style={{ background: color }} />}
+                className="flex-1 flex flex-col items-center gap-1 transition-all relative"
+                style={{ paddingTop: 10, paddingBottom: 10 }}>
+                {/* Top accent line */}
+                <span className="absolute top-0 left-1/4 right-1/4 h-0.5 rounded-full transition-all"
+                  style={{ background: active ? color : "transparent" }} />
+                {/* Icon container */}
+                <span className="flex items-center justify-center w-9 h-7 rounded-xl transition-all"
+                  style={{ background: isOpen ? color + "22" : active ? color + "15" : "transparent", color: active ? color : "#52525b" }}>
+                  {icon}
+                </span>
+                <span className="text-[10px] font-bold tracking-wider transition-all"
+                  style={{ color: active ? color : "#52525b" }}>
+                  {group}
+                </span>
               </button>
             );
           })}
