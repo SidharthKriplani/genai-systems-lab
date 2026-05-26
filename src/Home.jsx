@@ -497,19 +497,31 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
           </p>
         </div>
 
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        {/* Three-door entry */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto text-left">
           <button
-            onClick={() => { track("start_here_clicked", { location: "hero_cta_primary" }); onNavigate("lab"); }}
-            className="flex flex-col items-center px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-all shadow-lg shadow-violet-900/40">
-            <span>Run your first failure scenario →</span>
-            <span className="text-[10px] font-normal opacity-70 mt-0.5">For engineers building with LLMs</span>
+            onClick={() => { track("door_clicked", { door: "builder" }); onNavigate("lab"); }}
+            className="flex flex-col items-start p-4 rounded-xl border border-blue-900/40 bg-blue-950/20 hover:border-blue-700/50 hover:bg-blue-950/40 transition-all">
+            <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-1.5">Engineer</span>
+            <span className="text-sm font-bold text-white mb-1.5">I'm building with LLMs</span>
+            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">Simulate production failures, debug RAG pipelines, build agent systems.</span>
+            <span className="mt-3 text-xs font-bold text-blue-400">Start with RAG Lab →</span>
           </button>
           <button
-            onClick={() => { track("start_here_clicked", { location: "hero_cta_secondary" }); onNavigate("concepts"); }}
-            className="flex flex-col items-center px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-medium text-sm transition-all">
-            <span>Start from scratch: Tokenizer → RAG → Agents</span>
-            <span className="text-[10px] font-normal text-zinc-500 mt-0.5">For PMs &amp; anyone learning from zero</span>
+            onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
+            className="flex flex-col items-start p-4 rounded-xl border border-green-900/40 bg-green-950/20 hover:border-green-700/50 hover:bg-green-950/40 transition-all">
+            <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">Interview Prep</span>
+            <span className="text-sm font-bold text-white mb-1.5">I'm prepping for interviews</span>
+            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">190+ questions across system design, evals, ML fundamentals.</span>
+            <span className="mt-3 text-xs font-bold text-green-400">Open Prep Lab →</span>
+          </button>
+          <button
+            onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("aipm"); }}
+            className="flex flex-col items-start p-4 rounded-xl border border-violet-900/40 bg-violet-950/20 hover:border-violet-700/50 hover:bg-violet-950/40 transition-all">
+            <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-1.5">Career / PM</span>
+            <span className="text-sm font-bold text-white mb-1.5">I'm navigating my AI career</span>
+            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">Role transitions, salary data, AI PM track, system design interviews.</span>
+            <span className="mt-3 text-xs font-bold text-violet-400">Explore paths →</span>
           </button>
         </div>
 
