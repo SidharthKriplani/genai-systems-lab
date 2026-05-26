@@ -10161,8 +10161,302 @@ function GRPOAgentRL() {
   );
 }
 
+
+// ─── LONG CONTEXT PATTERNS ────────────────────────────────────────────────────
+
+const CONTEXT_MODELS = [
+  { name: "GPT-4o",          ctx: 128,  reliable: 64,   retrieval: "Good to ~64K, degrades beyond", notes: "Lost-in-the-middle documented above 64K" },
+  { name: "Claude Sonnet 4", ctx: 200,  reliable: 150,  retrieval: "Strong across full window",      notes: "Best-in-class long context reliability" },
+  { name: "Gemini 1.5 Pro",  ctx: 1000, reliable: 500,  retrieval: "Variable — spiky at extremes",   notes: "1M token window; retrieval degrades mid-doc" },
+  { name: "Llama 3.1 405B",  ctx: 128,  reliable: 64,   retrieval: "Similar to GPT-4o",              notes: "Open weights; self-host for full control" },
+  { name: "Mistral Large",   ctx: 128,  reliable: 80,   retrieval: "Good across window",             notes: "Sliding window attention helps mid-doc" },
+];
+
+const PATTERNS = [
+  {
+    id: "full",
+    label: "Full Context",
+    tag: "SIMPLE",
+    color: "#6366f1",
+    when: "Document < 50% of context window AND single-hop questions",
+    howItWorks: "Stuff the entire document into context. Let the model find the answer.",
+    pros: ["Simplest implementation", "No chunking errors", "Model sees all relationships"],
+    cons: ["Expensive — you pay for all tokens on every query", "Degrades past ~64K for most models", "Slow TTFT on very long inputs"],
+    failMode: "Lost-in-the-middle: facts buried in the middle of a 100K+ context are missed even when the answer is present. Models anchor on beginning and end.",
+    costSignal: "O(n) tokens per query — scales linearly with document length",
+  },
+  {
+    id: "needle",
+    label: "Needle-in-Haystack Retrieval",
+    tag: "RETRIEVE",
+    color: "#3b82f6",
+    when: "Large corpus, single specific fact needed, good metadata available",
+    howItWorks: "Embed chunks, retrieve top-k by similarity, feed only retrieved chunks to LLM.",
+    pros: ["Sub-linear token cost", "Scales to millions of documents", "Query latency stays flat as corpus grows"],
+    cons: ["Retrieval can miss the needle if query-chunk semantic gap is high", "Multi-hop questions require multiple retrieval passes", "Chunking boundaries can split the answer"],
+    failMode: "The needle is present in the corpus but the query embedding is too distant. Classic case: 'What was the CEO's salary in 2019?' — the chunk with the number doesn't embed close to the word 'salary' if the document uses 'compensation'.",
+    costSignal: "O(k) tokens per query where k << n — very efficient at scale",
+  },
+  {
+    id: "mapreduce",
+    label: "Map-Reduce",
+    tag: "SYNTHESISE",
+    color: "#f59e0b",
+    when: "Synthesis across many documents (summarise 50 reports, extract trends)",
+    howItWorks: "Map: run LLM over each chunk independently to extract relevant info. Reduce: combine extracted summaries into a final answer.",
+    pros: ["Parallelisable — map calls run concurrently", "Handles arbitrarily large corpora", "Each map call is a small, cheap context"],
+    cons: ["Two-pass latency", "Map step may miss cross-document relationships", "Reduce step can lose nuance from individual chunks"],
+    failMode: "Cross-document reasoning fails: 'Which of these 40 contracts has the most unusual indemnification clause?' requires comparison, not just extraction. Map-reduce extracts facts per-document; the comparison only exists in the reduce step and may not have enough signal.",
+    costSignal: "O(n) tokens total but distributed — n/chunk_size parallel calls, each cheap",
+  },
+  {
+    id: "chunksummarise",
+    label: "Chunk-then-Summarise",
+    tag: "COMPRESS",
+    color: "#22c55e",
+    when: "Need to compress one long document before asking questions over it",
+    howItWorks: "Split document into overlapping chunks. Summarise each chunk. Concatenate summaries into a compressed representation. Query the compressed context.",
+    pros: ["Reduces token cost for repeated queries over same document", "Summaries fit in smaller context windows", "Works well for hierarchical documents (chapters → sections)"],
+    cons: ["Summaries lose detail — compression is lossy", "Summary quality determines retrieval quality downstream", "Adds latency for the summarisation pass"],
+    failMode: "Precision questions fail: 'What exact percentage did revenue grow in Q3?' — the summarisation step rounds or omits the specific number. Compression is great for thematic questions, not numerical precision.",
+    costSignal: "One-time O(n) summarisation cost, then O(summary_length) per query — amortises well for repeated use",
+  },
+  {
+    id: "hierarchical",
+    label: "Hierarchical Indexing",
+    tag: "ADVANCED",
+    color: "#8b5cf6",
+    when: "Large structured corpus (documentation, legal, research papers) with known hierarchy",
+    howItWorks: "Build two indexes: coarse (document/section summaries) and fine (paragraph chunks). Query coarse index first to identify relevant sections, then query fine index within those sections.",
+    pros: ["Best recall for large corpora", "Two-stage filtering reduces irrelevant chunks in final context", "Mirrors how humans navigate large documents"],
+    cons: ["Complex to build and maintain", "Two retrieval hops add latency", "Requires document structure metadata"],
+    failMode: "If document structure is inconsistent or the coarse index summarises poorly, the fine retrieval never finds the right section. Garbage coarse index → garbage fine results.",
+    costSignal: "O(log n) effective retrieval — near-constant query cost regardless of corpus size",
+  },
+];
+
+const NITH_POSITIONS = [10, 25, 50, 75, 90]; // % through document
+const NITH_RECALL = { 10: 97, 25: 89, 50: 61, 75: 84, 90: 95 }; // approximate recall %
+
+function NeedleInHaystackViz() {
+  const [position, setPosition] = useState(50);
+  const recall = NITH_POSITIONS.reduce((best, p) => {
+    const base = NITH_RECALL[p] || 75;
+    const dist = Math.abs(position - p);
+    return { recall: best.recall + (base - best.recall) * Math.max(0, 1 - dist / 30), pos: p };
+  }, { recall: NITH_RECALL[NITH_POSITIONS[0]], pos: NITH_POSITIONS[0] }).recall;
+  const interp = (() => {
+    const sorted = NITH_POSITIONS;
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (position >= sorted[i] && position <= sorted[i+1]) {
+        const t = (position - sorted[i]) / (sorted[i+1] - sorted[i]);
+        return Math.round(NITH_RECALL[sorted[i]] * (1-t) + NITH_RECALL[sorted[i+1]] * t);
+      }
+    }
+    return position <= sorted[0] ? NITH_RECALL[sorted[0]] : NITH_RECALL[sorted[sorted.length-1]];
+  })();
+  const recallColor = interp >= 85 ? "#22c55e" : interp >= 70 ? "#f59e0b" : "#ef4444";
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-4">
+        <div className="text-xs text-zinc-400 mb-3 leading-relaxed">
+          The <span className="text-white font-semibold">lost-in-the-middle</span> effect: LLMs reliably find facts near the beginning and end of a long context, but recall degrades for facts buried in the middle. Drag the slider to see how needle position affects retrieval recall.
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs text-zinc-500 font-mono">
+            <span>Start of document</span>
+            <span>End of document</span>
+          </div>
+          {/* Document bar */}
+          <div className="relative h-10 rounded-lg bg-zinc-800 overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-between px-2">
+              {[0,10,20,30,40,50,60,70,80,90,100].map(p => (
+                <div key={p} className="w-px h-4 bg-zinc-700" />
+              ))}
+            </div>
+            <div
+              className="absolute top-1 bottom-1 w-4 rounded cursor-pointer flex items-center justify-center transition-all"
+              style={{ left: `calc(${position}% - 8px)`, backgroundColor: recallColor }}
+            >
+              <div className="w-1 h-4 bg-white/30 rounded" />
+            </div>
+          </div>
+          <input type="range" min={0} max={100} value={position} onChange={e => setPosition(Number(e.target.value))}
+            className="w-full accent-indigo-500" />
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-zinc-500">Needle at <span className="text-white font-mono">{position}%</span> through document</div>
+            <div className="text-right">
+              <div className="text-2xl font-black font-mono" style={{ color: recallColor }}>{interp}%</div>
+              <div className="text-[10px] text-zinc-500">recall</div>
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 rounded-lg p-2 bg-zinc-950 border border-zinc-800 text-[11px] text-zinc-400">
+          {interp >= 90 && "Strong recall — facts at document boundaries are reliably found."}
+          {interp >= 70 && interp < 90 && "Moderate recall — the model usually finds it but misses ~1 in 5. Use retrieval or explicit position markers."}
+          {interp < 70 && "Danger zone — lost-in-the-middle. A fact here has ~40% chance of being missed even when present in context. Switch to retrieval or hierarchical indexing."}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LongContextPatterns() {
+  const [activePattern, setActivePattern] = useState("full");
+  const [tab, setTab] = useState(0);
+  const pattern = PATTERNS.find(p => p.id === activePattern);
+  const tabs = ["Pattern Guide", "Needle-in-Haystack", "Model Limits"];
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-4">
+        <div className="text-sm font-bold text-white mb-1">Long Context Patterns</div>
+        <p className="text-xs text-zinc-400 leading-relaxed">Five engineering patterns for handling documents that exceed what you want to send to an LLM — each with distinct tradeoffs in cost, latency, and failure modes. The right choice depends on query type, corpus size, and how often you need to re-query the same documents.</p>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t,i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium transition-all ${tab===i ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-300 hover:text-white"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab===0 && (
+        <div className="space-y-3">
+          {/* Pattern selector */}
+          <div className="flex gap-2 flex-wrap">
+            {PATTERNS.map(p => (
+              <button key={p.id} onClick={() => setActivePattern(p.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${activePattern===p.id ? "text-white border-transparent" : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white"}`}
+                style={activePattern===p.id ? { backgroundColor: p.color, borderColor: p.color } : {}}>
+                {p.label}
+                <span className="ml-1.5 text-[9px] font-mono opacity-70">{p.tag}</span>
+              </button>
+            ))}
+          </div>
+          {pattern && (
+            <div className="space-y-3">
+              {/* When to use */}
+              <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4">
+                <div className="text-[10px] font-mono uppercase tracking-widest mb-2" style={{ color: pattern.color }}>Use when</div>
+                <div className="text-sm text-zinc-200">{pattern.when}</div>
+              </div>
+              {/* How it works */}
+              <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4">
+                <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">How it works</div>
+                <div className="text-xs text-zinc-300 leading-relaxed">{pattern.howItWorks}</div>
+                <div className="mt-2 text-[11px] font-mono text-zinc-500">{pattern.costSignal}</div>
+              </div>
+              {/* Pros / cons */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-zinc-900 border border-green-900/30 p-3">
+                  <div className="text-[10px] font-mono text-green-500 uppercase tracking-widest mb-2">Strengths</div>
+                  {pattern.pros.map((p,i) => (
+                    <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1">
+                      <span className="text-green-500 shrink-0">+</span>{p}
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-xl bg-zinc-900 border border-red-900/30 p-3">
+                  <div className="text-[10px] font-mono text-red-400 uppercase tracking-widest mb-2">Weaknesses</div>
+                  {pattern.cons.map((c,i) => (
+                    <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1">
+                      <span className="text-red-400 shrink-0">–</span>{c}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Failure mode */}
+              <div className="rounded-xl bg-red-950/20 border border-red-900/30 p-4">
+                <div className="text-[10px] font-mono text-red-400 uppercase tracking-widest mb-2">Production failure mode</div>
+                <div className="text-xs text-zinc-300 leading-relaxed">{pattern.failMode}</div>
+              </div>
+            </div>
+          )}
+          {/* Decision guide */}
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4">
+            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Quick decision guide</div>
+            <div className="space-y-2 text-xs">
+              {[
+                { q: "Single doc, fits in context?", a: "Full Context", color: "#6366f1" },
+                { q: "Large corpus, specific fact?", a: "Needle-in-Haystack Retrieval", color: "#3b82f6" },
+                { q: "Synthesise across many docs?", a: "Map-Reduce", color: "#f59e0b" },
+                { q: "One long doc, repeated queries?", a: "Chunk-then-Summarise", color: "#22c55e" },
+                { q: "Structured corpus at scale?", a: "Hierarchical Indexing", color: "#8b5cf6" },
+              ].map(r => (
+                <div key={r.q} className="flex items-center justify-between gap-3 border-b border-zinc-800 pb-2 last:border-0 last:pb-0">
+                  <span className="text-zinc-400">{r.q}</span>
+                  <span className="font-semibold shrink-0" style={{ color: r.color }}>{r.a}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab===1 && (
+        <div className="space-y-4">
+          <NeedleInHaystackViz />
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4 space-y-3 text-xs">
+            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Mitigations for lost-in-the-middle</div>
+            {[
+              { fix: "Retrieval before generation", desc: "Don't send the full doc — retrieve the relevant passage. The needle is now at position 0 in the context, where recall is highest." },
+              { fix: "Position markers", desc: "Add explicit XML tags: <section id='3' relevance='high'>. Models attend better to structurally marked content." },
+              { fix: "Reverse + forward pass", desc: "Send the document twice: once forward, once reversed. Average the answers. More expensive but dramatically improves mid-document recall." },
+              { fix: "Reranking by query proximity", desc: "After retrieval, reorder chunks so the highest-similarity chunks appear first and last in the context window, not in document order." },
+              { fix: "Model selection", desc: "Claude Sonnet 4 and Gemini 1.5 show substantially better mid-context recall than GPT-4o. For long-context tasks, model choice matters." },
+            ].map(m => (
+              <div key={m.fix} className="flex gap-3 border-b border-zinc-800 pb-2 last:border-0 last:pb-0">
+                <span className="text-indigo-400 font-semibold shrink-0 w-44">{m.fix}</span>
+                <span className="text-zinc-400 leading-relaxed">{m.desc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab===2 && (
+        <div className="space-y-3">
+          <div className="overflow-x-auto rounded-xl bg-zinc-900 border border-zinc-800">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  <th className="text-left py-2 px-3 text-zinc-500 font-semibold">Model</th>
+                  <th className="text-left py-2 px-3 text-zinc-500 font-semibold">Max ctx (K)</th>
+                  <th className="text-left py-2 px-3 text-zinc-500 font-semibold">Reliable to (K)</th>
+                  <th className="text-left py-2 px-3 text-zinc-500 font-semibold">Retrieval quality</th>
+                  <th className="text-left py-2 px-3 text-zinc-500 font-semibold">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CONTEXT_MODELS.map(m => (
+                  <tr key={m.name} className="border-b border-zinc-900 hover:bg-zinc-900/40">
+                    <td className="py-2 px-3 font-bold text-zinc-200 whitespace-nowrap">{m.name}</td>
+                    <td className="py-2 px-3 text-zinc-300 font-mono">{m.ctx}K</td>
+                    <td className="py-2 px-3 font-mono" style={{ color: m.reliable >= 150 ? "#22c55e" : m.reliable >= 80 ? "#f59e0b" : "#94a3b8" }}>{m.reliable}K</td>
+                    <td className="py-2 px-3 text-zinc-400 text-[11px]">{m.retrieval}</td>
+                    <td className="py-2 px-3 text-zinc-500 text-[11px]">{m.notes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="rounded-lg bg-amber-950/20 border border-amber-800/30 p-3 text-xs text-amber-300 leading-relaxed">
+            <span className="font-bold">Context window ≠ reliable window.</span> A 128K context window does not mean the model reliably uses all 128K. Published benchmarks (RULER, NIAH) show recall degradation well before the advertised limit. Design systems around the reliable window, not the maximum.
+          </div>
+          <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 text-xs text-zinc-400 leading-relaxed space-y-1">
+            <div className="text-zinc-200 font-semibold text-[11px] mb-1">Token cost reference (GPT-4o pricing)</div>
+            <div>128K tokens ≈ ~96,000 words ≈ a full novel. At $2.50/M input tokens: <span className="text-white">$0.32 per full-context request.</span></div>
+            <div>At 10K requests/day: <span className="text-white">$3,200/day</span> just for input tokens on a full-context strategy. Retrieval that sends 2K tokens instead: $0.005/request → <span className="text-green-400">$50/day.</span></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
+  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
 };

@@ -2233,7 +2233,42 @@ const PREP_QUESTIONS = [
     correct: 1, keywords: [],
     explanation: "When a query embeds into a region of vector space not populated by your document corpus, all retrieval scores are mediocre (0.3–0.5). The system retrieves the least-wrong documents and the LLM makes up an answer from irrelevant context. This is the 'distribution mismatch' failure: your embedding model was trained on text unlike your documents. Fix: domain-specific fine-tuning of the embedding model, or hard-negative mining.",
     readMore: { label: "Cosine Similarity Explorer", tab: "explore" }
-  }
+  },
+
+  // ─── LONG CONTEXT (4) ────────────────────────────────────────────────────────
+  {
+    id: "lctx-1", topic: "rag", difficulty: "hard", type: "mcq",
+    question: "A RAG system uses a 128K context window and stuffs the entire document corpus in. Users report missing answers that are definitely in the corpus. Most likely cause?",
+    options: ["The model has insufficient parameters", "Lost-in-the-middle — facts buried at ~50% through the context are retrieved at ~60% recall vs 95%+ at document boundaries", "Context window overflow", "Tokenization error"],
+    correct: 1, keywords: [],
+    explanation: "Lost-in-the-middle is a documented failure mode: LLMs attend strongly to the beginning and end of context but poorly to the middle. A 128K context window does not mean uniform recall across 128K tokens. Retrieval that places the relevant chunk at position 0 outperforms full-context stuffing for mid-document facts.",
+    readMore: { label: "Long Context Patterns →", tab: "systems" }
+  },
+  {
+    id: "lctx-2", topic: "rag", difficulty: "hard", type: "mcq",
+    question: "You need to synthesise findings across 200 research papers. Which pattern is correct?",
+    options: ["Full context — concatenate all 200 papers", "Map-reduce — extract key findings per paper in parallel, then synthesise the extractions", "Chunk-then-summarise — summarise each paper sequentially", "Single embedding lookup per paper"],
+    correct: 1, keywords: [],
+    explanation: "Map-reduce is the right pattern for synthesis across many documents. The map step extracts relevant findings per paper (cheap, parallelisable). The reduce step synthesises across extractions. Full context fails because 200 papers vastly exceed any context window. Chunk-then-summarise is sequential (slow) and loses cross-paper relationships.",
+    readMore: { label: "Long Context Patterns →", tab: "systems" }
+  },
+  {
+    id: "lctx-3", topic: "llmops", difficulty: "medium", type: "mcq",
+    question: "A user queries the same 500-page legal document 100 times per day with different questions. Best cost-optimisation strategy?",
+    options: ["Full context on every query", "Re-embed the document on every query", "Chunk-then-summarise once and cache the compressed representation; query the summaries", "Use a smaller model to reduce cost"],
+    correct: 2, keywords: [],
+    explanation: "Chunk-then-summarise amortises the summarisation cost across all queries. Pay once to compress 500 pages into a summary, then send only the summary (much fewer tokens) on each of the 100 daily queries. Full context at 100K tokens/query × 100 queries = 10M tokens/day. Summarise once (100K tokens) then query at 5K tokens each = 600K tokens/day — ~16× cheaper.",
+    readMore: { label: "Long Context Patterns →", tab: "systems" }
+  },
+  {
+    id: "lctx-4", topic: "rag", difficulty: "hard", type: "text",
+    question: "Explain the difference between a model's advertised context window and its reliable context window. Why does this distinction matter for system design?",
+    options: null, correct: null,
+    keywords: ["recall", "lost-in-the-middle", "degradation", "NIAH", "reliable", "benchmark", "design"],
+    explanation: "The advertised window is the maximum tokens the model will accept. The reliable window is the range over which retrieval recall stays high (typically 85%+). For GPT-4o, advertised is 128K but reliable is ~64K. The gap matters for system design: a system designed around the 128K limit will silently miss facts in the outer range. Always design around the reliable window and use retrieval for anything beyond it.",
+    readMore: { label: "Long Context Patterns →", tab: "systems" }
+  },
+
 ];
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
