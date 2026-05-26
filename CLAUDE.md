@@ -24,7 +24,7 @@ Act as a product and engineering partner, not an assistant. That means:
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of May 2026: 54 Systems modules, 23 Explore modules, 244 PrepLab questions, 212 Ground Truth posts, 14 top-level tabs. Mobile bottom nav shipped (LEARN/BUILD/GROW bar).
+Scale as of May 2026: 56 Systems modules, 23 Explore modules, 259 PrepLab questions, 216 Ground Truth posts, 14 top-level tabs. Mobile bottom nav shipped (LEARN/BUILD/GROW bar).
 
 ---
 

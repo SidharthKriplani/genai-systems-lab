@@ -855,3 +855,44 @@ The structural upgrade documented in CLAUDE.md (three front doors, GT as knowled
 
 **Status:** Sprint complete ✅
 
+
+---
+
+## Audit 23 — Build Sprint Review (May 2026, Session 3)
+
+**Type:** Post-build integrity check
+**Date:** May 2026
+**Scope:** Third build sprint — content expansion, positioning, learning paths
+
+### What was built
+
+| Item | Type | Status |
+|---|---|---|
+| MCP vs API vs Function Calling Systems module | Systems module | ✅ Shipped |
+| A/B Testing for AI Systems module | Systems module | ✅ Shipped |
+| PrepLab gap fill: Prompt Injection, Agent Memory, Long Context, Tokenizer (15 Qs) | PrepLab | ✅ Shipped |
+| GT post: A/B Testing for AI Systems | GT post | ✅ Shipped |
+| GT post: Graceful Degradation in AI Systems | GT post | ✅ Shipped |
+| GT post: Monitoring That Predicts | GT post | ✅ Shipped |
+| GT post: The N×M Problem and How MCP Solves It | GT post | ✅ Shipped |
+| Home.jsx Layer 3 positioning badge | Home.jsx | ✅ Shipped |
+| Home.jsx PrepLab door count updated (220+ → 259+) | Home.jsx | ✅ Shipped |
+| DE → AI Engineer learning path (10 steps) | LearningPaths.jsx | ✅ Shipped |
+| CLAUDE.md / IDEAS.md / AUDITS.md / LINEAGE.md updated | MD files | ✅ Shipped |
+
+### Scale after sprint
+
+- GT posts: 216 (was 212)
+- Explore modules: 23 (unchanged)
+- Systems modules: 56 (was 54)
+- PrepLab questions: 259 (was 244)
+
+### Open findings from this sprint
+
+| # | Finding | File | Status |
+|---|---|---|---|
+| 1 | `consult` tab still missing from SHORTCUT_TABS | App.jsx | ⚠️ Low priority — known |
+| 2 | Explore flat list at 23 modules — no group structure | Explore.jsx | ⚠️ Open — Tier 2 fix |
+| 3 | Ask/Search tab relies on keyword search — needs embedding upgrade to serve as knowledge gateway | Consultation.jsx | ⚠️ Open — Tier 1 architectural item |
+
+**Status:** Sprint complete ✅

@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: May 2026 | Current scale: 54 Systems modules, 23 Explore, 244 PrepLab questions, 212 GT posts*
+*Last updated: May 2026 | Current scale: 56 Systems modules, 23 Explore, 259 PrepLab questions, 216 GT posts*
 
 ---
 
@@ -57,8 +57,8 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 - ~~**Prompt Injection Defense**~~ ✅ *built May 2026 — 5 attack patterns, 5 defense layers, hardening checklist*
 - ~~**Agent Memory Architecture**~~ ✅ *built May 2026 — 4 memory types, failure demos, production stack, decision layer*
 - **AI Safety Engineering** — Jailbreak patterns, adversarial prompts, red-teaming frameworks. Different from the existing AI Red Teaming module (which is strategy) — this is implementation. *Pending.*
-- **MCP vs API vs Function Calling** — The N×M problem, context window tax, when each approach wins. Decision framework interactive. *Pending — from jamwithai cluster.*
-- **A/B Testing for AI Systems** — Classic A/B, interleaved testing (50x sample efficiency), MAB, switchback, permanent holdouts. *Pending — unique angle, no lab content yet.*
+- ~~**MCP vs API vs Function Calling**~~ ✅ *built May 2026 — N×M problem, 5 decision scenarios, context window tax, comparison table*
+- ~~**A/B Testing for AI Systems**~~ ✅ *built May 2026 — 5 strategies, why classic breaks, decision guide*
 - **Query Refinement Lab** — HyDE, multi-query, decomposition, iterative semantic optimization. Extends RAG Lab from the query side. *Pending.*
 - **Prompt Change Management** — User edits system prompt, sees quality score shift, regression alert, A/B split, rollback decision. *Pending — companion to "Your Prompt Is Code" GT post.*
 - **Agent Context Architecture** — Configure which layers your agent uses (persistent memory / skill injection / delegation / hooks), see cost/failure mode changes. *Pending — from ADK patterns cluster.*
@@ -83,7 +83,7 @@ An AI interviewer found that candidates who claimed to have built 2-3 RAG system
 - **Explore grouping** — Apply DESIGN/BUILD/OPS group structure to Explore (23 modules, getting long). Currently flat list. *Pending — Tier 2.*
 
 ### PrepLab
-- **Questions for uncovered modules** — Prompt Injection Defense, Agent Memory Architecture, Long Context Patterns, and Tokenizer Comparison modules all shipped but have zero PrepLab questions anchored to them. ~15 questions total. *Pending — quick win.*
+- ~~**Questions for uncovered modules**~~ ✅ *built May 2026 — 15 questions: pid-1–5, ama-1–4, lcp-1–3, tok-1–3*
 - **Scenario-type questions** — Multi-turn conversational scenarios where the user debugs a failing system across 3-4 exchanges. Higher fidelity than MCQ. *Pending.*
 - **More system design text questions** — Cover: vector DB selection, agent reliability, eval harness design, fine-tuning decision framework. *Pending.*
 
@@ -124,7 +124,7 @@ A practitioner traced the full arc: DS peak during COVID → 90% demand drop + r
 - **GT post: "The Next Fragmentation: What 'AI Engineer' Will Split Into by 2027"** — apply the same analytical lens forward. Inference Engineer, Eval Engineer, Agent Reliability Engineer emerging as distinct titles. Which specializations will command premium and which will commoditize. Opinion piece with data.
 - **Career module update: "Your Path: DS → MLOps → AI Engineer → What's Next"** — a career trajectory visualization showing the historical path and the current fork points. Interactive: user marks where they are, sees which Systems/Concepts modules close the gap to where they want to go.
 
-**Positioning opportunity:** The lab is implicitly built for people living this transition. A one-line callout in the hero — "Built for engineers who made the DS → AI Engineer shift and need systems depth" — would land hard with this audience and costs nothing.
+~~**Positioning opportunity:** Home page Layer 3 badge added.~~ ✅ *built May 2026 — "Layer 3 · RAG · evals · vector DBs · observability · agent architecture — the scarce skills, not the table stakes"*
 
 ### Ground Truth posts
 - ~~**"Why the Best Model on the Benchmark Isn't the Best Model for Your Product"**~~ ✅ *built May 2026 — id: benchmark-vs-business*
@@ -139,8 +139,8 @@ A practitioner traced the full arc: DS peak during COVID → 90% demand drop + r
 - ~~**"Your Prompt Is Code"**~~ ✅ *built May 2026 — id: your-prompt-is-code*
 - ~~**"The Three-Layer DE Skill Stack"**~~ ✅ *built May 2026 — id: three-layer-de-skill-stack*
 - **Series: "The Inference Stack"** — Four posts covering the full serving pipeline: quantization → KV cache → speculative decoding → serving infrastructure. Already have individual modules, need the cohesive narrative. *Pending.*
-- **"Graceful Degradation: The System Design Pattern Most AI Teams Skip"** — fallback chains, confidence thresholds, silent failure detection. From Type A/B cluster. *Pending.*
-- **"Monitoring That Predicts Problems, Not Reports Them"** — drift detection, latency trend alerts, hallucination rate canaries, cost spike prediction. From Type A/B cluster. *Pending.*
+- ~~**"Graceful Degradation"**~~ ✅ *built May 2026 — id: graceful-degradation*
+- ~~**"Monitoring That Predicts Problems, Not Reports Them"**~~ ✅ *built May 2026 — id: monitoring-that-predicts*
 - **"Prompt Regression Testing: How to Know When a Prompt Change Breaks Things"** — prompt test suite, metrics to track, wiring into CI/CD. Companion to "Your Prompt Is Code". *Pending.*
 - **"The N×M Problem and Why MCP Exists"** — architectural problem MCP solves, MCP vs function calling vs raw API. *Pending.*
 - **"Why Classic A/B Testing Breaks for AI and What to Do Instead"** — interleaving, switchback, MAB, permanent holdouts. *Pending.*
@@ -213,7 +213,7 @@ A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL
 
 - ~~**GT post: "The Three-Layer DE Skill Stack"**~~ ✅ *built May 2026 — id: three-layer-de-skill-stack*
 - **GT post: "Layer 3 Skills for Data Engineers: Vector DBs, Embedding Pipelines, and LLM Observability"** — practical breakdown of each Layer 3 skill: when you need it, what the learning curve looks like, what production looks like. Companion piece to the 3-layer post — goes deeper on the specific skills the lab already covers.
-- **Learning Path: "Data Engineer to AI Engineer"** — curated path through existing lab modules mapped to Layer 3 skills: RAG Lab → Vector DB Engineering → Evals → LLMOps Observability → Agent Architecture. Uses existing content, zero new builds required.
+- ~~**Learning Path: "Data Engineer to AI Engineer"**~~ ✅ *built May 2026 — 10-step path in LearningPaths.jsx*
 - **Home page positioning tweak** — add one line near the hero explicitly claiming Layer 3 depth: "The lab that builds Layer 3 skills — RAG, evals, observability, agent architecture." Zero build effort, direct resonance with DEs reading that post.
 
 ### AI Job Market Watch — side project signal engine (new cluster — May 2026)

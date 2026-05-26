@@ -108,7 +108,8 @@ Core insight: most GenAI learning resources are either too academic (papers, tex
 | Scale sprint | Agent Architecture, 5 new Explore modules, 5 GT posts, 20 PrepLab questions, Systems.jsx refactor, progress tracking |
 | May 2026 sprint 1 | Left sidebar nav, three-door Home hero, module sidebar+content split. Cosine Similarity Explore, EvalMetrics expanded (RAGAS/LLM-as-Judge), Long Context Patterns, Model Architecture Comparison, Hardware Reference, Tokenizer Comparison, Prompt Injection Defense, Vector DB Engineering, Agent Memory Architecture. GT posts: Type A/B Engineers, Pretraining, RAG Lies, Eval Crisis, Reversal Curse, Agent Memory, Entropy/KL, Why Transformers Won, Prompt Is Code, Three-Layer DE Stack. 244 PrepLab, 212 GT posts, related[] on 194+ posts. |
 | May 2026 sprint 2 | Bug fixes: HowTo import (runtime crash), duplicate JUDGE_SCENARIOS (Vercel build fail). UX: NAV_GROUPS counts corrected, Systems group filter pills, Explore search. Mobile bottom nav shipped: LEARN/BUILD/GROW bar with slide-up tray, SVG icons, pill highlights, 2-column grid, colored accent line, frosted glass. |
+| May 2026 sprint 3 | MCP vs API vs Function Calling module, A/B Testing for AI Systems module. PrepLab 244 → 259 (gap fill: Prompt Injection, Agent Memory, Long Context, Tokenizer clusters). 4 GT posts: A/B testing, graceful degradation, monitoring that predicts, N×M/MCP. Home.jsx Layer 3 badge. DE→AI Engineer learning path (10 steps). Scale: 56 Systems, 23 Explore, 259 PrepLab, 216 GT. |
 
 ---
 
-*Last updated: May 2026*
+*Last updated: May 2026 (sprint 3)*
