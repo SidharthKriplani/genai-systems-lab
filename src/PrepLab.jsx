@@ -1819,6 +1819,330 @@ const PREP_QUESTIONS = [
     keywords: ["buffering", "nginx", "proxy", "generation", "speculative", "context switch", "KV cache eviction", "network", "X-Accel-Buffering"],
     explanation: "Most common causes in order: (1) Proxy/CDN buffering — Nginx, Cloudflare, or API gateways buffer SSE by default. Fix: set X-Accel-Buffering: no header, configure proxy_buffering off. (2) Application-level buffering — middleware or response wrappers accumulating tokens before flushing. Fix: ensure flush() is called after each token. (3) KV cache pressure mid-generation — if the context exceeds cached KV state, the model recomputes; shows as a consistent pause at a predictable token position. Fix: monitor KV cache utilisation. (4) Generation stalls — model hitting a low-probability region, attempting multiple speculative decode paths. Less common but diagnosable by correlating pause timing with token log-probs.",
     readMore: { label: "Streaming & Serving →", tab: "systems" }
+  },
+
+  // ─── ATTENTION (additional) ──────────────────────────────────────────────────
+  {
+    id: "attn-5", topic: "attention", difficulty: "medium", type: "mcq",
+    question: "In scaled dot-product attention, why are scores divided by √d_k before the softmax?",
+    options: [
+      "To keep attention weights between 0 and 1 without softmax overflow",
+      "Because dot products grow in magnitude with d_k, pushing softmax into regions with near-zero gradients",
+      "To normalize for varying sequence lengths during training",
+      "To match the scale of the value vectors before weighted summation"
+    ],
+    correct: 1, keywords: [],
+    explanation: "For d_k-dimensional vectors with unit-variance components, the dot product Q·K has variance d_k. As d_k grows, extreme scores push softmax into saturation — gradients vanish and learning slows. Dividing by √d_k restores variance to ~1 and keeps softmax in a well-behaved gradient region. This is why the formula is Attention(Q,K,V) = softmax(QKᵀ/√d_k)V.",
+    readMore: { label: "Transformer Architecture →", tab: "concepts" }
+  },
+  {
+    id: "attn-6", topic: "attention", difficulty: "hard", type: "mcq",
+    question: "During autoregressive inference, the KV cache grows with each token generated. The main memory bottleneck this creates is:",
+    options: [
+      "The KV cache exceeds GPU L1 cache, causing frequent cache evictions",
+      "KV tensors for all past tokens must be loaded from HBM each decode step, making generation memory-bandwidth-bound",
+      "Storing KV cache requires recomputing all past token embeddings",
+      "Growing KV cache forces the model to use lower precision for recent tokens"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Each decode step must load K and V matrices for all previous tokens from HBM (GPU memory) — for a 70B model with 80 layers and long sequences, this is gigabytes of reads per token. Compute (the attention operation itself) is trivial by comparison. This is why generation throughput is memory-bandwidth-bound, not compute-bound, and why techniques like GQA, quantized KV caches, and PagedAttention all target KV cache size.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "attn-7", topic: "attention", difficulty: "medium", type: "mcq",
+    question: "Multi-Query Attention (MQA) trades quality for efficiency by:",
+    options: [
+      "Computing attention only over a random subset of tokens per head",
+      "Using a single shared K and V head across all query heads",
+      "Replacing the value projection with a simple averaging operation",
+      "Limiting each head to attend only within a fixed local window"
+    ],
+    correct: 1, keywords: [],
+    explanation: "MQA uses one K head and one V head shared across all Q heads (GQA is the middle ground — multiple KV heads, fewer than Q heads). This reduces KV cache size by the number of query heads (e.g., 32× for a 32-head model). The quality tradeoff is real but acceptable for many tasks — MQA is used in Falcon and early PaLM. GQA (Llama-3, Mistral) recovers most quality by using a small number of KV groups rather than just one.",
+    readMore: { label: "Flash Attention →", tab: "systems" }
+  },
+  {
+    id: "attn-8", topic: "attention", difficulty: "hard", type: "mcq",
+    question: "Cross-attention in encoder-decoder models differs from self-attention in that:",
+    options: [
+      "Cross-attention uses three separate weight matrices instead of two",
+      "Queries come from the decoder state while keys and values come from the encoder output",
+      "Cross-attention is computed only once per sequence, not per layer",
+      "Cross-attention applies a causal mask to prevent attending to future encoder tokens"
+    ],
+    correct: 1, keywords: [],
+    explanation: "In cross-attention, the decoder generates Q from its current hidden state but reads K and V from the encoder's final representations. This is what allows the decoder to 'condition on' the encoded input at every generation step. Self-attention has Q, K, V all from the same sequence. There's no causal masking in cross-attention since the encoder output is fully observed — the decoder can attend to any encoder position.",
+    readMore: { label: "Transformer Architecture →", tab: "concepts" }
+  },
+
+  // ─── TRANSFORMERS (additional) ───────────────────────────────────────────────
+  {
+    id: "txarch-5", topic: "transformers", difficulty: "medium", type: "mcq",
+    question: "Pre-norm (LayerNorm before sublayer) is preferred over post-norm in modern LLMs because:",
+    options: [
+      "Pre-norm requires fewer total LayerNorm operations per forward pass",
+      "Pre-norm produces more stable gradients at initialization, enabling training of very deep models without warmup tricks",
+      "Pre-norm eliminates the need for residual connections in the transformer block",
+      "Pre-norm allows higher learning rates by reducing the effective depth of the gradient path"
+    ],
+    correct: 1, keywords: [],
+    explanation: "In post-norm (original 'Attention Is All You Need' design), gradients flow through LayerNorm after the residual addition — at initialization, the residual branch dominates and gradients through the sublayer can vanish in deep models. Pre-norm (used in GPT-2, LLaMA, and virtually every modern LLM) normalizes inputs before the sublayer, keeping the residual stream magnitude stable and gradients well-behaved from step 1. This is why modern LLMs rarely need the careful learning rate warmup schedules that early transformer work required.",
+    readMore: { label: "Transformer Architecture →", tab: "concepts" }
+  },
+  {
+    id: "txarch-6", topic: "transformers", difficulty: "hard", type: "mcq",
+    question: "The feed-forward sublayer in a transformer block (FFN) serves a different function than attention because:",
+    options: [
+      "FFN applies the same transformation independently to each token with no cross-token interaction",
+      "FFN performs the cross-token mixing that attention cannot do efficiently",
+      "FFN compresses the residual stream back to d_model after attention expands it",
+      "FFN applies positional bias to ensure token order is respected after attention"
+    ],
+    correct: 0, keywords: [],
+    explanation: "Attention is the cross-token operation — it mixes information across the sequence. The FFN is a per-token operation applied identically and independently to each position. Mechanistically, the FFN acts as a key-value memory: the first projection retrieves patterns, the activation gates them, and the second projection writes the result back to the residual stream. For a d_model=4096 model with 4× FFN expansion, the FFN has 4× more parameters than attention and stores the majority of the model's factual knowledge.",
+    readMore: { label: "Transformer Architecture →", tab: "concepts" }
+  },
+  {
+    id: "txarch-7", topic: "transformers", difficulty: "medium", type: "mcq",
+    question: "A decoder-only model (GPT-style) differs architecturally from an encoder-decoder model (T5-style) in that:",
+    options: [
+      "Decoder-only models use bidirectional attention; encoder-decoder models use causal attention",
+      "Decoder-only models use causal self-attention throughout; encoder-decoder models use bidirectional encoding then causal decoding with cross-attention",
+      "Decoder-only models cannot perform translation or summarization tasks",
+      "Encoder-decoder models have more parameters at the same layer count due to cross-attention"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Encoder-decoder models encode the full input bidirectionally (each token can attend to all others), then decode autoregressively with causal self-attention plus cross-attention to the encoder output. Decoder-only models encode and decode in a single causal pass — they can still do translation and summarization (as demonstrated by GPT-4, Claude, etc.) but the input is processed left-to-right with the same causal mask as generation. The industry has largely converged on decoder-only because it unifies pretraining and instruction-following into a single architecture.",
+    readMore: { label: "Transformer Architecture →", tab: "concepts" }
+  },
+  {
+    id: "txarch-8", topic: "transformers", difficulty: "hard", type: "mcq",
+    question: "Residual connections in transformers primarily solve which training problem?",
+    options: [
+      "Overfitting by adding noise to intermediate representations",
+      "Vanishing gradients in deep networks by providing a direct gradient path to early layers",
+      "Attention head collapse where all heads learn the same pattern",
+      "Token representation drift across layers that degrades coherence"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Without residual connections, gradients must flow through every transformation in a deep stack — each layer multiplies the gradient by its Jacobian, and a product of many near-zero values vanishes. Residual connections (output = f(x) + x) add a direct highway: ∂Loss/∂x = ∂Loss/∂output × (∂f/∂x + 1). The +1 term ensures a non-vanishing gradient regardless of how small ∂f/∂x becomes. This is what makes 100+ layer transformers trainable. ResNets invented this; transformers adopted it from day one.",
+    readMore: { label: "Transformer Architecture →", tab: "concepts" }
+  },
+
+  // ─── CONTEXT (additional) ────────────────────────────────────────────────────
+  {
+    id: "ctx-5", topic: "context", difficulty: "hard", type: "mcq",
+    question: "The 'lost in the middle' phenomenon in long-context LLMs means:",
+    options: [
+      "LLMs fail to process contexts longer than their training sequence length",
+      "Retrieval accuracy degrades for information positioned in the middle of a long context, with best recall at the start and end",
+      "LLMs lose coherence in multi-turn conversations after a fixed number of exchanges",
+      "Attention entropy increases in middle layers, reducing representational quality"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Liu et al. (2023) showed LLMs systematically perform worse when the relevant document is placed in the middle of a long context versus the beginning or end — a U-shaped performance curve. The effect is significant: moving a document from position 1 to position 10 in a 20-document context can drop accuracy by 20%+. Implication for RAG: put the most relevant retrieved chunks at the beginning or end of the context, not buried in the middle.",
+    readMore: { label: "Context Engineering →", tab: "systems" }
+  },
+  {
+    id: "ctx-6", topic: "context", difficulty: "medium", type: "mcq",
+    question: "YaRN (Yet another RoPE extensioN) enables longer context than a model was trained on by:",
+    options: [
+      "Fine-tuning on longer documents sampled from the pretraining corpus",
+      "Scaling RoPE's rotation frequencies non-uniformly so high-frequency dimensions interpolate and low-frequency dimensions extrapolate",
+      "Adding absolute position embeddings on top of RoPE for positions beyond the training length",
+      "Quantizing KV cache for distant tokens to fit more positions in GPU memory"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Standard position interpolation (PI) uniformly scales all RoPE frequencies, which degrades high-frequency dimensions that encode fine-grained local patterns. YaRN applies NTK-aware scaling: high-frequency RoPE dimensions (which handle short-range dependencies) are interpolated conservatively, while low-frequency dimensions (long-range) are scaled more aggressively. Combined with a short fine-tuning run on longer sequences, YaRN achieves near-native performance at 4-16× the original context length. Used in Mistral and LLaMA extensions.",
+    readMore: { label: "Context Engineering →", tab: "systems" }
+  },
+  {
+    id: "ctx-7", topic: "context", difficulty: "medium", type: "mcq",
+    question: "In RAG, the distinction between 'context window' and 'effective context' matters because:",
+    options: [
+      "The context window is measured in tokens; effective context is measured in characters",
+      "LLMs can technically process all tokens in the window but reliably reason over a smaller subset — packing the window with marginally relevant chunks degrades quality",
+      "Effective context refers only to the user's query, excluding the system prompt",
+      "Context windows are fixed at training time; effective context grows with RLHF fine-tuning"
+    ],
+    correct: 1, keywords: [],
+    explanation: "A 128K context window doesn't mean a model reasons equally well over all 128K tokens. Empirically, retrieval accuracy and reasoning quality degrade with more context (especially low-signal context). The practical implication: don't retrieve top-20 chunks and hope the model figures it out. Retrieve top-5 with a reranker, compress aggressively, and keep the effective reasoning context tight. Filling the window is not a free upgrade.",
+    readMore: { label: "Context Engineering →", tab: "systems" }
+  },
+  {
+    id: "ctx-8", topic: "context", difficulty: "hard", type: "mcq",
+    question: "For a document Q&A system, placing the system prompt, retrieved chunks, and conversation history in which order typically produces the best results?",
+    options: [
+      "Conversation history → retrieved chunks → system prompt",
+      "System prompt → retrieved chunks → conversation history (most recent last)",
+      "Retrieved chunks → system prompt → conversation history",
+      "Conversation history → system prompt → retrieved chunks"
+    ],
+    correct: 1, keywords: [],
+    explanation: "System prompt first establishes the model's role and constraints before any content. Retrieved chunks come next — placing evidence before the question means the model has loaded the relevant context when it reaches the query. Conversation history last, with the most recent turn immediately before the model's response, leverages both primacy (system prompt is highly attended) and recency (recent history is well-recalled). This order minimises the lost-in-the-middle effect for the retrieved evidence and aligns with how attention patterns behave in practice.",
+    readMore: { label: "Context Engineering →", tab: "systems" }
+  },
+
+  // ─── SERVING (additional) ────────────────────────────────────────────────────
+  {
+    id: "serving-5", topic: "serving", difficulty: "medium", type: "mcq",
+    question: "In LLM serving, the prefill phase and the decode phase have fundamentally different bottlenecks because:",
+    options: [
+      "Prefill processes multiple tokens in parallel (compute-bound); decode generates one token at a time (memory-bandwidth-bound)",
+      "Prefill uses INT8 arithmetic; decode uses FP16 to maintain quality",
+      "Prefill runs on the CPU; decode runs on the GPU to balance resource usage",
+      "Prefill is bottlenecked by tokenization speed; decode is bottlenecked by sampling overhead"
+    ],
+    correct: 0, keywords: [],
+    explanation: "During prefill, all prompt tokens are processed in one forward pass — this is highly parallel and GPU-compute-bound. During decode, one token is generated per step by loading the full model's weights from HBM to compute a single output — this is sequential and memory-bandwidth-bound. These different bottlenecks explain why Flash Attention improves TTFT (prefill) while speculative decoding improves throughput (decode), and why large prompt + short output workloads need different serving configs than short prompt + long output.",
+    readMore: { label: "Serving Infrastructure →", tab: "systems" }
+  },
+  {
+    id: "serving-6", topic: "serving", difficulty: "hard", type: "mcq",
+    question: "Tensor parallelism in multi-GPU LLM serving splits the model by:",
+    options: [
+      "Assigning different layers to different GPUs (pipeline parallelism)",
+      "Splitting weight matrices across GPUs so each GPU handles a slice of every layer simultaneously",
+      "Routing different requests to different GPU replicas with no weight sharing",
+      "Replicating the full model on every GPU and averaging gradients after each step"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Tensor parallelism (Megatron-style) splits each attention head group and FFN across GPUs — for 8-way tensor parallel, each GPU holds 1/8 of every weight matrix and processes 1/8 of the attention heads. An all-reduce synchronizes after each layer. This keeps all GPUs active on every token but requires high-bandwidth GPU interconnects (NVLink). Pipeline parallelism (different layers on different GPUs) is orthogonal and used at larger scale. Data parallelism (separate replicas) improves throughput but not single-request latency.",
+    readMore: { label: "Serving Infrastructure →", tab: "systems" }
+  },
+  {
+    id: "serving-7", topic: "serving", difficulty: "medium", type: "mcq",
+    question: "When should you prefer optimising for throughput over latency in LLM serving?",
+    options: [
+      "Always — throughput is the primary business metric for all LLM deployments",
+      "For async batch workloads (document processing, offline eval, embeddings) where user wait time is irrelevant",
+      "For interactive chat products where users tolerate up to 30 seconds for high-quality responses",
+      "When the model is quantized to INT4 — latency optimisation no longer applies"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Throughput (tokens/second across all requests) and latency (time per request) are in tension — maximising throughput means larger batches and more queuing, which increases per-request latency. For real-time chat, you optimise for P95 TTFT and TBT. For async workloads (nightly document processing, embedding generation, offline evals), you maximise GPU utilisation via large batch sizes. Many teams run two serving tiers: a low-latency interactive cluster and a high-throughput batch cluster with the same model.",
+    readMore: { label: "Serving Infrastructure →", tab: "systems" }
+  },
+  {
+    id: "serving-8", topic: "serving", difficulty: "hard", type: "mcq",
+    question: "KV cache eviction policies matter when GPU memory is full because:",
+    options: [
+      "Evicting the wrong KV cache entries forces a full model reload from disk",
+      "Evicted requests must recompute their KV cache from scratch (recompute cost) or be dropped entirely",
+      "KV cache eviction triggers a CUDA out-of-memory error that crashes the serving process",
+      "Eviction always causes the associated request to be served with lower quality output"
+    ],
+    correct: 1, keywords: [],
+    explanation: "When GPU memory is exhausted, the serving system must either evict (free) KV cache for some in-flight requests or reject new ones. An evicted request's KV cache is lost — the system must either recompute it (latency hit equal to the full prefill time) or terminate the request with an error. vLLM uses a priority-based eviction policy (longest-waiting requests, shortest remaining sequences first). This is why KV cache memory management is a first-class concern in production LLM serving, not an afterthought.",
+    readMore: { label: "Serving Infrastructure →", tab: "systems" }
+  },
+
+  // ─── CACHING (additional) ────────────────────────────────────────────────────
+  {
+    id: "cache-5", topic: "caching", difficulty: "medium", type: "mcq",
+    question: "Semantic caching differs from prompt caching (KV cache reuse) in that:",
+    options: [
+      "Semantic caching stores model weights; prompt caching stores activations",
+      "Semantic caching stores complete LLM responses keyed by query embedding similarity, bypassing inference entirely on cache hits",
+      "Semantic caching operates at the token level; prompt caching operates at the request level",
+      "Semantic caching is implemented inside the model; prompt caching is implemented in the serving layer"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Prompt caching (KV cache reuse) speeds up inference for shared prefixes — the model still runs, just skips part of the computation. Semantic caching stores the complete LLM response and returns it on semantically similar future queries without running the model at all — 0 inference cost, near-0 latency. The tradeoff: cache hit requires a query to be semantically similar to a previous one (good for FAQ-style workloads, bad for creative or highly varied queries). Tools like GPTCache implement this with embedding similarity search.",
+    readMore: { label: "Prompt Caching →", tab: "systems" }
+  },
+  {
+    id: "cache-6", topic: "caching", difficulty: "hard", type: "mcq",
+    question: "To maximise prompt cache hit rate, you should structure your prompts so that:",
+    options: [
+      "Dynamic content (user query, date) comes before static content (system prompt, examples)",
+      "Static content (system prompt, tools, few-shot examples) comes first, with dynamic content appended at the end",
+      "The cache_control flag is applied to the entire prompt including the user query",
+      "System prompt length is kept below 512 tokens to minimise cache write cost"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Caches are prefix-keyed: a cache hit requires the prefix to match exactly. Static content (system prompt, tool definitions, few-shot examples) that never changes should always come first — this prefix is always cacheable. The user's unique query is appended last, after the cached prefix. If you put dynamic content first, the prefix is always unique and the cache never hits. Also: keep static content identical across requests down to whitespace — even a single character difference is a cache miss.",
+    readMore: { label: "Prompt Caching →", tab: "systems" }
+  },
+  {
+    id: "cache-7", topic: "caching", difficulty: "medium", type: "mcq",
+    question: "Output caching (caching complete LLM responses by exact input hash) is most appropriate when:",
+    options: [
+      "You need fresh responses for each user even on identical questions",
+      "Inputs are highly repetitive and deterministic responses are acceptable (FAQ, classification, templated generation)",
+      "You want to reduce TTFT for interactive chat without affecting response quality",
+      "Your model uses temperature > 0 and you want to preserve output diversity"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Output caching returns a stored response for an identical input — zero inference cost and zero latency. It's appropriate for: FAQ-style chatbots where the same questions recur, classification tasks with fixed schemas, batch processing where reruns should be idempotent. It's inappropriate when freshness matters (current events, personalised responses) or when stochastic diversity is valuable. Temperature doesn't matter — you're bypassing the model entirely, so the cached response is deterministic by definition.",
+    readMore: { label: "Prompt Caching →", tab: "systems" }
+  },
+  {
+    id: "cache-8", topic: "caching", difficulty: "hard", type: "mcq",
+    question: "Anthropic's ephemeral cache has a 5-minute TTL. The correct implication for production system design is:",
+    options: [
+      "Re-send cached content in every request to reset the TTL and maintain the cache",
+      "Design request flows so the same cached prefix is used frequently within 5-minute windows, or accept re-write costs on cold cache",
+      "Cache TTL doesn't matter — cache hits are guaranteed within a single API session",
+      "Extend TTL by splitting long system prompts across multiple cache_control markers"
+    ],
+    correct: 1, keywords: [],
+    explanation: "If the cache expires between requests, the next request pays the 1.25× cache write premium again. For high-volume applications (hundreds of requests per minute), the cache stays warm automatically. For low-volume applications (a few requests per hour), the cache expires constantly and caching may cost more than it saves — calculate break-even carefully. The correct design: architect your system prompt and tool definitions as a stable long prefix, keep request volume high enough to amortise write costs, and monitor cache hit rate in your observability stack.",
+    readMore: { label: "Prompt Caching →", tab: "systems" }
+  },
+
+  // ─── STREAMING (additional) ──────────────────────────────────────────────────
+  {
+    id: "stream-5", topic: "streaming", difficulty: "medium", type: "mcq",
+    question: "Backpressure in LLM streaming occurs when:",
+    options: [
+      "The model generates tokens faster than the client can consume them, causing server-side buffering",
+      "The client sends requests faster than the server can begin processing them",
+      "The KV cache fills up, forcing the server to pause generation mid-stream",
+      "Network congestion causes tokens to arrive at the client out of order"
+    ],
+    correct: 0, keywords: [],
+    explanation: "Modern LLMs can generate tokens at 50-200 tokens/second. If the client (browser, mobile app, slow consumer) can't process tokens at that rate, the server must buffer them or drop the connection. Proper streaming implementations use flow control: the server checks whether the client's write buffer has space before sending the next token. In practice, most web clients can render tokens fast enough, but this matters for embedded devices, slow connections, or server-to-server streaming where the downstream consumer is itself doing heavy work.",
+    readMore: { label: "Streaming Patterns →", tab: "systems" }
+  },
+  {
+    id: "stream-6", topic: "streaming", difficulty: "hard", type: "mcq",
+    question: "When a user cancels a streaming response mid-generation, the correct server-side behaviour is:",
+    options: [
+      "Complete generation and discard the remaining output to avoid wasted computation on the next request",
+      "Immediately stop generation, release the KV cache slot, and return the GPU capacity to the serving pool",
+      "Pause generation and cache the partial KV state in case the user resumes",
+      "Continue generation server-side and cache the full response for the next identical request"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Every token being generated occupies a KV cache slot and GPU compute. When the user cancels (closes the connection, navigates away), the serving system should detect the broken connection, abort the generation worker, and immediately free the KV cache. Continuing generation wastes GPU capacity that could serve other requests. Most production serving frameworks (vLLM, TGI) handle this via connection lifecycle hooks. Not implementing cancellation is a common source of GPU under-utilisation in production.",
+    readMore: { label: "Streaming Patterns →", tab: "systems" }
+  },
+  {
+    id: "stream-7", topic: "streaming", difficulty: "hard", type: "mcq",
+    question: "Streaming LLM responses that include tool calls (function calling) requires special handling because:",
+    options: [
+      "Tool call JSON must arrive completely before the function can be invoked, requiring the client to buffer the tool call portion",
+      "SSE cannot transmit tool call schemas alongside token deltas",
+      "Streaming pauses automatically when the model decides to call a tool",
+      "Tool calls require a separate WebSocket connection to handle the bidirectional tool result flow"
+    ],
+    correct: 0, keywords: [],
+    explanation: "Tool call arguments arrive as streamed JSON fragments — partial strings like name='get_weather', arguments='...city...London...' arrive token by token and cannot be parsed until the block is complete. You cannot invoke the function until the complete JSON is received and parseable. The client must detect that the current stream chunk is part of a tool call delta, buffer it, and only invoke the function when the tool_calls block is complete. OpenAI and Anthropic stream tool use deltas differently — tool use in Anthropic's streaming API uses input_json_delta events that must be concatenated before parsing.",
+    readMore: { label: "Streaming Patterns →", tab: "systems" }
+  },
+  {
+    id: "stream-8", topic: "streaming", difficulty: "medium", type: "mcq",
+    question: "The most meaningful metric for measuring the quality of a streaming LLM experience from a user perspective is:",
+    options: [
+      "Total tokens per second (aggregate throughput across all users)",
+      "P95 Time to First Token (TTFT) — how quickly the stream starts for 95% of requests",
+      "Mean token inter-arrival time (average gap between consecutive tokens)",
+      "End-to-end response latency (total time from request to last token)"
+    ],
+    correct: 1, keywords: [],
+    explanation: "Users experience streaming as 'when does it start?' and 'does it feel smooth?'. P95 TTFT is the primary metric because users perceive a blank screen as the most frustrating wait — they'll tolerate a slower stream once it starts. P95 (not mean) because outliers matter for perceived reliability. Mean token inter-arrival time matters for smoothness but only after TTFT. Total throughput is a capacity metric, not a user experience metric. End-to-end latency matters for non-streaming use cases.",
+    readMore: { label: "Streaming Patterns →", tab: "systems" }
   }
 ];
 
