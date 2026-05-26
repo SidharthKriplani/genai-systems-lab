@@ -2,149 +2,1423 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>GenAI Systems Lab — Ground Truth</title>
-    <link>https://genai-systems-lab.vercel.app</link>
+    <link>https://genai-systems-lab-ivory.vercel.app</link>
     <description>Deep technical posts on production AI systems: RAG, agents, LLMOps, fine-tuning, and more.</description>
-    <atom:link href="https://genai-systems-lab.vercel.app/rss.xml" rel="self" type="application/rss+xml" />
-    <lastBuildDate>Wed, 20 May 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://genai-systems-lab-ivory.vercel.app/rss.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 26 May 2026 00:00:00 +0000</lastBuildDate>
+    <item>
+      <title>What Is a Transformer? Self-Attention Explained Without the Math</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/what-is-a-transformer</link>
+      <description>Why every LLM is built on the same core idea — and what attention actually computes, step by step.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/what-is-a-transformer</guid>
+    </item>
+    <item>
+      <title>Self-Attention: From Dot Products to What the Model Focuses On</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/self-attention-deep-dive</link>
+      <description>Query, Key, Value matrices explained. Why multi-head attention sees different things at once, and what that means for long-range dependencies.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/self-attention-deep-dive</guid>
+    </item>
+    <item>
+      <title>Tokenization: Why </title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tokenization-deep-dive</link>
+      <description>BPE, WordPiece, SentencePiece — what tokenizers do, why it matters for prompting, and how token counts drive your inference bill.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tokenization-deep-dive</guid>
+    </item>
+    <item>
+      <title>Embeddings Explained: How Text Becomes Geometry</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/embeddings-explained</link>
+      <description>What embedding vectors represent, why semantic similarity works, and how this underpins every RAG system and search product.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/embeddings-explained</guid>
+    </item>
+    <item>
+      <title>Temperature, Top-P, Top-K: How LLMs Actually Choose the Next Word</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/decoding-sampling</link>
+      <description>Greedy, beam search, nucleus sampling — what each one does, when randomness helps, and why temperature 0 isn</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/decoding-sampling</guid>
+    </item>
+    <item>
+      <title>The Context Window: What Goes In, What Gets Dropped, and Why It Matters</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-window-guide</link>
+      <description>How LLMs process long inputs, what context overflow looks like in production, and strategies to stay within the window without losing what matters.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-window-guide</guid>
+    </item>
+    <item>
+      <title>Prompt Engineering &amp; Token Economics</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompting-token-economics</link>
+      <description>How prompt structure affects quality, why few-shot beats zero-shot in most cases, and how to calculate real inference cost before you ship.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompting-token-economics</guid>
+    </item>
+    <item>
+      <title>How RAG Actually Works — And Why It</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-rag-works</link>
+      <description>The full retrieval-augmented generation pipeline: chunking → embedding → retrieval → reranking → generation. Where each step silently fails.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-rag-works</guid>
+    </item>
+    <item>
+      <title>Chunking Strategies for RAG: Fixed, Semantic, and Hierarchical</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/chunking-strategies</link>
+      <description>Why chunk size is one of the most impactful RAG config decisions. Fixed-size vs. sentence vs. semantic chunking, with real retrieval quality differences.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/chunking-strategies</guid>
+    </item>
+    <item>
+      <title>RAG Architectures: Naive, Advanced, Modular, and Agentic</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-architectures</link>
+      <description>How RAG has evolved from a simple retrieve-and-read loop to routing, query rewriting, self-RAG, corrective RAG, and full agentic retrieval.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-architectures</guid>
+    </item>
+    <item>
+      <title>Reranking: Why Top-K Retrieval Isn</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reranking-explained</link>
+      <description>How cross-encoders and rerankers improve precision after initial retrieval, when the latency cost is worth it, and how to evaluate reranker quality.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reranking-explained</guid>
+    </item>
+    <item>
+      <title>Vector Databases Compared: Pinecone, Weaviate, Qdrant, pgvector</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/vector-databases-compared</link>
+      <description>Latency, scale, metadata filtering, cost, and managed vs. self-hosted tradeoffs. A decision framework for choosing your vector store.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/vector-databases-compared</guid>
+    </item>
+    <item>
+      <title>Missing Context: When RAG Retrieves the Right Chunk but Answers the Wrong Question</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/missing-context-failure</link>
+      <description>Why high similarity score doesn</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/missing-context-failure</guid>
+    </item>
+    <item>
+      <title>Ambiguous Queries: Why RAG Struggles When the Question Has Two Meanings</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ambiguous-query-failure</link>
+      <description>Multi-intent queries, under-specified questions, and how your retriever picks the wrong meaning — and confidently answers it.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ambiguous-query-failure</guid>
+    </item>
+    <item>
+      <title>Hybrid Search: Combining BM25 and Vector Retrieval</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/hybrid-search</link>
+      <description>Why pure semantic search misses exact matches, and pure keyword search misses meaning. How hybrid search with RRF fusion beats both.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/hybrid-search</guid>
+    </item>
+    <item>
+      <title>The ReAct Pattern: How LLM Agents Reason and Act</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/react-pattern</link>
+      <description>Thought → Action → Observation loops explained. How ReAct enables tool use, where it breaks, and how to trace what your agent actually did.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/react-pattern</guid>
+    </item>
+    <item>
+      <title>Tool Use Design for AI Agents: Contracts, Consequences, and MCP</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tool-use-design</link>
+      <description>How to design tools an agent won</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tool-use-design</guid>
+    </item>
+    <item>
+      <title>6 Types of Memory in AI Agents (And When to Use Each)</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-memory-types</link>
+      <description>In-context, episodic, semantic, procedural, working, and external memory — what each stores, how it</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-memory-types</guid>
+    </item>
+    <item>
+      <title>Multi-Agent Orchestration: Supervisor, Pipeline, and Mesh Patterns</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multi-agent-orchestration</link>
+      <description>How to break a complex task across multiple agents. Supervisor vs. pipeline vs. mesh patterns, inter-agent communication, and failure budgets.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multi-agent-orchestration</guid>
+    </item>
+    <item>
+      <title>Planning Patterns for AI Agents: ToT, GoT, and LATS</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/planning-patterns</link>
+      <description>How agents plan ahead: Tree of Thought, Graph of Thought, LATS, and reflection loops. When complex planning beats straight ReAct.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/planning-patterns</guid>
+    </item>
+    <item>
+      <title>Tracing Agent Loops: How to Debug Step-by-Step Execution</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tracing-agent-loops</link>
+      <description>What a step trace reveals, how to spot loops, wrong tool calls, and hallucinated observations — and how to use the Agent Loop Simulator to reproduce failures.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tracing-agent-loops</guid>
+    </item>
+    <item>
+      <title>How AI Agents Fail in Production: A Full Taxonomy</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-failure-modes</link>
+      <description>Tool misuse, infinite loops, hallucinated tool calls, context bleed, approval fatigue, compounding reliability failures — with worked examples from the lab.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-failure-modes</guid>
+    </item>
+    <item>
+      <title>How to Evaluate LLM Systems: RAGAS, G-Eval, and Custom Grading</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-evaluation-guide</link>
+      <description>What groundedness, faithfulness, and citation accuracy actually measure — and how to build an eval pipeline that catches real failures before users do.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-evaluation-guide</guid>
+    </item>
+    <item>
+      <title>Hallucination Detection: Why It</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/hallucination-detection</link>
+      <description>Factual vs. faithfulness vs. citation hallucinations. NLI-based detection, self-consistency, and retrieval grounding — tested against real examples.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/hallucination-detection</guid>
+    </item>
+    <item>
+      <title>Building an Eval Pipeline That Actually Catches Production Failures</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/eval-pipeline-design</link>
+      <description>Why unit tests aren</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/eval-pipeline-design</guid>
+    </item>
+    <item>
+      <title>A/B Testing LLM Systems: Statistical Significance and Evaluation Metrics</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ab-testing-llms</link>
+      <description>How to run controlled experiments on LLM outputs, which metrics to use (win-rate, NDCG, preference), and how to avoid common A/B traps.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ab-testing-llms</guid>
+    </item>
+    <item>
+      <title>LLMOps: What Production AI Actually Needs That Tutorials Skip</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llmops-production-checklist</link>
+      <description>Observability, prompt versioning, latency budgets, cost tracking, model routers, A/B testing, and rollback strategies. The full production checklist.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llmops-production-checklist</guid>
+    </item>
+    <item>
+      <title>Fine-Tuning vs. RAG vs. Prompt Engineering: When to Use What</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-vs-rag</link>
+      <description>The decision framework every AI engineer needs. Cost, latency, data requirements, update frequency, and failure modes for each approach.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-vs-rag</guid>
+    </item>
+    <item>
+      <title>Model Routing: How to Send the Right Query to the Right Model</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-routing</link>
+      <description>Complexity-based routing, cost-based routing, and capability routing. How model routers cut inference cost by 40-70% without hurting quality.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-routing</guid>
+    </item>
+    <item>
+      <title>LLM Inference Optimisation: Batching, Quantisation, and Speculative Decoding</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/inference-optimisation</link>
+      <description>How to reduce latency and cost at inference time without retraining. INT8/INT4 quantisation, continuous batching, speculative decoding explained.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/inference-optimisation</guid>
+    </item>
+    <item>
+      <title>Prompt Caching and Token Cost Optimisation at Scale</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-caching</link>
+      <description>How prompt caching works, when it pays off, and how to reduce inference cost by 60-80% on repetitive system prompt workloads.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-caching</guid>
+    </item>
+    <item>
+      <title>LLM Observability: What to Log, Trace, and Alert On</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-observability</link>
+      <description>Prompt/response logging, latency tracing, cost tracking, quality signals, and alert thresholds. What a production-grade LLM monitoring stack looks like.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-observability</guid>
+    </item>
+    <item>
+      <title>ML CI/CD: Testing, Versioning, and Deploying LLM Pipelines</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ml-cicd</link>
+      <description>How to adapt software CI/CD for ML: prompt versioning, eval regression gates, canary deploys, and rollback for model updates.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ml-cicd</guid>
+    </item>
+    <item>
+      <title>Context Compaction: Managing Long Conversations Without Losing the Thread</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-compaction</link>
+      <description>Why conversation history grows until it breaks. Sliding window, summarisation-based, and hierarchical compaction strategies for production agents.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-compaction</guid>
+    </item>
+    <item>
+      <title>Cost vs. Latency Tradeoffs in LLM Systems: How to Budget Both</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cost-latency-tradeoffs</link>
+      <description>TTFT, tokens-per-second, and end-to-end latency explained. How to set SLAs, model latency against user tolerance, and build a cost/latency budget.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cost-latency-tradeoffs</guid>
+    </item>
+    <item>
+      <title>Shadow Mode Testing: How to Compare Models Before You Switch</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/shadow-ab-testing</link>
+      <description>Run a new model in shadow mode alongside your live model, compare outputs without user exposure, and make data-driven upgrade decisions.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/shadow-ab-testing</guid>
+    </item>
+    <item>
+      <title>Model Strategy: When to Use GPT-4, Claude, Gemini, or an Open Model</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-strategy</link>
+      <description>The model selection decision — capability, cost, latency, data privacy, and fine-tunability. How to build a model strategy that holds up as models evolve.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-strategy</guid>
+    </item>
+    <item>
+      <title>Guardrails for LLMs: Input/Output Filtering in Production</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/guardrails-for-llms</link>
+      <description>How guardrail pipelines work — input classifiers, output validators, topic filters, PII redaction, and toxicity detection. What fails at scale.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/guardrails-for-llms</guid>
+    </item>
+    <item>
+      <title>Prompt Injection in Production: Attacks, Defenses, and What Doesn</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-injection-production</link>
+      <description>Direct and indirect injection, jailbreaks, data exfiltration via prompt, and why input sanitisation alone isn</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-injection-production</guid>
+    </item>
+    <item>
+      <title>Red Teaming LLMs: A Structured Methodology</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/red-teaming-llms</link>
+      <description>How to systematically find failure modes before attackers do. Adversarial prompting, boundary testing, multi-turn attacks, and red team documentation.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/red-teaming-llms</guid>
+    </item>
+    <item>
+      <title>Bias in LLM Outputs: Sources, Types, and What You Can Detect</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/bias-in-llms</link>
+      <description>Training data bias, demographic representation, positional bias in RAG, and confirmation bias in reasoning. How to surface and measure these in your system.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/bias-in-llms</guid>
+    </item>
+    <item>
+      <title>Privacy and Compliance for LLM Systems</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/privacy-compliance-llms</link>
+      <description>PII in prompts, data residency, model training on user data, GDPR/CCPA implications, and how to build a compliance architecture for production LLMs.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/privacy-compliance-llms</guid>
+    </item>
+    <item>
+      <title>A Framework for AI System Design Interviews (Staff+ Level)</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-system-design-framework</link>
+      <description>6-axis characterisation, architecture shape selection, reliability budgets, and how to structure a 45-minute system design answer.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-system-design-framework</guid>
+    </item>
+    <item>
+      <title>Designing a Production RAG System: Full Architecture Walkthrough</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-system-design</link>
+      <description>Document ingestion pipeline, retrieval layer, reranker, answer policy, eval loop, and monitoring — all the decisions you need to make before you ship.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-system-design</guid>
+    </item>
+    <item>
+      <title>Designing an Agent System for Production: State, Tools, and Failure Handling</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-system-design</link>
+      <description>How to design an agent that doesn</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-system-design</guid>
+    </item>
+    <item>
+      <title>Building AI at India Scale: Latency, Language, and Cost Constraints</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/india-scale-ai</link>
+      <description>What changes when you build for 500ms mobile latency, 22 official languages, and $0.001/query cost targets. Architecture decisions for India-scale AI.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/india-scale-ai</guid>
+    </item>
+    <item>
+      <title>Structured Outputs from LLMs: JSON Mode, Function Calling, and Tool Use</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/structured-outputs</link>
+      <description>How to make LLMs output reliable, parseable data. JSON mode, OpenAI function calling, Pydantic validation, and when structured outputs break.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/structured-outputs</guid>
+    </item>
+    <item>
+      <title>Case Study: How Stale Documents Made a Compliance Chatbot Confidently Wrong</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/stale-document-failure</link>
+      <description>Two policy versions in the corpus, top_k=1, no freshness filter. The chatbot answered with 3-year-old data. How to reproduce and fix this exact failure.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/stale-document-failure</guid>
+    </item>
+    <item>
+      <title>Multi-Hop Reasoning Failures: When Your RAG System Can</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multihop-reasoning-failure</link>
+      <description>Why single-step retrieval fails on questions that require chaining two or three facts. How multi-hop and three-hop failures look, and how to architect around them.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multihop-reasoning-failure</guid>
+    </item>
+    <item>
+      <title>Context Overflow: What Happens When Your RAG Pipeline Runs Out of Space</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-overflow-failure</link>
+      <description>How context overflow silently truncates the most relevant content, why it</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-overflow-failure</guid>
+    </item>
+    <item>
+      <title>The Incident Room: How to Respond to LLM Production Failures</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/incident-room</link>
+      <description>A playbook for LLM incidents — how to triage, isolate, mitigate, and do a post-mortem. What</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/incident-room</guid>
+    </item>
+    <item>
+      <title>When Your LLM Is Too Slow: Diagnosing and Fixing Latency Regressions</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/latency-planner</link>
+      <description>How to identify whether latency is in TTFT, TPS, retrieval, or network. A step-by-step latency triage guide with the Latency Planner tool.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/latency-planner</guid>
+    </item>
+    <item>
+      <title>Context Bleed: When One User</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-bleed-failure</link>
+      <description>The subtle session isolation failure that affects multi-tenant LLM apps. How system prompt fragments, conversation history, and cached context leak across users — and what it costs you.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-bleed-failure</guid>
+    </item>
+    <item>
+      <title>Tool Loop: When Your Agent Can</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tool-loop-failure</link>
+      <description>The runaway agent failure that burns tokens, triggers rate limits, and produces no output. How tool loops form, how to detect them in traces, and the circuit-breaker patterns that stop them.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tool-loop-failure</guid>
+    </item>
+    <item>
+      <title>Silent Hallucinations: The Confident Wrong Answer That Nobody Catches</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/silent-hallucination</link>
+      <description>Why the most dangerous LLM failure isn</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/silent-hallucination</guid>
+    </item>
+    <item>
+      <title>Cost Explosion: How a Single Prompt Change Multiplied Our API Bill by 40×</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cost-explosion-incident</link>
+      <description>A production post-mortem: how an innocent prompt refactor removed a compression step, what the token math looked like in real time, and the guardrails that should have caught it.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cost-explosion-incident</guid>
+    </item>
+    <item>
+      <title>Retrieval Poisoning: How Bad Documents Corrupt Your Entire RAG Pipeline</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/retrieval-poisoning</link>
+      <description>What happens when stale, contradictory, or adversarially crafted documents enter your vector store. How contamination propagates, why it</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/retrieval-poisoning</guid>
+    </item>
+    <item>
+      <title>Eval Gaming: When Your Model Passes Tests but Fails Users</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/eval-gaming</link>
+      <description>The silent regression that looks like progress. How LLMs learn to game specific benchmarks and human preference labels, why your held-out test set stops being held-out, and what floor-preserving evals look like.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/eval-gaming</guid>
+    </item>
+    <item>
+      <title>Prompt Injection Bypasses: When Your Safety Instructions Don</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-injection-bypass</link>
+      <description>The injection patterns that defeat system prompts in production — indirect injection via retrieved documents, role-play escapes, encoding tricks. What defence-in-depth looks like for real apps.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-injection-bypass</guid>
+    </item>
+    <item>
+      <title>Cold Start Latency: Why Your Serverless LLM Endpoint Is Spiking</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cold-start-latency</link>
+      <description>Container cold starts, model loading, connection pool exhaustion — the latency cliff that hits low-traffic LLM endpoints. Diagnosis, warm-up strategies, and when to give up on serverless.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cold-start-latency</guid>
+    </item>
+    <item>
+      <title>Schema Drift: When Your Structured Output Parser Silently Breaks</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/schema-drift-failure</link>
+      <description>How adding one optional field to a function-call schema breaks 12% of responses in ways your monitoring misses. The versioning discipline, canary rollout, and output validation layer that prevent it.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/schema-drift-failure</guid>
+    </item>
+    <item>
+      <title>Cascade Failure: When an LLM Mistake Breaks the Entire Downstream Pipeline</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cascade-failure</link>
+      <description>How a single hallucinated field value propagates through a multi-step agent pipeline, what the blast radius looks like in production, and the isolation checkpoints that contain it.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cascade-failure</guid>
+    </item>
+    <item>
+      <title>Confidence Calibration: Why </title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/confidence-calibration</link>
+      <description>Why LLM verbalized confidence (</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/confidence-calibration</guid>
+    </item>
+    <item>
+      <title>Reranker Inversion: When Your Reranker Makes Retrieval Worse</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reranker-inversion</link>
+      <description>The counterintuitive failure where adding a reranker reduces end-to-end RAG quality. Why cross-encoder rerankers underperform on domain-specific queries, and how to measure before you deploy.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reranker-inversion</guid>
+    </item>
+    <item>
+      <title>Writing PRDs for AI Features: A Framework for Product Managers</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prd-for-ai</link>
+      <description>What makes AI PRDs different — uncertainty ranges, fallback behaviour, eval criteria, human-in-the-loop decisions, and what </description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prd-for-ai</guid>
+    </item>
+    <item>
+      <title>AI-or-Not? A Decision Framework for Product Managers</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-or-not</link>
+      <description>When AI is the right solution and when it</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-or-not</guid>
+    </item>
+    <item>
+      <title>AI Roadmap Prioritisation: How to Decide What to Build Next</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-roadmap-prioritisation</link>
+      <description>Impact/feasibility for AI — why standard prioritisation frameworks break. How to score AI initiatives accounting for data readiness, model risk, and iteration speed.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-roadmap-prioritisation</guid>
+    </item>
+    <item>
+      <title>Explaining AI to Non-Technical Stakeholders: Frameworks That Work</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/explaining-ai-to-stakeholders</link>
+      <description>How to explain RAG, agents, hallucination risk, and eval gaps to execs, legal, and ops teams — without losing them or dumbing it down.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/explaining-ai-to-stakeholders</guid>
+    </item>
+    <item>
+      <title>The AI Launch Checklist: What to Verify Before Going Live</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-launch-checklist</link>
+      <description>Eval gate, fallback behaviour, latency SLA, cost guardrails, safety review, legal sign-off, monitoring setup — the full pre-launch checklist for AI features.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-launch-checklist</guid>
+    </item>
+    <item>
+      <title>How to Read a Model Card: What PMs and Engineers Actually Need to Know</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-card-reader</link>
+      <description>What model cards tell you about training data, benchmarks, limitations, and bias — and how to use them to make informed model selection decisions.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-card-reader</guid>
+    </item>
+    <item>
+      <title>LLM Interview Question Patterns: What Senior Engineers Actually Ask</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-interview-question-patterns</link>
+      <description>The 10 question categories, common traps, and how to structure 4-layer answers. From </description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-interview-question-patterns</guid>
+    </item>
+    <item>
+      <title>25 RAG Interview Questions With Model Answers</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-interview-questions</link>
+      <description>Covering retrieval, chunking, reranking, evaluation, failure modes, and system design — with strong answers and the traps interviewers use to filter candidates.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-interview-questions</guid>
+    </item>
+    <item>
+      <title>How to Ace an AI Case Interview: Structure, Signals, and What Kills Candidates</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-case-interview</link>
+      <description>How top companies structure AI case interviews, what signals they</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-case-interview</guid>
+    </item>
+    <item>
+      <title>The AI Vocabulary Cheat Sheet: 80 Terms You Need to Know Cold</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-vocabulary</link>
+      <description>From attention to zero-shot — the 80 terms that come up in AI interviews, product reviews, and engineering discussions. Definitions plus context for each.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-vocabulary</guid>
+    </item>
+    <item>
+      <title>How to Crush AI Take-Home Challenges: What Evaluators Actually Look For</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/take-home-challenges</link>
+      <description>What separates strong from weak take-homes — problem framing, eval design, failure analysis, and documentation. A checklist before you submit.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/take-home-challenges</guid>
+    </item>
+    <item>
+      <title>AI Benchmarks Explained: What MMLU, HumanEval, HELM, and LMSYS Actually Measure</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-benchmarks-explained</link>
+      <description>What each benchmark tests, its known weaknesses, and how to use benchmark results to make real hiring and model selection decisions without being misled.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-benchmarks-explained</guid>
+    </item>
+    <item>
+      <title>Context Tetris: Why What You Put in the Prompt Matters as Much as the Model</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-tetris</link>
+      <description>How to think about context window real estate — system prompt, examples, retrieved chunks, history, and query. Optimising the slot machine that is your prompt.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-tetris</guid>
+    </item>
+    <item>
+      <title>How Claude Works: Constitutional AI, 200K Context, and What Makes It Different</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-claude-works</link>
+      <description>Anthropic</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-claude-works</guid>
+    </item>
+    <item>
+      <title>How ChatGPT Works: GPT-4o, RLHF, and the o1 Reasoning Models</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-chatgpt-works</link>
+      <description>From the base GPT model to RLHF fine-tuning to GPT-4o</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-chatgpt-works</guid>
+    </item>
+    <item>
+      <title>How Gemini Works: 1M Context, Native Multimodality, and Google</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-gemini-works</link>
+      <description>Gemini</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-gemini-works</guid>
+    </item>
+    <item>
+      <title>Llama 3 and the Open-Source Model Ecosystem: What You Can Build</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llama-open-models</link>
+      <description>Meta</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llama-open-models</guid>
+    </item>
+    <item>
+      <title>Mistral, Cohere, and the Frontier Beyond OpenAI/Anthropic</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mistral-cohere-frontier</link>
+      <description>Mistral</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mistral-cohere-frontier</guid>
+    </item>
+    <item>
+      <title>Reading Model Benchmarks Without Being Misled</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-benchmarks-deep-dive</link>
+      <description>MMLU, HumanEval, LMSYS Chatbot Arena, HELM, SWE-bench — what each measures, its known flaws, and how to pick a model based on your actual use case, not marketing.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-benchmarks-deep-dive</guid>
+    </item>
+    <item>
+      <title>How Top Tech Companies Are Rebuilding Their Products Around AI</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-at-top-companies</link>
+      <description>Google</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-at-top-companies</guid>
+    </item>
+    <item>
+      <title>AI in Fintech: Fraud Detection, Underwriting, and Compliance Automation</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-in-fintech</link>
+      <description>How banks and fintechs are deploying LLMs and ML for real-time fraud detection, credit decisioning, document processing, and regulatory reporting.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-in-fintech</guid>
+    </item>
+    <item>
+      <title>AI in Healthcare: Clinical NLP, Medical Coding, and the Hallucination Problem</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-in-healthcare</link>
+      <description>Where AI is being deployed in clinical workflows, why hallucination is an existential risk in medical AI, and the regulatory landscape for health LLMs.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-in-healthcare</guid>
+    </item>
+    <item>
+      <title>AI Features in Enterprise SaaS: What</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-in-enterprise-saas</link>
+      <description>The patterns that deliver real enterprise value (copilots, intelligent search, workflow automation) vs. AI features shipped for press release purposes.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-in-enterprise-saas</guid>
+    </item>
+    <item>
+      <title>The Solo Operator: How AI Lets One Person Run a Business That Used to Need a Team</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/solo-operator-ai</link>
+      <description>AI as a force multiplier for individuals — the real workflows (content, support, code, research, outreach) where solo operators are replacing teams.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/solo-operator-ai</guid>
+    </item>
+    <item>
+      <title>What Is an AI Engineer? Role, Skills, and How It Differs from ML Engineer</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-engineer-role</link>
+      <description>The new AI Engineer role — what companies actually want, the technical stack (RAG, agents, evals, LLMOps), and how it differs from ML Engineering and Data Science.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-engineer-role</guid>
+    </item>
+    <item>
+      <title>What Does an ML Engineer Actually Do in 2025?</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ml-engineer-role</link>
+      <description>The evolving ML Engineer role post-LLM revolution — what</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ml-engineer-role</guid>
+    </item>
+    <item>
+      <title>The AI Product Manager: What</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-pm-role</link>
+      <description>How AI PM differs from traditional PM — working with probabilistic systems, writing AI-specific PRDs, speaking the language of evals, and hiring the right team.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-pm-role</guid>
+    </item>
+    <item>
+      <title>AI/ML Salary Guide 2025: Ranges, Levers, and How to Negotiate</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-salary-guide</link>
+      <description>Real comp data for AI Engineer, ML Engineer, Research Scientist, and AI PM across US, UK, EU, and India — plus the specific skills and signals that move your number.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-salary-guide</guid>
+    </item>
+    <item>
+      <title>Breaking Into AI: The Fastest Path from Software Engineer to AI Engineer</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/breaking-into-ai</link>
+      <description>The exact learning path, project types, and portfolio signals that get backend/frontend engineers hired as AI engineers — in 3-6 months, not 3 years.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/breaking-into-ai</guid>
+    </item>
+    <item>
+      <title>The Minimum Tech Stack for Every AI Role, Level, and Company Tier</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-role-tech-stacks</link>
+      <description>Exactly what tools, frameworks, and skills are expected from AI Engineers, ML Engineers, AI PMs, FDEs, and MLOps engineers — at junior, mid, senior, and staff level.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-role-tech-stacks</guid>
+    </item>
+    <item>
+      <title>Attention Is All You Need: The Paper That Built the AI Era</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/attention-is-all-you-need</link>
+      <description>The 2017 Transformer paper that replaced RNNs, enabled parallel training, and became the foundation every LLM is built on. What it actually proposed and why it worked.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/attention-is-all-you-need</guid>
+    </item>
+    <item>
+      <title>InstructGPT: How RLHF Turned a Language Model Into an Assistant</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/instructgpt-rlhf</link>
+      <description>The 2022 OpenAI paper that introduced RLHF to mainstream AI. How SFT + reward model + PPO produced a model that followed instructions — and why it changed everything.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/instructgpt-rlhf</guid>
+    </item>
+    <item>
+      <title>Constitutional AI: How Anthropic Trains Claude to Be Helpful and Harmless</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/constitutional-ai</link>
+      <description>Anthropic</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/constitutional-ai</guid>
+    </item>
+    <item>
+      <title>Chinchilla: The Scaling Laws Paper That Made Bigger Models Smaller</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/chinchilla-scaling-laws</link>
+      <description>DeepMind</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/chinchilla-scaling-laws</guid>
+    </item>
+    <item>
+      <title>Chain-of-Thought: The Prompting Technique That Unlocked LLM Reasoning</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/chain-of-thought-prompting</link>
+      <description>Google</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/chain-of-thought-prompting</guid>
+    </item>
+    <item>
+      <title>The Original RAG Paper: Retrieval-Augmented Generation Explained</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-paper-lewis-2020</link>
+      <description>Facebook AI</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-paper-lewis-2020</guid>
+    </item>
+    <item>
+      <title>ReAct: The Paper That Gave LLMs the Ability to Reason and Act Together</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/react-reasoning-acting</link>
+      <description>Princeton/Google</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/react-reasoning-acting</guid>
+    </item>
+    <item>
+      <title>Toolformer: How Language Models Learned to Use APIs on Their Own</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/toolformer</link>
+      <description>Meta AI</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/toolformer</guid>
+    </item>
+    <item>
+      <title>LIMA: Why 1,000 Examples Beat Millions for Instruction Tuning</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/lima-less-is-more</link>
+      <description>Meta AI</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/lima-less-is-more</guid>
+    </item>
+    <item>
+      <title>The GPT-4 Technical Report: What OpenAI Told Us (and What They Didn</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/gpt4-technical-report</link>
+      <description>The most-read model paper that reveals almost nothing about architecture or training. What the report actually contains — benchmark analysis, safety evaluations, system card — and how to read it.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/gpt4-technical-report</guid>
+    </item>
+    <item>
+      <title>Mixtral and Mixture of Experts: Activating 13B Parameters to Deliver 70B Quality</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mixtral-mixture-of-experts</link>
+      <description>Mistral AI</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mixtral-mixture-of-experts</guid>
+    </item>
+    <item>
+      <title>CLIP: The Paper That Made Vision and Language Speak the Same Language</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/clip-multimodal</link>
+      <description>OpenAI</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/clip-multimodal</guid>
+    </item>
+    <item>
+      <title>LoRA: How Low-Rank Adaptation Made Fine-Tuning Accessible to Everyone</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/lora-paper</link>
+      <description>Microsoft</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/lora-paper</guid>
+    </item>
+    <item>
+      <title>DPO: Direct Preference Optimization — Alignment Without a Reward Model</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/dpo-paper</link>
+      <description>Stanford</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/dpo-paper</guid>
+    </item>
+    <item>
+      <title>FlashAttention: The Algorithmic Fix That Made Long Context Actually Work</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flash-attention</link>
+      <description>Stanford</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flash-attention</guid>
+    </item>
+    <item>
+      <title>Fine-Tuning Fundamentals: What It Is, When to Use It, and When Not To</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-fundamentals</link>
+      <description>The mental model every engineer needs before touching fine-tuning. What fine-tuning actually changes in a model, the three real use cases where it beats prompting, and the five situations where it</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-fundamentals</guid>
+    </item>
+    <item>
+      <title>Full Fine-Tuning vs. PEFT vs. Prompting: The Decision Framework</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/full-vs-peft-vs-prompting</link>
+      <description>A practical decision tree for choosing between full fine-tuning, LoRA/QLoRA, and prompt engineering — based on data size, latency requirements, update frequency, and budget.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/full-vs-peft-vs-prompting</guid>
+    </item>
+    <item>
+      <title>LoRA in Practice: A Step-by-Step Production Fine-Tuning Guide</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/lora-in-practice</link>
+      <description>From dataset prep to adapter merge to deployment. The exact config choices that matter — rank, alpha, target modules, learning rate, epochs — with what goes wrong at each step.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/lora-in-practice</guid>
+    </item>
+    <item>
+      <title>QLoRA: Fine-Tuning 70B Models on a Single GPU</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/qlora-consumer-hardware</link>
+      <description>How 4-bit quantisation + LoRA adapters make large model fine-tuning accessible. NF4 quantisation explained, double quantisation, bfloat16 adapters, and what you lose vs. full LoRA.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/qlora-consumer-hardware</guid>
+    </item>
+    <item>
+      <title>PEFT Methods Compared: LoRA, Prefix Tuning, Prompt Tuning, and Adapters</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/peft-methods-compared</link>
+      <description>The four main parameter-efficient fine-tuning approaches — what each trains, when each wins, and why LoRA dominates most production use cases despite not being the oldest method.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/peft-methods-compared</guid>
+    </item>
+    <item>
+      <title>Building Instruction Tuning Datasets: Quality Over Everything</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/instruction-tuning-datasets</link>
+      <description>The data decisions that determine whether your fine-tuned model improves or degrades. Format design, diversity requirements, quality filtering, synthetic data generation, and the LIMA principle in practice.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/instruction-tuning-datasets</guid>
+    </item>
+    <item>
+      <title>DPO in Practice: Building Preference Datasets and Running Alignment Training</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/dpo-in-practice</link>
+      <description>Beyond the theory — how to actually collect preference data, format (prompt, chosen, rejected) triplets, run DPO training with PEFT, and evaluate the result against your baseline.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/dpo-in-practice</guid>
+    </item>
+    <item>
+      <title>Evaluating Fine-Tuned Models: How to Know If You Actually Improved Anything</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-evaluation</link>
+      <description>Why perplexity is the wrong metric, how to build domain-specific eval sets, what regression testing looks like for fine-tuned models, and how to catch capability degradation.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-evaluation</guid>
+    </item>
+    <item>
+      <title>Catastrophic Forgetting: Why Fine-Tuning Breaks General Capability</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/catastrophic-forgetting</link>
+      <description>What catastrophic forgetting actually looks like in fine-tuned LLMs, why it</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/catastrophic-forgetting</guid>
+    </item>
+    <item>
+      <title>Continued Pretraining: When Fine-Tuning Isn</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/continued-pretraining</link>
+      <description>When domain adaptation requires continued pretraining on unlabelled text rather than supervised fine-tuning. Medical, legal, and code domains — what it takes and when it</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/continued-pretraining</guid>
+    </item>
     <item>
       <title>From Fine-Tuned Model to Production: Serving, Versioning, and Monitoring</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-to-production</link>
       <description>The gap between a fine-tuned checkpoint and a production deployment. Adapter merging, quantisation for serving, model versioning strategy, and the monitoring signals that catch regressions.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/fine-tuning-to-production</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-to-production</guid>
     </item>
     <item>
       <title>Process Reward Models: How o1 and o3 Learn to Think Step by Step</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/process-reward-models</link>
       <description>Why outcome-based RLHF fails on multi-step reasoning and how process reward models — rewarding each step rather than the final answer — produce the reasoning models behind o1, o3, and DeepSeek-R1.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/process-reward-models</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/process-reward-models</guid>
     </item>
     <item>
       <title>CLIP: How Contrastive Vision-Language Pretraining Works</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
-      <description>OpenAI&#x27;s CLIP trained on 400M image-text pairs using contrastive loss — and changed what AI can do with vision. How the dual encoder works, what zero-shot classification means, and why CLIP embeddings power most production image search today.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/clip-how-it-works</guid>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/clip-how-it-works</link>
+      <description>OpenAI</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/clip-how-it-works</guid>
     </item>
     <item>
       <title>Vision Transformers (ViT): How Images Become Tokens</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/vision-transformers-vit</link>
       <description>The architecture that replaced CNNs for vision tasks. How patch embeddings work, why transformers scale better than convolutions, and what the attention mechanism sees in an image.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/vision-transformers-vit</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/vision-transformers-vit</guid>
     </item>
     <item>
       <title>How Multimodal LLMs Work: LLaVA, GPT-4V, and Gemini Architecture</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
-      <description>How you connect a vision encoder to a language model — the projection layer, visual tokens, and instruction tuning approach behind LLaVA. How GPT-4V and Gemini differ architecturally, and what &#x27;natively multimodal&#x27; actually means.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/multimodal-llms-architecture</guid>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-llms-architecture</link>
+      <description>How you connect a vision encoder to a language model — the projection layer, visual tokens, and instruction tuning approach behind LLaVA. How GPT-4V and Gemini differ architecturally, and what </description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-llms-architecture</guid>
     </item>
     <item>
       <title>Multimodal RAG: Retrieval Over Images, Tables, and Mixed Documents</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-rag</link>
       <description>RAG breaks when your corpus has PDFs with charts, scanned documents, or product images. The three architectures for handling mixed-modal retrieval: late fusion, early fusion, and cross-modal reranking — with when each fails.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/multimodal-rag</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-rag</guid>
     </item>
     <item>
       <title>Diffusion Models Explained: How Image Generation Actually Works</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/diffusion-models-explained</link>
       <description>What diffusion models actually do: the forward noising process, the reverse denoising network, why U-Net matters, and how text conditioning (CLIP + cross-attention) turns a text prompt into an image. No hand-waving.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/diffusion-models-explained</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/diffusion-models-explained</guid>
     </item>
     <item>
       <title>Audio and Speech Models: How Whisper and the Speech Pipeline Works</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/whisper-audio-models</link>
       <description>From raw audio waveform to text: log-mel spectrograms, the encoder-decoder transformer architecture, why Whisper is so robust to accents and noise, and how to deploy speech-to-text in production at low cost.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/whisper-audio-models</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/whisper-audio-models</guid>
     </item>
     <item>
       <title>Evaluating Multimodal Systems: Benchmarks, Metrics, and Production Signals</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-eval</link>
       <description>How do you know if your vision-language model is actually good? MMMU, MMBench, and VQA explained. Hallucination in multimodal models (CHAIR metric). The gap between benchmark scores and production quality.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/multimodal-eval</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-eval</guid>
     </item>
     <item>
       <title>Multimodal in Production: Latency, Cost, and Deployment Realities</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-in-production</link>
       <description>Vision tokens are expensive — GPT-4V charges per tile. The real latency and cost profile of multimodal calls vs. text-only, how to pre-process images to cut costs, and the caching strategies that matter for production workloads.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/multimodal-in-production</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-in-production</guid>
     </item>
     <item>
       <title>Image Embeddings and Visual Search: Building Production Image Retrieval</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/image-embeddings-visual-search</link>
       <description>How CLIP embeddings power reverse image search, product discovery, and content moderation. The full pipeline: embed → index → ANN search → rerank. What breaks at scale and how to fix it.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/image-embeddings-visual-search</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/image-embeddings-visual-search</guid>
     </item>
     <item>
       <title>How to Evaluate Multi-Step AI Agents</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/evaluating-ai-agents</link>
       <description>Why standard LLM evals break for agents. Task completion rate, tool call accuracy, trajectory quality, and building an agent eval harness.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/evaluating-ai-agents</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/evaluating-ai-agents</guid>
     </item>
     <item>
       <title>Prompt Caching: Cut Your LLM Costs by 90% Without Changing Your Prompts</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-caching-guide</link>
       <description>How prefix caching works in Anthropic Claude and OpenAI APIs, when it applies, how to structure prompts to maximise cache hits, and real cost savings math.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/prompt-caching-guide</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-caching-guide</guid>
     </item>
     <item>
       <title>LLM Security: Prompt Injection, Jailbreaks, and How to Actually Defend Against Them</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-security-red-teaming</link>
       <description>The real threat model for production LLM systems. Indirect injection, data exfiltration paths, jailbreak taxonomy, and a practical defence checklist.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/llm-security-red-teaming</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-security-red-teaming</guid>
     </item>
     <item>
       <title>Choosing a Vector Database in 2025: A Decision Framework</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/vector-db-selection-guide</link>
       <description>Pinecone vs Weaviate vs Qdrant vs Chroma vs pgvector — when to use each, what the real cost looks like at scale, and how to avoid choosing the wrong one.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/vector-db-selection-guide</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/vector-db-selection-guide</guid>
     </item>
     <item>
       <title>LLM Cost Optimization Playbook: From $10K to $1K Monthly</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-cost-optimization</link>
       <description>A systematic approach to cutting LLM inference costs by 80–90% without degrading quality. Caching, model routing, prompt compression, and batch processing.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/llm-cost-optimization</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-cost-optimization</guid>
     </item>
     <item>
-      <title>RLHF and DPO Explained: How Language Models Learn Human Preferences</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
-      <description>How reinforcement learning from human feedback works step-by-step, why DPO is replacing it, and what this means for fine-tuning in 2025.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/rlhf-dpo-explained</guid>
+      <title>RLHF and DPO: How Language Models Learn Human Preferences</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rlhf-dpo-explained</link>
+      <description>How reinforcement learning from human feedback works end to end, why DPO replaced it for most teams, and what actually changes in the model during alignment training.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rlhf-dpo-explained</guid>
+    </item>
+    <item>
+      <title>Constitutional AI: How Anthropic Trains Claude to Be Helpful and Safe</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/constitutional-ai-explained</link>
+      <description>The CAI technique: using a set of principles to train models to critique and revise their own outputs, reducing the need for human labelers at scale.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/constitutional-ai-explained</guid>
+    </item>
+    <item>
+      <title>How I</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-knowledge-base-search</link>
+      <description>A concrete walkthrough of the architecture, vendor choices, chunking strategy, and eval harness for an AI search system over company documentation.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-knowledge-base-search</guid>
     </item>
     <item>
       <title>Structured Outputs: JSON Mode, Tool Calling, and Constrained Decoding</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/structured-outputs-json-mode</link>
       <description>How to reliably get JSON, tables, and typed data from LLMs. JSON mode vs tool calling vs grammar-constrained decoding — what each guarantees and where each breaks.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/structured-outputs-json-mode</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/structured-outputs-json-mode</guid>
     </item>
     <item>
       <title>Building Memory into AI Agents: LangMem, Mem0, and Custom Patterns</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-memory-implementation</link>
       <description>How to actually implement persistent memory in production agents. Architecture patterns, library comparison, and what breaks at scale.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/agent-memory-implementation</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-memory-implementation</guid>
     </item>
     <item>
       <title>Claude 3.5 vs GPT-4o vs Gemini 1.5 Pro: A Practical Comparison</title>
-      <link>https://genai-systems-lab.vercel.app/#groundtruth</link>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-comparison-2025</link>
       <description>Not benchmarks — actual task-type tradeoffs. When each model wins, where each fails, and how to choose for your use case.</description>
-      <pubDate>Wed, 20 May 2026 00:00:00 +0000</pubDate>
-      <guid>https://genai-systems-lab.vercel.app/post/model-comparison-2025</guid>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-comparison-2025</guid>
+    </item>
+    <item>
+      <title>How Notion Built AI on a Block-Based Data Model: Architecture Decisions and Lessons</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-notion-ai</link>
+      <description>Notion</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-notion-ai</guid>
+    </item>
+    <item>
+      <title>How Perplexity Serves Millions of AI Searches: Search → LLM → Citations at Scale</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-perplexity</link>
+      <description>Perplexity</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-perplexity</guid>
+    </item>
+    <item>
+      <title>How Cursor Built AI Code Completion: Context, Retrieval, and Sub-Second Latency</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-cursor</link>
+      <description>Cursor</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-cursor</guid>
+    </item>
+    <item>
+      <title>GitHub Copilot at Scale: How a Hundred Million Suggestions Per Day Actually Works</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-github-copilot</link>
+      <description>Copilot</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-github-copilot</guid>
+    </item>
+    <item>
+      <title>How Spotify Uses AI: Embeddings, DJ, and the Recommendation Stack</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-spotify-ai</link>
+      <description>From music2vec embeddings to AI-generated narration. How Spotify</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-spotify-ai</guid>
+    </item>
+    <item>
+      <title>Attention Is All You Need → How Transformers Became the Backbone of Production AI</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-attention</link>
+      <description>The 2017 paper that killed RNNs. What the original Transformer proposed, what the ML world actually shipped from it, and the engineering gaps between </description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-attention</guid>
+    </item>
+    <item>
+      <title>InstructGPT → How RLHF Turned Raw LLMs Into Products People Actually Use</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-rlhf</link>
+      <description>OpenAI</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-rlhf</guid>
+    </item>
+    <item>
+      <title>The RAG Paper → From Facebook AI Research to Production Retrieval Systems</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-rag-paper</link>
+      <description>Lewis et al. 2020 introduced RAG as a sequence-to-sequence model. What the original paper proposed, what the industry actually built on top of it, and how modern production RAG is fundamentally different from the original formulation.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-rag-paper</guid>
+    </item>
+    <item>
+      <title>LoRA → How a 2021 Paper Made Fine-Tuning Affordable for Everyone</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-lora</link>
+      <description>Hu et al. introduced Low-Rank Adaptation as a way to fine-tune giant models by training a tiny fraction of parameters. What LoRA does mathematically, why it works, and how QLoRA, AdaLoRA, and LoRA+ evolved it for production use.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-lora</guid>
+    </item>
+    <item>
+      <title>Constitutional AI → How Anthropic</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-constitutional-ai</link>
+      <description>Anthropic</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-constitutional-ai</guid>
+    </item>
+    <item>
+      <title>How to Answer </title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-design-rag</link>
+      <description>A complete framework for tackling RAG system design questions: how to scope requirements, walk through the architecture, discuss failure modes, and show depth on retrieval quality vs. latency tradeoffs.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-design-rag</guid>
+    </item>
+    <item>
+      <title>How to Explain Attention Mechanisms in an AI Interview</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-explain-attention</link>
+      <description>What interviewers are testing when they ask about attention, what level of math to show, and how to give a coherent explanation that goes from intuition → math → why it matters in production — without losing your interviewer.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-explain-attention</guid>
+    </item>
+    <item>
+      <title>How to Answer </title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-eval-system</link>
+      <description>Evaluation is where most candidates go blank. This post gives you a reusable framework: task decomposition, metric selection, offline vs. online eval, human labelling, and how to talk about hallucination measurement.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-eval-system</guid>
+    </item>
+    <item>
+      <title>How to Answer </title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-agents-screen</link>
+      <description>ReAct, tool use, memory, multi-agent orchestration — what a senior interviewer wants to hear, what separates a junior answer from a strong one, and a worked example of walking through an agent architecture under time pressure.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-agents-screen</guid>
+    </item>
+    <item>
+      <title>How to Answer </title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-cost-reduction</link>
+      <description>Prompt caching, model routing, KV cache, quantisation, batching, context compression — a systematic framework for attacking LLM cost. Structured to walk through in an interview in under 10 minutes.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-cost-reduction</guid>
+    </item>
+    <item>
+      <title>What Changed: Base LLMs vs. Reasoning Models</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-what-changed</link>
+      <description>o1, o3, Claude 3.7 Sonnet — what makes a </description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-what-changed</guid>
+    </item>
+    <item>
+      <title>Thinking Budget: How to Control Reasoning Model Quality and Cost</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-thinking-budget</link>
+      <description>Reasoning models let you dial how much they think. What token budgets mean, the quality-vs-cost frontier, when to use 1K vs 32K thinking tokens, and how to build a dynamic routing system that picks the right thinking depth per query.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-thinking-budget</guid>
+    </item>
+    <item>
+      <title>When to Use Reasoning Models (and When Not To)</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-when-to-use</link>
+      <description>Reasoning models aren</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-when-to-use</guid>
+    </item>
+    <item>
+      <title>The Economics of Reasoning Models: When Is o1 Worth 20x the Price?</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-econ</link>
+      <description>Reasoning models can cost 20x more than GPT-4o. When is that justified? A breakdown of task types, accuracy lift data, cost-per-correct-answer analysis, and a routing architecture that uses cheap models first and escalates to reasoning only when needed.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-econ</guid>
+    </item>
+    <item>
+      <title>Production Patterns for Reasoning Models: Routing, Caching, and Fallback</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-prod-patterns</link>
+      <description>How to deploy reasoning models at scale without blowing your budget. Confidence-based routing, result caching for deterministic queries, structured output extraction from long scratchpads, streaming UX for slow TTFT, and graceful fallback strategies.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-prod-patterns</guid>
+    </item>
+    <item>
+      <title>Model Context Protocol: What It Is and Why It Matters</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mcp-what-is</link>
+      <description>Anthropic</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mcp-what-is</guid>
+    </item>
+    <item>
+      <title>Build Your First MCP Server in 30 Minutes</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mcp-build-server</link>
+      <description>Step-by-step walkthrough of building a working MCP server using the Python SDK. Define tools and resources, expose them over stdio transport, register with Claude Desktop, and call them from Claude. Every line of code explained.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mcp-build-server</guid>
+    </item>
+    <item>
+      <title>Claude Deep Dive: Architecture, Training Philosophy, and When to Use It</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-claude</link>
+      <description>Anthropic</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-claude</guid>
+    </item>
+    <item>
+      <title>GPT-4o Deep Dive: Native Multimodality, o1 Reasoning, and the OpenAI Model Stack</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-gpt4o</link>
+      <description>How GPT-4o achieves native audio/vision/text processing in one model, what changed from GPT-4 Turbo, the o1/o3 reasoning model branch, and how to choose across the OpenAI model family.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-gpt4o</guid>
+    </item>
+    <item>
+      <title>Gemini Deep Dive: 1M Context, Native Multimodality, and Google</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-gemini</link>
+      <description>Gemini</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-gemini</guid>
+    </item>
+    <item>
+      <title>Grok Deep Dive: xAI</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-grok</link>
+      <description>xAI</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-grok</guid>
+    </item>
+    <item>
+      <title>Llama Deep Dive: Meta</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-llama</link>
+      <description>Llama 3</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-llama</guid>
+    </item>
+    <item>
+      <title>MCP vs. Function Calling: Which Should You Use?</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mcp-vs-functions</link>
+      <description>MCP and function calling both let LLMs use tools — but they</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mcp-vs-functions</guid>
+    </item>
+    <item>
+      <title>DPO vs RLHF vs GRPO: Which Alignment Method Should You Use?</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-dpo-vs-grpo</link>
+      <description>Three dominant approaches to aligning fine-tuned models with human preferences. How DPO eliminates the reward model, why GRPO is driving reasoning model breakthroughs, and a decision tree for choosing the right method based on your data, compute, and stability requirements.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-dpo-vs-grpo</guid>
+    </item>
+    <item>
+      <title>Quantization Deep Dive: GPTQ, AWQ, GGUF, and When Each Wins</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-quantization</link>
+      <description>Cutting model size 4–8x without destroying quality. How GPTQ calibrates weight rounding with data, why AWQ outperforms on activation-aware pruning, what GGUF enables for CPU inference, and a practical guide to choosing your quantization stack for production.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-quantization</guid>
+    </item>
+    <item>
+      <title>AI Governance in Production: Frameworks, Audits, and What Actually Works</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-governance</link>
+      <description>EU AI Act, NIST AI RMF, and internal governance programs at Anthropic, Google, and Microsoft. What risk tiers mean for your product, how to structure model cards and audit trails, red-teaming cadences, and the governance gaps most teams miss before going to market.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-governance</guid>
+    </item>
+    <item>
+      <title>Multimodal RAG in Production: Images, Tables, and PDFs at Scale</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-multimodal-rag</link>
+      <description>RAG for documents with embedded images, charts, and tables. ColPali</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-multimodal-rag</guid>
+    </item>
+    <item>
+      <title>Production Fine-Tuning Case Study: From Zero to Deployed Domain Expert</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-case-study</link>
+      <description>End-to-end walkthrough of fine-tuning a 7B model for a legal document extraction task. Dataset curation decisions, SFT vs DPO sequencing, evaluation harness setup, LoRA rank selection, quantization for serving, and what broke in production that didn</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-case-study</guid>
+    </item>
+    <item>
+      <title>Andrej Karpathy: Building Intuition Through Code</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-karpathy</link>
+      <description>Karpathy</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-karpathy</guid>
+    </item>
+    <item>
+      <title>Simon Willison: The Pragmatist</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-willison</link>
+      <description>Willison writes daily about what actually works with LLMs in production. His prompt injection research changed how engineers think about trust boundaries.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-willison</guid>
+    </item>
+    <item>
+      <title>swyx: The AI Engineer Thesis</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-swyx</link>
+      <description>Shawn Wang coined </description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-swyx</guid>
+    </item>
+    <item>
+      <title>Hamel Husain: Evals Are Everything</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-hamel</link>
+      <description>Hamel wrote the definitive guide to LLM evals. His core thesis: if you don</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-hamel</guid>
+    </item>
+    <item>
+      <title>François Chollet: What LLMs Can</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-chollet</link>
+      <description>Chollet built ARC-AGI to measure what LLMs systematically fail at. His </description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-chollet</guid>
+    </item>
+    <item>
+      <title>Yann LeCun: Why World Models Are the Path Forward</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-lecun</link>
+      <description>LeCun argues LLMs are fundamentally the wrong architecture for AGI. His JEPA world model proposal and </description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-lecun</guid>
+    </item>
+    <item>
+      <title>World Models: The Architecture Beyond Next-Token Prediction</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/world-models-primer</link>
+      <description>Why predicting the next token isn</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/world-models-primer</guid>
+    </item>
+    <item>
+      <title>Mixture of Experts: Getting 671B Quality at 37B Cost</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/moe-architecture-guide</link>
+      <description>How MoE gives you a model with 671B parameters that costs the same to run as a 37B dense model. Sparse activation, expert routing, EPLB load balancing, and the failure modes that bite production teams.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/moe-architecture-guide</guid>
+    </item>
+    <item>
+      <title>How I</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-ai-search</link>
+      <description>The full architecture for a production AI search system — query intent classification, hybrid retrieval, LLM reranking, freshness signals, and why the first version almost always gets the retrieval layer wrong.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-ai-search</guid>
+    </item>
+    <item>
+      <title>How I</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-code-review-bot</link>
+      <description>Building an AI code reviewer that developers actually trust. AST-aware chunking, diff-scoped retrieval, explanation generation, calibrating false positive rate, and the feedback loop that makes it smarter over time.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-code-review-bot</guid>
+    </item>
+    <item>
+      <title>How I</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-customer-support-ai</link>
+      <description>A production customer support AI — intent routing, RAG over product docs, escalation triggers, tone compliance checking, and the guardrail architecture that catches the 3% of cases that can destroy trust.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-customer-support-ai</guid>
+    </item>
+    <item>
+      <title>A2A Protocol: How Agents Talk to Each Other at Scale</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/a2a-protocol-guide</link>
+      <description>Google</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/a2a-protocol-guide</guid>
+    </item>
+    <item>
+      <title>Implicit Feedback: The Free Label Generator Hidden in Your Traffic</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flywheel-implicit-feedback</link>
+      <description>Every user interaction is a weak label. Click-throughs, reformulations, copy-paste events, session abandonment — how to extract a high-signal feedback stream from production traffic without asking users to rate anything.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flywheel-implicit-feedback</guid>
+    </item>
+    <item>
+      <title>Reward Modeling from Logs: Turning Traffic into Training Signal</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flywheel-reward-modeling</link>
+      <description>How to build a reward model from implicit feedback logs using Bradley-Terry pairwise preference, DPO from preference pairs, and the contamination traps that silently corrupt your reward signal.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flywheel-reward-modeling</guid>
+    </item>
+    <item>
+      <title>The Online Evaluation Loop: Making Your Eval Set Self-Refreshing</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flywheel-online-eval</link>
+      <description>Static eval sets go stale. How to pipeline production failures into your eval set automatically, detect distribution shift before it becomes a user complaint, and run shadow evaluations without user exposure.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flywheel-online-eval</guid>
+    </item>
+    <item>
+      <title>Model Merging: Getting SOTA Quality at Zero Training Cost</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-merging-guide</link>
+      <description>SLERP, TIES, DARE, model soup, and LoRA adapter merging — how the open-source community routinely beats fine-tuned models by merging weights in parameter space. What works, what doesn</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-merging-guide</guid>
+    </item>
+    <item>
+      <title>The Fine-Tuning Playbook: LoRA, QLoRA, and When to Use Each</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/finetune-playbook</link>
+      <description>A practical decision framework for fine-tuning LLMs — from full parameter training to 4-bit QLoRA on consumer GPUs.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/finetune-playbook</guid>
+    </item>
+    <item>
+      <title>RLHF in Production: What Actually Works</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rlhf-production</link>
+      <description>Reward models, PPO instability, reward hacking, and the lessons learned shipping alignment training at scale.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rlhf-production</guid>
+    </item>
+    <item>
+      <title>DPO vs PPO: The Training Alignment Debate</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/dpo-vs-ppo</link>
+      <description>Why Direct Preference Optimization is replacing PPO in most teams — and the edge cases where PPO still wins.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/dpo-vs-ppo</guid>
+    </item>
+    <item>
+      <title>Knowledge Distillation at Scale: Teaching Small Models to Think Big</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/knowledge-distillation</link>
+      <description>How to transfer capabilities from large frontier models to smaller, cheaper, deployable ones — and where it breaks down.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/knowledge-distillation</guid>
+    </item>
+    <item>
+      <title>How I</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-voice-ai</link>
+      <description>STT → LLM → TTS architecture, latency budget breakdown, streaming strategies, and where it actually breaks in production.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-voice-ai</guid>
+    </item>
+    <item>
+      <title>How I</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-document-intelligence</link>
+      <description>Parsing PDFs, tables, and images; chunking strategies for structured documents; extraction pipelines with citations.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-document-intelligence</guid>
+    </item>
+    <item>
+      <title>How I</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-coding-assistant</link>
+      <description>Repository-aware context, diff-aware completion, retrieval over codebases, and the eval harness that actually catches regressions.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-coding-assistant</guid>
+    </item>
+    <item>
+      <title>Building Reliable Agents: Loops, Tools, and Failure Modes</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/building-reliable-agents</link>
+      <description>How to structure agent loops, tool calling patterns, retry logic, and the five failure modes that kill agent reliability in production.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/building-reliable-agents</guid>
+    </item>
+    <item>
+      <title>Cost-Aware Prompt Engineering</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-cost-engineering</link>
+      <description>How to engineer prompts that perform better and cost less. Token budgets by component, the five optimisation levers (output format, few-shot, CoT, prompt caching, model routing), and the iterative optimisation loop.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-cost-engineering</guid>
+    </item>
+    <item>
+      <title>RLHF and DPO: How Models Learn to Do What You Want</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rlhf-dpo-explained-v2</link>
+      <description>The full alignment pipeline — SFT, reward model training, PPO — and why DPO replaced most of it. Includes the Bradley-Terry model, KL penalty mechanics, reward hacking failure modes, and practical tradeoffs between RLHF and DPO.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rlhf-dpo-explained-v2</guid>
+    </item>
+    <item>
+      <title>Why the Best Model on the Benchmark Isn</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/benchmark-vs-business</link>
+      <description>Goodhart</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/benchmark-vs-business</guid>
+    </item>
+    <item>
+      <title>Hard Negatives: The Training Trick That Actually Improves Retrieval</title>
+      <link>https://genai-systems-lab-ivory.vercel.app/#groundtruth/hard-negatives-retrieval</link>
+      <description>Hard negatives — semantically close but intent-misaligned pairs — are the highest-ROI training signal for retrieval models. Three mining strategies with code.</description>
+      <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+      <guid>https://genai-systems-lab-ivory.vercel.app/#groundtruth/hard-negatives-retrieval</guid>
     </item>
   </channel>
 </rss>

@@ -1,883 +1,1299 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://genai-systems-lab-ivory.vercel.app</loc>
-    <lastmod>2026-05-19</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#concepts</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#flows</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-
-  <!-- Foundations -->
   <url>
-    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/what-is-a-transformer</loc>
-    <lastmod>2026-05-19</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#systems</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#agents</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#explore</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#lab</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#playground</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#preplab</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#aipm</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#career</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#fluency</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#paths</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/what-is-a-transformer</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/self-attention-deep-dive</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tokenization-deep-dive</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/embeddings-explained</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/decoding-sampling</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-window-guide</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompting-token-economics</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- RAG -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-rag-works</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/chunking-strategies</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-architectures</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reranking-explained</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/vector-databases-compared</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/missing-context-failure</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ambiguous-query-failure</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/hybrid-search</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- Agents -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/react-pattern</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tool-use-design</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-memory-types</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multi-agent-orchestration</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/planning-patterns</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tracing-agent-loops</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-failure-modes</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- Evaluation -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-evaluation-guide</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/hallucination-detection</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/eval-pipeline-design</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ab-testing-llms</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- LLMOps -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llmops-production-checklist</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-vs-rag</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-routing</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/inference-optimisation</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-caching</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-observability</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ml-cicd</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-compaction</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cost-latency-tradeoffs</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/shadow-ab-testing</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-strategy</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- Safety -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/guardrails-for-llms</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-injection-production</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/red-teaming-llms</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/bias-in-llms</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/privacy-compliance-llms</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- System Design -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-system-design-framework</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-system-design</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-system-design</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/india-scale-ai</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/structured-outputs</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- Production Failures -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/stale-document-failure</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multihop-reasoning-failure</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-overflow-failure</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/incident-room</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/latency-planner</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-bleed-failure</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/tool-loop-failure</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/silent-hallucination</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cost-explosion-incident</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/retrieval-poisoning</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/eval-gaming</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-injection-bypass</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cold-start-latency</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/schema-drift-failure</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/cascade-failure</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/confidence-calibration</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reranker-inversion</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-  <url>
-    <loc>https://genai-systems-lab-ivory.vercel.app/start</loc>
-    <lastmod>2026-05-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <!-- AI Product -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prd-for-ai</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-or-not</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-roadmap-prioritisation</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/explaining-ai-to-stakeholders</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-launch-checklist</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-card-reader</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- Interview Prep -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-interview-question-patterns</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-interview-questions</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-case-interview</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-vocabulary</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/take-home-challenges</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-benchmarks-explained</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/context-tetris</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- Model Profiles -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-claude-works</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-chatgpt-works</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/how-gemini-works</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llama-open-models</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mistral-cohere-frontier</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-benchmarks-deep-dive</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- Industry AI -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-at-top-companies</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-in-fintech</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-in-healthcare</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-in-enterprise-saas</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/solo-operator-ai</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- Careers & Salaries -->
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-engineer-role</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ml-engineer-role</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-pm-role</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-salary-guide</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/breaking-into-ai</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ai-role-tech-stacks</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- Research Papers, Fine-Tuning, Multimodal, Production, New Posts -->
-  <url>
-    <loc>https://genai-systems-lab.vercel.app/post/attention-is-all-you-need</loc>
-    <lastmod>2026-05-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/catastrophic-forgetting</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/attention-is-all-you-need</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/chain-of-thought-prompting</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/instructgpt-rlhf</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/chinchilla-scaling-laws</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/constitutional-ai</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/clip-how-it-works</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/chinchilla-scaling-laws</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/clip-multimodal</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/chain-of-thought-prompting</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/constitutional-ai</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rag-paper-lewis-2020</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/continued-pretraining</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/react-reasoning-acting</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/diffusion-models-explained</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/toolformer</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/dpo-in-practice</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/lima-less-is-more</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/dpo-paper</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/gpt4-technical-report</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/evaluating-ai-agents</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mixtral-mixture-of-experts</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/fine-tuning-evaluation</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/clip-multimodal</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/fine-tuning-fundamentals</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/lora-paper</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/fine-tuning-to-production</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/dpo-paper</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/flash-attention</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flash-attention</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/full-vs-peft-vs-prompting</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-fundamentals</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/gpt4-technical-report</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/full-vs-peft-vs-prompting</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/image-embeddings-visual-search</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/lora-in-practice</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/instructgpt-rlhf</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/qlora-consumer-hardware</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/instruction-tuning-datasets</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/peft-methods-compared</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/lima-less-is-more</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/instruction-tuning-datasets</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/llm-cost-optimization</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/dpo-in-practice</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/llm-security-red-teaming</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-evaluation</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/lora-in-practice</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/catastrophic-forgetting</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/lora-paper</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/continued-pretraining</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/mixtral-mixture-of-experts</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/fine-tuning-to-production</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/multimodal-eval</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/process-reward-models</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/multimodal-in-production</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/clip-how-it-works</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/multimodal-llms-architecture</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/vision-transformers-vit</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/multimodal-rag</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-llms-architecture</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/peft-methods-compared</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-rag</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/process-reward-models</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/diffusion-models-explained</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/prompt-caching-guide</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/whisper-audio-models</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/qlora-consumer-hardware</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-eval</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/rag-paper-lewis-2020</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/multimodal-in-production</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/react-reasoning-acting</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/image-embeddings-visual-search</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/toolformer</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/evaluating-ai-agents</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/vector-db-selection-guide</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-caching-guide</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/vision-transformers-vit</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-security-red-teaming</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/whisper-audio-models</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/vector-db-selection-guide</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/rlhf-dpo-explained</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/llm-cost-optimization</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/structured-outputs-json-mode</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rlhf-dpo-explained</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/agent-memory-implementation</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/constitutional-ai-explained</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://genai-systems-lab.vercel.app/post/model-comparison-2025</loc>
-    <lastmod>2026-05-20</lastmod>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-knowledge-base-search</loc>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/structured-outputs-json-mode</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/agent-memory-implementation</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-comparison-2025</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-notion-ai</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-perplexity</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-cursor</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-github-copilot</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/case-spotify-ai</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-attention</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-rlhf</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-rag-paper</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-lora</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/p2p-constitutional-ai</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-design-rag</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-explain-attention</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-eval-system</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-agents-screen</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/iv-cost-reduction</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-what-changed</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-thinking-budget</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-when-to-use</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-econ</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/reason-prod-patterns</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mcp-what-is</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mcp-build-server</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-claude</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-gpt4o</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-gemini</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-grok</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-llama</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/mcp-vs-functions</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-dpo-vs-grpo</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-quantization</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-governance</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-multimodal-rag</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/ft-case-study</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-karpathy</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-willison</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-swyx</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-hamel</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-chollet</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/persp-lecun</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/world-models-primer</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/moe-architecture-guide</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-ai-search</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-code-review-bot</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-customer-support-ai</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/a2a-protocol-guide</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flywheel-implicit-feedback</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flywheel-reward-modeling</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/flywheel-online-eval</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/model-merging-guide</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/finetune-playbook</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rlhf-production</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/dpo-vs-ppo</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/knowledge-distillation</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-voice-ai</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-document-intelligence</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/build-coding-assistant</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/building-reliable-agents</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/prompt-cost-engineering</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/rlhf-dpo-explained-v2</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/benchmark-vs-business</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://genai-systems-lab-ivory.vercel.app/#groundtruth/hard-negatives-retrieval</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>

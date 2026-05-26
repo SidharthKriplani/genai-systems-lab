@@ -718,6 +718,7 @@ const CATEGORIES = [
   { id: "training-stack",     label: "Training Stack" },
   { id: "mcp-protocol",       label: "MCP Protocol" },
   { id: "frontier",           label: "Frontier Models" },
+  { id: "production-mlops",   label: "Production MLOps" },
 ];
 
 const CAT_COLORS = {
