@@ -10939,4 +10939,68 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+  "type-a-vs-type-b-engineers": [
+    { t: "p", text: "There is a split happening inside AI engineering teams, and most people don\'t have words for it yet. Call it the Type A / Type B divide. It predates GenAI — you could see it in data science teams five years ago — but the agentic AI surge has made it sharper, more visible, and more consequential for compensation." },
+    { t: "callout", v: "key", text: "Type A engineers are model-obsessed. Type B engineers are systems-obsessed. Both are valuable. But enterprises are currently paying a 2x salary premium for Type B thinking, and the gap is widening." },
+
+    { t: "h2", text: "What Type A looks like" },
+    { t: "p", text: "Type A engineers are deeply invested in what\'s inside the model. They read papers the week they drop. They track benchmark leaderboards. They know loss function variants, attention mechanism improvements, and training recipes. They are the people who can explain why GRPO converges differently from PPO, or what makes Mistral\'s sliding window attention a meaningful architectural choice." },
+    { t: "p", text: "This knowledge is genuinely valuable. But in production, it translates to impact mostly at training time — and most companies are not training models from scratch. They are building on top of existing frontier models. The Type A engineer\'s deepest expertise often runs ahead of where the company actually is." },
+    { t: "list", items: [
+      "Optimises for: model quality, benchmark performance, architectural novelty",
+      "Interview signals: knows the papers, names the researchers, tracks leaderboards",
+      "Production gap: struggles when the problem is latency, cost, or monitoring — not model capability",
+      "Typical comp: $150K–$250K at AI-forward companies (2025–2026 market)",
+    ]},
+
+    { t: "h2", text: "What Type B looks like" },
+    { t: "p", text: "Type B engineers think in systems. When something breaks, their first question is not \'which model should we use\' — it is \'where in the pipeline did this fail and why didn\'t we catch it?\' They design for failure modes before they occur. They have strong intuitions about latency budgets, cost-per-query at scale, retrieval precision, and what a monitoring dashboard should actually alert on." },
+    { t: "p", text: "Type B engineers are the ones who implement graceful degradation — the fallback chain that serves a cached response when the primary model is unavailable. They build the eval harness that runs on every deploy. They write the prompt versioning system that prevents the 23% quality drop that goes undetected for 11 days. They think about observability before they think about accuracy." },
+    { t: "list", items: [
+      "Optimises for: reliability, latency, cost, observability, failure recovery",
+      "Interview signals: asks about SLAs, failure modes, monitoring strategy",
+      "Production gap: rarely — these are exactly the problems production has",
+      "Typical comp: $300K–$450K at top AI companies, $200K–$350K elsewhere (2025–2026)",
+    ]},
+
+    { t: "h2", text: "Why enterprises are scrambling for Type B" },
+    { t: "p", text: "The 2022–2024 hiring wave brought in a lot of Type A engineers. Companies hired people who could explain transformers and knew the literature. Then they discovered that 95% of enterprise AI pilots produce zero returns (MIT, 2024). The failure mode was almost never \'the model wasn\'t capable enough.\' It was: the system had no eval harness, so regressions went undetected. Retrieval was returning stale documents. Latency was 8 seconds and users abandoned after 3. The prompt changed in a deploy and nobody noticed." },
+    { t: "p", text: "These are systems problems. And companies that hired Type A engineers to solve them found themselves with people who reached for a better model when they needed a better pipeline." },
+    { t: "callout", v: "warning", text: "The pattern: hire Type A to build the demo, realise the demo doesn\'t scale, scramble to hire Type B to make it production-ready. The Type B hire often costs 30–50% more and is harder to find." },
+
+    { t: "h2", text: "The agentic multiplier" },
+    { t: "p", text: "Agentic AI has amplified the gap. An agent that fails silently — tool call times out, LLM hallucinates a file path, loop runs 47 iterations instead of 3 — causes real downstream damage. The cost of unreliable agentic systems is not a bad benchmark score. It is a customer\'s production database getting corrupted, or an automated email going to the wrong list, or a financial transaction executing twice." },
+    { t: "p", text: "Agentic AI engineer job postings grew 280% YoY in 2025 (Lightcast). The job descriptions for these roles are almost entirely Type B: reliability engineering, observability, tool sandboxing, loop termination logic, human-in-the-loop escalation design. The model is given — your job is to make the system around it trustworthy." },
+
+    { t: "h2", text: "The interview filter" },
+    { t: "p", text: "You can tell which type a candidate is within two questions." },
+    { t: "table", headers: ["Question", "Type A answer", "Type B answer"], rows: [
+      ["Your RAG system gives wrong answers 20% of the time. Where do you start?", "Switch to a better embedding model or reranker", "Add logging to every pipeline stage, find which stage is failing first, then fix the actual root cause"],
+      ["You\'ve shipped an LLM feature. How do you know it\'s working?", "Monitor BLEU or BERTScore on a held-out set", "Track task completion rate, user satisfaction, and set up LLM-as-judge on 5% of live traffic with a regression alert"],
+      ["The model is slow. What do you do?", "Try a smaller/faster model", "Profile the full request path: is it TTFT, generation speed, or retrieval? Apply the fix to the actual bottleneck"],
+    ]},
+    { t: "p", text: "Neither set of answers is wrong. But Type B answers are what production teams need, and they\'re what interviewers at companies with mature AI systems are screening for." },
+
+    { t: "h2", text: "How to develop Type B thinking if you started as Type A" },
+    { t: "p", text: "The good news: Type B thinking is learnable. It is not a different intelligence — it is a different orientation. Type A engineers often have stronger foundations (they understand what\'s happening inside the model) and can develop Type B instincts faster than engineers coming from the other direction." },
+    { t: "list", items: [
+      "Build the eval harness before the feature. Force yourself to define what \'working\' means in measurable terms before you write a line of application code.",
+      "Own an incident. If you\'ve never been paged at 2am because a model regression hit production, you haven\'t developed the instincts that come from that experience. Volunteer for on-call.",
+      "Cost everything. Every model call, every embedding, every retrieval. Build the habit of knowing what your system costs at 1K requests/day, 100K, and 1M.",
+      "Study failure, not performance. Instead of reading papers about new models, spend equal time reading post-mortems from production AI failures. The Cloudflare AI incident reports, the Reddit ML engineering blog, the LangChain failure mode documentation.",
+      "Build with constraints. Deliberately set a latency budget (p95 < 2s) and a cost budget ($0.005/query) before building. Design to the constraint.",
+    ]},
+
+    { t: "h2", text: "The real point" },
+    { t: "p", text: "The Type A / Type B framing is not a hierarchy. Type A thinking produces breakthroughs. Type B thinking makes those breakthroughs usable. The engineers commanding the highest compensation right now are the ones who have both — who can read a paper and also immediately ask: what breaks when this runs at scale? What does the monitoring look like? What\'s the graceful degradation story?" },
+    { t: "p", text: "The lab you\'re in right now is designed to build Type B thinking. Not because Type A doesn\'t matter — it does — but because the market is saturated with Type A and starved for Type B. Every module here is about failure modes, production tradeoffs, and systems that hold up under real conditions. That\'s not an accident." },
+    { t: "callout", v: "tip", text: "The fastest way to develop Type B instincts: go through every module in the Systems tab and ask yourself after each one — \'if I had built this and it failed in production, what would my monitoring have told me and what would I have done first?\'" },
+
+    { t: "refs", items: [
+      { label: "Lightcast AI Job Market Report 2025 — agentic AI engineer posting growth data", url: "https://lightcast.io" },
+      { label: "MIT Sloan: Why 95% of AI pilots fail to reach production", url: "https://sloanreview.mit.edu" },
+      { label: "Stanford HAI AI Index 2026 — AI job market trends and compensation data", url: "https://aiindex.stanford.edu" },
+    ]},
+  ],
+
 };
