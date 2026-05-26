@@ -11519,8 +11519,211 @@ function AgentMemoryArchitecture({ onNavigate }) {
   );
 }
 
+// ─── MCP VS API VS FUNCTION CALLING ──────────────────────────────────────────
+
+const MCP_SCENARIOS = [
+  {
+    id: "new_integration",
+    label: "New integration for one app",
+    description: "You're building a single app and need it to call GitHub's API to create issues.",
+    winner: "function",
+    winnerLabel: "Function Calling",
+    reasoning: "Direct API call + function calling is the right choice here. You have one app, one API, and full control over the schema. MCP adds a server layer with no benefit — you'd be adding infra complexity to solve a problem that doesn't exist yet.",
+    antipattern: "Building an MCP server for a single integration is over-engineering. MCP earns its place when multiple apps need the same tool, or when you want a consistent interface for many tools.",
+  },
+  {
+    id: "nm_problem",
+    label: "10 apps, 8 external tools",
+    description: "Your org has 10 AI apps. Each needs access to some combination of: GitHub, Jira, Slack, Postgres, S3, Confluence, PagerDuty, Datadog.",
+    winner: "mcp",
+    winnerLabel: "MCP",
+    reasoning: "This is the N×M problem. Without MCP: 10 apps × 8 integrations = up to 80 custom integration implementations, each with its own auth handling, error handling, and schema. With MCP: build 8 MCP servers once, then any app connects to any subset. The combinatorial explosion is the exact problem MCP was designed to solve.",
+    antipattern: "Rebuilding GitHub integration logic in each of your 10 apps is the N×M trap — when the GitHub API changes, you update 10 places instead of 1.",
+  },
+  {
+    id: "context_tax",
+    label: "Agent with 15 available tools",
+    description: "You're building an agent that has 15 tools available. Loading all tool schemas upfront costs 75K tokens before the agent does anything.",
+    winner: "api",
+    winnerLabel: "Selective Tool Loading",
+    reasoning: "The context window tax is real. At 75K tokens just for schemas, you've consumed most of a 128K context window before the first user message. The fix: load only the tools relevant to the current task, not all 15. Use dynamic tool selection — classify the user's intent, then load the relevant 2–4 tool schemas. This applies whether you use MCP or raw function calling — it's a retrieval problem, not a protocol problem.",
+    antipattern: "Loading all tool schemas unconditionally is the context tax mistake. Even with MCP, you still need selective tool loading at query time.",
+  },
+  {
+    id: "prototype",
+    label: "Weekend prototype",
+    description: "You're prototyping an AI assistant that calls your own FastAPI backend. One developer, one week, one app.",
+    winner: "function",
+    winnerLabel: "Function Calling / Direct API",
+    reasoning: "For a prototype: direct API call + function calling wins every time. MCP requires running a separate server process, implementing the protocol, handling connection lifecycle. That's meaningful overhead for a solo prototype. Build direct first. Migrate to MCP if and when you need multi-app sharing or want to open the tools to other models/apps.",
+    antipattern: "Adding MCP infrastructure to a prototype adds a week of setup time that buys nothing until you have multiple consumers.",
+  },
+  {
+    id: "existing_tools",
+    label: "Connecting existing CLI tools to an agent",
+    description: "Your team has 12 internal CLI scripts (backup, deploy, lint, report). You want an agent to be able to run them.",
+    winner: "mcp",
+    winnerLabel: "MCP",
+    reasoning: "MCP was built for exactly this: wrapping existing tools behind a consistent interface that any model can call. Build one MCP server that exposes your 12 scripts as tools. Any future agent — regardless of which model or framework — can use the same server without requiring the CLI scripts to change. This is the 'universal adapter' use case.",
+    antipattern: "Hardcoding CLI calls inside function definitions ties the tools to a specific model/app. When you swap models or build a second app, you rewrite the integrations.",
+  },
+];
+
+const MCP_COMPARISON = [
+  { aspect: "Best for", fn: "One app, controlled API, rapid iteration", api: "Simple direct calls, no tool framework needed", mcp: "Many apps sharing tools, org-wide reuse" },
+  { aspect: "Setup cost", fn: "Low — define schema, pass to model", api: "Minimal — just HTTP calls", mcp: "Higher — run a server, implement protocol" },
+  { aspect: "Context cost", fn: "Medium — schemas in system prompt", api: "None", mcp: "Medium — same schema cost as function calling" },
+  { aspect: "Solves N×M", fn: "No — per-app implementation", api: "No", mcp: "Yes — build once, all apps use" },
+  { aspect: "Auth handling", fn: "Per-app", api: "Per-app", mcp: "Centralized in MCP server" },
+  { aspect: "Tool versioning", fn: "Managed in each app", api: "Managed in each app", mcp: "Managed in one place" },
+  { aspect: "Framework support", fn: "All major frameworks", api: "Universal", mcp: "Growing — Claude, Cursor, some LangChain" },
+  { aspect: "Good for prototyping", fn: "Yes", api: "Yes", mcp: "No — too much setup overhead" },
+];
+
+function MCPDecisionFramework({ onNavigate }) {
+  const [scenario, setScenario] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const [activeTab, setActiveTab] = useState("decision");
+  const sc = MCP_SCENARIOS[scenario];
+
+  const WINNER_COLORS = { mcp: "#3b82f6", function: "#6366f1", api: "#22c55e" };
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
+        <h2 className="text-base font-bold text-white mb-1">MCP vs API vs Function Calling</h2>
+        <p className="text-sm text-zinc-400">Three ways to connect AI agents to external tools — each with a different sweet spot. The wrong choice costs you infra overhead or re-implementation debt.</p>
+      </div>
+
+      {/* The N×M problem explainer */}
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/20 p-4 space-y-3">
+        <div className="text-xs font-bold text-blue-300 uppercase tracking-widest">The N×M Problem</div>
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          Without a universal adapter: <span className="text-white font-semibold">N apps × M tools = N×M integrations</span> to build and maintain. Each app re-implements GitHub auth, Slack error handling, Jira schema mapping. When the GitHub API changes, you update N places.
+        </p>
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="rounded-lg bg-red-950/30 border border-red-800/40 p-3">
+            <div className="font-bold text-red-400 mb-1">Without MCP</div>
+            <div className="text-zinc-400">3 apps × 5 tools = <span className="text-red-300 font-bold">15 integrations</span></div>
+            <div className="text-zinc-500 mt-1">Each app builds its own GitHub, Slack, Jira connector</div>
+          </div>
+          <div className="rounded-lg bg-blue-950/30 border border-blue-800/40 p-3">
+            <div className="font-bold text-blue-400 mb-1">With MCP</div>
+            <div className="text-zinc-400">3 apps + 5 MCP servers = <span className="text-blue-300 font-bold">5 integrations</span></div>
+            <div className="text-zinc-500 mt-1">All apps connect to the same 5 servers</div>
+          </div>
+        </div>
+        <p className="text-xs text-zinc-500">MCP earns its setup cost when N×M &gt; N+M — roughly when you have 3+ apps and 3+ tools.</p>
+      </div>
+
+      {/* Tab nav */}
+      <div className="flex gap-1 border-b border-zinc-800 pb-0">
+        {[["decision", "Decision Scenarios"], ["compare", "Comparison Table"], ["context", "Context Window Tax"]].map(([id, label]) => (
+          <button key={id} onClick={() => setActiveTab(id)}
+            className={`px-4 py-2 text-xs font-semibold rounded-t-lg transition-all ${activeTab === id ? "bg-blue-600 text-white" : "text-zinc-500 hover:text-zinc-300"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "decision" && (
+        <div className="space-y-4">
+          <div className="flex gap-2 flex-wrap">
+            {MCP_SCENARIOS.map((s, i) => (
+              <button key={s.id} onClick={() => { setScenario(i); setRevealed(false); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${scenario === i ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+            <div className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Scenario</div>
+            <p className="text-sm text-zinc-200 leading-relaxed">{sc.description}</p>
+            <button onClick={() => setRevealed(true)}
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all">
+              What's the right approach?
+            </button>
+          </div>
+
+          {revealed && (
+            <div className="rounded-xl border p-4 space-y-3" style={{ borderColor: (WINNER_COLORS[sc.winner] || "#3b82f6") + "40", background: (WINNER_COLORS[sc.winner] || "#3b82f6") + "0d" }}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono uppercase tracking-widest text-zinc-500">Use</span>
+                <span className="text-sm font-black" style={{ color: WINNER_COLORS[sc.winner] || "#3b82f6" }}>{sc.winnerLabel}</span>
+              </div>
+              <p className="text-sm text-zinc-300 leading-relaxed">{sc.reasoning}</p>
+              <div className="rounded-lg bg-zinc-950/60 border border-zinc-800 p-3">
+                <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">Anti-pattern to avoid</div>
+                <p className="text-xs text-zinc-400">{sc.antipattern}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "compare" && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-zinc-800">
+                <th className="text-left py-2 pr-4 text-zinc-500 font-semibold w-32">Aspect</th>
+                <th className="text-left py-2 pr-4 text-indigo-400 font-semibold">Function Calling</th>
+                <th className="text-left py-2 pr-4 text-emerald-400 font-semibold">Direct API</th>
+                <th className="text-left py-2 text-blue-400 font-semibold">MCP</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MCP_COMPARISON.map((row, i) => (
+                <tr key={i} className="border-b border-zinc-900 hover:bg-zinc-900/40">
+                  <td className="py-2 pr-4 font-semibold text-zinc-400 whitespace-nowrap">{row.aspect}</td>
+                  <td className="py-2 pr-4 text-zinc-400">{row.fn}</td>
+                  <td className="py-2 pr-4 text-zinc-400">{row.api}</td>
+                  <td className="py-2 text-zinc-400">{row.mcp}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {activeTab === "context" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-4 space-y-3">
+            <div className="text-xs font-bold text-amber-300 uppercase tracking-widest">The Context Window Tax</div>
+            <p className="text-sm text-zinc-300 leading-relaxed">
+              Every tool schema you load costs tokens — before the model has done anything useful. A moderately complex tool schema runs 200–500 tokens. Load 15 tools upfront: <span className="text-amber-300 font-semibold">3,000–7,500 tokens just for schemas</span>.
+            </p>
+            <p className="text-sm text-zinc-400">At scale — 50 tools, complex schemas — teams have reported 75K+ token overhead per query. This is a protocol-agnostic problem: it affects MCP and function calling equally.</p>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+            <div className="text-xs font-bold text-white mb-2">The Fix: Dynamic Tool Selection</div>
+            <div className="space-y-2">
+              {[
+                { step: "1", label: "Classify intent", desc: "Classify the user query into a task type (code, data, comms, infra...)" },
+                { step: "2", label: "Load relevant tools", desc: "Load only the 2–4 tool schemas relevant to that task type" },
+                { step: "3", label: "Execute", desc: "Agent calls tools with a minimal, focused context window" },
+                { step: "4", label: "Expand if needed", desc: "If a tool call requires a capability not loaded, fetch that schema on demand" },
+              ].map(s => (
+                <div key={s.step} className="flex gap-3 items-start">
+                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
+                  <div>
+                    <span className="text-xs font-semibold text-zinc-200">{s.label} </span>
+                    <span className="text-xs text-zinc-500">{s.desc}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-zinc-500 mt-2">This applies equally to MCP and function calling. MCP solves the N×M integration problem. Dynamic tool selection solves the context tax problem. They're orthogonal.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
+  ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
 };

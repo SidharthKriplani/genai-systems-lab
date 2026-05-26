@@ -11421,4 +11421,45 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+
+  "nm-problem-mcp": [
+    { t: "h2", text: "The integration explosion" },
+    { t: "p", text: "Imagine you have three AI applications: a support bot, an internal search assistant, and a code review agent. Each needs to call GitHub, Jira, Slack, and your Postgres database. Without a shared interface, each application implements its own GitHub connector, its own Jira auth flow, its own Slack schema. That is 3 apps times 4 tools: 12 integration implementations to build and maintain." },
+    { t: "p", text: "Now add two more apps. Now add three more tools. The number of integrations grows as the product of both axes. This is the N×M problem, and it is not theoretical — it is the state most platform engineering teams find themselves in six months into building AI products." },
+    { t: "callout", v: "insight", text: "N×M: without a shared adapter layer, every new app multiplies the integration work. A team with 5 apps and 10 tools faces 50 integration implementations. Add one tool: 5 more implementations. Add one app: 10 more." },
+
+    { t: "h2", text: "What MCP actually is" },
+    { t: "p", text: "Model Context Protocol (MCP) is an open protocol that defines a standard interface between AI models and external tools. An MCP server wraps a tool — GitHub, a database, a file system, a CLI script — and exposes it through a consistent protocol that any MCP-compatible client can call." },
+    { t: "p", text: "The arithmetic changes: instead of N×M implementations, you build M MCP servers (one per tool) and N clients (one per app). Total: N+M. For 5 apps and 10 tools, that is 15 instead of 50. Add one tool: 1 new server, not 5 new implementations. Add one app: 1 new client, not 10 new integrations." },
+    { t: "p", text: "This is the core value proposition. Not performance, not capability — just combinatorial reduction in integration surface." },
+
+    { t: "h2", text: "When MCP earns its setup cost" },
+    { t: "p", text: "MCP is not free. Running an MCP server is an operational commitment: another process to deploy, monitor, restart on failure, and keep updated when the upstream API changes. For a single app calling a single API, the overhead is not justified." },
+    { t: "p", text: "The crossover point is roughly when N×M becomes significantly larger than N+M — meaning when you have three or more apps that need to share three or more tools. Below that, direct function calling or raw API calls are simpler and faster to ship." },
+    { t: "list", items: [
+      "Use function calling: one app, one or two tools, full control over the schema, rapid iteration. No server overhead.",
+      "Use direct API calls: simple integrations with no tool framework needed. Minimal abstraction.",
+      "Use MCP: multiple apps sharing the same tools, org-wide reuse, or wrapping existing CLI tools behind a consistent interface any model can call.",
+    ]},
+
+    { t: "h2", text: "The context window tax — a protocol-agnostic problem" },
+    { t: "p", text: "There is a failure mode that MCP does not solve and that often gets conflated with the N×M problem: the context window tax." },
+    { t: "p", text: "Every tool schema you load costs tokens. A moderately complex schema runs 200–500 tokens. Fifteen tools loaded upfront: 3,000–7,500 tokens consumed before the first user message. Teams building agents with 50+ tools have reported 75K+ token overhead per query — most of a 128K context window spent on schemas before the agent does anything." },
+    { t: "callout", v: "warning", text: "This affects MCP and function calling equally. MCP solves where tool implementations live. It does not solve how many schemas you load at query time. The fix is dynamic tool selection: classify intent, load 2–4 relevant schemas, execute, fetch more on demand." },
+    { t: "p", text: "Dynamic tool selection is a retrieval problem, not a protocol problem. You can and should apply it regardless of whether you use MCP or function calling." },
+
+    { t: "h2", text: "Why MCP and function calling feel similar" },
+    { t: "p", text: "At the model interaction level, both result in the same thing: the model generates a structured call, your code executes it, the result returns to the model. The protocol difference is in where tool definitions are served and where execution logic lives." },
+    { t: "p", text: "Function calling: tool definitions are inline in your app, passed to the model at query time. Execution logic lives in your app. MCP: tool definitions are served by an external server your app connects to. Execution logic lives in the server. The model interaction is identical; the infrastructure topology differs. This means you can start with function calling and migrate to MCP later with minimal model-side changes." },
+
+    { t: "h2", text: "The one-sentence decision rule" },
+    { t: "p", text: "If your tool implementations would otherwise be duplicated across multiple apps or teams, use MCP. If they would not, use function calling and ship faster." },
+    { t: "callout", v: "tip", text: "The MCP vs API vs Function Calling Systems module walks through five concrete scenarios with decision reasoning and the specific anti-patterns that signal you picked the wrong approach." },
+
+    { t: "refs", items: [
+      { label: "Model Context Protocol — Official Docs", url: "https://modelcontextprotocol.io/introduction" },
+      { label: "Anthropic MCP Announcement", url: "https://www.anthropic.com/news/model-context-protocol" },
+    ]},
+  ],
+
 };
