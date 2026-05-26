@@ -125,6 +125,13 @@ A practitioner traced the full arc: DS peak during COVID → 90% demand drop + r
 - **"Why Your RAG System Lies"** — Faithfulness failures, hallucination in retrieval-augmented contexts, practical mitigations.
 - **Series: "The Inference Stack"** — Four posts covering the full serving pipeline: quantization → KV cache → speculative decoding → serving infrastructure. Already have individual modules, need the cohesive narrative.
 
+### Agent memory architecture (new cluster — from practitioner infographic, May 2026)
+
+A practitioner post correctly frames the agent memory problem as four distinct types: short-term (current context, costs explode), long-term (vector search returns similar ≠ relevant), episodic (specific past events needing exact recall, not fuzzy matching), and semantic (learned user preferences that must persist across sessions). Their production stack: Redis (hot cache, last 10 interactions) → Postgres (structured episodic memory) → Vector DB (semantic retrieval) → LLM (decides what to fetch). Key insight: the real problem isn't storage, it's decision-making — knowing when to remember vs when to forget. An agent that remembers everything is as broken as one that remembers nothing. The lab has agent loop modules but zero content on agent memory architecture — one of the first production problems you hit when building real agents.
+
+- **GT post: "The Four Memory Problems Every Agent Has"** — short-term vs long-term vs episodic vs semantic, why each requires a different storage and retrieval strategy, why "just use a vector DB" fails for episodic recall, and why the decision layer (what to fetch, what to discard) is harder than the storage layer. Production-grounded, directly fills the gap.
+- **Systems module: "Agent Memory Architecture"** — interactive: user configures a memory stack (toggle Redis / Postgres / Vector DB), runs an agent through a multi-session scenario, observes what gets remembered, what gets lost, and where retrieval breaks. Shows the "similar ≠ relevant" failure in long-term memory, the exact-recall requirement for episodic, and what happens when the agent remembers too much. Sits alongside existing Agent Loop and Multi-Agent modules.
+
 ### Prompt management as infrastructure (new cluster — from Aryan Sharma post, May 2026)
 
 An AI/ML engineer shared how a one-line system prompt change caused a 23% quality drop for 11 days — undetected. No alert, no test, no one checking. Built PromptLab (open source, FastAPI + React + PostgreSQL) to solve it: full version history, A/B experiments, LLM-as-judge eval runs, serve-via-API. Core claim: prompts are code and deserve CI/CD treatment. The lab has zero content on prompt management as a DevOps discipline — only prompt engineering as a skill.
