@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import HowTo from "../HowTo";
 
 
 // ─── EVALS LAB DATA ───────────────────────────────────────────────────────────
