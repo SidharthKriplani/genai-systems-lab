@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: May 2026 | Current scale: 48+ Systems modules, 19 Explore, 183+ PrepLab questions, 202+ GT posts*
+*Last updated: May 2026 | Current scale: 54 Systems modules, 23 Explore, 244 PrepLab questions, 212 GT posts*
 
 ---
 
@@ -53,14 +53,20 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 - ~~**GRPO / Agent RL Training**~~ ✅ *built May 2026*
 - ~~**Evaluation Metrics Deep-Dive**~~ ✅ *built May 2026 — RAGAS, LLM-as-Judge tab, hallucination example*
 - ~~**Long Context Patterns**~~ ✅ *built May 2026 — needle-in-haystack viz, map-reduce, chunk-summarise, model limits table*
-- **AI Safety Engineering** — Jailbreak patterns, adversarial prompts, red-teaming frameworks. Different from the existing AI Red Teaming module (which is strategy) — this is implementation.
 - ~~**Vector Database Engineering**~~ ✅ *built May 2026 — pgvector/Chroma/Pinecone/Weaviate/Qdrant comparison, HNSW/IVF index guide, hybrid search, decision wizard*
-- **Prompt Injection Defense** — Attack patterns, defense strategies, prompt hardening. Rising importance as agents interact with untrusted content.
+- ~~**Prompt Injection Defense**~~ ✅ *built May 2026 — 5 attack patterns, 5 defense layers, hardening checklist*
+- ~~**Agent Memory Architecture**~~ ✅ *built May 2026 — 4 memory types, failure demos, production stack, decision layer*
+- **AI Safety Engineering** — Jailbreak patterns, adversarial prompts, red-teaming frameworks. Different from the existing AI Red Teaming module (which is strategy) — this is implementation. *Pending.*
+- **MCP vs API vs Function Calling** — The N×M problem, context window tax, when each approach wins. Decision framework interactive. *Pending — from jamwithai cluster.*
+- **A/B Testing for AI Systems** — Classic A/B, interleaved testing (50x sample efficiency), MAB, switchback, permanent holdouts. *Pending — unique angle, no lab content yet.*
+- **Query Refinement Lab** — HyDE, multi-query, decomposition, iterative semantic optimization. Extends RAG Lab from the query side. *Pending.*
+- **Prompt Change Management** — User edits system prompt, sees quality score shift, regression alert, A/B split, rollback decision. *Pending — companion to "Your Prompt Is Code" GT post.*
+- **Agent Context Architecture** — Configure which layers your agent uses (persistent memory / skill injection / delegation / hooks), see cost/failure mode changes. *Pending — from ADK patterns cluster.*
 
 ### Systems modules (depth improvements)
-- **Evals Lab** — Add "write your own eval" builder: user defines metric, weights, test cases, sees score. Currently too passive.
-- **Context Compaction** — Add live compaction simulator: user adjusts conversation length, sees token count, triggers compaction, sees output quality change.
-- **Agent Architecture** — Add multi-agent orchestration interactive (orchestrator dispatches to workers, see the message flow). Currently only single-agent.
+- **Evals Lab** — Add "write your own eval" builder: user defines metric, weights, test cases, sees score. Currently too passive. *Pending.*
+- **Context Compaction** — Add live compaction simulator: user adjusts conversation length, sees token count, triggers compaction, sees output quality change. *Pending.*
+- **Agent Architecture** — Add multi-agent orchestration interactive (orchestrator dispatches to workers, see the message flow). Currently only single-agent. *Pending.*
 
 ### Cosine similarity + vector normalisation fundamentals (small cluster — from Nishit Jain interview post, May 2026)
 
@@ -71,21 +77,24 @@ An AI interviewer found that candidates who claimed to have built 2-3 RAG system
 
 ### Explore modules
 - ~~**Model Architecture Comparison**~~ ✅ *built May 2026 — architecture guide + use-case wizard*
-- **Tokenizer Comparison** — BPE vs WordPiece vs SentencePiece vs tiktoken. Token counts for the same text across tokenizers. Interactive demo.
+- ~~**Tokenizer Comparison**~~ ✅ *built May 2026 — BPE/WordPiece/SentencePiece/tiktoken guide + live demo + cost calculator*
 - ~~**Hardware Reference**~~ ✅ *built May 2026 — GPU comparison table + VRAM calculator*
+- ~~**Cosine Similarity**~~ ✅ *built May 2026 — drag-vectors interactive*
+- **Explore grouping** — Apply DESIGN/BUILD/OPS group structure to Explore (23 modules, getting long). Currently flat list. *Pending — Tier 2.*
 
 ### PrepLab
-- **Scenario-type questions** — Multi-turn conversational scenarios where the user debugs a failing system across 3-4 exchanges. Higher fidelity than MCQ.
-- **More system design text questions** — Cover: vector DB selection, agent reliability, eval harness design, fine-tuning decision framework.
+- **Questions for uncovered modules** — Prompt Injection Defense, Agent Memory Architecture, Long Context Patterns, and Tokenizer Comparison modules all shipped but have zero PrepLab questions anchored to them. ~15 questions total. *Pending — quick win.*
+- **Scenario-type questions** — Multi-turn conversational scenarios where the user debugs a failing system across 3-4 exchanges. Higher fidelity than MCQ. *Pending.*
+- **More system design text questions** — Cover: vector DB selection, agent reliability, eval harness design, fine-tuning decision framework. *Pending.*
 
 ### Agent Development Kit patterns (new cluster — from LuMay AI diagram, May 2026)
 
 The 5-layer framework (CLAUDE.md → Skills → Hooks → Subagents → Plugins) surfaces production patterns the lab doesn't teach as named concepts. The underlying ideas are tool-agnostic and interview-relevant.
 
-- **GT post: "The Agent Memory Layer — Why CLAUDE.md Is Architecture, Not Documentation"** — CLAUDE.md as a persistent context injection mechanism. Global vs project-level. What belongs there, what doesn't, and how it shapes agent behavior at runtime. Tool-agnostic (applies to any agent framework with persistent memory).
-- **GT post: "Deterministic Guardrails: Hooks vs LLM-Based Safety"** — The distinction between rule-based hooks (pre/post tool use, auto-lint, block destructive commands) and probabilistic LLM guardrails. Why you want both layers and where each fails. Hooks as the `git hooks` mental model for agents.
-- **GT post: "Context Isolation in Multi-Agent Systems"** — "Main context stays clean" as a production principle. Why spawning subagents with forked context (rather than running everything in one context) prevents drift, reduces hallucination, and caps cost. No-infinite-loops constraint and why it matters.
-- **Systems module: "Agent Context Architecture"** — Interactive: configure which layers your agent uses (persistent memory / skill injection / delegation / hooks), see how context size, cost, and failure modes change. Sits alongside the existing Agent Memory Types module but covers the system design level.
+- **GT post: "The Agent Memory Layer — Why CLAUDE.md Is Architecture, Not Documentation"** — CLAUDE.md as a persistent context injection mechanism. Tool-agnostic. *Pending.*
+- **GT post: "Deterministic Guardrails: Hooks vs LLM-Based Safety"** — rule-based hooks vs probabilistic LLM guardrails. *Pending.*
+- **GT post: "Context Isolation in Multi-Agent Systems"** — main context stays clean, subagents with forked context, no-infinite-loops. *Pending.*
+- ~~**Systems module: "Agent Context Architecture"**~~ → listed under Systems modules above as pending.
 
 ### AI PM career track (new cluster — from real user persona signal, May 2026)
 
@@ -123,8 +132,22 @@ A practitioner traced the full arc: DS peak during COVID → 90% demand drop + r
 - ~~**"What Actually Happens During Pretraining"**~~ ✅ *built May 2026 — id: what-happens-during-pretraining*
 - ~~**"The Eval Crisis: Why Most AI Evals Are Wrong"**~~ ✅ *built May 2026 — id: the-eval-crisis*
 - ~~**"Why Your RAG System Lies"**~~ ✅ *built May 2026 — id: why-rag-lies*
-- **Series: "The Inference Stack"** — Four posts covering the full serving pipeline: quantization → KV cache → speculative decoding → serving infrastructure. Already have individual modules, need the cohesive narrative.
 - ~~**"The Reversal Curse"**~~ ✅ *built May 2026 — id: the-reversal-curse*
+- ~~**"The Four Memory Problems Every Agent Has"**~~ ✅ *built May 2026 — id: agent-memory-architecture*
+- ~~**"How Surprised Is the Model?"**~~ ✅ *built May 2026 — id: how-surprised-is-the-model*
+- ~~**"Why Transformers Won"**~~ ✅ *built May 2026 — id: why-transformers-won*
+- ~~**"Your Prompt Is Code"**~~ ✅ *built May 2026 — id: your-prompt-is-code*
+- ~~**"The Three-Layer DE Skill Stack"**~~ ✅ *built May 2026 — id: three-layer-de-skill-stack*
+- **Series: "The Inference Stack"** — Four posts covering the full serving pipeline: quantization → KV cache → speculative decoding → serving infrastructure. Already have individual modules, need the cohesive narrative. *Pending.*
+- **"Graceful Degradation: The System Design Pattern Most AI Teams Skip"** — fallback chains, confidence thresholds, silent failure detection. From Type A/B cluster. *Pending.*
+- **"Monitoring That Predicts Problems, Not Reports Them"** — drift detection, latency trend alerts, hallucination rate canaries, cost spike prediction. From Type A/B cluster. *Pending.*
+- **"Prompt Regression Testing: How to Know When a Prompt Change Breaks Things"** — prompt test suite, metrics to track, wiring into CI/CD. Companion to "Your Prompt Is Code". *Pending.*
+- **"The N×M Problem and Why MCP Exists"** — architectural problem MCP solves, MCP vs function calling vs raw API. *Pending.*
+- **"Why Classic A/B Testing Breaks for AI and What to Do Instead"** — interleaving, switchback, MAB, permanent holdouts. *Pending.*
+- **"The Query Is Never What the User Meant"** — HyDE, multi-query, decomposition, iterative semantic optimization. *Pending.*
+- **"The Forward Deployed Engineer: AI's Fastest-Growing Role Nobody's Training For"** — what FDE is, why it emerged, the dependency gap problem. *Pending.*
+- **"How Data Scientist Became AI Engineer: The Market Forces Behind Your Job Title"** — DS peak → fragmentation → ChatGPT reset → agentic surge. *Pending.*
+- **"Layer 3 Skills for Data Engineers: Vector DBs, Embedding Pipelines, and LLM Observability"** — companion to Three-Layer DE post, goes deeper on each Layer 3 skill. *Pending.*
 
 ### MCP vs API vs Function Calling (new cluster — from jamwithai production engineering blogs, May 2026)
 

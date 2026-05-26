@@ -817,3 +817,41 @@ The structural upgrade documented in CLAUDE.md (three front doors, GT as knowled
 
 **Status:** Sprint complete ✅
 
+---
+
+## Audit 22 — Build Sprint Review (May 2026, Session 2)
+
+**Type:** Post-build integrity check
+**Date:** May 2026
+**Scope:** Second build sprint — nav polish, bug fixes, mobile UX
+
+### What was built
+
+| Item | Type | Status |
+|---|---|---|
+| HowTo import fix in systems/modules.jsx | Bug fix | ✅ Shipped |
+| Duplicate JUDGE_SCENARIOS → LLM_JUDGE_SCENARIOS rename | Build fix (Vercel) | ✅ Shipped |
+| NAV_GROUPS sidebar counts corrected (all 10 entries) | UX fix | ✅ Shipped |
+| Systems left panel: group filter pills (All/DESIGN/BUILD/OPS) | UX | ✅ Shipped |
+| Explore left panel: search input | UX | ✅ Shipped |
+| Mobile bottom nav bar (LEARN/BUILD/GROW) with slide-up tray | Feature | ✅ Shipped |
+| Mobile bottom nav polish — icons, pill highlights, 2-column grid tray, accent line, frosted glass | UX | ✅ Shipped |
+
+### Scale after sprint
+
+- GT posts: 212 (unchanged)
+- Explore modules: 23 (unchanged)
+- Systems modules: 54 (unchanged)
+- PrepLab questions: 244 (unchanged)
+
+### Open findings from this sprint
+
+| # | Finding | File | Status |
+|---|---|---|---|
+| 1 | PrepLab question count in Home.jsx door copy likely stale ("220+") | Home.jsx | ⚠️ Minor — fix when counts next touched |
+| 2 | `consult` tab still missing from SHORTCUT_TABS | App.jsx | ⚠️ Low priority — known |
+| 3 | Prompt Injection Defense, Agent Memory, Long Context, Tokenizer Comparison have zero PrepLab questions | PrepLab.jsx | ⚠️ Open — ~15 questions needed |
+| 4 | Explore flat list at 23 modules — no group structure | Explore.jsx | ⚠️ Open — Tier 2 fix |
+
+**Status:** Sprint complete ✅
+

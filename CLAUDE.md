@@ -24,7 +24,7 @@ Act as a product and engineering partner, not an assistant. That means:
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of May 2026: 54 Systems modules, 23 Explore modules, 244 PrepLab questions, 212 Ground Truth posts, 14 top-level tabs.
+Scale as of May 2026: 54 Systems modules, 23 Explore modules, 244 PrepLab questions, 212 Ground Truth posts, 14 top-level tabs. Mobile bottom nav shipped (LEARN/BUILD/GROW bar).
 
 ---
 
@@ -304,3 +304,9 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 - Agent Memory Architecture Systems module built (4 memory types, failure demos, production stack, decision layer)
 - GT posts written: Agent Memory (4 types + decision layer), How Surprised Is the Model (entropy/cross-entropy/KL), Why Transformers Won (RNN→LSTM→Transformer arc), Your Prompt Is Code (prompt CI/CD), Three-Layer DE Skill Stack
 - PrepLab questions: 231 → 244 (5 Vector DB questions added)
+- HowTo import bug fixed in systems/modules.jsx (was causing runtime ReferenceError)
+- Duplicate JUDGE_SCENARIOS declaration renamed to LLM_JUDGE_SCENARIOS (was breaking Vercel build)
+- NAV_GROUPS sidebar counts corrected (all 10 entries updated to accurate values)
+- Systems left panel: group filter pills added (All / DESIGN / BUILD / OPS)
+- Explore left panel: search input added
+- Mobile bottom nav bar shipped: LEARN/BUILD/GROW 3-item fixed bar with slide-up tray, icons, pill highlights, 2-column grid tray, colored top accent line, frosted glass bar
