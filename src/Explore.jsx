@@ -3936,75 +3936,85 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
   const nextModule = EXPLORE_MODULES[activeIdx + 1] || null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-black text-white tracking-tight">Explore</h1>
-        <p className="text-sm text-zinc-400">Visualization, debugging, and auditing tools for AI systems</p>
-        {done.size > 0 && (
-          <div className="flex items-center justify-center gap-2">
-            <div className="h-1.5 w-32 rounded-full bg-zinc-800 overflow-hidden">
-              <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${(done.size / EXPLORE_MODULES.length) * 100}%` }} />
-            </div>
-            <span className="text-xs text-zinc-500">{done.size}/{EXPLORE_MODULES.length} done</span>
-          </div>
-        )}
-      </div>
+    <div className="flex min-h-[calc(100vh-56px)]">
 
-      {/* Start-here orientation — shown only before any module is completed */}
-      {done.size === 0 && (
-        <div className="rounded-lg border border-blue-900/40 bg-blue-950/20 px-4 py-3 flex items-center justify-between gap-3">
+      {/* ── LEFT PANEL: module list ────────────────────────────────── */}
+      <div className="w-full lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]">
+        <div className="px-3 pt-5 pb-2 space-y-3">
           <div>
-            <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">New here?</span>
-            <span className="text-sm text-zinc-300 ml-2">Start with <span className="font-bold text-white">3D Embedding Space</span> — the best visual intuition builder in the lab.</span>
+            <h1 className="text-base font-black text-white tracking-tight">Explore</h1>
+            <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">Visualizations &amp; debugging tools</p>
+            {done.size > 0 && (
+              <div className="flex items-center gap-2 mt-2">
+                <div className="h-1 flex-1 rounded-full bg-zinc-800 overflow-hidden">
+                  <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${(done.size / EXPLORE_MODULES.length) * 100}%` }} />
+                </div>
+                <span className="text-[10px] text-zinc-600 shrink-0">{done.size}/{EXPLORE_MODULES.length}</span>
+              </div>
+            )}
           </div>
-          <button onClick={() => switchModule("embeddings")} className="shrink-0 px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-300 text-xs font-bold hover:bg-blue-900/60 transition-all whitespace-nowrap">Start →</button>
         </div>
-      )}
 
-      <div className="flex gap-2 justify-center flex-wrap">
-        {EXPLORE_MODULES.map(m => (
-          <button key={m.id} onClick={() => switchModule(m.id)}
-            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-            {done.has(m.id) && <span className="text-green-400 text-[10px]">✓</span>}
-            <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
-            {m.label}
-          </button>
-        ))}
-      </div>
-      {(() => { const m = EXPLORE_MODULES.find(x => x.id === activeModule); return m?.fidelity ? (
-        <div className="flex items-center gap-2">
-          <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-            m.fidelity.tier === "faithful"   ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/50" :
-            m.fidelity.tier === "approximate" ? "bg-amber-900/20 text-amber-400 border-amber-700" :
-            m.fidelity.tier === "simplified" ? "bg-amber-950/40 text-amber-400 border-amber-800/50" :
-            "bg-zinc-800 text-zinc-500 border-zinc-700"
-          }`}>
-            {m.fidelity.tier === "faithful" ? "✓ Mathematically faithful" :
-             m.fidelity.tier === "approximate" ? "~ Approximate (simplified BPE)" :
-             m.fidelity.tier === "simplified" ? "~ Simplified" : "◌ Conceptual"}
-          </span>
-          <span className="text-[10px] text-zinc-600">{m.fidelity.note}</span>
+        <div className="px-2 pb-4 space-y-0.5">
+          {EXPLORE_MODULES.map(m => (
+            <button key={m.id} onClick={() => switchModule(m.id)}
+              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"}`}>
+              {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
+              <span className="truncate">{m.label}</span>
+            </button>
+          ))}
         </div>
-      ) : null; })()}
-      <ActiveComponent onNavigate={onNavigate} />
-
-      {/* Done state + next step */}
-      <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
-        <button
-          onClick={() => toggleDone(activeModule)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${done.has(activeModule) ? "bg-green-900/40 text-green-400 hover:bg-red-900/30 hover:text-red-400" : "bg-zinc-800 text-zinc-400 hover:bg-green-900/40 hover:text-green-400"}`}
-        >
-          {done.has(activeModule) ? "✓ Done — click to unmark" : "Mark as done"}
-        </button>
-        {done.has(activeModule) && nextModule && (
-          <button onClick={() => switchModule(nextModule.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-900/40 text-violet-300 text-xs font-bold hover:bg-violet-900/60 transition-all">
-            Next: {nextModule.label} →
-          </button>
-        )}
-        {done.has(activeModule) && !nextModule && (
-          <span className="text-xs text-green-400 font-semibold">All modules done</span>
-        )}
       </div>
+
+      {/* ── RIGHT PANEL: active module content ────────────────────── */}
+      <div className="flex-1 min-w-0 px-4 lg:px-8 py-6 space-y-6 max-w-2xl lg:max-w-3xl">
+
+        {done.size === 0 && (
+          <div className="rounded-lg border border-blue-900/40 bg-blue-950/20 px-4 py-3 flex items-center justify-between gap-3">
+            <div>
+              <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">New here?</span>
+              <span className="text-sm text-zinc-300 ml-2">Start with <span className="font-bold text-white">3D Embedding Space</span> — the best visual intuition builder in the lab.</span>
+            </div>
+            <button onClick={() => switchModule("embeddings")} className="shrink-0 px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-300 text-xs font-bold hover:bg-blue-900/60 transition-all whitespace-nowrap">Start →</button>
+          </div>
+        )}
+
+        {(() => { const m = EXPLORE_MODULES.find(x => x.id === activeModule); return m?.fidelity ? (
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+              m.fidelity.tier === "faithful"   ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/50" :
+              m.fidelity.tier === "approximate" ? "bg-amber-900/20 text-amber-400 border-amber-700" :
+              m.fidelity.tier === "simplified" ? "bg-amber-950/40 text-amber-400 border-amber-800/50" :
+              "bg-zinc-800 text-zinc-500 border-zinc-700"
+            }`}>
+              {m.fidelity.tier === "faithful" ? "✓ Mathematically faithful" :
+               m.fidelity.tier === "approximate" ? "~ Approximate (simplified BPE)" :
+               m.fidelity.tier === "simplified" ? "~ Simplified" : "◌ Conceptual"}
+            </span>
+            <span className="text-[10px] text-zinc-600">{m.fidelity.note}</span>
+          </div>
+        ) : null; })()}
+
+        <ActiveComponent onNavigate={onNavigate} />
+
+        <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+          <button
+            onClick={() => toggleDone(activeModule)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${done.has(activeModule) ? "bg-green-900/40 text-green-400 hover:bg-red-900/30 hover:text-red-400" : "bg-zinc-800 text-zinc-400 hover:bg-green-900/40 hover:text-green-400"}`}
+          >
+            {done.has(activeModule) ? "✓ Done — click to unmark" : "Mark as done"}
+          </button>
+          {done.has(activeModule) && nextModule && (
+            <button onClick={() => switchModule(nextModule.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-900/40 text-violet-300 text-xs font-bold hover:bg-violet-900/60 transition-all">
+              Next: {nextModule.label} →
+            </button>
+          )}
+          {done.has(activeModule) && !nextModule && (
+            <span className="text-xs text-green-400 font-semibold">All modules done</span>
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }
