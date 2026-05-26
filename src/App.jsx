@@ -127,7 +127,7 @@ function TierBadge({ tier, size = "sm" }) {
   );
 }
 
-function ChallengeResult({ grade, scenarioTitle }) {
+function ChallengeResult({ grade, scenarioTitle, scenario, onNavigate }) {
   const [copied, setCopied] = useState(false);
   if (!grade) return null;
   const tier = SCORE_TIERS[grade.tier] || SCORE_TIERS.analyst_ready;
@@ -166,9 +166,17 @@ function ChallengeResult({ grade, scenarioTitle }) {
           </div>
         ))}
       </div>
+      {/* Debrief link — read the full GT post on this failure mode */}
+      {scenario?.gtPost && onNavigate && (
+        <button
+          onClick={() => onNavigate({ tab: "groundtruth", postId: scenario.gtPost })}
+          className="w-full py-2 rounded-lg border border-blue-800/50 bg-blue-950/20 hover:border-blue-600/60 hover:bg-blue-950/40 text-xs font-mono text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center gap-2">
+          Read the full post on this failure mode →
+        </button>
+      )}
       {/* Share — always visible, more neutral color */}
       <button onClick={shareScenarioSolve}
-        className="w-full mt-1 py-2 rounded-lg border border-zinc-700/50 hover:border-zinc-500 text-xs font-mono text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-2">
+        className="w-full py-2 rounded-lg border border-zinc-700/50 hover:border-zinc-500 text-xs font-mono text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-2">
         {copied ? "✓ Copied!" : "📤 Share this result"}
       </button>
     </div>
@@ -1642,7 +1650,7 @@ export default function App() {
 
               {result && evaluated && (
                 <>
-                  {challengeMode && gradeResult && <ChallengeResult grade={gradeResult} scenarioTitle={scenario.title} />}
+                  {challengeMode && gradeResult && <ChallengeResult grade={gradeResult} scenarioTitle={scenario.title} scenario={scenario} onNavigate={navigateTo} />}
 
                   {result.failure_mode ? (
                     <div className="rounded-xl border border-red-800 bg-red-950/30 p-4 space-y-2">

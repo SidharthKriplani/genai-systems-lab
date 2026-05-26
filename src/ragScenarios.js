@@ -6,6 +6,7 @@ function pct(v) { return (v * 100).toFixed(0) + "%"; }
 
 const SCENARIO_MISSING = {
   scenario_id: "missing_answer",
+  gtPost: "missing-context-failure",
   title: "Missing Answer",
   tag: "RAG FAILURE #1",
   description:
@@ -116,6 +117,7 @@ const SCENARIO_MISSING = {
 
 const SCENARIO_AMBIGUOUS = {
   scenario_id: "ambiguous_query",
+  gtPost: "ambiguous-query-failure",
   title: "Ambiguous Query",
   tag: "RAG FAILURE #2",
   description:
@@ -225,6 +227,7 @@ const SCENARIO_AMBIGUOUS = {
 
 const SCENARIO_CONFLICTING = {
   scenario_id: "conflicting_documents",
+  gtPost: "retrieval-poisoning",
   title: "Conflicting Policy Documents",
   tag: "RAG FAILURE #3",
   description:
@@ -362,6 +365,7 @@ const SCENARIO_CONFLICTING = {
 
 const SCENARIO_MULTIHOP = {
   scenario_id: "multi_hop",
+  gtPost: "multihop-reasoning-failure",
   title: "Multi-Hop Reasoning",
   tag: "RAG FAILURE #4",
   description:
@@ -472,6 +476,7 @@ const SCENARIO_MULTIHOP = {
 
 const SCENARIO_THREEHOP = {
   scenario_id: "three_hop_chain",
+  gtPost: "multihop-reasoning-failure",
   title: "Three-Document Evidence Chain",
   tag: "RAG FAILURE #5",
   description:
@@ -554,6 +559,7 @@ const SCENARIO_THREEHOP = {
 
 const SCENARIO_INJECTION = {
   scenario_id: "prompt_injection",
+  gtPost: "prompt-injection-production",
   title: "Prompt Injection via Retrieval",
   tag: "RAG FAILURE #6",
   description:
