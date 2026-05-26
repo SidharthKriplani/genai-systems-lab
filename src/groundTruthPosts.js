@@ -11003,4 +11003,126 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+  "what-happens-during-pretraining": [
+    { t: "p", text: "Every LLM you have ever used is the product of a pretraining run that happened before you saw it. Fine-tuning, RLHF, prompt engineering — all of it operates on a foundation that was laid during pretraining. Understanding what actually happens during that process changes how you think about model behavior, failure modes, and limitations." },
+    { t: "callout", v: "key", text: "Pretraining is the process of training a neural network on a massive text corpus to predict the next token. Everything else — instruction following, reasoning, helpfulness — is learned on top of this foundation." },
+
+    { t: "h2", text: "Stage 1: Data curation" },
+    { t: "p", text: "The most important decisions in pretraining are made before a single gradient is computed. Data quality determines model quality more than architecture or scale. The major labs spend enormous effort on data pipelines — filtering, deduplication, quality scoring, and mixing." },
+    { t: "list", items: [
+      "Scale: frontier models train on 1–15 trillion tokens. GPT-3 used 300B tokens. Llama 3 used 15T. The trend is more data, not just bigger models.",
+      "Sources: Common Crawl (web), books, code (GitHub), Wikipedia, scientific papers, forums. The mix matters — code improves reasoning even for text tasks.",
+      "Filtering: heuristic quality filters (token count, punctuation ratio, stop word ratio), classifier-based quality scoring (trained on curated positive examples), language ID filters, safety filters removing CSAM and violent content.",
+      "Deduplication: near-duplicate removal using MinHash LSH. Without deduplication, the model memorises repeated content and generalises worse. Llama 3 reported dedup reduced dataset size by ~30%.",
+      "Mixing recipe: the ratio of web/books/code/math in training data is a hyperparameter. More code → better reasoning. More math → better quantitative tasks. Labs don\\'t publish exact recipes.",
+    ]},
+    { t: "callout", v: "warning", text: "Data contamination: if your benchmark test set appears in the pretraining corpus, your eval results are inflated. This is why new benchmarks become useless within months — they get scraped into Common Crawl and subsequent model versions memorise them." },
+
+    { t: "h2", text: "Stage 2: Tokenizer training" },
+    { t: "p", text: "Before the model trains, you need a tokenizer — a mapping from raw text to integers. The tokenizer is trained separately on a sample of the pretraining corpus and then frozen. Tokenizer choice has significant downstream effects." },
+    { t: "table", headers: ["Algorithm", "Used by", "Key property", "Weakness"], rows: [
+      ["BPE (Byte-Pair Encoding)", "GPT-2/3/4, Llama, Mistral", "Merges frequent byte pairs iteratively. Compact, handles unknown tokens via byte fallback.", "Word boundaries vary — same word tokenises differently with/without leading space."],
+      ["WordPiece", "BERT, DistilBERT", "Maximises likelihood of training data. Better for morphologically rich languages.", "Slower tokenisation, vocabulary tied to training language."],
+      ["SentencePiece (BPE/Unigram)", "Llama 2, T5, PaLM", "Language-agnostic — treats text as raw bytes. Works across scripts.", "Slightly larger vocabularies, more complex implementation."],
+      ["tiktoken (cl100k_base)", "GPT-4, GPT-4o", "Byte-level BPE with 100K vocabulary. Better multilingual coverage than GPT-3 tokenizer.", "Larger vocabulary means larger embedding table."],
+    ]},
+    { t: "p", text: "Vocabulary size is a key decision: larger vocabularies mean fewer tokens per document (cheaper training, longer context in tokens) but larger embedding matrices. Most frontier models use 32K–128K vocabulary." },
+
+    { t: "h2", text: "Stage 3: Architecture decisions" },
+    { t: "p", text: "By 2024, the architecture decisions for frontier models have largely converged. Decoder-only transformer with a few key modifications:" },
+    { t: "list", items: [
+      "Rotary Positional Embeddings (RoPE) — replaces absolute positional embeddings. Enables better length generalisation and context extension.",
+      "Grouped Query Attention (GQA) — reduces KV cache memory by sharing key/value heads across query heads. Used in Llama 3, Mistral, Gemma.",
+      "SwiGLU activation — replaces ReLU in the FFN. Empirically better performance, slightly more parameters.",
+      "RMSNorm — simpler than LayerNorm, same effect. Pre-norm (before attention) is now standard.",
+      "No bias terms — most modern LLMs remove bias from linear layers. Small speedup, no quality loss.",
+    ]},
+    { t: "p", text: "The number of layers, attention heads, and hidden dimension are determined by the Chinchilla scaling laws: optimal model size given a compute budget. The Chinchilla finding (2022) was that most models were undertrained — you get better performance by training a smaller model on more tokens rather than a larger model on fewer tokens." },
+    { t: "callout", v: "key", text: "Chinchilla optimal: for a given compute budget C (measured in FLOPs), optimal model size N ≈ C^0.5 / 1.5, optimal tokens D ≈ 20N. In practice, inference costs push labs to train smaller models on more tokens than Chinchilla optimal — you save on training once but serve millions of requests." },
+
+    { t: "h2", text: "Stage 4: The training run" },
+    { t: "p", text: "The training objective is simple: given a sequence of tokens, predict the next one. Cross-entropy loss over the vocabulary. But executing this at scale is a massive engineering problem." },
+    { t: "list", items: [
+      "Hardware: frontier runs use thousands of GPUs/TPUs. Llama 3 405B used ~16,000 H100s for ~77 days.",
+      "Parallelism: tensor parallelism (split layers across GPUs), pipeline parallelism (split layers sequentially), data parallelism (replicate model, split data). 3D parallelism combines all three.",
+      "Precision: BF16 for forward/backward pass, FP32 for optimizer state (AdamW). Mixed precision reduces memory by ~2× with minimal quality loss.",
+      "Learning rate schedule: warmup for ~1% of training steps, then cosine decay to 10% of peak LR. Typical peak LR: 3e-4 for 7B, 1e-4 for 70B.",
+      "Batch size: large batches (4M–16M tokens per step) for training stability. Gradient accumulation to fit large batches in GPU memory.",
+      "Checkpointing: save every few thousand steps. Resume from checkpoint on hardware failures (common at this scale).",
+    ]},
+
+    { t: "h2", text: "Reading the loss curve" },
+    { t: "p", text: "The training loss is a direct window into model quality. Understanding what it tells you is a practical skill." },
+    { t: "table", headers: ["Pattern", "What it means", "Action"], rows: [
+      ["Smooth monotonic decrease", "Normal healthy training", "Monitor for slowing — may need LR adjustment"],
+      ["Loss spike followed by recovery", "Learning rate too high, or bad batch (corrupted data)", "Check LR schedule; add data quality filters; gradient clipping"],
+      ["Loss plateau early", "Model undertrained — not enough compute", "Train longer or increase LR"],
+      ["Loss divergence (NaN/Inf)", "Numerical instability — LR too high or bad data", "Reduce LR, add gradient clipping, check data pipeline"],
+      ["Loss drops then flattens permanently", "Data exhausted — seen all unique patterns", "Add more data or accept the floor"],
+    ]},
+    { t: "p", text: "Validation loss (on held-out data) diverging from training loss signals memorisation. This is expected to some degree — but a large gap means the model is overfitting to training distribution." },
+
+    { t: "h2", text: "What pretraining gives you — and what it doesn't" },
+    { t: "p", text: "A pretrained model is a probability distribution over next tokens, conditioned on the preceding context. It has absorbed enormous amounts of world knowledge, linguistic patterns, and reasoning structures. But it has not learned to be helpful, safe, or instruction-following. That comes in post-training (SFT → RLHF/DPO)." },
+    { t: "p", text: "The limitations baked in during pretraining cannot be fully fixed in post-training. A model that never saw code during pretraining cannot be made into a coding assistant by fine-tuning alone. A model trained on data with a 2024 cutoff will hallucinate about 2025 events regardless of how you prompt it. Pretraining is the foundation — everything downstream is constrained by it." },
+    { t: "callout", v: "tip", text: "When debugging unexpected model behavior, ask: could this be a pretraining artifact? Biases, knowledge cutoff issues, reasoning limitations — these are usually pretraining constraints, not fine-tuning failures. The fix requires a different base model, not a better prompt." },
+
+    { t: "refs", items: [
+      { label: "Chinchilla scaling laws — Hoffmann et al. 2022", url: "https://arxiv.org/abs/2203.15556" },
+      { label: "Llama 3 technical report — Meta AI 2024", url: "https://arxiv.org/abs/2407.21783" },
+      { label: "GPT-3 paper — Brown et al. 2020", url: "https://arxiv.org/abs/2005.14165" },
+      { label: "RoPE positional embeddings — Su et al. 2021", url: "https://arxiv.org/abs/2104.09864" },
+    ]},
+  ],
+
+  "why-rag-lies": [
+    { t: "p", text: "RAG is supposed to solve hallucination. You ground the model in retrieved facts — it should only say what the documents say. In practice, RAG systems confidently produce wrong answers even when the correct answer is sitting in the retrieved context. This post is about why that happens and what you can actually do about it." },
+    { t: "callout", v: "key", text: "RAG reduces hallucination from parametric memory but introduces a new failure mode: faithfulness failures. The model generates claims that aren\\'t supported by — or directly contradict — the retrieved context. High retrieval recall does not prevent this." },
+
+    { t: "h2", text: "The five ways RAG lies" },
+
+    { t: "h3", text: "1. Context ignored under pressure" },
+    { t: "p", text: "When the retrieved context conflicts with the model\\'s parametric knowledge (what it learned during pretraining), the model sometimes ignores the context and generates from memory. This is worse for high-confidence parametric facts — the model \\'knows\\' something strongly and the retrieval doesn\\'t override it." },
+    { t: "p", text: "Example: your HR policy doc says notice period is 30 days. The model was trained on data where standard notice is 2 weeks. Query: \\'How much notice do I need to give?\\' Answer: \\'Two weeks.\\' The correct document was retrieved. The model didn\\'t use it." },
+
+    { t: "h3", text: "2. Aggregation hallucination" },
+    { t: "p", text: "The model retrieves 5 chunks from 5 different documents. The answer requires synthesising across all five. Instead, it takes signals from each and produces a plausible-sounding synthesis that doesn\\'t accurately reflect any of them. The individual chunks are all true. The synthesised answer is fabricated." },
+    { t: "p", text: "This is particularly common for questions like \\'What are the main themes across all feedback?\\' or \\'Summarise what our policy says about X.\\' The model aggregates rather than cites." },
+
+    { t: "h3", text: "3. Over-extrapolation" },
+    { t: "p", text: "The retrieved chunk contains a true statement. The model extends it beyond what the document says. Example: document says \\'Product A supports API version 2.\\' Query: \\'Does Product A support API version 3?\\' Answer: \\'Yes, Product A supports API versions 2 and 3.\\' The extension is plausible but fabricated." },
+
+    { t: "h3", text: "4. Stale context with confident generation" },
+    { t: "p", text: "The retrieved document is outdated. The model generates confidently from the stale content without flagging uncertainty. RAG doesn\\'t know your document is three years old unless you tell it. A pricing document from 2021 will produce confident wrong prices in 2024." },
+
+    { t: "h3", text: "5. Lost-in-the-middle faithfulness failure" },
+    { t: "p", text: "The correct evidence is in the retrieved context but positioned in the middle of a long context window. The model anchors on the beginning and end of context (lost-in-the-middle effect) and generates from those anchors, ignoring the correct middle passage." },
+
+    { t: "h2", text: "Why recall doesn\\'t fix this" },
+    { t: "p", text: "A common mistake: \\'our retrieval recall is 94%, so faithfulness should be high.\\' Recall measures whether the correct document is present in the top-k. Faithfulness measures whether the model\\'s answer is grounded in the retrieved context. These are independent. You can have 94% recall and 60% faithfulness. The document is there — the model just didn\\'t use it correctly." },
+    { t: "callout", v: "warning", text: "Eval trap: if you only measure retrieval metrics (recall, precision, MRR), you are not measuring faithfulness. A system with perfect retrieval can still lie 40% of the time. You need a separate faithfulness eval." },
+
+    { t: "h2", text: "Five mitigations that actually work" },
+    { t: "table", headers: ["Mitigation", "What it does", "When to use"], rows: [
+      ["RAGAS Faithfulness eval", "LLM checks each claim in the answer against retrieved context. Claims_supported / total_claims.", "Production monitoring — run on 5–10% of live traffic"],
+      ["Citation requirement in prompt", "\\'Every claim must be followed by the source chunk number.\\' Forces the model to attribute rather than synthesise freely.", "Most RAG systems — low cost, high impact"],
+      ["Answer abstention policy", "\\'If the context does not contain sufficient information, respond: I don\\'t have enough information.\\' Reduces confident wrong answers.", "High-stakes domains — legal, medical, financial"],
+      ["Freshness metadata filtering", "Filter retrieved chunks by document date before generation. Exclude documents older than X days for time-sensitive queries.", "Any corpus with version-controlled or time-sensitive documents"],
+      ["Chunk position reranking", "Reorder retrieved chunks so highest-similarity chunks appear first in context window. Reduces lost-in-the-middle faithfulness failures.", "When using large context windows with many retrieved chunks"],
+    ]},
+
+    { t: "h2", text: "Evaluating faithfulness in production" },
+    { t: "p", text: "The cleanest faithfulness eval uses an LLM judge (GPT-4o or Claude Sonnet) to check each claim in the generated answer against the retrieved context. The RAGAS framework implements this as: decompose the answer into atomic claims, check each claim against context, report faithfulness = supported_claims / total_claims." },
+    { t: "p", text: "Run this on a random sample of production traffic (5–10%) and set an alert threshold. A faithfulness score below 0.85 in a business-critical RAG system means users are receiving wrong answers roughly 1 in 7 queries. That number gets management\\'s attention faster than any benchmark." },
+    { t: "p", text: "The leading indicator to track: faithfulness score over time, correlated with document corpus changes. When someone adds or removes documents from the knowledge base, faithfulness often drops. The eval catches it before users do." },
+
+    { t: "callout", v: "tip", text: "Quick audit: take 20 questions you know the answers to, run them through your RAG system, manually check each answer against the retrieved chunks (not against ground truth — against what was actually retrieved). Count how many answers make claims not in the context. If it\\'s more than 3/20, you have a faithfulness problem." },
+
+    { t: "refs", items: [
+      { label: "RAGAS: Automated Evaluation of Retrieval Augmented Generation", url: "https://arxiv.org/abs/2309.15217" },
+      { label: "Lost in the Middle: How Language Models Use Long Contexts", url: "https://arxiv.org/abs/2307.03172" },
+      { label: "Benchmarking Large Language Models in Retrieval-Augmented Generation", url: "https://arxiv.org/abs/2309.01431" },
+    ]},
+  ],
+
 };

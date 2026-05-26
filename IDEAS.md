@@ -51,8 +51,8 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 
 ### Systems modules (new)
 - ~~**GRPO / Agent RL Training**~~ ✅ *built May 2026*
-- **Evaluation Metrics Deep-Dive** — ROUGE, BLEU, BERTScore, G-Eval, LLM-as-judge. Interactive metric comparison with example outputs. No module covers this well yet.
-- **Long Context Patterns** — Needle-in-haystack, chunk-then-summarize, map-reduce. The practical engineering patterns for 100K+ token contexts.
+- ~~**Evaluation Metrics Deep-Dive**~~ ✅ *built May 2026 — RAGAS, LLM-as-Judge tab, hallucination example*
+- ~~**Long Context Patterns**~~ ✅ *built May 2026 — needle-in-haystack viz, map-reduce, chunk-summarise, model limits table*
 - **AI Safety Engineering** — Jailbreak patterns, adversarial prompts, red-teaming frameworks. Different from the existing AI Red Teaming module (which is strategy) — this is implementation.
 - **Vector Database Engineering** — Pinecone vs Weaviate vs pgvector vs Chroma comparison, indexing strategies, filtering, hybrid search. High-frequency production decision.
 - **Prompt Injection Defense** — Attack patterns, defense strategies, prompt hardening. Rising importance as agents interact with untrusted content.
@@ -66,13 +66,13 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 
 An AI interviewer found that candidates who claimed to have built 2-3 RAG systems couldn't explain cosine similarity pictorially — no cos θ, no angle, no vector multiplication. The lab covers RAG failure modes deeply but not the mathematical foundation of WHY similarity search works. This is a real gap: someone can follow a RAG tutorial without understanding what cosine similarity is doing or why normalisation matters.
 
-- **PrepLab questions (3–4)** — "Explain cosine similarity pictorially and why it's used for chunk retrieval." "What is vector normalisation and why does it matter in retrieval?" "What happens to similarity scores if you skip L2 normalisation?" "Why does cosine similarity care about direction and not magnitude?" These are genuine interview-differentiating questions the lab doesn't currently test.
-- **Explore module: "Cosine Similarity — The Geometry of Retrieval"** — interactive: drag two vectors in 2D space, watch the angle and cosine similarity update live, see why normalised dot product = cosine similarity, see what breaks when vectors aren't normalised. Tagged `✓ Mathematically faithful`. Fills the gap between "embeddings look like points in space" (current Embedding Space module, conceptual) and "here is the math your retrieval system runs on every query."
+- ~~**PrepLab questions (3–4)**~~ ✅ *built May 2026 — cos-1, cos-2, cos-3*
+- ~~**Explore module: "Cosine Similarity — The Geometry of Retrieval"**~~ ✅ *built May 2026 — id: cosine in Explore*
 
 ### Explore modules
-- **Model Architecture Comparison** — Encoder-only (BERT) vs Decoder-only (GPT) vs Encoder-Decoder (T5). When to use each. Static reference table + use-case wizard.
+- ~~**Model Architecture Comparison**~~ ✅ *built May 2026 — architecture guide + use-case wizard*
 - **Tokenizer Comparison** — BPE vs WordPiece vs SentencePiece vs tiktoken. Token counts for the same text across tokenizers. Interactive demo.
-- **Hardware Reference** — A100 vs H100 vs RTX 4090 vs TPU v4: FLOPS, memory bandwidth, HBM, cost/hr. The table ML engineers actually need.
+- ~~**Hardware Reference**~~ ✅ *built May 2026 — GPU comparison table + VRAM calculator*
 
 ### PrepLab
 - **Scenario-type questions** — Multi-turn conversational scenarios where the user debugs a failing system across 3-4 exchanges. Higher fidelity than MCQ.
@@ -100,7 +100,7 @@ A LinkedIn post from an AI PM aspirant breaking into Anthropic/Google/OpenAI sur
 
 A widely-shared post articulates the split between model-obsessed engineers (Type A: papers, benchmarks, loss functions) and systems-obsessed engineers (Type B: failure modes, latency, cost, monitoring). Key claims: Type B earns ~2x more ($400K+ vs $200K), enterprises are now scrambling for Type B after hiring Type A, and Type B thinking makes you better at model work too. This directly validates the lab's core thesis and surfaces specific content gaps.
 
-- **GT post: "Type A vs Type B AI Engineers — and Why the Gap Is Widening"** — use the framing but go deeper: what each looks like on the job, real interview questions that filter for each, why enterprises now pay premium for Type B, and how to develop Type B thinking if you started as Type A. High shareability, strong search intent.
+- ~~**GT post: "Type A vs Type B AI Engineers — and Why the Gap Is Widening"**~~ ✅ *built May 2026 — id: type-a-vs-type-b-engineers*
 - **GT post: "Graceful Degradation: The System Design Pattern Most AI Teams Skip"** — specific Type B skill mentioned in the post. How to design AI systems that fail safely: fallback chains, confidence thresholds, silent failure detection, partial results vs hard errors. Production examples.
 - **GT post: "Monitoring That Predicts Problems, Not Reports Them"** — the exact phrase from the post. Proactive vs reactive observability for LLM systems: drift detection, latency trend alerts, hallucination rate canaries, cost spike prediction. The distinction between dashboards and early warning systems.
 - **Home page positioning tweak** — the lab's tagline ("configure the system and watch it fail") already signals Type B thinking. Could make this explicit: a one-line callout "This lab builds Type B thinking" near the hero. Low effort, high resonance with the target audience.
@@ -120,9 +120,9 @@ A practitioner traced the full arc: DS peak during COVID → 90% demand drop + r
 ### Ground Truth posts
 - ~~**"Why the Best Model on the Benchmark Isn't the Best Model for Your Product"**~~ ✅ *built May 2026 — id: benchmark-vs-business*
 - ~~**"Hard Negatives: The Training Trick That Actually Improves Retrieval"**~~ ✅ *built May 2026 — id: hard-negatives-retrieval*
-- **"What Actually Happens During Pretraining"** — Data curation, tokenizer training, architecture decisions, compute budget. The upstream of everything else.
+- ~~**"What Actually Happens During Pretraining"**~~ ✅ *built May 2026 — id: what-happens-during-pretraining*
 - **"The Eval Crisis: Why Most AI Evals Are Wrong"** — Benchmark contamination, eval-train leakage, Goodhart's Law in AI. Opinionated take.
-- **"Why Your RAG System Lies"** — Faithfulness failures, hallucination in retrieval-augmented contexts, practical mitigations.
+- ~~**"Why Your RAG System Lies"**~~ ✅ *built May 2026 — id: why-rag-lies*
 - **Series: "The Inference Stack"** — Four posts covering the full serving pipeline: quantization → KV cache → speculative decoding → serving infrastructure. Already have individual modules, need the cohesive narrative.
 - **"The Reversal Curse: Why Your LLM Knows a Fact in One Direction But Not the Other"** — Training A→B doesn't guarantee B→A retrieval from parametric memory. When both landmarks are in context the model can trace backward; when the fact must come from weights, the reverse path may not exist. Practical implications: RAG may retrieve the right evidence but the query asks the relation backward; fine-tuning may fix one query form but not the reverse; evals look strong because they only test the training direction. The eval rule: for every important fact, test all 4 cases (forward recall, reverse recall, forward reasoning with context, reverse reasoning with context). Sharp and under-covered — directly relevant to anyone building or evaluating RAG and fine-tuned systems.
 

@@ -24,7 +24,7 @@ Act as a product and engineering partner, not an assistant. That means:
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of May 2026: 50 Systems modules, 19 Explore modules, 190+ PrepLab questions, 200 Ground Truth posts (192 single-line + 8 multi-line format in groundTruthIndex.js), 14 top-level tabs.
+Scale as of May 2026: 51 Systems modules, 22 Explore modules, 231 PrepLab questions, 205 Ground Truth posts, 14 top-level tabs.
 
 ---
 
@@ -274,7 +274,26 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 ## Known open issues (check AUDITS.md for full list)
 
 - PrepLab text question keyword grading marks correct answers wrong if vocabulary differs
-- PrepLab → GT `readMore` links open the tab, not the specific post (needs `postId`)
-- "Ask" nav label doesn't match its keyword-search mechanic — label says Ask, mechanic is keyword search (Audit 20 F8)
-- `production-mlops` category filter now added to GroundTruth.jsx (Audit 19 F2 resolved)
-- Home.jsx STATS array GT count may need recheck after post additions
+- `consult` tab still missing from SHORTCUT_TABS in App.jsx (low priority, known)
+- Prompt Injection Defense Systems module not yet built (Tier 1, next session)
+- Tokenizer Comparison Explore module not yet built (Tier 1, next session)
+
+## Session build log (May 2026)
+
+**Resolved this session:**
+- D1: Quiz CTA pill added to GT post header (generateQuiz discoverability)
+- D2: PrepLab readMore links now deep-link to specific GT posts via postId
+- F2: Career door on Home.jsx routes to career tab, calls out Salary Calculator
+- related[] injected into 136 GT posts (194/205 now have related arrays)
+- production-mlops category filter added to GroundTruth.jsx
+- Sitemap regenerated (202 → 205 GT post URLs, dead old-domain entries removed)
+- RSS feed regenerated (202 items, correct domain)
+- DECISIONS.md + CLAUDE.md stale count references fixed
+- "Ask" nav label → "Search" in ALL_TABS (App.jsx)
+- PrepLab question count: 190+ → 231 (added attention/transformers/context/serving/caching/streaming/product/reasoning/cosine/long-context clusters)
+- Cosine Similarity Explore module built (drag-vectors interactive)
+- EvalMetrics module expanded: RAGAS, Exact Match, LLM-as-Judge tab, hallucination scoring example
+- Long Context Patterns Systems module built (needle-in-haystack viz, 5 patterns, model limits)
+- Model Architecture Comparison Explore module built (BERT/GPT/T5 guide + use-case wizard)
+- Hardware Reference Explore module built (GPU table + VRAM calculator)
+- GT posts written: Type A vs Type B Engineers, What Happens During Pretraining, Why Your RAG System Lies

@@ -770,3 +770,50 @@ The structural upgrade documented in CLAUDE.md (three front doors, GT as knowled
 - IP / Moat audit — what's hard to replicate, what's original?
 - First-time user audit — cold walk-through in incognito, every confusion point noted live
 - Mobile UX audit — systematic pass on small screens
+
+---
+
+## Audit 21 — Build Sprint Review (May 2026)
+
+**Type:** Post-build integrity check
+**Date:** May 2026
+**Scope:** All changes made in the May 2026 build sprint
+
+### What was built
+
+| Item | Type | Status |
+|---|---|---|
+| Cosine Similarity Explorer | Explore module | ✅ Shipped |
+| EvalMetrics expansion (RAGAS, LLM-as-Judge, hallucination) | Systems module | ✅ Shipped |
+| Long Context Patterns | Systems module | ✅ Shipped |
+| Model Architecture Comparison | Explore module | ✅ Shipped |
+| Hardware Reference | Explore module | ✅ Shipped |
+| Type A vs Type B AI Engineers | GT post | ✅ Shipped |
+| What Actually Happens During Pretraining | GT post | ✅ Shipped |
+| Why Your RAG System Lies | GT post | ✅ Shipped |
+| 41 PrepLab questions (product/reasoning/cosine/longctx clusters) | PrepLab | ✅ Shipped |
+| related[] arrays injected into 136 GT posts | groundTruthIndex.js | ✅ Shipped |
+| D1: Quiz CTA on GT post headers | GroundTruth.jsx | ✅ Shipped |
+| D2: PrepLab readMore → specific GT posts via postId | PrepLab.jsx + App.jsx | ✅ Shipped |
+| F2: Salary Calculator surfaced on Home career door | Home.jsx | ✅ Shipped |
+| Sitemap + RSS regenerated | public/ | ✅ Shipped |
+| "Ask" → "Search" nav label | App.jsx | ✅ Shipped |
+
+### Scale after sprint
+
+- GT posts: 205 (was 200)
+- Explore modules: 22 (was 19)
+- Systems modules: 51 (was 50)
+- PrepLab questions: 231 (was ~190)
+
+### Open findings from this sprint
+
+| # | Finding | File | Status |
+|---|---|---|---|
+| 1 | PrepLab question count in Home.jsx door copy set to "220+" — actual count is 231. Minor over/under-count, acceptable. | Home.jsx | ⚠️ Minor — update next time counts are touched |
+| 2 | Prompt Injection Defense Systems module not yet built — remains Tier 1 | — | ⚠️ Open backlog |
+| 3 | Tokenizer Comparison Explore module not yet built — remains Tier 1 | — | ⚠️ Open backlog |
+| 4 | `consult` tab still missing from SHORTCUT_TABS | App.jsx | ⚠️ Open (low priority) |
+
+**Status:** Sprint complete ✅
+
