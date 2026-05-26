@@ -516,12 +516,12 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             <span className="mt-3 text-xs font-bold text-green-400">Open Prep Lab →</span>
           </button>
           <button
-            onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("aipm"); }}
+            onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
             className="flex flex-col items-start p-4 rounded-xl border border-violet-900/40 bg-violet-950/20 hover:border-violet-700/50 hover:bg-violet-950/40 transition-all">
             <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-1.5">Career / PM</span>
             <span className="text-sm font-bold text-white mb-1.5">I'm navigating my AI career</span>
-            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">Role transitions, salary data, AI PM track, system design interviews.</span>
-            <span className="mt-3 text-xs font-bold text-violet-400">Explore paths →</span>
+            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">Role transitions, AI PM track, system design interviews — and a salary calculator with data by role and region.</span>
+            <span className="mt-3 text-xs font-bold text-violet-400">Try Salary Calculator →</span>
           </button>
         </div>
 

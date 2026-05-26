@@ -10,7 +10,7 @@ const PREP_QUESTIONS = [
     options: ["Chunk size too small", "Reranker missing — top-k has wrong docs at position 1 despite good recall", "Answer policy too permissive", "Embedding model mismatch"],
     correct: 1, keywords: [],
     explanation: "High recall means relevant docs exist in the top-k, but without a reranker the most relevant doc may not be at position 1. The LLM anchors on early context, so irrelevant chunks at the top produce wrong answers despite good recall.",
-    readMore: { label: "RAG Evaluation Deep Dive", tab: "groundtruth" }
+    readMore: { label: "RAG Evaluation Deep Dive", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
     id: "rag-2", topic: "rag", difficulty: "hard", type: "mcq",
@@ -34,7 +34,7 @@ const PREP_QUESTIONS = [
     options: ["Embedding model cannot handle dates", "Semantic similarity selects the most linguistically similar chunk regardless of recency", "Vector DB is corrupted", "Top_k is too high"],
     correct: 1, keywords: [],
     explanation: "Embeddings encode semantic meaning, not temporal relevance. Both policy versions discuss the same topic similarly. The retriever has no freshness signal. Metadata filtering on document date is required.",
-    readMore: { label: "Stale Document Retrieval", tab: "groundtruth" }
+    readMore: { label: "Stale Document Retrieval", tab: "groundtruth", postId: "stale-document-failure" }
   },
   {
     id: "rag-5", topic: "rag", difficulty: "hard", type: "text",
@@ -58,7 +58,7 @@ const PREP_QUESTIONS = [
     options: ["The LLM is paraphrasing correctly but attributing claims to wrong source chunks", "The evaluation metrics are misconfigured", "Retrieval is failing but generation is strong", "Token budget is too low"],
     correct: 0, keywords: [],
     explanation: "High groundedness means claims are supported by retrieved context. Low citation accuracy means the model is citing the wrong document ID. Classic reranker misconfiguration or chunk boundary issue.",
-    readMore: { label: "RAG Metrics Explained", tab: "groundtruth" }
+    readMore: { label: "RAG Metrics Explained", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
     id: "rag-8", topic: "rag", difficulty: "hard", type: "mcq",
@@ -206,7 +206,7 @@ const PREP_QUESTIONS = [
     options: ["ROUGE measures word overlap not factual accuracy — high overlap does not mean correct facts", "Evaluation set is too small", "Model is hallucinating mid-sentence only", "Chunking is wrong"],
     correct: 0, keywords: [],
     explanation: "ROUGE measures n-gram overlap. A response can be high-ROUGE by using similar words while still asserting wrong facts. Factual accuracy requires separate evaluation: fact-checking or LLM-as-judge with factual decomposition.",
-    readMore: { label: "Evaluation Metrics for RAG", tab: "groundtruth" }
+    readMore: { label: "Evaluation Metrics for RAG", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
     id: "eval-2", topic: "evaluation", difficulty: "hard", type: "mcq",
@@ -214,7 +214,7 @@ const PREP_QUESTIONS = [
     options: ["Model is biased toward longer outputs", "Positional bias — the LLM judge may score consistently high for stylistic reasons unrelated to actual quality", "G-Eval only works for summarization", "Token cost is too high"],
     correct: 1, keywords: [],
     explanation: "LLM-as-judge has known biases: verbosity bias, positional bias, self-preference bias. A consistently high score may indicate the judge is rewarding style rather than semantic accuracy. Calibration against human ratings is essential.",
-    readMore: { label: "LLM-as-Judge Pitfalls", tab: "groundtruth" }
+    readMore: { label: "LLM-as-Judge Pitfalls", tab: "groundtruth", postId: "hallucination-detection" }
   },
   {
     id: "eval-3", topic: "evaluation", difficulty: "hard", type: "text",
@@ -222,7 +222,7 @@ const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["groundedness", "relevance", "faithfulness", "false positive", "resolution", "tone"],
     explanation: "Good metrics: groundedness (catches hallucination but FP on well-phrased hallucinations), task completion (catches unhelpful responses but FP on technically-correct-but-useless answers), tone compliance (catches rude responses but FP on direct helpful answers scored as curt).",
-    readMore: { label: "Building Eval Suites", tab: "groundtruth" }
+    readMore: { label: "Building Eval Suites", tab: "groundtruth", postId: "eval-pipeline-design" }
   },
   {
     id: "eval-4", topic: "evaluation", difficulty: "hard", type: "mcq",
@@ -230,7 +230,7 @@ const PREP_QUESTIONS = [
     options: ["The eval set has too many questions", "Eval set does not represent the full distribution of production queries — distribution shift", "Model needs fine-tuning", "LLM judge was biased"],
     correct: 1, keywords: [],
     explanation: "An eval set sampled from one domain will miss out-of-distribution queries. Production has long-tail edge cases, adversarial inputs, and evolving language patterns not captured in a static narrow eval set.",
-    readMore: { label: "Eval Set Design", tab: "groundtruth" }
+    readMore: { label: "Eval Set Design", tab: "groundtruth", postId: "eval-pipeline-design" }
   },
   {
     id: "eval-5", topic: "evaluation", difficulty: "hard", type: "mcq",
@@ -238,7 +238,7 @@ const PREP_QUESTIONS = [
     options: ["Offline is faster", "Offline uses static test sets before deployment; online measures real user signals in production (CSAT, thumbs, task completion)", "Online evaluation uses better metrics", "They are interchangeable"],
     correct: 1, keywords: [],
     explanation: "Offline eval = pre-deployment, controlled, fast iteration. Online eval = post-deployment, real distribution, real user signals. Both are needed — a system can pass offline eval but fail online.",
-    readMore: { label: "Eval Infrastructure", tab: "groundtruth" }
+    readMore: { label: "Eval Infrastructure", tab: "groundtruth", postId: "llmops-production-checklist" }
   },
   {
     id: "eval-6", topic: "evaluation", difficulty: "hard", type: "mcq",
@@ -246,7 +246,7 @@ const PREP_QUESTIONS = [
     options: ["Strong agreement — ship the judge", "Moderate agreement — use the judge for directional signals but not absolute quality gates", "Weak agreement — the judge is useless", "Good agreement but needs more data"],
     correct: 1, keywords: [],
     explanation: "Kappa 0.61 is moderate agreement. Use it for A/B comparisons and regression detection, not as an absolute correctness gate.",
-    readMore: { label: "Evaluation Methodology", tab: "groundtruth" }
+    readMore: { label: "Evaluation Methodology", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
     id: "eval-7", topic: "evaluation", difficulty: "hard", type: "text",
@@ -254,7 +254,7 @@ const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["self-preference", "same model", "bias", "independent", "different model", "human", "calibration"],
     explanation: "Models from the same family share training biases, leading to self-preference bias. Control: use a judge from a different model family, or blind human eval on a representative sample.",
-    readMore: { label: "LLM-as-Judge Design", tab: "groundtruth" }
+    readMore: { label: "LLM-as-Judge Design", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
     id: "eval-8", topic: "evaluation", difficulty: "hard", type: "mcq",
@@ -262,7 +262,7 @@ const PREP_QUESTIONS = [
     options: ["Precision, Recall, F1, Accuracy", "Faithfulness, Answer Relevancy, Context Precision, Context Recall", "Groundedness, Coherence, Fluency, Completeness", "Latency, Cost, Accuracy, Reliability"],
     correct: 1, keywords: [],
     explanation: "RAGAS: Faithfulness (claims grounded in context?), Answer Relevancy (does the answer address the question?), Context Precision (are retrieved docs relevant?), Context Recall (were relevant docs retrieved?).",
-    readMore: { label: "RAGAS Framework", tab: "groundtruth" }
+    readMore: { label: "RAGAS Framework", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
     id: "eval-9", topic: "evaluation", difficulty: "hard", type: "mcq",
@@ -270,7 +270,7 @@ const PREP_QUESTIONS = [
     options: ["Ship B — groundedness is more important", "Roll back to A", "Investigate whether the relevancy drop is in a critical query category before deciding", "Run more tests"],
     correct: 2, keywords: [],
     explanation: "Aggregate metrics hide per-category behavior. A -8% relevancy drop might be uniformly small or concentrated in high-value query types. Always decompose metric changes by query category before shipping.",
-    readMore: { label: "A/B Testing RAG Systems", tab: "groundtruth" }
+    readMore: { label: "A/B Testing RAG Systems", tab: "groundtruth", postId: "ab-testing-llms" }
   },
   {
     id: "eval-10", topic: "evaluation", difficulty: "hard", type: "text",
@@ -278,7 +278,7 @@ const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["independent", "calibration", "bias", "cost", "speed", "human agreement", "family"],
     explanation: "Key criteria: avoid same-family models (self-preference bias), measure calibration against held-out human labels, cost/speed tradeoff, consistency across runs (temperature=0), structured output support.",
-    readMore: { label: "Choosing an LLM Judge", tab: "groundtruth" }
+    readMore: { label: "Choosing an LLM Judge", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
     id: "eval-11", topic: "evaluation", difficulty: "hard", type: "mcq",
@@ -286,7 +286,7 @@ const PREP_QUESTIONS = [
     options: ["Discard the adversarial set as outliers", "Add representative adversarial examples to your eval suite and treat it as a permanent regression category", "Switch to a bigger model", "Increase temperature"],
     correct: 1, keywords: [],
     explanation: "Golden datasets calcify. Production evolves. Adversarial failures reveal real distribution gaps. Incorporate them into your eval suite so future regressions are caught before deployment.",
-    readMore: { label: "Adversarial Evals", tab: "groundtruth" }
+    readMore: { label: "Adversarial Evals", tab: "groundtruth", postId: "red-teaming-llms" }
   },
 
   // ── LLMOPS (11) ───────────────────────────────────────────────────────────
@@ -504,6 +504,38 @@ const PREP_QUESTIONS = [
     explanation: "North star: code suggestion acceptance rate. Supporting: sessions with 1+ accepted suggestion, time-to-first-suggestion, multi-line acceptance rate. Guardrails: code security scan failure rate, TTFT p99.",
     readMore: { label: "AI Product Metrics", tab: "concepts" }
   },
+  {
+    id: "product-6", topic: "product", difficulty: "hard", type: "mcq",
+    question: "A new LLM feature launches and your primary metric (task completion) improves 12%, but 7-day retention drops 4%. What do you do?",
+    options: ["Ship it — primary metric wins", "Roll back immediately", "Pause the rollout, segment the retention drop to find if specific user cohorts are churning, then decide", "Run a longer A/B test"],
+    correct: 2, keywords: [],
+    explanation: "Retention drop is a guardrail regression. A 12% task completion lift that costs 4% of your users coming back is a bad trade. But you need to understand the causal chain — is the feature itself causing churn, or is this a novelty effect? Segmentation tells you which users and which sessions are driving the drop.",
+    readMore: { label: "AI Product Metrics", tab: "concepts" }
+  },
+  {
+    id: "product-7", topic: "product", difficulty: "hard", type: "text",
+    question: "Your CEO asks: 'Why can't we just replace our customer support team with an LLM?' What do you say?",
+    options: null, correct: null,
+    keywords: ["accuracy", "escalation", "edge case", "trust", "liability", "cost", "hallucin", "eval", "benchmark", "pilot"],
+    explanation: "Key points: LLMs hallucinate — wrong answers in support create liability and erode trust. Accuracy must be measured on your actual ticket corpus, not general benchmarks. Start with automation for high-confidence, low-stakes cases. Build an escalation path for everything else. Measure deflection rate AND satisfaction AND escalation rate together.",
+    readMore: { label: "Production AI reliability", tab: "groundtruth", postId: "llm-reliability-production" }
+  },
+  {
+    id: "product-8", topic: "product", difficulty: "hard", type: "mcq",
+    question: "You have 4 weeks to ship an MVP AI feature. Engineering wants to use fine-tuning. PM wants to use prompt engineering. Who is right?",
+    options: ["Engineering — fine-tuning always produces better results", "PM — prompt engineering first, fine-tune only after you have labeled data proving the baseline fails", "Neither — use RAG", "It depends entirely on whether you have a GPU budget"],
+    correct: 1, keywords: [],
+    explanation: "Fine-tuning requires labeled training data you don't have yet, weeks of iteration, and a deployment pipeline. Prompt engineering ships in days and teaches you what the actual failure modes are. You cannot write good training labels until you know where prompting breaks. Start fast, collect failure cases, then fine-tune if needed.",
+    readMore: { label: "Fine-tuning vs. prompting tradeoffs", tab: "groundtruth", postId: "fine-tuning-when-and-why" }
+  },
+  {
+    id: "product-9", topic: "product", difficulty: "hard", type: "text",
+    question: "Describe how you would structure a quarterly roadmap review for an AI product. What is different vs. a traditional software product review?",
+    options: null, correct: null,
+    keywords: ["eval", "metric", "failure", "model", "drift", "benchmark", "data", "regression", "cost", "quality"],
+    explanation: "AI product reviews differ in 3 ways: (1) Model regressions must be tracked — a model update from the provider can break behavior silently. (2) Data drift means last quarter's eval results may not reflect today. (3) Cost-per-query is a first-class roadmap input alongside user value. Review includes: eval score trends, failure mode analysis, prompt change log, token cost trend, model version changelog.",
+    readMore: { label: "AI Product Management", tab: "concepts" }
+  },
 
   // ── BEHAVIORAL (6) ────────────────────────────────────────────────────────
   {
@@ -586,7 +618,7 @@ const PREP_QUESTIONS = [
     options: ["Larger parameter count", "End-to-end native multimodal training vs. a separate vision encoder bolted on", "Bigger context window", "RLHF on image preferences"],
     correct: 1, keywords: [],
     explanation: "GPT-4V used a separate vision encoder whose output was injected as text tokens. GPT-4o is trained natively on all modalities simultaneously — giving it unified audio/image/text understanding and enabling real-time voice without a pipeline.",
-    readMore: { label: "GPT-4o Deep Dive →", tab: "groundtruth" }
+    readMore: { label: "GPT-4o Deep Dive →", tab: "groundtruth", postId: "how-chatgpt-works" }
   },
   {
     id: "mm-5", topic: "multimodal", difficulty: "medium", type: "mcq",
@@ -636,7 +668,39 @@ const PREP_QUESTIONS = [
     options: ["o1 is larger", "Claude's thinking is visible to the developer; o1's chain-of-thought is completely hidden", "o3 supports more tools", "Extended thinking only works on Claude Opus"],
     correct: 1, keywords: [],
     explanation: "OpenAI hides the full reasoning trace — you see the summary answer. Anthropic exposes the thinking tokens in the API response, which helps with debugging agent failures and building user trust. Different transparency philosophy with real production implications.",
-    readMore: { label: "Claude vs GPT-4o deep dive →", tab: "groundtruth" }
+    readMore: { label: "Claude vs GPT-4o deep dive →", tab: "groundtruth", postId: "how-claude-works" }
+  },
+  {
+    id: "rsn-6", topic: "reasoning", difficulty: "hard", type: "mcq",
+    question: "You prompt an o3 model with 'think step by step' explicitly. What happens?",
+    options: ["Quality improves further", "No effect or slight degradation — reasoning models already do chain-of-thought internally, adding it to the prompt is redundant and may corrupt the thinking process", "The model produces a visible scratchpad", "It reduces thinking token usage"],
+    correct: 1, keywords: [],
+    explanation: "Chain-of-thought prompting was designed for standard models that don't natively reason. Reasoning models like o1/o3/Claude extended thinking run CoT internally. Adding it to the system prompt can clash with the model's internal reasoning strategy. Trust the model's thinking budget, not CoT prompt tricks.",
+    readMore: { label: "Reasoning Models Lab →", tab: "systems" }
+  },
+  {
+    id: "rsn-7", topic: "reasoning", difficulty: "hard", type: "mcq",
+    question: "A reasoning model scores 92% on your eval but takes 40s per call. Your SLA is 5s. Best approach?",
+    options: ["Cache all responses", "Use a reasoning model for offline batch processing and a faster model for real-time with an async 'thinking mode' for users who opt in", "Reduce thinking tokens to 512", "Accept the latency — quality matters more"],
+    correct: 1, keywords: [],
+    explanation: "Latency and reasoning depth are fundamentally in tension. The correct architecture separates the use cases: real-time paths use a fast model; async or background tasks use the reasoning model. An opt-in 'deep analysis' mode lets power users accept the 40s wait for higher-quality output.",
+    readMore: { label: "Reasoning model economics →", tab: "systems" }
+  },
+  {
+    id: "rsn-8", topic: "reasoning", difficulty: "medium", type: "mcq",
+    question: "Why does giving a reasoning model 'extended thinking' sometimes produce a WORSE answer than a smaller thinking budget?",
+    options: ["The model forgets earlier context", "Overthinking — the model second-guesses a correct initial conclusion, explores low-probability paths, and converges on a wrong answer", "Token limit is exceeded", "The model runs out of RAM"],
+    correct: 1, keywords: [],
+    explanation: "Overthinking is a documented failure mode. On straightforward problems, longer reasoning chains introduce noise. Best practice: use the minimum thinking budget that achieves acceptable accuracy on your eval set. Blindly maximizing thinking tokens can reduce quality.",
+    readMore: { label: "Reasoning Models Lab →", tab: "systems" }
+  },
+  {
+    id: "rsn-9", topic: "reasoning", difficulty: "hard", type: "text",
+    question: "You are evaluating whether to use a reasoning model (o3) vs. a standard model (GPT-4o) for a new feature. Walk through your decision framework.",
+    options: null, correct: null,
+    keywords: ["latency", "cost", "complexity", "planning", "benchmark", "eval", "routing", "SLA", "accuracy"],
+    explanation: "Decision framework: (1) Task type — does it require multi-step planning, backtracking, or verification? If yes, reasoning model is justified. (2) Latency SLA — can users wait 10-40s? If not, reasoning model needs async mode. (3) Cost — reasoning tokens are 5-10x more expensive. Calculate cost/query at expected volume. (4) Run your eval on both models with your actual query distribution — general benchmarks don't predict your specific use case. (5) Consider a routing architecture for mixed workloads.",
+    readMore: { label: "Reasoning Models Lab →", tab: "systems" }
   },
 
   // ── MCP + RELIABILITY (agents) (4) ────────────────────────────────────────
@@ -722,7 +786,7 @@ const PREP_QUESTIONS = [
     options: ["Always — open source is always cheaper", "Never — managed APIs scale better", "At approximately $50K+/month API spend where GPU costs justify the engineering overhead", "When you have more than 100 users"],
     correct: 2, keywords: [],
     explanation: "Below ~$50K/month API spend, engineering cost (infra setup, monitoring, ops) exceeds savings. Above that threshold, self-hosting on dedicated A100/H100 GPUs typically costs 70–90% less per token. The crossover depends on team size, traffic predictability, and data privacy requirements.",
-    readMore: { label: "Llama Deep Dive →", tab: "groundtruth" }
+    readMore: { label: "Llama Deep Dive →", tab: "groundtruth", postId: "llama-open-models" }
   },
   {
     id: "syn-q1", topic: "finetuning", difficulty: "hard", type: "mcq",
@@ -2339,7 +2403,7 @@ function QuestionCard({ q, gaps = [] }) {
   );
 }
 
-function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, animKey }) {
+function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo, animKey }) {
   return (
     <div key={animKey} className={`rounded-xl p-5 border space-y-3 transition-all duration-300 ${isCorrect ? "animate-correctPulse bg-emerald-500/10 border-emerald-500/40" : "animate-wrongShake bg-red-500/10 border-red-500/40"}`}>
       <span className={`font-bold text-lg ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>
@@ -2354,7 +2418,13 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, animKey }) {
       <p className="text-sm text-zinc-300 border-t border-zinc-700 pt-3">{q.explanation}</p>
       {q.readMore && (
         <button
-          onClick={() => onNavigate && onNavigate(q.readMore.tab)}
+          onClick={() => {
+            if (q.readMore.postId && onNavigateTo) {
+              onNavigateTo({ tab: q.readMore.tab, postId: q.readMore.postId });
+            } else {
+              onNavigate && onNavigate(q.readMore.tab);
+            }
+          }}
           className="text-sm text-indigo-400 hover:text-indigo-300 underline block"
         >
           Read more: {q.readMore.label} →
@@ -2587,7 +2657,7 @@ function ExamMode({ onExit }) {
 
 const TRAINER_TOPICS = ["all", ...Array.from(new Set(PREP_QUESTIONS.map(q => q.topic))).sort()];
 
-function TrainerMode({ onExit, onNavigate }) {
+function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
   const [topicFilter, setTopicFilter] = useState("all");
   const [diffFilter, setDiffFilter] = useState("all");
   const [questions, setQuestions] = useState(() => shuffle(PREP_QUESTIONS));
@@ -2763,7 +2833,7 @@ function TrainerMode({ onExit, onNavigate }) {
             {submitted && (
               <RevealCard isCorrect={isCorrect} q={q} onNext={next}
                 nextLabel={current >= questions.length - 1 ? "See Results" : "Next Question →"}
-                onNavigate={onNavigate} animKey={current} />
+                onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current} />
             )}
           </>
         )}
@@ -2774,7 +2844,7 @@ function TrainerMode({ onExit, onNavigate }) {
 
 // ─── MODE 3: JD PREP ──────────────────────────────────────────────────────────
 
-function JDPrepMode({ onExit, onNavigate }) {
+function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
   const [step, setStep] = useState(1);
   const [jdText, setJdText] = useState("");
   const [resumeText, setResumeText] = useState("");
@@ -2891,7 +2961,7 @@ function JDPrepMode({ onExit, onNavigate }) {
           {submitted && (
             <RevealCard isCorrect={isCorrect} q={q} onNext={next}
               nextLabel={current >= sessionQs.length - 1 ? "See Results" : "Next →"}
-              onNavigate={onNavigate} animKey={current} />
+              onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current} />
           )}
         </div>
       </div>
@@ -3649,12 +3719,12 @@ const MODE_CARDS = [
 
 // ─── ROOT COMPONENT ───────────────────────────────────────────────────────────
 
-export default function PrepLab({ onNavigate }) {
+export default function PrepLab({ onNavigate, onNavigateTo }) {
   const [mode, setMode] = useState(null);
 
   if (mode === "exam") return <ExamMode onExit={() => setMode(null)} />;
-  if (mode === "trainer") return <TrainerMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
-  if (mode === "jdprep") return <JDPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
+  if (mode === "trainer") return <TrainerMode onExit={() => setMode(null)} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />;
+  if (mode === "jdprep") return <JDPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />;
   if (mode === "companyprep") return <CompanyPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
   if (mode === "defense") return <DefenseDocMode onExit={() => setMode(null)} />;
 
