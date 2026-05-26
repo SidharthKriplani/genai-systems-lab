@@ -4107,6 +4107,473 @@ function CosineSimilarityExplorer() {
   );
 }
 
+
+// ─── MODEL ARCHITECTURE COMPARISON ───────────────────────────────────────────
+
+const ARCH_MODELS = [
+  {
+    id: "bert",
+    name: "BERT",
+    full: "Bidirectional Encoder Representations from Transformers",
+    type: "Encoder-only",
+    typeColor: "#6366f1",
+    attention: "Bidirectional — sees all tokens simultaneously",
+    pretraining: "Masked Language Modeling (MLM) + Next Sentence Prediction",
+    strengths: ["Classification", "NER", "Semantic similarity", "Feature extraction"],
+    weaknesses: ["Cannot generate text", "No causal structure", "Slow inference vs decoder models"],
+    useCases: ["Sentiment analysis", "Spam detection", "Search ranking", "Q&A classification"],
+    notFor: ["Text generation", "Summarisation", "Chatbots", "Completion APIs"],
+    params: "110M (base) / 340M (large)",
+    year: 2018,
+    org: "Google",
+    keyInsight: "Bidirectional context means every token can attend to every other token — gives richer representations for understanding tasks. But this means you can't use it autoregressively.",
+  },
+  {
+    id: "gpt",
+    name: "GPT / decoder",
+    full: "Generative Pre-trained Transformer (decoder-only family)",
+    type: "Decoder-only",
+    typeColor: "#3b82f6",
+    attention: "Causal (left-to-right) — each token only sees previous tokens",
+    pretraining: "Causal Language Modeling (predict next token)",
+    strengths: ["Text generation", "Completion", "In-context learning (few-shot)", "Instruction following"],
+    weaknesses: ["Unidirectional context — worse at understanding tasks vs BERT", "Higher inference cost at scale"],
+    useCases: ["Chatbots", "Code completion", "Summarisation", "RAG generation", "Agents"],
+    notFor: ["Classification (use encoder)", "Embedding generation (use dedicated model)", "Tasks needing bidirectional context"],
+    params: "GPT-2: 1.5B → GPT-4: estimated 1T+",
+    year: 2018,
+    org: "OpenAI → industry standard",
+    keyInsight: "Causal attention means next-token prediction is the universal training objective. This scales cleanly — bigger model + more data = better generation. Almost all frontier models (GPT-4, Claude, Llama) are decoder-only.",
+  },
+  {
+    id: "t5",
+    name: "T5 / encoder-decoder",
+    full: "Text-to-Text Transfer Transformer",
+    type: "Encoder-Decoder",
+    typeColor: "#f59e0b",
+    attention: "Encoder: bidirectional. Decoder: causal with cross-attention to encoder.",
+    pretraining: "Span corruption — mask spans of input, predict them",
+    strengths: ["Translation", "Summarisation", "Structured tasks with known input→output format", "Seq2seq tasks"],
+    weaknesses: ["More complex architecture — two stacks", "Higher memory vs decoder-only at same quality", "Less dominant in LLM era"],
+    useCases: ["Machine translation", "Abstractive summarisation", "Data-to-text", "Question answering with defined answer space"],
+    notFor: ["Open-ended generation", "Long context tasks", "General chatbots"],
+    params: "T5-small: 60M → T5-XXL: 11B",
+    year: 2019,
+    org: "Google",
+    keyInsight: "Encoder reads and understands the full input bidirectionally. Decoder generates the output token-by-token with access to the encoded representation via cross-attention. Best of both worlds for structured transformation tasks — but overkill for pure generation.",
+  },
+];
+
+const ARCH_QUESTIONS = [
+  { q: "I need to classify customer support tickets into 12 categories", answer: "bert", why: "Classification is an understanding task. Encoder-only (BERT) with a classification head is faster, cheaper, and more accurate than a decoder model for fixed-label classification." },
+  { q: "I need to generate summaries of long articles", answer: "gpt", why: "Generation tasks go to decoder-only models. GPT-family (or fine-tuned decoder models like Mistral) are the standard. T5 also works but decoder-only models have largely superseded it for this." },
+  { q: "I need to translate English product descriptions to 12 languages", answer: "t5", why: "Translation is a seq2seq task — encoder-decoder (T5, mT5, mBART) was designed for exactly this. For high-volume production, dedicated translation models (NLLB, DeepL) are even better." },
+  { q: "I need semantic search — find the most similar documents to a query", answer: "bert", why: "Semantic similarity uses encoder models to produce embeddings. Sentence-BERT (SBERT) is BERT fine-tuned for this exact task. Decoder models don't produce good sentence embeddings by default." },
+  { q: "I need to build a conversational AI assistant", answer: "gpt", why: "Conversational generation = decoder-only. All frontier chat models (GPT-4, Claude, Llama) are decoder-only. The causal attention structure naturally handles multi-turn conversation." },
+  { q: "I need to extract named entities (people, orgs, dates) from contracts", answer: "bert", why: "NER is a token classification task — a classic encoder-only use case. BERT-based NER models are fast, accurate, and run locally at low cost." },
+];
+
+function ModelArchitectureComparison() {
+  const [active, setActive] = useState("gpt");
+  const [quizIdx, setQuizIdx] = useState(0);
+  const [quizAnswer, setQuizAnswer] = useState(null);
+  const [tab, setTab] = useState(0);
+  const model = ARCH_MODELS.find(m => m.id === active);
+  const tabs = ["Architecture Guide", "Use-Case Wizard"];
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-4">
+        <div className="text-sm font-bold text-white mb-1">Model Architecture Comparison</div>
+        <p className="text-xs text-zinc-400 leading-relaxed">The three fundamental transformer architectures — encoder-only, decoder-only, encoder-decoder — each optimised for different tasks. Picking the wrong one is a common and expensive mistake.</p>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t,i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium transition-all ${tab===i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300 hover:text-white"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab===0 && (
+        <div className="space-y-3">
+          {/* Architecture selector */}
+          <div className="grid grid-cols-3 gap-2">
+            {ARCH_MODELS.map(m => (
+              <button key={m.id} onClick={() => setActive(m.id)}
+                className={`p-3 rounded-xl border text-left transition-all ${active===m.id ? "border-transparent" : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"}`}
+                style={active===m.id ? { backgroundColor: m.typeColor + "22", borderColor: m.typeColor + "66" } : {}}>
+                <div className="text-xs font-bold text-white">{m.name}</div>
+                <div className="text-[10px] font-mono mt-0.5" style={{ color: m.typeColor }}>{m.type}</div>
+                <div className="text-[10px] text-zinc-500 mt-0.5">{m.org} · {m.year}</div>
+              </button>
+            ))}
+          </div>
+
+          {model && (
+            <div className="space-y-3">
+              {/* Attention + pretraining */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-3">
+                  <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Attention</div>
+                  <div className="text-xs text-zinc-300 leading-relaxed">{model.attention}</div>
+                </div>
+                <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-3">
+                  <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Pretraining objective</div>
+                  <div className="text-xs text-zinc-300 leading-relaxed">{model.pretraining}</div>
+                </div>
+              </div>
+
+              {/* Use / don't use */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-zinc-900 border border-green-900/30 p-3">
+                  <div className="text-[10px] font-mono text-green-500 uppercase tracking-widest mb-2">Use for</div>
+                  {model.useCases.map((u,i) => <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1"><span className="text-green-500">✓</span>{u}</div>)}
+                </div>
+                <div className="rounded-xl bg-zinc-900 border border-red-900/30 p-3">
+                  <div className="text-[10px] font-mono text-red-400 uppercase tracking-widest mb-2">Not for</div>
+                  {model.notFor.map((u,i) => <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1"><span className="text-red-400">✗</span>{u}</div>)}
+                </div>
+              </div>
+
+              {/* Key insight */}
+              <div className="rounded-xl p-4 border" style={{ backgroundColor: model.typeColor + "11", borderColor: model.typeColor + "44" }}>
+                <div className="text-[10px] font-mono uppercase tracking-widest mb-1" style={{ color: model.typeColor }}>Key insight</div>
+                <div className="text-xs text-zinc-300 leading-relaxed">{model.keyInsight}</div>
+              </div>
+
+              {/* Params */}
+              <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 text-xs text-zinc-400">
+                <span className="text-zinc-200 font-semibold">Scale: </span>{model.params}
+              </div>
+            </div>
+          )}
+
+          {/* Quick reference table */}
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  <th className="text-left py-2 px-3 text-zinc-500 font-semibold">Task type</th>
+                  <th className="text-center py-2 px-3 text-indigo-400 font-semibold">Encoder</th>
+                  <th className="text-center py-2 px-3 text-blue-400 font-semibold">Decoder</th>
+                  <th className="text-center py-2 px-3 text-amber-400 font-semibold">Enc-Dec</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Classification", "✓ Best", "✗", "~"],
+                  ["Text generation", "✗", "✓ Best", "~"],
+                  ["Semantic similarity", "✓ Best", "~", "~"],
+                  ["Translation", "~", "~", "✓ Best"],
+                  ["Summarisation", "✗", "✓ Best", "✓ Good"],
+                  ["NER / token labelling", "✓ Best", "~", "~"],
+                  ["In-context learning", "✗", "✓ Best", "~"],
+                  ["Embeddings", "✓ Best", "~", "~"],
+                ].map(([task, enc, dec, encdec]) => (
+                  <tr key={task} className="border-b border-zinc-900 hover:bg-zinc-900/40">
+                    <td className="py-2 px-3 text-zinc-300">{task}</td>
+                    <td className={`py-2 px-3 text-center font-semibold ${enc.includes("Best") ? "text-green-400" : enc === "~" ? "text-yellow-600" : "text-red-500"}`}>{enc}</td>
+                    <td className={`py-2 px-3 text-center font-semibold ${dec.includes("Best") ? "text-green-400" : dec === "~" ? "text-yellow-600" : "text-red-500"}`}>{dec}</td>
+                    <td className={`py-2 px-3 text-center font-semibold ${encdec.includes("Best") ? "text-green-400" : encdec.includes("Good") ? "text-green-600" : encdec === "~" ? "text-yellow-600" : "text-red-500"}`}>{encdec}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {tab===1 && (
+        <div className="space-y-4">
+          <div className="text-xs text-zinc-400">Describe your task — get the right architecture. Click next to cycle through scenarios.</div>
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4 space-y-4">
+            <div className="text-sm text-zinc-200 leading-relaxed">{ARCH_QUESTIONS[quizIdx].q}</div>
+            {quizAnswer === null ? (
+              <div className="grid grid-cols-3 gap-2">
+                {ARCH_MODELS.map(m => (
+                  <button key={m.id} onClick={() => setQuizAnswer(m.id)}
+                    className="py-2 px-3 rounded-lg border border-zinc-700 bg-zinc-800 text-xs font-semibold text-zinc-300 hover:text-white hover:border-zinc-500 transition-all">
+                    {m.name}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className={`rounded-lg p-3 border text-xs ${quizAnswer === ARCH_QUESTIONS[quizIdx].answer ? "bg-green-950/30 border-green-800/40 text-green-300" : "bg-red-950/30 border-red-800/40 text-red-300"}`}>
+                  <div className="font-bold mb-1">{quizAnswer === ARCH_QUESTIONS[quizIdx].answer ? "Correct" : "Not quite"} — best fit: {ARCH_MODELS.find(m => m.id === ARCH_QUESTIONS[quizIdx].answer)?.name}</div>
+                  <div className="text-zinc-300">{ARCH_QUESTIONS[quizIdx].why}</div>
+                </div>
+                <button onClick={() => { setQuizAnswer(null); setQuizIdx(i => (i+1) % ARCH_QUESTIONS.length); }}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all">
+                  Next scenario →
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 text-xs text-zinc-400 leading-relaxed">
+            <span className="text-zinc-200 font-semibold">Production reality (2025):</span> decoder-only models have largely replaced encoder-decoder for generation tasks. Encoder-only remains the standard for embeddings and classification. The relevant choice today is usually: fine-tuned encoder (BERT-family) vs decoder-only (GPT-family) vs dedicated embedding model.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── HARDWARE REFERENCE ───────────────────────────────────────────────────────
+
+const GPU_DATA = [
+  {
+    id: "h100_sxm",
+    name: "H100 SXM",
+    vendor: "NVIDIA",
+    gen: "Hopper",
+    tflops_bf16: 989,
+    hbm_gb: 80,
+    bandwidth_tbps: 3.35,
+    tdp_w: 700,
+    cloud_hr: 3.50,
+    best_for: "Large model training, MoE, distributed inference",
+    notes: "De facto standard for frontier model training. NVLink 4.0 for multi-GPU.",
+    tier: "datacenter",
+  },
+  {
+    id: "h100_pcie",
+    name: "H100 PCIe",
+    vendor: "NVIDIA",
+    gen: "Hopper",
+    tflops_bf16: 756,
+    hbm_gb: 80,
+    bandwidth_tbps: 2.0,
+    tdp_w: 350,
+    cloud_hr: 2.50,
+    best_for: "Inference at scale, fine-tuning mid-size models",
+    notes: "Same HBM as SXM but lower bandwidth. Better per-watt than SXM.",
+    tier: "datacenter",
+  },
+  {
+    id: "a100_80",
+    name: "A100 80GB",
+    vendor: "NVIDIA",
+    gen: "Ampere",
+    tflops_bf16: 312,
+    hbm_gb: 80,
+    bandwidth_tbps: 2.0,
+    tdp_w: 400,
+    cloud_hr: 2.00,
+    best_for: "Fine-tuning 70B models, multi-GPU inference",
+    notes: "Still widely available. Good cost-performance for 7B–70B fine-tuning.",
+    tier: "datacenter",
+  },
+  {
+    id: "a100_40",
+    name: "A100 40GB",
+    vendor: "NVIDIA",
+    gen: "Ampere",
+    tflops_bf16: 312,
+    hbm_gb: 40,
+    bandwidth_tbps: 1.6,
+    tdp_w: 300,
+    cloud_hr: 1.50,
+    best_for: "Fine-tuning 7B–13B models, inference for mid-size models",
+    notes: "Memory limit is the key constraint — 40GB caps which models you can load.",
+    tier: "datacenter",
+  },
+  {
+    id: "rtx_4090",
+    name: "RTX 4090",
+    vendor: "NVIDIA",
+    gen: "Ada Lovelace",
+    tflops_bf16: 165,
+    hbm_gb: 24,
+    bandwidth_tbps: 1.0,
+    tdp_w: 450,
+    cloud_hr: 0.50,
+    best_for: "Local inference, LoRA fine-tuning of 7B models, prototyping",
+    notes: "Best consumer GPU for ML. 24GB VRAM fits 7B in fp16 or 13B in int4.",
+    tier: "consumer",
+  },
+  {
+    id: "tpu_v4",
+    name: "TPU v4",
+    vendor: "Google",
+    gen: "TPU v4",
+    tflops_bf16: 275,
+    hbm_gb: 32,
+    bandwidth_tbps: 1.2,
+    tdp_w: 170,
+    cloud_hr: 3.22,
+    best_for: "JAX/XLA workloads, Google Cloud training, large batch inference",
+    notes: "Purpose-built for matrix ops. Requires JAX/TF. Not PyTorch-native.",
+    tier: "datacenter",
+  },
+  {
+    id: "tpu_v5e",
+    name: "TPU v5e",
+    vendor: "Google",
+    gen: "TPU v5",
+    tflops_bf16: 393,
+    hbm_gb: 16,
+    bandwidth_tbps: 1.6,
+    tdp_w: 160,
+    cloud_hr: 1.20,
+    best_for: "Cost-efficient inference and fine-tuning on Google Cloud",
+    notes: "Best cost/TFLOP for JAX inference workloads. Low memory limits model size.",
+    tier: "datacenter",
+  },
+];
+
+const VRAM_RULES = [
+  { model: "7B (fp16)", vram: 14, fits: ["rtx_4090","a100_40","a100_80","h100_sxm","h100_pcie"] },
+  { model: "7B (int4 quantised)", vram: 4, fits: ["rtx_4090","a100_40","a100_80","h100_sxm","h100_pcie"] },
+  { model: "13B (fp16)", vram: 26, fits: ["a100_40","a100_80","h100_sxm","h100_pcie"] },
+  { model: "70B (fp16)", vram: 140, fits: ["a100_80_x2","h100_sxm","h100_pcie"] },
+  { model: "70B (int4)", vram: 35, fits: ["a100_40","a100_80","h100_sxm","h100_pcie"] },
+  { model: "405B (int4)", vram: 200, fits: ["h100_sxm_x4","h100_pcie_x4"] },
+];
+
+function HardwareReference() {
+  const [sortCol, setSortCol] = useState("tflops_bf16");
+  const [filterTier, setFilterTier] = useState("all");
+  const [tab, setTab] = useState(0);
+  const tabs = ["GPU Comparison", "VRAM Calculator"];
+
+  const filtered = GPU_DATA
+    .filter(g => filterTier === "all" || g.tier === filterTier)
+    .sort((a,b) => (b[sortCol] || 0) - (a[sortCol] || 0));
+
+  const cols = [
+    { key: "tflops_bf16", label: "BF16 TFLOPS" },
+    { key: "hbm_gb", label: "VRAM (GB)" },
+    { key: "bandwidth_tbps", label: "Bandwidth (TB/s)" },
+    { key: "cloud_hr", label: "$/hr (cloud)" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-4">
+        <div className="text-sm font-bold text-white mb-1">ML Hardware Reference</div>
+        <p className="text-xs text-zinc-400 leading-relaxed">The practical hardware comparison ML engineers actually need — FLOPS, memory bandwidth, VRAM, and cloud cost. Includes a VRAM calculator for model loading decisions.</p>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t,i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium transition-all ${tab===i ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-300 hover:text-white"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab===0 && (
+        <div className="space-y-3">
+          <div className="flex gap-2 items-center flex-wrap">
+            <span className="text-[10px] text-zinc-500 font-mono">FILTER:</span>
+            {["all","datacenter","consumer"].map(t => (
+              <button key={t} onClick={() => setFilterTier(t)}
+                className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${filterTier===t ? "bg-zinc-600 text-white" : "bg-zinc-900 text-zinc-500 border border-zinc-800 hover:text-zinc-300"}`}>
+                {t}
+              </button>
+            ))}
+            <span className="text-[10px] text-zinc-500 font-mono ml-2">SORT BY:</span>
+            {cols.map(c => (
+              <button key={c.key} onClick={() => setSortCol(c.key)}
+                className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${sortCol===c.key ? "bg-indigo-700 text-white" : "bg-zinc-900 text-zinc-500 border border-zinc-800 hover:text-zinc-300"}`}>
+                {c.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="overflow-x-auto rounded-xl bg-zinc-900 border border-zinc-800">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  <th className="text-left py-2 px-3 text-zinc-500 font-semibold whitespace-nowrap">GPU</th>
+                  <th className="text-right py-2 px-3 text-zinc-500 font-semibold whitespace-nowrap">BF16 TFLOPS</th>
+                  <th className="text-right py-2 px-3 text-zinc-500 font-semibold whitespace-nowrap">VRAM</th>
+                  <th className="text-right py-2 px-3 text-zinc-500 font-semibold whitespace-nowrap">Bandwidth</th>
+                  <th className="text-right py-2 px-3 text-zinc-500 font-semibold whitespace-nowrap">TDP</th>
+                  <th className="text-right py-2 px-3 text-zinc-500 font-semibold whitespace-nowrap">$/hr</th>
+                  <th className="text-left py-2 px-3 text-zinc-500 font-semibold">Best for</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(g => (
+                  <tr key={g.id} className="border-b border-zinc-900 hover:bg-zinc-800/40">
+                    <td className="py-2 px-3 whitespace-nowrap">
+                      <div className="font-bold text-zinc-200">{g.name}</div>
+                      <div className="text-[10px] text-zinc-500">{g.vendor} · {g.gen}</div>
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono font-bold text-blue-300">{g.tflops_bf16}</td>
+                    <td className="py-2 px-3 text-right font-mono text-violet-300">{g.hbm_gb}GB</td>
+                    <td className="py-2 px-3 text-right font-mono text-cyan-300">{g.bandwidth_tbps} TB/s</td>
+                    <td className="py-2 px-3 text-right font-mono text-zinc-400">{g.tdp_w}W</td>
+                    <td className="py-2 px-3 text-right font-mono text-green-400">${g.cloud_hr.toFixed(2)}</td>
+                    <td className="py-2 px-3 text-zinc-400 text-[11px] max-w-[200px]">{g.best_for}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 space-y-1.5 text-xs">
+            <div className="text-zinc-200 font-semibold text-[11px] mb-2">What each spec means</div>
+            {[
+              ["BF16 TFLOPS", "Training/inference throughput. Higher = faster. The primary spec for compute-bound workloads."],
+              ["VRAM", "How much model fits. Bottleneck for loading large models. Bandwidth matters more than FLOPS for inference."],
+              ["Bandwidth (TB/s)", "How fast data moves between HBM and compute. The real bottleneck for LLM inference — not FLOPS."],
+              ["$/hr", "Approximate cloud cost (Lambda, Vast.ai, Google Cloud). Varies by provider and spot vs on-demand."],
+            ].map(([k,v]) => (
+              <div key={k} className="flex gap-2">
+                <span className="text-indigo-400 font-semibold w-28 shrink-0">{k}</span>
+                <span className="text-zinc-400">{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab===1 && (
+        <div className="space-y-3">
+          <div className="text-xs text-zinc-400 leading-relaxed">Rule of thumb: <span className="text-white">2 bytes per parameter in fp16, 1 byte in int8, 0.5 bytes in int4.</span> Add ~20% overhead for activations and KV cache.</div>
+          <div className="overflow-x-auto rounded-xl bg-zinc-900 border border-zinc-800">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  <th className="text-left py-2 px-3 text-zinc-500 font-semibold">Model size</th>
+                  <th className="text-right py-2 px-3 text-zinc-500 font-semibold">Min VRAM</th>
+                  <th className="text-left py-2 px-3 text-zinc-500 font-semibold">Fits on</th>
+                </tr>
+              </thead>
+              <tbody>
+                {VRAM_RULES.map(r => (
+                  <tr key={r.model} className="border-b border-zinc-900">
+                    <td className="py-2 px-3 font-semibold text-zinc-200">{r.model}</td>
+                    <td className="py-2 px-3 text-right font-mono text-violet-300">{r.vram}GB</td>
+                    <td className="py-2 px-3 text-zinc-400 text-[11px]">{r.fits.join(", ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[
+              { title: "Inference bottleneck", body: "LLM inference is memory-bandwidth-bound, not compute-bound. An H100 at 3.35 TB/s bandwidth generates tokens ~2× faster than an A100 at the same model size — even though FLOPS difference is 3×. Buy bandwidth for inference." },
+              { title: "Training bottleneck", body: "Training is compute-bound. FLOPS matter. An H100 SXM at 989 TFLOPS trains ~3× faster than an A100 at 312 TFLOPS. For fine-tuning, the A100 is often enough and significantly cheaper." },
+              { title: "Multi-GPU rule", body: "70B in fp16 needs ~140GB — 2× A100 80GB minimum. Each GPU split adds inter-GPU communication overhead (NVLink > PCIe). For inference, prefer fewer large GPUs over many small ones." },
+            ].map(c => (
+              <div key={c.title} className="rounded-xl bg-zinc-900 border border-zinc-800 p-3">
+                <div className="text-[10px] font-mono text-indigo-400 uppercase tracking-widest mb-1">{c.title}</div>
+                <div className="text-xs text-zinc-400 leading-relaxed">{c.body}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
@@ -4130,6 +4597,8 @@ const EXPLORE_MODULES = [
   { id: "benchmarks", label: "Benchmark Browser", tag: "EVAL", component: BenchmarkBrowser, fidelity: { tier: "reference", note: "MMLU/HumanEval/MT-Bench/MATH/GPQA scores" } },
   { id: "contexteng", label: "Context Engineering", tag: "CONTEXT", component: ContextWindowEngineering, fidelity: { tier: "reference", note: "Window strategies + model limits" } },
   { id: "cosine", label: "Cosine Similarity", tag: "MATH", component: CosineSimilarityExplorer, fidelity: { tier: "exact", note: "Real-time cosine similarity — exact math, no approximation" } },
+  { id: "modelarch", label: "Model Architecture", tag: "ARCH", component: ModelArchitectureComparison, fidelity: { tier: "reference", note: "Encoder / Decoder / Encoder-Decoder comparison with use-case wizard" } },
+  { id: "hardware", label: "Hardware Reference", tag: "HW", component: HardwareReference, fidelity: { tier: "reference", note: "GPU specs and cloud costs based on published datasheets — verify before procurement" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {
