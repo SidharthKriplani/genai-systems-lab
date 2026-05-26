@@ -54,7 +54,7 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 - ~~**Evaluation Metrics Deep-Dive**~~ ✅ *built May 2026 — RAGAS, LLM-as-Judge tab, hallucination example*
 - ~~**Long Context Patterns**~~ ✅ *built May 2026 — needle-in-haystack viz, map-reduce, chunk-summarise, model limits table*
 - **AI Safety Engineering** — Jailbreak patterns, adversarial prompts, red-teaming frameworks. Different from the existing AI Red Teaming module (which is strategy) — this is implementation.
-- **Vector Database Engineering** — Pinecone vs Weaviate vs pgvector vs Chroma comparison, indexing strategies, filtering, hybrid search. High-frequency production decision.
+- ~~**Vector Database Engineering**~~ ✅ *built May 2026 — pgvector/Chroma/Pinecone/Weaviate/Qdrant comparison, HNSW/IVF index guide, hybrid search, decision wizard*
 - **Prompt Injection Defense** — Attack patterns, defense strategies, prompt hardening. Rising importance as agents interact with untrusted content.
 
 ### Systems modules (depth improvements)
@@ -121,10 +121,10 @@ A practitioner traced the full arc: DS peak during COVID → 90% demand drop + r
 - ~~**"Why the Best Model on the Benchmark Isn't the Best Model for Your Product"**~~ ✅ *built May 2026 — id: benchmark-vs-business*
 - ~~**"Hard Negatives: The Training Trick That Actually Improves Retrieval"**~~ ✅ *built May 2026 — id: hard-negatives-retrieval*
 - ~~**"What Actually Happens During Pretraining"**~~ ✅ *built May 2026 — id: what-happens-during-pretraining*
-- **"The Eval Crisis: Why Most AI Evals Are Wrong"** — Benchmark contamination, eval-train leakage, Goodhart's Law in AI. Opinionated take.
+- ~~**"The Eval Crisis: Why Most AI Evals Are Wrong"**~~ ✅ *built May 2026 — id: the-eval-crisis*
 - ~~**"Why Your RAG System Lies"**~~ ✅ *built May 2026 — id: why-rag-lies*
 - **Series: "The Inference Stack"** — Four posts covering the full serving pipeline: quantization → KV cache → speculative decoding → serving infrastructure. Already have individual modules, need the cohesive narrative.
-- **"The Reversal Curse: Why Your LLM Knows a Fact in One Direction But Not the Other"** — Training A→B doesn't guarantee B→A retrieval from parametric memory. When both landmarks are in context the model can trace backward; when the fact must come from weights, the reverse path may not exist. Practical implications: RAG may retrieve the right evidence but the query asks the relation backward; fine-tuning may fix one query form but not the reverse; evals look strong because they only test the training direction. The eval rule: for every important fact, test all 4 cases (forward recall, reverse recall, forward reasoning with context, reverse reasoning with context). Sharp and under-covered — directly relevant to anyone building or evaluating RAG and fine-tuned systems.
+- ~~**"The Reversal Curse"**~~ ✅ *built May 2026 — id: the-reversal-curse*
 
 ### MCP vs API vs Function Calling (new cluster — from jamwithai production engineering blogs, May 2026)
 
