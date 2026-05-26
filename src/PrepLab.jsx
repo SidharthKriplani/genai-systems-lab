@@ -2207,6 +2207,32 @@ const PREP_QUESTIONS = [
     correct: 1, keywords: [],
     explanation: "Users experience streaming as 'when does it start?' and 'does it feel smooth?'. P95 TTFT is the primary metric because users perceive a blank screen as the most frustrating wait — they'll tolerate a slower stream once it starts. P95 (not mean) because outliers matter for perceived reliability. Mean token inter-arrival time matters for smoothness but only after TTFT. Total throughput is a capacity metric, not a user experience metric. End-to-end latency matters for non-streaming use cases.",
     readMore: { label: "Streaming Patterns →", tab: "systems" }
+  },
+
+  // ─── COSINE SIMILARITY (3) ───────────────────────────────────────────────────
+  {
+    id: "cos-1", topic: "rag", difficulty: "medium", type: "mcq",
+    question: "Two chunks have cosine similarity 0.92 to the query. A third chunk has similarity 0.61. The reranker returns the third chunk at rank 1. This is because:",
+    options: ["The reranker is broken", "Cosine similarity measures angle between embeddings — the reranker uses a cross-encoder that reads query and chunk together, capturing relevance the embedding model missed", "The third chunk has more tokens", "The embedding model is wrong"],
+    correct: 1, keywords: [],
+    explanation: "Bi-encoders (embedding models) compute query and chunk independently, then compare. Cross-encoders (rerankers) read both together — they see the actual query-chunk interaction. A chunk can be semantically adjacent (high cosine similarity) but not actually answer the question. The reranker catches this; the embedding model cannot.",
+    readMore: { label: "Cosine Similarity Explorer", tab: "explore" }
+  },
+  {
+    id: "cos-2", topic: "rag", difficulty: "medium", type: "text",
+    question: "Explain why cosine similarity ignores vector magnitude and why that matters for text retrieval.",
+    options: null, correct: null,
+    keywords: ["direction", "angle", "normaliz", "magnitude", "length", "dot product", "unit vector"],
+    explanation: "Cosine similarity divides the dot product by both magnitudes — normalising them to unit vectors. A 10-word chunk and a 1000-word chunk pointing in the same semantic direction score 1.0. This is correct for retrieval: you want topical alignment, not length matching. The tradeoff: two chunks can discuss different aspects of a topic and still score high because the overall direction is similar.",
+    readMore: { label: "Cosine Similarity Explorer", tab: "explore" }
+  },
+  {
+    id: "cos-3", topic: "rag", difficulty: "hard", type: "mcq",
+    question: "Your RAG system returns correct answers 90% of the time but a random 10% of queries get completely wrong results. Most likely root cause?",
+    options: ["Chunk size too large", "Orthogonal queries — these queries embed in a direction where the correct document is at cosine similarity near 0, so retrieval returns unrelated but non-orthogonal chunks instead", "LLM hallucination rate is exactly 10%", "Embedding model dimension too low"],
+    correct: 1, keywords: [],
+    explanation: "When a query embeds into a region of vector space not populated by your document corpus, all retrieval scores are mediocre (0.3–0.5). The system retrieves the least-wrong documents and the LLM makes up an answer from irrelevant context. This is the 'distribution mismatch' failure: your embedding model was trained on text unlike your documents. Fix: domain-specific fine-tuning of the embedding model, or hard-negative mining.",
+    readMore: { label: "Cosine Similarity Explorer", tab: "explore" }
   }
 ];
 

@@ -3891,6 +3891,222 @@ function ContextWindowEngineering() {
 }
 
 
+// ─── COSINE SIMILARITY EXPLORER ──────────────────────────────────────────────
+
+function CosineSimilarityExplorer() {
+  const CX = 150, CY = 150, MAX_R = 118;
+  const clamp = (v) => {
+    const len = Math.sqrt(v.x * v.x + v.y * v.y);
+    if (len === 0) return v;
+    const r = Math.min(len, MAX_R);
+    return { x: (v.x / len) * r, y: (v.y / len) * r };
+  };
+  const [vecA, setVecA] = useState(clamp({ x: 80, y: -60 }));
+  const [vecB, setVecB] = useState(clamp({ x: 30, y: -100 }));
+  const [dragging, setDragging] = useState(null);
+  const [showNorm, setShowNorm] = useState(false);
+  const svgRef = useRef(null);
+
+  const toSVG = (v) => ({ x: CX + v.x, y: CY - v.y });
+  const toVec = (sx, sy) => clamp({ x: sx - CX, y: CY - sy });
+
+  const ptA = toSVG(vecA);
+  const ptB = toSVG(vecB);
+
+  const dot = vecA.x * vecB.x + vecA.y * vecB.y;
+  const magA = Math.sqrt(vecA.x * vecA.x + vecA.y * vecA.y);
+  const magB = Math.sqrt(vecB.x * vecB.x + vecB.y * vecB.y);
+  const cosSim = (magA && magB) ? dot / (magA * magB) : 0;
+  const angleDeg = Math.round(Math.acos(Math.max(-1, Math.min(1, cosSim))) * 180 / Math.PI);
+
+  const DISP = 90;
+  const normA = magA ? { x: (vecA.x / magA) * DISP, y: (vecA.y / magA) * DISP } : vecA;
+  const normB = magB ? { x: (vecB.x / magB) * DISP, y: (vecB.y / magB) * DISP } : vecB;
+  const ptNA = toSVG(normA);
+  const ptNB = toSVG(normB);
+
+  const simColor = cosSim > 0.7 ? "#22c55e" : cosSim > 0.3 ? "#f59e0b" : cosSim > -0.2 ? "#94a3b8" : "#ef4444";
+  const simLabel = cosSim > 0.85 ? "Very similar" : cosSim > 0.5 ? "Related" : cosSim > 0.1 ? "Weakly related" : cosSim > -0.1 ? "Orthogonal" : "Dissimilar / opposite";
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!dragging || !svgRef.current) return;
+      const rect = svgRef.current.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const scaleX = 300 / rect.width;
+      const scaleY = 300 / rect.height;
+      const sx = (clientX - rect.left) * scaleX;
+      const sy = (clientY - rect.top) * scaleY;
+      const v = toVec(sx, sy);
+      if (dragging === "A") setVecA(v);
+      else setVecB(v);
+    };
+    const onUp = () => setDragging(null);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+    };
+  }, [dragging]);
+
+  const arcAngle = (v) => Math.atan2(-v.y, v.x);
+  const arcPath = () => {
+    const r = 28;
+    const aA = arcAngle(vecA);
+    const aB = arcAngle(vecB);
+    let da = aB - aA;
+    if (da > Math.PI) da -= 2 * Math.PI;
+    if (da < -Math.PI) da += 2 * Math.PI;
+    const x1 = CX + r * Math.cos(aA);
+    const y1 = CY - r * Math.sin(aA);
+    const x2 = CX + r * Math.cos(aA + da);
+    const y2 = CY - r * Math.sin(aA + da);
+    const large = Math.abs(da) > Math.PI ? 1 : 0;
+    const sweep = da > 0 ? 0 : 1;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${large} ${sweep} ${x2} ${y2}`;
+  };
+
+  const Arrow = ({ from, to, color, dashed }) => {
+    const dx = to.x - from.x, dy = to.y - from.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 2) return null;
+    const ux = dx / len, uy = dy / len;
+    const tip = { x: to.x - ux * 5, y: to.y - uy * 5 };
+    const w = 4;
+    const px = -uy * w, py = ux * w;
+    return (
+      <g>
+        <line x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+          stroke={color} strokeWidth={dashed ? 1.5 : 2.5}
+          strokeDasharray={dashed ? "4 3" : "none"} strokeOpacity={dashed ? 0.6 : 1} />
+        <polygon points={`${tip.x},${tip.y} ${tip.x - ux * 8 + px},${tip.y - uy * 8 + py} ${tip.x - ux * 8 - px},${tip.y - uy * 8 - py}`}
+          fill={color} opacity={dashed ? 0.6 : 1} />
+      </g>
+    );
+  };
+
+  const origin = { x: CX, y: CY };
+
+  return (
+    <div className="max-w-3xl mx-auto p-4 space-y-5">
+      <div>
+        <h2 className="text-lg font-bold text-white mb-1">Cosine Similarity — The Geometry of Retrieval</h2>
+        <p className="text-sm text-zinc-400">Drag the vector endpoints. Watch the similarity score update live. This is the exact math your retrieval system runs on every query.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* SVG Canvas */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 flex flex-col items-center">
+          <div className="flex gap-3 mb-2 text-[11px] font-mono">
+            <span className="text-blue-400">● Vector A (drag)</span>
+            <span className="text-violet-400">● Vector B (drag)</span>
+          </div>
+          <svg ref={svgRef} viewBox="0 0 300 300" width="100%" className="cursor-crosshair select-none" style={{ maxWidth: 280 }}>
+            {/* Grid */}
+            {[-90,-60,-30,30,60,90].map(n => (
+              <g key={n}>
+                <line x1={CX + n} y1={20} x2={CX + n} y2={280} stroke="#27272a" strokeWidth="1" />
+                <line x1={20} y1={CY + n} x2={280} y2={CY + n} stroke="#27272a" strokeWidth="1" />
+              </g>
+            ))}
+            {/* Axes */}
+            <line x1={20} y1={CY} x2={280} y2={CY} stroke="#3f3f46" strokeWidth="1" />
+            <line x1={CX} y1={20} x2={CX} y2={280} stroke="#3f3f46" strokeWidth="1" />
+            {/* Angle arc */}
+            <path d={arcPath()} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeOpacity="0.7" />
+            <text x={CX + 35} y={CY - 8} fill="#f59e0b" fontSize="10" fontFamily="monospace">{angleDeg}°</text>
+            {/* Normalized vectors (dashed, when toggled) */}
+            {showNorm && <Arrow from={origin} to={ptNA} color="#3b82f6" dashed={true} />}
+            {showNorm && <Arrow from={origin} to={ptNB} color="#8b5cf6" dashed={true} />}
+            {/* Main vectors */}
+            <Arrow from={origin} to={ptA} color="#3b82f6" />
+            <Arrow from={origin} to={ptB} color="#8b5cf6" />
+            {/* Drag handles */}
+            <circle cx={ptA.x} cy={ptA.y} r={7} fill="#3b82f6" stroke="#93c5fd" strokeWidth="2"
+              className="cursor-grab"
+              onMouseDown={(e) => { e.preventDefault(); setDragging("A"); }}
+              onTouchStart={(e) => { e.preventDefault(); setDragging("A"); }} />
+            <circle cx={ptB.x} cy={ptB.y} r={7} fill="#8b5cf6" stroke="#c4b5fd" strokeWidth="2"
+              className="cursor-grab"
+              onMouseDown={(e) => { e.preventDefault(); setDragging("B"); }}
+              onTouchStart={(e) => { e.preventDefault(); setDragging("B"); }} />
+            <text x={ptA.x + 9} y={ptA.y - 5} fill="#93c5fd" fontSize="11" fontFamily="monospace" fontWeight="bold">A</text>
+            <text x={ptB.x + 9} y={ptB.y - 5} fill="#c4b5fd" fontSize="11" fontFamily="monospace" fontWeight="bold">B</text>
+          </svg>
+          <button
+            onClick={() => setShowNorm(p => !p)}
+            className={`mt-2 text-[10px] font-mono px-3 py-1 rounded-full border transition-all ${showNorm ? "border-blue-600 bg-blue-950/40 text-blue-300" : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600"}`}>
+            {showNorm ? "Hide normalized vectors" : "Show normalized vectors"}
+          </button>
+        </div>
+
+        {/* Stats panel */}
+        <div className="space-y-3">
+          {/* Similarity score */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Cosine Similarity</div>
+            <div className="text-4xl font-bold font-mono" style={{ color: simColor }}>{cosSim.toFixed(3)}</div>
+            <div className="text-xs mt-1" style={{ color: simColor }}>{simLabel}</div>
+            <div className="mt-2 h-2 rounded-full bg-zinc-800 overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${((cosSim + 1) / 2) * 100}%`, backgroundColor: simColor }} />
+            </div>
+            <div className="flex justify-between text-[9px] text-zinc-600 font-mono mt-0.5">
+              <span>-1 (opposite)</span><span>0 (orthogonal)</span><span>+1 (identical)</span>
+            </div>
+          </div>
+
+          {/* Math breakdown */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 font-mono text-xs space-y-2">
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Step-by-step math</div>
+            <div className="text-zinc-300">A = ({Math.round(vecA.x)}, {Math.round(vecA.y)})</div>
+            <div className="text-zinc-300">B = ({Math.round(vecB.x)}, {Math.round(vecB.y)})</div>
+            <div className="border-t border-zinc-800 pt-2 text-zinc-400">
+              A · B = {Math.round(vecA.x)}×{Math.round(vecB.x)} + {Math.round(vecA.y)}×{Math.round(vecB.y)} = <span className="text-white">{Math.round(dot)}</span>
+            </div>
+            <div className="text-zinc-400">|A| = {magA.toFixed(1)} &nbsp;|B| = {magB.toFixed(1)}</div>
+            <div className="text-zinc-400">cos(θ) = {Math.round(dot)} / ({magA.toFixed(1)} × {magB.toFixed(1)})</div>
+            <div className="border-t border-zinc-800 pt-2">
+              <span className="text-zinc-400">= </span>
+              <span className="font-bold" style={{ color: simColor }}>{cosSim.toFixed(4)}</span>
+              <span className="text-zinc-500"> &nbsp;(θ = {angleDeg}°)</span>
+            </div>
+          </div>
+
+          {/* Key insight */}
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-[11px] text-zinc-400 leading-relaxed">
+            <span className="text-zinc-200 font-semibold">Why direction, not magnitude?</span> Cosine similarity divides by both magnitudes — so a short vector and a long vector pointing the same way score <span className="text-green-400">1.0</span>. Only the angle matters. Toggle <span className="text-blue-400">normalized vectors</span> above to see this.
+          </div>
+        </div>
+      </div>
+
+      {/* Reference table */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Similarity scores in production RAG</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          {[
+            { range: "0.90 – 1.00", color: "#22c55e", meaning: "Near-duplicate — same chunk retrieved, high confidence answer" },
+            { range: "0.70 – 0.90", color: "#86efac", meaning: "Strong match — likely relevant, usually correct retrieval" },
+            { range: "0.50 – 0.70", color: "#f59e0b", meaning: "Partial match — may retrieve loosely related content" },
+            { range: "0.30 – 0.50", color: "#94a3b8", meaning: "Weak signal — noise zone, reranker needed here" },
+            { range: "Below 0.30", color: "#ef4444", meaning: "No match — no relevant document in index" },
+          ].map(r => (
+            <div key={r.range} className="flex gap-2 items-start">
+              <span className="font-mono shrink-0 text-[11px]" style={{ color: r.color }}>{r.range}</span>
+              <span className="text-zinc-400">{r.meaning}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
@@ -3913,6 +4129,7 @@ const EXPLORE_MODULES = [
   { id: "promptpatterns", label: "Prompt Pattern Library", tag: "PROMPT", component: PromptPatternLibrary, fidelity: { tier: "reference", note: "Templates and anti-patterns" } },
   { id: "benchmarks", label: "Benchmark Browser", tag: "EVAL", component: BenchmarkBrowser, fidelity: { tier: "reference", note: "MMLU/HumanEval/MT-Bench/MATH/GPQA scores" } },
   { id: "contexteng", label: "Context Engineering", tag: "CONTEXT", component: ContextWindowEngineering, fidelity: { tier: "reference", note: "Window strategies + model limits" } },
+  { id: "cosine", label: "Cosine Similarity", tag: "MATH", component: CosineSimilarityExplorer, fidelity: { tier: "exact", note: "Real-time cosine similarity — exact math, no approximation" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {

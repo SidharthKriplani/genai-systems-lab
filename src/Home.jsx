@@ -512,7 +512,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             className="flex flex-col items-start p-4 rounded-xl border border-green-900/40 bg-green-950/20 hover:border-green-700/50 hover:bg-green-950/40 transition-all">
             <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">Interview Prep</span>
             <span className="text-sm font-bold text-white mb-1.5">I'm prepping for interviews</span>
-            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">190+ questions across system design, evals, ML fundamentals.</span>
+            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">220+ questions across system design, evals, reasoning models, ML fundamentals.</span>
             <span className="mt-3 text-xs font-bold text-green-400">Open Prep Lab →</span>
           </button>
           <button

@@ -449,7 +449,7 @@ const ALL_TABS = [
   { id: "concepts",    label: "Concepts",    group: "LEARN",  audience: "All levels" },
   { id: "flows",       label: "Diagrams",    group: "LEARN",  audience: "All levels" },
   { id: "groundtruth", label: "Ground Truth",group: "LEARN",  audience: "All levels" },
-  { id: "consult",     label: "Ask",         group: "LEARN",  audience: "All levels" },
+  { id: "consult",     label: "Search",      group: "LEARN",  audience: "All levels" },
   { id: "lab",         label: "RAG Lab",     group: "BUILD",  audience: "Engineers" },
   { id: "agents",      label: "Agents",      group: "BUILD",  audience: "Engineers" },
   { id: "playground",  label: "Playground",  group: "BUILD",  audience: "All levels" },
@@ -1463,7 +1463,7 @@ export default function App() {
           {topView === "playground" && <PlaygroundApp onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} onNavigate={(tab, postId) => { if (postId) setGtPostId(postId); navigate(tab); }} />}
           {topView === "career"     && <CareerApp />}
-          {topView === "preplab"    && <PrepLabApp onNavigate={navigate} />}
+          {topView === "preplab"    && <PrepLabApp onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} />}
 
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
