@@ -9654,7 +9654,7 @@ const EXAMPLE_SCORES = {
   candidate_hallucination:{ rouge: 0.44, bleu: 0.31, bertscore: 0.89, meteor: 0.52, geval: 3.9 },
 };
 
-const JUDGE_SCENARIOS = [
+const LLM_JUDGE_SCENARIOS = [
   {
     id: "rag_faithful",
     label: "RAG: Is it faithful?",
@@ -9808,7 +9808,7 @@ function EvalMetricsSamples() {
 function EvalLLMJudge() {
   const [scenario, setScenario] = useState(0);
   const [showFail, setShowFail] = useState(false);
-  const sc = JUDGE_SCENARIOS[scenario];
+  const sc = LLM_JUDGE_SCENARIOS[scenario];
   return (
     <div className="space-y-4">
       <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-4 text-xs text-zinc-400 leading-relaxed">
@@ -9817,7 +9817,7 @@ function EvalLLMJudge() {
 
       {/* Scenario picker */}
       <div className="flex gap-2 flex-wrap">
-        {JUDGE_SCENARIOS.map((s,i) => (
+        {LLM_JUDGE_SCENARIOS.map((s,i) => (
           <button key={s.id} onClick={() => { setScenario(i); setShowFail(false); }}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${scenario===i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
             {s.label}
