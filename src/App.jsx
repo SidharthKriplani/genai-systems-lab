@@ -1493,7 +1493,7 @@ export default function App() {
         </div>
       )}
 
-      {topView === "lab" && activeTab === "simulator" ? (
+      {topView === "lab" && (activeTab === "simulator" ? (
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="mb-4">
             <HowTo
@@ -1697,7 +1697,7 @@ export default function App() {
             ))}
           </div>
         </div>
-      )}
+      ))}
 
       {topView === "lab" && (
         <footer className="border-t border-zinc-800 mt-12 px-6 py-4 text-center">
