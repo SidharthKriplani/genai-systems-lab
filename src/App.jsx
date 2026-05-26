@@ -937,6 +937,7 @@ export default function App() {
     });
   }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileNavGroup, setMobileNavGroup] = useState(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
@@ -1387,7 +1388,7 @@ export default function App() {
       </aside>
 
       {/* ── MAIN COLUMN ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 pb-16 lg:pb-0">
 
       <header role="banner" className="border-b border-zinc-800">
         {/* Row 1: Logo + Search + Utilities */}
@@ -1430,9 +1431,6 @@ export default function App() {
               </span>
             )}
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono" aria-label="Keyboard shortcuts">?</button>
-            <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden p-2 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all" aria-label="Open navigation menu" aria-expanded={mobileMenuOpen}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect y="2" width="16" height="2" rx="1"/><rect y="7" width="16" height="2" rx="1"/><rect y="12" width="16" height="2" rx="1"/></svg>
-            </button>
           </div>
         </div>
         {/* Row 2: Tab navigation — desktop nav moved to left sidebar */}
@@ -1752,6 +1750,49 @@ export default function App() {
           ))}
         </div>
       )}
+      {/* ── MOBILE BOTTOM NAV (mobile only) ─────────────────────────── */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-zinc-950 border-t border-zinc-800" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        {/* Slide-up tray */}
+        {mobileNavGroup && (
+          <div className="border-b border-zinc-800 bg-zinc-900 px-2 py-2">
+            <div className="text-[9px] font-bold uppercase tracking-widest px-2 pb-1.5" style={{ color: (NAV_GROUPS.find(g => g.label === mobileNavGroup)?.color || "#fff") + "99" }}>{mobileNavGroup}</div>
+            {[...NAV_GROUPS.find(g => g.label === mobileNavGroup)?.items || []].map(item => (
+              <button key={item.id} onClick={() => { navigate(item.id); setMobileNavGroup(null); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold mb-0.5 flex items-center justify-between transition-all ${
+                  topView === item.id ? "bg-violet-600 text-white" : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                }`}>
+                {item.label}
+                {visited.has(item.id) && topView !== item.id && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />}
+              </button>
+            ))}
+            {mobileNavGroup === "GROW" && (
+              <button onClick={() => { navigate("progress"); setMobileNavGroup(null); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold mb-0.5 flex items-center justify-between transition-all ${
+                  topView === "progress" ? "bg-violet-600 text-white" : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                }`}>
+                My Progress
+              </button>
+            )}
+          </div>
+        )}
+        {/* 3 group buttons */}
+        <div className="flex">
+          {["LEARN", "BUILD", "GROW"].map(group => {
+            const grp = NAV_GROUPS.find(g => g.label === group);
+            const color = grp?.color || "#6366f1";
+            const isOpen = mobileNavGroup === group;
+            const hasCurrent = grp?.items.some(i => i.id === topView) || (group === "GROW" && topView === "progress");
+            return (
+              <button key={group} onClick={() => setMobileNavGroup(isOpen ? null : group)}
+                className="flex-1 py-3 flex flex-col items-center gap-0.5 transition-all"
+                style={{ color: isOpen || hasCurrent ? color : "#52525b" }}>
+                <span className="text-[11px] font-bold tracking-wide">{group}</span>
+                {hasCurrent && !isOpen && <span className="w-1 h-1 rounded-full" style={{ background: color }} />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       </div>{/* end main column */}
     </div>
   );
