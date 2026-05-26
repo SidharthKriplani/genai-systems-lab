@@ -259,7 +259,7 @@ Use these labels:
 
 The lab is currently in free community beta. The goal is to collect usage signal, confusion points, and testimonials before any monetization decision.
 
-**Give feedback:** [Feedback form](https://forms.gle/REPLACE_ME) — 2 minutes, anonymous option available.
+**Give feedback:** Open an issue on this repo or reach out directly — feedback is always welcome.
 
 ### Analytics
 

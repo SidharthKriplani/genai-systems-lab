@@ -1749,7 +1749,7 @@ export default function App() {
       localStorage.setItem("genai_streak", JSON.stringify({ count, lastVisit: today }));
     } catch {}
   }, []);
-  const SHORTCUT_TABS = ["home","concepts","flows","lab","agents","systems","playground","explore","fluency","aipm","career","paths","preplab"];
+  const SHORTCUT_TABS = ["home","concepts","flows","lab","agents","systems","playground","explore","fluency","aipm","career","paths","preplab","groundtruth"];
 
   function navigateTo({ tab, moduleId, postId, topic, diff }) {
     if (moduleId) {

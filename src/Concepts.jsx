@@ -221,7 +221,7 @@ const CAT_COLORS = {
   animal:    { dot: "#22c55e", label: "Animals",   text: "text-emerald-400", bg: "bg-emerald-900/60" },
   tech:      { dot: "#f59e0b", label: "Tech",      text: "text-amber-400",   bg: "bg-amber-900/60" },
   food:      { dot: "#f97316", label: "Food",      text: "text-orange-400",  bg: "bg-orange-900/60" },
-  transport: { dot: "#64748b", label: "Transport", text: "text-slate-400",   bg: "bg-slate-900/60" },
+  transport: { dot: "#64748b", label: "Transport", text: "text-zinc-400",    bg: "bg-zinc-900/60" },
   emotion:   { dot: "#ef4444", label: "Emotions",  text: "text-red-400",     bg: "bg-red-900/60" },
 };
 
