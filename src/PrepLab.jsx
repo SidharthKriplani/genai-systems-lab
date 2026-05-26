@@ -2269,6 +2269,49 @@ const PREP_QUESTIONS = [
     readMore: { label: "Long Context Patterns →", tab: "systems" }
   },
 
+  // ─── VECTOR DB (5) ───────────────────────────────────────────────────────────
+  {
+    id: "vdb-1", topic: "rag", difficulty: "medium", type: "mcq",
+    question: "Your team already runs Postgres and has 8M document vectors. Which vector DB choice minimises operational overhead?",
+    options: ["Pinecone — managed SaaS removes all ops", "pgvector — Postgres extension, no new infrastructure", "Chroma — easiest to set up", "Weaviate — best hybrid search"],
+    correct: 1, keywords: [],
+    explanation: "pgvector as a Postgres extension means zero new infrastructure: install the extension, add a vector column, create an HNSW index. You keep your existing Postgres ops knowledge, backups, monitoring, and SQL query patterns. At 8M vectors it comfortably fits in RAM with HNSW. Pinecone is the right call when you need to scale past what Postgres can handle or have no ops team — not when you are already on Postgres.",
+    readMore: { label: "Vector DB Engineering →", tab: "systems" }
+  },
+  {
+    id: "vdb-2", topic: "rag", difficulty: "hard", type: "mcq",
+    question: "You need sub-5ms p99 vector search over 20M vectors with high recall. Which index type and key trade-off applies?",
+    options: ["IVFFlat — faster to build, lower memory, tune nprobe for recall", "HNSW — higher memory (full graph in RAM), very fast queries, high recall at default settings", "IVF+PQ — best for this scale, no trade-offs", "Flat — exact search, no approximation needed at this scale"],
+    correct: 1, keywords: [],
+    explanation: "HNSW is the right choice for low-latency, high-recall requirements when data fits in RAM. 20M 1536-dim float32 vectors = ~115GB — requires a large-memory instance. The trade-off is memory cost vs query speed. IVFFlat uses less memory but requires tuning nprobe to hit recall targets, and p99 latency is less predictable. Flat exact search at 20M vectors is orders of magnitude too slow for sub-5ms.",
+    readMore: { label: "Vector DB Engineering →", tab: "systems" }
+  },
+  {
+    id: "vdb-3", topic: "rag", difficulty: "medium", type: "mcq",
+    question: "A RAG system over a product catalog frequently misses queries like 'SKU-48291' or 'CVE-2024-12345'. Root cause and fix?",
+    options: ["Embedding model dimension too small — increase to 3072", "Dense retrieval fails on exact strings — add BM25 sparse retrieval and merge with RRF for hybrid search", "Chunk size too small — increase to capture more context", "Reranker model needed"],
+    correct: 1, keywords: [],
+    explanation: "Dense (vector) retrieval finds semantically similar content but is poor at exact string matching. Product codes, CVE identifiers, and serial numbers don't have semantic neighbors — they need exact lexical match. BM25 sparse retrieval handles this natively. Hybrid search merges dense + sparse results using Reciprocal Rank Fusion (RRF score = Σ 1/(k+rank_i)), ensuring both semantic similarity and keyword matches contribute to final ranking.",
+    readMore: { label: "Vector DB Engineering →", tab: "systems" }
+  },
+  {
+    id: "vdb-4", topic: "rag", difficulty: "hard", type: "mcq",
+    question: "A multi-tenant RAG system serves 500 customers. Each customer should only retrieve their own documents. Correct architecture?",
+    options: ["Separate vector DB index per customer — safest isolation", "Single index with customer_id metadata filter applied before vector search", "Single index, post-filter results by customer_id after retrieval", "Namespace per customer in Pinecone"],
+    correct: 1, keywords: [],
+    explanation: "A single index with pre-filtering by customer_id metadata is the standard production pattern. Pre-filtering (applied before ANN search) ensures the search space is restricted to the tenant's documents — correct isolation and efficient. Post-filtering (retrieve top-K globally, then filter) leaks information about other tenants' document existence in edge cases and wastes compute retrieving documents that will be discarded. Separate indexes per customer creates 500× the operational overhead.",
+    readMore: { label: "Vector DB Engineering →", tab: "systems" }
+  },
+  {
+    id: "vdb-5", topic: "rag", difficulty: "hard", type: "text",
+    question: "Your IVFFlat index has recall@10 of 0.72 at your latency target. Walk through the two levers to improve recall without rebuilding the index from scratch.",
+    options: null, correct: null,
+    keywords: ["nprobe", "clusters", "probe", "recall", "nlist", "trade-off", "latency"],
+    explanation: "The two IVFFlat recall levers: (1) Increase nprobe — the number of cluster centroids searched at query time. Default is often 1–4; increasing to 16–32 typically recovers 10–15 recall points at the cost of proportionally higher latency. (2) Check nlist calibration — if nlist (number of clusters) was set too high for your dataset size, many clusters are sparsely populated and nprobe misses them. Rule of thumb: nlist ≈ sqrt(n_vectors). Neither requires rebuilding — nprobe is a query-time parameter, nlist recalibration requires retraining but not re-ingesting data.",
+    readMore: { label: "Vector DB Engineering →", tab: "systems" }
+  },
+
+
 ];
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────

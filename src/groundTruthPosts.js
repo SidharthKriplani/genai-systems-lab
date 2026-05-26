@@ -11223,4 +11223,202 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+  "agent-memory-architecture": [
+    { t: "h2", text: "The memory problem no one talks about" },
+    { t: "p", text: "Most agent tutorials show you how to call tools. Almost none show you how the agent remembers anything between calls — or across sessions. This is the gap that kills agents in production. The agent forgets the user\'s name. It repeats a question it asked three turns ago. It retrieves a document from six months ago that was superseded last week. These are not model quality problems. They are memory architecture problems." },
+    { t: "p", text: "There are four distinct memory problems every agent faces. Each one requires a different storage technology and retrieval strategy. Treating them all the same — dumping everything into a vector DB, or stuffing everything into the context window — is why most production agents break in the same three ways." },
+
+    { t: "h2", text: "The four memory types" },
+
+    { t: "h3", text: "1. Short-term memory — the context window" },
+    { t: "p", text: "Short-term memory is whatever is currently in the context window: the conversation history, retrieved documents, tool outputs, system prompt. It is fast, perfectly accurate, and immediately available. It is also expensive and finite." },
+    { t: "p", text: "The failure mode is cost explosion. A customer support agent that appends every message to the context window hits 100K tokens within a few dozen turns. At $3/M tokens input that is $0.30 per session — acceptable for a demo, catastrophic at 10,000 sessions/day. The naive fix — truncate old messages — introduces a worse failure: the agent forgets critical context from earlier in the conversation." },
+    { t: "callout", v: "tip", text: "Production pattern: maintain a rolling window of the last N turns verbatim, plus a compressed summary of earlier context. Summarize every K turns, keep the summary pinned at the top of the context. Cost drops 60-80%; the agent retains the thread." },
+
+    { t: "h3", text: "2. Long-term memory — vector retrieval" },
+    { t: "p", text: "Long-term memory is the persistent store of facts, documents, and knowledge the agent can draw on across sessions. The standard implementation is a vector DB: embed the content, store the vectors, retrieve by semantic similarity at query time." },
+    { t: "p", text: "The critical failure here is the similar ≠ relevant problem. Vector search returns semantically similar content. Semantically similar is not the same as contextually relevant for the current task. A query about a user\'s project timeline may retrieve many documents about project management best practices — all semantically close — while missing the specific document that says this user\'s deadline was moved to Friday." },
+    { t: "p", text: "A second failure: long-term memory has no native notion of recency or authority. A document from two years ago and a document from last week look identical to the retriever. Without explicit freshness metadata filtering, agents confidently surface stale information." },
+    { t: "callout", v: "warning", text: "Long-term memory retrieval should always include: (1) a relevance score threshold — don\'t inject content below 0.75 cosine similarity, (2) a recency filter — surface document date alongside retrieved content so the LLM can reason about staleness, (3) a source authority signal — internal docs outrank web-scraped docs for factual queries." },
+
+    { t: "h3", text: "3. Episodic memory — what happened, exactly" },
+    { t: "p", text: "Episodic memory is the record of specific past events: what the user asked last Tuesday, what the agent did in response, what the outcome was. Unlike long-term memory (which stores general knowledge), episodic memory stores particular instances with exact timing and sequencing." },
+    { t: "p", text: "Vector search is wrong for episodic memory. If a user asks \'what did I ask you yesterday?\', you do not want semantically similar past queries — you want the exact queries from yesterday, ordered by time. This is a structured lookup, not a similarity search. Postgres or any relational store with a timestamp index is the right tool: SELECT * FROM episodes WHERE user_id = X AND created_at > NOW() - INTERVAL \'1 day\' ORDER BY created_at." },
+    { t: "p", text: "The agents that confabulate about past interactions — \'As we discussed earlier...\' when no such discussion happened — usually have no episodic memory at all. The agent is generating plausible-sounding history from parametric memory rather than retrieving actual history from a structured store." },
+
+    { t: "h3", text: "4. Semantic memory — learned preferences" },
+    { t: "p", text: "Semantic memory is the agent\'s model of the user: their preferences, working style, recurring needs, communication preferences. Not what happened last Tuesday (episodic), but what is generally true about this person across all their interactions." },
+    { t: "p", text: "This is the hardest memory type to build well. It requires inference — the agent must conclude from many interactions that \'this user prefers concise answers\' or \'this user always wants cost estimates alongside recommendations.\' That inference must then be stored, updated over time, and retrieved at the start of every session to personalize behavior." },
+    { t: "p", text: "The practical implementation: a key-value store or structured Postgres table of user preferences, updated by a background process that periodically summarizes recent interactions and extracts or updates preference signals. The agent reads these preferences from the system prompt on every session start." },
+
+    { t: "h2", text: "The production memory stack" },
+    { t: "p", text: "The teams building reliable agents at scale typically run a layered stack:" },
+    { t: "list", items: [
+      "Redis (hot cache) — last 10–20 interactions, sub-millisecond read, evicts on TTL. Feeds short-term context compression.",
+      "Postgres (structured store) — episodic memory (full interaction log with timestamps) + semantic memory (user preferences as structured rows). Queryable by time, user, outcome.",
+      "Vector DB — long-term knowledge retrieval. Chroma or pgvector for smaller scale, Qdrant or Pinecone for production volume. Filtered by metadata before semantic search.",
+      "LLM layer — decides what to fetch, what to write, what to discard. This is where most implementations fail.",
+    ]},
+    { t: "callout", v: "warning", text: "The real problem is not storage. It is the decision layer: knowing when to remember vs when to forget, what is worth writing to long-term memory vs what should stay ephemeral, and when retrieved memory is stale enough to be harmful. An agent that remembers everything is as broken as one that remembers nothing." },
+
+    { t: "h2", text: "What to remember and what to forget" },
+    { t: "p", text: "The decision layer is a small LLM call (Haiku or GPT-4o-mini) that runs at the end of each interaction and answers: should anything from this session be written to long-term or semantic memory? It evaluates: was a new preference expressed? Was a fact established that will matter in future sessions? Was an outcome reached that future sessions should know about?" },
+    { t: "p", text: "Without this layer, agents write everything (cost explosion, noise overwhelms signal) or nothing (no persistence across sessions). The decision layer is the difference between an agent that gets smarter with use and one that starts from zero every session." },
+    { t: "p", text: "The forgetting side is equally important. Semantic memory preferences should decay or be explicitly overridden when contradicted. Episodic memory should be pruned by outcome — resolved interactions matter less than open ones. Long-term knowledge should be invalidated when source documents are updated. Memory without a retention policy is a liability." },
+
+    { t: "refs", items: [
+      { label: "MemGPT: Towards LLMs as Operating Systems", url: "https://arxiv.org/abs/2310.08560" },
+      { label: "Cognitive Architectures for Language Agents (CoALA)", url: "https://arxiv.org/abs/2309.02427" },
+      { label: "A Survey on the Memory Mechanism of Large Language Model based Agents", url: "https://arxiv.org/abs/2404.13501" },
+    ]},
+  ],
+
+  "how-surprised-is-the-model": [
+    { t: "h2", text: "One question unifies all of training" },
+    { t: "p", text: 'Every loss function in deep learning is answering one question: how surprised was the model when it saw the correct answer? If the model was very confident and correct, it is not surprised — loss is low. If it was very confident and wrong, it is extremely surprised — loss is high. Understanding this framing makes cross-entropy loss, entropy, and KL divergence all click into place as variations of the same idea.' },
+
+    { t: "h2", text: "Probability: what the model predicts" },
+    { t: "p", text: "At each token position, a language model outputs a probability distribution over its entire vocabulary — say, 100,000 tokens. Each entry is the model\'s estimated probability that this token is the correct next one. The distribution sums to 1. If the model assigns 0.9 to \'Paris\' as the next token after \'The capital of France is\', it is very confident. If it assigns 0.3, it is uncertain." },
+    { t: "p", text: "This probability is a direct measure of surprise in the information-theoretic sense: high probability = low surprise = low loss. The model that says 0.9 and gets the right answer is barely updating its weights. The model that says 0.1 and gets corrected is updating heavily." },
+
+    { t: "h2", text: "Entropy: how uncertain is the distribution?" },
+    { t: "p", text: "Entropy measures the average uncertainty of a probability distribution. A distribution that puts all probability on one token has entropy 0 — it is certain. A distribution that spreads probability evenly across all 100,000 tokens has maximum entropy — it has no idea." },
+    { t: "p", text: "For language models, entropy matters in two places. First, during generation: high entropy at a position means the model is genuinely uncertain what comes next — this is where temperature affects sampling. Second, as a training diagnostic: if entropy is very high throughout training, the model is not learning structure. If it drops to near zero, the model may be memorizing rather than generalizing." },
+    { t: "callout", v: "tip", text: "Entropy as eval signal: compute the average entropy of model outputs on your task. A well-calibrated model has moderate entropy on hard questions and low entropy on easy ones. A model with uniformly low entropy on hard questions is overconfident — and probably hallucinating." },
+
+    { t: "h2", text: "Cross-entropy loss: how surprised at the correct answer?" },
+    { t: "p", text: "Cross-entropy loss is the core training signal for language models. For each token position, it measures: given the model\'s probability distribution, how many bits does it take to encode the actual correct token?" },
+    { t: "p", text: "The formula is: L = -log(p_correct), where p_correct is the probability the model assigned to the right answer. If p_correct = 1.0 (perfect confidence, correct), loss = 0. If p_correct = 0.5, loss = 0.69. If p_correct = 0.01, loss = 4.6. The logarithm punishes overconfident wrong predictions disproportionately — exactly the right behavior for calibration." },
+    { t: "p", text: "Perplexity is just exponentiated average cross-entropy loss: PPX = exp(avg_loss). A perplexity of 10 means the model is, on average, as uncertain as if it were choosing uniformly among 10 equally likely options. Perplexity of 1 is perfect prediction. GPT-2 achieved perplexity ~29 on WikiText-103; GPT-4 is estimated below 5 on standard benchmarks." },
+
+    { t: "h2", text: "KL divergence: how far is one distribution from another?" },
+    { t: "p", text: "KL divergence measures the difference between two probability distributions. KL(P || Q) answers: if the true distribution is P, how much extra information do you need to encode samples using Q instead of P?" },
+    { t: "p", text: "In LLM contexts, KL divergence appears in two critical places. First, in RLHF and DPO: the KL penalty term KL(policy || reference) prevents the policy model from drifting too far from the original pretrained model during reward optimization. Without this penalty, the model exploits the reward signal in degenerate ways — generating text that maximizes reward but looks nothing like natural language. The KL term is the leash." },
+    { t: "p", text: "Second, in knowledge distillation: when training a small student model from a large teacher, you minimize KL(teacher_distribution || student_distribution) rather than just cross-entropy on the labels. This forces the student to match the full probability distribution of the teacher — including its uncertainty — not just its top-1 predictions. The student learns \'I\'m 60% confident, not 99%\' rather than just \'the answer is Paris.\'\'" },
+    { t: "callout", v: "tip", text: "Practical implication for RLHF: the KL coefficient β controls the tradeoff between reward maximization and staying close to the reference policy. High β = conservative, low β = aggressive. Setting β too low causes reward hacking. Setting it too high means the model barely changes from the base. Most practitioners start at β=0.1 and tune from there." },
+
+    { t: "h2", text: "Why this matters for engineering decisions" },
+    { t: "list", items: [
+      "Fine-tuning: cross-entropy loss on your target domain tells you directly how surprised the model is by your data. High loss means large update. Watch it drop — but watch for overfitting (loss on holdout stops dropping while train loss continues falling).",
+      "RLHF reward hacking: when the policy model collapses to gibberish that scores high on the reward model, the KL penalty was too low. Increase β.",
+      "Calibration: a well-calibrated model\'s predicted probabilities match actual accuracy rates. If it says 0.9 confidence, it should be right 90% of the time. Use temperature scaling after fine-tuning to recalibrate if needed.",
+      "Distillation vs hard labels: for small model training, using soft targets (full teacher distribution) consistently outperforms hard labels by 2–5 points on downstream tasks. The uncertainty signal is information the labels throw away.",
+    ]},
+
+    { t: "refs", items: [
+      { label: "A Mathematical Framework for Transformer Circuits", url: "https://transformer-circuits.pub/2021/framework/index.html" },
+      { label: "Training language models to follow instructions with human feedback (InstructGPT)", url: "https://arxiv.org/abs/2203.02155" },
+      { label: "Distilling the Knowledge in a Neural Network (Hinton et al.)", url: "https://arxiv.org/abs/1503.02531" },
+    ]},
+  ],
+
+  "why-transformers-won": [
+    { t: "h2", text: "The problem with processing sequences one step at a time" },
+    { t: "p", text: "Before transformers, the dominant architecture for sequences was the Recurrent Neural Network. RNNs process tokens one at a time: the hidden state from token N is passed forward to token N+1, which updates it and passes it to N+2. The entire history of the sequence is compressed into a single fixed-size hidden state vector." },
+    { t: "p", text: "This design has two fundamental problems that compound at scale. The first is the vanishing gradient: when backpropagating through hundreds of sequential steps, gradients shrink exponentially. The model cannot learn long-range dependencies — by the time information from token 1 influences token 100, the gradient signal is essentially zero." },
+    { t: "p", text: "The second is that sequential processing cannot be parallelized. Token N+1 must wait for token N. Training a 10,000-token sequence requires 10,000 sequential operations. This is a hard ceiling on throughput regardless of hardware." },
+
+    { t: "h2", text: "LSTM: the partial fix" },
+    { t: "p", text: "Long Short-Term Memory networks (Hochreiter & Schmidhuber, 1997) addressed the vanishing gradient with a gating mechanism: a cell state that flows across time steps with additive rather than multiplicative updates, controlled by learned gates (input, forget, output). The forget gate can learn to keep important information alive across many steps instead of letting it decay." },
+    { t: "p", text: "LSTMs were genuinely better. They powered state-of-the-art results in machine translation, speech recognition, and text generation through the early 2010s. But they did not solve parallelism — they were still sequential. And they still compressed the entire past into a fixed-size state. At 500+ tokens, even LSTMs struggled with long-range dependencies." },
+    { t: "callout", v: "tip", text: "The architectural insight that LSTM still missed: the bottleneck is not how well you carry forward information — it is that you must compress everything into a single vector. The fix is not a better compression mechanism. It is to stop compressing." },
+
+    { t: "h2", text: "Attention: the key insight" },
+    { t: "p", text: "The attention mechanism, formalized in \'Attention Is All You Need\' (Vaswani et al., 2017), replaced sequential compression with direct access. Instead of reading from a hidden state that must carry the entire history, each token can directly attend to any other token in the sequence, weighted by learned relevance." },
+    { t: "p", text: "Two consequences follow immediately. First, parallelism: all attention computations across the sequence can run simultaneously — the dependency is on the full input, not on the previous step\'s output. Training speed improves by orders of magnitude on modern GPU hardware. Second, long-range dependencies: token 1 and token 10,000 can influence each other directly, with no gradient path length penalty." },
+    { t: "p", text: "The cost is quadratic memory and compute in sequence length — the attention matrix is N×N. This is why long context remains expensive. The transformer did not make sequences free; it made them parallelizable and made long-range dependencies tractable." },
+
+    { t: "h2", text: "Encoder-only, decoder-only, encoder-decoder" },
+    { t: "p", text: "The original transformer had two components: an encoder that builds a representation of the input, and a decoder that generates the output attending to the encoder\'s representation. Different tasks use different parts." },
+    { t: "list", items: [
+      "Encoder-only (BERT, RoBERTa): reads the full input bidirectionally — every token attends to every other token. Best for classification, NER, semantic similarity. Knows the full context; cannot generate new tokens.",
+      "Decoder-only (GPT series, Llama, Mistral): generates tokens left-to-right. Each token attends only to previous tokens (causal masking). The standard architecture for chat, completion, and agentic tasks. The architecture that scaled.",
+      "Encoder-decoder (T5, BART, mT5): full encoder over the input, then a decoder that attends to both the encoder output and its own generated tokens. Best for translation, summarization, question answering with discrete input/output.",
+    ]},
+    { t: "callout", v: "tip", text: "Why decoder-only won at scale: the causal language modeling pretraining objective — predict the next token — is self-supervised over any text corpus. No labels needed. Encoder-decoder models need paired input-output data for pretraining. The data availability asymmetry was decisive. Internet-scale text is almost entirely unlabeled." },
+
+    { t: "h2", text: "Why this history matters for engineers" },
+    { t: "p", text: "Understanding the architectural arc makes specific engineering decisions obvious. BERT-family models are still the right choice for retrieval and classification — bidirectional attention gives richer representations for these tasks. Decoder-only models are the right choice for generation, instruction following, and agents. Encoder-decoder models remain competitive for structured generation tasks where the input and output are clearly separated." },
+    { t: "p", text: "The scaling story is decoder-only: all frontier models (GPT-4, Claude, Gemini, Llama 3) are decoder-only. The reason is not that the architecture is theoretically superior — it is that the pretraining objective scales with data, and data is the binding constraint. Any architecture that requires labeled data for pretraining will always lose to one that can train on raw internet text at ten times the scale." },
+
+    { t: "refs", items: [
+      { label: "Attention Is All You Need (Vaswani et al., 2017)", url: "https://arxiv.org/abs/1706.03762" },
+      { label: "Long Short-Term Memory (Hochreiter & Schmidhuber, 1997)", url: "https://www.bioinf.jku.at/publications/older/2604.pdf" },
+      { label: "BERT: Pre-training of Deep Bidirectional Transformers (Devlin et al., 2018)", url: "https://arxiv.org/abs/1810.04805" },
+    ]},
+  ],
+
+  "your-prompt-is-code": [
+    { t: "h2", text: "The 11-day silent regression" },
+    { t: "p", text: "An AI/ML engineer made a one-line change to a system prompt. A clarifying sentence was added — reasonable, innocuous. The change went to production. Quality dropped 23% on the primary task metric. Nobody noticed for 11 days. No alert fired. No test caught it. Users experienced degraded output for a week and a half before a manual review surfaced the problem." },
+    { t: "p", text: "This is not an unusual story. It is the default story for teams that treat prompts as configuration rather than code. The only thing unusual about it is that the 23% drop was eventually measured. Most teams do not have the eval infrastructure to measure it at all." },
+
+    { t: "h2", text: "What treating prompts as code actually means" },
+    { t: "p", text: "Version control for prompts is the minimum viable starting point. Every prompt change should be committed to a repository with a diff, a reason, and a timestamp. This is not controversial — it is the same discipline you apply to any other line of code that affects production behavior. The fact that it is widely skipped reflects how recently prompts became load-bearing infrastructure, not a considered decision that they should be exempt." },
+    { t: "p", text: "Beyond version control, prompt management as a discipline includes: A/B testing changes before full rollout (a new system prompt is a feature change, ship it like one), LLM-as-judge automated scoring on a fixed eval set after every change, and regression alerts when quality drops below a threshold. The infrastructure for all of this exists and is not complicated to build." },
+
+    { t: "h2", text: "Serving prompts via API, not hardcoded strings" },
+    { t: "p", text: "Hardcoding prompts in application code creates a deployment coupling: a prompt change requires a code deploy. For teams with CI/CD pipelines this is a real friction that causes engineers to batch prompt changes with code changes — trading frequency of iteration for deployment convenience." },
+    { t: "p", text: "The better pattern: serve prompts from a dedicated prompt management service (or even a simple database table with a versioned API). The application fetches the current active prompt at request time. Prompt changes deploy independently from code changes. Rollbacks are a one-line database update. A/B testing is a query parameter. This decoupling is the architectural equivalent of feature flags — and it costs about as much to build." },
+
+    { t: "h2", text: "The prompt test suite" },
+    { t: "p", text: "A prompt test suite is a fixed set of inputs with expected outputs or scoring criteria. Before any prompt change ships, run the suite. If the score drops more than N%, block the change and require review. The suite does not need to be large — 50 representative inputs covering the main use cases, edge cases, and known failure modes is enough to catch the majority of regressions." },
+    { t: "list", items: [
+      "Factual accuracy tests: inputs where the correct answer is known and verifiable. Score: exact match or LLM-as-judge faithfulness.",
+      "Tone / format tests: inputs where the output should follow specific formatting. Score: regex or structural check.",
+      "Edge case tests: inputs that previously caused failures. Score: binary pass/fail.",
+      "Regression tests: inputs from production incidents. Any change that re-introduces a past failure is an automatic block.",
+    ]},
+    { t: "callout", v: "warning", text: "The LLM-as-judge in your eval suite should NOT be the same model you are testing, and ideally not the same model family. A GPT-4o-based judge will have biases that favor GPT-4o-style outputs. Use Claude as judge for GPT-based systems, and vice versa. This is not perfect, but it significantly reduces self-preference bias in scoring." },
+
+    { t: "h2", text: "What to track in production" },
+    { t: "list", items: [
+      "Quality score trend: LLM-as-judge score on a random sample (5–10%) of production traffic, reported as a rolling 7-day average. Alerts if weekly average drops >5% from baseline.",
+      "Prompt version in every log: every inference request should log which prompt version was active. Without this you cannot correlate quality changes to prompt changes post-hoc.",
+      "Latency by prompt version: longer prompts cost more tokens and latency. Track cost and latency as first-class metrics per prompt version, not just quality.",
+      "Rollback readiness: every prompt change should have a one-click rollback to the previous version. If it takes more than 60 seconds to revert a bad prompt, the infrastructure is not mature enough.",
+    ]},
+
+    { t: "refs", items: [
+      { label: "PromptLayer: Prompt Versioning and Observability", url: "https://promptlayer.com" },
+      { label: "LangSmith: LLM Application Observability", url: "https://smith.langchain.com" },
+      { label: "Promptfoo: Prompt Testing and Evaluation", url: "https://promptfoo.dev" },
+    ]},
+  ],
+
+  "three-layer-de-skill-stack": [
+    { t: "h2", text: "The trap most data engineers fall into" },
+    { t: "p", text: "When AI productivity tools went mainstream in 2023, a lot of data engineers made a predictable mistake: they invested heavily in Layer 2 (Cursor, Claude Code, AI-generated SQL workflows) and called it upskilling. It felt like the right move — using AI to do their existing work faster. What they missed is that the highest-value shift happening in data engineering right now is Layer 3, and most of the field has barely started there." },
+
+    { t: "h2", text: "Layer 1 — The foundation (still 80% of your value)" },
+    { t: "p", text: "SQL, Python, data modelling, Spark, Airflow, cloud fundamentals. This is what the job is. In 2026 it remains true that a senior data engineer who cannot write clean SQL, design a normalized schema, or reason about query plans is not going to survive regardless of what AI tools they have. Layer 1 is not legacy — it is the foundation that makes everything else work." },
+    { t: "p", text: "The AI productivity argument sometimes obscures this: \'AI can write the SQL for me.\' This is true at the syntax level and false at the judgment level. AI-generated SQL needs to be verified by someone who can read it critically, spot incorrect joins, identify missing edge cases, and catch performance problems before they hit production. That verification skill is Layer 1. Without it, AI productivity tools generate confident garbage at scale." },
+    { t: "callout", v: "warning", text: "The AI productivity trap: engineers who let AI do their Layer 1 work without developing the judgment to verify it are creating technical debt that the next engineer will pay. Speed without verification is not productivity — it is future incident creation." },
+
+    { t: "h2", text: "Layer 2 — AI productivity (table stakes by 2025)" },
+    { t: "p", text: "Prompt engineering for code generation, Cursor or Claude Code fluency, AI-generated SQL review workflows, using LLMs to write boilerplate pipelines and tests. This layer is real and valuable — experienced engineers who use these tools well ship 30–50% faster on routine work." },
+    { t: "p", text: "But Layer 2 is rapidly commoditizing. Within 12 months of widespread adoption, using Cursor became a baseline expectation, not a differentiator. Job postings stopped calling it out because everyone was assumed to have it. The engineers who invested most heavily in Layer 2 at the expense of Layers 1 and 3 found themselves faster at the same job, not positioned for the next one." },
+
+    { t: "h2", text: "Layer 3 — AI infrastructure (currently scarce)" },
+    { t: "p", text: "Vector databases, embedding pipelines, RAG architecture, feature stores for ML, LLM observability, eval frameworks, model serving infrastructure. This is where the actual supply/demand gap is in 2026. Enterprise AI initiatives are accumulating rapidly; the engineering capacity to build and maintain the infrastructure underneath them is not keeping pace." },
+    { t: "p", text: "Layer 3 skills command the premium not because they are harder in absolute terms — building a pgvector integration is not more complex than building a Spark pipeline — but because the people who have built them in production are scarce. The tools are newer, the failure modes are less documented, and the mental models required (thinking about retrieval quality, hallucination rates, cost per query) are genuinely different from batch data pipeline thinking." },
+    { t: "list", items: [
+      "Vector DB engineering: pgvector vs Chroma vs Pinecone vs Weaviate, HNSW vs IVF indexing, hybrid search, metadata filtering at scale",
+      "Embedding pipeline design: chunking strategies, embedding model selection, re-embedding triggers when model upgrades, cost management",
+      "RAG architecture: retrieval quality evaluation, faithfulness scoring, failure mode diagnosis (the five ways RAG lies)",
+      "LLM observability: tracing, cost monitoring, latency profiling, quality alerting on production traffic",
+      "Eval infrastructure: building eval suites, LLM-as-judge pipelines, regression testing for model and prompt changes",
+    ]},
+
+    { t: "h2", text: "The all-three thesis" },
+    { t: "p", text: "The highest-value data engineers in 2026 are not the ones who went deepest on Layer 2. They are the ones who kept Layer 1 strong (so they can verify what AI generates), adopted Layer 2 tools (so they move fast on routine work), and built genuine Layer 3 depth (so they can own AI infrastructure, not just use it)." },
+    { t: "p", text: "Layer 3 without Layer 1 is fragile: you can build a RAG pipeline but you cannot diagnose why the SQL query pulling training data is returning duplicates. Layer 2 without Layer 3 is stagnant: you are faster at the same job but not positioned for the jobs that are opening up. All three, in balance, is where the compensation premium lives." },
+    { t: "callout", v: "tip", text: "This lab is a Layer 3 training ground. RAG Lab, Vector DB Engineering, Evals, LLM Observability, Agent Architecture, Prompt Injection Defense — these are the Layer 3 skills. If you have Layer 1 solid and have picked up Layer 2 tools, the modules in the BUILD and OPS groups are exactly where to invest next." },
+
+    { t: "refs", items: [
+      { label: "The State of Data Engineering 2026 — Emerging Roles", url: "https://aiindex.stanford.edu/report/" },
+      { label: "Vector Databases: from Embeddings to Applications", url: "https://www.pinecone.io/learn/vector-database/" },
+    ]},
+  ],
+
 };

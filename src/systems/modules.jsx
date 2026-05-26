@@ -11187,8 +11187,340 @@ function VectorDBEngineering({ onNavigate }) {
   );
 }
 
+
+// ─── AGENT MEMORY ARCHITECTURE ───────────────────────────────────────────────
+
+const MEMORY_TYPES = [
+  {
+    id: "shortterm",
+    label: "Short-Term",
+    subtitle: "Context Window",
+    color: "#6366f1",
+    icon: "⚡",
+    storage: "In-process (context window)",
+    retrieval: "Always available — no retrieval needed",
+    latency: "0ms",
+    persistence: "Session only",
+    capacity: "Finite — token limit",
+    costSignal: "High — every token costs",
+    failureMode: "Cost explosion as conversation grows; truncation loses critical context",
+    productionPattern: "Rolling window (last N turns) + compressed summary of earlier context. Summarize every K turns, pin summary at top.",
+    whenToUse: "Current conversation state, active tool outputs, recent retrieved docs",
+  },
+  {
+    id: "longterm",
+    label: "Long-Term",
+    subtitle: "Vector Retrieval",
+    color: "#3b82f6",
+    icon: "🔍",
+    storage: "Vector DB (Chroma, Qdrant, Pinecone, pgvector)",
+    retrieval: "Semantic similarity search at query time",
+    latency: "5–50ms",
+    persistence: "Permanent (until deleted)",
+    capacity: "Millions–billions of vectors",
+    costSignal: "Low per query; expensive to build index",
+    failureMode: "Similar ≠ relevant — retrieves semantically close but contextually wrong docs. No native recency signal.",
+    productionPattern: "Always filter by metadata (date, source, user_id) before semantic search. Set similarity threshold ≥0.75. Include doc date in injected context.",
+    whenToUse: "Knowledge base, user-facing docs, product FAQs, domain knowledge",
+  },
+  {
+    id: "episodic",
+    label: "Episodic",
+    subtitle: "Interaction Log",
+    color: "#22c55e",
+    icon: "📋",
+    storage: "Postgres / relational DB with timestamp index",
+    retrieval: "Structured query by time, user, outcome — NOT vector search",
+    latency: "1–5ms",
+    persistence: "Permanent (with retention policy)",
+    capacity: "Rows in a relational DB — effectively unlimited",
+    costSignal: "Very low",
+    failureMode: "Using vector search for episodic recall — returns 'similar past conversations' instead of 'what happened yesterday'",
+    productionPattern: "SELECT * FROM episodes WHERE user_id=X AND created_at > NOW()-INTERVAL '1 day' ORDER BY created_at. Prune resolved interactions on schedule.",
+    whenToUse: "'What did I ask last week?', audit trail, outcome tracking, personalisation from history",
+  },
+  {
+    id: "semantic",
+    label: "Semantic",
+    subtitle: "User Preferences",
+    color: "#f59e0b",
+    icon: "👤",
+    storage: "Key-value store or structured Postgres table",
+    retrieval: "Direct lookup by user_id at session start",
+    latency: "1ms",
+    persistence: "Permanent with explicit update/decay",
+    capacity: "Structured rows per user",
+    costSignal: "Negligible",
+    failureMode: "Never updated — stale preferences override new user intent. Or never built — agent forgets everything between sessions.",
+    productionPattern: "Background process summarises recent interactions, extracts/updates preferences. Inject as structured list in system prompt on session start. Include last-updated timestamp.",
+    whenToUse: "Communication style, recurring needs, role, preferred output format, domain expertise level",
+  },
+];
+
+const STACK_LAYERS = [
+  { id: "redis", label: "Redis", role: "Hot cache — last 10–20 turns", color: "#ef4444", feeds: "Short-term compression" },
+  { id: "postgres", label: "Postgres", role: "Episodic log + semantic preferences", color: "#3b82f6", feeds: "Structured recall" },
+  { id: "vectordb", label: "Vector DB", role: "Long-term knowledge retrieval", color: "#8b5cf6", feeds: "Semantic search" },
+  { id: "llm", label: "Decision Layer (LLM)", role: "What to remember, fetch, and forget", color: "#f59e0b", feeds: "All layers" },
+];
+
+const FAILURE_DEMOS = [
+  {
+    id: "similar_not_relevant",
+    title: "Similar ≠ Relevant",
+    query: "When is my project deadline?",
+    badResult: "Retrieves: 'Best practices for project deadline management' (cosine: 0.83)",
+    goodResult: "Needs: Episodic record — 'User set project deadline to Friday 5pm on May 12'",
+    fix: "Episodic memory (Postgres lookup) for user-specific facts, not semantic search",
+  },
+  {
+    id: "stale_longterm",
+    title: "Stale Long-Term Memory",
+    query: "What's our refund policy?",
+    badResult: "Retrieves: Policy doc from 2023 (cosine: 0.91) — '30-day refunds'",
+    goodResult: "Needs: Policy updated March 2026 — '14-day refunds for digital products'",
+    fix: "Filter long-term retrieval by document date. Pin updated_at in metadata. Never inject docs without freshness check.",
+  },
+  {
+    id: "preference_ignored",
+    title: "Preference Forgotten",
+    query: "Summarise this report",
+    badResult: "Agent produces 800-word detailed summary — user has asked for bullet points 6 times",
+    goodResult: "Semantic memory should record: 'prefers bullet-point summaries, max 5 points'",
+    fix: "Background preference extraction after each session. Inject user preferences at session start.",
+  },
+  {
+    id: "context_explosion",
+    title: "Context Explosion",
+    query: "(Turn 47 of support conversation)",
+    badResult: "Full 47-turn history in context = ~45,000 tokens = $0.14/session × 50K sessions = $7,000/day",
+    goodResult: "Rolling window: last 5 turns verbatim + summary of turns 1–42 = ~3,000 tokens",
+    fix: "Summarise every 10 turns. Keep summary pinned. Drop raw history beyond window.",
+  },
+];
+
+function AgentMemoryArchitecture({ onNavigate }) {
+  const [tab, setTab] = useState("types");
+  const [selected, setSelected] = useState("shortterm");
+  const [failureIdx, setFailureIdx] = useState(0);
+  const [stackExpanded, setStackExpanded] = useState(null);
+
+  const tabs = [
+    { id: "types", label: "Memory Types" },
+    { id: "failures", label: "Failure Demos" },
+    { id: "stack", label: "Production Stack" },
+    { id: "decision", label: "Decision Layer" },
+  ];
+
+  const selectedType = MEMORY_TYPES.find(m => m.id === selected);
+  const failure = FAILURE_DEMOS[failureIdx];
+
+  return (
+    <div style={{ fontFamily: "inherit" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ color: "#f4f4f5", fontSize: 20, fontWeight: 700, margin: "0 0 6px" }}>Agent Memory Architecture</h2>
+        <p style={{ color: "#a1a1aa", fontSize: 14, margin: 0 }}>Four memory types, why each needs different storage, and the decision layer that makes agents actually improve with use.</p>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+            background: tab === t.id ? "#3b82f6" : "#27272a", color: tab === t.id ? "#fff" : "#a1a1aa",
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* MEMORY TYPES */}
+      {tab === "types" && (
+        <div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, marginBottom: 20 }}>
+            {MEMORY_TYPES.map(m => (
+              <div key={m.id} onClick={() => setSelected(m.id)} style={{
+                background: selected === m.id ? "#18181b" : "#27272a",
+                border: `2px solid ${selected === m.id ? m.color : "transparent"}`,
+                borderRadius: 10, padding: "14px 16px", cursor: "pointer",
+              }}>
+                <div style={{ fontSize: 24, marginBottom: 6 }}>{m.icon}</div>
+                <div style={{ color: m.color, fontWeight: 700, fontSize: 14 }}>{m.label}</div>
+                <div style={{ color: "#71717a", fontSize: 12 }}>{m.subtitle}</div>
+              </div>
+            ))}
+          </div>
+
+          {selectedType && (
+            <div style={{ background: "#18181b", border: `1px solid ${selectedType.color}40`, borderRadius: 10, padding: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <span style={{ fontSize: 20 }}>{selectedType.icon}</span>
+                <span style={{ color: selectedType.color, fontSize: 16, fontWeight: 800 }}>{selectedType.label} Memory</span>
+                <span style={{ color: "#71717a", fontSize: 13 }}>— {selectedType.subtitle}</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
+                {[
+                  ["Storage", selectedType.storage],
+                  ["Retrieval", selectedType.retrieval],
+                  ["Latency", selectedType.latency],
+                  ["Persistence", selectedType.persistence],
+                  ["Capacity", selectedType.capacity],
+                  ["Cost", selectedType.costSignal],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ background: "#27272a", borderRadius: 8, padding: "10px 14px" }}>
+                    <div style={{ color: "#71717a", fontSize: 11, marginBottom: 4 }}>{k.toUpperCase()}</div>
+                    <div style={{ color: "#d4d4d8", fontSize: 12 }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <div style={{ background: "#7f1d1d20", border: "1px solid #ef444430", borderRadius: 8, padding: "12px 14px" }}>
+                  <div style={{ color: "#ef4444", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>FAILURE MODE</div>
+                  <div style={{ color: "#d4d4d8", fontSize: 13, lineHeight: 1.5 }}>{selectedType.failureMode}</div>
+                </div>
+                <div style={{ background: "#14532d20", border: "1px solid #22c55e30", borderRadius: 8, padding: "12px 14px" }}>
+                  <div style={{ color: "#22c55e", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>PRODUCTION PATTERN</div>
+                  <div style={{ color: "#d4d4d8", fontSize: 13, lineHeight: 1.5 }}>{selectedType.productionPattern}</div>
+                </div>
+              </div>
+              <div style={{ background: "#27272a", borderRadius: 8, padding: "10px 14px" }}>
+                <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>USE FOR</div>
+                <div style={{ color: "#d4d4d8", fontSize: 13 }}>{selectedType.whenToUse}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* FAILURE DEMOS */}
+      {tab === "failures" && (
+        <div>
+          <p style={{ color: "#a1a1aa", fontSize: 13, marginBottom: 16 }}>Real failure patterns and the memory architecture fix for each.</p>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            {FAILURE_DEMOS.map((f, i) => (
+              <button key={f.id} onClick={() => setFailureIdx(i)} style={{
+                padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                background: failureIdx === i ? "#7f1d1d" : "#27272a",
+                color: failureIdx === i ? "#fca5a5" : "#a1a1aa",
+              }}>{f.title}</button>
+            ))}
+          </div>
+          <div style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 20 }}>
+            <div style={{ color: "#f4f4f5", fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{failure.title}</div>
+            <div style={{ background: "#27272a", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
+              <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>USER QUERY</div>
+              <div style={{ color: "#d4d4d8", fontSize: 14, fontStyle: "italic" }}>"{failure.query}"</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+              <div style={{ background: "#7f1d1d20", border: "1px solid #ef444430", borderRadius: 8, padding: "12px 14px" }}>
+                <div style={{ color: "#ef4444", fontSize: 11, fontWeight: 700, marginBottom: 8 }}>WHAT HAPPENS (BROKEN)</div>
+                <div style={{ color: "#d4d4d8", fontSize: 13, lineHeight: 1.5 }}>{failure.badResult}</div>
+              </div>
+              <div style={{ background: "#14532d20", border: "1px solid #22c55e30", borderRadius: 8, padding: "12px 14px" }}>
+                <div style={{ color: "#22c55e", fontSize: 11, fontWeight: 700, marginBottom: 8 }}>WHAT SHOULD HAPPEN</div>
+                <div style={{ color: "#d4d4d8", fontSize: 13, lineHeight: 1.5 }}>{failure.goodResult}</div>
+              </div>
+            </div>
+            <div style={{ background: "#1e3a5f", border: "1px solid #3b82f640", borderRadius: 8, padding: "12px 14px" }}>
+              <div style={{ color: "#3b82f6", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>FIX</div>
+              <div style={{ color: "#d4d4d8", fontSize: 13 }}>{failure.fix}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PRODUCTION STACK */}
+      {tab === "stack" && (
+        <div>
+          <p style={{ color: "#a1a1aa", fontSize: 13, marginBottom: 16 }}>The layered stack production agent teams actually run. Click each layer for detail.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
+            {STACK_LAYERS.map(layer => (
+              <div key={layer.id} onClick={() => setStackExpanded(stackExpanded === layer.id ? null : layer.id)}
+                style={{ background: stackExpanded === layer.id ? "#18181b" : "#27272a", border: `1px solid ${stackExpanded === layer.id ? layer.color : "#3f3f46"}`, borderRadius: 10, padding: "14px 18px", cursor: "pointer" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <span style={{ color: layer.color, fontWeight: 800, fontSize: 14, minWidth: 120 }}>{layer.label}</span>
+                    <span style={{ color: "#a1a1aa", fontSize: 13 }}>{layer.role}</span>
+                  </div>
+                  <span style={{ color: layer.color, fontSize: 12 }}>{stackExpanded === layer.id ? "▲" : "▼"}</span>
+                </div>
+                {stackExpanded === layer.id && (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #3f3f46" }}>
+                    <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>FEEDS INTO</div>
+                    <div style={{ color: "#d4d4d8", fontSize: 13 }}>{layer.feeds}</div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 16 }}>
+            <div style={{ color: "#f4f4f5", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>Request flow</div>
+            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#a1a1aa", lineHeight: 2 }}>
+              <div><span style={{ color: "#f59e0b" }}>1.</span> User sends message</div>
+              <div><span style={{ color: "#f59e0b" }}>2.</span> <span style={{ color: "#ef4444" }}>Redis</span> → load last 10 turns into context</div>
+              <div><span style={{ color: "#f59e0b" }}>3.</span> <span style={{ color: "#3b82f6" }}>Postgres</span> → load user preferences + recent episodes</div>
+              <div><span style={{ color: "#f59e0b" }}>4.</span> <span style={{ color: "#8b5cf6" }}>Vector DB</span> → retrieve relevant knowledge (filtered by metadata)</div>
+              <div><span style={{ color: "#f59e0b" }}>5.</span> Assemble context: preferences + summary + recent turns + retrieved docs</div>
+              <div><span style={{ color: "#f59e0b" }}>6.</span> Generate response</div>
+              <div><span style={{ color: "#f59e0b" }}>7.</span> <span style={{ color: "#f59e0b" }}>Decision layer</span> → should anything be written to long-term / semantic memory?</div>
+              <div><span style={{ color: "#f59e0b" }}>8.</span> Write to <span style={{ color: "#ef4444" }}>Redis</span> (append turn) + <span style={{ color: "#3b82f6" }}>Postgres</span> (log episode) if decision says yes</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DECISION LAYER */}
+      {tab === "decision" && (
+        <div>
+          <p style={{ color: "#a1a1aa", fontSize: 13, marginBottom: 20 }}>The decision layer is a small LLM call at the end of each interaction. It is the difference between an agent that gets smarter with use and one that starts from zero every session.</p>
+          <div style={{ background: "#18181b", border: "1px solid #f59e0b40", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+            <div style={{ color: "#f59e0b", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Decision layer prompt (example)</div>
+            <div style={{ background: "#27272a", borderRadius: 8, padding: "12px 16px", fontFamily: "monospace", fontSize: 12, color: "#a1a1aa", lineHeight: 1.8 }}>
+              <div style={{ color: "#71717a" }}>SYSTEM: You are a memory decision agent. Given a completed interaction, decide:</div>
+              <div style={{ color: "#d4d4d8", marginTop: 8 }}>1. Should any user preference be updated? (style, needs, expertise level)</div>
+              <div style={{ color: "#d4d4d8" }}>2. Should any fact be stored in long-term memory? (outcome, decision, commitment)</div>
+              <div style={{ color: "#d4d4d8" }}>3. Is any existing memory entry now stale and should be deleted?</div>
+              <div style={{ color: "#d4d4d8", marginTop: 8 }}>Respond in JSON. If nothing should be stored, return empty arrays.</div>
+              <div style={{ color: "#d4d4d8", marginTop: 8 }}>{`{ "update_preferences": [], "store_facts": [], "delete_keys": [] }`}</div>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 16 }}>
+              <div style={{ color: "#22c55e", fontWeight: 700, fontSize: 12, marginBottom: 10 }}>REMEMBER WHEN</div>
+              {[
+                "User expresses explicit preference ('I prefer bullet points')",
+                "A new fact is established (deadline, decision, commitment)",
+                "An error was made and the correction should persist",
+                "User provides context that will affect future sessions",
+              ].map((item, i) => (
+                <div key={i} style={{ color: "#d4d4d8", fontSize: 13, marginBottom: 8, display: "flex", gap: 8 }}>
+                  <span style={{ color: "#22c55e" }}>✓</span>{item}
+                </div>
+              ))}
+            </div>
+            <div style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 16 }}>
+              <div style={{ color: "#ef4444", fontWeight: 700, fontSize: 12, marginBottom: 10 }}>FORGET WHEN</div>
+              {[
+                "Information is ephemeral ('what time is it?')",
+                "A stored preference is contradicted by new explicit input",
+                "A fact has been superseded (old deadline replaced by new)",
+                "Interaction was a one-off with no future relevance",
+              ].map((item, i) => (
+                <div key={i} style={{ color: "#d4d4d8", fontSize: 13, marginBottom: 8, display: "flex", gap: 8 }}>
+                  <span style={{ color: "#ef4444" }}>✗</span>{item}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginTop: 16, background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 16 }}>
+            <div style={{ color: "#f4f4f5", fontWeight: 700, fontSize: 12, marginBottom: 8 }}>Model choice for the decision layer</div>
+            <p style={{ color: "#a1a1aa", fontSize: 13, margin: 0, lineHeight: 1.6 }}>Use a small, fast model — Haiku or GPT-4o-mini. The decision layer runs on every interaction. At $0.25/M input tokens and ~500 tokens per decision call, that is $0.000125 per session. The intelligence requirement is low: JSON extraction from a short interaction summary. Over-engineering this with a frontier model adds cost and latency for no quality gain.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
+  ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
 };
