@@ -122,6 +122,7 @@ const RELATED_GT = {
 export default function SystemsApp({ initialModule, onModuleVisit, onNavigate }) {
   const [activeModule, setActiveModule] = useState(initialModule || "evals");
   const [search, setSearch] = useState("");
+  const [activeGroup, setActiveGroup] = useState(null); // null = all groups
   const [done, setDone] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("gsl-systems-done") || "[]")); }
     catch { return new Set(); }
@@ -142,13 +143,15 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate })
   const activeIdx = SYSTEMS_MODULES.findIndex(m => m.id === activeModule);
   const nextModule = SYSTEMS_MODULES[activeIdx + 1] || null;
   const searchLower = search.toLowerCase();
-  const filterModules = (modules) => search
-    ? modules.filter(m =>
-        m.label.toLowerCase().includes(searchLower) ||
-        m.tag.toLowerCase().includes(searchLower) ||
-        m.id.toLowerCase().includes(searchLower)
-      )
-    : modules;
+  const filterModules = (modules) => {
+    let result = activeGroup ? modules.filter(m => m.group === activeGroup) : modules;
+    if (search) result = result.filter(m =>
+      m.label.toLowerCase().includes(searchLower) ||
+      m.tag.toLowerCase().includes(searchLower) ||
+      m.id.toLowerCase().includes(searchLower)
+    );
+    return result;
+  };
 
   return (
     <div className="flex min-h-[calc(100vh-56px)]">
@@ -184,6 +187,26 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate })
           </div>
         </div>
 
+        {/* Group filter pills */}
+        <div className="px-3 pb-2 flex gap-1 flex-wrap">
+          <button
+            onClick={() => setActiveGroup(null)}
+            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide transition-all ${!activeGroup ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"}`}
+          >All</button>
+          {SYSTEMS_GROUPS.map(grp => (
+            <button
+              key={grp.id}
+              onClick={() => setActiveGroup(activeGroup === grp.id ? null : grp.id)}
+              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide transition-all`}
+              style={{
+                background: activeGroup === grp.id ? grp.color + "30" : "transparent",
+                color: activeGroup === grp.id ? grp.color : "#52525b",
+                border: activeGroup === grp.id ? `1px solid ${grp.color}50` : "1px solid transparent",
+              }}
+            >{grp.label}</button>
+          ))}
+        </div>
+
         {/* Module list — grouped */}
         <div className="px-2 pb-4 space-y-1">
           {search && SYSTEMS_GROUPS.every(grp => filterModules(SYSTEMS_MODULES.filter(m => m.group === grp.id)).length === 0) && (
@@ -192,6 +215,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate })
           {SYSTEMS_GROUPS.map(grp => {
             const groupModules = filterModules(SYSTEMS_MODULES.filter(m => m.group === grp.id));
             if (groupModules.length === 0) return null;
+            if (activeGroup && grp.id !== activeGroup) return null;
             return (
               <div key={grp.id}>
                 <div className="text-[9px] font-bold uppercase tracking-widest px-2 pt-2 pb-0.5" style={{ color: grp.color + "99" }}>{grp.label}</div>

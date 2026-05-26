@@ -4938,6 +4938,7 @@ const EXPLORE_MODULES = [
 
 export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {
   const [activeModule, setActiveModule] = useState(initialModule || "embeddings");
+  const [search, setSearch] = useState("");
   const [done, setDone] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("gsl-explore-done") || "[]")); }
     catch { return new Set(); }
@@ -4976,14 +4977,32 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
           </div>
         </div>
 
+        {/* Search */}
+        <div className="px-3 pb-2 relative">
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Filter…"
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-700 transition-colors"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 text-[10px]">✕</button>
+          )}
+        </div>
+
         <div className="px-2 pb-4 space-y-0.5">
-          {EXPLORE_MODULES.map(m => (
+          {EXPLORE_MODULES.filter(m => !search || m.label.toLowerCase().includes(search.toLowerCase()) || m.tag.toLowerCase().includes(search.toLowerCase())).map(m => (
             <button key={m.id} onClick={() => switchModule(m.id)}
               className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"}`}>
               {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
               <span className="truncate">{m.label}</span>
+              <span className="ml-auto text-[9px] text-zinc-700 shrink-0 hidden group-hover:block">{m.tag}</span>
             </button>
           ))}
+          {search && EXPLORE_MODULES.filter(m => m.label.toLowerCase().includes(search.toLowerCase()) || m.tag.toLowerCase().includes(search.toLowerCase())).length === 0 && (
+            <div className="text-center text-xs text-zinc-600 py-4">No match for "{search}"</div>
+          )}
         </div>
       </div>
 
