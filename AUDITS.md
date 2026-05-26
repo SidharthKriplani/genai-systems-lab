@@ -661,6 +661,93 @@ The 8 multi-line entries are: `finetune-playbook`, `rlhf-production`, `dpo-vs-pp
 
 ---
 
+## Audit 20 — First-Time User Audit
+
+**Date:** May 2026
+**Scope:** Full cold walk-through of the product — Home page, nav, module structure, module endings, content discoverability
+**Method:** Source-read audit simulating a first-time incognito visitor: no localStorage state, no prior context, reading exactly what the product renders in sequence.
+**Status:** Findings documented. Most are product/architecture decisions, not code bugs. Cross-referenced against CLAUDE.md Structural Upgrade plan.
+
+---
+
+### Walk-through sequence
+
+**Landing → Hero**
+Strong. "AI systems break in production. Learn exactly why." Clear. Two CTAs are well-differentiated (engineers → RAG Lab, learners → Concepts). Trust badge is clean. This is the best surface on the product.
+
+**Hero → Start Here strip**
+Good concept. 7-step horizontal journey is visible immediately. Problem: it reads as decorative. The tabs are small, the text is tiny, the "Begin →" button lives on the right. A first-timer may not realize this is the entry ramp, not just a progress display.
+
+**Continuing to scroll: what a first-timer sees in sequence**
+1. Stats (3,400+ learners, 200+ GT posts, 200+ challenges) — skimmable, fine
+2. 5 failure patterns strip (clickable pills → lab) — good
+3. Social proof (3 testimonials) — good
+4. **Daily tip block** — inserted mid-page, before Learning Paths. Breaks the scroll flow. Tips are high quality but the position kills momentum right before the most useful navigation section.
+5. Learning Paths — 4 path cards. This is the real second CTA but it's buried ~4 scrolls down.
+6. Module Map — LEARN/BUILD/GROW cards with "After this" outcomes. Excellent content, invisible to most users.
+7. Concept Graph — interactive dependency graph. Excellent mechanics, practically invisible (below the fold by 8+ scrolls).
+
+**The nav — 15 items, two rows**
+First-time visitor sees: Home | LEARN: Concepts / Diagrams / Ground Truth / Ask | BUILD: RAG Lab ★ / Agents / Playground / Explore / Systems | GROW: Paths / Drills / Prep Lab / Career / AI Product | My Progress
+
+Critical label problems:
+- "Diagrams" — doesn't convey it's animated pipeline flows
+- "Ground Truth" — opaque jargon to a first-timer. Feels like a test category, not a 200-post knowledge base
+- "Ask" — suggests a chatbot, not keyword search over GT posts
+- "Drills" — drills for what? Topic unclear
+- "Explore" — ambiguous; everything on the site is "explore"
+- "Paths" is a nav tab AND there's a "Choose Your Path" section on Home. Duplication without clear hierarchy.
+
+**Opening any module tab — Systems as example**
+A first-timer clicks "Systems" and sees a grid of 50 modules with no entry signal. No "start here" marker, no recommended first module, no difficulty sequencing visible. A user who doesn't scroll all the way to the Module Map on Home (where each tab's "discovery" tip lives) has no orientation inside any tab.
+
+**Module ending — any module**
+Consistent across all tabs: module ends, user is returned to the grid. No ✓ done state. No "next recommended" CTA. No "now go do this PrepLab question." The module just... ends. For a first-timer who followed a path, this is a dropout event.
+
+**"Consult / Ask" tab**
+IS visible in nav (under LEARN group as "Ask"). But a first-timer clicking "Ask" sees a keyword search box over GT posts. Label says "Ask," mechanic is "search." The mismatch creates a "this isn't what I expected" moment. CLAUDE.md's known issue "consult has no nav entry" is STALE — it IS in the nav. Update CLAUDE.md.
+
+**PrepLab**
+Clicking "Prep Lab" from nav opens PrepLab correctly. No cold-start orientation — it immediately shows a question with no context about what topics are available or what the modes are. A first-timer has to figure out by exploration that there are 3 modes (Flashcards, Quiz, Challenge).
+
+**Ground Truth tab**
+200 posts on a filter wall. No editorial hierarchy. No "start here," no curated entry sequence. Post quality varies (3 thin posts flagged in Audit 17). For a first-timer, this is the "library with size 10 tags" criticism verbatim.
+
+---
+
+### Findings
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | **Daily tip mid-page breaks home scroll flow** — the tip block interrupts momentum right before the most important navigation section (Learning Paths). Move it to the bottom of the page or sidebar. | Medium | ⚠️ Open |
+| 2 | **5+ "where to start" surfaces with no hierarchy** — Start Here strip, Learning Paths section, Paths tab, Module Map, Concept Graph. A first-timer gets no signal which one is canonical. The Start Here strip should be the only CTA above the fold; everything else is discovery for returning users. | High | ⚠️ Open |
+| 3 | **Nav labels don't communicate content** — "Diagrams," "Ground Truth," "Ask," "Drills," "Explore" are opaque to first-timers. Each label should answer "what will I be doing here?" | High | ⚠️ Open |
+| 4 | **Module tabs have no cold-start orientation** — Systems (50 modules), Agents, Explore — none signal where to start. No recommended first module, no difficulty indicator, no path context. | High | ⚠️ Open |
+| 5 | **Module endings are silent — still** — no ✓ done state, no next-step CTA, no PrepLab forward pointer. Dropout event after every module. (Audit 14 C1 — still open.) | High | ⚠️ Open (known) |
+| 6 | **"Paths" tab duplicates Home's "Choose Your Path" section** — first-timer doesn't know which is canonical. Paths tab should be merged into Home's path section or deprecated. | Medium | ⚠️ Open |
+| 7 | **Ground Truth is a wall — no editorial entry** — 200 posts on a filter grid. First-timer has no signal where to start. Confirms the "GT tab doesn't survive the rebuild" conclusion in CLAUDE.md. | High | ⚠️ Open (architectural) |
+| 8 | **"Ask" label ≠ search mechanic** — first-timer clicks "Ask" expecting an AI chatbot, gets a keyword search. Label-mechanic mismatch. Fix label to "Search" or upgrade mechanic to match label. | Medium | ⚠️ Open |
+| 9 | **PrepLab has no cold-start mode selection** — opens directly to a question. 3 modes (Flashcards, Quiz, Challenge) are discovered by accident. Needs a mode picker entry screen. | Medium | ⚠️ Open |
+| 10 | **CLAUDE.md known issue "consult has no nav entry" is stale** — `consult` IS in the nav as "Ask" under the LEARN group. Known issues list should be updated. | Low | ⚠️ Open (doc debt) |
+| 11 | **Module Map and Concept Graph are invisible to most first-timers** — both live below 8+ scrolls on a content-heavy home page. Module Map has the best per-tab orientation copy on the site; almost no one reads it. | Medium | ⚠️ Open |
+
+---
+
+### Summary verdict
+
+The hero is excellent. The modules are deep. The product fails in the middle — between the hero click and the first moment of genuine learning. The main failure chain is:
+
+**No landing orientation → nav labels don't guide → module tab opens to a wall → module ends silently → user has no idea what to do next → dropout.**
+
+The structural upgrade documented in CLAUDE.md (three front doors, GT as knowledge layer) addresses most of these findings architecturally. Until that rebuild, the highest-ROI fixes are:
+1. Move daily tip to page bottom
+2. Add a "Start here: [Module Name] →" recommendation to each tab's header (one line, no rebuild required)
+3. Add a minimal done state + one next-step CTA to each module ending
+4. Rename "Diagrams" → "Flows", "Ask" → "Search" (or upgrade the mechanic)
+5. Update CLAUDE.md known issues to remove stale consult entry
+
+---
+
 ## How to Use This File
 
 **Starting an audit session:**

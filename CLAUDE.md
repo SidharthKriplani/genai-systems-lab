@@ -276,5 +276,8 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 - PrepLab text question keyword grading marks correct answers wrong if vocabulary differs
 - PrepLab → GT `readMore` links open the tab, not the specific post (needs `postId`)
 - Module endings are silent — no ✓ Done state, no next-step CTA inside module pages
-- `consult` tab exists in App.jsx but has no nav entry point — effectively hidden
+- `consult` tab IS in the nav as "Ask" under LEARN group — the "no nav entry" note is STALE, remove
 - Home.jsx STATS array GT count not yet synced (index.html fixed; Home.jsx still needs recount)
+- "Ask" nav label doesn't match its keyword-search mechanic — Audit 20
+- Module tabs (Systems, Agents, Explore) open to walls with no cold-start orientation — Audit 20
+- PrepLab has no mode picker entry screen — Audit 20
