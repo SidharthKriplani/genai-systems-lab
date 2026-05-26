@@ -124,6 +124,28 @@ A practitioner traced the full arc: DS peak during COVID → 90% demand drop + r
 - **"The Eval Crisis: Why Most AI Evals Are Wrong"** — Benchmark contamination, eval-train leakage, Goodhart's Law in AI. Opinionated take.
 - **"Why Your RAG System Lies"** — Faithfulness failures, hallucination in retrieval-augmented contexts, practical mitigations.
 - **Series: "The Inference Stack"** — Four posts covering the full serving pipeline: quantization → KV cache → speculative decoding → serving infrastructure. Already have individual modules, need the cohesive narrative.
+- **"The Reversal Curse: Why Your LLM Knows a Fact in One Direction But Not the Other"** — Training A→B doesn't guarantee B→A retrieval from parametric memory. When both landmarks are in context the model can trace backward; when the fact must come from weights, the reverse path may not exist. Practical implications: RAG may retrieve the right evidence but the query asks the relation backward; fine-tuning may fix one query form but not the reverse; evals look strong because they only test the training direction. The eval rule: for every important fact, test all 4 cases (forward recall, reverse recall, forward reasoning with context, reverse reasoning with context). Sharp and under-covered — directly relevant to anyone building or evaluating RAG and fine-tuned systems.
+
+### MCP vs API vs Function Calling (new cluster — from jamwithai production engineering blogs, May 2026)
+
+The N×M problem: without MCP, every AI app must implement M integrations for N tools — the combinatorial explosion that MCP solves with a universal adapter layer. Context window tax: 75K+ tokens consumed before an agent does anything useful when tool schemas are loaded naively. When to skip the API layer and build an MCP server directly. The lab has agent modules covering tool use but no content on MCP as an architectural pattern or the decision framework for MCP vs API vs function calling.
+
+- **Systems module: "MCP vs API vs Function Calling — The Decision Framework"** — interactive: user picks a scenario (build a new integration, connect existing tools, prototype vs production), module walks through the decision tree. Shows N×M combinatorial explosion, context window tax calculation, when each approach wins. Fills a real gap as MCP adoption accelerates.
+- **GT post: "The N×M Problem and Why MCP Exists"** — the architectural problem MCP solves, what the protocol actually does, where it fits vs function calling vs raw API. No hype, just the engineering tradeoff.
+
+### A/B testing for AI systems (new cluster — from jamwithai production engineering blogs, May 2026)
+
+Five testing strategies most teams don't know: classic A/B (baseline), interleaved testing (why Airbnb gets 50x sample efficiency by interleaving results from two models rather than splitting users), multi-armed bandits (adaptive allocation), switchback testing (for marketplace/shared-resource systems where user-level splits are impossible), and permanent holdouts (the 5-10% never exposed to any experiment, which most teams skip and shouldn't). The lab has evals content but nothing on experimentation methodology for AI systems — a different and equally important discipline.
+
+- **Systems module: "A/B Testing for AI Systems"** — interactive: user configures an experiment (model A vs B, metric, traffic split, duration), module shows statistical significance calculator, explains when each strategy applies, shows the interleaving technique with a concrete example. Sits alongside the existing Evals module.
+- **GT post: "Why Classic A/B Testing Breaks for AI and What to Do Instead"** — the specific reasons user-level splits fail for AI (shared latent state, position bias, novelty effects), why interleaving works, when to use switchback for marketplace systems. Production-grounded.
+
+### Query refinement in RAG (new cluster — from practitioner post, May 2026)
+
+Users rarely ask questions in the ideal retrieval form. "How do I lose weight?" returns diet plans when the user meant PCOS-related concerns. Query rewriting, HyDE (Hypothetical Document Embeddings), multi-query retrieval, and decomposition all try to bridge intent to query. New research direction: refine the embedding representation itself during inference rather than just rewriting the query text — retrieve initial docs, LLM analyzes retrieval quality, refine embedding, retrieve again. "Iterative semantic optimization." Connects to agentic RAG, reflection loops, and test-time adaptation. The lab's RAG Lab covers failure modes at the retrieval config level but has zero content on query refinement as a technique category.
+
+- **GT post: "The Query Is Never What the User Meant"** — user intent vs literal query as the structural problem in retrieval. HyDE, multi-query, decomposition explained with concrete examples. The new direction of embedding refinement during inference. Why this matters: better query reformulation often outperforms better chunking or reranking.
+- **Systems module: "Query Refinement Lab"** — interactive: user types a vague query, sees what naive retrieval returns vs HyDE vs multi-query vs decomposition. Shows the difference in retrieved chunks. Extends the existing RAG Lab scenarios with a query-side perspective.
 
 ### Agent memory architecture (new cluster — from practitioner infographic, May 2026)
 
@@ -194,6 +216,9 @@ The problem: people have zero clue which side project to build to match what emp
 ### Systems improvements
 - **Explore grouping** — Apply the same DESIGN/BUILD/OPS group structure to Explore (14 modules, getting long). Currently flat list.
 - **Systems module search** — Filter pills by keyword as you type. Useful at 38+ modules.
+
+### Career tab — India salary data refresh (2026)
+Current salary calculator likely uses stale data. 2026 benchmarks from 1,200+ AI engineer hires across GCCs and startups in India: Junior $22–34K, Mid $45–72K, Senior $85–135K, Staff/Principal $150–240K, GenAI/LLM Specialist +35–55% premium over base band, top 1% at FAANG GCCs $280–420K. Key framing shift: senior Bangalore now earns more than median senior in Berlin or Toronto. GCCs competing at 70–80% of US comp, not 30%. Update the salary calculator bands and add the "GenAI specialist premium" as a distinct band.
 
 ### Architecture
 - **Split modules.jsx further** — Currently 9,500 lines. Could split by group: `src/systems/build.jsx`, `src/systems/ops.jsx`, `src/systems/design.jsx`. Low urgency (Vite handles it fine, file tools work with offset/limit).
