@@ -6,7 +6,7 @@ import InferenceOptimizer from "./InferenceOptimizer";
 import MLCiCdLab from "./MLCiCd";
 
 import {
-  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
+  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
 } from "./systems/modules";
 
 const SYSTEMS_MODULES = [
@@ -59,6 +59,7 @@ const SYSTEMS_MODULES = [
   { id: "longctx", label: "Long Context Patterns", tag: "CONTEXT", group: "BUILD", component: LongContextPatterns },
   { id: "evalmetrics", label: "Eval Metrics", tag: "METRIC", group: "DESIGN", component: EvalMetrics },
   { id: "promptinjection", label: "Prompt Injection Defense", tag: "SECURITY", group: "OPS", component: PromptInjectionDefense },
+  { id: "vectordb", label: "Vector DB Engineering", tag: "INFRA", group: "BUILD", component: VectorDBEngineering },
 ];
 
 const SYSTEMS_GROUPS = [

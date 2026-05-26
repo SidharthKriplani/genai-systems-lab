@@ -11125,4 +11125,102 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+  "the-eval-crisis": [
+    { t: "h2", text: "The problem with how we measure AI" },
+    { t: "p", text: "Most AI evals are wrong. Not wrong like \'slightly off\' — wrong like measuring the wrong thing entirely. Teams benchmark their models, get good numbers, ship to production, and then watch quality degrade in ways the benchmark never predicted. This is not a tooling problem. It is a thinking problem." },
+    { t: "p", text: "There are four specific ways evals fail. Each one is avoidable. None of them gets discussed in the papers that introduce new benchmarks." },
+
+    { t: "h2", text: "Failure 1: Benchmark contamination" },
+    { t: "p", text: "The model you are evaluating was trained on data scraped from the internet. So was the benchmark. If MMLU questions, their answers, or their structural patterns appeared anywhere in the training corpus, the model is not demonstrating general reasoning — it is pattern-matching against memorized content." },
+    { t: "p", text: "This is not hypothetical. In 2023, multiple studies found that GPT-4 and other frontier models showed substantially higher scores on benchmarks than on freshly-created equivalent questions. The gap was not small. On some tasks it was 10–20 percentage points. The model had not learned to do the task — it had learned to recognize the task." },
+    { t: "callout", v: "warning", text: "If your benchmark was published before your model\'s training cutoff, assume contamination until proven otherwise. Published benchmarks become training data. That is the default assumption, not the exception." },
+    { t: "p", text: "The fix is not to avoid benchmarks — it is to treat published benchmark scores as lower bounds on actual difficulty and to build private holdout evals that were never published anywhere. Your own eval suite, created after training cutoff, is the only contamination-safe measurement you have." },
+
+    { t: "h2", text: "Failure 2: Goodhart\'s Law in eval design" },
+    { t: "p", text: "Goodhart\'s Law: when a measure becomes a target, it ceases to be a good measure. In AI evals, this manifests as optimizing the model toward the eval signal until the eval no longer measures what you intended." },
+    { t: "p", text: "The most common version: a team uses an LLM-as-judge eval (GPT-4o scores responses 1–10). They tune prompts, fine-tune the model, and optimize against the judge score. After three weeks the judge score is 8.5. Actual user satisfaction is worse than before. Why? The model learned to produce responses that the judge scores highly — longer, more structured, with more hedging and acknowledgment — rather than responses that are actually useful to humans." },
+    { t: "p", text: "A related version: RLHF optimizes against a reward model. The reward model is a proxy for human preference. After enough optimization, the policy model learns to exploit weaknesses in the reward model rather than generate genuinely preferred outputs. This is reward hacking. It is not a failure of RLHF — it is a failure of treating the proxy as the real objective." },
+    { t: "callout", v: "tip", text: "Countermeasure: run a held-out eval with a different judge model than the one used during optimization. If the score diverges significantly, you have Goodhart\'s problem. Also: periodically human-evaluate a random sample — the judge score and human score should track each other over time." },
+
+    { t: "h2", text: "Failure 3: Eval-train leakage" },
+    { t: "p", text: "This is different from contamination. Contamination is about benchmark data appearing in pretraining. Eval-train leakage is about your own eval set bleeding into your fine-tuning or RLHF pipeline." },
+    { t: "p", text: "It happens like this: your team builds a 500-question eval. You run fine-tuning. You improve the eval score. You run more fine-tuning. You improve it more. After six iterations, you have implicitly trained against the eval distribution. You did not do this deliberately — the model saw eval-like examples in fine-tuning data, or the questions were drafted by the same people who drafted training examples. Either way, the eval is no longer independent." },
+    { t: "p", text: "The structural fix is the same as in classical ML: build your eval set before training begins, keep it strictly separate, never use eval examples as training examples, and rotate in fresh questions periodically. This discipline is routine in academic ML and routinely absent in production LLM teams." },
+    { t: "callout", v: "warning", text: "Red flag: if your eval score improves faster than your deployment quality, you have leakage. Eval scores should lag deployment quality slightly — the eval is harder than average real use. If it\'s the other way around, something has leaked." },
+
+    { t: "h2", text: "Failure 4: The wrong task altogether" },
+    { t: "p", text: "The most damaging eval failure does not involve data corruption or statistical artifacts. It involves measuring a task that is not the actual task. You are running a summarization benchmark. Your users use the model for customer support. These are not the same thing." },
+    { t: "p", text: "This happens at every scale. Teams use MMLU to evaluate reasoning but their product requires multi-step planning. They use ROUGE to evaluate generation quality but their users care about factual accuracy. They use pass@k to evaluate coding ability but their production code runs in a constrained environment with specific library versions." },
+    { t: "p", text: "The proxies are not wrong in the abstract — they are wrong for the specific product. And because they are published, validated, and easy to run, they get used anyway." },
+    { t: "callout", v: "tip", text: "Before building any eval, write the test in this form: \'A user asks [X]. The model does [Y]. This counts as a success if [Z].\' If you cannot fill in Z with a concrete, verifiable criterion tied to user value, you do not have an eval — you have a number." },
+
+    { t: "h2", text: "What a good eval suite actually looks like" },
+    { t: "list", items: [
+      "Task-specific: built around the actual use cases your model serves, not general capability proxies",
+      "Contamination-safe: created after training cutoff, kept private, never published",
+      "Leakage-proof: completely separated from training data by provenance, not just by file path",
+      "Multi-judge: uses both automated scoring and human evaluation, correlated to catch judge drift",
+      "Layered: capability evals (can it do the task at all) + quality evals (how well) + regression evals (did the last change break anything)",
+      "Versioned: every eval run logged with the model checkpoint, prompt version, and eval set version — so you can reproduce any historical score",
+    ]},
+    { t: "p", text: "None of this is complicated. All of it is skipped. The teams with good evals built them early and treated them as infrastructure — not as a one-time measurement before a launch." },
+
+    { t: "h2", text: "The uncomfortable truth" },
+    { t: "p", text: "Frontier labs have dozens of evaluation researchers. They publish benchmark papers, run contamination analyses, and maintain private holdout sets. Despite all of this, benchmark scores for frontier models are still partially contaminated, still partly Goodhart\'d, and still only loosely correlated with what users actually want." },
+    { t: "p", text: "If this is true at the frontier, it is certainly true for teams running fine-tuned models on production tasks with a handful of engineers and a 200-question eval set. The bar is not perfection. The bar is: do you know which failure modes your eval has, and are you correcting for them?" },
+    { t: "p", text: "Most teams do not know. That is the crisis." },
+
+    { t: "refs", items: [
+      { label: "Are Emergent Abilities of Large Language Models a Mirage?", url: "https://arxiv.org/abs/2304.15004" },
+      { label: "Goodhart\'s Law in Reinforcement Learning from Human Feedback", url: "https://arxiv.org/abs/2310.09144" },
+      { label: "Contamination Report: Memorization of MMLU and Other Benchmarks", url: "https://arxiv.org/abs/2310.18018" },
+      { label: "HELM: Holistic Evaluation of Language Models", url: "https://arxiv.org/abs/2211.09110" },
+    ]},
+  ],
+
+  "the-reversal-curse": [
+    { t: "h2", text: "A simple test most models fail" },
+    { t: "p", text: 'Ask a language model: \"Who is Tom Hanks?\" It will tell you he is an actor. Ask: \"Tom Hanks is a well-known [blank]?\" It fills in \"actor\" without hesitation. Now ask: \"What famous actor starred in Forrest Gump?\" It answers correctly. Then ask: \"Forrest Gump starred [blank] in the lead role.\" Many models hesitate, confabulate, or get this wrong — even though the factual content is identical and the model clearly knows the fact in the forward direction.' },
+    { t: "p", text: "This is the Reversal Curse. It was formally documented by Berglund et al. (2023): if a model is trained on \'A is B\', it does not automatically learn \'B is A\'. The relationship is directional in the model\'s weights. The model knows the fact in the direction it was trained on, but cannot reliably reverse it." },
+
+    { t: "h2", text: "Why this happens" },
+    { t: "p", text: "Language models learn next-token prediction over the training corpus. The statistical structure of natural language is not symmetric. In text, facts appear far more often in some directions than others. \'The CEO of Anthropic is Dario Amodei\' appears in that order in news articles, Wikipedia, and company pages. \'Dario Amodei is the CEO of Anthropic\' appears less frequently — it is still true but the sentence structure is less common." },
+    { t: "p", text: "Because the model learns from token-level patterns, the strength of the association in the weights reflects the frequency and directionality of exposure in training data. The reverse query activates a different chain of associations, one that was not as heavily reinforced. The model\'s parametric memory is directional, not a lookup table." },
+    { t: "callout", v: "warning", text: "This is not a model size problem. Berglund et al. found the Reversal Curse holds at all tested scales, including models over 100B parameters. Scaling up does not fix it. The architecture is the constraint." },
+    { t: "p", text: "There is an important exception: when both entities are in the context window. If you provide the full context — \'Tom Hanks starred in Forrest Gump; who starred in Forrest Gump?\' — the model can use the context to reason backward. The reversal failure is specifically a parametric memory failure. In-context reasoning is much more symmetric." },
+
+    { t: "h2", text: "Why this matters for RAG" },
+    { t: "p", text: "The common assumption about RAG is: if the right document is retrieved, the model will answer correctly. The Reversal Curse breaks this assumption in a specific class of queries." },
+    { t: "p", text: "Consider a knowledge base with a document that says: \'Project Phoenix was led by Sarah Chen.\' A user asks: \'Who led Project Phoenix?\' — retrieval works, document retrieved, model answers correctly. Same user asks: \'Sarah Chen led which project?\' — retrieval may still work (the same document is a good match), but when the model generates an answer, it needs to complete \'Sarah Chen led [blank]\' from context. If Sarah Chen was a rare entity in pretraining, the parametric memory has no strong association. The model must rely entirely on in-context reasoning from the retrieved document." },
+    { t: "p", text: "Most of the time, with a well-retrieved document and a capable model, this works. The failure case is when retrieval is imperfect and the model has to combine partial context with parametric memory — the parametric contribution may be directionally biased and actively misleading." },
+
+    { t: "h2", text: "Why this matters for fine-tuning" },
+    { t: "p", text: "If you fine-tune a model on a dataset of Q&A pairs, the training examples have a direction. \'Q: What is [entity A]\'s role? A: [Entity A] is [role].\'  The fine-tuning reinforces the forward direction. If your eval then tests only forward questions, you get strong scores. If a user asks the reverse, you may get failures that your eval never caught." },
+    { t: "p", text: "The practical implication: when building fine-tuning datasets for factual tasks, include reverse-direction examples explicitly. \'[Entity B] holds which title at [org A]?\' as well as \'What does [org A]\'s [title] look like?\' Both directions need representation in training, not just the natural-language-dominant direction." },
+
+    { t: "h2", text: "Why this matters for evals" },
+    { t: "p", text: "Eval suites for factual tasks almost always test the dominant direction. MMLU asks \'What is X?\' not \'X is an example of what?\'  Entity knowledge benchmarks present entities first, attributes second. The benchmarks measure what the training data structure predicts — not whether the model has symmetric access to the fact." },
+    { t: "p", text: "The result: eval scores overstate factual reliability for reverse queries. Production users ask questions in any direction. The eval never catches the gap." },
+    { t: "callout", v: "tip", text: "The four-case eval rule: for any important factual claim in your system, test all four cases — (1) forward question, parametric, (2) reverse question, parametric, (3) forward question, with context retrieved, (4) reverse question, with context retrieved. Cases 1 and 3 will almost always pass. Cases 2 and 4 reveal the real reliability profile." },
+
+    { t: "h2", text: "Mitigations" },
+    { t: "list", items: [
+      "Augment fine-tuning data with reverse-direction examples for every important factual relationship",
+      "In RAG systems, always retrieve supporting context even for queries that seem to require parametric recall — don\'t assume the model has the reverse direction in weights",
+      "Add reverse-direction test cases to your eval suite as a standard practice, not a one-time audit",
+      "For critical facts, use structured output to force the model to cite retrieved evidence rather than generate from parametric memory",
+      "When prompt-engineering for factual tasks, include the retrieved context directly adjacent to the query — the in-context reasoning path is much more symmetric than the parametric path",
+    ]},
+
+    { t: "h2", text: "The broader implication" },
+    { t: "p", text: "The Reversal Curse is one instance of a larger truth about language models: parametric memory is not a database. It is a compressed statistical representation of training data distribution. The structure of the representation reflects the structure of the data — including its asymmetries, its frequencies, its directional biases." },
+    { t: "p", text: "When you ask a model a question that the training data answered frequently in the forward direction, you get reliable recall. When you ask the reverse, or an unusual framing, or a query that requires combining two facts that appeared in different contexts, you are asking the model to generalize across statistical patterns it may never have seen aligned. Sometimes it works. Often it does not. Good system design does not rely on it working." },
+
+    { t: "refs", items: [
+      { label: "The Reversal Curse: LLMs Trained on \'A is B\' Fail to Learn \'B is A\' (Berglund et al., 2023)", url: "https://arxiv.org/abs/2309.12288" },
+      { label: "Knowledge Neurons in Pretrained Transformers", url: "https://arxiv.org/abs/2104.08696" },
+      { label: "Measuring Massive Multitask Language Understanding (MMLU)", url: "https://arxiv.org/abs/2009.03300" },
+    ]},
+  ],
+
 };

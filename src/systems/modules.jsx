@@ -10728,8 +10728,466 @@ function PromptInjectionDefense() {
   );
 }
 
+
+// ─── VECTOR DB ENGINEERING ────────────────────────────────────────────────────
+
+const VDB_OPTIONS = [
+  {
+    id: "pgvector",
+    name: "pgvector",
+    type: "Postgres extension",
+    indexTypes: ["IVFFlat", "HNSW"],
+    maxVectors: "Tens of millions (hardware-bound)",
+    hybridSearch: true,
+    filtering: "Full SQL WHERE",
+    managed: false,
+    cost: "Infra only",
+    latency: "1–10ms (HNSW, cached)",
+    bestFor: "Already on Postgres, <50M vectors, need SQL joins",
+    weaknesses: "Manual tuning, no built-in metadata UI, scaling requires DBA",
+    color: "#3b82f6",
+  },
+  {
+    id: "chroma",
+    name: "Chroma",
+    type: "Embedded / server",
+    indexTypes: ["HNSW"],
+    maxVectors: "Millions (embedded), tens of millions (server)",
+    hybridSearch: false,
+    filtering: "Metadata filter (AND/OR)",
+    managed: false,
+    cost: "Free / self-hosted",
+    latency: "1–5ms (local)",
+    bestFor: "Prototyping, local dev, small production RAG",
+    weaknesses: "No native hybrid search, limited ops tooling, production story immature",
+    color: "#8b5cf6",
+  },
+  {
+    id: "pinecone",
+    name: "Pinecone",
+    type: "Managed SaaS",
+    indexTypes: ["HNSW (Serverless)", "Pod-based"],
+    maxVectors: "Billions",
+    hybridSearch: true,
+    filtering: "Metadata filter",
+    managed: true,
+    cost: "$0.096/GB/month + query cost",
+    latency: "~50ms p50 (serverless), ~5ms (pods)",
+    bestFor: "Large scale, no-ops teams, need SLA",
+    weaknesses: "Cost at scale, vendor lock-in, latency on serverless cold start",
+    color: "#22c55e",
+  },
+  {
+    id: "weaviate",
+    name: "Weaviate",
+    type: "Self-hosted / managed",
+    indexTypes: ["HNSW"],
+    maxVectors: "Billions",
+    hybridSearch: true,
+    filtering: "GraphQL + WHERE",
+    managed: true,
+    cost: "Free self-hosted; managed from ~$25/mo",
+    latency: "2–20ms",
+    bestFor: "Hybrid search, multi-tenant, complex schema needs",
+    weaknesses: "Complex config, GraphQL learning curve",
+    color: "#f59e0b",
+  },
+  {
+    id: "qdrant",
+    name: "Qdrant",
+    type: "Self-hosted / managed",
+    indexTypes: ["HNSW"],
+    maxVectors: "Billions",
+    hybridSearch: true,
+    filtering: "Payload filter (very fast)",
+    managed: true,
+    cost: "Free self-hosted; managed from $25/mo",
+    latency: "1–10ms",
+    bestFor: "High-performance filtering, Rust-native speed, growing production use",
+    weaknesses: "Smaller ecosystem than Pinecone/Weaviate",
+    color: "#ef4444",
+  },
+];
+
+const INDEX_TYPES = [
+  {
+    id: "hnsw",
+    name: "HNSW",
+    full: "Hierarchical Navigable Small World",
+    how: "Builds a multi-layer graph. Upper layers are coarse, lower layers are dense. Search navigates top-down, pruning to nearest neighbors at each layer.",
+    querySpeed: "Very fast — O(log n) amortized",
+    buildTime: "Slow — O(n log n), must be built upfront",
+    memory: "High — entire graph in RAM",
+    recall: "Very high (tunable via ef parameter)",
+    updateCost: "Moderate — online insert supported but slower than batch build",
+    bestFor: "Low latency serving, datasets that fit in RAM, recall-sensitive use cases",
+    params: ["M (graph connectivity, default 16)", "ef_construction (build accuracy, default 200)", "ef (query accuracy, tune per use case)"],
+  },
+  {
+    id: "ivf",
+    name: "IVFFlat",
+    full: "Inverted File Index",
+    how: "Clusters vectors into nlist buckets via k-means. At query time, probes the nprobe nearest cluster centroids and searches within them.",
+    querySpeed: "Fast — only searches nprobe / nlist fraction of vectors",
+    buildTime: "Fast — k-means clustering is quick",
+    memory: "Lower — only centroids plus quantized vectors",
+    recall: "Lower at default settings; increase nprobe to trade latency for recall",
+    updateCost: "Poor — re-clustering needed as data grows",
+    bestFor: "Large datasets that don\'t fit in RAM, batch retrieval, recall less critical",
+    params: ["nlist (number of clusters, rule of thumb: sqrt(n))", "nprobe (clusters to search, higher = better recall + slower)"],
+  },
+  {
+    id: "ivfpq",
+    name: "IVF + PQ",
+    full: "IVF with Product Quantization",
+    how: "Splits vectors into subvectors, quantizes each subspace independently. Dramatically compresses memory footprint at cost of recall.",
+    querySpeed: "Fast — compressed comparisons",
+    buildTime: "Slow — trains PQ codebook",
+    memory: "Very low — 32x–64x compression possible",
+    recall: "Lower — depends on PQ parameters",
+    updateCost: "Poor",
+    bestFor: "Billion-scale datasets, limited RAM, recall trade-off acceptable",
+    params: ["M_pq (subvector count)", "nbits (bits per subvector, usually 8)"],
+  },
+];
+
+const DECISION_SCENARIOS = [
+  {
+    q: "I\'m prototyping and need to move fast",
+    answer: "Chroma",
+    reason: "Zero ops overhead, runs in-process, trivial to swap out later. Don\'t over-engineer the prototype.",
+  },
+  {
+    q: "I already use Postgres and have <10M vectors",
+    answer: "pgvector",
+    reason: "Install the extension, add a column, done. SQL joins work natively. No new infrastructure to maintain.",
+  },
+  {
+    q: "I need hybrid search (keyword + vector) in production",
+    answer: "Qdrant or Weaviate",
+    reason: "Both have native hybrid search with BM25 + dense vector scoring. Qdrant\'s payload filtering is notably fast at high cardinality.",
+  },
+  {
+    q: "I have billions of vectors and no ops team",
+    answer: "Pinecone",
+    reason: "Fully managed, auto-scales, SLA-backed. Pay the cost premium to avoid owning the infrastructure.",
+  },
+  {
+    q: "I need maximum query performance and will tune carefully",
+    answer: "HNSW on any backend",
+    reason: "Tune ef_construction and ef parameters. Profile recall at your target latency. HNSW is the right index type — pick the backend that fits your ops capability.",
+  },
+  {
+    q: "I\'m filtering heavily before vector search",
+    answer: "Qdrant or pgvector",
+    reason: "Qdrant\'s payload index handles high-cardinality pre-filtering efficiently. pgvector can use Postgres indexes (B-tree, GIN) before the vector scan.",
+  },
+];
+
+function VectorDBEngineering({ onNavigate }) {
+  const [tab, setTab] = useState("compare");
+  const [selectedDB, setSelectedDB] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [scenarioIdx, setScenarioIdx] = useState(0);
+  const [sortCol, setSortCol] = useState("name");
+
+  const tabs = [
+    { id: "compare", label: "DB Comparison" },
+    { id: "index", label: "Index Types" },
+    { id: "hybrid", label: "Hybrid Search" },
+    { id: "decision", label: "Decision Wizard" },
+  ];
+
+  const selectedDBData = VDB_OPTIONS.find(d => d.id === selectedDB);
+  const selectedIndexData = INDEX_TYPES.find(i => i.id === selectedIndex);
+
+  return (
+    <div style={{ fontFamily: "inherit" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ color: "#f4f4f5", fontSize: 20, fontWeight: 700, margin: "0 0 6px" }}>Vector DB Engineering</h2>
+        <p style={{ color: "#a1a1aa", fontSize: 14, margin: 0 }}>pgvector, Chroma, Pinecone, Weaviate, Qdrant — indexing strategies, hybrid search, and when to use what.</p>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+            background: tab === t.id ? "#3b82f6" : "#27272a", color: tab === t.id ? "#fff" : "#a1a1aa",
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* DB COMPARISON */}
+      {tab === "compare" && (
+        <div>
+          <p style={{ color: "#a1a1aa", fontSize: 13, marginBottom: 16 }}>Click any row for details.</p>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: "#27272a" }}>
+                  {["DB", "Type", "Index", "Hybrid", "Filtering", "Managed", "Best For"].map(h => (
+                    <th key={h} style={{ padding: "8px 10px", textAlign: "left", color: "#71717a", fontWeight: 600, borderBottom: "1px solid #3f3f46", whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {VDB_OPTIONS.map(db => (
+                  <tr key={db.id} onClick={() => setSelectedDB(selectedDB === db.id ? null : db.id)}
+                    style={{ cursor: "pointer", background: selectedDB === db.id ? "#1e1e3a" : "transparent", borderBottom: "1px solid #27272a" }}>
+                    <td style={{ padding: "9px 10px" }}>
+                      <span style={{ color: db.color, fontWeight: 700 }}>{db.name}</span>
+                    </td>
+                    <td style={{ padding: "9px 10px", color: "#d4d4d8" }}>{db.type}</td>
+                    <td style={{ padding: "9px 10px", color: "#d4d4d8" }}>{db.indexTypes.join(", ")}</td>
+                    <td style={{ padding: "9px 10px" }}>
+                      <span style={{ color: db.hybridSearch ? "#22c55e" : "#71717a" }}>{db.hybridSearch ? "Yes" : "No"}</span>
+                    </td>
+                    <td style={{ padding: "9px 10px", color: "#d4d4d8" }}>{db.filtering}</td>
+                    <td style={{ padding: "9px 10px" }}>
+                      <span style={{ color: db.managed ? "#22c55e" : "#71717a" }}>{db.managed ? "Yes" : "No"}</span>
+                    </td>
+                    <td style={{ padding: "9px 10px", color: "#a1a1aa", fontSize: 12 }}>{db.bestFor}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {selectedDBData && (
+            <div style={{ marginTop: 20, background: "#18181b", border: `1px solid ${selectedDBData.color}40`, borderRadius: 10, padding: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <span style={{ color: selectedDBData.color, fontSize: 18, fontWeight: 800 }}>{selectedDBData.name}</span>
+                <span style={{ background: "#27272a", color: "#a1a1aa", fontSize: 11, padding: "2px 8px", borderRadius: 4 }}>{selectedDBData.type}</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+                {[
+                  ["Max scale", selectedDBData.maxVectors],
+                  ["Latency", selectedDBData.latency],
+                  ["Cost", selectedDBData.cost],
+                  ["Filtering", selectedDBData.filtering],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ background: "#27272a", borderRadius: 8, padding: "10px 14px" }}>
+                    <div style={{ color: "#71717a", fontSize: 11, marginBottom: 4 }}>{k}</div>
+                    <div style={{ color: "#f4f4f5", fontSize: 13, fontWeight: 600 }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ background: "#14532d20", border: "1px solid #22c55e30", borderRadius: 8, padding: "10px 14px" }}>
+                  <div style={{ color: "#22c55e", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>USE WHEN</div>
+                  <div style={{ color: "#d4d4d8", fontSize: 13 }}>{selectedDBData.bestFor}</div>
+                </div>
+                <div style={{ background: "#7f1d1d20", border: "1px solid #ef444430", borderRadius: 8, padding: "10px 14px" }}>
+                  <div style={{ color: "#ef4444", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>WATCH OUT</div>
+                  <div style={{ color: "#d4d4d8", fontSize: 13 }}>{selectedDBData.weaknesses}</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* INDEX TYPES */}
+      {tab === "index" && (
+        <div>
+          <p style={{ color: "#a1a1aa", fontSize: 13, marginBottom: 16 }}>Understanding index types lets you tune recall, latency, and memory independently.</p>
+          <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+            {INDEX_TYPES.map(idx => (
+              <button key={idx.id} onClick={() => setSelectedIndex(selectedIndex === idx.id ? null : idx.id)} style={{
+                padding: "8px 16px", borderRadius: 8, border: "1px solid", cursor: "pointer", fontSize: 13, fontWeight: 700,
+                borderColor: selectedIndex === idx.id ? "#3b82f6" : "#3f3f46",
+                background: selectedIndex === idx.id ? "#1e3a5f" : "#27272a",
+                color: selectedIndex === idx.id ? "#93c5fd" : "#d4d4d8",
+              }}>{idx.name}</button>
+            ))}
+          </div>
+
+          {selectedIndexData ? (
+            <div style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 20 }}>
+              <div style={{ marginBottom: 14 }}>
+                <span style={{ color: "#f4f4f5", fontSize: 16, fontWeight: 800 }}>{selectedIndexData.name}</span>
+                <span style={{ color: "#71717a", fontSize: 13, marginLeft: 10 }}>{selectedIndexData.full}</span>
+              </div>
+              <div style={{ background: "#27272a", borderRadius: 8, padding: "12px 16px", marginBottom: 14 }}>
+                <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>HOW IT WORKS</div>
+                <div style={{ color: "#d4d4d8", fontSize: 13, lineHeight: 1.6 }}>{selectedIndexData.how}</div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
+                {[
+                  ["Query speed", selectedIndexData.querySpeed, "#22c55e"],
+                  ["Build time", selectedIndexData.buildTime, "#f59e0b"],
+                  ["Memory", selectedIndexData.memory, "#ef4444"],
+                  ["Recall", selectedIndexData.recall, "#3b82f6"],
+                  ["Updates", selectedIndexData.updateCost, "#a1a1aa"],
+                ].map(([k, v, c]) => (
+                  <div key={k} style={{ background: "#27272a", borderRadius: 8, padding: "10px 14px" }}>
+                    <div style={{ color: "#71717a", fontSize: 11, marginBottom: 4 }}>{k}</div>
+                    <div style={{ color: c, fontSize: 12, fontWeight: 600 }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: "#27272a", borderRadius: 8, padding: "12px 16px", marginBottom: 14 }}>
+                <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700, marginBottom: 8 }}>KEY PARAMETERS</div>
+                {selectedIndexData.params.map((p, i) => (
+                  <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
+                    <span style={{ color: "#3b82f6", fontSize: 12, marginTop: 2 }}>▸</span>
+                    <span style={{ color: "#d4d4d8", fontSize: 13 }}>{p}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: "#14532d20", border: "1px solid #22c55e30", borderRadius: 8, padding: "10px 14px" }}>
+                <div style={{ color: "#22c55e", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>BEST FOR</div>
+                <div style={{ color: "#d4d4d8", fontSize: 13 }}>{selectedIndexData.bestFor}</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 24 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+                {[
+                  { label: "HNSW wins at", items: ["Low latency (<10ms p99)", "High recall requirements", "Dataset fits in RAM", "Online insert needed"] },
+                  { label: "IVFFlat wins at", items: ["Dataset > RAM", "Batch retrieval workloads", "Recall can be tuned via nprobe", "Fast build iteration"] },
+                  { label: "IVF+PQ wins at", items: ["Billion-scale datasets", "RAM severely constrained", "Can accept recall trade-off", "Cold storage / archival retrieval"] },
+                ].map(({ label, items }) => (
+                  <div key={label} style={{ background: "#27272a", borderRadius: 8, padding: 14 }}>
+                    <div style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 700, marginBottom: 10 }}>{label}</div>
+                    {items.map((item, i) => (
+                      <div key={i} style={{ color: "#d4d4d8", fontSize: 12, marginBottom: 6, display: "flex", gap: 6 }}>
+                        <span style={{ color: "#3b82f6" }}>✓</span>{item}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* HYBRID SEARCH */}
+      {tab === "hybrid" && (
+        <div>
+          <p style={{ color: "#a1a1aa", fontSize: 13, marginBottom: 20 }}>Hybrid search combines dense vector retrieval (semantic) with sparse keyword retrieval (BM25/TF-IDF). Each method captures different signal.</p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
+            <div style={{ background: "#18181b", border: "1px solid #3b82f640", borderRadius: 10, padding: 16 }}>
+              <div style={{ color: "#3b82f6", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>DENSE RETRIEVAL (Vector)</div>
+              {[
+                ["Strength", "Semantic similarity — finds conceptually related content even with different words"],
+                ["Weakness", "Poor at exact matches — product codes, version numbers, names"],
+                ["Example win", "\"What causes memory leaks in Python?\" → finds docs about garbage collection, reference cycles"],
+                ["Example fail", "\"CVE-2024-12345\" → may retrieve unrelated vulnerability docs that are semantically similar"],
+              ].map(([k, v]) => (
+                <div key={k} style={{ marginBottom: 10 }}>
+                  <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700 }}>{k.toUpperCase()}</div>
+                  <div style={{ color: "#d4d4d8", fontSize: 13, lineHeight: 1.5 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ background: "#18181b", border: "1px solid #f59e0b40", borderRadius: 10, padding: 16 }}>
+              <div style={{ color: "#f59e0b", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>SPARSE RETRIEVAL (BM25)</div>
+              {[
+                ["Strength", "Exact keyword matching — reliable for names, codes, precise terminology"],
+                ["Weakness", "No semantic understanding — misses paraphrases, synonyms"],
+                ["Example win", "\"CVE-2024-12345\" → finds exact document containing that string"],
+                ["Example fail", "\"crashes when memory runs out\" → may miss docs about OOM errors if exact words differ"],
+              ].map(([k, v]) => (
+                <div key={k} style={{ marginBottom: 10 }}>
+                  <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700 }}>{k.toUpperCase()}</div>
+                  <div style={{ color: "#d4d4d8", fontSize: 13, lineHeight: 1.5 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+            <div style={{ color: "#f4f4f5", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Reciprocal Rank Fusion (RRF)</div>
+            <p style={{ color: "#a1a1aa", fontSize: 13, lineHeight: 1.6, margin: "0 0 14px" }}>The standard way to merge dense and sparse results. For each document, compute: <span style={{ color: "#3b82f6", fontFamily: "monospace" }}>RRF_score = Σ 1/(k + rank_i)</span> where k=60 by default and rank_i is the document&apos;s rank in each result list. Sum across retrieval methods. Sort by RRF score descending.</p>
+            <div style={{ background: "#27272a", borderRadius: 8, padding: "12px 16px", fontFamily: "monospace", fontSize: 12, color: "#a1a1aa" }}>
+              <div style={{ color: "#71717a", marginBottom: 6 }}># Doc A: rank 1 in dense, rank 3 in sparse</div>
+              <div style={{ color: "#d4d4d8" }}>rrf_A = 1/(60+1) + 1/(60+3) = 0.0164 + 0.0159 = 0.0323</div>
+              <div style={{ color: "#71717a", margin: "10px 0 6px" }}># Doc B: rank 2 in dense, rank 1 in sparse</div>
+              <div style={{ color: "#d4d4d8" }}>rrf_B = 1/(60+2) + 1/(60+1) = 0.0161 + 0.0164 = 0.0325</div>
+              <div style={{ color: "#22c55e", marginTop: 10 }}># Doc B wins slightly — appears highly in both lists</div>
+            </div>
+          </div>
+
+          <div style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 16 }}>
+            <div style={{ color: "#f4f4f5", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>When to use hybrid search</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {[
+                { label: "Use hybrid when", color: "#22c55e", items: ["Corpus has product names, codes, version strings", "Users ask exact-match queries alongside semantic ones", "Domain jargon not in embedding training data", "Customer support, code search, medical records"] },
+                { label: "Skip hybrid when", color: "#ef4444", items: ["Pure semantic use case (concept search, similarity)", "Adding complexity isn't justified by recall gain", "BM25 index build time is unacceptable", "Homogeneous long-form text (research papers, books)"] },
+              ].map(({ label, color, items }) => (
+                <div key={label}>
+                  <div style={{ color, fontSize: 11, fontWeight: 700, marginBottom: 8 }}>{label.toUpperCase()}</div>
+                  {items.map((item, i) => (
+                    <div key={i} style={{ color: "#d4d4d8", fontSize: 13, marginBottom: 6, display: "flex", gap: 8 }}>
+                      <span style={{ color }}>▸</span>{item}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DECISION WIZARD */}
+      {tab === "decision" && (
+        <div>
+          <p style={{ color: "#a1a1aa", fontSize: 13, marginBottom: 20 }}>Match your situation to get a concrete recommendation.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {DECISION_SCENARIOS.map((s, i) => (
+              <div key={i} onClick={() => setScenarioIdx(scenarioIdx === i ? null : i)}
+                style={{ background: scenarioIdx === i ? "#1e1e3a" : "#18181b", border: `1px solid ${scenarioIdx === i ? "#3b82f6" : "#3f3f46"}`, borderRadius: 10, padding: "14px 18px", cursor: "pointer" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#d4d4d8", fontSize: 14, fontWeight: 500 }}>{s.q}</span>
+                  <span style={{ color: "#3b82f6", fontSize: 12 }}>{scenarioIdx === i ? "▲" : "▼"}</span>
+                </div>
+                {scenarioIdx === i && (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #27272a" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <span style={{ color: "#71717a", fontSize: 12 }}>RECOMMENDATION</span>
+                      <span style={{ color: "#22c55e", fontWeight: 800, fontSize: 16 }}>{s.answer}</span>
+                    </div>
+                    <div style={{ color: "#a1a1aa", fontSize: 13, lineHeight: 1.6 }}>{s.reason}</div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 24, background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 16 }}>
+            <div style={{ color: "#f4f4f5", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>The default upgrade path</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {[
+                { stage: "Prototype", choice: "Chroma", note: "in-process" },
+                { stage: "→" },
+                { stage: "Early prod", choice: "pgvector", note: "if on Postgres" },
+                { stage: "→" },
+                { stage: "Scale", choice: "Qdrant / Weaviate", note: "self-hosted" },
+                { stage: "→" },
+                { stage: "No-ops", choice: "Pinecone", note: "managed" },
+              ].map((step, i) => step.stage === "→" ? (
+                <span key={i} style={{ color: "#3f3f46", fontSize: 20 }}>→</span>
+              ) : (
+                <div key={i} style={{ background: "#27272a", borderRadius: 8, padding: "8px 14px", textAlign: "center" }}>
+                  <div style={{ color: "#71717a", fontSize: 10, fontWeight: 700 }}>{step.stage.toUpperCase()}</div>
+                  <div style={{ color: "#3b82f6", fontSize: 13, fontWeight: 700 }}>{step.choice}</div>
+                  <div style={{ color: "#52525b", fontSize: 11 }}>{step.note}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
+  ABTestingLab, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
 };
