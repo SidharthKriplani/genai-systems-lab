@@ -1807,7 +1807,7 @@ export default function App() {
       home: "GenAI Systems Lab",
       concepts: "Concepts — GenAI Systems Lab",
       flows: "Flows — GenAI Systems Lab",
-      consult: "Ask — GenAI Systems Lab",
+      consult: "Search — GenAI Systems Lab",
       lab: "RAG Lab — GenAI Systems Lab",
       agents: "Agents Lab — GenAI Systems Lab",
       systems: "Systems Lab — GenAI Systems Lab",
@@ -1895,9 +1895,9 @@ export default function App() {
     ]},
     { label: "LEARN", color: "#6366f1", items: [
       { id: "concepts",    label: "Concepts",    count: 11, audience: "All levels" },
-      { id: "flows",       label: "Diagrams",    count: 5,  audience: "All levels" },
+      { id: "flows",       label: "Flows",       count: 5,  audience: "All levels" },
       { id: "groundtruth", label: "Ground Truth",           audience: "All levels" },
-      { id: "consult",     label: "Ask",                    audience: "All levels" },
+      { id: "consult",     label: "Search",                 audience: "All levels" },
     ]},
     { label: "BUILD", color: "#3b82f6", items: [
       { id: "lab",        label: "RAG Lab",    count: 6,  audience: "Engineers" },

@@ -632,22 +632,6 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
       </div>
 
 
-      {/* ---- DAILY TIP ------------------------------------------------- */}
-      {(() => {
-        const tip = DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length];
-        return (
-          <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4 mx-4 mb-4">
-            <div className="flex items-start gap-3">
-              <span className="text-amber-400 text-base shrink-0">💡</span>
-              <div>
-                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Did you know · Today's tip</p>
-                <p className="text-sm text-zinc-300 leading-relaxed">{tip}</p>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
       {/* ── LEARNING PATHS ───────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-16 space-y-8">
         <div className="text-center space-y-1">
@@ -928,6 +912,22 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             <p className="text-[10px] text-zinc-700 font-mono">No spam. Unsubscribe any time.</p>
           </div>
         )}
+
+        {/* ── DAILY TIP ─────────────────────────────────────────────────── */}
+        {(() => {
+          const tip = DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length];
+          return (
+            <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4 mb-8">
+              <div className="flex items-start gap-3">
+                <span className="text-amber-400 text-base shrink-0">💡</span>
+                <div>
+                  <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Did you know · Today's tip</p>
+                  <p className="text-sm text-zinc-300 leading-relaxed">{tip}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── FOOTER ────────────────────────────────────────────────────── */}
         <div className="text-center pt-4 space-y-3">

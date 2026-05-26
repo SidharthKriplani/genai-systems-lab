@@ -3200,21 +3200,55 @@ const AGENTS_RELATED_GT = {
 
 export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) {
   const [activeModule, setActiveModule] = useState(initialModule || "react");
+  const [done, setDone] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("gsl-agents-done") || "[]")); }
+    catch { return new Set(); }
+  });
   useEffect(() => { if (initialModule) setActiveModule(initialModule); }, [initialModule]);
 
   function switchModule(id) {
     setActiveModule(id);
     if (onModuleVisit) onModuleVisit("agents", id);
   }
+  function toggleDone(id) {
+    setDone(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      try { localStorage.setItem("gsl-agents-done", JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }
 
   const ActiveComponent = AGENTS_MODULES.find(m => m.id === activeModule)?.component || ReActPattern;
+  const activeIdx = AGENTS_MODULES.findIndex(m => m.id === activeModule);
+  const nextModule = AGENTS_MODULES[activeIdx + 1] || null;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-black text-white tracking-tight">Agent Lab</h1>
         <p className="text-sm text-zinc-400">Build intuition for how agents think, act, remember, and fail in production</p>
+        {done.size > 0 && (
+          <div className="flex items-center justify-center gap-2">
+            <div className="h-1.5 w-32 rounded-full bg-zinc-800 overflow-hidden">
+              <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${(done.size / AGENTS_MODULES.length) * 100}%` }} />
+            </div>
+            <span className="text-xs text-zinc-500">{done.size}/{AGENTS_MODULES.length} done</span>
+          </div>
+        )}
       </div>
+
+      {/* Start-here orientation — shown only before any module is completed */}
+      {done.size === 0 && (
+        <div className="rounded-lg border border-blue-900/40 bg-blue-950/20 px-4 py-3 flex items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">New here?</span>
+            <span className="text-sm text-zinc-300 ml-2">Start with <span className="font-bold text-white">ReAct Pattern</span> — the core agent loop every other module builds on.</span>
+          </div>
+          <button onClick={() => switchModule("react")} className="shrink-0 px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-300 text-xs font-bold hover:bg-blue-900/60 transition-all whitespace-nowrap">Start →</button>
+        </div>
+      )}
+
       <div className="space-y-2">
         {AGENTS_GROUPS.map(grp => (
           <div key={grp.id} className="flex items-start gap-2">
@@ -3225,6 +3259,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
                 {AGENTS_MODULES.filter(m => m.group === grp.id).map(m => (
                   <button key={m.id} onClick={() => switchModule(m.id)}
                     className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                    {done.has(m.id) && <span className="text-green-400 text-[10px]">✓</span>}
                     <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
                     {m.label}
                   </button>
@@ -3254,6 +3289,24 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
           </div>
         </div>
       )}
+
+      {/* Done state + next step */}
+      <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+        <button
+          onClick={() => toggleDone(activeModule)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${done.has(activeModule) ? "bg-green-900/40 text-green-400 hover:bg-red-900/30 hover:text-red-400" : "bg-zinc-800 text-zinc-400 hover:bg-green-900/40 hover:text-green-400"}`}
+        >
+          {done.has(activeModule) ? "✓ Done — click to unmark" : "Mark as done"}
+        </button>
+        {done.has(activeModule) && nextModule && (
+          <button onClick={() => switchModule(nextModule.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-900/40 text-violet-300 text-xs font-bold hover:bg-violet-900/60 transition-all">
+            Next: {nextModule.label} →
+          </button>
+        )}
+        {done.has(activeModule) && !nextModule && (
+          <span className="text-xs text-green-400 font-semibold">All modules done</span>
+        )}
+      </div>
     </div>
   );
 }

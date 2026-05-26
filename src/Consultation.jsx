@@ -505,9 +505,9 @@ export default function Consultation({ onNavigate, onNavigateTo }) {
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-white">Ask Anything</h1>
+        <h1 className="text-xl font-bold text-white">Search the Lab</h1>
         <p className="text-sm text-zinc-500 mt-1">
-          Search across 135+ posts and every module. Ask in plain English.
+          Keyword search across 200+ Ground Truth posts and every module.
         </p>
       </div>
 
