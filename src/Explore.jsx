@@ -4574,6 +4574,340 @@ function HardwareReference() {
   );
 }
 
+
+// ─── TOKENIZER COMPARISON ─────────────────────────────────────────────────────
+
+const TOKENIZER_ALGOS = [
+  {
+    id: "bpe",
+    name: "BPE",
+    full: "Byte-Pair Encoding",
+    usedBy: "GPT-2, GPT-3/4, Llama, Mistral, Falcon",
+    vocabSize: "32K–128K",
+    how: "Start with individual bytes/characters. Iteratively merge the most frequent adjacent pair into a new token. Repeat until vocabulary size is reached.",
+    pros: ["Handles unknown words via byte fallback — no UNK tokens", "Compact: common words become single tokens", "Language-agnostic (byte-level BPE)"],
+    cons: ["Same word tokenises differently with/without leading space", "Numbers split character-by-character: '1234' → ['1','2','3','4']", "Non-English text uses more tokens per word than English"],
+    color: "#3b82f6",
+  },
+  {
+    id: "wordpiece",
+    name: "WordPiece",
+    full: "WordPiece",
+    usedBy: "BERT, DistilBERT, ALBERT, mBERT",
+    vocabSize: "30K (BERT standard)",
+    how: "Similar to BPE but merges pairs that maximise the likelihood of the training data (not just frequency). Unknown subwords prefixed with ## to indicate continuation.",
+    pros: ["Good for morphologically rich languages", "## prefix shows word boundaries clearly", "Well-suited for classification/understanding tasks"],
+    cons: ["English-centric vocabulary", "UNK token for truly unseen subwords", "Less effective for code and multilingual text"],
+    color: "#6366f1",
+  },
+  {
+    id: "sentencepiece",
+    name: "SentencePiece",
+    full: "SentencePiece (BPE or Unigram LM)",
+    usedBy: "T5, Llama 2, PaLM, Gemma, NLLB",
+    vocabSize: "32K–250K",
+    how: "Treats input as a raw byte stream — no pre-tokenisation. Applies BPE or Unigram language model on bytes. Language-agnostic by design. ▁ prefix marks word boundaries.",
+    pros: ["Truly language-agnostic — works across scripts", "No whitespace pre-tokenisation needed", "Deterministic and reproducible"],
+    cons: ["▁ prefix can confuse beginners", "Larger vocabulary needed for good multilingual coverage", "Slightly slower than tiktoken"],
+    color: "#f59e0b",
+  },
+  {
+    id: "tiktoken",
+    name: "tiktoken",
+    full: "tiktoken (cl100k_base / o200k_base)",
+    usedBy: "GPT-4, GPT-4o, ChatGPT, o1/o3",
+    vocabSize: "100K (cl100k) / 200K (o200k)",
+    how: "Byte-level BPE with a very large vocabulary (100K+). Better multilingual coverage than GPT-3's 50K vocabulary. o200k_base further improves code and multilingual efficiency.",
+    pros: ["Best multilingual token efficiency among major tokenizers", "Large vocab means common phrases tokenise as single tokens", "Fast Rust implementation"],
+    cons: ["Larger vocab = larger embedding table (memory cost)", "Non-transferable to non-OpenAI models", "Numbers still split: arithmetic is expensive in tokens"],
+    color: "#22c55e",
+  },
+];
+
+// Approximate tokenization (heuristic — not a real tokenizer)
+function approxTokenize(text, algo) {
+  if (!text) return [];
+  const tokens = [];
+  // Split on whitespace first
+  const words = text.split(/(\s+)/);
+  for (const word of words) {
+    if (!word) continue;
+    if (/^\s+$/.test(word)) {
+      // whitespace handling differs
+      if (algo === "sentencepiece") {
+        // absorbed into next token via ▁
+      } else {
+        // BPE/tiktoken: space merged into next word
+      }
+      continue;
+    }
+    // Numbers: all split character by character
+    if (/^\d+$/.test(word)) {
+      for (const ch of word) tokens.push(ch);
+      continue;
+    }
+    // Short common words → single token for all
+    if (word.length <= 4 && /^[a-z]+$/i.test(word)) {
+      const prefix = algo === "sentencepiece" ? "▁" : algo === "wordpiece" ? "" : "";
+      tokens.push(prefix + word);
+      continue;
+    }
+    // Longer words — split differently per algo
+    if (algo === "wordpiece") {
+      // Split into subwords with ##
+      const mid = Math.ceil(word.length * 0.55);
+      tokens.push(word.slice(0, mid));
+      if (mid < word.length) tokens.push("##" + word.slice(mid));
+    } else if (algo === "sentencepiece") {
+      if (word.length <= 8) {
+        tokens.push("▁" + word);
+      } else {
+        const mid = Math.ceil(word.length * 0.6);
+        tokens.push("▁" + word.slice(0, mid));
+        tokens.push(word.slice(mid));
+      }
+    } else if (algo === "tiktoken") {
+      // Large vocab: longer words often single token
+      if (word.length <= 10) {
+        tokens.push(word);
+      } else {
+        const mid = Math.ceil(word.length * 0.65);
+        tokens.push(word.slice(0, mid));
+        tokens.push(word.slice(mid));
+      }
+    } else {
+      // BPE: space merged into word
+      const w = " " + word;
+      if (word.length <= 8) {
+        tokens.push(w);
+      } else {
+        const mid = Math.ceil(word.length * 0.6);
+        tokens.push(" " + word.slice(0, mid));
+        tokens.push(word.slice(mid));
+      }
+    }
+  }
+  return tokens.filter(Boolean);
+}
+
+const SAMPLE_INPUTS = [
+  { label: "English sentence", text: "The transformer architecture uses self-attention to process sequences." },
+  { label: "Code snippet", text: "def calculate_loss(logits, labels): return cross_entropy(logits, labels)" },
+  { label: "Number heavy", text: "Revenue grew from 12345678 to 98765432 in Q3 2024." },
+  { label: "Non-English", text: "机器学习是人工智能的一个子领域。" },
+  { label: "Rare word", text: "The antidisestablishmentarianism movement emerged in the 19th century." },
+];
+
+const TOKEN_COLORS = [
+  "bg-blue-900/60 text-blue-200 border-blue-700/50",
+  "bg-violet-900/60 text-violet-200 border-violet-700/50",
+  "bg-amber-900/60 text-amber-200 border-amber-700/50",
+  "bg-green-900/60 text-green-200 border-green-700/50",
+  "bg-pink-900/60 text-pink-200 border-pink-700/50",
+  "bg-cyan-900/60 text-cyan-200 border-cyan-700/50",
+];
+
+function TokenizerComparison() {
+  const [tab, setTab] = useState(0);
+  const [activeAlgo, setActiveAlgo] = useState("bpe");
+  const [customText, setCustomText] = useState(SAMPLE_INPUTS[0].text);
+  const [selectedSample, setSelectedSample] = useState(0);
+  const tabs = ["Algorithm Guide", "Live Tokenizer", "Token Cost Calculator"];
+  const algo = TOKENIZER_ALGOS.find(a => a.id === activeAlgo);
+
+  // Cost calculator state
+  const [costText, setCostText] = useState("You are a helpful assistant. Answer the user's question based on the context provided.\n\nContext: The product was launched in March 2024 and supports API versions 2 and 3.\n\nQuestion: When was the product launched?");
+  const [pricePerM, setPricePerM] = useState(2.50);
+
+  const allTokenCounts = TOKENIZER_ALGOS.map(a => ({
+    id: a.id,
+    name: a.name,
+    count: approxTokenize(customText, a.id).length,
+  }));
+  const maxCount = Math.max(...allTokenCounts.map(t => t.count));
+
+  const costTokens = approxTokenize(costText, "tiktoken");
+  const costEstimate = (costTokens.length / 1000000) * pricePerM;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-4">
+        <div className="text-sm font-bold text-white mb-1">Tokenizer Comparison</div>
+        <p className="text-xs text-zinc-400 leading-relaxed">The four major tokenization algorithms — how they split text, why the choice matters for cost and model behaviour, and the edge cases where each breaks.</p>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {tabs.map((t,i) => (
+          <button key={i} onClick={() => setTab(i)}
+            className={`px-3 py-1 rounded text-sm font-medium transition-all ${tab===i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300 hover:text-white"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab===0 && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {TOKENIZER_ALGOS.map(a => (
+              <button key={a.id} onClick={() => setActiveAlgo(a.id)}
+                className={`p-3 rounded-xl border text-left transition-all ${activeAlgo===a.id ? "border-transparent" : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"}`}
+                style={activeAlgo===a.id ? { backgroundColor: a.color+"22", borderColor: a.color+"66" } : {}}>
+                <div className="text-xs font-bold text-white">{a.name}</div>
+                <div className="text-[10px] text-zinc-500 mt-0.5 leading-tight">{a.usedBy.split(",")[0]}...</div>
+              </button>
+            ))}
+          </div>
+
+          {algo && (
+            <div className="space-y-3">
+              <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4">
+                <div className="text-[10px] font-mono uppercase tracking-widest mb-2" style={{ color: algo.color }}>How it works</div>
+                <div className="text-xs text-zinc-300 leading-relaxed mb-3">{algo.how}</div>
+                <div className="flex gap-3 text-xs">
+                  <div><span className="text-zinc-500">Used by: </span><span className="text-zinc-300">{algo.usedBy}</span></div>
+                  <div><span className="text-zinc-500">Vocab: </span><span className="text-zinc-300">{algo.vocabSize}</span></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-zinc-900 border border-green-900/30 p-3">
+                  <div className="text-[10px] font-mono text-green-500 uppercase tracking-widest mb-2">Strengths</div>
+                  {algo.pros.map((p,i) => <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1.5"><span className="text-green-500 shrink-0">+</span>{p}</div>)}
+                </div>
+                <div className="rounded-xl bg-zinc-900 border border-red-900/30 p-3">
+                  <div className="text-[10px] font-mono text-red-400 uppercase tracking-widest mb-2">Weaknesses</div>
+                  {algo.cons.map((c,i) => <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1.5"><span className="text-red-400 shrink-0">–</span>{c}</div>)}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 overflow-hidden">
+            <table className="w-full text-xs">
+              <thead><tr className="border-b border-zinc-800">
+                <th className="text-left py-2 px-3 text-zinc-500 font-semibold">Property</th>
+                {TOKENIZER_ALGOS.map(a => <th key={a.id} className="text-center py-2 px-3 font-semibold" style={{ color: a.color }}>{a.name}</th>)}
+              </tr></thead>
+              <tbody>
+                {[
+                  ["Byte fallback (no UNK)", "✓", "✗", "✓", "✓"],
+                  ["Language agnostic", "~", "✗", "✓", "✓"],
+                  ["Good for code", "✓", "✗", "~", "✓"],
+                  ["## subword markers", "✗", "✓", "✗", "✗"],
+                  ["▁ word boundaries", "✗", "✗", "✓", "✗"],
+                  ["Numbers efficient", "✗", "✗", "✗", "✗"],
+                  ["Open source impl", "✓", "✓", "✓", "✓"],
+                ].map(([prop, ...vals]) => (
+                  <tr key={prop} className="border-b border-zinc-900 hover:bg-zinc-900/40">
+                    <td className="py-2 px-3 text-zinc-400">{prop}</td>
+                    {vals.map((v,i) => <td key={i} className={`py-2 px-3 text-center font-bold ${v==="✓"?"text-green-400":v==="✗"?"text-red-500":"text-yellow-600"}`}>{v}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {tab===1 && (
+        <div className="space-y-3">
+          <div className="flex gap-2 flex-wrap">
+            {SAMPLE_INPUTS.map((s,i) => (
+              <button key={i} onClick={() => { setSelectedSample(i); setCustomText(s.text); }}
+                className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${selectedSample===i ? "bg-indigo-600 text-white" : "bg-zinc-900 text-zinc-500 border border-zinc-800 hover:text-zinc-300"}`}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={customText}
+            onChange={e => { setCustomText(e.target.value); setSelectedSample(-1); }}
+            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-xs text-zinc-300 font-mono resize-none focus:outline-none focus:border-indigo-500"
+            rows={3}
+            placeholder="Type anything to tokenize..."
+          />
+          <div className="space-y-3">
+            {TOKENIZER_ALGOS.map((a, ai) => {
+              const tokens = approxTokenize(customText, a.id);
+              return (
+                <div key={a.id} className="rounded-xl bg-zinc-900 border border-zinc-800 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold" style={{ color: a.color }}>{a.name}</span>
+                    <span className="text-xs font-mono text-zinc-400">{tokens.length} tokens</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-zinc-800 mb-2">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${(tokens.length/Math.max(maxCount,1))*100}%`, backgroundColor: a.color }} />
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {tokens.map((tok, ti) => (
+                      <span key={ti} className={`px-1.5 py-0.5 rounded border text-[10px] font-mono ${TOKEN_COLORS[ti % TOKEN_COLORS.length]}`}>
+                        {tok === " " ? "·" : tok}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="rounded-lg bg-amber-950/20 border border-amber-800/30 p-3 text-xs text-amber-300">
+            <span className="font-bold">Note:</span> This is an approximation of tokenization behaviour for illustration. Production tokenizers (Hugging Face tokenizers, tiktoken) produce exact results — use those for billing/context window calculations.
+          </div>
+        </div>
+      )}
+
+      {tab===2 && (
+        <div className="space-y-3">
+          <div className="text-xs text-zinc-400">Estimate the token cost of any prompt. Uses tiktoken approximation.</div>
+          <textarea
+            value={costText}
+            onChange={e => setCostText(e.target.value)}
+            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-xs text-zinc-300 font-mono resize-none focus:outline-none focus:border-indigo-500"
+            rows={6}
+          />
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs text-zinc-500">Price per 1M tokens ($):</span>
+            {[0.15, 0.60, 2.50, 5.00, 15.00].map(p => (
+              <button key={p} onClick={() => setPricePerM(p)}
+                className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${pricePerM===p ? "bg-indigo-600 text-white" : "bg-zinc-900 text-zinc-500 border border-zinc-800 hover:text-zinc-300"}`}>
+                ${p}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4 text-center">
+              <div className="text-[10px] text-zinc-500 font-mono uppercase mb-1">Tokens</div>
+              <div className="text-2xl font-black text-white font-mono">{costTokens.length}</div>
+            </div>
+            <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4 text-center">
+              <div className="text-[10px] text-zinc-500 font-mono uppercase mb-1">Cost/request</div>
+              <div className="text-2xl font-black text-green-400 font-mono">${costEstimate < 0.001 ? costEstimate.toFixed(6) : costEstimate.toFixed(4)}</div>
+            </div>
+            <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4 text-center">
+              <div className="text-[10px] text-zinc-500 font-mono uppercase mb-1">Cost/10K req</div>
+              <div className="text-2xl font-black text-amber-400 font-mono">${(costEstimate * 10000).toFixed(2)}</div>
+            </div>
+          </div>
+          <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 text-xs text-zinc-400 space-y-1.5">
+            <div className="text-zinc-200 font-semibold text-[11px]">Reference pricing (input tokens, May 2026)</div>
+            {[
+              ["GPT-4o mini", "$0.15/M", "Best for high-volume, cost-sensitive tasks"],
+              ["Claude Haiku 4.5", "$0.80/M", "Fast, cheap, good for simple extraction"],
+              ["GPT-4o", "$2.50/M", "Balanced quality/cost for most production use"],
+              ["Claude Sonnet 4.5", "$3.00/M", "Strong reasoning, good for complex tasks"],
+              ["GPT-4o (output)", "$10.00/M", "Output tokens 4× more expensive than input"],
+              ["o3 (thinking tokens)", "$10.00/M", "Thinking tokens billed at output rate"],
+            ].map(([m,p,n]) => (
+              <div key={m} className="flex gap-2">
+                <span className="text-zinc-300 w-36 shrink-0">{m}</span>
+                <span className="text-green-400 font-mono w-20 shrink-0">{p}</span>
+                <span className="text-zinc-500">{n}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
@@ -4599,6 +4933,7 @@ const EXPLORE_MODULES = [
   { id: "cosine", label: "Cosine Similarity", tag: "MATH", component: CosineSimilarityExplorer, fidelity: { tier: "exact", note: "Real-time cosine similarity — exact math, no approximation" } },
   { id: "modelarch", label: "Model Architecture", tag: "ARCH", component: ModelArchitectureComparison, fidelity: { tier: "reference", note: "Encoder / Decoder / Encoder-Decoder comparison with use-case wizard" } },
   { id: "hardware", label: "Hardware Reference", tag: "HW", component: HardwareReference, fidelity: { tier: "reference", note: "GPU specs and cloud costs based on published datasheets — verify before procurement" } },
+  { id: "tokenizers", label: "Tokenizer Comparison", tag: "TOKENS", component: TokenizerComparison, fidelity: { tier: "approximate", note: "Heuristic tokenization for illustration — use tiktoken/HF tokenizers for exact counts" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {
