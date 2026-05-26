@@ -485,7 +485,7 @@ Violet=LEARN, blue=BUILD, green=GROW on home page. Inside tabs, associations dis
 | 1 | **1 remaining `slate-*` class** — `text-slate-400` and `bg-slate-900/60` in MCP protocol layer data object | `Concepts.jsx` line 224 | Low | ⚠️ Open |
 | 2 | **No `React.useState` / `React.useEffect` remaining** — clean | All `.jsx` | — | ✅ Clean |
 | 3 | **No duplicate IDs in groundTruthIndex.js** — clean | `groundTruthIndex.js` | — | ✅ Clean |
-| 4 | **134 GT posts have no `related[]` array** — only 58 of 192 posts have "Keep reading" navigation. The other 134 are dead ends after a read. | `groundTruthIndex.js` | High | ⚠️ Open |
+| 4 | **134 GT posts have no `related[]` array** — only 58 of 192 posts have "Keep reading" navigation. The other 134 are dead ends after a read. | `groundTruthIndex.js` | High | ✅ Fixed — batch script injected related[] into 136 posts using tag+category scoring. 194/202 posts now have related[]. 0 broken refs, 0 self-references. |
 | 5 | **10 orphaned post IDs** — ~~content written in `groundTruthPosts.js`, no index entry~~ — **SUPERSEDED by Audit 18**: 8 of 10 are indexed in multi-line format; true orphans are only `prompt-cost-engineering` and `rlhf-dpo-explained-v2` | `groundTruthPosts.js` / `groundTruthIndex.js` | High | ⚠️ Partially corrected — see Audit 18 |
 | 6 | **`groundtruth` tab not in SHORTCUT_TABS** — the GT posts grid is a primary content surface but not keyboard-navigable via number shortcuts | `App.jsx` | Medium | ⚠️ Open |
 | 7 | **`consult` tab not in SHORTCUT_TABS** — already documented in Audit 8/B3; confirmed still missing | `App.jsx` | Low | ⚠️ Open (known) |
