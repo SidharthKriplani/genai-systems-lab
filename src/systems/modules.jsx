@@ -11613,7 +11613,7 @@ function ABTestingForAI({ onNavigate }) {
           <div className="flex gap-2 flex-wrap">
             {AB_STRATEGIES.map(s => (
               <button key={s.id} onClick={() => setStrategy(s.id)}
-                className={}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${strategy === s.id ? "text-white border-transparent" : "bg-zinc-900 text-zinc-400 border-zinc-700 hover:text-white"}`}
                 style={strategy === s.id ? { background: s.color } : {}}>
                 {s.label}
               </button>
