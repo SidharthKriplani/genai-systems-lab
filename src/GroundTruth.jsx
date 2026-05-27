@@ -424,7 +424,22 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
             </div>
           )}
           <h1 className="text-lg sm:text-xl font-black text-white leading-tight mb-3">{post.title}</h1>
-          <p className="text-sm text-zinc-400 leading-relaxed">{post.desc}</p>
+          <p className="text-sm text-zinc-400 leading-relaxed mb-3">{post.desc}</p>
+          {content && (
+            <button
+              onClick={() => {
+                const q = generateQuiz(content);
+                setQuizQuestions(q);
+                setQuizAnswers({});
+                setQuizRevealed(false);
+                setQuizActive(true);
+                setTimeout(() => document.getElementById("gt-quiz-section")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+              }}
+              className="text-[11px] px-3 py-1.5 rounded-full border border-violet-700/50 bg-violet-950/20 hover:border-violet-500/70 hover:bg-violet-950/40 text-violet-400 hover:text-violet-300 transition-all font-mono"
+            >
+              ✦ Test yourself on this post →
+            </button>
+          )}
         </div>
 
         {/* Content or coming soon */}
@@ -488,6 +503,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
               </div>
             </div>
             {/* Feature 4 — Quiz Me */}
+            <div id="gt-quiz-section" />
             {!quizActive ? (
               <div className="pt-2">
                 <button
