@@ -109,6 +109,38 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 
 ## Tier 1 — High Impact, Buildable Now
 
+### CRITICAL — Audit 28: Lab Quality Gap (May 2026) — the 30% that stops this being million-dollar
+
+Full audit of Agent Lab (16), Eval Lab (18), LLM Lab (9) against RAG Lab standard. Only 3/16 Agent Lab modules, 2/9 LLM Lab modules, and 9/18 Eval Lab modules meet the configure→fail→diagnose standard. The rest are reference content or interactive calculators without a failure arc.
+
+**Tier A — small lift, high ROI (add failure arc to existing decision engine):**
+
+- **`serving` (LLM Lab): connect configurator to failure scenarios inline** — when config output is in the danger zone (70B on 1×A100 at 200 RPS), auto-surface the matching pre-written failure instead of waiting for user to scroll to the Failure Scenarios tab. One `useMemo` check away from a dramatically stronger experience. *Audit 28 Finding 6.*
+
+- **`decoding` (LLM Lab): add 3 failure scenarios** — T=0 on creative task → repetition loop. T=1.8 on code → token incoherence. top-p=0.01 → effective censorship / topic starvation. Strong visualizer already exists — the failure arc is the only missing piece. *Audit 28 Finding 7.*
+
+- **`agentcfg` (Agent Lab): add to AGENTS_RELATED_GT + PrepLab forward pointer** — the strongest module in Agent Lab has zero GT reading links and no PrepLab forward pointer. One data entry and one component addition. *Audit 28 Finding 2.*
+
+- **`simulator` + `design` (Agent Lab): add PrepLab forward pointer at results screen** — both end silently after scoring. Add the same forward pointer card added to RAG Lab in sprint 6. *Audit 28 Finding 3.*
+
+**Tier B — medium lift (convert reference to decision engine):**
+
+- **`failures` (Agent Lab): rebuild as a triggerable failure simulator** — currently a click-to-expand failure catalog. This is the DECISIONS.md Section 4 anti-pattern verbatim. Best path: merge `failures` content into `agentcfg` as additional trigger scenarios (5 more failure modes with specific config triggers). `agentcfg` already handles the mechanic — it just needs more failure cases. *Audit 28 Finding 1, Critical.*
+
+- **`moe` (LLM Lab): add expert utilization simulator** — user sets number of experts, top-K routing, batch size → live load imbalance bar chart showing utilization per expert → collapse threshold indicator. The failure modes tab already lists expert collapse / load imbalance / router oscillation — just make them triggerable. *Audit 28 Finding 5.*
+
+- **`langsmith` (Eval Lab): rebuild as broken-trace diagnosis** — all 4 tabs are expandable reference cards. Replace with 5 pre-built broken requests (each with a multi-span trace containing one bad span), user identifies the failed span before reveal. The diagnosis pattern already proven in `debug_traces`. *Audit 28 Finding 9.*
+
+**Tier C — cut (free nav space, reduce quality dilution):**
+
+- **Cut `deploy` (Eval Lab)** — click-expander with no derived outcome, duplicates `serving` which does it better as a decision engine. Redirect link to `serving` in Eval Lab nav. *Audit 28 Finding 10.*
+
+- **Cut or merge `abtesting-ai` (Eval Lab)** — selector-driven reference sitting next to `abtesting` which is a proper decision engine. Confusing to have both. Either absorb unique content into `abtesting` or cut. *Audit 28 Finding 11.*
+
+- **Cut `buildthis` (Eval Lab)** — structured reading list with phase navigation. Not a lab experience. Convert to a GT post series: "Build a Production RAG Pipeline." Remove from Eval Lab nav. *Audit 28 Finding 12.*
+
+- **Slim `quantization` (LLM Lab)** — cut the methods table tab (pure reference HTML table), redirect users to `inference` quantization section which is stronger. Keep only the VRAM calculator tab if it's unique. *Audit 28 Finding 8.*
+
 ### CRITICAL — From Audits 26 & 27 (May 2026, never-before-run MVP/Moat audits)
 
 These are the highest-ROI moves identified in the first-ever MVP/Weight + IP/Moat audit. They don't add new content — they make existing content work harder.

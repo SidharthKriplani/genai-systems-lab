@@ -1098,3 +1098,142 @@ The moat is real but fragile. RAG Lab + GT corpus + decision engines + PrepLab c
 
 **The highest-leverage move is not new content — it's making what exists work harder.** Module endings that forward to PrepLab. GT posts that link back to the exact module. Reference tables that become decision engines.
 
+
+---
+
+## Audit 28 — Lab Quality Gap Analysis (May 2026)
+
+**Type:** Interactive decision engine standard audit — Agent Lab, Eval Lab, LLM Lab vs RAG Lab benchmark
+**Scope:** All 43 modules across the three non-RAG labs. Every module assessed for: configure→outcome logic, failure arc, system design lesson, forward pointer.
+**Benchmark:** RAG Lab scenario loop — user sets config → code derives outcome → named failure mode triggered → root cause explanation → system design lesson → forward pointer to PrepLab + GT post.
+
+---
+
+### Agent Lab — 16 modules
+
+**True decision engines (3/16):**
+- `agentcfg` — best in lab. Configure task type, context budget, tool count, retry limit, memory type → `deriveAgentFailure()` computes first matching failure trigger → named failure + step-by-step breakdown + fix list. Matches RAG Lab standard almost exactly. **Missing:** forward pointer to PrepLab, missing from AGENTS_RELATED_GT entirely.
+- `simulator` — 8 scenarios, user answers a 3-option quiz at each trace step, score accumulated, explanations revealed. Strong "configure thinking → see consequence" loop. **Missing:** PrepLab forward pointer at results screen.
+- `design` — 3 challenge scenarios, user picks tool/memory/guardrail options, gets per-option feedback + score. **Missing:** PrepLab forward pointer at results screen.
+
+**Reference content (13/16):**
+- `react` — static 7-step trace, click to expand each step. No config input.
+- `tools` — schema toggle + pattern selector. Binary toggle, no consequence logic.
+- `memory` — taxonomy browser. Click type → see specs. No decision engine.
+- `memarch` — reference tabs + a 3-question wizard → recommendation. Wizard produces label, not failure demonstration.
+- `multiagent` — click to select pattern → see description. No failure.
+- `failures` — click to select failure mode → see description. **Critical gap:** a failure catalog that doesn't let you trigger the failures is exactly DECISIONS.md Section 4's anti-pattern. Should be rebuilt as configure→trigger→diagnose.
+- `planning` — pattern selector, description only.
+- `reliability` — reference catalog across 4 tabs. Checklist is Unicode characters, not interactive.
+- `computeruse` — reference tabs, click-to-expand.
+- `longrunning` — reference + static decision text (5 if→then rules as plain text).
+- `frameworks` — reference tabs + scored decision wizard. Wizard ranks frameworks but doesn't show failure of wrong choice.
+- `mcp` — 4-tab reference deep dive. No interactivity.
+- `a2a` — reference + count-based decision guide. Simple yes/no count → label, not tied to failure consequences.
+
+**Zero modules in Agent Lab have PrepLab forward pointers.** The AGENTS_RELATED_GT section renders after every module uniformly — it is not module-specific. `agentcfg` has no AGENTS_RELATED_GT entry at all.
+
+---
+
+### LLM Lab — 9 modules
+
+**True decision engines (2/9):**
+- `serving` — strongest in LLM Lab. Stack configurator (model size + GPU + RPS + workload) → `deriveServingRecommendation()` → framework recommendation + warnings. Plus pre-written failure scenarios with trigger/symptom/root cause/fix. **Gap:** configurator and failure scenarios are disconnected — pushing params into the danger zone doesn't trigger the failure scenarios inline. Fix: when config is in danger zone, show the matching pre-written failure automatically.
+- `inference` — symptom selector (TTFT too high / TPOT too high / throughput collapse) → root cause → ranked technique recommendations with quantified gains. Quantization and batch size tabs have live sliders with derived outcomes. **Gap:** symptoms-first is backwards from the "configure → see break" RAG Lab pattern. No failure shown for wrong batch size choice.
+
+**Interactive calculators without failure arc (5/9):**
+- `decoding` — temperature/top-k/top-p sliders → live probability distribution. Strong visualizer. **Missing:** failure scenarios. T=0 on creative task → repetition loop. T=1.8 on code → incoherence. Currently always shows "how it works," never "here's what breaks."
+- `kvcache` — 3 tabs: reference + cost calculator + routing reference. Calculator derives VRAM numbers. **Missing:** OOM scenario when config exceeds GPU capacity.
+- `specdecoding` — acceptance rate α + draft length K → speedup calculator. Strong math tab. **Missing:** failure when α is low (draft overhead > savings), or when applied to reasoning tasks (high divergence).
+- `reasoning` — thinking budget slider → quality/cost/TTFT estimates + use-case matcher. Close to decision engine. **Missing:** failure scenario for "max budget on a summarization task = cost blowup with zero quality gain."
+- `moe` — reference tabs + a failure modes tab (5 named failures with fix, pure reference). **Critical gap:** failure modes tab is read-only. User never configures anything to trigger expert collapse or load imbalance.
+
+**Pure reference (2/9):**
+- `quantization` — reference table + basic VRAM calculator. Table tab is a static HTML table. Weaker than `inference` on every dimension. **Recommendation:** cut the methods table, redirect users to `inference` for quantization decisions.
+- `streaming` — 2 tabs, both static. Pattern cards + static latency waterfall visualization. **Weakest module in LLM Lab.** No configuration, no outcome, no failure.
+
+---
+
+### Eval Lab — 18 modules
+
+**True decision engines (9/18):**
+- `evals` — Budget Allocator + LLM-as-Judge Audit + Build Your Eval. Strongest in Eval Lab.
+- `shouldai` — 10 scenarios, pick correct approach (LLM/rules/hybrid/don't use AI), reveal + score. Clean.
+- `strategy` — 5 scenarios, pick strategy (RAG/fine-tune/prompt/agents), reveal + failure explanations for wrong choices. Strong.
+- `canvas` — problem type + constraints → model tier + failure modes to design against + eval approach. Derived outcomes.
+- `incidents` — 5 incident archetypes, diagnose root cause from symptoms. Score + mitigation playbook. Good "see failure, diagnose" half of the RAG Lab standard.
+- `abtesting` — statistical scenarios, pick correct interpretation. Score tracked.
+- `mlcicd` — staged rollout (Shadow→Canary 5%→25%→Full), pre-built metric spikes (latency/error rate), rollback verdict + root cause. **Gap:** pre-built scenarios, user can't set metric values.
+- `debug_traces` — trace symptoms → pick root cause → score + explanation. Solid.
+- `prompt-change-mgmt` — Lab tab: pick prompt variant → score delta + regression flag + BLOCK MERGE verdict. Cleanest configure→failure→diagnosis loop in Eval Lab. **Gap:** pre-written scenarios only.
+
+**Reference with redemptive selector (5/18):**
+- `evalfw` — framework guide + use-case → recommendation. Recommendation pre-written.
+- `observability` — 3 tabs: reference + static trace + Metric Diagnosis (user diagnoses anomalous snapshot). Diagnosis tab is the one interactive piece.
+- `trapslab` — read scenario, click "Show Issues," see failures revealed. Strong content, reveal-only mechanic.
+- `evalmetrics` — table + static samples + reference. Closest to pure reference in "decision" clothing.
+- `router` — strongest configure→outcome in Eval Lab (threshold slider + distribution chart + live cost calc). **Gap:** no failure mode when threshold is misconfigured. Sits in Eval Lab but logically belongs adjacent to `serving`.
+
+**Pure reference (4/18):**
+- `langsmith` — 4 tabs of expandable reference cards. **Should be:** "trace this broken request, identify the failed span."
+- `deploy` — click-expander, no derived outcome. Duplicates `serving` in a worse form. **Recommendation:** cut or redirect to `serving`.
+- `buildthis` — structured reading list with phase navigation. No interactive mechanic.
+- `abtesting-ai` — selector-driven reference, 3 tabs all reference. Thinner than `abtesting` which sits next to it. Confusing to have both.
+
+---
+
+### Cross-lab findings
+
+**1. The failure arc is the universal missing piece.** Almost every module that has configure→outcome logic stops at "here is the outcome." None of them (except `agentcfg`, `serving`, and `prompt-change-mgmt`) show a named production failure with a root cause when configuration goes wrong. The outcome is always a recommendation or a score — never a breaking system.
+
+**2. The "trigger the failure yourself" half is absent everywhere except `agentcfg`.** RAG Lab's power is that you configure the system into the failure — you caused it. Most modules show you failures in the abstract or let you diagnose pre-broken systems. Only `agentcfg` lets you build a misconfigured agent and watch it fail. This is the experience gap.
+
+**3. Forward pointers are completely absent in Agent Lab and LLM Lab.** Every module ends with no forward momentum. The Systems shell adds a PrepLab button and RELATED_GT section to Eval Lab and Systems modules, but Agent Lab and LLM Lab modules (which are separate components) end silently.
+
+**4. Duplication is diluting quality perception:**
+- `quantization` vs `inference` — quantization engineering tab in `inference` is stronger; the standalone `quantization` module is redundant.
+- `deploy` vs `serving` — ServingInfra is the decision engine; Deploy is the weaker reference version.
+- `abtesting` vs `abtesting-ai` — both cover A/B testing, one is a decision engine, one is reference. Confusing to have both visible.
+
+**5. Agent Lab's `failures` module is the most critical gap.** A failure catalog that lists 5 failure modes but doesn't let you trigger them is the exact DECISIONS.md Section 4 anti-pattern ("a module that presents a comparison table without requiring user input is a reference table, not an interactive"). `agentcfg` already demonstrates the right pattern for this content. The two should be merged: `agentcfg` becomes the complete failure simulator, absorbing the `failures` catalog into its trigger logic.
+
+---
+
+### Findings table
+
+| # | Finding | Lab | Severity | Status |
+|---|---|---|---|---|
+| 1 | **`failures` module is a reference catalog, not a simulator** — 5 failure modes listed but never triggered by user action. Contradicts DECISIONS.md Section 4 directly. Should be absorbed into `agentcfg`. | Agent | **Critical** | ⚠️ Open |
+| 2 | **`agentcfg` missing from AGENTS_RELATED_GT** — strongest module in Agent Lab has no GT reading links | Agent | High | ⚠️ Open |
+| 3 | **Zero Agent Lab + LLM Lab modules have PrepLab forward pointers** — 25 modules end silently | Agent + LLM | High | ⚠️ Open |
+| 4 | **`streaming` (LLM Lab) is pure reference** — 2 static tabs, no config, no outcome. Weakest module in the lab. Cut or rebuild. | LLM | High | ⚠️ Open |
+| 5 | **`moe` failure modes tab is read-only** — named failures with fixes but no interactivity. Expert collapse, load imbalance, router oscillation should be triggerable. | LLM | High | ⚠️ Open |
+| 6 | **`serving` configurator and failure scenarios are disconnected** — pushing into danger zone doesn't auto-surface the matching failure. Gap between what exists and what it could be is small. | LLM | Medium | ⚠️ Open |
+| 7 | **`decoding` has no failure scenarios** — strong visualizer without the "here's what breaks at T=0 / T=1.8" arc. One addition away from decision engine quality. | LLM | Medium | ⚠️ Open |
+| 8 | **`quantization` module is redundant** — weaker than the quantization section inside `inference`. Cut the methods table tab, redirect to `inference`. | LLM | Medium | ⚠️ Open |
+| 9 | **`langsmith` is 4 tabs of reference** — should be a "trace this broken request, identify the failed span" exercise. | Eval | High | ⚠️ Open |
+| 10 | **`deploy` duplicates `serving` worse** — ServingInfra is the decision engine; Deploy is the weaker reference version. Cut or redirect. | Eval | Medium | ⚠️ Open |
+| 11 | **`abtesting-ai` is thinner than `abtesting`** which sits next to it. Two A/B modules creates confusion. Merge or cut. | Eval | Medium | ⚠️ Open |
+| 12 | **`buildthis` is a structured reading list** — no interactive mechanic. Not a lab experience. Should be content in GT posts, not a module. | Eval | Medium | ⚠️ Open |
+
+---
+
+### Upgrade priority order
+
+**Tier A — highest ROI, small lift (failure arc added to existing decision engine):**
+1. `serving`: auto-surface failure scenario when configurator output is in danger zone
+2. `decoding`: add 3 failure scenarios (T=0 repetition, T=1.8 incoherence, top-p=0.01 censorship)
+3. `agentcfg`: add AGENTS_RELATED_GT entry + PrepLab forward pointer
+4. `simulator` + `design`: add PrepLab forward pointer at results screen
+
+**Tier B — medium lift (convert reference to decision engine):**
+5. `failures` → merge into `agentcfg` as additional trigger scenarios, or rebuild as standalone "configure agent → trigger this specific failure"
+6. `moe` → add expert utilization simulator: set experts/top-K/batch → see load imbalance bar chart + collapse threshold
+7. `langsmith` → rebuild as broken-trace diagnosis exercise (5 pre-built broken traces, user identifies failed span)
+
+**Tier C — cut (free nav space, reduce quality dilution):**
+8. `deploy` → redirect to `serving`
+9. `abtesting-ai` → merge into `abtesting` or cut
+10. `buildthis` → convert to a GT post series ("Build a Production RAG Pipeline"), remove from Eval Lab nav
+11. `quantization` → cut the methods table tab, reference `inference` for quantization decisions
+

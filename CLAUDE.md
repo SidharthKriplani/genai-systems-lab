@@ -275,15 +275,29 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Known open issues (check AUDITS.md for full list)
 
-- Module endings are silent — no ✓ done state, no forward pointer to PrepLab or GT. Highest-dropout moment in the product. (Audits 14, 20, 26, 27)
+**Fixed in sprint 6 (May 2026):**
+- ~~Module endings silent~~ → RAG Lab forward pointer added (scenario-specific GT post + PrepLab), Concepts 12 modules upgraded to ✓ done card, Systems shell always shows PrepLab CTA
+- ~~Stat numbers stale~~ → Home.jsx synced: "261+" PrepLab, "222+" GT posts, badge updated to "Layer 3 AI skills"
+- ~~Hero subtext flat~~ → magnetic copy, outcome-oriented door cards
+
+**Still open (Audit 28, May 2026):**
+- **13/16 Agent Lab modules are reference content** — only `agentcfg`, `simulator`, `design` are true decision engines. `failures` module is a catalog without trigger logic — contradicts DECISIONS.md Section 4 directly. Priority: add failure arc to `agentcfg` (merge `failures` scenarios in), add PrepLab forward pointers to `simulator` + `design`. (Audit 28)
+- **7/9 LLM Lab modules lack a failure arc** — `serving` and `inference` are the only decision engines. `streaming` is pure reference. `decoding` needs 3 failure scenarios. `moe` failure modes tab is read-only. (Audit 28)
+- **4 Eval Lab modules are pure reference** — `langsmith` (4 reference tabs), `deploy` (duplicates `serving` worse), `buildthis` (reading list), `abtesting-ai` (thinner than `abtesting` next to it). Priority: cut `deploy`, cut `buildthis`, rebuild `langsmith` as broken-trace diagnosis. (Audit 28)
+- **Zero Agent Lab + LLM Lab modules have PrepLab forward pointers** — these labs render their own components, not through Systems shell which adds the CTA. (Audit 28)
 - Ask/Search tab identity crisis — label says "Ask", mechanic is keyword search. Needs LLM upgrade or demotion. (Audit 26)
-- Reference tables without decision logic in Systems/Explore don't meet DECISIONS.md Section 4 standard. (Audit 27)
-- Stat numbers in Home.jsx stale: PrepLab "259+" (actual 261), GT posts (actual 222), Systems (actual 57).
 - 3 thin GT posts: `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` — need expansion to 8+ blocks.
-- Flows and Fluency tabs in PARKED.md — don't earn their place, accessible but deprioritized.
+- Flows and Fluency tabs in PARKED.md — accessible but deprioritized.
 
 ## Session build log (May 2026)
 
+**Resolved this session (sprint 6):**
+- Hero copy upgraded: badge "Free · No login · Layer 3 AI skills", magnetic subtext, outcome-oriented door cards, stat sync (261+ PrepLab, 222+ GT)
+- Module endings: RAG Lab forward pointer card (scenario-specific — 6 scenario_id → GT post mappings), Concepts 12 modules upgraded from "Go deeper →" pills to ✓ done card with violet gradient container, Systems shell footer always shows PrepLab CTA + improved done/next styling
+- `gated: true` added to 163 hard PrepLab questions + JD Prep mode card (invisible to users, activates with Stripe)
+- Audit 28 run: full module-by-module gap analysis of Agent Lab (16), Eval Lab (18), LLM Lab (9) vs RAG Lab standard. 3/16 Agent Lab, 2/9 LLM Lab, 9/18 Eval Lab meet configure→fail→diagnose standard. 12 specific findings with priority order.
+- AUDITS.md Audit 28 appended, IDEAS.md Tier 1 CRITICAL cluster added (Tier A/B/C upgrade plan), CLAUDE.md known issues updated
+- Commit: `55998de` (sprint UX), MD files updated locally
 
 **Resolved this session (sprint 5):**
 - PrepLab text grading: replaced keyword auto-grade with self-assess UI (open answers can't be reliably auto-graded on a static site)
