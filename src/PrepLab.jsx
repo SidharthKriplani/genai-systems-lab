@@ -3065,14 +3065,36 @@ function ExamMode({ onExit }) {
               Download Results
             </button>
           </div>
-          <div className="bg-zinc-900 rounded-2xl p-5 sm:p-8 border border-zinc-800 text-center">
-            <p className="text-zinc-400 text-sm mb-2">Final Score</p>
-            <div className="text-5xl sm:text-7xl font-bold text-indigo-400 mb-1">{r.pct}%</div>
-            <p className="text-zinc-400">{r.tc} / {r.total} correct</p>
+          <div
+            style={{
+              background: r.pct >= 70
+                ? "linear-gradient(160deg, rgba(16,185,129,0.12) 0%, rgba(15,15,17,0.97) 100%)"
+                : r.pct >= 50
+                ? "linear-gradient(160deg, rgba(245,158,11,0.1) 0%, rgba(15,15,17,0.97) 100%)"
+                : "linear-gradient(160deg, rgba(239,68,68,0.1) 0%, rgba(15,15,17,0.97) 100%)",
+              border: r.pct >= 70 ? "1px solid rgba(16,185,129,0.25)" : r.pct >= 50 ? "1px solid rgba(245,158,11,0.25)" : "1px solid rgba(239,68,68,0.25)",
+              borderTop: r.pct >= 70 ? "2px solid rgba(16,185,129,0.5)" : r.pct >= 50 ? "2px solid rgba(245,158,11,0.5)" : "2px solid rgba(239,68,68,0.5)",
+            }}
+            className="rounded-2xl p-5 sm:p-8 text-center"
+          >
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Final Score</p>
+            <div
+              className="text-6xl sm:text-8xl font-black mb-2 tracking-tight"
+              style={{
+                background: r.pct >= 70
+                  ? "linear-gradient(180deg, #34d399 0%, #10b981 100%)"
+                  : r.pct >= 50
+                  ? "linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%)"
+                  : "linear-gradient(180deg, #f87171 0%, #ef4444 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >{r.pct}%</div>
+            <p className="text-zinc-400 text-sm">{r.tc} / {r.total} correct</p>
             {(r.strong.length > 0 || r.weak.length > 0) && (
-              <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                {r.strong.length > 0 && <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-sm">Strong in: {r.strong.join(" · ")}</span>}
-                {r.weak.length > 0 && <span className="px-3 py-1 bg-red-500/20 text-red-300 border border-red-500/30 rounded-full text-sm">Needs work: {r.weak.join(" · ")}</span>}
+              <div className="mt-5 flex flex-wrap gap-2 justify-center">
+                {r.strong.length > 0 && <span className="px-3 py-1.5 text-xs font-medium rounded-full" style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399" }}>Strong: {r.strong.join(" · ")}</span>}
+                {r.weak.length > 0 && <span className="px-3 py-1.5 text-xs font-medium rounded-full" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}>Needs work: {r.weak.join(" · ")}</span>}
               </div>
             )}
           </div>
@@ -3219,10 +3241,17 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
         <div className="max-w-2xl mx-auto space-y-6">
           <button onClick={onExit} className="text-zinc-400 hover:text-zinc-200 text-sm">← Exit</button>
-          <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 text-center">
-            <p className="text-zinc-400 text-sm mb-2">Session Score</p>
-            <div className="text-4xl sm:text-6xl font-bold text-indigo-400 mb-1">{pct}%</div>
-            <p className="text-zinc-400">{tc} / {sessionAnswers.length} correct</p>
+          <div
+            style={{
+              background: pct >= 70 ? "linear-gradient(160deg, rgba(16,185,129,0.12) 0%, rgba(15,15,17,0.97) 100%)" : pct >= 50 ? "linear-gradient(160deg, rgba(245,158,11,0.1) 0%, rgba(15,15,17,0.97) 100%)" : "linear-gradient(160deg, rgba(239,68,68,0.1) 0%, rgba(15,15,17,0.97) 100%)",
+              border: pct >= 70 ? "1px solid rgba(16,185,129,0.25)" : pct >= 50 ? "1px solid rgba(245,158,11,0.25)" : "1px solid rgba(239,68,68,0.25)",
+              borderTop: pct >= 70 ? "2px solid rgba(16,185,129,0.5)" : pct >= 50 ? "2px solid rgba(245,158,11,0.5)" : "2px solid rgba(239,68,68,0.5)",
+            }}
+            className="rounded-2xl p-8 text-center"
+          >
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Session Score</p>
+            <div className="text-5xl sm:text-7xl font-black mb-2 tracking-tight" style={{ background: pct >= 70 ? "linear-gradient(180deg,#34d399 0%,#10b981 100%)" : pct >= 50 ? "linear-gradient(180deg,#fbbf24 0%,#f59e0b 100%)" : "linear-gradient(180deg,#f87171 0%,#ef4444 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{pct}%</div>
+            <p className="text-zinc-400 text-sm">{tc} / {sessionAnswers.length} correct</p>
           </div>
           {weakList.length > 0 && (
             <div className="bg-zinc-900 rounded-xl p-6 border border-amber-500/30">
@@ -4273,22 +4302,36 @@ export default function PrepLab({ onNavigate, onNavigateTo }) {
         {mode === "companyprep" && <CompanyPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />}
         {mode === "defense"     && <DefenseDocMode onExit={() => setMode(null)} />}
         {!mode && (
-          <div className="p-8 max-w-2xl">
-            <div className="mb-6">
-              <div className="text-lg font-black text-white mb-1">PrepLab</div>
-              <div className="text-sm text-zinc-400">{PREP_QUESTIONS.length} questions sourced from real AI engineering interview loops — weighted toward the hard ones that actually matter.</div>
-            </div>
-            <div className="grid grid-cols-1 gap-2 mb-8">
-              {PREPLAB_SIDEBAR.map(m => (
-                <button key={m.id} onClick={() => setMode(m.id)}
-                  className="text-left p-4 rounded-xl border border-zinc-800 bg-zinc-900 hover:border-violet-700/50 hover:bg-zinc-800/60 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40 transition-all duration-150 group">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-bold text-white group-hover:text-violet-200 transition-colors">{m.label}</span>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-500 group-hover:bg-violet-900/40 group-hover:text-violet-400 transition-colors">{m.tag}</span>
-                  </div>
-                  <div className="text-xs text-zinc-500">{m.desc}</div>
-                </button>
-              ))}
+          <div className="p-6 sm:p-8 max-w-2xl">
+            <div className="mb-8">
+              <div
+                style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.12) 0%, rgba(24,24,27,0.95) 100%)", border: "1px solid rgba(109,40,217,0.2)", borderTop: "2px solid rgba(139,92,246,0.5)" }}
+                className="rounded-xl px-5 py-4 mb-6"
+              >
+                <div className="text-xl font-black text-white mb-1 tracking-tight">PrepLab</div>
+                <div className="text-sm text-zinc-400 leading-relaxed">{PREP_QUESTIONS.length} questions from real AI engineering interview loops — weighted toward the hard ones that actually matter.</div>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {PREPLAB_SIDEBAR.map((m, i) => {
+                  const colors = ["#6366f1","#8b5cf6","#3b82f6","#f59e0b","#ef4444"];
+                  const c = colors[i] || "#6366f1";
+                  return (
+                    <button key={m.id} onClick={() => setMode(m.id)}
+                      style={{
+                        background: `linear-gradient(160deg, ${c}0d 0%, rgba(15,15,17,0.9) 100%)`,
+                        border: `1px solid ${c}30`,
+                        borderLeft: `3px solid ${c}70`,
+                      }}
+                      className="text-left p-4 rounded-xl hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40 transition-all duration-150 group">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-bold text-white">{m.label}</span>
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded" style={{ background: `${c}18`, border: `1px solid ${c}40`, color: c }}>{m.tag}</span>
+                      </div>
+                      <div className="text-xs text-zinc-500">{m.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="border-t border-zinc-800 pt-4">
               <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-2">Topics covered</div>

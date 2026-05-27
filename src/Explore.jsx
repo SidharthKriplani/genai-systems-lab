@@ -5011,16 +5011,24 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
           ) : (
             ["DESIGN","BUILD","OPS"].map(grp => {
               const grpModules = EXPLORE_MODULES.filter(m => m.group === grp);
+              const grpColor = grp === "DESIGN" ? "#6366f1" : grp === "BUILD" ? "#3b82f6" : "#22c55e";
               return (
                 <div key={grp} className="mb-3">
-                  <p className="px-2 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{grp}</p>
-                  {grpModules.map(m => (
-                    <button key={m.id} onClick={() => switchModule(m.id)}
-                      className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold border-l-2 border-blue-500" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 border-l-2 border-transparent"}`}>
-                      {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
-                      <span className="truncate">{m.label}</span>
-                    </button>
-                  ))}
+                  <p className="px-2 py-1 text-[9px] font-mono uppercase tracking-widest" style={{ color: grpColor + "99" }}>{grp}</p>
+                  {grpModules.map(m => {
+                    const active = activeModule === m.id;
+                    return (
+                      <button key={m.id} onClick={() => switchModule(m.id)}
+                        style={active ? {
+                          background: `linear-gradient(90deg, ${grpColor}22 0%, ${grpColor}08 100%)`,
+                          boxShadow: `inset 2px 0 0 ${grpColor}`,
+                        } : {}}
+                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${active ? "text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/60"}`}>
+                        {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
+                        <span className="truncate">{m.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               );
             })

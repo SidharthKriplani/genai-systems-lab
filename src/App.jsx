@@ -1504,12 +1504,20 @@ export default function App() {
       <main role="main" id="main-content">
       <TabErrorBoundary>
         <Suspense fallback={
-          <div className="flex-1 p-6 space-y-4 animate-pulse">
-            <div className="h-6 w-48 rounded-lg bg-zinc-800" />
-            <div className="h-4 w-full rounded bg-zinc-800/60" />
-            <div className="h-4 w-3/4 rounded bg-zinc-800/60" />
-            <div className="grid grid-cols-2 gap-3 mt-6">
-              {[1,2,3,4].map(i => <div key={i} className="h-24 rounded-xl bg-zinc-800/40" />)}
+          <div className="flex-1 p-8 space-y-6 animate-pulse">
+            <div className="space-y-2">
+              <div className="h-7 w-52 rounded-lg" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.15) 0%, rgba(39,39,42,0.4) 100%)" }} />
+              <div className="h-3.5 w-72 rounded" style={{ background: "rgba(39,39,42,0.7)" }} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="h-28 rounded-xl" style={{ background: `linear-gradient(160deg, rgba(39,39,42,${0.5 - i * 0.05}) 0%, rgba(15,15,17,0.9) 100%)`, border: "1px solid rgba(63,63,70,0.4)" }} />
+              ))}
+            </div>
+            <div className="space-y-2 pt-2">
+              <div className="h-3 w-full rounded" style={{ background: "rgba(39,39,42,0.5)" }} />
+              <div className="h-3 w-4/5 rounded" style={{ background: "rgba(39,39,42,0.35)" }} />
+              <div className="h-3 w-2/3 rounded" style={{ background: "rgba(39,39,42,0.25)" }} />
             </div>
           </div>
         }>
