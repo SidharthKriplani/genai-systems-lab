@@ -552,15 +552,18 @@ function TokenizerModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "tokenization-deep-dive" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 Tokenization Deep-Dive
             </button>
             <button onClick={() => onNavigate({ tab: "flows" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               🗺 Flows
             </button>
           </div>
@@ -777,15 +780,18 @@ function EmbeddingModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "embeddings-explained" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 Embeddings Explained
             </button>
             <button onClick={() => onNavigate({ tab: "explore", moduleId: "embmodels" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               🔬 Embedding Model Explorer
             </button>
           </div>
@@ -951,15 +957,18 @@ function AttentionModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "self-attention-deep-dive" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 Self-Attention Deep-Dive
             </button>
             <button onClick={() => onNavigate({ tab: "flows" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               🗺 Flows
             </button>
           </div>
@@ -1322,15 +1331,18 @@ function TransformerModule({ onNavigate }) {
       )}
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "what-is-a-transformer" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 What Is a Transformer?
             </button>
             <button onClick={() => onNavigate({ tab: "systems", moduleId: "txarch" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               ⚙️ Transformer Architecture
             </button>
           </div>
@@ -1592,15 +1604,18 @@ function ChunkingModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "chunking-strategies" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 Chunking Strategies
             </button>
             <button onClick={() => onNavigate({ tab: "lab" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               🧪 RAG Lab
             </button>
           </div>
@@ -1874,24 +1889,27 @@ function RAGPipelineModule({ onNavigate }) {
 
       {/* Go deeper footer */}
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => onNavigate({ tab: "groundtruth", postId: "how-rag-works" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium"
             >
               📖 How RAG Works
             </button>
             <button
               onClick={() => onNavigate({ tab: "systems", postId: "evals" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium"
             >
               🔬 Evals Lab
             </button>
             <button
               onClick={() => onNavigate({ tab: "lab" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium"
             >
               🧪 RAG Lab
             </button>
@@ -2146,11 +2164,14 @@ function SamplingModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "decoding-sampling" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 Decoding &amp; Sampling
             </button>
           </div>
@@ -2331,15 +2352,18 @@ function ContextWindowModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "context-window-guide" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 Context Window Guide
             </button>
             <button onClick={() => onNavigate({ tab: "systems", moduleId: "ctxwindow" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               ⚙️ Context Window Engineering
             </button>
           </div>
@@ -2562,15 +2586,18 @@ function AgentModule({ onNavigate }) {
       )}
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "building-reliable-agents" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 Building Reliable Agents
             </button>
             <button onClick={() => onNavigate({ tab: "agents" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               🤖 Agents Tab
             </button>
           </div>
@@ -2796,15 +2823,18 @@ function GuardrailsModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "guardrails-for-llms" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 Guardrails for LLMs
             </button>
             <button onClick={() => onNavigate({ tab: "systems", moduleId: "guardrails" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               ⚙️ Guardrails Deep-Dive
             </button>
           </div>
@@ -3051,15 +3081,18 @@ function DebugModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "lab" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               🧪 RAG Lab
             </button>
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "how-rag-works" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 How RAG Works
             </button>
           </div>
@@ -3334,15 +3367,18 @@ function MultiAgentModule({ onNavigate }) {
       )}
 
       {onNavigate && (
-        <div className="mt-6 pt-4 border-t border-zinc-800/60">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Go deeper →</div>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "multi-agent-orchestration" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               📖 Multi-Agent Orchestration
             </button>
             <button onClick={() => onNavigate({ tab: "agents" })}
-              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
               🤖 Agents Tab
             </button>
           </div>

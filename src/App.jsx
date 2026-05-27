@@ -903,6 +903,17 @@ const LLM_LAB_MODULES = [
 
 const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","qa","paths"];
 
+// ─── RAG LAB — scenario forward pointers ──────────────────────────────────────
+// One GT post + one PrepLab topic per scenario. Shown after result evaluation.
+const SCENARIO_FORWARD_POINTERS = {
+  missing_answer:          { postId: "missing-context-failure",  postTitle: "Missing Context: When RAG Retrieves the Right Chunk but Answers the Wrong Question", topic: "RAG failure modes" },
+  ambiguous_query:         { postId: "ambiguous-query-failure",  postTitle: "Ambiguous Queries: Why RAG Struggles When the Question Has Two Meanings",           topic: "Query handling" },
+  conflicting_documents:   { postId: "how-rag-works",            postTitle: "How RAG Actually Works — And Why It's Harder Than It Looks",                        topic: "Document conflicts" },
+  multi_hop:               { postId: "rag-architectures",        postTitle: "RAG Architectures: Naive, Advanced, Modular, and Agentic",                          topic: "Multi-hop retrieval" },
+  three_hop_chain:         { postId: "rag-architectures",        postTitle: "RAG Architectures: Naive, Advanced, Modular, and Agentic",                          topic: "Multi-hop retrieval" },
+  prompt_injection:        { postId: "how-rag-works",            postTitle: "How RAG Actually Works — And Why It's Harder Than It Looks",                        topic: "Prompt injection" },
+};
+
 function getInitialView() {
   try {
     const hash = window.location.hash.replace('#', '').toLowerCase();
@@ -1784,6 +1795,40 @@ export default function App() {
                       Give Feedback →
                     </button>
                   </div>
+
+                  {/* ── Forward pointer — what to do next ── */}
+                  {(() => {
+                    const fwd = SCENARIO_FORWARD_POINTERS[scenario.scenario_id];
+                    if (!fwd) return null;
+                    return (
+                      <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.22)", borderTop: "2px solid rgba(99,102,241,0.5)" }}>
+                        <div className="flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+                          <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">You've seen the failure. What's next?</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <button
+                            onClick={() => { track("module_forward_pointer_clicked", { type: "preplab", scenario: scenario.scenario_id }); navigateTo("preplab"); }}
+                            className="flex items-start gap-3 p-3 rounded-lg border border-zinc-700 hover:border-violet-500 bg-zinc-900/60 hover:bg-zinc-800/60 transition-all text-left group">
+                            <span className="text-lg shrink-0">🧠</span>
+                            <div>
+                              <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Test your understanding</div>
+                              <div className="text-[10px] text-zinc-500 mt-0.5">Prep Lab · {fwd.topic} questions</div>
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => { track("module_forward_pointer_clicked", { type: "groundtruth", scenario: scenario.scenario_id, postId: fwd.postId }); navigateTo({ tab: "groundtruth", postId: fwd.postId }); }}
+                            className="flex items-start gap-3 p-3 rounded-lg border border-zinc-700 hover:border-violet-500 bg-zinc-900/60 hover:bg-zinc-800/60 transition-all text-left group">
+                            <span className="text-lg shrink-0">📖</span>
+                            <div>
+                              <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Read the full breakdown</div>
+                              <div className="text-[10px] text-zinc-500 mt-0.5 leading-snug">{fwd.postTitle}</div>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </>
               )}
             </div>

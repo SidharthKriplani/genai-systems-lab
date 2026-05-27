@@ -255,7 +255,7 @@ const MODULE_MAP = [
 
 const STATS = [
   { value: "3,400+", target: 3400, suffix: "+", label: "Learners",           sub: "Engineers & PMs",   tab: null           },
-  { value: "200+",   target: 200,  suffix: "+", label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
+  { value: "222+",   target: 222,  suffix: "+", label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
   { value: "200+",   target: 200,  suffix: "+", label: "Challenges",         sub: "All interactive",   tab: null           },
 ];
 
@@ -573,15 +573,15 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         {/* Headline */}
         <div className="space-y-5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-widest" style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
-            Free · No login · Built for AI engineers &amp; PMs
+            Free · No login · Layer 3 AI skills
           </div>
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.05]">
             AI systems break<br className="hidden sm:block" /> in production.
             <br />
             <span style={{ background: "linear-gradient(90deg, #22d3ee 0%, #818cf8 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Learn exactly why.</span>
           </h1>
-          <p className="text-sm text-zinc-500 max-w-md mx-auto leading-relaxed">
-            Interactive labs. Real failure patterns. No login.
+          <p className="text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
+            Reading about RAG failures is different from watching one happen in a pipeline you configured.<br className="hidden sm:block" /> That's what this lab is. Free, no login, no passive consumption.
           </p>
         </div>
 
@@ -596,7 +596,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.12) 0%, rgba(15,23,42,0.8) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "2px solid rgba(59,130,246,0.7)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.05) inset" }}>
             <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">Engineer</span>
             <span className="text-sm font-bold text-white mb-2 leading-snug">I'm building with LLMs</span>
-            <span className="text-xs text-zinc-400 leading-relaxed flex-1">Four labs: RAG, Agent, Eval, and LLM. Configure systems, watch them fail, understand why.</span>
+            <span className="text-xs text-zinc-400 leading-relaxed flex-1">Configure a RAG pipeline and break it 6 ways. Move to agent loops, eval harnesses, LLM internals. No tutorials — just systems and why they fail.</span>
             <span className="mt-4 text-xs font-bold text-blue-300 flex items-center gap-1">Start with RAG Lab <span className="text-blue-400">→</span></span>
           </button>
           <button
@@ -605,7 +605,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.3) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(34,197,94,0.04) inset" }}>
             <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-2">Interview Prep</span>
             <span className="text-sm font-bold text-white mb-2 leading-snug">I'm prepping for interviews</span>
-            <span className="text-xs text-zinc-400 leading-relaxed flex-1">259+ questions across system design, evals, agents, RAG, and ML fundamentals.</span>
+            <span className="text-xs text-zinc-400 leading-relaxed flex-1">261 questions. Timed exam mode, instant-feedback trainer, or paste a JD and get a targeted drill weighted to your gaps.</span>
             <span className="mt-4 text-xs font-bold text-green-300 flex items-center gap-1">Open Prep Lab <span className="text-green-400">→</span></span>
           </button>
           <button

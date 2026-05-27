@@ -285,22 +285,34 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
           </div>
         )}
 
-        {/* Done state + next step */}
-        <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
-          <button
-            onClick={() => toggleDone(activeModule)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${done.has(activeModule) ? "bg-green-900/40 text-green-400 hover:bg-red-900/30 hover:text-red-400" : "bg-zinc-800 text-zinc-400 hover:bg-green-900/40 hover:text-green-400"}`}
-          >
-            {done.has(activeModule) ? "✓ Done — click to unmark" : "Mark as done"}
-          </button>
-          {done.has(activeModule) && nextModule && (
-            <button onClick={() => switchModule(nextModule.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-900/40 text-violet-300 text-xs font-bold hover:bg-violet-900/60 transition-all">
-              Next: {nextModule.label} →
+        {/* Done state + forward pointers */}
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+          <div className="flex items-center justify-between gap-3">
+            <button
+              onClick={() => toggleDone(activeModule)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${done.has(activeModule) ? "bg-emerald-900/40 text-emerald-400 border border-emerald-800/50 hover:bg-red-900/30 hover:text-red-400 hover:border-red-800/50" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-emerald-900/30 hover:text-emerald-400 hover:border-emerald-800/50"}`}
+            >
+              {done.has(activeModule) ? "✓ Done" : "Mark as done"}
             </button>
-          )}
-          {done.has(activeModule) && !nextModule && (
-            <span className="text-xs text-green-400 font-semibold">All modules done</span>
-          )}
+            <div className="flex items-center gap-2">
+              {done.has(activeModule) && nextModule && (
+                <button onClick={() => switchModule(nextModule.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-900/30 text-violet-300 text-xs font-bold border border-violet-800/40 hover:bg-violet-900/50 transition-all">
+                  Next: {nextModule.label} →
+                </button>
+              )}
+              {done.has(activeModule) && !nextModule && (
+                <span className="text-xs text-emerald-400 font-semibold">All modules complete</span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 pt-1 border-t border-zinc-800/60">
+            <span className="text-[10px] text-zinc-600 font-mono uppercase tracking-widest">Test your understanding →</span>
+            <button
+              onClick={() => onNavigate && onNavigate("preplab")}
+              className="text-xs px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-300 hover:text-violet-300 font-medium transition-all">
+              🧠 Prep Lab
+            </button>
+          </div>
         </div>
       </div>
 
