@@ -55,9 +55,16 @@ function Toggle({ value, onChange }) {
   return (
     <button
       onClick={() => onChange(!value)}
-      className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${value ? "bg-violet-600" : "bg-zinc-700"}`}
+      style={value ? {
+        background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)",
+        boxShadow: "0 0 12px rgba(99,102,241,0.4), 0 1px 0 rgba(255,255,255,0.08) inset",
+      } : { background: "#27272a" }}
+      className="relative w-11 h-6 rounded-full transition-all duration-200 focus:outline-none"
     >
-      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${value ? "translate-x-5" : "translate-x-0"}`} />
+      <span
+        style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.5)" }}
+        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform duration-200 ${value ? "translate-x-5" : "translate-x-0"}`}
+      />
     </button>
   );
 }
@@ -65,33 +72,49 @@ function Toggle({ value, onChange }) {
 function Pill({ options, value, onChange }) {
   return (
     <div className="flex gap-1 flex-wrap">
-      {options.map((o) => (
-        <button
-          key={o.value ?? o}
-          onClick={() => onChange(o.value ?? o)}
-          className={`px-3 py-1 rounded text-xs font-mono font-semibold transition-all ${
-            (o.value ?? o) === value ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
-          }`}
-        >
-          {o.label ?? o}
-        </button>
-      ))}
+      {options.map((o) => {
+        const active = (o.value ?? o) === value;
+        return (
+          <button
+            key={o.value ?? o}
+            onClick={() => onChange(o.value ?? o)}
+            style={active ? {
+              background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)",
+              boxShadow: "0 2px 8px rgba(99,102,241,0.4), 0 1px 0 rgba(255,255,255,0.1) inset",
+              border: "1px solid transparent",
+            } : {
+              background: "rgba(39,39,42,0.8)",
+              border: "1px solid rgba(63,63,70,0.8)",
+            }}
+            className={`px-3 py-1 rounded text-xs font-mono font-semibold transition-all ${
+              active ? "text-white" : "text-zinc-400 hover:text-white hover:border-zinc-500"
+            }`}
+          >
+            {o.label ?? o}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
 function MetricBar({ label, value, max = 1, isMs = false, isCost = false }) {
   const p = isMs ? Math.min((value / 2000) * 100, 100) : Math.min((value / max) * 100, 100);
-  const color = isMs || isCost ? METRIC_BAR_COLOR(value, true) : METRIC_BAR_COLOR(value);
+  const colorClass = isMs || isCost ? METRIC_BAR_COLOR(value, true) : METRIC_BAR_COLOR(value);
+  const glowColor = colorClass.includes("emerald") ? "rgba(16,185,129,0.5)" : colorClass.includes("amber") ? "rgba(245,158,11,0.5)" : "rgba(239,68,68,0.5)";
   const display = isMs ? value + "ms" : isCost ? "$" + value.toFixed(3) : (value * 100).toFixed(0) + "%";
+  const valueColor = colorClass.includes("emerald") ? "#34d399" : colorClass.includes("amber") ? "#fbbf24" : "#f87171";
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs">
-        <span className="text-zinc-400">{label}</span>
-        <span className="font-mono text-white">{display}</span>
+    <div className="space-y-1.5">
+      <div className="flex justify-between items-baseline">
+        <span className="text-xs text-zinc-400 font-medium">{label}</span>
+        <span className="font-mono font-bold text-sm" style={{ color: valueColor }}>{display}</span>
       </div>
-      <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: p + "%" }} />
+      <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)" }}>
+        <div
+          className={`h-full rounded-full transition-all duration-700 ${colorClass}`}
+          style={{ width: p + "%", boxShadow: `2px 0 8px ${glowColor}` }}
+        />
       </div>
     </div>
   );

@@ -3349,7 +3349,7 @@ function HowCachingWorks() {
             { label: "Cache write price", val: "$3.75/1M", sub: "1.25× write cost", color: "text-amber-400" },
             { label: "Min tokens (Claude)", val: "1,024", sub: "prefix must be ≥ this", color: "text-violet-400" },
           ].map(m => (
-            <div key={m.label} className="bg-zinc-800 rounded-lg p-3">
+            <div key={m.label} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
               <div className="text-zinc-500 mb-1">{m.label}</div>
               <div className={`font-mono font-bold ${m.color}`}>{m.val}</div>
               <div className="text-zinc-600 text-[10px] mt-0.5">{m.sub}</div>
@@ -3440,7 +3440,7 @@ function CachePatterns() {
           <span className="text-xs text-emerald-400 font-mono bg-emerald-950 px-2 py-0.5 rounded">{p.savings} savings</span>
         </div>
         <p className="text-sm text-zinc-300 leading-relaxed">{p.desc}</p>
-        <div className="bg-zinc-800 rounded-lg p-3">
+        <div className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
           <div className="text-xs text-zinc-500 mb-1.5">Example structure</div>
           <p className="text-xs font-mono text-zinc-400 leading-relaxed italic">{p.example}</p>
         </div>
@@ -6934,7 +6934,7 @@ function KVHowItWorks() {
           </button>
           <div className="px-4 pb-3 text-xs text-zinc-400 leading-relaxed">{c.desc}</div>
           {open === i && (
-            <div className="mx-4 mb-4 bg-zinc-800 rounded-lg p-3 border border-zinc-700">
+            <div className="mx-4 mb-4 bg-zinc-900 rounded-lg p-3 border border-zinc-800">
               <p className="text-xs text-zinc-300 leading-relaxed font-mono">{c.detail}</p>
             </div>
           )}
@@ -7373,7 +7373,7 @@ function TrapCard({ challenge, revealedIssues, onReveal }) {
         {revealed && (
           <div className="space-y-2 mt-1">
             {challenge.issues.map((issue, i) => (
-              <div key={i} className="bg-zinc-800 rounded-lg p-3 border border-zinc-700">
+              <div key={i} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
                 <p className="text-xs font-bold text-red-300 mb-1">{i + 1}. {issue.label}</p>
                 <p className="text-xs text-zinc-400 leading-relaxed">{issue.detail}</p>
               </div>
@@ -7479,7 +7479,7 @@ function MoEHowItWorks() {
   return (
     <div className="space-y-4">
       {/* Core concept */}
-      <div className="bg-zinc-800 rounded-xl p-4 border border-zinc-700">
+      <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
         <h3 className="text-sm font-bold text-white mb-3">Core Concept</h3>
         <p className="text-xs text-zinc-300 leading-relaxed mb-4">
           In a standard transformer, every token passes through every FFN layer. In MoE, the FFN is replaced by N expert networks. A learned router sends each token to the top-K experts only. Result: you get a model with N×(FFN params) but only K/N of the compute per forward pass.
@@ -7524,7 +7524,7 @@ function MoEHowItWorks() {
       <div className="space-y-2">
         <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide px-1">3 Key Mechanisms</div>
         {mechanisms.map(m => (
-          <div key={m.id} className="bg-zinc-800 rounded-xl border border-zinc-700 overflow-hidden">
+          <div key={m.id} className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
             <button
               onClick={() => toggle(m.id)}
               className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-750 transition-colors"
@@ -7552,7 +7552,7 @@ function MoEProductionModels() {
   return (
     <div className="space-y-4">
       {/* Comparison table */}
-      <div className="bg-zinc-800 rounded-xl border border-zinc-700 overflow-hidden">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
         <div className="p-4 border-b border-zinc-700">
           <h3 className="text-sm font-bold text-white">Production MoE Models</h3>
         </div>
@@ -7633,7 +7633,7 @@ function MoEProductionModels() {
               body: "Expert-Level Load Balancing: vLLM dynamically replicates hot experts and redistributes routing across replicas. This is the production solution to load imbalance — no need to retrain with auxiliary loss.",
             },
           ].map(card => (
-            <div key={card.title} className="bg-zinc-800 rounded-xl p-4 border border-zinc-700">
+            <div key={card.title} className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
               <div className="text-xl mb-2">{card.icon}</div>
               <div className="text-xs font-bold text-white mb-2">{card.title}</div>
               <p className="text-xs text-zinc-400 leading-relaxed">{card.body}</p>
@@ -7675,7 +7675,7 @@ function MoEFailureModes() {
       <div className="space-y-2">
         <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide px-1">Failure Modes</div>
         {MOE_FAILURE_MODES.map(f => (
-          <div key={f.name} className="bg-zinc-800 rounded-xl border border-zinc-700 overflow-hidden">
+          <div key={f.name} className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
             <div className="p-4">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="text-sm font-bold text-white">{f.name}</div>
@@ -7702,7 +7702,7 @@ function MoEFailureModes() {
       </div>
 
       {/* Health metrics checklist */}
-      <div className="bg-zinc-800 rounded-xl border border-zinc-700 p-4">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4">
         <h3 className="text-sm font-bold text-white mb-3">Health Metrics to Monitor</h3>
         <div className="space-y-2">
           {healthMetrics.map(m => (
@@ -7718,7 +7718,7 @@ function MoEFailureModes() {
       </div>
 
       {/* Decision guide */}
-      <div className="bg-zinc-800 rounded-xl border border-zinc-700 p-4">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4">
         <h3 className="text-sm font-bold text-white mb-3">Decision Guide: MoE vs Dense</h3>
         <div className="space-y-2">
           {decisions.map(d => (
@@ -8328,7 +8328,7 @@ function MergeWorkflow() {
           </div>
         </div>
       ))}
-      <div className="bg-zinc-800 rounded-xl p-3">
+      <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
         <p className="text-xs font-mono text-emerald-300">$ pip install mergekit</p>
         <p className="text-xs font-mono text-emerald-300">$ mergekit-yaml config.yml --out-path ./merged/</p>
         <p className="text-xs text-zinc-500 mt-1">MergeKit (Charles Goddard) is the standard open-source tool — supports SLERP, TIES, DARE, Model Soup.</p>
