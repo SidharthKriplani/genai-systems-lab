@@ -368,7 +368,7 @@ function EvalsLab() {
           <span className="text-xs font-mono px-2 py-0.5 bg-indigo-900 text-indigo-300 rounded border border-indigo-700">EVALS LAB</span>
           <span className="text-xs text-zinc-500">learn to design production eval suites</span>
         </div>
-        <h2 className="text-xl font-bold text-white">Evaluation Design Studio</h2>
+        <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Evaluation Design Studio</h2>
         <p className="text-sm text-zinc-400 mt-1">Evals are the most underrated skill in AI systems. Learn what to measure, how much to spend, and when LLM-as-judge misleads you.</p>
       </div>
 
@@ -950,7 +950,7 @@ function ModelStrategyLab() {
           <span className="text-xs font-mono px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded border border-emerald-700">MODEL STRATEGY LAB</span>
           <span className="text-xs text-zinc-500">RAG vs Fine-tuning vs Prompt Engineering vs Agents</span>
         </div>
-        <h2 className="text-xl font-bold text-white">Model Strategy Decision Lab</h2>
+        <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Model Strategy Decision Lab</h2>
         <p className="text-sm text-zinc-400 mt-1">5 real-world scenarios. Pick the right strategy. Understand why the others fail.</p>
         {answeredCount > 0 && (
           <div className="mt-3 text-xs font-mono text-emerald-400">{correctCount}/{answeredCount} correct so far</div>
@@ -1624,7 +1624,7 @@ function IncidentRoom() {
           <span className="text-xs font-mono px-2 py-0.5 bg-red-900 text-red-300 rounded border border-red-700">INCIDENT ROOM</span>
           <span className="text-xs text-zinc-500">production failure diagnosis</span>
         </div>
-        <h2 className="text-xl font-bold text-white">Production Incident Room</h2>
+        <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Production Incident Room</h2>
         <p className="text-sm text-zinc-400 mt-1">5 real incident archetypes. Given only the symptom, diagnose root cause — then see the mitigation and prevention playbook.</p>
         {answeredCount > 0 && (
           <div className="mt-2 text-xs font-mono text-red-400">{correctCount}/{answeredCount} correct diagnoses</div>
@@ -1968,7 +1968,7 @@ function ShouldUseAI() {
           <span className="text-xs font-mono px-2 py-0.5 bg-cyan-900 text-cyan-300 rounded border border-cyan-700">SHOULD YOU USE AI?</span>
           <span className="text-xs text-zinc-500">the judgment that separates junior from senior</span>
         </div>
-        <h2 className="text-xl font-bold text-white">Should You Even Use AI?</h2>
+        <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Should You Even Use AI?</h2>
         <p className="text-sm text-zinc-400 mt-1">10 product scenarios. For each: pick the right approach. Knowing when NOT to reach for an LLM is the most underrated senior skill.</p>
         {answeredCount > 0 && <div className="mt-2 text-xs font-mono text-cyan-400">{correctCount}/{answeredCount} correct</div>}
       </div>
@@ -2116,7 +2116,7 @@ function CostLatencyLab() {
           <span className="text-xs font-mono px-2 py-0.5 bg-orange-900/60 text-orange-300 rounded border border-orange-700">COST/LATENCY LAB</span>
           <span className="text-xs text-zinc-500">make the numbers visceral</span>
         </div>
-        <h2 className="text-xl font-bold text-white">Cost & Latency Lab</h2>
+        <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Cost & Latency Lab</h2>
         <p className="text-sm text-zinc-400 mt-1">Model selection feels abstract until you run the numbers. See what your architecture actually costs at production scale.</p>
       </div>
 
@@ -2663,7 +2663,7 @@ function FineTuningLab() {
         <div className="flex items-center gap-3 mb-1">
           <span className="text-xs font-mono px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded border border-emerald-700">FINE-TUNING LAB</span>
         </div>
-        <h2 className="text-xl font-bold text-white">Fine-Tuning Lab</h2>
+        <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Fine-Tuning Lab</h2>
         <p className="text-sm text-zinc-400 mt-1">Configure real training runs, see VRAM + cost tradeoffs, and solve fine-tuning decision scenarios.</p>
       </div>
 
@@ -2765,12 +2765,12 @@ function FineTuningLab() {
               </div>
               <div>
                 <div className="text-xs text-zinc-500 mb-1">Training time</div>
-                <div className="text-2xl font-black text-white">{sim.hoursStr}</div>
+                <div className="text-2xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{sim.hoursStr}</div>
                 <div className="text-xs text-zinc-600 mt-0.5">approx wall-clock</div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500 mb-1">Cloud GPU cost</div>
-                <div className="text-2xl font-black text-white">{sim.costStr}</div>
+                <div className="text-2xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{sim.costStr}</div>
                 <div className="text-xs text-zinc-600 mt-0.5">one-time run</div>
               </div>
               <div>
@@ -3033,7 +3033,7 @@ function LLMObservability() {
         <div className="flex items-center gap-3 mb-1">
           <span className="text-xs font-mono px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded border border-emerald-700">LLM OBSERVABILITY</span>
         </div>
-        <h2 className="text-xl font-bold text-white">LLM Observability</h2>
+        <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>LLM Observability</h2>
         <p className="text-sm text-zinc-400 mt-1">Production AI systems fail silently. Learn what to monitor, how to trace a request, and how to read anomalous metrics.</p>
       </div>
       <div className="flex gap-2 flex-wrap">
@@ -3210,7 +3210,7 @@ function ABTestingLab() {
         <div className="flex items-center gap-3 mb-1">
           <span className="text-xs font-mono px-2 py-0.5 bg-sky-900 text-sky-300 rounded border border-sky-700">A/B TESTING LAB</span>
         </div>
-        <h2 className="text-xl font-bold text-white">A/B Testing for LLMs</h2>
+        <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>A/B Testing for LLMs</h2>
         <p className="text-sm text-zinc-400 mt-1">Proving that your new prompt or pipeline is better before shipping is harder than it sounds.</p>
       </div>
       <div className="flex gap-2">
@@ -4664,21 +4664,21 @@ function ReasoningModelsLab() {
           </div>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-              <p className="text-2xl font-black text-white">{Math.round(qualityScore)}%</p>
+              <p className="text-2xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{Math.round(qualityScore)}%</p>
               <p className="text-[10px] text-zinc-500">Quality score (complex math)</p>
               <div className="mt-2 h-1.5 rounded-full bg-zinc-800">
                 <div className="h-1.5 rounded-full bg-violet-500 transition-all" style={{ width: `${qualityScore}%` }} />
               </div>
             </div>
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-              <p className="text-2xl font-black text-white">{costRatio}×</p>
+              <p className="text-2xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{costRatio}×</p>
               <p className="text-[10px] text-zinc-500">Cost vs. base model</p>
               <div className="mt-2 h-1.5 rounded-full bg-zinc-800">
                 <div className="h-1.5 rounded-full bg-amber-500 transition-all" style={{ width: `${Math.min(100, (costRatio/25)*100)}%` }} />
               </div>
             </div>
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-              <p className="text-2xl font-black text-white">{level.budget === 0 ? '<200' : level.budget >= 16000 ? '5000+' : level.budget >= 4096 ? '1500' : '400'}ms</p>
+              <p className="text-2xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{level.budget === 0 ? '<200' : level.budget >= 16000 ? '5000+' : level.budget >= 4096 ? '1500' : '400'}ms</p>
               <p className="text-[10px] text-zinc-500">Approx. TTFT</p>
               <div className="mt-2 h-1.5 rounded-full bg-zinc-800">
                 <div className="h-1.5 rounded-full bg-emerald-500 transition-all" style={{ width: `${level.budget === 0 ? 5 : level.budget >= 16000 ? 95 : level.budget >= 4096 ? 55 : 20}%` }} />

@@ -570,7 +570,8 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               <h3 className="text-sm font-black text-white">From Tokens to Production Failures — ~45 min</h3>
             </div>
             <button onClick={() => { track("start_here_clicked", { location: "journey_strip" }); onNavigate("concepts"); }}
-              className="px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs transition-all shrink-0">
+              className="px-4 py-1.5 rounded-lg text-white font-bold text-xs transition-all shrink-0"
+              style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)", boxShadow: "0 0 16px rgba(99,102,241,0.45)" }}>
               Begin →
             </button>
           </div>
@@ -659,7 +660,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
       {/* ── LEARNING PATHS ───────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-16 space-y-8">
         <div className="text-center space-y-1">
-          <h2 className="text-xl font-black text-white">Choose Your Path</h2>
+          <h2 className="text-xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Choose Your Path</h2>
           <p className="text-sm text-zinc-500">Each path is a curated sequence through the lab — or ignore them and explore freely.</p>
         </div>
 
@@ -699,9 +700,9 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
                   <span className="text-xs text-zinc-500">{prog.visited}/{prog.total} steps visited</span>
                   {prog.visited > 0 && <span className="text-xs font-bold" style={{ color: path.color }}>{pct}%</span>}
                 </div>
-                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)" }}>
                   <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%`, backgroundColor: path.color, opacity: pct === 0 ? 0 : 1 }} />
+                    style={{ width: `${pct}%`, background: path.color, opacity: pct === 0 ? 0 : 1, boxShadow: pct > 0 ? `2px 0 8px ${path.color}80` : "none" }} />
                 </div>
               </div>
 
@@ -736,7 +737,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
                       <button
                         onClick={e => { e.stopPropagation(); onNavigate(LEARNING_PATHS.find(p => p.id === path.nextPath)?.steps[0]?.tab || "home"); }}
                         className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all"
-                        style={{ backgroundColor: path.color }}>
+                        style={{ background: `linear-gradient(135deg, ${path.color}cc 0%, ${path.color} 100%)`, boxShadow: `0 0 14px ${path.color}40` }}>
                         Next: {path.nextPathLabel} →
                       </button>
                     </div>
@@ -773,7 +774,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
 
 
         {/* ---- BUILD MY PATH -------------------------------------------- */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 mx-0 mb-4 space-y-3">
+        <div className="rounded-xl p-4 mx-0 mb-4 space-y-3" style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.4)" }}>
           <p className="text-xs font-bold text-white">Get a personalised learning path</p>
           <div className="flex gap-2 flex-wrap">
             {[
@@ -794,7 +795,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         {/* ── CONCEPT DEPENDENCY GRAPH ────────────────────────────────────── */}
         <div className="space-y-2 pt-4">
           <div className="text-center space-y-1 mb-3">
-            <h2 className="text-xl font-black text-white">Concept Dependency Graph</h2>
+            <h2 className="text-xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Concept Dependency Graph</h2>
             <p className="text-sm text-zinc-500">Click a node to see prerequisites · Double-click to navigate</p>
           </div>
           <ConceptGraph onNavigate={onNavigate} />
@@ -803,7 +804,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         {/* ── MODULE MAP ──────────────────────────────────────────────────── */}
         <div className="space-y-2 pt-4">
           <div className="text-center space-y-3 mb-6">
-            <h2 className="text-xl font-black text-white">Every Module — Mapped</h2>
+            <h2 className="text-xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Every Module — Mapped</h2>
             {/* Role toggle */}
             <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-zinc-900 border border-zinc-800">
               {[
@@ -833,22 +834,23 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
                 {group.modules.map(m => (
                   <button key={m.tab}
                     onClick={() => onNavigate(m.tab)}
-                    className={`text-left border rounded-xl p-4 transition-all group bg-zinc-900 border-zinc-800 hover:border-zinc-600 ${!isRelevant(m.audience) ? "opacity-40" : ""}`}>
+                    className={`text-left rounded-xl p-4 transition-all duration-200 group hover:-translate-y-0.5 ${!isRelevant(m.audience) ? "opacity-40" : ""}`}
+                    style={{ background: `linear-gradient(160deg, ${group.color}0e 0%, rgba(15,15,17,0.97) 100%)`, border: `1px solid ${group.color}28`, borderTop: `2px solid ${group.color}55`, boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-lg">{m.icon}</span>
                       <span className="text-sm font-bold text-white">{m.title}</span>
                       <div className="ml-auto flex items-center gap-1.5">
                         {m.audience && (
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700/50 hidden sm:inline">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded hidden sm:inline" style={{ color: group.color + "cc", background: group.color + "15", border: `1px solid ${group.color}30` }}>
                             {m.audience}
                           </span>
                         )}
-                        <span className="text-zinc-700 group-hover:text-zinc-400 text-xs">→</span>
+                        <span className="text-xs transition-colors" style={{ color: group.color + "80" }}>→</span>
                       </div>
                     </div>
-                    <p className="text-xs text-zinc-500 leading-relaxed mb-2">{m.desc}</p>
+                    <p className="text-xs text-zinc-400 leading-relaxed mb-2">{m.desc}</p>
                     {m.discovery && (
-                      <p className="text-[11px] text-zinc-600 italic leading-relaxed border-t border-zinc-800 pt-1.5 mt-1">
+                      <p className="text-[11px] leading-relaxed pt-1.5 mt-1" style={{ color: group.color + "99", borderTop: `1px solid ${group.color}20` }}>
                         💡 {m.discovery}
                       </p>
                     )}
@@ -860,8 +862,8 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         </div>
 
         {/* ── HOW IT WORKS ───────────────────────────────────────────────── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-          <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4">How to use this lab</h3>
+        <div className="rounded-2xl p-6" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.97) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid rgba(99,102,241,0.35)" }}>
+          <h3 className="text-sm font-black uppercase tracking-widest mb-4" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>How to use this lab</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
               { n: "1", title: "Pick a path or module", desc: "Follow a learning path for structure, or jump to any module for what you need right now." },
@@ -869,7 +871,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               { n: "3", title: "Do the challenges, not just read", desc: "The learning is in the doing. Answer questions before revealing answers. Score yourself honestly." },
             ].map(s => (
               <div key={s.n} className="space-y-2">
-                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-sm font-black text-white">{s.n}</div>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black text-white" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.4) 0%, rgba(99,102,241,0.2) 100%)", border: "1px solid rgba(99,102,241,0.4)", boxShadow: "0 0 10px rgba(99,102,241,0.2)" }}>{s.n}</div>
                 <p className="text-sm font-bold text-white">{s.title}</p>
                 <p className="text-xs text-zinc-500 leading-relaxed">{s.desc}</p>
               </div>
@@ -878,8 +880,8 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         </div>
 
         {/* ── ABOUT THIS LAB ────────────────────────────────────────────── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
-          <h3 className="text-sm font-black text-white uppercase tracking-widest">About this lab</h3>
+        <div className="rounded-2xl p-6 space-y-4" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.97) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid rgba(139,92,246,0.35)" }}>
+          <h3 className="text-sm font-black uppercase tracking-widest" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>About this lab</h3>
           <p className="text-sm text-zinc-400 italic mb-3">
             "I built this because I spent months debugging RAG systems in production and couldn't find a resource that let me <em>break</em> things instead of just read about them."
           </p>

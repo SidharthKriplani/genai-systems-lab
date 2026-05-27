@@ -3880,7 +3880,7 @@ export default function ConceptsApp({ onNavigate }) {
         </div>
         {CONCEPT_GROUPS.map((grp) => (
           <div key={grp.label} className="mb-4">
-            <p className="px-3 mb-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{grp.label}</p>
+            <p className="px-3 mb-1 text-[9px] font-mono uppercase tracking-widest" style={{ color: grp.label === "FOUNDATION" ? "#6366f180" : grp.label === "APPLICATION" ? "#3b82f680" : "#22c55e80" }}>{grp.label}</p>
             {grp.ids.map((id) => {
               const m = MODULES.find((x) => x.id === id);
               if (!m) return null;
@@ -3889,11 +3889,15 @@ export default function ConceptsApp({ onNavigate }) {
                 <button
                   key={id}
                   onClick={() => { setActive(id); track("concept_module_opened", { module: id, module_label: m.label }); }}
-                  className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 transition-colors ${
+                  className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 transition-all duration-150 ${
                     isActive
-                      ? "bg-zinc-800 text-white border-l-2 border-violet-500"
-                      : "text-zinc-400 hover:text-white hover:bg-zinc-900 border-l-2 border-transparent"
+                      ? "font-semibold text-white"
+                      : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60"
                   }`}
+                  style={isActive ? {
+                    background: "linear-gradient(90deg, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.06) 100%)",
+                    boxShadow: "inset 2px 0 0 #6366f1",
+                  } : {}}
                 >
                   <span className="text-xs font-medium truncate">{m.label}</span>
                   {m.level && (
@@ -3945,7 +3949,7 @@ export default function ConceptsApp({ onNavigate }) {
               )}
               {mod.fidelity && <span className="text-[10px] text-zinc-600 hidden md:block">{mod.fidelity.note}</span>}
             </div>
-            <h2 className="text-xl font-bold text-white">{mod.title}</h2>
+            <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{mod.title}</h2>
             <p className="text-sm text-zinc-400 mt-1">{mod.subtitle}</p>
           </div>
 
