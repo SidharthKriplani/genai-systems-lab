@@ -4398,6 +4398,17 @@ const MODE_CARDS = [
 
 export default function PrepLab({ onNavigate, onNavigateTo }) {
   const [mode, setMode] = useState(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
+
+  function selectMode(id) {
+    setMode(id);
+    setMobileSidebarOpen(false);
+  }
+
+  function exitMode() {
+    setMode(null);
+    setMobileSidebarOpen(true);
+  }
 
   const PREPLAB_SIDEBAR = [
     { id: "exam",        label: "Combined Assessment", tag: "EXAM",      desc: "Timed full-topic test" },
@@ -4410,12 +4421,12 @@ export default function PrepLab({ onNavigate, onNavigateTo }) {
   return (
     <div className="flex h-full min-h-0">
       {/* Sidebar */}
-      <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
+      <div className={`${mobileSidebarOpen ? "flex" : "hidden"} flex-col w-full lg:flex lg:w-52 lg:shrink-0 border-r border-zinc-800 overflow-y-auto py-3`}>
         <div className="px-4 py-1 text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-2">MODES</div>
         {PREPLAB_SIDEBAR.map(m => {
           const active = mode === m.id;
           return (
-            <button key={m.id} onClick={() => setMode(m.id)}
+            <button key={m.id} onClick={() => selectMode(m.id)}
               className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "border-l-2 border-violet-500 bg-zinc-800/80" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
               <span className={`text-xs font-semibold leading-snug ${active ? "text-white" : "text-zinc-300"}`}>{m.label}</span>
               <span className={`text-[10px] font-mono ${active ? "text-violet-400" : "text-zinc-500"}`}>{m.tag}</span>
@@ -4429,12 +4440,18 @@ export default function PrepLab({ onNavigate, onNavigateTo }) {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 overflow-y-auto">
-        {mode === "exam"        && <ExamMode onExit={() => setMode(null)} />}
-        {mode === "trainer"     && <TrainerMode onExit={() => setMode(null)} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
-        {mode === "jdprep"      && <JDPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
-        {mode === "companyprep" && <CompanyPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />}
-        {mode === "defense"     && <DefenseDocMode onExit={() => setMode(null)} />}
+      <div className={`${mobileSidebarOpen ? "hidden" : "flex"} flex-col lg:flex flex-1 min-w-0 overflow-y-auto`}>
+        {/* Mobile back button */}
+        <button onClick={() => setMobileSidebarOpen(true)}
+          className="flex lg:hidden items-center gap-1.5 px-4 py-3 text-xs text-zinc-400 border-b border-zinc-800 shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          PrepLab
+        </button>
+        {mode === "exam"        && <ExamMode onExit={exitMode} />}
+        {mode === "trainer"     && <TrainerMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
+        {mode === "jdprep"      && <JDPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
+        {mode === "companyprep" && <CompanyPrepMode onExit={exitMode} onNavigate={onNavigate} />}
+        {mode === "defense"     && <DefenseDocMode onExit={exitMode} />}
         {!mode && (
           <div className="p-6 sm:p-8 max-w-2xl">
             <div className="mb-8">
@@ -4450,7 +4467,7 @@ export default function PrepLab({ onNavigate, onNavigateTo }) {
                   const colors = ["#6366f1","#8b5cf6","#3b82f6","#f59e0b","#ef4444"];
                   const c = colors[i] || "#6366f1";
                   return (
-                    <button key={m.id} onClick={() => setMode(m.id)}
+                    <button key={m.id} onClick={() => selectMode(m.id)}
                       style={{
                         background: `linear-gradient(160deg, ${c}0d 0%, rgba(15,15,17,0.9) 100%)`,
                         border: `1px solid ${c}30`,
