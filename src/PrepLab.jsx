@@ -4150,42 +4150,58 @@ const MODE_CARDS = [
 export default function PrepLab({ onNavigate, onNavigateTo }) {
   const [mode, setMode] = useState(null);
 
-  if (mode === "exam") return <ExamMode onExit={() => setMode(null)} />;
-  if (mode === "trainer") return <TrainerMode onExit={() => setMode(null)} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />;
-  if (mode === "jdprep") return <JDPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />;
-  if (mode === "companyprep") return <CompanyPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />;
-  if (mode === "defense") return <DefenseDocMode onExit={() => setMode(null)} />;
+  const PREPLAB_SIDEBAR = [
+    { id: "exam",        icon: "⏱", label: "Combined Assessment", tag: "EXAM" },
+    { id: "trainer",     icon: "🎯", label: "Trainer",             tag: "TRAIN" },
+    { id: "jdprep",      icon: "📋", label: "JD + Resume Prep",    tag: "TARGET" },
+    { id: "companyprep", icon: "🏢", label: "Company Tracks",      tag: "ARCHETYPE" },
+    { id: "defense",     icon: "🛡", label: "Defense Doc",         tag: "WAR ROOM" },
+  ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
-      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-10">
-        <div className="text-center space-y-3 pt-6 sm:pt-8">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">PrepLab</h1>
-          <p className="text-zinc-400 text-base sm:text-lg">Questions sourced from 50+ real AI engineering interview loops — weighted toward the hard ones that actually matter.</p>
-          <div className="flex justify-center gap-2 flex-wrap">
-            {Object.entries(TOPIC_LABELS).map(([t, l]) => (
-              <span key={t} className={`text-xs px-2.5 py-1 rounded-full border ${TOPIC_COLORS[t]}`}>{l}</span>
-            ))}
-          </div>
-          <p className="text-zinc-600 text-sm">{PREP_QUESTIONS.length} questions across 8 topics</p>
+    <div className="flex h-full min-h-0">
+      {/* Sidebar */}
+      <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
+        <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">MODES</div>
+        {PREPLAB_SIDEBAR.map(m => {
+          const active = mode === m.id;
+          return (
+            <button key={m.id} onClick={() => setMode(m.id)}
+              className={`w-full text-left px-4 py-2.5 text-xs transition-all flex items-center gap-2 ${active ? "border-l-2 border-violet-500 bg-zinc-800 text-white" : "border-l-2 border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"}`}>
+              <span className="shrink-0">{m.icon}</span>
+              <span className="flex-1 truncate">{m.label}</span>
+              <span className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded font-mono ${active ? "bg-violet-900/60 text-violet-300" : "bg-zinc-800 text-zinc-600"}`}>{m.tag}</span>
+            </button>
+          );
+        })}
+        <div className="mt-4 px-4 py-2 border-t border-zinc-800">
+          <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">QUESTIONS</div>
+          <div className="text-xs text-zinc-500">{PREP_QUESTIONS.length} across 8 topics</div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {MODE_CARDS.map(card => (
-            <div
-              key={card.id}
-              onClick={() => setMode(card.id)}
-              className={`bg-zinc-900 rounded-2xl p-6 border-2 ${card.border} transition-all cursor-pointer group`}
-            >
-              <div className="text-4xl mb-4">{card.icon}</div>
-              <h3 className="font-semibold text-zinc-100 text-lg mb-1">{card.title}</h3>
-              <span className={`inline-block text-xs px-2.5 py-0.5 rounded-full border mb-3 ${card.badge}`}>{card.subtitle}</span>
-              <p className="text-zinc-400 text-sm leading-relaxed">{card.description}</p>
-              <div className="mt-5">
-                <span className="text-sm font-medium text-zinc-300 group-hover:text-white transition-colors">Start →</span>
-              </div>
+      </div>
+
+      {/* Right panel */}
+      <div className="flex-1 overflow-y-auto">
+        {mode === "exam"        && <ExamMode onExit={() => setMode(null)} />}
+        {mode === "trainer"     && <TrainerMode onExit={() => setMode(null)} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
+        {mode === "jdprep"      && <JDPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
+        {mode === "companyprep" && <CompanyPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />}
+        {mode === "defense"     && <DefenseDocMode onExit={() => setMode(null)} />}
+        {!mode && (
+          <div className="flex flex-col items-center justify-center h-full min-h-64 text-center gap-4 px-8 py-16">
+            <div className="text-4xl">🎯</div>
+            <div className="space-y-1">
+              <div className="text-base font-bold text-white">PrepLab</div>
+              <div className="text-sm text-zinc-400">Questions sourced from 50+ real AI engineering interview loops — weighted toward the hard ones that actually matter.</div>
             </div>
-          ))}
-        </div>
+            <div className="flex flex-wrap justify-center gap-2 mt-2">
+              {Object.entries(TOPIC_LABELS).map(([t, l]) => (
+                <span key={t} className={`text-xs px-2.5 py-1 rounded-full border ${TOPIC_COLORS[t]}`}>{l}</span>
+              ))}
+            </div>
+            <div className="text-xs text-zinc-600 mt-2">← Pick a mode to start</div>
+          </div>
+        )}
       </div>
     </div>
   );
