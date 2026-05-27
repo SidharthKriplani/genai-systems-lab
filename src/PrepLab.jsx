@@ -2732,22 +2732,26 @@ function TopicChip({ topic }) {
 function PBar({ value, max, color = "bg-indigo-500" }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
-    <div className="w-full bg-zinc-700 rounded-full h-2 overflow-hidden">
-      <div className={`h-2 rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
+    <div className="w-full rounded-full h-1.5 overflow-hidden" style={{ background: "rgba(39,39,42,0.9)", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.5)" }}>
+      <div
+        className={`h-full rounded-full transition-all duration-500 ${color}`}
+        style={{ width: `${pct}%`, boxShadow: "2px 0 6px rgba(99,102,241,0.5)" }}
+      />
     </div>
   );
 }
 
 function ScoreBar({ label, score, max, color = "bg-indigo-500" }) {
   const pct = max > 0 ? Math.round((score / max) * 100) : 0;
+  const glowColor = color.includes("emerald") ? "rgba(16,185,129,0.4)" : color.includes("amber") ? "rgba(245,158,11,0.4)" : "rgba(239,68,68,0.4)";
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <div className="flex justify-between text-sm">
         <span className="text-zinc-300">{label}</span>
-        <span className="text-zinc-400">{score}/{max} ({pct}%)</span>
+        <span className="font-mono font-semibold text-zinc-300">{score}/{max} <span className="text-zinc-500">({pct}%)</span></span>
       </div>
-      <div className="w-full bg-zinc-700 rounded-full h-2 overflow-hidden">
-        <div className={`h-2 rounded-full transition-all duration-700 ${color}`} style={{ width: `${pct}%` }} />
+      <div className="w-full rounded-full h-2 overflow-hidden" style={{ background: "rgba(39,39,42,0.9)", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.5)" }}>
+        <div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width: `${pct}%`, boxShadow: `2px 0 8px ${glowColor}` }} />
       </div>
     </div>
   );
@@ -2801,49 +2805,108 @@ function SpeechTextArea({ value, onChange, rows = 5, placeholder = "Type your an
 
 function MCQOptions({ options, selected, onSelect }) {
   return (
-    <div className="space-y-2">
-      {options.map((opt, i) => (
-        <button
-          key={i}
-          onClick={() => onSelect(i)}
-          className={`w-full text-left px-5 py-4 rounded-xl border text-sm transition-all ${selected === i ? "bg-indigo-600/20 border-indigo-500 text-indigo-200" : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:bg-zinc-800"}`}
-        >
-          <span className="mr-3 text-zinc-500">{String.fromCharCode(65 + i)}.</span>{opt}
-        </button>
-      ))}
+    <div className="space-y-2.5">
+      {options.map((opt, i) => {
+        const isSelected = selected === i;
+        return (
+          <button
+            key={i}
+            onClick={() => onSelect(i)}
+            style={isSelected ? {
+              background: "linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.06) 100%)",
+              border: "1px solid rgba(99,102,241,0.5)",
+              boxShadow: "0 0 0 1px rgba(99,102,241,0.1) inset, 0 4px 12px rgba(99,102,241,0.12)",
+            } : {
+              background: "linear-gradient(160deg, rgba(39,39,42,0.5) 0%, rgba(15,15,17,0.8) 100%)",
+              border: "1px solid rgba(63,63,70,0.7)",
+            }}
+            className={`w-full text-left px-4 py-3.5 rounded-xl text-sm transition-all flex items-start gap-3 ${isSelected ? "text-indigo-100" : "text-zinc-300 hover:text-white"}`}
+          >
+            <span
+              style={isSelected ? {
+                background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+                color: "#fff",
+                boxShadow: "0 2px 6px rgba(99,102,241,0.4)",
+              } : {
+                background: "rgba(39,39,42,0.9)",
+                border: "1px solid rgba(63,63,70,0.9)",
+                color: "#71717a",
+              }}
+              className="flex-shrink-0 w-6 h-6 rounded-md text-xs font-bold font-mono flex items-center justify-center mt-0.5"
+            >
+              {String.fromCharCode(65 + i)}
+            </span>
+            <span className="flex-1 leading-relaxed">{opt}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
 
 function QuestionCard({ q, gaps = [] }) {
+  const diffColor = q.difficulty === "hard" ? { bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.3)", text: "#f87171" } : { bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)", text: "#fbbf24" };
   return (
-    <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 space-y-4">
+    <div
+      style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.9) 0%, rgba(15,15,17,1) 100%)", border: "1px solid rgba(63,63,70,0.7)", borderTop: "2px solid rgba(99,102,241,0.35)" }}
+      className="rounded-xl p-5 space-y-3"
+    >
       <div className="flex items-center gap-2 flex-wrap">
         <TopicChip topic={q.topic} />
+        <span
+          style={{ background: diffColor.bg, border: `1px solid ${diffColor.border}`, color: diffColor.text }}
+          className="text-[10px] font-mono font-black uppercase tracking-widest px-2 py-0.5 rounded"
+        >
+          {q.difficulty}
+        </span>
+        <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">{q.type === "mcq" ? "multiple choice" : "open answer"}</span>
         {gaps.includes(q.topic) && (
-          <span className="text-xs bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full">Gap topic</span>
+          <span className="text-xs bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full">Gap</span>
         )}
-        <span className="text-xs text-zinc-500 uppercase">{q.difficulty}</span>
-        <span className="text-xs text-zinc-600 uppercase">{q.type}</span>
       </div>
-      <p className="text-zinc-100 text-base leading-relaxed">{q.question}</p>
+      <p className="text-zinc-100 text-[15px] leading-[1.75] font-medium">{q.question}</p>
     </div>
   );
 }
 
 function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo, animKey }) {
+  const correctStyle = {
+    background: "linear-gradient(160deg, rgba(16,185,129,0.1) 0%, rgba(15,15,17,0.95) 100%)",
+    border: "1px solid rgba(16,185,129,0.3)",
+    borderTop: "2px solid rgba(16,185,129,0.6)",
+    boxShadow: "0 4px 20px rgba(16,185,129,0.08)",
+  };
+  const wrongStyle = {
+    background: "linear-gradient(160deg, rgba(239,68,68,0.1) 0%, rgba(15,15,17,0.95) 100%)",
+    border: "1px solid rgba(239,68,68,0.3)",
+    borderTop: "2px solid rgba(239,68,68,0.6)",
+    boxShadow: "0 4px 20px rgba(239,68,68,0.08)",
+  };
   return (
-    <div key={animKey} className={`rounded-xl p-5 border space-y-3 transition-all duration-300 ${isCorrect ? "animate-correctPulse bg-emerald-500/10 border-emerald-500/40" : "animate-wrongShake bg-red-500/10 border-red-500/40"}`}>
-      <span className={`font-bold text-lg ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>
-        {isCorrect ? "✓ Correct!" : "✗ Incorrect"}
-      </span>
+    <div key={animKey} style={isCorrect ? correctStyle : wrongStyle} className={`rounded-xl p-5 space-y-4 transition-all duration-300 ${isCorrect ? "animate-correctPulse" : "animate-wrongShake"}`}>
+      <div className="flex items-center gap-2">
+        <span
+          style={isCorrect ? { background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)", color: "#34d399" } : { background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171" }}
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold"
+        >
+          {isCorrect ? "✓ Correct" : "✗ Incorrect"}
+        </span>
+      </div>
       {!isCorrect && q.type === "mcq" && (
-        <p className="text-sm text-emerald-300">Correct answer: {q.options[q.correct]}</p>
+        <div style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }} className="rounded-lg px-4 py-2.5">
+          <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-1">Correct answer</p>
+          <p className="text-sm text-emerald-300 font-medium">{q.options[q.correct]}</p>
+        </div>
       )}
       {!isCorrect && q.type === "text" && q.keywords.length > 0 && (
-        <p className="text-sm text-zinc-400">Key concepts: {q.keywords.slice(0, 5).join(", ")}</p>
+        <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)" }} className="rounded-lg px-4 py-2.5">
+          <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-1">Key concepts</p>
+          <p className="text-sm text-indigo-300">{q.keywords.slice(0, 5).join(" · ")}</p>
+        </div>
       )}
-      <p className="text-sm text-zinc-300 border-t border-zinc-700 pt-3">{q.explanation}</p>
+      <div className="border-t border-zinc-800 pt-3">
+        <p className="text-[13px] text-zinc-300 leading-relaxed">{q.explanation}</p>
+      </div>
       {q.readMore && (
         <button
           onClick={() => {
@@ -2853,14 +2916,15 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
               onNavigate && onNavigate(q.readMore.tab);
             }
           }}
-          className="text-sm text-indigo-400 hover:text-indigo-300 underline block"
+          className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
         >
-          Read more: {q.readMore.label} →
+          <span>Read more: {q.readMore.label}</span><span>→</span>
         </button>
       )}
       <button
         onClick={onNext}
-        className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-sm font-medium"
+        style={{ background: "linear-gradient(135deg, rgba(39,39,42,0.9) 0%, rgba(24,24,27,0.95) 100%)", border: "1px solid rgba(63,63,70,0.8)" }}
+        className="w-full py-3 text-zinc-200 rounded-xl text-sm font-semibold hover:text-white transition-all"
       >
         {nextLabel}
       </button>
@@ -3191,21 +3255,42 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
         <div className="space-y-2">
           {/* Topic pills */}
           <div className="flex flex-wrap gap-1.5">
-            {TRAINER_TOPICS.map(t => (
-              <button key={t} onClick={() => setTopicFilter(t)}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize transition-all ${topicFilter === t ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-                {t === "all" ? "All topics" : t}
-              </button>
-            ))}
+            {TRAINER_TOPICS.map(t => {
+              const active = topicFilter === t;
+              return (
+                <button key={t} onClick={() => setTopicFilter(t)}
+                  style={active ? {
+                    background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+                    boxShadow: "0 2px 8px rgba(99,102,241,0.35)",
+                    border: "1px solid transparent",
+                  } : {
+                    background: "rgba(39,39,42,0.8)",
+                    border: "1px solid rgba(63,63,70,0.8)",
+                  }}
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize transition-all ${active ? "text-white" : "text-zinc-400 hover:text-white"}`}>
+                  {t === "all" ? "All topics" : t}
+                </button>
+              );
+            })}
           </div>
           {/* Difficulty + count */}
           <div className="flex items-center gap-2">
-            {["all", "medium", "hard"].map(d => (
-              <button key={d} onClick={() => setDiffFilter(d)}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize transition-all ${diffFilter === d ? "bg-zinc-200 text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-                {d === "all" ? "All difficulty" : d}
-              </button>
-            ))}
+            {["all", "medium", "hard"].map(d => {
+              const active = diffFilter === d;
+              return (
+                <button key={d} onClick={() => setDiffFilter(d)}
+                  style={active ? {
+                    background: "rgba(244,244,245,0.95)",
+                    border: "1px solid transparent",
+                  } : {
+                    background: "rgba(39,39,42,0.8)",
+                    border: "1px solid rgba(63,63,70,0.8)",
+                  }}
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize transition-all ${active ? "text-zinc-900" : "text-zinc-400 hover:text-white"}`}>
+                  {d === "all" ? "All difficulty" : d}
+                </button>
+              );
+            })}
             <span className="text-xs text-zinc-600 ml-auto">{questions.length} questions</span>
           </div>
           {/* Weak spots toggle */}
@@ -3253,7 +3338,8 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
                   : <SpeechTextArea value={answer} onChange={setAnswer} />
                 }
                 <button onClick={submit} disabled={answer.toString().trim() === ""}
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-medium rounded-xl transition-all">
+                  style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)", boxShadow: "0 4px 16px rgba(99,102,241,0.35), 0 1px 0 rgba(255,255,255,0.1) inset" }}
+                  className="w-full py-3.5 disabled:opacity-40 text-white font-semibold rounded-xl transition-all hover:brightness-110">
                   Submit Answer
                 </button>
               </>
