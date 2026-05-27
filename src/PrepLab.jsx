@@ -4151,26 +4151,25 @@ export default function PrepLab({ onNavigate, onNavigateTo }) {
   const [mode, setMode] = useState(null);
 
   const PREPLAB_SIDEBAR = [
-    { id: "exam",        icon: "⏱", label: "Combined Assessment", tag: "EXAM" },
-    { id: "trainer",     icon: "🎯", label: "Trainer",             tag: "TRAIN" },
-    { id: "jdprep",      icon: "📋", label: "JD + Resume Prep",    tag: "TARGET" },
-    { id: "companyprep", icon: "🏢", label: "Company Tracks",      tag: "ARCHETYPE" },
-    { id: "defense",     icon: "🛡", label: "Defense Doc",         tag: "WAR ROOM" },
+    { id: "exam",        label: "Combined Assessment", tag: "EXAM",      desc: "Timed full-topic test" },
+    { id: "trainer",     label: "Trainer",             tag: "TRAIN",     desc: "Adaptive question drill" },
+    { id: "jdprep",      label: "JD + Resume Prep",    tag: "TARGET",    desc: "Role-specific questions" },
+    { id: "companyprep", label: "Company Tracks",      tag: "ARCHETYPE", desc: "By company archetype" },
+    { id: "defense",     label: "Defense Doc",         tag: "WAR ROOM",  desc: "Anticipate hard pushbacks" },
   ];
 
   return (
     <div className="flex h-full min-h-0">
       {/* Sidebar */}
       <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
-        <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">MODES</div>
+        <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-2">MODES</div>
         {PREPLAB_SIDEBAR.map(m => {
           const active = mode === m.id;
           return (
             <button key={m.id} onClick={() => setMode(m.id)}
-              className={`w-full text-left px-4 py-2.5 text-xs transition-all flex items-center gap-2 ${active ? "border-l-2 border-violet-500 bg-zinc-800 text-white" : "border-l-2 border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"}`}>
-              <span className="shrink-0">{m.icon}</span>
-              <span className="flex-1 truncate">{m.label}</span>
-              <span className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded font-mono ${active ? "bg-violet-900/60 text-violet-300" : "bg-zinc-800 text-zinc-600"}`}>{m.tag}</span>
+              className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "border-l-2 border-violet-500 bg-zinc-800/80" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
+              <span className={`text-xs font-semibold leading-snug ${active ? "text-white" : "text-zinc-300"}`}>{m.label}</span>
+              <span className={`text-[10px] font-mono ${active ? "text-violet-400" : "text-zinc-600"}`}>{m.tag}</span>
             </button>
           );
         })}
@@ -4188,18 +4187,31 @@ export default function PrepLab({ onNavigate, onNavigateTo }) {
         {mode === "companyprep" && <CompanyPrepMode onExit={() => setMode(null)} onNavigate={onNavigate} />}
         {mode === "defense"     && <DefenseDocMode onExit={() => setMode(null)} />}
         {!mode && (
-          <div className="flex flex-col items-center justify-center h-full min-h-64 text-center gap-4 px-8 py-16">
-            <div className="text-4xl">🎯</div>
-            <div className="space-y-1">
-              <div className="text-base font-bold text-white">PrepLab</div>
-              <div className="text-sm text-zinc-400">Questions sourced from 50+ real AI engineering interview loops — weighted toward the hard ones that actually matter.</div>
+          <div className="p-8 max-w-2xl">
+            <div className="mb-6">
+              <div className="text-lg font-black text-white mb-1">PrepLab</div>
+              <div className="text-sm text-zinc-400">{PREP_QUESTIONS.length} questions sourced from real AI engineering interview loops — weighted toward the hard ones that actually matter.</div>
             </div>
-            <div className="flex flex-wrap justify-center gap-2 mt-2">
-              {Object.entries(TOPIC_LABELS).map(([t, l]) => (
-                <span key={t} className={`text-xs px-2.5 py-1 rounded-full border ${TOPIC_COLORS[t]}`}>{l}</span>
+            <div className="grid grid-cols-1 gap-2 mb-8">
+              {PREPLAB_SIDEBAR.map(m => (
+                <button key={m.id} onClick={() => setMode(m.id)}
+                  className="text-left p-4 rounded-xl border border-zinc-800 bg-zinc-900 hover:border-violet-700/60 hover:bg-zinc-800/60 transition-all group">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-bold text-white group-hover:text-violet-200 transition-colors">{m.label}</span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-500 group-hover:bg-violet-900/40 group-hover:text-violet-400 transition-colors">{m.tag}</span>
+                  </div>
+                  <div className="text-xs text-zinc-500">{m.desc}</div>
+                </button>
               ))}
             </div>
-            <div className="text-xs text-zinc-600 mt-2">← Pick a mode to start</div>
+            <div className="border-t border-zinc-800 pt-4">
+              <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-2">Topics covered</div>
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(TOPIC_LABELS).map(([t, l]) => (
+                  <span key={t} className={`text-xs px-2 py-0.5 rounded-full border ${TOPIC_COLORS[t]}`}>{l}</span>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
