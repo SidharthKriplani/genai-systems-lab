@@ -24,7 +24,7 @@ Act as a product and engineering partner, not an assistant. That means:
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of May 2026: 57 Systems modules, 25 Explore modules, 261 PrepLab questions, 222 Ground Truth posts. Nav: 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product) + KNOWLEDGE (Ground Truth). Legacy tabs (Concepts, Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
+Scale as of May 2026: 54 Systems modules (in nav), 25 Explore modules, 16 Agent Lab modules, 15 Concepts modules, 261 PrepLab questions, 222 Ground Truth posts. Nav: 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product) + KNOWLEDGE (Ground Truth). Legacy tabs (Concepts, Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
 
 **Business model:** Currently free. Recommended path: freemium with PrepLab as the paid gate — free modules + GT posts as acquisition funnel, paid tier ($15/month or $99/year) gates unlimited PrepLab, JD Prep mode, certificates. The zero-backend constraint is the blocker — auth + Stripe required when ready to monetize. See DECISIONS.md Section 0.
 
@@ -85,14 +85,14 @@ genai-systems-lab/
 │   ├── Systems.jsx              # Systems tab shell + SYSTEMS_MODULES registry
 │   ├── systems/
 │   │   └── modules.jsx          # All Systems module components (~9,500 lines)
-│   ├── Agents.jsx               # Agents tab (15 modules + AGENTS_RELATED_GT)
-│   ├── Explore.jsx              # Explore tab (19 modules)
+│   ├── Agents.jsx               # Agents tab (16 modules + AGENTS_RELATED_GT)
+│   ├── Explore.jsx              # Explore tab (25 modules)
 │   ├── Flows.jsx                # Animated pipeline flows
 │   ├── Concepts.jsx             # Tokenizer, attention, transformer modules
 │   ├── GroundTruth.jsx          # GT post renderer, video/refs/quiz blocks
 │   ├── groundTruthIndex.js      # Post metadata + related[] arrays (357 lines)
 │   ├── groundTruthPosts.js      # Post content as typed block arrays (~10,800 lines)
-│   ├── PrepLab.jsx              # Question bank + 3 modes
+│   ├── PrepLab.jsx              # Question bank + 5 modes (Exam, Trainer, JD Prep, Company Tracks, Defense Doc)
 │   ├── LearningPaths.jsx        # Curated multi-tab learning paths
 │   ├── QADashboard.jsx          # Internal QA console (hidden, accessed via ?qa=1)
 │   ├── Fluency.jsx              # Phrase bank, drills, mock interview
