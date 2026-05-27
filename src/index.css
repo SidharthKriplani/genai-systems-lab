@@ -53,6 +53,30 @@ button:disabled:active {
   transform: none;
 }
 
+/* ── Mobile contrast boost — low-brightness readability ────────────────────
+   On low-brightness phone screens, zinc-400 text on zinc-950 backgrounds
+   falls to ~1.5:1 contrast — effectively unreadable. This shifts zinc text
+   stops one level brighter on screens < 1024px. Tailwind v4 exposes colors
+   as CSS custom properties so this single override remaps every zinc utility
+   class app-wide — no component changes needed.
+
+   Mapping (mobile → desktop equivalent):
+     text-zinc-400  →  zinc-300  (#d4d4d8)
+     text-zinc-500  →  zinc-400  (#a1a1aa)
+     text-zinc-600  →  zinc-500  (#71717a)
+     text-zinc-700  →  zinc-600  (#52525b)
+     border/bg-zinc-800 → zinc-700 (#3f3f46) — borders more visible at low brightness
+*/
+@media (max-width: 1023px) {
+  :root {
+    --color-zinc-400: oklch(87.1% 0.006 286.29);
+    --color-zinc-500: oklch(70.2% 0.008 286.29);
+    --color-zinc-600: oklch(55.2% 0.009 286.29);
+    --color-zinc-700: oklch(44.2% 0.008 286.29);
+    --color-zinc-800: oklch(37.1% 0.006 286.29);
+  }
+}
+
 @keyframes stepDone {
   0%   { transform: scale(1); }
   30%  { transform: scale(1.35); }
