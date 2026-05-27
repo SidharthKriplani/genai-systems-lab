@@ -3851,60 +3851,107 @@ const LEVEL_STYLE = {
   advanced:     "text-red-400 border-red-800/50",
 };
 
+const CONCEPT_GROUPS = [
+  {
+    label: "FOUNDATION",
+    ids: ["tokenizer","embeddings","attention","transformer","context","sampling"],
+  },
+  {
+    label: "APPLICATION",
+    ids: ["chunking","rag-pipeline","agent","guardrails","multiagent"],
+  },
+  {
+    label: "PRACTICE",
+    ids: ["debug","nextoken","tempgame"],
+  },
+];
+
 export default function ConceptsApp({ onNavigate }) {
   const [active, setActive] = useState("tokenizer");
   const mod = MODULES.find((m) => m.id === active);
   const Component = mod.component;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      {/* Tab header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-black text-white tracking-tight">Concepts</h1>
-        <p className="text-sm text-zinc-400">Core building blocks — from tokenization to multi-agent systems</p>
+    <div className="flex h-full min-h-0">
+      {/* ── Left sidebar ── */}
+      <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4 hidden sm:block">
+        <div className="px-3 mb-3">
+          <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Concepts</p>
+        </div>
+        {CONCEPT_GROUPS.map((grp) => (
+          <div key={grp.label} className="mb-4">
+            <p className="px-3 mb-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{grp.label}</p>
+            {grp.ids.map((id) => {
+              const m = MODULES.find((x) => x.id === id);
+              if (!m) return null;
+              const isActive = active === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => { setActive(id); track("concept_module_opened", { module: id, module_label: m.label }); }}
+                  className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 transition-colors ${
+                    isActive
+                      ? "bg-zinc-800 text-white border-l-2 border-violet-500"
+                      : "text-zinc-400 hover:text-white hover:bg-zinc-900 border-l-2 border-transparent"
+                  }`}
+                >
+                  <span className="text-xs font-medium truncate">{m.label}</span>
+                  {m.level && (
+                    <span className={`text-[9px] font-mono shrink-0 ${
+                      m.level === "beginner" ? "text-emerald-500" :
+                      m.level === "intermediate" ? "text-amber-500" : "text-red-500"
+                    }`}>
+                      {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
-      {/* Module selector */}
-      <div className="flex gap-2 flex-wrap justify-center">
+
+      {/* ── Mobile: horizontal scroll nav ── */}
+      <div className="sm:hidden w-full overflow-x-auto border-b border-zinc-800 flex gap-1 px-3 py-2 shrink-0" style={{position:"sticky",top:0,zIndex:10,background:"rgb(9,9,11)"}}>
         {MODULES.map((m) => (
           <button
             key={m.id}
             onClick={() => { setActive(m.id); track("concept_module_opened", { module: m.id, module_label: m.label }); }}
-            className={`px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
-              active === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
+            className={`shrink-0 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+              active === m.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400"
             }`}
           >
-            <span className={`text-[9px] px-1 py-0.5 rounded font-mono ${active === m.id ? "bg-zinc-200 text-zinc-700" : "bg-zinc-700 text-zinc-500"}`}>{m.tag}</span>
             {m.label}
-            {m.level && (
-              <span className={`text-[9px] px-1.5 py-0.5 rounded border font-mono ${active === m.id ? "border-zinc-400 text-zinc-600" : LEVEL_STYLE[m.level]}`}>
-                {m.level}
-              </span>
-            )}
           </button>
         ))}
       </div>
 
-      {/* Module header */}
-      <div className="mb-5">
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className="text-xs font-mono px-2 py-0.5 bg-violet-900 text-violet-300 rounded border border-violet-700">{mod.tag}</span>
-          {mod.fidelity && (
-            <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-              mod.fidelity.tier === "faithful"   ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/50" :
-              mod.fidelity.tier === "simplified" ? "bg-amber-950/40 text-amber-400 border-amber-800/50" :
-              "bg-zinc-800 text-zinc-500 border-zinc-700"
-            }`} title={mod.fidelity.note}>
-              {mod.fidelity.tier === "faithful" ? "✓ Mathematically faithful" :
-               mod.fidelity.tier === "simplified" ? "~ Simplified" : "◌ Conceptual"}
-            </span>
-          )}
-          {mod.fidelity && <span className="text-[10px] text-zinc-600 hidden sm:block">{mod.fidelity.note}</span>}
-        </div>
-        <h2 className="text-xl font-bold text-white">{mod.title}</h2>
-        <p className="text-sm text-zinc-400 mt-0.5">{mod.subtitle}</p>
-      </div>
+      {/* ── Right content panel ── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-6 py-8">
+          {/* Module header */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="text-[10px] font-mono px-2 py-0.5 bg-violet-900/50 text-violet-400 rounded border border-violet-800">{mod.tag}</span>
+              {mod.fidelity && (
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                  mod.fidelity.tier === "faithful"   ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/50" :
+                  mod.fidelity.tier === "simplified" ? "bg-amber-950/40 text-amber-400 border-amber-800/50" :
+                  "bg-zinc-800 text-zinc-500 border-zinc-700"
+                }`} title={mod.fidelity.note}>
+                  {mod.fidelity.tier === "faithful" ? "✓ Mathematically faithful" :
+                   mod.fidelity.tier === "simplified" ? "~ Simplified" : "◌ Conceptual"}
+                </span>
+              )}
+              {mod.fidelity && <span className="text-[10px] text-zinc-600 hidden md:block">{mod.fidelity.note}</span>}
+            </div>
+            <h2 className="text-xl font-bold text-white">{mod.title}</h2>
+            <p className="text-sm text-zinc-400 mt-1">{mod.subtitle}</p>
+          </div>
 
-      <Component onNavigate={onNavigate} />
+          <Component onNavigate={onNavigate} />
+        </div>
+      </div>
     </div>
   );
 }
