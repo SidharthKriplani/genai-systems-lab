@@ -4910,6 +4910,251 @@ function TokenizerComparison() {
 
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
+// ─── MODEL MERGING EXPLORER ──────────────────────────────────────────────────
+
+const MERGE_METHODS = [
+  {
+    id: "slerp",
+    name: "SLERP",
+    full: "Spherical Linear Interpolation",
+    color: "#6366f1",
+    what: "Interpolates between two model weight tensors along the surface of a hypersphere. Smoother than linear averaging — preserves the angular relationship between weight vectors rather than just averaging coordinates.",
+    when: "Two models with the same architecture trained on different tasks. You want a blend that has properties of both. Classic: merge a coding model with an instruction-following model.",
+    complexity: "Low",
+    tradeoff: "Only works for two models at once. Does not handle conflicting parameters well — both models must have learned complementary, not competing, behaviors.",
+    example: 'model = slerp(model_a, model_b, t=0.5)  # t=0 is model_a, t=1 is model_b',
+  },
+  {
+    id: "ties",
+    name: "TIES",
+    full: "Trim, Elect Sign, Merge",
+    color: "#3b82f6",
+    what: "Three-step process: (1) Trim low-magnitude delta weights, (2) Elect a dominant sign direction per parameter, (3) Merge only parameters that agree on sign. Eliminates interference from conflicting fine-tunes.",
+    when: "Merging 3+ fine-tuned models back into a shared base. Each fine-tune specialized on a different task. TIES resolves sign conflicts that would cancel out improvements.",
+    complexity: "Medium",
+    tradeoff: "Requires all models to share the same base checkpoint. Sign election is a heuristic — works well at scale but individual parameter decisions may be suboptimal.",
+    example: 'merged = ties_merge([model_a, model_b, model_c], base=base_model, density=0.3)',
+  },
+  {
+    id: "dare",
+    name: "DARE",
+    full: "Drop and Rescale",
+    color: "#8b5cf6",
+    what: "Randomly drops (zeros out) a fraction of the delta weights from each fine-tune, then rescales the remaining ones to maintain the expected magnitude. Reduces interference between models through stochastic sparsification.",
+    when: "Reducing the interference footprint of a strong fine-tune before merging. Often used as a preprocessing step before TIES. Works well when merging models with overlapping capability domains.",
+    complexity: "Low",
+    tradeoff: "Stochastic — results vary by random seed. Drop ratio is a hyperparameter that needs tuning per model pair. High drop rates can degrade specialized capabilities.",
+    example: 'sparse_delta = dare(fine_tuned_delta, drop_rate=0.9, rescale=True)',
+  },
+  {
+    id: "breadcrumbs",
+    name: "Model Breadcrumbs",
+    full: "Sparse Fine-Tune Extraction",
+    color: "#f59e0b",
+    what: "Extracts the minimal set of weight changes that encode a capability by pruning the fine-tune delta to only its highest-magnitude parameters. The pruned delta is then added to a clean base — like applying only the essential instruction modifications.",
+    when: "You have a fine-tuned model and want to extract just the capability additions to apply them selectively to a different base model. Avoids merging full model weights.",
+    complexity: "Medium",
+    tradeoff: "Defining 'minimal' is non-trivial. Prune too aggressively and the capability degrades. Some capabilities are distributed across many parameters and cannot be extracted sparsely.",
+    example: 'capability_delta = extract_breadcrumbs(base, fine_tuned, top_k=0.01)',
+  },
+];
+
+const MERGE_USE_CASES = [
+  { q: "Combine coding + instruction following", rec: "slerp", why: "Two models, complementary skills — SLERP's smooth interpolation works well" },
+  { q: "Merge 3+ specialist fine-tunes", rec: "ties", why: "TIES handles sign conflicts that arise when merging multiple delta weights" },
+  { q: "Reduce fine-tune interference before merging", rec: "dare", why: "DARE sparsifies the delta before merging to reduce parameter conflicts" },
+  { q: "Extract a capability from a fine-tuned model", rec: "breadcrumbs", why: "Breadcrumbs isolates the minimal delta that encodes the skill" },
+];
+
+function ModelMergeExplorer() {
+  const [selected, setSelected] = useState("slerp");
+  const [useCase, setUseCase] = useState(null);
+  const method = MERGE_METHODS.find(m => m.id === selected);
+
+  return (
+    <div className="space-y-5">
+      <div style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.5)" }} className="rounded-xl p-4">
+        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">What this is</p>
+        <p className="text-sm text-zinc-300">Model merging combines multiple fine-tuned checkpoints in weight space without any additional training. No GPU needed — pure arithmetic on tensors. The technique that powers most open-source model experiments.</p>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Merge method</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {MERGE_METHODS.map(m => (
+            <button key={m.id} onClick={() => setSelected(m.id)}
+              style={selected === m.id ? { background: m.color + "22", border: "1px solid " + m.color + "55", borderTop: "2px solid " + m.color } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
+              className="py-2.5 px-3 rounded-lg text-xs transition-all text-left">
+              <p className={"font-bold " + (selected === m.id ? "text-white" : "text-zinc-400")} style={selected === m.id ? { color: m.color } : {}}>{m.name}</p>
+              <p className="text-zinc-600 text-[10px] mt-0.5 leading-tight">{m.full}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {method && (
+        <div style={{ background: "rgba(24,24,27,0.9)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid " + method.color + "60" }} className="rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-white">{method.name}</h3>
+            <span style={{ background: method.color + "22", border: "1px solid " + method.color + "55", color: method.color }} className="text-[10px] font-bold px-2 py-0.5 rounded font-mono">Complexity: {method.complexity}</span>
+          </div>
+          <p className="text-sm text-zinc-300 leading-relaxed">{method.what}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)" }} className="rounded-lg p-3">
+              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">When to use</p>
+              <p className="text-xs text-zinc-300">{method.when}</p>
+            </div>
+            <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }} className="rounded-lg p-3">
+              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Tradeoff</p>
+              <p className="text-xs text-zinc-300">{method.tradeoff}</p>
+            </div>
+          </div>
+          <div style={{ background: "rgba(15,15,17,0.95)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded-lg p-3">
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1.5">Pseudocode</p>
+            <p className="text-xs font-mono text-emerald-400">{method.example}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">What are you trying to do?</p>
+        <div className="space-y-2">
+          {MERGE_USE_CASES.map((uc, i) => (
+            <button key={i} onClick={() => setUseCase(useCase === i ? null : i)}
+              style={useCase === i ? { background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.4)" } : { background: "rgba(39,39,42,0.6)", border: "1px solid rgba(63,63,70,0.5)" }}
+              className="w-full text-left px-4 py-3 rounded-xl transition-all">
+              <div className="flex items-center justify-between">
+                <p className={"text-xs font-medium " + (useCase === i ? "text-zinc-100" : "text-zinc-400")}>{uc.q}</p>
+                {useCase === i && <span style={{ color: MERGE_METHODS.find(m => m.id === uc.rec)?.color }} className="text-[10px] font-bold ml-3 shrink-0">Use {uc.rec.toUpperCase()}</span>}
+              </div>
+              {useCase === i && <p className="text-xs text-zinc-500 mt-1">{uc.why}</p>}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MULTIMODAL ARCHITECTURES GUIDE ──────────────────────────────────────────
+
+const MULTIMODAL_ARCHS = [
+  {
+    id: "clip",
+    name: "CLIP",
+    tag: "Dual Encoder",
+    color: "#3b82f6",
+    how: "Two separate encoders — ViT for images, Transformer for text — trained contrastively on 400M image-text pairs. Pulls matching pairs together in shared embedding space, pushes non-matching apart.",
+    strengths: ["Zero-shot classification without labels", "Cross-modal search (text query → image results)", "Foundation for other architectures (frozen ViT in LLaVA)"],
+    limits: ["No text generation — embeddings only", "Struggles with fine-grained spatial reasoning", "Requires precomputed image embeddings for retrieval at scale"],
+    when: "Image retrieval, zero-shot image classification, building vision embeddings for downstream tasks.",
+    complexity: "High to train; Low to use with pretrained weights",
+  },
+  {
+    id: "llava",
+    name: "LLaVA / VLM",
+    tag: "Projector Architecture",
+    color: "#8b5cf6",
+    how: "Frozen CLIP ViT extracts visual features → MLP projector maps them into the LLM embedding space → standard decoder-only LLM generates text. Training only touches the projector and (optionally) LLM LoRA.",
+    strengths: ["Visual instruction following", "Document understanding, chart/table reading", "Open-source: LLaVA, InternVL, Qwen-VL, MiniCPM-V"],
+    limits: ["Image understanding bounded by ViT's pretrained features", "Poor at multi-image reasoning without architectural changes", "Projector is a bottleneck for fine-grained spatial detail"],
+    when: "Production VQA, document intelligence, image captioning, instruction-following with images. The default choice for open-source visual AI.",
+    complexity: "Moderate — fine-tune projector + LoRA on instruction data",
+  },
+  {
+    id: "native",
+    name: "Native Multimodal",
+    tag: "Interleaved Tokens",
+    color: "#10b981",
+    how: "Images tokenized into discrete or continuous tokens and interleaved directly with text in a unified transformer. Full cross-attention across modalities from the ground up. GPT-4V, Gemini, Claude 3+ use variants of this.",
+    strengths: ["Strongest reasoning over combined image+text", "Best at OCR-heavy tasks and complex diagrams", "Handles multi-image inputs naturally"],
+    limits: ["Requires training from scratch or massive fine-tuning", "Compute-intensive — frontier model scale only", "No open-source equivalent at frontier quality"],
+    when: "When you need frontier-quality visual reasoning and are using a closed-source API (GPT-4V, Claude, Gemini). Not reproducible open-source yet.",
+    complexity: "Very High — frontier scale pretraining",
+  },
+];
+
+const MULTIMODAL_USE_CASES = [
+  { q: "I want image retrieval from text queries", rec: "clip" },
+  { q: "I want a chatbot that understands images", rec: "llava" },
+  { q: "I need to read and reason about documents/charts", rec: "llava" },
+  { q: "I need frontier-quality visual reasoning", rec: "native" },
+  { q: "I want zero-shot image classification", rec: "clip" },
+  { q: "I want to fine-tune a vision model on my data", rec: "llava" },
+];
+
+function MultimodalGuide() {
+  const [selected, setSelected] = useState("llava");
+  const [expanded, setExpanded] = useState(null);
+  const arch = MULTIMODAL_ARCHS.find(a => a.id === selected);
+
+  return (
+    <div className="space-y-5">
+      <div style={{ background: "linear-gradient(160deg, rgba(16,185,129,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(16,185,129,0.2)", borderTop: "2px solid rgba(16,185,129,0.5)" }} className="rounded-xl p-4">
+        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Three families</p>
+        <p className="text-sm text-zinc-300">Multimodal AI has three distinct architectures with very different tradeoffs. Choosing wrong means rebuilding later — this guide tells you which family to reach for.</p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {MULTIMODAL_ARCHS.map(a => (
+          <button key={a.id} onClick={() => setSelected(a.id)}
+            style={selected === a.id ? { background: a.color + "18", border: "1px solid " + a.color + "55", borderTop: "2px solid " + a.color } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
+            className="py-3 px-2 rounded-xl text-xs transition-all text-center">
+            <p className={"font-bold text-sm " + (selected === a.id ? "text-white" : "text-zinc-400")} style={selected === a.id ? { color: a.color } : {}}>{a.name}</p>
+            <p className="text-zinc-600 text-[10px] mt-0.5">{a.tag}</p>
+          </button>
+        ))}
+      </div>
+
+      {arch && (
+        <div style={{ background: "rgba(24,24,27,0.9)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid " + arch.color + "60" }} className="rounded-xl p-5 space-y-4">
+          <div>
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">How it works</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">{arch.how}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)" }} className="rounded-lg p-3">
+              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-2">Strengths</p>
+              {arch.strengths.map((s, i) => <p key={i} className="text-xs text-emerald-300 mb-1">+ {s}</p>)}
+            </div>
+            <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }} className="rounded-lg p-3">
+              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-2">Limitations</p>
+              {arch.limits.map((l, i) => <p key={i} className="text-xs text-red-300 mb-1">- {l}</p>)}
+            </div>
+          </div>
+          <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)" }} className="rounded-lg p-3">
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Use when</p>
+            <p className="text-xs text-zinc-300">{arch.when}</p>
+          </div>
+          <div style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.4)" }} className="rounded-lg p-2.5">
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Build complexity</p>
+            <p className="text-xs text-zinc-400">{arch.complexity}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">What are you building?</p>
+        <div className="space-y-1.5">
+          {MULTIMODAL_USE_CASES.map((uc, i) => {
+            const recArch = MULTIMODAL_ARCHS.find(a => a.id === uc.rec);
+            return (
+              <button key={i} onClick={() => setExpanded(expanded === i ? null : i)}
+                style={expanded === i ? { background: "rgba(39,39,42,0.9)", border: "1px solid rgba(63,63,70,0.7)" } : { background: "rgba(24,24,27,0.7)", border: "1px solid rgba(39,39,42,0.6)" }}
+                className="w-full text-left px-4 py-2.5 rounded-xl transition-all">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-zinc-300">{uc.q}</p>
+                  {expanded === i && recArch && <span className="text-[10px] font-bold ml-3 shrink-0" style={{ color: recArch.color }}>{recArch.name}</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const EXPLORE_MODULES = [
   // DESIGN
   { id: "embeddings",  label: "3D Embedding Space",  tag: "3D SPACE", group: "DESIGN", component: EmbeddingExplorer, fidelity: { tier: "conceptual",  note: "3D projection of precomputed coordinates — not live model embeddings" } },
@@ -4927,6 +5172,8 @@ const EXPLORE_MODULES = [
   { id: "structured",  label: "Structured Outputs",   tag: "SCHEMA",   group: "BUILD",  component: StructuredOutputsLab, fidelity: { tier: "simplified", note: "Illustrative — static examples, no live schema validation" } },
   { id: "contexteng",  label: "Context Engineering",  tag: "CONTEXT",  group: "BUILD",  component: ContextWindowEngineering, fidelity: { tier: "reference", note: "Window strategies + model limits" } },
   { id: "promptpatterns", label: "Prompt Pattern Library", tag: "PROMPT", group: "BUILD", component: PromptPatternLibrary, fidelity: { tier: "reference", note: "Templates and anti-patterns" } },
+  { id: "modelmerge",   label: "Model Merging",        tag: "MERGE",    group: "BUILD",  component: ModelMergeExplorer, fidelity: { tier: "reference", note: "SLERP / TIES / DARE / Breadcrumbs decision guide" } },
+  { id: "multimodal",   label: "Multimodal Guide",     tag: "VISION",   group: "BUILD",  component: MultimodalGuide, fidelity: { tier: "reference", note: "CLIP / LLaVA / Native multimodal architecture comparison" } },
   // OPS
   { id: "shadow",      label: "Shadow Mode A/B",      tag: "COMPARE",  group: "OPS",    component: ShadowMode,        fidelity: { tier: "simplified",  note: "Illustrative comparison — static response pairs, no live inference" } },
   { id: "latency",     label: "Latency Planner",      tag: "BUDGET",   group: "OPS",    component: LatencyPlanner,    fidelity: { tier: "simplified",  note: "Estimated model — based on published benchmarks, not live measurements" } },
