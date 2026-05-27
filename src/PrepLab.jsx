@@ -4195,7 +4195,7 @@ export default function PrepLab({ onNavigate, onNavigateTo }) {
             <div className="grid grid-cols-1 gap-2 mb-8">
               {PREPLAB_SIDEBAR.map(m => (
                 <button key={m.id} onClick={() => setMode(m.id)}
-                  className="text-left p-4 rounded-xl border border-zinc-800 bg-zinc-900 hover:border-violet-700/60 hover:bg-zinc-800/60 transition-all group">
+                  className="text-left p-4 rounded-xl border border-zinc-800 bg-zinc-900 hover:border-violet-700/50 hover:bg-zinc-800/60 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40 transition-all duration-150 group">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-bold text-white group-hover:text-violet-200 transition-colors">{m.label}</span>
                     <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-500 group-hover:bg-violet-900/40 group-hover:text-violet-400 transition-colors">{m.tag}</span>

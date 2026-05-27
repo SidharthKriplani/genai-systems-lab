@@ -164,7 +164,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
     <div className="flex min-h-[calc(100vh-56px)]">
 
       {/* ── LEFT PANEL: module list ────────────────────────────────── */}
-      <div className="w-full lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]">
+      <div className="w-full lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800/70 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]" style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
         <div className="px-3 pt-5 pb-2 space-y-3">
           {/* Title + progress */}
           <div>
@@ -226,16 +226,20 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
             return (
               <div key={grp.id}>
                 <div className="text-[9px] font-bold uppercase tracking-widest px-2 pt-2 pb-0.5" style={{ color: grp.color + "99" }}>{grp.label}</div>
-                {groupModules.map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => switchModule(m.id)}
-                    className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"}`}
-                  >
-                    {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
-                    <span className="truncate">{m.label}</span>
-                  </button>
-                ))}
+                {groupModules.map(m => {
+                  const active = activeModule === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => switchModule(m.id)}
+                      className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all duration-150 ${active ? "text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50"}`}
+                      style={active ? { background: "linear-gradient(90deg, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.04) 100%)", boxShadow: "inset 2px 0 0 #6366f1" } : {}}
+                    >
+                      {done.has(m.id) ? <span className="text-emerald-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
+                      <span className="truncate">{m.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             );
           })}
@@ -247,12 +251,17 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
 
         {/* Start-here callout — new users only */}
         {doneCount === 0 && (
-          <div className="rounded-lg border border-blue-900/40 bg-blue-950/20 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+            style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(59,130,246,0.04) 100%)", border: "1px solid rgba(59,130,246,0.2)", boxShadow: "0 0 0 1px rgba(59,130,246,0.06) inset" }}>
             <div>
-              <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">Start here</span>
-              <span className="text-sm text-zinc-300 ml-2">Open <span className="font-bold text-white">{suggestedLabel || "Evals Lab"}</span> — {suggestedNote || "production evaluation is the skill every other module depends on"}.</span>
+              <div className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-0.5">Start here</div>
+              <div className="text-xs text-zinc-300">Open <span className="font-bold text-white">{suggestedLabel || "Evals Lab"}</span> — {suggestedNote || "production evaluation is the skill every other module depends on"}.</div>
             </div>
-            <button onClick={() => switchModule(suggestedStart || "evals")} className="shrink-0 px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-300 text-xs font-bold hover:bg-blue-900/60 transition-all whitespace-nowrap">Open →</button>
+            <button onClick={() => switchModule(suggestedStart || "evals")}
+              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all duration-150 hover:scale-105"
+              style={{ background: "rgba(59,130,246,0.2)", color: "#93c5fd", border: "1px solid rgba(59,130,246,0.25)" }}>
+              Open →
+            </button>
           </div>
         )}
 

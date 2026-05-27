@@ -1354,55 +1354,75 @@ export default function App() {
         </div>
       )}
       {/* ── LEFT SIDEBAR (desktop only) ─────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-48 shrink-0 border-r border-zinc-800 bg-zinc-950 sticky top-0 h-screen overflow-y-auto z-20">
+      <aside className="hidden lg:flex flex-col w-48 shrink-0 border-r border-zinc-800/70 sticky top-0 h-screen overflow-y-auto z-20"
+        style={{ background: "linear-gradient(180deg, #1c1c1f 0%, #0f0f11 60%, #09090b 100%)" }}>
         {/* Logo */}
-        <button onClick={() => navigate("home")} className="flex items-center gap-2 px-4 py-4 hover:opacity-80 transition-opacity">
-          <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0">G</div>
-          <span className="text-sm font-bold tracking-wide text-white">GenAI Lab</span>
+        <button onClick={() => navigate("home")} className="flex items-center gap-2.5 px-4 py-4 group">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0 transition-all group-hover:scale-105"
+            style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)", boxShadow: "0 2px 10px rgba(99,102,241,0.45)" }}>
+            G
+          </div>
+          <div>
+            <div className="text-sm font-bold tracking-wide text-white leading-none">GenAI Lab</div>
+            <div className="text-[9px] text-zinc-500 mt-0.5 font-mono">v2</div>
+          </div>
         </button>
-        <div className="h-px bg-zinc-800 mx-3 mb-2" />
+        <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
         {/* Nav groups */}
         <nav className="flex-1 px-2 pb-4 space-y-0.5">
           {NAV_GROUPS.map((group, gi) => (
-            <div key={gi} className={gi > 0 ? "mt-3" : ""}>
+            <div key={gi} className={gi > 0 ? "mt-4" : ""}>
               {group.label && (
-                <div className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 mb-0.5" style={{ color: group.color + "99" }}>{group.label}</div>
+                <div className="flex items-center gap-2 px-2 py-1 mb-1">
+                  <div className="h-px flex-1 opacity-40" style={{ background: group.color }} />
+                  <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: group.color }}>{group.label}</span>
+                  <div className="h-px flex-1 opacity-40" style={{ background: group.color }} />
+                </div>
               )}
-              {group.items.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.id)}
-                  aria-current={topView === item.id ? "page" : undefined}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all ${
-                    topView === item.id
-                      ? "bg-violet-600 text-white"
-                      : item.id === "lab"
-                        ? "text-amber-400 hover:bg-amber-900/20 hover:text-amber-300"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                  }`}>
-                  <span className="flex items-center gap-1.5">
-                    {item.label}
-                    {item.id === "lab" && topView !== "lab" && <span className="text-amber-500 text-[10px]">★</span>}
-                  </span>
-                  {visited.has(item.id) && topView !== item.id && item.id !== "lab" && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />
-                  )}
-                </button>
-              ))}
+              {group.items.map(item => {
+                const active = topView === item.id;
+                const grpColor = group.color || "#6366f1";
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.id)}
+                    aria-current={active ? "page" : undefined}
+                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
+                    style={active ? {
+                      background: `linear-gradient(90deg, ${grpColor}28 0%, ${grpColor}06 100%)`,
+                      boxShadow: `inset 2px 0 0 ${grpColor}`,
+                      color: "#ffffff",
+                    } : {}}>
+                    <span className={active ? "text-white font-bold" : ""}>
+                      {item.label}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      {item.count && !active && (
+                        <span className="text-[9px] font-mono text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded tabular-nums leading-none">{item.count}</span>
+                      )}
+                      {visited.has(item.id) && !active && (
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: grpColor, opacity: 0.7 }} />
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           ))}
         </nav>
         {/* Bottom utilities */}
-        <div className="px-2 pb-3 border-t border-zinc-800 pt-2 space-y-1">
+        <div className="px-2 pb-3 border-t border-zinc-800/60 pt-2 space-y-1">
           <button onClick={() => setSearchOpen(true)}
-            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-left transition-all">
+            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg border text-left transition-all duration-150 hover:border-zinc-600"
+            style={{ background: "rgba(24,24,27,0.8)", borderColor: "#27272a" }}>
             <svg width="10" height="10" viewBox="0 0 11 11" fill="none" className="text-zinc-600 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
             <span className="text-[11px] text-zinc-600 flex-1">Search…</span>
-            <kbd className="text-[9px] border border-zinc-700 rounded px-1 text-zinc-600 font-mono">⌘K</kbd>
+            <kbd className="text-[9px] border border-zinc-700/60 rounded px-1 text-zinc-600 font-mono">⌘K</kbd>
           </button>
           <button onClick={() => openFeedback("sidebar")}
-            className="w-full flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
-            💬 <span>Feedback</span>
+            className="w-full flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-150">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="shrink-0"><path d="M5.5 1C3.015 1 1 2.791 1 5c0 .98.38 1.878 1.01 2.58L1.5 9.5l2.04-.98A4.8 4.8 0 005.5 9C7.985 9 10 7.209 10 5s-2.015-4-4.5-4z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/></svg>
+            <span>Feedback</span>
           </button>
         </div>
       </aside>

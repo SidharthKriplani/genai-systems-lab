@@ -3227,7 +3227,8 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
     <div className="flex min-h-[calc(100vh-56px)]">
 
       {/* ── LEFT PANEL: module list ────────────────────────────────── */}
-      <div className="w-full lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]">
+      <div className="w-full lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]"
+        style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
         <div className="px-3 pt-5 pb-2 space-y-3">
           <div>
             <h1 className="text-base font-black text-white tracking-tight">Agent Lab</h1>
@@ -3247,13 +3248,21 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
           {AGENTS_GROUPS.map(grp => (
             <div key={grp.id}>
               <div className="text-[9px] font-bold uppercase tracking-widest px-2 pt-2 pb-0.5" style={{ color: grp.color + "99" }}>{grp.label}</div>
-              {AGENTS_MODULES.filter(m => m.group === grp.id).map(m => (
-                <button key={m.id} onClick={() => switchModule(m.id)}
-                  className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"}`}>
-                  {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
-                  <span className="truncate">{m.label}</span>
-                </button>
-              ))}
+              {AGENTS_MODULES.filter(m => m.group === grp.id).map(m => {
+                const active = activeModule === m.id;
+                return (
+                  <button key={m.id} onClick={() => switchModule(m.id)}
+                    className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all duration-150 ${!active ? "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60" : "font-semibold"}`}
+                    style={active ? {
+                      background: `linear-gradient(90deg, ${grp.color}28 0%, ${grp.color}06 100%)`,
+                      boxShadow: `inset 2px 0 0 ${grp.color}`,
+                      color: "#ffffff",
+                    } : {}}>
+                    {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
+                    <span className="truncate">{m.label}</span>
+                  </button>
+                );
+              })}
             </div>
           ))}
         </div>
