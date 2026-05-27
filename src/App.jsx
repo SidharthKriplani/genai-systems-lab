@@ -1565,9 +1565,9 @@ export default function App() {
 
 
       {topView === "lab" && (
-        <div className="flex h-full min-h-0">
-          {/* Sidebar: scenario list */}
-          <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4"
+        <div className="flex flex-col lg:flex-row h-full min-h-0">
+          {/* Sidebar: scenario list — desktop only */}
+          <div className="hidden lg:flex flex-col w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4"
             style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
             <div className="px-4 pb-2">
               <div className="text-xs font-black text-white tracking-tight">RAG Lab</div>
@@ -1596,7 +1596,24 @@ export default function App() {
           </div>
 
           {/* Right panel */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-w-0">
+            {/* Mobile scenario strip — horizontal scroll, lg+ hidden */}
+            <div className="flex lg:hidden overflow-x-auto gap-2 px-3 py-2 shrink-0 border-b border-zinc-800"
+              style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
+              {ALL_SCENARIOS.map((s, i) => {
+                const active = i === scenarioIdx;
+                return (
+                  <button key={s.scenario_id} onClick={() => switchScenario(i)}
+                    className="shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap transition-all"
+                    style={active
+                      ? { background: "rgba(139,92,246,0.22)", border: "1px solid rgba(139,92,246,0.45)", color: "#c4b5fd" }
+                      : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.4)", color: "#71717a" }}>
+                    <span className="font-mono mr-1" style={{ color: active ? "#8b5cf6" : "#3f3f46" }}>#{i + 1}</span>
+                    {s.title}
+                  </button>
+                );
+              })}
+            </div>
             {!labHintDismissed && (
               <div className="px-4 py-3" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.12) 0%, rgba(15,15,17,0.8) 100%)", borderBottom: "1px solid rgba(99,102,241,0.2)" }}>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
