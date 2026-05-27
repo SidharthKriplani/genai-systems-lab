@@ -1475,8 +1475,8 @@ export default function App() {
           {topView === "consult"    && <ConsultationApp onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "agentlab"   && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
-          {topView === "evallab"    && <SystemsApp allowedModules={EVAL_LAB_MODULES} labTitle="Eval Lab" labSubtitle="Evaluation, observability & ops strategy" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
-          {topView === "llmlab"     && <SystemsApp allowedModules={LLM_LAB_MODULES} labTitle="LLM Lab" labSubtitle="Architecture, training & inference systems" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
+          {topView === "evallab"    && <SystemsApp allowedModules={EVAL_LAB_MODULES} labTitle="Eval Lab" labSubtitle="Evaluation, observability & ops strategy" suggestedStart="evals" suggestedLabel="Evals Lab" suggestedNote="knowing how to measure is the skill every other module depends on" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
+          {topView === "llmlab"     && <SystemsApp allowedModules={LLM_LAB_MODULES} labTitle="LLM Lab" labSubtitle="Architecture, training & inference systems" suggestedStart="txarch" suggestedLabel="Transformer Architecture" suggestedNote="the foundation that explains every other module in this lab" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
 
           {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "fluency"    && <FluencyApp />}

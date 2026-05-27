@@ -124,7 +124,7 @@ const RELATED_GT = {
   buildthis:   [{ id: "ai-system-design-framework", title: "AI System Design Framework" }],
 };
 
-export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, allowedModules, labTitle, labSubtitle }) {
+export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, allowedModules, labTitle, labSubtitle, suggestedStart, suggestedLabel, suggestedNote }) {
   const visibleModules = allowedModules ? SYSTEMS_MODULES.filter(m => allowedModules.includes(m.id)) : SYSTEMS_MODULES;
   const [activeModule, setActiveModule] = useState(initialModule || (allowedModules ? allowedModules[0] : "evals"));
   const [search, setSearch] = useState("");
@@ -248,10 +248,10 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
         {doneCount === 0 && (
           <div className="rounded-lg border border-blue-900/40 bg-blue-950/20 px-4 py-3 flex items-center justify-between gap-3">
             <div>
-              <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">New here?</span>
-              <span className="text-sm text-zinc-300 ml-2">Start with <span className="font-bold text-white">Evals Lab</span> — production evaluation is the skill every other module depends on.</span>
+              <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">Start here</span>
+              <span className="text-sm text-zinc-300 ml-2">Open <span className="font-bold text-white">{suggestedLabel || "Evals Lab"}</span> — {suggestedNote || "production evaluation is the skill every other module depends on"}.</span>
             </div>
-            <button onClick={() => switchModule("evals")} className="shrink-0 px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-300 text-xs font-bold hover:bg-blue-900/60 transition-all whitespace-nowrap">Start →</button>
+            <button onClick={() => switchModule(suggestedStart || "evals")} className="shrink-0 px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-300 text-xs font-bold hover:bg-blue-900/60 transition-all whitespace-nowrap">Open →</button>
           </div>
         )}
 

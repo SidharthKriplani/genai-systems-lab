@@ -271,10 +271,10 @@ const DEP_NODES = [
   { id: "agent_flow", label: "Agent Loop",    tab: "flows",    x: 370, y: 93,  color: "#06b6d4" },
   { id: "guardrail",  label: "Guardrails",    tab: "flows",    x: 370, y: 163, color: "#06b6d4" },
   { id: "rag_lab",    label: "RAG Lab",       tab: "lab",      x: 522, y: 57,  color: "#22c55e" },
-  { id: "agent_lab",  label: "Agent Lab",     tab: "agents",   x: 522, y: 135, color: "#22c55e" },
-  { id: "evals",      label: "Evals Lab",     tab: "systems",  x: 672, y: 30,  color: "#f59e0b" },
-  { id: "finetune",   label: "Fine-Tuning",   tab: "systems",  x: 672, y: 103, color: "#f59e0b" },
-  { id: "systems",    label: "Systems",       tab: "systems",  x: 672, y: 173, color: "#f59e0b" },
+  { id: "agent_lab",  label: "Agent Lab",     tab: "agentlab", x: 522, y: 135, color: "#22c55e" },
+  { id: "evals",      label: "Evals Lab",     tab: "evallab",  x: 672, y: 30,  color: "#f59e0b" },
+  { id: "finetune",   label: "Fine-Tuning",   tab: "llmlab",   x: 672, y: 103, color: "#f59e0b" },
+  { id: "systems",    label: "LLM Lab",       tab: "llmlab",   x: 672, y: 173, color: "#f59e0b" },
 ];
 const DEP_EDGES = [
   { from: "tokenizer",  to: "context"    },
@@ -504,7 +504,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             className="flex flex-col items-start p-4 rounded-xl border border-blue-900/40 bg-blue-950/20 hover:border-blue-700/50 hover:bg-blue-950/40 transition-all">
             <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-1.5">Engineer</span>
             <span className="text-sm font-bold text-white mb-1.5">I'm building with LLMs</span>
-            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">Simulate production failures, debug RAG pipelines, build agent systems.</span>
+            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">Four labs: RAG, Agent, Eval, and LLM. Configure systems, watch them fail, understand why.</span>
             <span className="mt-3 text-xs font-bold text-blue-400">Start with RAG Lab →</span>
           </button>
           <button
@@ -534,7 +534,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         {/* Layer 3 positioning */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/60 border border-zinc-800/60 text-[11px] text-zinc-500">
           <span className="text-amber-400 font-bold">Layer 3</span>
-          <span>RAG · evals · vector DBs · observability · agent architecture</span>
+          <span>RAG Lab · Agent Lab · Eval Lab · LLM Lab</span>
           <span className="text-zinc-600">— the scarce skills, not the table stakes</span>
         </div>
 

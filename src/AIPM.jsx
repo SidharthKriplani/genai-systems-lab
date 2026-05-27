@@ -778,9 +778,9 @@ export default function AIPMApp() {
               const active = activeModule === id;
               return (
                 <button key={id} onClick={() => setActiveModule(id)}
-                  className={`w-full text-left px-4 py-2 text-xs transition-all flex items-center justify-between gap-2 ${active ? "border-l-2 border-emerald-500 bg-zinc-800 text-white" : "border-l-2 border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"}`}>
-                  <span className="truncate">{m.label}</span>
-                  <span className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded font-mono ${active ? "bg-emerald-900/60 text-emerald-300" : "bg-zinc-800 text-zinc-600"}`}>{m.tag}</span>
+                  className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "border-l-2 border-emerald-500 bg-zinc-800/80" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
+                  <span className={`text-xs font-semibold leading-snug ${active ? "text-white" : "text-zinc-300"}`}>{m.label}</span>
+                  <span className={`text-[10px] font-mono ${active ? "text-emerald-400" : "text-zinc-600"}`}>{m.tag}</span>
                 </button>
               );
             })}
