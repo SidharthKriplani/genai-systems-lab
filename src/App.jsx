@@ -446,26 +446,30 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
 // ─── PROGRESS VIEW ────────────────────────────────────────────────────────────
 
 const ALL_TABS = [
+  { id: "lab",         label: "RAG Lab",     group: "LABS",   audience: "Engineers" },
+  { id: "agentlab",    label: "Agent Lab",   group: "LABS",   audience: "Engineers" },
+  { id: "evallab",     label: "Eval Lab",    group: "LABS",   audience: "Engineers · PMs" },
+  { id: "llmlab",      label: "LLM Lab",     group: "LABS",   audience: "Engineers" },
+  { id: "preplab",     label: "Prep Lab",    group: "GROW",   audience: "Interview prep" },
+  { id: "career",      label: "Career",      group: "GROW",   audience: "Job seekers" },
+  { id: "aipm",        label: "AI Product",  group: "GROW",   audience: "Product managers" },
+  { id: "groundtruth", label: "Ground Truth",group: "LEARN",  audience: "All levels" },
+  // Legacy tabs — still accessible via #hash but not in primary nav
   { id: "concepts",    label: "Concepts",    group: "LEARN",  audience: "All levels" },
   { id: "flows",       label: "Diagrams",    group: "LEARN",  audience: "All levels" },
-  { id: "groundtruth", label: "Ground Truth",group: "LEARN",  audience: "All levels" },
-  { id: "lab",         label: "RAG Lab",     group: "BUILD",  audience: "Engineers" },
   { id: "agents",      label: "Agents",      group: "BUILD",  audience: "Engineers" },
   { id: "playground",  label: "Playground",  group: "BUILD",  audience: "All levels" },
   { id: "explore",     label: "Explore",     group: "BUILD",  audience: "Engineers" },
   { id: "systems",     label: "Systems",     group: "BUILD",  audience: "Engineers · PMs" },
   { id: "paths",       label: "Paths",       group: "GROW",   audience: "All levels" },
   { id: "fluency",     label: "Drills",      group: "GROW",   audience: "Interview prep" },
-  { id: "preplab",     label: "Prep Lab",    group: "GROW",   audience: "Interview prep" },
-  { id: "career",      label: "Career",      group: "GROW",   audience: "Job seekers" },
-  { id: "aipm",        label: "AI Product",  group: "GROW",   audience: "Product managers" },
 ];
 
-const GROUP_COLORS = { LEARN: "#6366f1", BUILD: "#3b82f6", GROW: "#22c55e" };
+const GROUP_COLORS = { LABS: "#3b82f6", GROW: "#22c55e", KNOWLEDGE: "#8b5cf6", LEARN: "#6366f1", BUILD: "#3b82f6" };
 
 function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookmarks = new Set(), toggleBookmark = () => {} }) {
   const tabsVisited = ALL_TABS.filter(t => visited.has(t.id));
-  const tabsByGroup = ["LEARN","BUILD","GROW"].map(g => ({
+  const tabsByGroup = ["LABS","GROW","KNOWLEDGE"].map(g => ({
     group: g,
     color: GROUP_COLORS[g],
     tabs: ALL_TABS.filter(t => t.group === g),
@@ -603,11 +607,11 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
 
       {/* Certificates */}
       {(() => {
-        const learnTabs = ALL_TABS.filter(t => t.group === "LEARN");
-        const buildTabs = ALL_TABS.filter(t => t.group === "BUILD");
+        const learnTabs = ALL_TABS.filter(t => t.group === "LABS");
+        const buildTabs = ALL_TABS.filter(t => t.group === "LABS");
         const growTabs  = ALL_TABS.filter(t => t.group === "GROW");
         const learnComplete = learnTabs.every(t => visited.has(t.id));
-        const buildComplete = buildTabs.every(t => visited.has(t.id));
+        const buildComplete = false; // merged into LABS
         const growComplete  = growTabs.every(t => visited.has(t.id));
         if (!learnComplete && !buildComplete && !growComplete) return null;
         function downloadCert(group) {
@@ -848,7 +852,27 @@ function FeedbackFallbackModal({ onClose }) {
 }
 
 
-const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","qa"];
+// ─── LAB MODULE FILTERS ──────────────────────────────────────────────────────
+// These define which Systems modules appear in each lab. Systems tab still works
+// at #systems for backward compat but is no longer in the primary nav.
+
+const EVAL_LAB_MODULES = [
+  "evals","evalfw","evalmetrics","shouldai","strategy","canvas",
+  "incidents","observability","abtesting","mlcicd","debug_traces","langsmith",
+  "trapslab","deploy","buildthis","prompt-change-mgmt","abtesting-ai","router",
+];
+
+const LLM_LAB_MODULES = [
+  "txarch","kvcache","inference","specdecoding","streaming","flashattn",
+  "quantization","serving","moe","ctxwindow","compaction","finetune","finetuning",
+  "rlhf","grpo","modelmerging","reasoning","synthdata","multimodal","multimodal2",
+  "promptlab","indiascale","promptcaching","costlatency",
+  "agentarch","agentmemory","mcp","ai-safety-eng","promptinjection","guardrails",
+  "vibecoding","redteam","constrained","structout","longctx","query-refinement",
+  "vectordb","caching",
+];
+
+const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","qa","paths"];
 
 function getInitialView() {
   try {
@@ -871,7 +895,7 @@ export default function App() {
   const warRoomOpenRef = useRef(false);
   const seqBuf = useRef("");
   useEffect(() => {
-    const BUILD_TABS = new Set(["lab", "agents", "playground", "explore", "systems"]);
+    const BUILD_TABS = new Set(["lab", "agentlab", "evallab", "llmlab", "agents", "playground", "explore", "systems"]);
     const SEQ = "business2026";
     function onKeyDown(e) {
       if (warRoomOpenRef.current) return;
@@ -1020,13 +1044,13 @@ export default function App() {
       localStorage.setItem("genai_streak", JSON.stringify({ count, lastVisit: today }));
     } catch {}
   }, []);
-  const SHORTCUT_TABS = ["home","concepts","flows","lab","agents","systems","playground","explore","fluency","aipm","career","paths","preplab","groundtruth"];
+  const SHORTCUT_TABS = ["home","lab","agentlab","evallab","llmlab","preplab","career","aipm","groundtruth","systems","agents","explore","playground","concepts","flows"];
 
   function navigateTo({ tab, moduleId, postId, topic, diff }) {
     if (moduleId) {
-      if (tab === "systems")  setSystemsModule(moduleId);
+      if (tab === "systems" || tab === "evallab" || tab === "llmlab") setSystemsModule(moduleId);
       if (tab === "explore")  setExploreModule(moduleId);
-      if (tab === "agents")   setAgentsModule(moduleId);
+      if (tab === "agents" || tab === "agentlab") setAgentsModule(moduleId);
     }
     if (postId) setGtPostId(postId);
     navigate(tab);
@@ -1081,6 +1105,9 @@ export default function App() {
       consult: "Search — GenAI Systems Lab",
       lab: "RAG Lab — GenAI Systems Lab",
       agents: "Agents Lab — GenAI Systems Lab",
+      agentlab: "Agent Lab — GenAI Systems Lab",
+      evallab: "Eval Lab — GenAI Systems Lab",
+      llmlab: "LLM Lab — GenAI Systems Lab",
       systems: "Systems Lab — GenAI Systems Lab",
       playground: "Playground — GenAI Systems Lab",
       explore: "Explore — GenAI Systems Lab",
@@ -1164,24 +1191,19 @@ export default function App() {
     { label: null, items: [
       { id: "home", label: "Home", audience: "All levels" },
     ]},
-    { label: "LEARN", color: "#6366f1", items: [
-      { id: "concepts",    label: "Concepts",    count: 4,  audience: "All levels" },
-      { id: "flows",       label: "Flows",       count: 14, audience: "All levels" },
-      { id: "groundtruth", label: "Ground Truth",           audience: "All levels" },
-    ]},
-    { label: "BUILD", color: "#3b82f6", items: [
-      { id: "lab",        label: "RAG Lab",    count: 6,  audience: "Engineers" },
-      { id: "agents",     label: "Agents",     count: 15, audience: "Engineers" },
-      { id: "playground", label: "Playground", count: 7,  audience: "All levels" },
-      { id: "explore",    label: "Explore",    count: 23, audience: "Engineers" },
-      { id: "systems",    label: "Systems",    count: 51, audience: "Engineers · PMs" },
+    { label: "LABS", color: "#3b82f6", items: [
+      { id: "lab",      label: "RAG Lab",   count: 6,  audience: "Engineers" },
+      { id: "agentlab", label: "Agent Lab", count: 15, audience: "Engineers" },
+      { id: "evallab",  label: "Eval Lab",  count: 18, audience: "Engineers · PMs" },
+      { id: "llmlab",   label: "LLM Lab",   count: 39, audience: "Engineers" },
     ]},
     { label: "GROW", color: "#22c55e", items: [
-      { id: "paths",   label: "Paths",                   audience: "All levels" },
-      { id: "fluency", label: "Drills",      count: 8,   audience: "Interview prep" },
-      { id: "preplab", label: "Prep Lab",                audience: "Interview prep" },
-      { id: "career",  label: "Career",      count: 6,   audience: "Job seekers" },
-      { id: "aipm",    label: "AI Product",  count: 5,   audience: "Product managers" },
+      { id: "preplab", label: "Prep Lab",   audience: "Interview prep" },
+      { id: "career",  label: "Career",     count: 6,  audience: "Job seekers" },
+      { id: "aipm",    label: "AI Product", count: 5,  audience: "Product managers" },
+    ]},
+    { label: "KNOWLEDGE", color: "#8b5cf6", items: [
+      { id: "groundtruth", label: "Ground Truth", audience: "All levels" },
     ]},
     { label: null, items: [
       { id: "progress", label: "My Progress", audience: "All levels" },
@@ -1200,9 +1222,9 @@ export default function App() {
           onSelect={item => {
             navigate(item.tab);
             track("search_performed", { query: item.label?.slice(0, 50) });
-            if (item.tab === "systems"     && item.moduleId) setSystemsModule(item.moduleId);
+            if ((item.tab === "systems" || item.tab === "evallab" || item.tab === "llmlab") && item.moduleId) setSystemsModule(item.moduleId);
             if (item.tab === "explore"     && item.moduleId) setExploreModule(item.moduleId);
-            if (item.tab === "agents"      && item.moduleId) setAgentsModule(item.moduleId);
+            if ((item.tab === "agents" || item.tab === "agentlab") && item.moduleId) setAgentsModule(item.moduleId);
             if (item.tab === "groundtruth" && item.moduleId) setGtPostId(item.moduleId);
             setSearchOpen(false);
           }}
@@ -1452,6 +1474,9 @@ export default function App() {
           {topView === "flows"      && <FlowsApp onNavigate={navigateTo} />}
           {topView === "consult"    && <ConsultationApp onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
+          {topView === "agentlab"   && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
+          {topView === "evallab"    && <SystemsApp allowedModules={EVAL_LAB_MODULES} labTitle="Eval Lab" labSubtitle="Evaluation, observability & ops strategy" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
+          {topView === "llmlab"     && <SystemsApp allowedModules={LLM_LAB_MODULES} labTitle="LLM Lab" labSubtitle="Architecture, training & inference systems" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
 
           {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "fluency"    && <FluencyApp />}
@@ -1774,17 +1799,17 @@ export default function App() {
         {/* 3 group buttons */}
         <div className="flex">
           {[
-            { label: "LEARN", icon: (
+            { label: "LABS", icon: (
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M6 2v5L3 14a1 1 0 00.9 1.5h10.2A1 1 0 0015 14L12 7V2" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+                <path d="M6 2h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <circle cx="8" cy="12" r="1" fill="currentColor"/>
+              </svg>
+            )},
+            { label: "KNOWLEDGE", icon: (
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M9 2L2 6l7 4 7-4-7-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
                 <path d="M2 10l7 4 7-4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-              </svg>
-            )},
-            { label: "BUILD", icon: (
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <rect x="2" y="10" width="5" height="6" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-                <rect x="7" y="6" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-                <rect x="12" y="2" width="5" height="14" rx="1" stroke="currentColor" strokeWidth="1.4"/>
               </svg>
             )},
             { label: "GROW", icon: (

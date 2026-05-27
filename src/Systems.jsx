@@ -124,8 +124,9 @@ const RELATED_GT = {
   buildthis:   [{ id: "ai-system-design-framework", title: "AI System Design Framework" }],
 };
 
-export default function SystemsApp({ initialModule, onModuleVisit, onNavigate }) {
-  const [activeModule, setActiveModule] = useState(initialModule || "evals");
+export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, allowedModules, labTitle, labSubtitle }) {
+  const visibleModules = allowedModules ? SYSTEMS_MODULES.filter(m => allowedModules.includes(m.id)) : SYSTEMS_MODULES;
+  const [activeModule, setActiveModule] = useState(initialModule || (allowedModules ? allowedModules[0] : "evals"));
   const [search, setSearch] = useState("");
   const [activeGroup, setActiveGroup] = useState(null); // null = all groups
   const [done, setDone] = useState(() => {
@@ -142,11 +143,11 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate })
       return next;
     });
   }
-  const ActiveComponent = SYSTEMS_MODULES.find(m => m.id === activeModule)?.component || EvalsLab;
-  const total = SYSTEMS_MODULES.length;
+  const ActiveComponent = visibleModules.find(m => m.id === activeModule)?.component || EvalsLab;
+  const total = visibleModules.length;
   const doneCount = done.size;
-  const activeIdx = SYSTEMS_MODULES.findIndex(m => m.id === activeModule);
-  const nextModule = SYSTEMS_MODULES[activeIdx + 1] || null;
+  const activeIdx = visibleModules.findIndex(m => m.id === activeModule);
+  const nextModule = visibleModules[activeIdx + 1] || null;
   const searchLower = search.toLowerCase();
   const filterModules = (modules) => {
     let result = activeGroup ? modules.filter(m => m.group === activeGroup) : modules;
@@ -166,8 +167,8 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate })
         <div className="px-3 pt-5 pb-2 space-y-3">
           {/* Title + progress */}
           <div>
-            <h1 className="text-base font-black text-white tracking-tight">Systems Lab</h1>
-            <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">Production AI systems thinking</p>
+            <h1 className="text-base font-black text-white tracking-tight">{labTitle || "Systems Lab"}</h1>
+            <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">{labSubtitle || "Production AI systems thinking"}</p>
             {doneCount > 0 && (
               <div className="flex items-center gap-2 mt-2">
                 <div className="h-1 flex-1 rounded-full bg-zinc-800 overflow-hidden">
@@ -214,11 +215,11 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate })
 
         {/* Module list — grouped */}
         <div className="px-2 pb-4 space-y-1">
-          {search && SYSTEMS_GROUPS.every(grp => filterModules(SYSTEMS_MODULES.filter(m => m.group === grp.id)).length === 0) && (
+          {search && SYSTEMS_GROUPS.every(grp => filterModules(visibleModules.filter(m => m.group === grp.id)).length === 0) && (
             <div className="text-center text-xs text-zinc-600 py-4">No match for "{search}"</div>
           )}
           {SYSTEMS_GROUPS.map(grp => {
-            const groupModules = filterModules(SYSTEMS_MODULES.filter(m => m.group === grp.id));
+            const groupModules = filterModules(visibleModules.filter(m => m.group === grp.id));
             if (groupModules.length === 0) return null;
             if (activeGroup && grp.id !== activeGroup) return null;
             return (
