@@ -863,7 +863,7 @@ const EVAL_LAB_MODULES = [
 ];
 
 const LLM_LAB_MODULES = [
-  "txarch","kvcache","inference","specdecoding","streaming","flashattn",
+  "decoding","txarch","kvcache","inference","specdecoding","streaming","flashattn",
   "quantization","serving","moe","ctxwindow","compaction","finetune","finetuning",
   "rlhf","grpo","modelmerging","reasoning","synthdata","multimodal","multimodal2",
   "promptlab","indiascale","promptcaching","costlatency",
@@ -1476,7 +1476,7 @@ export default function App() {
           {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "agentlab"   && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "evallab"    && <SystemsApp allowedModules={EVAL_LAB_MODULES} labTitle="Eval Lab" labSubtitle="Evaluation, observability & ops strategy" suggestedStart="evals" suggestedLabel="Evals Lab" suggestedNote="knowing how to measure is the skill every other module depends on" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
-          {topView === "llmlab"     && <SystemsApp allowedModules={LLM_LAB_MODULES} labTitle="LLM Lab" labSubtitle="Architecture, training & inference systems" suggestedStart="txarch" suggestedLabel="Transformer Architecture" suggestedNote="the foundation that explains every other module in this lab" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
+          {topView === "llmlab"     && <SystemsApp allowedModules={LLM_LAB_MODULES} labTitle="LLM Lab" labSubtitle="Architecture, training & inference systems" suggestedStart="decoding" suggestedLabel="Decoding Strategies Lab" suggestedNote="the interactive where you actually see what temperature and top-p do to token distributions" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
 
           {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "fluency"    && <FluencyApp />}

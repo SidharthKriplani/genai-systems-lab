@@ -12838,8 +12838,286 @@ ${filledCriteria.map((c, i) => `  "criterion_${i+1}_score": <score>,
   );
 }
 
+// ─── DECODING STRATEGIES LAB ──────────────────────────────────────────────────
+
+const BASE_TOKENS = [
+  { word: "the",    base: 0.28 },
+  { word: "a",      base: 0.18 },
+  { word: "this",   base: 0.14 },
+  { word: "an",     base: 0.11 },
+  { word: "that",   base: 0.09 },
+  { word: "its",    base: 0.07 },
+  { word: "each",   base: 0.06 },
+  { word: "every",  base: 0.04 },
+  { word: "their",  base: 0.02 },
+  { word: "some",   base: 0.01 },
+];
+
+function softmax(logits) {
+  const maxL = Math.max(...logits);
+  const exps = logits.map(l => Math.exp(l - maxL));
+  const sum = exps.reduce((a, b) => a + b, 0);
+  return exps.map(e => e / sum);
+}
+
+function applyTemperature(probs, temp) {
+  if (temp <= 0.01) {
+    return probs.map((p, i) => i === probs.indexOf(Math.max(...probs)) ? 1 : 0);
+  }
+  const logits = probs.map(p => Math.log(Math.max(p, 1e-10)) / temp);
+  return softmax(logits);
+}
+
+function applyTopK(probs, k) {
+  if (k >= probs.length) return probs;
+  const sorted = [...probs].map((p, i) => ({ p, i })).sort((a, b) => b.p - a.p);
+  const threshold = sorted[k - 1].p;
+  const masked = probs.map(p => p >= threshold ? p : 0);
+  const sum = masked.reduce((a, b) => a + b, 0);
+  return sum > 0 ? masked.map(p => p / sum) : probs;
+}
+
+function applyTopP(probs, topP) {
+  const sorted = [...probs].map((p, i) => ({ p, i })).sort((a, b) => b.p - a.p);
+  let cumulative = 0;
+  const keep = new Set();
+  for (const { p, i } of sorted) {
+    keep.add(i);
+    cumulative += p;
+    if (cumulative >= topP) break;
+  }
+  const masked = probs.map((p, i) => keep.has(i) ? p : 0);
+  const sum = masked.reduce((a, b) => a + b, 0);
+  return sum > 0 ? masked.map(p => p / sum) : probs;
+}
+
+function sampleToken(probs) {
+  const r = Math.random();
+  let cum = 0;
+  for (let i = 0; i < probs.length; i++) {
+    cum += probs[i];
+    if (r <= cum) return i;
+  }
+  return probs.length - 1;
+}
+
+export function DecodingStrategiesLab() {
+  const [temperature, setTemperature] = useState(1.0);
+  const [topK, setTopK] = useState(10);
+  const [topP, setTopP] = useState(1.0);
+  const [useTopK, setUseTopK] = useState(false);
+  const [useTopP, setUseTopP] = useState(false);
+  const [samples, setSamples] = useState([]);
+  const [activeTab, setActiveTab] = useState("visualizer");
+
+  const finalProbs = (() => {
+    let probs = BASE_TOKENS.map(t => t.base);
+    probs = applyTemperature(probs, temperature);
+    if (useTopK) probs = applyTopK(probs, topK);
+    if (useTopP) probs = applyTopP(probs, topP);
+    return probs;
+  })();
+
+  const maxProb = Math.max(...finalProbs);
+
+  function runSamples(n = 20) {
+    const results = [];
+    for (let i = 0; i < n; i++) results.push(sampleToken(finalProbs));
+    setSamples(results);
+  }
+
+  const uniqueSampled = new Set(samples).size;
+
+  const TABS = ["visualizer", "mechanics", "intuition"];
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-xl font-black text-white mb-1">Decoding Strategies Lab</h2>
+        <p className="text-sm text-zinc-400">See how temperature, top-k, and top-p reshape the probability distribution over next tokens. Adjust sliders and sample to build the intuition that sticks.</p>
+      </div>
+
+      <div className="flex gap-1">
+        {TABS.map(t => (
+          <button key={t} onClick={() => setActiveTab(t)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeTab === t ? "bg-blue-900/40 text-blue-300 border border-blue-800/50" : "text-zinc-500 hover:text-zinc-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "visualizer" && (
+        <div className="space-y-5">
+          {/* Controls */}
+          <div className="grid grid-cols-1 gap-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="font-semibold text-zinc-300">Temperature</span>
+                <span className="font-mono text-blue-300">{temperature.toFixed(2)}</span>
+              </div>
+              <input type="range" min="0.01" max="2.5" step="0.01" value={temperature}
+                onChange={e => setTemperature(parseFloat(e.target.value))}
+                className="w-full accent-blue-500" />
+              <div className="flex justify-between text-[10px] text-zinc-600">
+                <span>0.01 — greedy / deterministic</span>
+                <span>2.5 — very random</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <label className="flex items-center gap-2 font-semibold text-zinc-300 cursor-pointer">
+                    <input type="checkbox" checked={useTopK} onChange={e => setUseTopK(e.target.checked)} className="accent-emerald-500" />
+                    Top-K
+                  </label>
+                  <span className="font-mono text-emerald-300">{topK}</span>
+                </div>
+                <input type="range" min="1" max="10" step="1" value={topK}
+                  onChange={e => setTopK(parseInt(e.target.value))}
+                  disabled={!useTopK}
+                  className={`w-full accent-emerald-500 ${!useTopK ? "opacity-30" : ""}`} />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <label className="flex items-center gap-2 font-semibold text-zinc-300 cursor-pointer">
+                    <input type="checkbox" checked={useTopP} onChange={e => setUseTopP(e.target.checked)} className="accent-violet-500" />
+                    Top-P
+                  </label>
+                  <span className="font-mono text-violet-300">{topP.toFixed(2)}</span>
+                </div>
+                <input type="range" min="0.1" max="1.0" step="0.01" value={topP}
+                  onChange={e => setTopP(parseFloat(e.target.value))}
+                  disabled={!useTopP}
+                  className={`w-full accent-violet-500 ${!useTopP ? "opacity-30" : ""}`} />
+              </div>
+            </div>
+          </div>
+
+          {/* Distribution viz */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Token probability distribution</div>
+            <div className="space-y-1.5">
+              {BASE_TOKENS.map((token, i) => {
+                const raw = BASE_TOKENS[i].base;
+                const adjusted = finalProbs[i];
+                const inPool = adjusted > 0;
+                return (
+                  <div key={token.word} className="flex items-center gap-3">
+                    <span className={`text-xs font-mono w-12 text-right shrink-0 ${inPool ? "text-white" : "text-zinc-700 line-through"}`}>{token.word}</span>
+                    <div className="flex-1 relative h-5 bg-zinc-800 rounded overflow-hidden">
+                      {/* Base prob (ghost) */}
+                      <div className="absolute inset-y-0 left-0 bg-zinc-700/40 rounded"
+                        style={{ width: `${raw * 100}%` }} />
+                      {/* Adjusted prob */}
+                      {inPool && (
+                        <div className="absolute inset-y-0 left-0 rounded transition-all duration-200"
+                          style={{ width: `${adjusted * 100}%`, background: adjusted === maxProb ? "#6366f1" : "#3b82f680" }} />
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-mono w-10 shrink-0 ${inPool ? "text-zinc-400" : "text-zinc-700"}`}>
+                      {inPool ? (adjusted * 100).toFixed(1) + "%" : "masked"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-3 flex gap-3 text-[10px] text-zinc-600">
+              <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-zinc-700/40 inline-block" />base</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-blue-500/50 inline-block" />adjusted</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-violet-500 inline-block" />top token</span>
+            </div>
+          </div>
+
+          {/* Sampler */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Sampling simulation</div>
+                {samples.length > 0 && (
+                  <div className="text-xs text-zinc-400 mt-0.5">{uniqueSampled} unique token{uniqueSampled !== 1 ? "s" : ""} in {samples.length} draws — diversity: {((uniqueSampled / samples.length) * 100).toFixed(0)}%</div>
+                )}
+              </div>
+              <button onClick={() => runSamples(30)} className="px-3 py-1.5 rounded-lg bg-violet-900/40 text-violet-300 text-xs font-bold hover:bg-violet-900/60 transition-all">
+                Sample 30x
+              </button>
+            </div>
+            {samples.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {samples.map((idx, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded bg-zinc-800 text-xs font-mono text-zinc-300">{BASE_TOKENS[idx].word}</span>
+                ))}
+              </div>
+            )}
+            {samples.length === 0 && (
+              <div className="text-xs text-zinc-600 text-center py-2">Hit "Sample 30x" to see token draws with current settings</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "mechanics" && (
+        <div className="space-y-4">
+          {[
+            { name: "Temperature", color: "blue", formula: "p_i = softmax(logit_i / T)", what: "Divides every logit by T before softmax. Low T sharpens the distribution (high-prob tokens dominate). High T flattens it (all tokens become more equally likely). T=1 is unchanged.", when: "Use low temp (0.1–0.3) for code, SQL, structured outputs. Use high temp (0.8–1.2) for creative writing, brainstorming.", trap: "T=0 is greedy decoding — deterministic but can loop. T>1.5 often produces incoherent text." },
+            { name: "Top-K", color: "emerald", formula: "keep top K tokens, re-normalize", what: "After temperature scaling, discard all tokens except the K highest-probability ones. Re-normalize the remaining probabilities to sum to 1.", when: "K=1 is greedy. K=40–50 is common for chat. Lower K = more focused, higher K = more variety.", trap: "Fixed K ignores the distribution shape. K=50 in a flat distribution keeps many bad tokens; K=50 in a sharp distribution still keeps tokens with near-zero probability." },
+            { name: "Top-P (Nucleus Sampling)", color: "violet", formula: "keep tokens until cumulative prob >= P", what: "Sort tokens by probability descending. Keep adding until cumulative probability exceeds P. Re-normalize. The 'nucleus' adapts: when the model is confident, the nucleus is small; when uncertain, it's large.", when: "P=0.9–0.95 is the standard production default. Almost always better than fixed top-K.", trap: "Top-P and Top-K are often used together (apply top-K first, then top-P). In practice, top-P alone is usually sufficient." },
+          ].map(s => (
+            <div key={s.name} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-black text-white`}>{s.name}</span>
+                <code className={`text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-${s.color}-300`}>{s.formula}</code>
+              </div>
+              <p className="text-xs text-zinc-400 leading-relaxed"><span className="font-semibold text-zinc-300">What it does: </span>{s.what}</p>
+              <p className="text-xs text-zinc-400 leading-relaxed"><span className="font-semibold text-zinc-300">When to use: </span>{s.when}</p>
+              <p className="text-xs text-amber-400/80 leading-relaxed"><span className="font-semibold text-amber-300">Common trap: </span>{s.trap}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === "intuition" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+            <div className="text-sm font-bold text-white">The mental model that sticks</div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Think of the model's next-token distribution as a crowd of candidates waiting to be called. Temperature controls how much you trust the crowd's ranking. Low temperature: call the top candidates, trust the ranking. High temperature: give everyone a more equal chance — creative but risky.
+            </p>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Top-K and Top-P are bouncers. Top-K only lets in the top K people regardless of how much space that leaves. Top-P lets in people until the room is P% full — the crowd adapts to how good the candidates are.
+            </p>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+            <div className="text-sm font-bold text-white">Production defaults (by use case)</div>
+            {[
+              { use: "Code generation", temp: "0.1–0.3", k: "—", p: "0.95", note: "Determinism matters — wrong brackets break programs" },
+              { use: "Chat / assistant", temp: "0.7–1.0", k: "—", p: "0.9",  note: "Variety without incoherence" },
+              { use: "Creative writing", temp: "1.0–1.3", k: "—", p: "0.95", note: "High diversity, accept occasional weirdness" },
+              { use: "Classification / extraction", temp: "0.0", k: "—", p: "—", note: "Greedy is fine — you want the most likely label" },
+              { use: "Summarization", temp: "0.3–0.5", k: "—", p: "0.9",  note: "Factual but not robotic" },
+            ].map(r => (
+              <div key={r.use} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-start text-xs border-t border-zinc-800/60 pt-2 first:border-t-0 first:pt-0">
+                <div className="font-semibold text-zinc-300">{r.use}</div>
+                <div className="font-mono text-blue-300 text-center">{r.temp}</div>
+                <div className="font-mono text-violet-300 text-center">{r.p}</div>
+                <div className="text-zinc-500 text-[10px] col-span-4">{r.note}</div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl border border-amber-900/30 bg-amber-950/20 p-4 space-y-1">
+            <div className="text-xs font-bold text-amber-300">The interview question</div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              "Why does setting temperature=0 not guarantee the same output every time?" — Answer: floating-point non-determinism in GPU operations (especially across hardware or batch sizes) means even greedy decoding can produce slightly different results. True determinism requires setting a fixed seed AND using the same hardware/batch configuration.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, DecodingStrategiesLab, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
 };
