@@ -8813,79 +8813,287 @@ function QuantizationEngineering() {
 }
 
 // ─── SERVING INFRASTRUCTURE ───────────────────────────────────────────────────
-function ServingFrameworks() {
-  const rows = [
-    { name: "vLLM", batching: "Continuous", backend: "PagedAttention", throughput: "★★★★★", best: "General GPU serving" },
-    { name: "SGLang", batching: "RadixAttention", backend: "CUDA graphs", throughput: "★★★★★", best: "Multi-call / agents" },
-    { name: "TensorRT-LLM", batching: "Dynamic", backend: "TensorRT", throughput: "★★★★★", best: "NVIDIA production" },
-    { name: "Triton Inference", batching: "Static", backend: "Custom", throughput: "★★★☆☆", best: "Custom kernels" },
-    { name: "Ollama", batching: "Static", backend: "llama.cpp", throughput: "★★★☆☆", best: "Local / laptop" },
-  ];
+// ─── SERVING INFRASTRUCTURE DECISION ENGINE ─────────────────────────────────
+
+const SERVING_FAILURE_SCENARIOS = [
+  {
+    id: "oom",
+    title: "KV Cache OOM",
+    color: "#ef4444",
+    trigger: "Long context + large batch + insufficient VRAM",
+    symptoms: ["CUDA out of memory mid-request", "Server crashes on concurrent long prompts", "P99 latency spikes to 30s+ before crash"],
+    rootCause: "KV cache grows as O(batch × seq_len × layers × head_dim). A 70B model with 32K context at batch=32 needs ~400GB just for KV — exceeds any single GPU.",
+    fix: ["Reduce max_model_len in vLLM config", "Enable PagedAttention with smaller block sizes (block_size=8)", "Use chunked prefill to limit KV materialization per step", "Add max_num_seqs cap to bound concurrent requests"],
+  },
+  {
+    id: "taillatency",
+    title: "P99 Tail Latency Explosion",
+    color: "#f59e0b",
+    trigger: "Mixed short + long requests in the same continuous batch",
+    symptoms: ["Short requests wait behind long ones", "P50 latency fine, P99 is 10× worse", "TTFT good, total generation time unpredictable"],
+    rootCause: "Continuous batching queues short requests behind in-flight long sequences. Head-of-line blocking — same fundamental problem as HTTP/1.1 on a single connection.",
+    fix: ["Enable priority scheduling in vLLM (--enable-priority-scheduling)", "Separate short and long context request queues at the load balancer", "Use chunked prefill to interleave prefill/decode steps", "Set max_seq_len per request category"],
+  },
+  {
+    id: "coldstart",
+    title: "Cold Start Latency",
+    color: "#8b5cf6",
+    trigger: "Model loaded on first request, or replica scaled from zero",
+    symptoms: ["First request takes 20–120s", "Normal latency after first request", "Kubernetes HPA scale-up causes user-visible delays"],
+    rootCause: "Loading a 70B model from disk to GPU VRAM takes 60–90s. No warmup = first user pays full cost. Serverless without keep-alive has this on every cold replica.",
+    fix: ["Pre-warm replicas with dummy requests after scale-up", "Keep minimum replica count >= 1 (no scale-to-zero for P99-sensitive paths)", "Pin model weights to shared GPU memory across replicas", "Use readiness probes gated on first successful inference"],
+  },
+  {
+    id: "queueblowup",
+    title: "Queue Depth Explosion",
+    color: "#f97316",
+    trigger: "Burst traffic exceeds serving capacity — requests pile up",
+    symptoms: ["TTFT climbs steadily under load", "Memory usage stable but latency degrading", "Requests timing out at client before response arrives"],
+    rootCause: "vLLM maintains a waiting queue. When arrival rate > throughput, queue grows unbounded. At 2× overload, a 1s request becomes 10s+. Queue depth is the leading indicator, not memory.",
+    fix: ["Set max_waiting_tokens to cap queue depth", "Return 503 early when queue depth exceeds threshold (circuit breaker pattern)", "Scale horizontally before queue grows — add replicas proactively", "Use deadline headers; drop requests that cannot be served in time"],
+  },
+  {
+    id: "tensorparallel",
+    title: "Tensor Parallel Overhead",
+    color: "#3b82f6",
+    trigger: "TP > 2 on small models — NCCL all-reduce overhead exceeds compute time",
+    symptoms: ["Latency does not improve when adding more GPUs", "GPU utilization drops per-device as TP increases", "Throughput improves but TTFT stays high"],
+    rootCause: "Tensor parallel splits matrix multiplications across GPUs and requires an all-reduce sync per transformer layer. At TP=8 on a 7B model, the all-reduce takes longer than the actual compute. You pay network costs to do less work.",
+    fix: ["Use TP only when the model does not fit on a single GPU", "Prefer pipeline parallel over tensor parallel for throughput-heavy workloads", "Keep TP=2 or TP=4 max — diminishing returns beyond that", "Use SGLang RadixAttention for multi-call / agent workloads instead of increasing TP"],
+  },
+];
+
+const SERVING_FRAMEWORKS_DATA = [
+  { name: "vLLM", badge: "Industry default", badgeColor: "#3b82f6", strength: "Broadest hardware support, PagedAttention, continuous batching. The default choice for 90% of teams.", pickWhen: "Any Hugging Face model on any GPU. OpenAI-compatible API. AWS/GCP/Azure.", avoid: "Pure NVIDIA production where TRT-LLM gains matter.", latency: "Good", throughput: "Excellent", complexity: "Low" },
+  { name: "SGLang", badge: "Agent workloads", badgeColor: "#8b5cf6", strength: "RadixAttention reuses KV across multiple calls from the same agent loop. 2–5× better on multi-turn.", pickWhen: "Agent workloads: multiple tool calls per turn, long conversation threads, RAG with repeated context.", avoid: "Simple single-turn inference — RadixAttention overhead does not pay off.", latency: "Very Good", throughput: "Excellent", complexity: "Low" },
+  { name: "TensorRT-LLM", badge: "Peak NVIDIA", badgeColor: "#10b981", strength: "NVIDIA-optimized kernels. In-flight batching. 15–25% better throughput than vLLM on same hardware.", pickWhen: "Committed to NVIDIA, need every FLOP, can absorb model compilation time.", avoid: "AMD GPUs. Models not in TRT-LLM supported list. Rapid model iteration cycles.", latency: "Very Good", throughput: "Best", complexity: "High" },
+  { name: "Ollama", badge: "Local only", badgeColor: "#f59e0b", strength: "Dead-simple setup. Runs on MacBooks and Windows. llama.cpp backend handles CPU + partial GPU.", pickWhen: "Developer machines, local testing, demos, single-user apps.", avoid: "Any production multi-user workload. It is a single-request server.", latency: "Variable", throughput: "Poor", complexity: "Lowest" },
+];
+
+function deriveServingRecommendation(modelB, gpuGB, numGPU, rps, workload) {
+  const totalVRAM = gpuGB * numGPU;
+  const weightGB = modelB * 2;
+  const int4GB = weightGB / 4;
+  const fp8GB = weightGB / 2;
+  if (int4GB > totalVRAM * 0.88) {
+    return { fits: false, reason: modelB + "B model requires ~" + Math.round(weightGB) + "GB FP16. Even INT4 (~" + Math.round(int4GB) + "GB) exceeds " + totalVRAM + "GB total VRAM.", recommendation: "Minimum: " + Math.ceil(int4GB / (gpuGB * 0.85)) + "×" + gpuGB + "GB GPUs with INT4 quantization." };
+  }
+  const needsQuant = weightGB > totalVRAM * 0.82;
+  const quant = needsQuant ? (int4GB < totalVRAM * 0.58 ? "INT4 (AWQ)" : "FP8") : "None";
+  const effectiveGB = needsQuant ? (quant === "INT4 (AWQ)" ? int4GB : fp8GB) : weightGB;
+  const kvBudget = Math.round(totalVRAM - effectiveGB);
+  const kvPerSeq = (modelB / 7) * 0.5;
+  const maxConcurrent = Math.max(1, Math.floor(kvBudget / kvPerSeq));
+  const framework = workload === "agents" ? "SGLang" : numGPU > 1 ? "vLLM (tensor parallel)" : "vLLM";
+  const batching = workload === "batch" ? "Continuous batching (max throughput mode)" : workload === "agents" ? "RadixAttention (SGLang)" : "Continuous batching + prefix cache";
+  let failureMode = null;
+  if (rps > maxConcurrent * 1.8) {
+    failureMode = { type: "Queue depth explosion", severity: "high", fix: "This RPS likely exceeds capacity. Add replicas or reduce max_model_len. Expected max stable RPS: ~" + Math.round(maxConcurrent * 1.5) + "." };
+  } else if (kvBudget < 12) {
+    failureMode = { type: "KV cache OOM risk", severity: "high", fix: "Very little KV headroom. Set max_model_len=4096, enable PagedAttention with block_size=8." };
+  } else if (numGPU > 2 && modelB <= 13) {
+    failureMode = { type: "Tensor parallel overhead", severity: "medium", fix: "TP>2 on small models costs more in NCCL overhead than it saves. Use TP=1 or TP=2 max." };
+  }
+  return { fits: true, quant, framework, batching, kvBudget, maxConcurrent, effectiveGB: Math.round(effectiveGB), failureMode };
+}
+
+function ServingDecisionEngine() {
+  const [modelB, setModelB] = useState(7);
+  const [gpuKey, setGpuKey] = useState("a100-80");
+  const [numGPU, setNumGPU] = useState(1);
+  const [rps, setRps] = useState(20);
+  const [workload, setWorkload] = useState("streaming");
+  const GPU_MAP = { "a100-40": 40, "a100-80": 80, "h100-80": 80, "a40-48": 48 };
+  const GPU_LABELS = { "a100-40": "A100 40GB", "a100-80": "A100 80GB", "h100-80": "H100 80GB", "a40-48": "A40 48GB" };
+  const gpuGB = GPU_MAP[gpuKey] || 80;
+  const result = deriveServingRecommendation(modelB, gpuGB, numGPU, rps, workload);
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="bg-zinc-800">
-            {["Framework", "Batching", "Backend", "Throughput", "Best For"].map(h => (
-              <th key={h} className="text-left px-3 py-2 font-semibold text-zinc-300">{h}</th>
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Model size</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[7, 13, 70, 405].map(b => (
+              <button key={b} onClick={() => setModelB(b)}
+                style={modelB === b ? { background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)", border: "1px solid rgba(99,102,241,0.6)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
+                className={"py-2 rounded-lg text-xs font-bold transition-all " + (modelB === b ? "text-white" : "text-zinc-400 hover:text-zinc-200")}>
+                {b}B
+              </button>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i} className="border-t border-zinc-800">
-              <td className="px-3 py-2 font-bold text-zinc-200">{r.name}</td>
-              <td className="px-3 py-2 text-zinc-400">{r.batching}</td>
-              <td className="px-3 py-2 text-zinc-400">{r.backend}</td>
-              <td className="px-3 py-2 text-yellow-500">{r.throughput}</td>
-              <td className="px-3 py-2 text-zinc-500">{r.best}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">GPU type</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {Object.entries(GPU_LABELS).map(([key, label]) => (
+              <button key={key} onClick={() => setGpuKey(key)}
+                style={gpuKey === key ? { background: "rgba(99,102,241,0.18)", border: "1px solid rgba(99,102,241,0.5)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
+                className={"py-2 rounded-lg text-xs font-medium transition-all " + (gpuKey === key ? "text-indigo-300" : "text-zinc-400 hover:text-zinc-200")}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">GPU count</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[1, 2, 4, 8].map(n => (
+              <button key={n} onClick={() => setNumGPU(n)}
+                style={numGPU === n ? { background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)", border: "1px solid rgba(99,102,241,0.6)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
+                className={"py-2 rounded-lg text-xs font-bold transition-all " + (numGPU === n ? "text-white" : "text-zinc-400 hover:text-zinc-200")}>
+                x{n}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Target RPS: <span className="text-indigo-400">{rps}</span></p>
+          <input type="range" min={1} max={300} step={1} value={rps} onChange={e => setRps(Number(e.target.value))} className="w-full accent-indigo-600" />
+          <div className="flex justify-between text-[10px] text-zinc-600"><span>1</span><span>100</span><span>200</span><span>300</span></div>
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Workload type</p>
+          <div className="grid grid-cols-3 gap-1.5">
+            {[["streaming","Chat / Streaming","Optimize TTFT"],["batch","Batch / Offline","Max throughput"],["agents","RAG / Agents","Multi-call, P99 SLA"]].map(([v, l, sub]) => (
+              <button key={v} onClick={() => setWorkload(v)}
+                style={workload === v ? { background: "rgba(99,102,241,0.18)", border: "1px solid rgba(99,102,241,0.5)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
+                className="py-2.5 rounded-lg text-xs transition-all text-center">
+                <p className={"font-bold " + (workload === v ? "text-indigo-300" : "text-zinc-300")}>{l}</p>
+                <p className="text-zinc-600 mt-0.5">{sub}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      {!result.fits ? (
+        <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderTop: "2px solid rgba(239,68,68,0.6)" }} className="rounded-xl p-5 space-y-3">
+          <span style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171" }} className="inline-flex px-3 py-1 rounded-full text-xs font-bold">OOM — Won't Fit</span>
+          <p className="text-sm text-zinc-300">{result.reason}</p>
+          <p className="text-sm text-emerald-400 font-medium">{result.recommendation}</p>
+        </div>
+      ) : (
+        <div style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "2px solid rgba(59,130,246,0.5)" }} className="rounded-xl p-5 space-y-4">
+          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Recommendation</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[["Framework", result.framework, "#3b82f6"],["Batching", result.batching.split("(")[0].trim(), "#8b5cf6"],["Quantization", result.quant, result.quant !== "None" ? "#f59e0b" : "#10b981"]].map(([label, value, color]) => (
+              <div key={label} style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)", borderTop: "2px solid " + color + "40" }} className="rounded-lg p-3">
+                <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider mb-1">{label}</p>
+                <p className="text-sm font-bold" style={{ color }}>{value}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded-lg p-3 grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider mb-1">KV cache budget</p>
+              <p className="text-sm font-bold text-zinc-200">{result.kvBudget}GB</p>
+              <p className="text-[10px] text-zinc-600 mt-0.5">{result.effectiveGB}GB used by weights</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider mb-1">Max concurrent seqs</p>
+              <p className="text-sm font-bold text-zinc-200">~{result.maxConcurrent}</p>
+              <p className="text-[10px] text-zinc-600 mt-0.5">at 4K context, 4K output</p>
+            </div>
+          </div>
+          {result.failureMode && (
+            <div style={{ background: result.failureMode.severity === "high" ? "rgba(239,68,68,0.08)" : "rgba(245,158,11,0.08)", border: result.failureMode.severity === "high" ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(245,158,11,0.3)" }} className="rounded-lg p-3 space-y-1">
+              <p className={"text-xs font-bold " + (result.failureMode.severity === "high" ? "text-red-400" : "text-amber-400")}>Warning: {result.failureMode.type}</p>
+              <p className="text-xs text-zinc-400">{result.failureMode.fix}</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function ServingConcepts() {
-  const concepts = [
-    {
-      title: "PagedAttention",
-      tag: "vLLM",
-      color: "border-indigo-400 dark:border-indigo-600",
-      header: "bg-indigo-50 dark:bg-indigo-900/20",
-      desc: "KV cache stored in non-contiguous memory \"pages\" (like OS virtual memory). Eliminates fragmentation and reservation waste.",
-      impact: "GPU memory utilization ↑40%, enables 24× more concurrent sequences",
-    },
-    {
-      title: "Continuous Batching",
-      tag: "vLLM / SGLang",
-      color: "border-blue-400 dark:border-blue-600",
-      header: "bg-blue-50 dark:bg-blue-900/20",
-      desc: "New requests join in-flight batches mid-sequence as slots free up. Removes padding waste from static batching.",
-      impact: "2–23× throughput improvement vs static batching at high load",
-    },
-    {
-      title: "Prefix Caching",
-      tag: "vLLM / SGLang",
-      color: "border-green-400 dark:border-green-600",
-      header: "bg-green-50 dark:bg-green-900/20",
-      desc: "Common prompt prefixes (system prompts, RAG context) cached across requests. KV states reused without recomputation.",
-      impact: "Reduces TTFT for repeated system prompts by 60–80%",
-    },
-  ];
+function ServingFailures() {
+  const [open, setOpen] = useState(null);
   return (
-    <div className="space-y-4">
-      {concepts.map((c, i) => (
-        <div key={i} className={`border-l-4 ${c.color} rounded-lg overflow-hidden`}>
-          <div className={`${c.header} px-4 py-2 flex items-center justify-between`}>
-            <span className="font-bold text-sm text-zinc-100">{c.title}</span>
-            <span className="text-xs bg-zinc-900 px-2 py-0.5 rounded text-zinc-400">{c.tag}</span>
-          </div>
-          <div className="px-4 py-3 space-y-1">
-            <p className="text-sm text-zinc-300">{c.desc}</p>
-            <p className="text-xs font-medium text-green-700 dark:text-green-400">{c.impact}</p>
-          </div>
+    <div className="space-y-3">
+      <p className="text-xs text-zinc-500">Five failure modes that hit production inference. Each is a system-level failure — caused by configuration, not model quality.</p>
+      {SERVING_FAILURE_SCENARIOS.map(s => (
+        <div key={s.id} style={{ background: open === s.id ? "rgba(24,24,27,0.9)" : "rgba(24,24,27,0.6)", border: "1px solid rgba(63,63,70,0.6)", borderLeft: "3px solid " + s.color }} className="rounded-xl overflow-hidden transition-all">
+          <button className="w-full px-4 py-3.5 flex items-center justify-between text-left" onClick={() => setOpen(open === s.id ? null : s.id)}>
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />
+              <span className="text-sm font-bold text-zinc-200">{s.title}</span>
+            </div>
+            <span className="text-zinc-600 text-xs">{open === s.id ? "▲" : "▼"}</span>
+          </button>
+          {open === s.id && (
+            <div className="px-4 pb-4 space-y-3 border-t border-zinc-800 pt-3">
+              <div>
+                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Trigger</p>
+                <p className="text-xs text-zinc-300">{s.trigger}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1.5">Symptoms</p>
+                <div className="space-y-1">
+                  {s.symptoms.map((sym, i) => (
+                    <div key={i} className="flex items-start gap-2 text-xs text-zinc-400">
+                      <span style={{ color: s.color }} className="shrink-0 mt-0.5">•</span>
+                      <span>{sym}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ background: "rgba(15,15,17,0.9)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded-lg p-3">
+                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Root cause</p>
+                <p className="text-xs text-zinc-300 leading-relaxed">{s.rootCause}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1.5">Fix</p>
+                {s.fix.map((f, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs text-emerald-400 mb-1">
+                    <span className="shrink-0 mt-0.5">✓</span>
+                    <span>{f}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ServingFrameworksV2() {
+  const [expanded, setExpanded] = useState(null);
+  return (
+    <div className="space-y-3">
+      {SERVING_FRAMEWORKS_DATA.map((fw, i) => (
+        <div key={i} style={{ background: expanded === i ? "rgba(24,24,27,0.9)" : "rgba(24,24,27,0.6)", border: "1px solid rgba(63,63,70,0.6)" }} className="rounded-xl overflow-hidden transition-all">
+          <button className="w-full px-4 py-3.5 flex items-center justify-between text-left" onClick={() => setExpanded(expanded === i ? null : i)}>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-bold text-zinc-100">{fw.name}</span>
+              <span style={{ background: fw.badgeColor + "22", border: "1px solid " + fw.badgeColor + "55", color: fw.badgeColor }} className="text-[10px] font-bold px-2 py-0.5 rounded-full">{fw.badge}</span>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-[10px] text-zinc-500 hidden sm:inline">Throughput: <span className="text-zinc-300 font-medium">{fw.throughput}</span></span>
+              <span className="text-zinc-600 text-xs">{expanded === i ? "▲" : "▼"}</span>
+            </div>
+          </button>
+          {expanded === i && (
+            <div className="px-4 pb-4 border-t border-zinc-800 pt-3 space-y-3">
+              <p className="text-xs text-zinc-300 leading-relaxed">{fw.strength}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)" }} className="rounded-lg p-3">
+                  <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Pick this when</p>
+                  <p className="text-xs text-zinc-300">{fw.pickWhen}</p>
+                </div>
+                <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }} className="rounded-lg p-3">
+                  <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Avoid when</p>
+                  <p className="text-xs text-zinc-300">{fw.avoid}</p>
+                </div>
+              </div>
+              <div className="flex gap-3 text-xs">
+                <span className="text-zinc-500">Latency: <span className="text-zinc-300 font-medium">{fw.latency}</span></span>
+                <span className="text-zinc-500">Throughput: <span className="text-zinc-300 font-medium">{fw.throughput}</span></span>
+                <span className="text-zinc-500">Setup: <span className="text-zinc-300 font-medium">{fw.complexity}</span></span>
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -8893,20 +9101,34 @@ function ServingConcepts() {
 }
 
 function ServingInfra() {
-  const [tab, setTab] = useState(0);
-  const tabs = ["Frameworks", "Key Concepts"];
+  const TABS = [
+    { id: "config", tag: "LAB", label: "Stack Configurator" },
+    { id: "failures", tag: "FAIL", label: "Failure Scenarios" },
+    { id: "frameworks", tag: "REF", label: "Frameworks" },
+  ];
+  const [tab, setTab] = useState("config");
   return (
     <div className="space-y-4">
+      <HowTo
+        objective="Design a production inference stack without guessing. Configure your model, hardware, and traffic — see what works, what breaks, and why."
+        steps={[
+          "Stack Configurator: set model size, GPU config, RPS, and workload — get framework recommendation + failure warnings",
+          "Failure Scenarios: five real production failure modes — trigger, symptoms, root cause, and fix",
+          "Frameworks: vLLM vs SGLang vs TensorRT-LLM vs Ollama — when to pick each",
+        ]}
+      />
       <div className="flex gap-2 flex-wrap">
-        {tabs.map((t, i) => (
-          <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
-            {t}
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={"px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 " + (tab === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white")}>
+            <span className={"text-[9px] px-1 py-0.5 rounded font-mono " + (tab === t.id ? "bg-violet-500 text-violet-100" : "bg-zinc-700 text-zinc-400")}>{t.tag}</span>
+            {t.label}
           </button>
         ))}
       </div>
-      {tab === 0 && <ServingFrameworks />}
-      {tab === 1 && <ServingConcepts />}
+      {tab === "config" && <ServingDecisionEngine />}
+      {tab === "failures" && <ServingFailures />}
+      {tab === "frameworks" && <ServingFrameworksV2 />}
     </div>
   );
 }

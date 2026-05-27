@@ -3155,6 +3155,208 @@ function A2AProtocol() {
   );
 }
 
+// ─── AGENT CONFIG LAB ─────────────────────────────────────────────────────────
+
+const AGENT_FAILURE_MATRIX = [
+  {
+    id: "ctx_overflow",
+    title: "Context window overflow",
+    color: "#ef4444",
+    icon: "FULL",
+    trigger: (cfg) => cfg.taskType === "research" && cfg.contextBudget <= 8000 && cfg.toolCount >= 5,
+    why: "Research agents accumulate tool call results into context. At 5+ tools with 8K budget, a single round of evidence gathering fills the window before the task completes.",
+    step: "The agent calls web_search 3 times, stores 3 summaries, calls read_page twice — each observation adds ~500 tokens. At step 12, context = 7,800 tokens. The next tool call response pushes it over. The model starts truncating its own earlier reasoning.",
+    fix: ["Set a token budget per tool call response (e.g. max 300 tokens returned)", "Use external memory — write findings to a scratchpad file, keep context lean", "Switch to a model with 32K+ context budget for research workloads", "Implement context compaction: summarize earlier findings before they expire"],
+  },
+  {
+    id: "tool_loop",
+    title: "Infinite tool call loop",
+    color: "#f59e0b",
+    icon: "LOOP",
+    trigger: (cfg) => cfg.retryLimit === "unlimited" || (cfg.retryLimit >= 10 && cfg.memoryType === "none"),
+    why: "Without memory, each failed tool call produces no learning. The agent re-tries with nearly identical parameters. Without a retry ceiling, this continues indefinitely.",
+    step: "Agent calls search('quarterly revenue Apple') — API returns a rate limit error. No memory of this error. Retries with search('Apple quarterly earnings') — same error. Retries again. Loop count: 47. Token cost: $4.20. Task result: none.",
+    fix: ["Hard limit: max 3 retries per tool, max 30 total tool calls", "Log failure reasons into ephemeral memory so the agent can route around them", "Implement exponential backoff for transient errors", "On consecutive same-tool failures, escalate to a fallback strategy or return partial results"],
+  },
+  {
+    id: "hallucinated_tools",
+    title: "Hallucinated tool calls",
+    color: "#8b5cf6",
+    icon: "GHOST",
+    trigger: (cfg) => cfg.toolCount >= 15 && cfg.taskType !== "code",
+    why: "With 15+ tools in the schema, the model occasionally invents tool names or parameters that don't exist. This is especially pronounced for non-code tasks where the model has less structural grounding.",
+    step: "Agent generates: create_jira_ticket_v2(priority='urgent', stakeholders=['alice','bob'], epic_id='EP-422'). The actual tool is create_ticket(summary, priority). The agent invented three nonexistent parameters. Call fails. Agent tries again with the same invented schema.",
+    fix: ["Keep tool count to 5–7 per agent — use router agents to delegate to specialized sub-agents", "Use structured tool definitions with strict JSON schema validation", "Add a tool call validator that catches schema mismatches before execution", "Prefer tools with simple, flat parameter schemas over deeply nested ones"],
+  },
+  {
+    id: "state_amnesia",
+    title: "State amnesia mid-task",
+    color: "#06b6d4",
+    icon: "LOST",
+    trigger: (cfg) => cfg.taskType === "pipeline" && cfg.memoryType === "none",
+    why: "Data pipeline agents process sequences of files or records. Without persistent memory, a restart (model timeout, network error) loses all progress tracking. The agent has no way to know what it already processed.",
+    step: "Agent processes files 1–23 of 50. API timeout at step 40 minutes in. On restart, agent has no memory of progress. Starts from file 1. Files 1–23 are processed twice. Duplicates in output. Data integrity compromised.",
+    fix: ["Write a progress manifest to external storage after each record", "Use idempotent operations — processing the same record twice should produce the same result", "Checkpoint pattern: agent writes completed_files.json before sleeping", "For long pipelines, use a proper workflow orchestrator (Temporal, Prefect) not a raw agent loop"],
+  },
+  {
+    id: "cascade_failure",
+    title: "Multi-agent cascade failure",
+    color: "#f97316",
+    icon: "CHAIN",
+    trigger: (cfg) => cfg.taskType === "research" && cfg.toolCount >= 10,
+    why: "Complex research tasks often spawn sub-agents. If a worker agent returns a partial or malformed result, the coordinator passes it downstream unchecked. One bad output corrupts the entire chain.",
+    step: "Coordinator assigns: 'Summarize Q3 earnings for top 10 FAANG companies'. Sub-agent 1 returns valid data. Sub-agent 3 hallucinated Meta's revenue. Sub-agent 7 failed silently and returned empty string. Coordinator assembles final report — combines correct and wrong data without checking. User sees confident, partially fabricated report.",
+    fix: ["Each sub-agent result must pass a validation check before the coordinator accepts it", "Sub-agents should return confidence scores and flag uncertain facts", "Coordinator must handle None/empty returns explicitly — never silently discard", "Implement result voting for critical facts: have 2 independent sub-agents verify key numbers"],
+  },
+];
+
+function deriveAgentFailure(cfg) {
+  const triggered = AGENT_FAILURE_MATRIX.filter(f => f.trigger(cfg));
+  if (triggered.length === 0) return null;
+  // Return the highest-severity one (first match in priority order)
+  return triggered[0];
+}
+
+function AgentConfigLab() {
+  const [taskType, setTaskType] = useState("research");
+  const [contextBudget, setContextBudget] = useState(8000);
+  const [toolCount, setToolCount] = useState(8);
+  const [retryLimit, setRetryLimit] = useState(3);
+  const [memoryType, setMemoryType] = useState("none");
+  const [simulated, setSimulated] = useState(false);
+  const [openFix, setOpenFix] = useState(false);
+
+  const cfg = { taskType, contextBudget, toolCount, retryLimit, memoryType };
+  const failure = deriveAgentFailure(cfg);
+  const allTriggers = AGENT_FAILURE_MATRIX.filter(f => f.trigger(cfg));
+
+  function runSim() { setSimulated(true); setOpenFix(false); }
+  function reset() { setSimulated(false); setOpenFix(false); }
+
+  return (
+    <div className="space-y-5">
+      <div style={{ background: "linear-gradient(160deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "2px solid rgba(245,158,11,0.5)" }} className="rounded-xl p-4">
+        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Objective</p>
+        <p className="text-sm text-zinc-300">Configure your agent architecture. Run the simulation. See which failure mode fires and exactly why — then get the fix.</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Task type</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {[["research","Research"],["customer","Customer service"],["code","Code generation"],["pipeline","Data pipeline"]].map(([v,l]) => (
+              <button key={v} onClick={() => { setTaskType(v); setSimulated(false); }}
+                style={taskType === v ? { background: "rgba(245,158,11,0.18)", border: "1px solid rgba(245,158,11,0.5)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
+                className={"py-2 px-2 rounded-lg text-xs font-medium transition-all " + (taskType === v ? "text-amber-300" : "text-zinc-400 hover:text-zinc-200")}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Context budget</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[[4000,"4K"],[8000,"8K"],[32000,"32K"],[128000,"128K"]].map(([v,l]) => (
+              <button key={v} onClick={() => { setContextBudget(v); setSimulated(false); }}
+                style={contextBudget === v ? { background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)", border: "1px solid rgba(99,102,241,0.6)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
+                className={"py-2 rounded-lg text-xs font-bold transition-all " + (contextBudget === v ? "text-white" : "text-zinc-400 hover:text-zinc-200")}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Tool count: <span className="text-amber-400">{toolCount}</span></p>
+          <input type="range" min={1} max={25} step={1} value={toolCount} onChange={e => { setToolCount(Number(e.target.value)); setSimulated(false); }} className="w-full accent-amber-500" />
+          <div className="flex justify-between text-[10px] text-zinc-600"><span>1</span><span>5</span><span>10</span><span>20+</span></div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Retry limit</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[[0,"None"],[3,"3"],[10,"10"],["unlimited","∞"]].map(([v,l]) => (
+              <button key={String(v)} onClick={() => { setRetryLimit(v); setSimulated(false); }}
+                style={retryLimit === v ? { background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)", border: "1px solid rgba(99,102,241,0.6)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
+                className={"py-2 rounded-lg text-xs font-bold transition-all " + (retryLimit === v ? "text-white" : "text-zinc-400 hover:text-zinc-200")}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2 sm:col-span-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Memory type</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            {[["none","None","No memory between steps"],["ephemeral","Ephemeral","In-context only, lost on restart"],["persistent","Persistent","Survives restarts, same process"],["external","External DB","File system / Redis / DB"]].map(([v,l,sub]) => (
+              <button key={v} onClick={() => { setMemoryType(v); setSimulated(false); }}
+                style={memoryType === v ? { background: "rgba(245,158,11,0.18)", border: "1px solid rgba(245,158,11,0.5)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
+                className="py-2.5 px-2 rounded-lg text-xs transition-all text-center">
+                <p className={"font-bold " + (memoryType === v ? "text-amber-300" : "text-zinc-300")}>{l}</p>
+                <p className="text-zinc-600 mt-0.5 text-[10px] leading-tight">{sub}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <button onClick={runSim}
+        style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.85) 0%, rgba(234,88,12,0.9) 100%)", boxShadow: "0 4px 16px rgba(245,158,11,0.3)" }}
+        className="w-full py-3.5 text-white font-bold rounded-xl text-sm hover:brightness-110 transition-all">
+        Run Simulation
+      </button>
+
+      {simulated && (
+        <div className="space-y-3">
+          {!failure ? (
+            <div style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)", borderTop: "2px solid rgba(16,185,129,0.6)" }} className="rounded-xl p-5 space-y-3">
+              <span style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)", color: "#34d399" }} className="inline-flex px-3 py-1 rounded-full text-xs font-bold">No failure triggered</span>
+              <p className="text-sm text-zinc-300">This configuration avoids the common failure modes. The agent has adequate context, bounded retries, and appropriate tooling for the task.</p>
+              <p className="text-xs text-zinc-500">Try increasing tool count, removing memory, or setting retry limit to unlimited to trigger failures.</p>
+            </div>
+          ) : (
+            <div style={{ background: "linear-gradient(160deg, " + failure.color + "0a 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid " + failure.color + "40", borderTop: "2px solid " + failure.color + "99" }} className="rounded-xl p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <span style={{ background: failure.color + "20", border: "1px solid " + failure.color + "50", color: failure.color }} className="text-[10px] font-black px-2 py-1 rounded font-mono">{failure.icon}</span>
+                <span className="text-sm font-bold text-zinc-100">Failure: {failure.title}</span>
+                {allTriggers.length > 1 && <span className="text-[10px] text-zinc-600">+{allTriggers.length - 1} more risk{allTriggers.length > 2 ? "s" : ""}</span>}
+              </div>
+              <div style={{ background: "rgba(24,24,27,0.9)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded-lg p-3">
+                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1.5">Why this config triggers it</p>
+                <p className="text-xs text-zinc-300 leading-relaxed">{failure.why}</p>
+              </div>
+              <div style={{ background: failure.color + "08", border: "1px solid " + failure.color + "25" }} className="rounded-lg p-3">
+                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1.5">What actually happens</p>
+                <p className="text-xs text-zinc-400 leading-relaxed italic">{failure.step}</p>
+              </div>
+              <div>
+                <button onClick={() => setOpenFix(!openFix)}
+                  style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }}
+                  className="w-full py-2.5 text-emerald-300 rounded-lg text-xs font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2">
+                  <span>{openFix ? "Hide" : "Show"} fixes</span>
+                  <span className="text-emerald-600">{openFix ? "▲" : "▼"}</span>
+                </button>
+                {openFix && (
+                  <div className="mt-2 space-y-1.5 pt-2">
+                    {failure.fix.map((f, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-emerald-400">
+                        <span className="shrink-0 mt-0.5 font-bold">{i + 1}.</span>
+                        <span>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <button onClick={reset} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">Reset</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const AGENTS_MODULES = [
   { id: "react",      label: "ReAct Pattern",       tag: "LOOP",   group: "CORE",      component: ReActPattern        },
   { id: "tools",      label: "Tool Use Design",     tag: "TOOLS",  group: "CORE",      component: ToolUseDesign       },
@@ -3171,6 +3373,7 @@ const AGENTS_MODULES = [
   { id: "computeruse", label: "Computer Use",          tag: "CU",       group: "SCALE",     component: ComputerUseAgents   },
   { id: "longrunning", label: "Long-Running Workflows",tag: "DURABLE",  group: "SCALE",     component: LongRunningWorkflows},
   { id: "a2a",         label: "A2A Protocol",          tag: "A2A",      group: "ECOSYSTEM", component: A2AProtocol          },
+  { id: "agentcfg",   label: "Agent Config Lab",      tag: "CONFIG",   group: "SIM",       component: AgentConfigLab       },
 ];
 
 const AGENTS_GROUPS = [

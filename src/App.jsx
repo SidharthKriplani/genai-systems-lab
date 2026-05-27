@@ -1222,7 +1222,7 @@ export default function App() {
     ]},
     { label: "LABS", color: "#3b82f6", items: [
       { id: "lab",      label: "RAG Lab",   count: 6,  audience: "Engineers" },
-      { id: "agentlab", label: "Agent Lab", count: 15, audience: "Engineers" },
+      { id: "agentlab", label: "Agent Lab", count: 16, audience: "Engineers" },
       { id: "evallab",  label: "Eval Lab",  count: 18, audience: "Engineers · PMs" },
       { id: "llmlab",   label: "LLM Lab",   count: 39, audience: "Engineers" },
     ]},
