@@ -12569,9 +12569,7 @@ Score task completion (1-5):
 Output JSON: {"score": <1-5>, "reason": "<one sentence>", "missing_elements": [<what was missing>]}`,
     testCases: [
       { input: "Write a SQL query to find all users who signed up in the last 7 days", good: "SELECT * FROM users WHERE created_at >= NOW() - INTERVAL '7 days'", bad: "You can use the WHERE clause with a date filter to find recent users." },
-      { input: "Summarise this article in 3 bullet points", good: "• Point 1
-• Point 2
-• Point 3", bad: "The article covers several important topics and discusses key themes." },
+      { input: "Summarise this article in 3 bullet points", good: "• Point 1\n• Point 2\n• Point 3", bad: "The article covers several important topics and discusses key themes." },
     ],
   },
   format_compliance: {
