@@ -1683,28 +1683,44 @@ const PLAYGROUND_MODULES = [
     howTo: ["Filter by category (RAG, Agents, Coding, etc.) or search by keyword", "Click any card to see the full prompt and design notes", "Copy prompt with one click — variables are wrapped in {curly_braces}", "Read the design notes — they explain why each choice was made"] },
 ];
 
+const PLAYGROUND_GROUPS = [
+  { label: "ATTACK",  ids: ["injection"] },
+  { label: "RAG",     ids: ["chunking", "reranker"] },
+  { label: "DETECT",  ids: ["hallucinate", "bias"] },
+  { label: "BUDGET",  ids: ["tetris"] },
+  { label: "LIBRARY", ids: ["prompt_lib"] },
+];
+
 export default function PlaygroundApp() {
   const [activeModule, setActiveModule] = useState("injection");
   const mod = PLAYGROUND_MODULES.find(m => m.id === activeModule);
   const ActiveComponent = mod?.component || PromptInjectionPlayground;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-black text-white tracking-tight">Playground</h1>
-        <p className="text-sm text-zinc-400">Hands-on challenges: attacks, retrieval, hallucinations, bias</p>
-      </div>
-      <div className="flex gap-2 justify-center flex-wrap">
-        {PLAYGROUND_MODULES.map(m => (
-          <button key={m.id} onClick={() => setActiveModule(m.id)}
-            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2 ${activeModule === m.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-            <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${activeModule === m.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{m.tag}</span>
-            {m.label}
-          </button>
+    <div className="flex h-full min-h-0">
+      <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
+        {PLAYGROUND_GROUPS.map(group => (
+          <div key={group.label} className="mb-3">
+            <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{group.label}</div>
+            {group.ids.map(id => {
+              const m = PLAYGROUND_MODULES.find(x => x.id === id);
+              if (!m) return null;
+              const active = activeModule === id;
+              return (
+                <button key={id} onClick={() => setActiveModule(id)}
+                  className={`w-full text-left px-4 py-2 text-xs transition-all flex items-center justify-between gap-2 ${active ? "border-l-2 border-blue-500 bg-zinc-800 text-white" : "border-l-2 border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"}`}>
+                  <span className="truncate">{m.label}</span>
+                  <span className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded font-mono ${active ? "bg-blue-900/60 text-blue-300" : "bg-zinc-800 text-zinc-600"}`}>{m.tag}</span>
+                </button>
+              );
+            })}
+          </div>
         ))}
       </div>
-      {mod?.objective && <HowTo objective={mod.objective} steps={mod.howTo} />}
-      <ActiveComponent />
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        {mod?.objective && <HowTo objective={mod.objective} steps={mod.howTo} />}
+        <ActiveComponent />
+      </div>
     </div>
   );
 }

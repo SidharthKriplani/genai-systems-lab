@@ -158,7 +158,7 @@ function saveProgress(data) {
 }
 
 export default function LearningPaths({ onNavigateTo }) {
-  const [activePath, setActivePath] = useState(null);
+  const [activePath, setActivePath] = useState(PATHS[0].id);
   const [progress, setProgress] = useState(loadProgress);
   const [justCompleted, setJustCompleted] = useState(null);
 
@@ -193,56 +193,37 @@ export default function LearningPaths({ onNavigateTo }) {
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-white tracking-tight">Learning Paths</h1>
-        <p className="text-sm text-zinc-400 mt-1">Curated sequences through Systems, Ground Truth, Explore, and Prep Lab — follow a path or jump to any step.</p>
-      </div>
-
-      {/* Path picker */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="flex h-full min-h-0">
+      {/* Sidebar */}
+      <div className="w-56 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
+        <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">PATHS</div>
         {PATHS.map(p => {
           const stepsComplete = allPathsDone[p.id] || 0;
           const total = p.steps.length;
           const pct = Math.round((stepsComplete / total) * 100);
           const isActive = activePath === p.id;
           return (
-            <button
-              key={p.id}
-              onClick={() => setActivePath(isActive ? null : p.id)}
-              className={`text-left rounded-xl border p-4 transition-all ${
-                isActive
-                  ? "border-zinc-600 bg-zinc-800"
-                  : "border-zinc-800 bg-zinc-900/60 hover:border-zinc-700 hover:bg-zinc-900"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="text-2xl">{p.emoji}</div>
-                <div className="text-xs text-zinc-500 whitespace-nowrap">{p.duration}</div>
+            <button key={p.id} onClick={() => setActivePath(p.id)}
+              className={`w-full text-left px-4 py-3 transition-all ${isActive ? "border-l-2 bg-zinc-800 text-white" : "border-l-2 border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"}`}
+              style={isActive ? { borderLeftColor: p.color } : {}}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-base leading-none">{p.emoji}</span>
+                <span className="text-xs font-semibold leading-snug truncate">{p.title}</span>
               </div>
-              <div className="font-bold text-white mt-1 text-sm leading-snug">{p.title}</div>
-              <div className="text-xs text-zinc-500 mt-0.5">{p.audience}</div>
-
-              {/* Progress bar */}
-              <div className="mt-3">
-                <div className="flex justify-between text-[10px] text-zinc-500 mb-1">
-                  <span>{stepsComplete}/{total} steps</span>
-                  <span>{pct}%</span>
-                </div>
-                <div className="h-1 rounded-full bg-zinc-800">
-                  <div
-                    className="h-1 rounded-full transition-all"
-                    style={{ width: `${pct}%`, backgroundColor: p.color }}
-                  />
-                </div>
+              <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-1">
+                <span>{stepsComplete}/{total} steps</span>
+                <span>{pct}%</span>
+              </div>
+              <div className="h-0.5 rounded-full bg-zinc-800">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: p.color }} />
               </div>
             </button>
           );
         })}
       </div>
 
-      {/* Active path steps */}
+      {/* Detail panel */}
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
       {path && (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
           {/* Path header */}
@@ -268,7 +249,6 @@ export default function LearningPaths({ onNavigateTo }) {
                     isDone ? "bg-zinc-900/20 opacity-70" : "hover:bg-zinc-800/30"
                   }`}
                 >
-                  {/* Step number / check */}
                   <button
                     onClick={() => toggleStep(path.id, idx)}
                     className={`shrink-0 w-6 h-6 mt-0.5 rounded-full border text-xs font-bold flex items-center justify-center transition-all ${
@@ -282,8 +262,6 @@ export default function LearningPaths({ onNavigateTo }) {
                   >
                     {isDone ? "✓" : idx + 1}
                   </button>
-
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${cfg.bg} ${cfg.border} border ${cfg.text}`}>
@@ -295,8 +273,6 @@ export default function LearningPaths({ onNavigateTo }) {
                     </div>
                     <div className="text-xs text-zinc-500 mt-0.5 leading-relaxed">{step.desc}</div>
                   </div>
-
-                  {/* Go button */}
                   <button
                     onClick={() => { goToStep(step); toggleStep(path.id, idx); }}
                     className="shrink-0 text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all border border-zinc-700 whitespace-nowrap"
@@ -308,7 +284,6 @@ export default function LearningPaths({ onNavigateTo }) {
             })}
           </div>
 
-          {/* Path footer */}
           <div className="px-5 py-3 border-t border-zinc-800 flex items-center justify-between">
             <span className="text-xs text-zinc-500">{done.size}/{path.steps.length} complete</span>
             {done.size > 0 && (
@@ -328,15 +303,8 @@ export default function LearningPaths({ onNavigateTo }) {
           </div>
         </div>
       )}
-
-      {/* Empty state */}
-      {!activePath && (
-        <div className="text-center py-8 space-y-2">
-          <div className="text-2xl">👆</div>
-          <div className="text-sm text-zinc-400 font-medium">Pick one. Even if it's not your exact situation.</div>
-          <div className="text-xs text-zinc-600">Not sure where to start? <span className="text-indigo-400">Ship Your First RAG System</span> is where most engineers get stuck first.</div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
+
