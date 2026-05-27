@@ -887,14 +887,18 @@ const EVAL_LAB_MODULES = [
   "trapslab","deploy","buildthis","prompt-change-mgmt","abtesting-ai","router",
 ];
 
+// LLM Lab: only true simulators and decision engines — interactive, not reference
+// Everything else stays accessible via the main Systems tab
 const LLM_LAB_MODULES = [
-  "decoding","txarch","kvcache","inference","specdecoding","streaming","flashattn",
-  "quantization","serving","moe","ctxwindow","compaction","finetune","finetuning",
-  "rlhf","grpo","modelmerging","reasoning","synthdata","multimodal","multimodal2",
-  "promptlab","indiascale","promptcaching","costlatency",
-  "agentarch","agentmemory","mcp","ai-safety-eng","promptinjection","guardrails",
-  "vibecoding","redteam","constrained","structout","longctx","query-refinement",
-  "vectordb","caching",
+  "decoding",       // interactive: temperature + top-p token distribution
+  "kvcache",        // decision lab: when and how to cache
+  "specdecoding",   // simulator: speculative decoding tradeoffs
+  "quantization",   // calculator: bit-width vs quality vs VRAM
+  "serving",        // decision engine: batching, routing, hardware
+  "reasoning",      // explorer: chain-of-thought vs direct tradeoffs
+  "moe",            // failure scenarios: mixture-of-experts architecture
+  "inference",      // patterns: batching, throughput, latency
+  "streaming",      // patterns: token streaming implementation
 ];
 
 const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","qa","paths"];
@@ -1069,7 +1073,7 @@ export default function App() {
       localStorage.setItem("genai_streak", JSON.stringify({ count, lastVisit: today }));
     } catch {}
   }, []);
-  const SHORTCUT_TABS = ["home","lab","agentlab","evallab","llmlab","preplab","career","aipm","groundtruth","systems","agents","explore","playground","concepts","flows"];
+  const SHORTCUT_TABS = ["home","lab","agentlab","evallab","llmlab","preplab","career","aipm","groundtruth","systems","agents","explore","playground","concepts","flows","consult"];
 
   function navigateTo({ tab, moduleId, postId, topic, diff }) {
     if (moduleId) {
