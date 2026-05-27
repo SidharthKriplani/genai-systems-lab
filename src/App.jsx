@@ -217,12 +217,12 @@ function CollapsibleConfigCard({ cfg }) {
         className="w-full text-left px-4 py-3 flex items-center gap-3 flex-wrap hover:bg-zinc-800/40 transition-colors"
       >
         <span className="text-xs font-mono text-violet-400">{cfg.label}</span>
-        <span className="text-xs text-zinc-600 font-mono">{cfg.chunk_size} · top_k={cfg.top_k} · reranker={cfg.reranker ? "on" : "off"} · {cfg.answer_policy}</span>
+        <span className="text-xs text-zinc-500 font-mono">{cfg.chunk_size} · top_k={cfg.top_k} · reranker={cfg.reranker ? "on" : "off"} · {cfg.answer_policy}</span>
         {cfg.failure_mode
           ? <span className="text-xs bg-red-900 text-red-300 px-2 py-0.5 rounded font-mono">{cfg.failure_mode}</span>
           : <span className="text-xs bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded font-mono">no failure</span>
         }
-        <span className="ml-auto text-zinc-600 text-xs font-mono">{open ? "▲" : "▼"}</span>
+        <span className="ml-auto text-zinc-500 text-xs font-mono">{open ? "▲" : "▼"}</span>
       </button>
       {open && (
         <div className="px-4 pb-3 border-t border-zinc-800 pt-3 space-y-1.5">
@@ -248,7 +248,7 @@ function CorpusPanel({ scenario }) {
       <div className="flex items-center justify-between">
         <div className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Corpus</div>
         {sources.length > 0 && (
-          <button onClick={() => setOpen(o => !o)} className="text-[10px] font-mono text-zinc-600 hover:text-zinc-300 border border-zinc-700 rounded px-1.5 py-0.5 transition-all">
+          <button onClick={() => setOpen(o => !o)} className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 border border-zinc-700 rounded px-1.5 py-0.5 transition-all">
             {open ? "hide docs" : `peek docs (${sources.length})`}
           </button>
         )}
@@ -258,14 +258,14 @@ function CorpusPanel({ scenario }) {
         <div className="space-y-1.5 pt-1 border-t border-zinc-800">
           {sources.map(s => (
             <div key={s.source} className="flex items-start gap-2 text-[10px] font-mono">
-              <span className="text-zinc-600 shrink-0">📄</span>
+              <span className="text-zinc-500 shrink-0">📄</span>
               <div>
                 <span className="text-zinc-300">{s.source}</span>
-                <span className="text-zinc-600 ml-1.5">{s.date}</span>
+                <span className="text-zinc-500 ml-1.5">{s.date}</span>
               </div>
             </div>
           ))}
-          <p className="text-[10px] text-zinc-600 pt-0.5 italic">Documents visible to the retriever — your config determines which get surfaced.</p>
+          <p className="text-[10px] text-zinc-500 pt-0.5 italic">Documents visible to the retriever — your config determines which get surfaced.</p>
         </div>
       )}
     </div>
@@ -323,7 +323,7 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
       <div className="max-w-7xl mx-auto px-4 py-16 text-center space-y-3">
         <div className="text-5xl mb-4">🏆</div>
         <div className="text-lg font-bold text-zinc-400">No scores yet</div>
-        <p className="text-sm text-zinc-600">Go to RAG Lab → enable Challenge Mode → submit a passing config to get on the board.</p>
+        <p className="text-sm text-zinc-500">Go to RAG Lab → enable Challenge Mode → submit a passing config to get on the board.</p>
         <button onClick={() => onRetry("lab")} className="mt-4 px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-lg text-sm transition-all">
           Go to RAG Lab →
         </button>
@@ -396,7 +396,7 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
             </div>
           </div>
         ))}
-        <p className="text-[10px] text-zinc-600 font-mono pt-1">Based on solved scenarios · solve all 6 to complete every dimension</p>
+        <p className="text-[10px] text-zinc-500 font-mono pt-1">Based on solved scenarios · solve all 6 to complete every dimension</p>
       </div>
 
       {/* Share button */}
@@ -416,11 +416,11 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-mono text-zinc-300 truncate">{s.title}</div>
-              <div className="text-xs text-zinc-600">{s.entries.length} attempt{s.entries.length !== 1 ? "s" : ""}</div>
+              <div className="text-xs text-zinc-500">{s.entries.length} attempt{s.entries.length !== 1 ? "s" : ""}</div>
             </div>
             {s.bestTier
               ? <TierBadge tier={s.bestTier} />
-              : <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-600">OPEN</span>
+              : <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-500">OPEN</span>
             }
           </div>
         ))}
@@ -430,7 +430,7 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Attempt History</div>
-          <button onClick={onClear} className="text-xs text-zinc-600 hover:text-red-400 transition-colors font-mono">Clear all</button>
+          <button onClick={onClear} className="text-xs text-zinc-500 hover:text-red-400 transition-colors font-mono">Clear all</button>
         </div>
         {[...leaderboard].reverse().map((entry, i) => (
           <div key={i} className={`rounded-xl border p-3 ${entry.passed ? "border-emerald-800 bg-emerald-950/10" : "border-zinc-800 bg-zinc-900/40"}`}>
@@ -457,7 +457,7 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
                   ))}
                 </div>
               </div>
-              <div className="text-xs text-zinc-600 font-mono shrink-0">{new Date(entry.date).toLocaleDateString()}</div>
+              <div className="text-xs text-zinc-500 font-mono shrink-0">{new Date(entry.date).toLocaleDateString()}</div>
             </div>
           </div>
         ))}
@@ -546,7 +546,7 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
               <div className="flex flex-wrap gap-1.5">
                 {tabs.map(t => (
                   <button key={t.id} onClick={() => onNavigate(t.id)}
-                    className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-all ${visited.has(t.id) ? "border-zinc-600 text-zinc-300 bg-zinc-800" : "border-zinc-800 text-zinc-600 hover:border-zinc-600 hover:text-zinc-400"}`}>
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-all ${visited.has(t.id) ? "border-zinc-600 text-zinc-300 bg-zinc-800" : "border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-400"}`}>
                     {visited.has(t.id) ? "✓ " : ""}{t.label}
                   </button>
                 ))}
@@ -578,13 +578,13 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
           <div className="space-y-2">
             {byScenario.map((s, i) => (
               <div key={s.scenario_id} className="flex items-center gap-3">
-                <span className="text-xs font-mono text-zinc-600 w-4 shrink-0">#{i+1}</span>
+                <span className="text-xs font-mono text-zinc-500 w-4 shrink-0">#{i+1}</span>
                 <span className="text-xs text-zinc-300 flex-1 truncate">{s.title}</span>
                 {s.bestTier
                   ? <TierBadge tier={s.bestTier} />
                   : s.attempted
                     ? <span className="text-[10px] font-mono text-amber-600 border border-amber-900 px-1.5 py-0.5 rounded">Attempted</span>
-                    : <span className="text-[10px] font-mono text-zinc-700 border border-zinc-800 px-1.5 py-0.5 rounded">Open</span>
+                    : <span className="text-[10px] font-mono text-zinc-500 border border-zinc-800 px-1.5 py-0.5 rounded">Open</span>
                 }
               </div>
             ))}
@@ -692,7 +692,7 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
               return (
                 <div key={id} className="flex items-center justify-between gap-3">
                   <button onClick={() => onNavigate("groundtruth")} className="text-xs text-zinc-300 hover:text-white text-left truncate">{post.title}</button>
-                  <button onClick={() => toggleBookmark(id)} className="text-zinc-600 hover:text-red-400 text-xs shrink-0">✕</button>
+                  <button onClick={() => toggleBookmark(id)} className="text-zinc-500 hover:text-red-400 text-xs shrink-0">✕</button>
                 </div>
               );
             })}
@@ -803,11 +803,11 @@ function SearchModal({ onClose, onSelect }) {
             aria-label="Search modules"
             className="flex-1 bg-transparent text-white text-sm outline-none placeholder-zinc-600"
           />
-          <kbd className="text-[10px] font-mono text-zinc-600 border border-zinc-700 rounded px-1.5 py-0.5">Esc</kbd>
+          <kbd className="text-[10px] font-mono text-zinc-500 border border-zinc-700 rounded px-1.5 py-0.5">Esc</kbd>
         </div>
         <div className="max-h-80 overflow-y-auto">
           {results.length === 0
-            ? <div className="px-4 py-8 text-center text-xs text-zinc-600">No modules found</div>
+            ? <div className="px-4 py-8 text-center text-xs text-zinc-500">No modules found</div>
             : results.map((item, i) => {
               return (
                 <button key={`${item.tab}-${item.moduleId || "tab"}-${i}`}
@@ -830,9 +830,9 @@ function SearchModal({ onClose, onSelect }) {
             })
           }
         </div>
-        <div className="px-4 py-2 border-t border-zinc-800 flex items-center gap-4 text-[10px] text-zinc-600 font-mono">
+        <div className="px-4 py-2 border-t border-zinc-800 flex items-center gap-4 text-[10px] text-zinc-500 font-mono">
           <span>↑↓ navigate</span><span>↵ select</span><span>Esc close</span>
-          <span className="ml-auto text-xs text-zinc-600">Press / to open · Esc to close</span>
+          <span className="ml-auto text-xs text-zinc-500">Press / to open · Esc to close</span>
         </div>
       </div>
     </div>
@@ -868,7 +868,7 @@ function FeedbackFallbackModal({ onClose }) {
             <span>→</span> GitHub — @SidharthKriplani
           </a>
         </div>
-        <p className="text-[10px] text-zinc-600 font-mono">
+        <p className="text-[10px] text-zinc-500 font-mono">
           No login required. No personal data collected.
         </p>
       </div>
@@ -1338,7 +1338,7 @@ export default function App() {
                     style={{ color, background: color + "22", border: `1px solid ${color}44` }}>{tag}</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold text-white flex items-center gap-1">
-                      {label}{tab && <span className="text-zinc-600 text-[10px]">→</span>}
+                      {label}{tab && <span className="text-zinc-500 text-[10px]">→</span>}
                     </div>
                     <div className="text-xs text-zinc-500">{desc}</div>
                   </div>
@@ -1455,9 +1455,9 @@ export default function App() {
           <button onClick={() => setSearchOpen(true)}
             className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg border text-left transition-all duration-150 hover:border-zinc-600"
             style={{ background: "rgba(24,24,27,0.8)", borderColor: "#27272a" }}>
-            <svg width="10" height="10" viewBox="0 0 11 11" fill="none" className="text-zinc-600 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-            <span className="text-[11px] text-zinc-600 flex-1">Search…</span>
-            <kbd className="text-[9px] border border-zinc-700/60 rounded px-1 text-zinc-600 font-mono">⌘K</kbd>
+            <svg width="10" height="10" viewBox="0 0 11 11" fill="none" className="text-zinc-500 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+            <span className="text-[11px] text-zinc-500 flex-1">Search…</span>
+            <kbd className="text-[9px] border border-zinc-700/60 rounded px-1 text-zinc-500 font-mono">⌘K</kbd>
           </button>
           <button onClick={() => openFeedback("sidebar")}
             className="w-full flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-150">
@@ -1483,9 +1483,9 @@ export default function App() {
           <button onClick={() => setSearchOpen(true)}
             aria-label="Search modules"
             className="lg:hidden flex flex-1 items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-left">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-zinc-600 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-            <span className="text-xs text-zinc-600 flex-1">Search modules…</span>
-            <kbd className="text-[9px] border border-zinc-700 rounded px-1 text-zinc-600 font-mono">⌘K</kbd>
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-zinc-500 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+            <span className="text-xs text-zinc-500 flex-1">Search modules…</span>
+            <kbd className="text-[9px] border border-zinc-700 rounded px-1 text-zinc-500 font-mono">⌘K</kbd>
           </button>
           {/* Right utilities */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
@@ -1514,7 +1514,7 @@ export default function App() {
                 🔥{streak}
               </span>
             )}
-            <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-600 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono" aria-label="Keyboard shortcuts">?</button>
+            <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono" aria-label="Keyboard shortcuts">?</button>
           </div>
         </div>
         {/* Row 2: Tab navigation — desktop nav moved to left sidebar */}
@@ -1588,7 +1588,7 @@ export default function App() {
                         style={active ? { background: "rgba(139,92,246,0.3)", color: "#c4b5fd" } : { background: "rgba(39,39,42,0.8)", color: "#a1a1aa" }}>
                         {s.tag}
                       </span>
-                      <span className="text-zinc-700 text-[9px]">#{i + 1}</span>
+                      <span className="text-zinc-500 text-[9px]">#{i + 1}</span>
                     </div>
                     <div className="leading-snug">{s.title}</div>
                   </button>
@@ -1668,7 +1668,7 @@ export default function App() {
               <div className="rounded-xl p-4 space-y-4" style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.07) 0%, rgba(24,24,27,0.95) 100%)", border: "1px solid rgba(139,92,246,0.18)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-zinc-200 uppercase tracking-wider">System Config</span>
-                  <button onClick={reset} className="text-[10px] font-mono text-zinc-600 hover:text-zinc-300 transition-colors border border-zinc-800 hover:border-zinc-600 px-1.5 py-0.5 rounded">reset</button>
+                  <button onClick={reset} className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors border border-zinc-800 hover:border-zinc-600 px-1.5 py-0.5 rounded">reset</button>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-zinc-500">Chunk size</label>
@@ -1681,7 +1681,7 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-xs text-zinc-500">Reranker</div>
-                    <div className="text-xs text-zinc-600 mt-0.5">{config.reranker ? "on" : "off"}</div>
+                    <div className="text-xs text-zinc-500 mt-0.5">{config.reranker ? "on" : "off"}</div>
                   </div>
                   <Toggle value={config.reranker} onChange={(v) => updateConfig("reranker", v)} />
                 </div>
@@ -1730,9 +1730,9 @@ export default function App() {
                 {result ? (
                   result.retrieved_chunks.length > 0
                     ? result.retrieved_chunks.map((chunk, i) => <ChunkCard key={chunk.id} chunk={chunk} index={i} />)
-                    : <p className="text-xs text-zinc-600">No chunks retrieved.</p>
+                    : <p className="text-xs text-zinc-500">No chunks retrieved.</p>
                 ) : (
-                  <p className="text-xs text-zinc-600">Select a config to see retrieved chunks.</p>
+                  <p className="text-xs text-zinc-500">Select a config to see retrieved chunks.</p>
                 )}
               </div>
 
@@ -1747,7 +1747,7 @@ export default function App() {
                 </div>
                 {result
                   ? <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-line">{result.answer}</p>
-                  : <p className="text-xs text-zinc-600">Configure system to see the answer.</p>
+                  : <p className="text-xs text-zinc-500">Configure system to see the answer.</p>
                 }
               </div>
             </div>
@@ -1860,7 +1860,7 @@ export default function App() {
                   <h2 className="text-xl font-bold mt-2">{scenario.title}</h2>
                   <p className="text-sm text-zinc-400 mt-1">Failure mode: {scenario.failure_mode_taught}</p>
                 </div>
-                <p className="text-xs text-zinc-600 mb-3">Click any config to expand the design lesson.</p>
+                <p className="text-xs text-zinc-500 mb-3">Click any config to expand the design lesson.</p>
                 <div className="space-y-2">
                   {scenario.configs.map((cfg) => (
                     <CollapsibleConfigCard key={cfg.id} cfg={cfg} />
@@ -1870,14 +1870,14 @@ export default function App() {
             )}
 
             <footer className="border-t border-zinc-800 mt-12 px-6 py-4 text-center">
-              <p className="text-xs text-zinc-600">GenAI Systems Lab · RAG Lab · 6 production failure scenarios · Zero hosting cost · Open source</p>
+              <p className="text-xs text-zinc-500">GenAI Systems Lab · RAG Lab · 6 production failure scenarios · Zero hosting cost · Open source</p>
             </footer>
           </div>
         </div>
       )}
 
       {topView === "qa" && (
-        <Suspense fallback={<div className="flex-1 flex items-center justify-center py-24 text-zinc-600 text-sm font-mono">Loading…</div>}>
+        <Suspense fallback={<div className="flex-1 flex items-center justify-center py-24 text-zinc-500 text-sm font-mono">Loading…</div>}>
           <QADashboard
             onNavigate={navigate}
             onOpenModule={(tab, moduleId) => {

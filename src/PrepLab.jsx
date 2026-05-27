@@ -2859,7 +2859,7 @@ function QuestionCard({ q, gaps = [] }) {
         >
           {q.difficulty}
         </span>
-        <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">{q.type === "mcq" ? "multiple choice" : "open answer"}</span>
+        <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">{q.type === "mcq" ? "multiple choice" : "open answer"}</span>
         {gaps.includes(q.topic) && (
           <span className="text-xs bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full">Gap</span>
         )}
@@ -3184,13 +3184,13 @@ function ExamMode({ onExit }) {
                   </div>
                   {answers[q.id] && (
                     <div style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded p-2.5">
-                      <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider mb-1">Your answer</p>
+                      <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-1">Your answer</p>
                       <p className="text-zinc-400 text-sm leading-relaxed">{answers[q.id]}</p>
                     </div>
                   )}
                   {q.keywords.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
-                      <span className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider self-center mr-1">Cover:</span>
+                      <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider self-center mr-1">Cover:</span>
                       {q.keywords.map(k => (
                         <span key={k} style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }} className="text-xs text-indigo-300 px-2 py-0.5 rounded-full">{k}</span>
                       ))}
@@ -3443,7 +3443,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
                 </button>
               );
             })}
-            <span className="text-xs text-zinc-600 ml-auto">{questions.length} questions</span>
+            <span className="text-xs text-zinc-500 ml-auto">{questions.length} questions</span>
           </div>
           {/* Weak spots toggle */}
           {Object.values(history).some(h => h.wrong > 0) && (
@@ -3456,12 +3456,12 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
                 Weak spots ({Object.values(history).filter(h => h.wrong > 0).length})
               </button>
               {weakOnly && (
-                <span className="text-xs text-zinc-600">Showing questions you've answered wrong</span>
+                <span className="text-xs text-zinc-500">Showing questions you've answered wrong</span>
               )}
               {Object.keys(history).length > 0 && (
                 <button
                   onClick={() => { setHistory({}); try { localStorage.removeItem("gsl-preplab-history"); } catch {} }}
-                  className="text-[10px] text-zinc-700 hover:text-zinc-500 transition-colors ml-auto"
+                  className="text-[10px] text-zinc-500 hover:text-zinc-500 transition-colors ml-auto"
                 >
                   Clear history
                 </button>
@@ -3720,7 +3720,7 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
                   <div>
                     <p className="text-zinc-500 text-xs mb-2 uppercase tracking-wide">You Mention</p>
                     <div className="space-y-1.5">{jdTopics.map(t => (
-                      <div key={t} className={resumeTopics.includes(t) ? "text-emerald-400" : "text-zinc-600"}>
+                      <div key={t} className={resumeTopics.includes(t) ? "text-emerald-400" : "text-zinc-500"}>
                         {resumeTopics.includes(t) ? "✓" : "–"}
                       </div>
                     ))}</div>
@@ -3728,7 +3728,7 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
                   <div>
                     <p className="text-zinc-500 text-xs mb-2 uppercase tracking-wide">Gap</p>
                     <div className="space-y-1.5">{jdTopics.map(t => (
-                      <div key={t} className={gaps.includes(t) ? "text-red-400 font-medium" : "text-zinc-600"}>
+                      <div key={t} className={gaps.includes(t) ? "text-red-400 font-medium" : "text-zinc-500"}>
                         {gaps.includes(t) ? "⚠" : "–"}
                       </div>
                     ))}</div>
@@ -3939,7 +3939,7 @@ function CompanyPrepMode({ onExit, onNavigate }) {
                 <p className="text-zinc-200 leading-relaxed text-sm">{prompt}</p>
               </div>
               <div className="mt-3 pl-8 space-y-1">
-                <p className="text-xs text-zinc-600">Consider: scale, latency, cost, failure modes, observability</p>
+                <p className="text-xs text-zinc-500">Consider: scale, latency, cost, failure modes, observability</p>
               </div>
             </div>
           ))}
@@ -3992,7 +3992,7 @@ function CompanyPrepMode({ onExit, onNavigate }) {
         <div className="max-w-2xl mx-auto space-y-5">
           <div className="flex items-center justify-between pt-4">
             <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
-            <span className="text-xs text-zinc-600">{archetype.icon} {archetype.label} · Q{qIdx+1}/{sessionQs.length} · {score.correct} correct</span>
+            <span className="text-xs text-zinc-500">{archetype.icon} {archetype.label} · Q{qIdx+1}/{sessionQs.length} · {score.correct} correct</span>
           </div>
           <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
             <div className="flex gap-2 mb-3 flex-wrap">
@@ -4006,7 +4006,7 @@ function CompanyPrepMode({ onExit, onNavigate }) {
                 if (!revealed) cls += "border-zinc-700 bg-zinc-800 hover:border-zinc-500 text-zinc-300";
                 else if (opt === q.answer) cls += "border-emerald-500 bg-emerald-900/30 text-emerald-200";
                 else if (opt === answer && opt !== q.answer) cls += "border-red-500 bg-red-900/30 text-red-300";
-                else cls += "border-zinc-800 bg-zinc-900 text-zinc-600";
+                else cls += "border-zinc-800 bg-zinc-900 text-zinc-500";
                 return (
                   <button key={opt} disabled={revealed} onClick={() => setAnswer(opt)} className={cls}>
                     {opt}
@@ -4411,19 +4411,19 @@ export default function PrepLab({ onNavigate, onNavigateTo }) {
     <div className="flex h-full min-h-0">
       {/* Sidebar */}
       <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
-        <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-2">MODES</div>
+        <div className="px-4 py-1 text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-2">MODES</div>
         {PREPLAB_SIDEBAR.map(m => {
           const active = mode === m.id;
           return (
             <button key={m.id} onClick={() => setMode(m.id)}
               className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "border-l-2 border-violet-500 bg-zinc-800/80" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
               <span className={`text-xs font-semibold leading-snug ${active ? "text-white" : "text-zinc-300"}`}>{m.label}</span>
-              <span className={`text-[10px] font-mono ${active ? "text-violet-400" : "text-zinc-600"}`}>{m.tag}</span>
+              <span className={`text-[10px] font-mono ${active ? "text-violet-400" : "text-zinc-500"}`}>{m.tag}</span>
             </button>
           );
         })}
         <div className="mt-4 px-4 py-2 border-t border-zinc-800">
-          <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">QUESTIONS</div>
+          <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-1">QUESTIONS</div>
           <div className="text-xs text-zinc-500">{PREP_QUESTIONS.length} across 8 topics</div>
         </div>
       </div>
@@ -4468,7 +4468,7 @@ export default function PrepLab({ onNavigate, onNavigateTo }) {
               </div>
             </div>
             <div className="border-t border-zinc-800 pt-4">
-              <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-2">Topics covered</div>
+              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Topics covered</div>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(TOPIC_LABELS).map(([t, l]) => (
                   <span key={t} className={`text-xs px-2 py-0.5 rounded-full border ${TOPIC_COLORS[t]}`}>{l}</span>

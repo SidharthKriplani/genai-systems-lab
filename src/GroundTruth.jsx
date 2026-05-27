@@ -82,7 +82,7 @@ function Block({ b, onNavigate, color, postSearch }) {
           <h2 className="text-lg font-black text-white mt-10 mb-1.5 tracking-tight">{highlightText(b.text, postSearch)}</h2>
           <button
             onClick={() => { navigator.clipboard.writeText(window.location.href.split('#')[0] + '#' + headingId); }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-600 hover:text-zinc-400 text-xs mt-10"
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-zinc-400 text-xs mt-10"
             title="Copy link to section"
           >§</button>
         </div>
@@ -219,7 +219,7 @@ function Block({ b, onNavigate, color, postSearch }) {
           <ul className="space-y-2">
             {b.items.map((ref, i) => (
               <li key={i} className="flex items-start gap-2">
-                <span className="text-zinc-700 font-mono text-[11px] shrink-0 mt-0.5">[{i+1}]</span>
+                <span className="text-zinc-500 font-mono text-[11px] shrink-0 mt-0.5">[{i+1}]</span>
                 {ref.url ? (
                   <a href={ref.url} target="_blank" rel="noopener noreferrer"
                     className="text-xs text-violet-400 hover:text-violet-300 transition-colors leading-relaxed underline decoration-violet-800 hover:decoration-violet-400">
@@ -263,7 +263,7 @@ function Block({ b, onNavigate, color, postSearch }) {
                   {ref.url ? (
                     <a href={ref.url} target="_blank" rel="noopener noreferrer"
                       className="text-xs text-zinc-300 hover:text-white transition-colors leading-relaxed flex-1">
-                      {label} <span className="text-zinc-600">↗</span>
+                      {label} <span className="text-zinc-500">↗</span>
                     </a>
                   ) : (
                     <span className="text-xs text-zinc-500 leading-relaxed flex-1">{label}</span>
@@ -399,7 +399,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
               style={{ color, background: color + "22", border: `1px solid ${color}44` }}>
               {catLabel}
             </span>
-            <span className="text-[9px] text-zinc-600 font-mono">{post.readMin} min read</span>
+            <span className="text-[9px] text-zinc-500 font-mono">{post.readMin} min read</span>
             <span className="text-xs text-zinc-500">by <span className="text-zinc-400 font-medium">Sidharth Kriplani</span></span>
             <div className="ml-auto flex items-center gap-2">
               {/* Feature 2 — In-post search */}
@@ -420,7 +420,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
               <span className="text-[10px] font-mono font-bold px-2 py-1 rounded-full border" style={{ color: series.color, borderColor: series.color + "44", background: series.color + "15" }}>
                 {series.title}
               </span>
-              <span className="text-[10px] text-zinc-600 font-mono">Part {seriesIdx + 1} of {seriesPostIds.length}</span>
+              <span className="text-[10px] text-zinc-500 font-mono">Part {seriesIdx + 1} of {seriesPostIds.length}</span>
             </div>
           )}
           <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight mb-3">{post.title}</h1>
@@ -489,7 +489,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
             })()}
             {/* Feature 3 — Reactions */}
             <div className="border-t border-zinc-800 pt-4 mt-6">
-              <p className="text-xs text-zinc-600 mb-2">React to this post</p>
+              <p className="text-xs text-zinc-500 mb-2">React to this post</p>
               <div className="flex flex-wrap gap-2">
                 {REACTIONS.map(r => {
                   const active = (activeReactions || []).includes(r.id);
@@ -523,7 +523,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Quick Quiz</p>
-                  <button onClick={() => setQuizActive(false)} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">✕ Close</button>
+                  <button onClick={() => setQuizActive(false)} className="text-xs text-zinc-500 hover:text-zinc-400 transition-colors">✕ Close</button>
                 </div>
                 {quizQuestions.length === 0 ? (
                   <p className="text-xs text-zinc-500">Not enough structured content to generate questions for this post.</p>
@@ -596,13 +596,13 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
           <div className="mt-10 pt-6 border-t border-zinc-800">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full" style={{ color: series.color, background: series.color + "18" }}>{series.title}</span>
-              <span className="text-[10px] text-zinc-600 font-mono">Part {seriesIdx + 1} of {seriesPostIds.length}</span>
+              <span className="text-[10px] text-zinc-500 font-mono">Part {seriesIdx + 1} of {seriesPostIds.length}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {prevSeriesPost ? (
                 <button onClick={() => { onOpenPost(prevSeriesPost); window.scrollTo(0, 0); }}
                   className="text-left rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 hover:border-zinc-600 transition-all group">
-                  <div className="text-[10px] text-zinc-600 font-mono mb-1">← Previous in series</div>
+                  <div className="text-[10px] text-zinc-500 font-mono mb-1">← Previous in series</div>
                   <p className="text-xs font-bold text-zinc-300 group-hover:text-white transition-colors leading-snug">{prevSeriesPost.title}</p>
                 </button>
               ) : <div />}
@@ -640,11 +640,11 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
                         style={{ color: rc, borderColor: rc + "44", background: rc + "15" }}>
                         {catLbl}
                       </span>
-                      {isCross && <span className="text-[9px] text-zinc-600 font-mono">related topic</span>}
+                      {isCross && <span className="text-[9px] text-zinc-500 font-mono">related topic</span>}
                     </div>
                     <p className="text-xs font-bold text-white leading-snug mb-1.5 line-clamp-2 group-hover:text-white/90">{r.title}</p>
                     <p className="text-[10px] text-zinc-500 leading-relaxed line-clamp-2 mb-2">{r.desc}</p>
-                    <p className="text-[9px] text-zinc-600 font-mono">{r.readMin} min read</p>
+                    <p className="text-[9px] text-zinc-500 font-mono">{r.readMin} min read</p>
                   </button>
                 );
               })}
@@ -656,7 +656,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
         <div className="mt-8 pt-6 border-t border-zinc-800 space-y-4">
           {/* Share row */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mr-1">Share</span>
+            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mr-1">Share</span>
             <button onClick={copyPostLink}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
               {linkCopied ? "✓ Copied!" : "Copy link"}
@@ -976,7 +976,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
           <div className="mb-10">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Reading Series</span>
-              <span className="text-[10px] text-zinc-600">{Object.keys(SERIES_META).length} series · structured paths through the posts</span>
+              <span className="text-[10px] text-zinc-500">{Object.keys(SERIES_META).length} series · structured paths through the posts</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {Object.entries(SERIES_META).map(([sid, s]) => {
@@ -1052,7 +1052,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
           if (!recentPosts.length) return null;
           return (
             <div className="mb-4">
-              <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-2">Continue reading</p>
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Continue reading</p>
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {recentPosts.map(p => {
                   const color = CAT_COLORS[p.category] || "#6366f1";
@@ -1140,7 +1140,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                     <span className={`text-[9px] font-bold uppercase tracking-widest ${DIFF_COLORS[CAT_DIFFICULTY[post.category]] || "text-zinc-500"}`}>
                       {CAT_DIFFICULTY[post.category] || ""}
                     </span>
-                    <span className="text-[9px] text-zinc-600 font-mono">{post.readMin} min</span>
+                    <span className="text-[9px] text-zinc-500 font-mono">{post.readMin} min</span>
                   </div>
                 </div>
 
@@ -1153,7 +1153,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1">
                   {post.tags.slice(0, 3).map(t => (
-                    <span key={t} className="text-[8px] font-mono text-zinc-700 bg-zinc-800/60 border border-zinc-800 rounded px-1.5 py-0.5">
+                    <span key={t} className="text-[8px] font-mono text-zinc-500 bg-zinc-800/60 border border-zinc-800 rounded px-1.5 py-0.5">
                       {t}
                     </span>
                   ))}
@@ -1164,7 +1164,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                   <div className="flex items-center gap-2">
                     {hasContent
                       ? <span className="text-[10px] font-mono font-bold" style={{ color }}>Read →</span>
-                      : <span className="text-[10px] text-zinc-600 font-mono italic">Coming soon</span>
+                      : <span className="text-[10px] text-zinc-500 font-mono italic">Coming soon</span>
                     }
                     {readIds.has(post.id) && (
                       <button
@@ -1178,14 +1178,14 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                       <button
                         onClick={e => toggleRead(post.id, e)}
                         title="Mark as read"
-                        className="text-[9px] font-mono text-zinc-700 hover:text-zinc-500 transition-colors">
+                        className="text-[9px] font-mono text-zinc-500 hover:text-zinc-500 transition-colors">
                         Mark read
                       </button>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={(e) => markHelpful(post.id, e)}
-                      className={`text-[10px] flex items-center gap-1 transition-all ${helpfulCounts[post.id] ? "text-emerald-400" : "text-zinc-600 hover:text-zinc-400"}`}>
+                      className={`text-[10px] flex items-center gap-1 transition-all ${helpfulCounts[post.id] ? "text-emerald-400" : "text-zinc-500 hover:text-zinc-400"}`}>
                       👍 {helpfulCounts[post.id] ? "Helpful" : "Mark helpful"}
                     </button>
                     <button
@@ -1198,7 +1198,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                           onNavigate(post.labLink);
                         }
                       }}
-                      className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 transition-colors">
+                      className="text-[10px] font-mono text-zinc-500 hover:text-zinc-400 transition-colors">
                       {post.labLabel}
                     </button>
                   </div>
@@ -1210,7 +1210,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
 
         {/* Footer */}
         <div className="mt-12 text-center space-y-1">
-          <p className="text-xs text-zinc-600 font-mono">{total} pieces live{totalPlanned - total > 0 ? ` · ${totalPlanned - total} more coming` : ""} · every piece links to an interactive module</p>
+          <p className="text-xs text-zinc-500 font-mono">{total} pieces live{totalPlanned - total > 0 ? ` · ${totalPlanned - total} more coming` : ""} · every piece links to an interactive module</p>
           <button onClick={() => onNavigate("home")}
             className="text-xs text-zinc-500 hover:text-white transition-colors font-mono underline">
             ← Back to Home

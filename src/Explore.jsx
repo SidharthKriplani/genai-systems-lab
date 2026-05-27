@@ -345,7 +345,7 @@ function EmbeddingExplorer({ onNavigate }) {
             <div className="space-y-2">
               {nearestPoints.map((pt, i) => (
                 <div key={pt.id} className="flex items-center gap-3">
-                  <span className="text-zinc-600 text-xs w-3 shrink-0">{i + 1}</span>
+                  <span className="text-zinc-500 text-xs w-3 shrink-0">{i + 1}</span>
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ background: EMB_CAT_COLOR[pt.cat] }}/>
                   <span className="text-sm text-zinc-200 flex-1">{pt.label}</span>
                   <span className="text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0"
@@ -373,7 +373,7 @@ function EmbeddingExplorer({ onNavigate }) {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-3 text-center text-zinc-600 text-xs">
+        <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-3 text-center text-zinc-500 text-xs">
           Select a query — zero keyword overlap, pure meaning match
         </div>
       )}
@@ -457,7 +457,7 @@ function ShadowMode() {
           "The key insight: 'better prompt' depends entirely on which metric you optimize for",
         ]}
       />
-      <p className="text-[11px] text-zinc-600 font-mono">
+      <p className="text-[11px] text-zinc-500 font-mono">
         ~ Static response pairs — illustrates the pattern of shadow A/B testing; no live inference is run.
       </p>
       <div className="flex gap-2">
@@ -482,7 +482,7 @@ function ShadowMode() {
           <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 space-y-3">
             <div>
               <p className="text-xs font-bold text-white mb-1">{v.label}</p>
-              <p className="text-xs text-zinc-600 font-mono leading-relaxed">{v.prompt.slice(0, 80)}…</p>
+              <p className="text-xs text-zinc-500 font-mono leading-relaxed">{v.prompt.slice(0, 80)}…</p>
             </div>
             <div className="border-t border-zinc-800 pt-2">
               <p className="text-xs text-zinc-400 leading-relaxed">{v.output}</p>
@@ -495,7 +495,7 @@ function ShadowMode() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
         <div className="flex justify-between text-xs text-zinc-500 mb-1">
           <span className="font-bold text-indigo-400">Variant A</span>
-          <span className="text-zinc-600">Metrics</span>
+          <span className="text-zinc-500">Metrics</span>
           <span className="font-bold text-purple-400">Variant B</span>
         </div>
         <MetricBar label="CSAT (out of 5)" a={sc.metrics.csat_a} b={sc.metrics.csat_b} unit="" lowerBetter={false} />
@@ -548,7 +548,7 @@ function ShadowMode() {
           className={"w-full py-2.5 font-bold rounded-lg text-sm transition-all " + (
             userPick
               ? "bg-zinc-800 hover:bg-zinc-700 text-white cursor-pointer"
-              : "bg-zinc-900 text-zinc-600 cursor-not-allowed border border-zinc-800"
+              : "bg-zinc-900 text-zinc-500 cursor-not-allowed border border-zinc-800"
           )}>
           {userPick ? "Reveal Expert Verdict →" : "Pick A or B first"}
         </button>
@@ -628,11 +628,11 @@ function LatencyPlanner() {
           <div>
             <p className="text-xs text-zinc-500">Total Pipeline</p>
             <p className="text-2xl font-black" style={{ color: budgetColor }}>{total.toLocaleString()}ms</p>
-            <p className="text-xs text-zinc-600">of {sla.toLocaleString()}ms SLA ({overBudget ? `+${(total-sla).toLocaleString()}ms OVER` : `${(sla-total).toLocaleString()}ms remaining`})</p>
+            <p className="text-xs text-zinc-500">of {sla.toLocaleString()}ms SLA ({overBudget ? `+${(total-sla).toLocaleString()}ms OVER` : `${(sla-total).toLocaleString()}ms remaining`})</p>
           </div>
           <div className="text-right">
             <p className="text-3xl font-black" style={{ color: budgetColor }}>{utilPct}%</p>
-            <p className="text-xs text-zinc-600">utilization</p>
+            <p className="text-xs text-zinc-500">utilization</p>
           </div>
         </div>
         {/* Stacked bar */}
@@ -643,7 +643,7 @@ function LatencyPlanner() {
           ))}
           <div style={{ width: `${(overhead/sla)*100}%`, backgroundColor: "#52525b", minWidth: 2 }} title={`Overhead: ${overhead}ms`} />
         </div>
-        <div className="flex items-center gap-2 text-xs text-zinc-600">
+        <div className="flex items-center gap-2 text-xs text-zinc-500">
           <div className="w-2 h-2 rounded-sm bg-zinc-600" />
           <span>+{overhead}ms overhead (15% reserved — network, serialization)</span>
         </div>
@@ -667,7 +667,7 @@ function LatencyPlanner() {
                 <input type="range" min={s.min} max={s.max} value={s.ms}
                   onChange={e => update(s.id, e.target.value)}
                   className="w-full h-1 rounded cursor-pointer" style={{ accentColor: s.color }} />
-                <p className="text-xs text-zinc-600 mt-1">{s.note}</p>
+                <p className="text-xs text-zinc-500 mt-1">{s.note}</p>
               </>
             )}
           </div>
@@ -879,7 +879,7 @@ function ModelCardReader() {
           "Goal: spot the gaps before you build a product on a model that can't support it",
         ]}
       />
-      <p className="text-[11px] text-zinc-600 font-mono">
+      <p className="text-[11px] text-zinc-500 font-mono">
         ~ Curated static cards based on published model documentation — not live API data.
       </p>
       <div className="flex gap-2">
@@ -1008,9 +1008,9 @@ function VectorDBExplorer() {
             ))}
           </div>
           <div className="flex gap-4 text-xs flex-wrap">
-            <span className={db.hybrid ? "text-emerald-400" : "text-zinc-600"}>{db.hybrid ? "✓" : "✗"} Hybrid search</span>
-            <span className={db.sql ? "text-emerald-400" : "text-zinc-600"}>{db.sql ? "✓" : "✗"} SQL support</span>
-            <span className={db.self_host ? "text-emerald-400" : "text-zinc-600"}>{db.self_host ? "✓" : "✗"} Self-hostable</span>
+            <span className={db.hybrid ? "text-emerald-400" : "text-zinc-500"}>{db.hybrid ? "✓" : "✗"} Hybrid search</span>
+            <span className={db.sql ? "text-emerald-400" : "text-zinc-500"}>{db.sql ? "✓" : "✗"} SQL support</span>
+            <span className={db.self_host ? "text-emerald-400" : "text-zinc-500"}>{db.self_host ? "✓" : "✗"} Self-hostable</span>
           </div>
         </div>
         <div className="space-y-3">
@@ -2099,11 +2099,11 @@ function LLMMatrixExplorer() {
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr>
-                <td className="text-zinc-600 font-mono pb-2 pr-4 text-left w-24">Dimension</td>
+                <td className="text-zinc-500 font-mono pb-2 pr-4 text-left w-24">Dimension</td>
                 {visibleModels.map(m => (
                   <td key={m.id} className="pb-2 px-2 text-center">
                     <div className="font-bold text-[10px]" style={{ color: m.color }}>{m.name.split(" ")[0]}</div>
-                    <div className="text-[9px] text-zinc-600">{m.vendor}</div>
+                    <div className="text-[9px] text-zinc-500">{m.vendor}</div>
                   </td>
                 ))}
               </tr>
@@ -2131,7 +2131,7 @@ function LLMMatrixExplorer() {
                 <td className="py-2 pr-4 text-zinc-500 text-[11px]">Open Source</td>
                 {visibleModels.map(m => (
                   <td key={m.id} className="py-2 px-2 text-center text-[11px]">
-                    {m.openSource ? <span className="text-emerald-400 font-bold">✓</span> : <span className="text-zinc-600">✗</span>}
+                    {m.openSource ? <span className="text-emerald-400 font-bold">✓</span> : <span className="text-zinc-500">✗</span>}
                   </td>
                 ))}
               </tr>
@@ -2350,7 +2350,7 @@ function SemanticCachingExplorer() {
             <div className="h-full rounded-full bg-violet-500 transition-all duration-300"
               style={{ width: `${((threshold - 0.70) / 0.29) * 100}%` }} />
           </div>
-          <span className="text-[10px] text-zinc-600 font-mono">0.70 to 0.99</span>
+          <span className="text-[10px] text-zinc-500 font-mono">0.70 to 0.99</span>
         </div>
       </div>
 
@@ -2445,7 +2445,7 @@ function SemanticCachingExplorer() {
 
               {/* Similarity bar */}
               <div className="space-y-1">
-                <div className="flex justify-between text-[10px] text-zinc-600 font-mono">
+                <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
                   <span>0.00</span>
                   <span className="text-zinc-500">similarity score</span>
                   <span>1.00</span>
@@ -2460,7 +2460,7 @@ function SemanticCachingExplorer() {
                     }} />
                 </div>
                 <div className="flex justify-end">
-                  <span className="text-[9px] text-zinc-600 font-mono">| threshold</span>
+                  <span className="text-[9px] text-zinc-500 font-mono">| threshold</span>
                 </div>
               </div>
 
@@ -2474,7 +2474,7 @@ function SemanticCachingExplorer() {
                   <div className="flex gap-4 text-[10px] font-mono text-zinc-500 pt-1">
                     <span className="text-emerald-500">$0.003 saved</span>
                     <span className="text-emerald-500">420ms saved</span>
-                    <span className="text-zinc-600">no LLM call needed</span>
+                    <span className="text-zinc-500">no LLM call needed</span>
                   </div>
                 </div>
               )}
@@ -2488,7 +2488,7 @@ function SemanticCachingExplorer() {
                   <div className="flex gap-4 text-[10px] font-mono text-zinc-500 pt-1">
                     <span className="text-red-500">full cost incurred</span>
                     <span className="text-red-500">full latency</span>
-                    <span className="text-zinc-600">fresh response generated</span>
+                    <span className="text-zinc-500">fresh response generated</span>
                   </div>
                 </div>
               )}
@@ -2811,7 +2811,7 @@ function LLMOpsComparison() {
                   >
                     <td className="px-4 py-3">
                       <div className="font-medium text-zinc-300 text-xs leading-tight">{dim.label}</div>
-                      <div className="text-[10px] text-zinc-600 mt-0.5 leading-snug">{dim.desc}</div>
+                      <div className="text-[10px] text-zinc-500 mt-0.5 leading-snug">{dim.desc}</div>
                     </td>
                     {LLMOPS_TOOLS.map(tool => (
                       <td key={tool.id} className="px-3 py-3 text-center">
@@ -2830,7 +2830,7 @@ function LLMOpsComparison() {
                       {tool.acquiredBy ? (
                         <span className="text-[10px] text-amber-400 font-medium leading-tight">{tool.acquiredBy}</span>
                       ) : (
-                        <span className="text-[10px] text-zinc-600">Independent</span>
+                        <span className="text-[10px] text-zinc-500">Independent</span>
                       )}
                     </td>
                   ))}
@@ -2913,7 +2913,7 @@ function LLMOpsComparison() {
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6 flex flex-col gap-5">
               <div className="flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
                 <span>DECISION WIZARD</span>
-                <span className="text-zinc-700">·</span>
+                <span className="text-zinc-500">·</span>
                 <span>Step {wizardHistory.length + 1}</span>
               </div>
 
@@ -3216,7 +3216,7 @@ function EmbedModelTable() {
               <td className="px-3 py-2.5 text-center">
                 {m.matryoshka
                   ? <span className="text-violet-400 text-[11px] font-bold">✓</span>
-                  : <span className="text-zinc-700 text-[11px]">—</span>}
+                  : <span className="text-zinc-500 text-[11px]">—</span>}
               </td>
             </tr>
           ))}
@@ -3338,7 +3338,7 @@ function EmbedMatryoshka() {
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-zinc-600">Bar width represents fraction of dimensions used. The first 256 values already encode the most salient structure.</p>
+        <p className="text-[10px] text-zinc-500">Bar width represents fraction of dimensions used. The first 256 values already encode the most salient structure.</p>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-zinc-800">
@@ -4056,7 +4056,7 @@ function CosineSimilarityExplorer() {
             <div className="mt-2 h-2 rounded-full bg-zinc-800 overflow-hidden">
               <div className="h-full rounded-full transition-all" style={{ width: `${((cosSim + 1) / 2) * 100}%`, backgroundColor: simColor }} />
             </div>
-            <div className="flex justify-between text-[9px] text-zinc-600 font-mono mt-0.5">
+            <div className="flex justify-between text-[9px] text-zinc-500 font-mono mt-0.5">
               <span>-1 (opposite)</span><span>0 (orthogonal)</span><span>+1 (identical)</span>
             </div>
           </div>
@@ -4986,7 +4986,7 @@ function ModelMergeExplorer() {
               style={selected === m.id ? { background: m.color + "22", border: "1px solid " + m.color + "55", borderTop: "2px solid " + m.color } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
               className="py-2.5 px-3 rounded-lg text-xs transition-all text-left">
               <p className={"font-bold " + (selected === m.id ? "text-white" : "text-zinc-400")} style={selected === m.id ? { color: m.color } : {}}>{m.name}</p>
-              <p className="text-zinc-600 text-[10px] mt-0.5 leading-tight">{m.full}</p>
+              <p className="text-zinc-500 text-[10px] mt-0.5 leading-tight">{m.full}</p>
             </button>
           ))}
         </div>
@@ -5001,16 +5001,16 @@ function ModelMergeExplorer() {
           <p className="text-sm text-zinc-300 leading-relaxed">{method.what}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)" }} className="rounded-lg p-3">
-              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">When to use</p>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1">When to use</p>
               <p className="text-xs text-zinc-300">{method.when}</p>
             </div>
             <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }} className="rounded-lg p-3">
-              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Tradeoff</p>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Tradeoff</p>
               <p className="text-xs text-zinc-300">{method.tradeoff}</p>
             </div>
           </div>
           <div style={{ background: "rgba(15,15,17,0.95)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded-lg p-3">
-            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1.5">Pseudocode</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5">Pseudocode</p>
             <p className="text-xs font-mono text-emerald-400">{method.example}</p>
           </div>
         </div>
@@ -5101,7 +5101,7 @@ function MultimodalGuide() {
             style={selected === a.id ? { background: a.color + "18", border: "1px solid " + a.color + "55", borderTop: "2px solid " + a.color } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
             className="py-3 px-2 rounded-xl text-xs transition-all text-center">
             <p className={"font-bold text-sm " + (selected === a.id ? "text-white" : "text-zinc-400")} style={selected === a.id ? { color: a.color } : {}}>{a.name}</p>
-            <p className="text-zinc-600 text-[10px] mt-0.5">{a.tag}</p>
+            <p className="text-zinc-500 text-[10px] mt-0.5">{a.tag}</p>
           </button>
         ))}
       </div>
@@ -5109,25 +5109,25 @@ function MultimodalGuide() {
       {arch && (
         <div style={{ background: "rgba(24,24,27,0.9)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid " + arch.color + "60" }} className="rounded-xl p-5 space-y-4">
           <div>
-            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">How it works</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1">How it works</p>
             <p className="text-sm text-zinc-300 leading-relaxed">{arch.how}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)" }} className="rounded-lg p-3">
-              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-2">Strengths</p>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-2">Strengths</p>
               {arch.strengths.map((s, i) => <p key={i} className="text-xs text-emerald-300 mb-1">+ {s}</p>)}
             </div>
             <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }} className="rounded-lg p-3">
-              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-2">Limitations</p>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-2">Limitations</p>
               {arch.limits.map((l, i) => <p key={i} className="text-xs text-red-300 mb-1">- {l}</p>)}
             </div>
           </div>
           <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)" }} className="rounded-lg p-3">
-            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Use when</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Use when</p>
             <p className="text-xs text-zinc-300">{arch.when}</p>
           </div>
           <div style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.4)" }} className="rounded-lg p-2.5">
-            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Build complexity</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Build complexity</p>
             <p className="text-xs text-zinc-400">{arch.complexity}</p>
           </div>
         </div>
@@ -5221,7 +5221,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
                 <div className="h-1 flex-1 rounded-full bg-zinc-800 overflow-hidden">
                   <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${(done.size / EXPLORE_MODULES.length) * 100}%` }} />
                 </div>
-                <span className="text-[10px] text-zinc-600 shrink-0">{done.size}/{EXPLORE_MODULES.length}</span>
+                <span className="text-[10px] text-zinc-500 shrink-0">{done.size}/{EXPLORE_MODULES.length}</span>
               </div>
             )}
           </div>
@@ -5237,7 +5237,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-700 transition-colors"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 text-[10px]">✕</button>
+            <button onClick={() => setSearch("")} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-400 text-[10px]">✕</button>
           )}
         </div>
 
@@ -5252,7 +5252,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
                 </button>
               ))}
               {EXPLORE_MODULES.filter(m => m.label.toLowerCase().includes(search.toLowerCase()) || m.tag.toLowerCase().includes(search.toLowerCase())).length === 0 && (
-                <div className="text-center text-xs text-zinc-600 py-4">No match for "{search}"</div>
+                <div className="text-center text-xs text-zinc-500 py-4">No match for "{search}"</div>
               )}
             </>
           ) : (
@@ -5308,7 +5308,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
                m.fidelity.tier === "approximate" ? "~ Approximate (simplified BPE)" :
                m.fidelity.tier === "simplified" ? "~ Simplified" : "◌ Conceptual"}
             </span>
-            <span className="text-[10px] text-zinc-600">{m.fidelity.note}</span>
+            <span className="text-[10px] text-zinc-500">{m.fidelity.note}</span>
           </div>
         ) : null; })()}
 

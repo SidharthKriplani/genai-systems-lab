@@ -52,10 +52,10 @@ function ReActPattern() {
           {[["Thought","#a5b4fc","#6366f1"], ["Action","#93c5fd","#3b82f6"], ["Observation","#86efac","#22c55e"]].map(([s,tc,bg], i) => (
             <span key={s} className="flex items-center gap-1.5">
               <span className="px-2 py-1 rounded-lg" style={{ backgroundColor: bg+"22", color: tc }}>{s}</span>
-              {i < 2 && <span className="text-zinc-600">→</span>}
+              {i < 2 && <span className="text-zinc-500">→</span>}
             </span>
           ))}
-          <span className="text-zinc-600">→ repeat until</span>
+          <span className="text-zinc-500">→ repeat until</span>
           <span className="px-2 py-1 rounded-lg bg-amber-950/40 text-amber-300">Final Answer</span>
         </div>
         <p className="text-xs text-zinc-400 leading-relaxed">Model generates <span className="text-indigo-400 font-bold">Thoughts</span> and <span className="text-blue-400 font-bold">Actions</span> only. <span className="text-emerald-400 font-bold">Observations</span> are real tool output — never model-generated. This separation is what prevents ReAct from hallucinating intermediate facts.</p>
@@ -988,7 +988,7 @@ function AgentDesignChallenge() {
               if (opt.correct && selected) cls = "border-emerald-600 bg-emerald-950/40 text-white";
               else if (opt.correct && !selected) cls = "border-emerald-800 bg-emerald-950/20 text-zinc-400";
               else if (!opt.correct && selected) cls = "border-red-700 bg-red-950/40 text-zinc-300";
-              else cls = "border-zinc-800 bg-zinc-900/40 text-zinc-600";
+              else cls = "border-zinc-800 bg-zinc-900/40 text-zinc-500";
             } else if (selected) {
               cls = "border-zinc-400 bg-zinc-700 text-white";
             }
@@ -1737,7 +1737,7 @@ function AgentLoopSimulator() {
       {/* Trace so far */}
       {stepIdx > 0 && (
         <div className="space-y-1.5">
-          <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wide">Trace so far</div>
+          <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wide">Trace so far</div>
           {scenario.steps.slice(0, stepIdx).map((s, i) => (
             <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800">
               <span className="text-sm shrink-0">{STEP_ICONS[s.type]}</span>
@@ -1763,7 +1763,7 @@ function AgentLoopSimulator() {
             if (revealed) {
               if (opt.correct) style = "border-emerald-600 bg-emerald-950/40 text-white";
               else if (i === chosen && !opt.correct) style = "border-red-700 bg-red-950/40 text-zinc-300";
-              else style = "border-zinc-800 bg-zinc-900/40 text-zinc-600";
+              else style = "border-zinc-800 bg-zinc-900/40 text-zinc-500";
             }
             return (
               <button key={i} onClick={() => selectOption(i)} disabled={chosen !== null}
@@ -2169,7 +2169,7 @@ function LLMMemoryArchitecture() {
                 style={{ borderColor: selectedMem===m.id ? m.color : "#3f3f46", backgroundColor: selectedMem===m.id ? "#18181b" : "transparent" }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full" style={{ color: m.color, backgroundColor: m.color+"22" }}>{m.label}</span>
-                  <span className="text-[10px] text-zinc-600">{m.costTier}</span>
+                  <span className="text-[10px] text-zinc-500">{m.costTier}</span>
                 </div>
                 <p className="text-sm text-zinc-300 leading-relaxed mb-2">{m.desc}</p>
                 <div className="grid grid-cols-2 gap-1 text-[10px] text-zinc-500">
@@ -2339,7 +2339,7 @@ function MCPDeepDive() {
                   <p className="font-bold text-zinc-300 text-[10px] text-center">MCP Client</p>
                   <p className="text-zinc-500 text-[10px] text-center mt-1">Inside the host. Speaks the protocol.</p>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-600 text-[10px]">
+                <div className="flex items-center gap-2 text-zinc-500 text-[10px]">
                   <span>←→</span>
                   <span>JSON-RPC 2.0</span>
                   <span>←→</span>
@@ -2553,13 +2553,13 @@ function AgenticReliability() {
                 <div className="mt-3 pt-3 border-t border-zinc-800 space-y-3">
                   <div>
                     <p className="text-[10px] font-bold text-amber-400 uppercase mb-1">Detection Signals</p>
-                    {f.signals.map((s, i) => <p key={i} className="text-xs text-zinc-400 flex gap-1.5"><span className="text-zinc-600 shrink-0">•</span>{s}</p>)}
+                    {f.signals.map((s, i) => <p key={i} className="text-xs text-zinc-400 flex gap-1.5"><span className="text-zinc-500 shrink-0">•</span>{s}</p>)}
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Fix</p>
                     <p className="text-xs text-zinc-300">{f.fix}</p>
                   </div>
-                  <p className="text-[10px] text-zinc-600">Pattern: <span className="text-zinc-500 font-mono">{f.pattern}</span></p>
+                  <p className="text-[10px] text-zinc-500">Pattern: <span className="text-zinc-500 font-mono">{f.pattern}</span></p>
                 </div>
               )}
             </div>
@@ -2613,7 +2613,7 @@ function AgenticReliability() {
               <p className="text-xs font-bold text-orange-400 uppercase tracking-wide mb-2">{phase.phase}</p>
               {phase.items.map((item, i) => (
                 <div key={i} className="flex gap-2 mb-1.5">
-                  <span className="text-zinc-600 text-xs mt-0.5 shrink-0">☐</span>
+                  <span className="text-zinc-500 text-xs mt-0.5 shrink-0">☐</span>
                   <p className="text-xs text-zinc-300">{item}</p>
                 </div>
               ))}
@@ -3320,7 +3320,7 @@ function AgentConfigLab() {
         <div className="space-y-2">
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Tool count: <span className="text-amber-400">{toolCount}</span></p>
           <input type="range" min={1} max={25} step={1} value={toolCount} onChange={e => { setToolCount(Number(e.target.value)); setSimulated(false); }} className="w-full accent-amber-500" />
-          <div className="flex justify-between text-[10px] text-zinc-600"><span>1</span><span>5</span><span>10</span><span>20+</span></div>
+          <div className="flex justify-between text-[10px] text-zinc-500"><span>1</span><span>5</span><span>10</span><span>20+</span></div>
         </div>
 
         <div className="space-y-2">
@@ -3344,7 +3344,7 @@ function AgentConfigLab() {
                 style={memoryType === v ? { background: "rgba(245,158,11,0.18)", border: "1px solid rgba(245,158,11,0.5)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
                 className="py-2.5 px-2 rounded-lg text-xs transition-all text-center">
                 <p className={"font-bold " + (memoryType === v ? "text-amber-300" : "text-zinc-300")}>{l}</p>
-                <p className="text-zinc-600 mt-0.5 text-[10px] leading-tight">{sub}</p>
+                <p className="text-zinc-500 mt-0.5 text-[10px] leading-tight">{sub}</p>
               </button>
             ))}
           </div>
@@ -3370,14 +3370,14 @@ function AgentConfigLab() {
               <div className="flex items-center gap-3">
                 <span style={{ background: failure.color + "20", border: "1px solid " + failure.color + "50", color: failure.color }} className="text-[10px] font-black px-2 py-1 rounded font-mono">{failure.icon}</span>
                 <span className="text-sm font-bold text-zinc-100">Failure: {failure.title}</span>
-                {allTriggers.length > 1 && <span className="text-[10px] text-zinc-600">+{allTriggers.length - 1} more risk{allTriggers.length > 2 ? "s" : ""}</span>}
+                {allTriggers.length > 1 && <span className="text-[10px] text-zinc-500">+{allTriggers.length - 1} more risk{allTriggers.length > 2 ? "s" : ""}</span>}
               </div>
               <div style={{ background: "rgba(24,24,27,0.9)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded-lg p-3">
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1.5">Why this config triggers it</p>
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5">Why this config triggers it</p>
                 <p className="text-xs text-zinc-300 leading-relaxed">{failure.why}</p>
               </div>
               <div style={{ background: failure.color + "08", border: "1px solid " + failure.color + "25" }} className="rounded-lg p-3">
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1.5">What actually happens</p>
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5">What actually happens</p>
                 <p className="text-xs text-zinc-400 leading-relaxed italic">{failure.step}</p>
               </div>
               <div>
@@ -3400,7 +3400,7 @@ function AgentConfigLab() {
               </div>
             </div>
           )}
-          <button onClick={reset} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">Reset</button>
+          <button onClick={reset} className="text-xs text-zinc-500 hover:text-zinc-400 transition-colors">Reset</button>
         </div>
       )}
     </div>
@@ -3494,7 +3494,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
                 <div className="h-1 flex-1 rounded-full overflow-hidden" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)" }}>
                   <div className="h-full rounded-full transition-all" style={{ width: `${(done.size / AGENTS_MODULES.length) * 100}%`, background: "linear-gradient(90deg, #16a34a 0%, #22c55e 100%)", boxShadow: "2px 0 8px rgba(34,197,94,0.6)" }} />
                 </div>
-                <span className="text-[10px] text-zinc-600 shrink-0">{done.size}/{AGENTS_MODULES.length}</span>
+                <span className="text-[10px] text-zinc-500 shrink-0">{done.size}/{AGENTS_MODULES.length}</span>
               </div>
             )}
           </div>
@@ -3585,7 +3585,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
             </div>
           </div>
           <div className="flex items-center gap-2 pt-1 border-t border-zinc-800/60">
-            <span className="text-[10px] text-zinc-600 font-mono uppercase tracking-widest">Test your understanding →</span>
+            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Test your understanding →</span>
             <button
               onClick={() => onNavigate && onNavigate("preplab")}
               className="text-xs px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-300 hover:text-violet-300 font-medium transition-all">

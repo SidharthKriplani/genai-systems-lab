@@ -758,7 +758,7 @@ function AgentEvalLab() {
 
         {!submitted ? (
           <button onClick={submit} disabled={!allScored}
-            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${allScored ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${allScored ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}>
             Submit grades
           </button>
         ) : (
@@ -887,7 +887,7 @@ function GradingTool() {
 
         {!submitted ? (
           <button onClick={submit} disabled={!allScored}
-            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${allScored ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${allScored ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}>
             Submit grades
           </button>
         ) : (
@@ -1008,7 +1008,7 @@ function ModelStrategyLab() {
           <button
             onClick={reveal}
             disabled={!chosen}
-            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${chosen ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${chosen ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}
           >
             Reveal answer
           </button>
@@ -1693,7 +1693,7 @@ function IncidentRoom() {
             <button
               onClick={reveal}
               disabled={!chosen}
-              className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${chosen ? "bg-red-700 hover:bg-red-600 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}
+              className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${chosen ? "bg-red-700 hover:bg-red-600 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}
             >
               Submit diagnosis
             </button>
@@ -2017,7 +2017,7 @@ function ShouldUseAI() {
 
         {!revealed && (
           <button onClick={reveal} disabled={!chosen}
-            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${chosen ? "bg-cyan-700 hover:bg-cyan-600 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${chosen ? "bg-cyan-700 hover:bg-cyan-600 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}>
             Reveal answer
           </button>
         )}
@@ -2141,7 +2141,7 @@ function CostLatencyLab() {
               </div>
               <input type="range" min="1000" max="10000000" step="1000" value={queriesPerDay} onChange={e => setQueriesPerDay(+e.target.value)}
                 className="w-full accent-orange-500" />
-              <div className="flex justify-between text-xs text-zinc-600 font-mono">
+              <div className="flex justify-between text-xs text-zinc-500 font-mono">
                 <span>1k</span><span>100k</span><span>1M</span><span>10M</span>
               </div>
             </div>
@@ -2152,7 +2152,7 @@ function CostLatencyLab() {
               </div>
               <input type="range" min="100" max="8000" step="100" value={inputTokens} onChange={e => setInputTokens(+e.target.value)}
                 className="w-full accent-orange-500" />
-              <div className="flex justify-between text-xs text-zinc-600 font-mono">
+              <div className="flex justify-between text-xs text-zinc-500 font-mono">
                 <span>100</span><span>system prompt + query (~800)</span><span>8k (long doc)</span>
               </div>
             </div>
@@ -2163,7 +2163,7 @@ function CostLatencyLab() {
               </div>
               <input type="range" min="50" max="2000" step="50" value={outputTokens} onChange={e => setOutputTokens(+e.target.value)}
                 className="w-full accent-orange-500" />
-              <div className="flex justify-between text-xs text-zinc-600 font-mono">
+              <div className="flex justify-between text-xs text-zinc-500 font-mono">
                 <span>50</span><span>short answer (~200)</span><span>2k (long gen)</span>
               </div>
             </div>
@@ -2199,7 +2199,7 @@ function CostLatencyLab() {
                   <div className="mt-2 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${pctOfFrontier}%`, background: m.color }} />
                   </div>
-                  <div className="text-xs text-zinc-600 mt-1 font-mono">{pctOfFrontier}% of frontier cost</div>
+                  <div className="text-xs text-zinc-500 mt-1 font-mono">{pctOfFrontier}% of frontier cost</div>
                 </div>
               );
             })}
@@ -2218,7 +2218,7 @@ function CostLatencyLab() {
             </div>
             <input type="range" min="0" max="100" step="5" value={smallPct} onChange={e => setSmallPct(+e.target.value)}
               className="w-full accent-emerald-500" />
-            <div className="flex justify-between text-xs text-zinc-600 font-mono">
+            <div className="flex justify-between text-xs text-zinc-500 font-mono">
               <span>0% (frontier only)</span><span>50/50</span><span>100% (small only)</span>
             </div>
           </div>
@@ -2577,17 +2577,17 @@ function LoRA3DViz() {
         <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3">
           <div className="text-[10px] text-zinc-500 mb-1">Full fine-tune</div>
           <div className="font-mono text-sm text-zinc-300">{fullP} params</div>
-          <div className="text-[10px] text-zinc-600 mt-0.5">W (d²)</div>
+          <div className="text-[10px] text-zinc-500 mt-0.5">W (d²)</div>
         </div>
         <div className="rounded-lg bg-zinc-900 border border-emerald-900/60 p-3">
           <div className="text-[10px] text-zinc-500 mb-1">LoRA (r={rank})</div>
           <div className="font-mono text-sm text-emerald-400">{loraP} params</div>
-          <div className="text-[10px] text-zinc-600 mt-0.5">A + B (2·d·r)</div>
+          <div className="text-[10px] text-zinc-500 mt-0.5">A + B (2·d·r)</div>
         </div>
         <div className="rounded-lg bg-zinc-900 border border-sky-900/60 p-3">
           <div className="text-[10px] text-zinc-500 mb-1">Reduction</div>
           <div className="font-mono text-sm text-sky-400">{reduc}×</div>
-          <div className="text-[10px] text-zinc-600 mt-0.5">fewer params</div>
+          <div className="text-[10px] text-zinc-500 mt-0.5">fewer params</div>
         </div>
       </div>
       <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-3 text-xs text-zinc-400 leading-relaxed">
@@ -2723,7 +2723,7 @@ function FineTuningLab() {
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-zinc-600 mt-2">Higher rank = more adapter capacity, more VRAM. r=16 is the default. r=64 for complex multi-domain tasks.</p>
+              <p className="text-xs text-zinc-500 mt-2">Higher rank = more adapter capacity, more VRAM. r=16 is the default. r=64 for complex multi-domain tasks.</p>
             </div>
           )}
 
@@ -2761,22 +2761,22 @@ function FineTuningLab() {
               <div>
                 <div className="text-xs text-zinc-500 mb-1">VRAM needed</div>
                 <div className={`text-2xl font-black ${sim.vram > 160 ? "text-red-400" : sim.vram > 80 ? "text-amber-400" : "text-emerald-400"}`}>{sim.vram}GB</div>
-                <div className="text-xs text-zinc-600 mt-0.5">{sim.gpuConfig}</div>
+                <div className="text-xs text-zinc-500 mt-0.5">{sim.gpuConfig}</div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500 mb-1">Training time</div>
                 <div className="text-2xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{sim.hoursStr}</div>
-                <div className="text-xs text-zinc-600 mt-0.5">approx wall-clock</div>
+                <div className="text-xs text-zinc-500 mt-0.5">approx wall-clock</div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500 mb-1">Cloud GPU cost</div>
                 <div className="text-2xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{sim.costStr}</div>
-                <div className="text-xs text-zinc-600 mt-0.5">one-time run</div>
+                <div className="text-xs text-zinc-500 mt-0.5">one-time run</div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500 mb-1">Overfitting risk</div>
                 <div className="text-2xl font-black capitalize" style={{ color: sim.overfitColor }}>{sim.overfitRisk}</div>
-                <div className="text-xs text-zinc-600 mt-0.5">data-to-param ratio</div>
+                <div className="text-xs text-zinc-500 mt-0.5">data-to-param ratio</div>
               </div>
             </div>
             {!sim.feasible && (
@@ -2845,7 +2845,7 @@ function FineTuningLab() {
 
           {!scRevealed ? (
             <button onClick={handleReveal} disabled={!scPick}
-              className={`px-6 py-2.5 rounded text-sm font-bold transition-all ${scPick ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+              className={`px-6 py-2.5 rounded text-sm font-bold transition-all ${scPick ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}>
               Submit Answer
             </button>
           ) : (
@@ -3122,7 +3122,7 @@ function LLMObservability() {
                   <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
                   </div>
-                  <div className="text-xs text-zinc-700 font-mono">target: {OBS_METRICS.find(m => m.id === key)?.target}</div>
+                  <div className="text-xs text-zinc-500 font-mono">target: {OBS_METRICS.find(m => m.id === key)?.target}</div>
                 </div>
               );
             })}
@@ -3271,7 +3271,7 @@ function ABTestingLab() {
         </div>
         {!revealed && (
           <button onClick={reveal} disabled={!chosen}
-            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${chosen ? "bg-sky-700 hover:bg-sky-600 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${chosen ? "bg-sky-700 hover:bg-sky-600 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}>
             Reveal answer
           </button>
         )}
@@ -3352,7 +3352,7 @@ function HowCachingWorks() {
             <div key={m.label} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
               <div className="text-zinc-500 mb-1">{m.label}</div>
               <div className={`font-mono font-bold ${m.color}`}>{m.val}</div>
-              <div className="text-zinc-600 text-[10px] mt-0.5">{m.sub}</div>
+              <div className="text-zinc-500 text-[10px] mt-0.5">{m.sub}</div>
             </div>
           ))}
         </div>
@@ -3412,7 +3412,7 @@ function CacheCostCalculator() {
           <div key={c.label} className={`rounded-xl border p-4 ${c.accent ? "border-emerald-800 bg-emerald-950/20" : "border-zinc-800 bg-zinc-900"}`}>
             <div className="text-xs text-zinc-500 mb-1">{c.label}</div>
             <div className={`text-lg font-bold font-mono ${c.color}`}>{c.val}</div>
-            <div className="text-xs text-zinc-600">{c.sub}</div>
+            <div className="text-xs text-zinc-500">{c.sub}</div>
           </div>
         ))}
       </div>
@@ -3828,11 +3828,11 @@ function ContextCompaction() {
           ].map(({ label, val, color }) => (
             <div key={label} className="bg-zinc-800 rounded-lg p-2">
               <div className="text-sm font-bold font-mono" style={{ color }}>{val}</div>
-              <div className="text-xs text-zinc-600 mt-0.5">{label}</div>
+              <div className="text-xs text-zinc-500 mt-0.5">{label}</div>
             </div>
           ))}
         </div>
-        <p className="text-xs text-zinc-600">Assumes ~150 tokens/turn avg, 800 token system prompt. Pick a strategy below for when you hit the limit.</p>
+        <p className="text-xs text-zinc-500">Assumes ~150 tokens/turn avg, 800 token system prompt. Pick a strategy below for when you hit the limit.</p>
       </div>
 
       {/* Strategy picker */}
@@ -4041,7 +4041,7 @@ function DebugTraces() {
         </div>
         <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5">
           <span className="text-xs text-zinc-500">Score</span>
-          <span className="text-sm font-black text-violet-400">{correctCount}<span className="text-zinc-600 font-normal">/{DEBUG_TRACES.length}</span></span>
+          <span className="text-sm font-black text-violet-400">{correctCount}<span className="text-zinc-500 font-normal">/{DEBUG_TRACES.length}</span></span>
         </div>
       </div>
 
@@ -4114,7 +4114,7 @@ function DebugTraces() {
               className={`w-full text-left rounded-xl border p-3 transition-all ${border}`}
             >
               <div className="flex items-start gap-2.5">
-                <span className={`text-[10px] font-bold font-mono mt-0.5 shrink-0 w-4 ${submitted && opt.correct ? "text-emerald-400" : submitted && opt.id === selected && !opt.correct ? "text-red-400" : "text-zinc-600"}`}>
+                <span className={`text-[10px] font-bold font-mono mt-0.5 shrink-0 w-4 ${submitted && opt.correct ? "text-emerald-400" : submitted && opt.id === selected && !opt.correct ? "text-red-400" : "text-zinc-500"}`}>
                   {opt.id.toUpperCase()}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -4139,7 +4139,7 @@ function DebugTraces() {
           onClick={handleSubmit}
           disabled={!selected}
           className={`w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all ${
-            selected ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
+            selected ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
           }`}
         >
           Submit Diagnosis
@@ -5291,7 +5291,7 @@ function BuildThis({ onNavigate }) {
                     <p className="text-xs text-zinc-400 leading-relaxed mt-1">{step.detail}</p>
                   )}
                 </div>
-                <span className="text-zinc-600 text-xs">{expandedStep===idx ? "▲" : "▼"}</span>
+                <span className="text-zinc-500 text-xs">{expandedStep===idx ? "▲" : "▼"}</span>
               </div>
             </div>
           ))}
@@ -5387,7 +5387,7 @@ function MultimodalAI() {
                     <p className="text-sm font-semibold text-zinc-200">{s.stage}</p>
                     <p className="text-xs text-zinc-400 mt-0.5">{s.what}</p>
                     <p className="text-xs text-zinc-500 mt-0.5 italic">{s.detail}</p>
-                    <p className="text-xs text-zinc-600 mt-0.5">→ {s.prod}</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">→ {s.prod}</p>
                   </div>
                 </div>
               ))}
@@ -5402,7 +5402,7 @@ function MultimodalAI() {
               <div key={c.label} className="bg-zinc-900 rounded-xl p-3 border border-zinc-800 text-center">
                 <p className="text-lg font-black text-cyan-400">{c.val}</p>
                 <p className="text-[10px] text-zinc-500 mt-1">{c.label}</p>
-                <p className="text-[10px] text-zinc-600 mt-0.5">{c.sub}</p>
+                <p className="text-[10px] text-zinc-500 mt-0.5">{c.sub}</p>
               </div>
             ))}
           </div>
@@ -5430,7 +5430,7 @@ function MultimodalAI() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xs font-mono text-zinc-300">{m.contextK}K ctx</p>
-                  <p className="text-[10px] text-zinc-600 mt-0.5">{m.imgTokens}</p>
+                  <p className="text-[10px] text-zinc-500 mt-0.5">{m.imgTokens}</p>
                 </div>
               </div>
               {selectedModel?.name === m.name && (
@@ -5591,11 +5591,11 @@ function ContextWindowEngineering() {
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
                   <span className="text-[10px] text-zinc-400 font-mono">{d.label}</span>
                   <div className="w-full rounded-t" style={{ height: `${d.recall * 0.9}px`, background: d.recall > 80 ? "#10b981" : d.recall > 60 ? "#f59e0b" : "#ef4444" }} />
-                  <span className="text-[10px] text-zinc-600">{d.pos}</span>
+                  <span className="text-[10px] text-zinc-500">{d.pos}</span>
                 </div>
               ))}
             </div>
-            <p className="text-[10px] text-zinc-600 text-center mt-1">Recall of key facts by document position (approximate, based on Liu et al. 2023)</p>
+            <p className="text-[10px] text-zinc-500 text-center mt-1">Recall of key facts by document position (approximate, based on Liu et al. 2023)</p>
           </div>
           <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-3">
             <h3 className="text-sm font-bold text-zinc-200">Mitigations</h3>
@@ -5633,7 +5633,7 @@ function ContextWindowEngineering() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xs font-bold text-indigo-300">{c.ratio}</p>
-                  <p className="text-[10px] text-zinc-600">compression</p>
+                  <p className="text-[10px] text-zinc-500">compression</p>
                 </div>
               </div>
               {compressionSel === i && (
@@ -5832,7 +5832,7 @@ function PromptEngineeringLab() {
               <p className="text-xs font-bold text-violet-300 uppercase tracking-wide mb-2">{phase.phase}</p>
               {phase.items.map((item, i) => (
                 <div key={i} className="flex gap-2 mb-1.5">
-                  <span className="text-zinc-600 text-xs mt-0.5 shrink-0">☐</span>
+                  <span className="text-zinc-500 text-xs mt-0.5 shrink-0">☐</span>
                   <p className="text-xs text-zinc-300">{item}</p>
                 </div>
               ))}
@@ -5920,7 +5920,7 @@ function AIRedTeaming() {
                     <p className="text-[10px] font-bold text-emerald-400 uppercase mb-1">Defense</p>
                     <p className="text-xs text-zinc-300">{a.defense}</p>
                   </div>
-                  <p className="text-[10px] text-zinc-600">Detectability: {a.detectability}</p>
+                  <p className="text-[10px] text-zinc-500">Detectability: {a.detectability}</p>
                 </div>
               )}
             </div>
@@ -5956,7 +5956,7 @@ function AIRedTeaming() {
               <p className={`text-xs font-bold text-${section.color}-400 uppercase tracking-wide mb-2`}>{section.name}</p>
               {section.items.map((item, i) => (
                 <div key={i} className="flex gap-2 mb-2">
-                  <span className="text-zinc-600 text-xs mt-0.5 shrink-0">→</span>
+                  <span className="text-zinc-500 text-xs mt-0.5 shrink-0">→</span>
                   <p className="text-xs text-zinc-300">{item}</p>
                 </div>
               ))}
@@ -5974,7 +5974,7 @@ function AIRedTeaming() {
               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                 {[["Who runs it", m.who], ["Scale", m.scale], ["Coverage", m.coverage], ["Cost", m.cost], ["Use when", m.when]].map(([k, v]) => (
                   <div key={k} className="col-span-1">
-                    <p className="text-[10px] text-zinc-600">{k}</p>
+                    <p className="text-[10px] text-zinc-500">{k}</p>
                     <p className="text-xs text-zinc-300">{v}</p>
                   </div>
                 ))}
@@ -5998,7 +5998,7 @@ function AIRedTeaming() {
               <p className="text-xs font-bold text-red-400 uppercase tracking-wide mb-2">{phase.phase}</p>
               {phase.items.map((item, i) => (
                 <div key={i} className="flex gap-2 mb-1.5">
-                  <span className="text-zinc-600 text-xs mt-0.5 shrink-0">☐</span>
+                  <span className="text-zinc-500 text-xs mt-0.5 shrink-0">☐</span>
                   <p className="text-xs text-zinc-300">{item}</p>
                 </div>
               ))}
@@ -6089,11 +6089,11 @@ function AIDeploymentArchitecture() {
               <p className="text-xs text-zinc-400 mb-2">{b.desc}</p>
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <p className="text-[10px] text-zinc-600">Throughput gain</p>
+                  <p className="text-[10px] text-zinc-500">Throughput gain</p>
                   <p className="text-xs text-emerald-400 font-semibold">{b.throughput}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-[10px] text-zinc-600">Latency effect</p>
+                  <p className="text-[10px] text-zinc-500">Latency effect</p>
                   <p className="text-xs text-zinc-300">{b.latency}</p>
                 </div>
               </div>
@@ -6112,7 +6112,7 @@ function AIDeploymentArchitecture() {
               <div key={i} className="border-l-2 border-blue-600/50 pl-3">
                 <p className="text-xs font-bold text-zinc-200">{p.metric}</p>
                 <p className="text-xs text-zinc-400">{p.threshold}</p>
-                <p className="text-[10px] text-zinc-600 mt-0.5 italic">{p.caveat}</p>
+                <p className="text-[10px] text-zinc-500 mt-0.5 italic">{p.caveat}</p>
               </div>
             ))}
           </div>
@@ -6128,7 +6128,7 @@ function AIDeploymentArchitecture() {
               "Model version pinning: deploy new model versions to 5% traffic before full rollout",
             ].map((item, i) => (
               <div key={i} className="flex gap-2">
-                <span className="text-zinc-600 text-xs mt-0.5 shrink-0">☐</span>
+                <span className="text-zinc-500 text-xs mt-0.5 shrink-0">☐</span>
                 <p className="text-xs text-zinc-300">{item}</p>
               </div>
             ))}
@@ -6768,7 +6768,7 @@ function StructuredOutputEngineering() {
               <p className="text-xs font-bold text-teal-400 uppercase tracking-wide mb-2">{phase.phase}</p>
               {phase.items.map((item, i) => (
                 <div key={i} className="flex gap-2 mb-1.5">
-                  <span className="text-zinc-600 text-xs mt-0.5 shrink-0">☐</span>
+                  <span className="text-zinc-500 text-xs mt-0.5 shrink-0">☐</span>
                   <p className="text-xs text-zinc-300">{item}</p>
                 </div>
               ))}
@@ -6870,7 +6870,7 @@ function SyntheticDataGeneration() {
                 <span className={`text-[10px] px-1.5 py-0.5 rounded border shrink-0 ${m.complexity==="Low"?"bg-emerald-900/40 text-emerald-300 border-emerald-700/40":m.complexity==="Medium"?"bg-amber-900/40 text-amber-300 border-amber-700/40":"bg-red-900/40 text-red-300 border-red-700/40"}`}>{m.complexity}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-zinc-100">{m.name}</p>
-                  <p className="text-[10px] text-zinc-600">Output: {m.output}</p>
+                  <p className="text-[10px] text-zinc-500">Output: {m.output}</p>
                 </div>
               </div>
               <p className="text-xs text-zinc-400 mb-1">{m.desc}</p>
@@ -7046,7 +7046,7 @@ function VibeCodingAndAgenticDev() {
               <div key={i} className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 text-center">
                 <p className="text-2xl font-black text-amber-400">{s.value}</p>
                 <p className="text-[10px] text-zinc-400 mt-1 leading-tight">{s.label}</p>
-                <p className="text-[10px] text-zinc-600 mt-0.5">{s.sub}</p>
+                <p className="text-[10px] text-zinc-500 mt-0.5">{s.sub}</p>
               </div>
             ))}
           </div>
@@ -7061,7 +7061,7 @@ function VibeCodingAndAgenticDev() {
                     <p className="text-sm font-bold text-zinc-100">{p.title}</p>
                     <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{p.desc}</p>
                   </div>
-                  <span className="text-zinc-600 text-xs shrink-0">{expandedPattern === p.id ? "▲" : "▼"}</span>
+                  <span className="text-zinc-500 text-xs shrink-0">{expandedPattern === p.id ? "▲" : "▼"}</span>
                 </div>
                 {expandedPattern === p.id && (
                   <div className="mt-3 space-y-2 border-t border-zinc-800 pt-3">
@@ -7092,23 +7092,23 @@ function VibeCodingAndAgenticDev() {
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tool.color }} />
                   <p className="text-sm font-black text-zinc-100">{tool.name}</p>
                   <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold border" style={{ color: tool.color, borderColor: tool.color + "60", backgroundColor: tool.color + "18" }}>{tool.tag}</span>
-                  <span className="ml-auto text-zinc-600 text-xs">{expandedTool === tool.name ? "▲" : "▼"}</span>
+                  <span className="ml-auto text-zinc-500 text-xs">{expandedTool === tool.name ? "▲" : "▼"}</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
                   <div>
-                    <p className="text-zinc-600 uppercase tracking-wide">Model</p>
+                    <p className="text-zinc-500 uppercase tracking-wide">Model</p>
                     <p className="text-zinc-300 mt-0.5">{tool.model}</p>
                   </div>
                   <div>
-                    <p className="text-zinc-600 uppercase tracking-wide">Best For</p>
+                    <p className="text-zinc-500 uppercase tracking-wide">Best For</p>
                     <p className="text-zinc-300 mt-0.5">{tool.bestFor}</p>
                   </div>
                   <div>
-                    <p className="text-zinc-600 uppercase tracking-wide">Context</p>
+                    <p className="text-zinc-500 uppercase tracking-wide">Context</p>
                     <p className="text-zinc-300 mt-0.5">{tool.contextWindow}</p>
                   </div>
                   <div>
-                    <p className="text-zinc-600 uppercase tracking-wide">Price</p>
+                    <p className="text-zinc-500 uppercase tracking-wide">Price</p>
                     <p className="text-zinc-300 mt-0.5">{tool.price}</p>
                   </div>
                 </div>
@@ -8065,7 +8065,7 @@ function MoEExpertSimulator() {
                 <button key={k} onClick={() => { setTopK(k); setSimulated(false); }}
                   disabled={k > numExperts}
                   style={topK === k ? { background: "linear-gradient(135deg, #f59e0b, #f97316)", border: "1px solid rgba(245,158,11,0.6)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
-                  className={"py-2 rounded-lg text-xs font-bold transition-all " + (topK === k ? "text-white" : k > numExperts ? "text-zinc-700 cursor-not-allowed" : "text-zinc-400 hover:text-zinc-200")}>
+                  className={"py-2 rounded-lg text-xs font-bold transition-all " + (topK === k ? "text-white" : k > numExperts ? "text-zinc-500 cursor-not-allowed" : "text-zinc-400 hover:text-zinc-200")}>
                   {k}
                 </button>
               ))}
@@ -8096,7 +8096,7 @@ function MoEExpertSimulator() {
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Expert load distribution — {numExperts} experts, top-{topK}</span>
-              <span className="text-[10px] font-mono text-zinc-600">avg token share: {(100 / numExperts).toFixed(1)}%</span>
+              <span className="text-[10px] font-mono text-zinc-500">avg token share: {(100 / numExperts).toFixed(1)}%</span>
             </div>
             <div className="space-y-1">
               {loads.map((load, i) => {
@@ -8105,7 +8105,7 @@ function MoEExpertSimulator() {
                 const isWarm = !isHot && load > avgLoad * 2;
                 return (
                   <div key={i} className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-zinc-600 w-12 shrink-0">E{String(i + 1).padStart(2, "0")}</span>
+                    <span className="text-[10px] font-mono text-zinc-500 w-12 shrink-0">E{String(i + 1).padStart(2, "0")}</span>
                     <div className="flex-1 h-4 bg-zinc-800 rounded overflow-hidden relative">
                       <div className="absolute inset-y-0 left-0 rounded transition-all"
                         style={{ width: `${Math.min(pct * (100 / (collapseThreshold * 100 + 5)), 100)}%`, background: isHot ? "#ef4444" : isWarm ? "#f59e0b" : "#6366f1" }} />
@@ -8347,7 +8347,7 @@ function SpecMathExplainer() {
         <div className="font-mono text-xs text-zinc-300 space-y-1">
           <p><span className="text-violet-400">E[accepted tokens]</span> = (1 − α^(K+1)) / (1 − α)</p>
           <p><span className="text-blue-400">speedup</span> = (E[accepted] + 1) / (1 + cost_ratio × K)</p>
-          <p className="text-zinc-600 text-[10px]">where cost_ratio = draft_cost / target_cost ≈ 0.05–0.15</p>
+          <p className="text-zinc-500 text-[10px]">where cost_ratio = draft_cost / target_cost ≈ 0.05–0.15</p>
         </div>
       </div>
 
@@ -8356,7 +8356,7 @@ function SpecMathExplainer() {
         <div>
           <div className="flex justify-between mb-1">
             <label className="text-xs text-zinc-400">Acceptance rate <span className="font-mono text-violet-400">α = {alpha.toFixed(2)}</span></label>
-            <span className="text-[10px] text-zinc-600 font-mono">0.50 → 0.95</span>
+            <span className="text-[10px] text-zinc-500 font-mono">0.50 → 0.95</span>
           </div>
           <input type="range" min="50" max="95" value={Math.round(alpha * 100)}
             onChange={e => setAlpha(parseInt(e.target.value) / 100)}
@@ -8367,7 +8367,7 @@ function SpecMathExplainer() {
         <div>
           <div className="flex justify-between mb-1">
             <label className="text-xs text-zinc-400">Draft length <span className="font-mono text-amber-400">K = {K}</span></label>
-            <span className="text-[10px] text-zinc-600 font-mono">3 → 8</span>
+            <span className="text-[10px] text-zinc-500 font-mono">3 → 8</span>
           </div>
           <input type="range" min="3" max="8" value={K}
             onChange={e => setK(parseInt(e.target.value))}
@@ -8452,16 +8452,16 @@ function SpeculativeDecoding() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-lg font-black text-emerald-400 font-mono">{m.speedup}</p>
-                  <p className="text-[10px] text-zinc-600">speedup</p>
+                  <p className="text-[10px] text-zinc-500">speedup</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <p className="text-[10px] text-zinc-600 uppercase font-bold mb-0.5">Params overhead</p>
+                  <p className="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Params overhead</p>
                   <p className="text-zinc-300 font-mono">{m.params}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-zinc-600 uppercase font-bold mb-0.5">Compatible with</p>
+                  <p className="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Compatible with</p>
                   <p className="text-zinc-300">{m.compatibility}</p>
                 </div>
               </div>
@@ -8616,7 +8616,7 @@ function StreamPatternCards() {
               <p className="text-sm font-bold text-zinc-100">{p.name}</p>
               <p className="text-[10px] text-violet-400 mt-0.5 font-semibold">Use when: {p.when}</p>
             </div>
-            <span className="text-zinc-600 text-sm shrink-0 mt-0.5">{expanded === i ? "▲" : "▼"}</span>
+            <span className="text-zinc-500 text-sm shrink-0 mt-0.5">{expanded === i ? "▲" : "▼"}</span>
           </div>
           {expanded === i && (
             <div className="px-3 pb-3 space-y-2 border-t border-zinc-800 pt-2">
@@ -8737,9 +8737,9 @@ function MergeMethodTable() {
           <div className="p-4 flex items-center gap-4 flex-wrap">
             <span className="text-sm font-bold text-white w-28">{m.name}</span>
             <span className="text-xs text-zinc-500 font-mono">{m.params}</span>
-            <span className="text-xs text-zinc-600">·</span>
+            <span className="text-xs text-zinc-500">·</span>
             <span className="text-xs text-zinc-500">t={m.hyperparams}</span>
-            <span className="text-xs text-zinc-600">·</span>
+            <span className="text-xs text-zinc-500">·</span>
             <span className="text-xs text-zinc-500">{m.cost}</span>
           </div>
           {selected === i && (
@@ -8869,7 +8869,7 @@ function ConstrainedHowItWorks() {
             <div className="flex-1 bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-800">
               <p className="text-xs text-zinc-200">{s.label}</p>
             </div>
-            {i < steps.length - 1 && <span className="text-zinc-600 text-xs shrink-0">↓</span>}
+            {i < steps.length - 1 && <span className="text-zinc-500 text-xs shrink-0">↓</span>}
           </div>
         ))}
       </div>
@@ -9378,7 +9378,7 @@ function ServingDecisionEngine() {
         <div className="space-y-2">
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Target RPS: <span className="text-indigo-400">{rps}</span></p>
           <input type="range" min={1} max={300} step={1} value={rps} onChange={e => setRps(Number(e.target.value))} className="w-full accent-indigo-600" />
-          <div className="flex justify-between text-[10px] text-zinc-600"><span>1</span><span>100</span><span>200</span><span>300</span></div>
+          <div className="flex justify-between text-[10px] text-zinc-500"><span>1</span><span>100</span><span>200</span><span>300</span></div>
         </div>
         <div className="space-y-2 sm:col-span-2">
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Workload type</p>
@@ -9388,7 +9388,7 @@ function ServingDecisionEngine() {
                 style={workload === v ? { background: "rgba(99,102,241,0.18)", border: "1px solid rgba(99,102,241,0.5)" } : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.6)" }}
                 className="py-2.5 rounded-lg text-xs transition-all text-center">
                 <p className={"font-bold " + (workload === v ? "text-indigo-300" : "text-zinc-300")}>{l}</p>
-                <p className="text-zinc-600 mt-0.5">{sub}</p>
+                <p className="text-zinc-500 mt-0.5">{sub}</p>
               </button>
             ))}
           </div>
@@ -9406,21 +9406,21 @@ function ServingDecisionEngine() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[["Framework", result.framework, "#3b82f6"],["Batching", result.batching.split("(")[0].trim(), "#8b5cf6"],["Quantization", result.quant, result.quant !== "None" ? "#f59e0b" : "#10b981"]].map(([label, value, color]) => (
               <div key={label} style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)", borderTop: "2px solid " + color + "40" }} className="rounded-lg p-3">
-                <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider mb-1">{label}</p>
+                <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-1">{label}</p>
                 <p className="text-sm font-bold" style={{ color }}>{value}</p>
               </div>
             ))}
           </div>
           <div style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded-lg p-3 grid grid-cols-2 gap-3">
             <div>
-              <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider mb-1">KV cache budget</p>
+              <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-1">KV cache budget</p>
               <p className="text-sm font-bold text-zinc-200">{result.kvBudget}GB</p>
-              <p className="text-[10px] text-zinc-600 mt-0.5">{result.effectiveGB}GB used by weights</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">{result.effectiveGB}GB used by weights</p>
             </div>
             <div>
-              <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider mb-1">Max concurrent seqs</p>
+              <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-1">Max concurrent seqs</p>
               <p className="text-sm font-bold text-zinc-200">~{result.maxConcurrent}</p>
-              <p className="text-[10px] text-zinc-600 mt-0.5">at 4K context, 4K output</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">at 4K context, 4K output</p>
             </div>
           </div>
           {result.failureMode && (() => {
@@ -9466,16 +9466,16 @@ function ServingFailures() {
               <div className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />
               <span className="text-sm font-bold text-zinc-200">{s.title}</span>
             </div>
-            <span className="text-zinc-600 text-xs">{open === s.id ? "▲" : "▼"}</span>
+            <span className="text-zinc-500 text-xs">{open === s.id ? "▲" : "▼"}</span>
           </button>
           {open === s.id && (
             <div className="px-4 pb-4 space-y-3 border-t border-zinc-800 pt-3">
               <div>
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Trigger</p>
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Trigger</p>
                 <p className="text-xs text-zinc-300">{s.trigger}</p>
               </div>
               <div>
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1.5">Symptoms</p>
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5">Symptoms</p>
                 <div className="space-y-1">
                   {s.symptoms.map((sym, i) => (
                     <div key={i} className="flex items-start gap-2 text-xs text-zinc-400">
@@ -9486,11 +9486,11 @@ function ServingFailures() {
                 </div>
               </div>
               <div style={{ background: "rgba(15,15,17,0.9)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded-lg p-3">
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Root cause</p>
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Root cause</p>
                 <p className="text-xs text-zinc-300 leading-relaxed">{s.rootCause}</p>
               </div>
               <div>
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1.5">Fix</p>
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5">Fix</p>
                 {s.fix.map((f, i) => (
                   <div key={i} className="flex items-start gap-2 text-xs text-emerald-400 mb-1">
                     <span className="shrink-0 mt-0.5">✓</span>
@@ -9519,7 +9519,7 @@ function ServingFrameworksV2() {
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-[10px] text-zinc-500 hidden sm:inline">Throughput: <span className="text-zinc-300 font-medium">{fw.throughput}</span></span>
-              <span className="text-zinc-600 text-xs">{expanded === i ? "▲" : "▼"}</span>
+              <span className="text-zinc-500 text-xs">{expanded === i ? "▲" : "▼"}</span>
             </div>
           </button>
           {expanded === i && (
@@ -9527,11 +9527,11 @@ function ServingFrameworksV2() {
               <p className="text-xs text-zinc-300 leading-relaxed">{fw.strength}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)" }} className="rounded-lg p-3">
-                  <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Pick this when</p>
+                  <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Pick this when</p>
                   <p className="text-xs text-zinc-300">{fw.pickWhen}</p>
                 </div>
                 <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }} className="rounded-lg p-3">
-                  <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Avoid when</p>
+                  <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Avoid when</p>
                   <p className="text-xs text-zinc-300">{fw.avoid}</p>
                 </div>
               </div>
@@ -11351,7 +11351,7 @@ function PromptInjectionDefense() {
             <div className="text-zinc-200 font-semibold mb-2">Defense-in-depth order of operations</div>
             <div className="flex flex-wrap items-center gap-1 text-zinc-400">
               {["User input", "→", "Input guard", "→", "Privilege check", "→", "LLM call", "→", "Output guard", "→", "Audit log", "→", "Response"].map((s,i) => (
-                <span key={i} className={s==="→" ? "text-zinc-600" : "px-2 py-0.5 rounded bg-zinc-800 text-zinc-300"}>{s}</span>
+                <span key={i} className={s==="→" ? "text-zinc-500" : "px-2 py-0.5 rounded bg-zinc-800 text-zinc-300"}>{s}</span>
               ))}
             </div>
           </div>
@@ -11391,7 +11391,7 @@ function PromptInjectionDefense() {
               <div className="text-[10px] font-mono text-red-400 uppercase tracking-widest mb-2">{section.cat}</div>
               {section.items.map((item, i) => (
                 <div key={i} className="flex gap-2 text-xs text-zinc-300 mb-1.5">
-                  <span className="text-zinc-600 shrink-0">□</span>
+                  <span className="text-zinc-500 shrink-0">□</span>
                   {item}
                 </div>
               ))}
@@ -12748,7 +12748,7 @@ function QueryRefinementLab({ onNavigate }) {
                 return (
                   <div key={doc.id} className={`p-3 rounded-lg border text-xs transition-all ${hit ? "border-emerald-800 bg-emerald-950/20" : miss ? "border-red-900/50 bg-red-950/10 opacity-40" : "border-zinc-800 bg-zinc-900/30 opacity-30"}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`font-bold ${hit ? "text-emerald-400" : "text-zinc-600"}`}>{hit ? "✓" : "–"}</span>
+                      <span className={`font-bold ${hit ? "text-emerald-400" : "text-zinc-500"}`}>{hit ? "✓" : "–"}</span>
                       <span className={`font-medium ${hit ? "text-white" : "text-zinc-500"}`}>{doc.title}</span>
                     </div>
                     <p className="text-zinc-500 leading-relaxed">{doc.excerpt}</p>
@@ -12925,8 +12925,8 @@ function PromptChangeMgmt({ onNavigate }) {
                         <div className="flex items-center justify-between mb-0.5">
                           <span className="text-zinc-400 truncate mr-2">{tc.q}</span>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-zinc-600 font-mono">{base}</span>
-                            <span className="text-zinc-700">→</span>
+                            <span className="text-zinc-500 font-mono">{base}</span>
+                            <span className="text-zinc-500">→</span>
                             <span className={`font-mono font-bold ${delta < -0.4 ? "text-red-400" : delta > 0.1 ? "text-emerald-400" : "text-zinc-300"}`}>{newScore}</span>
                             <span className={`text-[10px] font-mono w-10 text-right ${delta < 0 ? "text-red-500" : "text-emerald-500"}`}>{delta > 0 ? "+" : ""}{delta.toFixed(1)}</span>
                           </div>
@@ -12995,7 +12995,7 @@ function PromptChangeMgmt({ onNavigate }) {
             <div key={i} className="p-4 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
               <p className="text-xs font-bold text-white">{p.pattern}</p>
               <p className="text-xs text-zinc-400 leading-relaxed">{p.desc}</p>
-              <p className="text-[11px] text-zinc-600"><span className="text-amber-600 font-semibold">Tradeoff: </span>{p.tradeoff}</p>
+              <p className="text-[11px] text-zinc-500"><span className="text-amber-600 font-semibold">Tradeoff: </span>{p.tradeoff}</p>
             </div>
           ))}
         </div>
@@ -13157,7 +13157,7 @@ function AISafetyEngineering({ onNavigate }) {
                 <span className="text-xs font-bold text-white">{d.label}</span>
               </div>
               <p className="text-xs text-zinc-400 leading-relaxed">{d.desc}</p>
-              <p className="text-[11px] text-zinc-600 mt-1.5">Catches: {ASE_ATTACKS.filter(a => a.caught_by.includes(d.id)).map(a => a.label).join(", ") || "None in this set"}</p>
+              <p className="text-[11px] text-zinc-500 mt-1.5">Catches: {ASE_ATTACKS.filter(a => a.caught_by.includes(d.id)).map(a => a.label).join(", ") || "None in this set"}</p>
             </div>
           ))}
         </div>
@@ -13176,7 +13176,7 @@ function AISafetyEngineering({ onNavigate }) {
               <p className={`text-[10px] font-mono font-bold ${section.priority==="P0" ? "text-red-500" : section.priority==="P1" ? "text-orange-500" : section.priority==="P2" ? "text-amber-500" : "text-zinc-500"}`}>{section.priority} — {section.priority==="P0" ? "Before launch" : section.priority==="P1" ? "Week 1" : section.priority==="P2" ? "Month 1" : "Ongoing"}</p>
               {section.items.map((item, i) => (
                 <div key={i} className="flex gap-2 p-2.5 bg-zinc-900 rounded border border-zinc-800 text-xs">
-                  <span className="text-zinc-700 shrink-0">□</span>
+                  <span className="text-zinc-500 shrink-0">□</span>
                   <span className="text-zinc-300">{item}</span>
                 </div>
               ))}
@@ -13316,11 +13316,11 @@ ${filledCriteria.map((c, i) => `  "criterion_${i+1}_score": <score>,
         {[["1","Task"],["2","Metric"],["3","Criteria"],["4","Output"]].map(([s, label], i) => (
           <div key={s} className="flex items-center">
             <button onClick={() => { if (parseInt(s) < step || (s==="2" && taskDesc.trim()) || (s==="3" && metricType) || s === "1") setStep(parseInt(s)); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${step===parseInt(s) ? "bg-indigo-600 text-white" : parseInt(s)<step ? "text-indigo-400 hover:text-white" : "text-zinc-600"}`}>
-              <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold ${step===parseInt(s) ? "bg-white text-indigo-600" : parseInt(s)<step ? "bg-indigo-800 text-indigo-300" : "bg-zinc-800 text-zinc-600"}`}>{s}</span>
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${step===parseInt(s) ? "bg-indigo-600 text-white" : parseInt(s)<step ? "text-indigo-400 hover:text-white" : "text-zinc-500"}`}>
+              <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold ${step===parseInt(s) ? "bg-white text-indigo-600" : parseInt(s)<step ? "bg-indigo-800 text-indigo-300" : "bg-zinc-800 text-zinc-500"}`}>{s}</span>
               {label}
             </button>
-            {i < 3 && <span className="text-zinc-700 mx-1 text-xs">›</span>}
+            {i < 3 && <span className="text-zinc-500 mx-1 text-xs">›</span>}
           </div>
         ))}
       </div>
@@ -13337,7 +13337,7 @@ ${filledCriteria.map((c, i) => `  "criterion_${i+1}_score": <score>,
               className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500 resize-none"
               rows={4}
             />
-            <p className="text-[10px] text-zinc-600 mt-1">Be specific — the more precise the task description, the more useful the eval criteria you generate.</p>
+            <p className="text-[10px] text-zinc-500 mt-1">Be specific — the more precise the task description, the more useful the eval criteria you generate.</p>
           </div>
 
           <div>
@@ -13375,7 +13375,7 @@ ${filledCriteria.map((c, i) => `  "criterion_${i+1}_score": <score>,
                 </div>
               </div>
               <p className="text-xs text-zinc-400">{m.desc}</p>
-              <p className="text-[10px] text-zinc-600 mt-1">Reliability: {m.reliability}</p>
+              <p className="text-[10px] text-zinc-500 mt-1">Reliability: {m.reliability}</p>
             </button>
           ))}
         </div>
@@ -13399,7 +13399,7 @@ ${filledCriteria.map((c, i) => `  "criterion_${i+1}_score": <score>,
               <div className="space-y-2">
                 {criteriaList.map((c, i) => (
                   <div key={i} className="flex gap-2 items-center">
-                    <span className="text-[10px] font-mono text-zinc-600 w-4 shrink-0">{i+1}.</span>
+                    <span className="text-[10px] font-mono text-zinc-500 w-4 shrink-0">{i+1}.</span>
                     <input
                       value={c}
                       onChange={e => updateCriteria(i, e.target.value)}
@@ -13407,7 +13407,7 @@ ${filledCriteria.map((c, i) => `  "criterion_${i+1}_score": <score>,
                       className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-2.5 py-1.5 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
                     />
                     {criteriaList.length > 1 && (
-                      <button onClick={() => removeCriteria(i)} className="text-zinc-600 hover:text-red-400 text-xs">✕</button>
+                      <button onClick={() => removeCriteria(i)} className="text-zinc-500 hover:text-red-400 text-xs">✕</button>
                     )}
                   </div>
                 ))}
@@ -13416,7 +13416,7 @@ ${filledCriteria.map((c, i) => `  "criterion_${i+1}_score": <score>,
               <div className="flex gap-2 items-center">
                 <button onClick={addCriteria} disabled={criteriaList.length >= 6}
                   className="text-xs text-indigo-400 hover:text-white transition-colors disabled:opacity-40">+ Add criterion</button>
-                <span className="text-zinc-700 text-xs">({criteriaList.length}/6)</span>
+                <span className="text-zinc-500 text-xs">({criteriaList.length}/6)</span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -13490,7 +13490,7 @@ ${filledCriteria.map((c, i) => `  "criterion_${i+1}_score": <score>,
                   "Set regression threshold and wire into CI/CD on prompt changes",
                 ].map((step, i) => (
                   <div key={i} className="flex gap-2">
-                    <span className="text-zinc-600 shrink-0">{i+1}.</span>
+                    <span className="text-zinc-500 shrink-0">{i+1}.</span>
                     <span>{step}</span>
                   </div>
                 ))}
@@ -13628,7 +13628,7 @@ export function DecodingStrategiesLab() {
               <input type="range" min="0.01" max="2.5" step="0.01" value={temperature}
                 onChange={e => setTemperature(parseFloat(e.target.value))}
                 className="w-full accent-blue-500" />
-              <div className="flex justify-between text-[10px] text-zinc-600">
+              <div className="flex justify-between text-[10px] text-zinc-500">
                 <span>0.01 — greedy / deterministic</span>
                 <span>2.5 — very random</span>
               </div>
@@ -13674,7 +13674,7 @@ export function DecodingStrategiesLab() {
                 const inPool = adjusted > 0;
                 return (
                   <div key={token.word} className="flex items-center gap-3">
-                    <span className={`text-xs font-mono w-12 text-right shrink-0 ${inPool ? "text-white" : "text-zinc-700 line-through"}`}>{token.word}</span>
+                    <span className={`text-xs font-mono w-12 text-right shrink-0 ${inPool ? "text-white" : "text-zinc-500 line-through"}`}>{token.word}</span>
                     <div className="flex-1 relative h-5 bg-zinc-800 rounded overflow-hidden">
                       {/* Base prob (ghost) */}
                       <div className="absolute inset-y-0 left-0 bg-zinc-700/40 rounded"
@@ -13685,14 +13685,14 @@ export function DecodingStrategiesLab() {
                           style={{ width: `${adjusted * 100}%`, background: adjusted === maxProb ? "#6366f1" : "#3b82f680" }} />
                       )}
                     </div>
-                    <span className={`text-[10px] font-mono w-10 shrink-0 ${inPool ? "text-zinc-400" : "text-zinc-700"}`}>
+                    <span className={`text-[10px] font-mono w-10 shrink-0 ${inPool ? "text-zinc-400" : "text-zinc-500"}`}>
                       {inPool ? (adjusted * 100).toFixed(1) + "%" : "masked"}
                     </span>
                   </div>
                 );
               })}
             </div>
-            <div className="mt-3 flex gap-3 text-[10px] text-zinc-600">
+            <div className="mt-3 flex gap-3 text-[10px] text-zinc-500">
               <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-zinc-700/40 inline-block" />base</span>
               <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-blue-500/50 inline-block" />adjusted</span>
               <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-violet-500 inline-block" />top token</span>
@@ -13720,7 +13720,7 @@ export function DecodingStrategiesLab() {
               </div>
             )}
             {samples.length === 0 && (
-              <div className="text-xs text-zinc-600 text-center py-2">Hit "Sample 30x" to see token draws with current settings</div>
+              <div className="text-xs text-zinc-500 text-center py-2">Hit "Sample 30x" to see token draws with current settings</div>
             )}
           </div>
 

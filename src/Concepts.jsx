@@ -490,7 +490,7 @@ function TokenizerModule({ onNavigate }) {
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Token Stream</span>
-          <span className="text-xs text-zinc-600">Each coloured block = 1 token</span>
+          <span className="text-xs text-zinc-500">Each coloured block = 1 token</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {tokens.map((tok) => (
@@ -503,7 +503,7 @@ function TokenizerModule({ onNavigate }) {
             </span>
           ))}
           {tokens.length === 0 && (
-            <span className="text-xs text-zinc-600 italic">Start typing to see tokens...</span>
+            <span className="text-xs text-zinc-500 italic">Start typing to see tokens...</span>
           )}
         </div>
       </div>
@@ -519,7 +519,7 @@ function TokenizerModule({ onNavigate }) {
             </span>
           ))}
         </div>
-        <p className="text-xs text-zinc-600 leading-relaxed">
+        <p className="text-xs text-zinc-500 leading-relaxed">
           The LLM never sees text — only integer IDs. Each ID maps to a learned embedding vector. The entire vocabulary (GPT-4: ~100k tokens) is a lookup table.
         </p>
       </div>
@@ -856,7 +856,7 @@ function AttentionModule({ onNavigate }) {
         {/* Heatmap */}
         <div className="col-span-12 lg:col-span-8">
           <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-            <div className="text-xs text-zinc-600 mb-3 font-mono">
+            <div className="text-xs text-zinc-500 mb-3 font-mono">
               Row = query token (what is attending) · Column = key token (being attended to)
             </div>
             <div className="overflow-x-auto w-full">
@@ -949,7 +949,7 @@ function AttentionModule({ onNavigate }) {
                 <div key={v} className="flex-1 h-4 rounded-sm" style={{ background: heatColor(v) }} title={v.toFixed(1)} />
               ))}
             </div>
-            <div className="flex justify-between text-xs font-mono text-zinc-600">
+            <div className="flex justify-between text-xs font-mono text-zinc-500">
               <span>0.0</span><span>0.5</span><span>1.0</span>
             </div>
           </div>
@@ -1151,7 +1151,7 @@ function TransformerModule({ onNavigate }) {
             <input type="range" min="0.1" max="2.0" step="0.1" value={temperature}
               onChange={e => setTemperature(parseFloat(e.target.value))}
               className="w-full accent-amber-500 cursor-pointer" />
-            <div className="flex justify-between text-xs text-zinc-600 font-mono">
+            <div className="flex justify-between text-xs text-zinc-500 font-mono">
               <span>0.1 sharp</span><span>2.0 flat</span>
             </div>
           </div>
@@ -1177,7 +1177,7 @@ function TransformerModule({ onNavigate }) {
               {s.label}
             </button>
           ))}
-          <p className="text-xs text-zinc-600">d_model=8 · causal · 1 layer</p>
+          <p className="text-xs text-zinc-500">d_model=8 · causal · 1 layer</p>
         </div>
       </div>
 
@@ -1189,7 +1189,7 @@ function TransformerModule({ onNavigate }) {
           <div>
             <div className="flex" style={{ marginLeft: 94 }}>
               {Array.from({ length: 8 }, (_, i) => (
-                <div key={i} style={{ width: 46, textAlign: "center" }} className="text-xs font-mono text-zinc-600 pb-1">d{i}</div>
+                <div key={i} style={{ width: 46, textAlign: "center" }} className="text-xs font-mono text-zinc-500 pb-1">d{i}</div>
               ))}
             </div>
             {tokens.map((tok, i) => (
@@ -1219,7 +1219,7 @@ function TransformerModule({ onNavigate }) {
                 H{h}
               </button>
             ))}
-            <span className="text-xs text-zinc-600 ml-1 font-mono">d_head = {Math.floor(8 / nHeads)}</span>
+            <span className="text-xs text-zinc-500 ml-1 font-mono">d_head = {Math.floor(8 / nHeads)}</span>
           </div>
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-12 lg:col-span-8 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
@@ -1243,7 +1243,7 @@ function TransformerModule({ onNavigate }) {
                   ))}
                 </div>
               ))}
-              <p className="text-xs text-zinc-600 mt-2">Grey = masked future. Move the temperature slider — watch weights sharpen or flatten.</p>
+              <p className="text-xs text-zinc-500 mt-2">Grey = masked future. Move the temperature slider — watch weights sharpen or flatten.</p>
             </div>
             <div className="col-span-12 lg:col-span-4 space-y-3">
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
@@ -1271,7 +1271,7 @@ function TransformerModule({ onNavigate }) {
           <div>
             <div className="flex" style={{ marginLeft: 94 }}>
               {Array.from({ length: 8 }, (_, i) => (
-                <div key={i} style={{ width: 46, textAlign: "center" }} className="text-xs font-mono text-zinc-600 pb-1">d{i}</div>
+                <div key={i} style={{ width: 46, textAlign: "center" }} className="text-xs font-mono text-zinc-500 pb-1">d{i}</div>
               ))}
             </div>
             {tokens.map((tok, i) => (
@@ -1536,11 +1536,11 @@ function ChunkingModule({ onNavigate }) {
             return (
               <div key={chunk.id} className={`rounded-lg border px-3 py-2 text-xs font-mono leading-relaxed transition-all duration-200 ${
                 isHit ? "border-emerald-500 bg-emerald-950/30 text-emerald-200" :
-                showRetrieval ? "border-zinc-800 bg-zinc-900/20 text-zinc-600 opacity-40" :
+                showRetrieval ? "border-zinc-800 bg-zinc-900/20 text-zinc-500 opacity-40" :
                 "border-zinc-800 bg-zinc-900/40 text-zinc-300"
               }`}>
                 <div className="flex items-start gap-2">
-                  <span className="shrink-0 text-zinc-600">#{chunk.id}</span>
+                  <span className="shrink-0 text-zinc-500">#{chunk.id}</span>
                   <span className="flex-1">{chunk.text}</span>
                   {chunk.topic && (
                     <span className={`shrink-0 px-1.5 py-0.5 rounded text-xs font-sans border ${isHit ? "border-emerald-700 bg-emerald-900/60 text-emerald-300" : "border-zinc-700 bg-zinc-800 text-zinc-500"}`}>
@@ -1590,7 +1590,7 @@ function ChunkingModule({ onNavigate }) {
                     <span className="w-2 h-2 rounded-full" style={{ background: CHUNK_STRATEGIES[k].color }} />
                     <span className={k === strategy ? "text-white" : "text-zinc-500"}>{CHUNK_STRATEGIES[k].label}</span>
                   </span>
-                  <span className={k === strategy ? "text-white font-bold" : "text-zinc-600"}>{displayCount}</span>
+                  <span className={k === strategy ? "text-white font-bold" : "text-zinc-500"}>{displayCount}</span>
                 </div>
               );
             })}
@@ -1707,7 +1707,7 @@ function RAGPipelineModule({ onNavigate }) {
                 ? "bg-indigo-600 text-white"
                 : step > i
                 ? "bg-indigo-950/60 text-indigo-400 border border-indigo-800/50"
-                : "bg-zinc-900 text-zinc-600 border border-zinc-800"
+                : "bg-zinc-900 text-zinc-500 border border-zinc-800"
             }`}>
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
                 step === i ? "bg-white text-indigo-700" : step > i ? "bg-indigo-500 text-white" : "bg-zinc-700 text-zinc-400"
@@ -1741,7 +1741,7 @@ function RAGPipelineModule({ onNavigate }) {
             <div className="grid grid-cols-8 gap-1 mb-3">
               {Array.from({ length: 32 }).map((_, i) => (
                 <div key={i} className={`h-6 rounded text-center text-[8px] font-mono flex items-center justify-center ${
-                  i < 3 ? "bg-emerald-800 border border-emerald-600 text-emerald-300 font-bold" : "bg-zinc-800 border border-zinc-700 text-zinc-600"
+                  i < 3 ? "bg-emerald-800 border border-emerald-600 text-emerald-300 font-bold" : "bg-zinc-800 border border-zinc-700 text-zinc-500"
                 }`}>
                   {i < 3 ? ["0.91", "0.84", "0.72"][i] : "·"}
                 </div>
@@ -1782,7 +1782,7 @@ function RAGPipelineModule({ onNavigate }) {
                     <div className={`text-sm font-black font-mono ${
                       chunk.score >= 0.85 ? "text-emerald-400" : chunk.score >= 0.75 ? "text-amber-400" : "text-zinc-400"
                     }`}>{chunk.score}</div>
-                    <div className="text-[9px] text-zinc-600 uppercase tracking-wide">sim score</div>
+                    <div className="text-[9px] text-zinc-500 uppercase tracking-wide">sim score</div>
                   </div>
                 </div>
                 {chunk.id === 3 && visibleChunks >= 3 && (
@@ -2053,7 +2053,7 @@ function SamplingModule({ onNavigate }) {
               <button key={s.id} onClick={() => { setSampleStrategy(s.id); setRollKey(0); }}
                 className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${strategy === s.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
                 <div className="font-mono font-bold">{s.label}</div>
-                <div className={`text-xs mt-0.5 leading-snug ${strategy === s.id ? "text-violet-200" : "text-zinc-600"}`}>{s.desc}</div>
+                <div className={`text-xs mt-0.5 leading-snug ${strategy === s.id ? "text-violet-200" : "text-zinc-500"}`}>{s.desc}</div>
               </button>
             ))}
           </div>
@@ -2063,21 +2063,21 @@ function SamplingModule({ onNavigate }) {
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">k</span><span className="text-violet-400 font-mono font-bold">{topK}</span></div>
               <input type="range" min="1" max="8" step="1" value={topK} onChange={e => setTopK(+e.target.value)} className="w-full accent-violet-500" />
-              <div className="flex justify-between text-xs text-zinc-600 font-mono"><span>1 (greedy)</span><span>8 (all)</span></div>
+              <div className="flex justify-between text-xs text-zinc-500 font-mono"><span>1 (greedy)</span><span>8 (all)</span></div>
             </div>
           )}
           {strategy === "topp" && (
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">p</span><span className="text-violet-400 font-mono font-bold">{topP.toFixed(2)}</span></div>
               <input type="range" min="0.5" max="1.0" step="0.05" value={topP} onChange={e => setTopP(+e.target.value)} className="w-full accent-violet-500" />
-              <div className="flex justify-between text-xs text-zinc-600 font-mono"><span>0.5 tight</span><span>1.0 all</span></div>
+              <div className="flex justify-between text-xs text-zinc-500 font-mono"><span>0.5 tight</span><span>1.0 all</span></div>
             </div>
           )}
           {strategy === "temperature" && (
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">temperature</span><span className="text-amber-400 font-mono font-bold">{temperature.toFixed(1)}</span></div>
               <input type="range" min="0.1" max="2.0" step="0.1" value={temperature} onChange={e => setSampleTemp(+e.target.value)} className="w-full accent-amber-500" />
-              <div className="flex justify-between text-xs text-zinc-600 font-mono"><span>0.1 sharp</span><span>2.0 flat</span></div>
+              <div className="flex justify-between text-xs text-zinc-500 font-mono"><span>0.1 sharp</span><span>2.0 flat</span></div>
             </div>
           )}
 
@@ -2108,12 +2108,12 @@ function SamplingModule({ onNavigate }) {
               return (
                 <div key={c.token} className="space-y-0.5">
                   <div className="flex items-center justify-between text-xs font-mono">
-                    <span className={isSampled ? "text-emerald-300 font-bold" : inPool ? "text-violet-300" : "text-zinc-600"}>
+                    <span className={isSampled ? "text-emerald-300 font-bold" : inPool ? "text-violet-300" : "text-zinc-500"}>
                       {isSampled ? "→ " : "  "}{c.token}
                     </span>
                     <div className="flex items-center gap-3">
-                      <span className="text-zinc-600">logit {c.logit.toFixed(1)}</span>
-                      <span className={isSampled ? "text-emerald-400 font-bold" : inPool ? "text-violet-400" : "text-zinc-600"}>
+                      <span className="text-zinc-500">logit {c.logit.toFixed(1)}</span>
+                      <span className={isSampled ? "text-emerald-400 font-bold" : inPool ? "text-violet-400" : "text-zinc-500"}>
                         {(p * 100).toFixed(1)}%
                       </span>
                     </div>
@@ -2323,7 +2323,7 @@ function ContextWindowModule({ onNavigate }) {
                 <div key={n} className="flex-1 flex flex-col items-center gap-1">
                   <div className="w-full rounded-t-sm"
                     style={{ height: `${Math.max(barPct * 104, 2)}px`, background: isCurrent ? "#8b5cf6" : barPct > 0.5 ? "#ef4444" : barPct > 0.1 ? "#f59e0b" : "#27272a" }} />
-                  <span style={{ fontSize: 9 }} className="text-zinc-600 font-mono">{label}</span>
+                  <span style={{ fontSize: 9 }} className="text-zinc-500 font-mono">{label}</span>
                 </div>
               ))}
             </div>
@@ -2558,7 +2558,7 @@ function AgentModule({ onNavigate }) {
                     {step.content || step.input}
                   </p>
                 </div>
-                <span className="text-xs font-mono text-zinc-700 shrink-0">{tokensAt(i)}t</span>
+                <span className="text-xs font-mono text-zinc-500 shrink-0">{tokensAt(i)}t</span>
               </div>
             </div>
           );
@@ -2581,7 +2581,7 @@ function AgentModule({ onNavigate }) {
             <div className="h-full bg-violet-600 rounded-full transition-all duration-500"
               style={{ width: `${Math.min(totalTokensSoFar / 600 * 100, 100)}%` }} />
           </div>
-          <p className="text-xs text-zinc-600">Each loop appends thought + action + observation. A 10-step chain with 4k-token observations can easily hit 128k limits in real agents. This is why max_iterations and context compression are production requirements.</p>
+          <p className="text-xs text-zinc-500">Each loop appends thought + action + observation. A 10-step chain with 4k-token observations can easily hit 128k limits in real agents. This is why max_iterations and context compression are production requirements.</p>
         </div>
       )}
 
@@ -2720,7 +2720,7 @@ function GuardrailsModule({ onNavigate }) {
     pass:    "border-emerald-700 bg-emerald-950/10 text-emerald-400",
     blocked: "border-red-700 bg-red-950/20 text-red-400",
     flagged: "border-amber-700 bg-amber-950/20 text-amber-400",
-    skipped: "border-zinc-700 bg-zinc-900/20 text-zinc-600",
+    skipped: "border-zinc-700 bg-zinc-900/20 text-zinc-500",
   };
 
   return (
@@ -2754,7 +2754,7 @@ function GuardrailsModule({ onNavigate }) {
                   <div className="text-xs opacity-60 capitalize">{st}</div>
                 </div>
                 {i < STAGES.length - 1 && (
-                  <div className={`text-xl font-bold ${st === "blocked" ? "text-red-600" : "text-zinc-700"}`}>
+                  <div className={`text-xl font-bold ${st === "blocked" ? "text-red-600" : "text-zinc-500"}`}>
                     {st === "blocked" ? "✗" : "→"}
                   </div>
                 )}
@@ -3007,7 +3007,7 @@ function DebugModule({ onNavigate }) {
                 <div className="flex items-center justify-between text-xs font-mono mb-1">
                   <span className="text-zinc-500 truncate">{c.source}</span>
                   <div className="flex gap-2 shrink-0">
-                    <span className="text-zinc-600">{c.date}</span>
+                    <span className="text-zinc-500">{c.date}</span>
                     <span className="text-violet-400">score {c.score}</span>
                   </div>
                 </div>
@@ -3036,7 +3036,7 @@ function DebugModule({ onNavigate }) {
                   "border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:text-white hover:border-zinc-500"
                 }`}>
                 <div className="font-mono font-bold">{fm.label}</div>
-                <div className={`text-xs mt-0.5 leading-tight ${selected === fm.id ? "text-zinc-300" : "text-zinc-600"}`}>{fm.desc}</div>
+                <div className={`text-xs mt-0.5 leading-tight ${selected === fm.id ? "text-zinc-300" : "text-zinc-500"}`}>{fm.desc}</div>
               </button>
             ))}
 
@@ -3349,8 +3349,8 @@ function MultiAgentModule({ onNavigate }) {
                 <div className="flex-1">
                   <div className="text-xs font-bold text-zinc-300 mb-1.5">{row.signal}</div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="text-xs text-zinc-400"><span className="text-zinc-600">Single: </span>{row.single}</div>
-                    <div className="text-xs text-zinc-400"><span className="text-zinc-600">Multi: </span>{row.multi}</div>
+                    <div className="text-xs text-zinc-400"><span className="text-zinc-500">Single: </span>{row.single}</div>
+                    <div className="text-xs text-zinc-400"><span className="text-zinc-500">Multi: </span>{row.multi}</div>
                   </div>
                 </div>
                 <span className={`text-xs font-bold px-2 py-0.5 rounded flex-shrink-0 ${row.rec === "single" ? "bg-zinc-800 text-zinc-300" : "bg-indigo-900 text-indigo-300"}`}>
@@ -3542,7 +3542,7 @@ function NextTokenGame() {
 
         {!revealed ? (
           <button onClick={reveal} disabled={!picked}
-            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${picked ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${picked ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}>
             Reveal distribution
           </button>
         ) : (
@@ -3683,7 +3683,7 @@ function TemperatureGame() {
               <div key={out.id} className={`rounded-lg border p-4 space-y-3 transition-all ${isCorrect ? "border-emerald-700 bg-emerald-950/30" : isWrong ? "border-red-700 bg-red-950/30" : "border-zinc-700 bg-zinc-900/40"}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="text-xs text-zinc-300 leading-relaxed flex-1">
-                    <span className="text-zinc-600 font-mono mr-2">[{String.fromCharCode(65 + i)}]</span>
+                    <span className="text-zinc-500 font-mono mr-2">[{String.fromCharCode(65 + i)}]</span>
                     {out.text}
                   </div>
                   {submitted && (
@@ -3699,7 +3699,7 @@ function TemperatureGame() {
                       const selected = guesses[out.id] === label;
                       return (
                         <button key={label} onClick={() => !alreadyUsedElsewhere && setGuess(out.id, label)}
-                          className={`px-2 py-1 rounded text-[11px] font-bold transition-all ${selected ? "bg-amber-600 text-white" : alreadyUsedElsewhere ? "bg-zinc-800 text-zinc-700 cursor-not-allowed" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"}`}>
+                          className={`px-2 py-1 rounded text-[11px] font-bold transition-all ${selected ? "bg-amber-600 text-white" : alreadyUsedElsewhere ? "bg-zinc-800 text-zinc-500 cursor-not-allowed" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"}`}>
                           {label}
                         </button>
                       );
@@ -3713,7 +3713,7 @@ function TemperatureGame() {
 
         {!submitted ? (
           <button onClick={submit} disabled={!allGuessed}
-            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${allGuessed ? "bg-amber-600 hover:bg-amber-500 text-white" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}>
+            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${allGuessed ? "bg-amber-600 hover:bg-amber-500 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}>
             Check answers
           </button>
         ) : (
@@ -3797,7 +3797,7 @@ function FlashAttentionConcept() {
             </div>
             <input type="range" min={128} max={16384} step={128} value={seqLen}
               onChange={e => setSeqLen(+e.target.value)} className="w-full accent-violet-500" />
-            <div className="flex justify-between text-[10px] text-zinc-600 font-mono">
+            <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
               <span>128</span><span>4k</span><span>8k</span><span>16k</span>
             </div>
           </div>
@@ -3852,7 +3852,7 @@ function FlashAttentionConcept() {
                 <span style={{ color: stdGB > g.gb ? "#ef4444" : "#22c55e" }}>
                   std {stdGB > g.gb ? "OVERFLOW" : "fits"}
                 </span>
-                <span className="text-zinc-600">·</span>
+                <span className="text-zinc-500">·</span>
                 <span className="text-green-400">flash fits</span>
               </div>
             ))}
@@ -4135,7 +4135,7 @@ export default function ConceptsApp({ onNavigate }) {
       {/* ── Left sidebar ── */}
       <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4 hidden sm:block">
         <div className="px-3 mb-3">
-          <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Concepts</p>
+          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Concepts</p>
         </div>
         {CONCEPT_GROUPS.map((grp) => (
           <div key={grp.label} className="mb-4">
@@ -4206,7 +4206,7 @@ export default function ConceptsApp({ onNavigate }) {
                    mod.fidelity.tier === "simplified" ? "~ Simplified" : "◌ Conceptual"}
                 </span>
               )}
-              {mod.fidelity && <span className="text-[10px] text-zinc-600 hidden md:block">{mod.fidelity.note}</span>}
+              {mod.fidelity && <span className="text-[10px] text-zinc-500 hidden md:block">{mod.fidelity.note}</span>}
             </div>
             <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{mod.title}</h2>
             <p className="text-sm text-zinc-400 mt-1">{mod.subtitle}</p>

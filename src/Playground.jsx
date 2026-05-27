@@ -251,11 +251,11 @@ function PromptInjectionPlayground() {
       {/* Pipeline visualization */}
       <div className="grid grid-cols-5 gap-1 items-center text-center">
         <div className={boxCls(animStep >= 1, false)}>User Input</div>
-        <div className="text-zinc-600 text-xs">→</div>
+        <div className="text-zinc-500 text-xs">→</div>
         <div className={boxCls(animStep >= 1, attack?.caught === "input" && animStep >= 1.5)}>
           {attack?.caught === "input" && animStep >= 1.5 ? "🛡 BLOCKED" : "Input Guard"}
         </div>
-        <div className="text-zinc-600 text-xs">→</div>
+        <div className="text-zinc-500 text-xs">→</div>
         <div className={boxCls(animStep >= 2, attack?.caught === "output" && animStep >= 2.5)}>
           {attack?.caught === "output" && animStep >= 2.5 ? "⚠ CAUGHT" : "LLM"}
         </div>
@@ -263,7 +263,7 @@ function PromptInjectionPlayground() {
       {attack?.caught !== "input" && (
         <div className="grid grid-cols-3 gap-1 items-center text-center">
           <div />
-          <div className="text-zinc-600 text-xs text-center">↓</div>
+          <div className="text-zinc-500 text-xs text-center">↓</div>
           <div />
           <div />
           <div className={boxCls(animStep >= 3, attack?.caught === "output" && animStep >= 2.5)}>Output Guard</div>
@@ -339,7 +339,7 @@ function ChunkingLab() {
         <p className="text-xs text-zinc-500 uppercase tracking-widest">Resulting Chunks ({s.chunks.length})</p>
         {s.chunks.map((chunk, i) => (
           <div key={i} className="border rounded-lg p-3" style={{ borderColor: s.color + "44" }}>
-            <span className="text-xs font-mono text-zinc-600 mr-2">#{i+1}</span>
+            <span className="text-xs font-mono text-zinc-500 mr-2">#{i+1}</span>
             <span className="text-xs text-zinc-300">{chunk}</span>
           </div>
         ))}
@@ -401,7 +401,7 @@ function RerankerSim() {
           <div key={label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-2">
             <p className="text-xs text-zinc-500">{label}</p>
             <p className="text-lg font-black" style={{ color }}>{score.toFixed(2)}</p>
-            <p className="text-xs text-zinc-600">NDCG</p>
+            <p className="text-xs text-zinc-500">NDCG</p>
           </div>
         ))}
       </div>
@@ -411,8 +411,8 @@ function RerankerSim() {
           <div key={chunk.id} className="bg-zinc-900 border border-zinc-700 rounded-xl p-3">
             <div className="flex items-start gap-3">
               <div className="flex flex-col gap-0.5 shrink-0">
-                <button onClick={() => moveUp(i)} className="text-zinc-600 hover:text-white text-xs">↑</button>
-                <button onClick={() => moveDown(i)} className="text-zinc-600 hover:text-white text-xs">↓</button>
+                <button onClick={() => moveUp(i)} className="text-zinc-500 hover:text-white text-xs">↑</button>
+                <button onClick={() => moveDown(i)} className="text-zinc-500 hover:text-white text-xs">↓</button>
               </div>
               <div className="flex-1">
                 <p className="text-xs text-zinc-300 leading-relaxed">{chunk.text}</p>
@@ -423,7 +423,7 @@ function RerankerSim() {
                   </div>
                 )}
               </div>
-              <span className="text-xs font-mono text-zinc-600 shrink-0">#{i+1}</span>
+              <span className="text-xs font-mono text-zinc-500 shrink-0">#{i+1}</span>
             </div>
           </div>
         ))}
@@ -496,7 +496,7 @@ function SpotHallucination() {
           if (revealed) {
             if (o.hallucination) cls = "border-red-600 bg-red-900/20 text-red-300 cursor-default";
             else if (o.id === sel) cls = "border-green-600 bg-green-900/20 text-green-300 cursor-default";
-            else cls = "border-zinc-800 bg-zinc-900 text-zinc-600 cursor-default";
+            else cls = "border-zinc-800 bg-zinc-900 text-zinc-500 cursor-default";
           } else if (o.id === sel) cls = "border-indigo-500 bg-indigo-900/20 text-white";
           return (
             <button key={o.id} onClick={() => pick(o.id)}
@@ -577,7 +577,7 @@ function ContextTetris() {
               <span className="text-xs text-zinc-500 ml-2">{p.desc}</span>
             </div>
             <span className="text-xs font-mono text-zinc-400 shrink-0">{p.tokens.toLocaleString()}t</span>
-            {p.required && <span className="text-xs text-zinc-600 font-mono shrink-0">locked</span>}
+            {p.required && <span className="text-xs text-zinc-500 font-mono shrink-0">locked</span>}
           </div>
         ))}
       </div>
@@ -652,7 +652,7 @@ function BiasDetector() {
           if (revealed) {
             if (i === round.biasIn) cls = "border-red-600 bg-red-900/20 text-red-300 cursor-default";
             else if (i === sel) cls = "border-green-700 bg-green-900/20 text-green-300 cursor-default";
-            else cls = "border-zinc-800 bg-zinc-900 text-zinc-600 cursor-default";
+            else cls = "border-zinc-800 bg-zinc-900 text-zinc-500 cursor-default";
           } else if (i === sel) cls = "border-indigo-500 bg-indigo-900/20 text-white";
           return (
             <button key={i} onClick={() => pick(i)}
@@ -1584,7 +1584,7 @@ function PromptLibrary() {
       </div>
 
       {/* Results count */}
-      <p className="text-xs text-zinc-600">{filtered.length} prompts{search ? ` matching "${search}"` : ""}</p>
+      <p className="text-xs text-zinc-500">{filtered.length} prompts{search ? ` matching "${search}"` : ""}</p>
 
       {/* Card grid */}
       {!selected && (
@@ -1602,7 +1602,7 @@ function PromptLibrary() {
               <p className="text-xs text-zinc-500 leading-relaxed">{p.description}</p>
               <div className="flex flex-wrap gap-1 pt-1">
                 {p.tags.map(tag => (
-                  <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-600 rounded font-mono">{tag}</span>
+                  <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 rounded font-mono">{tag}</span>
                 ))}
               </div>
             </button>
@@ -1629,7 +1629,7 @@ function PromptLibrary() {
             <p className="text-xs text-zinc-500">{selected.description}</p>
             <div className="flex flex-wrap gap-1 pt-1">
               {selected.tags.map(tag => (
-                <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-600 rounded font-mono">{tag}</span>
+                <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 rounded font-mono">{tag}</span>
               ))}
             </div>
           </div>
@@ -1851,8 +1851,8 @@ function StreamingLab() {
       {/* Output window */}
       <div className="rounded-xl border bg-zinc-950 p-4 min-h-[80px] font-mono text-sm leading-relaxed relative overflow-hidden"
         style={{ borderColor: phase === "failed" ? fail.color : phase === "done" ? "#22c55e40" : "#27272a" }}>
-        {phase === "idle" && <span className="text-zinc-600">Hit &quot;Run stream&quot; to simulate...</span>}
-        {phase === "waiting" && <span className="text-zinc-600 animate-pulse">Waiting for first token ({ttft}ms TTFT)...</span>}
+        {phase === "idle" && <span className="text-zinc-500">Hit &quot;Run stream&quot; to simulate...</span>}
+        {phase === "waiting" && <span className="text-zinc-500 animate-pulse">Waiting for first token ({ttft}ms TTFT)...</span>}
         {phase === "buffering" && <span className="text-zinc-500 animate-pulse">Buffering response (batch mode — no tokens until complete)...</span>}
         {tokens.length > 0 && (
           <span>
@@ -1948,7 +1948,7 @@ export default function PlaygroundApp() {
       <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
         {PLAYGROUND_GROUPS.map(group => (
           <div key={group.label} className="mb-3">
-            <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{group.label}</div>
+            <div className="px-4 py-1 text-[9px] font-mono text-zinc-500 uppercase tracking-widest">{group.label}</div>
             {group.ids.map(id => {
               const m = PLAYGROUND_MODULES.find(x => x.id === id);
               if (!m) return null;
@@ -1957,7 +1957,7 @@ export default function PlaygroundApp() {
                 <button key={id} onClick={() => setActiveModule(id)}
                   className={`w-full text-left px-4 py-2 text-xs transition-all flex items-center justify-between gap-2 ${active ? "border-l-2 border-blue-500 bg-zinc-800 text-white" : "border-l-2 border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"}`}>
                   <span className="truncate">{m.label}</span>
-                  <span className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded font-mono ${active ? "bg-blue-900/60 text-blue-300" : "bg-zinc-800 text-zinc-600"}`}>{m.tag}</span>
+                  <span className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded font-mono ${active ? "bg-blue-900/60 text-blue-300" : "bg-zinc-800 text-zinc-500"}`}>{m.tag}</span>
                 </button>
               );
             })}

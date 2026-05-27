@@ -112,9 +112,9 @@ function SuggestedPath({ role, onNavigate }) {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-xs font-bold text-white">{s.label}</span>
-            <span className="text-xs text-zinc-600 ml-1.5">{s.desc}</span>
+            <span className="text-xs text-zinc-500 ml-1.5">{s.desc}</span>
           </div>
-          <span className="text-zinc-700 group-hover:text-violet-400 text-xs transition-colors">→</span>
+          <span className="text-zinc-500 group-hover:text-violet-400 text-xs transition-colors">→</span>
         </button>
       ))}
     </div>
@@ -392,11 +392,11 @@ function ConceptGraph({ onNavigate }) {
               className="text-[11px] px-2.5 py-1 rounded border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-300 transition-all ml-auto">
               Open →
             </button>
-            <button onClick={() => setSelected(null)} className="text-[11px] text-zinc-700 hover:text-zinc-400 transition-colors">✕</button>
+            <button onClick={() => setSelected(null)} className="text-[11px] text-zinc-500 hover:text-zinc-400 transition-colors">✕</button>
           </>
         ) : (
           <>
-            <span className="text-[11px] text-zinc-600">Click any node · see what to learn first and what it unlocks · double-click to open</span>
+            <span className="text-[11px] text-zinc-500">Click any node · see what to learn first and what it unlocks · double-click to open</span>
             <div className="flex items-center gap-3 ml-auto">
               <span className="flex items-center gap-1 text-[10px] text-amber-400"><span className="w-4 h-px bg-amber-400 inline-block rounded" /> prerequisite</span>
               <span className="flex items-center gap-1 text-[10px] text-emerald-400"><span className="w-4 h-px bg-emerald-400 inline-block rounded" /> unlocks</span>
@@ -457,17 +457,17 @@ function HeroFailureDemo({ onNavigate }) {
             {f.label}
           </button>
         ))}
-        <span className="ml-auto text-[9px] text-zinc-700 font-mono">live failure demo</span>
+        <span className="ml-auto text-[9px] text-zinc-500 font-mono">live failure demo</span>
       </div>
       {/* Query / Answer */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">User query</div>
+          <div className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest">User query</div>
           <div className="text-xs text-zinc-300 leading-snug">{d.q}</div>
-          <div className="text-[9px] font-mono text-zinc-700 leading-relaxed mt-1 border-l border-zinc-800 pl-2">{d.ctx}</div>
+          <div className="text-[9px] font-mono text-zinc-400 leading-relaxed mt-1 border-l border-zinc-700 pl-2">{d.ctx}</div>
         </div>
         <div className="space-y-1.5">
-          <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">AI answer</div>
+          <div className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest">AI answer</div>
           <div className="text-xs text-white font-medium leading-snug px-2 py-1.5 rounded-lg" style={{ background: d.color + "0e", borderLeft: `2px solid ${d.color}60` }}>{d.answer}</div>
         </div>
       </div>
@@ -676,7 +676,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
                       {done ? "✓" : s.step}
                     </div>
                     <span className={`text-[10px] font-bold text-center leading-tight ${done ? "text-emerald-400" : "text-white"}`}>{s.label}</span>
-                    <span className="text-[9px] text-zinc-600 text-center leading-tight">{s.desc}</span>
+                    <span className="text-[9px] text-zinc-500 text-center leading-tight">{s.desc}</span>
                   </button>
                   {i < START_HERE_PATH.length - 1 && (
                     <div className={`w-6 h-px shrink-0 mb-4 ${done ? "bg-emerald-900/60" : "bg-violet-900/60"}`} />
@@ -696,7 +696,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               <>
                 <div className="text-5xl sm:text-6xl font-black tabular-nums" style={{ background: "linear-gradient(180deg, #ffffff 40%, rgba(255,255,255,0.6) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}><CountUp target={s.target} suffix={s.suffix} /></div>
                 <div className={`text-xs font-bold mt-1.5 tracking-wide ${s.tab ? "text-violet-400" : "text-zinc-300"}`}>{s.label}{s.tab ? " →" : ""}</div>
-                <div className="text-[10px] text-zinc-600 mt-0.5 font-mono uppercase tracking-widest">{s.sub}</div>
+                <div className="text-[10px] text-zinc-500 mt-0.5 font-mono uppercase tracking-widest">{s.sub}</div>
               </>
             );
             return s.tab
@@ -739,7 +739,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-zinc-700 font-mono text-center mt-3">Early user feedback · names withheld</p>
+        <p className="text-[10px] text-zinc-500 font-mono text-center mt-3">Early user feedback · names withheld</p>
       </div>
 
 
@@ -803,7 +803,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-xs font-bold text-white">{step.label}</span>
-                        <span className="text-xs text-zinc-600 ml-1.5">{step.desc}</span>
+                        <span className="text-xs text-zinc-500 ml-1.5">{step.desc}</span>
                       </div>
                     </div>
                   );
@@ -905,7 +905,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               ))}
             </div>
             {role !== "all" && (
-              <p className="text-xs text-zinc-600">Showing modules most relevant to {role === "engineers" ? "engineers" : "product managers"} first</p>
+              <p className="text-xs text-zinc-500">Showing modules most relevant to {role === "engineers" ? "engineers" : "product managers"} first</p>
             )}
           </div>
           {orderedGroups.map(group => (
@@ -913,7 +913,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-px flex-1 bg-zinc-800" />
                 <span className="text-xs font-mono font-bold uppercase tracking-widest px-2" style={{ color: group.color }}>{group.group}</span>
-                <span className="text-xs text-zinc-600 hidden sm:inline">{group.desc}</span>
+                <span className="text-xs text-zinc-500 hidden sm:inline">{group.desc}</span>
                 <div className="h-px flex-1 bg-zinc-800" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
@@ -986,10 +986,10 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               </div>
             ))}
           </div>
-          <p className="text-xs text-zinc-600 leading-relaxed">
+          <p className="text-xs text-zinc-500 leading-relaxed">
             RAG Lab scenarios are curated from real production failure patterns. The goal throughout is <em className="text-zinc-500">systems intuition</em> — not exact model introspection.
           </p>
-          <p className="text-[11px] text-zinc-700 border-t border-zinc-800 pt-3 leading-relaxed">
+          <p className="text-[11px] text-zinc-500 border-t border-zinc-800 pt-3 leading-relaxed">
             No login. No personal data requested. Usage analytics are used only to improve the beta.
           </p>
         </div>
@@ -1026,7 +1026,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               </button>
             </form>
             {subStatus === "error" && <p className="text-[10px] text-red-400 font-mono">Something went wrong — try again or open a GitHub issue.</p>}
-            <p className="text-[10px] text-zinc-700 font-mono">No spam. Unsubscribe any time.</p>
+            <p className="text-[10px] text-zinc-500 font-mono">No spam. Unsubscribe any time.</p>
           </div>
         )}
 
@@ -1069,7 +1069,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             GitHub
           </a>
         </p>
-          <p className="text-[11px] text-zinc-700 max-w-lg mx-auto leading-relaxed">
+          <p className="text-[11px] text-zinc-500 max-w-lg mx-auto leading-relaxed">
             No login. No personal data requested. Usage analytics are used only to improve the beta.
           </p>
         </div>

@@ -173,7 +173,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
                 <div className="h-1 flex-1 rounded-full bg-zinc-800 overflow-hidden">
                   <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${(doneCount / total) * 100}%` }} />
                 </div>
-                <span className="text-[10px] text-zinc-600 shrink-0">{doneCount}/{total}</span>
+                <span className="text-[10px] text-zinc-500 shrink-0">{doneCount}/{total}</span>
               </div>
             )}
           </div>
@@ -187,7 +187,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
               className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-700 transition-colors"
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 text-[10px]">✕</button>
+              <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-400 text-[10px]">✕</button>
             )}
           </div>
         </div>
@@ -215,7 +215,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
         {/* Module list — grouped */}
         <div className="px-2 pb-4 space-y-1">
           {search && SYSTEMS_GROUPS.every(grp => filterModules(visibleModules.filter(m => m.group === grp.id)).length === 0) && (
-            <div className="text-center text-xs text-zinc-600 py-4">No match for "{search}"</div>
+            <div className="text-center text-xs text-zinc-500 py-4">No match for "{search}"</div>
           )}
           {SYSTEMS_GROUPS.map(grp => {
             const groupModules = filterModules(visibleModules.filter(m => m.group === grp.id));
@@ -312,7 +312,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
             </div>
           </div>
           <div className="flex items-center gap-2 pt-1 border-t border-zinc-800/60">
-            <span className="text-[10px] text-zinc-600 font-mono uppercase tracking-widest">Test your understanding →</span>
+            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Test your understanding →</span>
             <button
               onClick={() => onNavigate && onNavigate("preplab")}
               className="text-xs px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-300 hover:text-violet-300 font-medium transition-all">
