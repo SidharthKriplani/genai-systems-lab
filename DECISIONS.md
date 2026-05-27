@@ -6,6 +6,28 @@ Standing rules and principles that govern every build decision. This is a prescr
 
 ---
 
+## 0. Business model — decision pending (May 2026)
+
+The product is currently free, zero-backend, no login. This is a deliberate choice that has enabled fast iteration and zero operational overhead.
+
+**The open question:** when and how to monetize.
+
+**Recommended path** (from May 2026 audit): Freemium with PrepLab as the paid gate. Free tier keeps all interactive modules and GT posts (acquisition). Paid tier ($15/month or $99/year) gates: unlimited PrepLab, JD Prep mode, certificates, personalized gap analysis. The JD Prep mode — paste a job description, get a targeted drill — is the killer feature for monetization. Engineers prepping for Anthropic/Google interviews will pay for this.
+
+**What this requires architecturally:**
+- Auth layer (Google OAuth minimum)
+- Payment processing (Stripe)
+- User record (progress, subscription status) — Supabase or PlanetScale, not localStorage
+- Cross-device sync
+
+**This is the only decision that changes the zero-backend constraint.** Until this decision is made, the zero-backend rule stands. When the decision is made to monetize, the architecture rebuild is Tier 0 before any paid features.
+
+**Alternative paths considered:**
+- B2B / team licenses — higher ACV but requires sales. Wrong stage for a solo builder.
+- Cohort-based ($300/cohort) — highest "take my money" energy but requires facilitation time. Possible Tier 2 after product-market fit.
+
+---
+
 ## 1. Project genesis
 
 GenAI Systems Lab was built as a portfolio and learning artifact, not as a funded product. The starting intent: an interactive tool for AI engineers and PMs to develop intuition about production AI systems — not through video or reading, but through configuration, observation, and diagnosis.

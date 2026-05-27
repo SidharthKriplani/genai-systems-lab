@@ -2,7 +2,41 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: May 2026 | Current scale: 56 Systems modules, 23 Explore, 259 PrepLab questions, 216 GT posts*
+*Last updated: May 2026 | Current scale: 57 Systems modules, 25 Explore, 261 PrepLab questions, 222 GT posts*
+
+---
+
+## 💰 Business Model — Decision Pending (May 2026)
+
+This is the single most consequential open decision. Everything below is affected by which path is chosen.
+
+### Recommended: Freemium with PrepLab as the paid gate
+
+**Free tier** (acquisition funnel — keep everything free):
+- All interactive modules (RAG Lab, Agent Lab, Eval Lab, LLM Lab, Concepts, Playground, Explore, Systems, Agents)
+- All 222 Ground Truth posts
+- Basic PrepLab (limited questions per day, no JD Prep)
+
+**Paid tier** ($15/month or $99/year — the "get hired" layer):
+- Unlimited PrepLab
+- JD Prep mode — paste a job description, get a targeted question drill weighted to the gaps
+- Personalized gap analysis + "study these next" recommendations
+- Learning path tracking with milestone badges
+- Certificate of completion per learning path (verifiable)
+
+**Why PrepLab is the right gate:** People will pay for things that directly help them get hired. The JD Prep mode targets a specific high-intent moment — someone with an interview in 2 weeks. That person pays $99 without hesitation. The free modules build trust; PrepLab converts it.
+
+**Why not B2B:** Requires sales. Solo builder. Wrong stage.
+
+**Why not cohorts:** Requires facilitation. Wrong stage. Could be Tier 2 once product-market fit is confirmed.
+
+**The blocker:** Zero-backend constraint. Freemium requires auth (to gate PrepLab), payment processing (Stripe), and cross-device progress sync. This is the only architectural decision that changes everything downstream. When ready to monetize, this is the first decision to make — not a feature to add.
+
+**The "take my money" UI transformation** needed regardless of model:
+- First 60 seconds must convey transformation, not just content: "Use this for 4 weeks. Walk into any AI systems interview ready."
+- Progress must feel earned — not localStorage streaks but visible milestones with meaning
+- Social proof must be real — named engineers with handles, not "ML Engineer · fintech startup"
+- The product needs a point of view: it's not a tutorial platform, it's a production-failure simulator. That should be the first thing you see.
 
 ---
 
