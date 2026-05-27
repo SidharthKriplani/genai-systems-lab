@@ -273,13 +273,31 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Known open issues (check AUDITS.md for full list)
 
-- PrepLab text question keyword grading marks correct answers wrong if vocabulary differs
-- `consult` tab still missing from SHORTCUT_TABS in App.jsx (low priority, known)
-- PrepLab text question keyword grading marks correct answers wrong if vocabulary differs
-- `consult` tab still missing from SHORTCUT_TABS in App.jsx (low priority, known)
+- Module endings are silent — no ✓ done state, no forward pointer to PrepLab or GT. Highest-dropout moment in the product. (Audits 14, 20, 26, 27)
+- Ask/Search tab identity crisis — label says "Ask", mechanic is keyword search. Needs LLM upgrade or demotion. (Audit 26)
+- Reference tables without decision logic in Systems/Explore don't meet DECISIONS.md Section 4 standard. (Audit 27)
+- Stat numbers in Home.jsx stale: PrepLab "259+" (actual 261), GT posts (actual 222), Systems (actual 57).
+- 3 thin GT posts: `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` — need expansion to 8+ blocks.
+- Flows and Fluency tabs in PARKED.md — don't earn their place, accessible but deprioritized.
 
 ## Session build log (May 2026)
 
+
+**Resolved this session (sprint 5):**
+- PrepLab text grading: replaced keyword auto-grade with self-assess UI (open answers can't be reliably auto-graded on a static site)
+- `consult` added to SHORTCUT_TABS in App.jsx
+- LLM Lab slimmed: 39 modules → 9 true simulators. Reference modules moved to PARKED.md.
+- PARKED.md created: documents deferred modules (39 LLM Lab reference modules, Flows, Fluency, Ask/Search identity crisis, Learning Paths structure issue, Context Compaction deferred)
+- ServingInfra rebuilt as full decision engine: hardware config → framework/quant/batching recommendation
+- AgentConfigLab: 5 failure scenarios with trigger logic (context_overflow, tool_loop, hallucinated_tools, state_amnesia, cascade_failure)
+- ModelMergeExplorer added to Explore BUILD group: SLERP/TIES/DARE/Breadcrumbs decision guide
+- MultimodalGuide added to Explore BUILD group: CLIP/LLaVA/Native arch comparison
+- FlashAttentionConcept added to Concepts FOUNDATION group: O(n²) vs O(n) VRAM interactive, tiling diagram, growth table
+- StreamingLab added to Playground STREAM group: SSE/WS/batch simulator, failure injection, latency breakdown
+- AUDITS.md: Audits 25 (sprint review), 26 (MVP/Weight — first run), 27 (IP/Moat — first run)
+- DECISIONS.md: Section 4 added — interactive decision engine standard, tabs-that-earn-their-place, module endings, GT quality bar, zero-backend constraint
+- PARKED.md: Ask/Search, Learning Paths, Context Compaction added
+- IDEAS.md: CRITICAL cluster added to Tier 1 — module endings, reference tables → decision engines, social proof, stat sync, thin GT posts
 
 **Resolved this session (sprint 4):**
 - Concepts tab: replaced flex-wrap pill nav with sidebar layout (FOUNDATION/APPLICATION/PRACTICE groups)

@@ -121,5 +121,56 @@ Knowledge base built client-side on first render: all 200+ GT posts (title × 3,
 
 ---
 
+---
+
+## 4. Product quality bar (emerged from Audits 26 & 27, May 2026)
+
+### The interactive decision engine standard
+
+Every module — in Systems, Agents, Explore, Playground, Concepts — must meet this standard before shipping:
+
+1. **Configure** — user sets parameters (model size, hardware, workload, config choice)
+2. **Logic** — code derives an outcome from the config, not from a lookup table
+3. **Outcome** — the result is specific: a recommendation, a failure mode, a cost
+4. **Diagnosis** — the outcome explains WHY, not just what
+
+A module that presents a comparison table without requiring user input is a **reference table**, not an interactive. Reference tables belong in Ground Truth posts, not in Systems/Explore/Agents modules.
+
+This standard was implicit before May 2026. It is now explicit and governs all new module decisions.
+
+### Tabs that earn their place
+
+A tab earns its place if it meets ALL of:
+- Has genuine depth (not surface skimmable)
+- Has content unique to this lab (not just a blog post in a UI)
+- Requires user friction — configuration, failure, diagnosis — not passive reading/watching
+- Has a maintenance cost proportional to its value
+
+Tabs that fail this: Flows (passive animations), Fluency (phrase bank), Ask/Search (keyword search disguised as a chatbot). See PARKED.md.
+
+### Module endings — required forward pointer
+
+Every module must end with at least ONE of:
+- A PrepLab question on this exact topic (link by question id)
+- A GT post link (the most relevant post, not a list)
+- A "next module" suggestion based on natural progression
+
+This is the "learn loop" — configure → fail → understand → test yourself. Silent module endings break the loop at its most important moment.
+
+### Ground Truth quality bar
+
+Every GT post must meet:
+- Minimum 8 content blocks (p, h2, callout, code, list, table, refs, video)
+- At least 1 `callout` block (key insight the reader should remember)
+- At least 1 `refs` block (sources, papers, tools)
+- Written at "knowledgeable colleague" depth — not a tutorial, not a textbook
+- No AI hype ("revolutionary", "game-changing", "unprecedented")
+
+Posts with 4-5 blocks are stubs, not posts. They dilute the corpus quality bar.
+
+### The zero-backend constraint is a feature
+
+The static, zero-backend architecture forces a design discipline: every interactive must be achievable with client-side logic. This produces better learning tools (no API costs, no rate limits, reproducible failures, no auth friction) and eliminates operational overhead. When a feature idea requires a backend, the correct response is to redesign the feature, not add the backend.
+
 *Feature build history lives in LINEAGE.md — not duplicated here.*
 

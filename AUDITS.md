@@ -766,9 +766,6 @@ The structural upgrade documented in CLAUDE.md (three front doors, GT as knowled
 - DECISIONS.md captures architectural rules that emerged from audit findings
 
 **Audit types still never run:**
-- MVP / Weight audit — which tabs earn their place?
-- IP / Moat audit — what's hard to replicate, what's original?
-- First-time user audit — cold walk-through in incognito, every confusion point noted live
 - Mobile UX audit — systematic pass on small screens
 
 ---
@@ -939,3 +936,165 @@ The structural upgrade documented in CLAUDE.md (three front doors, GT as knowled
 | 3 | Ask/Search tab relies on keyword search — needs embedding upgrade for knowledge gateway role | Consultation.jsx | ⚠️ Open — architectural |
 
 **Status:** Sprint complete ✅
+
+---
+
+## Audit 25 — Build Sprint Review (May 2026, Session 5)
+
+**Type:** Post-build integrity check
+**Date:** May 2026
+**Scope:** Tier 1–3 sprint — bug fixes, LLM Lab thinning, PARKED.md, Tier 2 decision engines, Tier 3 content migrations
+
+### What was built
+
+| Item | Type | Status |
+|---|---|---|
+| PrepLab text grading — keyword auto-grade replaced with self-assess UI | Bug fix | ✅ Shipped |
+| `consult` added to SHORTCUT_TABS | Fix | ✅ Shipped |
+| LLM Lab slimmed: 39 → 9 simulators (removed reference-only modules) | Product | ✅ Shipped |
+| PARKED.md created — documents deferred modules with right-home guidance | Doc | ✅ Shipped |
+| ServingInfra rebuilt as full decision engine (hardware → framework/quant/batching) | Systems module | ✅ Shipped |
+| AgentConfigLab — 5 failure scenarios with trigger logic, expandable fixes | Agents module | ✅ Shipped |
+| ModelMergeExplorer — SLERP/TIES/DARE/Breadcrumbs decision guide | Explore module | ✅ Shipped |
+| MultimodalGuide — CLIP/LLaVA/Native arch comparison with use-case accordion | Explore module | ✅ Shipped |
+| FlashAttentionConcept — O(n²) vs O(n) VRAM interactive, tiling diagram, growth table | Concepts module | ✅ Shipped |
+| StreamingLab — SSE/WS/batch simulator with failure injection + latency breakdown | Playground module | ✅ Shipped |
+
+### Intentional skips (Tier 3)
+
+| Item | Reason |
+|---|---|
+| `txarch` → Concepts | Existing `transformer` module already covers forward pass. Would be duplication. |
+| `compaction` → Concepts | ContextWindowModule partially covers it. Needs multi-turn simulator to add real value — remains in PARKED.md. |
+
+### Scale after sprint
+
+- GT posts: 222 (unchanged)
+- Explore modules: 25 (was 23)
+- Systems modules: 57 (unchanged — ServingInfra rebuilt, not added)
+- Agents modules: 16 (was 15)
+- Concepts modules: 15 (was 14)
+- Playground modules: 8 (was 7)
+- PrepLab questions: 261 (unchanged)
+
+### Open findings
+
+| # | Finding | File | Status |
+|---|---|---|---|
+| 1 | All brace checks passed for all modified files | All | ✅ Clean |
+| 2 | Stat numbers in Home.jsx door copy likely stale ("259+" PrepLab, "216" GT posts) | Home.jsx | ⚠️ Minor — fix next stat sync |
+| 3 | PARKED.md lists `compaction` as deferred — no interactive simulator built yet | — | ⚠️ Open |
+
+**Status:** Sprint complete ✅
+
+---
+
+## Audit 26 — MVP / Weight Audit
+
+**Type:** MVP / Weight
+**Date:** May 2026
+**Scope:** All 15 tabs — does each earn its place?
+**Method:** Systematic source-read + count verification. First time this audit type has been run.
+**Criteria:** Depth, uniqueness to the lab, fit with core thesis (configure → fail → understand), maintenance cost.
+
+### Tab verdicts
+
+| Tab | Depth | Unique | Fits Thesis | Maintenance | Verdict |
+|---|---|---|---|---|---|
+| Home | High | Yes | — | Medium | ✅ Core |
+| Concepts (15 modules) | Very high | High | Yes | Low | ✅ Core |
+| Flows / Diagrams (2,588 lines) | Medium | Medium | **No** — passive | Low | ❌ PARKED |
+| RAG Lab | Very high | Very high | **Yes** — flagship | Medium | ✅ Core |
+| Agents (16 modules) | High | High | Yes | Medium | ✅ Core |
+| Systems (57 modules) | Very high | High | Yes | High | ✅ Core |
+| Playground (8 modules) | High | High | Yes | Low | ✅ Core |
+| Explore (25 modules) | Mixed | Mixed | Partial | Low | ⚠️ Earns place — needs pruning |
+| Ground Truth (222 posts) | Very high | Very high | Partial | High | ✅ Core — format broken |
+| Ask / Search | Low | Low | **No** — broken promise | Low | ❌ Identity crisis |
+| Fluency / Drills (2,341 lines) | Medium | Low | **No** — passive phrase bank | Low | ❌ PARKED |
+| AI Product (AIPM) | High | High | Yes | Medium | ✅ Earns place |
+| Career | High | High | Yes | Low | ✅ Earns place |
+| PrepLab (261 questions) | High | High | Yes | Medium | ✅ Core |
+| Learning Paths | Medium | Medium | Yes | Low | ⚠️ Should be feature not tab |
+
+### Findings
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | **Flows earns no place** — passive animations, anti-thesis of lab mechanic. 2,588 lines. Already in PARKED.md. | High | ⚠️ PARKED |
+| 2 | **Fluency earns no place** — phrase bank + drills, no interactive mechanic. 2,341 lines. Already in PARKED.md. | High | ⚠️ PARKED |
+| 3 | **Ask/Search identity crisis** — label says "Ask" (chatbot), mechanic is keyword search. Gap between expectation and reality is damaging. Needs LLM upgrade or demotion to search overlay inside GT tab. | High | ⚠️ Open |
+| 4 | **Explore has 5+ modules that are reference tables, not interactives** — LLM evolution, benchmark guide, and similar belong as GT posts. The deep interactives (cosine, hardware, tokenizer) justify the tab. Per-module pruning needed. | Medium | ⚠️ Open |
+| 5 | **Learning Paths is a tab when it should be the spine** — 6 curated paths are valuable but require navigating to a separate tab to find them. Should be surfaced on Home as the primary second CTA. | Medium | ⚠️ Open |
+| 6 | **Systems at 57 modules needs a "start here" signal** — DESIGN/BUILD/OPS grouping + search help, but no recommended first module per group. A first-timer opening Systems sees 57 undifferentiated cards. | Medium | ⚠️ Open |
+| 7 | **Module endings are silent across all tabs** — every module in Systems (57), Explore (25), Concepts (15), Playground (8) ends with nothing. No ✓ done, no next-step CTA, no PrepLab forward pointer. Highest-dropout moment in the product. Flagged in Audit 14 C1 and Audit 20 Finding 5. Still open. | **Critical** | ⚠️ Open |
+
+### Summary
+
+3 tabs don't earn their place: Flows, Fluency, Ask/Search (in current form). These are ~5,500 lines of code that don't reinforce the product thesis. The product's identity is strongest where it's interactive — RAG Lab, Systems, Agents, Concepts, Playground. Everything else is support infrastructure.
+
+---
+
+## Audit 27 — IP / Moat Audit
+
+**Type:** IP / Moat
+**Date:** May 2026
+**Scope:** What's hard to replicate? What's original? What deserves doubling down?
+**Method:** Systematic assessment of all major content surfaces and interactive modules. First time this audit type has been run.
+
+### Tier 1 Moat — Hard to replicate even with resources
+
+| Asset | Why |
+|---|---|
+| **RAG Lab failure scenarios** | 5 production failure modes, 6-8 configs each. The UI is replicable in a day; the domain knowledge encoded in failure explanations and pedagogical arc takes months of real production experience. |
+| **Ground Truth corpus (222 posts)** | Volume × quality × consistent voice. "Knowledgeable colleague" tone, no hype. A competitor could produce 222 GPT posts in a week — they would not have the same depth. The corpus is also a knowledge graph: cross-linked to modules and PrepLab. |
+| **PrepLab × GT × Systems cross-linking** | 261 questions with GT post deep-links, 57 modules with RELATED_GT maps, GT posts with labLink back to modules. No other resource has this web. It's a knowledge graph, not a content library. |
+| **Decision engines** — ServingInfra, AgentConfigLab, Query Refinement Lab | Encode domain knowledge as runnable logic. Not tables — functions that map configuration choices to outcomes. The logic took production experience to write; the UI is commodity. |
+
+### Tier 2 Moat — Replicable but requires significant effort
+
+| Asset | Why effort is required |
+|---|---|
+| PrepLab question bank (261 Qs) | Hand-written, quality-controlled, cross-linked. AI-assisted replication is possible but calibration and cross-linking is labor-intensive. |
+| Flash Attention memory viz | Well-executed, pedagogically integrated. Others exist but not with fidelity labeling and the learning flow context. |
+| India AI salary data in Career | Specific, localized, not easily scraped from public sources. |
+
+### No moat — easily replicated
+
+Reference tables without decision logic. Phrase banks (Fluency). The visual design. The tech stack. Topic explainer GT posts in isolation (the moat is the cross-linking, not the existence of an explainer).
+
+### What deserves doubling down
+
+1. **RAG Lab** — the next 5 failure scenarios are higher ROI than any new tab.
+2. **GT corpus** — every post with no `related[]`, no `labLink` is a dead end in the knowledge graph. Completing the graph deepens the moat.
+3. **Reference tables → decision engines** — every reference table in Systems/Explore is a missed opportunity. The standard is: configure → logic → outcome → diagnosis.
+4. **PrepLab × GT cross-linking** — the questions that link directly to GT posts are more valuable than the ones that don't.
+
+### What to stop building
+
+1. Reference tables that don't become decision engines.
+2. Passive content surfaces (Flows, Fluency, and any equivalent).
+3. Features that require a backend — the zero-backend constraint is a feature, not a limitation.
+
+### Moat risk
+
+**Primary risk:** A well-resourced competitor (Anthropic Academy, DeepLearning.AI) builds a similar interactive platform with live model APIs. The lab's moat is depth + integration, not technology. The zero-backend version actually works better for learning (no API costs, no rate limits, reproducible failures) — but perception favors live APIs.
+
+**Secondary risk:** GT corpus quality diluted by adding low-depth posts to hit count targets. The 3 thin posts flagged in Audit 17 are early warning signs. Quality bar must stay at "production engineer would trust this."
+
+### Findings
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | **Reference tables without decision logic dilute the moat** — 10-15 modules in Systems and Explore present information without requiring the user to configure anything. Each should become a decision engine or move to GT posts. | High | ⚠️ Open |
+| 2 | **Social proof is unconvincing** — 3 unnamed testimonials. The product has a claimed audience of 3,400+ learners. Real, verifiable social proof (LinkedIn screenshots, GitHub star count, named quotes with handles) is a moat amplifier. | High | ⚠️ Open |
+| 3 | **3 thin GT posts dilute corpus quality** — `dpo-in-practice` (4 blocks), `llm-observability` (5 blocks), `instruction-tuning-datasets` (5 blocks). Each is a chance for a user to trust the corpus less. | Medium | ⚠️ Open |
+| 4 | **Module endings break the learn loop** — same as Audit 26 Finding 7. The RELATED_GT infrastructure and PrepLab cross-links exist. The module endings don't use them. | **Critical** | ⚠️ Open |
+| 5 | **Editorial standard is internal and invisible** — "genuinely interactive," "teaches a production failure mode," "no AI hype" is a real quality bar. Making it public differentiates from AI tutorial farms. | Medium | ⚠️ Open (Audit 14 G3) |
+
+### Summary
+
+The moat is real but fragile. RAG Lab + GT corpus + decision engines + PrepLab cross-linking form a genuine knowledge graph that would take 6-12 months to replicate at this depth. But the moat is being diluted by passive surfaces, reference tables without decision logic, silent module endings, and thin GT posts.
+
+**The highest-leverage move is not new content — it's making what exists work harder.** Module endings that forward to PrepLab. GT posts that link back to the exact module. Reference tables that become decision engines.
+

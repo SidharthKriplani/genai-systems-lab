@@ -56,8 +56,39 @@ The Flows tab exists (`src/Flows.jsx`) — animated pipeline visualizations. Pas
 
 ---
 
+## Ask / Search tab (identity crisis — May 2026)
+
+`src/Consultation.jsx` — keyword search over GT posts, presented as "Ask" in the nav (implying a chatbot). The label-mechanic mismatch is damaging: users expect to ask a question and get an answer; they get a keyword search that returns 5 post titles.
+
+**The fix options:**
+1. **LLM upgrade path** — swap keyword scorer for embedding similarity + Claude API generation step. The architecture was designed for this (see DECISIONS.md consultation section). This turns it into a genuine "Ask" tab.
+2. **Demotion** — rename to "Search" (already partially done in nav), move it out of primary nav, make it a search overlay inside the GT tab. This is the right shape if LLM upgrade isn't coming.
+
+**Status:** In nav as "Search" but still a standalone tab. Audit 26 identified it as failing the "earns its place" standard in current form. Decision pending on upgrade vs demotion.
+
+---
+
+## Learning Paths tab (should be feature, not tab — May 2026)
+
+`src/LearningPaths.jsx` — 6 curated multi-tab learning paths. The content is valuable. The problem: making it a standalone tab buries it. Users who need a path most (first-timers) are unlikely to discover a tab called "Paths" before they've already clicked into Systems or Concepts.
+
+**Right home:** The path selector should be the second CTA on the Home page — "I want to: [interview in 3 weeks / transition from DS / build my first RAG system / understand agents]." Each choice launches a path with full context preserved inside each tab.
+
+**Status:** Accessible as a tab. The content is good; the architecture is wrong. Remains available but deprioritized for nav prominence until it's promoted to Home page spine.
+
+---
+
+## Context Compaction — interactive simulator (deferred — May 2026)
+
+The existing `ContextCompaction` module in Systems is reference content. To earn a home in Concepts (where it was planned), it needs a genuine multi-turn conversation simulator: conversation grows token by token, user watches the token count climb, compaction triggers at threshold, user sees before/after quality comparison.
+
+**Status:** Reference module remains in Systems. Concepts version not built — too thin without the simulator mechanic. Deferred until the simulator can be built properly.
+
+---
+
 ## Notes
 
 - Nothing in PARKED.md is deleted. Everything is reachable via main Systems tab or direct `#hash` navigation.
 - Items leave PARKED.md when they're upgraded to interactive decision-engine standard or find a permanent structural home.
 - Do not add something to PARKED.md as a way to avoid thinking about where it belongs. PARKED is for genuinely ambiguous cases, not lazy disposal.
+- The standard for leaving PARKED.md: meets the interactive decision engine standard in DECISIONS.md Section 4.
