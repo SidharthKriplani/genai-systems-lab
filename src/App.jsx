@@ -1469,36 +1469,38 @@ export default function App() {
       </main>
 
 
-      {/* Scenario tabs */}
-      {topView === "lab" && <div className="border-b border-zinc-800 px-4 py-2">
-        <div className="max-w-7xl mx-auto flex gap-1.5 overflow-x-auto scrollbar-hide flex-nowrap pb-0.5">
-          {ALL_SCENARIOS.map((s, i) => (
-            <button
-              key={s.scenario_id}
-              onClick={() => switchScenario(i)}
-              className={`shrink-0 px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all ${
-                i === scenarioIdx ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
-              }`}
-            >
-              #{i + 1} {s.title.split(" ").slice(0, 2).join(" ")}
-            </button>
-          ))}
-        </div>
-      </div>}
-
-      {topView === "lab" && !labHintDismissed && (
-        <div className="border-b border-violet-800/40 bg-violet-950/20 px-4 py-2.5">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-xs text-violet-300 leading-relaxed">
-              <span className="font-bold">New here?</span> Pick a scenario, adjust the 4 controls, hit <span className="font-bold text-white">Evaluate</span> — then read the failure diagnosis. Each scenario teaches one production failure mode.
-            </p>
-            <button onClick={dismissLabHint} className="text-[10px] text-violet-400 hover:text-white border border-violet-800 hover:border-violet-600 rounded px-2 py-0.5 transition-all shrink-0 font-mono">Got it ✕</button>
+      {topView === "lab" && (
+        <div className="flex h-full min-h-0">
+          {/* Sidebar: scenario list */}
+          <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
+            <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">SCENARIOS</div>
+            {ALL_SCENARIOS.map((s, i) => (
+              <button key={s.scenario_id} onClick={() => switchScenario(i)}
+                className={`w-full text-left px-4 py-3 text-xs transition-all ${i === scenarioIdx ? "border-l-2 border-violet-500 bg-zinc-800 text-white" : "border-l-2 border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"}`}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${i === scenarioIdx ? "bg-violet-900/60 text-violet-300" : "bg-zinc-800 text-zinc-600"}`}>{s.tag}</span>
+                  <span className="text-zinc-600 text-[9px]">#{i + 1}</span>
+                </div>
+                <div className="font-semibold leading-snug">{s.title}</div>
+              </button>
+            ))}
           </div>
-        </div>
-      )}
 
-      {topView === "lab" && (activeTab === "simulator" ? (
-        <div className="max-w-7xl mx-auto px-4 py-6">
+          {/* Right panel */}
+          <div className="flex-1 overflow-y-auto">
+            {!labHintDismissed && (
+              <div className="border-b border-violet-800/40 bg-violet-950/20 px-4 py-2.5">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="text-xs text-violet-300 leading-relaxed">
+                    <span className="font-bold">New here?</span> Pick a scenario, adjust the 4 controls, hit <span className="font-bold text-white">Evaluate</span> — then read the failure diagnosis. Each scenario teaches one production failure mode.
+                  </p>
+                  <button onClick={dismissLabHint} className="text-[10px] text-violet-400 hover:text-white border border-violet-800 hover:border-violet-600 rounded px-2 py-0.5 transition-all shrink-0 font-mono">Got it ✕</button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "simulator" ? (
+              <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="mb-4">
             <HowTo
               objective="Build intuition for how RAG systems fail in production — and what configuration choices prevent each failure mode."
@@ -1686,27 +1688,28 @@ export default function App() {
               )}
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <div className="mb-6">
-            <span className="text-xs font-mono px-2 py-0.5 bg-violet-900 text-violet-300 rounded border border-violet-700">DESIGN NOTES</span>
-            <h2 className="text-xl font-bold mt-2">{scenario.title}</h2>
-            <p className="text-sm text-zinc-400 mt-1">Failure mode: {scenario.failure_mode_taught}</p>
-          </div>
-          <p className="text-xs text-zinc-600 mb-3">Click any config to expand the design lesson.</p>
-          <div className="space-y-2">
-            {scenario.configs.map((cfg) => (
-              <CollapsibleConfigCard key={cfg.id} cfg={cfg} />
-            ))}
-          </div>
-        </div>
-      ))}
+            </div>
+            ) : (
+              <div className="max-w-4xl mx-auto px-6 py-8">
+                <div className="mb-6">
+                  <span className="text-xs font-mono px-2 py-0.5 bg-violet-900 text-violet-300 rounded border border-violet-700">DESIGN NOTES</span>
+                  <h2 className="text-xl font-bold mt-2">{scenario.title}</h2>
+                  <p className="text-sm text-zinc-400 mt-1">Failure mode: {scenario.failure_mode_taught}</p>
+                </div>
+                <p className="text-xs text-zinc-600 mb-3">Click any config to expand the design lesson.</p>
+                <div className="space-y-2">
+                  {scenario.configs.map((cfg) => (
+                    <CollapsibleConfigCard key={cfg.id} cfg={cfg} />
+                  ))}
+                </div>
+              </div>
+            )}
 
-      {topView === "lab" && (
-        <footer className="border-t border-zinc-800 mt-12 px-6 py-4 text-center">
-          <p className="text-xs text-zinc-600">GenAI Systems Lab · RAG Lab · 6 production failure scenarios · Zero hosting cost · Open source</p>
-        </footer>
+            <footer className="border-t border-zinc-800 mt-12 px-6 py-4 text-center">
+              <p className="text-xs text-zinc-600">GenAI Systems Lab · RAG Lab · 6 production failure scenarios · Zero hosting cost · Open source</p>
+            </footer>
+          </div>
+        </div>
       )}
 
       {topView === "qa" && (
