@@ -334,7 +334,8 @@ function ConceptGraph({ onNavigate }) {
 
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/40">
+      <div className="relative overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/40">
+        <div className="absolute right-0 top-0 h-full w-10 pointer-events-none lg:hidden z-10 rounded-r-xl" style={{ background: "linear-gradient(to right, transparent, rgba(9,9,11,0.9))" }} />
         <svg viewBox="0 0 762 205" className="w-full min-w-[600px]" style={{ height: 205 }}>
           {/* Column labels */}
           {[
@@ -718,7 +719,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               { label: "Multi-hop failure", color: "#22c55e" },
             ].map(f => (
               <button key={f.label} onClick={() => onNavigate("lab")}
-                className="px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all hover:opacity-80"
+                className="px-3 py-2.5 rounded-full text-xs font-mono font-bold border transition-all hover:opacity-80 min-h-[44px]"
                 style={{ color: f.color, borderColor: f.color + "40", background: f.color + "10" }}>
                 {f.label}
               </button>

@@ -299,26 +299,32 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 - ~~PrepLab split-panel on mobile~~ → `mobileSidebarOpen` pattern applied (same as Agents/Systems)
 - ~~Explore split-panel on mobile~~ → `mobileSidebarOpen` pattern applied; back button `← Explore` added
 - ~~Global palette audit: zinc-500/600 unreadable~~ → CSS variable remap + 300+ class changes (sprint 8 palette audit commits `bea5281`, `b088571`)
+- ~~Concepts sidebar hidden on mobile~~ → verified Concepts already has `sm:hidden` horizontal pill strip; no change needed
+- ~~GT code blocks + tables on mobile~~ → verified `overflow-x-auto` already present on both; no change needed
+- ~~Touch targets below 44×44px~~ → systematic `py-1`/`py-1.5` → `py-2.5` pass across GT (filter pills, action buttons, reactions, quiz), Home (failure pills + `min-h-[44px]`), Explore sidebar items, Agents/Systems sidebar items, Concepts mobile strip pills
+- ~~Concept dependency graph SVG overflow~~ → right-fade gradient overlay added (same pattern as journey strip)
+
+**Overflow-x scroll hint pattern (new standard):** Any `overflow-x-auto` strip that clips on mobile gets a `pointer-events-none lg:hidden` right-fade overlay. Applied to: journey strip, SVG concept graph.
 
 **Still open:**
 - `failures` module in Agent Lab is still a reference catalog. Low priority — keep as reference.
 - Ask/Search tab identity crisis — label says "Ask", mechanic is keyword search. Needs LLM upgrade or demotion. (Audit 26)
 - 3 thin GT posts: `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` — need expansion to 8+ blocks.
 - Flows and Fluency tabs in PARKED.md — accessible but deprioritized.
-- Concepts sidebar hidden on mobile (`hidden sm:block`) — no way to switch modules below 640px. Needs mobileSidebarOpen treatment.
-- GT code blocks + table layout on mobile — not audited. Spot-check needed.
-- Touch targets — many `text-[9px]`/`text-[10px]` buttons likely below 44×44px WCAG minimum.
-- Concept dependency graph (SVG, fixed node positions) — may overflow on narrow screens.
 
 ## Session build log (May 2026)
 
 **Resolved this session (sprint 9):**
-- Audit 32: Full mobile UX audit — 15 findings across all tabs, classified Critical/High/Medium/Low
-- `Home.jsx`: stats row `flex gap-8` → `grid grid-cols-3 sm:flex`; font size reduced on mobile; journey strip right-fade gradient hint added
-- `PrepLab.jsx`: `mobileSidebarOpen` pattern (same as Agents/Systems); `selectMode()`/`exitMode()` helpers; back button `← PrepLab`
-- `Explore.jsx`: `mobileSidebarOpen` pattern; `switchModule()` sets sidebar closed; back button `← Explore`; right panel wrapped in outer `flex`/`hidden` div
-- AUDITS.md: Audit 32 written (15 findings, 8 fixed, 7 open)
-- CLAUDE.md: sprint 9 build log added
+- Audit 32: Full mobile UX audit — 15 findings, all resolved or closed
+- Audit 33: Touch target + overflow pass — all Audit 32 open findings resolved
+- `Home.jsx`: stats row overflow fix; journey strip + SVG graph right-fade gradient; failure pills `min-h-[44px]`
+- `PrepLab.jsx`: `mobileSidebarOpen` pattern; `selectMode()`/`exitMode()` helpers; back button `← PrepLab`
+- `Explore.jsx`: `mobileSidebarOpen` pattern; module list `py-2.5` touch targets; back button `← Explore`
+- `GroundTruth.jsx`: category filter `py-1` → `py-2.5`; all post action buttons + reactions + quiz button `py-1.5` → `py-2.5`
+- `Agents.jsx` / `Systems.jsx`: module sidebar items `py-1.5` → `py-2.5`
+- `Concepts.jsx`: mobile strip pills `py-1.5` → `py-2.5`
+- AUDITS.md: Audit 32 + Audit 33 written; all 15 findings closed
+- CLAUDE.md: sprint 9 build log updated
 
 **Resolved this session (sprint 8):**
 - RAG Lab mobile: `App.jsx` outer `flex` → `flex flex-col lg:flex-row`; desktop sidebar `hidden lg:flex`; mobile horizontal scroll strip added (scenario pills, whitespace-nowrap, violet active state)

@@ -230,7 +230,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
                     <button
                       key={m.id}
                       onClick={() => switchModule(m.id)}
-                      className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all duration-150 ${active ? "text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50"}`}
+                      className={`w-full text-left px-2 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all duration-150 ${active ? "text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50"}`}
                       style={active ? { background: "linear-gradient(90deg, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.04) 100%)", boxShadow: "inset 2px 0 0 #6366f1" } : {}}
                     >
                       {done.has(m.id) ? <span className="text-emerald-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}

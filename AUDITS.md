@@ -1455,3 +1455,40 @@ Issues 9–15 above. Priority order: Explore sidebar (#10), Concepts sidebar (#1
 
 **Status:** Partial ✅. Critical fixes done. Medium/Low open items logged for Audit 33 or sprint 10.
 
+
+---
+
+## Audit 33 — Mobile Touch Target & Overflow Pass (May 2026, Sprint 9 continued)
+
+**Type:** Systematic mobile polish — touch targets, overflow hints, Explore split-panel
+**Date:** May 2026
+**Scope:** All remaining open findings from Audit 32 (#9–15). Fix or close each.
+
+### Findings resolved
+
+| # | Finding | Fix |
+|---|---|---|
+| 9 | **GT code blocks + table layout on mobile** | Verified — `<pre overflow-x-auto>` and `<div overflow-x-auto>` already present. No change needed. ✅ Closed. |
+| 10 | **Explore split-panel on mobile** | `mobileSidebarOpen` pattern applied to `ExploreApp`. Back button `← Explore` added. ✅ Fixed. |
+| 11 | **Concepts sidebar hidden on mobile** | Verified — Concepts already has a `sm:hidden` horizontal scroll pill strip as mobile nav. Sidebar hidden + strip shown is the correct pattern. ✅ Closed (no change). |
+| 12 | **Concept dependency graph SVG overflow** | `overflow-x-auto` container already present. Added right-fade gradient overlay (`lg:hidden`) to signal scrollability. ✅ Fixed. |
+| 13 | **Touch targets below 44×44px** | Systematic pass across all key interactive elements: GT category filter pills `py-1` → `py-2.5`; GT post action buttons `py-1.5` → `py-2.5`; GT reaction buttons `py-1.5` → `py-2.5`; GT quiz/simplify buttons `py-1.5` → `py-2.5`; Home failure pills `py-1.5` → `py-2.5` + `min-h-[44px]`; Explore module sidebar items `py-1.5` → `py-2.5`; Agents module sidebar items `py-1.5` → `py-2.5`; Systems module sidebar items `py-1.5` → `py-2.5`; Concepts mobile strip pills `py-1.5` → `py-2.5`. ✅ Fixed. |
+| 14 | **Home door cards `grid-cols-2` on mobile** | Acceptable — 185px per card is workable for this content. ✅ Closed (no change). |
+| 15 | **PrepLab question text layout** | Acceptable — `p-5 sm:p-8` padding correct, content wraps gracefully. ✅ Closed (no change). |
+
+### Journey strip and SVG graph fade pattern (new standard)
+
+Any `overflow-x-auto` scrollable container that may clip content on mobile now gets a right-fade gradient overlay (`pointer-events-none`, `lg:hidden`). Applied to: journey step strip, concept dependency graph. Pattern:
+
+```jsx
+<div className="relative">
+  <div className="overflow-x-auto scrollbar-hide">
+    {/* content */}
+  </div>
+  <div className="absolute right-0 top-0 h-full w-10 pointer-events-none lg:hidden"
+    style={{ background: "linear-gradient(to right, transparent, rgba(9,9,11,0.9))" }} />
+</div>
+```
+
+**Status:** All 15 Audit 32 findings resolved or closed. Mobile audit complete ✅
+

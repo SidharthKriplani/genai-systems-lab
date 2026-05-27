@@ -5247,7 +5247,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
             <>
               {EXPLORE_MODULES.filter(m => m.label.toLowerCase().includes(search.toLowerCase()) || m.tag.toLowerCase().includes(search.toLowerCase())).map(m => (
                 <button key={m.id} onClick={() => switchModule(m.id)}
-                  className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"}`}>
+                  className={`w-full text-left px-2 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"}`}>
                   {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
                   <span className="truncate">{m.label}</span>
                 </button>
@@ -5271,7 +5271,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
                           background: `linear-gradient(90deg, ${grpColor}22 0%, ${grpColor}08 100%)`,
                           boxShadow: `inset 2px 0 0 ${grpColor}`,
                         } : {}}
-                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${active ? "text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/60"}`}>
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${active ? "text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/60"}`}>
                         {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
                         <span className="truncate">{m.label}</span>
                       </button>

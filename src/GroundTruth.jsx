@@ -410,7 +410,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
               />
               {postSearch.length >= 2 && <span className="text-xs text-zinc-500">{matchCount} matches</span>}
               {/* Feature 1 — Simple Mode toggle */}
-              <button onClick={() => setSimpleMode(s => !s)} className="text-xs px-2 py-1 rounded border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white transition-all">
+              <button onClick={() => setSimpleMode(s => !s)} className="text-xs px-2 py-2.5 rounded border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white transition-all">
                 {simpleMode ? "Full version" : "Simplify"}
               </button>
             </div>
@@ -495,7 +495,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
                   const active = (activeReactions || []).includes(r.id);
                   return (
                     <button key={r.id} onClick={() => onReact(r.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all ${active ? "border-violet-500 bg-violet-900/30 text-violet-300" : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-600"}`}>
+                      className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs border transition-all ${active ? "border-violet-500 bg-violet-900/30 text-violet-300" : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-600"}`}>
                       <span>{r.emoji}</span>{r.label}
                     </button>
                   );
@@ -514,7 +514,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
                     setQuizRevealed(false);
                     setQuizActive(true);
                   }}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-zinc-700 hover:border-violet-600 text-zinc-400 hover:text-violet-300 transition-all"
+                  className="text-xs px-3 py-2.5 rounded-lg border border-zinc-700 hover:border-violet-600 text-zinc-400 hover:text-violet-300 transition-all"
                 >
                   Quiz me on this post →
                 </button>
@@ -658,7 +658,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mr-1">Share</span>
             <button onClick={copyPostLink}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
               {linkCopied ? "✓ Copied!" : "Copy link"}
             </button>
             <button onClick={() => window.print()}
@@ -668,13 +668,13 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
             <a href={`https://twitter.com/intent/tweet?text=${shareTitle}&url=${shareUrl}`}
               target="_blank" rel="noopener noreferrer"
               onClick={() => track("post_shared_twitter", { post: post.id })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
               𝕏 / Twitter
             </a>
             <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`}
               target="_blank" rel="noopener noreferrer"
               onClick={() => track("post_shared_linkedin", { post: post.id })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs text-zinc-400 hover:text-white transition-all font-mono">
               LinkedIn
             </a>
           </div>
@@ -1084,7 +1084,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
               <button
                 key={c.id}
                 onClick={() => setFilter(c.id)}
-                className="shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition-all duration-150"
+                className="shrink-0 px-3 py-2.5 rounded-lg text-xs font-bold transition-all duration-150"
                 style={filter === c.id ? {
                   background: "linear-gradient(90deg, rgba(139,92,246,0.28) 0%, rgba(139,92,246,0.10) 100%)",
                   boxShadow: "inset 2px 0 0 #8b5cf6",

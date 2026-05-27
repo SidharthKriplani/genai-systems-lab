@@ -4180,7 +4180,7 @@ export default function ConceptsApp({ onNavigate }) {
           <button
             key={m.id}
             onClick={() => { setActive(m.id); track("concept_module_opened", { module: m.id, module_label: m.label }); }}
-            className={`shrink-0 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+            className={`shrink-0 px-3 py-2.5 rounded text-xs font-medium transition-colors ${
               active === m.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400"
             }`}
           >

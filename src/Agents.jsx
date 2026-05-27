@@ -924,8 +924,8 @@ function AgentDesignChallenge() {
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Design complete — go deeper</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => onNavigate && onNavigate("preplab")} className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">🧠 Test in Prep Lab</button>
-            <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-system-design" })} className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">📖 Designing an Agent System</button>
+            <button onClick={() => onNavigate && onNavigate("preplab")} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">🧠 Test in Prep Lab</button>
+            <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-system-design" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">📖 Designing an Agent System</button>
           </div>
         </div>
       </div>
@@ -1689,8 +1689,8 @@ function AgentLoopSimulator() {
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">You've traced the loop — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => onNavigate && onNavigate("preplab")} className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">🧠 Test in Prep Lab</button>
-            <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-failure-modes" })} className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">📖 How AI Agents Fail in Production</button>
+            <button onClick={() => onNavigate && onNavigate("preplab")} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">🧠 Test in Prep Lab</button>
+            <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-failure-modes" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">📖 How AI Agents Fail in Production</button>
           </div>
         </div>
       </div>
@@ -3508,7 +3508,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
                 const active = activeModule === m.id;
                 return (
                   <button key={m.id} onClick={() => switchModule(m.id)}
-                    className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all duration-150 ${!active ? "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60" : "font-semibold"}`}
+                    className={`w-full text-left px-2 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all duration-150 ${!active ? "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60" : "font-semibold"}`}
                     style={active ? {
                       background: `linear-gradient(90deg, ${grp.color}28 0%, ${grp.color}06 100%)`,
                       boxShadow: `inset 2px 0 0 ${grp.color}`,
