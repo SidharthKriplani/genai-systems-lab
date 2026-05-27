@@ -953,7 +953,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest mb-3" style={{ background: "rgba(139,92,246,0.10)", border: "1px solid rgba(139,92,246,0.25)", color: "#a78bfa" }}>
             Read it. Then break it on the platform.
           </div>
-          <h1 className="text-3xl font-black text-white mb-2 tracking-tight">Ground Truth</h1>
+          <h1 className="text-3xl font-black mb-2 tracking-tight" style={{ background: "linear-gradient(90deg, #ffffff 0%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Ground Truth</h1>
           <p className="text-[15px] text-zinc-400 leading-relaxed max-w-xl">
             Production-depth writing on RAG, agents, evaluation, LLMOps, safety, and system design.
             Every piece links to the lab module where you test what you just read.
@@ -987,7 +987,8 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                 return (
                   <button key={sid}
                     onClick={() => { if (firstPost && POST_CONTENT[firstPost.id]) { setOpenPost(firstPost); } }}
-                    className="text-left rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 hover:border-zinc-700 transition-all group relative overflow-hidden">
+                    className="text-left rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-150 group relative overflow-hidden"
+                    style={{ background: `linear-gradient(160deg, ${s.color}0d 0%, rgba(15,15,17,0.97) 100%)`, border: `1px solid ${s.color}25`, borderTop: `2px solid ${s.color}55`, boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
                     <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${s.color}aa, transparent)` }} />
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <span className="text-xs font-black text-white group-hover:opacity-90">{s.title}</span>
@@ -1062,7 +1063,8 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                         try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
                         setOpenPost(p);
                       }}
-                      className="shrink-0 text-left rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 hover:border-zinc-600 transition-all max-w-[200px]">
+                      className="shrink-0 text-left rounded-lg px-3 py-2 transition-all duration-150 hover:-translate-y-0.5 max-w-[200px]"
+                      style={{ background: `linear-gradient(135deg, ${color}12 0%, rgba(15,15,17,0.97) 100%)`, border: `1px solid ${color}28`, borderTop: `1px solid ${color}45` }}>
                       <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color }}>{p.category}</div>
                       <div className="text-xs text-white leading-snug line-clamp-2">{p.title}</div>
                     </button>

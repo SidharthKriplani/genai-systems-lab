@@ -2351,7 +2351,7 @@ function MCPDeepDive() {
       {tab === "primitives" && (
         <div className="space-y-3">
           <p className="text-xs text-zinc-500">MCP servers expose 4 primitives. Click any to see examples.</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {MCP_PRIMITIVES.map(p => (
               <div key={p.id} onClick={() => setSelectedPrim(selectedPrim===p.id ? null : p.id)}
                 className="rounded-xl border p-4 cursor-pointer transition-all"
@@ -2891,7 +2891,7 @@ function LongRunningWorkflows() {
                   <span className="text-[10px] text-zinc-500 font-mono">{t.lang}</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="text-[10px] text-emerald-400 font-mono font-bold mb-0.5">STRENGTH</div>
                   <div className="text-zinc-400 text-xs">{t.strength}</div>

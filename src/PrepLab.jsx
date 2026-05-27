@@ -2961,7 +2961,7 @@ function ExamConfig({ onStart, onExit }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-400 mb-3">Focus</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[["all", "All Topics"], ["engineering", "Engineering"], ["pm", "Product / PM"], ["interview", "Interview Prep"]].map(([v, l]) => (
                 <button key={v} onClick={() => setFocus(v)}
                   className={`py-3 rounded-lg border text-sm font-medium transition-all ${focus === v ? "bg-indigo-600/20 border-indigo-500 text-indigo-200" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
@@ -2972,7 +2972,7 @@ function ExamConfig({ onStart, onExit }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-400 mb-3">Difficulty</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[["mixed", "Mixed"], ["hard", "Hard Only"]].map(([v, l]) => (
                 <button key={v} onClick={() => setDifficulty(v)}
                   className={`py-3 rounded-lg border text-sm font-medium transition-all ${difficulty === v ? "bg-indigo-600/20 border-indigo-500 text-indigo-200" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>

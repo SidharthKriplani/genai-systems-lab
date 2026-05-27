@@ -1583,12 +1583,13 @@ export default function App() {
           {/* Right panel */}
           <div className="flex-1 overflow-y-auto">
             {!labHintDismissed && (
-              <div className="border-b border-violet-800/40 bg-violet-950/20 px-4 py-2.5">
+              <div className="px-4 py-3" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.12) 0%, rgba(15,15,17,0.8) 100%)", borderBottom: "1px solid rgba(99,102,241,0.2)" }}>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <p className="text-xs text-violet-300 leading-relaxed">
-                    <span className="font-bold">New here?</span> Pick a scenario, adjust the 4 controls, hit <span className="font-bold text-white">Evaluate</span> — then read the failure diagnosis. Each scenario teaches one production failure mode.
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    <span className="font-black" style={{ color: "#a5b4fc" }}>New here?</span> Pick a scenario · adjust the 4 controls · hit <span className="font-bold text-white">Evaluate</span> · read the failure diagnosis. Each scenario = one production failure mode.
                   </p>
-                  <button onClick={dismissLabHint} className="text-[10px] text-violet-400 hover:text-white border border-violet-800 hover:border-violet-600 rounded px-2 py-0.5 transition-all shrink-0 font-mono">Got it ✕</button>
+                  <button onClick={dismissLabHint} className="text-[10px] font-bold transition-all shrink-0 px-2.5 py-1 rounded-lg"
+                    style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", color: "#818cf8" }}>Got it ✕</button>
                 </div>
               </div>
             )}
@@ -1612,7 +1613,7 @@ export default function App() {
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-mono px-2 py-0.5 bg-violet-900 text-violet-300 rounded border border-violet-700">{scenario.tag}</span>
               </div>
-              <h1 className="text-lg sm:text-xl font-bold text-white">{scenario.title}</h1>
+              <h1 className="text-lg sm:text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{scenario.title}</h1>
               <p className="text-sm text-zinc-400 mt-1">{scenario.description}</p>
             </div>
             <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 sm:shrink-0">

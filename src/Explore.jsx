@@ -474,7 +474,7 @@ function ShadowMode() {
         <p className="text-sm text-white italic">"{sc.input}"</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {[
           { label: sc.variantA.label, prompt: sc.variantA.prompt, output: sc.outputA, metrics: { csat: sc.metrics.csat_a, hall: sc.metrics.hallucination_a, lat: sc.metrics.latency_a } },
           { label: sc.variantB.label, prompt: sc.variantB.prompt, output: sc.outputB, metrics: { csat: sc.metrics.csat_b, hall: sc.metrics.hallucination_b, lat: sc.metrics.latency_b } },
@@ -4214,7 +4214,7 @@ function ModelArchitectureComparison() {
           {model && (
             <div className="space-y-3">
               {/* Attention + pretraining */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-3">
                   <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Attention</div>
                   <div className="text-xs text-zinc-300 leading-relaxed">{model.attention}</div>
@@ -4226,7 +4226,7 @@ function ModelArchitectureComparison() {
               </div>
 
               {/* Use / don't use */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-xl bg-zinc-900 border border-green-900/30 p-3">
                   <div className="text-[10px] font-mono text-green-500 uppercase tracking-widest mb-2">Use for</div>
                   {model.useCases.map((u,i) => <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1"><span className="text-green-500">✓</span>{u}</div>)}
@@ -4767,7 +4767,7 @@ function TokenizerComparison() {
                   <div><span className="text-zinc-500">Vocab: </span><span className="text-zinc-300">{algo.vocabSize}</span></div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-xl bg-zinc-900 border border-green-900/30 p-3">
                   <div className="text-[10px] font-mono text-green-500 uppercase tracking-widest mb-2">Strengths</div>
                   {algo.pros.map((p,i) => <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1.5"><span className="text-green-500 shrink-0">+</span>{p}</div>)}

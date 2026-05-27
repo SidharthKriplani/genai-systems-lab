@@ -2223,7 +2223,7 @@ function CostLatencyLab() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-center">
               <div className="text-xs text-zinc-500 mb-1">Frontier-only daily cost</div>
               <div className="text-xl font-black text-red-400">{fmt(frontierOnly)}</div>
@@ -5536,7 +5536,7 @@ function PromptEngineeringLab() {
             </div>
             <pre className="bg-zinc-950 rounded-lg p-3 text-[11px] text-zinc-300 font-mono overflow-x-auto whitespace-pre border border-zinc-800">{DSPY_STEPS[dspyStep].code}</pre>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { label: "vs Manual Prompting", val: "DSPy finds better few-shot examples systematically. No prompt brittle to model version changes." },
               { label: "When to use DSPy", val: "You have a labeled eval set (even 50 examples). Task has a measurable metric. You're changing models frequently." },
@@ -6166,7 +6166,7 @@ function TransformerArchitecture() {
             </svg>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { k:"Causal masking", v:"Token i attends only to positions 0…i. Enforced via −∞ mask before softmax. Prevents future-token leakage during training.", c:"#93c5fd" },
               { k:"KV Cache", v:"At inference, keys & values from all prior tokens are stored. Each new step only computes Q — turns O(n²) attention into O(n) per step.", c:"#fde68a" },
@@ -6345,7 +6345,7 @@ function TransformerArchitecture() {
           </div>
 
           {/* Architecture cards */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { name:"RoPE", full:"Rotary Position Embedding", desc:"Encodes position by rotating Q and K vectors by angle proportional to position. Relative distance between tokens is implicit in the dot product. Enables length generalisation beyond training context.", color:"#a78bfa" },
               { name:"GQA", full:"Grouped-Query Attention", desc:"Share one K/V head across G query heads. If G=8, memory for KV cache is 8× smaller. Llama-3 uses GQA — critical for long-context inference with large batches.", color:"#38bdf8" },
@@ -6977,7 +6977,7 @@ function KVCostMath() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-3 text-center">
           <p className="text-xs text-zinc-500 mb-1">Tokens from cache/day</p>
           <p className="text-lg font-black text-violet-400 font-mono">{fmt(cachedTokens)}</p>
@@ -8441,7 +8441,7 @@ function ConstrainedHowItWorks() {
       </div>
 
       {/* 2-column comparison */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="bg-zinc-900 rounded-lg p-3 border border-red-800/30">
           <p className="text-[10px] font-bold text-red-400 uppercase tracking-wide mb-2">Without constraint</p>
           <ul className="space-y-1">
@@ -8482,7 +8482,7 @@ function ConstrainedGrammarExplorer() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Left: grammar */}
         <div className="space-y-1.5">
           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">GBNF Grammar</p>
@@ -10105,7 +10105,7 @@ function GRPOAgentRL() {
       {/* PPO vs GRPO key difference */}
       <div className="space-y-2">
         <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest px-1">PPO vs GRPO — The Key Difference</div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="rounded-xl bg-blue-950/20 border border-blue-800/30 p-3 space-y-1.5">
             <div className="text-xs font-black text-blue-400">PPO</div>
             <div className="space-y-1">
@@ -10353,7 +10353,7 @@ function LongContextPatterns() {
                 <div className="mt-2 text-[11px] font-mono text-zinc-500">{pattern.costSignal}</div>
               </div>
               {/* Pros / cons */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-xl bg-zinc-900 border border-green-900/30 p-3">
                   <div className="text-[10px] font-mono text-green-500 uppercase tracking-widest mb-2">Strengths</div>
                   {pattern.pros.map((p,i) => (
@@ -12964,7 +12964,7 @@ export function DecodingStrategiesLab() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <label className="flex items-center gap-2 font-semibold text-zinc-300 cursor-pointer">
