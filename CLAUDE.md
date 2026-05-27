@@ -280,16 +280,32 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 - ~~Stat numbers stale~~ → Home.jsx synced: "261+" PrepLab, "222+" GT posts, badge updated to "Layer 3 AI skills"
 - ~~Hero subtext flat~~ → magnetic copy, outcome-oriented door cards
 
-**Still open (Audit 28, May 2026):**
-- **13/16 Agent Lab modules are reference content** — only `agentcfg`, `simulator`, `design` are true decision engines. `failures` module is a catalog without trigger logic — contradicts DECISIONS.md Section 4 directly. Priority: add failure arc to `agentcfg` (merge `failures` scenarios in), add PrepLab forward pointers to `simulator` + `design`. (Audit 28)
-- **7/9 LLM Lab modules lack a failure arc** — `serving` and `inference` are the only decision engines. `streaming` is pure reference. `decoding` needs 3 failure scenarios. `moe` failure modes tab is read-only. (Audit 28)
-- **4 Eval Lab modules are pure reference** — `langsmith` (4 reference tabs), `deploy` (duplicates `serving` worse), `buildthis` (reading list), `abtesting-ai` (thinner than `abtesting` next to it). Priority: cut `deploy`, cut `buildthis`, rebuild `langsmith` as broken-trace diagnosis. (Audit 28)
-- **Zero Agent Lab + LLM Lab modules have PrepLab forward pointers** — these labs render their own components, not through Systems shell which adds the CTA. (Audit 28)
+**Fixed in sprint 7 (May 2026):**
+- ~~13/16 Agent Lab modules reference content~~ → `simulator` + `design` done screens: PrepLab forward pointer card added; `agentcfg` AGENT_FAILURE_MATRIX expanded with 3 new trigger-based failure modes (cascading_errors, over_delegation, tool_poisoning) merged from `failures` catalog
+- ~~7/9 LLM Lab modules lack failure arc~~ → `serving`: full scenario card (root cause + fix chips, SERVING_FAILURE_SCENARIOS lookup); `decoding`: reactive failure callout (repetition collapse T≤0.15, token incoherence T≥1.5, vocabulary starvation topP≤0.2)
+- ~~`moe` failure modes tab read-only~~ → `MoEExpertSimulator` added as 4th tab: configure experts/top-K/batch → load bar chart → collapse/imbalance callout with fixes
+- ~~`langsmith` 4 reference tabs~~ → "Diagnose Traces" tab added as primary view: 5 pre-built broken trace scenarios (retriever timeout, token overflow, tool schema mismatch, context overflow, prompt injection) with span-click inspection + diagnosis reveal
+- ~~`deploy`, `buildthis`, `abtesting-ai` in nav~~ → cut from SYSTEMS_MODULES registry (components kept, just removed from nav)
+- ~~`quantization` Methods reference table~~ → cut, module now shows Calculator only
+
+**Still open:**
+- `failures` module in Agent Lab is still a reference catalog (its 5 entries are now mirrored in agentcfg trigger logic, but the module itself remains). Low priority — keep as reference, ensure agentcfg is the primary discovery path.
 - Ask/Search tab identity crisis — label says "Ask", mechanic is keyword search. Needs LLM upgrade or demotion. (Audit 26)
 - 3 thin GT posts: `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` — need expansion to 8+ blocks.
 - Flows and Fluency tabs in PARKED.md — accessible but deprioritized.
 
 ## Session build log (May 2026)
+
+**Resolved this session (sprint 7):**
+- Tier A: `simulator` + `design` done screens → PrepLab forward pointer cards (violet gradient, ✓ badge, GT post links)
+- Tier A: `serving` failure block → full scenario card with SERVING_FAILURE_SCENARIOS lookup (root cause, fix chips, severity badge)
+- Tier A: `decoding` visualizer → reactive failure callout (3 triggers: repetition collapse, token incoherence, vocabulary starvation)
+- Tier B: `agentcfg` AGENT_FAILURE_MATRIX expanded — 3 new trigger-based entries from `failures` catalog: cascading_errors (retryLimit=0 + 5+ tools), over_delegation (18+ tools + no memory), tool_poisoning (research + 32K context + no external memory)
+- Tier B: `MoEExpertSimulator` component added — numExperts/topK/batchSize config → pseudo-random load distribution → bar chart → collapse/imbalance failure callout with fixes
+- Tier B: `LangSmithTracingLab` — "Diagnose Traces" tab added as default view with `LangSmithDiagnose` component: 5 broken trace scenarios, span-click inspection, correct/wrong scoring, diagnosis + fix reveal
+- Tier C: `deploy`, `buildthis`, `abtesting-ai` removed from SYSTEMS_MODULES registry in Systems.jsx
+- Tier C: `QuantizationEngineering` slimmed — Methods reference table tab removed, Calculator tab only
+- CLAUDE.md known issues updated
 
 **Resolved this session (sprint 6):**
 - Hero copy upgraded: badge "Free · No login · Layer 3 AI skills", magnetic subtext, outcome-oriented door cards, stat sync (261+ PrepLab, 222+ GT)
