@@ -3454,14 +3454,16 @@ const AGENTS_RELATED_GT = {
 
 export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) {
   const [activeModule, setActiveModule] = useState(initialModule || "react");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
   const [done, setDone] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("gsl-agents-done") || "[]")); }
     catch { return new Set(); }
   });
-  useEffect(() => { if (initialModule) setActiveModule(initialModule); }, [initialModule]);
+  useEffect(() => { if (initialModule) { setActiveModule(initialModule); setMobileSidebarOpen(false); } }, [initialModule]);
 
   function switchModule(id) {
     setActiveModule(id);
+    setMobileSidebarOpen(false);
     if (onModuleVisit) onModuleVisit("agents", id);
   }
   function toggleDone(id) {
@@ -3481,7 +3483,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
     <div className="flex min-h-[calc(100vh-56px)]">
 
       {/* ── LEFT PANEL: module list ────────────────────────────────── */}
-      <div className="w-full lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]"
+      <div className={`${mobileSidebarOpen ? "flex" : "hidden"} flex-col w-full lg:flex lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]`}
         style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
         <div className="px-3 pt-5 pb-2 space-y-3">
           <div>
@@ -3523,7 +3525,15 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
       </div>
 
       {/* ── RIGHT PANEL: active module content ────────────────────── */}
-      <div className="flex-1 min-w-0 px-5 lg:px-10 py-8 space-y-7 max-w-2xl lg:max-w-3xl">
+      <div className={`${mobileSidebarOpen ? "hidden" : "flex"} flex-col lg:flex flex-1 min-w-0 max-w-2xl lg:max-w-3xl`}>
+        {/* Mobile back button */}
+        <button onClick={() => setMobileSidebarOpen(true)}
+          className="flex lg:hidden items-center gap-1.5 px-4 py-3 text-xs text-zinc-400 hover:text-zinc-200 border-b border-zinc-800 transition-colors"
+          style={{ background: "rgba(22,22,24,0.95)" }}>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Agent Lab
+        </button>
+        <div className="px-5 lg:px-10 py-8 space-y-7">
 
         {done.size === 0 && (
           <div className="rounded-lg px-4 py-3 flex items-center justify-between gap-3" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(15,15,17,0.8) 100%)", border: "1px solid rgba(59,130,246,0.2)", borderTop: "2px solid rgba(59,130,246,0.4)" }}>
@@ -3583,7 +3593,8 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
             </button>
           </div>
         </div>
-      </div>
+        </div>{/* closes px-5 inner wrapper */}
+      </div>{/* closes right panel outer wrapper */}
 
     </div>
   );
