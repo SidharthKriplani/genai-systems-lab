@@ -4911,29 +4911,32 @@ function TokenizerComparison() {
 // ─── EXPLORE APP ──────────────────────────────────────────────────────────────
 
 const EXPLORE_MODULES = [
-  { id: "embeddings",  label: "3D Embedding Space",  tag: "3D SPACE", component: EmbeddingExplorer, fidelity: { tier: "conceptual",  note: "3D projection of precomputed coordinates — not live model embeddings" } },
-  { id: "shadow",      label: "Shadow Mode A/B",      tag: "COMPARE",  component: ShadowMode,        fidelity: { tier: "simplified",  note: "Illustrative comparison — static response pairs, no live inference" } },
-  { id: "latency",     label: "Latency Planner",      tag: "BUDGET",   component: LatencyPlanner,    fidelity: { tier: "simplified",  note: "Estimated model — based on published benchmarks, not live measurements" } },
-  { id: "tokenizer",   label: "Tokenizer Explorer",   tag: "TOKENS",   component: TokenizerExplorer, fidelity: { tier: "approximate", note: "Approximate (simplified BPE) — heuristic tokenization, not a production tokenizer" } },
-  { id: "modelcard",   label: "Model Card Reader",    tag: "AUDIT",    component: ModelCardReader,   fidelity: { tier: "simplified",  note: "Curated static cards — based on published model documentation" } },
-  { id: "vectordb",    label: "Vector DB Comparison", tag: "DB",       component: VectorDBComparison, fidelity: { tier: "simplified", note: "Curated comparison — based on published benchmarks and docs" } },
-  { id: "structured",  label: "Structured Outputs",   tag: "SCHEMA",   component: StructuredOutputsLab, fidelity: { tier: "simplified", note: "Illustrative — static examples, no live schema validation" } },
-  { id: "redteam",     label: "Red Teaming Lab",       tag: "ATTACK",   component: RedTeamingLab,     fidelity: { tier: "simplified",  note: "Curated scenarios — real attack patterns, scripted responses" } },
-  { id: "attention3d", label: "3D Attention Heads",   tag: "3D ATTN",  component: AttentionViz3D,    fidelity: { tier: "conceptual",  note: "Pre-computed attention patterns for 'The cat sat on the mat'" } },
-  { id: "diffusion3d", label: "3D Diffusion",          tag: "3D DIFF",  component: DiffusionViz3D,    fidelity: { tier: "conceptual",  note: "Conceptual particle simulation — illustrates forward/reverse diffusion" } },
-  { id: "llm_matrix",  label: "Model Matrix",          tag: "COMPARE",  component: LLMMatrixExplorer, fidelity: { tier: "simplified",  note: "Curated comparison based on published benchmarks — not live API data" } },
-  { id: "semcache",   label: "Semantic Caching",    tag: "CACHE",    component: SemanticCachingExplorer, fidelity: { tier: "simplified", note: "Illustrative similarity scores — precomputed, not live embedding comparison" } },
-  { id: "llmops",  label: "LLMOps Tool Comparison", tag: "OBSERVE", component: LLMOpsComparison, fidelity: { tier: "simplified", note: "Based on published documentation and benchmarks as of mid-2026" } },
-  { id: "embmodels", label: "Embedding Models", tag: "EMBED", component: EmbeddingModelSelector, fidelity: { tier: "simplified", note: "MTEB scores and specs from published benchmarks — model availability changes; verify before production use" } },
-  { id: "ragpatterns", label: "RAG Architecture", tag: "RAG", component: RAGArchitecturePatterns, fidelity: { tier: "reference", note: "Chunking + retrieval pipeline patterns" } },
-  { id: "apipricing", label: "API Model Pricing", tag: "COST", component: APIModelPricing, fidelity: { tier: "reference", note: "Major model API pricing comparison" } },
-  { id: "promptpatterns", label: "Prompt Pattern Library", tag: "PROMPT", component: PromptPatternLibrary, fidelity: { tier: "reference", note: "Templates and anti-patterns" } },
-  { id: "benchmarks", label: "Benchmark Browser", tag: "EVAL", component: BenchmarkBrowser, fidelity: { tier: "reference", note: "MMLU/HumanEval/MT-Bench/MATH/GPQA scores" } },
-  { id: "contexteng", label: "Context Engineering", tag: "CONTEXT", component: ContextWindowEngineering, fidelity: { tier: "reference", note: "Window strategies + model limits" } },
-  { id: "cosine", label: "Cosine Similarity", tag: "MATH", component: CosineSimilarityExplorer, fidelity: { tier: "exact", note: "Real-time cosine similarity — exact math, no approximation" } },
-  { id: "modelarch", label: "Model Architecture", tag: "ARCH", component: ModelArchitectureComparison, fidelity: { tier: "reference", note: "Encoder / Decoder / Encoder-Decoder comparison with use-case wizard" } },
-  { id: "hardware", label: "Hardware Reference", tag: "HW", component: HardwareReference, fidelity: { tier: "reference", note: "GPU specs and cloud costs based on published datasheets — verify before procurement" } },
-  { id: "tokenizers", label: "Tokenizer Comparison", tag: "TOKENS", component: TokenizerComparison, fidelity: { tier: "approximate", note: "Heuristic tokenization for illustration — use tiktoken/HF tokenizers for exact counts" } },
+  // DESIGN
+  { id: "embeddings",  label: "3D Embedding Space",  tag: "3D SPACE", group: "DESIGN", component: EmbeddingExplorer, fidelity: { tier: "conceptual",  note: "3D projection of precomputed coordinates — not live model embeddings" } },
+  { id: "attention3d", label: "3D Attention Heads",   tag: "3D ATTN",  group: "DESIGN", component: AttentionViz3D,    fidelity: { tier: "conceptual",  note: "Pre-computed attention patterns for 'The cat sat on the mat'" } },
+  { id: "diffusion3d", label: "3D Diffusion",          tag: "3D DIFF",  group: "DESIGN", component: DiffusionViz3D,    fidelity: { tier: "conceptual",  note: "Conceptual particle simulation — illustrates forward/reverse diffusion" } },
+  { id: "cosine",      label: "Cosine Similarity",    tag: "MATH",     group: "DESIGN", component: CosineSimilarityExplorer, fidelity: { tier: "exact", note: "Real-time cosine similarity — exact math, no approximation" } },
+  { id: "modelarch",   label: "Model Architecture",   tag: "ARCH",     group: "DESIGN", component: ModelArchitectureComparison, fidelity: { tier: "reference", note: "Encoder / Decoder / Encoder-Decoder comparison with use-case wizard" } },
+  { id: "llm_matrix",  label: "Model Matrix",          tag: "COMPARE",  group: "DESIGN", component: LLMMatrixExplorer, fidelity: { tier: "simplified",  note: "Curated comparison based on published benchmarks — not live API data" } },
+  // BUILD
+  { id: "tokenizer",   label: "Tokenizer Explorer",   tag: "TOKENS",   group: "BUILD",  component: TokenizerExplorer, fidelity: { tier: "approximate", note: "Approximate (simplified BPE) — heuristic tokenization, not a production tokenizer" } },
+  { id: "tokenizers",  label: "Tokenizer Comparison", tag: "TOKENS",   group: "BUILD",  component: TokenizerComparison, fidelity: { tier: "approximate", note: "Heuristic tokenization for illustration — use tiktoken/HF tokenizers for exact counts" } },
+  { id: "embmodels",   label: "Embedding Models",     tag: "EMBED",    group: "BUILD",  component: EmbeddingModelSelector, fidelity: { tier: "simplified", note: "MTEB scores and specs from published benchmarks — model availability changes; verify before production use" } },
+  { id: "vectordb",    label: "Vector DB Comparison", tag: "DB",       group: "BUILD",  component: VectorDBComparison, fidelity: { tier: "simplified", note: "Curated comparison — based on published benchmarks and docs" } },
+  { id: "ragpatterns", label: "RAG Architecture",     tag: "RAG",      group: "BUILD",  component: RAGArchitecturePatterns, fidelity: { tier: "reference", note: "Chunking + retrieval pipeline patterns" } },
+  { id: "structured",  label: "Structured Outputs",   tag: "SCHEMA",   group: "BUILD",  component: StructuredOutputsLab, fidelity: { tier: "simplified", note: "Illustrative — static examples, no live schema validation" } },
+  { id: "contexteng",  label: "Context Engineering",  tag: "CONTEXT",  group: "BUILD",  component: ContextWindowEngineering, fidelity: { tier: "reference", note: "Window strategies + model limits" } },
+  { id: "promptpatterns", label: "Prompt Pattern Library", tag: "PROMPT", group: "BUILD", component: PromptPatternLibrary, fidelity: { tier: "reference", note: "Templates and anti-patterns" } },
+  // OPS
+  { id: "shadow",      label: "Shadow Mode A/B",      tag: "COMPARE",  group: "OPS",    component: ShadowMode,        fidelity: { tier: "simplified",  note: "Illustrative comparison — static response pairs, no live inference" } },
+  { id: "latency",     label: "Latency Planner",      tag: "BUDGET",   group: "OPS",    component: LatencyPlanner,    fidelity: { tier: "simplified",  note: "Estimated model — based on published benchmarks, not live measurements" } },
+  { id: "semcache",    label: "Semantic Caching",     tag: "CACHE",    group: "OPS",    component: SemanticCachingExplorer, fidelity: { tier: "simplified", note: "Illustrative similarity scores — precomputed, not live embedding comparison" } },
+  { id: "llmops",      label: "LLMOps Tool Comparison", tag: "OBSERVE", group: "OPS",   component: LLMOpsComparison, fidelity: { tier: "simplified", note: "Based on published documentation and benchmarks as of mid-2026" } },
+  { id: "apipricing",  label: "API Model Pricing",    tag: "COST",     group: "OPS",    component: APIModelPricing, fidelity: { tier: "reference", note: "Major model API pricing comparison" } },
+  { id: "benchmarks",  label: "Benchmark Browser",    tag: "EVAL",     group: "OPS",    component: BenchmarkBrowser, fidelity: { tier: "reference", note: "MMLU/HumanEval/MT-Bench/MATH/GPQA scores" } },
+  { id: "hardware",    label: "Hardware Reference",   tag: "HW",       group: "OPS",    component: HardwareReference, fidelity: { tier: "reference", note: "GPU specs and cloud costs based on published datasheets — verify before procurement" } },
+  { id: "modelcard",   label: "Model Card Reader",    tag: "AUDIT",    group: "OPS",    component: ModelCardReader,   fidelity: { tier: "simplified",  note: "Curated static cards — based on published model documentation" } },
+  { id: "redteam",     label: "Red Teaming Lab",      tag: "ATTACK",   group: "OPS",    component: RedTeamingLab,     fidelity: { tier: "simplified",  note: "Curated scenarios — real attack patterns, scripted responses" } },
 ];
 
 export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {
@@ -4991,17 +4994,36 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
           )}
         </div>
 
-        <div className="px-2 pb-4 space-y-0.5">
-          {EXPLORE_MODULES.filter(m => !search || m.label.toLowerCase().includes(search.toLowerCase()) || m.tag.toLowerCase().includes(search.toLowerCase())).map(m => (
-            <button key={m.id} onClick={() => switchModule(m.id)}
-              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"}`}>
-              {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
-              <span className="truncate">{m.label}</span>
-              <span className="ml-auto text-[9px] text-zinc-700 shrink-0 hidden group-hover:block">{m.tag}</span>
-            </button>
-          ))}
-          {search && EXPLORE_MODULES.filter(m => m.label.toLowerCase().includes(search.toLowerCase()) || m.tag.toLowerCase().includes(search.toLowerCase())).length === 0 && (
-            <div className="text-center text-xs text-zinc-600 py-4">No match for "{search}"</div>
+        <div className="px-2 pb-4">
+          {search ? (
+            <>
+              {EXPLORE_MODULES.filter(m => m.label.toLowerCase().includes(search.toLowerCase()) || m.tag.toLowerCase().includes(search.toLowerCase())).map(m => (
+                <button key={m.id} onClick={() => switchModule(m.id)}
+                  className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"}`}>
+                  {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
+                  <span className="truncate">{m.label}</span>
+                </button>
+              ))}
+              {EXPLORE_MODULES.filter(m => m.label.toLowerCase().includes(search.toLowerCase()) || m.tag.toLowerCase().includes(search.toLowerCase())).length === 0 && (
+                <div className="text-center text-xs text-zinc-600 py-4">No match for "{search}"</div>
+              )}
+            </>
+          ) : (
+            ["DESIGN","BUILD","OPS"].map(grp => {
+              const grpModules = EXPLORE_MODULES.filter(m => m.group === grp);
+              return (
+                <div key={grp} className="mb-3">
+                  <p className="px-2 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{grp}</p>
+                  {grpModules.map(m => (
+                    <button key={m.id} onClick={() => switchModule(m.id)}
+                      className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold border-l-2 border-blue-500" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 border-l-2 border-transparent"}`}>
+                      {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
+                      <span className="truncate">{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+              );
+            })
           )}
         </div>
       </div>

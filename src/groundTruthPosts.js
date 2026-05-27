@@ -11571,4 +11571,144 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+
+// ─── DS TO AI ENGINEER ────────────────────────────────────────────────────────
+  "ds-to-ai-engineer": [
+    { t: "p", text: "Your job title changed. The market forces behind that change are more legible than most people realise — and understanding them makes you dramatically better at predicting what to learn next." },
+    { t: "h2", text: "The DS peak and the collapse" },
+    { t: "p", text: "Data Scientist was the hottest job in tech from 2016 through COVID. Companies hired aggressively, often without a clear production use case. Then, between 2021 and 2023, DS demand fell roughly 90% from its peak — not because data science became less valuable, but because the role fragmented." },
+    { t: "p", text: "What was called Data Scientist split into at least four distinct specialisations: Machine Learning Engineer (model development and production deployment), Data Engineer (pipeline infrastructure, warehousing), Analytics Engineer (dbt, semantic layers, business-facing analysis), and ML Ops / Platform Engineer (serving infrastructure, monitoring, CI/CD for models). Each pays differently. Each has different hiring criteria. The generalist DS role survived in smaller companies but largely disappeared from big tech hiring." },
+    { t: "h2", text: "ChatGPT as the demand reset" },
+    { t: "p", text: "ChatGPT launched in November 2022. Within 12 months, GenAI Engineer listings on LinkedIn went from near-zero to over 10,000 in the US alone. The demand reset was not gradual — it was a step function. Companies that had frozen ML hiring were suddenly posting for prompt engineers, RAG engineers, and LLM platform engineers within the same fiscal quarter." },
+    { t: "p", text: "The difference between this wave and the original DS bubble: the use cases were immediately legible to non-technical buyers. Customer support automation, document Q&A, code generation — every enterprise executive understood the pitch. Hiring followed demand, not research agenda." },
+    { t: "h2", text: "The agentic surge" },
+    { t: "p", text: "Agentic AI Engineer listings grew over 280% year-over-year and by some measures are already the fastest-growing category in AI hiring — roughly 2.5x the size of the broader GenAI Engineer category. The pattern: capabilities that were research in 2023 (tool use, multi-agent orchestration, memory systems) became production requirements by 2025." },
+    { t: "p", text: "This is not a coincidence. The agentic surge follows the same pattern as the original DS fragmentation: a technology proves itself in narrow production use cases, demand pulls ahead of supply, and compensation premiums appear before training pipelines catch up. That gap is where the salary differential lives — and it typically lasts 18-36 months before supply catches up." },
+    { t: "h2", text: "The lesson from the arc" },
+    { t: "p", text: "The market does not reward knowing a technology. It rewards being able to build reliable production systems with that technology before supply catches up with demand. The DS peak failed because most DS hires could not get models to production. The RAG wave rewarded engineers who understood retrieval failure modes. The agentic wave is rewarding engineers who understand orchestration, memory, and reliability at the system level — not just model capabilities." },
+    { t: "callout", v: "tip", text: "The pattern repeats: what the market pays premium for is always at the intersection of new capability and production-hardening expertise. Right now that is agentic AI engineering — evaluation harnesses, reliability patterns, memory architecture, observability." },
+    { t: "refs", items: [
+      { label: "Stanford HAI AI Index 2026", url: "https://hai.stanford.edu/ai-index" },
+      { label: "LinkedIn Economic Graph — AI Jobs Report", url: "https://economicgraph.linkedin.com" },
+    ]},
+  ],
+
+// ─── FORWARD DEPLOYED ENGINEER ───────────────────────────────────────────────
+  "forward-deployed-engineer": [
+    { t: "p", text: "The Forward Deployed Engineer is the fastest-growing role in enterprise AI. Postings grew over 1,165% year-over-year. The role exists because enterprise AI has a specific, repeatable failure mode — and most companies are only now realising it." },
+    { t: "h2", text: "The 95% problem" },
+    { t: "p", text: "MIT research found that 95% of enterprise AI pilots produce zero measurable returns. The failure mode is almost always the same: the pilot proved the model could do the task. It did not prove the system could run reliably, integrate with existing workflows, handle edge cases, or be maintained when the implementation engineer left. The intelligence was in the engineer, not in the system." },
+    { t: "p", text: "A Forward Deployed Engineer's job is to close that gap — to sit inside a client's environment, understand the actual workflow (not the idealised version in the pitch deck), and build AI systems that survive contact with production. The role is distinct from Sales Engineer (pre-sale) and Solution Architect (design-only). FDEs write code and own outcomes." },
+    { t: "h2", text: "What FDEs actually do" },
+    { t: "p", text: "A typical FDE engagement: understand the client's existing data infrastructure, identify the highest-ROI AI automation target, build a RAG or agent system against real internal data, instrument it with evals and monitoring, hand off with runbooks and a regression test suite. The engagement ends when the system runs without the FDE in the loop." },
+    { t: "p", text: "The last part is the hardest and most valuable. Most vendors build the demo. FDEs build the handoff — the evals that tell a non-AI engineer whether the system is still working, the runbooks that explain what to do when it is not, the architecture decisions that make the system maintainable by a team that did not build it." },
+    { t: "h2", text: "The dependency gap" },
+    { t: "p", text: "The core problem FDEs solve has a name: the dependency gap. When intelligence lives in the engineer rather than the system, the company's AI capability walks out the door when the engineer does. The FDE's output is reusable systems — eval harnesses, prompt test suites, monitoring dashboards, agent architectures with explicit failure modes — that transfer the intelligence from person to product." },
+    { t: "p", text: "This is also why FDEs earn senior AI engineer compensation. The skill set is unusual: deep technical capability (builds production systems), domain fluency (navigates enterprise workflows and data), communication (explains AI failure modes to non-technical stakeholders), and the discipline to optimise for handoff rather than hero moments." },
+    { t: "h2", text: "How to build toward this role" },
+    { t: "p", text: "The FDE skill set maps directly to what the Systems Lab covers: RAG pipeline architecture, evaluation harness design, observability and monitoring, agent reliability patterns, and prompt change management. The differentiator is not just knowing these tools — it is building systems that communicate their own health and fail gracefully when they cannot." },
+    { t: "callout", v: "insight", text: "The FDE premium will persist as long as the dependency gap exists. That gap will exist as long as most AI practitioners optimise for demos rather than handoffs. Building for handoff is a learnable discipline — and currently a rare one." },
+    { t: "refs", items: [
+      { label: "MIT — Enterprise AI Adoption Study", url: "https://sloanreview.mit.edu" },
+    ]},
+  ],
+
+// ─── PROMPT REGRESSION TESTING ───────────────────────────────────────────────
+  "prompt-regression-testing": [
+    { t: "p", text: "A one-line change to a system prompt caused a 23% quality drop across thousands of daily interactions. It went undetected for 11 days. The root cause was not the change itself — it was the absence of a regression test suite that would have caught it on day one." },
+    { t: "p", text: "Your prompt is code. Code has tests. Your prompts should too." },
+    { t: "h2", text: "What a prompt test suite looks like" },
+    { t: "p", text: "A prompt test suite has three components: canonical inputs (representative real queries, including edge cases and adversarial inputs), expected output criteria (what a correct response must contain, avoid, and satisfy), and a scoring function (LLM-as-judge, regex match, or structural validation depending on task type)." },
+    { t: "p", text: "The suite does not need to be exhaustive. A 20-50 example test suite that covers the core task types, known failure modes, and regression cases from past incidents catches the majority of prompt regressions. The goal is signal speed — knowing within minutes of a prompt change whether quality held, not a comprehensive quality audit." },
+    { t: "h2", text: "LLM-as-judge scoring" },
+    { t: "p", text: "For open-ended tasks where regex or structural matching cannot capture quality, LLM-as-judge is the practical solution. Write a judge prompt that defines the scoring criteria explicitly — faithfulness to source, task completion, appropriate hedging, format compliance — and scores each test case on a 1-5 scale with reasoning." },
+    { t: "p", text: "The judge prompt is itself a piece of code that needs versioning. Run it on a calibration set with known good and bad outputs to establish that your judge agrees with human judgement before you trust it for automated regression. Judge reliability typically reaches 85-90% agreement with humans on well-defined tasks; for complex multi-criteria judgements it drops to 70-75%." },
+    { t: "h2", text: "Wiring into CI/CD" },
+    { t: "p", text: "The integration point is simple: prompt changes live in version control (a prompts/ directory, a YAML config file, or a prompt management system). The CI/CD pipeline runs the test suite against any changed prompt before merge. A score drop below a threshold blocks the PR." },
+    { t: "p", text: "The threshold matters. A 5% score drop on a 20-case suite might be noise. A 15% drop is a regression. Calibrate the threshold using historical data: take the last 10 prompt changes, run them through your suite retroactively, and set the threshold at the natural break between intentional improvements and accidental regressions." },
+    { t: "h2", text: "The serving model" },
+    { t: "p", text: "For production systems with high change velocity, the mature pattern is serving prompts via API rather than hardcoding them. This enables instant rollback (revert to previous version in the prompt store), A/B testing across prompt versions without code deploys, and audit logs that correlate quality metrics to exact prompt versions." },
+    { t: "p", text: "Prompt stores are now available as managed services (PromptLayer, LangSmith, Helicone) or as a simple internal key-value store if operational overhead is a concern. The architecture is straightforward — the discipline of actually building and maintaining the test suite is the hard part." },
+    { t: "callout", v: "tip", text: "Start with 20 canonical examples and a simple LLM-as-judge scorer. That is enough to catch 80% of regressions. The perfect test suite is the enemy of any test suite." },
+    { t: "refs", items: [
+      { label: "LangSmith Prompt Management", url: "https://docs.smith.langchain.com" },
+      { label: "PromptLayer — Prompt Versioning", url: "https://promptlayer.com" },
+    ]},
+  ],
+
+// ─── CLAUDEMD AS ARCHITECTURE ─────────────────────────────────────────────────
+  "claudemd-as-architecture": [
+    { t: "p", text: "Every production agent reads a context file at startup. Most engineers treat it like a README — a place to write instructions for humans maintaining the system. This is the most common and most consequential agent architecture mistake." },
+    { t: "p", text: "The context file is not documentation. It is the agent's working memory — persistent state that shapes every decision the agent makes before the first user message arrives. Treating it as architecture changes how you write it, version it, and maintain it." },
+    { t: "h2", text: "What the context file actually does" },
+    { t: "p", text: "At startup, the context file is injected into the agent's context window. From that point, it is indistinguishable from the agent's own knowledge — the agent reasons from it, references it, and is constrained by it. If the context file says 'always hedge uncertainty with specific confidence language', the agent does that. If it says 'never recommend a specific vendor', the agent avoids it. The file does not suggest behaviour — it determines it." },
+    { t: "p", text: "This means every line in the context file is a policy decision. Ambiguous lines produce ambiguous behaviour. Contradictory lines produce inconsistent behaviour that is extremely difficult to debug because the inconsistency appears in model output, not in code." },
+    { t: "h2", text: "The four things the context file should define" },
+    { t: "list", items: [
+      "Working memory: what the agent knows about the current environment — tools available, constraints, recent state that does not fit in conversation history",
+      "Behavioural policies: explicit rules for how to handle ambiguous situations, failure modes, and edge cases",
+      "Identity and scope: what the agent is, what it is not, and what it should refuse to do",
+      "Handoff protocols: how the agent should escalate, route, or terminate when it reaches the boundary of its capability",
+    ]},
+    { t: "h2", text: "Versioning and testing" },
+    { t: "p", text: "If a change to your context file changes agent behaviour — and it will — that change needs to be tested the same way a code change is tested. This means prompt regression suites that include context-file-specific test cases: does the agent still respect the policy after this edit? Does the new instruction conflict with an existing one?" },
+    { t: "p", text: "The second question is the harder one. Context files accumulate over time. New instructions are added without auditing for conflicts with existing ones. The result is a context file that contains contradictory policies that the model resolves unpredictably. Regular audits — treating the context file like a codebase review, not a document review — prevent this." },
+    { t: "h2", text: "The multi-agent implication" },
+    { t: "p", text: "In multi-agent systems, each agent has its own context file. The architecture question is: what is shared across context files and what is agent-specific? Shared policies (safety constraints, output format requirements, escalation thresholds) should be maintained in a single source of truth and included by reference. Agent-specific state (tool access, domain knowledge, scope) belongs in the individual file. Duplicating shared policies across agent context files means policy changes require touching every agent — a maintenance failure that eventually produces policy drift." },
+    { t: "callout", v: "insight", text: "The test of whether you are treating the context file as architecture: does it have a changelog, a review process, and a test suite? If it is edited informally and changes are described as 'minor prompt tweaks', it is still documentation. Minor prompt tweaks are how 23% quality drops go undetected for 11 days." },
+    { t: "refs", items: [
+      { label: "Anthropic — System Prompt Engineering", url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts" },
+    ]},
+  ],
+
+// ─── HOOKS VS LLM SAFETY ──────────────────────────────────────────────────────
+  "hooks-vs-llm-safety": [
+    { t: "p", text: "When something happens in your agent — a tool is called, a response is generated, an external message arrives — you have two ways to inspect and potentially modify it: a deterministic hook or an LLM-based classifier. Choosing wrong adds latency, costs money, or lets bad outputs through. Choosing right is a systems design decision, not a preference." },
+    { t: "h2", text: "What hooks are" },
+    { t: "p", text: "Hooks are deterministic code that executes at specific points in the agent lifecycle. Pre-tool hooks fire before a tool is called — you can inspect the tool name and arguments and block or modify the call. Post-model hooks fire after the model generates output — you can inspect the response and reject, modify, or log it. Input hooks fire on every incoming message before the model sees it." },
+    { t: "p", text: "Hooks are fast (microseconds), predictable (same input always produces same output), and auditable (you can log exactly what was blocked and why). Their weakness: they operate on patterns, not meaning. A hook can block any response containing a competitor's name. It cannot understand whether a response is actually harmful in context." },
+    { t: "h2", text: "What LLM classifiers are" },
+    { t: "p", text: "An LLM-based safety classifier is a separate model call that evaluates a piece of content against safety criteria. It can understand context, nuance, and intent in ways a rule-based hook cannot. It catches adversarial inputs that are specifically designed to evade pattern matching. It handles novel threat vectors that were not anticipated when the hooks were written." },
+    { t: "p", text: "LLM classifiers add 100-500ms of latency per check and cost money per call. They fail probabilistically — a well-crafted adversarial input can still fool an LLM classifier. They are harder to audit: when a classifier blocks something, explaining exactly why in deterministic terms is difficult." },
+    { t: "h2", text: "The layered architecture" },
+    { t: "list", items: [
+      "Layer 1 — Input hooks: fast pattern matching on incoming messages. Block known bad patterns (prompt injection templates, PII regexes, known jailbreak prefixes) before the model sees them. Cost: ~0ms.",
+      "Layer 2 — LLM input classifier: semantic safety check on inputs that passed layer 1. Catches novel attacks, contextual violations, subtle policy breaches. Cost: 100-200ms, $0.001-0.01 per check.",
+      "Layer 3 — Output hooks: structural validation on model responses. Format compliance, length limits, forbidden content patterns. Cost: ~0ms.",
+      "Layer 4 — LLM output classifier: faithfulness and safety check on responses before they reach the user. Catches hallucination, policy violations in generated content. Use on a sampled basis (1-10%) or for high-stakes responses only.",
+    ]},
+    { t: "h2", text: "The design decision" },
+    { t: "p", text: "The right architecture depends on your threat model and latency budget. If your primary risk is known bad patterns (competitor names, PII categories, known injection templates), hooks handle this at zero latency cost. If your risk is adversarial users actively probing for policy violations, you need LLM classifiers on the input path. If you serve high-stakes outputs (medical, legal, financial), LLM output classification on 100% of responses may be justified despite the cost." },
+    { t: "callout", v: "warning", text: "A common mistake: replacing deterministic hooks entirely with LLM classifiers because 'the LLM is smarter'. The LLM is smarter on hard cases. On easy cases (block any message mentioning a banned keyword), hooks are faster, cheaper, and more auditable. Use each layer for what it is actually good at." },
+    { t: "refs", items: [
+      { label: "Anthropic — Guardrails Documentation", url: "https://docs.anthropic.com" },
+      { label: "LlamaIndex — Guardrails Integration", url: "https://docs.llamaindex.ai" },
+    ]},
+  ],
+
+// ─── CONTEXT ISOLATION MULTIAGENT ────────────────────────────────────────────
+  "context-isolation-multiagent": [
+    { t: "p", text: "The most common multi-agent failure mode does not look like a bug. It looks like inconsistent, hard-to-reproduce behaviour where agents make decisions that seem correct in isolation but are wrong in the context of the overall task. The root cause is almost always context contamination." },
+    { t: "h2", text: "What context contamination is" },
+    { t: "p", text: "In a multi-agent system, each agent has a context window. Context contamination occurs when content from one agent's working context — intermediate reasoning, tool outputs, partial results — leaks into another agent's context in ways that were not intended by the architecture. The contaminated agent then reasons from that content as if it were ground truth." },
+    { t: "p", text: "A concrete example: an orchestrator agent delegates a research subtask to a worker. The worker returns its full reasoning chain along with the result. The orchestrator includes this reasoning chain in the next worker's context as 'background'. The second worker now treats the first worker's unverified intermediate reasoning as established fact. This propagates errors across the system in ways that are extremely difficult to debug." },
+    { t: "h2", text: "The three isolation boundaries" },
+    { t: "list", items: [
+      "Orchestrator isolation: the orchestrator's context should contain task state and routing logic, not worker reasoning. Workers return structured results, not raw thoughts. The orchestrator synthesises results; it does not inherit reasoning.",
+      "Worker isolation: each worker spawned for a subtask gets a clean context containing only: the task description, necessary background from the shared knowledge store, and relevant tool schemas. Prior worker outputs are summarised, not passed verbatim.",
+      "Shared state isolation: facts that need to persist across agents live in an explicit shared state object with defined read/write semantics — not in free-form context passage. Any agent can read from shared state; only designated agents can write to it.",
+    ]},
+    { t: "h2", text: "Forked vs shared context" },
+    { t: "p", text: "Two patterns for passing context between agents: forking (the receiving agent gets a copy of the sender's context at fork time, then works independently) and shared (multiple agents read from and write to a common context store). Forked context prevents contamination but loses the ability to share live updates. Shared context enables coordination but requires explicit conflict resolution when multiple agents write." },
+    { t: "p", text: "The default should be forked context with explicit shared state for coordination data. Most multi-agent systems do not need live context sharing between workers — they need workers to see the same initial state, work independently, and report structured results back to the orchestrator." },
+    { t: "h2", text: "Preventing infinite loops" },
+    { t: "p", text: "Context isolation also prevents the agent equivalent of a stack overflow: infinite delegation loops, where agent A delegates to agent B which delegates back to agent A. Prevention requires explicit loop detection in the orchestrator (track delegation depth and abort above a threshold) and clear scope boundaries in each agent's context file (what this agent can and cannot delegate)." },
+    { t: "p", text: "Set a maximum delegation depth (typically 3-4 levels) enforced by the orchestrator. Log every delegation with the full agent path. When a loop is detected, return an explicit failure to the user rather than silently spinning — silent spinning is how agent systems consume 100x their token budget without producing output." },
+    { t: "callout", v: "insight", text: "Clean context architecture is boring. It requires discipline — structured result formats, explicit shared state, delegation depth limits — that adds implementation overhead before you see any benefit. The benefit arrives when your system is in production and debugging a six-agent trace. Systems with clean context boundaries are debuggable. Systems without them are not." },
+    { t: "refs", items: [
+      { label: "Anthropic — Multi-Agent Systems", url: "https://docs.anthropic.com/en/docs/build-with-claude/agents" },
+    ]},
+  ],
+
+
 };
