@@ -11602,7 +11602,7 @@ function ABTestingForAI({ onNavigate }) {
       <div className="flex gap-1 border-b border-zinc-800">
         {[["strategies", "Testing Strategies"], ["problems", "Why Classic A/B Breaks"], ["decision", "Decision Guide"]].map(([id, label]) => (
           <button key={id} onClick={() => setActiveTab(id)}
-            className={}>
+            className={`px-3 py-2 text-xs font-medium transition-colors border-b-2 -mb-px ${activeTab === id ? "border-blue-500 text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}>
             {label}
           </button>
         ))}
