@@ -449,7 +449,6 @@ const ALL_TABS = [
   { id: "concepts",    label: "Concepts",    group: "LEARN",  audience: "All levels" },
   { id: "flows",       label: "Diagrams",    group: "LEARN",  audience: "All levels" },
   { id: "groundtruth", label: "Ground Truth",group: "LEARN",  audience: "All levels" },
-  { id: "consult",     label: "Search",      group: "LEARN",  audience: "All levels" },
   { id: "lab",         label: "RAG Lab",     group: "BUILD",  audience: "Engineers" },
   { id: "agents",      label: "Agents",      group: "BUILD",  audience: "Engineers" },
   { id: "playground",  label: "Playground",  group: "BUILD",  audience: "All levels" },
@@ -1169,7 +1168,6 @@ export default function App() {
       { id: "concepts",    label: "Concepts",    count: 4,  audience: "All levels" },
       { id: "flows",       label: "Flows",       count: 14, audience: "All levels" },
       { id: "groundtruth", label: "Ground Truth",           audience: "All levels" },
-      { id: "consult",     label: "Search",                 audience: "All levels" },
     ]},
     { label: "BUILD", color: "#3b82f6", items: [
       { id: "lab",        label: "RAG Lab",    count: 6,  audience: "Engineers" },

@@ -2513,41 +2513,76 @@ const FLOW_TABS = [
     reflection: "Your agent forgets user preferences after each session. Which memory type is missing — and how would you implement it?" },
 ];
 
+const FLOW_GROUPS = [
+  { label: "ARCHITECTURE", ids: ["transformer", "ctx", "inference-stack"] },
+  { label: "RETRIEVAL",    ids: ["rag", "ragarch", "prodrag", "graphrag"] },
+  { label: "AGENTS",       ids: ["agent", "agent-memory"] },
+  { label: "TRAINING",     ids: ["finetuning", "rlhf-pipeline"] },
+  { label: "SAFETY & OPS", ids: ["guardrail", "eval-pipeline", "voiceai"] },
+];
+
 export default function FlowsApp({ onNavigate }) {
   const [activeTab, setActiveTab] = useState("rag");
   const tab = FLOW_TABS.find(t => t.id === activeTab);
   const Component = tab.component;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+    <div className="flex h-full min-h-0">
       <style>{CSS}</style>
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-black text-white tracking-tight">System Flows</h1>
-        <p className="text-sm text-zinc-400">Watch AI systems move. Every animation teaches causality — structure, failure, tradeoff, feedback.</p>
+
+      {/* Sidebar */}
+      <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
+        {FLOW_GROUPS.map(group => (
+          <div key={group.label} className="mb-3">
+            <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{group.label}</div>
+            {group.ids.map(id => {
+              const t = FLOW_TABS.find(f => f.id === id);
+              if (!t) return null;
+              const active = activeTab === id;
+              return (
+                <button key={id} onClick={() => setActiveTab(id)}
+                  className={`w-full text-left px-4 py-2 text-xs transition-all flex items-center justify-between gap-2 ${active ? "border-l-2 border-blue-500 bg-zinc-800 text-white" : "border-l-2 border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"}`}>
+                  <span className="truncate">{t.label}</span>
+                  <span className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded font-mono ${active ? "bg-blue-900/60 text-blue-300" : "bg-zinc-800 text-zinc-600"}`}>{t.tag}</span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
-      <div className="flex gap-2 flex-wrap justify-center">
+      {/* Mobile horizontal strip */}
+      <div className="sm:hidden fixed bottom-16 left-0 right-0 z-10 bg-zinc-950/95 border-t border-zinc-800 px-3 py-2 overflow-x-auto flex gap-2">
         {FLOW_TABS.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2 ${activeTab === t.id ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-            <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${activeTab === t.id ? "bg-zinc-200 text-zinc-800" : "bg-zinc-700 text-zinc-400"}`}>{t.tag}</span>
-            {t.label}
+            className={`shrink-0 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wide transition-all ${activeTab === t.id ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-400"}`}>
+            {t.tag}
           </button>
         ))}
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3">
-        <p className="text-sm text-zinc-400">{tab.desc}</p>
-      </div>
-
-      <Component key={activeTab} onNavigate={onNavigate} />
-
-      {tab?.reflection && (
-        <div className="mt-4 rounded-xl border border-indigo-800/40 bg-indigo-950/20 p-4">
-          <p className="text-xs font-bold text-indigo-400 uppercase tracking-wide mb-1">Reflect</p>
-          <p className="text-sm text-zinc-300">{tab.reflection}</p>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        <div>
+          <h2 className="text-xl font-black text-white tracking-tight">{tab.label}</h2>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-900/40 text-blue-400 uppercase">{tab.tag}</span>
+          </div>
         </div>
-      )}
+
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3">
+          <p className="text-sm text-zinc-400">{tab.desc}</p>
+        </div>
+
+        <Component key={activeTab} onNavigate={onNavigate} />
+
+        {tab?.reflection && (
+          <div className="rounded-xl border border-indigo-800/40 bg-indigo-950/20 p-4">
+            <p className="text-xs font-bold text-indigo-400 uppercase tracking-wide mb-1">Reflect</p>
+            <p className="text-sm text-zinc-300">{tab.reflection}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
