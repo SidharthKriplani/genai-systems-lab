@@ -1000,7 +1000,7 @@ export default function App() {
     });
   }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileNavGroup, setMobileNavGroup] = useState(null);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
@@ -1468,14 +1468,16 @@ export default function App() {
       </aside>
 
       {/* ── MAIN COLUMN ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 pb-16 lg:pb-0">
+      <div className="flex-1 flex flex-col min-w-0">
 
       <header role="banner" className="border-b border-zinc-800">
         {/* Row 1: Logo + Search + Utilities */}
         <div className="px-4 py-2 flex items-center gap-3 max-w-7xl mx-auto">
-          <button onClick={() => navigate("home")} className="flex lg:hidden items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
-            <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center text-xs font-bold text-white">G</div>
-            <span className="hidden sm:block text-sm font-bold tracking-wide text-white">GenAI Lab</span>
+          {/* Mobile: hamburger opens left drawer */}
+          <button onClick={() => setMobileDrawerOpen(true)} className="flex lg:hidden items-center gap-2 hover:opacity-80 transition-opacity shrink-0" aria-label="Open navigation">
+            <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center shrink-0">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="2" y1="3.5" x2="12" y2="3.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/><line x1="2" y1="7" x2="12" y2="7" stroke="white" strokeWidth="1.5" strokeLinecap="round"/><line x1="2" y1="10.5" x2="12" y2="10.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            </div>
           </button>
           {/* Search bar — mobile only; desktop has sidebar search */}
           <button onClick={() => setSearchOpen(true)}
@@ -1913,75 +1915,60 @@ export default function App() {
           ))}
         </div>
       )}
-      {/* ── MOBILE BOTTOM NAV (mobile only) ─────────────────────────── */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30" style={{ paddingBottom: "env(safe-area-inset-bottom)", background: "rgba(9,9,11,0.97)", backdropFilter: "blur(12px)", borderTop: "1px solid #27272a" }}>
-        {/* Slide-up tray */}
-        {mobileNavGroup && (
-          <div className="border-b border-zinc-800 bg-zinc-900/80 px-3 py-2.5">
-            <div className="text-[9px] font-bold uppercase tracking-widest px-1 pb-2" style={{ color: (NAV_GROUPS.find(g => g.label === mobileNavGroup)?.color || "#fff") + "bb" }}>{mobileNavGroup}</div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {[...NAV_GROUPS.find(g => g.label === mobileNavGroup)?.items || [], ...(mobileNavGroup === "GROW" ? [{ id: "progress", label: "My Progress" }] : [])].map(item => (
-                <button key={item.id} onClick={() => { navigate(item.id); setMobileNavGroup(null); }}
-                  className="text-left px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all"
-                  style={topView === item.id
-                    ? { background: (NAV_GROUPS.find(g => g.label === mobileNavGroup)?.color || "#6366f1") + "22", color: NAV_GROUPS.find(g => g.label === mobileNavGroup)?.color || "#6366f1", border: "1px solid " + (NAV_GROUPS.find(g => g.label === mobileNavGroup)?.color || "#6366f1") + "44" }
-                    : { background: "#18181b", color: "#a1a1aa", border: "1px solid #27272a" }}>
-                  {item.label}
-                  {visited.has(item.id) && topView !== item.id && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-70 shrink-0" />}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {/* 3 group buttons */}
-        <div className="flex">
-          {[
-            { label: "LABS", icon: (
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M6 2v5L3 14a1 1 0 00.9 1.5h10.2A1 1 0 0015 14L12 7V2" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-                <path d="M6 2h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                <circle cx="8" cy="12" r="1" fill="currentColor"/>
-              </svg>
-            )},
-            { label: "KNOWLEDGE", icon: (
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M9 2L2 6l7 4 7-4-7-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-                <path d="M2 10l7 4 7-4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-              </svg>
-            )},
-            { label: "GROW", icon: (
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M3 15c2-4 4-6 6-6s4 2 6-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                <path d="M13 5h2v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )},
-          ].map(({ label: group, icon }) => {
-            const grp = NAV_GROUPS.find(g => g.label === group);
-            const color = grp?.color || "#6366f1";
-            const isOpen = mobileNavGroup === group;
-            const hasCurrent = grp?.items.some(i => i.id === topView) || (group === "GROW" && topView === "progress");
-            const active = isOpen || hasCurrent;
-            return (
-              <button key={group} onClick={() => setMobileNavGroup(isOpen ? null : group)}
-                className="flex-1 flex flex-col items-center gap-1 transition-all relative"
-                style={{ paddingTop: 10, paddingBottom: 10 }}>
-                {/* Top accent line */}
-                <span className="absolute top-0 left-1/4 right-1/4 h-0.5 rounded-full transition-all"
-                  style={{ background: active ? color : "transparent" }} />
-                {/* Icon container */}
-                <span className="flex items-center justify-center w-9 h-7 rounded-xl transition-all"
-                  style={{ background: isOpen ? color + "22" : active ? color + "15" : "transparent", color: active ? color : "#52525b" }}>
-                  {icon}
-                </span>
-                <span className="text-[10px] font-bold tracking-wider transition-all"
-                  style={{ color: active ? color : "#52525b" }}>
-                  {group}
-                </span>
+      {/* ── MOBILE NAV DRAWER ────────────────────────────────────────── */}
+      {mobileDrawerOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileDrawerOpen(false)} />
+          {/* Drawer panel */}
+          <div className="relative flex flex-col w-72 max-w-[85vw] h-full overflow-y-auto"
+            style={{ background: "linear-gradient(180deg, #111113 0%, #0a0a0c 100%)", borderRight: "1px solid #27272a" }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 pt-5 pb-3">
+              <button onClick={() => { navigate("home"); setMobileDrawerOpen(false); }} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+                <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center text-sm font-black text-white shrink-0">G</div>
+                <div className="text-left">
+                  <div className="text-sm font-black text-white tracking-tight leading-none">GenAI Lab</div>
+                  <div className="text-[10px] text-zinc-400 mt-0.5">Production AI systems</div>
+                </div>
               </button>
-            );
-          })}
+              <button onClick={() => setMobileDrawerOpen(false)} className="p-1.5 text-zinc-400 hover:text-white transition-colors" aria-label="Close navigation">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+            <div className="h-px mx-4 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
+            {/* Nav sections */}
+            {NAV_GROUPS.map(grp => (
+              <div key={grp.id} className="px-3 mb-3">
+                <div className="text-[9px] font-bold uppercase tracking-widest px-2 py-1.5" style={{ color: grp.color + "99" }}>{grp.label}</div>
+                {[...grp.items, ...(grp.label === "GROW" ? [{ id: "progress", label: "My Progress" }] : [])].map(item => {
+                  const active = topView === item.id;
+                  return (
+                    <button key={item.id} onClick={() => { navigate(item.id); setMobileDrawerOpen(false); }}
+                      className="w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-all mb-0.5"
+                      style={active
+                        ? { background: grp.color + "20", color: grp.color, boxShadow: "inset 3px 0 0 " + grp.color }
+                        : { color: "#d4d4d8" }}>
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0 transition-all"
+                        style={{ background: active ? grp.color : visited.has(item.id) ? "rgba(52,211,153,0.6)" : "transparent", border: active || visited.has(item.id) ? "none" : "1px solid #3f3f46" }} />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+            <div className="h-px mx-4 my-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
+            {/* Search shortcut */}
+            <button onClick={() => { setSearchOpen(true); setMobileDrawerOpen(false); }}
+              className="mx-3 mb-4 flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all"
+              style={{ background: "#18181b", border: "1px solid #27272a", color: "#a1a1aa" }}>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5.5" cy="5.5" r="3.5" stroke="currentColor" strokeWidth="1.3"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+              Search modules…
+              <kbd className="ml-auto text-[9px] border border-zinc-700 rounded px-1 font-mono text-zinc-500">⌘K</kbd>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       </div>{/* end main column */}
     </div>
   );
