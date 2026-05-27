@@ -288,13 +288,25 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 - ~~`deploy`, `buildthis`, `abtesting-ai` in nav~~ → cut from SYSTEMS_MODULES registry (components kept, just removed from nav)
 - ~~`quantization` Methods reference table~~ → cut, module now shows Calculator only
 
+**Fixed in sprint 8 (May 2026):**
+- ~~RAG Lab mobile layout broken~~ → `App.jsx`: horizontal scroll pill strip on mobile (sidebar hidden below lg, scenario pills above content)
+- ~~Agent Lab / Systems Lab sidebar doesn't close on mobile~~ → `Agents.jsx` + `Systems.jsx`: `mobileSidebarOpen` state added; clicking a module collapses sidebar, back button (`← Agent Lab`) re-opens it
+- ~~Low-brightness mobile unreadable~~ → `index.css`: single `@media (max-width: 1023px)` rule shifts zinc-400/500/600/700/800 one stop brighter; zero JSX changes
+
 **Still open:**
 - `failures` module in Agent Lab is still a reference catalog (its 5 entries are now mirrored in agentcfg trigger logic, but the module itself remains). Low priority — keep as reference, ensure agentcfg is the primary discovery path.
 - Ask/Search tab identity crisis — label says "Ask", mechanic is keyword search. Needs LLM upgrade or demotion. (Audit 26)
 - 3 thin GT posts: `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` — need expansion to 8+ blocks.
 - Flows and Fluency tabs in PARKED.md — accessible but deprioritized.
+- Mobile UX audit never run systematically — sprint 8 fixes were reactive, not from a full audit pass.
 
 ## Session build log (May 2026)
+
+**Resolved this session (sprint 8):**
+- RAG Lab mobile: `App.jsx` outer `flex` → `flex flex-col lg:flex-row`; desktop sidebar `hidden lg:flex`; mobile horizontal scroll strip added (scenario pills, whitespace-nowrap, violet active state)
+- Agent Lab mobile: `mobileSidebarOpen` state (default `true`); `switchModule()` sets it `false`; sidebar `flex` / `hidden` conditional; back button `← Agent Lab` at top of content panel; right panel wrapped in outer div with `hidden`/`flex` toggle
+- Systems Lab mobile: same `mobileSidebarOpen` pattern as Agents; back button reads `{labTitle || "Systems Lab"}`
+- `index.css`: `@media (max-width: 1023px)` overrides zinc-400/500/600/700/800 CSS custom properties one stop brighter — entire app contrast lifted on mobile, zero JSX changes
 
 **Resolved this session (sprint 7):**
 - Tier A: `simulator` + `design` done screens → PrepLab forward pointer cards (violet gradient, ✓ badge, GT post links)

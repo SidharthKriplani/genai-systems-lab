@@ -1380,3 +1380,30 @@ Pyodide (wrong architecture), 5-zone nav (redundant), Supabase auth (premature),
 
 **Status:** Scan complete ✅. All 10 findings logged in IDEAS.md cross-repo cluster.
 
+---
+
+## Audit 31 — Mobile UX Sprint Review (May 2026, Sprint 8)
+
+**Type:** Post-build integrity check + mobile UX reactive fixes
+**Date:** May 2026
+**Scope:** Three mobile layout/usability bugs identified from live usage on Android (Chrome mobile)
+
+### Issues found and fixed
+
+| # | Issue | File | Fix | Commit |
+|---|---|---|---|---|
+| 1 | **RAG Lab split layout broken on mobile** — `w-52` sidebar + `flex-1` content side-by-side on ~400px screen; content squished to ~150px and text truncated | `App.jsx` | Outer `flex` → `flex flex-col lg:flex-row`; sidebar `hidden lg:flex`; mobile horizontal scenario scroll strip added above content | `baec2d7` |
+| 2 | **Agent Lab / Systems Lab sidebar doesn't close after module selection** — `w-full` sidebar covered full viewport on mobile; clicking a module left sidebar visible with content peeking at ~10% width | `Agents.jsx`, `Systems.jsx` | `mobileSidebarOpen` state (default `true`); `switchModule()` calls `setMobileSidebarOpen(false)`; sidebar conditionally `flex`/`hidden` on mobile; back button `← [Lab Name]` added at top of content panel | `61a2c7b` |
+| 3 | **Dark theme unreadable at low phone brightness** — `text-zinc-400` on `bg-zinc-950` yields ~1.5:1 contrast at 30-40% brightness; labels, captions, secondary text effectively invisible | `index.css` | Single `@media (max-width: 1023px)` override: CSS custom properties `--color-zinc-400/500/600/700/800` shifted one stop brighter; Tailwind v4's variable-based utility classes pick up the override globally — zero JSX changes | `6d38c09` |
+
+### Mobile UX audit gap
+
+These were reactive fixes from user-reported issues, not from a systematic mobile audit. A dedicated mobile UX audit pass (Audit 32) should cover:
+- All remaining split-panel tabs on mobile (Explore, Concepts if applicable)
+- Touch target sizes (minimum 44×44px)
+- Horizontal overflow scan
+- PrepLab question layout on narrow screens
+- GT post reading experience on mobile
+
+**Status:** Sprint complete ✅. Mobile audit (Audit 32) remains open.
+
