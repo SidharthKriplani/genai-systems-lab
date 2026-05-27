@@ -12619,16 +12619,14 @@ Task description: ${taskDesc || "{task_description}"}
 Response to evaluate: {response}
 
 Score the response on the following criteria (each 1-${scale}):
-${filledCriteria.map((c, i) => `${i+1}. ${c}`).join('
-')}
+${filledCriteria.map((c, i) => `${i+1}. ${c}`).join('\n')}
 
 ${scale === "5" ? "Scale: 1=very poor, 2=poor, 3=acceptable, 4=good, 5=excellent" : scale === "3" ? "Scale: 1=fail, 2=partial, 3=pass" : "Scale: 0=fail, 1=pass"}
 
 Output valid JSON only:
 {
 ${filledCriteria.map((c, i) => `  "criterion_${i+1}_score": <score>,
-  "criterion_${i+1}_reason": "<one sentence>"`).join(',
-')},
+  "criterion_${i+1}_reason": "<one sentence>"`).join(',\n')},
   "overall_score": <average>,
   "summary": "<two sentence overall assessment>"
 }` : "";
