@@ -1517,18 +1517,32 @@ export default function App() {
       {topView === "lab" && (
         <div className="flex h-full min-h-0">
           {/* Sidebar: scenario list */}
-          <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
-            <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">SCENARIOS</div>
-            {ALL_SCENARIOS.map((s, i) => (
-              <button key={s.scenario_id} onClick={() => switchScenario(i)}
-                className={`w-full text-left px-4 py-3 text-xs transition-all ${i === scenarioIdx ? "border-l-2 border-violet-500 bg-zinc-800 text-white" : "border-l-2 border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"}`}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${i === scenarioIdx ? "bg-violet-900/60 text-violet-300" : "bg-zinc-800 text-zinc-600"}`}>{s.tag}</span>
-                  <span className="text-zinc-600 text-[9px]">#{i + 1}</span>
-                </div>
-                <div className="font-semibold leading-snug">{s.title}</div>
-              </button>
-            ))}
+          <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4"
+            style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
+            <div className="px-4 pb-2">
+              <div className="text-xs font-black text-white tracking-tight">RAG Lab</div>
+              <div className="text-[10px] text-zinc-500 mt-0.5">6 production failure modes</div>
+            </div>
+            <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
+            <div className="px-2 space-y-0.5">
+              {ALL_SCENARIOS.map((s, i) => {
+                const active = i === scenarioIdx;
+                return (
+                  <button key={s.scenario_id} onClick={() => switchScenario(i)}
+                    className={`w-full text-left px-2 py-2.5 rounded-lg text-xs transition-all duration-150 ${!active ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60" : "font-semibold"}`}
+                    style={active ? { background: "linear-gradient(90deg, rgba(139,92,246,0.22) 0%, rgba(139,92,246,0.06) 100%)", boxShadow: "inset 2px 0 0 #8b5cf6", color: "#ffffff" } : {}}>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                        style={active ? { background: "rgba(139,92,246,0.3)", color: "#c4b5fd" } : { background: "rgba(39,39,42,0.8)", color: "#52525b" }}>
+                        {s.tag}
+                      </span>
+                      <span className="text-zinc-700 text-[9px]">#{i + 1}</span>
+                    </div>
+                    <div className="leading-snug">{s.title}</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Right panel */}
@@ -1581,10 +1595,10 @@ export default function App() {
 
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-12 lg:col-span-3 space-y-4">
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-4">
+              <div className="rounded-xl p-4 space-y-4" style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.07) 0%, rgba(24,24,27,0.95) 100%)", border: "1px solid rgba(139,92,246,0.18)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-zinc-300 uppercase tracking-wide">System Config</span>
-                  <button onClick={reset} className="text-xs text-zinc-500 hover:text-white transition-colors">reset</button>
+                  <span className="text-xs font-black text-zinc-200 uppercase tracking-wider">System Config</span>
+                  <button onClick={reset} className="text-[10px] font-mono text-zinc-600 hover:text-zinc-300 transition-colors border border-zinc-800 hover:border-zinc-600 px-1.5 py-0.5 rounded">reset</button>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-zinc-500">Chunk size</label>
@@ -1625,9 +1639,10 @@ export default function App() {
                 )}
                 <button
                   onClick={evaluate}
-                  className="w-full py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold tracking-wide transition-all uppercase"
+                  className="w-full py-2.5 rounded-lg text-white text-xs font-black tracking-wider transition-all uppercase"
+                  style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)", boxShadow: "0 4px 16px rgba(99,102,241,0.4), 0 1px 0 rgba(255,255,255,0.1) inset" }}
                 >
-                  Evaluate Configuration
+                  Evaluate →
                 </button>
               </div>
 
@@ -1635,13 +1650,13 @@ export default function App() {
             </div>
 
             <div className="col-span-12 lg:col-span-5 space-y-4">
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-                <div className="text-xs text-zinc-500 mb-2 uppercase tracking-wide">User Query</div>
-                <p className="text-white font-semibold text-sm">{scenario.user_query}</p>
+              <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(24,24,27,0.9) 100%)", border: "1px solid rgba(59,130,246,0.18)", borderTop: "2px solid rgba(59,130,246,0.4)" }}>
+                <div className="text-[10px] font-mono font-bold text-blue-400 uppercase tracking-widest mb-2">User Query</div>
+                <p className="text-white font-semibold text-sm leading-snug">{scenario.user_query}</p>
               </div>
 
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
-                <div className="text-xs text-zinc-500 uppercase tracking-wide">Retrieved Evidence</div>
+              <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(160deg, rgba(39,39,42,0.5) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(63,63,70,0.8)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
+                <div className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Retrieved Evidence</div>
                 {result ? (
                   result.retrieved_chunks.length > 0
                     ? result.retrieved_chunks.map((chunk, i) => <ChunkCard key={chunk.id} chunk={chunk} index={i} />)
@@ -1651,9 +1666,9 @@ export default function App() {
                 )}
               </div>
 
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+              <div className="rounded-xl p-4" style={{ background: "linear-gradient(160deg, rgba(39,39,42,0.5) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(63,63,70,0.8)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs text-zinc-500 uppercase tracking-wide">Generated Answer</div>
+                  <div className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Generated Answer</div>
                   {result && (
                     <span className={`text-xs px-2 py-0.5 rounded border font-mono font-bold uppercase ${RISK_COLORS[result.metrics.risk_level]}`}>
                       {result.metrics.risk_level} risk
@@ -1669,8 +1684,8 @@ export default function App() {
 
             <div className="col-span-12 lg:col-span-4 space-y-4">
               {result && (
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
-                  <div className="text-xs text-zinc-500 uppercase tracking-wide">Metrics</div>
+                <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(160deg, rgba(39,39,42,0.5) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(63,63,70,0.8)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
+                  <div className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Metrics</div>
                   <MetricBar label="Groundedness" value={result.metrics.groundedness} />
                   <MetricBar label="Citation accuracy" value={result.metrics.citation_accuracy} />
                   <MetricBar label="Completeness" value={result.metrics.completeness} />
@@ -1696,30 +1711,30 @@ export default function App() {
                   {challengeMode && gradeResult && <ChallengeResult grade={gradeResult} scenarioTitle={scenario.title} scenario={scenario} onNavigate={navigateTo} />}
 
                   {result.failure_mode ? (
-                    <div className="rounded-xl border border-red-800 bg-red-950/30 p-4 space-y-2">
+                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(239,68,68,0.3)", borderTop: "2px solid rgba(239,68,68,0.6)", boxShadow: "0 4px 16px rgba(239,68,68,0.08)" }}>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-red-400 uppercase tracking-wide">Failure Mode</span>
-                        <span className="text-xs font-mono bg-red-900 text-red-300 px-2 py-0.5 rounded">{result.failure_mode}</span>
+                        <span className="text-[10px] font-mono font-black text-red-400 uppercase tracking-widest">Failure Mode</span>
+                        <span className="text-[10px] font-mono bg-red-900/60 text-red-300 px-2 py-0.5 rounded border border-red-800/50">{result.failure_mode}</span>
                       </div>
-                      <p className="text-xs text-zinc-300 leading-relaxed">{result.failure_explanation}</p>
+                      <p className="text-sm text-zinc-300 leading-relaxed">{result.failure_explanation}</p>
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 space-y-2">
-                      <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">No Critical Failure</div>
-                      <p className="text-xs text-zinc-300 leading-relaxed">{result.failure_explanation}</p>
+                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(34,197,94,0.3)", borderTop: "2px solid rgba(34,197,94,0.6)", boxShadow: "0 4px 16px rgba(34,197,94,0.06)" }}>
+                      <div className="text-[10px] font-mono font-black text-emerald-400 uppercase tracking-widest">No Critical Failure</div>
+                      <p className="text-sm text-zinc-300 leading-relaxed">{result.failure_explanation}</p>
                     </div>
                   )}
 
                   {result.suggested_fix && (
-                    <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 space-y-2">
-                      <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Suggested Fix</div>
-                      <p className="text-xs text-zinc-300 leading-relaxed">{result.suggested_fix}</p>
+                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "2px solid rgba(245,158,11,0.5)" }}>
+                      <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">Suggested Fix</div>
+                      <p className="text-sm text-zinc-300 leading-relaxed">{result.suggested_fix}</p>
                     </div>
                   )}
 
-                  <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-4 space-y-2">
-                    <div className="text-xs font-bold text-violet-400 uppercase tracking-wide">System Design Lesson</div>
-                    <p className="text-xs text-zinc-300 leading-relaxed">{result.system_design_lesson}</p>
+                  <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderTop: "2px solid rgba(139,92,246,0.55)", boxShadow: "0 4px 16px rgba(139,92,246,0.08)" }}>
+                    <div className="text-[10px] font-mono font-black text-violet-400 uppercase tracking-widest">System Design Lesson</div>
+                    <p className="text-sm text-zinc-300 leading-relaxed">{result.system_design_lesson}</p>
                   </div>
 
                   <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 flex items-center justify-between gap-3">

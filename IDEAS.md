@@ -10,7 +10,17 @@ Prioritized backlog of ideas not yet built. Organized by effort and impact. Upda
 
 Items actively being built in the current or most recent session. Move here when you start, move to Tier 1 (struck through) when done.
 
-*Nothing in progress — pick from Tier 1 below.*
+**UI Polish Sprint (May 2026)** — premium UI pass in progress. Completed: Inter font, hero glow + gradient headline, door cards with full gradients/shadows, stats with gradient text, testimonials with colored borders, RAG Lab sidebar/config/results, GT browser cards + header + filter pills, Systems/Agents right-panel breathing room, GT reading experience (body 15px/1.8lh, h2/h3 upgraded, quote border uses post color).
+
+## 🎯 Next Polish Items (do in order)
+
+- **Consistent module headers** (Tier 1) — every module in modules.jsx renders its own ad-hoc title block. Need a standard: title, group tag, difficulty badge, estimated time. Build a `ModuleHeader` component in modules.jsx, apply to top 10 most-visited modules first.
+- **Explore tab module cards** (Tier 1) — 23 modules in a flat grid. Apply same card treatment as Home door cards: colored top border by group, hover lift, gradient bg. Change is in Explore.jsx.
+- **PrepLab question experience** (Tier 1) — question card, correct/wrong states, progress indicator all functional but visually flat. The moment of answering should feel satisfying — green flash for correct, explanation card with depth, progress bar that feels earned.
+- **Loading/skeleton states** (Tier 2) — Suspense fallback is four gray divs. Build a skeleton that matches the sidebar+content layout.
+- **Series cards depth in GT** (Tier 2) — series cards already have top accent line but background is flat. Apply same gradient card treatment.
+- **Mobile bottom nav tray content** (Tier 2) — the slide-up tray shows a 2-col grid of tabs but items have no visual hierarchy. Apply group-color treatment.
+- **RAG Lab HowTo block** (Tier 3) — the HowTo component at the top of RAG Lab is informational text. Could be replaced with a more visual onboarding strip (numbered steps with icons) that collapses after first visit.
 
 ---
 

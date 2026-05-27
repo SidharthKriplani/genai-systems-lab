@@ -950,13 +950,13 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-2">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest mb-3" style={{ background: "rgba(139,92,246,0.10)", border: "1px solid rgba(139,92,246,0.25)", color: "#a78bfa" }}>
             Read it. Then break it on the platform.
-          </p>
-          <h1 className="text-2xl font-black text-white mb-2">Ground Truth</h1>
-          <p className="text-sm text-zinc-400 leading-relaxed max-w-xl">
+          </div>
+          <h1 className="text-3xl font-black text-white mb-2 tracking-tight">Ground Truth</h1>
+          <p className="text-[15px] text-zinc-400 leading-relaxed max-w-xl">
             Production-depth writing on RAG, agents, evaluation, LLMOps, safety, and system design.
-            Every piece links directly to the lab module where you test what you just read.
+            Every piece links to the lab module where you test what you just read.
           </p>
         </div>
 
@@ -1028,12 +1028,11 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                         try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
                         setOpenPost(post);
                       }}
-                      className="text-left rounded-xl border border-violet-800/40 bg-violet-950/10 p-3.5 hover:border-violet-600/60 transition-all relative overflow-hidden">
-                      <div className="absolute top-0 left-0 right-0 h-[2px]"
-                        style={{ background: `linear-gradient(90deg, ${color}99, transparent)` }} />
-                      <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-1.5">{post.readMin} min</div>
-                      <p className="text-xs font-bold text-white leading-snug mb-1">{post.title}</p>
-                      <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-2">{post.desc}</p>
+                      className="text-left rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-150 relative overflow-hidden"
+                      style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(139,92,246,0.2)", borderTop: `2px solid ${color}88`, boxShadow: "0 4px 16px rgba(0,0,0,0.35)" }}>
+                      <div className="text-[9px] font-mono font-bold uppercase tracking-widest mb-1.5" style={{ color }}>{post.readMin} min · {post.category}</div>
+                      <p className="text-sm font-bold text-white leading-snug mb-1.5">{post.title}</p>
+                      <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{post.desc}</p>
                     </button>
                   );
                 })}
@@ -1083,11 +1082,17 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
               <button
                 key={c.id}
                 onClick={() => setFilter(c.id)}
-                className={`shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                  filter === c.id
-                    ? "bg-violet-600 text-white"
-                    : "bg-zinc-800 hover:bg-zinc-700 text-zinc-400"
-                }`}>
+                className="shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition-all duration-150"
+                style={filter === c.id ? {
+                  background: "linear-gradient(90deg, rgba(139,92,246,0.28) 0%, rgba(139,92,246,0.10) 100%)",
+                  boxShadow: "inset 2px 0 0 #8b5cf6",
+                  color: "#e9d5ff",
+                  border: "1px solid rgba(139,92,246,0.25)",
+                } : {
+                  background: "rgba(39,39,42,0.6)",
+                  color: "#71717a",
+                  border: "1px solid rgba(63,63,70,0.6)",
+                }}>
                 {c.label}
                 <span className="ml-1.5 text-[9px] opacity-50">{count}</span>
               </button>
@@ -1111,11 +1116,16 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                   try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
                   setOpenPost(post);
                 }}
-                className={`rounded-xl border p-4 flex flex-col gap-3 relative overflow-hidden cursor-pointer transition-all hover:border-zinc-600 ${hasContent ? "border-zinc-700 bg-zinc-900/50" : "border-zinc-800 bg-zinc-900/30"}`}>
+                className="rounded-xl flex flex-col gap-3 relative overflow-hidden cursor-pointer transition-all duration-150 hover:-translate-y-0.5"
+                style={{
+                  padding: "16px",
+                  background: hasContent ? "linear-gradient(160deg, rgba(39,39,42,0.6) 0%, rgba(15,15,17,0.95) 100%)" : "rgba(15,15,17,0.6)",
+                  border: `1px solid ${hasContent ? "rgba(63,63,70,0.9)" : "rgba(39,39,42,0.8)"}`,
+                  borderTop: `2px solid ${color}${hasContent ? "55" : "22"}`,
+                  boxShadow: hasContent ? "0 2px 12px rgba(0,0,0,0.3)" : "none",
+                }}>
 
-                {/* Top accent line */}
-                <div className="absolute top-0 left-0 right-0 h-[2px]"
-                  style={{ background: `linear-gradient(90deg, ${color}99, transparent)` }} />
+                {/* Top accent line — hidden, replaced by borderTop above */}
 
                 {/* Category + read time + difficulty */}
                 <div className="flex items-center justify-between">
@@ -1134,8 +1144,8 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
 
                 {/* Title + desc */}
                 <div className="flex-1">
-                  <h3 className="text-xs font-bold text-white leading-snug mb-1.5">{post.title}</h3>
-                  <p className="text-[11px] text-zinc-500 leading-relaxed">{post.desc}</p>
+                  <h3 className="text-sm font-bold text-white leading-snug mb-1.5">{post.title}</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{post.desc}</p>
                 </div>
 
                 {/* Tags */}
