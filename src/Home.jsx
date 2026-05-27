@@ -481,20 +481,22 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden">
         {/* Radial glow behind hero */}
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 55% at 50% -5%, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0.03) 50%, transparent 100%)" }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 100% 70% at 50% -10%, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.08) 40%, transparent 75%)" }} />
+        {/* Secondary tighter core glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 35% at 50% 0%, rgba(139,92,246,0.15) 0%, transparent 70%)" }} />
       <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8 relative">
 
         {/* Headline */}
-        <div className="space-y-4">
-          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
+        <div className="space-y-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-widest" style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
+            Free · No login · Built for AI engineers &amp; PMs
+          </div>
+          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.05]">
             AI systems break<br className="hidden sm:block" /> in production.
             <br />
-            <span className="text-cyan-400">Learn exactly why.</span>
+            <span style={{ background: "linear-gradient(90deg, #22d3ee 0%, #818cf8 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Learn exactly why.</span>
           </h1>
-          <p className="text-xs font-mono text-zinc-500 tracking-widest uppercase">
-            For AI engineers · PMs · anyone building with LLMs
-          </p>
-          <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-zinc-300 max-w-xl mx-auto leading-relaxed">
             Simulate production failures, trace agent loops, and debug RAG pipelines that break in the real world.
             Every module is interactive and takes under 20 minutes.
           </p>
@@ -504,44 +506,39 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto text-left">
           <button
             onClick={() => { track("door_clicked", { door: "builder" }); onNavigate("lab"); }}
-            className="flex flex-col items-start p-4 rounded-xl border border-blue-900/40 bg-blue-950/20 hover:border-blue-700/50 hover:bg-blue-950/40 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-950/30 duration-150"
-            style={{ borderTop: "2px solid rgba(59,130,246,0.45)" }}>
-            <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-1.5">Engineer</span>
-            <span className="text-sm font-bold text-white mb-1.5">I'm building with LLMs</span>
-            <span className="text-[11px] text-zinc-400 leading-relaxed flex-1">Four labs: RAG, Agent, Eval, and LLM. Configure systems, watch them fail, understand why.</span>
-            <span className="mt-3 text-xs font-bold text-blue-400">Start with RAG Lab →</span>
+            className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
+            style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.12) 0%, rgba(15,23,42,0.8) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "2px solid rgba(59,130,246,0.7)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.05) inset" }}>
+            <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">Engineer</span>
+            <span className="text-sm font-bold text-white mb-2 leading-snug">I'm building with LLMs</span>
+            <span className="text-xs text-zinc-400 leading-relaxed flex-1">Four labs: RAG, Agent, Eval, and LLM. Configure systems, watch them fail, understand why.</span>
+            <span className="mt-4 text-xs font-bold text-blue-300 flex items-center gap-1">Start with RAG Lab <span className="text-blue-400">→</span></span>
           </button>
           <button
             onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
-            className="flex flex-col items-start p-4 rounded-xl border border-green-900/40 bg-green-950/20 hover:border-green-700/50 hover:bg-green-950/40 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-950/30 duration-150"
-            style={{ borderTop: "2px solid rgba(34,197,94,0.45)" }}>
-            <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">Interview Prep</span>
-            <span className="text-sm font-bold text-white mb-1.5">I'm prepping for interviews</span>
-            <span className="text-[11px] text-zinc-400 leading-relaxed flex-1">259+ questions across system design, evals, agents, RAG, and ML fundamentals.</span>
-            <span className="mt-3 text-xs font-bold text-green-400">Open Prep Lab →</span>
+            className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
+            style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.3) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(34,197,94,0.04) inset" }}>
+            <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-2">Interview Prep</span>
+            <span className="text-sm font-bold text-white mb-2 leading-snug">I'm prepping for interviews</span>
+            <span className="text-xs text-zinc-400 leading-relaxed flex-1">259+ questions across system design, evals, agents, RAG, and ML fundamentals.</span>
+            <span className="mt-4 text-xs font-bold text-green-300 flex items-center gap-1">Open Prep Lab <span className="text-green-400">→</span></span>
           </button>
           <button
             onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
-            className="flex flex-col items-start p-4 rounded-xl border border-violet-900/40 bg-violet-950/20 hover:border-violet-700/50 hover:bg-violet-950/40 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-violet-950/30 duration-150"
-            style={{ borderTop: "2px solid rgba(139,92,246,0.45)" }}>
-            <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-1.5">Career / PM</span>
-            <span className="text-sm font-bold text-white mb-1.5">I'm navigating my AI career</span>
-            <span className="text-[11px] text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, system design interviews — and a salary calculator with data by role and region.</span>
-            <span className="mt-3 text-xs font-bold text-violet-400">Try Salary Calculator →</span>
+            className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
+            style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.12) 0%, rgba(46,16,101,0.2) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderTop: "2px solid rgba(139,92,246,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.05) inset" }}>
+            <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-2">Career / PM</span>
+            <span className="text-sm font-bold text-white mb-2 leading-snug">I'm navigating my AI career</span>
+            <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, system design interviews — and a salary calculator with data by role and region.</span>
+            <span className="mt-4 text-xs font-bold text-violet-300 flex items-center gap-1">Try Salary Calculator <span className="text-violet-400">→</span></span>
           </button>
         </div>
 
-        {/* Trust badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-500 font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
-          Free · no login required · built for AI engineers &amp; PMs
-        </div>
-
         {/* Layer 3 positioning */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/60 border border-zinc-800/60 text-[11px] text-zinc-500">
-          <span className="text-amber-400 font-bold">Layer 3</span>
-          <span>RAG Lab · Agent Lab · Eval Lab · LLM Lab</span>
-          <span className="text-zinc-600">— the scarce skills, not the table stakes</span>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px]" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", color: "#d97706" }}>
+          <span className="font-bold text-amber-400">Layer 3</span>
+          <span className="text-amber-700/80">·</span>
+          <span className="text-amber-600/90">RAG Lab · Agent Lab · Eval Lab · LLM Lab</span>
+          <span className="text-amber-800">— scarce skills, not table stakes</span>
         </div>
 
         {/* Continue where you left off — shown only to returning users */}
@@ -610,9 +607,9 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
           {STATS.map((s) => {
             const inner = (
               <>
-                <div className="text-4xl sm:text-5xl font-black text-white tabular-nums"><CountUp target={s.target} suffix={s.suffix} /></div>
-                <div className={`text-xs font-semibold mt-1 ${s.tab ? "text-violet-400 underline underline-offset-2 decoration-dotted" : "text-zinc-300"}`}>{s.label}{s.tab ? " →" : ""}</div>
-                <div className="text-[10px] text-zinc-600 mt-0.5 font-mono">{s.sub}</div>
+                <div className="text-5xl sm:text-6xl font-black tabular-nums" style={{ background: "linear-gradient(180deg, #ffffff 40%, rgba(255,255,255,0.6) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}><CountUp target={s.target} suffix={s.suffix} /></div>
+                <div className={`text-xs font-bold mt-1.5 tracking-wide ${s.tab ? "text-violet-400" : "text-zinc-300"}`}>{s.label}{s.tab ? " →" : ""}</div>
+                <div className="text-[10px] text-zinc-600 mt-0.5 font-mono uppercase tracking-widest">{s.sub}</div>
               </>
             );
             return s.tab
@@ -644,14 +641,14 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
       <div className="max-w-4xl mx-auto px-4 pb-12">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { quote: "The RAG Lab is the best way I've found to build real intuition for why retrieval fails. You can read about stale docs all day — this makes you feel it.", role: "ML Engineer", company: "fintech startup" },
-            { quote: "I used the Start Here path to prep for my AI PM interview. The failure mode framing is exactly what interviewers want — 'what could go wrong and how would you know?'", role: "Senior PM", company: "SaaS company" },
-            { quote: "Finally something that assumes you're technical but doesn't assume you're already an expert. The agent loop simulator especially.", role: "Software Engineer", company: "transitioning to AI" },
+            { quote: "The RAG Lab is the best way I've found to build real intuition for why retrieval fails. You can read about stale docs all day — this makes you feel it.", role: "ML Engineer", company: "fintech startup", color: "#3b82f6" },
+            { quote: "I used the Start Here path to prep for my AI PM interview. The failure mode framing is exactly what interviewers want — 'what could go wrong and how would you know?'", role: "Senior PM", company: "SaaS company", color: "#22c55e" },
+            { quote: "Finally something that assumes you're technical but doesn't assume you're already an expert. The agent loop simulator especially.", role: "Software Engineer", company: "transitioning to AI", color: "#8b5cf6" },
           ].map((t, i) => (
-            <div key={i} className="rounded-xl border border-zinc-800/60 p-4 space-y-3"
-              style={{ background: "linear-gradient(160deg, rgba(39,39,42,0.5) 0%, rgba(24,24,27,0.8) 100%)", boxShadow: "0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)" }}>
-              <p className="text-xs text-zinc-300 leading-relaxed italic">"{t.quote}"</p>
-              <div className="text-[10px] font-mono text-zinc-500">— {t.role} · {t.company}</div>
+            <div key={i} className="rounded-xl p-5 space-y-3"
+              style={{ background: "linear-gradient(160deg, rgba(39,39,42,0.6) 0%, rgba(15,15,17,0.95) 100%)", border: `1px solid rgba(255,255,255,0.06)`, borderLeft: `3px solid ${t.color}`, boxShadow: `0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)` }}>
+              <p className="text-sm text-zinc-200 leading-relaxed">"{t.quote}"</p>
+              <div className="text-[10px] font-mono" style={{ color: t.color + "99" }}>— {t.role} · {t.company}</div>
             </div>
           ))}
         </div>
