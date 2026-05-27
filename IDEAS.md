@@ -56,15 +56,15 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 - ~~**Vector Database Engineering**~~ ✅ *built May 2026 — pgvector/Chroma/Pinecone/Weaviate/Qdrant comparison, HNSW/IVF index guide, hybrid search, decision wizard*
 - ~~**Prompt Injection Defense**~~ ✅ *built May 2026 — 5 attack patterns, 5 defense layers, hardening checklist*
 - ~~**Agent Memory Architecture**~~ ✅ *built May 2026 — 4 memory types, failure demos, production stack, decision layer*
-- **AI Safety Engineering** — Jailbreak patterns, adversarial prompts, red-teaming frameworks. Different from the existing AI Red Teaming module (which is strategy) — this is implementation. *Pending.*
+- ~~**AI Safety Engineering**~~ ✅ *built May 2026 — 6 attack patterns, 5 defense layers, hardening checklist*
 - ~~**MCP vs API vs Function Calling**~~ ✅ *built May 2026 — N×M problem, 5 decision scenarios, context window tax, comparison table*
 - ~~**A/B Testing for AI Systems**~~ ✅ *built May 2026 — 5 strategies, why classic breaks, decision guide*
-- **Query Refinement Lab** — HyDE, multi-query, decomposition, iterative semantic optimization. Extends RAG Lab from the query side. *Pending.*
-- **Prompt Change Management** — User edits system prompt, sees quality score shift, regression alert, A/B split, rollback decision. *Pending — companion to "Your Prompt Is Code" GT post.*
+- ~~**Query Refinement Lab**~~ ✅ *built May 2026 — 5 strategies, scenario lab, when-to-use guide*
+- ~~**Prompt Change Management**~~ ✅ *built May 2026 — version/score/rollback lab, CI/CD workflow, serving patterns*
 - **Agent Context Architecture** — Configure which layers your agent uses (persistent memory / skill injection / delegation / hooks), see cost/failure mode changes. *Pending — from ADK patterns cluster.*
 
 ### Systems modules (depth improvements)
-- **Evals Lab** — Add "write your own eval" builder: user defines metric, weights, test cases, sees score. Currently too passive. *Pending.*
+- ~~**Evals Lab**~~ ✅ *built May 2026 — Build Your Eval 4-step wizard, generates judge prompts, implementation checklist*
 - **Context Compaction** — Add live compaction simulator: user adjusts conversation length, sees token count, triggers compaction, sees output quality change. *Pending.*
 - **Agent Architecture** — Add multi-agent orchestration interactive (orchestrator dispatches to workers, see the message flow). Currently only single-agent. *Pending.*
 
@@ -80,7 +80,7 @@ An AI interviewer found that candidates who claimed to have built 2-3 RAG system
 - ~~**Tokenizer Comparison**~~ ✅ *built May 2026 — BPE/WordPiece/SentencePiece/tiktoken guide + live demo + cost calculator*
 - ~~**Hardware Reference**~~ ✅ *built May 2026 — GPU comparison table + VRAM calculator*
 - ~~**Cosine Similarity**~~ ✅ *built May 2026 — drag-vectors interactive*
-- **Explore grouping** — Apply DESIGN/BUILD/OPS group structure to Explore (23 modules, getting long). Currently flat list. *Pending — Tier 2.*
+- ~~**Explore grouping**~~ ✅ *built May 2026 — DESIGN/BUILD/OPS sections with border-l active state*
 
 ### PrepLab
 - ~~**Questions for uncovered modules**~~ ✅ *built May 2026 — 15 questions: pid-1–5, ama-1–4, lcp-1–3, tok-1–3*
@@ -91,9 +91,9 @@ An AI interviewer found that candidates who claimed to have built 2-3 RAG system
 
 The 5-layer framework (CLAUDE.md → Skills → Hooks → Subagents → Plugins) surfaces production patterns the lab doesn't teach as named concepts. The underlying ideas are tool-agnostic and interview-relevant.
 
-- **GT post: "The Agent Memory Layer — Why CLAUDE.md Is Architecture, Not Documentation"** — CLAUDE.md as a persistent context injection mechanism. Tool-agnostic. *Pending.*
-- **GT post: "Deterministic Guardrails: Hooks vs LLM-Based Safety"** — rule-based hooks vs probabilistic LLM guardrails. *Pending.*
-- **GT post: "Context Isolation in Multi-Agent Systems"** — main context stays clean, subagents with forked context, no-infinite-loops. *Pending.*
+- ~~**GT post: "The Agent Memory Layer"**~~ ✅ *built May 2026 — id: claudemd-as-architecture*
+- ~~**GT post: "Deterministic Guardrails: Hooks vs LLM-Based Safety"**~~ ✅ *built May 2026 — id: hooks-vs-llm-safety*
+- ~~**GT post: "Context Isolation in Multi-Agent Systems"**~~ ✅ *built May 2026 — id: context-isolation-multiagent*
 - ~~**Systems module: "Agent Context Architecture"**~~ → listed under Systems modules above as pending.
 
 ### AI PM career track (new cluster — from real user persona signal, May 2026)
@@ -119,7 +119,7 @@ A widely-shared post articulates the split between model-obsessed engineers (Typ
 
 A practitioner traced the full arc: DS peak during COVID → 90% demand drop + role fragmentation (MLE, DE, Analytics Engineer) → ChatGPT reset (0 to 10K+ GenAI listings in a year) → agentic surge (10,854% listing growth, 90K US postings). Core thesis: "what masses upskill into next depends on how much pressure a tech balance sheet can take." These numbers are real and the narrative is lived experience for most lab users. The lab has zero content contextualizing why the AI Engineer role exists structurally.
 
-- **GT post: "How Data Scientist Became AI Engineer: The Market Forces Behind Your Job Title"** — the full arc with real numbers: DS peak, fragmentation into MLE/DE/Analytics Engineer, ChatGPT as demand reset, agentic surge. Why understanding this history makes you better at predicting what to learn next. High resonance for anyone mid-career who lived this shift.
+- ~~**GT post: "How Data Scientist Became AI Engineer"**~~ ✅ *built May 2026 — id: ds-to-ai-engineer*: DS peak, fragmentation into MLE/DE/Analytics Engineer, ChatGPT as demand reset, agentic surge. Why understanding this history makes you better at predicting what to learn next. High resonance for anyone mid-career who lived this shift.
 - **GT post: "Role Fragmentation in AI: What DS Split Into and What Each Piece Pays"** — the structural split: what Analytics Engineer, ML Engineer, Data Engineer each own now, how compensation diverged, and where the generalist DS role still survives (and where it doesn't). Practical career navigation content.
 - **GT post: "The Next Fragmentation: What 'AI Engineer' Will Split Into by 2027"** — apply the same analytical lens forward. Inference Engineer, Eval Engineer, Agent Reliability Engineer emerging as distinct titles. Which specializations will command premium and which will commoditize. Opinion piece with data.
 - **Career module update: "Your Path: DS → MLOps → AI Engineer → What's Next"** — a career trajectory visualization showing the historical path and the current fork points. Interactive: user marks where they are, sees which Systems/Concepts modules close the gap to where they want to go.
@@ -142,10 +142,10 @@ A practitioner traced the full arc: DS peak during COVID → 90% demand drop + r
 - ~~**"Graceful Degradation"**~~ ✅ *built May 2026 — id: graceful-degradation*
 - ~~**"Monitoring That Predicts Problems, Not Reports Them"**~~ ✅ *built May 2026 — id: monitoring-that-predicts*
 - **"Prompt Regression Testing: How to Know When a Prompt Change Breaks Things"** — prompt test suite, metrics to track, wiring into CI/CD. Companion to "Your Prompt Is Code". *Pending.*
-- **"The N×M Problem and Why MCP Exists"** — architectural problem MCP solves, MCP vs function calling vs raw API. *Pending.*
+- ~~**"The N×M Problem and Why MCP Exists"**~~ ✅ *built May 2026 — id: nm-problem-mcp*
 - **"Why Classic A/B Testing Breaks for AI and What to Do Instead"** — interleaving, switchback, MAB, permanent holdouts. *Pending.*
 - **"The Query Is Never What the User Meant"** — HyDE, multi-query, decomposition, iterative semantic optimization. *Pending.*
-- **"The Forward Deployed Engineer: AI's Fastest-Growing Role Nobody's Training For"** — what FDE is, why it emerged, the dependency gap problem. *Pending.*
+- ~~**"The Forward Deployed Engineer"**~~ ✅ *built May 2026 — id: forward-deployed-engineer*
 - **"How Data Scientist Became AI Engineer: The Market Forces Behind Your Job Title"** — DS peak → fragmentation → ChatGPT reset → agentic surge. *Pending.*
 - **"Layer 3 Skills for Data Engineers: Vector DBs, Embedding Pipelines, and LLM Observability"** — companion to Three-Layer DE post, goes deeper on each Layer 3 skill. *Pending.*
 

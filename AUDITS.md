@@ -896,3 +896,46 @@ The structural upgrade documented in CLAUDE.md (three front doors, GT as knowled
 | 3 | Ask/Search tab relies on keyword search — needs embedding upgrade to serve as knowledge gateway | Consultation.jsx | ⚠️ Open — Tier 1 architectural item |
 
 **Status:** Sprint complete ✅
+
+---
+
+## Audit 24 — Build Sprint Review (May 2026, Session 4)
+
+**Type:** Post-build integrity check
+**Date:** May 2026
+**Scope:** Fourth build sprint — content depth, UI polish, eval tooling
+
+### What was built
+
+| Item | Type | Status |
+|---|---|---|
+| Concepts tab sidebar layout (FOUNDATION/APPLICATION/PRACTICE) | UX refactor | ✅ Shipped |
+| GT post: How Data Scientist Became AI Engineer | GT post | ✅ Shipped |
+| GT post: The Forward Deployed Engineer | GT post | ✅ Shipped |
+| GT post: Prompt Regression Testing | GT post | ✅ Shipped |
+| GT post: The Agent Memory Layer (CLAUDE.md as architecture) | GT post | ✅ Shipped |
+| GT post: Deterministic Guardrails — Hooks vs LLM Safety | GT post | ✅ Shipped |
+| GT post: Context Isolation in Multi-Agent Systems | GT post | ✅ Shipped |
+| Query Refinement Lab Systems module | Systems module | ✅ Shipped |
+| Prompt Change Management Systems module | Systems module | ✅ Shipped |
+| AI Safety Engineering Systems module | Systems module | ✅ Shipped |
+| 14 PrepLab questions (qr, pcm, ase clusters) | PrepLab | ✅ Shipped |
+| Explore: DESIGN/BUILD/OPS group structure | UX | ✅ Shipped |
+| Evals Lab: Build Your Eval 4-step wizard | Feature | ✅ Shipped |
+
+### Scale after sprint
+
+- GT posts: 222 (was 216)
+- Explore modules: 23 (unchanged)
+- Systems modules: 59 (was 56)
+- PrepLab questions: 273 (was 259)
+
+### Open findings
+
+| # | Finding | File | Status |
+|---|---|---|---|
+| 1 | `consult` tab still missing from SHORTCUT_TABS | App.jsx | ⚠️ Low priority — known |
+| 2 | Concepts tab gaps: KV Cache, Training Signal Math, Positional Encoding, LoRA | Concepts.jsx | ⚠️ Tier 1 additions |
+| 3 | Ask/Search tab relies on keyword search — needs embedding upgrade for knowledge gateway role | Consultation.jsx | ⚠️ Open — architectural |
+
+**Status:** Sprint complete ✅

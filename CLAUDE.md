@@ -24,7 +24,7 @@ Act as a product and engineering partner, not an assistant. That means:
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of May 2026: 56 Systems modules, 23 Explore modules, 259 PrepLab questions, 216 Ground Truth posts, 14 top-level tabs. Mobile bottom nav shipped (LEARN/BUILD/GROW bar).
+Scale as of May 2026: 59 Systems modules, 23 Explore modules, 273 PrepLab questions, 222 Ground Truth posts, 14 top-level tabs. Mobile bottom nav shipped (LEARN/BUILD/GROW bar).
 
 ---
 
@@ -280,7 +280,16 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Session build log (May 2026)
 
-**Resolved this session:**
+
+**Resolved this session (sprint 4):**
+- Concepts tab: replaced flex-wrap pill nav with sidebar layout (FOUNDATION/APPLICATION/PRACTICE groups)
+- 6 GT posts: ds-to-ai-engineer, forward-deployed-engineer, prompt-regression-testing, claudemd-as-architecture, hooks-vs-llm-safety, context-isolation-multiagent
+- 3 Systems modules: Query Refinement Lab (HyDE/multi-query/decomposition), Prompt Change Management (version/test/rollback), AI Safety Engineering (6 attack patterns, 5 defense layers, hardening checklist)
+- 14 PrepLab questions: qr-1–4 (Query Refinement), pcm-1–3 (Prompt Change Mgmt), ase-1–4 (AI Safety Engineering), + earlier session questions confirmed
+- Explore tab: DESIGN/BUILD/OPS group structure added to 23-module left panel
+- Evals Lab: "Build Your Eval" tab added — 4-step wizard generating LLM-as-judge prompts
+
+**Resolved previous sessions:**
 - D1: Quiz CTA pill added to GT post header (generateQuiz discoverability)
 - D2: PrepLab readMore links now deep-link to specific GT posts via postId
 - F2: Career door on Home.jsx routes to career tab, calls out Salary Calculator
