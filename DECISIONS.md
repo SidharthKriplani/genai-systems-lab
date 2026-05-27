@@ -212,3 +212,15 @@ A module being cut from nav means "doesn't earn its place in navigation" — not
 
 *Feature build history lives in LINEAGE.md — not duplicated here.*
 
+### Mobile layout — standard patterns (May 2026)
+
+These are the settled patterns for mobile layout. Apply consistently; do not invent new approaches.
+
+**Split-panel tabs (sidebar + content):** Use `mobileSidebarOpen` boolean state (default `true`). Sidebar: `${mobileSidebarOpen ? "flex" : "hidden"} flex-col w-full lg:flex lg:w-52 lg:shrink-0`. Right panel: `${mobileSidebarOpen ? "hidden" : "flex"} flex-col lg:flex flex-1 min-w-0`. Back button at top of right panel (visible `flex lg:hidden`). Selecting a module calls `setMobileSidebarOpen(false)`; exiting calls `setMobileSidebarOpen(true)`. Applied to: RAG Lab, Agent Lab, Systems Lab, PrepLab, Explore.
+
+**Horizontal scroll containers:** Any `overflow-x-auto` strip that clips on mobile gets a right-fade gradient overlay to signal scrollability: `<div className="absolute right-0 top-0 h-full w-10 pointer-events-none lg:hidden" style={{ background: "linear-gradient(to right, transparent, rgba(9,9,11,0.9))" }} />`. Wrap the scroll container in `relative`. Applied to: journey strip, SVG concept graph. This is the standard — apply to any new horizontal scroll strips.
+
+**Touch targets:** All interactive buttons must have minimum `py-2.5` vertical padding. `py-1` and `py-1.5` on tappable buttons are below the 44×44px WCAG minimum. Decorative chips (non-interactive labels) are exempt.
+
+**Contrast at low brightness:** Do not use `text-zinc-600` or `text-zinc-700` for any readable text. `text-zinc-500` is the minimum for secondary text. `text-zinc-400` is the minimum for primary body text. This is enforced globally via CSS custom property remap in `index.css` (see sprint 8).
+

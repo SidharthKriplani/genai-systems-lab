@@ -137,13 +137,13 @@ Full audit of Agent Lab (16), Eval Lab (18), LLM Lab (9) against RAG Lab standar
 
 These are the highest-ROI moves identified in the first-ever MVP/Weight + IP/Moat audit. They don't add new content — they make existing content work harder.
 
-- **Module endings: forward pointer** — Every module (Systems 57, Explore 25, Concepts 15, Playground 8) ends silently. Add a minimal ✓ done card at each module end with: one PrepLab question on this topic (by id), one GT post link (the most relevant). The RELATED_GT infrastructure already exists — the ending just needs to use it. This is the single highest-dropout moment in the product. *Flagged in Audits 14, 20, 26, 27 — still open. Zero new infrastructure required.*
+- ~~**Module endings: forward pointer**~~ ✅ *Done sprint 6/7 — ✓ done card with PrepLab + GT forward pointer added to RAG Lab, Concepts, Systems shell, Agent Lab done screens.* Add a minimal ✓ done card at each module end with: one PrepLab question on this topic (by id), one GT post link (the most relevant). The RELATED_GT infrastructure already exists — the ending just needs to use it. This is the single highest-dropout moment in the product. *Flagged in Audits 14, 20, 26, 27 — still open. Zero new infrastructure required.*
 
 - **Reference tables → decision engines** — 10-15 modules in Systems and Explore are comparison tables without user input. Per DECISIONS.md Section 4, these don't meet the interactive decision engine standard. Each should either: (a) add a configuration input + logic-derived outcome, or (b) move to a GT post. Start with the 5 lowest-effort conversions. *Audit 27 Finding 1.*
 
 - **Social proof overhaul** — 3 unnamed testimonials from "ML Engineer · fintech startup" are unconvincing. Replace with: (a) real LinkedIn screenshots with likes/comments as proof of resonance, (b) GitHub star count if significant, (c) named quotes with handles from real users. *Audit 27 Finding 2.*
 
-- **Stat sync** — Home.jsx door copy says "259+" PrepLab questions. Actual: 261. GT posts: 222. Systems: 57. Run a stat sync across Home.jsx, index.html, README.md. *Audit 25 Finding 2.*
+- ~~**Stat sync**~~ ✅ *Done sprint 6 — all stat counts synced across Home.jsx.* Actual: 261. GT posts: 222. Systems: 57. Run a stat sync across Home.jsx, index.html, README.md. *Audit 25 Finding 2.*
 
 - **Thin GT posts expansion** — `dpo-in-practice` (4 blocks), `llm-observability` (5 blocks), `instruction-tuning-datasets` (5 blocks). These are stubs, not posts. Each needs minimum 8 blocks, 1 callout, 1 refs section. *Audit 17 Finding 5, Audit 27 Finding 3.*
 
