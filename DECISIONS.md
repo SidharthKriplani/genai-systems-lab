@@ -20,6 +20,10 @@ The product is currently free, zero-backend, no login. This is a deliberate choi
 - User record (progress, subscription status) — Supabase or PlanetScale, not localStorage
 - Cross-device sync
 
+**Auth approach:** Supabase Auth or Firebase Auth work on static sites — no custom backend needed. Google OAuth, one JS import, free tier. This does NOT require rebuilding the app. It's an additive layer.
+
+**Internal pay gate markers:** `gated: true` flag added to PrepLab questions and JD Prep mode in the data. Invisible to users, present in code. When Stripe is wired, the gate activates — no structural change needed at that point.
+
 **This is the only decision that changes the zero-backend constraint.** Until this decision is made, the zero-backend rule stands. When the decision is made to monetize, the architecture rebuild is Tier 0 before any paid features.
 
 **Alternative paths considered:**

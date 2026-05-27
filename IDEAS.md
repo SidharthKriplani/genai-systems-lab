@@ -30,13 +30,29 @@ This is the single most consequential open decision. Everything below is affecte
 
 **Why not cohorts:** Requires facilitation. Wrong stage. Could be Tier 2 once product-market fit is confirmed.
 
-**The blocker:** Zero-backend constraint. Freemium requires auth (to gate PrepLab), payment processing (Stripe), and cross-device progress sync. This is the only architectural decision that changes everything downstream. When ready to monetize, this is the first decision to make — not a feature to add.
+**Auth approach when ready:** Supabase Auth or Firebase Auth — both work on static sites with no custom backend. Google OAuth, one JS import, free tier. Progress syncs to a real DB instead of localStorage. Not a massive lift (~1 weekend). Unlocks cross-device sync, persistent progress, future gating.
 
-**The "take my money" UI transformation** needed regardless of model:
-- First 60 seconds must convey transformation, not just content: "Use this for 4 weeks. Walk into any AI systems interview ready."
-- Progress must feel earned — not localStorage streaks but visible milestones with meaning
-- Social proof must be real — named engineers with handles, not "ML Engineer · fintech startup"
-- The product needs a point of view: it's not a tutorial platform, it's a production-failure simulator. That should be the first thing you see.
+**Internal pay gate markers:** Add `gated: true` flag to each PrepLab question and JD Prep mode in the data. Invisible to users. When Stripe is ready, wire the gate — the flag is already there. No UI change needed now.
+
+**The blocker for actual gating:** Stripe + Supabase Auth. Not a blocker for building toward it. Current state: everything stays free, markers get added, auth comes in a focused sprint when the decision is made.
+
+### "Take my money" experience sprint — separate from monetization
+
+This is about the **feel, look, and emotional resonance** of the product — independent of business model mechanics. The content already earns "take my money." The surface needs to catch up.
+
+What "take my money" products have that this doesn't yet:
+- **A personality** — Linear, Raycast, Vercel don't just look clean, they feel like they were made by someone obsessed. Every micro-detail signals care.
+- **An emotional entry point** — the first 10 seconds make you feel something. Currently the product is informative. It needs to be magnetic.
+- **Progression that feels earned** — visible sense of "I am becoming something here." Not localStorage streaks, but real milestones that mean something.
+- **Micro-details** — hover states, transitions, the finishing touches that make you feel the product was *completed*, not just built.
+- **A point of view** — "This is not a tutorial platform. This is a production-failure simulator." That should hit you in the first 5 seconds.
+
+Sprint items (in order of impact):
+1. **Hero/entry experience** — the first screen needs to be magnetic, not informative. One strong emotional hook, one clear action.
+2. **Lab entry screens** — each lab's landing should tell you what you'll be able to DO after, not what the lab contains.
+3. **Module endings** — ✓ done card with one PrepLab question and one GT post link. The learn loop must close.
+4. **Micro-interactions** — hover lifts, transition polish, the "someone cared about this" details throughout.
+5. **Progression visibility** — make streaks, milestones, and progress feel real and earned on screen.
 
 ---
 
