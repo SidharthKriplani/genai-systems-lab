@@ -2869,7 +2869,64 @@ function QuestionCard({ q, gaps = [] }) {
   );
 }
 
-function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo, animKey }) {
+function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo, animKey, onSelfGrade }) {
+  // Text questions: always show self-assess UI — keyword matching can't reliably grade open answers
+  if (q.type === "text") {
+    return (
+      <div key={animKey} style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.1) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(99,102,241,0.3)", borderTop: "2px solid rgba(99,102,241,0.6)", boxShadow: "0 4px 20px rgba(99,102,241,0.08)" }} className="rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <span style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)", color: "#a5b4fc" }} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold">
+            Open answer — self-assess
+          </span>
+        </div>
+        {q.keywords.length > 0 && (
+          <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)" }} className="rounded-lg px-4 py-3">
+            <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-2">Concepts to cover</p>
+            <div className="flex flex-wrap gap-1.5">
+              {q.keywords.map(k => (
+                <span key={k} style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)" }} className="text-xs text-indigo-300 px-2 py-0.5 rounded-full">{k}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="border-t border-zinc-800 pt-3">
+          <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-2">Model answer</p>
+          <p className="text-[13px] text-zinc-300 leading-relaxed">{q.explanation}</p>
+        </div>
+        {q.readMore && (
+          <button
+            onClick={() => {
+              if (q.readMore.postId && onNavigateTo) {
+                onNavigateTo({ tab: q.readMore.tab, postId: q.readMore.postId });
+              } else {
+                onNavigate && onNavigate(q.readMore.tab);
+              }
+            }}
+            className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
+          >
+            <span>Read more: {q.readMore.label}</span><span>→</span>
+          </button>
+        )}
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <button
+            onClick={() => { onSelfGrade && onSelfGrade(false); onNext(); }}
+            style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}
+            className="py-3 text-red-300 rounded-xl text-sm font-semibold hover:brightness-110 transition-all"
+          >
+            ✗ Missed it
+          </button>
+          <button
+            onClick={() => { onSelfGrade && onSelfGrade(true); onNext(); }}
+            style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }}
+            className="py-3 text-emerald-300 rounded-xl text-sm font-semibold hover:brightness-110 transition-all"
+          >
+            ✓ Got it
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const correctStyle = {
     background: "linear-gradient(160deg, rgba(16,185,129,0.1) 0%, rgba(15,15,17,0.95) 100%)",
     border: "1px solid rgba(16,185,129,0.3)",
@@ -2896,12 +2953,6 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
         <div style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }} className="rounded-lg px-4 py-2.5">
           <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-1">Correct answer</p>
           <p className="text-sm text-emerald-300 font-medium">{q.options[q.correct]}</p>
-        </div>
-      )}
-      {!isCorrect && q.type === "text" && q.keywords.length > 0 && (
-        <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)" }} className="rounded-lg px-4 py-2.5">
-          <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-1">Key concepts</p>
-          <p className="text-sm text-indigo-300">{q.keywords.slice(0, 5).join(" · ")}</p>
         </div>
       )}
       <div className="border-t border-zinc-800 pt-3">
@@ -3000,6 +3051,7 @@ function ExamMode({ onExit }) {
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [textOverrides, setTextOverrides] = useState({});
   const timerRef = useRef(null);
   const DM = { 15: 20, 30: 35, 60: 55 };
 
@@ -3021,18 +3073,31 @@ function ExamMode({ onExit }) {
   }, [config, finished]);
 
   function computeResults() {
-    const bt = {}; let tc = 0; const wrong = [];
+    const bt = {}; let tc = 0; const wrong = []; const textPending = [];
     for (const q of questions) {
       if (!bt[q.topic]) bt[q.topic] = { correct: 0, total: 0 };
+      if (q.type === "text") {
+        // Text questions: use override if available, else pending
+        if (textOverrides[q.id] !== undefined) {
+          bt[q.topic].total++;
+          if (textOverrides[q.id]) { tc++; bt[q.topic].correct++; }
+          else wrong.push(q);
+        } else {
+          textPending.push(q);
+        }
+        continue;
+      }
       bt[q.topic].total++;
       const ans = answers[q.id];
-      const ok = q.type === "mcq" ? ans === q.correct : scoreText(ans, q.keywords).pass;
+      const ok = ans === q.correct;
       if (ok) { tc++; bt[q.topic].correct++; } else wrong.push(q);
     }
-    const pct = questions.length > 0 ? Math.round((tc / questions.length) * 100) : 0;
+    const mcqTotal = questions.filter(q => q.type === "mcq").length;
+    const gradedTotal = mcqTotal + Object.keys(textOverrides).length;
+    const pct = gradedTotal > 0 ? Math.round((tc / gradedTotal) * 100) : 0;
     const ta = Object.entries(bt).map(([t, v]) => ({ topic: t, ...v, pct: v.total > 0 ? Math.round(v.correct / v.total * 100) : 0 }));
     return {
-      tc, total: questions.length, pct, byTopic: ta, wrong,
+      tc, total: gradedTotal, pct, byTopic: ta, wrong, textPending,
       strong: ta.filter(t => t.pct >= 70).map(t => TOPIC_LABELS[t.topic]),
       weak: ta.filter(t => t.pct < 50).map(t => TOPIC_LABELS[t.topic])
     };
@@ -3105,10 +3170,57 @@ function ExamMode({ onExit }) {
                 color={t.pct >= 70 ? "bg-emerald-500" : t.pct >= 50 ? "bg-amber-500" : "bg-red-500"} />
             ))}
           </div>
+          {r.textPending && r.textPending.length > 0 && (
+            <div style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(99,102,241,0.25)", borderTop: "2px solid rgba(99,102,241,0.5)" }} className="rounded-xl p-6 space-y-4">
+              <div>
+                <h3 className="font-semibold text-zinc-200 mb-1">Open Answers — Self-Assess ({r.textPending.length})</h3>
+                <p className="text-xs text-zinc-500">Review your answers against the model. Mark each one yourself — your score updates immediately.</p>
+              </div>
+              {r.textPending.map(q => (
+                <div key={q.id} style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.18)" }} className="rounded-lg p-4 space-y-3">
+                  <div className="flex gap-2 items-start">
+                    <TopicChip topic={q.topic} />
+                    <p className="text-zinc-200 text-sm flex-1 font-medium">{q.question}</p>
+                  </div>
+                  {answers[q.id] && (
+                    <div style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded p-2.5">
+                      <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider mb-1">Your answer</p>
+                      <p className="text-zinc-400 text-sm leading-relaxed">{answers[q.id]}</p>
+                    </div>
+                  )}
+                  {q.keywords.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider self-center mr-1">Cover:</span>
+                      {q.keywords.map(k => (
+                        <span key={k} style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }} className="text-xs text-indigo-300 px-2 py-0.5 rounded-full">{k}</span>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-zinc-400 text-sm border-t border-zinc-800 pt-2">{q.explanation}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setTextOverrides(o => ({ ...o, [q.id]: false }))}
+                      style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}
+                      className="py-2 text-red-300 rounded-lg text-sm font-medium hover:brightness-110 transition-all"
+                    >
+                      ✗ Missed it
+                    </button>
+                    <button
+                      onClick={() => setTextOverrides(o => ({ ...o, [q.id]: true }))}
+                      style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }}
+                      className="py-2 text-emerald-300 rounded-lg text-sm font-medium hover:brightness-110 transition-all"
+                    >
+                      ✓ Got it
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {r.wrong.length > 0 && (
             <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 space-y-4">
               <h3 className="font-semibold text-zinc-200">Wrong Answers ({r.wrong.length})</h3>
-              {r.wrong.map(q => (
+              {r.wrong.filter(q => q.type === "mcq").map(q => (
                 <div key={q.id} className="border border-zinc-700 rounded-lg p-4 space-y-2">
                   <div className="flex gap-2 items-start">
                     <TopicChip topic={q.topic} />
@@ -3221,8 +3333,19 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
   const q = questions[current];
 
   function submit() {
-    const ok = q.type === "mcq" ? parseInt(answer) === q.correct : scoreText(answer, q.keywords).pass;
-    setIsCorrect(ok); setSubmitted(true);
+    if (q.type === "text") {
+      // Text questions: don't auto-grade — show self-assess UI, record after user decides
+      setIsCorrect(false); setSubmitted(true);
+    } else {
+      const ok = parseInt(answer) === q.correct;
+      setIsCorrect(ok); setSubmitted(true);
+      if (!ok) setWeakTopics(wt => ({ ...wt, [q.topic]: (wt[q.topic] || 0) + 1 }));
+      setSessionAnswers(sa => [...sa, { q, correct: ok }]);
+      recordAnswer(q.id, ok);
+    }
+  }
+
+  function selfGradePractice(ok) {
     if (!ok) setWeakTopics(wt => ({ ...wt, [q.topic]: (wt[q.topic] || 0) + 1 }));
     setSessionAnswers(sa => [...sa, { q, correct: ok }]);
     recordAnswer(q.id, ok);
@@ -3376,7 +3499,8 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
             {submitted && (
               <RevealCard isCorrect={isCorrect} q={q} onNext={next}
                 nextLabel={current >= questions.length - 1 ? "See Results" : "Next Question →"}
-                onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current} />
+                onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current}
+                onSelfGrade={selfGradePractice} />
             )}
           </>
         )}
@@ -3436,8 +3560,17 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
 
   function submit() {
     const q = sessionQs[current];
-    const ok = q.type === "mcq" ? parseInt(answer) === q.correct : scoreText(answer, q.keywords).pass;
-    setIsCorrect(ok); setSubmitted(true);
+    if (q.type === "text") {
+      setIsCorrect(false); setSubmitted(true);
+    } else {
+      const ok = parseInt(answer) === q.correct;
+      setIsCorrect(ok); setSubmitted(true);
+      setSessionAnswers(sa => [...sa, { q, correct: ok }]);
+    }
+  }
+
+  function selfGradeJD(ok) {
+    const q = sessionQs[current];
     setSessionAnswers(sa => [...sa, { q, correct: ok }]);
   }
 
@@ -3504,7 +3637,8 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
           {submitted && (
             <RevealCard isCorrect={isCorrect} q={q} onNext={next}
               nextLabel={current >= sessionQs.length - 1 ? "See Results" : "Next →"}
-              onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current} />
+              onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current}
+              onSelfGrade={selfGradeJD} />
           )}
         </div>
       </div>
