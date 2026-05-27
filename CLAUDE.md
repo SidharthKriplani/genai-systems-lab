@@ -293,14 +293,32 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 - ~~Agent Lab / Systems Lab sidebar doesn't close on mobile~~ → `Agents.jsx` + `Systems.jsx`: `mobileSidebarOpen` state added; clicking a module collapses sidebar, back button (`← Agent Lab`) re-opens it
 - ~~Low-brightness mobile unreadable~~ → `index.css`: single `@media (max-width: 1023px)` rule shifts zinc-400/500/600/700/800 one stop brighter; zero JSX changes
 
+**Fixed in sprint 9 (May 2026):**
+- ~~Home.jsx stats row horizontal overflow~~ → `flex gap-8` → `grid grid-cols-3 gap-2 sm:flex sm:gap-16`; `text-5xl` → `text-4xl sm:text-6xl`; white overflow strip eliminated
+- ~~Journey strip right-clip no visual cue~~ → right-fade gradient overlay (mobile only, `lg:hidden`) signals horizontal scroll
+- ~~PrepLab split-panel on mobile~~ → `mobileSidebarOpen` pattern applied (same as Agents/Systems)
+- ~~Explore split-panel on mobile~~ → `mobileSidebarOpen` pattern applied; back button `← Explore` added
+- ~~Global palette audit: zinc-500/600 unreadable~~ → CSS variable remap + 300+ class changes (sprint 8 palette audit commits `bea5281`, `b088571`)
+
 **Still open:**
-- `failures` module in Agent Lab is still a reference catalog (its 5 entries are now mirrored in agentcfg trigger logic, but the module itself remains). Low priority — keep as reference, ensure agentcfg is the primary discovery path.
+- `failures` module in Agent Lab is still a reference catalog. Low priority — keep as reference.
 - Ask/Search tab identity crisis — label says "Ask", mechanic is keyword search. Needs LLM upgrade or demotion. (Audit 26)
 - 3 thin GT posts: `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` — need expansion to 8+ blocks.
 - Flows and Fluency tabs in PARKED.md — accessible but deprioritized.
-- Mobile UX audit never run systematically — sprint 8 fixes were reactive, not from a full audit pass.
+- Concepts sidebar hidden on mobile (`hidden sm:block`) — no way to switch modules below 640px. Needs mobileSidebarOpen treatment.
+- GT code blocks + table layout on mobile — not audited. Spot-check needed.
+- Touch targets — many `text-[9px]`/`text-[10px]` buttons likely below 44×44px WCAG minimum.
+- Concept dependency graph (SVG, fixed node positions) — may overflow on narrow screens.
 
 ## Session build log (May 2026)
+
+**Resolved this session (sprint 9):**
+- Audit 32: Full mobile UX audit — 15 findings across all tabs, classified Critical/High/Medium/Low
+- `Home.jsx`: stats row `flex gap-8` → `grid grid-cols-3 sm:flex`; font size reduced on mobile; journey strip right-fade gradient hint added
+- `PrepLab.jsx`: `mobileSidebarOpen` pattern (same as Agents/Systems); `selectMode()`/`exitMode()` helpers; back button `← PrepLab`
+- `Explore.jsx`: `mobileSidebarOpen` pattern; `switchModule()` sets sidebar closed; back button `← Explore`; right panel wrapped in outer `flex`/`hidden` div
+- AUDITS.md: Audit 32 written (15 findings, 8 fixed, 7 open)
+- CLAUDE.md: sprint 9 build log added
 
 **Resolved this session (sprint 8):**
 - RAG Lab mobile: `App.jsx` outer `flex` → `flex flex-col lg:flex-row`; desktop sidebar `hidden lg:flex`; mobile horizontal scroll strip added (scenario pills, whitespace-nowrap, violet active state)

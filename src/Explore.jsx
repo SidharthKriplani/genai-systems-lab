@@ -5189,12 +5189,13 @@ const EXPLORE_MODULES = [
 export default function ExploreApp({ initialModule, onModuleVisit, onNavigate }) {
   const [activeModule, setActiveModule] = useState(initialModule || "embeddings");
   const [search, setSearch] = useState("");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
   const [done, setDone] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("gsl-explore-done") || "[]")); }
     catch { return new Set(); }
   });
-  useEffect(() => { if (initialModule) setActiveModule(initialModule); }, [initialModule]);
-  function switchModule(id) { setActiveModule(id); if (onModuleVisit) onModuleVisit("explore", id); }
+  useEffect(() => { if (initialModule) { setActiveModule(initialModule); setMobileSidebarOpen(false); } }, [initialModule]);
+  function switchModule(id) { setActiveModule(id); setMobileSidebarOpen(false); if (onModuleVisit) onModuleVisit("explore", id); }
   function toggleDone(id) {
     setDone(prev => {
       const next = new Set(prev);
@@ -5211,7 +5212,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
     <div className="flex min-h-[calc(100vh-56px)]">
 
       {/* ── LEFT PANEL: module list ────────────────────────────────── */}
-      <div className="w-full lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]">
+      <div className={`${mobileSidebarOpen ? "flex" : "hidden"} flex-col w-full lg:flex lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]`}>
         <div className="px-3 pt-5 pb-2 space-y-3">
           <div>
             <h1 className="text-base font-black text-white tracking-tight">Explore</h1>
@@ -5284,7 +5285,13 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
       </div>
 
       {/* ── RIGHT PANEL: active module content ────────────────────── */}
-      <div className="flex-1 min-w-0 px-4 lg:px-8 py-6 space-y-6 max-w-2xl lg:max-w-3xl">
+      <div className={`${mobileSidebarOpen ? "hidden" : "flex"} flex-col lg:flex flex-1 min-w-0 max-w-2xl lg:max-w-3xl`}>
+        <button onClick={() => setMobileSidebarOpen(true)}
+          className="flex lg:hidden items-center gap-1.5 px-4 py-3 text-xs text-zinc-400 border-b border-zinc-800 shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Explore
+        </button>
+        <div className="px-4 lg:px-8 py-6 space-y-6">
 
         {done.size === 0 && (
           <div className="rounded-lg border border-blue-900/40 bg-blue-950/20 px-4 py-3 flex items-center justify-between gap-3">
@@ -5330,7 +5337,8 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
             <span className="text-xs text-green-400 font-semibold">All modules done</span>
           )}
         </div>
-      </div>
+        </div>{/* closes px-4 inner div */}
+      </div>{/* closes right panel outer div */}
 
     </div>
   );

@@ -1407,3 +1407,51 @@ These were reactive fixes from user-reported issues, not from a systematic mobil
 
 **Status:** Sprint complete ✅. Mobile audit (Audit 32) remains open.
 
+
+---
+
+## Audit 32 — Full Mobile UX Audit (May 2026, Sprint 9)
+
+**Type:** Systematic mobile audit — layout, overflow, readability, touch targets
+**Date:** May 2026
+**Scope:** All pages and tabs visible on Android Chrome mobile (~390px viewport). Screenshot-triggered by live usage showing horizontal overflow on Home.jsx.
+**Method:** Code analysis of all JSX files (Home, App, PrepLab, Agents, Systems, GroundTruth, Explore, Concepts) + screenshot evidence. Each issue classified by severity (Critical / High / Medium / Low).
+
+---
+
+### Findings
+
+| # | Component | Issue | Severity | Status |
+|---|---|---|---|---|
+| 1 | `Home.jsx` — stats row | `flex gap-8` with `text-5xl` for 3 stats ("3,400+", "222+", "200+") overflows on ~390px screens; white horizontal overflow strip visible in production | **Critical** | ✅ Fixed — `grid grid-cols-3 gap-2 sm:flex sm:gap-16`; `text-5xl` → `text-4xl sm:text-6xl` |
+| 2 | `Home.jsx` — journey step strip | `overflow-x-auto scrollbar-hide` gives no visual cue that the strip scrolls right; step labels clipped with no fade | **High** | ✅ Fixed — right-fade gradient overlay (`w-10`, `lg:hidden`) added |
+| 3 | `App.jsx` — bottom nav bar (pre-sprint 8) | 3-item fixed bar (`pb-16`) covered content; slide-up tray interaction awkward on small screens | **Critical** | ✅ Fixed in sprint 8 commit `9054f0e` — replaced with PAL-style left drawer |
+| 4 | `App.jsx` — RAG Lab split layout (pre-sprint 8) | Sidebar + content both visible at full width on mobile | **Critical** | ✅ Fixed in sprint 8 commit `baec2d7` |
+| 5 | `Agents.jsx` / `Systems.jsx` — split panel (pre-sprint 8) | Module sidebar did not close after selection | **Critical** | ✅ Fixed in sprint 8 commit `61a2c7b` |
+| 6 | `PrepLab.jsx` — split panel | MODES sidebar + content panel both visible simultaneously on mobile | **Critical** | ✅ Fixed in sprint 9 commit `e73ea58` |
+| 7 | `Home.jsx` — live failure demo widget | `grid-cols-2` query/answer layout on ~390px is workable (~185px each) but text-xs at low brightness was illegible | **High** | ✅ Fixed in sprint 8 palette audit — `text-zinc-600/700` → `text-zinc-400/500` |
+| 8 | `index.css` — global contrast | `zinc-500/600` on `zinc-950` background fails WCAG AA; unreadable at low phone brightness | **Critical** | ✅ Fixed in sprint 8 (`bea5281`, `6d38c09`) — CSS variable remap + mobile media query |
+| 9 | `GroundTruth.jsx` — post reading layout | Long posts on mobile: no systematic audit. `max-w-2xl` prose should be fine but code blocks, tables, and ref blocks need verification | **Medium** | ⚠️ Open — needs spot-check |
+| 10 | `Explore.jsx` — module sidebar | Same split-panel pattern as Agents/Systems but Explore tab not yet audited for mobile | **High** | ⚠️ Open — apply `mobileSidebarOpen` pattern if confirmed |
+| 11 | `Concepts.jsx` — sidebar layout | Sidebar + content split needs mobile check | **High** | ⚠️ Open — apply `mobileSidebarOpen` pattern if confirmed |
+| 12 | `Home.jsx` — concept dependency graph | SVG graph with fixed node positions may overflow or be unreadably small on mobile | **Medium** | ⚠️ Open — check NODE_W/NODE_H at 390px |
+| 13 | Touch targets — all interactive elements | Many `text-[9px]`/`text-[10px]` buttons and pill tags may be below 44×44px WCAG touch target minimum | **Medium** | ⚠️ Open — systematic pass needed |
+| 14 | `Home.jsx` — door cards (`grid-cols-2`) | 2-col grid at ~390px gives ~185px per card; text-sm content may wrap poorly on some cards | **Low** | ⚠️ Open — acceptable but monitor |
+| 15 | `PrepLab.jsx` — question text layout | Long MCQ question text on ~390px; `p-5 sm:p-8` padding correct but some questions may wrap to 6+ lines | **Low** | ⚠️ Open — monitor, no systematic fix needed yet |
+
+---
+
+### Sprint 9 fixes (this audit)
+
+| Fix | File | Description |
+|---|---|---|
+| Stats row overflow | `Home.jsx` | `flex gap-8` → `grid grid-cols-3 gap-2 sm:flex sm:gap-16`; `text-5xl` → `text-4xl sm:text-6xl` |
+| Journey strip clip hint | `Home.jsx` | Right-edge fade gradient overlay (mobile only, `lg:hidden`) signals horizontal scroll |
+| PrepLab split panel | `PrepLab.jsx` | `mobileSidebarOpen` pattern (same as Agents/Systems) |
+
+### Still open
+
+Issues 9–15 above. Priority order: Explore sidebar (#10), Concepts sidebar (#11), GT code blocks (#9), concept graph overflow (#12), touch targets (#13).
+
+**Status:** Partial ✅. Critical fixes done. Medium/Low open items logged for Audit 33 or sprint 10.
+

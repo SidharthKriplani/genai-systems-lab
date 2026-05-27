@@ -661,40 +661,43 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
               Begin →
             </button>
           </div>
-          <div className="flex items-start gap-0 overflow-x-auto pb-1 scrollbar-hide">
-            {START_HERE_PATH.map((s, i) => {
-              const done = visited.has(s.tab);
-              return (
-                <div key={s.step} className="flex items-center shrink-0">
-                  <button onClick={() => onNavigate(s.tab)}
-                    className="flex flex-col items-center gap-1 px-3 hover:opacity-80 transition-opacity group min-w-[72px]">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${
-                      done
-                        ? "bg-emerald-600/20 border border-emerald-600/50 text-emerald-400"
-                        : "bg-violet-600/20 border border-violet-600/50 text-violet-400 group-hover:bg-violet-600/40"
-                    }`}>
-                      {done ? "✓" : s.step}
-                    </div>
-                    <span className={`text-[10px] font-bold text-center leading-tight ${done ? "text-emerald-400" : "text-white"}`}>{s.label}</span>
-                    <span className="text-[9px] text-zinc-500 text-center leading-tight">{s.desc}</span>
-                  </button>
-                  {i < START_HERE_PATH.length - 1 && (
-                    <div className={`w-6 h-px shrink-0 mb-4 ${done ? "bg-emerald-900/60" : "bg-violet-900/60"}`} />
-                  )}
-                </div>
-              );
-            })}
+          <div className="relative">
+            <div className="flex items-start gap-0 overflow-x-auto pb-1 scrollbar-hide">
+              {START_HERE_PATH.map((s, i) => {
+                const done = visited.has(s.tab);
+                return (
+                  <div key={s.step} className="flex items-center shrink-0">
+                    <button onClick={() => onNavigate(s.tab)}
+                      className="flex flex-col items-center gap-1 px-3 hover:opacity-80 transition-opacity group min-w-[72px]">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${
+                        done
+                          ? "bg-emerald-600/20 border border-emerald-600/50 text-emerald-400"
+                          : "bg-violet-600/20 border border-violet-600/50 text-violet-400 group-hover:bg-violet-600/40"
+                      }`}>
+                        {done ? "✓" : s.step}
+                      </div>
+                      <span className={`text-[10px] font-bold text-center leading-tight ${done ? "text-emerald-400" : "text-white"}`}>{s.label}</span>
+                      <span className="text-[9px] text-zinc-500 text-center leading-tight">{s.desc}</span>
+                    </button>
+                    {i < START_HERE_PATH.length - 1 && (
+                      <div className={`w-6 h-px shrink-0 mb-4 ${done ? "bg-emerald-900/60" : "bg-violet-900/60"}`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="absolute right-0 top-0 h-full w-10 pointer-events-none lg:hidden" style={{ background: "linear-gradient(to right, transparent, rgba(12,8,24,0.9))" }} />
           </div>
         </div>
       </div>
 
       {/* ── STATS + FAILURE MODE STRIP ───────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-10 text-center space-y-6">
-        <div className="flex items-center justify-center gap-8 sm:gap-16">
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:justify-center sm:gap-16 w-full">
           {STATS.map((s) => {
             const inner = (
               <>
-                <div className="text-5xl sm:text-6xl font-black tabular-nums" style={{ background: "linear-gradient(180deg, #ffffff 40%, rgba(255,255,255,0.6) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}><CountUp target={s.target} suffix={s.suffix} /></div>
+                <div className="text-4xl sm:text-6xl font-black tabular-nums" style={{ background: "linear-gradient(180deg, #ffffff 40%, rgba(255,255,255,0.6) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}><CountUp target={s.target} suffix={s.suffix} /></div>
                 <div className={`text-xs font-bold mt-1.5 tracking-wide ${s.tab ? "text-violet-400" : "text-zinc-300"}`}>{s.label}{s.tab ? " →" : ""}</div>
                 <div className="text-[10px] text-zinc-500 mt-0.5 font-mono uppercase tracking-widest">{s.sub}</div>
               </>
