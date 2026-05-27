@@ -3699,6 +3699,219 @@ function TemperatureGame() {
   );
 }
 
+// ─── FLASH ATTENTION MEMORY COMPLEXITY ───────────────────────────────────────
+function FlashAttentionConcept() {
+  const [seqLen, setSeqLen] = useState(1024);
+  const [heads, setHeads] = useState(8);
+  const headDim = 64;
+  const fp16 = 2; // bytes
+
+  // Standard attention: materialises full n×n matrix per head in HBM
+  const stdBytes = seqLen * seqLen * heads * fp16;
+  const stdGB = stdBytes / 1e9;
+
+  // Flash attention: only needs O(n * d) for Q/K/V per block — never materialises full n×n
+  // In practice tiles of block_size × d per head
+  const blockSize = 64;
+  const flashBytes = (seqLen * headDim * 3 + blockSize * blockSize) * heads * fp16;
+  const flashGB = flashBytes / 1e9;
+
+  const SEQ_POINTS = [128, 256, 512, 1024, 2048, 4096, 8192, 16384];
+  const maxStd = SEQ_POINTS[SEQ_POINTS.length - 1] ** 2 * heads * fp16 / 1e9;
+
+  const gpuVRAMs = [
+    { label: "16 GB", gb: 16, color: "#22c55e" },
+    { label: "24 GB", gb: 24, color: "#3b82f6" },
+    { label: "40 GB", gb: 40, color: "#8b5cf6" },
+    { label: "80 GB", gb: 80, color: "#f59e0b" },
+  ];
+
+  const stdBarPct = Math.min(stdGB / 80 * 100, 100);
+  const flashBarPct = Math.min(flashGB / 80 * 100, 100);
+
+  const fmtGB = (v) => v < 0.01 ? `${(v * 1000).toFixed(1)} MB` : `${v.toFixed(2)} GB`;
+
+  const tiles = [];
+  const tileCount = Math.min(Math.ceil(seqLen / blockSize), 8);
+  for (let i = 0; i < tileCount; i++) {
+    for (let j = 0; j < tileCount; j++) {
+      tiles.push({ i, j });
+    }
+  }
+  const [activeTile, setActiveTile] = useState(null);
+
+  return (
+    <div className="space-y-5">
+      {/* Intro callout */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          Standard attention writes a full <span className="font-mono text-red-400">n × n</span> matrix to HBM (GPU memory) for every head — memory that grows <span className="font-bold text-red-400">quadratically</span> with sequence length.{" "}
+          Flash Attention tiles the computation so only a small block lives in fast SRAM at a time. VRAM stays <span className="font-bold text-green-400">linear</span>.
+        </p>
+      </div>
+
+      {/* Controls */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-4">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Configure</div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="text-zinc-300">Sequence length</span>
+              <span className="text-violet-400 font-bold">{seqLen.toLocaleString()} tokens</span>
+            </div>
+            <input type="range" min={128} max={16384} step={128} value={seqLen}
+              onChange={e => setSeqLen(+e.target.value)} className="w-full accent-violet-500" />
+            <div className="flex justify-between text-[10px] text-zinc-600 font-mono">
+              <span>128</span><span>4k</span><span>8k</span><span>16k</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="text-zinc-300">Attention heads</span>
+              <span className="text-violet-400 font-bold">{heads}</span>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {[1, 4, 8, 16, 32].map(h => (
+                <button key={h} onClick={() => setHeads(h)}
+                  className={`px-2 py-1 rounded text-xs font-mono border transition-all ${heads === h ? "border-violet-500 bg-violet-950/40 text-white" : "border-zinc-700 text-zinc-400 hover:text-white"}`}>
+                  {h}h
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* VRAM comparison */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">VRAM — attention matrices only</div>
+
+          {[
+            { label: "Standard attention", gb: stdGB, color: "#ef4444", complexity: "O(n²·h)" },
+            { label: "Flash attention", gb: flashGB, color: "#22c55e", complexity: "O(n·d·h)" },
+          ].map(({ label, gb, color, complexity }) => (
+            <div key={label} className="space-y-1">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-zinc-300">{label}</span>
+                <span className="font-bold" style={{ color }}>{fmtGB(gb)}</span>
+              </div>
+              <div className="text-[10px] text-zinc-500 font-mono">{complexity}</div>
+              <div className="h-3 rounded-full bg-zinc-800 overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(gb / 80 * 100, 100)}%`, background: color, opacity: 0.8 }} />
+              </div>
+            </div>
+          ))}
+
+          <div className="text-[11px] font-mono pt-2 border-t border-zinc-800">
+            <span className="text-zinc-500">Reduction: </span>
+            <span className="font-bold text-green-400">{stdGB > 0 ? `${((1 - flashGB / stdGB) * 100).toFixed(1)}%` : "—"} less VRAM</span>
+          </div>
+
+          {/* GPU lines */}
+          <div className="space-y-1 pt-1">
+            {gpuVRAMs.map(g => (
+              <div key={g.label} className="flex items-center gap-2 text-[10px] font-mono">
+                <span className="w-2 h-2 rounded-full" style={{ background: g.color }} />
+                <span className="text-zinc-500">{g.label} GPU:</span>
+                <span style={{ color: stdGB > g.gb ? "#ef4444" : "#22c55e" }}>
+                  std {stdGB > g.gb ? "OVERFLOW" : "fits"}
+                </span>
+                <span className="text-zinc-600">·</span>
+                <span className="text-green-400">flash fits</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Growth curve */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Memory growth — 8 heads, head_dim=64</div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs font-mono">
+            <thead>
+              <tr className="border-b border-zinc-800">
+                <th className="text-left py-1 text-zinc-500">Seq len</th>
+                <th className="text-right py-1 text-red-400">Standard O(n²)</th>
+                <th className="text-right py-1 text-green-400">Flash O(n)</th>
+                <th className="text-right py-1 text-zinc-500">Ratio</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SEQ_POINTS.map(n => {
+                const s = n * n * 8 * 2 / 1e9;
+                const f = (n * 64 * 3 + 64 * 64) * 8 * 2 / 1e9;
+                const ratio = Math.round(s / f);
+                const isActive = n === seqLen;
+                return (
+                  <tr key={n} className={`border-t border-zinc-800/50 transition-colors ${isActive ? "bg-violet-950/30" : ""}`}>
+                    <td className="py-1 text-zinc-300">{n >= 1000 ? `${n / 1000}k` : n}</td>
+                    <td className={`py-1 text-right ${s > 80 ? "text-red-400 font-bold" : "text-zinc-300"}`}>{fmtGB(s)}</td>
+                    <td className="py-1 text-right text-green-400">{fmtGB(f)}</td>
+                    <td className="py-1 text-right text-zinc-500">{ratio}×</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Tiling diagram */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">How tiling works</div>
+        <p className="text-xs text-zinc-400 leading-relaxed">
+          Flash Attention splits Q, K, V into blocks. Each block pair fits in SRAM (fast on-chip cache). The n×n matrix is <span className="text-zinc-200">never materialized</span> — only the final output is written to HBM.
+        </p>
+        <div className="flex gap-4 items-start flex-wrap">
+          <div className="space-y-1">
+            <p className="text-[10px] text-zinc-500 font-mono">Attention matrix (conceptual — first {Math.min(tileCount,8)}×{Math.min(tileCount,8)} tiles shown)</p>
+            <div className="inline-grid gap-0.5" style={{ gridTemplateColumns: `repeat(${Math.min(tileCount,8)}, 1fr)` }}>
+              {tiles.slice(0, Math.min(tileCount,8) * Math.min(tileCount,8)).map(({ i, j }) => {
+                const idx = `${i}-${j}`;
+                const isActive = activeTile === idx;
+                return (
+                  <div key={idx}
+                    onMouseEnter={() => setActiveTile(idx)}
+                    onMouseLeave={() => setActiveTile(null)}
+                    className="w-6 h-6 rounded-sm border border-zinc-700 cursor-pointer transition-all"
+                    style={{ background: isActive ? "#6366f1" : i === j ? "rgba(99,102,241,0.2)" : "rgba(59,130,246,0.08)" }} />
+                );
+              })}
+            </div>
+          </div>
+          <div className="space-y-2 text-xs text-zinc-400 flex-1 min-w-[200px]">
+            <div className="flex items-start gap-2">
+              <span className="w-4 h-4 rounded-sm shrink-0 mt-0.5" style={{ background: "rgba(99,102,241,0.2)" }} />
+              <span>Diagonal tile: Q<sub>i</sub> · K<sub>i</sub><sup>T</sup> — one block processed at a time in SRAM</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="w-4 h-4 rounded-sm shrink-0 mt-0.5" style={{ background: "rgba(59,130,246,0.08)" }} />
+              <span>Off-diagonal: computed on demand, <span className="text-zinc-200">immediately discarded</span> after softmax accumulation</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="w-4 h-4 bg-indigo-500 rounded-sm shrink-0 mt-0.5" />
+              <span>Hover a tile — that block is the <span className="text-zinc-200">only thing in SRAM</span> at that step</span>
+            </div>
+            <div className="pt-2 border-t border-zinc-800 font-mono text-[10px] space-y-0.5">
+              <div className="text-zinc-500">SRAM usage per step: <span className="text-violet-400">O(block_size × d)</span></div>
+              <div className="text-zinc-500">HBM writes: <span className="text-green-400">only O and softmax stats</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Key insight */}
+      <div className="rounded-xl border border-zinc-700/50 p-4 space-y-2" style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08), rgba(34,197,94,0.05))" }}>
+        <div className="text-xs font-bold text-zinc-300 uppercase tracking-wide">Key insight</div>
+        <p className="text-xs text-zinc-400 leading-relaxed">
+          Flash Attention is not an approximation — it computes <span className="text-zinc-200">exact attention</span>. The speedup comes purely from IO-awareness: minimising reads/writes between HBM and SRAM. Standard attention does O(n²) HBM accesses. Flash does O(n). At 16k tokens with 32 heads, that&apos;s the difference between 34 GB and 34 MB of attention-matrix VRAM.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN CONCEPTS APP ────────────────────────────────────────────────────────
 
 // fidelity tiers: "faithful" (real math), "simplified" (correct pattern, simplified scale), "conceptual" (illustrative)
@@ -3752,6 +3965,16 @@ const MODULES = [
     subtitle: "Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.",
     fidelity: { tier: "simplified", note: "Illustrative cost model — O(n²) relationship is correct, exact flops vary by architecture" },
     component: ContextWindowModule,
+  },
+  {
+    id: "flashattn",
+    label: "Flash Attention",
+    tag: "MEMORY",
+    level: "advanced",
+    title: "Flash Attention: IO-Aware Exact Attention",
+    subtitle: "Standard attention: O(n²) VRAM. Flash: O(n). Adjust sequence length and watch the gap explode.",
+    fidelity: { tier: "simplified", note: "Memory model is correct; flop counts simplified to show IO-awareness principle" },
+    component: FlashAttentionConcept,
   },
   {
     id: "sampling",
@@ -3854,7 +4077,7 @@ const LEVEL_STYLE = {
 const CONCEPT_GROUPS = [
   {
     label: "FOUNDATION",
-    ids: ["tokenizer","embeddings","attention","transformer","context","sampling"],
+    ids: ["tokenizer","embeddings","attention","transformer","context","flashattn","sampling"],
   },
   {
     label: "APPLICATION",
