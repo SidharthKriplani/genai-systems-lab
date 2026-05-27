@@ -74,30 +74,30 @@ function generateQuiz(blocks) {
 function Block({ b, onNavigate, color, postSearch }) {
   switch (b.t) {
     case "p":
-      return <p className="text-sm text-zinc-300 leading-relaxed">{highlightText(b.text, postSearch)}</p>;
+      return <p className="text-[15px] text-zinc-300 leading-[1.8]">{highlightText(b.text, postSearch)}</p>;
     case "h2": {
       const headingId = b.text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       return (
         <div className="group flex items-center gap-2" id={headingId}>
-          <h2 className="text-base font-black text-white mt-8 mb-1">{highlightText(b.text, postSearch)}</h2>
+          <h2 className="text-lg font-black text-white mt-10 mb-1.5 tracking-tight">{highlightText(b.text, postSearch)}</h2>
           <button
             onClick={() => { navigator.clipboard.writeText(window.location.href.split('#')[0] + '#' + headingId); }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-600 hover:text-zinc-400 text-xs mt-8"
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-600 hover:text-zinc-400 text-xs mt-10"
             title="Copy link to section"
           >§</button>
         </div>
       );
     }
     case "h3":
-      return <h3 className="text-sm font-bold text-zinc-200 mt-5 mb-1">{highlightText(b.text, postSearch)}</h3>;
+      return <h3 className="text-[15px] font-bold text-zinc-100 mt-7 mb-1.5 tracking-tight">{highlightText(b.text, postSearch)}</h3>;
     case "divider":
       return <hr className="border-zinc-800 my-6" />;
     case "list":
       return (
         <ul className="space-y-1.5 pl-1">
           {b.items.map((item, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-zinc-300 leading-relaxed">
-              <span className="text-zinc-600 shrink-0 mt-1">—</span>
+            <li key={i} className="flex items-start gap-2 text-[15px] text-zinc-300 leading-[1.75]">
+              <span className="text-zinc-500 shrink-0 mt-1">—</span>
               <span>{item}</span>
             </li>
           ))}
@@ -114,7 +114,7 @@ function Block({ b, onNavigate, color, postSearch }) {
       return (
         <div className={`rounded-lg border ${s.border} ${s.bg} px-4 py-3 flex gap-3`}>
           <span className={`w-1.5 h-1.5 rounded-full ${s.dot} shrink-0 mt-1.5`} />
-          <p className={`text-xs leading-relaxed ${s.text}`}>{highlightText(b.text, postSearch)}</p>
+          <p className={`text-sm leading-relaxed ${s.text}`}>{highlightText(b.text, postSearch)}</p>
         </div>
       );
     }
@@ -207,9 +207,9 @@ function Block({ b, onNavigate, color, postSearch }) {
       return null;
     case "quote":
       return (
-        <blockquote className="border-l-2 border-zinc-600 pl-4 py-1 my-2">
-          <p className="text-sm text-zinc-400 italic leading-relaxed">"{b.text}"</p>
-          {b.attribution && <p className="text-[11px] text-zinc-600 font-mono mt-1.5">— {b.attribution}</p>}
+        <blockquote className="pl-5 py-1 my-2" style={{ borderLeft: `3px solid ${color}60` }}>
+          <p className="text-[15px] text-zinc-300 italic leading-[1.75]">"{b.text}"</p>
+          {b.attribution && <p className="text-[11px] text-zinc-500 font-mono mt-2">— {b.attribution}</p>}
         </blockquote>
       );
     case "references":
@@ -384,7 +384,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
           style={{ width: `${scrollPct}%`, background: color }} />
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <div className="max-w-[680px] mx-auto px-4 sm:px-8 py-8 sm:py-12">
 
         {/* Back */}
         <button onClick={onBack}
@@ -423,8 +423,8 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
               <span className="text-[10px] text-zinc-600 font-mono">Part {seriesIdx + 1} of {seriesPostIds.length}</span>
             </div>
           )}
-          <h1 className="text-lg sm:text-xl font-black text-white leading-tight mb-3">{post.title}</h1>
-          <p className="text-sm text-zinc-400 leading-relaxed mb-3">{post.desc}</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight mb-3">{post.title}</h1>
+          <p className="text-[15px] text-zinc-400 leading-[1.7] mb-4">{post.desc}</p>
           {content && (
             <button
               onClick={() => {
@@ -444,15 +444,15 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
 
         {/* Content or coming soon */}
         {content ? (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {(() => {
               const headings = content.filter(b => b.t === "h2").map(b => b.text);
               return headings.length >= 3 ? (
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 mb-6">
-                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">In this post</p>
-                  <ul className="space-y-1">
+                <div className="rounded-xl border border-zinc-800/60 p-4 mb-6" style={{ background: "linear-gradient(135deg, rgba(39,39,42,0.5) 0%, rgba(24,24,27,0.8) 100%)" }}>
+                  <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest mb-2.5">In this post</p>
+                  <ul className="space-y-1.5">
                     {headings.map((h, i) => (
-                      <li key={i} className="text-xs text-zinc-400 hover:text-white cursor-pointer transition-colors flex items-center gap-2">
+                      <li key={i} className="text-[13px] text-zinc-400 hover:text-white cursor-pointer transition-colors flex items-center gap-2.5">
                         <span className="w-1 h-1 rounded-full bg-zinc-600 shrink-0" />
                         {h}
                       </li>

@@ -247,7 +247,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
       </div>
 
       {/* ── RIGHT PANEL: active module content ────────────────────── */}
-      <div className="flex-1 min-w-0 px-4 lg:px-8 py-6 space-y-6 max-w-2xl lg:max-w-3xl">
+      <div className="flex-1 min-w-0 px-5 lg:px-10 py-8 space-y-7 max-w-2xl lg:max-w-3xl">
 
         {/* Start-here callout — new users only */}
         {doneCount === 0 && (
@@ -269,14 +269,14 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
 
         {/* Related GT reading */}
         {RELATED_GT[activeModule]?.length > 0 && (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">📖 Related reading in Ground Truth</div>
+          <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.06) 0%, rgba(24,24,27,0.6) 100%)", border: "1px solid rgba(139,92,246,0.15)" }}>
+            <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-violet-500 mb-3">Ground Truth — Related reading</div>
             <div className="flex flex-wrap gap-2">
               {RELATED_GT[activeModule].map(post => (
                 <button
                   key={post.id}
                   onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: post.id })}
-                  className="text-xs text-indigo-400 bg-indigo-950/40 border border-indigo-900/50 px-2.5 py-1 rounded-lg font-medium hover:bg-indigo-900/40 hover:text-indigo-300 transition-colors cursor-pointer"
+                  className="text-xs text-violet-300 bg-violet-950/40 border border-violet-900/40 px-2.5 py-1 rounded-lg font-medium hover:bg-violet-900/50 hover:text-violet-200 hover:border-violet-700/50 transition-all cursor-pointer"
                 >
                   {post.title} →
                 </button>

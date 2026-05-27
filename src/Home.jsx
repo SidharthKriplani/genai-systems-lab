@@ -479,7 +479,10 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
       )}
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8">
+      <div className="relative overflow-hidden">
+        {/* Radial glow behind hero */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 55% at 50% -5%, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0.03) 50%, transparent 100%)" }} />
+      <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8 relative">
 
         {/* Headline */}
         <div className="space-y-4">
@@ -501,26 +504,29 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto text-left">
           <button
             onClick={() => { track("door_clicked", { door: "builder" }); onNavigate("lab"); }}
-            className="flex flex-col items-start p-4 rounded-xl border border-blue-900/40 bg-blue-950/20 hover:border-blue-700/50 hover:bg-blue-950/40 transition-all">
+            className="flex flex-col items-start p-4 rounded-xl border border-blue-900/40 bg-blue-950/20 hover:border-blue-700/50 hover:bg-blue-950/40 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-950/30 duration-150"
+            style={{ borderTop: "2px solid rgba(59,130,246,0.45)" }}>
             <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-1.5">Engineer</span>
             <span className="text-sm font-bold text-white mb-1.5">I'm building with LLMs</span>
-            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">Four labs: RAG, Agent, Eval, and LLM. Configure systems, watch them fail, understand why.</span>
+            <span className="text-[11px] text-zinc-400 leading-relaxed flex-1">Four labs: RAG, Agent, Eval, and LLM. Configure systems, watch them fail, understand why.</span>
             <span className="mt-3 text-xs font-bold text-blue-400">Start with RAG Lab →</span>
           </button>
           <button
             onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
-            className="flex flex-col items-start p-4 rounded-xl border border-green-900/40 bg-green-950/20 hover:border-green-700/50 hover:bg-green-950/40 transition-all">
+            className="flex flex-col items-start p-4 rounded-xl border border-green-900/40 bg-green-950/20 hover:border-green-700/50 hover:bg-green-950/40 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-950/30 duration-150"
+            style={{ borderTop: "2px solid rgba(34,197,94,0.45)" }}>
             <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">Interview Prep</span>
             <span className="text-sm font-bold text-white mb-1.5">I'm prepping for interviews</span>
-            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">259+ questions across system design, evals, agents, RAG, and ML fundamentals.</span>
+            <span className="text-[11px] text-zinc-400 leading-relaxed flex-1">259+ questions across system design, evals, agents, RAG, and ML fundamentals.</span>
             <span className="mt-3 text-xs font-bold text-green-400">Open Prep Lab →</span>
           </button>
           <button
             onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
-            className="flex flex-col items-start p-4 rounded-xl border border-violet-900/40 bg-violet-950/20 hover:border-violet-700/50 hover:bg-violet-950/40 transition-all">
+            className="flex flex-col items-start p-4 rounded-xl border border-violet-900/40 bg-violet-950/20 hover:border-violet-700/50 hover:bg-violet-950/40 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-violet-950/30 duration-150"
+            style={{ borderTop: "2px solid rgba(139,92,246,0.45)" }}>
             <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-1.5">Career / PM</span>
             <span className="text-sm font-bold text-white mb-1.5">I'm navigating my AI career</span>
-            <span className="text-[11px] text-zinc-500 leading-relaxed flex-1">Role transitions, AI PM track, system design interviews — and a salary calculator with data by role and region.</span>
+            <span className="text-[11px] text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, system design interviews — and a salary calculator with data by role and region.</span>
             <span className="mt-3 text-xs font-bold text-violet-400">Try Salary Calculator →</span>
           </button>
         </div>
@@ -556,10 +562,11 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         })()}
 
       </div>
+      </div>
 
       {/* ── START HERE JOURNEY ──────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-8">
-        <div className="bg-zinc-900 border border-violet-800/40 rounded-2xl p-5">
+        <div className="rounded-2xl border border-violet-800/30 p-5" style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.08) 0%, rgba(24,24,27,0.95) 60%)", boxShadow: "0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(139,92,246,0.08)" }}>
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div>
               <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-0.5">Recommended first journey</p>
@@ -641,9 +648,10 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             { quote: "I used the Start Here path to prep for my AI PM interview. The failure mode framing is exactly what interviewers want — 'what could go wrong and how would you know?'", role: "Senior PM", company: "SaaS company" },
             { quote: "Finally something that assumes you're technical but doesn't assume you're already an expert. The agent loop simulator especially.", role: "Software Engineer", company: "transitioning to AI" },
           ].map((t, i) => (
-            <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
-              <p className="text-xs text-zinc-400 leading-relaxed italic">"{t.quote}"</p>
-              <div className="text-[10px] font-mono text-zinc-600">— {t.role} · {t.company}</div>
+            <div key={i} className="rounded-xl border border-zinc-800/60 p-4 space-y-3"
+              style={{ background: "linear-gradient(160deg, rgba(39,39,42,0.5) 0%, rgba(24,24,27,0.8) 100%)", boxShadow: "0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)" }}>
+              <p className="text-xs text-zinc-300 leading-relaxed italic">"{t.quote}"</p>
+              <div className="text-[10px] font-mono text-zinc-500">— {t.role} · {t.company}</div>
             </div>
           ))}
         </div>
@@ -664,8 +672,13 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             const pct = Math.round((prog.visited / prog.total) * 100);
             return (
             <div key={path.id}
-              className={`bg-zinc-900 border rounded-2xl p-5 cursor-pointer transition-all ${activePath === path.id ? "scale-[1.01] shadow-lg" : "hover:border-zinc-600"}`}
-              style={{ borderColor: activePath === path.id ? path.color : "#3f3f46" }}
+              className={`rounded-2xl p-5 cursor-pointer transition-all ${activePath === path.id ? "scale-[1.01] shadow-xl" : "hover:shadow-lg"}`}
+              style={{
+                background: "linear-gradient(160deg, rgba(39,39,42,0.6) 0%, rgba(24,24,27,0.95) 100%)",
+                border: `1px solid ${activePath === path.id ? path.color + "60" : "#3f3f46"}`,
+                borderTop: `2px solid ${activePath === path.id ? path.color + "80" : path.color + "30"}`,
+                boxShadow: activePath === path.id ? `0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px ${path.color}20` : "0 1px 3px rgba(0,0,0,0.3)",
+              }}
               onClick={() => setActivePath(activePath === path.id ? null : path.id)}>
               <div className="flex items-start justify-between mb-3">
                 <div>
