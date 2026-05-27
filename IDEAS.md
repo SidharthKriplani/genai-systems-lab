@@ -113,33 +113,25 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 
 Full audit of Agent Lab (16), Eval Lab (18), LLM Lab (9) against RAG Lab standard. Only 3/16 Agent Lab modules, 2/9 LLM Lab modules, and 9/18 Eval Lab modules meet the configure→fail→diagnose standard. The rest are reference content or interactive calculators without a failure arc.
 
-**Tier A — small lift, high ROI (add failure arc to existing decision engine):**
+**Tier A — small lift, high ROI (add failure arc to existing decision engine):** ✅ *All done sprint 7*
 
-- **`serving` (LLM Lab): connect configurator to failure scenarios inline** — when config output is in the danger zone (70B on 1×A100 at 200 RPS), auto-surface the matching pre-written failure instead of waiting for user to scroll to the Failure Scenarios tab. One `useMemo` check away from a dramatically stronger experience. *Audit 28 Finding 6.*
+- ~~**`serving` (LLM Lab): connect configurator to failure scenarios inline**~~ ✅ *Full scenario card with root cause + fix chips, type→id lookup into SERVING_FAILURE_SCENARIOS.*
+- ~~**`decoding` (LLM Lab): add 3 failure scenarios**~~ ✅ *Reactive failure callout: repetition collapse T≤0.15, token incoherence T≥1.5, vocabulary starvation topP≤0.2.*
+- ~~**`agentcfg` (Agent Lab): add to AGENTS_RELATED_GT + PrepLab forward pointer**~~ ✅ *Done.*
+- ~~**`simulator` + `design` (Agent Lab): add PrepLab forward pointer at results screen**~~ ✅ *Done.*
 
-- **`decoding` (LLM Lab): add 3 failure scenarios** — T=0 on creative task → repetition loop. T=1.8 on code → token incoherence. top-p=0.01 → effective censorship / topic starvation. Strong visualizer already exists — the failure arc is the only missing piece. *Audit 28 Finding 7.*
+**Tier B — medium lift (convert reference to decision engine):** ✅ *All done sprint 7*
 
-- **`agentcfg` (Agent Lab): add to AGENTS_RELATED_GT + PrepLab forward pointer** — the strongest module in Agent Lab has zero GT reading links and no PrepLab forward pointer. One data entry and one component addition. *Audit 28 Finding 2.*
+- ~~**`failures` (Agent Lab): merge into `agentcfg` as additional trigger scenarios**~~ ✅ *3 new trigger-based entries added: cascading_errors, over_delegation, tool_poisoning.*
+- ~~**`moe` (LLM Lab): add expert utilization simulator**~~ ✅ *MoEExpertSimulator: experts/topK/batch config → load bar chart → collapse/imbalance callout.*
+- ~~**`langsmith` (Eval Lab): rebuild as broken-trace diagnosis**~~ ✅ *LangSmithDiagnose: 5 broken trace scenarios, span inspection, correct/wrong scoring, diagnosis reveal.*
 
-- **`simulator` + `design` (Agent Lab): add PrepLab forward pointer at results screen** — both end silently after scoring. Add the same forward pointer card added to RAG Lab in sprint 6. *Audit 28 Finding 3.*
+**Tier C — cut (free nav space, reduce quality dilution):** ✅ *All done sprint 7*
 
-**Tier B — medium lift (convert reference to decision engine):**
-
-- **`failures` (Agent Lab): rebuild as a triggerable failure simulator** — currently a click-to-expand failure catalog. This is the DECISIONS.md Section 4 anti-pattern verbatim. Best path: merge `failures` content into `agentcfg` as additional trigger scenarios (5 more failure modes with specific config triggers). `agentcfg` already handles the mechanic — it just needs more failure cases. *Audit 28 Finding 1, Critical.*
-
-- **`moe` (LLM Lab): add expert utilization simulator** — user sets number of experts, top-K routing, batch size → live load imbalance bar chart showing utilization per expert → collapse threshold indicator. The failure modes tab already lists expert collapse / load imbalance / router oscillation — just make them triggerable. *Audit 28 Finding 5.*
-
-- **`langsmith` (Eval Lab): rebuild as broken-trace diagnosis** — all 4 tabs are expandable reference cards. Replace with 5 pre-built broken requests (each with a multi-span trace containing one bad span), user identifies the failed span before reveal. The diagnosis pattern already proven in `debug_traces`. *Audit 28 Finding 9.*
-
-**Tier C — cut (free nav space, reduce quality dilution):**
-
-- **Cut `deploy` (Eval Lab)** — click-expander with no derived outcome, duplicates `serving` which does it better as a decision engine. Redirect link to `serving` in Eval Lab nav. *Audit 28 Finding 10.*
-
-- **Cut or merge `abtesting-ai` (Eval Lab)** — selector-driven reference sitting next to `abtesting` which is a proper decision engine. Confusing to have both. Either absorb unique content into `abtesting` or cut. *Audit 28 Finding 11.*
-
-- **Cut `buildthis` (Eval Lab)** — structured reading list with phase navigation. Not a lab experience. Convert to a GT post series: "Build a Production RAG Pipeline." Remove from Eval Lab nav. *Audit 28 Finding 12.*
-
-- **Slim `quantization` (LLM Lab)** — cut the methods table tab (pure reference HTML table), redirect users to `inference` quantization section which is stronger. Keep only the VRAM calculator tab if it's unique. *Audit 28 Finding 8.*
+- ~~**Cut `deploy` (Eval Lab)**~~ ✅ *Removed from SYSTEMS_MODULES registry.*
+- ~~**Cut or merge `abtesting-ai` (Eval Lab)**~~ ✅ *Removed from SYSTEMS_MODULES registry.*
+- ~~**Cut `buildthis` (Eval Lab)**~~ ✅ *Removed from SYSTEMS_MODULES registry.*
+- ~~**Slim `quantization` (LLM Lab)**~~ ✅ *Methods table tab cut, Calculator only remains.*
 
 ### CRITICAL — From Audits 26 & 27 (May 2026, never-before-run MVP/Moat audits)
 
@@ -321,6 +313,36 @@ A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL
 - **GT post: "Layer 3 Skills for Data Engineers: Vector DBs, Embedding Pipelines, and LLM Observability"** — practical breakdown of each Layer 3 skill: when you need it, what the learning curve looks like, what production looks like. Companion piece to the 3-layer post — goes deeper on the specific skills the lab already covers.
 - ~~**Learning Path: "Data Engineer to AI Engineer"**~~ ✅ *built May 2026 — 10-step path in LearningPaths.jsx*
 - **Home page positioning tweak** — add one line near the hero explicitly claiming Layer 3 depth: "The lab that builds Layer 3 skills — RAG, evals, observability, agent architecture." Zero build effort, direct resonance with DEs reading that post.
+
+### Cross-repo intelligence — what sibling labs have that we don't (May 2026)
+
+Scan of ML Systems Lab and Product Analytics Lab (PAL/Experimentation Lab) surfaced several mechanics and features the GenAI lab is missing. Filtered for fit — excluded things that belong to the other lab's domain (Pyodide Python runtime, statistics rooms, SQL runners).
+
+**High-value borrows — Tier 1:**
+
+- **"Spot the Flaw" mechanic** — PAL has 12 adversarial cases where you find the flaw in a real-looking analysis (SRM, peeking, Simpson's Paradox, etc). Adapt for GenAI: show a broken RAG pipeline config, broken eval setup, or broken agent design — user finds the flaw before the reveal. Different from our current Diagnose mechanic (we build configs that break) — this is "already built, something is wrong." The LangSmith Diagnose tab we just built is the closest thing we have. Port the mechanic more broadly to RAG Lab and AgentConfigLab as an alternative entry mode.
+
+- **Role Readiness Score** — PAL has Junior/Analyst/Senior/Staff readiness derived from PrepLab performance. Build "AI Engineer Readiness" with tiers: Familiar → Practitioner → Senior → Staff. Derived from PrepLab session scores across domains. Shown on PrepLab or a Progress page. No backend needed — localStorage.
+
+- **Weakness Heatmap** — ML Systems Lab Trainer shows per-domain weakness heatmap. Adapt: after PrepLab sessions, show performance per domain (RAG / Agents / Evals / LLMs / Infra) as a heatmap grid. "You're weak on Evals and Serving. These PrepLab questions next." Builds study plan automatically.
+
+- **Defense Doc Generator** — PAL: input JD → 7-day study plan tiered by room importance, printable. Adapt: input a JD → ranked study plan with specific Systems modules, GT posts, and PrepLab clusters weighted to the gap. Different from our current JD Prep mode (which just generates questions). The study plan output is more immediately actionable.
+
+- **Cross-module "Senior Interview" Challenges** — PAL has 6 cross-room scenarios combining stats+RCA+metrics+product. Build 5-6 GenAI capstone scenarios that span RAG + Agents + Evals + deployment — "You're the AI tech lead and this system is failing at 2am. Walk through the diagnosis." No single module answers it. Requires integrating knowledge across labs. Strong interview prep signal.
+
+- **Verbal Practice (Web Speech API)** — ML Systems Lab has voice recording for 25 interview questions, 4-criteria self-rating. No server needed (Web Speech API is browser-native). Port: 10 AI system design questions + "explain your RAG architecture" scenarios. Differentiating feature with zero backend cost. Note: Chrome/Edge only.
+
+- **Company-specific prep tracks** — ML Systems Lab has a Companies section. Build: "Prepare for OpenAI / Anthropic / Google DeepMind / Meta FAIR" — curated module sequences + GT post clusters + PrepLab question filters. Simple static data, high perceived value. Target the exact user running interview prep right now.
+
+- **Bookmarks** — PAL has a global Saved/bookmarks feature (save any case across all rooms). localStorage only. Build: save any GT post, Systems module, or PrepLab question for later. Simple but makes the lab stickier — users return to their saved items.
+
+- **91-day practice heatmap** — GitHub-style contribution grid showing daily module completions and PrepLab attempts. Pure localStorage, zero backend. Progression visibility that makes streaks feel real and earned.
+
+**Low-value / wrong-fit borrows (skip these):**
+- Pyodide live Python runner — no Python content in GenAI lab, adds ~30MB bundle
+- 5-zone bottom nav (Today/Practice/Read/Interview/Ask) — our current architecture is different and would require full restructure
+- Case study dossiers (Netflix/Uber) — those are product analytics scenarios, wrong domain
+- Spaced repetition queue — needs meaningful per-question difficulty calibration data we don't have yet
 
 ### AI Job Market Watch — side project signal engine (new cluster — May 2026)
 
