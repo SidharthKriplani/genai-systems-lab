@@ -735,29 +735,32 @@ export default function AIPMApp() {
   }
 
   if (showWelcome) return (
-    <div className="max-w-lg mx-auto px-4 py-16 flex flex-col items-center text-center gap-6">
-      <div className="w-12 h-12 rounded-xl bg-emerald-900/40 border border-emerald-800/50 flex items-center justify-center text-2xl">📋</div>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-black text-white tracking-tight">AI Product Track</h1>
-        <p className="text-sm text-zinc-400 max-w-sm">Make better AI product decisions — the way senior PMs think about LLM features, PRDs, and tradeoffs.</p>
+    <div className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 70%)" }} />
+      <div className="max-w-lg w-full flex flex-col items-center text-center gap-6 fade-up">
+        <div style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(16,185,129,0.08) 100%)", border: "1px solid rgba(34,197,94,0.3)", boxShadow: "0 0 24px rgba(34,197,94,0.15)" }} className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl">📋</div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.75) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>AI Product Track</h1>
+          <p className="text-sm text-zinc-400 max-w-sm leading-relaxed">Make better AI product decisions — the way senior PMs think about LLM features, PRDs, and tradeoffs.</p>
+        </div>
+        <div className="w-full rounded-xl p-5 text-left space-y-3" style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.07) 0%, rgba(15,15,17,0.9) 100%)", border: "1px solid rgba(34,197,94,0.18)", borderTop: "2px solid rgba(34,197,94,0.35)" }}>
+          <p className="text-[10px] font-mono font-black text-zinc-500 uppercase tracking-widest">What you'll do</p>
+          {[
+            ["PRD Scenarios", "Write success criteria, failure handling, and non-determinism specs for real AI feature briefs."],
+            ["Roadmap Prioritization", "Weigh impact, effort, and risk across an AI feature backlog under real constraints."],
+            ["Stakeholder Comms", "Craft the right message for engineering, legal, and executives when your AI system fails."],
+          ].map(([title, desc]) => (
+            <div key={title} className="flex items-start gap-3">
+              <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "#22c55e" }} />
+              <div><span className="text-xs font-bold text-white">{title} — </span><span className="text-xs text-zinc-400">{desc}</span></div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-zinc-600 font-mono">Best for: product managers · aspiring AI PMs · engineers moving into product roles</p>
+        <button onClick={dismissWelcome} style={{ background: "linear-gradient(135deg, #16a34a 0%, #22c55e 100%)", boxShadow: "0 4px 16px rgba(34,197,94,0.35), 0 1px 0 rgba(255,255,255,0.1) inset" }} className="px-8 py-3 rounded-xl text-white font-bold text-sm transition-all hover:brightness-110">
+          Start with a Scenario →
+        </button>
       </div>
-      <div className="w-full rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-left space-y-3">
-        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">What you'll do</p>
-        {[
-          ["PRD Scenarios", "Write success criteria, failure handling, and non-determinism specs for real AI feature briefs."],
-          ["Roadmap Prioritization", "Weigh impact, effort, and risk across an AI feature backlog under real constraints."],
-          ["Stakeholder Comms", "Craft the right message for engineering, legal, and executives when your AI system fails."],
-        ].map(([title, desc]) => (
-          <div key={title} className="flex items-start gap-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-            <div><span className="text-xs font-bold text-white">{title} — </span><span className="text-xs text-zinc-400">{desc}</span></div>
-          </div>
-        ))}
-      </div>
-      <p className="text-[11px] text-zinc-600 font-mono">Best for: product managers · aspiring AI PMs · engineers moving into product roles</p>
-      <button onClick={dismissWelcome} className="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all">
-        Start with a Scenario →
-      </button>
     </div>
   );
 
@@ -778,7 +781,8 @@ export default function AIPMApp() {
               const active = activeModule === id;
               return (
                 <button key={id} onClick={() => setActiveModule(id)}
-                  className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "border-l-2 border-emerald-500 bg-zinc-800/80" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
+                  style={active ? { background: "linear-gradient(90deg, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0.04) 100%)", boxShadow: "inset 2px 0 0 #22c55e" } : {}}
+                  className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
                   <span className={`text-xs font-semibold leading-snug ${active ? "text-white" : "text-zinc-300"}`}>{m.label}</span>
                   <span className={`text-[10px] font-mono ${active ? "text-emerald-400" : "text-zinc-600"}`}>{m.tag}</span>
                 </button>

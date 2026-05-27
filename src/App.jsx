@@ -1501,7 +1501,7 @@ export default function App() {
 
       {topView === "home" && <HomePage onNavigate={navigate} visited={visited} onFeedback={openFeedback} />}
 
-      <main role="main" id="main-content">
+      <main role="main" id="main-content" key={topView} className="tab-enter">
       <TabErrorBoundary>
         <Suspense fallback={
           <div className="flex-1 p-8 space-y-6 animate-pulse">

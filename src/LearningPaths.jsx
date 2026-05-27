@@ -204,18 +204,21 @@ export default function LearningPaths({ onNavigateTo }) {
           const isActive = activePath === p.id;
           return (
             <button key={p.id} onClick={() => setActivePath(p.id)}
-              className={`w-full text-left px-4 py-3 transition-all ${isActive ? "border-l-2 bg-zinc-800 text-white" : "border-l-2 border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"}`}
-              style={isActive ? { borderLeftColor: p.color } : {}}>
-              <div className="flex items-center gap-2 mb-1">
+              style={isActive ? {
+                background: `linear-gradient(90deg, ${p.color}22 0%, ${p.color}06 100%)`,
+                boxShadow: `inset 2px 0 0 ${p.color}`,
+              } : {}}
+              className={`w-full text-left px-4 py-3 transition-all ${isActive ? "text-white" : "text-zinc-400 hover:text-white hover:bg-zinc-900/60 border-l-2 border-transparent"}`}>
+              <div className="flex items-center gap-2 mb-1.5">
                 <span className="text-base leading-none">{p.emoji}</span>
                 <span className="text-xs font-semibold leading-snug truncate">{p.title}</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-1">
+              <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-1.5">
                 <span>{stepsComplete}/{total} steps</span>
-                <span>{pct}%</span>
+                <span style={{ color: pct > 0 ? p.color : undefined }}>{pct}%</span>
               </div>
-              <div className="h-0.5 rounded-full bg-zinc-800">
-                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: p.color }} />
+              <div className="h-1 rounded-full" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)" }}>
+                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: p.color, boxShadow: pct > 0 ? `2px 0 6px ${p.color}60` : "none" }} />
               </div>
             </button>
           );
@@ -225,9 +228,9 @@ export default function LearningPaths({ onNavigateTo }) {
       {/* Detail panel */}
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
       {path && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+        <div className="rounded-xl overflow-hidden" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,1) 100%)", border: `1px solid ${path.color}25`, borderTop: `2px solid ${path.color}60` }}>
           {/* Path header */}
-          <div className="px-5 py-4 border-b border-zinc-800" style={{ borderLeftColor: path.color, borderLeftWidth: 3 }}>
+          <div className="px-5 py-4 border-b border-zinc-800/60">
             <div className="flex items-center gap-2">
               <span className="text-xl">{path.emoji}</span>
               <div>
@@ -275,7 +278,8 @@ export default function LearningPaths({ onNavigateTo }) {
                   </div>
                   <button
                     onClick={() => { goToStep(step); toggleStep(path.id, idx); }}
-                    className="shrink-0 text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all border border-zinc-700 whitespace-nowrap"
+                    style={{ background: `linear-gradient(135deg, ${path.color}22 0%, ${path.color}10 100%)`, border: `1px solid ${path.color}40`, color: path.color }}
+                    className="shrink-0 text-xs px-2.5 py-1 rounded-lg font-semibold transition-all hover:brightness-125 whitespace-nowrap"
                   >
                     Go →
                   </button>

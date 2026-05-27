@@ -1023,29 +1023,32 @@ export default function CareerApp() {
   }
 
   if (showWelcome) return (
-    <div className="max-w-lg mx-auto px-4 py-16 flex flex-col items-center text-center gap-6">
-      <div className="w-12 h-12 rounded-xl bg-amber-900/40 border border-amber-800/50 flex items-center justify-center text-2xl">🚀</div>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-black text-white tracking-tight">Career Track</h1>
-        <p className="text-sm text-zinc-400 max-w-sm">Interview prep and career tools for engineers targeting AI-forward roles.</p>
+    <div className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245,158,11,0.1) 0%, transparent 70%)" }} />
+      <div className="max-w-lg w-full flex flex-col items-center text-center gap-6 fade-up">
+        <div style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(217,119,6,0.08) 100%)", border: "1px solid rgba(245,158,11,0.3)", boxShadow: "0 0 24px rgba(245,158,11,0.12)" }} className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl">🚀</div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.75) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Career Track</h1>
+          <p className="text-sm text-zinc-400 max-w-sm leading-relaxed">Interview prep and career tools for engineers targeting AI-forward roles.</p>
+        </div>
+        <div className="w-full rounded-xl p-5 text-left space-y-3" style={{ background: "linear-gradient(160deg, rgba(245,158,11,0.07) 0%, rgba(15,15,17,0.9) 100%)", border: "1px solid rgba(245,158,11,0.18)", borderTop: "2px solid rgba(245,158,11,0.4)" }}>
+          <p className="text-[10px] font-mono font-black text-zinc-500 uppercase tracking-widest">What you'll do</p>
+          {[
+            ["System Design Interviews", "Walk through AI system design prompts the way top companies actually run them — component selection, trade-offs, must-haves vs. nice-to-haves."],
+            ["Take-Home Challenges", "Rank LLM outputs, fix broken prompts, design an eval pipeline — the exact formats used by AI-forward companies."],
+            ["Negotiation Flashcards", "Understand benchmark claims, spot marketing spin, and push back on misleading metrics in job negotiations."],
+          ].map(([title, desc]) => (
+            <div key={title} className="flex items-start gap-3">
+              <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "#f59e0b" }} />
+              <div><span className="text-xs font-bold text-white">{title} — </span><span className="text-xs text-zinc-400">{desc}</span></div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-zinc-600 font-mono">Best for: engineers targeting AI roles · ML engineers · anyone interviewing at AI companies</p>
+        <button onClick={dismissWelcome} style={{ background: "linear-gradient(135deg, #b45309 0%, #f59e0b 100%)", boxShadow: "0 4px 16px rgba(245,158,11,0.3), 0 1px 0 rgba(255,255,255,0.1) inset" }} className="px-8 py-3 rounded-xl text-white font-bold text-sm transition-all hover:brightness-110">
+          Start Preparing →
+        </button>
       </div>
-      <div className="w-full rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-left space-y-3">
-        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">What you'll do</p>
-        {[
-          ["System Design Interviews", "Walk through AI system design prompts the way top companies actually run them — component selection, trade-offs, must-haves vs. nice-to-haves."],
-          ["Take-Home Challenges", "Rank LLM outputs, fix broken prompts, design an eval pipeline — the exact formats used by AI-forward companies."],
-          ["Negotiation Flashcards", "Understand benchmark claims, spot marketing spin, and push back on misleading metrics in job negotiations."],
-        ].map(([title, desc]) => (
-          <div key={title} className="flex items-start gap-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-            <div><span className="text-xs font-bold text-white">{title} — </span><span className="text-xs text-zinc-400">{desc}</span></div>
-          </div>
-        ))}
-      </div>
-      <p className="text-[11px] text-zinc-600 font-mono">Best for: engineers targeting AI roles · ML engineers · anyone interviewing at AI companies</p>
-      <button onClick={dismissWelcome} className="px-8 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm transition-all">
-        Start Preparing →
-      </button>
     </div>
   );
 
@@ -1067,7 +1070,8 @@ export default function CareerApp() {
               const active = activeModule === id;
               return (
                 <button key={id} onClick={() => setActiveModule(id)}
-                  className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "border-l-2 border-amber-500 bg-zinc-800/80" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
+                  style={active ? { background: "linear-gradient(90deg, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.04) 100%)", boxShadow: "inset 2px 0 0 #f59e0b" } : {}}
+                  className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
                   <span className={`text-xs font-semibold leading-snug ${active ? "text-white" : "text-zinc-300"}`}>{m.label}</span>
                   <span className={`text-[10px] font-mono ${active ? "text-amber-400" : "text-zinc-600"}`}>{m.tag}</span>
                 </button>
