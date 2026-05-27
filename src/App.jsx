@@ -525,12 +525,12 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
       <div className="text-center space-y-1">
-        <h1 className="text-2xl font-black text-white tracking-tight">Your Progress</h1>
+        <h1 className="text-2xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Your Progress</h1>
         <p className="text-sm text-zinc-500">{tabsVisited.length} of {ALL_TABS.length} tabs visited · {leaderboard.length} challenge attempt{leaderboard.length !== 1 ? "s" : ""}</p>
       </div>
 
       {/* Tab completion by group */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-4">
+      <div className="rounded-xl p-5 space-y-4" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid rgba(99,102,241,0.35)" }}>
         <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Tab Coverage</div>
         {tabsByGroup.map(({ group, color, tabs, visitedCount }) => {
           const pct = Math.round((visitedCount / tabs.length) * 100);
@@ -540,8 +540,8 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
                 <span className="text-xs font-bold font-mono" style={{ color }}>{group}</span>
                 <span className="text-xs text-zinc-500 font-mono">{visitedCount}/{tabs.length}</span>
               </div>
-              <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden mb-2">
-                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
+              <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)" }}>
+                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color, boxShadow: pct > 0 ? `2px 0 8px ${color}80` : "none" }} />
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {tabs.map(t => (
@@ -557,7 +557,7 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
       </div>
 
       {/* RAG challenge readiness */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-4">
+      <div className="rounded-xl p-5 space-y-4" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid rgba(245,158,11,0.35)" }}>
         <div className="flex items-center justify-between">
           <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest">RAG Challenge</div>
           {bestOverall && (
@@ -602,7 +602,8 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
                 <div className="text-sm font-bold text-white">Try the next RAG scenario</div>
                 <div className="text-xs text-zinc-400">{nextLabScenario.title}</div>
               </div>
-              <button onClick={() => onNavigate("lab")} className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-all shrink-0">
+              <button onClick={() => onNavigate("lab")} className="px-3 py-1.5 rounded-lg text-white text-xs font-bold transition-all shrink-0"
+                style={{ background: "linear-gradient(135deg, #b45309 0%, #f59e0b 100%)", boxShadow: "0 0 14px rgba(245,158,11,0.35)" }}>
                 Go →
               </button>
             </div>
@@ -612,7 +613,8 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
                 <div className="text-sm font-bold text-white">Open {nextTab.label}</div>
                 <div className="text-xs text-zinc-400">{nextTab.audience}</div>
               </div>
-              <button onClick={() => onNavigate(nextTab.id)} className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all shrink-0">
+              <button onClick={() => onNavigate(nextTab.id)} className="px-3 py-1.5 rounded-lg text-white text-xs font-bold transition-all shrink-0"
+                style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)", boxShadow: "0 0 14px rgba(99,102,241,0.4)" }}>
                 Go →
               </button>
             </div>
@@ -1472,12 +1474,14 @@ export default function App() {
           <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
             {/* Feedback button — desktop has it in sidebar */}
             <button onClick={() => setLeaderboardOpen(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all"
+              style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(245,158,11,0.06) 100%)", border: "1px solid rgba(245,158,11,0.25)", color: "#fbbf24" }}
               title="Challenge Log" aria-label="Open challenge log">
-              🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px]">{leaderboard.filter(e => e.passed).length}</span>}
+              🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px] font-black">{leaderboard.filter(e => e.passed).length}</span>}
             </button>
             <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v5","1"); } catch {} }}
-              className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs border border-zinc-800 hover:border-zinc-700 transition-all font-mono text-zinc-500 hover:text-zinc-300 relative">
+              className="hidden lg:flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black relative transition-all"
+              style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(99,102,241,0.3)", color: "#818cf8" }}>
               NEW
               {!whatsNewSeen && visited.size > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
             </button>

@@ -3235,8 +3235,8 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
             <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">How agents think, act, and fail</p>
             {done.size > 0 && (
               <div className="flex items-center gap-2 mt-2">
-                <div className="h-1 flex-1 rounded-full bg-zinc-800 overflow-hidden">
-                  <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${(done.size / AGENTS_MODULES.length) * 100}%` }} />
+                <div className="h-1 flex-1 rounded-full overflow-hidden" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)" }}>
+                  <div className="h-full rounded-full transition-all" style={{ width: `${(done.size / AGENTS_MODULES.length) * 100}%`, background: "linear-gradient(90deg, #16a34a 0%, #22c55e 100%)", boxShadow: "2px 0 8px rgba(34,197,94,0.6)" }} />
                 </div>
                 <span className="text-[10px] text-zinc-600 shrink-0">{done.size}/{AGENTS_MODULES.length}</span>
               </div>
@@ -3272,12 +3272,13 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
       <div className="flex-1 min-w-0 px-5 lg:px-10 py-8 space-y-7 max-w-2xl lg:max-w-3xl">
 
         {done.size === 0 && (
-          <div className="rounded-lg border border-blue-900/40 bg-blue-950/20 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="rounded-lg px-4 py-3 flex items-center justify-between gap-3" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(15,15,17,0.8) 100%)", border: "1px solid rgba(59,130,246,0.2)", borderTop: "2px solid rgba(59,130,246,0.4)" }}>
             <div>
-              <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">New here?</span>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: "#60a5fa" }}>New here?</span>
               <span className="text-sm text-zinc-300 ml-2">Start with <span className="font-bold text-white">ReAct Pattern</span> — the core agent loop every other module builds on.</span>
             </div>
-            <button onClick={() => switchModule("react")} className="shrink-0 px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-300 text-xs font-bold hover:bg-blue-900/60 transition-all whitespace-nowrap">Start →</button>
+            <button onClick={() => switchModule("react")} className="shrink-0 px-3 py-1.5 rounded-lg text-white text-xs font-bold transition-all whitespace-nowrap"
+              style={{ background: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)", boxShadow: "0 0 12px rgba(59,130,246,0.35)" }}>Start →</button>
           </div>
         )}
 
