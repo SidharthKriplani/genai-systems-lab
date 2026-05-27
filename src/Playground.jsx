@@ -1657,6 +1657,249 @@ function PromptLibrary() {
   );
 }
 
+// ─── STREAMING LAB ────────────────────────────────────────────────────────────
+const STREAM_TOKENS = [
+  "The","quick","brown","fox","jumps","over","the","lazy","dog",
+  "and","then","calls","a","tool","to","look","up","the","weather",
+  "in","San","Francisco","before","finishing","the","response","with",
+  "a","complete","structured","JSON","object","containing","results",
+];
+
+const STREAM_FAILURES = [
+  {
+    id: "none",
+    label: "No failure",
+    color: "#22c55e",
+    triggerAt: Infinity,
+    description: "Clean stream — all tokens delivered.",
+  },
+  {
+    id: "disconnect",
+    label: "Client disconnect",
+    color: "#f59e0b",
+    triggerAt: 12,
+    description: "Client drops the connection at token 12. Partial output rendered. Server keeps generating — wasted compute.",
+  },
+  {
+    id: "tool_interrupt",
+    label: "Mid-stream tool call",
+    color: "#6366f1",
+    triggerAt: 15,
+    description: "Model emits a tool call mid-stream. Client must buffer, pause rendering, wait for tool response, then resume — or lose context.",
+  },
+  {
+    id: "buffer_overflow",
+    label: "SSE buffer overflow",
+    color: "#ef4444",
+    triggerAt: 20,
+    description: "SSE buffer hits limit (common with nginx default 8KB). Stream silently terminates. Client sees partial output with no error.",
+  },
+];
+
+const TRANSPORT_MODES = [
+  { id: "sse",   label: "SSE",       tag: "HTTP/1.1", note: "One-way server push. Stateless. Most common for chat." },
+  { id: "ws",    label: "WebSocket", tag: "WS",       note: "Full-duplex. Better for barge-in, tool results mid-stream." },
+  { id: "batch", label: "Batch",     tag: "HTTP",     note: "Wait for full response. No streaming. Highest TTFT." },
+];
+
+function StreamingLab() {
+  const [mode, setMode] = useState("sse");
+  const [ttft, setTtft] = useState(400);
+  const [tokenRate, setTokenRate] = useState(8);
+  const [failId, setFailId] = useState("none");
+  const [running, setRunning] = useState(false);
+  const [tokens, setTokens] = useState([]);
+  const [status, setStatus] = useState("idle");
+  const [phase, setPhase] = useState("idle");
+  const [elapsed, setElapsed] = useState(0);
+
+  const fail = STREAM_FAILURES.find(f => f.id === failId);
+  const transport = TRANSPORT_MODES.find(t => t.id === mode);
+
+  useEffect(() => {
+    if (!running) return;
+    let startTime = Date.now();
+    let tokenIdx = 0;
+    setTokens([]);
+    setStatus("waiting");
+    setPhase("ttft");
+
+    // TTFT delay
+    const ttftTimer = setTimeout(() => {
+      if (mode === "batch") {
+        setPhase("generating");
+        setStatus("buffering");
+        const totalDelay = (STREAM_TOKENS.length / tokenRate) * 1000;
+        setTimeout(() => {
+          setTokens([...STREAM_TOKENS]);
+          setStatus("done");
+          setPhase("done");
+          setRunning(false);
+        }, totalDelay);
+        return;
+      }
+
+      setPhase("streaming");
+      setStatus("streaming");
+      const interval = 1000 / tokenRate;
+      const streamTimer = setInterval(() => {
+        tokenIdx += 1;
+        const elapsed = tokenIdx;
+        if (tokenIdx >= STREAM_TOKENS.length) {
+          setTokens([...STREAM_TOKENS]);
+          setStatus("done");
+          setPhase("done");
+          setRunning(false);
+          clearInterval(streamTimer);
+          return;
+        }
+        if (tokenIdx >= fail.triggerAt) {
+          setTokens(STREAM_TOKENS.slice(0, tokenIdx));
+          setStatus("failed");
+          setPhase("failed");
+          setRunning(false);
+          clearInterval(streamTimer);
+          return;
+        }
+        setTokens(STREAM_TOKENS.slice(0, tokenIdx));
+        setElapsed(tokenIdx);
+      }, interval);
+    }, ttft);
+
+    return () => { clearTimeout(ttftTimer); };
+  }, [running]);
+
+  const reset = () => { setRunning(false); setTokens([]); setStatus("idle"); setPhase("idle"); setElapsed(0); };
+
+  const statusColors = { idle: "#6b7280", waiting: "#f59e0b", streaming: "#3b82f6", buffering: "#8b5cf6", done: "#22c55e", failed: "#ef4444" };
+  const statusLabels = { idle: "IDLE", waiting: `TTFT (${ttft}ms)`, streaming: "STREAMING", buffering: "BUFFERING", done: "DONE", failed: "FAILED" };
+
+  return (
+    <div className="space-y-4">
+      {/* Config row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Transport */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Transport</div>
+          <div className="space-y-1">
+            {TRANSPORT_MODES.map(t => (
+              <button key={t.id} onClick={() => { reset(); setMode(t.id); }}
+                className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-2 border transition-all ${mode === t.id ? "border-blue-500 bg-blue-950/30 text-white" : "border-zinc-800 text-zinc-400 hover:text-white"}`}>
+                <span className="font-mono text-[9px] px-1 py-0.5 rounded" style={{ background: mode === t.id ? "#1d4ed8" : "#27272a", color: mode === t.id ? "#bfdbfe" : "#71717a" }}>{t.tag}</span>
+                <span className="font-semibold">{t.label}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-zinc-500 leading-relaxed">{transport.note}</p>
+        </div>
+
+        {/* Latency sliders */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-3">
+          <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Latency</div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="text-zinc-300">TTFT</span>
+              <span className="text-blue-400 font-bold">{ttft}ms</span>
+            </div>
+            <input type="range" min={50} max={3000} step={50} value={ttft}
+              onChange={e => { reset(); setTtft(+e.target.value); }} className="w-full accent-blue-500" />
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="text-zinc-300">Token rate</span>
+              <span className="text-blue-400 font-bold">{tokenRate} tok/s</span>
+            </div>
+            <input type="range" min={1} max={30} step={1} value={tokenRate}
+              onChange={e => { reset(); setTokenRate(+e.target.value); }} className="w-full accent-blue-500" />
+          </div>
+          <div className="text-[10px] text-zinc-500 space-y-0.5">
+            <div>Est. total: <span className="font-mono text-zinc-300">{mode === "batch" ? `${ttft + Math.round(STREAM_TOKENS.length / tokenRate * 1000)}ms` : `${ttft}ms TTFT + ${Math.round(STREAM_TOKENS.length / tokenRate * 1000)}ms stream`}</span></div>
+          </div>
+        </div>
+
+        {/* Failure injection */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Inject failure</div>
+          <div className="space-y-1">
+            {STREAM_FAILURES.map(f => (
+              <button key={f.id} onClick={() => { reset(); setFailId(f.id); }}
+                className={`w-full text-left px-2 py-1.5 rounded-lg text-xs border transition-all ${failId === f.id ? "text-white" : "border-zinc-800 text-zinc-400 hover:text-white"}`}
+                style={failId === f.id ? { borderColor: f.color, background: `${f.color}18` } : {}}>
+                <span className="font-semibold">{f.label}</span>
+                {f.triggerAt < Infinity && <span className="ml-1.5 font-mono text-[9px] text-zinc-500">@tok {f.triggerAt}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Run / status */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => { if (running) { reset(); } else { reset(); setTimeout(() => setRunning(true), 50); } }}
+          className="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+          style={{ background: running ? "#7f1d1d" : "#1d4ed8", color: "white" }}>
+          {running ? "Stop" : "Run stream"}
+        </button>
+        <div className="flex items-center gap-2 text-xs font-mono">
+          <span className="w-2 h-2 rounded-full" style={{ background: statusColors[phase] || "#6b7280" }} />
+          <span style={{ color: statusColors[phase] || "#6b7280" }}>{statusLabels[phase] || "IDLE"}</span>
+          {phase === "streaming" && <span className="text-zinc-500">{tokens.length}/{STREAM_TOKENS.length} tokens</span>}
+        </div>
+      </div>
+
+      {/* Output window */}
+      <div className="rounded-xl border bg-zinc-950 p-4 min-h-[80px] font-mono text-sm leading-relaxed relative overflow-hidden"
+        style={{ borderColor: phase === "failed" ? fail.color : phase === "done" ? "#22c55e40" : "#27272a" }}>
+        {phase === "idle" && <span className="text-zinc-600">Hit &quot;Run stream&quot; to simulate...</span>}
+        {phase === "waiting" && <span className="text-zinc-600 animate-pulse">Waiting for first token ({ttft}ms TTFT)...</span>}
+        {phase === "buffering" && <span className="text-zinc-500 animate-pulse">Buffering response (batch mode — no tokens until complete)...</span>}
+        {tokens.length > 0 && (
+          <span>
+            {tokens.map((tok, i) => (
+              <span key={i} className="text-zinc-200">{tok} </span>
+            ))}
+            {phase === "streaming" && <span className="inline-block w-2 h-4 bg-blue-400 align-middle animate-pulse ml-0.5" />}
+          </span>
+        )}
+        {phase === "failed" && (
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: `${fail.color}40` }}>
+            <span className="text-xs font-bold" style={{ color: fail.color }}>{fail.label.toUpperCase()}</span>
+            <span className="text-xs text-zinc-400 ml-2">{fail.description}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Latency breakdown */}
+      {(phase === "done" || phase === "failed") && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Latency breakdown</div>
+          <div className="space-y-2">
+            {[
+              { label: "Time to first token (TTFT)", ms: ttft, color: "#f59e0b", note: "Prefill + queue time. What the user feels as 'response lag'." },
+              { label: "Token generation", ms: Math.round((tokens.length / tokenRate) * 1000), color: "#3b82f6", note: `${tokens.length} tokens @ ${tokenRate}/s` },
+            ].map(({ label, ms, color, note }) => (
+              <div key={label} className="space-y-1">
+                <div className="flex justify-between text-xs font-mono">
+                  <span className="text-zinc-300">{label}</span>
+                  <span className="font-bold" style={{ color }}>{ms}ms</span>
+                </div>
+                <div className="text-[10px] text-zinc-500">{note}</div>
+                <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(ms / (ttft + 3000) * 100, 100)}%`, background: color, opacity: 0.7 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-zinc-500 pt-1 border-t border-zinc-800">
+            Key insight: TTFT dominates perceived latency for short responses. Token rate dominates for long ones. Streaming makes TTFT the metric that matters — batch mode hides it.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── PLAYGROUND APP ───────────────────────────────────────────────────────────
 
 const PLAYGROUND_MODULES = [
@@ -1681,6 +1924,9 @@ const PLAYGROUND_MODULES = [
   { id: "prompt_lib",  label: "Prompt Library",          tag: "LIBRARY", component: PromptLibrary,
     objective: "30 production-ready prompts with design notes explaining every decision. Copy and adapt for real deployments.",
     howTo: ["Filter by category (RAG, Agents, Coding, etc.) or search by keyword", "Click any card to see the full prompt and design notes", "Copy prompt with one click — variables are wrapped in {curly_braces}", "Read the design notes — they explain why each choice was made"] },
+  { id: "streaming",   label: "Streaming Token Lab",     tag: "STREAM",  component: StreamingLab,
+    objective: "Understand how SSE/WebSocket streaming actually behaves — and which failure modes only appear once you're live.",
+    howTo: ["Pick transport mode (SSE, WebSocket, or Batch)", "Adjust TTFT and token rate to match your stack", "Inject a failure and watch where the stream breaks", "Read the latency breakdown — TTFT vs generation time tells you where to optimise"] },
 ];
 
 const PLAYGROUND_GROUPS = [
@@ -1689,6 +1935,7 @@ const PLAYGROUND_GROUPS = [
   { label: "DETECT",  ids: ["hallucinate", "bias"] },
   { label: "BUDGET",  ids: ["tetris"] },
   { label: "LIBRARY", ids: ["prompt_lib"] },
+  { label: "STREAM",  ids: ["streaming"] },
 ];
 
 export default function PlaygroundApp() {
