@@ -1237,3 +1237,146 @@ The moat is real but fragile. RAG Lab + GT corpus + decision engines + PrepLab c
 10. `buildthis` → convert to a GT post series ("Build a Production RAG Pipeline"), remove from Eval Lab nav
 11. `quantization` → cut the methods table tab, reference `inference` for quantization decisions
 
+---
+
+## Audit 29 — Build Sprint Review (May 2026, Sprint 7)
+
+**Type:** Post-build integrity check
+**Date:** May 2026
+**Scope:** All Audit 28 Tier A/B/C items — Agent Lab + LLM Lab + Eval Lab module upgrades + nav cuts
+
+### What was built
+
+| Item | Tier | Status |
+|---|---|---|
+| `simulator` done screen — PrepLab forward pointer card (violet gradient, ✓ badge, GT link) | A | ✅ Shipped |
+| `design` done screen — PrepLab forward pointer card + GT "agent-system-design" link | A | ✅ Shipped |
+| `serving` failure block — full scenario card (SERVING_FAILURE_SCENARIOS lookup, root cause, fix chips, severity badge) | A | ✅ Shipped |
+| `decoding` visualizer — reactive failure callout (3 triggers: T≤0.15 repetition collapse, T≥1.5 incoherence, topP≤0.2 vocabulary starvation) | A | ✅ Shipped |
+| `agentcfg` AGENT_FAILURE_MATRIX — 3 new entries from `failures` catalog: cascading_errors, over_delegation, tool_poisoning | B | ✅ Shipped |
+| `MoEExpertSimulator` component — numExperts/topK/batchSize config → LCG pseudo-random load → bar chart → collapse/imbalance callout | B | ✅ Shipped |
+| `MoEArchitecture` — "sim" tab added, MoEExpertSimulator rendered | B | ✅ Shipped |
+| `LangSmithDiagnose` component — 5 broken trace scenarios, span-click inspection, multi-choice root cause, score + reveal | B | ✅ Shipped |
+| `LangSmithTracingLab` — "Diagnose Traces" tab added as default view | B | ✅ Shipped |
+| `deploy`, `buildthis`, `abtesting-ai` removed from SYSTEMS_MODULES registry | C | ✅ Shipped |
+| `QuantizationEngineering` — Methods reference table tab removed, Calculator only | C | ✅ Shipped |
+
+### Brace balance check results
+
+All modified files passed `node -e` brace check (diff: 0) before commit.
+
+### Scale after sprint
+
+- Systems modules in nav: 54 (was 57 — 3 cut: deploy, buildthis, abtesting-ai)
+- Agents modules: 16 (unchanged)
+- LLM Lab modules: 9 (unchanged — MoE sim added as tab, not new module)
+- Eval Lab modules: 15 (was 18 — 3 cut from nav)
+- PrepLab questions: 261 (unchanged)
+- GT posts: 222 (unchanged)
+
+### Audit 28 findings status update
+
+| Finding | Was | Now |
+|---|---|---|
+| 1 — `failures` reference catalog | ⚠️ Open | ⚠️ Partial — `agentcfg` expanded with 3 failures from catalog; `failures` module kept as low-priority reference |
+| 2 — `agentcfg` missing AGENTS_RELATED_GT | ⚠️ Open | ⚠️ Open — low priority |
+| 3 — Zero Agent Lab + LLM Lab PrepLab pointers | ⚠️ Open | ✅ Fixed — `simulator` + `design` done screens added |
+| 5 — `moe` failure modes read-only | ⚠️ Open | ✅ Fixed — MoEExpertSimulator added as "sim" tab |
+| 6 — `serving` configurator disconnected from failures | ⚠️ Open | ✅ Fixed — failure scenario auto-surfaces from config output |
+| 7 — `decoding` no failure scenarios | ⚠️ Open | ✅ Fixed — 3 reactive failure callouts added |
+| 8 — `quantization` redundant | ⚠️ Open | ✅ Fixed — methods table cut, Calculator only |
+| 9 — `langsmith` pure reference | ⚠️ Open | ✅ Fixed — Diagnose Traces tab is now default |
+| 10 — `deploy` duplicates `serving` | ⚠️ Open | ✅ Fixed — removed from nav |
+| 11 — `abtesting-ai` thinner than `abtesting` | ⚠️ Open | ✅ Fixed — removed from nav |
+| 12 — `buildthis` reading list | ⚠️ Open | ✅ Fixed — removed from nav |
+
+### Still open from Audit 28
+
+| # | Finding | Status |
+|---|---|---|
+| 2 | `agentcfg` missing from AGENTS_RELATED_GT | ⚠️ Low priority |
+| 4 | `streaming` (LLM Lab) pure reference — 2 static tabs | ⚠️ Open |
+
+**Status:** Sprint complete ✅
+
+---
+
+## Audit 30 — Cross-Repo Intelligence Scan (May 2026)
+
+**Type:** Competitive / feature intelligence
+**Date:** May 2026
+**Scope:** Two sibling repos — `ml-systems-lab` (ML Systems Lab) and `experimentation-systems-lab` (PAL — Product Analytics Lab). What do they have that GenAI Systems Lab doesn't? What's worth adopting?
+**Method:** Full README + feature scan of both repos. GenAI Lab feature set cross-referenced against findings.
+
+---
+
+### ML Systems Lab — gap analysis
+
+ML Systems Lab covers infrastructure-layer ML: distributed training, MLOps, model serving at scale, hardware-level optimization. Audience: MLOps engineers, platform engineers, infra-focused ML engineers. Different audience than GenAI Lab (production AI systems + application engineering).
+
+**High-value features to borrow:**
+
+| Feature | Why it matters for GenAI Lab |
+|---|---|
+| **"Spot the Flaw" mechanic** — present a flawed system design, user identifies the error | A failure-diagnosis mode that GenAI Lab doesn't have. High fit with the configure→fail→understand thesis. Would work in Eval Lab (spot the bad eval design) and Systems (spot the bad RAG config). |
+| **Role Readiness Score** — computed from PrepLab performance across categories, expressed as a single "readiness %" per role type | GenAI Lab has JD Prep mode but no persistent readiness signal. A role readiness score surfaced on the PrepLab home screen is a retention mechanic — users return to improve the number. |
+| **Weakness Heatmap** — shows which topic clusters have low correct rates, visualized as a grid | GenAI Lab's PrepLab tracks wrong answers in session but has no persistent cross-session weakness view. A topic-level heatmap would turn PrepLab from "quiz" to "gap analyzer." |
+| **Defense Doc Generator** — user configures a system, output is a shareable/downloadable design rationale doc | High value for interview prep. After completing an AgentConfigLab or RAG Lab scenario, generate a "here's what I built and why" summary. No backend required — generate as formatted HTML or JSON. |
+| **Cross-module Challenges** — multi-step scenarios that span two or more modules (e.g. design the system + eval it + serve it) | GenAI Lab modules are isolated islands. A cross-module challenge would be the first "end to end" experience. High effort, high moat. |
+
+**Low-value / wrong-fit:**
+
+| Feature | Why not |
+|---|---|
+| Pyodide (browser Python execution) | ML Systems Lab uses this for live code execution. GenAI Lab's zero-backend constraint is intentional — adding a Python runtime breaks the "reproducible failures via precomputed logic" discipline. |
+| 5-zone nav structure | ML Systems Lab uses a zoned nav (Infrastructure / Platform / Application / Deployment / Monitoring). GenAI Lab's DESIGN/BUILD/OPS grouping already serves this purpose and is simpler. |
+| Infrastructure-depth content (CUDA, distributed training) | Wrong audience. GenAI Lab's audience is application-layer engineers, not MLOps/infra engineers. |
+
+---
+
+### Product Analytics Lab (PAL) — gap analysis
+
+PAL is a browser-based interview prep platform for product analysts and PMs. 17 rooms covering stats, experimentation, RCA, metrics, SQL/Python, product design, behavioral, and A/B foundations. High interactive depth — every room has a runner component with scoring and debrief.
+
+**High-value features to borrow:**
+
+| Feature | Why it matters for GenAI Lab |
+|---|---|
+| **91-day practice heatmap** — GitHub-style contribution grid, one cell per day, green fill on practice days | Retention mechanic. GenAI Lab has streaks (`gsl-streak`) but no visual history. A 91-day grid on the My Progress page turns usage history into a concrete object users want to fill in. |
+| **Verbal Practice mode** — user records an answer, gets back a transcript with gap analysis | PAL uses this for behavioral questions. GenAI Lab could apply it to PrepLab text questions — record your answer to "explain MoE routing," see your transcript, compare to model answer. Web Speech API already available. |
+| **Company-specific prep tracks** — "Preparing for Anthropic / Google / OpenAI" bundles curated question sets by likely interview focus | PAL has company case sets. GenAI Lab PrepLab could offer a "company track" mode that filters to the 20 questions most likely to appear at a given company. Pure filtering on existing data — zero new content. |
+| **Bookmarks as a first-class feature** — persistent bookmark list surfaced in a dedicated panel, not just a localStorage flag | GenAI Lab has `gsl-bookmarks` but the bookmark list is not prominently surfaced. PAL surfaces it as a panel on the room browser. Bookmarks become a "my study list" mechanic. |
+| **DebriefCopyButton** — one-click copy of a debrief/explanation to clipboard | Small but high friction reduction for interview prep. After PrepLab answer reveal, "Copy model answer" button. Users copy it into their notes. Zero backend, one component. |
+
+**Low-value / wrong-fit:**
+
+| Feature | Why not |
+|---|---|
+| Supabase auth + Stripe (PAL roadmap) | Correct for PAL's paid model, premature for GenAI Lab until the monetization decision is made (DECISIONS.md Section 0). |
+| SQL/Python runner rooms | Wrong domain. PAL's SQL/Python content is product analytics. GenAI Lab has no SQL content and shouldn't — scope constraint. |
+| Product analytics case studies (Airbnb, DoorDash, Netflix) | Wrong audience. GenAI Lab's audience cares about AI systems, not product analytics case studies. |
+| Spaced repetition scheduler | Complexity vs. value ratio is wrong for a static site. localStorage-based spaced repetition is brittle without a backend to validate review timing across sessions. |
+
+---
+
+### Findings table
+
+| # | Finding | Source | Priority | Status |
+|---|---|---|---|---|
+| 1 | **"Spot the Flaw" mechanic** — present a broken system, user identifies the error | ML Systems Lab | Tier 1 | ⚠️ Open — add to IDEAS.md |
+| 2 | **Role Readiness Score** — computed readiness % per role from PrepLab performance | ML Systems Lab + PAL | Tier 1 | ⚠️ Open — add to IDEAS.md |
+| 3 | **Weakness Heatmap** — per-topic correct rate grid in PrepLab | ML Systems Lab + PAL | Tier 1 | ⚠️ Open — add to IDEAS.md |
+| 4 | **91-day practice heatmap** on My Progress | PAL | Tier 1 | ⚠️ Open — add to IDEAS.md |
+| 5 | **Bookmarks panel** surfaced as "my study list" | PAL | Tier 2 | ⚠️ Open — `gsl-bookmarks` key exists, UI needs promotion |
+| 6 | **DebriefCopyButton** — copy model answer to clipboard | PAL | Tier 2 | ⚠️ Open — small, high friction reduction |
+| 7 | **Defense Doc Generator** — post-module shareable design rationale | ML Systems Lab | Tier 2 | ⚠️ Open — interview prep value |
+| 8 | **Company-specific prep tracks** — filter PrepLab by company interview focus | PAL | Tier 2 | ⚠️ Open — zero new content, pure filter |
+| 9 | **Cross-module Challenges** — end-to-end scenarios spanning design + eval + serve | ML Systems Lab | Tier 3 | ⚠️ Open — high effort, high moat |
+| 10 | **Verbal Practice mode** — record answer, transcript, gap analysis | PAL | Tier 3 | ⚠️ Open — Web Speech API available, high effort |
+
+### What to NOT adopt
+
+Pyodide (wrong architecture), 5-zone nav (redundant), Supabase auth (premature), SQL/Python content (wrong scope), spaced repetition without backend (brittle), company case studies from product analytics domain (wrong audience).
+
+**Status:** Scan complete ✅. All 10 findings logged in IDEAS.md cross-repo cluster.
+

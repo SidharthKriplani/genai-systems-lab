@@ -26,6 +26,10 @@ Events are fired via `track(eventName, properties)` in `src/analytics.js`.
 | `challenge_submitted` | RAG Lab config evaluated | `scenario_id`, `config_id`, `passed` |
 | `continue_clicked` | "Continue where you left off" clicked | `tab`, `step` |
 | `path_started` | Learning path first step clicked | `path_id` |
+| `diagnosis_submitted` | LangSmith Diagnose tab — user submits span + root cause guess | `traceId`, `correct` (bool) |
+| `moe_sim_run` | MoE Expert Simulator "Run Simulation" clicked | `numExperts`, `topK`, `batchSize`, `failureType` |
+| `failure_triggered` | AgentConfigLab / ServingInfra config produces a named failure | `moduleId`, `failureId`, `taskType` |
+| `forward_pointer_clicked` | Done-screen forward pointer button clicked | `moduleId`, `destination` (preplab / groundtruth) |
 
 ---
 
@@ -88,6 +92,15 @@ These are not PostHog events but are equally important for understanding user st
 | `genai_role` | Selected role (engineers / pms / all) |
 | `genai_beta_banner_dismissed` | Whether beta banner was dismissed |
 | `preplab_spaced` | PrepLab spaced repetition state |
+
+**Planned keys (for cross-repo-inspired features — not yet implemented):**
+
+| Key | What it tracks |
+|---|---|
+| `gsl-role-readiness` | Computed readiness % per role (AI Engineer / ML Engineer / AI PM) from PrepLab category performance |
+| `gsl-weakness-heatmap` | Per-topic wrong rate map — `{ topicId: { correct: N, total: N } }` across all PrepLab sessions |
+| `gsl-practice-heatmap` | 91-day practice history — `{ "YYYY-MM-DD": questionsAnswered }` for GitHub-style grid |
+| `gsl-company-track` | Selected company prep track (e.g. "anthropic", "google", "openai") |
 
 ---
 

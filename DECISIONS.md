@@ -102,6 +102,8 @@ There's a second origin underneath that one: the lab was built because LinkedIn 
 
 **Current tabs:** Home, Concepts, Flows, RAG Lab, Agents, Systems, Playground, Explore, Fluency, AI Product, Career, **Ask** (Consultation), **PrepLab**, **Learning Paths**.
 
+**Systems modules in nav:** 54 active (as of sprint 7 — 3 removed from SYSTEMS_MODULES registry: `deploy`, `buildthis`, `abtesting-ai`). Components are kept in `modules.jsx` but not surfaced in nav — accessible only via direct link if needed.
+
 **Ask** was added as a lightweight consultation space — keyword search over all 200+ GT posts + 57 module descriptions. Conversational UI. LLM-ready: swap the scoring function for embeddings + add a generation step without touching the UI.
 
 **PrepLab** was added to the GROW group. Three modes: timed assessment exam (15/30/60 min), trainer with immediate feedback, and JD+resume gap analysis with targeted drill.
@@ -197,6 +199,16 @@ Posts with 4-5 blocks are stubs, not posts. They dilute the corpus quality bar.
 ### The zero-backend constraint is a feature
 
 The static, zero-backend architecture forces a design discipline: every interactive must be achievable with client-side logic. This produces better learning tools (no API costs, no rate limits, reproducible failures, no auth friction) and eliminates operational overhead. When a feature idea requires a backend, the correct response is to redesign the feature, not add the backend.
+
+### Nav cut policy — component kept, entry removed
+
+When a module is cut from the nav (removed from SYSTEMS_MODULES / AGENTS_MODULES registries), the React component is NOT deleted from its source file. It remains in `modules.jsx` or its tab file. This is intentional:
+
+1. The component may be reinstated without rewriting it
+2. The component may be absorbed into another module (e.g. `failures` → `agentcfg`)
+3. Direct `#hash/moduleId` links may still resolve
+
+A module being cut from nav means "doesn't earn its place in navigation" — not "this code is wrong." Document cuts in AUDITS.md sprint review and LINEAGE.md build session table.
 
 *Feature build history lives in LINEAGE.md — not duplicated here.*
 
