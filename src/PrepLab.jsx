@@ -2830,7 +2830,7 @@ function MCQOptions({ options, selected, onSelect }) {
               } : {
                 background: "rgba(39,39,42,0.9)",
                 border: "1px solid rgba(63,63,70,0.9)",
-                color: "#71717a",
+                color: "#a1a1aa",
               }}
               className="flex-shrink-0 w-6 h-6 rounded-md text-xs font-bold font-mono flex items-center justify-center mt-0.5"
             >

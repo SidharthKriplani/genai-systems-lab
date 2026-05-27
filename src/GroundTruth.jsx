@@ -1092,7 +1092,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                   border: "1px solid rgba(139,92,246,0.25)",
                 } : {
                   background: "rgba(39,39,42,0.6)",
-                  color: "#71717a",
+                  color: "#a1a1aa",
                   border: "1px solid rgba(63,63,70,0.6)",
                 }}>
                 {c.label}

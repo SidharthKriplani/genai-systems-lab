@@ -1583,7 +1583,7 @@ export default function App() {
                     style={active ? { background: "linear-gradient(90deg, rgba(139,92,246,0.22) 0%, rgba(139,92,246,0.06) 100%)", boxShadow: "inset 2px 0 0 #8b5cf6", color: "#ffffff" } : {}}>
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
-                        style={active ? { background: "rgba(139,92,246,0.3)", color: "#c4b5fd" } : { background: "rgba(39,39,42,0.8)", color: "#52525b" }}>
+                        style={active ? { background: "rgba(139,92,246,0.3)", color: "#c4b5fd" } : { background: "rgba(39,39,42,0.8)", color: "#a1a1aa" }}>
                         {s.tag}
                       </span>
                       <span className="text-zinc-700 text-[9px]">#{i + 1}</span>
@@ -1607,7 +1607,7 @@ export default function App() {
                     className="shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap transition-all"
                     style={active
                       ? { background: "rgba(139,92,246,0.22)", border: "1px solid rgba(139,92,246,0.45)", color: "#c4b5fd" }
-                      : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.4)", color: "#71717a" }}>
+                      : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.4)", color: "#a1a1aa" }}>
                     <span className="font-mono mr-1" style={{ color: active ? "#8b5cf6" : "#3f3f46" }}>#{i + 1}</span>
                     {s.title}
                   </button>

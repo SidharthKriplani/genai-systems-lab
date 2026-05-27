@@ -53,27 +53,40 @@ button:disabled:active {
   transform: none;
 }
 
-/* ── Mobile contrast boost — low-brightness readability ────────────────────
-   On low-brightness phone screens, zinc-400 text on zinc-950 backgrounds
-   falls to ~1.5:1 contrast — effectively unreadable. This shifts zinc text
-   stops one level brighter on screens < 1024px. Tailwind v4 exposes colors
-   as CSS custom properties so this single override remaps every zinc utility
-   class app-wide — no component changes needed.
+/* ── Global contrast fix ─────────────────────────────────────────────────────
+   zinc-500 (#71717a) and zinc-600 (#52525b) fail WCAG AA on dark backgrounds
+   (~3.2:1 and ~2.1:1 respectively). Both are shifted one stop brighter globally
+   so every text-zinc-500 and text-zinc-600 class becomes readable without
+   touching 1,600+ individual component class names.
 
-   Mapping (mobile → desktop equivalent):
+   Global mapping:
+     text-zinc-500  →  zinc-400  (#a1a1aa)   was ~3.2:1, now ~4.8:1
+     text-zinc-600  →  zinc-500  (#71717a)   was ~2.1:1, now ~3.2:1
+*/
+:root {
+  --color-zinc-500: oklch(70.2% 0.008 286.29);   /* remapped to zinc-400 value */
+  --color-zinc-600: oklch(55.2% 0.009 286.29);   /* remapped to zinc-500 value */
+}
+
+/* ── Mobile contrast boost — low-brightness readability ────────────────────
+   On low-brightness phone screens the above global fix is still insufficient.
+   This additional override shifts all text stops one further level brighter
+   on screens < 1024px, on top of the global remap above.
+
+   Mobile final mapping (vs original zinc values):
      text-zinc-400  →  zinc-300  (#d4d4d8)
-     text-zinc-500  →  zinc-400  (#a1a1aa)
-     text-zinc-600  →  zinc-500  (#71717a)
-     text-zinc-700  →  zinc-600  (#52525b)
-     border/bg-zinc-800 → zinc-700 (#3f3f46) — borders more visible at low brightness
+     text-zinc-500  →  zinc-300  (#d4d4d8)   (global shift + mobile shift)
+     text-zinc-600  →  zinc-400  (#a1a1aa)
+     text-zinc-700  →  zinc-500  (#71717a)
+     border/bg-zinc-800 → zinc-700 (#3f3f46)
 */
 @media (max-width: 1023px) {
   :root {
     --color-zinc-400: oklch(87.1% 0.006 286.29);
-    --color-zinc-500: oklch(70.2% 0.008 286.29);
-    --color-zinc-600: oklch(55.2% 0.009 286.29);
-    --color-zinc-700: oklch(44.2% 0.008 286.29);
-    --color-zinc-800: oklch(37.1% 0.006 286.29);
+    --color-zinc-500: oklch(87.1% 0.006 286.29);
+    --color-zinc-600: oklch(70.2% 0.008 286.29);
+    --color-zinc-700: oklch(55.2% 0.009 286.29);
+    --color-zinc-800: oklch(44.2% 0.008 286.29);
   }
 }
 

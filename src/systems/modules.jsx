@@ -10051,7 +10051,7 @@ function AgentReActLoop() {
         {REACT_STEPS.map((s, i) => (
           <button key={i} onClick={() => setStep(i)}
             className="px-2 py-1 rounded text-xs font-bold transition-all border"
-            style={step === i ? { background: s.color + "22", borderColor: s.color, color: s.color } : { background: "transparent", borderColor: "#3f3f46", color: "#71717a" }}>
+            style={step === i ? { background: s.color + "22", borderColor: s.color, color: s.color } : { background: "transparent", borderColor: "#3f3f46", color: "#a1a1aa" }}>
             {i + 1}. {s.label}
           </button>
         ))}
@@ -11602,7 +11602,7 @@ function VectorDBEngineering({ onNavigate }) {
               <thead>
                 <tr style={{ background: "#27272a" }}>
                   {["DB", "Type", "Index", "Hybrid", "Filtering", "Managed", "Best For"].map(h => (
-                    <th key={h} style={{ padding: "8px 10px", textAlign: "left", color: "#71717a", fontWeight: 600, borderBottom: "1px solid #3f3f46", whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ padding: "8px 10px", textAlign: "left", color: "#a1a1aa", fontWeight: 600, borderBottom: "1px solid #3f3f46", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -11643,7 +11643,7 @@ function VectorDBEngineering({ onNavigate }) {
                   ["Filtering", selectedDBData.filtering],
                 ].map(([k, v]) => (
                   <div key={k} style={{ background: "#27272a", borderRadius: 8, padding: "10px 14px" }}>
-                    <div style={{ color: "#71717a", fontSize: 11, marginBottom: 4 }}>{k}</div>
+                    <div style={{ color: "#a1a1aa", fontSize: 11, marginBottom: 4 }}>{k}</div>
                     <div style={{ color: "#f4f4f5", fontSize: 13, fontWeight: 600 }}>{v}</div>
                   </div>
                 ))}
@@ -11682,10 +11682,10 @@ function VectorDBEngineering({ onNavigate }) {
             <div style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 20 }}>
               <div style={{ marginBottom: 14 }}>
                 <span style={{ color: "#f4f4f5", fontSize: 16, fontWeight: 800 }}>{selectedIndexData.name}</span>
-                <span style={{ color: "#71717a", fontSize: 13, marginLeft: 10 }}>{selectedIndexData.full}</span>
+                <span style={{ color: "#a1a1aa", fontSize: 13, marginLeft: 10 }}>{selectedIndexData.full}</span>
               </div>
               <div style={{ background: "#27272a", borderRadius: 8, padding: "12px 16px", marginBottom: 14 }}>
-                <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>HOW IT WORKS</div>
+                <div style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>HOW IT WORKS</div>
                 <div style={{ color: "#d4d4d8", fontSize: 13, lineHeight: 1.6 }}>{selectedIndexData.how}</div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
@@ -11697,13 +11697,13 @@ function VectorDBEngineering({ onNavigate }) {
                   ["Updates", selectedIndexData.updateCost, "#a1a1aa"],
                 ].map(([k, v, c]) => (
                   <div key={k} style={{ background: "#27272a", borderRadius: 8, padding: "10px 14px" }}>
-                    <div style={{ color: "#71717a", fontSize: 11, marginBottom: 4 }}>{k}</div>
+                    <div style={{ color: "#a1a1aa", fontSize: 11, marginBottom: 4 }}>{k}</div>
                     <div style={{ color: c, fontSize: 12, fontWeight: 600 }}>{v}</div>
                   </div>
                 ))}
               </div>
               <div style={{ background: "#27272a", borderRadius: 8, padding: "12px 16px", marginBottom: 14 }}>
-                <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700, marginBottom: 8 }}>KEY PARAMETERS</div>
+                <div style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 700, marginBottom: 8 }}>KEY PARAMETERS</div>
                 {selectedIndexData.params.map((p, i) => (
                   <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
                     <span style={{ color: "#3b82f6", fontSize: 12, marginTop: 2 }}>▸</span>
@@ -11754,7 +11754,7 @@ function VectorDBEngineering({ onNavigate }) {
                 ["Example fail", "\"CVE-2024-12345\" → may retrieve unrelated vulnerability docs that are semantically similar"],
               ].map(([k, v]) => (
                 <div key={k} style={{ marginBottom: 10 }}>
-                  <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700 }}>{k.toUpperCase()}</div>
+                  <div style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 700 }}>{k.toUpperCase()}</div>
                   <div style={{ color: "#d4d4d8", fontSize: 13, lineHeight: 1.5 }}>{v}</div>
                 </div>
               ))}
@@ -11768,7 +11768,7 @@ function VectorDBEngineering({ onNavigate }) {
                 ["Example fail", "\"crashes when memory runs out\" → may miss docs about OOM errors if exact words differ"],
               ].map(([k, v]) => (
                 <div key={k} style={{ marginBottom: 10 }}>
-                  <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700 }}>{k.toUpperCase()}</div>
+                  <div style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 700 }}>{k.toUpperCase()}</div>
                   <div style={{ color: "#d4d4d8", fontSize: 13, lineHeight: 1.5 }}>{v}</div>
                 </div>
               ))}
@@ -11779,9 +11779,9 @@ function VectorDBEngineering({ onNavigate }) {
             <div style={{ color: "#f4f4f5", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Reciprocal Rank Fusion (RRF)</div>
             <p style={{ color: "#a1a1aa", fontSize: 13, lineHeight: 1.6, margin: "0 0 14px" }}>The standard way to merge dense and sparse results. For each document, compute: <span style={{ color: "#3b82f6", fontFamily: "monospace" }}>RRF_score = Σ 1/(k + rank_i)</span> where k=60 by default and rank_i is the document&apos;s rank in each result list. Sum across retrieval methods. Sort by RRF score descending.</p>
             <div style={{ background: "#27272a", borderRadius: 8, padding: "12px 16px", fontFamily: "monospace", fontSize: 12, color: "#a1a1aa" }}>
-              <div style={{ color: "#71717a", marginBottom: 6 }}># Doc A: rank 1 in dense, rank 3 in sparse</div>
+              <div style={{ color: "#a1a1aa", marginBottom: 6 }}># Doc A: rank 1 in dense, rank 3 in sparse</div>
               <div style={{ color: "#d4d4d8" }}>rrf_A = 1/(60+1) + 1/(60+3) = 0.0164 + 0.0159 = 0.0323</div>
-              <div style={{ color: "#71717a", margin: "10px 0 6px" }}># Doc B: rank 2 in dense, rank 1 in sparse</div>
+              <div style={{ color: "#a1a1aa", margin: "10px 0 6px" }}># Doc B: rank 2 in dense, rank 1 in sparse</div>
               <div style={{ color: "#d4d4d8" }}>rrf_B = 1/(60+2) + 1/(60+1) = 0.0161 + 0.0164 = 0.0325</div>
               <div style={{ color: "#22c55e", marginTop: 10 }}># Doc B wins slightly — appears highly in both lists</div>
             </div>
@@ -11823,7 +11823,7 @@ function VectorDBEngineering({ onNavigate }) {
                 {scenarioIdx === i && (
                   <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #27272a" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                      <span style={{ color: "#71717a", fontSize: 12 }}>RECOMMENDATION</span>
+                      <span style={{ color: "#a1a1aa", fontSize: 12 }}>RECOMMENDATION</span>
                       <span style={{ color: "#22c55e", fontWeight: 800, fontSize: 16 }}>{s.answer}</span>
                     </div>
                     <div style={{ color: "#a1a1aa", fontSize: 13, lineHeight: 1.6 }}>{s.reason}</div>
@@ -11848,9 +11848,9 @@ function VectorDBEngineering({ onNavigate }) {
                 <span key={i} style={{ color: "#3f3f46", fontSize: 20 }}>→</span>
               ) : (
                 <div key={i} style={{ background: "#27272a", borderRadius: 8, padding: "8px 14px", textAlign: "center" }}>
-                  <div style={{ color: "#71717a", fontSize: 10, fontWeight: 700 }}>{step.stage.toUpperCase()}</div>
+                  <div style={{ color: "#a1a1aa", fontSize: 10, fontWeight: 700 }}>{step.stage.toUpperCase()}</div>
                   <div style={{ color: "#3b82f6", fontSize: 13, fontWeight: 700 }}>{step.choice}</div>
-                  <div style={{ color: "#52525b", fontSize: 11 }}>{step.note}</div>
+                  <div style={{ color: "#a1a1aa", fontSize: 11 }}>{step.note}</div>
                 </div>
               ))}
             </div>
@@ -12017,7 +12017,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
               }}>
                 <div style={{ fontSize: 24, marginBottom: 6 }}>{m.icon}</div>
                 <div style={{ color: m.color, fontWeight: 700, fontSize: 14 }}>{m.label}</div>
-                <div style={{ color: "#71717a", fontSize: 12 }}>{m.subtitle}</div>
+                <div style={{ color: "#a1a1aa", fontSize: 12 }}>{m.subtitle}</div>
               </div>
             ))}
           </div>
@@ -12027,7 +12027,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
                 <span style={{ fontSize: 20 }}>{selectedType.icon}</span>
                 <span style={{ color: selectedType.color, fontSize: 16, fontWeight: 800 }}>{selectedType.label} Memory</span>
-                <span style={{ color: "#71717a", fontSize: 13 }}>— {selectedType.subtitle}</span>
+                <span style={{ color: "#a1a1aa", fontSize: 13 }}>— {selectedType.subtitle}</span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
                 {[
@@ -12039,7 +12039,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
                   ["Cost", selectedType.costSignal],
                 ].map(([k, v]) => (
                   <div key={k} style={{ background: "#27272a", borderRadius: 8, padding: "10px 14px" }}>
-                    <div style={{ color: "#71717a", fontSize: 11, marginBottom: 4 }}>{k.toUpperCase()}</div>
+                    <div style={{ color: "#a1a1aa", fontSize: 11, marginBottom: 4 }}>{k.toUpperCase()}</div>
                     <div style={{ color: "#d4d4d8", fontSize: 12 }}>{v}</div>
                   </div>
                 ))}
@@ -12055,7 +12055,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
                 </div>
               </div>
               <div style={{ background: "#27272a", borderRadius: 8, padding: "10px 14px" }}>
-                <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>USE FOR</div>
+                <div style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>USE FOR</div>
                 <div style={{ color: "#d4d4d8", fontSize: 13 }}>{selectedType.whenToUse}</div>
               </div>
             </div>
@@ -12079,7 +12079,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
           <div style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 10, padding: 20 }}>
             <div style={{ color: "#f4f4f5", fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{failure.title}</div>
             <div style={{ background: "#27272a", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
-              <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>USER QUERY</div>
+              <div style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>USER QUERY</div>
               <div style={{ color: "#d4d4d8", fontSize: 14, fontStyle: "italic" }}>"{failure.query}"</div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
@@ -12117,7 +12117,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
                 </div>
                 {stackExpanded === layer.id && (
                   <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #3f3f46" }}>
-                    <div style={{ color: "#71717a", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>FEEDS INTO</div>
+                    <div style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>FEEDS INTO</div>
                     <div style={{ color: "#d4d4d8", fontSize: 13 }}>{layer.feeds}</div>
                   </div>
                 )}
@@ -12147,7 +12147,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
           <div style={{ background: "#18181b", border: "1px solid #f59e0b40", borderRadius: 10, padding: 20, marginBottom: 16 }}>
             <div style={{ color: "#f59e0b", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Decision layer prompt (example)</div>
             <div style={{ background: "#27272a", borderRadius: 8, padding: "12px 16px", fontFamily: "monospace", fontSize: 12, color: "#a1a1aa", lineHeight: 1.8 }}>
-              <div style={{ color: "#71717a" }}>SYSTEM: You are a memory decision agent. Given a completed interaction, decide:</div>
+              <div style={{ color: "#a1a1aa" }}>SYSTEM: You are a memory decision agent. Given a completed interaction, decide:</div>
               <div style={{ color: "#d4d4d8", marginTop: 8 }}>1. Should any user preference be updated? (style, needs, expertise level)</div>
               <div style={{ color: "#d4d4d8" }}>2. Should any fact be stored in long-term memory? (outcome, decision, commitment)</div>
               <div style={{ color: "#d4d4d8" }}>3. Is any existing memory entry now stale and should be deleted?</div>

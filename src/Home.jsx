@@ -453,7 +453,7 @@ function HeroFailureDemo({ onNavigate }) {
             className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold transition-all"
             style={active === i
               ? { background: f.color + "22", border: `1px solid ${f.color}55`, color: f.color }
-              : { background: "rgba(39,39,42,0.7)", border: "1px solid rgba(63,63,70,0.5)", color: "#52525b" }}>
+              : { background: "rgba(39,39,42,0.7)", border: "1px solid rgba(63,63,70,0.5)", color: "#a1a1aa" }}>
             {f.label}
           </button>
         ))}
@@ -978,7 +978,7 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             {[
               { tw: "emerald", color: "#22c55e", badge: "✓ Mathematically faithful", desc: "Real algorithm logic on toy inputs. Tokenizer, sampling, and cost models fall here." },
               { tw: "amber",   color: "#f59e0b", badge: "~ Simplified",              desc: "Correct pattern, simplified scale. Attention, transformer, and agent trace — real concepts, not frontier-model internals." },
-              { tw: "zinc",    color: "#71717a", badge: "◌ Conceptual",              desc: "Illustrative only. Embedding Space uses precomputed 2D coords, not live model embeddings. Useful for intuition, not introspection." },
+              { tw: "zinc",    color: "#a1a1aa", badge: "◌ Conceptual",              desc: "Illustrative only. Embedding Space uses precomputed 2D coords, not live model embeddings. Useful for intuition, not introspection." },
             ].map(t => (
               <div key={t.badge} className="rounded-xl p-3 space-y-2 bg-zinc-800/50 border border-zinc-700/50">
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded inline-block" style={{ color: t.color, background: t.color + "20" }}>{t.badge}</span>
