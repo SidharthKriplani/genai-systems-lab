@@ -12181,7 +12181,7 @@ const PCM_VARIANTS = [
   {
     id: "v1.3-hedge",
     name: "v1.3 — add hedging",
-    change: 'Added "If you're unsure, say so." to reduce hallucination risk.',
+    change: "Added \"If you're unsure, say so.\" to reduce hallucination risk.",
     system: "You are a helpful customer support assistant. Answer questions about our product accurately and concisely. If you're unsure, say so.",
     scores: [4.3, 4.6, 4.0, 2.8, 4.4],
     avgScore: 4.0,
