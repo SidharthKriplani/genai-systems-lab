@@ -183,6 +183,7 @@ When the user shares a screenshot of a LinkedIn post, tweet, or practitioner wri
 | `DECISIONS.md` | Architectural + product rulebook | Before making an architectural choice |
 | `METRICS.md` | PostHog events, funnel, success metrics | Before building a new feature (what to track) |
 | `LINEAGE.md` | Narrative history — what was built and why | Understanding why something exists |
+| `UPGRADES.md` | Targeted enhancements to existing components — current vs target behavior, effort, priority | Before starting any improvement to an existing module or mode |
 
 ---
 

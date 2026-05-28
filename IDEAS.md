@@ -182,6 +182,7 @@ An AI interviewer found that candidates who claimed to have built 2-3 RAG system
 
 ### PrepLab
 - ~~**Questions for uncovered modules**~~ ✅ *built May 2026 — 15 questions: pid-1–5, ama-1–4, lcp-1–3, tok-1–3*
+- **JD Prep mode — Defense Strategy upgrade** — Current JD Prep does keyword matching. Target: full three-phase flow: (1) parse JD against 11 skill categories with keyword maps → category weights, (2) self-rating per flagged category (Weak/Okay/Strong) → gap score = weight × inverse rating, (3) sequenced prep plan output: GT posts + Systems modules + PrepLab clusters per gap, plus honest gaps callout for uncovered skills. All static, no backend. `gated: true` already in place. See UPGRADES.md for full spec. *Pending — Tier 1, M effort.*
 - **Scenario-type questions** — Multi-turn conversational scenarios where the user debugs a failing system across 3-4 exchanges. Higher fidelity than MCQ. *Pending.*
 - **More system design text questions** — Cover: vector DB selection, agent reliability, eval harness design, fine-tuning decision framework. *Pending.*
 
