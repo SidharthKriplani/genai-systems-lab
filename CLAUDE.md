@@ -184,6 +184,7 @@ When the user shares a screenshot of a LinkedIn post, tweet, or practitioner wri
 | `METRICS.md` | PostHog events, funnel, success metrics | Before building a new feature (what to track) |
 | `LINEAGE.md` | Narrative history — what was built and why | Understanding why something exists |
 | `UPGRADES.md` | Targeted enhancements to existing components — current vs target behavior, effort, priority | Before starting any improvement to an existing module or mode |
+| `ROLLOUT.md` | Beta rollout plan — batches, self-vet checklists, tester briefs, feedback tracking. Operational only; not a backlog. | Before inviting any tester; before opening a new batch |
 
 ---
 
