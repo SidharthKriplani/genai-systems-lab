@@ -32,68 +32,135 @@ Each batch entry states what pass looks like before a single tester is invited. 
 
 **Status:** Pending
 
-**User profile:** Founder (Avinash), using the product as a first-time visitor with no internal context. Browse from the landing page as if you've never built it. No shortcuts, no direct-linking to known-good states.
+**User profile:** Founder (Avinash), using the product as a first-time visitor with no internal context. Start from the landing page every time. No shortcuts, no direct URL entry to known-good states. Open DevTools console in a second tab — watch for JS errors as you go.
 
-**Scope:** Full product surface — all four Labs, Ground Truth, PrepLab, Home.
+**Scope:** Structured walkthrough below. Not "check everything" — check the specific paths a real user would take.
 
-**Self-vet checklist:**
+---
 
-Core loop:
-- [ ] Home → pick a lab (RAG Lab) → complete one scenario end-to-end → forward pointer fires (✓ done card) → lands in PrepLab correctly
-- [ ] Home → Ground Truth → open a post → quiz CTA visible → quiz fires
-- [ ] Home → PrepLab → Exam mode → 10 questions → progress indicator tracks correctly
-- [ ] JD Prep mode: paste a real JD → questions surface → mode behaves as expected (critical — primary paid feature)
+### Walk 1 — The Primary Loop (desktop, ~25 min)
 
-Mobile (real device, not devtools):
-- [ ] Home stats row — no overflow, all three numbers visible
-- [ ] RAG Lab — horizontal scenario pill strip scrolls, fade gradient visible
-- [ ] Agent Lab — back button `← Agent Lab` appears, sidebar collapses on module select
-- [ ] Systems Lab — same pattern as Agent Lab
-- [ ] PrepLab — sidebar collapses on mode select, back button appears
-- [ ] Explore — sidebar collapses on module select, back button appears
-- [ ] GT post — code blocks and tables scroll horizontally without breaking layout
-- [ ] Touch targets — all filter pills, buttons, and sidebar items comfortably tappable
+The single most important path. If this doesn't work cleanly, nothing else matters.
 
-Recently shipped features:
-- [ ] Sprint 7 upgrades: `serving` failure card, `decoding` failure callout, `moe` simulator, `langsmith` Diagnose tab — all load without error
-- [ ] Sprint 9 upgrades: all mobile patterns confirmed above
+- [ ] Land on Home. Read the hero as a stranger. Does the value prop land in 5 seconds without reading all the copy?
+- [ ] Click the RAG Lab door card. Confirm it routes correctly.
+- [ ] **RAG Lab — Retrieval Failure scenario:** Set chunk size large, top-k low, no reranking. Run it. Confirm the failure arc fires (failure card appears with root cause + fix). Confirm the ✓ done card appears at the end with a GT post link and PrepLab CTA.
+- [ ] Click the GT post link from the done card. Confirm it opens the correct post in Ground Truth. Confirm the quiz CTA is visible in the post header.
+- [ ] Click the quiz CTA. Confirm the quiz fires and shows relevant questions.
+- [ ] Navigate to PrepLab from the nav. Open Exam mode. Answer 10 questions. Confirm: progress bar tracks, correct/wrong states render, session end screen appears.
+- [ ] No JS errors in console throughout.
 
-Known rough edges to confirm are not blockers:
-- [ ] `failures` module in Agent Lab renders as reference catalog (intentional, not broken)
-- [ ] Flows and Fluency tabs load (parked but still accessible via hash)
+---
 
-**Pass criteria:** Core loop completes without confusion or error on desktop. All mobile checklist items pass on a real device. No JS errors in console on any Lab entry. JD Prep mode completes without dead ends.
+### Walk 2 — RAG Lab remaining scenarios (~15 min)
+
+- [ ] **Context Overflow scenario:** Max chunk size + max top-k. Confirm context overflow failure card fires with correct diagnosis.
+- [ ] **Embedding Mismatch scenario:** Confirm failure arc is distinct from retrieval failure — different root cause, different fix.
+- [ ] **Reranking Collapse scenario:** Confirm reranking toggle affects results card visibly.
+- [ ] Each scenario: confirm ✓ done card fires with a scenario-specific GT post (not the same post for every scenario).
+
+---
+
+### Walk 3 — Agent Lab (~15 min)
+
+- [ ] Open `agentcfg` (Agent Config Lab). Set retryLimit=0, add 5+ tools. Confirm cascading_errors failure fires. Confirm fix suggestion appears.
+- [ ] Open `simulator` (Agent Simulator). Run a multi-step task to completion. Confirm the done screen has a PrepLab forward pointer card.
+- [ ] Open `langsmith`. Go to "Diagnose Traces" tab (should be default). Click a broken trace scenario. Click a span. Confirm diagnosis + fix reveals correctly.
+- [ ] Open `moe` (Mixture of Experts). Set experts=8, topK=1, batchSize=10. Run. Confirm load imbalance callout fires with fix suggestions.
+
+---
+
+### Walk 4 — LLM Lab (serving + decoding) (~10 min)
+
+- [ ] Open `serving` (Serving Infrastructure). Configure a hardware setup. Confirm recommendation card renders. Change a config parameter that should trigger a failure scenario — confirm the failure card appears with root cause + fix chips.
+- [ ] Open `decoding`. Set temperature ≤ 0.15. Confirm repetition collapse callout fires. Set temperature ≥ 1.5. Confirm token incoherence callout fires. Set topP ≤ 0.2. Confirm vocabulary starvation callout fires.
+
+---
+
+### Walk 5 — PrepLab all modes (~20 min)
+
+- [ ] **Exam mode:** 10-question session (already done in Walk 1 — skip if confirmed).
+- [ ] **Trainer mode:** Open one question. Reveal answer. Confirm explanation shows. Navigate to next question.
+- [ ] **JD Prep mode:** Paste a real AI engineering JD (e.g., from an Anthropic or Google DeepMind posting). Confirm questions surface and are weighted toward the JD's skill profile. Walk through 5 questions. Confirm no dead ends. *This is the primary paid feature — give it extra time.*
+- [ ] **Company Tracks mode:** Pick one company track. Confirm questions load and are tagged correctly.
+- [ ] **Defense Doc mode:** Generate a defense doc. Confirm it renders without error.
+
+---
+
+### Walk 6 — Ground Truth (~10 min)
+
+- [ ] Open GT browser. Filter by one category (e.g., `rag`). Confirm filter works and only relevant posts show.
+- [ ] Open `agent-memory-architecture`. Confirm: h2/h3 headers render, callout block renders, refs block renders, quiz CTA visible.
+- [ ] Open `your-prompt-is-code`. Same checks.
+- [ ] Open `dpo-in-practice`. Note: known stub (4 blocks). Confirm it at least renders without error — don't expect depth.
+- [ ] Click the "Simplify" toggle on any post. Confirm it toggles without breaking layout.
+
+---
+
+### Walk 7 — Mobile (real device, not devtools, ~15 min)
+
+- [ ] **Home:** Stats row — all three numbers visible, no overflow. Journey strip — scrolls horizontally, fade gradient visible on right. Hero CTA button — comfortably tappable.
+- [ ] **RAG Lab:** Scenario pill strip scrolls. Fade gradient visible. Selecting a scenario updates the config panel below (not side-by-side).
+- [ ] **Agent Lab:** Tap a module from the list — sidebar collapses, content panel appears. Back button `← Agent Lab` visible at top. Tap it — sidebar re-opens.
+- [ ] **Systems Lab:** Same pattern as Agent Lab. Back button reads `← Systems Lab` or the correct lab title.
+- [ ] **PrepLab:** Tap a mode — sidebar collapses, mode loads. Back button `← PrepLab` visible. Tap it — mode selection screen re-appears.
+- [ ] **Explore:** Tap a module — sidebar collapses, content loads. Back button `← Explore` visible.
+- [ ] **GT post:** Open any post with a code block. Confirm it scrolls horizontally without breaking surrounding layout. Open any post with a table. Same check.
+- [ ] Touch targets: tap the GT category filter pills, PrepLab sidebar mode buttons, Agents/Systems sidebar module items — all should feel comfortably tappable (no mis-tap needed).
+
+---
+
+### Walk 8 — Parked tabs (quick sanity, ~5 min)
+
+- [ ] Navigate to `#flows` directly. Confirm Flows tab loads without JS error.
+- [ ] Navigate to `#fluency`. Confirm Fluency tab loads without JS error.
+- [ ] Navigate to `#consult`. Confirm Ask/Search tab loads, search input accepts text.
+- [ ] `failures` module in Agent Lab — confirm it renders as a reference catalog (intentional, not broken).
+
+---
+
+**Pass criteria:** All 8 walks complete without a JS error in console, without a dead end (a state the user can't navigate out of), and without a layout break on mobile. JD Prep mode specifically must complete without a dead end. Any single console error or dead end = Batch 0 fails and must be fixed before Batch 1 opens.
 
 **Feedback collected:** N/A — founder self-vet only.
 
 ---
 
-## Batch 1 — First External Testers (RAG Lab + PrepLab)
+## Batch 1 — First External Testers (RAG Lab + PrepLab Exam)
 
 **Status:** Not open — opens after Batch 0 passes.
 
-**User profile:** AI engineer or senior DS who is actively preparing for AI engineering interviews or evaluating the lab as a learning resource. Ideally someone with 1–3 years of experience who has already built at least one RAG pipeline. Has skin in the game — either interviewing soon or evaluating the lab for their team. Not a friend doing you a favour.
+**User profile:** AI engineer or senior DS, 1–3 years experience, has shipped at least one RAG pipeline in production. Currently interviewing or likely to interview within 3 months. Not a friend doing you a favour — someone with real skin in the game who will give honest feedback because their career depends on knowing what they don't know.
 
-**Scope:** RAG Lab (one full scenario) + PrepLab (Exam mode, 10 questions on RAG/retrieval topics).
+**Scope:** RAG Lab (Retrieval Failure scenario only) + PrepLab Exam mode (10 questions, RAG/retrieval cluster). Narrow intentionally — two things, both polished, not the whole product.
+
+**Hypotheses being tested:**
+1. The failure arc lands — testers understand *why* the system failed, not just that it did. (Does the root cause card do enough work, or do testers leave confused?)
+2. The forward pointer is discovered — testers see the ✓ done card and at least one clicks through to PrepLab or the GT post.
+3. PrepLab questions feel calibrated — not too easy (insults them), not too obscure (loses them). The difficulty feels like real interview pressure.
+4. The product feels recommendable — "I would send this to a colleague" is the bar, not "interesting tool."
 
 **Self-vet checklist (before any tester is invited):**
-- [ ] Batch 0 passed fully
-- [ ] Mobile confirmed on real device for RAG Lab and PrepLab specifically
-- [ ] RAG Lab tested with 3 different scenario configurations (not just the default) — confirm failure arc fires correctly in each
-- [ ] PrepLab Exam mode tested with 10-question session — confirm progress bar, correct/wrong states, and session end all work
+- [ ] Batch 0 passed fully — all 8 walks complete, no console errors, no dead ends
+- [ ] RAG Lab Retrieval Failure scenario tested with 3 different configurations — failure arc fires correctly in all three, ✓ done card fires in all three
+- [ ] PrepLab Exam mode: 10-question session completed — progress bar, correct/wrong states, session end all work
+- [ ] Mobile: RAG Lab pill strip + PrepLab back button confirmed on real device
 
 **Tester brief (send verbatim):**
-> "You have 20 minutes. Go to genai-systems-lab-ivory.vercel.app, pick RAG Lab from the nav, and run through the Retrieval Failure scenario — configure it, watch it fail, and figure out why. Then go to PrepLab and answer 10 questions in Exam mode. Don't use any help or hints. When you're done, tell me: where did you get confused or have to re-read something, and does this feel like something you'd recommend to a colleague who's interviewing at an AI-first company?"
+> "I'm testing something — 20 minutes of your time, honest feedback only. Go to genai-systems-lab-ivory.vercel.app. Click into RAG Lab. Run the Retrieval Failure scenario — configure it however you'd set up a real system, watch it fail, and read the diagnosis. Then go to PrepLab and answer 10 questions in Exam mode. No hints, no googling. When you're done, I have two questions: (1) Was there any moment where you weren't sure what was happening or why? (2) Would you send this to someone you know who's interviewing for an AI engineering role?"
 
-**Feedback target:** Not "does it work." Specifically: where did the tester pause or re-read? Does the failure arc land — do they understand *why* the system failed, not just that it failed? Would they recommend it? To whom?
+**Feedback target:**
+- Where did they pause, re-read, or feel uncertain? (UX/copy gaps)
+- Did the failure arc land — can they explain back what went wrong and why? (Core mechanic validation)
+- Did they see the ✓ done card? Did they click the GT post or PrepLab link? (Forward pointer discoverability)
+- Would they recommend it? To whom specifically? (Product-market fit signal)
 
-**Pass criteria:** At minimum — 3 of 5 testers complete the RAG Lab scenario and 10 PrepLab questions without asking for guidance. At least one piece of specific, actionable feedback per tester (not "looks good"). Zero testers report a broken state that Batch 0 should have caught.
+**Pass criteria:** 3 of 5 testers complete both flows without asking for guidance. At least one piece of specific, actionable feedback per tester. At least 2 testers say they would recommend it unprompted. Zero testers report a broken state.
 
 **Feedback collected:** Open — fill in below as responses come in. Close this field when Batch 2 opens.
 
-| Tester | Profile | Completed flow? | Key feedback | Actionable? |
-|---|---|---|---|---|
-| | | | | |
+| Tester | Profile | Completed flow? | Failure arc landed? | Saw done card? | Would recommend? | Key feedback |
+|---|---|---|---|---|---|---|
+| | | | | | | |
 
 ---
 
