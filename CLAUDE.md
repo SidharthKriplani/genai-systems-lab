@@ -316,6 +316,12 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Session build log (May 2026)
 
+**Resolved this session (sprint 12):**
+- `WeaknessHeatmapMode` added to PrepLab (mode "heatmap"): reads `gsl-preplab-history`, shows per-topic accuracy bars sorted worst-first, "Hard Questions" view showing most-missed questions. Added to PREPLAB_SIDEBAR as TRACK mode.
+- Module-level `recordHistory(questionId, correct)` helper added; `InterviewPrepMode` now writes to history on every submit/selfGrade. TrainerMode updated to use shared `HISTORY_KEY` constant.
+- `GateModal` unlock animation: success state with `gsl-pop` scale+fade + `gsl-glow` radial pulse + `gsl-fadein` text — 1.4s total, then calls `onUnlock`. Keyframes injected via inline `<style>` tag.
+- **Concepts Gym**: `MASTERY_KEY = "gsl-concepts-mastery"` + `MODULE_NEXT_STEP` lookup (13 modules → lab/module forward pointers). `GymPanel` component: track accordion (FOUNDATION/APPLICATION/PRACTICE), per-module Start/Revisit, "Next up" recommendation, progress bars. `ConceptsApp` updated: `mastery` state, `gymView` toggle, "GYM" button in sidebar, ✓ badge per completed module, "Mark complete" / "✓ Completed" in module header. Commit: `820cb2d`
+
 **Resolved this session (sprint 11):**
 - TYU fix: `preplabInitialMode` state in `App.jsx`; `initialMode` + `onClearInitialMode` props in `PrepLab.jsx`; `useEffect` auto-selects Trainer mode when navigated from RAG Lab forward pointer — commit `327a745`
 - Hero copy rewrite: removed Layer 3 amber badge, new gradient headline "Configure it. Break it. Know exactly why." — commit `327a745`
