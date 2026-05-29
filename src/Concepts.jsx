@@ -4521,8 +4521,10 @@ const GYMS = [
     id: "evaluation",
     label: "Evaluation",
     desc: "Metrics, LLM-as-judge, RAGAS, and building eval pipelines that catch regressions before users do.",
+    teaser: "5 modules: eval fundamentals, LLM-as-judge calibration, RAGAS deep-dive, regression test design, and eval pipeline architecture. Everything needed to measure whether your system actually works.",
     color: "#22c55e",
     moduleIds: [],
+    modulesSkeleton: ["eval-fundamentals", "llm-as-judge", "ragas-pipeline", "regression-testing", "eval-pipeline-design"],
     labId: "evallab",
     labLabel: "Eval Lab",
     comingSoon: true,
@@ -4531,8 +4533,10 @@ const GYMS = [
     id: "production",
     label: "Production Systems",
     desc: "Cost, latency, caching, observability, and the engineering tradeoffs behind serving LLMs at scale.",
+    teaser: "5 modules: cost vs latency design, KV cache mechanics, batching and throughput, model routing, and deployment patterns. The engineering decisions that separate demos from production.",
     color: "#8b5cf6",
     moduleIds: [],
+    modulesSkeleton: ["cost-latency-design", "kv-cache-mechanics", "batching-throughput", "model-routing-design", "deployment-patterns"],
     labId: "systems",
     labLabel: "Systems Lab",
     comingSoon: true,
@@ -4541,8 +4545,10 @@ const GYMS = [
     id: "foundation-models",
     label: "Foundation Models",
     desc: "Pretraining, RLHF, fine-tuning (LoRA, QLoRA, full), model families — GPT, Claude, Gemini, Llama. What each architectural choice actually buys you.",
+    teaser: "5 modules: pretraining mechanics, RLHF walkthrough, LoRA/QLoRA fine-tuning, model family comparison, and scaling laws. Traces how foundation models are built before they reach your API.",
     color: "#ec4899",
     moduleIds: [],
+    modulesSkeleton: ["pretraining-mechanics", "rlhf-walkthrough", "lora-qlora-finetuning", "model-family-comparison", "scaling-laws"],
     labId: "llmlab",
     labLabel: "LLM Lab",
     comingSoon: true,
@@ -4551,8 +4557,10 @@ const GYMS = [
     id: "prompt-engineering",
     label: "Prompt Engineering",
     desc: "Few-shot, chain-of-thought, structured output, prompt versioning and regression testing. Prompts are code — treat them that way.",
+    teaser: "5 modules: few-shot design patterns, chain-of-thought strategies, structured output reliability, prompt versioning, and system prompt architecture. Treats prompts as engineering artifacts with failure modes.",
     color: "#06b6d4",
     moduleIds: [],
+    modulesSkeleton: ["few-shot-design", "chain-of-thought", "structured-output-prompting", "prompt-versioning", "system-prompt-architecture"],
     labId: "playground",
     labLabel: "Playground",
     comingSoon: true,
@@ -4561,8 +4569,10 @@ const GYMS = [
     id: "cloud-ai-services",
     label: "Cloud AI Services",
     desc: "AWS Bedrock, AgentCore, Vertex AI, Azure AI Foundry — managed APIs, serverless inference, enterprise guardrails, and the real cost model behind each.",
+    teaser: "5 modules: AWS Bedrock + AgentCore, Vertex AI + Gemini, Azure AI Foundry, managed vs self-hosted decision engine, and enterprise TCO modeling. The practical platform landscape.",
     color: "#f97316",
     moduleIds: [],
+    modulesSkeleton: ["aws-bedrock-agentcore", "vertex-ai-gemini", "azure-ai-foundry", "managed-vs-selfhosted", "enterprise-ai-cost-model"],
     labId: "systems",
     labLabel: "Systems Lab",
     comingSoon: true,
@@ -4571,8 +4581,10 @@ const GYMS = [
     id: "vector-infrastructure",
     label: "Vector Infrastructure",
     desc: "pgvector, Pinecone, Weaviate, Qdrant — HNSW vs IVF index types, hybrid search at scale, metadata filtering, and when managed beats self-hosted.",
+    teaser: "5 modules: HNSW vs IVF index mechanics, pgvector vs managed services, hybrid search design, metadata filtering at scale, and migration patterns. Deepens the Retrieval gym into the storage layer.",
     color: "#0ea5e9",
     moduleIds: [],
+    modulesSkeleton: ["vector-db-index-mechanics", "pgvector-vs-managed", "hybrid-search-design", "metadata-filtering", "vector-migration-patterns"],
     labId: "lab",
     labLabel: "RAG Lab",
     comingSoon: true,
@@ -4581,8 +4593,10 @@ const GYMS = [
     id: "observability",
     label: "Observability & Tracing",
     desc: "LangSmith, span tracing, latency + cost + quality signals, production monitoring, eval-in-prod, and catching prompt drift before users do.",
+    teaser: "5 modules: span tracing fundamentals, cost and quality monitoring, prompt drift detection, eval-in-production pipelines, and AI incident response. For engineers who need to know when things break.",
     color: "#14b8a6",
     moduleIds: [],
+    modulesSkeleton: ["span-tracing-fundamentals", "cost-quality-monitoring", "prompt-drift-detection", "eval-in-production", "incident-response-ai"],
     labId: "evallab",
     labLabel: "Eval Lab",
     comingSoon: true,
@@ -4591,8 +4605,10 @@ const GYMS = [
     id: "multimodal",
     label: "Multimodal AI",
     desc: "Vision-language models, CLIP, LLaVA, audio pipelines, cross-modal retrieval, OCR at scale. How the modality changes every design decision.",
+    teaser: "5 modules: vision-language model mechanics, CLIP embedding internals, multimodal RAG pipelines, audio pipeline design, and cross-modal retrieval. For when your system needs to see, hear, and read.",
     color: "#d946ef",
     moduleIds: [],
+    modulesSkeleton: ["vision-language-models", "clip-mechanics", "multimodal-rag", "audio-pipeline-design", "cross-modal-retrieval"],
     labId: "explore",
     labLabel: "Explore",
     comingSoon: true,
@@ -4601,8 +4617,10 @@ const GYMS = [
     id: "ai-safety",
     label: "AI Safety & Alignment",
     desc: "Constitutional AI, RLHF vs RLAIF, red-teaming, jailbreaks and defenses, bias and toxicity at scale, and what alignment actually means in a deployed product.",
+    teaser: "5 modules: Constitutional AI mechanics, red-teaming methodology, jailbreak defense architecture, bias and toxicity at scale, and alignment tradeoffs in production. For engineers who ship systems that affect people.",
     color: "#ef4444",
     moduleIds: [],
+    modulesSkeleton: ["constitutional-ai-mechanics", "red-teaming-methodology", "jailbreak-defense-architecture", "bias-toxicity-at-scale", "alignment-in-practice"],
     labId: "systems",
     labLabel: "Systems Lab",
     comingSoon: true,
@@ -4611,8 +4629,10 @@ const GYMS = [
     id: "ai-product",
     label: "AI Product Strategy",
     desc: "Build vs buy, model selection frameworks, cost modeling, product metrics for AI features, and why most AI pilots fail to reach production.",
+    teaser: "5 modules: build vs buy decision engine, model selection criteria, AI product metrics, cost modeling under uncertainty, and why pilots fail. For engineers and PMs making product decisions on AI.",
     color: "#84cc16",
     moduleIds: [],
+    modulesSkeleton: ["build-vs-buy", "model-selection-criteria", "ai-product-metrics", "cost-modeling-ai-features", "why-pilots-fail"],
     labId: "aipm",
     labLabel: "AI Product",
     comingSoon: true,
@@ -4621,8 +4641,10 @@ const GYMS = [
     id: "data-for-ai",
     label: "Data for AI",
     desc: "Synthetic data generation, fine-tuning dataset curation, annotation pipelines, the data flywheel, and why data quality beats data quantity every time.",
+    teaser: "5 modules: synthetic data generation, fine-tuning dataset curation, annotation pipeline design, the data flywheel, and quality vs quantity tradeoffs. The data layer that determines what your model can actually do.",
     color: "#a855f7",
     moduleIds: [],
+    modulesSkeleton: ["synthetic-data-generation", "finetuning-dataset-curation", "annotation-pipeline-design", "data-flywheel", "data-quality-vs-quantity"],
     labId: "systems",
     labLabel: "Systems Lab",
     comingSoon: true,
@@ -4652,23 +4674,48 @@ function GymSelectorView({ mastery, onEnterGym }) {
               onClick={() => !gym.comingSoon && onEnterGym(gym.id)}
               className={`rounded-2xl border p-5 flex flex-col gap-3 transition-all ${
                 gym.comingSoon
-                  ? "border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed"
+                  ? "border-zinc-800/60 bg-zinc-900/15 cursor-default"
                   : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 cursor-pointer"
               }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded border"
-                  style={{ color: gym.color, borderColor: `${gym.color}40`, background: `${gym.color}14` }}>
-                  {gym.comingSoon ? "COMING SOON" : `${total} modules`}
+                  style={
+                    gym.comingSoon
+                      ? { color: "#71717a", borderColor: "#3f3f46", background: "#18181b" }
+                      : { color: gym.color, borderColor: `${gym.color}40`, background: `${gym.color}14` }
+                  }>
+                  {gym.comingSoon
+                    ? `${(gym.modulesSkeleton || []).length || "?"} modules planned`
+                    : `${total} modules`}
                 </span>
                 {!gym.comingSoon && total > 0 && (
                   <span className="text-xs text-zinc-500">{completed}/{total} done</span>
                 )}
+                {gym.comingSoon && (
+                  <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">Coming soon</span>
+                )}
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">{gym.label}</h3>
-                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{gym.desc}</p>
+                <h3 className={`text-base font-bold ${gym.comingSoon ? "text-zinc-500" : "text-white"}`}>{gym.label}</h3>
+                <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                  {gym.comingSoon && gym.teaser ? gym.teaser : gym.desc}
+                </p>
               </div>
+              {gym.comingSoon && gym.modulesSkeleton && gym.modulesSkeleton.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {gym.modulesSkeleton.slice(0, 4).map(mid => (
+                    <span key={mid} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-600">
+                      {mid.replace(/-/g, " ")}
+                    </span>
+                  ))}
+                  {gym.modulesSkeleton.length > 4 && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-600">
+                      +{gym.modulesSkeleton.length - 4} more
+                    </span>
+                  )}
+                </div>
+              )}
               {!gym.comingSoon && total > 0 && (
                 <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: gym.color }} />
