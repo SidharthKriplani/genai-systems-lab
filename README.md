@@ -22,7 +22,7 @@
 <br/>
 
 ```
-14 tabs  ·  140+ modules  ·  200+ posts  ·  200+ PrepLab questions  ·  zero backend  ·  no login
+14 tabs  ·  150+ modules  ·  222+ posts  ·  261+ PrepLab questions  ·  zero backend  ·  no login
 ```
 
 </div>
@@ -35,7 +35,7 @@ The answer is wrong. Nobody catches it until the complaint arrives.
 
 **This lab teaches you to catch it before it ships.**
 
-Five curated RAG failure scenarios. Inference bottleneck diagnosis. Agent loop step-through. Eval design. MCP protocol. Context compaction. 140+ production systems modules. 200+ Ground Truth posts. All interactive. All in your browser. No account, no backend, no cost.
+Five curated RAG failure scenarios. Inference bottleneck diagnosis. Agent loop step-through. Eval design. MCP protocol. Context compaction. 150+ production systems modules. 222+ Ground Truth posts. 261+ PrepLab questions. All interactive. All in your browser. No account, no backend, no cost.
 
 → [**Open the lab**](https://genai-systems-lab-ivory.vercel.app)
 
@@ -43,9 +43,9 @@ Five curated RAG failure scenarios. Inference bottleneck diagnosis. Agent loop s
 
 ## What this is
 
-A systems intuition tool, not a course. It models how production AI systems actually fail — misconfigured retrieval, stale documents, prompt injection, context overflow, agent loops gone wrong — and puts you in the position of configuring, diagnosing, and fixing them.
+A **production AI judgment simulator**, not a course. It models how production AI systems actually fail — misconfigured retrieval, stale documents, prompt injection, context overflow, agent loops gone wrong — and puts you in the seat of configuring, diagnosing, and fixing them.
 
-Not a video. Not a blog post. Not a quiz. You make decisions, the system responds, you see the consequence.
+Not a video. Not a blog post. Not a quiz. You make a configuration decision, the system responds, you see the consequence and learn exactly why it happened.
 
 ---
 
@@ -78,14 +78,14 @@ Not a video. Not a blog post. Not a quiz. You make decisions, the system respond
 | 💬 **Fluency** | 5 | Phrase bank, timed drills, mock interview (20 questions, 90s each), company case arena, prompt engineering lab |
 | 📋 **AI Product** | 5 | PRD simulator, roadmap prioritizer, stakeholder explainer, launch checklist, AI-or-not? decision framework |
 | 🚀 **Career** | 5 | System design interviews, take-home challenges, negotiation flashcards, benchmark literacy |
-| 💡 **Ask** | — | Consultation space — keyword search over 200+ posts + all module descriptions. Conversational UI. LLM-upgrade-ready |
+| 💡 **Ask** | — | Consultation space — keyword search over 222+ posts + all module descriptions. Conversational UI. LLM-upgrade-ready |
 | 📝 **PrepLab** | 3 modes | Assessment (timed exam, 15/30/60 min), Trainer (immediate feedback + weak topic tracking), JD Prep (paste JD → skill gap → targeted drill) |
 
 ---
 
 ## PrepLab — what makes it different
 
-**Assessment Mode:** Timed exam (15/30/60 min). 200+ questions across 8 skill categories. Scores hidden until end — final reveal shows per-category breakdown and "Strong in / Needs work" callout.
+**Assessment Mode:** Timed exam (15/30/60 min). 261+ questions across 8 skill categories. Scores hidden until end — final reveal shows per-category breakdown and "Strong in / Needs work" callout.
 
 **Trainer Mode:** Immediate feedback after each answer. Optional speech input (Web Speech API). Tracks weak topics. Session summary with "Study these next" recommendations.
 
@@ -107,7 +107,7 @@ Not available anywhere else for this audience, for free.
 | Honest fidelity disclosure | ✗ | ✗ | ✗ | ✓ |
 | No ads, no upsells | ✓ | ✗ | ✗ | ✓ |
 | Covers evals, inference, agents, MCP | ✗ | Partial | ✗ | ✓ |
-| 200+ production-depth posts | ✗ | ✗ | ✗ | ✓ |
+| 222+ production-depth posts | ✗ | ✗ | ✗ | ✓ |
 | Free forever | ✓ | ✗ | ✓ | ✓ |
 
 The gap that matters: every other resource **shows** you what to do. This one puts you in the seat and makes you decide — then shows you what broke and why.
