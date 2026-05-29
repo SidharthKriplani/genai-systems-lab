@@ -316,6 +316,14 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Session build log (May 2026)
 
+**Resolved this session (sprint 10):**
+- `Home.jsx` simplification: cut PATHS, SuggestedPath, LEARNING_PATHS, MODULE_MAP, DEP_NODES/EDGES, ConceptGraph, journey strip, social proof placeholders, learning paths section, concept graph section, module map section, how-to section, about section, email capture section
+- Dead state removed: `role`, `switchRole`, `orderedGroups`, `isRelevant`, `activePath`, `pathRole`, `showPath`, `expandedModule`, `subEmail`, `subStatus`, `pathProgress`
+- Kept: beta banner, hero + glow + door cards + "continue where you left off", stats row + failure pills, daily tip, footer
+- `useMemo` import removed (no longer needed)
+- Home.jsx: 1083 lines → ~367 lines (~66% reduction)
+- Brace check: diff 0 ✓ — commit `303597c`
+
 **Resolved this session (sprint 9):**
 - Audit 32: Full mobile UX audit — 15 findings, all resolved or closed
 - Audit 33: Touch target + overflow pass — all Audit 32 open findings resolved
