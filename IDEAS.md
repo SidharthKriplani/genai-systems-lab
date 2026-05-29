@@ -359,6 +359,72 @@ A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL
 - **Jump back in precision** — surface the specific module name + "N days ago" timestamp. Currently shows tab-level only (e.g. "RAG Lab"). Requires storing last-opened module + timestamp in a separate key. *Pending.*
 - **PrepLab nudge in Today** — "Your weakest topic: X. Here are 3 questions." Pulls from WeaknessHeatmap data. Currently shows aggregate stats only. *Pending.*
 
+### Prompt Engineering Lab — new lab (May 2026)
+
+The clearest gap in the lab lineup. Every AI practitioner writes prompts. Prompt regressions are one of the most common and hardest-to-detect production failures (Aryan Sharma post — 23% quality drop undetected for 11 days). The "configure it, break it" mechanic maps perfectly: write a prompt, run it against test cases, introduce a change, observe the regression, diagnose the root cause.
+
+**Proposed scenarios (6–8):**
+- **Regression from prompt edit** — change one line of a system prompt, watch 3 test cases fail. Diagnose which edit caused which failure.
+- **System prompt injection via user input** — well-designed prompt overridden by adversarial user message. Diagnose the boundary failure.
+- **Few-shot degradation** — add a bad example to a few-shot prompt, watch output quality drop non-obviously. Diagnose example contamination.
+- **Structured output failure** — prompt that produces valid JSON 90% of the time. Find the edge cases that break schema compliance.
+- **Multi-turn drift** — system prompt designed for turn 1 degrades over a long conversation as context accumulates. Diagnose context pollution.
+- **Temperature miscalibration** — same prompt, wrong temperature for the task type. Diagnose determinism failure vs creative failure.
+- **Over-constrained prompt** — so many rules the model fails to complete the core task. Diagnose instruction conflict.
+- **Implicit persona bleed** — system prompt unintentionally establishes a persona that produces off-brand outputs under adversarial framing.
+
+**Nav entry:** Under LABS, between Agent Lab and Eval Lab.
+**Shell pattern:** Identical to RAG Lab — scenario list left, prompt config + test case output right, root cause + synthesis close below.
+**Concepts gym connection:** Prompt Engineering gym (coming soon) → this lab.
+**PrepLab coverage:** Add 6–8 questions per scenario after build.
+
+**Effort:** M (shell + 6 scenarios = ~1 full session if scenarios are well-specified before building)
+
+**Priority:** Tier 1 — highest-value new lab, clearest mechanic, broadest audience (engineers AND PMs)
+
+---
+
+### Foundation Models Lab — new lab (May 2026)
+
+Covers fine-tuning, pretraining concepts, and model behaviour that practitioners need to understand but can't directly experience. The mechanic: configure a fine-tuning setup (data quality, LoRA rank, learning rate, epochs) → simulate the training outcome → diagnose the failure mode. All outcomes are pre-computed and triggered by config thresholds — no real model calls needed.
+
+**Proposed scenarios (5–6):**
+- **LoRA rank too low** — underfitting. Model retains general capability but doesn't learn the target behaviour. Diagnose: rank insufficient for task complexity.
+- **Learning rate too high** — catastrophic forgetting. Model loses general capability while learning the new task. Diagnose: LR destroyed the base model weights.
+- **Dataset contamination** — eval set leaked into training. Metrics look great; real-world quality is poor. Diagnose: benchmark overfitting.
+- **Insufficient data volume** — model memorises training examples instead of generalising. Diagnose: data volume below threshold for task.
+- **Misaligned training objective** — fine-tuned on the wrong proxy signal. Model optimises the metric but fails the actual task. Diagnose: metric–task mismatch.
+- **Base model mismatch** — fine-tuning a model that wasn't pretrained on the right domain. Diagnose: base capability gap that fine-tuning can't close.
+
+**Nav entry:** Under LABS, after LLM Lab.
+**Concepts gym connection:** Foundation Models gym (coming soon) → this lab.
+**Effort:** M–L (scenarios need convincing fake feedback loops — the main design challenge)
+
+**Priority:** Tier 1 — distinct from LLM Lab (which covers inference/serving), covers training-time decisions
+
+---
+
+### Non-lab domain competence path — PrepLab coverage expansion (May 2026)
+
+For domains that can't have a "configure and break" lab (Cloud AI Services, Multimodal, AI Safety, Data for AI, Observability), the competence-building path is: Concepts gym (mental model) + Ground Truth posts (production depth) + PrepLab questions (judgment under pressure). The path is correct in principle — it just isn't populated yet.
+
+**What's missing:** PrepLab has thin or zero coverage on these domains. Current topic distribution is heavy on RAG/agents/evals and light on everything else.
+
+**Needed PrepLab topic clusters (25–30 questions each):**
+- **Cloud AI Services** — Bedrock vs Vertex vs Azure AI Foundry tradeoffs, managed inference economics, serverless vs dedicated, enterprise guardrails, when to use managed vs self-hosted
+- **AI Safety & Alignment** — red-teaming methods, constitutional AI, RLHF vs RLAIF, jailbreak categories, bias detection, safety-helpfulness tradeoff in production
+- **Data for AI** — synthetic data quality signals, fine-tuning dataset curation, annotation pipeline design, data flywheel mechanics, quality vs quantity tradeoffs
+- **Multimodal** — vision-language model selection, cross-modal retrieval design, OCR pipeline failure modes, resolution/compression tradeoffs
+- **Observability** — what to instrument, span tracing design, drift detection signals, eval-in-prod patterns, alert thresholds
+
+**Also needed:** GT posts for each domain (at least 2–3 per domain) before PrepLab questions land — questions without depth resources feel unsupported.
+
+**Effort:** L (writing-heavy — 100+ questions + 10–15 GT posts)
+
+**Priority:** Tier 1 — this is the product's answer to "how do I build competence on domains I can't simulate." Without it, the Concepts gym rooms are placeholders with no path to applied practice.
+
+---
+
 ### Cross-repo intelligence — what sibling labs have that we don't (May 2026)
 
 Scan of ML Systems Lab and Product Analytics Lab (PAL/Experimentation Lab) surfaced several mechanics and features the GenAI lab is missing. Filtered for fit — excluded things that belong to the other lab's domain (Pyodide Python runtime, statistics rooms, SQL runners).

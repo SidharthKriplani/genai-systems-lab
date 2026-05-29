@@ -423,6 +423,71 @@ Only show the chip when the target gym is active (not `comingSoon`). Check again
 
 ---
 
+## Labs — Guiding Text Pass (all 4 labs, 49 scenarios/modules)
+
+**Component:** `src/App.jsx` (RAG Lab scenarios), `src/Agents.jsx` (16 Agent Lab modules), `src/systems/modules.jsx` (Eval Lab + LLM Lab modules)
+
+**Current behavior:** All lab modules are interactive-first with little to no explanatory text. Configuration UIs have no setup context. Failure outputs have no framing for what the user is watching. Root causes exist in RAG Lab but are thin elsewhere. No module has a synthesis close — the practitioner takeaway that turns a demo into a mental model. Labs feel like toys, not learning tools. Same disease Concepts had, 3× the scale.
+
+**The standard — 3 beats per scenario/module, no exceptions:**
+
+**Beat 1 — Setup framing** (before the config UI, ~80–120 words)
+What the user is about to configure, why this exact configuration decision matters in production, what failure mode they're about to produce, and what specifically to pay attention to as they adjust parameters. Production-practitioner tone. Never passive voice. Never "in this module you will learn." Instead: "This is the configuration decision that breaks most RAG pipelines in their first week of production."
+
+**Beat 2 — Inline callouts** (reactive to specific config states, 1–2 sentences per trigger)
+As the user crosses a meaningful threshold, contextual text appears. Not "value is 0.3" but "at this retrieval score cutoff, you're accepting chunks that are topically adjacent but factually irrelevant — the model will fill the gap." Tied to named thresholds, not free-form. Each callout names the specific failure it's telegraphing.
+
+**Beat 3 — Synthesis close** (after the failure reveal, 2–3 sentences max)
+The design principle the failure teaches. One decision rule a practitioner would actually use. Not a summary of what happened — a conclusion about what to do differently. Example: "The fix is not a lower temperature. The fix is a confidence threshold that routes low-certainty queries to abstain rather than hallucinate. Helpfulness and groundedness trade off; the system design choice is where to draw the line."
+
+**Total per scenario:** ~250–350 words across all 3 beats. Tight. Every word earns its place.
+
+**Priority order and lab-by-lab scope:**
+
+**1. RAG Lab — 6 scenarios (highest ROI, most traffic)**
+`src/App.jsx` — each scenario's right panel. Root cause + suggested fix already exist from sprint 6 — these become Beat 3 material, but setup framing (Beat 1) and inline callouts (Beat 2) are completely missing. Scenarios: stale retrieval, prompt injection, missing context, context overflow, multi-hop failure, hybrid search.
+
+**2. LLM Lab — 9 modules (some reactive callouts already exist)**
+`src/systems/modules.jsx` — `decoding` has some Beat 2 from sprint 7. `serving` has failure scenarios. `moe`, `langsmith`, `quantization`, `finetune`, `alignment`, `context-compression`, `architecture` need full 3-beat treatment. Lightest lift after RAG Lab.
+
+**3. Agent Lab — 16 modules (done screens exist, framing missing)**
+`src/Agents.jsx` — done screens with PrepLab pointers exist for `simulator` + `design` from sprint 7. But setup framing is absent from all 16. `agentcfg` has failure matrix but no Beat 1. `failures`, `memory`, `tools`, `tracing`, `multiagent`, `evaluate`, `deploy-agents`, `security`, `costcontrol`, `langsmith`, `planning`, `streaming`, `humanloop` — all thin.
+
+**4. Eval Lab — 18 modules (heaviest lift, most reference-heavy)**
+`src/systems/modules.jsx` — most Eval Lab modules are closest to reference tabs. Full 3-beat pass here transforms them from readable to learnable. `evals`, `judge`, `ragas`, `hallucination`, `datasets`, `regression`, `ab-testing`, `tracing`, `monitoring`, `feedback`, `safety-eval`, `cost`, `latency`, `groundedness`, `coverage`, `custom-metrics`, `pipeline`, `productioneval`.
+
+**Effort:** L (multi-session — minimum 4 focused sessions, one per lab)
+
+**Dependencies:** None — pure writing + JSX injection. No new interactives needed.
+
+**Quality bar:** After this pass, every scenario/module must be completable by someone who has never heard of the concept. They configure it, understand what they configured, watch it fail, understand why it failed, and leave with a concrete design principle. That is the standard.
+
+**Priority:** Critical — this is the highest-priority text work on the product. Every user who bounces from a lab without learning anything is this problem.
+
+**Status:** Pending — start with RAG Lab (6 scenarios, 1 session)
+
+---
+
+## Labs — "What's Next" Card Redesign (forward pointer pattern)
+
+**Component:** `src/App.jsx` (RAG Lab), `src/Agents.jsx`, `src/systems/modules.jsx` — scenario/module bottom sections
+
+**Current behavior:** RAG Lab has a "YOU'VE SEEN THE FAILURE. WHAT'S NEXT?" card at the bottom right of the scenario panel — two small buttons: Test your understanding (PrepLab) + Read the full breakdown (GT post). The card is visually insignificant. It sits in a corner competing with root cause, suggested fix, system design lesson, and feedback prompt — six elements fighting for attention. The most important CTA on the page (next step) has the least visual weight. Agent Lab has PrepLab pointers on done screens only. Eval Lab and LLM Lab have minimal or no forward pointers.
+
+**Target behavior:** The forward pointer becomes the deliberate final beat of every scenario — not a corner widget but a full-width conclusion section. Positioned after the synthesis close (Beat 3 from the guiding text pass). Design: a horizontal divider, a clear heading ("You've diagnosed this. Where does it take you?"), then two full-width CTA cards side by side — PrepLab (test judgment under pressure) + GT post (go deeper on the concept). The cards should have enough visual weight to feel like a conclusion, not an afterthought. Same component, consistent across all labs.
+
+**Implementation note:** Build as a shared `<WhatNextCard>` component that accepts `preplabTopic` and `gtPostId` props. Slot it at the bottom of every scenario/module after the synthesis close. Replaces the current ad-hoc corner card in RAG Lab.
+
+**Effort:** M (component build = S; wiring across all labs = M)
+
+**Dependencies:** Guiding text pass should happen first — the card reads as a conclusion to the synthesis close. Without Beat 3 text, the card still feels disconnected.
+
+**Priority:** High — but blocked on guiding text pass for full effect.
+
+**Status:** Pending
+
+---
+
 ## Global — Font + Color Scheme Audit
 
 **Component:** `src/index.css` + all `.jsx` files — typography and color token usage
