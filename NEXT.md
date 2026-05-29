@@ -2,17 +2,20 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 23)*
+*Last updated: May 2026 (post sprint 24)*
 
 ---
 
 ## Theme: Close the loops users already opened. Surface progress clearly.
 
-Sprint 22 structural overhaul complete (Build/Prove/Navigate). Sprint 23 visual redesign complete (CSS vars, collapsible sidebar, home hierarchy, lab shell parity). This session: interactive improvements that directly affect the learn loop.
+Sprint 22 structural overhaul complete (Build/Prove/Navigate). Sprint 23 visual redesign + animations complete. Sprint 24 elevation token system complete — cards now float visibly (PAL-parity). This session: interactive improvements that directly affect the learn loop.
 
 ---
 
 ## Do this (in order)
+
+**Done this session (sprint 24):**
+- ~~Elevation token system~~ → `--bg` (#111520), `--surface` (#191e30), `--surface-2` (#1f2438), `--border` (#3d4668), `--border-subtle` (#2a3255) added to `:root` in `index.css`. App.jsx: root div, both sidebars (desktop + mobile), RAG Lab inner sidebar, header border, bottom utils border all use tokens. Home.jsx: all door cards + Today section + Continue button use `--surface-2`/`--border`. Gradient overlays removed — surface elevation now handles depth. Commit `08f4512`.
 
 **Done this session (sprint 23):**
 - ~~CSS variables~~ → `--gal-build/prove/navigate/knowledge` added to `index.css`. NAV_GROUPS use `var()`. Commit `b5b4d2e`.
