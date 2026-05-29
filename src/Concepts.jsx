@@ -4110,6 +4110,137 @@ const LEVEL_STYLE = {
   advanced:     "text-red-400 border-red-800/50",
 };
 
+const MASTERY_KEY = "gsl-concepts-mastery";
+
+// Per-module: where to go next after completing
+const MODULE_NEXT_STEP = {
+  "rag-pipeline":  { tab: "lab",       label: "RAG Lab — configure 6 real failure scenarios" },
+  "chunking":      { tab: "lab",       label: "RAG Lab — chunking strategy affects retrieval" },
+  "agent":         { tab: "agentlab",  label: "Agent Lab — wire failure modes and recovery" },
+  "multiagent":    { tab: "agentlab",  label: "Agent Lab — multi-agent patterns" },
+  "guardrails":    { tab: "systems",   label: "Systems — AI Safety Engineering module" },
+  "debug":         { tab: "lab",       label: "RAG Lab — diagnose pipeline failures" },
+  "transformer":   { tab: "llmlab",    label: "LLM Lab — Decoding & sampling module" },
+  "sampling":      { tab: "llmlab",    label: "LLM Lab — Decoding module" },
+  "embeddings":    { tab: "systems",   label: "Systems — Vector DB Engineering" },
+  "attention":     { tab: "concepts",  label: "Next: Transformer forward pass" },
+  "tokenizer":     { tab: "concepts",  label: "Next: Embedding Space" },
+  "context":       { tab: "llmlab",    label: "LLM Lab — Long Context Patterns" },
+  "flashattn":     { tab: "llmlab",    label: "LLM Lab — Serving Infrastructure" },
+};
+
+// ─── GYM PANEL ───────────────────────────────────────────────────────────────
+
+function GymPanel({ mastery, onOpen, onClose, onNavigate }) {
+  const [expandedGroup, setExpandedGroup] = useState("FOUNDATION");
+  const completedCount = mastery.size;
+  const totalCount = MODULES.length;
+  const nextModule = MODULES.find(m => !mastery.has(m.id));
+
+  return (
+    <div className="flex-1 overflow-y-auto">
+      <div className="max-w-2xl mx-auto px-5 py-7 space-y-5">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 text-sm">← Back</button>
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-white">Concepts Gym</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">{completedCount} / {totalCount} modules completed</p>
+          </div>
+          <div className="w-24 h-2 bg-zinc-800 rounded-full overflow-hidden shrink-0">
+            <div className="h-full rounded-full bg-violet-500 transition-all"
+              style={{ width: `${Math.round(completedCount / totalCount * 100)}%` }} />
+          </div>
+        </div>
+
+        {/* "Next up" CTA */}
+        {nextModule && (
+          <div className="flex items-center gap-4 p-4 rounded-xl border border-violet-800/30"
+            style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.1) 0%, rgba(15,15,17,0.9) 100%)" }}>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-0.5">Next up</div>
+              <div className="text-sm font-semibold text-white truncate">{nextModule.title}</div>
+              <div className="text-xs text-zinc-500 truncate">{nextModule.subtitle.split(".")[0]}</div>
+            </div>
+            <button onClick={() => onOpen(nextModule.id)}
+              className="shrink-0 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors">
+              Start →
+            </button>
+          </div>
+        )}
+        {!nextModule && (
+          <div className="p-5 text-center rounded-xl border border-emerald-800/30 bg-emerald-900/10">
+            <div className="text-emerald-400 font-semibold mb-1">All modules complete</div>
+            <p className="text-xs text-zinc-400">Move to the Labs to apply what you've learned.</p>
+          </div>
+        )}
+
+        {/* Track accordion */}
+        {CONCEPT_GROUPS.map((grp) => {
+          const modules = grp.ids.map(id => MODULES.find(m => m.id === id)).filter(Boolean);
+          const completed = modules.filter(m => mastery.has(m.id)).length;
+          const color = grp.label === "FOUNDATION" ? "#6366f1" : grp.label === "APPLICATION" ? "#3b82f6" : "#22c55e";
+          const isExpanded = expandedGroup === grp.label;
+          return (
+            <div key={grp.label} className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+              <button onClick={() => setExpandedGroup(isExpanded ? null : grp.label)}
+                className="w-full flex items-center gap-4 p-4 text-left">
+                <div className="flex-1">
+                  <div className="text-xs font-mono uppercase tracking-wider font-bold" style={{ color }}>{grp.label}</div>
+                  <div className="text-xs text-zinc-500 mt-0.5">{completed}/{modules.length} complete</div>
+                </div>
+                <div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden shrink-0">
+                  <div className="h-full rounded-full transition-all"
+                    style={{ width: `${Math.round(completed / modules.length * 100)}%`, background: color }} />
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  className={`text-zinc-500 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}>
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              {isExpanded && (
+                <div className="border-t border-zinc-800 divide-y divide-zinc-800">
+                  {modules.map((m, i) => {
+                    const done = mastery.has(m.id);
+                    const nextStep = MODULE_NEXT_STEP[m.id];
+                    return (
+                      <div key={m.id} className={`p-4 flex items-center gap-3 ${done ? "opacity-60" : ""}`}>
+                        <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 text-[10px] font-bold ${
+                          done ? "bg-emerald-900/30 border-emerald-600/50 text-emerald-400" : "bg-zinc-800 border-zinc-700 text-zinc-500"
+                        }`}>
+                          {done ? "✓" : i + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className={`text-sm font-medium truncate ${done ? "text-zinc-500 line-through" : "text-zinc-200"}`}>{m.title}</div>
+                          <div className="text-xs text-zinc-600 truncate">{m.subtitle.split(".")[0]}</div>
+                          {done && nextStep && (
+                            <button onClick={() => onNavigate(nextStep.tab)}
+                              className="text-xs text-indigo-400 hover:text-indigo-300 mt-0.5 block text-left">
+                              {nextStep.label}
+                            </button>
+                          )}
+                        </div>
+                        <button onClick={() => onOpen(m.id)}
+                          className={`shrink-0 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                            done
+                              ? "border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600"
+                              : "border-violet-700/50 text-violet-400 hover:bg-violet-900/20"
+                          }`}>
+                          {done ? "Revisit" : "Start →"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 const CONCEPT_GROUPS = [
   {
     label: "FOUNDATION",
@@ -4127,15 +4258,49 @@ const CONCEPT_GROUPS = [
 
 export default function ConceptsApp({ onNavigate }) {
   const [active, setActive] = useState("tokenizer");
+  const [gymView, setGymView] = useState(false);
+  const [mastery, setMastery] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(MASTERY_KEY) || "[]")); }
+    catch { return new Set(); }
+  });
+
   const mod = MODULES.find((m) => m.id === active);
   const Component = mod.component;
+
+  function openModule(id) {
+    setActive(id);
+    setGymView(false);
+    track("concept_module_opened", { module: id, source: gymView ? "gym" : "sidebar" });
+  }
+
+  function markComplete(id) {
+    setMastery(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      try { localStorage.setItem(MASTERY_KEY, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+    track("concept_module_completed", { module: id });
+  }
+
+  if (gymView) {
+    return (
+      <div className="flex h-full min-h-0">
+        <GymPanel mastery={mastery} onOpen={openModule} onClose={() => setGymView(false)} onNavigate={onNavigate} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0">
       {/* ── Left sidebar ── */}
       <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4 hidden sm:block">
-        <div className="px-3 mb-3">
+        <div className="px-3 mb-3 flex items-center justify-between">
           <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Concepts</p>
+          <button onClick={() => setGymView(true)}
+            className="text-[9px] font-mono text-violet-400 hover:text-violet-300 border border-violet-800/40 hover:border-violet-600/60 rounded px-1.5 py-0.5 transition-colors">
+            GYM
+          </button>
         </div>
         {CONCEPT_GROUPS.map((grp) => (
           <div key={grp.label} className="mb-4">
@@ -4144,14 +4309,13 @@ export default function ConceptsApp({ onNavigate }) {
               const m = MODULES.find((x) => x.id === id);
               if (!m) return null;
               const isActive = active === id;
+              const done = mastery.has(id);
               return (
                 <button
                   key={id}
-                  onClick={() => { setActive(id); track("concept_module_opened", { module: id, module_label: m.label }); }}
+                  onClick={() => openModule(id)}
                   className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 transition-all duration-150 ${
-                    isActive
-                      ? "font-semibold text-white"
-                      : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60"
+                    isActive ? "font-semibold text-white" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60"
                   }`}
                   style={isActive ? {
                     background: "linear-gradient(90deg, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.06) 100%)",
@@ -4159,14 +4323,17 @@ export default function ConceptsApp({ onNavigate }) {
                   } : {}}
                 >
                   <span className="text-xs font-medium truncate">{m.label}</span>
-                  {m.level && (
-                    <span className={`text-[9px] font-mono shrink-0 ${
-                      m.level === "beginner" ? "text-emerald-500" :
-                      m.level === "intermediate" ? "text-amber-500" : "text-red-500"
-                    }`}>
-                      {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {done && <span className="text-[9px] text-emerald-500 font-bold">✓</span>}
+                    {m.level && (
+                      <span className={`text-[9px] font-mono ${
+                        m.level === "beginner" ? "text-emerald-500" :
+                        m.level === "intermediate" ? "text-amber-500" : "text-red-500"
+                      }`}>
+                        {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -4179,7 +4346,7 @@ export default function ConceptsApp({ onNavigate }) {
         {MODULES.map((m) => (
           <button
             key={m.id}
-            onClick={() => { setActive(m.id); track("concept_module_opened", { module: m.id, module_label: m.label }); }}
+            onClick={() => openModule(m.id)}
             className={`shrink-0 px-3 py-2.5 rounded text-xs font-medium transition-colors ${
               active === m.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400"
             }`}
@@ -4207,6 +4374,19 @@ export default function ConceptsApp({ onNavigate }) {
                 </span>
               )}
               {mod.fidelity && <span className="text-[10px] text-zinc-500 hidden md:block">{mod.fidelity.note}</span>}
+              <div className="ml-auto flex items-center gap-2">
+                {mastery.has(active)
+                  ? <span className="text-[9px] font-mono px-2 py-0.5 rounded border bg-emerald-950/30 border-emerald-800/40 text-emerald-400">✓ Completed</span>
+                  : <button onClick={() => markComplete(active)}
+                      className="text-[9px] font-mono px-2 py-0.5 rounded border bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-emerald-950/30 hover:border-emerald-800/40 hover:text-emerald-400 transition-colors">
+                      Mark complete
+                    </button>
+                }
+                <button onClick={() => setGymView(true)}
+                  className="hidden sm:block text-[9px] font-mono text-violet-400 hover:text-violet-300 border border-violet-800/40 rounded px-1.5 py-0.5 transition-colors">
+                  Gym view
+                </button>
+              </div>
             </div>
             <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{mod.title}</h2>
             <p className="text-sm text-zinc-400 mt-1">{mod.subtitle}</p>

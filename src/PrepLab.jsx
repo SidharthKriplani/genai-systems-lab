@@ -5,10 +5,39 @@ import { isAccessGranted, grantAccess, validateCode, FREE_QUESTION_LIMIT } from 
 function GateModal({ onUnlock, onClose }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
 
   function submit() {
-    if (validateCode(code)) { grantAccess(); onUnlock(); }
-    else setError(true);
+    if (validateCode(code)) {
+      grantAccess();
+      setUnlocked(true);
+      setTimeout(onUnlock, 1400);
+    } else setError(true);
+  }
+
+  if (unlocked) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <style>{`
+          @keyframes gsl-pop { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
+          @keyframes gsl-glow { 0%,100% { box-shadow: 0 0 30px rgba(139,92,246,0.35),0 0 70px rgba(139,92,246,0.12); } 50% { box-shadow: 0 0 60px rgba(139,92,246,0.6),0 0 120px rgba(139,92,246,0.25); } }
+          @keyframes gsl-fadein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        `}</style>
+        <div className="bg-zinc-900 border border-violet-500/40 rounded-2xl p-10 max-w-sm w-full flex flex-col items-center gap-5 text-center"
+          style={{ animation: "gsl-pop 0.35s cubic-bezier(0.16,1,0.3,1) both" }}>
+          <div className="w-18 h-18 rounded-full flex items-center justify-center"
+            style={{ width: 72, height: 72, background: "radial-gradient(circle, rgba(139,92,246,0.25) 0%, rgba(109,40,217,0.08) 100%)", animation: "gsl-glow 1.4s ease-in-out both" }}>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div style={{ animation: "gsl-fadein 0.4s 0.25s both" }}>
+            <div className="text-2xl font-bold text-white mb-1">You're in.</div>
+            <div className="text-sm text-zinc-400">Full access unlocked</div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -2834,6 +2863,18 @@ function shuffle(arr) {
   return a;
 }
 
+// Shared history persistence — used by TrainerMode, InterviewPrepMode, and WeaknessHeatmapMode
+function recordHistory(questionId, correct) {
+  try {
+    const prev = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
+    const entry = prev[questionId] || { attempts: 0, wrong: 0 };
+    localStorage.setItem(HISTORY_KEY, JSON.stringify({
+      ...prev,
+      [questionId]: { attempts: entry.attempts + 1, wrong: entry.wrong + (correct ? 0 : 1) },
+    }));
+  } catch {}
+}
+
 function drawQuestions(count, focus, difficulty) {
   let pool = [...PREP_QUESTIONS];
   if (focus !== "all") {
@@ -2875,6 +2916,7 @@ function skillWeightLabel(weight) {
 
 const RATING_VALUES = { strong: 0.9, okay: 0.5, weak: 0.0 };
 const DRILL_W       = { weak: 3,    okay: 1.5,  strong: 0.5 };
+const HISTORY_KEY   = "gsl-preplab-history";
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
@@ -3474,23 +3516,19 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
   const [sessionAnswers, setSessionAnswers] = useState([]);
   const [showGate, setShowGate] = useState(false);
   const [history, setHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); }
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}"); }
     catch { return {}; }
   });
   const [weakOnly, setWeakOnly] = useState(false);
 
   function recordAnswer(questionId, correct) {
+    recordHistory(questionId, correct);
     setHistory(prev => {
       const entry = prev[questionId] || { attempts: 0, wrong: 0 };
-      const next = {
+      return {
         ...prev,
-        [questionId]: {
-          attempts: entry.attempts + 1,
-          wrong: entry.wrong + (correct ? 0 : 1),
-        }
+        [questionId]: { attempts: entry.attempts + 1, wrong: entry.wrong + (correct ? 0 : 1) },
       };
-      try { localStorage.setItem("gsl-preplab-history", JSON.stringify(next)); } catch {}
-      return next;
     });
   }
 
@@ -3646,7 +3684,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
               )}
               {Object.keys(history).length > 0 && (
                 <button
-                  onClick={() => { setHistory({}); try { localStorage.removeItem("gsl-preplab-history"); } catch {} }}
+                  onClick={() => { setHistory({}); try { localStorage.removeItem(HISTORY_KEY); } catch {} }}
                   className="text-[10px] text-zinc-500 hover:text-zinc-500 transition-colors ml-auto"
                 >
                   Clear history
@@ -3758,11 +3796,14 @@ function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
       const ok = parseInt(answer) === q.correct;
       setIsCorrect(ok); setSubmitted(true);
       setSessionAnswers(sa => [...sa, { q, correct: ok }]);
+      recordHistory(q.id, ok);
     }
   }
 
   function selfGrade(ok) {
-    setSessionAnswers(sa => [...sa, { q: sessionQs[current], correct: ok }]);
+    const q = sessionQs[current];
+    setSessionAnswers(sa => [...sa, { q, correct: ok }]);
+    recordHistory(q.id, ok);
   }
 
   function next() {
@@ -4005,6 +4046,135 @@ function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── MODE 3b: WEAKNESS HEATMAP ───────────────────────────────────────────────
+
+function WeaknessHeatmapMode({ onExit }) {
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}"); }
+    catch { return {}; }
+  });
+  const [view, setView] = useState("topics");
+
+  const topicStats = {};
+  for (const q of PREP_QUESTIONS) {
+    const entry = history[q.id];
+    if (!entry) continue;
+    if (!topicStats[q.topic]) topicStats[q.topic] = { correct: 0, total: 0 };
+    topicStats[q.topic].total += entry.attempts;
+    topicStats[q.topic].correct += (entry.attempts - entry.wrong);
+  }
+
+  const sorted = Object.entries(topicStats)
+    .sort((a, b) => (a[1].correct / a[1].total) - (b[1].correct / b[1].total));
+
+  const hardQs = PREP_QUESTIONS
+    .filter(q => (history[q.id]?.wrong || 0) > 0)
+    .sort((a, b) => (history[b.id]?.wrong || 0) - (history[a.id]?.wrong || 0))
+    .slice(0, 8);
+
+  const totalAttempts = sorted.reduce((s, [, v]) => s + v.total, 0);
+  const totalCorrect  = sorted.reduce((s, [, v]) => s + v.correct, 0);
+  const overallPct    = totalAttempts > 0 ? Math.round(totalCorrect / totalAttempts * 100) : 0;
+
+  function clearHistory() {
+    try { localStorage.removeItem(HISTORY_KEY); } catch {}
+    setHistory({});
+  }
+
+  if (totalAttempts === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-10 text-center max-w-sm mx-auto gap-4">
+        <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-zinc-500"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <div className="text-zinc-200 font-semibold mb-1">No data yet</div>
+          <div className="text-zinc-500 text-sm">Answer questions in Trainer or Interview Prep — your per-topic accuracy will appear here.</div>
+        </div>
+        <button onClick={onExit} className="text-xs text-zinc-500 hover:text-zinc-300 mt-2">← Back</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-5 sm:p-6 max-w-2xl">
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
+        <h2 className="text-lg font-bold flex-1 text-white">My Weakness Map</h2>
+        <button onClick={clearHistory} className="text-[11px] text-zinc-600 hover:text-red-400 transition-colors">Reset</button>
+      </div>
+      <div className="flex items-center gap-5 mb-5 p-4 bg-zinc-900 rounded-xl border border-zinc-800">
+        <div>
+          <div className="text-4xl font-bold text-indigo-400">{overallPct}%</div>
+          <div className="text-xs text-zinc-500 mt-0.5">Overall accuracy</div>
+        </div>
+        <div className="flex-1 space-y-0.5">
+          <div className="text-xs text-zinc-400">{totalAttempts} total attempts</div>
+          <div className="text-xs text-zinc-400">{totalCorrect} correct · {totalAttempts - totalCorrect} wrong</div>
+          <div className="text-xs text-zinc-500">{sorted.length} topics covered</div>
+        </div>
+      </div>
+      <div className="flex gap-1 mb-4">
+        {["topics", "questions"].map(v => (
+          <button key={v} onClick={() => setView(v)}
+            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${view === v ? "bg-zinc-700 text-white" : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200"}`}>
+            {v === "topics" ? "By Topic" : "Hard Questions"}
+          </button>
+        ))}
+      </div>
+      {view === "topics" && (
+        <div className="space-y-2.5">
+          {sorted.map(([topic, v]) => {
+            const pct = v.total > 0 ? Math.round(v.correct / v.total * 100) : 0;
+            const barColor  = pct >= 70 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-red-500";
+            const textColor = pct >= 70 ? "text-emerald-400" : pct >= 50 ? "text-amber-400" : "text-red-400";
+            return (
+              <div key={topic} className="flex items-center gap-3">
+                <div className="w-32 text-xs text-zinc-300 shrink-0 truncate">{TOPIC_LABELS[topic] || topic}</div>
+                <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${barColor} transition-all duration-300`} style={{ width: `${pct}%` }} />
+                </div>
+                <div className={`text-xs font-mono w-9 text-right tabular-nums ${textColor}`}>{pct}%</div>
+                <div className="text-[10px] text-zinc-600 w-10 text-right tabular-nums">{v.total}q</div>
+              </div>
+            );
+          })}
+          <p className="text-xs text-zinc-600 mt-4 pt-4 border-t border-zinc-800">
+            Tracks answers from Trainer and Interview Prep. Use Interview Prep Plan to target your red topics.
+          </p>
+        </div>
+      )}
+      {view === "questions" && (
+        <div className="space-y-2">
+          {hardQs.length === 0
+            ? <p className="text-zinc-500 text-sm">No wrong answers on record yet.</p>
+            : hardQs.map(q => {
+                const entry = history[q.id];
+                const wrongPct = entry ? Math.round(entry.wrong / entry.attempts * 100) : 0;
+                return (
+                  <div key={q.id} className="bg-zinc-900 rounded-lg p-3.5 border border-zinc-800">
+                    <div className="flex items-start gap-2.5">
+                      <span className={`shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded border mt-0.5 ${TOPIC_COLORS[q.topic] || ""}`}>
+                        {TOPIC_LABELS[q.topic] || q.topic}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-zinc-300 leading-snug line-clamp-2">{q.question}</div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="text-sm font-mono text-red-400">{entry?.wrong}x</div>
+                        <div className="text-[10px] text-zinc-600">{wrongPct}% wrong</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+          }
+        </div>
+      )}
     </div>
   );
 }
@@ -4689,6 +4859,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
     { id: "jdprep",      label: "Interview Prep Plan",  tag: "PLAN",      desc: "JD → gap score → targeted drill" },
     { id: "companyprep", label: "Company Tracks",      tag: "ARCHETYPE", desc: "By company archetype" },
     { id: "defense",     label: "Defense Doc",         tag: "WAR ROOM",  desc: "Anticipate hard pushbacks" },
+    { id: "heatmap",     label: "My Weakness Map",     tag: "TRACK",     desc: "Per-topic accuracy over time" },
   ];
 
   return (
@@ -4725,6 +4896,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
         {mode === "jdprep"      && <InterviewPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
         {mode === "companyprep" && <CompanyPrepMode onExit={exitMode} onNavigate={onNavigate} />}
         {mode === "defense"     && <DefenseDocMode onExit={exitMode} />}
+        {mode === "heatmap"     && <WeaknessHeatmapMode onExit={exitMode} />}
         {!mode && (
           <div className="p-6 sm:p-8 max-w-2xl">
             <div className="mb-8">
