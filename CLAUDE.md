@@ -317,6 +317,10 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Session build log (May 2026)
 
+**Resolved this session (sprint 18):**
+- **Guiding text pass — complete across all 4 labs (49 modules/scenarios):** 3-beat standard (setup framing + inline callouts + synthesis close) applied to every active module. RAG Lab: `setup_framing[]` + `synthesis_close` fields added to all 6 scenarios in `ragScenarios.js`; `PreEvalCallout` component added to `App.jsx` (Beat 2 — fires on failure mode + metric thresholds); Beat 1 + Beat 3 rendered in scenario panel. LLM Lab: framing blocks added to all 9 modules in `systems/modules.jsx` + `InferenceOptimizer.jsx`. Agent Lab: framing blocks added to all 16 modules in `Agents.jsx`. Eval Lab: framing blocks added to 15 active modules — 13 in `systems/modules.jsx`, 1 in `MLCiCd.jsx`, 1 in `ModelRouter.jsx` (deploy/buildthis/abtesting-ai skipped — cut from nav in sprint 7). All brace diffs: 0. Commits: `3f06dcc` (RAG), `2ec2b19` (LLM), `720d7a1` (Agent), `eb30888` (Eval).
+- **UPGRADES.md:** "Labs — Guiding Text Pass" entry marked DONE with commit refs.
+
 **Resolved this session (sprint 17):**
 - **Concepts gym expansion:** GYMS constant expanded from 5 to 14 rooms. 3 active (Language Models, Retrieval, AI Agents). 11 coming-soon placeholders: Evaluation, Production Systems, Foundation Models, Prompt Engineering, Cloud AI Services, Vector Infrastructure, Observability & Tracing, Multimodal AI, AI Safety & Alignment, AI Product Strategy, Data for AI. Each has color, desc, labId, labLabel. Brace diff: 0. Commit `a43fffe`.
 - **Concepts ↔ Labs bidirectional connection:** `conceptsGym` state + `gymId` param added to `navigateTo` in `App.jsx`. `initialGym` prop + `useEffect` added to `ConceptsApp` — deep-links directly into the correct gym on mount. Quiet sidebar chips added: RAG Lab → "Concepts: Retrieval →" (blue), Agent Lab → "Concepts: AI Agents →" (amber), LLM Lab → "Concepts: Language Models →" (indigo). LLM Lab chip conditional on `labTitle === "LLM Lab"` so Eval/Systems sidebars are unaffected. Brace diff: 0 all files. Commit `bf7cc6a`.

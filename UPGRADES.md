@@ -423,11 +423,13 @@ Only show the chip when the target gym is active (not `comingSoon`). Check again
 
 ---
 
-## Labs — Guiding Text Pass (all 4 labs, 49 scenarios/modules)
+## ~~Labs — Guiding Text Pass (all 4 labs, 49 scenarios/modules)~~ DONE — sprint 18
 
-**Component:** `src/App.jsx` (RAG Lab scenarios), `src/Agents.jsx` (16 Agent Lab modules), `src/systems/modules.jsx` (Eval Lab + LLM Lab modules)
+**Status:** Complete. All 4 labs done across 5 commits: `3f06dcc` (RAG Lab), `2ec2b19` (LLM Lab), `720d7a1` (Agent Lab), `eb30888` (Eval Lab).
 
-**Current behavior:** All lab modules are interactive-first with little to no explanatory text. Configuration UIs have no setup context. Failure outputs have no framing for what the user is watching. Root causes exist in RAG Lab but are thin elsewhere. No module has a synthesis close — the practitioner takeaway that turns a demo into a mental model. Labs feel like toys, not learning tools. Same disease Concepts had, 3× the scale.
+**Component:** `src/App.jsx` (RAG Lab scenarios), `src/Agents.jsx` (16 Agent Lab modules), `src/systems/modules.jsx` (Eval Lab + LLM Lab modules), `src/MLCiCd.jsx`, `src/ModelRouter.jsx`, `src/InferenceOptimizer.jsx`
+
+**Current behavior (was):** All lab modules are interactive-first with little to no explanatory text. Configuration UIs have no setup context. Failure outputs have no framing for what the user is watching. Root causes exist in RAG Lab but are thin elsewhere. No module has a synthesis close — the practitioner takeaway that turns a demo into a mental model. Labs feel like toys, not learning tools. Same disease Concepts had, 3× the scale.
 
 **The standard — 3 beats per scenario/module, no exceptions:**
 
