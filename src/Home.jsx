@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
+import { track } from "./analytics";
 import { POSTS } from "./groundTruthIndex";
 
 function CountUp({ target, duration = 1200, suffix = "" }) {
@@ -334,44 +334,14 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export default function HomePage({ onNavigate, onNavigateTo, visited = new Set(), onFeedback }) {
-  function handleFeedback(location) {
-    track("feedback_clicked", { location });
-    if (onFeedback) { onFeedback(location); return; }
-    if (isFeedbackReady()) window.open(FEEDBACK_URL, "_blank", "noopener,noreferrer");
-  }
-  const [betaBannerDismissed, setBetaBannerDismissed] = useState(() => {
-    try { return localStorage.getItem("genai_beta_banner_dismissed") === "1"; } catch { return false; }
-  });
+export default function HomePage({ onNavigate, onNavigateTo, visited = new Set() }) {
   const [activityData] = useState(() => getActivityData());
 
   useEffect(() => { track("home_viewed", { returning: activityData.isReturning }); }, []);
 
-  function dismissBetaBanner() {
-    setBetaBannerDismissed(true);
-    try { localStorage.setItem("genai_beta_banner_dismissed", "1"); } catch {}
-  }
-
   return (
     <div className="min-h-screen bg-zinc-950">
 
-      {/* ── COMMUNITY BETA BANNER ────────────────────────────────────────── */}
-      {!betaBannerDismissed && (
-        <div className="border-b border-violet-900/40 bg-violet-950/20">
-          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-xs text-violet-300 leading-relaxed">
-              <span className="font-bold text-violet-200">Community beta:</span> this lab is free while we improve it. Try a module, break something, and tell us what confused you.
-            </p>
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={() => handleFeedback("beta_banner")}
-                className="px-3 py-1 rounded-lg text-xs font-bold bg-violet-600 hover:bg-violet-500 text-white transition-all">
-                Give Feedback
-              </button>
-              <button onClick={dismissBetaBanner} className="text-violet-500 hover:text-violet-300 text-xs px-2 py-1 transition-all">✕</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── CONDITIONAL: returning user vs. new user ──────────────────────── */}
       {activityData.isReturning ? (
@@ -510,30 +480,6 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
 
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-12 text-center space-y-3">
-        <button onClick={() => handleFeedback("footer")}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 hover:border-violet-700 text-xs font-mono text-zinc-500 hover:text-violet-400 transition-all">
-          💬 Give feedback on this lab
-        </button>
-        <p className="text-sm text-zinc-400 font-medium">
-          Built by{" "}
-          <a href="https://github.com/SidharthKriplani" target="_blank" rel="noopener noreferrer"
-            className="text-zinc-400 hover:text-violet-400 transition-colors underline underline-offset-2">
-            Sidharth Kriplani
-          </a>
-          {" "}·{" "}
-          <a href="https://www.linkedin.com/in/sidharth-kriplani" target="_blank" rel="noopener noreferrer"
-            className="text-zinc-400 hover:text-violet-400 transition-colors underline underline-offset-2">
-            LinkedIn
-          </a>
-          {" "}·{" "}
-          <a href="https://github.com/SidharthKriplani/genai-systems-lab" target="_blank" rel="noopener noreferrer"
-            className="text-zinc-400 hover:text-violet-400 transition-colors underline underline-offset-2">
-            GitHub
-          </a>
-        </p>
-        <p className="text-[11px] text-zinc-500 max-w-lg mx-auto leading-relaxed">
-          No login. No personal data requested. Usage analytics are used only to improve the beta.
-        </p>
         <p className="text-[11px] text-zinc-600 max-w-lg mx-auto">
           Also by the same author:{" "}
           <a href="https://ml-systems-lab-v9xe.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">ML Systems Lab</a>
