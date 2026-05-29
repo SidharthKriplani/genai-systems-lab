@@ -310,11 +310,20 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 **Still open:**
 - `failures` module in Agent Lab is still a reference catalog. Low priority — keep as reference.
-- Ask/Search tab identity crisis — label says "Ask", mechanic is keyword search. Needs LLM upgrade or demotion. (Audit 26)
+- Ask/Search label gap resolved (sprint 13) — button now says "Search →", count accurate. LLM upgrade still future work.
 - 3 thin GT posts: `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` — need expansion to 8+ blocks.
 - Flows and Fluency tabs in PARKED.md — accessible but deprioritized.
+- Concepts inline callouts + synthesis close — framing text done (15/15), but inline + synthesis beats pending. See UPGRADES.md.
 
 ## Session build log (May 2026)
+
+**Resolved this session (sprint 14):**
+- `Consultation.jsx` Search upgrade: button label "Ask →" → "Search →"; post count "135+" / "200+" → "222+"; result limits widened (posts 5→7, modules 3→4); `highlightText()` helper added — bolds matched keywords in post descriptions; zero-results state now shows 5 suggested query pills. Commit: `1ff9eaf`
+- Nav: `Concepts` added to `KNOWLEDGE` NAV_GROUP (count: 15); `KNOWLEDGE` group moved above `LABS` — makes logical reading order (understand → build → grow). Commit: `d78025f`
+- **Concepts framing text pass (15/15):** Before-the-interactive framing block added to all 15 Concepts modules. Modules that already had built-in callouts (NextTokenGame, TemperatureGame, FlashAttentionConcept) left as-is. New framing added to: Tokenizer, Embeddings, Attention, RAG Pipeline, Context Window, Agents (commit `1f649a2`); Transformer, Chunking, Sampling, Guardrails, Debug, MultiAgent (commit `4539d5e`). Remaining: inline callouts + synthesis close (tracked in UPGRADES.md).
+
+**Resolved this session (sprint 13):**
+- `Consultation.jsx` (Ask/Search) audit: token-based scoring already present — real gaps were button label, stale count, no match highlighting, no zero-results fallback. All fixed. See sprint 14 entry above.
 
 **Resolved this session (sprint 12):**
 - `WeaknessHeatmapMode` added to PrepLab (mode "heatmap"): reads `gsl-preplab-history`, shows per-topic accuracy bars sorted worst-first, "Hard Questions" view showing most-missed questions. Added to PREPLAB_SIDEBAR as TRACK mode.
