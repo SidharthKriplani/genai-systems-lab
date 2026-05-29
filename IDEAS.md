@@ -508,6 +508,52 @@ Scan of ML Systems Lab and Product Analytics Lab (PAL/Experimentation Lab) surfa
 - Case study dossiers (Netflix/Uber) — those are product analytics scenarios, wrong domain
 - Spaced repetition queue — needs meaningful per-question difficulty calibration data we don't have yet
 
+### Cross-product patterns from sibling repos (May 2026)
+
+Both sibling products (ML Systems Lab and PAL) were fully read this session. The following items are directly portable patterns observed there that are missing here. Filtered for relevance — items marked "wrong fit" are in the skip list below.
+
+**Tier 1 (small effort, high impact — build these soon):**
+
+- **Fidelity badges on Lab modules** — ML Systems Lab ships `✓ Real execution` / `~ Simulated` labels on every module header. Builds user trust by being honest about what the simulator is doing vs what a real system would do. GenAI Lab modules currently present all outcomes as equivalent. Add: RAG Lab = `✓ Real scenario logic`, Agent Lab = `~ Simulated`, LLM Lab modules = `✓` where config drives real output, `~` where outcomes are pre-computed. Implementation: small label component in each lab header, 2 CSS classes. S effort. (Source: ml-systems-lab, May 2026)
+
+- **Share Session clipboard button in PrepLab** — one-click copy of score summary to clipboard: `GenAI Systems Lab PrepLab · 18/20 · 90% · Weak: evals → Strong: RAG`. ML Systems Lab ships this in exam debrief and trainer. Zero new infrastructure — reads from existing PrepLab session state. S effort. (Source: ml-systems-lab, May 2026)
+
+- **Keyboard shortcuts in PrepLab Exam/Trainer modes** — press 1/2/3/4 to select MCQ option, Enter to confirm. ML Systems Lab and PAL both ship this. Currently requires mouse click for every answer. S effort — one `useEffect` key listener. (Source: ml-systems-lab + PAL, May 2026)
+
+- **Streak + 4-week heatmap in returning user HomeTab view** — returning user HomeTab (sprint 16) has progress snapshot but no streak or activity heatmap. ML Systems Lab ships `msl_streak` / `msl_last_visit` (daily streak counter) + 7×13 GitHub-style activity grid using date-keyed localStorage keys. Apply same pattern: `gsl-streak`, `gsl-last-visit`, `gsl-activity-YYYY-MM-DD` (set on PrepLab attempt or module visit). Heatmap rendered in the Today section of `ReturningHomeView`. S-M effort. (Source: ml-systems-lab, May 2026)
+
+- **GT "Quiz Me" → direct "Practice this" linking** — PAL ships a "Practice this" link at the bottom of every Playbook article, routing directly to the most relevant case. GenAI Lab GT posts already have `related[]` arrays. The gap: no "Practice this in PrepLab" CTA at GT post end. Add a single "Drill this in PrepLab →" button per GT post that navigates to PrepLab filtered to the topic cluster matching the post tag. M effort (wiring tag → PrepLab topic filter). (Source: PAL, May 2026)
+
+**Tier 2 (more effort, still directly portable):**
+
+- **React.lazy() + Suspense code splitting** — both siblings fully implement lazy loading on all page components. GenAI Lab eagerly imports every tab and module in App.jsx, inflating the initial bundle. `React.lazy()` + `<Suspense fallback={<LoadingSpinner />}>` per route. PAL has this on all 20+ room components. Significant first-load improvement especially on mobile. M effort — systematic, no logic changes. (Source: ml-systems-lab + PAL, May 2026)
+
+- **State-aware GT reading mode — "Revise / Learn / What's Next"** — ML Systems Lab ships three reading lenses on the Gradient tab powered by localStorage data: (1) Revise = posts in topics where PrepLab scores are weak; (2) Learn = unread posts in topics the user is actively in; (3) What's Next = unread posts in topics not yet touched. Uses `gsl-preplab-history` + `genai_gt_read` — both already exist. This turns the GT wall into a personalized study queue without any backend. M effort. (Source: ml-systems-lab GradientTab, May 2026)
+
+- **GT Series + Tags redesign** — ML Systems Lab Gradient tab and PAL Deep Dives both flag the same pattern: activate Series + Tags UI once post count hits 50+. GenAI Lab is at 222 posts — 4× past that threshold. Group into named series (e.g. "Production Failures", "Architecture Decisions", "Inference Stack", "Agents in Production"). Tags enable cross-series filtering. Current flat wall at 222 posts is a content graveyard — users open it, see the wall, leave. This is the GT equivalent of the structural rebuild. M-L effort (content taxonomy work + UI). (Source: ml-systems-lab + PAL, May 2026)
+
+- **Timed exam with lock mechanic in PrepLab** — ML Systems Lab CombinatorTab and PAL both ship a timer with pause/resume + answer lock (answers locked until timer fires, simulating real exam pressure). GenAI Lab PrepLab Exam mode has no time pressure. Add: session timer selector (20/30/45 min), timer displayed in corner, answers revealed on timer end or manual submit. M effort. (Source: ml-systems-lab + PAL, May 2026)
+
+- **"Staff Lens" reveal in PrepLab** — ML Systems Lab's StaffLayerTab shows "How a staff engineer reads this" after every scenario reveal: multi-step reasoning that models the expert thought process, not just the conclusion. PrepLab currently shows correct/wrong + explanation but doesn't model the reasoning chain. Add a `staff_lens` field to PrepLab questions (optional) — shows as an expandable panel after the explanation: "At the staff level, this is actually about..." M effort (content work for 30-50 hard questions). (Source: ml-systems-lab, May 2026)
+
+- **Cross-lab incident scenarios** — ML Systems Lab "Production Incident" cross-tab scenarios require reasoning across multiple domains simultaneously ("Model AUC dropped, serving latency increased, what do you check first?"). GenAI Lab has siloed labs. A cross-lab scenario would require reasoning across RAG Lab + Eval Lab + Agent Lab simultaneously. Format: multi-step diagnosis, user chooses first action, sees what that reveals, chooses next. 4–6 scenarios. New tab or PrepLab scenario type. L effort — new interaction pattern. (Source: ml-systems-lab, May 2026)
+
+- **Analytics pause — PostHog WAU baseline** — both PAL and ML Systems Lab explicitly paused feature building pending a PostHog WAU baseline. GenAI Lab has PostHog wired but no formal baseline established. Before the next major feature sprint: check if PostHog is receiving events in Vercel prod, establish WAU + module-completion funnel as baseline. This is not a feature — it's a prerequisite for making good decisions about what to build next. (Source: PAL DECISIONS.md + IDEAS.md, May 2026)
+
+**Already logged elsewhere in this file (skip — don't add again):**
+- 91-day practice heatmap (mentioned at line 503) → now fully specced above as Streak + 4-week heatmap
+- Bookmarks across rooms (line 501) → logged, pending
+- Interview Strategy Tool consolidation → logged as PrepLab mode consolidation
+
+**Wrong fit for GenAI Lab (do not port):**
+- Pyodide live Python runner — no Python content here, +30MB bundle
+- 5-zone bottom nav (Today/Practice/Read/Interview/Ask) — different architecture
+- Product analytics case dossiers (Netflix/Uber) — wrong domain
+- Company Tracks for India PM (Blinkit/CRED/Meesho) — PAL territory
+- Verbal practice via Web Speech API — relevant for interview prep but PrepLab is MCQ-first; this is a separate mode decision, not a direct port
+
+---
+
 ### AI Job Market Watch — side project signal engine (new cluster — May 2026)
 
 The problem: people have zero clue which side project to build to match what employers actually want. Generic "build these 7 projects" advice dominates LinkedIn but is disconnected from live market signal. The idea: continuously watch online job postings for AI roles, extract recurring skill/tech stack requirements, and surface "here's what 300 JDs asked for this month — build something that demonstrates it." Data-driven side project recommendations tied directly to current hiring patterns, not vibes.

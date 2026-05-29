@@ -574,3 +574,95 @@ The design principle the failure teaches. One decision rule a practitioner would
 **Priority:** Medium — correctness and polish, not functionality. Run after interviews.
 
 **Status:** Pending
+
+
+---
+
+## GroundTruth.jsx — State-Aware Reading Mode ("Revise / Learn / What's Next")
+
+**Component:** `src/GroundTruth.jsx` — post list + filter UI
+
+**Current behavior:** 222 posts displayed as a flat wall with category filter pills and a search box. No personalization. No reading history beyond the `genai_gt_read` localStorage set that tracks which posts have been opened.
+
+**Target behavior:** Three reading lenses surfaced as tabs or a sort selector above the post list, powered by existing localStorage data:
+1. **Revise** — posts in topics where PrepLab score history (`gsl-preplab-history`) shows weak performance. "You're scoring 45% on evals questions — here are the GT posts on that topic."
+2. **Learn** — unread posts in topics the user is actively visiting in the Labs (derived from `genai_visited_modules`). Shows what to read alongside what you're doing.
+3. **What's Next** — unread posts in topics the user hasn't touched yet. Gentle expansion pull.
+
+Default when no filter selected: most-recently-visited-topic first (personalized) or chronological (anonymous). The three lenses collapse the 222-post wall into a curated study queue without any backend. All data sources already exist.
+
+**Effort:** M (data wiring + filter UI; no new infrastructure needed)
+
+**Dependencies:** `gsl-preplab-history` (exists, from Weakness Heatmap), `genai_gt_read` (exists), `genai_visited_modules` (exists). Post tags already set in `groundTruthIndex.js`.
+
+**Priority:** Medium — GT is underutilized because 222 posts without personalization is overwhelming. This converts it from a library into a study queue.
+
+**Status:** Pending (Source: ml-systems-lab GradientTab, May 2026)
+
+---
+
+## GroundTruth.jsx — Series + Tags Architecture
+
+**Component:** `src/GroundTruth.jsx` + `src/groundTruthIndex.js`
+
+**Current behavior:** 222 posts with flat category tags. Category filter pills work but give no narrative organization — the post wall has no series grouping, no reading order within topics, no sense of progression.
+
+**Target behavior:** Posts grouped into 5–7 named series (e.g. "Production Failures", "Architecture Decisions", "Inference Stack", "Agents in Production", "Evals & Observability"). Default landing = series cards grid (one card per series, post count + progress bar). Clicking a series shows the posts in reading order. Tag filter overrides series view and shows all posts with that tag, sortable. ML Systems Lab and PAL both gate this UI on 50+ posts; genai-systems-lab is at 222 and well past that threshold.
+
+**Content work needed first (in `groundTruthIndex.js`):**
+- Add `series: "series-slug"` field to each post's metadata
+- Define reading order within each series
+- Confirm tags are consistent across posts
+
+**Effort:** M-L (content taxonomy work in groundTruthIndex.js is the bulk; UI change is a new series card grid component)
+
+**Dependencies:** Series taxonomy decision (content work) before any UI. Should happen in the same session as the state-aware reading mode above.
+
+**Priority:** Medium-High — 222 posts on a wall is a known conversion killer. This is the fix.
+
+**Status:** Pending (Source: ml-systems-lab + PAL, May 2026)
+
+---
+
+## Home.jsx — Streak + Activity Heatmap in Returning User View
+
+**Component:** `src/Home.jsx` — `ReturningHomeView` — Today section
+
+**Current behavior:** Returning user view (`ReturningHomeView`, sprint 16) shows a progress snapshot with PrepLab stats and Concepts gym progress bar. No streak counter, no activity history heatmap.
+
+**Target behavior:** Add to the Today section:
+- **Daily streak** — "Day 7 streak 🔥" (or "come back tomorrow to keep your streak"). Read from `gsl-streak` + `gsl-last-visit` localStorage keys. Increment on any PrepLab attempt or module visit.
+- **4-week activity grid** — 4×7 GitHub-style squares, each cell = one day, colored if `gsl-activity-YYYY-MM-DD` key exists for that date. Matches ML Systems Lab's 28-day window (not 91 — sparse grids look broken for new users).
+
+Storage: `gsl-streak` (number), `gsl-last-visit` (ISO date string), `gsl-activity-YYYY-MM-DD` (set on any lab visit or PrepLab attempt, value = number of actions that day).
+
+**Effort:** S-M (localStorage utilities + grid component rendering)
+
+**Dependencies:** ReturningHomeView must be live (it is, sprint 16). No other dependencies.
+
+**Priority:** Medium — visible progression is one of the "take my money" sprint items (IDEAS.md Business Model section). This is the static version that doesn't require a backend.
+
+**Status:** Pending (Source: ml-systems-lab HomeTab, May 2026)
+
+---
+
+## PrepLab.jsx — Keyboard Shortcuts in Exam / Trainer Modes
+
+**Component:** `src/PrepLab.jsx` — Exam mode + Trainer mode question view
+
+**Current behavior:** All MCQ interactions require mouse clicks. No keyboard navigation.
+
+**Target behavior:** When a question is displayed:
+- Press `1` / `2` / `3` / `4` → highlight the corresponding option
+- Press `Enter` → confirm selection (same as clicking "Submit")
+- Press `N` (after reveal) → next question
+
+One `useEffect` key listener per mode, cleaned up on unmount. No UI change needed beyond the existing selection highlight state.
+
+**Effort:** S (30–40 lines, no logic changes)
+
+**Dependencies:** None
+
+**Priority:** Low-Medium — power users will love this; low effort to ship
+
+**Status:** Pending (Source: ml-systems-lab + PAL, May 2026)
