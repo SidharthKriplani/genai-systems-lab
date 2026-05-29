@@ -15,6 +15,43 @@ Format per entry:
 
 ---
 
+## Home.jsx — Page Simplification (cut everything that isn't converting)
+
+**Component:** `src/Home.jsx` — all sections below the hero
+
+**Current behavior:** Home contains: hero, stats row, door cards, concept dependency graph, learning paths, journey strip, how-to section, about section, module grid, social proof/testimonials. A first-time visitor sees everything and understands nothing. Each section answers a different question superficially; none do their job well. The welcome modal now handles routing — Home's conversion job is largely done before the user reads anything below the fold.
+
+**Target behavior:** Home does one job — convert a cold visitor into someone who starts something.
+
+Keep:
+- Hero (fix copy separately — see hero copy entry below)
+- Stats row (3 numbers — credibility signal, 5 seconds to read)
+- Door cards (3 — RAG Lab, PrepLab, Ground Truth — the three real entry points)
+- Social proof strip (only once real quotes exist — remove placeholder testimonials now)
+
+Cut entirely:
+- Concept dependency graph → move to Concepts tab (it belongs there, not on Home)
+- Learning paths section → belongs in PrepLab as a mode, not on Home
+- Journey strip → passive, no action, remove
+- How-to section → move inline as first-time tooltip inside each Lab
+- About section → nobody reads it on a landing page; content belongs in a GT post if anywhere
+- Module grid / full content map → overwhelming, anti-conversion
+
+**Result:** Hero → door cards → done. Below the fold: social proof strip if real quotes exist, nothing else.
+
+**Effort:** S (pure deletion — no new components needed)
+
+**Dependencies:**
+- Welcome modal is live ✅ (handles routing for most visitors)
+- Do not remove social proof placeholder until real quotes exist — just hide it if empty
+- Hero copy rewrite should happen in the same pass (separate entry below)
+
+**Priority:** High — Home is the first thing every visitor sees and currently creates confusion rather than momentum
+
+**Status:** Pending — build after MD checkpoint
+
+---
+
 ## Home.jsx — Hero Copy Rewrite
 
 **Component:** `src/Home.jsx` — hero section (badge, headline, subtext, body copy)
