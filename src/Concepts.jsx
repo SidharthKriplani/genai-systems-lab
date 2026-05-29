@@ -1142,6 +1142,11 @@ function TransformerModule({ onNavigate }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          The transformer is the architecture behind every modern LLM. Each token is embedded into a vector, self-attention lets tokens interact with every other token in the sequence, feed-forward layers apply non-linear transformations, and a final projection produces a probability distribution over the vocabulary. <strong className="text-white">Temperature</strong> and <strong className="text-white">number of heads</strong> are real parameters — adjust them below and watch what changes. The model here is tiny (d_model=8), but the math is exact.
+        </p>
+      </div>
       {/* Top controls */}
       <div className="grid grid-cols-12 gap-3">
         {/* Sentence picker */}
@@ -1504,6 +1509,11 @@ function ChunkingModule({ onNavigate }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          Before a RAG system can retrieve anything, your documents must be split into chunks that get embedded and stored. <strong className="text-white">How you split matters enormously</strong>: chunks too small lose context, chunks too large dilute relevance scores, and a boundary in the wrong place can put a question and its answer in separate chunks. Below are four real strategies applied to the same document — pick one, run a retrieval query, and see which chunks surface and which ones get missed.
+        </p>
+      </div>
       {/* Strategy selector */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {STRAT_KEYS.map(k => {
@@ -2053,6 +2063,11 @@ function SamplingModule({ onNavigate }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          Once a transformer produces logit scores for every possible next token, you still have to decide which one to actually output. That decision — the <strong className="text-white">decoding strategy</strong> — is separate from the model and determines whether outputs are deterministic or random, conservative or creative. Greedy always picks the top token. Top-K limits the pool. Top-P cuts at a cumulative probability threshold. Temperature rescales the whole distribution before any filtering. Pick a prompt below and watch the same logits pass through each strategy differently.
+        </p>
+      </div>
       {/* Prompt picker */}
       <div className="flex flex-wrap gap-2">
         {SAMPLE_PROMPTS.map((p, i) => (
@@ -2755,6 +2770,11 @@ function GuardrailsModule({ onNavigate }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          A guardrail pipeline wraps the LLM with classifiers that run before and after the model. The <strong className="text-white">input classifier</strong> screens what enters; the <strong className="text-white">output validator</strong> checks what leaves. Without these, even a well-aligned model will produce PII leaks, jailbreak responses, and hallucinated facts under the right prompting conditions. The seven scenarios below are real failure patterns — try each one and follow where in the pipeline the request passes through or gets blocked.
+        </p>
+      </div>
       <div className="flex flex-wrap gap-2">
         {GUARDRAIL_TESTS.map((t, i) => (
           <button key={i} onClick={() => { setTestIdx(i); setShowRedacted(false); }}
@@ -2982,6 +3002,11 @@ function DebugModule({ onNavigate }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          Diagnosing a failing RAG system means looking at the whole pipeline, not just the final response. The same wrong answer could be caused by a retrieval problem (wrong chunks surfaced), a context problem (right chunk retrieved but model ignores it), a hallucination (model invents facts absent from context), or a configuration issue (chunk size or top_k wrong for the query type). Each incident below shows only the symptom — identify the <strong className="text-white">failure mode</strong> before revealing the root cause.
+        </p>
+      </div>
       {/* Progress row */}
       <div className="flex items-center justify-between">
         <div className="flex gap-1.5">
@@ -3228,6 +3253,11 @@ function MultiAgentModule({ onNavigate }) {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          When a task is too complex for a single agent — or has subtasks that can run in parallel — you need multiple agents coordinating. This introduces architectural decisions that a single-agent setup never faces: who orchestrates, how agents communicate, what happens when one fails, and whether the added complexity actually earns its overhead. The three tabs cover <strong className="text-white">architectural patterns</strong> (when to use each), <strong className="text-white">failure cascades</strong> (how failures propagate), and a direct comparison against single-agent approaches.
+        </p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {[{ id: "patterns", label: "Architecture Patterns" }, { id: "failures", label: "Failure Cascade Simulator" }, { id: "vs", label: "Single vs. Multi-Agent" }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
