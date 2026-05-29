@@ -1584,3 +1584,67 @@ Any `overflow-x-auto` scrollable container that may clip content on mobile now g
 | 6 | "Ask" label vs search mechanic mismatch | Medium | ✅ Fixed sprint 13 — relabeled Search, honest description |
 
 **Status:** ✅ Fixed sprint 13 (this session).
+
+---
+
+## Audit 36 — Content Integrity + Code Hygiene Pass (May 2026, Sprint 20)
+
+**Type:** Content integrity + BUILD hygiene
+**Date:** May 2026
+**Scope:** Stat accuracy across all public-facing files, dead code from sprint 20 cleanup, brace balance, color drift, hook violations.
+**Method:** grep + python3 counts across src/, index.html, CLAUDE.md, DECISIONS.md.
+
+### Findings
+
+| # | Finding | File(s) | Severity | Status |
+|---|---|---|---|---|
+| 1 | **index.html GT count stale** — all three meta tags (`description`, `og:description`, `twitter:description`) claimed "200+ Ground Truth posts". Actual count: 222. | `index.html` | Medium | ✅ Fixed — updated to "222+" in all three tags |
+| 2 | **CLAUDE.md Explore module count stale** — scale line (line 27) said "25 Explore modules". Actual: 22 modules in `EXPLORE_MODULES` array. | `CLAUDE.md` | Low | ✅ Fixed — updated to "22 Explore modules" |
+| 3 | **DECISIONS.md GT count stale** — two references to "200+ GT posts" in Section 3 (Ask tab architecture). | `DECISIONS.md` | Low | ✅ Fixed — updated to "222+" in both occurrences |
+| 4 | **Dead `onFeedback` prop** — `App.jsx` still passed `onFeedback={openFeedback}` to `<HomePage>` after sprint 20 removed the handler and all feedback UI from `Home.jsx`. Dead prop passed to a component that no longer accepts it. | `App.jsx` line 1690 | Low | ✅ Fixed — prop removed |
+| 5 | **All 7 key files brace-balanced** — Home.jsx, App.jsx, PrepLab.jsx, Agents.jsx, GroundTruth.jsx, Concepts.jsx, systems/modules.jsx all diff: 0 | All | — | ✅ Clean |
+| 6 | **No React.useState / React.useEffect violations** | All `.jsx` | — | ✅ Clean |
+| 7 | **No gray-\* Tailwind classes remaining** | All `.jsx` | — | ✅ Clean |
+| 8 | **slate-\* grep returns false positives only** — 15 hits all come from `translate-` utilities (e.g. `-translate-y-0.5`), which contain "slate" as a substring. Zero actual `text-slate-*` / `bg-slate-*` color classes in codebase. | All `.jsx` | — | ✅ Clean |
+| 9 | **Home.jsx stat numbers accurate** — 222+ GT ✓, 261 PrepLab questions ✓ | `Home.jsx` | — | ✅ Clean |
+| 10 | **Systems nav module count: 54** — matches CLAUDE.md claim | `Systems.jsx` | — | ✅ Clean |
+| 11 | **Agent Lab nav module count: 16** — AGENTS_MODULES array has 26 raw IDs but 10 are false positives from AGENTS_RELATED_GT entries immediately following the array. True nav modules: 16. Matches CLAUDE.md. | `Agents.jsx` | — | ✅ Clean |
+
+### Sprint 20 changes verified
+
+| Item | Status |
+|---|---|
+| Beta banner removed from `Home.jsx` | ✅ |
+| "Built by Sidharth Kriplani" line removed | ✅ |
+| "No login" disclaimer line removed | ✅ |
+| Footer feedback button removed | ✅ |
+| Footer now shows "Also by the same team" sibling links with `border-t` + indigo glow + `mt-auto` | ✅ |
+| `NEXT.md` created for genai-systems-lab (5 items) | ✅ |
+| `NEXT.md` created for PAL/experimentation-systems-lab | ✅ |
+| PAL `Footer.jsx` cross-links reverted — home page only per product decision | ✅ |
+
+### Verified counts as of sprint 20
+
+| Metric | Count |
+|---|---|
+| GT posts indexed | 222 |
+| PrepLab questions | 261 |
+| Systems modules in nav | 54 |
+| Agent Lab modules in nav | 16 |
+| Explore modules | 22 |
+| Concepts modules | 15 |
+
+### Still-open findings (carried from prior audits)
+
+| # | Finding | Source Audit | Status |
+|---|---|---|---|
+| 1 | `streaming` (LLM Lab) is pure reference — 2 static tabs, no config, no outcome | Audit 28 #4 | ⚠️ Open |
+| 2 | `agentcfg` missing from AGENTS_RELATED_GT | Audit 29 #2 | ⚠️ Low priority |
+| 3 | RAG Lab done card below the fold — highest-dropout moment in the product | Audit 34 #5 | ⚠️ Open — NEXT.md item 1 |
+| 4 | PrepLab has no difficulty levels, no multi-select questions | Audit 34 #9 | ⚠️ Open |
+| 5 | RSS feed missing ~100 recent GT posts | Audit 17 #2 | ⚠️ Open |
+| 6 | 2 true orphaned GT posts — `prompt-cost-engineering`, `rlhf-dpo-explained-v2` | Audit 18 #4 | ⚠️ Open |
+| 7 | `production-mlops` CATEGORIES filter entry missing in GroundTruth.jsx | Audit 19 #2 | ⚠️ Open |
+| 8 | Sitemap has 45 dead URLs on old domain + ~103 GT posts missing | Audit 19 #1/#6 | ⚠️ Open |
+
+**Status:** Sprint 20 hygiene pass complete ✅
