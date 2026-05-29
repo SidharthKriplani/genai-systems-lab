@@ -1718,3 +1718,52 @@ Any `overflow-x-auto` scrollable container that may clip content on mobile now g
 | 8 | Sitemap has 45 dead URLs on old domain + ~103 GT posts missing | Audit 19 #1/#6 | ⚠️ Open |
 
 **Status:** Sprint 20 hygiene pass complete ✅
+
+---
+
+## Audit 37 — Automated Bug Sweep (May 2026, Sprint 20 close)
+
+**Type:** Code safety / runtime risk
+**Date:** May 2026
+**Scope:** All `.jsx` files in `src/`. 7 automated checks.
+**Method:** grep-based sweep across the full source tree.
+
+### Checks run
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Imperative `currentTarget.style` DOM mutations | 2 hits in `App.jsx` — QA corner button opacity only (not answer cards, not ghost-hover risk) |
+| 2 | High-risk subset: `background`/`borderColor` mutations on interactive buttons | 0 hits ✅ |
+| 3 | `addEventListener` without matching `removeEventListener` | `main.jsx` — service worker registration pattern, not a leak ✅ |
+| 4 | `JSON.parse` without `try/catch` | `groundTruthPosts.js` — static data file, not runtime risk ✅ |
+| 5 | `.find()` result accessed without optional chaining | `Playground.jsx:450` — **real bug** — see below |
+| 6 | `setInterval` without `clearInterval` | 0 hits ✅ |
+| 7 | `.map()` without key prop | `Flows.jsx` only — Flows is PARKED, low priority |
+
+### Finding 5 — Playground.jsx:450 (fixed)
+
+```js
+// Before (throws TypeError if no hallucination element found):
+setScores(s => [...s, id === round.outputs.find(o => o.hallucination).id ? 1 : 0]);
+
+// After:
+setScores(s => [...s, id === round.outputs.find(o => o.hallucination)?.id ? 1 : 0]);
+```
+
+All `HALLUCINATION_ROUNDS` entries currently have exactly one `hallucination: true` entry so this would never fire in practice, but the unguarded `.id` access is a real TypeError waiting for any data change.
+
+**Commit:** `0532c36`
+
+### App.jsx:2085–2086 — not a bug
+
+The two `currentTarget.style` mutations are on the fixed QA debug button (bottom-left corner, opacity 0.45 ↔ 1). Not choice buttons, not answer cards — not the mobile ghost-hover pattern. Safe to leave as-is.
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | `Playground.jsx:450` — `.find().id` without optional chaining | Medium | ✅ Fixed `0532c36` |
+| 2 | `App.jsx:2085` — `currentTarget.style.opacity` on QA button | Low | ✅ Non-issue |
+| 3 | `main.jsx` — addEventListener mismatch | Low | ✅ Non-issue (service worker) |
+| 4 | `Flows.jsx` — missing map keys | Low | ⚠️ Open (Flows is PARKED) |
+
+**Status:** ✅ Complete. 1 real bug fixed.
+**Status:** Sprint 20 hygiene pass complete ✅
