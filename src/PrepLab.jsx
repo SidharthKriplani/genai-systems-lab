@@ -4865,7 +4865,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
   return (
     <div className="flex h-full min-h-0">
       {/* Sidebar */}
-      <div className={`${mobileSidebarOpen ? "flex" : "hidden"} flex-col w-full lg:flex lg:w-52 lg:shrink-0 border-r border-zinc-800 overflow-y-auto py-3`}>
+      <div className={`${mobileSidebarOpen ? "flex" : "hidden"} flex-col w-full lg:flex lg:w-52 lg:shrink-0 overflow-y-auto py-3`} style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
         <div className="px-4 py-1 text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-2">MODES</div>
         {PREPLAB_SIDEBAR.map(m => {
           const active = mode === m.id;
@@ -4887,7 +4887,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
       <div className={`${mobileSidebarOpen ? "hidden" : "flex"} flex-col lg:flex flex-1 min-w-0 overflow-y-auto`}>
         {/* Mobile back button */}
         <button onClick={() => setMobileSidebarOpen(true)}
-          className="flex lg:hidden items-center gap-1.5 px-4 py-3 text-xs text-zinc-400 border-b border-zinc-800 shrink-0">
+          className="flex lg:hidden items-center gap-1.5 px-4 py-3 text-xs text-zinc-400 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           PrepLab
         </button>

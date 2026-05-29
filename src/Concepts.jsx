@@ -4881,7 +4881,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
   return (
     <div className="flex flex-col sm:flex-row h-full min-h-0">
       {/* ── Left sidebar ── */}
-      <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4 hidden sm:block">
+      <div className="w-52 shrink-0 overflow-y-auto py-4 hidden sm:block" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
         <div className="px-3 mb-3">
           <button
             onClick={() => currentGym ? setActive(null) : setActiveGym(null)}

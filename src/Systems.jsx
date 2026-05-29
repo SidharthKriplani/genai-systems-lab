@@ -190,7 +190,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
     <div className="flex min-h-[calc(100vh-56px)]">
 
       {/* ── LEFT PANEL: module list ────────────────────────────────── */}
-      <div className={`${mobileSidebarOpen ? "flex" : "hidden"} flex-col w-full lg:flex lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800/70 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]`} style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
+      <div className={`${mobileSidebarOpen ? "flex" : "hidden"} flex-col w-full lg:flex lg:w-52 lg:shrink-0 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]`} style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
         <div className="px-3 pt-5 pb-2 space-y-3">
           {/* Title + progress */}
           <div>
@@ -210,7 +210,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
             )}
             {doneCount > 0 && (
               <div className="flex items-center gap-2 mt-2">
-                <div className="h-1 flex-1 rounded-full bg-zinc-800 overflow-hidden">
+                <div className="h-1 flex-1 rounded-full overflow-hidden" style={{ background: "var(--surface-2)" }}>
                   <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${(doneCount / total) * 100}%` }} />
                 </div>
                 <span className="text-[10px] text-zinc-500 shrink-0">{doneCount}/{total}</span>
@@ -224,7 +224,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Filter…"
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-700 transition-colors"
+              className="w-full rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none transition-colors" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-400 text-[10px]">✕</button>
@@ -288,8 +288,8 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
       <div className={`${mobileSidebarOpen ? "hidden" : "flex"} flex-col lg:flex flex-1 min-w-0 max-w-2xl lg:max-w-3xl`}>
         {/* Mobile back button */}
         <button onClick={() => setMobileSidebarOpen(true)}
-          className="flex lg:hidden items-center gap-1.5 px-4 py-3 text-xs text-zinc-400 hover:text-zinc-200 border-b border-zinc-800 transition-colors"
-          style={{ background: "rgba(22,22,24,0.95)" }}>
+          className="flex lg:hidden items-center gap-1.5 px-4 py-3 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+          style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           {labTitle || "Systems Lab"}
         </button>

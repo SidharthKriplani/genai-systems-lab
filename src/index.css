@@ -138,6 +138,14 @@ button:disabled:active {
   --surface-2:      #1f2438;   /* nested cards, hover fills */
   --border:         #3d4668;   /* all borders — clearly visible against --surface */
   --border-subtle:  #2a3255;   /* dividers, light separators */
+
+  /* ── Global zinc remap to surface system ────────────────────────────────────
+     Remaps bg-zinc-900 (was #18181b cold gray) → surface (#191e30 blue-tinted).
+     Fixes all 300+ panel/card backgrounds across Agents, PrepLab, Concepts,
+     GroundTruth, Systems in one declaration — same technique as the zinc-500/600
+     contrast fix in sprint 8. bg-zinc-950 stays as-is (used for modals/deep inset).
+  */
+  --color-zinc-900: #191e30;
 }
 
 /* ── Mobile contrast boost — low-brightness readability ────────────────────

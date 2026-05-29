@@ -3587,8 +3587,8 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
     <div className="flex min-h-[calc(100vh-56px)]">
 
       {/* ── LEFT PANEL: module list ────────────────────────────────── */}
-      <div className={`${mobileSidebarOpen ? "flex" : "hidden"} flex-col w-full lg:flex lg:w-52 lg:shrink-0 lg:border-r lg:border-zinc-800 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]`}
-        style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
+      <div className={`${mobileSidebarOpen ? "flex" : "hidden"} flex-col w-full lg:flex lg:w-52 lg:shrink-0 lg:overflow-y-auto lg:sticky lg:top-0 lg:h-[calc(100vh-56px)]`}
+        style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
         <div className="px-3 pt-5 pb-2 space-y-3">
           <div>
             <h1 className="text-base font-black text-white tracking-tight">Agent Lab</h1>
@@ -3636,8 +3636,8 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
       <div className={`${mobileSidebarOpen ? "hidden" : "flex"} flex-col lg:flex flex-1 min-w-0 max-w-2xl lg:max-w-3xl`}>
         {/* Mobile back button */}
         <button onClick={() => setMobileSidebarOpen(true)}
-          className="flex lg:hidden items-center gap-1.5 px-4 py-3 text-xs text-zinc-400 hover:text-zinc-200 border-b border-zinc-800 transition-colors"
-          style={{ background: "rgba(22,22,24,0.95)" }}>
+          className="flex lg:hidden items-center gap-1.5 px-4 py-3 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+          style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           Agent Lab
         </button>
