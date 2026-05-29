@@ -316,6 +316,13 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Session build log (May 2026)
 
+**Resolved this session (sprint 11):**
+- TYU fix: `preplabInitialMode` state in `App.jsx`; `initialMode` + `onClearInitialMode` props in `PrepLab.jsx`; `useEffect` auto-selects Trainer mode when navigated from RAG Lab forward pointer — commit `327a745`
+- Hero copy rewrite: removed Layer 3 amber badge, new gradient headline "Configure it. Break it. Know exactly why." — commit `327a745`
+- `InterviewPrepMode` replaces `JDPrepMode` (PrepLab.jsx, 3 phases): Phase 1 (JD paste → SKILL_KEYWORDS detection, topics sorted by hit-weight), Phase 2 (self-rate each topic Weak/Okay/Strong, 3× weighting for weak), Phase 3 (gap-scored 20-question drill using `DRILL_W = {weak:3, okay:1.5, strong:0.5}` × jd_weight), Results (score + per-topic breakdown + study resources for weak areas + gated Phase 4 study plan teaser with GateModal overlay)
+- `serving: "Serving & Inference"` added to `TOPIC_LABELS`; `serving: "bg-purple-500/20..."` added to `TOPIC_COLORS`; `DRILL_W` constant added at module level
+- PREPLAB_SIDEBAR entry updated: label "Interview Prep Plan", tag "PLAN", desc "JD → gap score → targeted drill" — commit `4533e86`
+
 **Resolved this session (sprint 10):**
 - `Home.jsx` simplification: cut PATHS, SuggestedPath, LEARNING_PATHS, MODULE_MAP, DEP_NODES/EDGES, ConceptGraph, journey strip, social proof placeholders, learning paths section, concept graph section, module map section, how-to section, about section, email capture section
 - Dead state removed: `role`, `switchRole`, `orderedGroups`, `isRelevant`, `activePath`, `pathRole`, `showPath`, `expandedModule`, `subEmail`, `subStatus`, `pathProgress`
