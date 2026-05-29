@@ -30,6 +30,76 @@ Run these periodically. Pick one per session, or stack them after major build ph
 | **IP / Moat** | What's hard to replicate? What's original? What deserves doubling down? | Bi-annually |
 | **Content Quality** | Hype language, accuracy, fidelity labels, interactivity vs. passive reading | Quarterly |
 | **First-Time User** | Cold walk-through in incognito — every confusion point noted as it happens | Monthly |
+| **Instructional Coverage** | Does every interactive component have guiding text at the right moments? See detail below. | After every major build sprint |
+| **GT Post Interlinking** | Do GT posts have embedded links, cross-post redirects, and lab pointers where relevant? See detail below. | Monthly |
+
+---
+
+### Audit Type Detail — Instructional Coverage
+
+**What this audit checks:**
+
+Every interactive component in the product should give the user three things in sequence: (1) context before they touch anything, (2) signal during the interaction at the moment it matters, and (3) a closing frame after they finish. This is the 3-beat standard established in sprint 18.
+
+**Beat 1 — Setup framing (before interaction)**
+- Is there a short block above the interactive area that tells the user what they're about to configure, why it matters in production, and what failure they're about to reproduce?
+- This should be present on: every RAG Lab scenario, every Agent Lab module, every LLM Lab module, every Eval Lab module, every Systems module, every Concepts module, every Explore module.
+- Format: a small framed block (indigo/amber/green tinted background depending on lab), short label in monospace uppercase, 1–2 sentences. Second sentence hidden on mobile (`hidden sm:block`).
+- Flag: missing entirely, or present but reads as a tooltip/instruction rather than context.
+
+**Beat 2 — Inline callout (during interaction)**
+- At the key decision point — the moment a slider crosses a threshold, a config triggers a failure, a wrong answer is submitted — does something surface to explain what just happened and why it matters?
+- This should be present on: failure-triggering config inputs (RAG Lab eval thresholds, Agent Lab trigger conditions, LLM Lab temperature extremes), wrong-answer reveals in PrepLab, score reveals in simulator/design modules.
+- Format: a reactive callout (not always-visible) that appears conditionally — on failure, on threshold crossing, on wrong answer.
+- Flag: nothing surfaces when a failure is triggered; wrong answer just turns red with no explanation.
+
+**Beat 3 — Synthesis close (after completion)**
+- After the user finishes — completes all configs, hits the score screen, reaches the done state — is there a closing frame that names what they just learned and where to go next?
+- This should be present on: all RAG Lab scenario completions, all simulator/design/challenge score screens, all Concepts modules, all Systems modules.
+- Format: a ✓ done card with a named lesson ("You just reproduced X failure. Here's why it happens in production.") + one forward pointer (GT post or PrepLab question cluster).
+- Flag: module ends with nothing; done card exists but has no named lesson; forward pointer is generic ("go to PrepLab") rather than specific.
+
+**How to run this audit:**
+1. Open each lab tab in turn (RAG Lab, Agent Lab, LLM Lab, Eval Lab, Systems, Concepts, Explore).
+2. For each module: check Beat 1 (scroll to top, is there framing?), Beat 2 (trigger the failure/interaction, does anything surface?), Beat 3 (reach the end state, is there a close?).
+3. Score each module: ✓ (all 3 beats present), ⚠️ (1–2 beats missing), ✗ (no beats present).
+4. Prioritise ✗ modules first, then ⚠️. Log findings by beat number and module ID.
+
+---
+
+### Audit Type Detail — GT Post Interlinking
+
+**What this audit checks:**
+
+Every Ground Truth post should function as a node in a knowledge graph, not an isolated document. A user who finishes reading a post should always have at least one clearly signposted next step. This audit verifies that every post has the right outbound links at the right moments in the text.
+
+**Category 1 — Related posts (horizontal links)**
+- Does the post have a `related[]` array in `groundTruthIndex.js` with 2–4 curated sibling posts?
+- Are the related posts genuinely relevant (same topic cluster or natural reading sequence), not just same-category filler?
+- Flag: `related: []` empty array; `related` field missing entirely; related posts are irrelevant (e.g. a post about RAG chunking linking to a post about RLHF).
+
+**Category 2 — Lab module forward pointer (`labLink`)**
+- Does the post have a `labLink` + `labModuleId` in `groundTruthIndex.js` pointing to the most relevant interactive module?
+- The pointer should go to the module that lets the user *do* what the post just explained. A post about RAG retrieval failure → RAG Lab. A post about agent memory → Agent Lab memarch module.
+- Flag: `labLink` missing on posts that have a clearly relevant module; `labLink` present but points to a wrong or generic module (e.g. Systems generic entry instead of a specific module).
+- Exceptions: perspective posts (`persp-*`) intentionally have no lab link — these are opinion pieces with no direct interactive equivalent.
+
+**Category 3 — Inline embedded links within post body**
+- For posts that reference other GT posts by name or concept (e.g. "as covered in our post on context window limits"), is there an inline link (`{ t: "refs" }` block or inline anchor in the text) pointing to that post?
+- This is especially important for: foundational posts that downstream posts reference (e.g. "What Is a Transformer" should be linked from every post that assumes transformer knowledge); and series posts that follow a sequence (e.g. RAG chunking → RAG retrieval → RAG evaluation should form a chain).
+- Flag: post text says "see our post on X" but no link exists; post assumes prior knowledge that exists elsewhere in the corpus but is never linked.
+
+**Category 4 — PrepLab forward pointer**
+- Does the post have a `readMore` link in at least one PrepLab question that references this post's topic?
+- This is a reverse check: grep PrepLab.jsx for `postId: "post-id"` references and confirm that the top 50 most-read GT posts (by topic importance, not analytics) have at least one PrepLab question linking to them.
+- Flag: high-importance post (RAG, agent memory, evaluation) has zero PrepLab questions pointing to it.
+
+**How to run this audit:**
+1. Export all post IDs from `groundTruthIndex.js` (python3, ~5 min).
+2. For each post, check: `related[]` non-empty and relevant (Category 1), `labLink` present or intentionally absent (Category 2).
+3. For the top 30 highest-importance posts (by topic centrality — RAG, agents, evals, LLMOps), do a manual spot-check of inline linking (Category 3).
+4. grep PrepLab.jsx for `postId:` occurrences, map back to post IDs, identify high-importance posts with zero PrepLab references (Category 4).
+5. Output: a table of post ID × category × pass/fail. Prioritise Category 2 gaps (missing `labLink`) and Category 1 gaps (empty `related[]`) first — both are one-line fixes per post.
 
 ---
 
