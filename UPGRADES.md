@@ -15,6 +15,46 @@ Format per entry:
 
 ---
 
+## PrepLab — Mode Consolidation into Interview Strategy Tool
+
+**Component:** `src/PrepLab.jsx` — all modes + `PREPLAB_SIDEBAR`
+
+**Current behavior:** 6 peer-level sidebar modes — Exam, Trainer, Interview Prep Plan, Company Tracks, Defense Doc, Weakness Heatmap. They overlap in purpose (multiple modes serve "what should I practice for my interview"), unclear differentiation from the sidebar, and split the core interview prep flow across 3 separate modes. A user with an interview in 7 days doesn't know which to open.
+
+**Target behavior:** 3 sidebar modes — Exam, Interview Strategy, Company Tracks. Interview Strategy is the new unified mode (full spec in IDEAS.md → "Interview Strategy Tool — full personalization funnel"). Trainer becomes the drill mechanism invoked from within Interview Strategy. Weakness Heatmap becomes an internal data source (reads `gsl-preplab-history` to supplement self-ratings), not a top-level nav item. Defense Doc is absorbed into the gap analysis step of Interview Strategy.
+
+The sidebar decision becomes obvious: Exam = test yourself cold. Interview Strategy = personalized prep for an upcoming interview. Company Tracks = company-specific drill set.
+
+**Effort:** L — multi-session. Resume parsing (static text against skill taxonomy) is new. Day plan generation is new. Mode consolidation is structural surgery on PrepLab.jsx.
+
+**Dependencies:** Interview Strategy Tool spec (logged in IDEAS.md May 2026). No backend needed — fully static, localStorage only.
+
+**Priority:** High
+
+**Status:** Pending
+
+---
+
+## Career + AIPM — Navigation Consolidation into "Navigate" Branch
+
+**Component:** `src/Career.jsx`, `src/AIPM.jsx`, `App.jsx` nav
+
+**Current behavior:** Career (system design, take-home, salary calculator) and AI Product (PRD simulator, roadmap, PM track) are separate tabs under the GROW nav group. A PM prepping for interviews must visit both to get everything relevant. System design prep in Career, PRD skills in AIPM, interview drill in PrepLab — the same user's job is split across three tabs with no connective thread.
+
+**Target behavior:** One "Navigate" entry point in the nav. Career and AIPM content become sections or modes within a unified experience, reached through intent — "I'm prepping for an interview" / "I'm figuring out my career path" — rather than by tool category. Salary calculator stays as a standalone utility within the same shell. The nav entry replaces both Career and AIPM tabs.
+
+This is the same architectural fix as the pending structural rebuild (see CLAUDE.md "Structural Upgrade" section) — Career + AIPM is the Navigate branch that doesn't have a clean front door yet.
+
+**Effort:** M-L — primarily navigation restructuring + a thin wrapper shell. Content doesn't need to change, just how it's reached.
+
+**Dependencies:** Structural rebuild direction confirmed (CLAUDE.md). Should happen before PrepLab consolidation since both touch the GROW nav group.
+
+**Priority:** Medium — real user friction but lower urgency than Interview Strategy consolidation.
+
+**Status:** Pending
+
+---
+
 ## Home.jsx — Page Simplification (cut everything that isn't converting)
 
 **Component:** `src/Home.jsx` — all sections below the hero

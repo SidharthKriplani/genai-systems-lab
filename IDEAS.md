@@ -194,6 +194,59 @@ An AI interviewer found that candidates who claimed to have built 2-3 RAG system
 - ~~**Explore grouping**~~ ✅ *built May 2026 — DESIGN/BUILD/OPS sections with border-l active state*
 
 ### PrepLab
+
+#### Interview Strategy Tool — full personalization funnel (May 2026)
+
+**What it is:** A single, unified "Interview Strategy" mode that replaces and absorbs the current Interview Prep Plan (phases 1–3), Defense Doc, and effectively renders Trainer and Weakness Heatmap as internal mechanisms rather than top-level modes. Validated by ML Systems Lab (Defense Plan, v4.10) and PAL (same merge done). GenAI Lab is the pre-merge version — this is the consolidation.
+
+**Input layer — what the user brings:**
+
+1. **JD paste** — required. Extract required skills/topics, seniority signals, domain emphasis.
+2. **Resume paste** — optional but changes the analysis. Gap becomes resume-evidenced, not just self-reported. Topics the resume clearly covers skip or reduce self-rating weight.
+3. **Days until interview** — 3 / 7 / 14 / 21+ days. Scopes the plan to what's actually achievable.
+4. **Round type** — Technical / Hiring Manager / Behavioral / HR. Filters which topics and resource types dominate the plan. A behavioral round plan looks nothing like a technical round plan.
+5. **Prior round feedback** — optional. "Recruiter said system design was weak", "L4 technical round, got dinged on evals." Each piece of feedback boosts weight on the named topic cluster.
+
+**Gap analysis layer:**
+
+- JD → skill/topic extraction (existing SKILL_KEYWORDS detection, extend it)
+- Resume → coverage extraction (new — parse resume text against same skill taxonomy)
+- Delta = JD-required topics minus resume-covered topics = the actual gap
+- Self-rating questions shown **only on gap topics** — not everything, just what resume doesn't cover or covers weakly. This is the key UX improvement over current IPP (which asks you to rate everything).
+- Weight formula: `gap_weight = jd_importance × (1 - self_rating) × round_type_multiplier × prior_feedback_boost`
+- Result: ranked list of topics by cost-of-being-wrong, scoped to the round type
+
+**Output layer — the day plan:**
+
+- Day-by-day study plan scoped to the days they have
+- Each day = 2–3 specific resources from the platform: GT post, Systems/Agent Lab module, PrepLab question cluster
+- Hard/high-weight gaps front-loaded (days 1–2), lighter gaps toward the end
+- Round type changes the resource mix: technical round → Labs + PrepLab systems design questions; behavioral → GT posts on failure patterns + self-reflection framing; HM round → product angle, tradeoff framing
+- Prior round feedback adjusts day ordering — feedback-named weaknesses get day 1–2 slots regardless of self-rating
+
+**Gating:**
+- Free: JD input + gap analysis + first 2 days of plan
+- Gated: full plan (all days), resume integration, prior round feedback, round-type filtering
+- Gate fires after user sees the gap analysis and first 2 days — they're invested before the gate fires
+
+**Absorbs / replaces:**
+- Current Interview Prep Plan (phases 1–3 + gated phase 4 teaser) → becomes the core of this
+- Defense Doc → its self-rating questionnaire becomes the gap analysis step
+- Weakness Heatmap → becomes an internal data source (history-based weights supplement self-ratings), not a top-level mode
+- Trainer → becomes the drill mechanism invoked from within the plan, not a standalone mode
+
+**What this does to PrepLab sidebar:**
+- Before: Exam / Trainer / Interview Prep Plan / Company Tracks / Defense Doc / Weakness Heatmap — 6 peer-level items with unclear differentiation
+- After: Exam / Interview Strategy / Company Tracks — 3 items with clear distinct jobs. Trainer and Heatmap live inside Interview Strategy, not as separate nav items.
+
+**Files to touch:** `PrepLab.jsx` — new `InterviewStrategyMode` component replacing `InterviewPrepMode` + `DefenseDocMode`. `PREPLAB_SIDEBAR` updated. Heatmap becomes a data utility, not a rendered mode.
+
+**Effort:** L — multi-session. Resume parsing is new (static text matching against skill taxonomy, no backend). Day plan generation is algorithmic (sort by weight, bin into days, map to resource IDs). No LLM calls needed — fully static.
+
+**Source:** Conversation May 2026 — synthesized from ML Systems Lab Defense Plan v4.10, GenAI Lab IPP phases 1–3, user spec. Confirmed cross-product: same consolidation done in both sibling products.
+
+---
+
 - ~~**Questions for uncovered modules**~~ ✅ *built May 2026 — 15 questions: pid-1–5, ama-1–4, lcp-1–3, tok-1–3*
 - ~~**JD Prep mode — Interview Prep Plan upgrade**~~ ✅ *Done sprint 11 — `InterviewPrepMode` replaces `JDPrepMode`: Phase 1 (JD → SKILL_KEYWORDS detection, topic weights), Phase 2 (self-rate Weak/Okay/Strong per topic), Phase 3 (gap-weighted 20-question drill with `DRILL_W = {weak:3, okay:1.5, strong:0.5}`), Results (score + per-topic breakdown + study resources + gated Phase 4 study plan teaser). `serving` added to TOPIC_LABELS/COLORS.*
 - **Scenario-type questions** — Multi-turn conversational scenarios where the user debugs a failing system across 3-4 exchanges. Higher fidelity than MCQ. *Pending.*
