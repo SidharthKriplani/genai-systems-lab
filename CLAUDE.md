@@ -24,7 +24,7 @@ Act as a product and engineering partner, not an assistant. That means:
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of May 2026: 54 Systems modules (in nav), 25 Explore modules, 16 Agent Lab modules, 15 Concepts modules, 261 PrepLab questions, 222 Ground Truth posts. Nav: 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product) + KNOWLEDGE (Ground Truth). Legacy tabs (Concepts, Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
+Scale as of May 2026: 54 Systems modules (in nav), 25 Explore modules, 16 Agent Lab modules, 15 Concepts modules, 261 PrepLab questions, 222 Ground Truth posts. Nav: KNOWLEDGE (Concepts, Ground Truth) + 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product). Legacy tabs (Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
 
 **Business model:** Freemium with access code gate (decided May 2026). Free: all Labs, all GT, all modules, PrepLab 10q/session. Gated (access code now, paid later): full PrepLab, Company Tracks, Interview Prep Plan study plan (phase 4, gated after 30% completion). Community code shared freely during beta. Stripe + auth when ready to monetize. See DECISIONS.md Section 0.
 
@@ -317,10 +317,13 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Session build log (May 2026)
 
+**Resolved this session (sprint 15):**
+- **Concepts gym skeleton:** `GymSelectorView` (5-card grid with progress bars, coming-soon state), `GymRoomView` (PAL-style sequential module cards with insight teasers + time estimates), `ConceptsApp` rewritten as 3-view state machine (selector → room → module). `MODULE_META` constant (15 entries, insight + mins). `GYMS` constant (5 gyms: Language Models 7 modules, Retrieval 5, AI Agents 3, Evaluation + Production Systems as placeholders). `CONCEPT_GROUPS` sidebar removed; sidebar now shows only current gym's modules when in module view. Back navigation: gym room → selector, module → gym room. Lab forward pointer in GymRoomView footer. Brace diff: 0. Commit `e19fb27`.
+
 **Resolved this session (sprint 14):**
 - `Consultation.jsx` Search upgrade: button label "Ask →" → "Search →"; post count "135+" / "200+" → "222+"; result limits widened (posts 5→7, modules 3→4); `highlightText()` helper added — bolds matched keywords in post descriptions; zero-results state now shows 5 suggested query pills. Commit: `1ff9eaf`
 - Nav: `Concepts` added to `KNOWLEDGE` NAV_GROUP (count: 15); `KNOWLEDGE` group moved above `LABS` — makes logical reading order (understand → build → grow). Commit: `d78025f`
-- **Concepts framing text pass (15/15):** Before-the-interactive framing block added to all 15 Concepts modules. Modules that already had built-in callouts (NextTokenGame, TemperatureGame, FlashAttentionConcept) left as-is. New framing added to: Tokenizer, Embeddings, Attention, RAG Pipeline, Context Window, Agents (commit `1f649a2`); Transformer, Chunking, Sampling, Guardrails, Debug, MultiAgent (commit `4539d5e`). Remaining: inline callouts + synthesis close (tracked in UPGRADES.md).
+- **Concepts framing text pass (15/15):** Before-the-interactive framing block added to all 15 Concepts modules. Commits `1f649a2` (6 core), `4539d5e` (6 remaining), `6d5083b` (3 game/special modules — FlashAttention, NextToken, Temperature replaced instruction-style callouts with real conceptual framing). Remaining: inline callouts + synthesis close (tracked in UPGRADES.md).
 
 **Resolved this session (sprint 13):**
 - `Consultation.jsx` (Ask/Search) audit: token-based scoring already present — real gaps were button label, stale count, no match highlighting, no zero-results fallback. All fixed. See sprint 14 entry above.

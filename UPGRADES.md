@@ -366,18 +366,9 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 **Context:** Concepts modules are interactive-first with almost no explanatory text. The interactives are aids; they can't be understood without text framing what the user is looking at, why it matters, and what to look for. A beginner in these concepts can interact without learning anything.
 
-**Sprint 14 progress:** Framing text (before-the-interactive beat) added to 6 core modules — Tokenizer, Embeddings, Attention, RAG Pipeline, Context Window, Agents. Commit `1f649a2`.
+**Sprint 14 progress:** Framing text (before-the-interactive beat) added to all 15 modules across 3 passes. Commits `1f649a2`, `4539d5e`, `6d5083b`.
 
-**Remaining: 9 modules still need framing text (before-the-interactive only)**
-- `sampling` — Sampling & Temperature
-- `chunking` — Chunking Strategies
-- `guardrails` — Guardrails
-- `debug` — Debug Mode
-- `multiagent` — Multi-Agent Patterns
-- `nextoken` — Next Token Prediction Game
-- `tempgame` — Temperature Explorer Game
-- `transformer` — Transformer Architecture
-- `flashattn` — Flash Attention
+**Sprint 15 progress:** Gym-based UI skeleton shipped. `GymSelectorView` (5-card grid), `GymRoomView` (PAL-style sequential module cards), 3-view state machine in `ConceptsApp`. 3 active gyms (Language Models 7 modules, Retrieval 5, AI Agents 3) + 2 placeholder gyms (Evaluation, Production Systems). `MODULE_META` constant: insight teaser + time estimate per module. `GYMS` constant. Commit `e19fb27`.
 
 **Remaining for all 15 modules (future pass):**
 - **Inline callouts** — annotations tied to specific interactive states (e.g. "When temperature hits 0 you're always picking the top token — this is why outputs become repetitive.")
@@ -385,10 +376,10 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 **Target per module (full pass):** ~150–300 words across 3 beats: setup framing → inline callouts → synthesis close.
 
-**Effort:** M (framing-only for remaining 9 = ~1 focused session; full 3-beat pass for all 15 = L, multi-session)
+**Effort:** L (multi-session, 15 modules × 2 beats each)
 
 **Dependencies:** None — pure writing + JSX injection.
 
-**Priority:** High — Concepts is now in primary nav (sprint 14). Beginners will land here. Thin text = poor first impression and incomplete learning.
+**Priority:** High — Concepts is in primary nav. Beginners will land here.
 
-**Status:** In Progress — 15/15 framing texts done. Remaining: inline callouts + synthesis close pass (full 3-beat upgrade)
+**Status:** In Progress — 15/15 framing texts done, gym skeleton shipped. Remaining: inline callouts + synthesis close pass (full 3-beat upgrade)
