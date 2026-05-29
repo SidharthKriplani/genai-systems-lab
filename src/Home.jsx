@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
+import { POSTS } from "./groundTruthIndex";
 
 function CountUp({ target, duration = 1200, suffix = "" }) {
   const [count, setCount] = useState(0);
@@ -157,7 +158,183 @@ function HeroFailureDemo({ onNavigate }) {
   );
 }
 
-export default function HomePage({ onNavigate, visited = new Set(), onFeedback }) {
+// ── Returning-user helpers ────────────────────────────────────────────────────
+
+function getActivityData() {
+  try {
+    const history       = JSON.parse(localStorage.getItem("gsl-preplab-history")   || "{}");
+    const mastery       = JSON.parse(localStorage.getItem("gsl-concepts-mastery")  || "[]");
+    const visitedMods   = JSON.parse(localStorage.getItem("genai_visited_modules") || "[]");
+    const gtRead        = JSON.parse(localStorage.getItem("genai_gt_read")         || "[]");
+    const histKeys      = Object.keys(history);
+    const isReturning   = histKeys.length > 0 || mastery.length > 0 || visitedMods.length > 0 || gtRead.length > 1;
+    return { isReturning, history, histKeys, mastery, visitedMods, gtRead };
+  } catch {
+    return { isReturning: false, history: {}, histKeys: [], mastery: [], visitedMods: [], gtRead: [] };
+  }
+}
+
+const TAB_META = {
+  lab:         { label: "RAG Lab",      color: "#3b82f6" },
+  agentlab:    { label: "Agent Lab",    color: "#f59e0b" },
+  evallab:     { label: "Eval Lab",     color: "#22c55e" },
+  llmlab:      { label: "LLM Lab",      color: "#8b5cf6" },
+  concepts:    { label: "Concepts",     color: "#6366f1" },
+  preplab:     { label: "Prep Lab",     color: "#22c55e" },
+  groundtruth: { label: "Ground Truth", color: "#8b5cf6" },
+  career:      { label: "Career",       color: "#22c55e" },
+  systems:     { label: "Systems Lab",  color: "#3b82f6" },
+  explore:     { label: "Explore",      color: "#3b82f6" },
+};
+
+function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
+  const { history, histKeys, mastery, visitedMods } = data;
+
+  const now     = new Date();
+  const hour    = now.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const dateStr  = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+  const tip           = DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length];
+  const featuredPost  = POSTS[Math.floor(Date.now() / 86400000) % POSTS.length];
+
+  // Last 3 unique tabs from visitedMods (most-recent first)
+  const jumpTabs = [];
+  const seen = new Set();
+  [...visitedMods].reverse().forEach(key => {
+    const tab = key.split(":")[0];
+    if (!seen.has(tab) && TAB_META[tab]) { seen.add(tab); jumpTabs.push(tab); }
+  });
+
+  const totalAnswered = histKeys.length;
+  const correctCount  = histKeys.filter(k => history[k]?.correct).length;
+  const pct           = totalAnswered > 0 ? Math.round(correctCount / totalAnswered * 100) : 0;
+  const masteryCount  = mastery.length;
+
+  function goPost() {
+    if (onNavigateTo) onNavigateTo({ tab: "groundtruth", postId: featuredPost.id });
+    else onNavigate("groundtruth");
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-10 space-y-10">
+
+      {/* Date header */}
+      <div>
+        <p className="text-xs font-mono text-zinc-500 uppercase tracking-widest">{greeting}</p>
+        <h2 className="text-2xl sm:text-3xl font-black text-white mt-1">{dateStr}</h2>
+      </div>
+
+      {/* Today — tip + featured post */}
+      <div>
+        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Today</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-5 space-y-2">
+            <p className="text-[10px] font-mono text-amber-500 uppercase tracking-widest font-bold">Did you know · Today's tip</p>
+            <p className="text-sm text-zinc-300 leading-relaxed">{tip}</p>
+          </div>
+          <button onClick={goPost}
+            className="rounded-xl border border-violet-800/40 bg-violet-900/10 p-5 text-left hover:border-violet-700/60 transition-all flex flex-col gap-2">
+            <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">Today's read · Ground Truth</p>
+            <p className="text-sm font-bold text-white leading-snug">{featuredPost.title}</p>
+            <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{featuredPost.desc}</p>
+            <span className="text-xs font-bold text-violet-400 mt-auto">{featuredPost.readMin} min read →</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Jump back in */}
+      {jumpTabs.length > 0 && (
+        <div>
+          <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Jump back in</p>
+          <div className="flex flex-wrap gap-3">
+            {jumpTabs.slice(0, 3).map(tab => {
+              const meta = TAB_META[tab];
+              return (
+                <button key={tab} onClick={() => { track("returning_jump_back", { tab }); onNavigate(tab); }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-bold transition-all hover:opacity-80"
+                  style={{ borderColor: meta.color + "40", background: meta.color + "10", color: meta.color }}>
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: meta.color }} />
+                  {meta.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Progress */}
+      {(totalAnswered > 0 || masteryCount > 0) && (
+        <div>
+          <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Your progress</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {totalAnswered > 0 && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Prep Lab</p>
+                <p className="text-2xl font-black text-white mt-2">
+                  {totalAnswered}
+                  <span className="text-sm font-bold text-zinc-400 ml-1.5">questions answered</span>
+                </p>
+                <p className="text-xs text-zinc-400 mt-1">{pct}% correct</p>
+                <button onClick={() => onNavigate("preplab")}
+                  className="mt-3 text-xs font-bold text-green-400 hover:text-green-300 transition-colors">
+                  Continue →
+                </button>
+              </div>
+            )}
+            {masteryCount > 0 && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Concepts Gym</p>
+                <p className="text-2xl font-black text-white mt-2">
+                  {masteryCount}
+                  <span className="text-sm font-bold text-zinc-400 ml-1.5">/ 15 modules done</span>
+                </p>
+                <div className="w-full bg-zinc-800 rounded-full h-1.5 mt-2.5">
+                  <div className="h-1.5 rounded-full bg-violet-500 transition-all"
+                    style={{ width: `${Math.round(masteryCount / 15 * 100)}%` }} />
+                </div>
+                <button onClick={() => onNavigate("concepts")}
+                  className="mt-3 text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors">
+                  Continue →
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Where to next */}
+      <div>
+        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Where to next</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button onClick={() => onNavigate("preplab")}
+            className="p-4 rounded-xl border border-green-800/40 bg-green-900/10 text-left hover:border-green-700/60 transition-all">
+            <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest font-bold">Prep Lab</p>
+            <p className="text-sm font-bold text-white mt-1.5">261 questions</p>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Exam, Trainer, or Interview Prep modes</p>
+          </button>
+          <button onClick={() => onNavigate("lab")}
+            className="p-4 rounded-xl border border-blue-800/40 bg-blue-900/10 text-left hover:border-blue-700/60 transition-all">
+            <p className="text-[10px] font-mono text-blue-400 uppercase tracking-widest font-bold">RAG Lab</p>
+            <p className="text-sm font-bold text-white mt-1.5">6 failure scenarios</p>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Configure, break, diagnose</p>
+          </button>
+          <button onClick={() => onNavigate("groundtruth")}
+            className="p-4 rounded-xl border border-violet-800/40 bg-violet-900/10 text-left hover:border-violet-700/60 transition-all">
+            <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">Ground Truth</p>
+            <p className="text-sm font-bold text-white mt-1.5">222+ posts</p>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Production depth, not tutorials</p>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
+export default function HomePage({ onNavigate, onNavigateTo, visited = new Set(), onFeedback }) {
   function handleFeedback(location) {
     track("feedback_clicked", { location });
     if (onFeedback) { onFeedback(location); return; }
@@ -166,8 +343,9 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
   const [betaBannerDismissed, setBetaBannerDismissed] = useState(() => {
     try { return localStorage.getItem("genai_beta_banner_dismissed") === "1"; } catch { return false; }
   });
+  const [activityData] = useState(() => getActivityData());
 
-  useEffect(() => { track("home_viewed", {}); }, []);
+  useEffect(() => { track("home_viewed", { returning: activityData.isReturning }); }, []);
 
   function dismissBetaBanner() {
     setBetaBannerDismissed(true);
@@ -195,134 +373,140 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         </div>
       )}
 
-      {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden">
-        {/* Radial glow behind hero */}
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 100% 70% at 50% -10%, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.08) 40%, transparent 75%)" }} />
-        {/* Secondary tighter core glow */}
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 35% at 50% 0%, rgba(139,92,246,0.15) 0%, transparent 70%)" }} />
-      <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8 relative">
+      {/* ── CONDITIONAL: returning user vs. new user ──────────────────────── */}
+      {activityData.isReturning ? (
+        <ReturningHomeView
+          onNavigate={onNavigate}
+          onNavigateTo={onNavigateTo}
+          data={activityData}
+        />
+      ) : (
+        <>
+          {/* ── HERO ──────────────────────────────────────────────────────── */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 100% 70% at 50% -10%, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.08) 40%, transparent 75%)" }} />
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 35% at 50% 0%, rgba(139,92,246,0.15) 0%, transparent 70%)" }} />
+            <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8 relative">
 
-        {/* Headline */}
-        <div className="space-y-5">
-          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.05]">
-            Configure it.{" "}
-            <span style={{ background: "linear-gradient(90deg, #ef4444 0%, #f59e0b 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Break it.</span>
-            <br />
-            <span style={{ background: "linear-gradient(90deg, #818cf8 0%, #22d3ee 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Know exactly why.</span>
-          </h1>
-          <p className="text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
-            Production AI systems fail in specific, predictable ways. This lab makes you <span className="text-zinc-300 font-medium">reproduce those failures</span> — not read about them. RAG pipelines, agent loops, eval harnesses. Free, no login.
-          </p>
-        </div>
+              <div className="space-y-5">
+                <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.05]">
+                  Configure it.{" "}
+                  <span style={{ background: "linear-gradient(90deg, #ef4444 0%, #f59e0b 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Break it.</span>
+                  <br />
+                  <span style={{ background: "linear-gradient(90deg, #818cf8 0%, #22d3ee 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Know exactly why.</span>
+                </h1>
+                <p className="text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
+                  Production AI systems fail in specific, predictable ways. This lab makes you <span className="text-zinc-300 font-medium">reproduce those failures</span> — not read about them. RAG pipelines, agent loops, eval harnesses. Free, no login.
+                </p>
+              </div>
 
-        {/* Live failure demo */}
-        <HeroFailureDemo onNavigate={onNavigate} />
+              <HeroFailureDemo onNavigate={onNavigate} />
 
-        {/* Three-door entry */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto text-left">
-          <button
-            onClick={() => { track("door_clicked", { door: "builder" }); onNavigate("lab"); }}
-            className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
-            style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.12) 0%, rgba(15,23,42,0.8) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "2px solid rgba(59,130,246,0.7)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.05) inset" }}>
-            <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">Engineer</span>
-            <span className="text-sm font-bold text-white mb-2 leading-snug">I'm building with LLMs</span>
-            <span className="text-xs text-zinc-400 leading-relaxed flex-1">Configure a RAG pipeline and break it 6 ways. Move to agent loops, eval harnesses, LLM internals. No tutorials — just systems and why they fail.</span>
-            <span className="mt-4 text-xs font-bold text-blue-300 flex items-center gap-1">Start with RAG Lab <span className="text-blue-400">→</span></span>
-          </button>
-          <button
-            onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
-            className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
-            style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.3) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(34,197,94,0.04) inset" }}>
-            <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-2">Interview Prep</span>
-            <span className="text-sm font-bold text-white mb-2 leading-snug">I'm prepping for interviews</span>
-            <span className="text-xs text-zinc-400 leading-relaxed flex-1">261 questions. Timed exam mode, instant-feedback trainer, or paste a JD and get a targeted drill weighted to your gaps.</span>
-            <span className="mt-4 text-xs font-bold text-green-300 flex items-center gap-1">Open Prep Lab <span className="text-green-400">→</span></span>
-          </button>
-          <button
-            onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
-            className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
-            style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.12) 0%, rgba(46,16,101,0.2) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderTop: "2px solid rgba(139,92,246,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.05) inset" }}>
-            <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-2">Career / PM</span>
-            <span className="text-sm font-bold text-white mb-2 leading-snug">I'm navigating my AI career</span>
-            <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, system design interviews — and a salary calculator with data by role and region.</span>
-            <span className="mt-4 text-xs font-bold text-violet-300 flex items-center gap-1">Try Salary Calculator <span className="text-violet-400">→</span></span>
-          </button>
-        </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto text-left">
+                <button
+                  onClick={() => { track("door_clicked", { door: "builder" }); onNavigate("lab"); }}
+                  className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
+                  style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.12) 0%, rgba(15,23,42,0.8) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "2px solid rgba(59,130,246,0.7)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.05) inset" }}>
+                  <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">Engineer</span>
+                  <span className="text-sm font-bold text-white mb-2 leading-snug">I'm building with LLMs</span>
+                  <span className="text-xs text-zinc-400 leading-relaxed flex-1">Configure a RAG pipeline and break it 6 ways. Move to agent loops, eval harnesses, LLM internals. No tutorials — just systems and why they fail.</span>
+                  <span className="mt-4 text-xs font-bold text-blue-300 flex items-center gap-1">Start with RAG Lab <span className="text-blue-400">→</span></span>
+                </button>
+                <button
+                  onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
+                  className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
+                  style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.3) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(34,197,94,0.04) inset" }}>
+                  <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-2">Interview Prep</span>
+                  <span className="text-sm font-bold text-white mb-2 leading-snug">I'm prepping for interviews</span>
+                  <span className="text-xs text-zinc-400 leading-relaxed flex-1">261 questions. Timed exam mode, instant-feedback trainer, or paste a JD and get a targeted drill weighted to your gaps.</span>
+                  <span className="mt-4 text-xs font-bold text-green-300 flex items-center gap-1">Open Prep Lab <span className="text-green-400">→</span></span>
+                </button>
+                <button
+                  onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
+                  className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
+                  style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.12) 0%, rgba(46,16,101,0.2) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderTop: "2px solid rgba(139,92,246,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.05) inset" }}>
+                  <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-2">Career / PM</span>
+                  <span className="text-sm font-bold text-white mb-2 leading-snug">I'm navigating my AI career</span>
+                  <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, system design interviews — and a salary calculator with data by role and region.</span>
+                  <span className="mt-4 text-xs font-bold text-violet-300 flex items-center gap-1">Try Salary Calculator <span className="text-violet-400">→</span></span>
+                </button>
+              </div>
 
-        {/* Continue where you left off — shown only to returning users */}
-        {(() => {
-          const hasVisited = visited.size > 1;
-          const nextStep = START_HERE_PATH.find(s => !visited.has(s.tab));
-          if (!hasVisited || !nextStep) return null;
-          return (
-            <button
-              onClick={() => { track("continue_clicked", { tab: nextStep.tab, step: nextStep.step }); onNavigate(nextStep.tab); }}
-              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-violet-500 transition-all group">
-              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Continue where you left off</span>
-              <span className="w-px h-3 bg-zinc-700" />
-              <span className="text-xs font-bold text-white">Step {nextStep.step}: {nextStep.label}</span>
-              <span className="text-violet-400 group-hover:translate-x-0.5 transition-transform">→</span>
-            </button>
-          );
-        })()}
+              {/* Continue where you left off */}
+              {(() => {
+                const hasVisited = visited.size > 1;
+                const nextStep = START_HERE_PATH.find(s => !visited.has(s.tab));
+                if (!hasVisited || !nextStep) return null;
+                return (
+                  <button
+                    onClick={() => { track("continue_clicked", { tab: nextStep.tab, step: nextStep.step }); onNavigate(nextStep.tab); }}
+                    className="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-violet-500 transition-all group">
+                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Continue where you left off</span>
+                    <span className="w-px h-3 bg-zinc-700" />
+                    <span className="text-xs font-bold text-white">Step {nextStep.step}: {nextStep.label}</span>
+                    <span className="text-violet-400 group-hover:translate-x-0.5 transition-transform">→</span>
+                  </button>
+                );
+              })()}
 
-      </div>
-      </div>
-
-      {/* ── STATS + FAILURE MODE STRIP ───────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-4 pb-10 text-center space-y-6">
-        <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:justify-center sm:gap-16 w-full">
-          {STATS.map((s) => {
-            const inner = (
-              <>
-                <div className="text-4xl sm:text-6xl font-black tabular-nums" style={{ background: "linear-gradient(180deg, #ffffff 40%, rgba(255,255,255,0.6) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}><CountUp target={s.target} suffix={s.suffix} /></div>
-                <div className={`text-xs font-bold mt-1.5 tracking-wide ${s.tab ? "text-violet-400" : "text-zinc-300"}`}>{s.label}{s.tab ? " →" : ""}</div>
-                <div className="text-[10px] text-zinc-500 mt-0.5 font-mono uppercase tracking-widest">{s.sub}</div>
-              </>
-            );
-            return s.tab
-              ? <button key={s.label} onClick={() => { track("stat_clicked", { stat: s.label }); onNavigate(s.tab); }} className="text-center hover:opacity-80 transition-opacity">{inner}</button>
-              : <div key={s.label} className="text-center">{inner}</div>;
-          })}
-        </div>
-        <div className="space-y-2">
-          <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-widest">5 production failure patterns you can simulate right now</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {[
-              { label: "Stale retrieval",   color: "#ef4444" },
-              { label: "Prompt injection",  color: "#f59e0b" },
-              { label: "Context overflow",  color: "#6366f1" },
-              { label: "Hallucination",     color: "#3b82f6" },
-              { label: "Multi-hop failure", color: "#22c55e" },
-            ].map(f => (
-              <button key={f.label} onClick={() => onNavigate("lab")}
-                className="px-3 py-2.5 rounded-full text-xs font-mono font-bold border transition-all hover:opacity-80 min-h-[44px]"
-                style={{ color: f.color, borderColor: f.color + "40", background: f.color + "10" }}>
-                {f.label}
-              </button>
-            ))}
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* ── DAILY TIP ─────────────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-4 pb-10">
-        {(() => {
-          const tip = DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length];
-          return (
-            <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4">
-              <div className="flex items-start gap-3">
-                <span className="text-amber-400 text-base shrink-0">💡</span>
-                <div>
-                  <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Did you know · Today's tip</p>
-                  <p className="text-sm text-zinc-300 leading-relaxed">{tip}</p>
-                </div>
+          {/* ── STATS + FAILURE MODE STRIP ──────────────────────────────── */}
+          <div className="max-w-4xl mx-auto px-4 pb-10 text-center space-y-6">
+            <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:justify-center sm:gap-16 w-full">
+              {STATS.map((s) => {
+                const inner = (
+                  <>
+                    <div className="text-4xl sm:text-6xl font-black tabular-nums" style={{ background: "linear-gradient(180deg, #ffffff 40%, rgba(255,255,255,0.6) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}><CountUp target={s.target} suffix={s.suffix} /></div>
+                    <div className={`text-xs font-bold mt-1.5 tracking-wide ${s.tab ? "text-violet-400" : "text-zinc-300"}`}>{s.label}{s.tab ? " →" : ""}</div>
+                    <div className="text-[10px] text-zinc-500 mt-0.5 font-mono uppercase tracking-widest">{s.sub}</div>
+                  </>
+                );
+                return s.tab
+                  ? <button key={s.label} onClick={() => { track("stat_clicked", { stat: s.label }); onNavigate(s.tab); }} className="text-center hover:opacity-80 transition-opacity">{inner}</button>
+                  : <div key={s.label} className="text-center">{inner}</div>;
+              })}
+            </div>
+            <div className="space-y-2">
+              <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-widest">5 production failure patterns you can simulate right now</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {[
+                  { label: "Stale retrieval",   color: "#ef4444" },
+                  { label: "Prompt injection",  color: "#f59e0b" },
+                  { label: "Context overflow",  color: "#6366f1" },
+                  { label: "Hallucination",     color: "#3b82f6" },
+                  { label: "Multi-hop failure", color: "#22c55e" },
+                ].map(f => (
+                  <button key={f.label} onClick={() => onNavigate("lab")}
+                    className="px-3 py-2.5 rounded-full text-xs font-mono font-bold border transition-all hover:opacity-80 min-h-[44px]"
+                    style={{ color: f.color, borderColor: f.color + "40", background: f.color + "10" }}>
+                    {f.label}
+                  </button>
+                ))}
               </div>
             </div>
-          );
-        })()}
-      </div>
+          </div>
+
+          {/* ── DAILY TIP ──────────────────────────────────────────────── */}
+          <div className="max-w-4xl mx-auto px-4 pb-10">
+            {(() => {
+              const tip = DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length];
+              return (
+                <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-amber-400 text-base shrink-0">💡</span>
+                    <div>
+                      <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Did you know · Today's tip</p>
+                      <p className="text-sm text-zinc-300 leading-relaxed">{tip}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </>
+      )}
 
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-12 text-center space-y-3">

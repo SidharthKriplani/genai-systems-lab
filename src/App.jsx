@@ -1591,7 +1591,7 @@ export default function App() {
         {/* Row 2: Tab navigation — desktop nav moved to left sidebar */}
       </header>
 
-      {topView === "home" && <HomePage onNavigate={navigate} visited={visited} onFeedback={openFeedback} />}
+      {topView === "home" && <HomePage onNavigate={navigate} onNavigateTo={navigateTo} visited={visited} onFeedback={openFeedback} />}
 
       <main role="main" id="main-content" key={topView} className="tab-enter">
       <TabErrorBoundary>
