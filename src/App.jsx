@@ -1169,6 +1169,9 @@ export default function App() {
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [config, setConfig] = useState(ALL_SCENARIOS[0].default_config);
   const [evaluated, setEvaluated] = useState(false);
+  const [ragDone, setRagDone] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("gsl-rag-done") || "[]")); } catch { return new Set(); }
+  });
   const [challengeMode, setChallengeMode] = useState(false);
   const [gradeResult, setGradeResult] = useState(null);
   const [activeTab, setActiveTab] = useState("simulator");
@@ -1188,6 +1191,12 @@ export default function App() {
   }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+  const toggleGroup = (label) => setCollapsedGroups(prev => {
+    const next = new Set(prev);
+    next.has(label) ? next.delete(label) : next.add(label);
+    return next;
+  });
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
@@ -1372,6 +1381,13 @@ export default function App() {
   const evaluate = () => {
     setEvaluated(true);
     track("evaluate_configuration_clicked", { scenario_id: scenario.scenario_id, challenge_mode: challengeMode });
+    setRagDone(prev => {
+      if (prev.has(scenario.scenario_id)) return prev;
+      const next = new Set(prev);
+      next.add(scenario.scenario_id);
+      try { localStorage.setItem("gsl-rag-done", JSON.stringify([...next])); } catch {}
+      return next;
+    });
     if (challengeMode && lookup?.result) {
       const grade = gradeChallenge(scenario, lookup.result);
       setGradeResult(grade);
@@ -1421,20 +1437,20 @@ export default function App() {
     { label: null, items: [
       { id: "home", label: "Home", audience: "All levels" },
     ]},
-    { label: "BUILD", color: "#3b82f6", items: [
+    { label: "BUILD", color: "var(--gal-build)", items: [
       { id: "lab",      label: "RAG Lab",   count: 6,  audience: "Engineers" },
       { id: "agentlab", label: "Agent Lab", count: 16, audience: "Engineers" },
       { id: "evallab",  label: "Eval Lab",  count: 15, audience: "Engineers · PMs" },
       { id: "llmlab",   label: "LLM Lab",   count: 9,  audience: "Engineers" },
     ]},
-    { label: "PROVE", color: "#22c55e", items: [
+    { label: "PROVE", color: "var(--gal-prove)", items: [
       { id: "preplab", label: "Prep Lab",   audience: "Interview prep" },
     ]},
-    { label: "NAVIGATE", color: "#f59e0b", items: [
+    { label: "NAVIGATE", color: "var(--gal-navigate)", items: [
       { id: "career",  label: "Career",     count: 6,  audience: "Job seekers" },
       { id: "aipm",    label: "AI Product", count: 5,  audience: "Product managers" },
     ]},
-    { label: "KNOWLEDGE", color: "#8b5cf6", items: [
+    { label: "KNOWLEDGE", color: "var(--gal-knowledge)", items: [
       { id: "concepts",    label: "Concepts",     count: 15, audience: "All levels" },
       { id: "groundtruth", label: "Ground Truth",            audience: "All levels" },
     ]},
@@ -1556,23 +1572,34 @@ export default function App() {
               <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Navigation</span>
               <button onClick={() => setMobileMenuOpen(false)} className="text-zinc-500 hover:text-white text-sm">✕</button>
             </div>
-            {NAV_GROUPS.map((group, gi) => (
-              <div key={gi} className="mb-3">
-                {group.label && <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5 px-1" style={{ color: group.color }}>{group.label}</div>}
-                {group.items.map((item, ii) => (
-                  <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${
-                      topView === item.id ? "bg-violet-600 text-white"
-                      : item.id === "lab" ? "text-amber-500 hover:bg-amber-900/20 hover:text-amber-300 border border-amber-900/30"
-                      : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
-                    <span className="flex items-center gap-1.5">
-                      {item.label}{item.id === "lab" && topView !== "lab" && <span className="text-amber-600 text-[10px]">★</span>}
-                    </span>
-                    {visited.has(item.id) && topView !== item.id && item.id !== "lab" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
-                  </button>
-                ))}
-              </div>
-            ))}
+            {NAV_GROUPS.map((group, gi) => {
+              const isCollapsed = group.label && collapsedGroups.has(group.label);
+              return (
+                <div key={gi} className="mb-2">
+                  {group.label && (
+                    <button onClick={() => toggleGroup(group.label)} className="w-full flex items-center gap-1.5 px-1 mb-1.5 hover:opacity-80 transition-opacity">
+                      <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: group.color }}>{group.label}</span>
+                      {isCollapsed && <span className="text-[9px] font-mono px-1 rounded" style={{ color: group.color, background: `${group.color}18` }}>{group.items.length}</span>}
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ color: group.color, transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 150ms" }}>
+                        <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  )}
+                  {!isCollapsed && group.items.map((item) => (
+                    <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${
+                        topView === item.id ? "bg-violet-600 text-white"
+                        : item.id === "lab" ? "text-amber-500 hover:bg-amber-900/20 hover:text-amber-300 border border-amber-900/30"
+                        : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                      <span className="flex items-center gap-1.5">
+                        {item.label}{item.id === "lab" && topView !== "lab" && <span className="text-amber-600 text-[10px]">★</span>}
+                      </span>
+                      {visited.has(item.id) && topView !== item.id && item.id !== "lab" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
             <div className="mt-3 space-y-1.5">
               <button onClick={() => { setSearchOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-400 border border-zinc-700 rounded-lg hover:text-white hover:border-zinc-600 transition-all flex items-center justify-center gap-2">
                 <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
@@ -1606,45 +1633,58 @@ export default function App() {
         <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
         {/* Nav groups */}
         <nav className="flex-1 px-2 pb-4 space-y-0.5">
-          {NAV_GROUPS.map((group, gi) => (
-            <div key={gi} className={gi > 0 ? "mt-4" : ""}>
-              {group.label && (
-                <div className="flex items-center gap-2 px-2 py-1 mb-1">
-                  <div className="h-px flex-1 opacity-40" style={{ background: group.color }} />
-                  <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: group.color }}>{group.label}</span>
-                  <div className="h-px flex-1 opacity-40" style={{ background: group.color }} />
-                </div>
-              )}
-              {group.items.map(item => {
-                const active = topView === item.id;
-                const grpColor = group.color || "#6366f1";
-                return (
+          {NAV_GROUPS.map((group, gi) => {
+            const isCollapsed = group.label && collapsedGroups.has(group.label);
+            const itemCount = group.items.length;
+            return (
+              <div key={gi} className={gi > 0 ? "mt-3" : ""}>
+                {group.label && (
                   <button
-                    key={item.id}
-                    onClick={() => navigate(item.id)}
-                    aria-current={active ? "page" : undefined}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
-                    style={active ? {
-                      background: `linear-gradient(90deg, ${grpColor}28 0%, ${grpColor}06 100%)`,
-                      boxShadow: `inset 2px 0 0 ${grpColor}`,
-                      color: "#ffffff",
-                    } : {}}>
-                    <span className={active ? "text-white font-bold" : ""}>
-                      {item.label}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      {item.count && !active && (
-                        <span className="text-[9px] font-mono text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded tabular-nums leading-none">{item.count}</span>
-                      )}
-                      {visited.has(item.id) && !active && (
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: grpColor, opacity: 0.7 }} />
-                      )}
-                    </span>
+                    onClick={() => toggleGroup(group.label)}
+                    className="w-full flex items-center gap-2 px-2 py-1 mb-1 hover:opacity-80 transition-opacity"
+                  >
+                    <div className="h-px flex-1 opacity-40" style={{ background: group.color }} />
+                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: group.color }}>{group.label}</span>
+                    {isCollapsed && (
+                      <span className="text-[9px] font-mono px-1 py-0.5 rounded" style={{ color: group.color, background: `${group.color}18` }}>{itemCount}</span>
+                    )}
+                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ color: group.color, flexShrink: 0, transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 150ms" }}>
+                      <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <div className="h-px flex-1 opacity-40" style={{ background: group.color }} />
                   </button>
-                );
-              })}
-            </div>
-          ))}
+                )}
+                {!isCollapsed && group.items.map(item => {
+                  const active = topView === item.id;
+                  const grpColor = group.color || "#6366f1";
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => navigate(item.id)}
+                      aria-current={active ? "page" : undefined}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
+                      style={active ? {
+                        background: `linear-gradient(90deg, ${grpColor}28 0%, ${grpColor}06 100%)`,
+                        boxShadow: `inset 2px 0 0 ${grpColor}`,
+                        color: "#ffffff",
+                      } : {}}>
+                      <span className={active ? "text-white font-bold" : ""}>
+                        {item.label}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        {item.count && !active && (
+                          <span className="text-[9px] font-mono text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded tabular-nums leading-none">{item.count}</span>
+                        )}
+                        {visited.has(item.id) && !active && (
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: grpColor, opacity: 0.7 }} />
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
         </nav>
         {/* Bottom utilities */}
         <div className="px-2 pb-3 border-t border-zinc-800/60 pt-2 space-y-1">
@@ -1767,13 +1807,21 @@ export default function App() {
           {/* Sidebar: scenario list — desktop only */}
           <div className="hidden lg:flex flex-col w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4"
             style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
-            <div className="px-4 pb-2">
-              <div className="text-xs font-black text-white tracking-tight">RAG Lab</div>
-              <div className="text-[10px] text-zinc-500 mt-0.5">6 production failure modes</div>
+            <div className="px-3 pt-5 pb-2">
+              <h1 className="text-base font-black text-white tracking-tight">RAG Lab</h1>
+              <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">6 production failure modes</p>
               <button onClick={() => navigateTo({ tab: "concepts", gymId: "retrieval" })}
                 className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded text-[9px] font-mono border border-zinc-800 text-zinc-500 hover:border-blue-800/60 hover:text-blue-400 transition-all">
                 Concepts: Retrieval →
               </button>
+              {ragDone.size > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="h-1 flex-1 rounded-full overflow-hidden" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)" }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${(ragDone.size / ALL_SCENARIOS.length) * 100}%`, background: "linear-gradient(90deg, #1d4ed8 0%, #3b82f6 100%)", boxShadow: "2px 0 8px rgba(59,130,246,0.6)" }} />
+                  </div>
+                  <span className="text-[10px] text-zinc-500 shrink-0">{ragDone.size}/{ALL_SCENARIOS.length}</span>
+                </div>
+              )}
             </div>
             <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
             <div className="px-2 space-y-0.5">

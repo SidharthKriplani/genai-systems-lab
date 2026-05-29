@@ -372,34 +372,43 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
 
               <HeroFailureDemo onNavigate={onNavigate} />
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto text-left">
+              <div className="space-y-3 max-w-2xl mx-auto text-left">
+                {/* BUILD — dominant full-width card */}
                 <button
                   onClick={() => { track("door_clicked", { door: "builder" }); onNavigate("lab"); }}
-                  className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
-                  style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.12) 0%, rgba(15,23,42,0.8) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "2px solid rgba(59,130,246,0.7)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.05) inset" }}>
+                  className="w-full flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 text-left"
+                  style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.14) 0%, rgba(15,23,42,0.85) 100%)", border: "1px solid rgba(59,130,246,0.28)", borderTop: "2px solid rgba(59,130,246,0.75)", boxShadow: "0 6px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(59,130,246,0.06) inset" }}>
                   <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">BUILD</span>
-                  <span className="text-sm font-bold text-white mb-2 leading-snug">I'm building with LLMs</span>
-                  <span className="text-xs text-zinc-400 leading-relaxed flex-1">Configure a RAG pipeline and break it 6 ways. Move to agent loops, eval harnesses, LLM internals. No tutorials — just systems and why they fail.</span>
-                  <span className="mt-4 text-xs font-bold text-blue-300 flex items-center gap-1">Start with RAG Lab <span className="text-blue-400">→</span></span>
+                  <span className="text-base font-bold text-white mb-2 leading-snug">I'm building with LLMs</span>
+                  <span className="text-xs text-zinc-400 leading-relaxed">Configure real AI systems, watch them fail in production-realistic ways, and understand exactly why. 4 labs, 46 interactive scenarios.</span>
+                  <div className="flex flex-wrap gap-1.5 mt-3 mb-1">
+                    {["RAG Lab", "Agent Lab", "Eval Lab", "LLM Lab"].map(lab => (
+                      <span key={lab} className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: "#93c5fd", background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}>{lab}</span>
+                    ))}
+                  </div>
+                  <span className="mt-3 text-xs font-bold text-blue-300 flex items-center gap-1">Start with RAG Lab <span className="text-blue-400">→</span></span>
                 </button>
-                <button
-                  onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
-                  className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
-                  style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.3) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(34,197,94,0.04) inset" }}>
-                  <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-2">PROVE</span>
-                  <span className="text-sm font-bold text-white mb-2 leading-snug">I'm prepping for interviews</span>
-                  <span className="text-xs text-zinc-400 leading-relaxed flex-1">261 questions. Timed exam mode, instant-feedback trainer, or paste a JD and get a targeted drill weighted to your gaps.</span>
-                  <span className="mt-4 text-xs font-bold text-green-300 flex items-center gap-1">Open Prep Lab <span className="text-green-400">→</span></span>
-                </button>
-                <button
-                  onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
-                  className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
-                  style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.12) 0%, rgba(46,16,101,0.2) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderTop: "2px solid rgba(139,92,246,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.05) inset" }}>
-                  <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-2">NAVIGATE</span>
-                  <span className="text-sm font-bold text-white mb-2 leading-snug">I'm navigating my AI career</span>
-                  <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, system design interviews — and a salary calculator with data by role and region.</span>
-                  <span className="mt-4 text-xs font-bold text-violet-300 flex items-center gap-1">Try Salary Calculator <span className="text-violet-400">→</span></span>
-                </button>
+                {/* PROVE + NAVIGATE — secondary row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
+                    className="flex flex-col items-start p-4 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 text-left"
+                    style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.3) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
+                    <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">PROVE</span>
+                    <span className="text-sm font-bold text-white mb-1.5 leading-snug">Interview prep</span>
+                    <span className="text-xs text-zinc-400 leading-relaxed flex-1">261 questions. Exam mode, trainer, or JD-targeted drill.</span>
+                    <span className="mt-3 text-xs font-bold text-green-300 flex items-center gap-1">Open Prep Lab <span className="text-green-400">→</span></span>
+                  </button>
+                  <button
+                    onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
+                    className="flex flex-col items-start p-4 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 text-left"
+                    style={{ background: "linear-gradient(160deg, rgba(245,158,11,0.10) 0%, rgba(69,26,3,0.25) 100%)", border: "1px solid rgba(245,158,11,0.22)", borderTop: "2px solid rgba(245,158,11,0.6)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
+                    <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest mb-1.5">NAVIGATE</span>
+                    <span className="text-sm font-bold text-white mb-1.5 leading-snug">Career clarity</span>
+                    <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, salary data by role.</span>
+                    <span className="mt-3 text-xs font-bold text-amber-300 flex items-center gap-1">Try Salary Calculator <span className="text-amber-400">→</span></span>
+                  </button>
+                </div>
               </div>
 
               {/* Continue where you left off */}
@@ -422,22 +431,8 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
             </div>
           </div>
 
-          {/* ── STATS + FAILURE MODE STRIP ──────────────────────────────── */}
-          <div className="max-w-4xl mx-auto px-4 pb-10 text-center space-y-6">
-            <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:justify-center sm:gap-16 w-full">
-              {STATS.map((s) => {
-                const inner = (
-                  <>
-                    <div className="text-4xl sm:text-6xl font-black tabular-nums" style={{ background: "linear-gradient(180deg, #ffffff 40%, rgba(255,255,255,0.6) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}><CountUp target={s.target} suffix={s.suffix} /></div>
-                    <div className={`text-xs font-bold mt-1.5 tracking-wide ${s.tab ? "text-violet-400" : "text-zinc-300"}`}>{s.label}{s.tab ? " →" : ""}</div>
-                    <div className="text-[10px] text-zinc-500 mt-0.5 font-mono uppercase tracking-widest">{s.sub}</div>
-                  </>
-                );
-                return s.tab
-                  ? <button key={s.label} onClick={() => { track("stat_clicked", { stat: s.label }); onNavigate(s.tab); }} className="text-center hover:opacity-80 transition-opacity">{inner}</button>
-                  : <div key={s.label} className="text-center">{inner}</div>;
-              })}
-            </div>
+          {/* ── FAILURE MODE STRIP ──────────────────────────────────────── */}
+          <div className="max-w-4xl mx-auto px-4 pb-10 text-center">
             <div className="space-y-2">
               <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-widest">5 production failure patterns you can simulate right now</p>
               <div className="flex flex-wrap justify-center gap-2">

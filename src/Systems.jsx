@@ -202,6 +202,12 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
                 Concepts: Language Models →
               </button>
             )}
+            {labTitle === "Eval Lab" && (
+              <button onClick={() => onNavigate({ tab: "groundtruth" })}
+                className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded text-[9px] font-mono border border-zinc-800 text-zinc-500 hover:border-violet-800/60 hover:text-violet-400 transition-all">
+                Ground Truth: Evals →
+              </button>
+            )}
             {doneCount > 0 && (
               <div className="flex items-center gap-2 mt-2">
                 <div className="h-1 flex-1 rounded-full bg-zinc-800 overflow-hidden">

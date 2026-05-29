@@ -66,6 +66,12 @@ button:disabled:active {
 :root {
   --color-zinc-500: oklch(70.2% 0.008 286.29);   /* remapped to zinc-400 value */
   --color-zinc-600: oklch(55.2% 0.009 286.29);   /* remapped to zinc-500 value */
+
+  /* ── GAL accent colors ───────────────────────────────────────────────────── */
+  --gal-build:      #3b82f6;   /* blue-500    — BUILD group */
+  --gal-prove:      #22c55e;   /* green-500   — PROVE group */
+  --gal-navigate:   #f59e0b;   /* amber-500   — NAVIGATE group */
+  --gal-knowledge:  #8b5cf6;   /* violet-500  — KNOWLEDGE group */
 }
 
 /* ── Mobile contrast boost — low-brightness readability ────────────────────
