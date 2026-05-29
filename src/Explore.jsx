@@ -126,6 +126,10 @@ function EmbeddingExplorer({ onNavigate }) {
         ]}
       />
 
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Embedding models convert text into numeric vectors where similar meanings land near each other in space. This explorer shows what that actually means: a plain-English query with zero shared vocabulary finds the right concepts purely because the model learned to encode meaning as geometry. In production, semantic search fails when queries use domain jargon the embedding model never saw — vocabulary gap is the leading cause of low retrieval recall.</p>
+      </div>
+
       <div className="flex flex-wrap gap-2">
         {EMB_QUERIES.map(q => (
           <button key={q.id} onClick={() => selectQuery(q)}
@@ -328,6 +332,11 @@ function EmbeddingExplorer({ onNavigate }) {
         </svg>
       </div>
 
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Keyword hits always reads 0. Every match is found by meaning alone. This is exactly what your retrieval system does on every query — and why a query that uses different vocabulary than your indexed documents will still find the right chunks.</p>
+      </div>
+
       {activeQuery ? (
         <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4 space-y-3">
           <div className="flex items-start justify-between gap-3">
@@ -377,6 +386,10 @@ function EmbeddingExplorer({ onNavigate }) {
           Select a query — zero keyword overlap, pure meaning match
         </div>
       )}
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The vocabulary gap between user language and indexed documents is the most common failure mode in production RAG. Before going to production, benchmark your embedding model on your actual domain — not MTEB. A model that scores 68 on general benchmarks may score 42 on your specific corpus.</p>
+      </div>
     </div>
   );
 }
@@ -457,6 +470,10 @@ function ShadowMode() {
           "The key insight: 'better prompt' depends entirely on which metric you optimize for",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Shadow A/B testing runs two prompt variants on every real request and compares outputs — without showing variant B to users until you are confident it is better. The critical discipline is committing to a success metric before you run the test. Teams that define "better" after seeing results always ship the wrong variant.</p>
+      </div>
+
       <p className="text-[11px] text-zinc-500 font-mono">
         ~ Static response pairs — illustrates the pattern of shadow A/B testing; no live inference is run.
       </p>
@@ -489,6 +506,11 @@ function ShadowMode() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">No variant wins on every metric. Higher CSAT almost always means higher latency or higher hallucination rate. The right choice depends entirely on which metric your use case weights most — and that decision must happen before you run the test.</p>
       </div>
 
       {/* Metrics comparison */}
@@ -553,6 +575,10 @@ function ShadowMode() {
           {userPick ? "Reveal Expert Verdict →" : "Pick A or B first"}
         </button>
       )}
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">A/B testing without a pre-defined success metric is just gambling. Define your primary metric (CSAT, hallucination rate, latency) and your minimum detectable effect before running any experiment — otherwise confirmation bias will make every variant look like a winner.</p>
+      </div>
     </div>
   );
 }
@@ -606,6 +632,10 @@ function LatencyPlanner() {
           "15% overhead is reserved for network, serialization, and surprises — it's non-negotiable",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Latency is a design constraint, not a benchmark metric — the right way to think about it is a budget you allocate before choosing any model or tool. Teams that pick the LLM first and measure latency afterward always end up over budget. This planner forces the correct order: SLA first, then allocation, then model selection.</p>
+      </div>
+
       {/* SLA selector */}
       <div className="space-y-2">
         <p className="text-xs text-zinc-400">SLA Target</p>
@@ -649,6 +679,11 @@ function LatencyPlanner() {
         </div>
       </div>
 
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">The LLM (TTFT) stage alone consumes more budget than all other stages combined at default settings. Skipping the reranker saves 200ms — often the fastest win when you are over budget. The 15% overhead is non-negotiable: it covers network, serialization, and the one slow request that always arrives.</p>
+      </div>
+
       {/* Stage sliders */}
       <div className="space-y-2">
         {stages.map(s => (
@@ -672,6 +707,10 @@ function LatencyPlanner() {
             )}
           </div>
         ))}
+      </div>
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">P50 latency is easy to hit; P99 is where production systems break. Always design your latency budget against your P99 target, not your average — the slow outlier is what users remember. If you cannot fit your pipeline under P99 budget, streaming is your fastest fix: perceived latency drops even if total latency does not.</p>
       </div>
     </div>
   );
@@ -731,6 +770,10 @@ function TokenizerExplorer() {
           "Token count = what you're billed for. Longer tokens = cheaper than short ones",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Tokenization determines what a model can and cannot process efficiently. Non-English text typically uses 2–5x more tokens per word than English, making multilingual applications significantly more expensive and hitting context limits much faster. Token count is also the unit of billing — understanding how your specific content tokenizes is a prerequisite for accurate cost modeling.</p>
+      </div>
+
       <div className="flex gap-2">
         {[["gpt4","GPT-4"],["claude","Claude"],["llama","Llama"]].map(([id, label]) => (
           <button key={id} onClick={() => setModel(id)}
@@ -783,6 +826,11 @@ function TokenizerExplorer() {
           </div>
         ))}
       </div>
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Try the "Edge case" example and switch between model families. The same text can tokenize into 20% more tokens on one model than another. That gap compounds across millions of requests — benchmark your actual prompts, not toy examples.</p>
+      </div>
+
       <div className="bg-zinc-900 border border-amber-800/30 rounded-xl p-4 space-y-2">
         <p className="text-xs text-amber-400 uppercase tracking-widest">Why tokenization matters</p>
         <div className="text-xs text-zinc-400 space-y-1">
@@ -791,6 +839,10 @@ function TokenizerExplorer() {
           <p>• Context window limits are in tokens, not characters — a 128K token window ≈ ~96K English words</p>
           <p>• Prompt injection attacks sometimes exploit tokenization boundaries to hide instructions</p>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Token efficiency varies 3–5x across languages and content types. Before committing to a model family, run your actual production content through the real tokenizer — cost and context window projections built on English toy examples will be wrong for multilingual or code-heavy workloads.</p>
       </div>
     </div>
   );
@@ -879,6 +931,10 @@ function ModelCardReader() {
           "Goal: spot the gaps before you build a product on a model that can't support it",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Model cards tell you what a model can do — but what they omit tells you what the team was not confident about. Missing bias evaluation, internal-only benchmarks, and vague training data descriptions are deployment blockers in disguise. Real model card literacy means reading the gaps as carefully as the claims.</p>
+      </div>
+
       <p className="text-[11px] text-zinc-500 font-mono">
         ~ Curated static cards based on published model documentation — not live API data.
       </p>
@@ -926,6 +982,11 @@ function ModelCardReader() {
         </div>
       </div>
 
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Pay attention to what is absent. Fields marked "Not evaluated" or "Not reported" are not neutral — they are signals that the team chose not to measure. Bias evaluation gaps are particularly important for customer-facing deployments where uneven performance across demographics creates legal and reputational risk.</p>
+      </div>
+
       {!revealed ? (
         <div className="flex items-center justify-between">
           <p className="text-xs text-zinc-500">{found.size} fields flagged</p>
@@ -945,6 +1006,10 @@ function ModelCardReader() {
           </p>
         </div>
       )}
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Model cards are starting points, not verdicts. Real-world performance on your specific domain, user population, and failure modes will differ from whatever the card reports. Treat published benchmarks as a filter to narrow the candidate list — then run your own evals before you commit.</p>
+      </div>
     </div>
   );
 }
@@ -1123,6 +1188,10 @@ function VectorDBComparison() {
           "Key insight: there's no universally best vector DB — the right choice depends on your constraints",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Vector database selection is one of the early architectural commitments that is painful to reverse — your entire corpus gets embedded and indexed against your choice. The key tradeoffs are: index type (HNSW gives fast approximate recall, IVF scales better to very large corpora), hybrid search support (dense + sparse for better recall on keyword-heavy queries), and ops burden. Most teams over-engineer here: if you have under 10M vectors, pgvector is enough.</p>
+      </div>
+
       <div className="flex gap-2">
         {[{ id: "explore", label: "DB Explorer", tag: "COMPARE" }, { id: "decide", label: "Decision Tool", tag: "PICK" }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -1134,6 +1203,10 @@ function VectorDBComparison() {
       </div>
       {tab === "explore" && <VectorDBExplorer />}
       {tab === "decide"  && <VectorDBDecisionTool />}
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The most common vector DB mistake is choosing a managed SaaS for a prototype and never reconsidering it for production. Switching later means re-embedding your entire corpus — which is a significant cost and downtime event. Make the decision consciously, with your production scale and ops constraints in mind, not just what gets you running fastest today.</p>
+      </div>
     </div>
   );
 }
@@ -1322,6 +1395,10 @@ function StructuredOutputsLab() {
           "Key insight: function calling is the most reliable approach for most production use cases",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Structured output reliability is not guaranteed — it degrades as schema complexity increases, and every failure requires a retry or a fallback that adds latency and cost. Understanding which approach (JSON mode, function calling, or constrained decoding) gives you the reliability level your use case requires is one of the most practical production engineering decisions in LLM systems.</p>
+      </div>
+
       <div className="flex gap-2 flex-wrap">
         {[
           { id: "approaches", label: "Approaches",    tag: "COMPARE" },
@@ -1334,8 +1411,18 @@ function StructuredOutputsLab() {
           </button>
         ))}
       </div>
+
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Failure Modes tab, notice that every failure has a specific fix pattern — most production schema failures are preventable with better prompt engineering or a move to function calling. Constrained decoding is the nuclear option: guaranteed compliance, but only available self-hosted.</p>
+      </div>
+
       {tab === "approaches" && <StructuredApproaches />}
       {tab === "failures"   && <OutputFailureModes />}
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Simple flat schemas are an order of magnitude more reliable than nested objects with enums. If your use case requires complex nesting, break it into sequential calls with flat schemas at each step rather than asking the model to produce the full structure in one shot.</p>
+      </div>
     </div>
   );
 }
@@ -1630,6 +1717,10 @@ function RedTeamingLab() {
           "Simulation: walk through an attack end-to-end, then replay with defense applied",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Most LLM security work focuses on known attack patterns — but the attacks that matter in production are the ones you did not anticipate. Red teaming is most valuable when it is adversarial and creative, not when it runs a checklist of known jailbreaks. This lab covers the six most prevalent attack categories and the defenses that actually reduce blast radius when an attack succeeds.</p>
+      </div>
+
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -1639,9 +1730,19 @@ function RedTeamingLab() {
           </button>
         ))}
       </div>
+
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Simulation tab, compare the attack flow vs the defense flow step by step. Notice that most defenses do not prevent the attack from being attempted — they catch it at a specific point in the pipeline. Defense in depth means multiple layers, each catching a different failure mode.</p>
+      </div>
+
       {tab === "attacks"  && <AttackPatterns />}
       {tab === "defenses" && <DefenseMechanisms />}
       {tab === "simulate" && <AttackSimulation />}
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">No single defense stops all attacks. A practical production security posture combines input validation (cheap, fast, catches known patterns), prompt hardening (zero cost, raises the bar), output filtering (catches policy violations post-hoc), and sandboxing (limits blast radius when something slips through). Layer them in order of cost-effectiveness.</p>
+      </div>
     </div>
   );
 }
@@ -1775,9 +1876,16 @@ function AttentionViz3D() {
           "Notice different heads capture syntax, position, coreference simultaneously",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Transformers run multiple attention heads in parallel — each learning a different relationship between tokens. This 3D view stacks all 8 heads so you can see them simultaneously. One head may track subject-verb agreement, another positional proximity, another coreference across sentences. No single head "understands" the input; the model's power comes from combining all eight perspectives. Rotate the cube and notice how the same token pair can have near-zero weight in one head and high weight in another.</p>
+      </div>
       <canvas ref={canvasRef} width={560} height={360}
         className="w-full rounded-xl border border-zinc-800 cursor-grab active:cursor-grabbing"
         style={{ background:"#09090b", touchAction:"none" }} />
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Click a head card and read its specialization label — then look at which token pairs light up for that head. Syntactic heads tend to attend locally (adjacent tokens); semantic heads reach across longer distances. This division of labor is emergent — the model was never told to specialize heads this way.</p>
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {ATTN_HEADS.map((head,h) => (
           <button key={h} onClick={() => pickHead(h)}
@@ -1797,6 +1905,9 @@ function AttentionViz3D() {
       )}
       <div className="flex justify-center gap-3 flex-wrap">
         {ATTN_TOKENS.map(t=><span key={t} className="px-2 py-0.5 bg-zinc-800 rounded text-xs font-mono text-zinc-400">{t}</span>)}
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Multi-head attention is why transformers generalize so well — different heads capture complementary structure, and the output projection combines them. When a model "hallucinates," attention often shows it failed to attend to the relevant context tokens. Inspecting attention patterns is one of the earliest — and still useful — tools for understanding what a model is and isn't tracking.</p>
       </div>
     </div>
   );
@@ -1922,6 +2033,9 @@ function DiffusionViz3D() {
           "Each color = one image class the model learned to generate",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Diffusion models generate images by learning to reverse a noise process. During training, the model sees the same image at every noise level — from clean to pure static — and learns the denoising direction at each step. At inference, it starts from random Gaussian noise and repeatedly applies the learned denoising function. The 3D field here shows 64 "concept particles" converging toward their correct semantic clusters. Watch the transition from chaos to structure.</p>
+      </div>
       <canvas ref={canvasRef} width={520} height={340}
         className="w-full rounded-xl border border-zinc-800 cursor-grab active:cursor-grabbing"
         style={{ background:"#09090b", touchAction:"none" }} />
@@ -1940,6 +2054,10 @@ function DiffusionViz3D() {
           ↺ Reset
         </button>
       </div>
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Run "Add Noise" all the way to T=1000 — the four color clusters become indistinguishable. Then run "Denoise" — each particle follows a curved trajectory back to its cluster, not a straight line. That curved path is the learned score function: the model's estimate of which direction leads toward a real image at each noise level.</p>
+      </div>
       <div className="flex gap-4 justify-center flex-wrap">
         {DIFF_ATTRACTORS.map(a=>(
           <div key={a.label} className="flex items-center gap-1.5">
@@ -1947,6 +2065,9 @@ function DiffusionViz3D() {
             <span className="text-xs font-mono text-zinc-400">{a.label}</span>
           </div>
         ))}
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The key insight is that diffusion separates learning from sampling. The model trains on noise prediction, not image generation directly. This makes training stable and the architecture generic — the same DDPM framework works for images, audio, protein structures, and more. Understanding denoising trajectories helps you reason about why guidance techniques (CFG, DDIM) work and where they can fail.</p>
       </div>
     </div>
   );
@@ -2065,6 +2186,9 @@ function LLMMatrixExplorer() {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Choosing a frontier LLM is a multi-dimensional decision, and specs alone can mislead. A model with the highest capability score may be 10× the cost of a model that scores 90% as high — and for most production tasks, the cheaper model wins. This matrix gives you a structured view across the dimensions that matter for AI engineering decisions: capabilities, cost, context window, and use-case fit. Filter down to the models you're actively considering, then use the Use Cases tab to see which wins for your specific task.</p>
+      </div>
       {/* Model filter chips */}
       <div className="flex flex-wrap gap-2">
         {LLM_DATA.map(m => (
@@ -2248,6 +2372,13 @@ function LLMMatrixExplorer() {
           </div>
         </div>
       )}
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Cost tab, compare input vs output pricing ratios. Output tokens are consistently 3–10× more expensive than input tokens across all providers. This means prompt length optimization and output truncation have asymmetric payoffs — trimming output matters more per token than trimming input at most price tiers. Check the At a Glance tab last: it shows which model wins outright on each dimension.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The matrix reflects mid-2026 specs — model capability and pricing shift quarterly. Claude Sonnet 4.5, GPT-4o, and Gemini 2.0 have all had pricing cuts in the past year. The open-source column (Llama 3.1 70B) is particularly dynamic: self-hosted inference costs drop as serving infrastructure improves. Use this as a decision framework, not a final price sheet. Always verify current pricing before committing to production architecture.</p>
+      </div>
     </div>
   );
 }
@@ -2333,6 +2464,9 @@ function SemanticCachingExplorer() {
           "Lower threshold = more hits, more risk of wrong answers. Higher = fewer hits, always fresh.",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Semantic caching stores LLM responses indexed by embedding vectors rather than exact query strings. When a new query arrives, its embedding is compared against cached embeddings — if the similarity score exceeds a threshold, the cached answer is returned directly, saving the LLM call entirely. The threshold is the central tradeoff: set it too low and semantically distant queries get stale answers; set it too high and you miss obvious near-duplicates that should have been cache hits.</p>
+      </div>
 
       {/* Threshold slider */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
@@ -2518,6 +2652,13 @@ function SemanticCachingExplorer() {
           </div>
         </div>
       )}
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Fire all 8 queries at the balanced threshold (0.85), then lower it to 0.75 and re-fire the misses. Watch which queries flip from miss to hit — those are the "risky" hits where the cached answer might not match the new query's intent. The threshold isn't a correctness dial; it's a risk dial.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">In production, the right threshold depends on your domain. Support queries ("how do I reset my password?") tolerate aggressive caching — slight phrasing differences rarely change the correct answer. Research or analysis queries need conservative thresholds — "compare X and Y" and "compare Y and X" are semantically similar but may need different response ordering. Set thresholds per query category, not globally.</p>
+      </div>
     </div>
   );
 }
@@ -2741,6 +2882,9 @@ function LLMOpsComparison() {
           "All scores based on public documentation and mid-2026 feature sets",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">LLMOps tooling has fragmented fast — five platforms serve overlapping but distinct needs. Langfuse leads on open-source flexibility and prompt management. Braintrust leads on eval workflow rigor. Arize leads on ML observability heritage. The choice isn't just features; it's philosophy: some teams instrument everything and analyze later; others build eval-first and trace only when things break. Your architecture should match your team's actual debugging workflow, not the platform with the most checkboxes.</p>
+      </div>
 
       {/* View toggle */}
       <div className="flex gap-2">
@@ -3022,6 +3166,13 @@ function LLMOpsComparison() {
           )}
         </div>
       )}
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Check the Prompt Management score row — it's the most differentiating dimension in 2026. Versioning, A/B testing, and rollback for prompts is a newer capability that only some platforms treat as first-class. If your team ships prompt changes weekly, this score matters more than tracing completeness.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The LLMOps category is still consolidating. Several of these platforms were founded in 2023; feature sets shift quarterly. The right long-term bet is a platform with a strong open-source core or good data portability — so you're not stranded if the vendor pivots, raises prices, or gets acquired. Always check whether your trace data can be exported before committing to a managed platform.</p>
+      </div>
     </div>
   );
 }
@@ -3407,6 +3558,9 @@ function EmbeddingModelSelector() {
           "Left border colour = provider: violet OpenAI, emerald Voyage, blue Cohere, amber OSS",
         ]}
       />
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Embedding model choice is one of the most consequential and least reversible decisions in a RAG system. Once you embed your entire corpus with a given model, switching means re-embedding everything — and similarity scores from the old model are incompatible with the new one. This isn't like swapping an LLM, where you can test a new one in real time. The model you pick at indexing time is locked in until you rebuild the index. That makes the selection decision worth taking seriously, not just defaulting to whatever's cheapest.</p>
+      </div>
 
       <div className="flex gap-2 flex-wrap">
         {tabs.map(t => (
@@ -3423,9 +3577,16 @@ function EmbeddingModelSelector() {
         ))}
       </div>
 
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Model Comparison table, look at the cost-to-MTEB ratio, not MTEB alone. voyage-3-lite scores 65.1 at $0.02/1M tokens — nearly the same cost as text-embedding-3-small but 2.8 MTEB points higher and 32x the context window. Context window length matters most for document-level RAG where chunks are long. Check the Matryoshka tab to see how dimension truncation trades off accuracy for speed.</p>
+      </div>
       {tab === "TABLE"  && <EmbedModelTable />}
       {tab === "WIZARD" && <EmbedWizard />}
       {tab === "MRL"    && <EmbedMatryoshka />}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Run the Use-Case Wizard for your actual use case, then verify the recommendation against the table — check whether the recommended model's context window actually fits your average document chunk size. A model with a 512-token limit will silently truncate anything longer, degrading retrieval quality in ways that are hard to debug after the fact.</p>
+      </div>
     </div>
   );
 }
@@ -3454,6 +3615,9 @@ function RAGArchitecturePatterns() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">RAG architecture has two independent decision surfaces: how you chunk documents at index time, and how you retrieve them at query time. Most teams get the pipeline steps right (dense retrieval → reranker) but underestimate how much chunking strategy affects end-to-end quality. A reranker can't save you if the relevant information was split across two chunks at indexing time. Get chunking right first — it's cheaper to fix before you embed your corpus.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -3507,6 +3671,13 @@ function RAGArchitecturePatterns() {
           </div>
         </div>
       )}
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Retrieval Pipeline tab, look at Step 4 (Reranker): +50–200ms latency, +15–25% precision. That 50–200ms is substantial at 100ms SLA targets — it forces you to ask whether your queries are precision-sensitive enough to justify the latency budget. Most production systems use the reranker but cap it at top-50 candidates to bound the latency hit. See the Latency Planner module to model this numerically.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The biggest RAG quality gap in production is usually not retrieval algorithm choice — it's poor chunking for the specific document type. Legal contracts, API documentation, code files, and conversational transcripts each have natural semantic boundaries that generic fixed-size chunking ignores. Match your chunking strategy to the document structure, not to a default token count from a tutorial.</p>
+      </div>
     </div>
   );
 }
@@ -3536,6 +3707,9 @@ function APIModelPricing() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">API pricing is the most underestimated production cost in AI systems. Output tokens are consistently 4–10× more expensive than input tokens — so a long system prompt costs far less than a verbose model response. Two factors dominate your bill: output verbosity and volume. Use this table to compare models at the tier you actually need, not the tier with the highest headline benchmark score. Deepseek V3 at $0.27/M input is one of the most striking data points: frontier-quality at a fraction of the cost.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {filterBtns.map(f => (
           <button key={f} onClick={() => setFilter(f)}
@@ -3575,7 +3749,13 @@ function APIModelPricing() {
           </tbody>
         </table>
       </div>
-      <p className="text-zinc-500 text-xs text-center">Prices as of mid-2025. Always check provider docs for current pricing.</p>
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Filter to "frontier" and compare input vs output columns. Every frontier model charges 3–5× more for output tokens. Now calculate: a 500-token output at 50K requests/day at $10/M output = $250/day = $7,500/month. Shorten your output by 20% and you save $1,500/month before any model switch. Output brevity is a cost lever, not just a UX preference.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Prices as of mid-2025 — always check provider documentation for current rates. The structural pattern (output tokens more expensive, small models closing the quality gap) will persist even as absolute numbers drop. Deepseek V3's price point has already forced downward pressure across the market. Plan for continued price compression when sizing production budgets.</p>
+      </div>
     </div>
   );
 }
@@ -3638,6 +3818,9 @@ function PromptPatternLibrary() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Prompting patterns are reusable structural solutions to recurring LLM reliability problems. Few-shot examples solve format uncertainty. Chain of thought solves multi-step reasoning errors. Role prompting sets context. Structured output forces parseable responses. These aren't tips — they're engineering patterns with known failure modes and known conditions where they work. The Anti-Patterns tab is worth reading first: it shows the six most common prompting mistakes that kill production reliability before you write a single example.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -3704,6 +3887,13 @@ function PromptPatternLibrary() {
           ))}
         </div>
       )}
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Patterns tab, compare Few-Shot and Self-Consistency. Few-shot costs one inference call with examples in the prompt — cheap. Self-consistency runs the same prompt 5–10 times and takes the majority vote — expensive but much more reliable for math and factual claims. The decision rule: use self-consistency only when wrong answers are costly and output tokens are cheap relative to the cost of an error.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Prompt patterns solve structural reliability problems, but they don't solve knowledge gaps or model capability ceilings. If the model doesn't know the answer, no amount of chain-of-thought framing will invent it correctly. Pattern selection is downstream of capability assessment — match the pattern to the task type, not just to the failure mode you're currently seeing.</p>
+      </div>
     </div>
   );
 }
@@ -3750,6 +3940,9 @@ function BenchmarkBrowser() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Benchmarks are proxies for capability, not measures of production performance. A model that tops MMLU (knowledge breadth) may struggle on your specific document domain. HumanEval measures pass@1 on Python toy problems — not the ability to refactor a 2,000-line codebase. GPQA is the most selective test here: PhD-level science questions that frontier models only recently crossed 50% on. Use benchmarks to narrow the field, then evaluate on your actual task distribution before committing.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -3802,6 +3995,13 @@ function BenchmarkBrowser() {
           ))}
         </div>
       )}
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Sort by GPQA and then by MMLU — the ranking changes. Models that lead on GPQA (graduate science reasoning) don't always lead on MMLU (breadth of knowledge). o3 leads GPQA by 3+ points over Gemini 2.5 Pro but Gemini leads MMLU. This divergence tells you something: these benchmarks measure different cognitive tasks, and a model optimized for one doesn't automatically win the other.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Benchmark saturation is a real phenomenon: as models approach 90%+ on older benchmarks like MMLU, those benchmarks stop differentiating frontier models. GPQA and MATH were designed to resist saturation by requiring genuine multi-step reasoning. When comparing models for your use case, prioritize the benchmark that most closely resembles your task type — or better yet, build a small eval set from your own data and measure there directly.</p>
+      </div>
     </div>
   );
 }
@@ -3830,6 +4030,9 @@ function ContextWindowEngineering() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Context window size and reliable context recall are different things. Gemini 2.5 Pro supports 1M tokens but performs best up to 256K. GPT-4o supports 128K but degrades noticeably beyond 64K. "Stuffing" the full context window rarely improves quality and always increases cost — models struggle to attend uniformly across very long contexts due to the "lost in the middle" phenomenon. The practical approach: retrieve only what's needed, compress what can't be cut, and summarize what's distant. Max context is a ceiling, not a target.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -3886,6 +4089,13 @@ function ContextWindowEngineering() {
           <p className="text-zinc-500 text-xs text-center">Practical sweet spot = where the model reliably recalls information. Max context ≠ reliable context.</p>
         </div>
       )}
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Context Limits table, compare the Max Context and Sweet Spot columns side by side. Every model's sweet spot is well below its advertised limit — GPT-4o's is 50% of max, Claude's is about 35%, Gemini 2.5 Pro is 25%. The model with the biggest absolute window (Gemini at 1M) also has the biggest gap between ceiling and reliable range. Treat these sweet spot figures as your operating budget, not the limit.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Context window management is fundamentally a cost-quality optimization problem. More context = better recall up to the sweet spot, then diminishing returns with increasing cost. The strategies here (retrieval-first, hierarchical summary, compression) are engineering solutions to stay in the reliable zone while handling real-world document volumes. For most production systems, retrieval-first with a well-tuned top-k is the right starting point — not throwing everything at the model and hoping it finds the relevant parts.</p>
+      </div>
     </div>
   );
 }
@@ -3999,6 +4209,9 @@ function CosineSimilarityExplorer() {
         <h2 className="text-lg font-bold text-white mb-1">Cosine Similarity — The Geometry of Retrieval</h2>
         <p className="text-sm text-zinc-400">Drag the vector endpoints. Watch the similarity score update live. This is the exact math your retrieval system runs on every query.</p>
       </div>
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Every retrieval system — semantic search, RAG, recommendation — runs on one number: cosine similarity between two embedding vectors. The score measures the angle between vectors, not their length. Two documents can be completely different lengths and still score 1.0 if they represent the same meaning. This is the key property that makes dense retrieval work: meaning is direction, not magnitude. Every time you run a semantic query, this formula executes millions of times across your index.</p>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* SVG Canvas */}
@@ -4103,6 +4316,13 @@ function CosineSimilarityExplorer() {
           ))}
         </div>
       </div>
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Toggle "Show normalized vectors" — watch the dashed vectors snap to the unit circle. The cosine score doesn't change when you enable normalization, because normalization is what cosine already does internally: it divides by both magnitudes. The normalized view just makes the geometry explicit: two vectors pointing in the same direction score 1.0 regardless of their original length.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The practical implication: if your retrieval system is returning irrelevant results, a low threshold (below 0.5) isn't the problem — the embedding model isn't placing related concepts near each other. That's a model selection or fine-tuning problem, not a threshold problem. Use the reference table to calibrate what "good retrieval" looks like numerically in your domain — it varies by corpus.</p>
+      </div>
     </div>
   );
 }
@@ -4186,6 +4406,9 @@ function ModelArchitectureComparison() {
       <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-4">
         <div className="text-sm font-bold text-white mb-1">Model Architecture Comparison</div>
         <p className="text-xs text-zinc-400 leading-relaxed">The three fundamental transformer architectures — encoder-only, decoder-only, encoder-decoder — each optimised for different tasks. Picking the wrong one is a common and expensive mistake.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Every transformer model falls into one of three architectural families, and each family excels at a different class of tasks. Encoder-only models (BERT) see the whole input at once — ideal for understanding and classification. Decoder-only models (GPT) predict one token at a time — ideal for generation. Encoder-decoder models (T5) encode the full input, then decode to a new sequence — ideal for transformation tasks like translation. The frontier model era has compressed this choice: in practice, if you're using an API, it's almost certainly decoder-only.</p>
       </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t,i) => (
@@ -4317,6 +4540,13 @@ function ModelArchitectureComparison() {
           </div>
         </div>
       )}
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Use-Case Wizard, try the semantic search scenario — the answer is encoder-only, not decoder-only, even though GPT-4 and Claude are technically decoder models. Decoder models don't produce good sentence-level embeddings by default because causal attention means each token only sees what came before, not the full sentence. For embeddings, you need an encoder model or a dedicated embedding model trained on pair contrastive loss.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The architecture decision is upstream of everything else — it affects your fine-tuning approach, serving infrastructure, latency profile, and which tasks you can tackle. A common mistake is defaulting to a decoder-only model for classification because it's what you're already using for generation. A fine-tuned BERT-family encoder will be faster, cheaper, and more accurate for most classification tasks at production scale.</p>
+      </div>
     </div>
   );
 }
@@ -4456,6 +4686,9 @@ function HardwareReference() {
         <div className="text-sm font-bold text-white mb-1">ML Hardware Reference</div>
         <p className="text-xs text-zinc-400 leading-relaxed">The practical hardware comparison ML engineers actually need — FLOPS, memory bandwidth, VRAM, and cloud cost. Includes a VRAM calculator for model loading decisions.</p>
       </div>
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">LLM inference is memory-bandwidth-bound, not compute-bound. This is one of the most misunderstood facts in ML infrastructure. When you're generating tokens, the GPU spends most of its time moving model weights from HBM to compute cores — not running multiply-accumulate operations. So for inference, bandwidth (TB/s) predicts throughput better than TFLOPS. For training, it's the opposite: you're doing dense forward and backward passes, so FLOPS dominate. Matching your hardware choice to your actual workload saves real money.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t,i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -4570,6 +4803,13 @@ function HardwareReference() {
           </div>
         </div>
       )}
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Sort by Bandwidth in the GPU table, then compare against TFLOPS. The H100 SXM has 989 TFLOPS but only 2.2× the bandwidth of the A100 (3.35 vs 2.0 TB/s). For inference, the bandwidth ratio predicts your throughput gain better than the TFLOPS ratio. Then switch to the VRAM Calculator tab and estimate what GPU count you actually need for your target model — that's usually the binding constraint before cost even enters the conversation.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Hardware costs change fast — cloud spot pricing, new GPU releases, and availability fluctuations mean the right answer in Q1 can be wrong in Q3. Use this table as a decision framework, not a price sheet. The structural relationships (H100 SXM for large training, A100 for fine-tuning, L4 for small model serving) remain stable even as absolute prices shift. Verify current pricing before any procurement decision.</p>
+      </div>
     </div>
   );
 }
@@ -4735,6 +4975,9 @@ function TokenizerComparison() {
         <div className="text-sm font-bold text-white mb-1">Tokenizer Comparison</div>
         <p className="text-xs text-zinc-400 leading-relaxed">The four major tokenization algorithms — how they split text, why the choice matters for cost and model behaviour, and the edge cases where each breaks.</p>
       </div>
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Before a model sees a single word, it runs a tokenizer. The tokenizer determines your cost (tokens billed), your context window usage (tokens consumed), and model behavior on edge cases like numbers, code, and non-English text. Most engineers default to tiktoken for OpenAI models and HuggingFace tokenizers for everything else — but the differences between BPE, WordPiece, SentencePiece, and tiktoken become significant at scale, especially for multilingual content and structured data like JSON, SQL, and code.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t,i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -4847,6 +5090,10 @@ function TokenizerComparison() {
               );
             })}
           </div>
+          <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+            <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">Switch between the sample inputs — try "Code snippet" and compare BPE vs SentencePiece token counts. BPE typically splits code identifiers into fewer tokens (common subwords), while SentencePiece treats the whole token stream more uniformly. Then try "Mathematical expression" — all tokenizers struggle with numbers because digits are usually split individually, making multi-digit arithmetic harder for models to reason about.</p>
+          </div>
           <div className="rounded-lg bg-amber-950/20 border border-amber-800/30 p-3 text-xs text-amber-300">
             <span className="font-bold">Note:</span> This is an approximation of tokenization behaviour for illustration. Production tokenizers (Hugging Face tokenizers, tiktoken) produce exact results — use those for billing/context window calculations.
           </div>
@@ -4904,6 +5151,9 @@ function TokenizerComparison() {
           </div>
         </div>
       )}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Use the Cost Calculator tab to build intuition about the relationship between token count and spend. At $0.15/M tokens (GPT-4o mini), even long prompts cost fractions of a cent per request — but at $15/M (Claude output), a 2K-token response at 10K requests/day is $300/day. The difference between a 500-token and 800-token system prompt at scale is real budget. Tokenizer choice affects this: non-English content, heavy whitespace formatting, and markdown can all inflate token counts unexpectedly.</p>
+      </div>
     </div>
   );
 }
@@ -4977,6 +5227,9 @@ function ModelMergeExplorer() {
         <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">What this is</p>
         <p className="text-sm text-zinc-300">Model merging combines multiple fine-tuned checkpoints in weight space without any additional training. No GPU needed — pure arithmetic on tensors. The technique that powers most open-source model experiments.</p>
       </div>
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Model merging works because fine-tuned models often learn useful specializations in weight space that are partially orthogonal — a coding model and an instruction-following model may be "far enough apart" that averaging them preserves both skills. SLERP (spherical interpolation) handles this better than linear averaging. TIES and DARE are newer techniques that deal with parameter conflicts and redundancy more explicitly. The entire field runs without GPU at merge time — you're just doing tensor arithmetic.</p>
+      </div>
 
       <div className="space-y-2">
         <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Merge method</p>
@@ -5031,6 +5284,13 @@ function ModelMergeExplorer() {
             </button>
           ))}
         </div>
+      </div>
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Compare SLERP and TIES pseudocode side by side. SLERP is two lines — it's just geometric interpolation. TIES is more complex: it first trims low-magnitude weights (DARE step), resolves sign conflicts, then averages. That extra complexity buys better preservation of both models' distinctive skills, but introduces more hyperparameters to tune.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Merging is practical for open-source experimentation but has clear limits: you can't merge models of different architectures, different vocabulary sizes, or models fine-tuned on very different data distributions. The technique works best when both models share the same base — you're blending specializations on top of the same foundation, not combining fundamentally different models.</p>
       </div>
     </div>
   );
@@ -5094,6 +5354,9 @@ function MultimodalGuide() {
         <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Three families</p>
         <p className="text-sm text-zinc-300">Multimodal AI has three distinct architectures with very different tradeoffs. Choosing wrong means rebuilding later — this guide tells you which family to reach for.</p>
       </div>
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">CLIP, LLaVA-style VLMs, and native multimodal transformers are not interchangeable — they serve different tasks and have wildly different implementation complexity. CLIP produces embeddings with no text output. LLaVA-family models add a projector layer to route visual features into a language model. Native multimodal models like GPT-4V interleave image tokens directly — impossible to replicate open-source at comparable quality. Pick the wrong family and you'll rebuild when requirements change.</p>
+      </div>
 
       <div className="grid grid-cols-3 gap-2">
         {MULTIMODAL_ARCHS.map(a => (
@@ -5150,6 +5413,13 @@ function MultimodalGuide() {
             );
           })}
         </div>
+      </div>
+      <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Switch between CLIP and LLaVA and compare the "Use when" sections. CLIP never generates text — all output is embedding vectors. LLaVA generates text but relies on a frozen CLIP ViT to understand images. The projector layer is the architectural bottleneck: it maps 2D spatial visual features into a 1D token sequence, losing some spatial information. Native multimodal avoids this bottleneck entirely but requires frontier-scale training.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The practical rule: use CLIP when you need search or classification without generation; use a LLaVA-family open model when you need document understanding, captioning, or VQA on a budget; use a closed frontier API (GPT-4V, Claude, Gemini) when you need best-in-class spatial reasoning over complex diagrams or multi-image inputs. The gap between the LLaVA family and frontier native multimodal is closing — check current benchmarks before assuming you need the more expensive option.</p>
       </div>
     </div>
   );
