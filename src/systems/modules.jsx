@@ -8,7 +8,7 @@ const EVAL_CASES = [
   {
     id: "factual",
     type: "Factual Recall",
-    color: "#6366f1",
+    color: "#22D3EE",
     description: "Does the system correctly retrieve and state known facts?",
     example: "Q: What is the capital of France? Expected: Paris",
     weakPhrase: "The answer seems right",
@@ -19,7 +19,7 @@ const EVAL_CASES = [
   {
     id: "groundedness",
     type: "Groundedness",
-    color: "#f59e0b",
+    color: "#22D3EE",
     description: "Is every claim in the response supported by the retrieved context?",
     example: "Answer cites 'Q2 revenue was $4.2B' — verify it's in the chunk",
     weakPhrase: "Sounds grounded",
@@ -30,7 +30,7 @@ const EVAL_CASES = [
   {
     id: "refusal",
     type: "Refusal Quality",
-    color: "#ef4444",
+    color: "#22D3EE",
     description: "Does the system correctly refuse out-of-scope or unsafe queries?",
     example: "Q: 'How do I hack this?' → Expected: graceful refusal",
     weakPhrase: "It refused, seems fine",
@@ -41,7 +41,7 @@ const EVAL_CASES = [
   {
     id: "format",
     type: "Format Compliance",
-    color: "#10b981",
+    color: "#22D3EE",
     description: "Does output match required structure (JSON, markdown, schema)?",
     example: "API expected {name, score, reason} — check all keys present",
     weakPhrase: "Output looks structured",
@@ -52,7 +52,7 @@ const EVAL_CASES = [
   {
     id: "coherence",
     type: "Coherence / Relevance",
-    color: "#8b5cf6",
+    color: "#22D3EE",
     description: "Is the response coherent and relevant to the question asked?",
     example: "Q: 'Summarize the contract' → answer talks about unrelated project",
     weakPhrase: "It answered the question",
@@ -63,7 +63,7 @@ const EVAL_CASES = [
   {
     id: "edge",
     type: "Edge Case Coverage",
-    color: "#f97316",
+    color: "#22D3EE",
     description: "Does the system handle empty context, ambiguous queries, and language edge cases?",
     example: "No context retrieved → should say 'I don't know', not hallucinate",
     weakPhrase: "We tested happy path",
@@ -209,7 +209,7 @@ const STRATEGY_SCENARIOS = [
     id: "s1",
     title: "Customer Support at Scale",
     tag: "SCENARIO 1",
-    color: "#6366f1",
+    color: "#22D3EE",
     context: "A SaaS company gets 50k support tickets/month. 70% are repeat questions (billing, password reset, feature how-tos). 30% are novel or edge cases. Response quality is critical — wrong answers hurt retention. Latency target: <3s. Budget: moderate.",
     question: "What is the right primary strategy?",
     options: [
@@ -231,7 +231,7 @@ const STRATEGY_SCENARIOS = [
     id: "s2",
     title: "Code Review Assistant",
     tag: "SCENARIO 2",
-    color: "#10b981",
+    color: "#22D3EE",
     context: "A fintech company wants an internal tool that reviews PRs for their proprietary coding standards, internal library usage, security patterns, and compliance rules. The standards are documented but highly specific to their stack. Standard models know nothing about their internal APIs.",
     question: "What is the right primary strategy?",
     options: [
@@ -253,7 +253,7 @@ const STRATEGY_SCENARIOS = [
     id: "s3",
     title: "Research Report Generator",
     tag: "SCENARIO 3",
-    color: "#f59e0b",
+    color: "#22D3EE",
     context: "A financial analyst team wants a tool that, given a company name, automatically: (1) fetches latest SEC filings, (2) pulls earnings call transcripts, (3) retrieves news from the last 30 days, (4) synthesizes a structured investment memo. Speed is less important — analysts check output. Accuracy is critical.",
     question: "What is the right primary strategy?",
     options: [
@@ -275,7 +275,7 @@ const STRATEGY_SCENARIOS = [
     id: "s4",
     title: "Multilingual Content Moderation",
     tag: "SCENARIO 4",
-    color: "#ef4444",
+    color: "#22D3EE",
     context: "A social platform moderates 2M posts/day across 40 languages. They have 18 months of labeled moderation data (approved/removed + violation category). Latency must be <500ms. Cost sensitivity is high. The violation categories are specific to their community standards.",
     question: "What is the right primary strategy?",
     options: [
@@ -297,7 +297,7 @@ const STRATEGY_SCENARIOS = [
     id: "s5",
     title: "Internal Policy Q&A Bot",
     tag: "SCENARIO 5",
-    color: "#8b5cf6",
+    color: "#22D3EE",
     context: "An HR team wants employees to ask questions about company policies (leave, benefits, code of conduct). The policy docs are 200 pages and updated quarterly. Questions are simple factual lookups. The team has no ML engineers — this needs to be buildable in a week by a product engineer.",
     question: "What is the right primary strategy?",
     options: [
