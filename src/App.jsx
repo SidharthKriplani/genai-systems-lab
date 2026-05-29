@@ -234,6 +234,100 @@ function CollapsibleConfigCard({ cfg }) {
   );
 }
 
+// ─── PRE-EVAL CALLOUT (Beat 2 — fires on result before evaluate) ─────────────
+
+function PreEvalCallout({ result }) {
+  if (!result) return null;
+  const m = result.metrics;
+
+  if (result.failure_mode === "prompt_injection") {
+    return (
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.3)", borderLeft: "3px solid rgba(239,68,68,0.7)" }}>
+        <div className="text-[10px] font-mono font-black text-red-400 uppercase tracking-widest">Before you evaluate</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">The retrieved context contains an instruction payload. Read the generated answer carefully — a user following it would send sensitive documents to an attacker-controlled address. What in the config allowed this?</p>
+      </div>
+    );
+  }
+
+  if (result.failure_mode === "stale_document_retrieval") {
+    return (
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)", borderLeft: "3px solid rgba(245,158,11,0.6)" }}>
+        <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">Before you evaluate</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">A stale document is in the retrieved evidence — look at the source dates. The answer may be factually wrong while sounding completely authoritative. What config change would surface the newer document?</p>
+      </div>
+    );
+  }
+
+  if (result.failure_mode === "single_hop_retrieval") {
+    return (
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)", borderLeft: "3px solid rgba(245,158,11,0.6)" }}>
+        <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">Before you evaluate</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Only one retrieval hop was captured. This query needs facts from multiple documents — scan the retrieved evidence and identify what's missing. Which config lever retrieves more hops?</p>
+      </div>
+    );
+  }
+
+  if (result.failure_mode === "three_hop_chain_collapse") {
+    return (
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)", borderLeft: "3px solid rgba(245,158,11,0.6)" }}>
+        <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">Before you evaluate</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">The answer may sound complete — but count the documents in the retrieved evidence. A three-hop query answered from one or two hops sounds confident but misses critical compliance details. What's absent?</p>
+      </div>
+    );
+  }
+
+  if (result.failure_mode === "conflict_not_flagged") {
+    return (
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)", borderLeft: "3px solid rgba(245,158,11,0.6)" }}>
+        <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">Before you evaluate</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Conflicting documents were both retrieved. Look at the evidence panel — do you see both policy versions? The answer might be factually correct, but was the conflict surfaced? Can this answer be audited?</p>
+      </div>
+    );
+  }
+
+  if (result.failure_mode === "silent_interpretation_selection") {
+    return (
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)", borderLeft: "3px solid rgba(245,158,11,0.6)" }}>
+        <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">Before you evaluate</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">The system picked one interpretation of an ambiguous query. Read the retrieved evidence — do the chunks represent different situations? Does the generated answer acknowledge the ambiguity, or ignore it?</p>
+      </div>
+    );
+  }
+
+  if (m.groundedness < 0.40) {
+    return (
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.3)", borderLeft: "3px solid rgba(239,68,68,0.7)" }}>
+        <div className="text-[10px] font-mono font-black text-red-400 uppercase tracking-widest">Notice — groundedness {Math.round(m.groundedness * 100)}%</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Most of this answer was not grounded in the retrieved chunks — the model generated it from training data. Find one specific claim in the answer that is not present in the retrieved evidence above.</p>
+      </div>
+    );
+  }
+
+  if (m.risk_level === "critical") {
+    return (
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.3)", borderLeft: "3px solid rgba(239,68,68,0.7)" }}>
+        <div className="text-[10px] font-mono font-black text-red-400 uppercase tracking-widest">Critical risk — Before you evaluate</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">This configuration is dangerous for production. Before evaluating — what specific setting caused the critical risk? What would a user do if they received this answer?</p>
+      </div>
+    );
+  }
+
+  if (m.groundedness >= 0.88 && m.risk_level === "low") {
+    return (
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderLeft: "3px solid rgba(34,197,94,0.5)" }}>
+        <div className="text-[10px] font-mono font-black text-emerald-400 uppercase tracking-widest">Strong config — Before you evaluate</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Groundedness and risk look good. Before evaluating — does the answer cite its sources explicitly? Does it acknowledge any limitations or ambiguity? Does it match what the challenge requires?</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-center">
+      <p className="text-xs text-zinc-500">Click <span className="text-violet-400 font-semibold">Evaluate Configuration</span> to see the failure diagnosis and system design lesson.</p>
+    </div>
+  );
+}
+
 // ─── CORPUS PANEL ────────────────────────────────────────────────────────────
 
 function CorpusPanel({ scenario }) {
@@ -1733,6 +1827,15 @@ export default function App() {
             </div>
           </div>
 
+          {scenario.setup_framing && (
+            <div className="mb-5 rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+              <div className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're testing</div>
+              {scenario.setup_framing.map((para, i) => (
+                <p key={i} className="text-xs text-zinc-400 leading-relaxed">{para}</p>
+              ))}
+            </div>
+          )}
+
           {challengeMode && (
             <div className="mb-5 rounded-xl border border-violet-700 bg-violet-950/40 p-4">
               <div className="text-xs font-bold text-violet-300 mb-1 uppercase tracking-wide">Challenge</div>
@@ -1847,11 +1950,7 @@ export default function App() {
                 </div>
               )}
 
-              {result && !evaluated && (
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-center">
-                  <p className="text-xs text-zinc-500">Click <span className="text-violet-400">Evaluate Configuration</span> to see the diagnosis and system design lesson.</p>
-                </div>
-              )}
+              {result && !evaluated && <PreEvalCallout result={result} />}
 
               {result && evaluated && (
                 <>
@@ -1883,6 +1982,13 @@ export default function App() {
                     <div className="text-[10px] font-mono font-black text-violet-400 uppercase tracking-widest">System Design Lesson</div>
                     <p className="text-sm text-zinc-300 leading-relaxed">{result.system_design_lesson}</p>
                   </div>
+
+                  {scenario.synthesis_close && (
+                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.3)", borderTop: "2px solid rgba(99,102,241,0.6)" }}>
+                      <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">Scenario Principle</div>
+                      <p className="text-sm text-zinc-200 leading-relaxed">{scenario.synthesis_close}</p>
+                    </div>
+                  )}
 
                   <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 flex items-center justify-between gap-3">
                     <p className="text-xs text-zinc-500">Was this scenario useful? Tell us what to improve.</p>
