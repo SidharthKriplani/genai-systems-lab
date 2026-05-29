@@ -30,7 +30,7 @@ Each batch entry states what pass looks like before a single tester is invited. 
 
 ## Batch 0 — Founder Self-Vet
 
-**Status:** Pending
+**Status:** In Progress — Walk 1 complete (May 2026)
 
 **User profile:** Founder (Avinash), using the product as a first-time visitor with no internal context. Start from the landing page every time. No shortcuts, no direct URL entry to known-good states. Open DevTools console in a second tab — watch for JS errors as you go.
 
@@ -42,22 +42,46 @@ Each batch entry states what pass looks like before a single tester is invited. 
 
 The single most important path. If this doesn't work cleanly, nothing else matters.
 
-- [ ] Land on Home. Read the hero as a stranger. Does the value prop land in 5 seconds without reading all the copy?
-- [ ] Click the RAG Lab door card. Confirm it routes correctly.
-- [ ] **RAG Lab — Retrieval Failure scenario:** Set chunk size large, top-k low, no reranking. Run it. Confirm the failure arc fires (failure card appears with root cause + fix). Confirm the ✓ done card appears at the end with a GT post link and PrepLab CTA.
-- [ ] Click the GT post link from the done card. Confirm it opens the correct post in Ground Truth. Confirm the quiz CTA is visible in the post header.
-- [ ] Click the quiz CTA. Confirm the quiz fires and shows relevant questions.
-- [ ] Navigate to PrepLab from the nav. Open Exam mode. Answer 10 questions. Confirm: progress bar tracks, correct/wrong states render, session end screen appears.
-- [ ] No JS errors in console throughout.
+- [x] Land on Home. Read the hero as a stranger. Does the value prop land in 5 seconds without reading all the copy? → **FAIL** — see findings below.
+- [x] Click the RAG Lab door card. Confirm it routes correctly. → ✓ routes correctly.
+- [x] **RAG Lab — Missing Answer scenario:** Set chunk size large, top-k low, no reranking. Run it. Confirm the failure arc fires. Confirm ✓ done card appears with GT post link and PrepLab CTA. → **PARTIAL** — failure arc fires; done card appears but positioned in corner, not prominent. See findings.
+- [x] Click the GT post link from the done card. → ✓ "Read the full breakdown" opens correct GT post.
+- [x] Confirm quiz CTA is visible in post header → click it → quiz fires. → ✓ quiz CTA visible and fires. Quiz has too few questions — needs 5+.
+- [x] Navigate to PrepLab → Exam mode → 10 questions. Confirm: progress bar tracks, session end screen appears. → ✓ progress bar confirmed, session end screen looks good. **Issue:** PrepLab depth and polish insufficient — see findings.
+- [x] No JS errors in console. → ✓ no JS errors.
+
+---
+
+### Walk 1 — Findings (May 2026)
+
+| # | Area | Finding | Severity | Status |
+|---|---|---|---|---|
+| 1 | Hero copy — value prop | "AI systems break in production" doesn't land in 5 seconds. Framing is generic. The real claim — engineers who can make AI pipelines robust and production-ready are what the market pays for, not engineers who just know how to use AI — is not stated. Copy needs a full rewrite anchored to production readiness, not model knowledge. | **Critical** | Open — see UPGRADES.md |
+| 2 | Hero badges | "Free · No login · Layer 3 AI skills" — all three wrong. "Free" is table stakes. "No login" is a technical fact, not a benefit. "Layer 3 AI skills" is jargon requiring explanation. Remove or replace with one line that means something. | **High** | Open — see UPGRADES.md |
+| 3 | Hero body copy | "reading about RAG failures" frames the product as a RAG tool. It isn't. The hero copy must reflect the whole AI pipeline, not one component. | **High** | Open — see UPGRADES.md |
+| 4 | RAG Lab routing | Routes correctly from door card. | ✓ Pass | Closed |
+| 5 | Done card placement | ✓ done card appears but is positioned in the corner — not prominent, not immediately visible. The forward pointer is the most important CTA on the page and it's being missed. | **Critical** | Open — see UPGRADES.md |
+| 6 | "Test your understanding" CTA | Crashes — does not open anything. Dead end. | **Critical** | Open — bug, see UPGRADES.md |
+| 7 | "Read the full breakdown" CTA | ✓ opens correct GT post. | ✓ Pass | Closed |
+| 8 | GT post quiz depth | Quiz fires correctly but has too few questions. Needs minimum 5 to feel like a real test of understanding, not a checkbox. | **Medium** | Open — see UPGRADES.md |
+| 9 | PrepLab depth + polish | Not "million dollar" polished. Modes feel shallow. No difficulty levels (easy/medium/hard). All questions are single-select MCQ only — multi-select (multiple correct answers) missing. Customization options thin. | **High** | Open — see UPGRADES.md |
+| 10 | PrepLab progress bar | ✓ tracks correctly. | ✓ Pass | Closed |
+| 11 | PrepLab session end screen | ✓ looks good. | ✓ Pass | Closed |
+| 12 | JS errors | ✓ none. | ✓ Pass | Closed |
+| 13 | Access code gate (new idea) | Rather than full Stripe auth, gate premium content behind an access code (client-side). Keep a generic community code public. Easier to beta test, no backend needed, clear upgrade path when Stripe goes live. | **Idea** | Open — see UPGRADES.md |
 
 ---
 
 ### Walk 2 — RAG Lab remaining scenarios (~15 min)
 
-- [ ] **Context Overflow scenario:** Max chunk size + max top-k. Confirm context overflow failure card fires with correct diagnosis.
-- [ ] **Embedding Mismatch scenario:** Confirm failure arc is distinct from retrieval failure — different root cause, different fix.
-- [ ] **Reranking Collapse scenario:** Confirm reranking toggle affects results card visibly.
-- [ ] Each scenario: confirm ✓ done card fires with a scenario-specific GT post (not the same post for every scenario).
+*Note: actual RAG Lab scenario names are: Missing Answer, Ambiguous Query, Conflicting Policy Documents, Multi-hop Reasoning, Three Document Evidence Chain, Prompt Injection via Retrieval. Previous checklist had wrong names — corrected below.*
+
+- [ ] **Ambiguous Query scenario:** Confirm failure arc fires with distinct root cause from Missing Answer.
+- [ ] **Conflicting Policy Documents scenario:** Confirm conflicting evidence handling — failure card shows the conflict, not just a generic error.
+- [ ] **Multi-hop Reasoning scenario:** Confirm multi-hop failure arc fires correctly.
+- [ ] **Three Document Evidence Chain scenario:** Confirm evidence chain rendering and failure diagnosis.
+- [ ] **Prompt Injection via Retrieval scenario:** Confirm injection attack is demonstrated and defense is shown.
+- [ ] Each scenario: confirm ✓ done card fires with a scenario-specific GT post (not the same post for every scenario). **Known issue from Walk 1: done card placement — flag if still in corner.**
 
 ---
 
@@ -131,7 +155,7 @@ The single most important path. If this doesn't work cleanly, nothing else matte
 
 **User profile:** AI engineer or senior DS, 1–3 years experience, has shipped at least one RAG pipeline in production. Currently interviewing or likely to interview within 3 months. Not a friend doing you a favour — someone with real skin in the game who will give honest feedback because their career depends on knowing what they don't know.
 
-**Scope:** RAG Lab (Retrieval Failure scenario only) + PrepLab Exam mode (10 questions, RAG/retrieval cluster). Narrow intentionally — two things, both polished, not the whole product.
+**Scope:** RAG Lab (Missing Answer scenario) + PrepLab Exam mode (10 questions, RAG/retrieval cluster). Narrow intentionally — two things, both polished, not the whole product.
 
 **Hypotheses being tested:**
 1. The failure arc lands — testers understand *why* the system failed, not just that it did. (Does the root cause card do enough work, or do testers leave confused?)
@@ -141,12 +165,12 @@ The single most important path. If this doesn't work cleanly, nothing else matte
 
 **Self-vet checklist (before any tester is invited):**
 - [ ] Batch 0 passed fully — all 8 walks complete, no console errors, no dead ends
-- [ ] RAG Lab Retrieval Failure scenario tested with 3 different configurations — failure arc fires correctly in all three, ✓ done card fires in all three
+- [ ] RAG Lab Missing Answer scenario tested with 3 different configurations — failure arc fires correctly in all three, ✓ done card fires prominently in all three (done card placement fix must be shipped before this)
 - [ ] PrepLab Exam mode: 10-question session completed — progress bar, correct/wrong states, session end all work
 - [ ] Mobile: RAG Lab pill strip + PrepLab back button confirmed on real device
 
 **Tester brief (send verbatim):**
-> "I'm testing something — 20 minutes of your time, honest feedback only. Go to genai-systems-lab-ivory.vercel.app. Click into RAG Lab. Run the Retrieval Failure scenario — configure it however you'd set up a real system, watch it fail, and read the diagnosis. Then go to PrepLab and answer 10 questions in Exam mode. No hints, no googling. When you're done, I have two questions: (1) Was there any moment where you weren't sure what was happening or why? (2) Would you send this to someone you know who's interviewing for an AI engineering role?"
+> "I'm testing something — 20 minutes of your time, honest feedback only. Go to genai-systems-lab-ivory.vercel.app. Click into RAG Lab. Run the Missing Answer scenario — configure it however you'd set up a real system, watch it fail, and read the diagnosis. Then go to PrepLab and answer 10 questions in Exam mode. No hints, no googling. When you're done, I have two questions: (1) Was there any moment where you weren't sure what was happening or why? (2) Would you send this to someone you know who's interviewing for an AI engineering role?"
 
 **Feedback target:**
 - Where did they pause, re-read, or feel uncertain? (UX/copy gaps)

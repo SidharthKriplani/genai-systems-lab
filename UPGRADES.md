@@ -15,6 +15,138 @@ Format per entry:
 
 ---
 
+## Home.jsx — Hero Copy Rewrite
+
+**Component:** `src/Home.jsx` — hero section (badge, headline, subtext, body copy)
+
+**Current behavior:** Badge reads "Free · No login · Layer 3 AI skills". Headline is "AI systems break in production." Body copy references "reading about RAG failures" which frames the product as a RAG tool. None of these land in 5 seconds for a cold visitor.
+
+**Target behavior:** Copy anchored to the real market claim: engineers who can make AI pipelines robust and production-ready are what the market pays for — not engineers who just know how to use AI. Specific changes:
+- Badge: remove "Free" (table stakes), "No login" (technical fact, not benefit), "Layer 3 AI skills" (jargon). Replace with one line that names the outcome, e.g. "Production AI skills. No fluff."
+- Headline: tighten to the production readiness thesis. Must land in under 5 seconds. No more than 8 words.
+- Body copy: remove all RAG-specific framing. Speak to the full AI pipeline — RAG, agents, evals, serving, observability. The copy should make a data engineer, an AI PM, and an agent builder all feel like this is for them.
+- The underlying thesis: the lab trains production debugging instinct, not model knowledge. That should be unmissable.
+
+**Effort:** S (copy work, no structural JSX changes)
+
+**Dependencies:** Alignment on the headline direction before writing. One agreed-upon thesis statement first.
+
+**Priority:** Critical — first thing a new visitor sees. If this doesn't land, nothing else matters.
+
+**Status:** Pending — alignment in progress (Batch 0 Walk 1 finding #1, #2, #3)
+
+---
+
+## RAG Lab — Done Card Prominence
+
+**Component:** `src/App.jsx` or RAG Lab scenario result panel — ✓ done card placement
+
+**Current behavior:** The ✓ done card (forward pointer to PrepLab + GT post) appears in the corner of the results view after a scenario completes. It is not immediately visible — a user can complete a scenario and leave without ever seeing it.
+
+**Target behavior:** Done card must be the first thing seen after a scenario completes — not a corner element. Options: (a) full-width card below the failure diagnosis, above the fold, impossible to miss; (b) the scenario result panel scrolls down to the done card automatically on completion. Either way, it should not require the user to scroll down or look in a corner.
+
+**Effort:** S (layout adjustment, no logic changes)
+
+**Dependencies:** None
+
+**Priority:** Critical — the done card is the entire learn loop closing mechanism. If it's invisible, the loop doesn't close.
+
+**Status:** Pending — Batch 0 Walk 1 finding #5
+
+---
+
+## RAG Lab — "Test Your Understanding" CTA Fix
+
+**Component:** `src/App.jsx` or RAG Lab scenario done card — "Test your understanding" button
+
+**Current behavior:** Button is present in the done card but crashes on click — navigates to nothing, dead end.
+
+**Target behavior:** Button navigates to PrepLab filtered to the relevant question cluster for that scenario. E.g., Missing Answer scenario → PrepLab filtered to RAG retrieval failure questions.
+
+**Effort:** S (routing fix — wire the button to the correct PrepLab state)
+
+**Dependencies:** Done card prominence fix should ship first (no point fixing the routing if the card is invisible)
+
+**Priority:** Critical — a crashing CTA is a bug, not a UX issue.
+
+**Status:** Pending — Batch 0 Walk 1 finding #6
+
+---
+
+## Ground Truth — Quiz Depth (minimum 5 questions)
+
+**Component:** `src/GroundTruth.jsx` — generateQuiz() + question arrays per post
+
+**Current behavior:** GT post quiz fires with a small number of questions (fewer than 5). Feels like a checkbox, not a meaningful test of understanding.
+
+**Target behavior:** Minimum 5 questions per quiz. Ideally 5–7. Questions should cover the full breadth of the post, not just the opening concept. The quiz should feel like real interview pressure on that topic — if you read the post carefully, you should get 4/5. If you skimmed, 2/5.
+
+**Effort:** M (content work — writing additional questions for each post that has a quiz. Logic already exists.)
+
+**Dependencies:** Identify which posts currently have quizzes and how many questions each has — audit needed before writing.
+
+**Priority:** Medium
+
+**Status:** Pending — Batch 0 Walk 1 finding #8
+
+---
+
+## PrepLab — Difficulty Levels (Easy / Medium / Hard)
+
+**Component:** `src/PrepLab.jsx` — question bank + Exam/Trainer modes
+
+**Current behavior:** No difficulty classification. All questions are presented with equal weight regardless of complexity.
+
+**Target behavior:** Each question tagged with `difficulty: "easy" | "medium" | "hard"`. Exam mode lets user select difficulty filter before starting. Trainer mode shows difficulty badge on each question. Default: mixed (all difficulties). Easy = definitional recall. Medium = application. Hard = design tradeoff or production scenario.
+
+**Effort:** M (tagging all 261 questions is the bulk of the work; UI change is small)
+
+**Dependencies:** None — tags can be added to the existing question objects
+
+**Priority:** High — difficulty levels are table stakes for any question bank targeting interview prep
+
+**Status:** Pending — Batch 0 Walk 1 finding #9
+
+---
+
+## PrepLab — Multi-Select MCQ (Multiple Correct Answers)
+
+**Component:** `src/PrepLab.jsx` — question format + answer validation logic
+
+**Current behavior:** All questions are single-select MCQ (one correct answer). User clicks one option, answer is evaluated.
+
+**Target behavior:** Questions can optionally be `type: "multi"` — user selects all correct options, then clicks "Submit." Scoring: full credit only if all correct options selected and no incorrect ones selected. UI: checkboxes instead of radio buttons for multi questions. A "Select all that apply" label signals the format to the user.
+
+**Effort:** M (question format change + UI conditional rendering + scoring logic update)
+
+**Dependencies:** None
+
+**Priority:** Medium — adds real depth and closer to real interview format ("select all that apply" questions are common)
+
+**Status:** Pending — Batch 0 Walk 1 finding #9
+
+---
+
+## Access Code Gate (Interim Auth)
+
+**Component:** `src/PrepLab.jsx` + `src/App.jsx` — gated content access
+
+**Current behavior:** `gated: true` markers exist on 163 PrepLab questions and JD Prep mode. No gate is active — all content is accessible to everyone.
+
+**Target behavior:** A lightweight access code gate (client-side, localStorage) sits in front of gated content. On first access to a gated feature, user is prompted to enter an access code. Valid code stored in localStorage — not re-prompted on return. Community access code is public and shared freely. When Stripe goes live, replace community code with purchased codes (server-side validation). This is an interim solution — explicit, easy to understand, no backend required.
+
+**Trade-off to name explicitly:** Client-side validation is trivially bypassed by anyone who reads the JS. Acceptable for a community gate over free content. Not acceptable for paid content — that needs server-side validation when Stripe goes live.
+
+**Effort:** S (localStorage check + simple modal/overlay for code entry)
+
+**Dependencies:** Decide on the community code and the copy ("Enter your access code — get it free at [link]")
+
+**Priority:** Medium — not blocking Batch 0/1, but should be in before Batch 3 (pre-monetization test)
+
+**Status:** Pending — idea surfaced in Batch 0 Walk 1 discussion
+
+---
+
 ## PrepLab — JD Prep Mode: Defense Strategy Upgrade
 
 **Component:** `src/PrepLab.jsx` → JD Prep mode (`mode === "jd"`)

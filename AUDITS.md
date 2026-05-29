@@ -1492,3 +1492,40 @@ Any `overflow-x-auto` scrollable container that may clip content on mobile now g
 
 **Status:** All 15 Audit 32 findings resolved or closed. Mobile audit complete ✅
 
+
+
+---
+
+## Audit 34 — Batch 0 Walk 1 Self-Vet Findings (May 2026)
+
+**Type:** Founder self-vet — primary loop walkthrough
+**Date:** May 2026
+**Scope:** Walk 1 of Batch 0 ROLLOUT.md checklist: Home hero → RAG Lab → done card → GT post → PrepLab Exam mode.
+**Method:** Live product walkthrough on desktop by founder. Screenshots reviewed. DevTools console monitored.
+
+### Findings
+
+| # | Component | Finding | Severity | Status |
+|---|---|---|---|---|
+| 1 | `Home.jsx` — hero badge + headline | "Free · No login · Layer 3 AI skills" — none of the three land. "Free" is table stakes. "No login" is a technical fact, not a benefit. "Layer 3 AI skills" is jargon. Hero headline "AI systems break in production" is generic — doesn't state the actual market claim (production readiness, not model knowledge). | **Critical** | ⚠️ Open — UPGRADES.md |
+| 2 | `Home.jsx` — hero body copy | "reading about RAG failures" frames the entire product as a RAG tool. Doesn't reflect agent, eval, serving, or observability content. Narrows perceived scope for cold visitors. | **High** | ⚠️ Open — UPGRADES.md |
+| 3 | RAG Lab — routing | Door card routes correctly to RAG Lab. | ✅ Pass | Closed |
+| 4 | RAG Lab — scenario names | ROLLOUT.md checklist had wrong scenario names ("Retrieval Failure", "Context Overflow", etc.). Actual scenarios: Missing Answer, Ambiguous Query, Conflicting Policy Documents, Multi-hop Reasoning, Three Document Evidence Chain, Prompt Injection via Retrieval. | **Doc bug** | ✅ Fixed — ROLLOUT.md updated |
+| 5 | RAG Lab — done card placement | ✓ done card appears after scenario completion but is positioned in corner — not immediately visible. Primary CTA of the entire learn loop is being missed by users. | **Critical** | ⚠️ Open — UPGRADES.md |
+| 6 | RAG Lab — "Test your understanding" CTA | Crashes on click. Dead end — navigates to nothing. | **Critical** | ⚠️ Open — UPGRADES.md (bug fix) |
+| 7 | RAG Lab — "Read the full breakdown" CTA | ✅ Opens correct GT post. | ✅ Pass | Closed |
+| 8 | GT post quiz depth | Quiz fires correctly but too few questions. Needs minimum 5 to feel meaningful. | **Medium** | ⚠️ Open — UPGRADES.md |
+| 9 | PrepLab — depth + polish | Not sufficiently polished for external testers. No difficulty levels (easy/medium/hard). All questions single-select MCQ only — no multi-select option. Mode customization thin. | **High** | ⚠️ Open — UPGRADES.md |
+| 10 | PrepLab — progress bar | ✅ Tracks correctly. | ✅ Pass | Closed |
+| 11 | PrepLab — session end screen | ✅ Looks good. | ✅ Pass | Closed |
+| 12 | Console errors | ✅ None. | ✅ Pass | Closed |
+
+### New idea surfaced
+
+**Access code gate (interim auth):** Rather than full Stripe + auth, gate premium content behind a client-side access code (localStorage). Keep a generic community code public. Upgrade path: when Stripe goes live, swap to server-side purchased codes. Logged in UPGRADES.md.
+
+### Summary
+
+4 critical findings, 2 high, 1 medium. **Batch 0 Walk 1 does not pass.** Critical fixes required before Batch 1 opens: done card placement (#5), "Test your understanding" crash (#6), hero copy (#1). Walk 2–8 not yet run.
+
+**Status:** ⚠️ Open — Walk 1 complete, critical findings block Batch 1.
