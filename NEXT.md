@@ -8,14 +8,15 @@ Read this at session start. Do only this. Update before closing.
 
 ## Theme: Close the loops users already opened. Surface progress clearly.
 
-Sprint 22 structural overhaul complete (Build/Prove/Navigate). Sprint 23 visual redesign + animations complete. Sprint 24 elevation token system complete — cards now float visibly (PAL-parity). This session: interactive improvements that directly affect the learn loop.
+Sprint 22 structural overhaul complete (Build/Prove/Navigate). Sprint 23 visual redesign + animations complete. Sprint 24 full elevation token system complete — GAL now competes with PAL through and through. This session: interactive improvements that directly affect the learn loop.
 
 ---
 
 ## Do this (in order)
 
 **Done this session (sprint 24):**
-- ~~Elevation token system~~ → `--bg` (#111520), `--surface` (#191e30), `--surface-2` (#1f2438), `--border` (#3d4668), `--border-subtle` (#2a3255) added to `:root` in `index.css`. App.jsx: root div, both sidebars (desktop + mobile), RAG Lab inner sidebar, header border, bottom utils border all use tokens. Home.jsx: all door cards + Today section + Continue button use `--surface-2`/`--border`. Gradient overlays removed — surface elevation now handles depth. Commit `08f4512`.
+- ~~Elevation token system (shell)~~ → `--bg` (#111520), `--surface` (#191e30), `--surface-2` (#1f2438), `--border` (#3d4668), `--border-subtle` (#2a3255) added to `:root` in `index.css`. App.jsx: root div, both sidebars (desktop + mobile), RAG Lab inner sidebar, header border, search modal, leaderboard modal, feedback modal, shortcuts modal all use tokens. Home.jsx: all door cards + Today section + Continue button use `--surface-2`/`--border`. Commits `08f4512`, `dc26961`.
+- ~~Elevation token system (full pass)~~ → `--color-zinc-900: #191e30` added to `:root` — single-line remap that fixes 300+ `bg-zinc-900` panel backgrounds across Agents.jsx, PrepLab.jsx, Concepts.jsx, GroundTruth.jsx, Systems.jsx in one shot (same technique as the sprint 8 zinc-500/600 contrast fix). All 5 lab sidebar shells converted to `var(--surface)` + `var(--border)`. All mobile back buttons use `var(--border)`. Commit `4192c3a`.
 
 **Done this session (sprint 23):**
 - ~~CSS variables~~ → `--gal-build/prove/navigate/knowledge` added to `index.css`. NAV_GROUPS use `var()`. Commit `b5b4d2e`.

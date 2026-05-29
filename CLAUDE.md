@@ -36,7 +36,7 @@ Scale as of May 2026: 54 Systems modules (in nav), 22 Explore modules, 16 Agent 
 |---|---|
 | Language | `.jsx` only. **No TypeScript.** TypeScript breaks Vercel builds with this setup. |
 | React hooks | Always `import { useState, useEffect } from "react"`. **NEVER `React.useState()`** — causes ReferenceError at runtime. |
-| CSS | **Tailwind `zinc-*` palette only.** `gray-*`, `slate-*` are visual inconsistencies. zinc-950 base, zinc-800 borders, zinc-900 cards. |
+| CSS | **Tailwind `zinc-*` palette only.** `gray-*`, `slate-*` are visual inconsistencies. For structural surfaces use CSS vars: `var(--bg)` page, `var(--surface)` sidebars/panels, `var(--surface-2)` cards, `var(--border)` borders. `bg-zinc-900`/`border-zinc-800` still usable for chips/badges/code blocks. |
 | Styling | No PostCSS config. Tailwind v4 via `@tailwindcss/vite`. No external UI library (shadcn, MUI etc.). |
 | State | localStorage only. No backend, no API calls, no auth. |
 | Routing | Hash-based (`#concepts`, `#systems`). No React Router. |
@@ -325,6 +325,9 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 - Concepts inline callouts + synthesis close — framing text done (15/15), but inline + synthesis beats pending. See UPGRADES.md.
 
 ## Session build log (May 2026)
+
+**Resolved this session (sprint 24):**
+- **Full elevation token system — PAL-parity visual overhaul:** Two-phase commit. Phase 1 (`08f4512`): Added `--bg` (#111520), `--surface` (#191e30), `--surface-2` (#1f2438), `--border` (#3d4668), `--border-subtle` (#2a3255) to `:root` in `index.css`. Applied to `App.jsx` (root div background, both sidebars desktop+mobile, RAG Lab inner sidebar, header border-bottom, search/feedback/leaderboard/shortcuts modals) and `Home.jsx` (all door cards, Today section cards, Continue button — gradient overlays removed). Phase 2 (`4192c3a`): `--color-zinc-900: #191e30` added to `:root` — single-declaration remap that converts all 300+ `bg-zinc-900` panel backgrounds app-wide from cold `#18181b` to blue-tinted `#191e30` (same CSS variable technique used in sprint 8 for zinc-500/600 contrast fix). All 5 lab sidebar shells (`Systems.jsx`, `Agents.jsx`, `PrepLab.jsx`, `Concepts.jsx`, plus App.jsx RAG Lab sidebar) updated to `var(--surface)` + `var(--border)`. All mobile back buttons use `var(--border)`. Net result: GAL now has the same layered elevation system as PAL — bg → surface (sidebar) → surface-2 (cards) → border (visible edges). Cards float. Brace diffs: 0 all files. Commits: `08f4512`, `dc26961`, `4192c3a`.
 
 **Resolved this session (sprint 23):**
 - **GAL visual redesign — 4 fronts:** (1) CSS vars: `--gal-build`, `--gal-prove`, `--gal-navigate`, `--gal-knowledge` added to `:root` in `index.css`; `NAV_GROUPS` color strings updated to `var()` references. (2) Sidebar collapse: `collapsedGroups` + `toggleGroup()` added to `App.jsx`; each labeled group header is now a clickable button with chevron + item-count badge when collapsed; applied to both desktop sidebar and mobile drawer; group `mt-4` tightened to `mt-3`. (3) Home hierarchy: BUILD door card promoted to full-width with 4 lab pills inside; PROVE + NAVIGATE demoted to side-by-side secondary row; stats row (3400+/222+/200+) removed; failure pills strip retained. NAVIGATE card color updated to amber (was violet, conflicted with KNOWLEDGE). (4) Lab shell consistency: RAG Lab sidebar header promoted to `text-base`/`text-[11px]` to match Agents/Systems Lab; `ragDone` Set + `gsl-rag-done` localStorage added — progress bar shows on RAG Lab sidebar after first evaluation; Eval Lab gets "Ground Truth: Evals →" chip; `Systems.jsx` now shows Eval Lab chip alongside existing LLM Lab chip. All brace diffs: 0. Commit: `b5b4d2e`.
