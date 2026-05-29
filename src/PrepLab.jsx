@@ -2716,14 +2716,109 @@ const TOPIC_LABELS = {
 };
 
 const SKILL_KEYWORDS = {
-  rag: ["rag", "retrieval", "vector", "embedding", "pinecone", "weaviate", "langchain"],
-  finetuning: ["fine-tun", "lora", "rlhf", "dpo", "training", "finetune"],
-  agents: ["agent", "tool use", "react", "langgraph", "orchestrat"],
-  evaluation: ["eval", "metric", "benchmark", "evals", "llm-as-judge"],
-  llmops: ["mlops", "llmops", "deploy", "observ", "latency", "cost", "monitor"],
-  safety: ["safety", "guardrail", "alignment", "harmful", "red-team"],
-  product: ["product", "roadmap", "stakeholder", "metric", "kpi", "prd"],
-  behavioral: ["team", "leadership", "cross-functional", "conflict", "mentoring"]
+  rag:         ["rag", "retrieval", "vector", "embedding", "pinecone", "weaviate", "langchain", "chunking", "reranker", "hybrid search"],
+  agents:      ["agent", "tool use", "react", "langgraph", "orchestrat", "agentic", "multi-agent", "tool calling"],
+  finetuning:  ["fine-tun", "lora", "rlhf", "dpo", "training", "finetune", "sft", "adapter"],
+  evaluation:  ["eval", "evals", "benchmark", "llm-as-judge", "ragas", "hallucination", "groundedness"],
+  llmops:      ["mlops", "llmops", "deploy", "observ", "latency", "cost", "monitor", "ci/cd", "prompt management", "versioning"],
+  safety:      ["safety", "guardrail", "alignment", "harmful", "red-team", "jailbreak", "injection"],
+  product:     ["product", "roadmap", "stakeholder", "kpi", "prd", "feature", "pm", "product manager"],
+  behavioral:  ["team", "leadership", "cross-functional", "conflict", "mentor", "collaborate"],
+  multimodal:  ["multimodal", "vision", "image", "clip", "llava", "ocr", "audio"],
+  reasoning:   ["reasoning", "chain of thought", "cot", "o1", "o3", "step-by-step", "planning"],
+  serving:     ["serving", "inference", "throughput", "quantiz", "batching", "gpu", "vllm", "triton", "tgi"],
+};
+
+// ─── STUDY PLAN RESOURCES PER TOPIC ──────────────────────────────────────────
+const TOPIC_STUDY_RESOURCES = {
+  rag: {
+    gtPosts: [
+      { id: "why-rag-lies",              title: "Why Your RAG System Lies" },
+      { id: "hard-negatives-retrieval",  title: "Hard Negatives: The Training Trick That Improves Retrieval" },
+    ],
+    modules: [
+      { tab: "lab",     label: "RAG Lab — 6 failure scenarios" },
+      { tab: "systems", moduleId: "vectordb", label: "Vector DB Engineering" },
+    ],
+  },
+  agents: {
+    gtPosts: [
+      { id: "agent-memory-architecture",     title: "The Four Memory Problems Every Agent Has" },
+      { id: "context-isolation-multiagent",  title: "Context Isolation in Multi-Agent Systems" },
+    ],
+    modules: [
+      { tab: "agentlab", label: "Agent Lab" },
+    ],
+  },
+  finetuning: {
+    gtPosts: [
+      { id: "what-happens-during-pretraining", title: "What Actually Happens During Pretraining" },
+    ],
+    modules: [
+      { tab: "llmlab", label: "LLM Lab — Fine-Tuning module" },
+    ],
+  },
+  evaluation: {
+    gtPosts: [
+      { id: "the-eval-crisis", title: "The Eval Crisis: Why Most AI Evals Are Wrong" },
+    ],
+    modules: [
+      { tab: "evallab", label: "Eval Lab" },
+    ],
+  },
+  llmops: {
+    gtPosts: [
+      { id: "your-prompt-is-code",       title: "Your Prompt Is Code" },
+      { id: "monitoring-that-predicts",  title: "Monitoring That Predicts Problems, Not Reports Them" },
+    ],
+    modules: [
+      { tab: "systems", label: "Systems Lab — LLMOps modules" },
+    ],
+  },
+  safety: {
+    gtPosts: [
+      { id: "hooks-vs-llm-safety", title: "Deterministic Guardrails vs LLM-Based Safety" },
+    ],
+    modules: [
+      { tab: "systems", label: "AI Safety Engineering module" },
+    ],
+  },
+  product: {
+    gtPosts: [
+      { id: "type-a-vs-type-b-engineers", title: "Type A vs Type B AI Engineers" },
+    ],
+    modules: [
+      { tab: "aipm", label: "AI Product Track" },
+    ],
+  },
+  behavioral: {
+    gtPosts: [
+      { id: "forward-deployed-engineer", title: "The Forward Deployed Engineer" },
+    ],
+    modules: [
+      { tab: "career", label: "Career Track" },
+    ],
+  },
+  multimodal: {
+    gtPosts: [],
+    modules: [
+      { tab: "explore", label: "Explore — Multimodal Guide" },
+    ],
+  },
+  reasoning: {
+    gtPosts: [
+      { id: "how-surprised-is-the-model", title: "How Surprised Is the Model?" },
+    ],
+    modules: [
+      { tab: "concepts", label: "Concepts — Transformer architecture" },
+    ],
+  },
+  serving: {
+    gtPosts: [],
+    modules: [
+      { tab: "llmlab", label: "LLM Lab — Serving Infrastructure" },
+    ],
+  },
 };
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -2763,10 +2858,20 @@ function extractSkills(text) {
   const lower = text.toLowerCase();
   const found = {};
   for (const [skill, kws] of Object.entries(SKILL_KEYWORDS)) {
-    if (kws.some(k => lower.includes(k))) found[skill] = kws.filter(k => lower.includes(k));
+    const hits = kws.filter(k => lower.includes(k));
+    if (hits.length > 0) found[skill] = { hits, weight: hits.length };
   }
   return found;
 }
+
+// weight 1–2 = medium, 3+ = high
+function skillWeightLabel(weight) {
+  if (weight >= 3) return { label: "High priority", color: "text-red-400", dot: "bg-red-400" };
+  if (weight >= 2) return { label: "Medium",        color: "text-amber-400", dot: "bg-amber-400" };
+  return            { label: "Mentioned",           color: "text-zinc-400",  dot: "bg-zinc-600" };
+}
+
+const RATING_VALUES = { strong: 0.9, okay: 0.5, weak: 0.0 };
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
@@ -4484,7 +4589,7 @@ const MODE_CARDS = [
 
 // ─── ROOT COMPONENT ───────────────────────────────────────────────────────────
 
-export default function PrepLab({ onNavigate, onNavigateTo }) {
+export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClearInitialMode }) {
   const [mode, setMode] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
 
@@ -4497,6 +4602,14 @@ export default function PrepLab({ onNavigate, onNavigateTo }) {
     setMode(null);
     setMobileSidebarOpen(true);
   }
+
+  // Auto-select mode when navigated here from an external forward pointer (e.g. RAG Lab TYU)
+  useEffect(() => {
+    if (initialMode) {
+      selectMode(initialMode);
+      if (onClearInitialMode) onClearInitialMode();
+    }
+  }, [initialMode]);
 
   const PREPLAB_SIDEBAR = [
     { id: "exam",        label: "Combined Assessment", tag: "EXAM",      desc: "Timed full-topic test" },

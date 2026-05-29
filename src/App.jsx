@@ -1078,6 +1078,7 @@ export default function App() {
   const [exploreModule, setExploreModule] = useState(null);
   const [agentsModule, setAgentsModule] = useState(null);
   const [gtPostId, setGtPostId] = useState(null);
+  const [preplabInitialMode, setPreplabInitialMode] = useState(null);
   const [visitedModules, setVisitedModules] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited_modules") || "[]")); }
     catch { return new Set(); }
@@ -1625,7 +1626,7 @@ export default function App() {
           {topView === "playground" && <PlaygroundApp onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} onNavigate={(tab, postId) => { if (postId) setGtPostId(postId); navigate(tab); }} />}
           {topView === "career"     && <CareerApp />}
-          {topView === "preplab"    && <PrepLabApp onNavigate={navigate} onNavigateTo={navigateTo} />}
+          {topView === "preplab"    && <PrepLabApp onNavigate={navigate} onNavigateTo={navigateTo} initialMode={preplabInitialMode} onClearInitialMode={() => setPreplabInitialMode(null)} />}
           {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} />}
 
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
@@ -1896,12 +1897,12 @@ export default function App() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <button
-                            onClick={() => { track("module_forward_pointer_clicked", { type: "preplab", scenario: scenario.scenario_id }); navigateTo("preplab"); }}
+                            onClick={() => { track("module_forward_pointer_clicked", { type: "preplab", scenario: scenario.scenario_id }); setPreplabInitialMode("trainer"); navigate("preplab"); }}
                             className="flex items-start gap-3 p-3 rounded-lg border border-zinc-700 hover:border-violet-500 bg-zinc-900/60 hover:bg-zinc-800/60 transition-all text-left group">
                             <span className="text-lg shrink-0">🧠</span>
                             <div>
                               <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Test your understanding</div>
-                              <div className="text-[10px] text-zinc-500 mt-0.5">Prep Lab · {fwd.topic} questions</div>
+                              <div className="text-[10px] text-zinc-500 mt-0.5">Opens Prep Lab Trainer · instant feedback</div>
                             </div>
                           </button>
                           <button

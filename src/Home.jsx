@@ -205,16 +205,14 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
 
         {/* Headline */}
         <div className="space-y-5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-widest" style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
-            Free · No login · Layer 3 AI skills
-          </div>
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.05]">
-            AI systems break<br className="hidden sm:block" /> in production.
+            Configure it.{" "}
+            <span style={{ background: "linear-gradient(90deg, #ef4444 0%, #f59e0b 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Break it.</span>
             <br />
-            <span style={{ background: "linear-gradient(90deg, #22d3ee 0%, #818cf8 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Learn exactly why.</span>
+            <span style={{ background: "linear-gradient(90deg, #818cf8 0%, #22d3ee 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Know exactly why.</span>
           </h1>
           <p className="text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
-            Reading about RAG failures is different from watching one happen in a pipeline you configured.<br className="hidden sm:block" /> That's what this lab is. Free, no login, no passive consumption.
+            Production AI systems fail in specific, predictable ways. This lab makes you <span className="text-zinc-300 font-medium">reproduce those failures</span> — not read about them. RAG pipelines, agent loops, eval harnesses. Free, no login.
           </p>
         </div>
 
@@ -250,14 +248,6 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, system design interviews — and a salary calculator with data by role and region.</span>
             <span className="mt-4 text-xs font-bold text-violet-300 flex items-center gap-1">Try Salary Calculator <span className="text-violet-400">→</span></span>
           </button>
-        </div>
-
-        {/* Layer 3 positioning */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px]" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", color: "#d97706" }}>
-          <span className="font-bold text-amber-400">Layer 3</span>
-          <span className="text-amber-700/80">·</span>
-          <span className="text-amber-600/90">RAG Lab · Agent Lab · Eval Lab · LLM Lab</span>
-          <span className="text-amber-800">— scarce skills, not table stakes</span>
         </div>
 
         {/* Continue where you left off — shown only to returning users */}
