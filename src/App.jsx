@@ -1201,7 +1201,7 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [palette, setPalette] = useState(() => {
-    try { return localStorage.getItem("genai_palette") || "violet"; } catch { return "violet"; }
+    try { return localStorage.getItem("genai_palette") || "luna"; } catch { return "luna"; }
   });
   const switchPalette = (p) => { setPalette(p); try { localStorage.setItem("genai_palette", p); } catch {} };
   const [systemsModule, setSystemsModule] = useState(null);

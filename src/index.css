@@ -95,6 +95,25 @@ h3 { letter-spacing: -0.02em; }
   --color-violet-950: var(--color-amber-950);
 }
 
+/* ── LUNA — GAL identity palette ────────────────────────────────────────────
+   Deep navy base → icy teal accent. Distinct from PAL (purple) and MSL (neutral dark).
+   Remaps every violet utility class (text-violet-*, border-violet-*, bg-violet-*)
+   to a custom LUNA teal scale — zero component changes required.
+   Anchor: #4fb8cb (teal-500), #A7EFE0 (icy highlight), #051820 (deep surface).
+*/
+[data-palette="luna"] {
+  --color-violet-100: #dff8f9;
+  --color-violet-200: #b2edf2;
+  --color-violet-300: #7bd8e4;
+  --color-violet-400: #4fb8cb;   /* primary accent — active text, icons, tabs */
+  --color-violet-500: #38a0b4;   /* active borders */
+  --color-violet-600: #277d8e;   /* strong borders, emphasis */
+  --color-violet-700: #185d6b;   /* dark accent elements */
+  --color-violet-800: #0f3d48;   /* dark tinted fills */
+  --color-violet-900: #092630;   /* very dark tinted */
+  --color-violet-950: #051820;   /* deepest — active card backgrounds */
+}
+
 /* Global button press feedback */
 button {
   transition-property: transform, background-color, border-color, color, opacity;
@@ -124,28 +143,27 @@ button:disabled:active {
   --color-zinc-600: oklch(55.2% 0.009 286.29);   /* remapped to zinc-500 value */
 
   /* ── GAL accent colors ───────────────────────────────────────────────────── */
-  --gal-build:      #3b82f6;   /* blue-500    — BUILD group */
+  --gal-build:      #4fb8cb;   /* LUNA teal   — BUILD group */
   --gal-prove:      #22c55e;   /* green-500   — PROVE group */
   --gal-navigate:   #f59e0b;   /* amber-500   — NAVIGATE group */
   --gal-knowledge:  #8b5cf6;   /* violet-500  — KNOWLEDGE group */
 
-  /* ── Elevation token system (PAL-parity) ────────────────────────────────────
-     Blue-tinted darks with 12+ L* units between layers — cards float visibly.
-     Previously: flat zinc-950/900/800 with only ~9 L* steps (invisible edges).
+  /* ── Elevation token system — LUNA navy edition ──────────────────────────────
+     Deep navy base (#080E1C) rising through navy-teal surfaces to icy teal accents.
+     Same structural layers as PAL/MSL, distinct LUNA color identity.
   */
-  --bg:             #111520;   /* page / outermost background */
-  --surface:        #191e30;   /* sidebar, panels, raised cards */
-  --surface-2:      #1f2438;   /* nested cards, hover fills */
-  --border:         #3d4668;   /* all borders — clearly visible against --surface */
-  --border-subtle:  #2a3255;   /* dividers, light separators */
+  --bg:             #080E1C;   /* deep navy page background */
+  --surface:        #0C1829;   /* sidebars, panels */
+  --surface-2:      #112038;   /* cards, nested surfaces */
+  --border:         #1D3850;   /* visible borders */
+  --border-subtle:  #152D42;   /* subtle dividers */
 
-  /* ── Global zinc remap to surface system ────────────────────────────────────
-     Remaps bg-zinc-900 (was #18181b cold gray) → surface (#191e30 blue-tinted).
-     Fixes all 300+ panel/card backgrounds across Agents, PrepLab, Concepts,
-     GroundTruth, Systems in one declaration — same technique as the zinc-500/600
-     contrast fix in sprint 8. bg-zinc-950 stays as-is (used for modals/deep inset).
+  /* ── Global zinc remap → LUNA navy ──────────────────────────────────────────
+     bg-zinc-900 → LUNA surface (#0C1829). bg-zinc-950 → deep navy (#060C18).
+     Cascades through all 300+ Tailwind panel/card backgrounds in one declaration.
   */
-  --color-zinc-900: #191e30;
+  --color-zinc-900: #0C1829;
+  --color-zinc-950: #060C18;
 }
 
 /* ── Mobile contrast boost — low-brightness readability ────────────────────
