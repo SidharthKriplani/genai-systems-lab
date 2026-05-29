@@ -251,6 +251,11 @@ export default function ModelRouterLab() {
           "Routing Economics: set your MAU and see monthly savings from smart routing vs sending everything to GPT-4o",
         ]}
       />
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Routing is the highest-leverage optimization in production LLM systems. The assumption that every query should go to the best frontier model is expensive, slow, and unnecessary — most real-world query distributions have a large proportion of simple, deterministic requests that a rule engine handles better than any LLM. Smart routing can cut per-query costs 70%+ while improving latency for the majority of requests.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Start with the Query Classifier: notice which queries actually need frontier model reasoning and which a rule engine handles in 2ms at zero cost. The Router Config shows how moving a complexity threshold shifts the distribution and changes weighted average cost. The Routing Economics tab makes the business case concrete — at production scale, routing decisions translate directly into monthly infrastructure spend.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}

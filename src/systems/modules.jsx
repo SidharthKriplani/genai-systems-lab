@@ -372,6 +372,12 @@ function EvalsLab() {
         <p className="text-sm text-zinc-400 mt-1">Evals are the most underrated skill in AI systems. Learn what to measure, how much to spend, and when LLM-as-judge misleads you.</p>
       </div>
 
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Most teams treat evals as a test-before-ship checkbox. Production teams treat them as a continuous feedback signal. This module covers the full eval lifecycle: which types of evals to build, how to allocate a finite eval budget across competing dimensions, and when LLM-as-judge gives you a false signal.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The Budget Allocator tab is where the real learning happens. A startup with 100 eval budget points can't measure everything equally — watch how over-investing in format evals starves your factual accuracy coverage. In the LLM-as-Judge Audit, notice which question patterns fool the judge: position bias and verbosity bias are the two most common failure modes that invalidate automated eval results.</p>
+      </div>
+
       {/* Tab nav */}
       <div className="flex gap-2 flex-wrap">
         {TABS.map(tab => (
@@ -955,6 +961,12 @@ function ModelStrategyLab() {
         {answeredCount > 0 && (
           <div className="mt-3 text-xs font-mono text-emerald-400">{correctCount}/{answeredCount} correct so far</div>
         )}
+      </div>
+
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Choosing between RAG, fine-tuning, prompt engineering, and agents is the most consequential technical decision on any AI project. The wrong choice can waste weeks of engineering effort on a solution that fundamentally won't work. Each approach has a different failure ceiling, cost structure, and maintenance burden — and the right answer depends on what's actually wrong with your current system.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The trap most engineers fall into is defaulting to fine-tuning when the data is small, or RAG when the knowledge is static. Watch for the constraint that eliminates options: latency often rules out agents, data scarcity rules out fine-tuning, and dynamic knowledge rules out prompt-only approaches. The correct answer often becomes obvious once you identify the binding constraint.</p>
       </div>
 
       {/* Scenario progress */}
@@ -1631,6 +1643,12 @@ function IncidentRoom() {
         )}
       </div>
 
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Production AI incidents follow recognizable patterns. The same failure archetypes — context overflow, retrieval drift, prompt regression, feedback loop corruption, model degradation — appear across industries and use cases. The difference between a 20-minute resolution and a 4-hour outage is usually whether the on-call engineer recognized the pattern early.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Work through each incident the way you would under real production pressure: read the symptom first, form a hypothesis before clicking "Start Diagnosis." The mitigation and prevention playbook at the end is as important as the root cause — knowing what broke without a prevention strategy means the same incident recurs in six weeks.</p>
+      </div>
+
       {/* Incident selector */}
       <div className="flex gap-2 flex-wrap">
         {INCIDENTS.map((inc, i) => (
@@ -1971,6 +1989,12 @@ function ShouldUseAI() {
         <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Should You Even Use AI?</h2>
         <p className="text-sm text-zinc-400 mt-1">10 product scenarios. For each: pick the right approach. Knowing when NOT to reach for an LLM is the most underrated senior skill.</p>
         {answeredCount > 0 && <div className="mt-2 text-xs font-mono text-cyan-400">{correctCount}/{answeredCount} correct</div>}
+      </div>
+
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Senior AI engineers know that the most important skill isn't prompting or RAG architecture — it's deciding whether AI belongs in the loop at all. Every AI component adds latency, cost, unpredictability, and a failure surface. When the task is deterministic, a rule engine or a simple lookup is always faster, cheaper, and more reliable than an LLM.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">These scenarios cover the full spectrum: tasks that are genuinely AI-native, tasks where AI adds marginal value over traditional code, and tasks where AI will actively make things worse. Pay attention to what the correct answer says about the decision criteria — task ambiguity, output variability tolerance, and error cost are the three primary factors that determine whether AI belongs here.</p>
       </div>
 
       {/* Scenario nav */}
@@ -3036,6 +3060,13 @@ function LLMObservability() {
         <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>LLM Observability</h2>
         <p className="text-sm text-zinc-400 mt-1">Production AI systems fail silently. Learn what to monitor, how to trace a request, and how to read anomalous metrics.</p>
       </div>
+
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">"It worked in testing" is the most dangerous phrase in production AI. Production systems fail silently — the LLM returns a plausible-looking response, no error is thrown, but the output is wrong, slow, or expensive. Without observability, you discover failures through user complaints rather than metrics — minutes after they've already affected thousands of users.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The three tabs cover the observability stack in order of operation: what to track continuously (the six critical metrics), how to trace a single request end-to-end across spans, and how to read a metric snapshot and diagnose what went wrong. The trace view is especially important — understanding which span owns most of your latency is the first step in any performance optimization.</p>
+      </div>
+
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -3213,6 +3244,13 @@ function ABTestingLab() {
         <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>A/B Testing for LLMs</h2>
         <p className="text-sm text-zinc-400 mt-1">Proving that your new prompt or pipeline is better before shipping is harder than it sounds.</p>
       </div>
+
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Proving that your new prompt or pipeline is actually better is harder than it sounds. LLM outputs are non-deterministic and high-dimensional — traditional A/B testing intuitions from classical ML don't transfer cleanly. You need to define what "better" means before you run any test, or you'll end up with results that feel conclusive but measure the wrong thing.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">These challenges expose the most common statistical traps: treating human preference data as ground truth when raters disagree, calling significance too early, and optimizing one metric while regressing another. Work through each challenge before revealing the answer — the most valuable learning is recognizing why your intuition was wrong, not memorizing what the right answer was.</p>
+      </div>
+
       <div className="flex gap-2">
         {AB_CHALLENGES.map((c, i) => (
           <button key={c.id} onClick={() => goTo(i)}
@@ -3690,6 +3728,11 @@ function EvalFrameworksLab() {
   const [tab, setTab] = useState("guide");
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">There is no single eval framework that covers all AI system types. RAGAS was designed for retrieval-augmented systems — its metrics assume a ground truth context and measure whether the response is grounded in what was retrieved. G-Eval was designed for open-ended generation — it uses LLM-as-judge with explicit criteria. Using RAGAS on a creative writing assistant, or G-Eval on a RAG pipeline, produces metrics that mislead more than they inform.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The Eval Design tab makes the mapping concrete — pick your use case and see a recommended framework stack with priority ordering. The core insight is that production eval stacks are almost always a combination: RAGAS for retrieval quality, a custom LLM judge for response quality, human evaluation for calibration and edge cases. No single framework catches everything.</p>
+      </div>
       <HowTo
         objective="Know which eval framework to use for your use case — RAGAS for RAG, G-Eval for open-ended tasks, Human eval for calibration, custom models at production scale."
         steps={[
@@ -4045,6 +4088,12 @@ function DebugTraces() {
         </div>
       </div>
 
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">In production, you rarely see a clean error message. What you see is degraded output, anomalous latency, or a metric threshold breached on a dashboard. Trace-based debugging is the skill of reading a set of symptoms and inferring the underlying system state — without being able to reproduce the problem locally.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">These cases are based on real production failure patterns. Treat each one as a live incident: read the symptoms first, form a hypothesis before looking at the options. The most common mistake is latching onto the first symptom and missing the system-level pattern that explains all of them together.</p>
+      </div>
+
       {/* Case selector */}
       <div className="flex items-center gap-1.5 flex-wrap">
         {DEBUG_TRACES.map((dt, i) => {
@@ -4261,6 +4310,11 @@ function AISystemDesignCanvas() {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Most AI architecture mistakes aren't made during implementation — they're made in the first 30 minutes when someone says "let's just use RAG" without thinking through failure modes or eval requirements. This canvas forces the design decisions that should happen before any code is written: what type of problem is this, what failure modes does that create, and how will you measure whether it's working?</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The constraint toggles are where the design gets real. High-stakes domains require eval coverage that standard setups don't provide — medical, legal, and financial use cases need human review loops, not just automated scoring. Cost sensitivity changes the model tier in ways that affect quality ceilings. Work through multiple problem types to build a mental model of how these tradeoffs shift across use cases.</p>
+      </div>
       <HowTo
         objective="Map any AI problem to the right architecture before you write a single line of code."
         steps={[
@@ -4696,6 +4750,11 @@ function LangSmithTracingLab() {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">LangSmith is to LLM systems what Datadog is to microservices — it makes the invisible visible. Without a tracing layer, debugging a multi-step LangChain or LangGraph pipeline means adding print statements and hoping for reproducibility. With tracing, every span has timing, token counts, input/output, and error state — and you can see exactly where a 4-second request spent its time.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Start with the Diagnose Traces tab. It presents pre-built broken trace scenarios that mirror real production failures: retriever timeouts, token overflow, tool schema mismatches. Work through each diagnosis before clicking the reveal — building pattern recognition for what a broken trace looks like is more valuable than memorizing the solutions.</p>
+      </div>
       <HowTo
         objective="Understand LangSmith as an observability layer — what it captures, how to add feedback, and how to build eval datasets from production traffic."
         steps={[
@@ -7684,6 +7743,11 @@ function TrapsLab() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Knowing the right architecture isn't enough — you also need to recognize when something is subtly wrong. The flaws in this lab are the kind that pass code review, survive a demo, and fail three months into production. They're not typos; they're design mistakes that look reasonable on the surface.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Treat each scenario the way you would in a real design review: read the description, actively look for what's missing or incorrect before revealing the issues. The goal isn't to memorize the specific mistakes — it's to build the habit of asking the right skeptical questions. Senior engineers have seen enough failures that these patterns feel wrong immediately; that intuition is what you're training here.</p>
+      </div>
       <HowTo
         objective="Find the flaws before the reveal. Each scenario has 2–3 real bugs that cause production failures or interview red flags."
         steps={[
@@ -10600,6 +10664,13 @@ function EvalMetrics() {
         <div className="text-sm font-bold text-white mb-1">Evaluation Metrics Deep-Dive</div>
         <p className="text-xs text-zinc-400 leading-relaxed">Picking the wrong metric is one of the most common production mistakes — a model that scores well on ROUGE but hallucinates, or passes G-Eval while copying context verbatim. This module covers 10 metrics across lexical, semantic, LLM-based, and RAG-specific categories, with live scoring examples showing exactly where each metric fails.</p>
       </div>
+
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Picking the wrong eval metric is worse than having no metric at all — it creates false confidence. A model that scores 0.7 on ROUGE may be copying source text verbatim. A model that passes G-Eval may still hallucinate factual claims that the judge finds plausible. Every metric has a specific failure mode it can't see, and production teams pay for those blind spots in regressions they didn't catch.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The Live Scoring tab makes the failures concrete — compare the same response across metrics and watch the scores diverge. The LLM-as-Judge tab covers the specific biases — length preference, position bias, verbosity — that make automated judgment unreliable without deliberate calibration. The patterns reveal which metrics are reliable for which task types.</p>
+      </div>
+
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t,i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -12911,6 +12982,11 @@ function PromptChangeMgmt({ onNavigate }) {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">A prompt is code. Changing it without version control, a test suite, and a rollback plan is the equivalent of editing a database schema in production. One practitioner documented a real case: a single-line prompt change caused a 23% quality drop that went undetected for 11 days — the system had no prompt diff, no eval suite, and no rollback mechanism.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The Lab tab makes this concrete: compare prompt variants against a test suite and see which test cases regressed. The CI/CD Workflow tab shows what a proper prompt deployment pipeline looks like — shadow eval, regression gate, staged rollout, fast rollback. The core insight is that prompt management requires the same engineering discipline as code deployment.</p>
+      </div>
       <div className="flex gap-2 border-b border-zinc-800 pb-3">
         {[["lab","Lab"],["workflow","CI/CD Workflow"],["patterns","Serving Patterns"]].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${tab===id?"bg-blue-600 text-white":"text-zinc-400 hover:text-white"}`}>{label}</button>
