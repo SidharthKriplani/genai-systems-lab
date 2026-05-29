@@ -438,133 +438,314 @@ function heatColor(v) {
 
 // ─── TOKENIZER MODULE ─────────────────────────────────────────────────────────
 
+// BPE algorithm walkthrough data
+const BPE_STEPS = [
+  {
+    step: 0, merge: null,
+    label: "Start — every character is its own token",
+    words: {
+      "new":    ["n","e","w"],
+      "newest": ["n","e","w","e","s","t"],
+      "low":    ["l","o","w"],
+      "lowest": ["l","o","w","e","s","t"],
+    },
+    topPairs: [["(n,e)","5"],["(e,w)","5"],["(l,o)","2"],["(o,w)","2"],["(e,s)","2"]],
+    vocab: ["n","e","w","l","o","s","t"],
+  },
+  {
+    step: 1, merge: "(n,e) → 'ne'",
+    label: "Merge #1: (n,e) is most frequent (×5)",
+    words: {
+      "new":    ["ne","w"],
+      "newest": ["ne","w","e","s","t"],
+      "low":    ["l","o","w"],
+      "lowest": ["l","o","w","e","s","t"],
+    },
+    topPairs: [["(ne,w)","5"],["(l,o)","2"],["(o,w)","2"],["(e,s)","2"],["(s,t)","2"]],
+    vocab: ["n","e","w","l","o","s","t","ne"],
+  },
+  {
+    step: 2, merge: "(ne,w) → 'new'",
+    label: "Merge #2: (ne,w) is now top pair (×5)",
+    words: {
+      "new":    ["new"],
+      "newest": ["new","e","s","t"],
+      "low":    ["l","o","w"],
+      "lowest": ["l","o","w","e","s","t"],
+    },
+    topPairs: [["(l,o)","2"],["(o,w)","2"],["(e,s)","2"],["(s,t)","2"],["(new,e)","2"]],
+    vocab: ["n","e","w","l","o","s","t","ne","new"],
+  },
+  {
+    step: 3, merge: "(l,o) → 'lo'",
+    label: "Merge #3: (l,o) tied at top (×2)",
+    words: {
+      "new":    ["new"],
+      "newest": ["new","e","s","t"],
+      "low":    ["lo","w"],
+      "lowest": ["lo","w","e","s","t"],
+    },
+    topPairs: [["(lo,w)","2"],["(e,s)","2"],["(s,t)","2"],["(new,e)","2"],["(w,e)","2"]],
+    vocab: ["n","e","w","l","o","s","t","ne","new","lo"],
+  },
+  {
+    step: 4, merge: "(lo,w) → 'low'",
+    label: "Merge #4: (lo,w) — the word 'low' crystallises",
+    words: {
+      "new":    ["new"],
+      "newest": ["new","e","s","t"],
+      "low":    ["low"],
+      "lowest": ["low","e","s","t"],
+    },
+    topPairs: [["(e,s)","2"],["(s,t)","2"],["(new,e)","2"],["(low,e)","1"]],
+    vocab: ["n","e","w","l","o","s","t","ne","new","lo","low"],
+  },
+  {
+    step: 5, merge: "(e,s) → 'es'",
+    label: "Merge #5: (e,s) — suffix 'es' emerges",
+    words: {
+      "new":    ["new"],
+      "newest": ["new","es","t"],
+      "low":    ["low"],
+      "lowest": ["low","es","t"],
+    },
+    topPairs: [["(es,t)","2"],["(new,es)","2"],["(low,es)","1"]],
+    vocab: ["n","e","w","l","o","s","t","ne","new","lo","low","es"],
+  },
+  {
+    step: 6, merge: "(es,t) → 'est'",
+    label: "Merge #6: (es,t) — suffix 'est' becomes one token",
+    words: {
+      "new":    ["new"],
+      "newest": ["new","est"],
+      "low":    ["low"],
+      "lowest": ["low","est"],
+    },
+    topPairs: [["(new,est)","2"],["(low,est)","1"]],
+    vocab: ["n","e","w","l","o","s","t","ne","new","lo","low","es","est"],
+  },
+];
+
+const TOK_COLORS = ["bg-violet-900/60 border-violet-700 text-violet-200", "bg-blue-900/60 border-blue-700 text-blue-200", "bg-emerald-900/60 border-emerald-700 text-emerald-200", "bg-amber-900/60 border-amber-700 text-amber-200", "bg-rose-900/60 border-rose-700 text-rose-200", "bg-cyan-900/60 border-cyan-700 text-cyan-200", "bg-orange-900/60 border-orange-700 text-orange-200"];
+
 function TokenizerModule({ onNavigate }) {
+  const [tokTab, setTokTab] = useState("tokenize");
   const [text, setText] = useState(TOKENIZER_EXAMPLES[0]);
   const tokens = useMemo(() => tokenize(text), [text]);
   const charCount = text.length;
   const inputCost = ((tokens.length / 1_000_000) * COST_PER_1M.input).toFixed(6);
   const costPer1M = COST_PER_1M.input.toFixed(2);
 
+  const [bpeStep, setBpeStep] = useState(0);
+  const bpe = BPE_STEPS[bpeStep];
+  const wordList = Object.entries(bpe.words);
+  const maxPairCount = bpe.topPairs.length > 0 ? parseInt(bpe.topPairs[0][1]) : 1;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
         <p className="text-sm text-zinc-300 leading-relaxed">
-          LLMs don't read words — they read <strong className="text-white">tokens</strong>. A token is roughly 3–4 characters of English text, but can be much shorter for code or non-English languages. Every API call is priced per token, your context window is measured in tokens, and subtle tokenization quirks can shift your costs by 2–5×. Paste any text below to see exactly how a model splits it — and what it costs.
+          LLMs don't read words — they read <strong className="text-white">tokens</strong>. A token is roughly 3–4 characters of English text, but much shorter for code or non-English. Every API call is priced per token, context windows are measured in tokens, and tokenization quirks can shift your costs by 2–5×. "Tokenize" shows how your text splits. "BPE Algorithm" shows how the vocabulary was built in the first place.
         </p>
       </div>
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Input Text</span>
-          <div className="flex gap-2">
-            {TOKENIZER_EXAMPLES.map((ex, i) => (
-              <button
-                key={i}
-                onClick={() => setText(ex)}
-                className={`text-xs px-2 py-1 rounded font-mono transition-all ${text === ex ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-        </div>
-        <textarea
-          className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-3 text-sm text-white font-mono resize-none focus:outline-none focus:border-violet-500 transition-colors"
-          rows={3}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Type anything..."
-        />
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
-        {[
-          { label: "Tokens", value: tokens.length, color: "text-violet-400" },
-          { label: "Characters", value: charCount, color: "text-blue-400" },
-          { label: "Chars / token", value: charCount > 0 && tokens.length > 0 ? (charCount / tokens.length).toFixed(1) : "—", color: "text-emerald-400" },
-          { label: `Cost (GPT-4o $${costPer1M}/1M)`, value: `$${inputCost}`, color: "text-amber-400" },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-center">
-            <div className={`text-2xl font-bold font-mono ${color}`}>{value}</div>
-            <div className="text-xs text-zinc-500 mt-1">{label}</div>
-          </div>
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b border-zinc-800">
+        {[["tokenize", "Tokenize"], ["bpe", "BPE Algorithm"]].map(([id, label]) => (
+          <button key={id} onClick={() => setTokTab(id)}
+            className={`px-4 py-2 text-xs font-mono transition-all rounded-t-lg ${tokTab === id ? "bg-violet-600/20 text-violet-300 border-b-2 border-violet-500" : "text-zinc-500 hover:text-zinc-300"}`}>
+            {label}
+          </button>
         ))}
       </div>
 
-      {/* Token display */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Token Stream</span>
-          <span className="text-xs text-zinc-500">Each coloured block = 1 token</span>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {tokens.map((tok) => (
-            <span
-              key={tok.id}
-              className={`inline-flex items-center px-2 py-1 rounded border text-xs font-mono font-semibold ${tok.color}`}
-              title={`Token ${tok.id} · type: ${tok.type}`}
-            >
-              {tok.text}
-            </span>
-          ))}
-          {tokens.length === 0 && (
-            <span className="text-xs text-zinc-500 italic">Start typing to see tokens...</span>
-          )}
-        </div>
-      </div>
-
-      {/* Token IDs */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-3">
-        <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Token IDs (approximate)</span>
-        <span className="text-xs font-mono text-amber-600 ml-2">⚠ illustrative — not real tiktoken</span>
-        <div className="flex flex-wrap gap-1">
-          {tokens.map((tok) => (
-            <span key={tok.id} className="text-xs font-mono text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">
-              {tok.id * 137 + 1023}
-            </span>
-          ))}
-        </div>
-        <p className="text-xs text-zinc-500 leading-relaxed">
-          The LLM never sees text — only integer IDs. Each ID maps to a learned embedding vector. The entire vocabulary (GPT-4: ~100k tokens) is a lookup table.
-        </p>
-      </div>
-
-      {/* Insight */}
-      <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-4">
-        <div className="text-xs font-bold text-violet-400 uppercase tracking-wide mb-2">Key insight</div>
-        <p className="text-xs text-zinc-300 leading-relaxed">
-          Tokenization is the first place things go wrong. Rare words, names, and technical terms split into many tokens — increasing cost and sometimes breaking semantic coherence. "tokenization" → {tokenize("tokenization").map(t => `"${t.text}"`).join(" + ")} = {tokenize("tokenization").length} tokens. Numbers are especially fragmented: "2024" → {tokenize("2024").length} token(s).
-        </p>
-      </div>
-
-      {/* Beat 2 — what to notice */}
-      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
-        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
-        <p className="text-xs text-zinc-300 leading-relaxed">Watch the chars/token ratio as you switch between English prose, code, and emoji-heavy text. A ratio below 2.5 is a red flag — you are burning context window and API budget faster than necessary, and the model may be receiving fragmented representations that degrade comprehension on multi-word concepts.</p>
-      </div>
-
-      {/* When tokenization fails */}
-      <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-4 space-y-3">
-        <div className="text-xs font-bold text-red-400 uppercase tracking-wide">When tokenization breaks your system</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-          {[
-            { case: "Emoji & special characters", symptom: "Model sees garbage tokens — 🎉 becomes 3–5 tokens. Sentiment analysis on social media text will misread emoji-heavy posts.", fix: "Test your tokenizer on production input samples. If emoji density is high, use a model with a better multilingual vocabulary." },
-            { case: "Code & programming", symptom: "Identifiers like `getUserById` split into `get`, `User`, `By`, `Id` — 4 tokens. Long variable names explode token count and lose semantic coherence.", fix: "For code tasks, prefer models specifically trained on code (Codex, DeepSeek-Coder). They have code-aware vocabularies." },
-            { case: "Non-English languages", symptom: "Languages outside the training corpus tokenize very inefficiently — Arabic or Chinese text can be 3–5× more tokens than equivalent English. Context windows fill up fast.", fix: "Benchmark token counts on your target language. Multilingual models (mBERT, multilingual-e5) have more balanced vocabularies." },
-            { case: "Numbers & dates", symptom: "'2024-01-15' becomes ['2024', '-', '01', '-', '15'] — 5 tokens. Arithmetic over tokenized numbers is unreliable because '15' has no inherent numeric value.", fix: "For numeric reasoning, preprocess numbers into words or use chain-of-thought prompting. Never expect an LLM to do reliable arithmetic on raw numbers." },
-          ].map(f => (
-            <div key={f.case} className="rounded-lg bg-zinc-900/60 border border-zinc-700 p-3 space-y-1">
-              <div className="text-red-400 font-semibold">{f.case}</div>
-              <div className="text-zinc-400 leading-relaxed"><span className="text-zinc-300 font-medium">Symptom: </span>{f.symptom}</div>
-              <div className="text-zinc-400 leading-relaxed"><span className="text-emerald-400 font-medium">Fix: </span>{f.fix}</div>
+      {/* ── TAB 1: TOKENIZE ── */}
+      {tokTab === "tokenize" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Input Text</span>
+              <div className="flex gap-2">
+                {TOKENIZER_EXAMPLES.map((ex, i) => (
+                  <button key={i} onClick={() => setText(ex)}
+                    className={`text-xs px-2 py-1 rounded font-mono transition-all ${text === ex ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
+            <textarea
+              className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-3 text-sm text-white font-mono resize-none focus:outline-none focus:border-violet-500 transition-colors"
+              rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Type anything..." />
+          </div>
 
-      {/* Beat 3 — synthesis close */}
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: "Tokens", value: tokens.length, color: "text-violet-400" },
+              { label: "Characters", value: charCount, color: "text-blue-400" },
+              { label: "Chars / token", value: charCount > 0 && tokens.length > 0 ? (charCount / tokens.length).toFixed(1) : "—", color: "text-emerald-400" },
+              { label: `Cost (GPT-4o $${costPer1M}/1M)`, value: `$${inputCost}`, color: "text-amber-400" },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-center">
+                <div className={`text-2xl font-bold font-mono ${color}`}>{value}</div>
+                <div className="text-xs text-zinc-500 mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Token Stream</span>
+              <span className="text-xs text-zinc-500">Each block = 1 token</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {tokens.map((tok) => (
+                <span key={tok.id} className={`inline-flex items-center px-2 py-1 rounded border text-xs font-mono font-semibold ${tok.color}`}
+                  title={`Token ${tok.id} · type: ${tok.type}`}>
+                  {tok.text}
+                </span>
+              ))}
+              {tokens.length === 0 && <span className="text-xs text-zinc-500 italic">Start typing to see tokens...</span>}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Token IDs (approximate)</span>
+            <span className="text-xs font-mono text-amber-600 ml-2">illustrative — not real tiktoken</span>
+            <div className="flex flex-wrap gap-1">
+              {tokens.map((tok) => (
+                <span key={tok.id} className="text-xs font-mono text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">
+                  {tok.id * 137 + 1023}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-zinc-500">The LLM never sees text — only integer IDs. Each maps to a learned embedding vector. GPT-4's vocab is ~100k tokens.</p>
+          </div>
+
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+            <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">Watch the chars/token ratio as you switch examples. A ratio below 2.5 is a red flag — you're burning context window faster than necessary. Switch to the BPE Algorithm tab to understand why some words get 1 token while others get 5.</p>
+          </div>
+
+          <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 space-y-3">
+            <div className="text-xs font-bold text-red-400 uppercase tracking-wide">When tokenization breaks your system</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {[
+                { case: "Emoji", symptom: "One emoji = 3-5 tokens. Sentiment on emoji-heavy text misfires.", fix: "Test with production samples. Use models with better multilingual vocab." },
+                { case: "Code identifiers", symptom: "getUserById splits to [get, User, By, Id] = 4 tokens, losing semantic coherence.", fix: "Use code-trained models (Codex, DeepSeek-Coder) with code-aware vocabularies." },
+                { case: "Non-English text", symptom: "Arabic or Chinese can be 3-5x more tokens than equivalent English.", fix: "Benchmark on your target language. Multilingual models have more balanced vocab." },
+                { case: "Numbers & dates", symptom: "'2024-01-15' = 5 tokens. LLMs cannot reliably do arithmetic on tokenized numbers.", fix: "Use chain-of-thought for numeric reasoning. Never rely on raw number arithmetic." },
+              ].map(f => (
+                <div key={f.case} className="rounded-lg bg-zinc-900/60 border border-zinc-700 p-3 space-y-1">
+                  <div className="text-red-400 font-semibold">{f.case}</div>
+                  <div className="text-zinc-400"><span className="text-zinc-300">Symptom: </span>{f.symptom}</div>
+                  <div className="text-zinc-400"><span className="text-emerald-400">Fix: </span>{f.fix}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 2: BPE ALGORITHM ── */}
+      {tokTab === "bpe" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              GPT-4 and most LLMs use <strong className="text-white">Byte-Pair Encoding (BPE)</strong> to build their vocabulary from raw text. It starts with individual characters and iteratively merges the most frequent adjacent pair — until the vocabulary reaches the target size (GPT-4: ~100k). Below: watch BPE build vocabulary from corpus "new, newest, low, lowest." Move through the merge steps.
+            </p>
+          </div>
+
+          {/* Step slider */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-xs font-mono text-zinc-300">Merge step: <strong className="text-white">{bpeStep} / {BPE_STEPS.length - 1}</strong></span>
+              <span className="text-xs font-mono text-zinc-500">Vocab size: <span className="text-violet-400 font-bold">{bpe.vocab.length}</span> tokens</span>
+            </div>
+            <input type="range" min="0" max={BPE_STEPS.length - 1} step="1" value={bpeStep}
+              onChange={e => setBpeStep(Number(e.target.value))} className="w-full accent-violet-500" />
+            <div className={`rounded-lg px-3 py-2 border text-xs font-mono ${bpe.merge ? "border-violet-700/60 bg-violet-950/20 text-violet-300" : "border-zinc-700 bg-zinc-900/40 text-zinc-400"}`}>
+              {bpe.merge ? `Merged: ${bpe.merge}` : "No merges yet — start at character level"}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-12 gap-4">
+            {/* Word tokenizations */}
+            <div className="col-span-12 lg:col-span-7 space-y-3">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Current tokenization of each word</div>
+              {wordList.map(([word, toks], wi) => (
+                <div key={word} className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-zinc-300 w-16">{word}</span>
+                    <span className="text-xs text-zinc-500">({toks.length} token{toks.length !== 1 ? "s" : ""})</span>
+                    {toks.length === 1 && <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-900/50 border border-emerald-700 text-emerald-400 font-mono">single token</span>}
+                  </div>
+                  <div className="flex gap-1 flex-wrap">
+                    {toks.map((t, ti) => (
+                      <span key={ti} className={`px-2 py-1 rounded border text-xs font-mono font-bold ${TOK_COLORS[(wi * 3 + ti) % TOK_COLORS.length]}`}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Right panel: top pairs + vocab */}
+            <div className="col-span-12 lg:col-span-5 space-y-3">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+                <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Top pair frequencies</div>
+                {bpe.topPairs.length > 0 ? bpe.topPairs.map(([pair, count], i) => (
+                  <div key={pair} className="flex items-center gap-2">
+                    <span className={`text-xs font-mono w-24 ${i === 0 ? "text-violet-300 font-bold" : "text-zinc-400"}`}>{pair}</span>
+                    <div className="flex-1 h-4 bg-zinc-800 rounded overflow-hidden">
+                      <div className="h-full rounded transition-all duration-300"
+                        style={{ width: `${(parseInt(count) / maxPairCount) * 100}%`, background: i === 0 ? "#8b5cf6" : "#52525b" }} />
+                    </div>
+                    <span className={`text-xs font-mono w-4 text-right ${i === 0 ? "text-violet-400" : "text-zinc-500"}`}>×{count}</span>
+                  </div>
+                )) : <p className="text-xs text-zinc-500">All words are now single tokens — no more merges needed.</p>}
+              </div>
+
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+                <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Vocabulary ({bpe.vocab.length} tokens)</div>
+                <div className="flex flex-wrap gap-1">
+                  {bpe.vocab.map((v, i) => (
+                    <span key={i} className={`px-1.5 py-0.5 rounded border text-xs font-mono ${i >= 7 ? "border-violet-700/60 bg-violet-950/30 text-violet-300" : "border-zinc-700 bg-zinc-900 text-zinc-400"}`}>
+                      {v}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-zinc-500">Violet = newly added by merges</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+            <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What's happening</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              {bpeStep === 0 && "Every character starts as its own token. 'newest' costs 6 tokens. The algorithm will now find the most frequent adjacent pair and merge it."}
+              {bpeStep === 1 && "'ne' merged — the n+e pair appeared 5 times (in 'new'×3 and 'newest'×2). Now the prefix 'ne' is a single reusable unit in the vocabulary."}
+              {bpeStep === 2 && "'new' emerged as a single token after just 2 merges. This is BPE's power: common words or subwords crystallise quickly because they appear frequently."}
+              {bpeStep === 3 && "'lo' forms — the start of 'low' and 'lowest'. BPE finds structural patterns without any grammar rules."}
+              {bpeStep === 4 && "'low' is now a single token after 4 merges. In GPT-4's real vocabulary, 'low' is indeed one token (ID 9519)."}
+              {bpeStep === 5 && "The suffix 'es' appears in both 'newest' and 'lowest'. BPE naturally learns morphological suffixes like -es, -ing, -tion without ever being taught grammar."}
+              {bpeStep === 6 && "'est' is now a single token — the superlative suffix. After just 6 merges on this tiny corpus, 'newest' went from 6 tokens to 2: ['new','est']. In a real model trained on billions of words, this process runs for ~50k steps."}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3 space-y-2">
+            <div className="text-xs font-bold text-blue-400 uppercase tracking-wide">Why this matters in production</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Words that appear often in training data become single tokens — cheap, coherent. Rare words, technical jargon, and names get split into multiple subword pieces — expensive, sometimes semantically broken. "ChatGPT" = 3 tokens. "Quantization" = 3 tokens. "Avinash" = 3 tokens. A word the tokenizer has never seen gets split character-by-character. This is why domain-adapted tokenizers exist for medical/legal/code domains.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Synthesis close */}
       <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
-        <p className="text-sm text-zinc-400 leading-relaxed italic">Token cost is an engineering constraint, not a footnote. On any system processing over 1M tokens per day, a ratio of 3.5 chars/token versus 4.2 chars/token is a 20% cost difference — real money, not rounding error. Run your actual production samples through the tokenizer of your target model before you commit to an architecture. The model you choose is also the tokenizer you choose.</p>
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Token cost is an engineering constraint, not a footnote. On any system processing over 1M tokens per day, a ratio of 3.5 chars/token versus 4.2 chars/token is a 20% cost difference. Run your actual production samples through the tokenizer of your target model before committing to an architecture. The model you choose is also the tokenizer you choose.</p>
       </div>
 
       {onNavigate && (
@@ -576,11 +757,11 @@ function TokenizerModule({ onNavigate }) {
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "tokenization-deep-dive" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 Tokenization Deep-Dive
+              Tokenization Deep-Dive
             </button>
             <button onClick={() => onNavigate({ tab: "flows" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              🗺 Flows
+              Flows
             </button>
           </div>
         </div>
@@ -2537,10 +2718,12 @@ const CTX_SECTIONS = [
 const CTX_COMPLEXITY = [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 128000];
 
 function ContextWindowModule({ onNavigate }) {
+  const [ctxTab, setCtxTab] = useState("budget");
   const [modelIdx, setModelIdx] = useState(2);
   const [fewshot, setFewshot] = useState(2);
   const [history, setHistory] = useState(3);
   const [chunks, setChunks] = useState(3);
+  const [litmPos, setLitmPos] = useState(4);
 
   const model = CTX_MODELS[modelIdx];
   const sections = CTX_SECTIONS.map(s => ({
@@ -2559,144 +2742,250 @@ function ContextWindowModule({ onNavigate }) {
     isCurrent: totalTokens > 0 && n <= totalTokens,
   }));
 
+  const LITM_RECALL = [92, 85, 75, 62, 52, 48, 51, 62, 75, 88];
+  const LITM_LABELS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"];
+  const litmRecall = LITM_RECALL[litmPos];
+  const isLitmBest = litmPos === 0 || litmPos === 9;
+  const isLitmMiddle = litmPos >= 3 && litmPos <= 6;
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
         <p className="text-sm text-zinc-300 leading-relaxed">
-          Everything the model can see at once — system prompt, conversation history, retrieved chunks, and the response it's generating — must fit inside the <strong className="text-white">context window</strong>. Exceed it and content is silently truncated. But a larger window isn't free: transformer attention scales quadratically, meaning 2× more tokens means 4× more compute. Every production RAG system is a battle to fit the right content into a fixed budget. Use the sliders below to build a realistic token budget and see where you run out of room.
+          Everything the model can see at once — system prompt, conversation history, retrieved chunks, and the response it’s generating — must fit inside the <strong className="text-white">context window</strong>. Exceed it and content is silently truncated. But a larger window isn’t free: transformer attention scales quadratically, meaning 2× more tokens means 4× more compute. Every production RAG system is a battle to fit the right content into a fixed budget.
         </p>
       </div>
-      {/* Model selector */}
-      <div className="flex gap-2 flex-wrap">
-        {CTX_MODELS.map((m, i) => (
-          <button key={m.name} onClick={() => setModelIdx(i)}
-            className={`px-3 py-2 rounded-lg text-xs font-mono transition-all border ${modelIdx === i ? "border-violet-500 bg-violet-950/30 text-white" : "border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:text-white"}`}>
-            <span className="font-bold">{m.name}</span>
-            <span className="text-zinc-500 ml-1.5">{m.max >= 1000000 ? "1M" : `${(m.max / 1000).toFixed(0)}k`} ctx</span>
+
+      {/* Tab switcher */}
+      <div className="flex gap-1 border-b border-zinc-800">
+        {[
+          { id: "budget", label: "Token Budget" },
+          { id: "litm", label: "Lost in the Middle" },
+        ].map(t => (
+          <button key={t.id} onClick={() => setCtxTab(t.id)}
+            className={`px-4 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all ${ctxTab === t.id ? "border-violet-500 text-white bg-violet-950/20" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}>
+            {t.label}
           </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        {/* Sliders */}
-        <div className="col-span-12 lg:col-span-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-4">
-          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Build Your Context</div>
-          {[
-            { label: "Few-shot examples", val: fewshot, set: setFewshot, max: 6 },
-            { label: "Conversation turns", val: history, set: setHistory, max: 12 },
-            { label: "RAG chunks",         val: chunks,  set: setChunks,  max: 10 },
-          ].map(({ label, val, set, max }) => (
-            <div key={label} className="space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-zinc-300 font-mono">{label}</span>
-                <span className="text-violet-400 font-mono font-bold">{val}</span>
-              </div>
-              <input type="range" min="0" max={max} step="1" value={val}
-                onChange={e => set(+e.target.value)} className="w-full accent-violet-500" />
-            </div>
-          ))}
-
-          <div className="space-y-1 pt-2 border-t border-zinc-800">
-            {sections.map(s => (
-              <div key={s.id} className="flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: s.color }} />
-                  <span className="text-zinc-400">{s.label}</span>
-                </div>
-                <span className="text-zinc-300">{s.tokens.toLocaleString()}</span>
-              </div>
+      {ctxTab === "budget" && (
+        <div className="space-y-4">
+          <div className="flex gap-2 flex-wrap">
+            {CTX_MODELS.map((m, i) => (
+              <button key={m.name} onClick={() => setModelIdx(i)}
+                className={`px-3 py-2 rounded-lg text-xs font-mono transition-all border ${modelIdx === i ? "border-violet-500 bg-violet-950/30 text-white" : "border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:text-white"}`}>
+                <span className="font-bold">{m.name}</span>
+                <span className="text-zinc-500 ml-1.5">{m.max >= 1000000 ? "1M" : `${(m.max / 1000).toFixed(0)}k`} ctx</span>
+              </button>
             ))}
-            <div className="flex justify-between text-xs font-mono font-bold pt-1.5 border-t border-zinc-700">
-              <span className={isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-white"}>Total</span>
-              <span className={isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-white"}>{totalTokens.toLocaleString()}</span>
+          </div>
+
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-12 lg:col-span-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-4">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Build Your Context</div>
+              {[
+                { label: "Few-shot examples", val: fewshot, set: setFewshot, max: 6 },
+                { label: "Conversation turns", val: history, set: setHistory, max: 12 },
+                { label: "RAG chunks",         val: chunks,  set: setChunks,  max: 10 },
+              ].map(({ label, val, set, max }) => (
+                <div key={label} className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-300 font-mono">{label}</span>
+                    <span className="text-violet-400 font-mono font-bold">{val}</span>
+                  </div>
+                  <input type="range" min="0" max={max} step="1" value={val}
+                    onChange={e => set(+e.target.value)} className="w-full accent-violet-500" />
+                </div>
+              ))}
+              <div className="space-y-1 pt-2 border-t border-zinc-800">
+                {sections.map(s => (
+                  <div key={s.id} className="flex items-center justify-between text-xs font-mono">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: s.color }} />
+                      <span className="text-zinc-400">{s.label}</span>
+                    </div>
+                    <span className="text-zinc-300">{s.tokens.toLocaleString()}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between text-xs font-mono font-bold pt-1.5 border-t border-zinc-700">
+                  <span className={isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-white"}>Total</span>
+                  <span className={isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-white"}>{totalTokens.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-span-12 lg:col-span-8 space-y-4">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">{model.name} — {model.max >= 1000000 ? "1M" : `${(model.max / 1000).toFixed(0)}k`} tokens</span>
+                  <span className={`text-xs font-mono font-bold ${isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-emerald-400"}`}>
+                    {(pctUsed * 100).toFixed(1)}% used
+                  </span>
+                </div>
+                <div className="h-10 rounded-lg overflow-hidden flex bg-zinc-800 gap-px">
+                  {sections.filter(s => s.tokens > 0).map(s => (
+                    <div key={s.id}
+                      style={{ width: `${clamp(s.tokens / model.max * 100, 0, 100)}%`, background: s.color, minWidth: 2 }}
+                      title={`${s.label}: ${s.tokens.toLocaleString()} tokens`} />
+                  ))}
+                </div>
+                {isDanger && (
+                  <div className="rounded-lg border border-red-700 bg-red-950/30 p-2 text-xs text-red-300 font-mono">
+                    ⚠ OVERFLOW — {(totalTokens - model.max).toLocaleString()} tokens over limit. Model will truncate oldest history.
+                  </div>
+                )}
+                {isWarning && !isDanger && (
+                  <div className="rounded-lg border border-amber-700 bg-amber-950/30 p-2 text-xs text-amber-300 font-mono">
+                    ⚠ {(pctUsed * 100).toFixed(0)}% full — little room for a long response. Reduce history or chunks.
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-3">
+                  {sections.map(s => (
+                    <div key={s.id} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                      <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: s.color }} />
+                      {s.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+                <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Attention Compute Cost O(n²) — your length highlighted</div>
+                <div className="flex items-end gap-1 h-28">
+                  {complexityBars.map(({ n, label, pct: barPct, isCurrent }) => (
+                    <div key={n} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full rounded-t-sm"
+                        style={{ height: `${Math.max(barPct * 104, 2)}px`, background: isCurrent ? "#8b5cf6" : barPct > 0.5 ? "#ef4444" : barPct > 0.1 ? "#f59e0b" : "#27272a" }} />
+                      <span style={{ fontSize: 9 }} className="text-zinc-500 font-mono">{label}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-zinc-500">Doubling context quadruples attention ops. 128k context = 16,000× more compute than 1k. This is why long-context models need flash attention, sliding window attention, and KV cache optimisations.</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Visuals */}
-        <div className="col-span-12 lg:col-span-8 space-y-4">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">{model.name} — {model.max >= 1000000 ? "1M" : `${(model.max / 1000).toFixed(0)}k`} tokens</span>
-              <span className={`text-xs font-mono font-bold ${isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-emerald-400"}`}>
-                {(pctUsed * 100).toFixed(1)}% used
-              </span>
-            </div>
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+            <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">Add conversation turns until the bar hits 80% on GPT-4o. Now look at the O(n²) chart — find where your current token count falls, then look one column right to see what doubling it costs. The quadratic curve is why you cannot simply "use a bigger context window" as a solution to every retrieval problem.</p>
+          </div>
 
-            {/* Stacked bar */}
-            <div className="h-10 rounded-lg overflow-hidden flex bg-zinc-800 gap-px">
-              {sections.filter(s => s.tokens > 0).map(s => (
-                <div key={s.id}
-                  style={{ width: `${clamp(s.tokens / model.max * 100, 0, 100)}%`, background: s.color, minWidth: 2 }}
-                  title={`${s.label}: ${s.tokens.toLocaleString()} tokens`} />
-              ))}
-            </div>
-
-            {isDanger && (
-              <div className="rounded-lg border border-red-700 bg-red-950/30 p-2 text-xs text-red-300 font-mono">
-                ⚠ OVERFLOW — {(totalTokens - model.max).toLocaleString()} tokens over limit. Model will truncate oldest history.
-              </div>
-            )}
-            {isWarning && !isDanger && (
-              <div className="rounded-lg border border-amber-700 bg-amber-950/30 p-2 text-xs text-amber-300 font-mono">
-                ⚠ {(pctUsed * 100).toFixed(0)}% full — little room for a long response. Reduce history or chunks.
-              </div>
-            )}
-
-            {/* Legend */}
-            <div className="flex flex-wrap gap-3">
-              {sections.map(s => (
-                <div key={s.id} className="flex items-center gap-1.5 text-xs text-zinc-400">
-                  <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: s.color }} />
-                  {s.label}
+          <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 space-y-3">
+            <div className="text-xs font-bold text-red-400 uppercase tracking-wide">Other context window failure modes</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              {[
+                { case: "Soft context overflow", symptom: "Prompt is within the limit but response quality degrades. Attention is spread too thin.", fix: "Past 50% context usage, consider map-reduce: process each chunk separately, combine results." },
+                { case: "Stale context drift", symptom: "Sliding window drops old turns. Model contradicts itself or forgets user context from 20 turns ago.", fix: "Summarize old turns into a running prefix. Most chat systems need this by turn 15–20." },
+                { case: "Output budget collision", symptom: "Input fills 95% of context. Model’s response is silently truncated mid-sentence.", fix: "Budget explicitly: max_input = context_limit - max_output - safety_margin. Log token usage in production." },
+              ].map(f => (
+                <div key={f.case} className="rounded-lg bg-zinc-900/60 border border-zinc-700 p-3 space-y-1">
+                  <div className="text-red-400 font-semibold">{f.case}</div>
+                  <div className="text-zinc-400 leading-relaxed"><span className="text-zinc-300 font-medium">Symptom: </span>{f.symptom}</div>
+                  <div className="text-zinc-400 leading-relaxed"><span className="text-emerald-400 font-medium">Fix: </span>{f.fix}</div>
                 </div>
               ))}
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Attention complexity chart */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
-            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Attention Compute Cost O(n²) — your length highlighted</div>
-            <div className="flex items-end gap-1 h-28">
-              {complexityBars.map(({ n, label, pct: barPct, isCurrent }) => (
-                <div key={n} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full rounded-t-sm"
-                    style={{ height: `${Math.max(barPct * 104, 2)}px`, background: isCurrent ? "#8b5cf6" : barPct > 0.5 ? "#ef4444" : barPct > 0.1 ? "#f59e0b" : "#27272a" }} />
-                  <span style={{ fontSize: 9 }} className="text-zinc-500 font-mono">{label}</span>
-                </div>
-              ))}
+      {ctxTab === "litm" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+            <p className="text-sm text-zinc-300 leading-relaxed">
+              Liu et al. (2023) showed that LLMs perform best on information at the <strong className="text-white">beginning and end</strong> of a long context window, and worst in the <strong className="text-red-400">middle</strong>. This U-shaped recall curve held consistently across GPT-3.5, Claude, and others. The implication for RAG: where you <em>place</em> retrieved chunks inside the prompt matters as much as which chunks you retrieve.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-12 lg:col-span-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Select chunk position</div>
+              <p className="text-xs text-zinc-500">You retrieved 10 chunks. Place your most relevant one here and see the recall accuracy change.</p>
+              <div className="space-y-1.5">
+                {LITM_RECALL.map((recall, i) => (
+                  <button key={i} onClick={() => setLitmPos(i)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-mono transition-all ${litmPos === i ? "border-violet-500 bg-violet-950/30 text-white" : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"}`}>
+                    <span>Position {i + 1} <span className="text-zinc-600">({LITM_LABELS[i]})</span></span>
+                    <span className={`font-bold ${recall >= 80 ? "text-emerald-400" : recall >= 65 ? "text-amber-400" : "text-red-400"}`}>{recall}%</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="text-xs text-zinc-500">Doubling context quadruples attention ops. 128k context = 16,000× more compute than 1k. This is why long-context models need flash attention, sliding window attention, and KV cache optimisations.</p>
+
+            <div className="col-span-12 lg:col-span-8 space-y-4">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+                <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Recall accuracy by chunk position (Liu et al. 2023)</div>
+                <div className="flex items-end gap-2 h-36 px-1">
+                  {LITM_RECALL.map((recall, i) => {
+                    const isSelected = litmPos === i;
+                    const barColor = isSelected ? "#8b5cf6" : recall >= 80 ? "#22c55e" : recall >= 65 ? "#f59e0b" : "#ef4444";
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => setLitmPos(i)}>
+                        <span className="text-[9px] font-mono font-bold" style={{ color: isSelected ? "#c4b5fd" : "#6b7280" }}>{recall}%</span>
+                        <div className="w-full rounded-t-sm transition-all duration-200"
+                          style={{ height: `${(recall / 100) * 110}px`, background: barColor, outline: isSelected ? "2px solid #8b5cf6" : "none", outlineOffset: "1px" }} />
+                        <span className="text-[9px] text-zinc-600 font-mono">{i + 1}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                  <span>Earlier in context</span>
+                  <span className="flex-1 border-t border-dashed border-zinc-800" />
+                  <span>Later in context</span>
+                </div>
+              </div>
+
+              <div className={`rounded-xl border p-4 space-y-2 transition-all ${isLitmBest ? "border-emerald-800/50 bg-emerald-950/15" : isLitmMiddle ? "border-red-800/50 bg-red-950/15" : "border-amber-800/50 bg-amber-950/15"}`}>
+                <div className="flex items-center justify-between">
+                  <div className={`text-xs font-bold uppercase tracking-wide ${isLitmBest ? "text-emerald-400" : isLitmMiddle ? "text-red-400" : "text-amber-400"}`}>
+                    Position {litmPos + 1} — {LITM_LABELS[litmPos]} chunk
+                  </div>
+                  <div className={`text-2xl font-black font-mono ${litmRecall >= 80 ? "text-emerald-400" : litmRecall >= 65 ? "text-amber-400" : "text-red-400"}`}>
+                    {litmRecall}%
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  {litmPos === 0 && "Best position. The model’s primacy effect is strongest at the start. Put your most critical chunk here — it will be reliably read and acted upon."}
+                  {litmPos === 1 && "Still strong. High attention in the opening positions. Good slot for your second most important chunk or key background context."}
+                  {litmPos === 2 && "Attention starting to fade. 17 points below position 1. Use this for supporting evidence, not the key fact you need the model to reason about."}
+                  {litmPos === 3 && "Entering the dead zone. Below 65% recall — this chunk has a 1-in-3 chance of being effectively ignored. Reranking becomes critical at this position."}
+                  {litmPos === 4 && "Dead zone. Half the information here goes unnoticed. If your most relevant chunk sits at position 5, the model may answer from chunk 1 or 10 instead. This is the core Liu et al. finding."}
+                  {litmPos === 5 && "Worst position. 48% recall — worse than a coin flip for whether the model correctly uses this information. Never place your most relevant chunk in the middle of a long context."}
+                  {litmPos === 6 && "Still in the dead zone. Slightly better than position 6 but well below reliable recall. The recency effect is starting to emerge but too weak to rely on."}
+                  {litmPos === 7 && "Recency effect emerging. 62% recall — climbing back. Matches positions 3–4 in accuracy but is trending up rather than down."}
+                  {litmPos === 8 && "Good recency position. 75% recall — comparable to the 3rd slot. Place high-relevance supporting context here if you must spread chunks across a long context."}
+                  {litmPos === 9 && "Second-best position (88%). Recency effect is strong but not quite as strong as primacy. Put your second most important chunk here — combined with position 1, this is the sandwich retrieval strategy."}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+                <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Production strategies</div>
+                <div className="space-y-2.5">
+                  {[
+                    { label: "Sandwich strategy", desc: "Most relevant chunk at position 1. Second most relevant at the last position. Lower-confidence chunks fill the middle.", color: "text-emerald-400" },
+                    { label: "Rerank before placing", desc: "Use a cross-encoder reranker (Cohere Rerank, bge-reranker) to identify your top 1–2 chunks, then sandwich them. Vector similarity alone doesn’t tell you ordering.", color: "text-blue-400" },
+                    { label: "Fewer, better chunks", desc: "5 high-quality chunks beats 15 mediocre ones. Every extra chunk pushes earlier chunks further toward the dead zone.", color: "text-violet-400" },
+                    { label: "Test your own curve", desc: "Run a recall test: plant a known answer at each position and measure extraction accuracy. Different models have different U-curve shapes.", color: "text-amber-400" },
+                  ].map(s => (
+                    <div key={s.label} className="flex gap-2 text-xs">
+                      <span className={`font-bold shrink-0 ${s.color}`}>{s.label}:</span>
+                      <span className="text-zinc-400">{s.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+            <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">Try this</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">Click position 6 (worst, 48%), then click position 1 (best, 92%). The difference is 44 percentage points — not from changing which chunk you retrieved, but only from where you placed it in the prompt. Now click position 10: second-best at 88%, despite being last. That is the recency effect. The model’s attention function is not flat across the context window.</p>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Beat 2 — what to notice */}
-      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
-        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
-        <p className="text-xs text-zinc-300 leading-relaxed">Add conversation turns until the bar hits 80% on GPT-4o. Now look at the O(n²) chart — find where your current token count falls, then look one column right to see what doubling it costs. The quadratic curve is why you cannot simply "use a bigger context window" as a solution to every retrieval problem: compute cost grows far faster than context size, and latency follows with it.</p>
-      </div>
-
-      {/* When context window fails */}
-      <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-4 space-y-3">
-        <div className="text-xs font-bold text-red-400 uppercase tracking-wide">Context window failure modes</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-          {[
-            { case: "Lost in the middle", symptom: "You stuff 10 retrieved chunks into context. The answer is in chunk 5. The model answers using chunk 1 or chunk 10 and ignores chunk 5. Empirically, LLMs attend strongly to the beginning and end of context — the middle is a dead zone.", fix: "Put your most relevant chunks FIRST and LAST in the context. Use a reranker to identify the most relevant chunk, then position it at the start." },
-            { case: "Soft context overflow", symptom: "Your prompt is within the context limit but the model's responses get worse as you add more content. No error — just degrading quality. This happens because attention is spread too thin.", fix: "Monitor response quality as a function of context length. If quality drops past 50% of your context window, switch to map-reduce (process each chunk separately, combine results)." },
-            { case: "Stale context in long conversations", symptom: "In a long chat, the user refers to something they said 30 messages ago. With a sliding window, old context gets dropped. The model acts confused or contradicts itself.", fix: "Implement conversation summarization: compress old turns into a running summary that's prepended to new context. Most chat systems need this by turn 15–20." },
-            { case: "Prompt + output budget collision", symptom: "Your system prompt is 2K tokens. Retrieved context is 6K tokens. User query is 500 tokens. Total input = 8.5K. But you need 2K output tokens. At 8K context limit, generation gets cut short silently.", fix: "Always budget: max_input_tokens = context_limit - max_output_tokens - safety_margin. Monitor actual token usage per request in production." },
-          ].map(f => (
-            <div key={f.case} className="rounded-lg bg-zinc-900/60 border border-zinc-700 p-3 space-y-1">
-              <div className="text-red-400 font-semibold">{f.case}</div>
-              <div className="text-zinc-400 leading-relaxed"><span className="text-zinc-300 font-medium">Symptom: </span>{f.symptom}</div>
-              <div className="text-zinc-400 leading-relaxed"><span className="text-emerald-400 font-medium">Fix: </span>{f.fix}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Beat 3 — synthesis close */}
       <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
         <p className="text-sm text-zinc-400 leading-relaxed italic">Every production RAG system is a budget problem: how do you fit the most relevant information into a fixed token budget without overflowing or padding with noise? The token budget formula — max_input = context_limit minus max_output minus safety_margin — should be explicit in your configuration, not left as an implicit assumption. Systems that treat context as unlimited and latency as free both discover the ceiling at the worst possible time.</p>
       </div>
@@ -2705,7 +2994,7 @@ function ContextWindowModule({ onNavigate }) {
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
-            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what’s next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "context-window-guide" })}
@@ -2722,6 +3011,7 @@ function ContextWindowModule({ onNavigate }) {
     </div>
   );
 }
+
 
 // ─── AGENT REACT LOOP MODULE ──────────────────────────────────────────────────
 
