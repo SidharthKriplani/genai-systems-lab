@@ -127,6 +127,34 @@ Format per entry:
 
 ---
 
+## Home.jsx — Goal-Based Welcome Entry (Onboarding Modal)
+
+**Component:** `src/Home.jsx` or `src/App.jsx` — first-visit onboarding
+
+**Current behavior:** No guided entry. Cold visitors land on Home and must orient themselves from the nav and hero copy alone.
+
+**Target behavior:** On first visit (localStorage flag), a modal appears: "What are you here to do?" with 3 goal-based options:
+- "Get interview-ready" → routes to PrepLab, Exam mode
+- "Build something in production" → routes to RAG Lab, first scenario
+- "Understand how it works" → routes to Ground Truth or Concepts
+
+"Explore on my own" dismisses the modal. Choice stored in localStorage — not shown again. Optionally: choice subtly personalises the home screen (e.g. highlights the relevant lab door card).
+
+**Why goal-based, not role-based:** Role labels (AI Engineer, DS, PM) create demographic segmentation that doesn't map cleanly to what users actually want to do. Goal labels (interview-ready, build, understand) map directly to the three real entry points the product has.
+
+**Effort:** S (modal UI + localStorage flag + 3 routing targets — all targets already exist)
+
+**Dependencies:**
+- Hero copy rewrite should ship first (modal assumes the product is polished enough to guide users deeper)
+- Done card prominence + TYU crash fix should ship first (critical Audit 34 findings — don't guide users into a broken loop)
+- Routing targets must be confirmed working end-to-end before modal goes live
+
+**Priority:** Medium — good idea, wrong timing. Build after all Audit 34 critical findings are resolved.
+
+**Status:** Pending — do not build until hero copy, done card, and TYU crash are fixed
+
+---
+
 ## Access Code Gate (Interim Auth)
 
 **Component:** `src/PrepLab.jsx` + `src/App.jsx` — gated content access
