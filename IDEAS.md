@@ -317,6 +317,48 @@ A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL
 - ~~**Learning Path: "Data Engineer to AI Engineer"**~~ ✅ *built May 2026 — 10-step path in LearningPaths.jsx*
 - **Home page positioning tweak** — add one line near the hero explicitly claiming Layer 3 depth: "The lab that builds Layer 3 skills — RAG, evals, observability, agent architecture." Zero build effort, direct resonance with DEs reading that post.
 
+### Concepts Gym — structured foundation layer (new cluster — May 2026)
+
+Ground Truth is a library: you read it when you need a reference. The Concepts tab is 15 good interactives with no progression, no coverage tracking, no mastery signal. There is no structured path from "I want to understand embeddings" that ends in demonstrated understanding. This gap is the biggest thing missing for beginners — a foundation layer that prepares them for the labs rather than assuming they arrive ready.
+
+**The idea:** restructure around PAL-style foundation tracks. Not a tab rename — the mechanic must change.
+
+- **Dependency graph becomes navigation** — currently cut from Home (was decorative). In a Concepts Gym it has a real job: click a node → concept opens → shows what you need first + what it unlocks → forward pointer to the lab that uses it. The graph earns its place here.
+- **Foundation tracks** (like PAL's Stat Foundations / A/B Foundations): RAG Foundations, LLM Foundations, Agent Foundations, Eval Foundations. Each track is: concept → interactive simulator → test recall → link to the lab where you practice it for real.
+- **Mastery signal** — per-concept coverage tracking (localStorage). User sees which concepts are covered, which are prerequisites for what they want to do next. Not just "visited" — actually tested.
+- **GT posts as concept references** — GT posts surface contextually inside the gym at the exact moment a concept is explained, not as a wall to browse. Fixes the "GT is just a blog" problem structurally.
+- **Interlinked with Labs** — every concept in the gym has a forward pointer to the lab scenario it enables. Tokenization → Context Window → RAG Lab "Missing Answer" scenario. The chain becomes explicit.
+
+**Why this is the right architectural direction:** the current product has learning material (GT), labs (RAG Lab etc.), and assessment (PrepLab) but no structured foundation layer connecting them. The dependency graph, Concepts interactives, and GT posts are all the right raw material — what's missing is the architecture that organizes them into a progression a beginner can follow.
+
+**Effort:** L — not a tab rename. Requires restructuring Concepts around foundation tracks, wiring the dependency graph as navigation, adding mastery/coverage tracking, and explicit lab forward pointers.
+
+- **Foundation tracks build-out** — RAG Foundations (tokenization → embeddings → retrieval → ranking → RAG Lab), LLM Foundations (architecture → attention → sampling → serving), Agent Foundations (ReAct → tool use → memory → agent lab), Eval Foundations (metrics → LLM-as-judge → eval frameworks). *Pending.*
+- **Dependency graph as navigation** — Restore the graph from Home (it was cut because it was decorative there, not because it was wrong). Wire it as the primary navigation layer in the gym. Click node → open concept. *Pending.*
+- **Per-concept mastery tracking** — localStorage coverage map, shown in the graph (node color changes on completion). Gate "unlocks" on prerequisite completion. *Pending.*
+- **Concepts module: "The Training Signal — Entropy, Loss, and KL Divergence"** — interactive: user adjusts confidence distribution, sees entropy/cross-entropy/KL change in real time. Fills gap between architecture and training. *Pending (from Utkarsh Mangal cluster).*
+- **Concepts module addition: "Sequential vs Parallel — The Architecture Transition"** — RNN token-by-token vs Transformer parallel processing. Why the transition was necessary. *Pending (from Naresh Edagotti cluster).*
+
+### Returning user "Today" dashboard — PAL-inspired (new cluster — May 2026)
+
+PAL shows a different home to new vs returning visitors. Returning visitors see: "Today's Case" (specific thing to do right now), "The Brief" (daily concept), "Jump back in" (precise room + timestamp), and Guided Paths. This creates a daily pull reason and makes the home page earn its return visits.
+
+GenAI Lab currently shows the same hero to everyone. Welcome modal handles first-time routing (good), but returning users still see the same static home instead of a dashboard.
+
+**What a returning user "Today" view needs:**
+- **Today's scenario** — rotate one RAG Lab or Agent Lab scenario per day (7-day cycle). Specific, actionable, not a menu.
+- **Daily concept** — same as current daily tip but linked to the concept in the Concepts Gym, not just passive text.
+- **Jump back in** — more precise than current "continue where you left off": show the actual module name + how long ago.
+- **PrepLab nudge** — "3 questions on your weak topics." Pulled from weakness heatmap.
+
+**Constraint:** "Today's scenario" rotation only works if there are enough distinct scenarios (we have 6 RAG + 5 Agent + 18 Eval + 9 LLM = plenty). The daily concept rotation is simple — already have DAILY_TIPS, just needs a link target.
+
+**Effort:** M — conditional render based on `genai_welcomed` + `visited` state already exist. Today view is additive, not a rebuild.
+
+- **New vs returning render split** — show welcome/hero to first-time visitors, "Today" dashboard to returning. Flag: `visited.size > 0 && localStorage.getItem("genai_welcomed")`. *Pending.*
+- **Today's scenario card** — day-of-week → scenario_id lookup (static, no backend). *Pending.*
+- **Jump back in precision** — store last-visited module + timestamp in localStorage. Surface in Today view. *Pending.*
+
 ### Cross-repo intelligence — what sibling labs have that we don't (May 2026)
 
 Scan of ML Systems Lab and Product Analytics Lab (PAL/Experimentation Lab) surfaced several mechanics and features the GenAI lab is missing. Filtered for fit — excluded things that belong to the other lab's domain (Pyodide Python runtime, statistics rooms, SQL runners).
