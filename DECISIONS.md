@@ -385,3 +385,23 @@ ReturningHomeView retains a compact version of this (3 quick stats + CTA to full
 
 *Structural rebuild history: LINEAGE.md sprint 22.*
 
+---
+
+## 6. Format integrity rule — do not converge with case-study format (decided May 2026)
+
+**The standing rule:** GAL's core interaction mechanic is **failure simulation** — configure a system, watch it fail, diagnose why. This is the correct format for AI engineers and ML practitioners. It must not be replaced with or diluted toward a **case-study format** (scenario narrative → analysis → framework application), which is the correct format for product analytics and PM interview prep (as used in PAL).
+
+**Why this matters:** A third-party assessment of all three sibling labs (GAL, ML Systems Lab, PAL) in May 2026 validated both formats as correct for their respective audiences. GAL's failure simulation produces production judgment. PAL's case studies produce decision-making judgment. These are different skills for different roles. They should not converge.
+
+**What this rules out:**
+- Do not build company-specific case studies for AI engineer content (e.g. "Swiggy's recommendation system case: what went wrong"). Case narratives belong in PrepLab Company Tracks as question context — not as the primary module mechanic.
+- Do not replace any configure→fail→diagnose module with a read-then-analyze format.
+- Do not add passive narrative sections as the primary content of a Systems or Agent Lab module.
+
+**What this allows:**
+- Company context *as annotation* on existing failure modes (e.g. a "In production this is: [company's known architecture]" callout on a root-cause card). This is adding production grounding to failure simulation, not replacing the mechanic.
+- PrepLab Company Tracks can use question-and-scenario format because PrepLab is Prove content, not Build content. The mechanic there is appropriately a question bank with company-specific framing.
+- GT posts can use narrative format — they are the knowledge layer, not interactive modules.
+
+**Source:** Third-party lab assessment, May 2026. Confirmed by external analysis that the failure simulation format is GAL's differentiated position vs. standard AI courses and case-study products.
+

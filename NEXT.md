@@ -64,7 +64,18 @@ See: UPGRADES.md → "PrepLab.jsx — Keyboard Shortcuts"
 
 ---
 
-## If time allows (pick one)
+## If time allows (pick one, in priority order)
+
+**"Maps to Production" callout on root-cause cards** `S effort` `HIGH`
+Add a `productionNote` field to each RAG Lab scenario + Agent Lab failure matrix entry. Render as a subdued one-liner below the root-cause text: "In production this is: [service / OSS tool]." No logic change — pure data addition + a 5-line render update. Closes the single biggest gap identified in the third-party lab assessment (May 2026). Start with RAG Lab 6 scenarios, then agent failures.
+Files: `src/App.jsx` (ragScenarios), `src/Agents.jsx` (AGENT_FAILURE_MATRIX).
+See: UPGRADES.md → "Labs — Maps to Production Callout"
+
+**"Your Interview Story" block on done cards** `S effort` `HIGH`
+Add a collapsible "See your interview story →" block to the RAG Lab done card (expand to reveal: "You diagnosed X → root cause Y → fix Z → in production this is W. That's your answer."). Copy is static and scenario-specific. 2–3 lines JSX per scenario + the copy itself.
+Dependency: Done card prominence fix should ship first.
+Files: `src/App.jsx` (RAG Lab done card section).
+See: UPGRADES.md → "Labs — Your Interview Story Block"
 
 **Streak + 4-week activity heatmap in returning user HomeTab** `S-M effort`
 ReturningHomeView (sprint 16) shows progress stats but no streak or activity grid. Add `gsl-streak` + `gsl-last-visit` + `gsl-activity-YYYY-MM-DD` localStorage keys, increment on any lab visit or PrepLab attempt. 4×7 grid in the Today section.

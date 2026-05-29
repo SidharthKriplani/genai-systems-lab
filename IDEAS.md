@@ -372,6 +372,22 @@ A widely-shared educational post traces the full progression from RNN to LSTM to
 - ~~**GT post: "Why Transformers Won"**~~ ✅ *built May 2026 — id: why-transformers-won*
 - **Concepts module addition: "Sequential vs Parallel — The Architecture Transition"** — interactive visualization of token processing as sequential (RNN) vs parallel (Transformer). Show long-range dependency handling and vanishing gradient behavior. Could extend the existing Transformer module or stand as a new Explore module.
 
+### Diagnosis-sourced adaptations (new cluster — from third-party lab assessment, May 2026)
+
+An external assessment of all three sibling labs (GAL, ML Systems Lab, PAL) for Quantiphi/Meesho interview prep identified specific gaps and strengths. Core finding on GAL: excellent for judgment simulation ("feels like a real product"), but ceiling is "weaker for proving real backend/cloud execution." Bridge formula identified: lab concept → AWS service → client architecture → tradeoffs/failure modes.
+
+Four concrete adaptations:
+
+- **"Maps to production" callout inside existing lab scenarios** — Each RAG Lab scenario root-cause card and Agent Lab failure diagnosis currently stops at the abstract failure mode. Add one line per scenario: "In production this is: [AWS service / OSS tool]." E.g., Missing Answer → "Bedrock Knowledge Base / OpenSearch / Weaviate + CloudWatch." No new module. 15 min per scenario. High interview-answer leverage. See UPGRADES.md for the implementation pattern.
+
+- **Company-specific architecture in Company Tracks** — PrepLab Company Tracks currently asks topic questions in a company context but doesn't connect failure modes to that company's known architecture. Add a "this failure pattern at Swiggy looks like X (food catalog freshness)," "at PhonePe looks like Y (UPI retry handling)" framing to the Company Tracks drill set. The scenarios exist — the company-specific lens is the addition. Connects directly to what the diagnosis identified as PAL's generic frameworks gap.
+
+- **Interview story construction card at scenario completion** — At the done card (after RAG Lab / Agent Lab scenarios), add a "your story" block: "You diagnosed [failure mode] → root cause [X] → fix [Y] → in production this maps to [Z]. That's your interview answer." Pure copywriting/framing, no logic. Surfaces the narrative the lab already gives the user but doesn't package. See UPGRADES.md entry.
+
+- **One real execution artifact** — A single FastAPI + ChromaDB RAG demo repo (GitHub), linked from the RAG Lab done card with anchor text "Want to show real code? Here's the production skeleton." Addresses the "no proof of real backend execution" ceiling the diagnosis identified. Zero in-browser complexity. Just a link to a real repo.
+
+**What NOT to build (explicit):** Do not drift toward case-study format for ML/AI engineer content. The assessment validated PAL's case format for analytics/PM roles and GAL's failure simulation format for AI engineers. These are the right mechanics for their audiences — they should not converge. See DECISIONS.md Section 4 (format integrity rule).
+
 ### DE skill stack — 3-layer model (new cluster — from anonymous DE post, May 2026)
 
 A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL, Python, data modelling, Spark, Airflow, cloud — still 80% of your value), Layer 2 (AI productivity: prompt engineering, Cursor/Claude Code fluency, AI-generated SQL verification workflows), Layer 3 (AI infrastructure: vector DBs, embedding pipelines, RAG architecture, feature stores, LLM eval and observability, cloud AI services). Key claim: most engineers obsess over Layer 2 and forget Layer 1 — that's the trap. Layer 3 is currently scarce and what gets you the next senior/staff role. The lab is effectively a Layer 3 training ground but never frames itself that way — a direct positioning opportunity.

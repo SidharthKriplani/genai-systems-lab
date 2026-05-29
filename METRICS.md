@@ -93,6 +93,11 @@ These are not PostHog events but are equally important for understanding user st
 | `genai_role` | Selected role (engineers / pms / all) |
 | `genai_beta_banner_dismissed` | Whether beta banner was dismissed |
 | `preplab_spaced` | PrepLab spaced repetition state |
+| `gsl-preplab-history` | Per-question attempt history — `{ [questionId]: { attempts: N, wrong: N } }` — used by WeaknessHeatmap + InterviewPrepMode |
+| `gsl-concepts-mastery` | Set of completed Concepts module IDs — used by GymSelectorView progress bars + ReturningHomeView |
+| `genai_visited_modules` | Array of recently visited tab IDs — used by ReturningHomeView "Jump Back In" |
+| `genai_gt_read` | Set of GT post IDs opened — used by ReturningHomeView GT card seeding |
+| `gsl-rag-done` | Set of RAG Lab scenario IDs completed — used by RAG Lab sidebar progress bar (sprint 23) |
 
 **Planned keys (for cross-repo-inspired features — not yet implemented):**
 

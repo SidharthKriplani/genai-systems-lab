@@ -1873,3 +1873,53 @@ PAL uses blue-tinted darks: bg=#111520, surface=#191e30, surface-2=#1f2438 — ~
 - Sticky header with backdrop-blur
 
 **Status:** ✅ All HIGH impact gaps resolved. Remaining LOW/MED gaps deferred. Standing rule in DECISIONS.md.
+
+---
+
+## Audit 40 — Third-Party Lab Diagnosis Assessment (May 2026, Sprint 25)
+
+**Type:** External product assessment — interview readiness utility
+**Date:** May 2026
+**Source:** Third-party written diagnosis of all three sibling labs (GAL, ML Systems Lab, PAL) for Quantiphi + Meesho interview preparation. Document reviewed in full during sprint 25. No code shipped this session — analysis and MD sync only.
+**Why logged:** External assessments with a specific use-case frame (interview prep for named companies) surface gaps that internal audits miss. This one had an unusually concrete framing: "can a candidate use these labs to prepare for Quantiphi (AI infra) and Meesho (marketplace ML) roles?"
+
+---
+
+### Summary ratings from the assessment
+
+| Lab | Assessment | Primary signal |
+|---|---|---|
+| GAL | "Excellent for production AI judgment simulation" | Failure diagnosis mechanic + "feels like a real product" cited as primary strengths |
+| ML Systems Lab | "Strong for infra-layer AI concepts" | CUDA/distributed content not relevant for Quantiphi application layer |
+| PAL | "Best for Meesho analytics/PM prep, weakest for ML engineer roles" | Case study format correct for analytics; insufficient for AI systems judgment |
+
+---
+
+### GAL-specific findings
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | **No production service mapping on failure cards** — GAL teaches failure judgment but never names the real AWS/OSS service the failure maps to. "You can diagnose the pattern but can't say 'this is the Bedrock Knowledge Base problem'" | High | ⚠️ Open — UPGRADES.md + NEXT.md |
+| 2 | **No interview story packaging at scenario completion** — users leave with judgment but not a narrative they can use in an interview answer. The done card has a PrepLab CTA but doesn't frame what the user just built as an interview story | High | ⚠️ Open — UPGRADES.md + NEXT.md |
+| 3 | **Company Tracks lacks architecture mapping** — PrepLab Company Tracks asks topic questions with company context but doesn't map failure modes to each company's known systems (e.g. Swiggy catalog freshness, PhonePe UPI retry) | Medium | ⚠️ Open — IDEAS.md |
+| 4 | **No proof of real backend execution** — the "judgment simulator" framing is strong but a user asked "show me something you built" has no concrete artifact to link. A single FastAPI + ChromaDB RAG demo repo would close this | Medium | ⚠️ Open — IDEAS.md |
+
+### Validated strengths (do not dilute)
+
+- Failure simulation mechanic is the correct format for AI engineer prep — external validation confirms this
+- "Feels like a real product" positioning is earned and should be reinforced, not discarded
+- 3,400+ users cited as credibility signal by the assessor
+
+### Format integrity decision
+
+The assessment confirmed that GAL's failure simulation mechanic and PAL's case study mechanic serve different audiences correctly. **These formats must not converge.** Full rule in DECISIONS.md Section 6.
+
+### Adaptations logged
+
+All four adaptation items documented in:
+- IDEAS.md — "Diagnosis-sourced adaptations" cluster (Tier 1)
+- UPGRADES.md — "Maps to Production Callout" + "Your Interview Story Block" entries (both S effort, High priority)
+- NEXT.md — both items added to "If time allows" section
+- DECISIONS.md — Section 6: format integrity rule
+
+**Status:** ✅ Analysis complete. All findings mapped to backlog. No code shipped this session.

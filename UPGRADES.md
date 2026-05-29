@@ -678,3 +678,62 @@ One `useEffect` key listener per mode, cleaned up on unmount. No UI change neede
 **Priority:** Low-Medium — power users will love this; low effort to ship
 
 **Status:** Pending (Source: ml-systems-lab + PAL, May 2026)
+
+---
+
+## Labs — "Maps to Production" Callout Inside Scenario Root-Cause Cards
+
+**Component:** `src/App.jsx` (RAG Lab scenario root-cause sections), `src/Agents.jsx` (Agent Lab failure diagnosis blocks), `src/systems/modules.jsx` (Eval + LLM Lab failure callout cards)
+
+**Current behavior:** Every lab scenario surfaces a root cause and a fix. The failure judgment ends at the conceptual layer — the user knows *what* failed and *why*, but the output has no grounding in real services or production architectures. A user walking into an interview can diagnose the failure but cannot say "this is the Bedrock Knowledge Base problem" or "this is what you see when OpenSearch misconfigures HNSW index params."
+
+**Target behavior:** Add one line to each root-cause/failure card: `"In production this is: [service / OSS tool / architecture pattern]"`. Examples:
+- RAG Missing Answer → "Bedrock Knowledge Base chunking config / OpenSearch HNSW params / Weaviate segment size"
+- RAG Context Overflow → "LangChain token stuffing / Llama-Index context window management / OpenAI 128K context vs semantic loss tradeoff"
+- Agent Tool Loop → "ReAct loop without retry limits / LangGraph cycle detection / AutoGen termination condition"
+- Serving latency spike → "vLLM continuous batching vs static batch / TGI KV cache eviction / Triton server queue depth"
+
+Implementation: a small `productionNote` field on the failure scenario data object, rendered as a subdued one-liner below the root-cause text. No logic change. Pure data + render addition.
+
+**Files to touch:**
+- `src/App.jsx` — `ragScenarios` array (or wherever root-cause text is stored) — add `productionNote` field per scenario
+- `src/Agents.jsx` — failure matrix / done screen diagnosis blocks — add production note
+- `src/systems/modules.jsx` — failure callout renders in serving, decoding, langsmith, moe modules
+
+**Effort:** S (data field addition + 5-line render change, done in one session for all labs)
+
+**Dependencies:** None — additive change, zero risk
+
+**Priority:** High — single highest-leverage interview-readiness upgrade from the third-party lab assessment (May 2026). Low effort, directly closes the "judgment but no production connection" gap.
+
+**Status:** Pending (Source: third-party lab assessment, May 2026)
+
+---
+
+## Labs — "Your Interview Story" Block at Scenario Completion
+
+**Component:** `src/App.jsx` (RAG Lab done card), `src/Agents.jsx` (Agent Lab done screens), `src/systems/modules.jsx` (Eval + LLM Lab completion states)
+
+**Current behavior:** Done cards / module endings exist across all labs (shipped sprint 6/7). They surface a PrepLab CTA and a GT post link. What they don't do: package the narrative of what the user just did into an interview-ready talking point. A user who completed a scenario has the judgment but not the story.
+
+**Target behavior:** Add a collapsible "Your Interview Story" block at each scenario done card. Format:
+
+```
+"You diagnosed [failure mode] → root cause was [X] → fix was [Y] → in production this maps to [Z].
+That's your answer when they ask: 'Tell me about a time you debugged a production AI failure.'"
+```
+
+Collapsed by default ("See your interview story →"), expands on click. Copy is written once per scenario — no dynamic generation.
+
+**Files to touch:**
+- `src/App.jsx` — RAG Lab scenario done card (6 scenarios × 1 story block each)
+- `src/Agents.jsx` — Agent Lab done screen on `simulator` + `design` modules (at minimum)
+- `src/systems/modules.jsx` — at least the 3 highest-traffic Eval + LLM Lab completion states
+
+**Effort:** S (2–3 lines JSX per scenario + static copy; ~30min total)
+
+**Dependencies:** Done card prominence fix should ship first. See RAG Lab — Done Card Prominence entry.
+
+**Priority:** High — closes the gap between "I built judgment in the lab" and "I can articulate it in an interview." Zero infrastructure cost.
+
+**Status:** Pending (Source: third-party lab assessment, May 2026)
