@@ -357,3 +357,38 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 **Priority:** Low (Audit 27 Finding 2 — flagged but unactionable until real social proof exists)
 
 **Status:** Pending — blocked on content
+
+---
+
+## Concepts — Full Module Text Pass (horizontal depth)
+
+**Component:** `src/Concepts.jsx` — all 15 module components
+
+**Context:** Concepts modules are interactive-first with almost no explanatory text. The interactives are aids; they can't be understood without text framing what the user is looking at, why it matters, and what to look for. A beginner in these concepts can interact without learning anything.
+
+**Sprint 14 progress:** Framing text (before-the-interactive beat) added to 6 core modules — Tokenizer, Embeddings, Attention, RAG Pipeline, Context Window, Agents. Commit `1f649a2`.
+
+**Remaining: 9 modules still need framing text (before-the-interactive only)**
+- `sampling` — Sampling & Temperature
+- `chunking` — Chunking Strategies
+- `guardrails` — Guardrails
+- `debug` — Debug Mode
+- `multiagent` — Multi-Agent Patterns
+- `nextoken` — Next Token Prediction Game
+- `tempgame` — Temperature Explorer Game
+- `transformer` — Transformer Architecture
+- `flashattn` — Flash Attention
+
+**Remaining for all 15 modules (future pass):**
+- **Inline callouts** — annotations tied to specific interactive states (e.g. "When temperature hits 0 you're always picking the top token — this is why outputs become repetitive.")
+- **Synthesis close** — 1–2 sentences after the interactive: what this means for real system design decisions.
+
+**Target per module (full pass):** ~150–300 words across 3 beats: setup framing → inline callouts → synthesis close.
+
+**Effort:** M (framing-only for remaining 9 = ~1 focused session; full 3-beat pass for all 15 = L, multi-session)
+
+**Dependencies:** None — pure writing + JSX injection.
+
+**Priority:** High — Concepts is now in primary nav (sprint 14). Beginners will land here. Thin text = poor first impression and incomplete learning.
+
+**Status:** In Progress — 6/15 framing texts done
