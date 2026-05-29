@@ -193,6 +193,7 @@ Two sibling products built by the same author on the same stack provide a live c
 | `LINEAGE.md` | Narrative history — what was built and why | Understanding why something exists |
 | `UPGRADES.md` | Targeted enhancements to existing components — current vs target behavior, effort, priority | Before starting any improvement to an existing module or mode |
 | `ROLLOUT.md` | Beta rollout plan — batches, self-vet checklists, tester briefs, feedback tracking. Operational only; not a backlog. | Before inviting any tester; before opening a new batch |
+| `NEXT.md` | Focused next-session task list — 3–5 committed items only. Read at session start, update at session end. | **Every session — read this first, after CLAUDE.md** |
 
 ---
 

@@ -2052,8 +2052,9 @@ export default function App() {
               </div>
             )}
 
-            <footer className="border-t border-zinc-800 mt-12 px-6 py-4 text-center">
+            <footer className="border-t border-zinc-800 mt-12 px-6 py-4 text-center space-y-1">
               <p className="text-xs text-zinc-500">GenAI Systems Lab · RAG Lab · 6 production failure scenarios · Zero hosting cost · Open source</p>
+              <p className="text-xs text-zinc-600">Also by the same author: <a href="https://ml-systems-lab-v9xe.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">ML Systems Lab</a> · <a href="https://experimentation-systems-lab.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">Product Analytics Lab</a></p>
             </footer>
           </div>
         </div>
