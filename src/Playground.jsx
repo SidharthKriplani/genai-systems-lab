@@ -447,7 +447,7 @@ function SpotHallucination() {
     if (revealed) return;
     setSel(id);
     setRevealed(true);
-    setScores(s => [...s, id === round.outputs.find(o => o.hallucination).id ? 1 : 0]);
+    setScores(s => [...s, id === round.outputs.find(o => o.hallucination)?.id ? 1 : 0]);
   }
   const [showHallucinationSummary, setShowHallucinationSummary] = useState(false);
 
