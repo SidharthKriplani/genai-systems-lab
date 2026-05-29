@@ -1437,20 +1437,20 @@ export default function App() {
     { label: null, items: [
       { id: "home", label: "Home", audience: "All levels" },
     ]},
-    { label: "BUILD", color: "var(--gal-build)", items: [
+    { label: "BUILD", color: "#52525b", items: [
       { id: "lab",      label: "RAG Lab",   count: 6,  audience: "Engineers" },
       { id: "agentlab", label: "Agent Lab", count: 16, audience: "Engineers" },
       { id: "evallab",  label: "Eval Lab",  count: 15, audience: "Engineers · PMs" },
       { id: "llmlab",   label: "LLM Lab",   count: 9,  audience: "Engineers" },
     ]},
-    { label: "PROVE", color: "var(--gal-prove)", items: [
+    { label: "PROVE", color: "#52525b", items: [
       { id: "preplab", label: "Prep Lab",   audience: "Interview prep" },
     ]},
-    { label: "NAVIGATE", color: "var(--gal-navigate)", items: [
+    { label: "NAVIGATE", color: "#52525b", items: [
       { id: "career",  label: "Career",     count: 6,  audience: "Job seekers" },
       { id: "aipm",    label: "AI Product", count: 5,  audience: "Product managers" },
     ]},
-    { label: "KNOWLEDGE", color: "var(--gal-knowledge)", items: [
+    { label: "KNOWLEDGE", color: "#52525b", items: [
       { id: "concepts",    label: "Concepts",     count: 15, audience: "All levels" },
       { id: "groundtruth", label: "Ground Truth",            audience: "All levels" },
     ]},
@@ -1600,7 +1600,7 @@ export default function App() {
                         <span className="flex items-center gap-1.5">
                           {item.label}{item.id === "lab" && topView !== "lab" && <span className="text-amber-600 text-[10px]">★</span>}
                         </span>
-                        {visited.has(item.id) && topView !== item.id && item.id !== "lab" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
+                        {visited.has(item.id) && topView !== item.id && item.id !== "lab" && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--gal-build)", opacity: 0.45 }} />}
                       </button>
                     ))}
                   </div>
@@ -1677,8 +1677,8 @@ export default function App() {
                         aria-current={active ? "page" : undefined}
                         className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
                         style={active ? {
-                          background: `linear-gradient(90deg, ${grpColor}28 0%, ${grpColor}06 100%)`,
-                          boxShadow: `inset 2px 0 0 ${grpColor}`,
+                          background: "linear-gradient(90deg, rgba(34,211,238,0.10) 0%, rgba(34,211,238,0.02) 100%)",
+                          boxShadow: "inset 2px 0 0 var(--gal-build)",
                           color: "#ffffff",
                         } : {}}>
                         <span className={active ? "text-white font-bold" : ""}>
@@ -1689,7 +1689,7 @@ export default function App() {
                             <span className="text-[9px] font-mono text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded tabular-nums leading-none">{item.count}</span>
                           )}
                           {visited.has(item.id) && !active && (
-                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: grpColor, opacity: 0.7 }} />
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--gal-build)", opacity: 0.45 }} />
                           )}
                         </span>
                       </button>
