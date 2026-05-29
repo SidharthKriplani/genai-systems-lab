@@ -96,22 +96,42 @@ h3 { letter-spacing: -0.02em; }
 }
 
 /* ── LUNA — GAL identity palette ────────────────────────────────────────────
-   Deep navy base → icy teal accent. Distinct from PAL (purple) and MSL (neutral dark).
+   Near-void black base + electric cyan accent. Distinct from PAL (purple) and MSL (neutral dark).
    Remaps every violet utility class (text-violet-*, border-violet-*, bg-violet-*)
-   to a custom LUNA teal scale — zero component changes required.
-   Anchor: #4fb8cb (teal-500), #A7EFE0 (icy highlight), #051820 (deep surface).
+   to Tailwind's cyan scale — same values, distinct identity.
+   Anchor: #22D3EE (cyan-400, S=86% — crosses the "emitting" threshold), #05060E (void bg).
+   Why cyan-400: at S=86% the eye reads it as emitting light, not reflecting it.
+   Why #05060E: L=4% with H=233° — near-void with just enough blue-black cast for "deep space."
 */
 [data-palette="luna"] {
-  --color-violet-100: #dff8f9;
-  --color-violet-200: #b2edf2;
-  --color-violet-300: #7bd8e4;
-  --color-violet-400: #4fb8cb;   /* primary accent — active text, icons, tabs */
-  --color-violet-500: #38a0b4;   /* active borders */
-  --color-violet-600: #277d8e;   /* strong borders, emphasis */
-  --color-violet-700: #185d6b;   /* dark accent elements */
-  --color-violet-800: #0f3d48;   /* dark tinted fills */
-  --color-violet-900: #092630;   /* very dark tinted */
-  --color-violet-950: #051820;   /* deepest — active card backgrounds */
+  --color-violet-100: #CFFAFE;   /* cyan-100 */
+  --color-violet-200: #A5F3FC;   /* cyan-200 */
+  --color-violet-300: #67E8F9;   /* cyan-300 */
+  --color-violet-400: #22D3EE;   /* cyan-400 — primary accent (S=86%, electric) */
+  --color-violet-500: #06B6D4;   /* cyan-500 — active borders */
+  --color-violet-600: #0891B2;   /* cyan-600 — strong borders, emphasis */
+  --color-violet-700: #0E7490;   /* cyan-700 — dark accent elements */
+  --color-violet-800: #155E75;   /* cyan-800 — dark tinted fills */
+  --color-violet-900: #164E63;   /* cyan-900 — very dark tinted */
+  --color-violet-950: #083344;   /* cyan-950 — deepest active card backgrounds */
+}
+
+/* ── LUNA electric glow system ───────────────────────────────────────────────
+   Three targeted rules that give active UI elements the appearance of emitting
+   light. Applied only under [data-palette="luna"] — zero effect on other themes.
+   Glow intensity is deliberately subtle: visible on dark void backgrounds but
+   not distracting. All rgba values reference the primary accent #22D3EE (34,211,238).
+*/
+[data-palette="luna"] .text-violet-400,
+[data-palette="luna"] .text-violet-300 {
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
+}
+[data-palette="luna"] .border-violet-500 {
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.18);
+}
+[data-palette="luna"] .bg-violet-950,
+[data-palette="luna"] .bg-violet-900 {
+  box-shadow: inset 0 1px 0 rgba(34, 211, 238, 0.08);
 }
 
 /* Global button press feedback */
@@ -143,27 +163,29 @@ button:disabled:active {
   --color-zinc-600: oklch(55.2% 0.009 286.29);   /* remapped to zinc-500 value */
 
   /* ── GAL accent colors ───────────────────────────────────────────────────── */
-  --gal-build:      #4fb8cb;   /* LUNA teal   — BUILD group */
-  --gal-prove:      #22c55e;   /* green-500   — PROVE group */
-  --gal-navigate:   #f59e0b;   /* amber-500   — NAVIGATE group */
-  --gal-knowledge:  #8b5cf6;   /* violet-500  — KNOWLEDGE group */
+  --gal-build:      #22D3EE;   /* electric cyan  — BUILD group (matches LUNA primary) */
+  --gal-prove:      #22c55e;   /* green-500      — PROVE group */
+  --gal-navigate:   #f59e0b;   /* amber-500      — NAVIGATE group */
+  --gal-knowledge:  #8b5cf6;   /* violet-500     — KNOWLEDGE group */
 
-  /* ── Elevation token system — LUNA navy edition ──────────────────────────────
-     Deep navy base (#080E1C) rising through navy-teal surfaces to icy teal accents.
-     Same structural layers as PAL/MSL, distinct LUNA color identity.
+  /* ── Elevation token system — LUNA void edition ──────────────────────────────
+     Near-void black base (#05060E) rising barely through deep-space surfaces.
+     Electric cyan accent creates maximum contrast against these near-null backgrounds.
+     Surfaces differentiate by L-stops of 1-4% — barely visible in isolation,
+     clearly distinct when stacked (bg → surface → surface-2 → card).
   */
-  --bg:             #080E1C;   /* deep navy page background */
-  --surface:        #0C1829;   /* sidebars, panels */
-  --surface-2:      #112038;   /* cards, nested surfaces */
-  --border:         #1D3850;   /* visible borders */
-  --border-subtle:  #152D42;   /* subtle dividers */
+  --bg:             #05060E;   /* near-void page background (L=4%) */
+  --surface:        #080A14;   /* sidebars, panels (L=5%) */
+  --surface-2:      #0C0E1A;   /* cards, nested surfaces (L=8%) */
+  --border:         #191C2E;   /* visible borders */
+  --border-subtle:  #10122A;   /* subtle dividers */
 
-  /* ── Global zinc remap → LUNA navy ──────────────────────────────────────────
-     bg-zinc-900 → LUNA surface (#0C1829). bg-zinc-950 → deep navy (#060C18).
+  /* ── Global zinc remap → LUNA void ──────────────────────────────────────────
+     bg-zinc-900 → LUNA surface (#080A14). bg-zinc-950 → near-void (#05060E).
      Cascades through all 300+ Tailwind panel/card backgrounds in one declaration.
   */
-  --color-zinc-900: #0C1829;
-  --color-zinc-950: #060C18;
+  --color-zinc-900: #080A14;
+  --color-zinc-950: #05060E;
 }
 
 /* ── Mobile contrast boost — low-brightness readability ────────────────────
