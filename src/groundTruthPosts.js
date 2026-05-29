@@ -943,7 +943,25 @@ result = nli(f"{context} [SEP] {claim}")
       "Weave (W&B) — strongest if you're already using Weights & Biases for ML experiment tracking",
     ]},
 
+    { t: "h2", text: "Why standard APM misses LLM problems" },
+    { t: "p", text: "Datadog and New Relic track errors, latency, and throughput — the right signals for deterministic services. LLM systems fail differently. Latency can be within SLA and error rate can be zero while the model is confidently answering questions wrong. Semantic drift, hallucination rate, and prompt regression are invisible to infrastructure monitoring. You need a separate observability layer that understands what a good response looks like." },
+    { t: "list", items: [
+      "Standard APM gap: no concept of response quality — a 200 OK with a hallucinated answer looks identical to a correct one",
+      "Standard APM gap: no prompt versioning — a prompt change that degrades quality 20% shows no signal in error rate",
+      "Standard APM gap: no cost-per-feature attribution — you can\'t see which product surface is burning your token budget",
+      "LLM-specific need: quality sampling — run LLM-as-judge over 5-10% of production traffic to catch regressions before users notice",
+    ]},
+    { t: "callout", v: "warning", text: "Most LLM quality problems are invisible in standard metrics. Latency can be fine and error rate can be zero while the model is confidently answering questions wrong. Quality monitoring requires a separate eval pipeline running in parallel with your inference pipeline." },
+    { t: "h2", text: "The production eval pipeline" },
+    { t: "p", text: "The pattern that works at scale: sample 5-10% of production traffic, run each (prompt, response) pair through an LLM-as-judge evaluator on a background queue, store scores in your observability platform, and alert when a rolling window average drops below your quality threshold. This gives you a real-time quality signal without blocking the inference path. Typical judge dimensions: factual accuracy, instruction following, format compliance, appropriate hedging." },
+
     { t: "lab", tab: "systems", label: "Explore observability in Systems →", desc: "See what a production observability stack looks like for a RAG + agent system." },
+    { t: "references", items: [
+      { label: "LangSmith — LLM tracing and evaluation platform (LangChain)", url: "https://docs.smith.langchain.com/" },
+      { label: "Arize Phoenix — open-source LLM observability and evals", url: "https://docs.arize.com/phoenix" },
+      { label: "Helicone — lightweight LLM proxy logging for OpenAI-compatible APIs", url: "https://www.helicone.ai/docs" },
+      { label: "OpenTelemetry GenAI Semantic Conventions", url: "https://opentelemetry.io/docs/specs/semconv/gen-ai/" },
+    ]},
   ],
 
   // ─── PROMPT CACHING ──────────────────────────────────────────────────────────
