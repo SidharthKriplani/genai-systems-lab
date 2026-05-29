@@ -1298,6 +1298,10 @@ export default function App() {
     { label: null, items: [
       { id: "home", label: "Home", audience: "All levels" },
     ]},
+    { label: "KNOWLEDGE", color: "#8b5cf6", items: [
+      { id: "concepts",    label: "Concepts",     count: 15, audience: "All levels" },
+      { id: "groundtruth", label: "Ground Truth",            audience: "All levels" },
+    ]},
     { label: "LABS", color: "#3b82f6", items: [
       { id: "lab",      label: "RAG Lab",   count: 6,  audience: "Engineers" },
       { id: "agentlab", label: "Agent Lab", count: 16, audience: "Engineers" },
@@ -1308,9 +1312,6 @@ export default function App() {
       { id: "preplab", label: "Prep Lab",   audience: "Interview prep" },
       { id: "career",  label: "Career",     count: 6,  audience: "Job seekers" },
       { id: "aipm",    label: "AI Product", count: 5,  audience: "Product managers" },
-    ]},
-    { label: "KNOWLEDGE", color: "#8b5cf6", items: [
-      { id: "groundtruth", label: "Ground Truth", audience: "All levels" },
     ]},
     { label: null, items: [
       { id: "progress", label: "My Progress", audience: "All levels" },
