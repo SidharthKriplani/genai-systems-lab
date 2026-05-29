@@ -29,6 +29,16 @@ Every MCQ answer requires a mouse click. 1/2/3/4 to select + Enter to confirm is
 Fix: one key listener in Exam mode + Trainer mode, cleaned up on unmount.
 See: UPGRADES.md → "PrepLab.jsx — Keyboard Shortcuts"
 
+**4. Concepts — inline callouts + synthesis close** `M effort` `MEDIUM`
+Sprint 14 added Beat 1 (framing text) to all 15 Concepts modules. Beats 2 and 3 — inline callouts during interaction + synthesis close after — are still missing. The 3-beat standard is incomplete.
+Fix: for each module, identify the 1-2 key "aha" moments mid-interaction and add an inline callout; add a synthesis close card at the end. Pattern already established in RAG Lab.
+See: UPGRADES.md → "Concepts — Inline Callouts + Synthesis Close"
+
+**5. GT thin post expansion** `S-M effort` `MEDIUM`
+Three GT posts are under the 8-block quality bar: `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets`. They exist in the catalog but feel thin next to the rest.
+Fix: expand each to 8+ blocks — add a real example, a failure mode, and a production callout. 30-45 min per post.
+See: CLAUDE.md → Known open issues
+
 ---
 
 ## If time allows (pick one)
