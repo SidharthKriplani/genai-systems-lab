@@ -4882,6 +4882,12 @@ function ReasoningModelsLab() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Reasoning models (o1, o3, Claude Extended Thinking, Gemini Thinking) represent a paradigm shift: instead of scaling quality through bigger training runs, they scale quality by spending more compute thinking at inference time. The same model weights produce better answers given a larger thinking token budget — but at higher latency and cost.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The practical consequence: not everything benefits from extended thinking. RAG Q&A, summarisation, and conversation see pure overhead. Math, logic, code generation, and multi-step planning get dramatically better. This module builds the instinct for when extended thinking earns its cost — and when it is wasted compute.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Use the Thinking Budget tab to see quality vs. cost curves across task types. Use the Use-Case Matcher to calibrate your judgment before the next time someone asks "should we use o3 for this?"</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {[{id:"what",label:"What Changed"},{id:"budget",label:"Thinking Budget"},{id:"usecases",label:"Use-Case Matcher"},{id:"cost",label:"Economics"}].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -7335,6 +7341,12 @@ function KVCacheEngineering() {
   const [tab, setTab] = useState("how");
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Every token the LLM has already processed gets its keys and values saved in the KV cache. Without it, regenerating the same context from scratch on every decoding step would make inference ~100× more expensive. With it, autoregressive generation is tractable at all.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">But KV cache is not free — it consumes VRAM proportional to batch size × sequence length × model depth. At scale, KV cache management becomes the dominant constraint on serving cost and throughput. This is why vLLM's PagedAttention and SGLang's RadixAttention were built specifically around it, not around the model weights.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Start with How It Works to understand the mechanism, then use the Cost Math calculator with your actual token volumes to see what the cache is saving you — and what it's consuming.</p>
+      </div>
       <HowTo
         objective="Master KV cache engineering — understand the mechanism, calculate real cost savings, and design cache-aware routing for production inference."
         steps={[
@@ -8187,6 +8199,12 @@ function MoEArchitecture() {
   const [tab, setTab] = useState("how");
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Mixture-of-Experts models (Mixtral, DeepSeek-V3, GPT-4, Grok-1) use only a fraction of their total parameters per token — routing each token to 2–8 'expert' FFN layers out of potentially 64+. The result: training compute closer to a smaller dense model, inference quality closer to a much larger one.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The operational consequence: MoE models are cheaper to run per token than their raw parameter count suggests, but harder to serve. Expert routing creates load imbalance — popular experts get overloaded while others sit idle. This failure mode does not exist in dense models, and engineers unfamiliar with MoE architecture miss it in production.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Use the Expert Load Simulator tab to watch imbalance emerge as you adjust expert count, top-K, and batch size. The failure is non-obvious until you see the routing distribution collapse.</p>
+      </div>
       <HowTo
         objective="Understand Mixture-of-Experts architecture — how routing works, which production models use it, and how to operate MoE systems reliably."
         steps={[
@@ -8420,6 +8438,12 @@ function SpeculativeDecoding() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Speculative decoding delivers 2.5–5× throughput improvement with zero quality loss by exploiting a structural inefficiency in standard inference: the target model runs a full forward pass for each token, even when that token is predictable. A tiny, cheap draft model speculates K tokens ahead; the target model verifies all K in a single forward pass. Accepted tokens cost essentially nothing extra.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The catch: speedup only materialises when the draft model's predictions match the target model often enough. Acceptance rate α below ~0.7 and you're paying the overhead with minimal benefit. The right draft model, K length, and acceptance threshold depend on your specific task distribution — not on benchmarks.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Use The Math tab's calculator to see exactly what α and K values your use case needs before implementing this. The production models tab shows the real options: Eagle-2, Medusa, QuantSpec — and when each earns its deployment complexity.</p>
+      </div>
       <HowTo
         objective="Understand speculative decoding — how draft models accelerate target model inference by 2.5–5× with zero quality loss."
         steps={[
@@ -8645,6 +8669,12 @@ function StreamingPatterns() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Streaming LLM responses sounds simple — send tokens as they're generated. In practice, it introduces a class of bugs that don't exist in non-streaming systems: partial JSON that breaks your parser, markdown that flickers while completing, barge-in race conditions when the user types mid-generation, and tool call chunks that arrive out of order.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The root cause: your frontend and downstream systems assume complete units — full sentences, complete JSON objects, finished markdown blocks. Streaming sends incomplete units mid-construction. Every pattern in this module exists to solve a version of that mismatch.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The Latency Waterfall tab is particularly important — it shows why TTFT (time to first token) and total generation time are two completely different metrics with different causes, and why optimising for one can actively hurt the other.</p>
+      </div>
       <HowTo
         objective="Master streaming LLM responses — understand SSE vs WebSocket, avoid the gotchas that break production, and reason about latency correctly."
         steps={[
@@ -9236,6 +9266,12 @@ function QuantizationCalculator() {
 function QuantizationEngineering() {
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Quantization trades numeric precision for memory and speed. A 70B model at FP16 needs ~140GB VRAM — four high-end GPUs, $200+/hr in cloud compute. The same model at INT4 with GPTQ or AWQ fits in ~35GB — a single GPU, $30/hr. That delta determines whether your inference is economically viable at all.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The cost is quality degradation. INT4 is usually within 1–3% of FP16 on standard benchmarks, but specific capabilities degrade faster and unpredictably: complex code generation, long-tail factual recall, and precise arithmetic. The acceptable bit-width depends on your use case, not on general-purpose accuracy benchmarks.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Use the calculator below to quantify the exact tradeoff for your model size and target bit width — VRAM savings, throughput gain, and quality loss estimate. Then choose the bit width that fits within your quality floor, not the lowest available.</p>
+      </div>
       <QuantizationCalculator />
     </div>
   );
@@ -9557,6 +9593,12 @@ function ServingInfra() {
   const [tab, setTab] = useState("config");
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">An LLM in production is not just the model — it's the serving stack that routes requests, manages batching, handles KV cache allocation, and decides which hardware to use. Wrong choices here cause OOM crashes under load, P99 latency 10× worse than P50, cold start delays on the first request, and GPU utilisation under 40% during peak traffic.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Serving infrastructure decisions are where engineering judgment matters as much as ML knowledge. Framework selection (vLLM vs SGLang vs TensorRT-LLM) depends on your workload pattern. Batching strategy depends on your latency SLA. Hardware config depends on model size and context length. There is no universal right answer.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Enter your actual production numbers in the Stack Configurator — model size, GPU count, requests per second, workload type — and see a concrete recommendation with the failure modes specific to your config. Then explore the Failure Scenarios tab to understand what breaks first when you're wrong.</p>
+      </div>
       <HowTo
         objective="Design a production inference stack without guessing. Configure your model, hardware, and traffic — see what works, what breaks, and why."
         steps={[
@@ -13605,6 +13647,13 @@ export function DecodingStrategiesLab() {
       <div>
         <h2 className="text-xl font-black text-white mb-1">Decoding Strategies Lab</h2>
         <p className="text-sm text-zinc-400">See how temperature, top-k, and top-p reshape the probability distribution over next tokens. Adjust sliders and sample to build the intuition that sticks.</p>
+      </div>
+
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Temperature, top-p, and top-k sound like minor sampling parameters. They're actually the controls for a fundamental quality vs. diversity tradeoff that determines whether your outputs are correct, creative, or chaotic. Most engineers set temperature=0.7 and move on. This is usually wrong — 0.7 that works well for creative writing will produce hallucinations on factual Q&A at the same rate it produces creative variety.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The key insight: temperature rescales the entire probability distribution before sampling. A temperature of 0 is pure greedy (always the most likely token — deterministic, often repetitive). A temperature of 1.5 flattens the distribution until low-probability tokens fire frequently. Top-p and top-k then truncate the distribution after temperature scaling — they determine which tokens are even eligible to be sampled.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Adjust the sliders and watch the bar chart reshape in real time. Then sample 20 tokens and see the diversity change. The failure callout at the bottom fires when your settings hit known production failure zones — repetition collapse, incoherent outputs, or vocabulary starvation.</p>
       </div>
 
       <div className="flex gap-1">
