@@ -229,12 +229,13 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
       <div>
         <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Today</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-5 space-y-2">
+          <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-5 space-y-2 animate-cardSlideUp">
             <p className="text-[10px] font-mono text-amber-500 uppercase tracking-widest font-bold">Did you know · Today's tip</p>
             <p className="text-sm text-zinc-300 leading-relaxed">{tip}</p>
           </div>
           <button onClick={goPost}
-            className="rounded-xl border border-violet-800/40 bg-violet-900/10 p-5 text-left hover:border-violet-700/60 transition-all flex flex-col gap-2">
+            className="rounded-xl border border-violet-800/40 bg-violet-900/10 p-5 text-left transition-all flex flex-col gap-2 card-lift animate-cardSlideUp animate-delay-60"
+            style={{ animationFillMode: 'both' }}>
             <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">Today's read · Ground Truth</p>
             <p className="text-sm font-bold text-white leading-snug">{featuredPost.title}</p>
             <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{featuredPost.desc}</p>
@@ -303,28 +304,39 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
         </div>
       )}
 
-      {/* Where to next */}
+      {/* Where to next — mirrors BUILD/PROVE/NAVIGATE hierarchy */}
       <div>
         <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Where to next</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <button onClick={() => onNavigate("preplab")}
-            className="p-4 rounded-xl border border-green-800/40 bg-green-900/10 text-left hover:border-green-700/60 transition-all">
-            <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest font-bold">Prep Lab</p>
-            <p className="text-sm font-bold text-white mt-1.5">261 questions</p>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Exam, Trainer, or Interview Prep modes</p>
-          </button>
+        <div className="space-y-3">
+          {/* BUILD — dominant */}
           <button onClick={() => onNavigate("lab")}
-            className="p-4 rounded-xl border border-blue-800/40 bg-blue-900/10 text-left hover:border-blue-700/60 transition-all">
-            <p className="text-[10px] font-mono text-blue-400 uppercase tracking-widest font-bold">RAG Lab</p>
-            <p className="text-sm font-bold text-white mt-1.5">6 failure scenarios</p>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Configure, break, diagnose</p>
+            className="w-full p-4 rounded-xl text-left card-lift animate-cardSlideUp"
+            style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.12) 0%, rgba(15,23,42,0.7) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "2px solid rgba(59,130,246,0.65)" }}>
+            <p className="text-[10px] font-mono text-blue-400 uppercase tracking-widest font-bold">BUILD</p>
+            <p className="text-sm font-bold text-white mt-1 mb-1">4 interactive labs</p>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {["RAG Lab", "Agent Lab", "Eval Lab", "LLM Lab"].map(l => (
+                <span key={l} className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: "#93c5fd", background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.22)" }}>{l}</span>
+              ))}
+            </div>
           </button>
-          <button onClick={() => onNavigate("groundtruth")}
-            className="p-4 rounded-xl border border-violet-800/40 bg-violet-900/10 text-left hover:border-violet-700/60 transition-all">
-            <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">Ground Truth</p>
-            <p className="text-sm font-bold text-white mt-1.5">222+ posts</p>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Production depth, not tutorials</p>
-          </button>
+          {/* PROVE + NAVIGATE secondary row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button onClick={() => onNavigate("preplab")}
+              className="p-4 rounded-xl text-left card-lift animate-cardSlideUp animate-delay-60"
+              style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.25) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.55)" }}>
+              <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest font-bold">PROVE</p>
+              <p className="text-sm font-bold text-white mt-1">261 questions</p>
+              <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Exam, Trainer, or Interview Prep modes</p>
+            </button>
+            <button onClick={() => onNavigate("groundtruth")}
+              className="p-4 rounded-xl text-left card-lift animate-cardSlideUp animate-delay-120"
+              style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.10) 0%, rgba(46,16,101,0.18) 100%)", border: "1px solid rgba(139,92,246,0.22)", borderTop: "2px solid rgba(139,92,246,0.55)" }}>
+              <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">KNOWLEDGE</p>
+              <p className="text-sm font-bold text-white mt-1">222+ posts</p>
+              <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Production depth, not tutorials</p>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -376,7 +388,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                 {/* BUILD — dominant full-width card */}
                 <button
                   onClick={() => { track("door_clicked", { door: "builder" }); onNavigate("lab"); }}
-                  className="w-full flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 text-left"
+                  className="w-full flex flex-col items-start p-5 rounded-2xl text-left card-lift animate-cardSlideUp"
                   style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.14) 0%, rgba(15,23,42,0.85) 100%)", border: "1px solid rgba(59,130,246,0.28)", borderTop: "2px solid rgba(59,130,246,0.75)", boxShadow: "0 6px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(59,130,246,0.06) inset" }}>
                   <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">BUILD</span>
                   <span className="text-base font-bold text-white mb-2 leading-snug">I'm building with LLMs</span>
@@ -392,7 +404,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
-                    className="flex flex-col items-start p-4 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 text-left"
+                    className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp animate-delay-60"
                     style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.3) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
                     <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">PROVE</span>
                     <span className="text-sm font-bold text-white mb-1.5 leading-snug">Interview prep</span>
@@ -401,7 +413,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   </button>
                   <button
                     onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
-                    className="flex flex-col items-start p-4 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 text-left"
+                    className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp animate-delay-120"
                     style={{ background: "linear-gradient(160deg, rgba(245,158,11,0.10) 0%, rgba(69,26,3,0.25) 100%)", border: "1px solid rgba(245,158,11,0.22)", borderTop: "2px solid rgba(245,158,11,0.6)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
                     <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest mb-1.5">NAVIGATE</span>
                     <span className="text-sm font-bold text-white mb-1.5 leading-snug">Career clarity</span>

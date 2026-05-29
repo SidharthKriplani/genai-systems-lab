@@ -1585,18 +1585,25 @@ export default function App() {
                       </svg>
                     </button>
                   )}
-                  {!isCollapsed && group.items.map((item) => (
-                    <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${
-                        topView === item.id ? "bg-violet-600 text-white"
-                        : item.id === "lab" ? "text-amber-500 hover:bg-amber-900/20 hover:text-amber-300 border border-amber-900/30"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
-                      <span className="flex items-center gap-1.5">
-                        {item.label}{item.id === "lab" && topView !== "lab" && <span className="text-amber-600 text-[10px]">★</span>}
-                      </span>
-                      {visited.has(item.id) && topView !== item.id && item.id !== "lab" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
-                    </button>
-                  ))}
+                  <div style={{
+                    maxHeight: (group.label && isCollapsed) ? '0px' : `${group.items.length * 42}px`,
+                    overflow: 'hidden',
+                    opacity: (group.label && isCollapsed) ? 0 : 1,
+                    transition: 'max-height 220ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease',
+                  }}>
+                    {group.items.map((item) => (
+                      <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${
+                          topView === item.id ? "bg-violet-600 text-white"
+                          : item.id === "lab" ? "text-amber-500 hover:bg-amber-900/20 hover:text-amber-300 border border-amber-900/30"
+                          : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                        <span className="flex items-center gap-1.5">
+                          {item.label}{item.id === "lab" && topView !== "lab" && <span className="text-amber-600 text-[10px]">★</span>}
+                        </span>
+                        {visited.has(item.id) && topView !== item.id && item.id !== "lab" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80 shrink-0" />}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               );
             })}
@@ -1654,34 +1661,41 @@ export default function App() {
                     <div className="h-px flex-1 opacity-40" style={{ background: group.color }} />
                   </button>
                 )}
-                {!isCollapsed && group.items.map(item => {
-                  const active = topView === item.id;
-                  const grpColor = group.color || "#6366f1";
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => navigate(item.id)}
-                      aria-current={active ? "page" : undefined}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
-                      style={active ? {
-                        background: `linear-gradient(90deg, ${grpColor}28 0%, ${grpColor}06 100%)`,
-                        boxShadow: `inset 2px 0 0 ${grpColor}`,
-                        color: "#ffffff",
-                      } : {}}>
-                      <span className={active ? "text-white font-bold" : ""}>
-                        {item.label}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        {item.count && !active && (
-                          <span className="text-[9px] font-mono text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded tabular-nums leading-none">{item.count}</span>
-                        )}
-                        {visited.has(item.id) && !active && (
-                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: grpColor, opacity: 0.7 }} />
-                        )}
-                      </span>
-                    </button>
-                  );
-                })}
+                <div style={{
+                  maxHeight: (group.label && isCollapsed) ? '0px' : `${group.items.length * 38}px`,
+                  overflow: 'hidden',
+                  opacity: (group.label && isCollapsed) ? 0 : 1,
+                  transition: 'max-height 220ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease',
+                }}>
+                  {group.items.map(item => {
+                    const active = topView === item.id;
+                    const grpColor = group.color || "#6366f1";
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => navigate(item.id)}
+                        aria-current={active ? "page" : undefined}
+                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
+                        style={active ? {
+                          background: `linear-gradient(90deg, ${grpColor}28 0%, ${grpColor}06 100%)`,
+                          boxShadow: `inset 2px 0 0 ${grpColor}`,
+                          color: "#ffffff",
+                        } : {}}>
+                        <span className={active ? "text-white font-bold" : ""}>
+                          {item.label}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          {item.count && !active && (
+                            <span className="text-[9px] font-mono text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded tabular-nums leading-none">{item.count}</span>
+                          )}
+                          {visited.has(item.id) && !active && (
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: grpColor, opacity: 0.7 }} />
+                          )}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
@@ -1817,7 +1831,7 @@ export default function App() {
               {ragDone.size > 0 && (
                 <div className="flex items-center gap-2 mt-2">
                   <div className="h-1 flex-1 rounded-full overflow-hidden" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)" }}>
-                    <div className="h-full rounded-full transition-all" style={{ width: `${(ragDone.size / ALL_SCENARIOS.length) * 100}%`, background: "linear-gradient(90deg, #1d4ed8 0%, #3b82f6 100%)", boxShadow: "2px 0 8px rgba(59,130,246,0.6)" }} />
+                    <div className="h-full rounded-full animate-fillBar" style={{ width: `${(ragDone.size / ALL_SCENARIOS.length) * 100}%`, background: "linear-gradient(90deg, #1d4ed8 0%, #3b82f6 100%)", boxShadow: "2px 0 8px rgba(59,130,246,0.6)" }} />
                   </div>
                   <span className="text-[10px] text-zinc-500 shrink-0">{ragDone.size}/{ALL_SCENARIOS.length}</span>
                 </div>

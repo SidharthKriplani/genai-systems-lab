@@ -1,5 +1,61 @@
 @import "tailwindcss";
 
+/* ── Inter optical alternates ───────────────────────────────────────────────
+   Enables cleaner letterforms: cv02=a, cv03=g, cv04=l/I, cv11=1.
+   The difference between Inter-as-system-font vs. Inter-as-designed-font.
+*/
+* {
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* ── Heading tracking — negative letter-spacing like print ──────────────── */
+h1 { letter-spacing: -0.035em; line-height: 1.15; }
+h2 { letter-spacing: -0.025em; line-height: 1.2; }
+h3 { letter-spacing: -0.02em; }
+
+/* ── Tab enter — fires on key={topView} remount ─────────────────────────── */
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.tab-enter {
+  animation: tabFadeIn 180ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ── Progress bar fill ───────────────────────────────────────────────────── */
+@keyframes fillBar {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.animate-fillBar {
+  transform-origin: left center;
+  animation: fillBar 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 120ms;
+}
+
+/* ── Card entrance stagger ───────────────────────────────────────────────── */
+@keyframes cardSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-cardSlideUp {
+  animation: cardSlideUp 320ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.animate-delay-60  { animation-delay:  60ms; }
+.animate-delay-120 { animation-delay: 120ms; }
+.animate-delay-180 { animation-delay: 180ms; }
+.animate-delay-240 { animation-delay: 240ms; }
+
+/* ── Card hover lift ─────────────────────────────────────────────────────── */
+.card-lift {
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  will-change: transform;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.2);
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
