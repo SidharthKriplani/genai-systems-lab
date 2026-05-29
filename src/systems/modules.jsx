@@ -372,10 +372,10 @@ function EvalsLab() {
         <p className="text-sm text-zinc-400 mt-1">Evals are the most underrated skill in AI systems. Learn what to measure, how much to spend, and when LLM-as-judge misleads you.</p>
       </div>
 
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Most teams treat evals as a test-before-ship checkbox. Production teams treat them as a continuous feedback signal. This module covers the full eval lifecycle: which types of evals to build, how to allocate a finite eval budget across competing dimensions, and when LLM-as-judge gives you a false signal.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The Budget Allocator tab is where the real learning happens. A startup with 100 eval budget points can't measure everything equally — watch how over-investing in format evals starves your factual accuracy coverage. In the LLM-as-Judge Audit, notice which question patterns fool the judge: position bias and verbosity bias are the two most common failure modes that invalidate automated eval results.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The Budget Allocator tab is where the real learning happens. A startup with 100 eval budget points can't measure everything equally — watch how over-investing in format evals starves your factual accuracy coverage. In the LLM-as-Judge Audit, notice which question patterns fool the judge: position bias and verbosity bias are the two most common failure modes that invalidate automated eval results.</p>
       </div>
 
       {/* Tab nav */}
@@ -963,10 +963,10 @@ function ModelStrategyLab() {
         )}
       </div>
 
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Choosing between RAG, fine-tuning, prompt engineering, and agents is the most consequential technical decision on any AI project. The wrong choice can waste weeks of engineering effort on a solution that fundamentally won't work. Each approach has a different failure ceiling, cost structure, and maintenance burden — and the right answer depends on what's actually wrong with your current system.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The trap most engineers fall into is defaulting to fine-tuning when the data is small, or RAG when the knowledge is static. Watch for the constraint that eliminates options: latency often rules out agents, data scarcity rules out fine-tuning, and dynamic knowledge rules out prompt-only approaches. The correct answer often becomes obvious once you identify the binding constraint.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The trap most engineers fall into is defaulting to fine-tuning when the data is small, or RAG when the knowledge is static. Watch for the constraint that eliminates options: latency often rules out agents, data scarcity rules out fine-tuning, and dynamic knowledge rules out prompt-only approaches. The correct answer often becomes obvious once you identify the binding constraint.</p>
       </div>
 
       {/* Scenario progress */}
@@ -1643,10 +1643,10 @@ function IncidentRoom() {
         )}
       </div>
 
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Production AI incidents follow recognizable patterns. The same failure archetypes — context overflow, retrieval drift, prompt regression, feedback loop corruption, model degradation — appear across industries and use cases. The difference between a 20-minute resolution and a 4-hour outage is usually whether the on-call engineer recognized the pattern early.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">Work through each incident the way you would under real production pressure: read the symptom first, form a hypothesis before clicking "Start Diagnosis." The mitigation and prevention playbook at the end is as important as the root cause — knowing what broke without a prevention strategy means the same incident recurs in six weeks.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Work through each incident the way you would under real production pressure: read the symptom first, form a hypothesis before clicking "Start Diagnosis." The mitigation and prevention playbook at the end is as important as the root cause — knowing what broke without a prevention strategy means the same incident recurs in six weeks.</p>
       </div>
 
       {/* Incident selector */}
@@ -1991,10 +1991,10 @@ function ShouldUseAI() {
         {answeredCount > 0 && <div className="mt-2 text-xs font-mono text-cyan-400">{correctCount}/{answeredCount} correct</div>}
       </div>
 
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Senior AI engineers know that the most important skill isn't prompting or RAG architecture — it's deciding whether AI belongs in the loop at all. Every AI component adds latency, cost, unpredictability, and a failure surface. When the task is deterministic, a rule engine or a simple lookup is always faster, cheaper, and more reliable than an LLM.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">These scenarios cover the full spectrum: tasks that are genuinely AI-native, tasks where AI adds marginal value over traditional code, and tasks where AI will actively make things worse. Pay attention to what the correct answer says about the decision criteria — task ambiguity, output variability tolerance, and error cost are the three primary factors that determine whether AI belongs here.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">These scenarios cover the full spectrum: tasks that are genuinely AI-native, tasks where AI adds marginal value over traditional code, and tasks where AI will actively make things worse. Pay attention to what the correct answer says about the decision criteria — task ambiguity, output variability tolerance, and error cost are the three primary factors that determine whether AI belongs here.</p>
       </div>
 
       {/* Scenario nav */}
@@ -3061,10 +3061,10 @@ function LLMObservability() {
         <p className="text-sm text-zinc-400 mt-1">Production AI systems fail silently. Learn what to monitor, how to trace a request, and how to read anomalous metrics.</p>
       </div>
 
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">"It worked in testing" is the most dangerous phrase in production AI. Production systems fail silently — the LLM returns a plausible-looking response, no error is thrown, but the output is wrong, slow, or expensive. Without observability, you discover failures through user complaints rather than metrics — minutes after they've already affected thousands of users.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The three tabs cover the observability stack in order of operation: what to track continuously (the six critical metrics), how to trace a single request end-to-end across spans, and how to read a metric snapshot and diagnose what went wrong. The trace view is especially important — understanding which span owns most of your latency is the first step in any performance optimization.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The three tabs cover the observability stack in order of operation: what to track continuously (the six critical metrics), how to trace a single request end-to-end across spans, and how to read a metric snapshot and diagnose what went wrong. The trace view is especially important — understanding which span owns most of your latency is the first step in any performance optimization.</p>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -3245,10 +3245,10 @@ function ABTestingLab() {
         <p className="text-sm text-zinc-400 mt-1">Proving that your new prompt or pipeline is better before shipping is harder than it sounds.</p>
       </div>
 
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Proving that your new prompt or pipeline is actually better is harder than it sounds. LLM outputs are non-deterministic and high-dimensional — traditional A/B testing intuitions from classical ML don't transfer cleanly. You need to define what "better" means before you run any test, or you'll end up with results that feel conclusive but measure the wrong thing.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">These challenges expose the most common statistical traps: treating human preference data as ground truth when raters disagree, calling significance too early, and optimizing one metric while regressing another. Work through each challenge before revealing the answer — the most valuable learning is recognizing why your intuition was wrong, not memorizing what the right answer was.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">These challenges expose the most common statistical traps: treating human preference data as ground truth when raters disagree, calling significance too early, and optimizing one metric while regressing another. Work through each challenge before revealing the answer — the most valuable learning is recognizing why your intuition was wrong, not memorizing what the right answer was.</p>
       </div>
 
       <div className="flex gap-2">
@@ -3728,10 +3728,10 @@ function EvalFrameworksLab() {
   const [tab, setTab] = useState("guide");
   return (
     <div className="space-y-5">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">There is no single eval framework that covers all AI system types. RAGAS was designed for retrieval-augmented systems — its metrics assume a ground truth context and measure whether the response is grounded in what was retrieved. G-Eval was designed for open-ended generation — it uses LLM-as-judge with explicit criteria. Using RAGAS on a creative writing assistant, or G-Eval on a RAG pipeline, produces metrics that mislead more than they inform.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The Eval Design tab makes the mapping concrete — pick your use case and see a recommended framework stack with priority ordering. The core insight is that production eval stacks are almost always a combination: RAGAS for retrieval quality, a custom LLM judge for response quality, human evaluation for calibration and edge cases. No single framework catches everything.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The Eval Design tab makes the mapping concrete — pick your use case and see a recommended framework stack with priority ordering. The core insight is that production eval stacks are almost always a combination: RAGAS for retrieval quality, a custom LLM judge for response quality, human evaluation for calibration and edge cases. No single framework catches everything.</p>
       </div>
       <HowTo
         objective="Know which eval framework to use for your use case — RAGAS for RAG, G-Eval for open-ended tasks, Human eval for calibration, custom models at production scale."
@@ -4088,10 +4088,10 @@ function DebugTraces() {
         </div>
       </div>
 
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">In production, you rarely see a clean error message. What you see is degraded output, anomalous latency, or a metric threshold breached on a dashboard. Trace-based debugging is the skill of reading a set of symptoms and inferring the underlying system state — without being able to reproduce the problem locally.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">These cases are based on real production failure patterns. Treat each one as a live incident: read the symptoms first, form a hypothesis before looking at the options. The most common mistake is latching onto the first symptom and missing the system-level pattern that explains all of them together.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">These cases are based on real production failure patterns. Treat each one as a live incident: read the symptoms first, form a hypothesis before looking at the options. The most common mistake is latching onto the first symptom and missing the system-level pattern that explains all of them together.</p>
       </div>
 
       {/* Case selector */}
@@ -4310,10 +4310,10 @@ function AISystemDesignCanvas() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Most AI architecture mistakes aren't made during implementation — they're made in the first 30 minutes when someone says "let's just use RAG" without thinking through failure modes or eval requirements. This canvas forces the design decisions that should happen before any code is written: what type of problem is this, what failure modes does that create, and how will you measure whether it's working?</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The constraint toggles are where the design gets real. High-stakes domains require eval coverage that standard setups don't provide — medical, legal, and financial use cases need human review loops, not just automated scoring. Cost sensitivity changes the model tier in ways that affect quality ceilings. Work through multiple problem types to build a mental model of how these tradeoffs shift across use cases.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The constraint toggles are where the design gets real. High-stakes domains require eval coverage that standard setups don't provide — medical, legal, and financial use cases need human review loops, not just automated scoring. Cost sensitivity changes the model tier in ways that affect quality ceilings. Work through multiple problem types to build a mental model of how these tradeoffs shift across use cases.</p>
       </div>
       <HowTo
         objective="Map any AI problem to the right architecture before you write a single line of code."
@@ -4750,10 +4750,10 @@ function LangSmithTracingLab() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">LangSmith is to LLM systems what Datadog is to microservices — it makes the invisible visible. Without a tracing layer, debugging a multi-step LangChain or LangGraph pipeline means adding print statements and hoping for reproducibility. With tracing, every span has timing, token counts, input/output, and error state — and you can see exactly where a 4-second request spent its time.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">Start with the Diagnose Traces tab. It presents pre-built broken trace scenarios that mirror real production failures: retriever timeouts, token overflow, tool schema mismatches. Work through each diagnosis before clicking the reveal — building pattern recognition for what a broken trace looks like is more valuable than memorizing the solutions.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Start with the Diagnose Traces tab. It presents pre-built broken trace scenarios that mirror real production failures: retriever timeouts, token overflow, tool schema mismatches. Work through each diagnosis before clicking the reveal — building pattern recognition for what a broken trace looks like is more valuable than memorizing the solutions.</p>
       </div>
       <HowTo
         objective="Understand LangSmith as an observability layer — what it captures, how to add feedback, and how to build eval datasets from production traffic."
@@ -4941,10 +4941,10 @@ function ReasoningModelsLab() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Reasoning models (o1, o3, Claude Extended Thinking, Gemini Thinking) represent a paradigm shift: instead of scaling quality through bigger training runs, they scale quality by spending more compute thinking at inference time. The same model weights produce better answers given a larger thinking token budget — but at higher latency and cost.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The practical consequence: not everything benefits from extended thinking. RAG Q&A, summarisation, and conversation see pure overhead. Math, logic, code generation, and multi-step planning get dramatically better. This module builds the instinct for when extended thinking earns its cost — and when it is wasted compute.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The practical consequence: not everything benefits from extended thinking. RAG Q&A, summarisation, and conversation see pure overhead. Math, logic, code generation, and multi-step planning get dramatically better. This module builds the instinct for when extended thinking earns its cost — and when it is wasted compute.</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Use the Thinking Budget tab to see quality vs. cost curves across task types. Use the Use-Case Matcher to calibrate your judgment before the next time someone asks "should we use o3 for this?"</p>
       </div>
       <div className="flex gap-2 flex-wrap">
@@ -7400,10 +7400,10 @@ function KVCacheEngineering() {
   const [tab, setTab] = useState("how");
   return (
     <div className="space-y-4">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Every token the LLM has already processed gets its keys and values saved in the KV cache. Without it, regenerating the same context from scratch on every decoding step would make inference ~100× more expensive. With it, autoregressive generation is tractable at all.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">But KV cache is not free — it consumes VRAM proportional to batch size × sequence length × model depth. At scale, KV cache management becomes the dominant constraint on serving cost and throughput. This is why vLLM's PagedAttention and SGLang's RadixAttention were built specifically around it, not around the model weights.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">But KV cache is not free — it consumes VRAM proportional to batch size × sequence length × model depth. At scale, KV cache management becomes the dominant constraint on serving cost and throughput. This is why vLLM's PagedAttention and SGLang's RadixAttention were built specifically around it, not around the model weights.</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Start with How It Works to understand the mechanism, then use the Cost Math calculator with your actual token volumes to see what the cache is saving you — and what it's consuming.</p>
       </div>
       <HowTo
@@ -7743,10 +7743,10 @@ function TrapsLab() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Knowing the right architecture isn't enough — you also need to recognize when something is subtly wrong. The flaws in this lab are the kind that pass code review, survive a demo, and fail three months into production. They're not typos; they're design mistakes that look reasonable on the surface.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">Treat each scenario the way you would in a real design review: read the description, actively look for what's missing or incorrect before revealing the issues. The goal isn't to memorize the specific mistakes — it's to build the habit of asking the right skeptical questions. Senior engineers have seen enough failures that these patterns feel wrong immediately; that intuition is what you're training here.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Treat each scenario the way you would in a real design review: read the description, actively look for what's missing or incorrect before revealing the issues. The goal isn't to memorize the specific mistakes — it's to build the habit of asking the right skeptical questions. Senior engineers have seen enough failures that these patterns feel wrong immediately; that intuition is what you're training here.</p>
       </div>
       <HowTo
         objective="Find the flaws before the reveal. Each scenario has 2–3 real bugs that cause production failures or interview red flags."
@@ -8263,10 +8263,10 @@ function MoEArchitecture() {
   const [tab, setTab] = useState("how");
   return (
     <div className="space-y-4">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Mixture-of-Experts models (Mixtral, DeepSeek-V3, GPT-4, Grok-1) use only a fraction of their total parameters per token — routing each token to 2–8 'expert' FFN layers out of potentially 64+. The result: training compute closer to a smaller dense model, inference quality closer to a much larger one.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The operational consequence: MoE models are cheaper to run per token than their raw parameter count suggests, but harder to serve. Expert routing creates load imbalance — popular experts get overloaded while others sit idle. This failure mode does not exist in dense models, and engineers unfamiliar with MoE architecture miss it in production.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The operational consequence: MoE models are cheaper to run per token than their raw parameter count suggests, but harder to serve. Expert routing creates load imbalance — popular experts get overloaded while others sit idle. This failure mode does not exist in dense models, and engineers unfamiliar with MoE architecture miss it in production.</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Use the Expert Load Simulator tab to watch imbalance emerge as you adjust expert count, top-K, and batch size. The failure is non-obvious until you see the routing distribution collapse.</p>
       </div>
       <HowTo
@@ -8502,10 +8502,10 @@ function SpeculativeDecoding() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Speculative decoding delivers 2.5–5× throughput improvement with zero quality loss by exploiting a structural inefficiency in standard inference: the target model runs a full forward pass for each token, even when that token is predictable. A tiny, cheap draft model speculates K tokens ahead; the target model verifies all K in a single forward pass. Accepted tokens cost essentially nothing extra.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The catch: speedup only materialises when the draft model's predictions match the target model often enough. Acceptance rate α below ~0.7 and you're paying the overhead with minimal benefit. The right draft model, K length, and acceptance threshold depend on your specific task distribution — not on benchmarks.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The catch: speedup only materialises when the draft model's predictions match the target model often enough. Acceptance rate α below ~0.7 and you're paying the overhead with minimal benefit. The right draft model, K length, and acceptance threshold depend on your specific task distribution — not on benchmarks.</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Use The Math tab's calculator to see exactly what α and K values your use case needs before implementing this. The production models tab shows the real options: Eagle-2, Medusa, QuantSpec — and when each earns its deployment complexity.</p>
       </div>
       <HowTo
@@ -8733,10 +8733,10 @@ function StreamingPatterns() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Streaming LLM responses sounds simple — send tokens as they're generated. In practice, it introduces a class of bugs that don't exist in non-streaming systems: partial JSON that breaks your parser, markdown that flickers while completing, barge-in race conditions when the user types mid-generation, and tool call chunks that arrive out of order.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The root cause: your frontend and downstream systems assume complete units — full sentences, complete JSON objects, finished markdown blocks. Streaming sends incomplete units mid-construction. Every pattern in this module exists to solve a version of that mismatch.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The root cause: your frontend and downstream systems assume complete units — full sentences, complete JSON objects, finished markdown blocks. Streaming sends incomplete units mid-construction. Every pattern in this module exists to solve a version of that mismatch.</p>
         <p className="text-xs text-zinc-400 leading-relaxed">The Latency Waterfall tab is particularly important — it shows why TTFT (time to first token) and total generation time are two completely different metrics with different causes, and why optimising for one can actively hurt the other.</p>
       </div>
       <HowTo
@@ -9330,10 +9330,10 @@ function QuantizationCalculator() {
 function QuantizationEngineering() {
   return (
     <div className="space-y-4">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Quantization trades numeric precision for memory and speed. A 70B model at FP16 needs ~140GB VRAM — four high-end GPUs, $200+/hr in cloud compute. The same model at INT4 with GPTQ or AWQ fits in ~35GB — a single GPU, $30/hr. That delta determines whether your inference is economically viable at all.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The cost is quality degradation. INT4 is usually within 1–3% of FP16 on standard benchmarks, but specific capabilities degrade faster and unpredictably: complex code generation, long-tail factual recall, and precise arithmetic. The acceptable bit-width depends on your use case, not on general-purpose accuracy benchmarks.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The cost is quality degradation. INT4 is usually within 1–3% of FP16 on standard benchmarks, but specific capabilities degrade faster and unpredictably: complex code generation, long-tail factual recall, and precise arithmetic. The acceptable bit-width depends on your use case, not on general-purpose accuracy benchmarks.</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Use the calculator below to quantify the exact tradeoff for your model size and target bit width — VRAM savings, throughput gain, and quality loss estimate. Then choose the bit width that fits within your quality floor, not the lowest available.</p>
       </div>
       <QuantizationCalculator />
@@ -9657,10 +9657,10 @@ function ServingInfra() {
   const [tab, setTab] = useState("config");
   return (
     <div className="space-y-4">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">An LLM in production is not just the model — it's the serving stack that routes requests, manages batching, handles KV cache allocation, and decides which hardware to use. Wrong choices here cause OOM crashes under load, P99 latency 10× worse than P50, cold start delays on the first request, and GPU utilisation under 40% during peak traffic.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">Serving infrastructure decisions are where engineering judgment matters as much as ML knowledge. Framework selection (vLLM vs SGLang vs TensorRT-LLM) depends on your workload pattern. Batching strategy depends on your latency SLA. Hardware config depends on model size and context length. There is no universal right answer.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Serving infrastructure decisions are where engineering judgment matters as much as ML knowledge. Framework selection (vLLM vs SGLang vs TensorRT-LLM) depends on your workload pattern. Batching strategy depends on your latency SLA. Hardware config depends on model size and context length. There is no universal right answer.</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Enter your actual production numbers in the Stack Configurator — model size, GPU count, requests per second, workload type — and see a concrete recommendation with the failure modes specific to your config. Then explore the Failure Scenarios tab to understand what breaks first when you're wrong.</p>
       </div>
       <HowTo
@@ -10665,10 +10665,10 @@ function EvalMetrics() {
         <p className="text-xs text-zinc-400 leading-relaxed">Picking the wrong metric is one of the most common production mistakes — a model that scores well on ROUGE but hallucinates, or passes G-Eval while copying context verbatim. This module covers 10 metrics across lexical, semantic, LLM-based, and RAG-specific categories, with live scoring examples showing exactly where each metric fails.</p>
       </div>
 
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Picking the wrong eval metric is worse than having no metric at all — it creates false confidence. A model that scores 0.7 on ROUGE may be copying source text verbatim. A model that passes G-Eval may still hallucinate factual claims that the judge finds plausible. Every metric has a specific failure mode it can't see, and production teams pay for those blind spots in regressions they didn't catch.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The Live Scoring tab makes the failures concrete — compare the same response across metrics and watch the scores diverge. The LLM-as-Judge tab covers the specific biases — length preference, position bias, verbosity — that make automated judgment unreliable without deliberate calibration. The patterns reveal which metrics are reliable for which task types.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The Live Scoring tab makes the failures concrete — compare the same response across metrics and watch the scores diverge. The LLM-as-Judge tab covers the specific biases — length preference, position bias, verbosity — that make automated judgment unreliable without deliberate calibration. The patterns reveal which metrics are reliable for which task types.</p>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -12982,10 +12982,10 @@ function PromptChangeMgmt({ onNavigate }) {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">A prompt is code. Changing it without version control, a test suite, and a rollback plan is the equivalent of editing a database schema in production. One practitioner documented a real case: a single-line prompt change caused a 23% quality drop that went undetected for 11 days — the system had no prompt diff, no eval suite, and no rollback mechanism.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The Lab tab makes this concrete: compare prompt variants against a test suite and see which test cases regressed. The CI/CD Workflow tab shows what a proper prompt deployment pipeline looks like — shadow eval, regression gate, staged rollout, fast rollback. The core insight is that prompt management requires the same engineering discipline as code deployment.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The Lab tab makes this concrete: compare prompt variants against a test suite and see which test cases regressed. The CI/CD Workflow tab shows what a proper prompt deployment pipeline looks like — shadow eval, regression gate, staged rollout, fast rollback. The core insight is that prompt management requires the same engineering discipline as code deployment.</p>
       </div>
       <div className="flex gap-2 border-b border-zinc-800 pb-3">
         {[["lab","Lab"],["workflow","CI/CD Workflow"],["patterns","Serving Patterns"]].map(([id, label]) => (
@@ -13725,10 +13725,10 @@ export function DecodingStrategiesLab() {
         <p className="text-sm text-zinc-400">See how temperature, top-k, and top-p reshape the probability distribution over next tokens. Adjust sliders and sample to build the intuition that sticks.</p>
       </div>
 
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Temperature, top-p, and top-k sound like minor sampling parameters. They're actually the controls for a fundamental quality vs. diversity tradeoff that determines whether your outputs are correct, creative, or chaotic. Most engineers set temperature=0.7 and move on. This is usually wrong — 0.7 that works well for creative writing will produce hallucinations on factual Q&A at the same rate it produces creative variety.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The key insight: temperature rescales the entire probability distribution before sampling. A temperature of 0 is pure greedy (always the most likely token — deterministic, often repetitive). A temperature of 1.5 flattens the distribution until low-probability tokens fire frequently. Top-p and top-k then truncate the distribution after temperature scaling — they determine which tokens are even eligible to be sampled.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The key insight: temperature rescales the entire probability distribution before sampling. A temperature of 0 is pure greedy (always the most likely token — deterministic, often repetitive). A temperature of 1.5 flattens the distribution until low-probability tokens fire frequently. Top-p and top-k then truncate the distribution after temperature scaling — they determine which tokens are even eligible to be sampled.</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Adjust the sliders and watch the bar chart reshape in real time. Then sample 20 tokens and see the diversity change. The failure callout at the bottom fires when your settings hit known production failure zones — repetition collapse, incoherent outputs, or vocabulary starvation.</p>
       </div>
 

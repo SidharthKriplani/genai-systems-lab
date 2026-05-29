@@ -390,10 +390,10 @@ export default function InferenceOptimizer() {
         <h2 className="text-xl font-bold text-white">Inference Optimizer</h2>
         <p className="text-sm text-zinc-400 mt-1">Self-hosting LLMs means understanding hardware trade-offs. Quantization, batch size, and KV cache are the three levers that determine cost, latency, and quality at inference time.</p>
       </div>
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Inference optimisation is a multi-variable problem: you're simultaneously managing throughput, latency, cost, and quality. The naive choices — single-request batching, full-precision weights, no KV cache sharing — leave the majority of available performance on the table. The over-engineered choices add operational complexity with no proportional gain.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">Three levers dominate everything else: quantization (how much VRAM your model consumes, and how much quality you sacrifice for it), batch size (the fundamental latency vs. throughput tradeoff — there is no free lunch), and KV cache (where you recover compute cost by reusing shared context across requests).</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Three levers dominate everything else: quantization (how much VRAM your model consumes, and how much quality you sacrifice for it), batch size (the fundamental latency vs. throughput tradeoff — there is no free lunch), and KV cache (where you recover compute cost by reusing shared context across requests).</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Work through each tab in sequence. Use the Quantization Lab with your actual model size before picking a bit-width. Use the Batching Simulator with your actual SLA before setting batch size. The numbers only matter when they're your numbers.</p>
       </div>
       <HowTo

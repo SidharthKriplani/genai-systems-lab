@@ -391,10 +391,10 @@ export default function MLCiCdLab() {
           are what separate notebook engineers from production ML engineers.
         </p>
       </div>
-      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
-        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+      <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Shipping an LLM update is not like deploying a bug fix. A new model or prompt change can degrade quality in ways that don't throw errors and don't trigger alerts — because the output is still syntactically valid, still within latency bounds, just subtly worse. Shadow deployments and canary rollouts exist specifically to catch this class of failure before it reaches all users.</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">Walk through the pipeline stages in order, checking the promotion gates before advancing to each next stage. The Rollback Simulator puts you in the position of an on-call engineer reading a live metric alert — the decision to roll back or continue is never obvious from a single metric. The Pre-Deploy Checklist covers 16 gates that most teams only discover they needed after their first bad deploy.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Walk through the pipeline stages in order, checking the promotion gates before advancing to each next stage. The Rollback Simulator puts you in the position of an on-call engineer reading a live metric alert — the decision to roll back or continue is never obvious from a single metric. The Pre-Deploy Checklist covers 16 gates that most teams only discover they needed after their first bad deploy.</p>
       </div>
       <HowTo
         objective="Build intuition for safe LLM deployment: shadow mode, canary rollouts, rollback decision-making, and pre-deploy gates."
