@@ -388,6 +388,41 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 ---
 
+## Concepts ↔ Labs — Bidirectional Connection
+
+**Component:** `src/Concepts.jsx` (GYMS data), `src/App.jsx`, `src/Agents.jsx`, `src/Systems.jsx`, `src/PrepLab.jsx` — lab sidebar headers
+
+**Current behavior:** Connection is one-directional only.
+- Gym → Lab: ✓ each gym has `labId` + `labLabel`; `GymRoomView` footer renders "Ready to apply this? → [Lab]"
+- Lab → Gym: ✗ no lab currently surfaces a pointer back to its relevant Concepts gym. A user struggling in RAG Lab has no path to "go learn the concepts first."
+
+**Target behavior:** Quiet reverse pointer added to each lab's sidebar header — a single chip line reading e.g. `Concepts: Retrieval →` that navigates to the gym. Appears above the module list, never interrupts active flow. Labs not yet covered by an active gym show nothing (no broken link to a coming-soon room).
+
+**Reverse mapping (data structure to add to `App.jsx`):**
+```js
+const LAB_GYM_MAP = {
+  lab:         { gymId: "retrieval",       gymLabel: "Retrieval" },
+  agentlab:    { gymId: "ai-agents",       gymLabel: "AI Agents" },
+  llmlab:      { gymId: "language-models", gymLabel: "Language Models" },
+  evallab:     { gymId: "evaluation",      gymLabel: "Evaluation" },      // coming soon — hide pointer
+  systems:     { gymId: "production",      gymLabel: "Production Systems" }, // coming soon — hide pointer
+  playground:  { gymId: "prompt-engineering", gymLabel: "Prompt Engineering" }, // coming soon — hide pointer
+};
+```
+Only show the chip when the target gym is active (not `comingSoon`). Check against GYMS before rendering.
+
+**Files to touch:** `App.jsx` (add constant, pass `onNavigate` to lab shells), `Agents.jsx`, `Systems.jsx` sidebar header, RAG Lab sidebar header in `App.jsx`, `PrepLab.jsx` sidebar header. Each is a 3–5 line addition.
+
+**Effort:** M (4–5 files, all low-risk sidebar additions)
+
+**Dependencies:** Gym skeleton complete (done). At least the 3 active gyms must be live before any lab pointer is worth showing.
+
+**Priority:** Medium — gym→lab direction works; this is the return path. Matters most for beginners who land in a lab and get stuck.
+
+**Status:** Pending
+
+---
+
 ## Global — Font + Color Scheme Audit
 
 **Component:** `src/index.css` + all `.jsx` files — typography and color token usage
