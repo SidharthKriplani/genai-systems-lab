@@ -352,23 +352,12 @@ A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL
 
 ### Returning user "Today" dashboard — PAL-inspired (new cluster — May 2026)
 
-PAL shows a different home to new vs returning visitors. Returning visitors see: "Today's Case" (specific thing to do right now), "The Brief" (daily concept), "Jump back in" (precise room + timestamp), and Guided Paths. This creates a daily pull reason and makes the home page earn its return visits.
+**Sprint 16 — core shipped.** `ReturningHomeView` in `Home.jsx`. Detection: `getActivityData()` reads `gsl-preplab-history`, `gsl-concepts-mastery`, `genai_visited_modules`, `genai_gt_read`. Returning users see: greeting + date header, Today section (daily tip card + date-seeded GT post card), Jump Back In (last 3 unique tabs), Progress snapshot (PrepLab stats + Concepts gym bar), Where to Next (3 quick-entry cards). Commit `6f18011`.
 
-GenAI Lab currently shows the same hero to everyone. Welcome modal handles first-time routing (good), but returning users still see the same static home instead of a dashboard.
-
-**What a returning user "Today" view needs:**
-- **Today's scenario** — rotate one RAG Lab or Agent Lab scenario per day (7-day cycle). Specific, actionable, not a menu.
-- **Daily concept** — same as current daily tip but linked to the concept in the Concepts Gym, not just passive text.
-- **Jump back in** — more precise than current "continue where you left off": show the actual module name + how long ago.
-- **PrepLab nudge** — "3 questions on your weak topics." Pulled from weakness heatmap.
-
-**Constraint:** "Today's scenario" rotation only works if there are enough distinct scenarios (we have 6 RAG + 5 Agent + 18 Eval + 9 LLM = plenty). The daily concept rotation is simple — already have DAILY_TIPS, just needs a link target.
-
-**Effort:** M — conditional render based on `genai_welcomed` + `visited` state already exist. Today view is additive, not a rebuild.
-
-- **New vs returning render split** — show welcome/hero to first-time visitors, "Today" dashboard to returning. Flag: `visited.size > 0 && localStorage.getItem("genai_welcomed")`. *Pending.*
-- **Today's scenario card** — day-of-week → scenario_id lookup (static, no backend). *Pending.*
-- **Jump back in precision** — store last-visited module + timestamp in localStorage. Surface in Today view. *Pending.*
+**Still pending (refinements, not blockers):**
+- **Today's scenario card** — replace the daily tip with a specific scenario from RAG Lab / Agent Lab on a 7-day rotation. More actionable than a tip. *Pending — low priority, tip works fine for now.*
+- **Jump back in precision** — surface the specific module name + "N days ago" timestamp. Currently shows tab-level only (e.g. "RAG Lab"). Requires storing last-opened module + timestamp in a separate key. *Pending.*
+- **PrepLab nudge in Today** — "Your weakest topic: X. Here are 3 questions." Pulls from WeaknessHeatmap data. Currently shows aggregate stats only. *Pending.*
 
 ### Cross-repo intelligence — what sibling labs have that we don't (May 2026)
 
