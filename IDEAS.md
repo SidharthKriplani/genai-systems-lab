@@ -540,6 +540,27 @@ Both sibling products (ML Systems Lab and PAL) were fully read this session. The
 
 - **Analytics pause — PostHog WAU baseline** — both PAL and ML Systems Lab explicitly paused feature building pending a PostHog WAU baseline. GenAI Lab has PostHog wired but no formal baseline established. Before the next major feature sprint: check if PostHog is receiving events in Vercel prod, establish WAU + module-completion funnel as baseline. This is not a feature — it's a prerequisite for making good decisions about what to build next. (Source: PAL DECISIONS.md + IDEAS.md, May 2026)
 
+### External cold-read findings — positioning + structural (May 2026)
+
+Source: unsolicited ChatGPT cold-read of all three repos. See Audit 38 in AUDITS.md for full findings.
+
+**Positioning fix (done):**
+- README + GitHub description updated to "production AI judgment simulator" framing. Commit `07c40f0`. Standing rule added to DECISIONS.md § 0a.
+
+**Structural rebuild — Build/Prove/Navigate (L effort, own sprint)**
+The 14-tab layout works as a collection but not as a product with a clear front door. An external viewer can identify RAG Lab as the flagship but can't immediately answer "what is the single best thing to do here?" or "what's the path for someone with an interview in 2 weeks?"
+
+The architecture is already designed (DECISIONS.md — Structural Upgrade section): three front doors (Build / Prove / Navigate), Concepts as a foundation layer, GT as a knowledge layer with Ask as gateway, Learning Paths as connective spine. Nothing is implemented.
+
+**Do not start this until:** PostHog WAU baseline is established and at least one full NEXT.md sprint cycle (items 1–5) is complete. Structural rebuilds on low-traffic products are rearranging furniture nobody sits in yet.
+
+**"What this is NOT" section in README (S effort)**
+Pre-empt the "too static / not real infra" skeptic with a short, confident paragraph in the README:
+
+> "This is not a live inference platform. It doesn't call models, query vector databases, or run real eval pipelines. It simulates the decision layer — the configuration choices, failure modes, and diagnostic reasoning — which is where production AI judgment is actually built. The zero-backend constraint is intentional: scripted scenarios fail at exactly the right moment to teach. Live model outputs don't."
+
+This costs 10 minutes and permanently deflects the most common misread. Add to README under "Key design decisions" after the Zero backend section.
+
 **Already logged elsewhere in this file (skip — don't add again):**
 - 91-day practice heatmap (mentioned at line 503) → now fully specced above as Streak + 4-week heatmap
 - Bookmarks across rooms (line 501) → logged, pending

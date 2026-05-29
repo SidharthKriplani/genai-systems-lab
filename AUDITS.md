@@ -1766,4 +1766,69 @@ The two `currentTarget.style` mutations are on the fixed QA debug button (bottom
 | 4 | `Flows.jsx` — missing map keys | Low | ⚠️ Open (Flows is PARKED) |
 
 **Status:** ✅ Complete. 1 real bug fixed.
-**Status:** Sprint 20 hygiene pass complete ✅
+
+---
+
+## Audit 38 — External Cold Read (May 2026, Sprint 20 close)
+
+**Type:** External positioning + product perception audit
+**Date:** May 2026
+**Source:** Unsolicited cold-read analysis by ChatGPT — reviewed genai-systems-lab, experimentation-systems-lab, ml-systems-lab with no prior context. Repo-visible code + docs only; no runtime execution.
+**Why logged:** Third-party cold reads are the closest proxy to a real first-time visitor impression. Signal without bias.
+
+### Ratings
+
+| Repo | Rating | Primary signal |
+|---|---|---|
+| genai-systems-lab | **8.5/10** | Best concept, strongest differentiation, most market-relevant |
+| experimentation-systems-lab (PAL) | **8/10** | Most commercially coherent, strongest product/analytics interview utility |
+| ml-systems-lab | **7.5/10** | Broad coverage, strong concept, less sharply differentiated |
+
+### What was praised (accurate, keep reinforcing)
+
+- Clear product thesis: "configure the system, watch it fail, understand why"
+- Failure simulation angle is genuinely differentiated — RAG Lab scenario file cited as "far beyond a shallow GenAI demo"
+- Fidelity tags called "unusually mature" — explicit disclosure of what's simulated vs faithful
+- Architecture/product documentation (DECISIONS.md) noted as impressive — shows editorial judgment, not just feature building
+- "Feels like a real product, not a project"
+
+### What was flagged as weaknesses (honest assessment of each)
+
+| Weakness flagged | Our assessment | Action |
+|---|---|---|
+| "Too static — may look like frontend SPA, not real AI systems" | Framing problem, not a build problem. Zero-backend is a design decision. Fidelity badges on all Lab modules (not just Concepts) are the correct response — own the simulation explicitly. | NEXT.md item 2 (fidelity badges) |
+| "Client-side access code is weak security/monetization" | Accurate but irrelevant — it's transparently a beta pattern, not a security claim. Non-issue until Stripe. | No action needed |
+| "14 tabs, unclear flagship beyond RAG Lab" | Real. Build/Prove/Navigate restructure in DECISIONS.md is the answer — not yet implemented. | L-effort, separate sprint |
+| "No tests, backend, real infra, real users" | Wrong audience's critique. Adding these would be a different product that defeats the zero-backend thesis. | Ignore |
+| Stats stale (140+ modules, 200+ posts) | Fixed — README updated to 150+, 222+, 261+ same session. | ✅ Fixed `07c40f0` |
+
+### Most important finding — distribution
+
+> "Distribution is the next bottleneck. Without users, none of the above matters."
+
+Said about PAL but applies equally here. The product reached feature-completeness in May 2026. PostHog is installed but no WAU baseline has been established. More features without usage data is inventory with no demand signal. **This is the highest-priority action coming out of this audit — not a build item.**
+
+See DECISIONS.md Section 0b: "Distribution before features" (standing rule added May 2026).
+
+### Positioning fix applied this session
+
+GitHub repo description and README updated to use "production AI judgment simulator" framing. See DECISIONS.md Section 0a. Commit: `07c40f0`.
+
+### Actionable items surfaced (mapped to existing backlog)
+
+| Item | Priority | Where logged |
+|---|---|---|
+| Pull PostHog WAU baseline before next major sprint | **Highest** | DECISIONS.md § 0b; IDEAS.md (analytics pause cluster) |
+| Fidelity badges on all Lab modules | High | NEXT.md item 2 |
+| Done card prominence (RAG Lab learn loop) | High | NEXT.md item 1 |
+| Concepts synthesis close + inline callouts | Medium | NEXT.md item 4 |
+| 3 thin GT posts expansion | Medium | NEXT.md item 5 |
+| Build/Prove/Navigate structural rebuild | L-effort | DECISIONS.md (Structural Upgrade section) |
+
+### Items explicitly not worth building from this analysis
+
+- Tests — marginal signal for wrong audience
+- Real backend / live inference — defeats zero-backend thesis
+- Supabase auth (for this repo) — access code pattern is correct for current stage
+
+**Status:** ✅ Analysis complete. Positioning fix applied. All findings mapped to backlog or standing rules.

@@ -66,6 +66,38 @@ Client-side, localStorage. `accessGranted: true` stored on valid code entry. Com
 
 ---
 
+## 0a. Positioning — "production AI judgment simulator" (decided May 2026)
+
+**The standing framing rule:** This product is a **production AI judgment simulator**, not a GenAI course, not a production infrastructure platform, not a backend system.
+
+The phrase that survives external scrutiny: *"Interactive browser-based systems lab that simulates production AI judgment scenarios — RAG failures, inference bottlenecks, agent loops, eval design."*
+
+Bad framing (invites the wrong skeptic): *"I built production ML/GenAI systems."*
+Correct framing (hard to attack): *"I simulate production AI judgment scenarios in the browser and put the user in the decision seat."*
+
+This distinction matters for the README, GitHub description, home page copy, and any description used in portfolios or sharing. When copy drifts back toward "AI systems platform" or "GenAI tools," correct it.
+
+**Source:** External cold-read analysis, May 2026 — see Audit 38 in AUDITS.md.
+
+---
+
+## 0b. Distribution before features (standing rule, May 2026)
+
+**The rule:** Before starting any major new feature sprint, check PostHog for WAU + module-completion funnel. If you don't know which modules real users visit and where they drop, you are building inventory with no demand signal.
+
+The product reached feature-completeness in May 2026 (4 Labs, 222+ GT posts, 261+ PrepLab questions, freemium model, access code gate, mobile layout). The limiting factor after this point is not feature count — it is proof of use. More features without usage data is waste.
+
+**What to check before the next major sprint:**
+- Is PostHog receiving events in Vercel prod?
+- WAU over the last 30 days
+- Top 5 modules by visit count
+- RAG Lab scenario completion rate (does anyone finish a scenario?)
+- PrepLab session depth (average questions answered per session)
+
+**Source:** PAL DECISIONS.md pattern (PAL explicitly paused feature building at this exact stage); external cold-read analysis, May 2026.
+
+---
+
 ## 1. Project genesis
 
 GenAI Systems Lab was built as a portfolio and learning artifact, not as a funded product. The starting intent: an interactive tool for AI engineers and PMs to develop intuition about production AI systems — not through video or reading, but through configuration, observation, and diagnosis.

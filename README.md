@@ -119,6 +119,8 @@ The gap that matters: every other resource **shows** you what to do. This one pu
 **🔌 Zero backend, by design**
 No API calls, no live model inference, no database. Every scenario uses curated configs and client-side logic. This is deliberate — a live API won't fail at exactly the right moment to teach prompt injection. Scripted scenarios are more reliable pedagogical tools than unpredictable model outputs. Static deployment means free to run, for anyone, indefinitely.
 
+**What this is not:** This is not a live inference platform. It doesn't call models, query vector databases, or run real eval pipelines. It simulates the decision layer — the configuration choices, failure modes, and diagnostic reasoning — which is where production AI judgment is actually built. If you expected a backend system, that's a different product. If you want to develop the intuition to build and debug those systems, this is it.
+
 **🏷️ Fidelity tagging — every module is honest about what it is**
 Three tiers, shown as a badge on every Concepts and Explore module:
 
