@@ -537,6 +537,12 @@ function TokenizerModule({ onNavigate }) {
         </p>
       </div>
 
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Watch the chars/token ratio as you switch between English prose, code, and emoji-heavy text. A ratio below 2.5 is a red flag — you are burning context window and API budget faster than necessary, and the model may be receiving fragmented representations that degrade comprehension on multi-word concepts.</p>
+      </div>
+
       {/* When tokenization fails */}
       <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-4 space-y-3">
         <div className="text-xs font-bold text-red-400 uppercase tracking-wide">When tokenization breaks your system</div>
@@ -554,6 +560,11 @@ function TokenizerModule({ onNavigate }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Token cost is an engineering constraint, not a footnote. On any system processing over 1M tokens per day, a ratio of 3.5 chars/token versus 4.2 chars/token is a 20% cost difference — real money, not rounding error. Run your actual production samples through the tokenizer of your target model before you commit to an architecture. The model you choose is also the tokenizer you choose.</p>
       </div>
 
       {onNavigate && (
@@ -770,6 +781,12 @@ function EmbeddingModule({ onNavigate }) {
         </div>
       </div>
 
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Hover words in the same cluster and observe their similarity scores. Then hover across clusters. That gap — the difference between within-cluster and across-cluster cosine similarity — is your retrieval signal. In production, if that gap is small (scores bunched near 0.7–0.8 for everything), your embedding model has poor discriminative power on your domain and retrieval will be noisy regardless of chunk quality.</p>
+      </div>
+
       {/* When embeddings fail */}
       <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-4 space-y-3">
         <div className="text-xs font-bold text-red-400 uppercase tracking-wide">When embedding search breaks in production</div>
@@ -787,6 +804,11 @@ function EmbeddingModule({ onNavigate }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">An embedding model that performs well on your evaluation set can still fail in production if your production queries look different from your eval queries. The distance metric, the asymmetry between query and passage embedding, and the domain mismatch between pretraining and deployment are where most embedding problems actually live — not in the vector store configuration or the indexing strategy.</p>
       </div>
 
       {onNavigate && (
@@ -969,6 +991,17 @@ function AttentionModule({ onNavigate }) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Switch between attention heads and observe how each one has a different focus: one tracks syntactic structure, another tracks semantic coreference, another attends broadly. This specialization is not programmed — it emerges from training. When a model makes an unexpected output, the cause is usually visible in the attention pattern of one specific head, which is why attention visualization is the first tool any LLM debugger reaches for.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Multi-head attention is how the model reads the same sentence multiple times with different questions — syntax, reference, topic, context. The diversity of what each head finds is why attention-based models generalize better than anything that came before. When you debug unexpected outputs, the answer is usually in the attention pattern, not the weights — which is why interpretability tools like attention visualization exist and are worth learning before you reach for fine-tuning.</p>
       </div>
 
       {onNavigate && (
@@ -1350,6 +1383,17 @@ function TransformerModule({ onNavigate }) {
         </div>
       )}
 
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Go to the Predict step and drag temperature from 0.1 to 1.8. Watch how the top token's probability collapses from near-certainty to near-equality with all alternatives. This is the real meaning of temperature — not "creativity," but the shape of the probability distribution the model samples from. The same distribution shape governs every output token of every response in every production system using this architecture.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Every frontier LLM runs this same forward pass — embed, attend, FFN, predict — just scaled to hundreds of layers and billions of parameters. The architecture decisions that matter in production (number of heads, model dimension, context length) all connect directly back to what you see here. When you tune temperature in a production API call, you are reaching directly into the predict step of this diagram.</p>
+      </div>
+
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
           <div className="flex items-center gap-2">
@@ -1626,6 +1670,17 @@ function ChunkingModule({ onNavigate }) {
             <p className="text-xs text-zinc-400 leading-relaxed">Most teams start with sentence-aware and graduate to semantic when retrieval quality becomes a bottleneck. Semantic costs ~$0.0004/chunk in embedding calls.</p>
           </div>
         </div>
+      </div>
+
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Run "Why does chunk size affect retrieval quality?" against fixed-size and then sentence-aware chunking. Notice that fixed-size misses the "too small" half of the tradeoff — the answer is literally split across a chunk boundary. This is the most common silent bug in production RAG: the answer exists in your corpus but your chunking strategy puts it across a boundary, so no single retrieved chunk contains it.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Chunking is a retrieval contract: every decision about chunk size and strategy determines which questions your system can and cannot answer. Most teams start with sentence-aware and it handles 80% of queries well. The 20% failure cases — compound questions, long tables, multi-paragraph arguments — each require a different strategy. Treat chunking as something you iterate on with real production queries, not something you configure once at launch.</p>
       </div>
 
       {onNavigate && (
@@ -1917,6 +1972,17 @@ function RAGPipelineModule({ onNavigate }) {
         </div>
       )}
 
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">At Step 1, look at the assembled prompt preview — specifically the similarity scores (0.91, 0.84, 0.72). Chunk 3 at 0.72 is borderline: close enough to the threshold to be included, but it contains enterprise contract language that may not apply to this user. In production, a poorly-calibrated similarity threshold is one of the most common sources of confident-but-wrong answers because the model treats all retrieved chunks as equally authoritative.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">RAG converts an LLM's job from recall to synthesis — and that is a more tractable problem for a language model. But the quality ceiling is set by retrieval, not generation: the best LLM in the world cannot answer correctly from a wrong or stale chunk. Treat the retrieval pipeline as a first-class engineering surface with its own evaluation metrics, freshness monitoring, and tuning cadence.</p>
+      </div>
+
       {/* Go deeper footer */}
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
@@ -2179,6 +2245,12 @@ function SamplingModule({ onNavigate }) {
         </div>
       </div>
 
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Switch to the creative prompt ("Once upon a time..."), set strategy to Top-P at 0.9, and hit "sample again" several times. Notice how the sampled token jumps between options because the distribution is genuinely flat — all options are nearly equally probable. This is the scenario where hallucination risk is highest: the model picks a plausible token, not a correct one, and has no signal to distinguish between them.</p>
+      </div>
+
       {/* When sampling fails */}
       <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-4 space-y-3">
         <div className="text-xs font-bold text-red-400 uppercase tracking-wide">Common sampling mistakes in production</div>
@@ -2196,6 +2268,11 @@ function SamplingModule({ onNavigate }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Decoding strategy is one of the first things you tune and one of the most common sources of silent quality regressions. Use temperature=0 for any task where correctness matters — structured output, classification, factual extraction. Reserve temperature above 0.7 for creative tasks only. When something changes in production quality and you cannot find the cause, check if someone changed the sampling parameters — this happens more often than model updates do.</p>
       </div>
 
       {onNavigate && (
@@ -2372,6 +2449,12 @@ function ContextWindowModule({ onNavigate }) {
         </div>
       </div>
 
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Add conversation turns until the bar hits 80% on GPT-4o. Now look at the O(n²) chart — find where your current token count falls, then look one column right to see what doubling it costs. The quadratic curve is why you cannot simply "use a bigger context window" as a solution to every retrieval problem: compute cost grows far faster than context size, and latency follows with it.</p>
+      </div>
+
       {/* When context window fails */}
       <div className="rounded-xl border border-red-900/40 bg-red-950/15 p-4 mt-4 space-y-3">
         <div className="text-xs font-bold text-red-400 uppercase tracking-wide">Context window failure modes</div>
@@ -2389,6 +2472,11 @@ function ContextWindowModule({ onNavigate }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Every production RAG system is a budget problem: how do you fit the most relevant information into a fixed token budget without overflowing or padding with noise? The token budget formula — max_input = context_limit minus max_output minus safety_margin — should be explicit in your configuration, not left as an implicit assumption. Systems that treat context as unlimited and latency as free both discover the ceiling at the worst possible time.</p>
       </div>
 
       {onNavigate && (
@@ -2630,6 +2718,17 @@ function AgentModule({ onNavigate }) {
         </div>
       )}
 
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Enable "inject failure" on the research scenario and step through the trace. Watch how the agent pivots at step 6 instead of giving up — that recovery behavior (PIVOT tag, broader search) is what separates a robust agent from a fragile one. The token counter in the context bar keeps climbing through every thought-action-observation cycle: at 9 steps this trace uses around 350 tokens, but real agents with long tool outputs easily hit thousands per step.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">An agent that fails loudly on the first tool error is easier to fix than one that silently continues with degraded inputs. Every production agent needs three explicit engineering decisions: a hard iteration cap, a timeout, and a defined fallback behavior. These are not optimizations — they are correctness requirements. Without them, you have a system that works in demos and fails unpredictably in production.</p>
+      </div>
+
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
           <div className="flex items-center gap-2">
@@ -2870,6 +2969,17 @@ function GuardrailsModule({ onNavigate }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Compare the "Subtle injection" scenario (confidence 0.71) to the clean "DAN jailbreak" (confidence 0.99). The subtle case sits near the decision threshold — a system with a threshold above 0.71 would let it through. This is the tuning problem every guardrail deployment faces: lower the threshold to catch more attacks and you increase false positives on legitimate queries; raise it and borderline injections slip through. There is no correct answer without measuring your actual production traffic.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Guardrails are not a one-time configuration — they are a continuous measurement exercise. A threshold that worked last month may need adjustment as users discover new bypass patterns, or as your legitimate query distribution shifts. The hallucination checker is the most underinvested guardrail in most production systems: it requires a grounding score comparison, which means you need to track what was retrieved alongside every generation — not just the final output.</p>
       </div>
 
       {onNavigate && (
@@ -3133,6 +3243,17 @@ function DebugModule({ onNavigate }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Before submitting your diagnosis, check the config line for each scenario — chunk_size, top_k, reranker, answer_policy. The failure mode is almost always a combination of at least two config factors, not just one. Scenario 2 (The Inventive CFO) has reranker=true AND answer_policy=helpful: the reranker did its job correctly, but the policy let the model fill gaps rather than refuse. Neither setting alone is wrong — together they produced a hallucination.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">RAG debugging requires reading the full pipeline trace, not just the final answer. The same wrong output can come from five different root causes — stale retrieval, hallucination, injection, abstention, or single-hop failure — and each requires a different fix. Build the habit of writing down the retrieval trace alongside every failure report: which chunks were retrieved, their scores, their sources, their dates. Without that trace, you are debugging with one hand tied behind your back.</p>
       </div>
 
       {onNavigate && (
@@ -3426,6 +3547,17 @@ function MultiAgentModule({ onNavigate }) {
         </div>
       )}
 
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Failure Cascade tab, compare "Worker returns empty result" to "Context drift." Empty-result failure is obvious at the end — output is incomplete. Context drift is worse: the output looks complete and well-formatted, but is factually wrong for a specific subset of inputs. Drift failures are the hardest to catch because they require knowing what should have been preserved, which you only discover when a user complains about the edge case that was silently dropped.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Multi-agent architecture multiplies debugging surface area proportionally to agent count. Before adding a second agent, ask: would a single ReAct agent with a larger tool set solve this? If yes, that is the right answer. When multi-agent is genuinely required — parallel subtasks, specialist knowledge, context budget constraints — the failure cascade tab shows you exactly what monitoring you need to build from day one, not as a retrofit.</p>
+      </div>
+
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
           <div className="flex items-center gap-2">
@@ -3616,11 +3748,21 @@ function NextTokenGame() {
               <div className="text-xs font-bold text-zinc-400">Distribution shape: <span className="text-violet-400">{prompt.concept}</span></div>
               <p className="text-xs text-zinc-300 leading-relaxed">{prompt.explanation}</p>
             </div>
+            {/* Beat 2 — what to notice (inline, shown after reveal) */}
+            <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+              <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+              <p className="text-xs text-zinc-300 leading-relaxed">Look at the distribution shape label — sharp vs flat. In production, flat distributions (creative prompts, ambiguous factual questions) are exactly where models hallucinate most often: the correct token has no strong probability advantage over plausible-but-wrong alternatives. A model picking "OpenAI" at 51% vs 49% for a competitor is making a statistically weak commitment that will vary run-to-run at moderate temperatures.</p>
+            </div>
             <button onClick={next} className="w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all">
               Next prompt →
             </button>
           </div>
         )}
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The next-token operation is not lookup or retrieval — it is weighted sampling from a learned probability distribution. When that distribution is sharp, the model is reliable. When it is flat, the model is uncertain, and any output it produces in that region is a guess with confidence theater. Building reliable AI systems means knowing which parts of your input space produce sharp distributions and which produce flat ones — and routing or escalating appropriately when you hit the flat zones.</p>
       </div>
     </div>
   );
@@ -3789,11 +3931,21 @@ function TemperatureGame() {
               <div className="text-xs font-bold text-amber-400 mb-2">Why these temperatures?</div>
               <p className="text-xs text-zinc-300 leading-relaxed">{ch.explanation}</p>
             </div>
+            {/* Beat 2 — what to notice (inline after reveal) */}
+            <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+              <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+              <p className="text-xs text-zinc-300 leading-relaxed">After checking answers, read the explanation carefully for any you got wrong. Temperature does not just control "creativity" — it controls distribution entropy. The code variable name challenge (tc3) is the most production-relevant: "temporal_user_session_inception_marker" is not wrong, it is just what high temperature looks like on a low-ambiguity task. The model loses the conventional signal at high temperature, so you lose code readability.</p>
+            </div>
             <button onClick={next} className="w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all">
               Next challenge →
             </button>
           </div>
         )}
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Temperature is one of the first parameters you tune and one of the most common sources of silent quality regressions when changed without testing. A production deployment should treat temperature as a versioned configuration parameter: log every change, compare output distributions before and after, and have a test set of golden examples you run against it. The team that changed temperature to "make outputs more interesting" and did not notice the 23% quality drop in the process is a real story.</p>
       </div>
     </div>
   );
@@ -4006,6 +4158,17 @@ function FlashAttentionConcept() {
         <p className="text-xs text-zinc-400 leading-relaxed">
           Flash Attention is not an approximation — it computes <span className="text-zinc-200">exact attention</span>. The speedup comes purely from IO-awareness: minimising reads/writes between HBM and SRAM. Standard attention does O(n²) HBM accesses. Flash does O(n). At 16k tokens with 32 heads, that&apos;s the difference between 34 GB and 34 MB of attention-matrix VRAM.
         </p>
+      </div>
+
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Drag the sequence length to 8192 and look at the VRAM comparison — standard attention overflows a 16 GB GPU before you even reach 8k tokens with 8 heads. Now look at the growth table: at 16k tokens, Flash is using 34 MB while standard requires 34 GB. That 1000x gap is why 128K+ context windows became practical in 2023: not from bigger GPUs, but from this IO-awareness insight applied to the tiling algorithm.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Flash Attention illustrates a principle that applies beyond transformers: the bottleneck in modern deep learning is often memory bandwidth, not compute. When you see "OOM error" in a training or inference job, the first question is always where the memory is going — and for transformer workloads, the answer is usually the attention matrix. Understanding IO-aware algorithms is not academic; it is the difference between fitting a model in your GPU budget and not.</p>
       </div>
     </div>
   );
