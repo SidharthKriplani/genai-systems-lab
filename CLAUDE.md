@@ -317,6 +317,9 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Session build log (May 2026)
 
+**Resolved this session (sprint 17):**
+- **Concepts gym expansion:** GYMS constant expanded from 5 to 14 rooms. 3 active (Language Models, Retrieval, AI Agents). 11 coming-soon placeholders: Evaluation, Production Systems, Foundation Models, Prompt Engineering, Cloud AI Services, Vector Infrastructure, Observability & Tracing, Multimodal AI, AI Safety & Alignment, AI Product Strategy, Data for AI. Each has color, desc, labId, labLabel. Brace diff: 0. Commit `a43fffe`.
+
 **Resolved this session (sprint 16):**
 - **Dynamic homepage:** `Home.jsx` now detects returning vs. new user from localStorage on mount (`getActivityData()` reads `gsl-preplab-history`, `gsl-concepts-mastery`, `genai_visited_modules`, `genai_gt_read`). New users see existing hero. Returning users see `ReturningHomeView`: date/greeting header, Today section (daily tip card + date-seeded GT featured post card), Jump Back In (last 3 unique tabs from `visitedMods`), Progress snapshot (PrepLab: N answered + % correct; Concepts Gym: N/15 + progress bar), Where to Next (3 quick-entry cards). Both views share beta banner + footer. `onNavigateTo={navigateTo}` wired into `HomePage` from `App.jsx` for GT post deep-link. `TAB_META` constant maps tab IDs to labels + colors. Brace diff: 0. Commit `6f18011`.
 - **UPGRADES.md:** Font/color audit + Emoji→SVG upgrade entries logged. Commit `df51c5e`.

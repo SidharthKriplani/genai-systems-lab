@@ -370,6 +370,8 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 **Sprint 15 progress:** Gym-based UI skeleton shipped. `GymSelectorView` (5-card grid), `GymRoomView` (PAL-style sequential module cards), 3-view state machine in `ConceptsApp`. 3 active gyms (Language Models 7 modules, Retrieval 5, AI Agents 3) + 2 placeholder gyms (Evaluation, Production Systems). `MODULE_META` constant: insight teaser + time estimate per module. `GYMS` constant. Commit `e19fb27`.
 
+**Sprint 17 progress:** GYMS expanded to 14 rooms. 9 new coming-soon rooms added: Foundation Models, Prompt Engineering, Cloud AI Services, Vector Infrastructure, Observability & Tracing, Multimodal AI, AI Safety & Alignment, AI Product Strategy, Data for AI. Each fully described with color + lab pointer. Commit `a43fffe`.
+
 **Remaining for all 15 modules (future pass):**
 - **Inline callouts** — annotations tied to specific interactive states (e.g. "When temperature hits 0 you're always picking the top token — this is why outputs become repetitive.")
 - **Synthesis close** — 1–2 sentences after the interactive: what this means for real system design decisions.
