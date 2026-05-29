@@ -46,6 +46,11 @@ function ReActPattern() {
   const TYPE_ICONS = { thought: "💭", action: "⚡", observation: "👁", final: "✓" };
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The ReAct loop — Thought, Action, Observation — is the architectural primitive that separates agents from standard LLM calls. What's novel: the model generates its reasoning explicitly as text before deciding what to do, then observes the result and loops. Every major agent framework (LangGraph, OpenAI Agents SDK, Google ADK) builds on this loop or a variant of it.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Understanding the loop at this level matters because production failures in agents are almost always loop failures: the Thought is wrong (bad plan), the Action is wrong (bad tool call), or the Observation is wrong (bad output parsing). Knowing which step failed is what separates fast debugging from guessing.</p>
+      </div>
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
         <div className="text-xs text-zinc-500 uppercase tracking-wide mb-2">The Loop</div>
         <div className="flex items-center gap-1.5 flex-wrap text-xs font-bold">
@@ -161,6 +166,11 @@ function ToolUseDesign() {
   const pattern = TOOL_PATTERNS.find(p => p.id === selPattern);
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Tool schemas are the specification interface between your design intent and model behavior. A schema with a vague description causes the model to hallucinate calls, pass wrong arguments, or call at the wrong moment. A schema with precise descriptions, typed parameters, and concrete examples guides the model to call reliably. Most agent reliability problems originate here — not in the model.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">This module also covers the MCP protocol, which standardises the tool interface across frameworks: instead of writing a custom tool integration for every LLM client, one MCP server works with all of them. Understanding the schema → protocol → calling pattern chain is the technical foundation for any agent development role.</p>
+      </div>
       <HowTo
         objective="Tool schema design is the most underrated skill in agent development. A bad schema causes hallucinated calls. A good one guides the model reliably."
         steps={[
@@ -380,6 +390,11 @@ function AgentMemory() {
   const mem = MEMORY_TYPES.find(m => m.id === sel);
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Agents have four fundamentally different memory mechanisms — working (in-context), episodic (conversation history), semantic (vector retrieval), procedural (fine-tuned weights) — and they are not interchangeable. Using context window as your only memory mechanism is expensive and breaks on long sessions. Using fine-tuning to store facts that change frequently is an architectural mistake. Getting this wrong determines whether your agent scales past a demo.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The diagnostic question for production agent debugging: is the failure a working memory management problem (context overflow, lost context), or a semantic memory problem (wrong retrieval), or a missing memory type entirely? This module gives you the taxonomy to ask that question precisely.</p>
+      </div>
       <HowTo
         objective="Understand the 4 memory types every agent has access to — and when each is the right lever to pull."
         steps={[
@@ -460,6 +475,11 @@ function MultiAgentPatterns() {
   const pattern = MULTI_AGENT_PATTERNS.find(p => p.id === sel);
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Multi-agent is a complexity multiplier, not an automatic upgrade. Most tasks that seem to require multiple agents are solvable with a better-designed single agent. The three patterns — orchestrator-subagent, peer mesh, hierarchical — each introduce failure modes that single-agent architectures don't have: coordination overhead, message passing failures, partial completion ambiguity.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The gate question before going multi-agent: does the task decompose cleanly into subtasks that have minimal dependencies and can run in parallel? If the subtasks are tightly coupled, you're adding inter-agent coordination cost with no parallel execution benefit. Learn to recognize the gate before you commit to the architecture.</p>
+      </div>
       <HowTo
         objective="Learn the 3 main multi-agent patterns and when each is worth the added complexity. Most tasks don't need multi-agent."
         steps={[
@@ -553,6 +573,11 @@ function AgentFailureModes() {
   };
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The five agent failure modes that repeat across every production deployment — infinite loops, hallucinated tool calls, context overflow, state amnesia, cascade failure — have a common property: they are systems failures, not model failures. The model is doing exactly what its architecture and configuration allow. The engineer who set retryLimit=0 and gave the agent 15 tools caused the infinite loop. Adding a better model doesn't fix it.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Recognising which failure mode you're looking at is the diagnostic skill this module builds. Each has a distinct symptom pattern — same tool called with identical arguments (loop), confident answer citing a non-existent tool parameter (hallucination), sudden quality degradation mid-session (overflow). Learn the patterns before you're reading production logs at 2am.</p>
+      </div>
       <HowTo
         objective="Know the 5 agent failure modes before you hit them in production. Most are systems problems — missing guardrails, no max steps, bad schemas — not model quality."
         steps={[
@@ -631,6 +656,11 @@ function PlanningPatterns() {
   const plan = PLANNING_PATTERNS.find(p => p.id === sel);
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Planning patterns determine how an agent thinks before it acts. Chain-of-Thought (linear reasoning trace) is the right default for most tasks — it's cheap, interpretable, and good enough. Tree-of-Thought (branching exploration of multiple paths) is warranted when the task has high uncertainty about the right approach upfront. Reflection (a second pass that critiques and revises the first answer) is warranted when accuracy on high-stakes outputs is worth an extra full inference pass.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The critical discipline: upgrade from CoT only when you have evidence that CoT accuracy is genuinely insufficient for your task. Tree-of-Thought at scale multiplies inference cost by the branching factor. Reflection doubles it. Use the right tool for the right problem — not the most sophisticated-sounding one.</p>
+      </div>
       <HowTo
         objective="Choose the right planning strategy. CoT is your default. ToT for complex branching. Reflection for high-stakes accuracy."
         steps={[
@@ -934,6 +964,11 @@ function AgentDesignChallenge() {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Most engineers can describe agent architecture in the abstract. Designing one that is production-safe for a specific real-world scenario — a customer support bot, an autonomous research agent, a coding assistant — is where gaps surface. The right tool set, memory architecture, and guardrail combination is different for each scenario, and there are specific wrong answers that cause specific production failures.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">This challenge scores your design decisions and explains exactly where your reasoning had gaps. Take your time on each decision before submitting — the instinct you build here is the same instinct you need in a system design interview and in production architecture reviews. Think through each decision as if it will go live.</p>
+      </div>
       <HowTo
         objective="Design a production-safe agent from scratch. For each challenge, choose the right tools, memory architecture, and guardrails — then see where your design had gaps."
         steps={[
@@ -1699,6 +1734,11 @@ function AgentLoopSimulator() {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Watching a real agent execution trace is the fastest way to build loop-level intuition that textbook descriptions can't give you. At each step, you see: the task, the current trace, the observations so far, and the branching options for what the agent should do next. Making the decision before seeing the answer reveals exactly where your mental model diverges from sound agent reasoning.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The wrong answers are specifically instructive — they represent the common failure modes in concrete form. Every trace in this simulator was designed around a real production decision point. Work through each scenario fully, not just until you get one right.</p>
+      </div>
       <HowTo
         objective="Step through real agent execution traces and predict what the agent should do at each step. Every wrong answer has a lesson."
         steps={["Pick a scenario", "Read the task and current trace", "Pick the best next action before revealing", "See the actual decision and explanation"]}
@@ -1907,6 +1947,11 @@ function FrameworkLandscape() {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">LangChain, LangGraph, LangSmith, OpenAI Agents SDK, and Google ADK are commonly confused because they partially overlap and are frequently mentioned together. They were built to solve different problems at different layers of the agent stack: orchestration (LangGraph), tool abstraction (LangChain), observability (LangSmith), runtime (OpenAI SDK), cross-framework coordination (ADK). Understanding the layer each operates at cuts through the hype.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Framework selection is a real architectural decision. Using LangGraph for a simple linear tool-calling agent adds unnecessary complexity. Skipping an orchestration framework for a complex multi-step workflow adds unnecessary fragility. Use the Decision Wizard to work through your actual use case — not a generic benchmark comparison.</p>
+      </div>
       <HowTo
         objective="Understand which AI agent framework fits your use case — and how LangChain, LangGraph, LangSmith, OpenAI SDK, and Google ADK relate to each other."
         steps={[
@@ -2150,6 +2195,11 @@ function LLMMemoryArchitecture() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The Agent Memory module covers the 4 fundamental memory types. This module goes deeper: the 6 specific memory storage libraries (Mem0, Zep, LangMem, MemGPT, Letta, custom vector stores) and when to reach for each. A lot of engineering time is wasted building custom memory solutions when a production-hardened library already exists and handles the hard cases — TTL expiry, memory consolidation, conflict resolution.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Use the Library Comparison to understand the differentiated positioning, then use the Decision Wizard with your specific use case — session length, user personalization requirements, retrieval latency SLA — to get a concrete recommendation. Library choice affects architecture in ways that are hard to refactor later.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {[{id:"types",label:"6 Memory Types"},{id:"libs",label:"Library Comparison"},{id:"wizard",label:"Decision Wizard"}].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -2309,6 +2359,11 @@ function MCPDeepDive() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Model Context Protocol (MCP) solves the N×M integration problem in agent tool development: instead of writing a custom tool integration for every LLM client × every tool service = N×M bespoke implementations, you write one MCP server that works with any MCP-compatible client. It's the USB-C of agent tools — a standardised interface that decouples producers from consumers.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Understanding the 4 primitives (resources, tools, prompts, sampling) determines whether you build MCP servers correctly or make architectural mistakes that are expensive to fix. The Build a Server tab gives you the pattern you'd actually use, not pseudocode. The MCP vs. Function Calling comparison answers the question that comes up in every architecture discussion about this protocol.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {[{id:"arch",label:"Architecture"},{id:"primitives",label:"4 Primitives"},{id:"build",label:"Build a Server"},{id:"vs",label:"MCP vs. Function Calling"}].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -2529,6 +2584,11 @@ function AgenticReliability() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Reliability engineering for agents is qualitatively different from standard software reliability. In conventional APIs, retrying a failed request is always safe. In agent systems, retrying a failed action can make things worse: a partially-executed file write retried creates duplicates; a purchase action retried charges twice; a database mutation retried corrupts state. The retry semantics that work everywhere else fail here.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">This module covers the engineering patterns that make agents safe to run in production: idempotency keys for tool calls, circuit breakers that stop cascading failures, timeout handling that distinguishes model slowness from system failure, and graceful degradation paths when the agent cannot complete its task. These are not optional — they are the difference between a demo and a production system.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -2671,6 +2731,11 @@ function ComputerUseAgents() {
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Computer Use &amp; Browser Agents</h2>
         <p className="text-zinc-400 text-sm">Agents that see screens and control computers. Vision → grounding → action → verify. Every production deployment needs explicit failure handling.</p>
+      </div>
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Computer use agents are the hardest deployment surface in AI engineering. Vision-to-action grounding fails in unpredictable ways: element identification breaks when UI state changes mid-task, coordinate-based clicking fails on different screen sizes, screenshot latency creates race conditions where the agent acts on a stale view. The model sees a snapshot, but the UI is dynamic.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The retry semantics are particularly dangerous: clicking a "submit" button twice can complete two orders. The engineering discipline required — idempotency, explicit confirmation before irreversible actions, human-in-the-loop gates — is higher than any other agent type. This module covers the production architecture required to make computer use agents safe, not just functional in demos.</p>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -2850,6 +2915,12 @@ function LongRunningWorkflows() {
         <p className="text-zinc-400 text-sm">Multi-hour or multi-day agent workflows with checkpointing, human handoffs, and durable execution. The engineering layer that makes complex agents production-grade.</p>
       </div>
 
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">A 30-minute or 8-hour agent workflow is a fundamentally different engineering problem from a 30-second one. Context windows overflow mid-task. Models are stateless across session boundaries. Partial progress is lost on failure — and resuming from scratch after 4 hours of work is unacceptable. Human approval gates need asynchronous handling that doesn't block the execution thread.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">This module covers the infrastructure layer that makes complex agents viable: checkpointing for resume-on-failure, durable execution frameworks (Temporal, Step Functions, LangGraph persistence), and the human handoff patterns that keep long-running tasks under control without requiring constant polling. These are the patterns that separate agent demos from production deployments.</p>
+      </div>
+
       <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
         <div className="text-zinc-500 text-xs font-mono font-bold mb-3">WHY THIS IS HARD</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -3009,6 +3080,12 @@ function A2AProtocol() {
       <div>
         <h2 className="text-xl font-bold text-white mb-1">A2A Protocol</h2>
         <p className="text-zinc-400 text-sm">Agent-to-Agent protocol (Google ADK, May 2025) — standardises how agents from different frameworks discover and call each other. Turns N×M custom integrations into N+M.</p>
+      </div>
+
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">A2A solves the N×M integration problem in multi-agent systems: N agent frameworks × M agent services = N×M custom integrations without a standard. A2A standardises how agents from different frameworks discover each other (via Agent Cards), authenticate, and exchange tasks — turning that N×M problem into N+M. It complements MCP (which handles model-to-tool communication) at the agent-to-agent layer.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The practical implication: as agent ecosystems grow, inter-framework compatibility becomes an architectural constraint. Understanding A2A vs. MCP positioning — what each protocol handles, where they overlap, and when you need both — is the knowledge that determines whether your multi-agent architecture is forward-compatible with the ecosystem direction.</p>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -3285,6 +3362,11 @@ function AgentConfigLab() {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg p-3.5 space-y-2" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-widest">What you're building intuition for</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Agent configuration choices cause production failures that look like model failures: infinite tool loops (retryLimit too low + too many tools), context overflow (large token budget + long-running task + no memory), tool poisoning (many tools + external data sources + no memory isolation). The model is behaving correctly given its configuration — the configuration is wrong.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">This lab maps specific configuration combinations to specific failure modes. Configure the task type, context budget, tool count, retry limit, and memory type — run the simulation — see which failure fires and exactly why. The goal is to build the instinct to catch these configurations in design review, before they become production incidents.</p>
+      </div>
       <div style={{ background: "linear-gradient(160deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "2px solid rgba(245,158,11,0.5)" }} className="rounded-xl p-4">
         <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Objective</p>
         <p className="text-sm text-zinc-300">Configure your agent architecture. Run the simulation. See which failure mode fires and exactly why — then get the fix.</p>
