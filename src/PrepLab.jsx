@@ -2706,6 +2706,7 @@ const TOPIC_COLORS = {
   behavioral: "bg-orange-500/20 text-orange-300 border-orange-500/30",
   multimodal: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
   reasoning: "bg-teal-500/20 text-teal-300 border-teal-500/30",
+  serving: "bg-purple-500/20 text-purple-300 border-purple-500/30",
 };
 
 const TOPIC_LABELS = {
@@ -2713,6 +2714,7 @@ const TOPIC_LABELS = {
   evaluation: "Evaluation", llmops: "LLMOps",
   safety: "Safety", product: "Product", behavioral: "Behavioral",
   multimodal: "Multimodal", reasoning: "Reasoning Models",
+  serving: "Serving & Inference",
 };
 
 const SKILL_KEYWORDS = {
@@ -2872,6 +2874,7 @@ function skillWeightLabel(weight) {
 }
 
 const RATING_VALUES = { strong: 0.9, okay: 0.5, weak: 0.0 };
+const DRILL_W       = { weak: 3,    okay: 1.5,  strong: 0.5 };
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
@@ -3692,14 +3695,13 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
   );
 }
 
-// ─── MODE 3: JD PREP ──────────────────────────────────────────────────────────
+// ─── MODE 3: INTERVIEW PREP PLAN ─────────────────────────────────────────────
 
-function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
+function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
   const [step, setStep] = useState(1);
   const [jdText, setJdText] = useState("");
-  const [resumeText, setResumeText] = useState("");
-  const [jdSkills, setJdSkills] = useState({});
-  const [resumeSkills, setResumeSkills] = useState({});
+  const [detectedTopics, setDetectedTopics] = useState([]);
+  const [ratings, setRatings] = useState({});
   const [sessionQs, setSessionQs] = useState([]);
   const [current, setCurrent] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -3707,20 +3709,26 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
   const [isCorrect, setIsCorrect] = useState(false);
   const [sessionAnswers, setSessionAnswers] = useState([]);
   const [done, setDone] = useState(false);
+  const [showGate, setShowGate] = useState(false);
 
-  const jdTopics = Object.keys(jdSkills);
-  const resumeTopics = Object.keys(resumeSkills);
-  const gaps = jdTopics.filter(t => !resumeTopics.includes(t));
+  const allRated = detectedTopics.length > 0 && detectedTopics.every(t => ratings[t.key]);
 
-  function analyzeJD() { setJdSkills(extractSkills(jdText)); setStep(2); }
-  function handleResume(text) { setResumeText(text); setResumeSkills(extractSkills(text)); }
+  function analyzeJD() {
+    const skills = extractSkills(jdText);
+    const sorted = Object.entries(skills)
+      .sort((a, b) => b[1].weight - a[1].weight)
+      .map(([key, v]) => ({ key, weight: v.weight }));
+    setDetectedTopics(sorted);
+    setRatings({});
+    setStep(2);
+  }
 
-  function buildQs() {
-    const wt = {};
-    for (const t of jdTopics) wt[t] = gaps.includes(t) ? 3 : 1;
+  function buildDrillQs() {
     let pool = [];
     for (const q of PREP_QUESTIONS) {
-      const w = wt[q.topic] || 0;
+      const dt = detectedTopics.find(t => t.key === q.topic);
+      if (!dt) continue;
+      const w = Math.ceil(dt.weight * (DRILL_W[ratings[dt.key]] || 1));
       for (let i = 0; i < w; i++) pool.push(q);
     }
     pool = shuffle(pool);
@@ -3736,44 +3744,49 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
     return uniq.slice(0, 20);
   }
 
-  function startSession() {
-    setSessionQs(buildQs()); setCurrent(0); setAnswer(""); setSubmitted(false);
-    setIsCorrect(false); setSessionAnswers([]); setDone(false); setStep(3);
+  function startDrill() {
+    setSessionQs(buildDrillQs());
+    setCurrent(0); setAnswer(""); setSubmitted(false);
+    setIsCorrect(false); setSessionAnswers([]); setDone(false);
+    setStep(3);
   }
 
   function submit() {
     const q = sessionQs[current];
-    if (q.type === "text") {
-      setIsCorrect(false); setSubmitted(true);
-    } else {
+    if (q.type === "text") { setIsCorrect(false); setSubmitted(true); }
+    else {
       const ok = parseInt(answer) === q.correct;
       setIsCorrect(ok); setSubmitted(true);
       setSessionAnswers(sa => [...sa, { q, correct: ok }]);
     }
   }
 
-  function selfGradeJD(ok) {
-    const q = sessionQs[current];
-    setSessionAnswers(sa => [...sa, { q, correct: ok }]);
+  function selfGrade(ok) {
+    setSessionAnswers(sa => [...sa, { q: sessionQs[current], correct: ok }]);
   }
 
   function next() {
-    if (current >= sessionQs.length - 1) setDone(true);
-    else { setCurrent(c => c + 1); setAnswer(""); setSubmitted(false); setIsCorrect(false); }
+    if (current >= sessionQs.length - 1) { setDone(true); return; }
+    setCurrent(c => c + 1); setAnswer(""); setSubmitted(false); setIsCorrect(false);
   }
 
+  // ── Results ──────────────────────────────────────────────────────────────────
   if (step === 3 && done) {
     const tc = sessionAnswers.filter(a => a.correct).length;
-    const pct = Math.round((tc / sessionAnswers.length) * 100);
+    const pct = Math.round((tc / Math.max(sessionAnswers.length, 1)) * 100);
     const bt = {};
     for (const { q, correct } of sessionAnswers) {
       if (!bt[q.topic]) bt[q.topic] = { correct: 0, total: 0 };
       bt[q.topic].total++;
       if (correct) bt[q.topic].correct++;
     }
+    const weakTopics = Object.entries(bt)
+      .filter(([, v]) => Math.round(v.correct / v.total * 100) < 50)
+      .map(([t]) => t);
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
-        <div className="max-w-2xl mx-auto space-y-6">
+        {showGate && <GateModal onUnlock={() => setShowGate(false)} onClose={() => setShowGate(false)} />}
+        <div className="max-w-2xl mx-auto space-y-5">
           <button onClick={onExit} className="text-zinc-400 hover:text-zinc-200 text-sm">← Exit</button>
           <div className="bg-zinc-900 rounded-2xl p-5 sm:p-8 border border-zinc-800 text-center">
             <p className="text-zinc-400 text-sm mb-2">Interview Readiness Score</p>
@@ -3782,20 +3795,92 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
           </div>
           <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 space-y-4">
             <h3 className="font-semibold text-zinc-200">Per-Topic Breakdown</h3>
-            {Object.entries(bt).map(([t, v]) => (
-              <ScoreBar key={t} label={TOPIC_LABELS[t]} score={v.correct} max={v.total}
-                color={Math.round(v.correct / v.total * 100) >= 70 ? "bg-emerald-500" : Math.round(v.correct / v.total * 100) >= 50 ? "bg-amber-500" : "bg-red-500"} />
-            ))}
+            {Object.entries(bt).map(([t, v]) => {
+              const pctT = Math.round(v.correct / v.total * 100);
+              return (
+                <ScoreBar key={t} label={TOPIC_LABELS[t] || t} score={v.correct} max={v.total}
+                  color={pctT >= 70 ? "bg-emerald-500" : pctT >= 50 ? "bg-amber-500" : "bg-red-500"} />
+              );
+            })}
           </div>
-          <button onClick={onExit} className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-sm">Back to Home</button>
+          {weakTopics.length > 0 && (
+            <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800 space-y-4">
+              <h3 className="font-semibold text-zinc-200">Study Resources for Weak Areas</h3>
+              {weakTopics.map(t => {
+                const res = TOPIC_STUDY_RESOURCES[t];
+                if (!res) return null;
+                return (
+                  <div key={t} className="space-y-1.5">
+                    <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">{TOPIC_LABELS[t]}</div>
+                    {res.gtPosts.map(p => (
+                      <button key={p.id} onClick={() => onNavigateTo({ tab: "groundtruth", postId: p.id })}
+                        className="block w-full text-left text-sm text-indigo-400 hover:text-indigo-300">
+                        → {p.title}
+                      </button>
+                    ))}
+                    {res.modules.map((m, i) => (
+                      <button key={i} onClick={() => onNavigateTo({ tab: m.tab, moduleId: m.moduleId })}
+                        className="block w-full text-left text-sm text-zinc-400 hover:text-zinc-300">
+                        → {m.label}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {/* Phase 4: Personalized Study Plan — gated */}
+          <div className="relative rounded-xl overflow-hidden border border-violet-500/20"
+            style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.08) 0%, rgba(15,15,17,0.95) 100%)" }}>
+            {!isAccessGranted() && (
+              <div className="absolute inset-0 backdrop-blur-sm bg-zinc-950/70 flex flex-col items-center justify-center z-10 gap-3 p-4">
+                <div className="text-xs font-mono text-violet-400 uppercase tracking-widest">Access Required</div>
+                <p className="text-xs text-zinc-400 text-center max-w-xs">Unlock your prioritized 30-day study plan with per-topic resource lists.</p>
+                <button onClick={() => setShowGate(true)}
+                  className="px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors">
+                  Unlock Full Plan →
+                </button>
+              </div>
+            )}
+            <div className={`p-5 space-y-3 ${!isAccessGranted() ? "blur-sm pointer-events-none select-none" : ""}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white">Your Personalized Study Plan</span>
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-violet-500/20 border border-violet-500/30 text-violet-400">PHASE 4</span>
+              </div>
+              <p className="text-xs text-zinc-400">Prioritized by gap score — JD weight × self-rating weakness. Study these in order.</p>
+              <div className="divide-y divide-zinc-800">
+                {detectedTopics
+                  .map(t => ({ ...t, rating: ratings[t.key] || "okay", gapScore: t.weight * (DRILL_W[ratings[t.key]] || 1) }))
+                  .sort((a, b) => b.gapScore - a.gapScore)
+                  .map(({ key, gapScore, rating }) => {
+                    const res = TOPIC_STUDY_RESOURCES[key];
+                    const wl = skillWeightLabel(Math.ceil(gapScore));
+                    return (
+                      <div key={key} className="flex items-center justify-between py-2.5">
+                        <div>
+                          <div className="text-sm text-zinc-200">{TOPIC_LABELS[key] || key}</div>
+                          <div className={`text-[10px] ${wl.color}`}>{wl.label} · rated {rating}</div>
+                        </div>
+                        <div className="text-[10px] text-zinc-500 text-right">
+                          {res ? `${res.gtPosts.length}p · ${res.modules.length}m` : ""}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+          <button onClick={onExit} className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-sm">Back to Modes</button>
         </div>
       </div>
     );
   }
 
+  // ── Drill (step 3) ───────────────────────────────────────────────────────────
   if (step === 3) {
     const q = sessionQs[current];
     if (!q) return null;
+    const gapKeys = detectedTopics.filter(t => ratings[t.key] === "weak").map(t => t.key);
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
         <div className="max-w-2xl mx-auto space-y-5">
@@ -3804,7 +3889,7 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
             <span className="text-sm text-zinc-500">{current + 1} / {sessionQs.length}</span>
           </div>
           <PBar value={current} max={sessionQs.length} />
-          <QuestionCard q={q} gaps={gaps} />
+          <QuestionCard q={q} gaps={gapKeys} />
           {!submitted && (
             <>
               {q.type === "mcq"
@@ -3821,23 +3906,21 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
             <RevealCard isCorrect={isCorrect} q={q} onNext={next}
               nextLabel={current >= sessionQs.length - 1 ? "See Results" : "Next →"}
               onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current}
-              onSelfGrade={selfGradeJD} />
+              onSelfGrade={selfGrade} />
           )}
         </div>
       </div>
     );
   }
 
-  // Steps 1 & 2
+  // ── Steps 1 & 2 ─────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
-          <h2 className="text-xl font-bold">JD + Resume Prep</h2>
+          <h2 className="text-xl font-bold">Interview Prep Plan</h2>
         </div>
-
-        {/* Step indicator */}
         <div className="flex items-center gap-2">
           {[1, 2, 3].map(s => (
             <React.Fragment key={s}>
@@ -3847,14 +3930,15 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
           ))}
         </div>
         <div className="flex justify-between text-xs text-zinc-500">
-          <span>Paste JD</span><span>Resume Gap</span><span>Session</span>
+          <span>Paste JD</span><span>Rate Yourself</span><span>Drill</span>
         </div>
-
         {step === 1 && (
           <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800 space-y-3">
-            <label className="block text-sm font-medium text-zinc-300">Job Description</label>
-            <textarea
-              value={jdText} onChange={e => setJdText(e.target.value)}
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Job Description</label>
+              <p className="text-xs text-zinc-500 mb-3">Paste the JD — we detect which AI skills it emphasizes, then you rate yourself. Weak spots get weighted 3× in your drill.</p>
+            </div>
+            <textarea value={jdText} onChange={e => setJdText(e.target.value)}
               placeholder="Paste the full job description here..." rows={10}
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-zinc-200 text-sm placeholder-zinc-600 focus:outline-none focus:border-indigo-500 resize-none"
             />
@@ -3864,72 +3948,60 @@ function JDPrepMode({ onExit, onNavigate, onNavigateTo }) {
             </button>
           </div>
         )}
-
         {step === 2 && (
-          <div className="space-y-5">
-            <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800 space-y-4">
-              <h3 className="font-medium text-zinc-300">Detected Skills in JD</h3>
-              {jdTopics.length === 0
-                ? <p className="text-zinc-500 text-sm">No specific skill keywords detected. Try pasting a more detailed JD.</p>
-                : <>
-                    <div className="flex flex-wrap gap-2">{jdTopics.map(t => <TopicChip key={t} topic={t} />)}</div>
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium text-zinc-300">Session focus: </span>
-                      {jdTopics.map((t, i) => `${TOPIC_LABELS[t]} (${Math.round(100 / jdTopics.length)}%)${i < jdTopics.length - 1 ? " · " : ""}`).join("")}
-                    </p>
-                  </>
-              }
-            </div>
-
-            <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800 space-y-3">
-              <label className="block text-sm font-medium text-zinc-300">
-                Resume Text <span className="text-zinc-500 font-normal">(optional)</span>
-              </label>
-              <textarea
-                value={resumeText} onChange={e => handleResume(e.target.value)}
-                placeholder="Paste your resume text to see gap analysis..." rows={6}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-zinc-200 text-sm placeholder-zinc-600 focus:outline-none focus:border-indigo-500 resize-none"
-              />
-            </div>
-
-            {resumeText.trim() && jdTopics.length > 0 && (
-              <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800 space-y-3">
-                <h3 className="font-medium text-zinc-300">Gap Analysis</h3>
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 text-sm">
-                  <div>
-                    <p className="text-zinc-500 text-xs mb-2 uppercase tracking-wide">JD Requires</p>
-                    <div className="space-y-1.5">{jdTopics.map(t => <div key={t} className="text-zinc-300">{TOPIC_LABELS[t]}</div>)}</div>
-                  </div>
-                  <div>
-                    <p className="text-zinc-500 text-xs mb-2 uppercase tracking-wide">You Mention</p>
-                    <div className="space-y-1.5">{jdTopics.map(t => (
-                      <div key={t} className={resumeTopics.includes(t) ? "text-emerald-400" : "text-zinc-500"}>
-                        {resumeTopics.includes(t) ? "✓" : "–"}
-                      </div>
-                    ))}</div>
-                  </div>
-                  <div>
-                    <p className="text-zinc-500 text-xs mb-2 uppercase tracking-wide">Gap</p>
-                    <div className="space-y-1.5">{jdTopics.map(t => (
-                      <div key={t} className={gaps.includes(t) ? "text-red-400 font-medium" : "text-zinc-500"}>
-                        {gaps.includes(t) ? "⚠" : "–"}
-                      </div>
-                    ))}</div>
+          <div className="space-y-4">
+            {detectedTopics.length === 0 ? (
+              <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800">
+                <p className="text-zinc-400 text-sm">No specific skill keywords detected.{" "}
+                  <button onClick={() => setStep(1)} className="text-indigo-400 hover:text-indigo-300">Try a more detailed JD.</button>
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800">
+                  <h3 className="font-medium text-zinc-200 mb-1">How strong are you in each area?</h3>
+                  <p className="text-xs text-zinc-500 mb-4">Be honest — weak areas get 3× more questions in your drill.</p>
+                  <div className="divide-y divide-zinc-800">
+                    {detectedTopics.map(({ key, weight }) => {
+                      const wl = skillWeightLabel(weight);
+                      const r = ratings[key];
+                      return (
+                        <div key={key} className="flex items-center justify-between py-2.5 gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm text-zinc-200">{TOPIC_LABELS[key] || key}</div>
+                            <div className={`text-[10px] flex items-center gap-1 ${wl.color}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${wl.dot} inline-block`} />
+                              {wl.label}
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5 shrink-0">
+                            {["weak", "okay", "strong"].map(rv => (
+                              <button key={rv} onClick={() => setRatings(prev => ({ ...prev, [key]: rv }))}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border ${
+                                  r === rv
+                                    ? rv === "weak"   ? "bg-red-500/20 border-red-500/50 text-red-300"
+                                    : rv === "okay"   ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
+                                                      : "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                                    : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                                }`}>
+                                {rv.charAt(0).toUpperCase() + rv.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-                {gaps.length > 0 && (
-                  <div className="px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <p className="text-sm text-red-300 font-medium">Your weak areas: {gaps.map(t => TOPIC_LABELS[t]).join(", ")}</p>
-                    <p className="text-xs text-zinc-500 mt-1">These will be weighted more heavily in your session.</p>
-                  </div>
+                <button onClick={startDrill} disabled={!allRated}
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold rounded-xl">
+                  Build My Drill →
+                </button>
+                {!allRated && (
+                  <p className="text-center text-xs text-zinc-500">Rate all {detectedTopics.length} topics to continue</p>
                 )}
-              </div>
+              </>
             )}
-
-            <button onClick={startSession} disabled={jdTopics.length === 0}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold rounded-xl">
-              Start Targeted Session →
-            </button>
           </div>
         )}
       </div>
@@ -4614,7 +4686,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
   const PREPLAB_SIDEBAR = [
     { id: "exam",        label: "Combined Assessment", tag: "EXAM",      desc: "Timed full-topic test" },
     { id: "trainer",     label: "Trainer",             tag: "TRAIN",     desc: "Adaptive question drill" },
-    { id: "jdprep",      label: "JD + Resume Prep",    tag: "TARGET",    desc: "Role-specific questions" },
+    { id: "jdprep",      label: "Interview Prep Plan",  tag: "PLAN",      desc: "JD → gap score → targeted drill" },
     { id: "companyprep", label: "Company Tracks",      tag: "ARCHETYPE", desc: "By company archetype" },
     { id: "defense",     label: "Defense Doc",         tag: "WAR ROOM",  desc: "Anticipate hard pushbacks" },
   ];
@@ -4650,7 +4722,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
         </button>
         {mode === "exam"        && <ExamMode onExit={exitMode} />}
         {mode === "trainer"     && <TrainerMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
-        {mode === "jdprep"      && <JDPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
+        {mode === "jdprep"      && <InterviewPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
         {mode === "companyprep" && <CompanyPrepMode onExit={exitMode} onNavigate={onNavigate} />}
         {mode === "defense"     && <DefenseDocMode onExit={exitMode} />}
         {!mode && (
