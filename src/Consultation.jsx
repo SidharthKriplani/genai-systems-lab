@@ -137,13 +137,13 @@ function search(q) {
   const scoredPosts = POSTS.map(p => ({ post: p, score: scorePost(p, kws) }))
     .filter(x => x.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
+    .slice(0, 7)
     .map(x => x.post);
 
   const scoredModules = MODULES_KB.map(m => ({ mod: m, score: scoreModule(m, kws) }))
     .filter(x => x.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
+    .slice(0, 4)
     .map(x => x.mod);
 
   return { posts: scoredPosts, modules: scoredModules, keywords: kws };
@@ -282,6 +282,22 @@ const SUGGESTED_QUESTIONS = [
   "How do agents work and when should I use them?",
 ];
 
+// ─── HIGHLIGHT HELPER ─────────────────────────────────────────────────────────
+
+function highlightText(text, keywords) {
+  if (!keywords || !keywords.length) return <>{text}</>;
+  const escaped = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const rx = new RegExp(`(${escaped.join("|")})`, "gi");
+  const parts = text.split(rx);
+  return (
+    <>
+      {parts.map((part, i) =>
+        i % 2 === 1 ? <strong key={i} className="text-white font-semibold">{part}</strong> : part
+      )}
+    </>
+  );
+}
+
 // ─── CATEGORY COLOUR MAP ─────────────────────────────────────────────────────
 
 const CAT_COLOURS = {
@@ -334,7 +350,7 @@ function CannedBox({ canned, onNavigate }) {
   );
 }
 
-function PostCard({ post, onNavigate, onNavigateTo }) {
+function PostCard({ post, onNavigate, onNavigateTo, keywords }) {
   const catCls = CAT_COLOURS[post.category] || "bg-zinc-800 text-zinc-400 border-zinc-700";
   return (
     <div
@@ -348,7 +364,7 @@ function PostCard({ post, onNavigate, onNavigateTo }) {
         <span className="text-xs text-zinc-600">{post.readMin} min read</span>
       </div>
       <p className="text-sm font-semibold text-white leading-snug">{post.title}</p>
-      <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{post.desc}</p>
+      <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{highlightText(post.desc, keywords)}</p>
       {(onNavigate || onNavigateTo) && (
         <button
           onClick={e => { e.stopPropagation(); onNavigateTo ? onNavigateTo({ tab: "groundtruth", postId: post.id }) : onNavigate("groundtruth"); }}
@@ -386,7 +402,7 @@ function ModuleCard({ mod, onNavigate }) {
   );
 }
 
-function ResultsPanel({ results, query, onNavigate, onNavigateTo }) {
+function ResultsPanel({ results, query, onNavigate, onNavigateTo, onRerun }) {
   const { posts, modules, keywords, canned } = results;
   const hasResults = posts.length > 0 || modules.length > 0;
 
@@ -396,19 +412,37 @@ function ResultsPanel({ results, query, onNavigate, onNavigateTo }) {
       {canned && <CannedBox canned={canned} onNavigate={onNavigate} />}
 
       {!hasResults ? (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-5 py-8 text-center space-y-2">
-          <p className="text-sm text-zinc-300">Nothing found for <span className="text-white font-semibold">"{query}"</span>.</p>
-          <p className="text-xs text-zinc-500">
-            Try rephrasing — or{" "}
-            {onNavigate ? (
-              <button onClick={() => onNavigate("groundtruth")} className="text-violet-400 hover:text-violet-300 transition-colors">
-                browse Ground Truth
-              </button>
-            ) : (
-              <span className="text-violet-400">browse Ground Truth</span>
-            )}{" "}
-            for all 135+ posts.
-          </p>
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-5 py-8 text-center space-y-2">
+            <p className="text-sm text-zinc-300">Nothing found for <span className="text-white font-semibold">"{query}"</span>.</p>
+            <p className="text-xs text-zinc-500">
+              Try rephrasing — or{" "}
+              {onNavigate ? (
+                <button onClick={() => onNavigate("groundtruth")} className="text-violet-400 hover:text-violet-300 transition-colors">
+                  browse Ground Truth
+                </button>
+              ) : (
+                <span className="text-violet-400">browse Ground Truth</span>
+              )}{" "}
+              for all 222+ posts.
+            </p>
+          </div>
+          {onRerun && (
+            <div className="space-y-2">
+              <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold">Try one of these</p>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTED_QUESTIONS.slice(0, 5).map(q => (
+                  <button
+                    key={q}
+                    onClick={() => onRerun(q)}
+                    className="text-xs px-3 py-1.5 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-600 hover:text-violet-400 transition-all"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -420,7 +454,7 @@ function ResultsPanel({ results, query, onNavigate, onNavigateTo }) {
               </p>
               <div className="space-y-2">
                 {posts.map(p => (
-                  <PostCard key={p.id} post={p} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />
+                  <PostCard key={p.id} post={p} onNavigate={onNavigate} onNavigateTo={onNavigateTo} keywords={keywords} />
                 ))}
               </div>
             </div>
@@ -507,7 +541,7 @@ export default function Consultation({ onNavigate, onNavigateTo }) {
       <div>
         <h1 className="text-xl font-bold text-white">Search the Lab</h1>
         <p className="text-sm text-zinc-500 mt-1">
-          Keyword search across 200+ Ground Truth posts and every module.
+          Keyword search across 222+ Ground Truth posts and every module.
         </p>
       </div>
 
@@ -531,7 +565,7 @@ export default function Consultation({ onNavigate, onNavigateTo }) {
           disabled={loading || !query.trim()}
           className="px-4 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold transition-all shrink-0"
         >
-          {loading ? "..." : "Ask →"}
+          {loading ? "..." : "Search →"}
         </button>
       </div>
 
@@ -560,6 +594,7 @@ export default function Consultation({ onNavigate, onNavigateTo }) {
           query={query}
           onNavigate={onNavigate}
           onNavigateTo={onNavigateTo}
+          onRerun={q => { setQuery(q); runSearch(q); }}
         />
       )}
 
