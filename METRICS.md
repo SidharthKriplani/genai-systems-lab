@@ -12,7 +12,8 @@ Events are fired via `track(eventName, properties)` in `src/analytics.js`.
 
 | Event | Fired when | Key properties |
 |---|---|---|
-| `home_viewed` | Home page mounts | — |
+| `home_viewed` | Home page mounts | `returning` (bool) — true if `getActivityData().isReturning` |
+| `returning_jump_back` | Returning user clicks a "Jump back in" tab pill | `tab` |
 | `start_here_clicked` | Any hero/journey CTA clicked | `location` (hero_cta_primary / hero_cta_secondary / journey_strip) |
 | `role_toggle` | Engineers / PMs / All toggle used | `role` |
 | `stat_clicked` | Clickable stat on home page clicked | `stat` |
