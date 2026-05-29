@@ -419,7 +419,7 @@ Only show the chip when the target gym is active (not `comingSoon`). Check again
 
 **Priority:** Medium — gym→lab direction works; this is the return path. Matters most for beginners who land in a lab and get stuck.
 
-**Status:** Pending
+**Status:** Done — shipped sprint 17 (commit `bf7cc6a`). Active gym chips in RAG Lab, Agent Lab, LLM Lab sidebars. Deep-link via `initialGym` prop + `navigateTo` gymId param. Eval Lab and Systems Lab chips deferred until their gyms go active.
 
 ---
 
