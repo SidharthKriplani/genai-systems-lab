@@ -2144,6 +2144,10 @@ function CostLatencyLab() {
         <p className="text-sm text-zinc-400 mt-1">Model selection feels abstract until you run the numbers. See what your architecture actually costs at production scale.</p>
       </div>
 
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Every production LLM system is a cost-latency tradeoff engine. Model size, quantization, batching strategy, and caching all live on the same Pareto frontier. This module builds intuition for where the tradeoffs actually live — which knobs move cost without affecting latency, and which ones move both.</p>
+      </div>
+
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
@@ -2689,6 +2693,10 @@ function FineTuningLab() {
         </div>
         <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Fine-Tuning Lab</h2>
         <p className="text-sm text-zinc-400 mt-1">Configure real training runs, see VRAM + cost tradeoffs, and solve fine-tuning decision scenarios.</p>
+      </div>
+
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Fine-tuning is the last resort, not the first option. Before committing to fine-tuning, ask: can prompt engineering solve this? Can RAG? Can few-shot examples? Fine-tuning costs 10-100x more to maintain than prompting and locks you to a specific model version. This module shows which problems actually need fine-tuning and which are better solved by other means.</p>
       </div>
 
       {/* Tabs */}
@@ -3506,6 +3514,9 @@ function PromptCachingLab() {
   ];
   return (
     <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Prompt caching is one of the highest-ROI optimizations available for systems with repetitive context — system prompts, tool definitions, few-shot examples. A cached 1000-token system prompt costs near zero to re-include. Configure your usage pattern and see where caching saves money vs. where it doesn't.</p>
+      </div>
       <HowTo
         objective="Understand prefix caching — what it is, when it cuts 90% of input costs, and which prompt patterns actually benefit."
         steps={[
@@ -5430,6 +5441,9 @@ function MultimodalAI() {
   ];
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Images are converted into token sequences and inserted into context alongside text — the LLM core doesn't change, only the front-end encoding does. The real engineering decisions are which fusion architecture fits your use case, how multimodal RAG differs from text-only retrieval, and where multimodal systems silently fail in production.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -5608,6 +5622,9 @@ function ContextWindowEngineering() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Longer context windows don't solve the retrieval problem — they change it. You can fit 200K tokens in a context window, but attention quality degrades as context grows. The "lost in the middle" problem means the model pays less attention to chunks positioned in the middle of a long context. This module shows where retrieval quality breaks down as a function of context length and position, and when RAG is the right answer vs. full context.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -5821,6 +5838,9 @@ function PromptEngineeringLab() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Prompt engineering is not about magic phrases — it's about controlling the model's reasoning process. Chain-of-thought, few-shot exemplars, and role priming each work through different mechanisms. DSPy represents the next step: automated prompt optimization that treats prompt writing as a compilation problem. This module covers both the manual techniques and the automated alternative.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -5945,6 +5965,9 @@ function AIRedTeaming() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Red teaming is how you find the ways your AI system fails before an adversary does. The attack surface is wider than most teams expect: jailbreaks, prompt injection, model extraction, membership inference, and multi-turn manipulation all exist in production. This module maps the full taxonomy and shows which defenses work against which attack classes.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -6310,6 +6333,9 @@ function TransformerArchitecture() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">The transformer architecture is the foundation of every modern LLM — but most engineers who work with LLMs have never traced exactly how input tokens become output probabilities. This module walks the full forward pass: embeddings, multi-head attention (the O(n²) bottleneck), residual connections, feed-forward layers, and how modern variants like GQA, SwiGLU, and RMSNorm evolved from the original 2017 design.</p>
+      </div>
       <style>{`
         @keyframes attn-line {
           from { stroke-dashoffset: 80; opacity: 0; }
@@ -6774,6 +6800,9 @@ function StructuredOutputEngineering() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Getting structured JSON from an LLM reliably is one of the most common production engineering challenges. The naive approach — "ask nicely in the prompt" — fails unpredictably at scale. Tool calling, constrained generation, and schema-enforced output are four strategies with dramatically different reliability profiles. This module covers which strategy to use and what production failures look like for each.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -6916,6 +6945,9 @@ function SyntheticDataGeneration() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Synthetic data generation is how frontier labs scale training and evaluation beyond what human annotation can provide. Self-instruct, distillation from stronger models, persona-based generation, and tool-augmented pipelines each produce different data quality profiles. The bottleneck is always quality, not quantity — and quality filters are what most teams skip.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -9223,6 +9255,9 @@ function FlashAttention() {
   const tabs = ["How It Works", "v1→v3 + MHA/GQA"];
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Standard attention is IO-bound, not compute-bound — the bottleneck is reading and writing the attention matrix between HBM and SRAM, not the floating-point operations themselves. Flash Attention eliminates the full N×N materialization by tiling the computation and fusing operations into a single kernel. Understanding this changes how you think about context length limits and VRAM budgets.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -9788,6 +9823,9 @@ function PromptCaching() {
   const tabs = ["How It Works", "Savings Calculator"];
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Prompt caching is one of the highest-ROI optimizations available for systems with repetitive context — system prompts, tool definitions, few-shot examples. A cached 1000-token system prompt costs near zero to re-include. Configure your usage pattern and see where caching saves money vs. where it doesn't.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -9868,6 +9906,9 @@ function FineTuningWorkflows() {
   const tabs = ["Methods Comparison", "Training Checklist"];
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Fine-tuning method selection determines your VRAM budget, data requirements, and maintenance overhead. Full fine-tuning, LoRA, QLoRA, and prompt tuning are not interchangeable — each has a specific regime where it wins. This module maps the decision matrix and gives you a pre-training checklist to run before committing GPU hours.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -9962,6 +10003,9 @@ function RLHFAlignment() {
   const tabs = ["RLHF Pipeline", "PPO vs DPO"];
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">RLHF is how pre-trained language models become instruction-following assistants. The three-stage pipeline — SFT, reward modeling, PPO — is expensive and unstable. DPO eliminates the explicit reward model by treating alignment as a classification problem directly on preference pairs. This module shows both approaches and where each breaks down in practice.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -10081,6 +10125,9 @@ function MultimodalSystems() {
   const tabs = ["Architectures", "Fusion Patterns"];
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">CLIP, LLaVA, and native multimodal architectures differ in how they fuse visual and textual representations — and the fusion pattern determines what tasks the system can handle and where it will fail. Early fusion, late fusion, and cross-attention fusion have distinct tradeoffs in training cost, modality alignment quality, and production latency.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -10267,6 +10314,9 @@ function AgentArchitecture() {
   const tabs = ["ReAct Loop", "Planning Patterns", "Tool Design"];
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">The ReAct loop — Thought, Action, Observation — is the fundamental unit of agent behavior, but the architecture decisions that determine reliability are upstream of it: how planning is structured, how tools are designed, and what happens when a step fails. This module covers the patterns that make agents reliable in production vs. the ones that look good in demos and fail at step 4.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
@@ -11696,6 +11746,10 @@ function VectorDBEngineering({ onNavigate }) {
         <p style={{ color: "#a1a1aa", fontSize: 14, margin: 0 }}>pgvector, Chroma, Pinecone, Weaviate, Qdrant — indexing strategies, hybrid search, and when to use what.</p>
       </div>
 
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4" style={{ marginBottom: 24 }}>
+        <p className="text-sm text-zinc-300 leading-relaxed">Vector database selection affects every retrieval operation your system will ever do — and switching after indexing means re-embedding your entire corpus. The real decision variables aren't brand names; they're index type (HNSW vs IVF flat vs IVF_PQ), distance metric (cosine vs dot product vs L2), and whether your query pattern is batch or real-time. Configure your scenario and see which architecture survives the load.</p>
+      </div>
+
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
         {tabs.map(t => (
@@ -12107,6 +12161,10 @@ function AgentMemoryArchitecture({ onNavigate }) {
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ color: "#f4f4f5", fontSize: 20, fontWeight: 700, margin: "0 0 6px" }}>Agent Memory Architecture</h2>
         <p style={{ color: "#a1a1aa", fontSize: 14, margin: 0 }}>Four memory types, why each needs different storage, and the decision layer that makes agents actually improve with use.</p>
+      </div>
+
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4" style={{ marginBottom: 24 }}>
+        <p className="text-sm text-zinc-300 leading-relaxed">Most agent failures aren't reasoning failures — they're memory architecture failures. The agent forgot context it should have kept, or kept context it should have discarded, or had no mechanism to distinguish the two. The four memory types (in-context, external, semantic, episodic) serve different retrieval patterns. Choose the wrong one and your agent will repeat the same reasoning step, contradict itself, or run up a context bill it can't afford.</p>
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
@@ -12777,6 +12835,9 @@ function QueryRefinementLab({ onNavigate }) {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">The query the user types is rarely the query you want to send to your retrieval system. HyDE, query decomposition, and multi-query expansion are three strategies for bridging the gap between a vague natural language question and the precise retrieval query that surfaces the right chunks. Each adds latency — the question is whether the retrieval quality improvement justifies the cost.</p>
+      </div>
       <div className="flex gap-2 border-b border-zinc-800 pb-3">
         {[["lab","Lab"],["strategies","Strategies"],["when","When to Use"]].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${tab===id?"bg-blue-600 text-white":"text-zinc-400 hover:text-white"}`}>{label}</button>
@@ -13210,6 +13271,9 @@ function AISafetyEngineering({ onNavigate }) {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Production AI safety is not a single filter — it's a layered defense: input classification, output validation, content policy, access control, and audit logging. Each layer has a false positive rate. Stack too many layers and you block legitimate queries; too few and you miss attacks. This module shows the attack surface and where each defense layer catches what.</p>
+      </div>
       <div className="flex gap-2 border-b border-zinc-800 pb-3">
         {[["attacks","Attack Patterns"],["defenses","Defense Layers"],["hardening","Hardening Checklist"]].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${tab===id?"bg-red-700 text-white":"text-zinc-400 hover:text-white"}`}>{label}</button>
