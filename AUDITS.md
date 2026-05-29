@@ -1923,3 +1923,29 @@ All four adaptation items documented in:
 - DECISIONS.md — Section 6: format integrity rule
 
 **Status:** ✅ Analysis complete. All findings mapped to backlog. No code shipped this session.
+
+---
+
+## Audit 41 — Visual Color Audit: One-Accent Discipline (May 2026)
+
+**Type:** Visual Consistency
+
+**Trigger:** After LUNA electric rebrand. User feedback: "still colorful" and "looks like careless color spraying."
+
+**What was audited:** Every location in App.jsx, Systems.jsx, and systems/modules.jsx where `color` properties are used to distinguish UI elements.
+
+**Root cause identified:** Two separate problems:
+1. **Navigation chrome**: NAV_GROUPS had 4 group accent colors (BUILD=cyan, PROVE=green, NAVIGATE=amber, KNOWLEDGE=violet). Near-void backgrounds (`#05060E`) removed the navy "color glue" that had been unifying them — each color popped independently after the rebrand.
+2. **Module content**: EVAL_CASES had 6 vivid type badge colors (indigo, amber, red, emerald, violet, orange). STRATEGY_SCENARIOS had 5 different card accent colors. All displayed simultaneously on screen.
+
+**Fixes applied:**
+- `App.jsx` NAV_GROUPS: all 4 group colors → `#52525b` (neutral). Active item = single hardcoded cyan gradient + inset box-shadow. Visited dots = `var(--gal-build)` at 0.45 opacity.
+- `Systems.jsx` SYSTEMS_GROUPS: DESIGN/BUILD/OPS all → `#52525b`.
+- `systems/modules.jsx` EVAL_CASES: 6 category type badges → `#22D3EE`.
+- `systems/modules.jsx` STRATEGY_SCENARIOS: 5 scenario card colors → `#22D3EE`.
+
+**What was NOT changed:** Semantic status colors (red=OOM/bad, amber=warning, green=good), data visualization chart series colors (need distinct colors to be readable), sequential step process diagrams (colors encode position/order). These are functional color encodings, not decorative.
+
+**Standing rule added:** One accent color in navigation chrome. No competing accent colors in sidebar group labels, module type badges, or scenario card accents. Semantic/chart/status colors exempt.
+
+**Status:** ✅ Resolved — commits `1b972b4`, `36a4360`, `9fce4d3`.

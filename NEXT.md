@@ -2,106 +2,60 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 24)*
+*Last updated: May 2026 (post sprint 27)*
 
 ---
 
-## Theme: Close the loops users already opened. Surface progress clearly.
+## Theme: Concepts Gym — depth-first module upgrade
 
-Sprint 22 structural overhaul complete (Build/Prove/Navigate). Sprint 23 visual redesign + animations complete. Sprint 24 full elevation token system complete — GAL now competes with PAL through and through. This session: interactive improvements that directly affect the learn loop.
+All 15 modules have basic interactivity. Three need a real upgrade to be genuinely excellent:
+- `flashattn` — has VRAM calculator but no animated tile traversal showing HBM vs SRAM
+- `rag-pipeline` — only shows happy path; needs a failure injection mode
+- `tempgame` — matching game is fine but no live softmax distribution visualizer
+
+After those three, the Retrieval gym needs a new module: `eval-loop` (how do you measure whether RAG is working?). Sprint target: 3 upgrades + 1 new module.
 
 ---
 
 ## Do this (in order)
 
-**Done this session (sprint 24):**
-- ~~Elevation token system (shell)~~ → `--bg` (#111520), `--surface` (#191e30), `--surface-2` (#1f2438), `--border` (#3d4668), `--border-subtle` (#2a3255) added to `:root` in `index.css`. App.jsx: root div, both sidebars (desktop + mobile), RAG Lab inner sidebar, header border, search modal, leaderboard modal, feedback modal, shortcuts modal all use tokens. Home.jsx: all door cards + Today section + Continue button use `--surface-2`/`--border`. Commits `08f4512`, `dc26961`.
-- ~~Elevation token system (full pass)~~ → `--color-zinc-900: #191e30` added to `:root` — single-line remap that fixes 300+ `bg-zinc-900` panel backgrounds across Agents.jsx, PrepLab.jsx, Concepts.jsx, GroundTruth.jsx, Systems.jsx in one shot (same technique as the sprint 8 zinc-500/600 contrast fix). All 5 lab sidebar shells converted to `var(--surface)` + `var(--border)`. All mobile back buttons use `var(--border)`. Commit `4192c3a`.
+**1. FlashAttention — animated tile traversal** `M effort` `HIGH`
+The current module is a VRAM calculator + static tiling grid. It's correct but passive. Add a "How it works" tab with an animated tile-by-tile walkthrough: tiles light up on the grid one by one, a sidebar shows what's in SRAM vs what would have been in HBM for standard attention, and a counter shows HBM writes: standard=n² vs flash=n. Step-through button + auto-play mode.
+File: `src/Concepts.jsx` — `FlashAttentionConcept` function (currently at ~line 4467). Add a second tab `[{ id: "calc", label: "VRAM Calculator" }, { id: "anim", label: "How It Works" }]`. The animation tab shows an 8×8 tile grid where tiles highlight in reading order, with a running counter of HBM memory writes vs standard attention.
 
-**Done this session (sprint 23):**
-- ~~CSS variables~~ → `--gal-build/prove/navigate/knowledge` added to `index.css`. NAV_GROUPS use `var()`. Commit `b5b4d2e`.
-- ~~Sidebar collapse~~ → `collapsedGroups` + chevron + item-count badge. Desktop + mobile. Commit `b5b4d2e`.
-- ~~Home hierarchy~~ → BUILD full-width dominant card with 4 lab pills. PROVE+NAVIGATE secondary row. Stats row removed. Commit `b5b4d2e`.
-- ~~Lab shell consistency~~ → RAG Lab sidebar header promoted (text-base). `ragDone` + progress bar. Eval Lab gets GT chip. Commit `b5b4d2e`.
+**2. RAG Pipeline — failure injection mode** `M effort` `HIGH`
+Currently the module walks through query→retrieve→augment→generate as a happy path. It needs a "What breaks" tab showing 3 failure scenarios: (a) stale retrieval (old doc retrieved), (b) low-relevance chunks (top-k too high, noise chunks injected), (c) hallucination despite context (model ignores retrieved content). Each failure shows the pipeline diverging at the failure point with a highlighted error + root cause + fix.
+File: `src/Concepts.jsx` — `RAGPipelineModule` function (~line 2139). Add a second tab `[{ id: "flow", label: "How RAG Works" }, { id: "breaks", label: "What Breaks" }]`. The "What Breaks" tab has 3 failure cards, each showing the pipeline with the broken stage highlighted red, a symptom description, root cause, and fix.
 
-**Done this session (sprint 22):**
-- ~~Fidelity badges on Lab modules~~ → FidelityBadge added to App.jsx, Agents.jsx, Systems.jsx. Commit `8578457`.
-- ~~Sidebar — Build/Prove/Navigate nav~~ → NAV_GROUPS rewritten, ALL_TABS updated, GROUP_COLORS updated. Commit `8578457`.
-- ~~Progress page three-lane rebuild~~ → ProgressView replaced with BUILD/PROVE/CONCEPTS lanes. Commit `8578457`.
-
-**1. RAG Lab — Done Card prominence fix** `S effort` `CRITICAL`
-The ✓ done card (forward pointer to PrepLab + GT post) is below the fold after a scenario completes. Users finish a scenario and leave without seeing it. The learn loop doesn't close.
-File: `src/App.jsx` — the done card is rendered inside the RAG Lab scenario panel. Currently it sits after the failure diagnosis block at the bottom of a long scroll. The card itself exists and has content (GT post link + PrepLab CTA) — it just needs to move up and become impossible to miss.
-Fix:
-- In `App.jsx`, find the RAG Lab scenario result view (look for `synthesis_close` or the done card render block).
-- Move the done card to render immediately below the failure diagnosis block, before any additional detail or config recap.
-- Make it full-width (`w-full`), visually distinct (violet gradient border, ✓ badge prominent), with `mt-4 mb-6` spacing so it breaks the scroll naturally.
-- No logic changes — pure JSX reorder + class adjustments.
-- Brace check after. Diff must be 0.
-See: UPGRADES.md → "RAG Lab — Done Card Prominence"
-
-**2. Concepts Gym — inline progress view + "next module" CTA** `S-M effort` `MEDIUM`
-PAL's Progress page shows per-room completion bars and a guided path with a named "NEXT" marker. Our Concepts Gym has the data (mastery set in localStorage, gym structure in GYMS constant) but no dedicated progress view. A returning user has no clear signal of where to go next within a gym.
-File: `src/Concepts.jsx` — `GymRoomView` and/or a new `GymProgressView` component.
-Fix:
-- In `GymRoomView`, add a progress summary at the top: `N / total modules done` bar (same style as the existing gym progress bar on the selector card, just surfaced inside the room).
-- Add a "Continue where you left off" CTA — detect the first incomplete module in the room's `moduleIds` list and render a button: `Continue: [module label] →` in the gym's accent color. If all done, render "All done — try the lab →" with the lab pointer.
-- Optionally: add a 2-line summary of what the user last completed (`mastery` set contains the IDs). "Last completed: Attention Mechanism."
-- This is essentially PAL's Guided Path right panel, scoped to one gym. Keep it to 8-10 lines of JSX — don't over-engineer.
-- Brace check after. Diff must be 0.
-Source: PAL comparison, May 2026
-
-**3. PrepLab — Keyboard shortcuts** `S effort` `LOW-MEDIUM`
-Every MCQ answer requires a mouse click. 1/2/3/4 to select + Enter to confirm is standard for any quiz tool. Power users on a study loop notice the friction immediately.
-File: `src/PrepLab.jsx` — ExamMode and TrainerMode components.
-Fix:
-- In ExamMode: add a `useEffect` with a `keydown` listener. Keys 1/2/3/4 map to answer index 0/1/2/3 — call the existing `selectAnswer(index)` handler. Enter key calls the existing `submitAnswer()` or `next()` handler depending on state. Clean up the listener on unmount (`return () => window.removeEventListener(...)`).
-- In TrainerMode: same pattern — 1/2/3/4 to select, Enter to confirm/advance. TrainerMode already has `handleAnswer(option)` — wire keys to call it.
-- Do NOT add keyboard shortcuts to InterviewPrepMode (free-text self-grade — no MCQ to wire to) or WeaknessHeatmapMode.
-- The `useEffect` import is already at the top of PrepLab.jsx — no new imports needed.
-- Brace check after. Diff must be 0.
-See: UPGRADES.md → "PrepLab.jsx — Keyboard Shortcuts"
+**3. Temperature — live logit distribution** `S effort` `MEDIUM`
+The temperature game (matching game) is good. But add a second tab: a live logit reshaper. Show 8 fixed logits for a token distribution, add a temperature slider (0.1→2.0), and show the softmax output updating in real time as a bar chart. The point: watch a near-certain distribution (99% probability on token A) flatten to 50/50 as temperature rises to 1.5. Label the sweet spots (0.2 = factual, 0.7 = balanced, 1.2+ = chaotic).
+File: `src/Concepts.jsx` — `TemperatureGame` function (~line 4328). Add a tab row `[{ id: "game", label: "Match the Output" }, { id: "live", label: "Live Logit Shaper" }]`.
 
 ---
 
-## If time allows (pick one, in priority order)
+## Pending from last session (still valid)
 
-**"Maps to Production" callout on root-cause cards** `S effort` `HIGH`
-Add a `productionNote` field to each RAG Lab scenario + Agent Lab failure matrix entry. Render as a subdued one-liner below the root-cause text: "In production this is: [service / OSS tool]." No logic change — pure data addition + a 5-line render update. Closes the single biggest gap identified in the third-party lab assessment (May 2026). Start with RAG Lab 6 scenarios, then agent failures.
-Files: `src/App.jsx` (ragScenarios), `src/Agents.jsx` (AGENT_FAILURE_MATRIX).
-See: UPGRADES.md → "Labs — Maps to Production Callout"
+**RAG Lab — Done Card prominence fix** `S effort` `CRITICAL`
+The ✓ done card (PrepLab + GT post forward pointer) sits below the fold after a scenario completes. Move it up to render immediately below the failure diagnosis block. No logic changes — pure JSX reorder.
+File: `src/App.jsx` — RAG Lab scenario result view. Find `synthesis_close` render block, move done card before detail/config recap.
 
-**"Your Interview Story" block on done cards** `S effort` `HIGH`
-Add a collapsible "See your interview story →" block to the RAG Lab done card (expand to reveal: "You diagnosed X → root cause Y → fix Z → in production this is W. That's your answer."). Copy is static and scenario-specific. 2–3 lines JSX per scenario + the copy itself.
-Dependency: Done card prominence fix should ship first.
-Files: `src/App.jsx` (RAG Lab done card section).
-See: UPGRADES.md → "Labs — Your Interview Story Block"
+**Concepts Gym — inline progress + "next module" CTA** `S-M effort` `MEDIUM`
+In `GymRoomView`, add a progress summary bar at top (N/total done) and a "Continue: [next module] →" CTA detecting first incomplete module.
+File: `src/Concepts.jsx` — `GymRoomView` component (~line 5254).
 
-**Streak + 4-week activity heatmap in returning user HomeTab** `S-M effort`
-ReturningHomeView (sprint 16) shows progress stats but no streak or activity grid. Add `gsl-streak` + `gsl-last-visit` + `gsl-activity-YYYY-MM-DD` localStorage keys, increment on any lab visit or PrepLab attempt. 4×7 grid in the Today section.
-File: `src/Home.jsx` — `ReturningHomeView` component and `getActivityData()` helper.
-Fix: on every tab navigation (`navigate()` in App.jsx), write today's date key to localStorage (`gsl-activity-YYYY-MM-DD = 1`). In `getActivityData()`, read the last 28 day-keys and return a boolean array. In `ReturningHomeView`, render a 4-row × 7-col grid in the Today section: filled cell = green-500/30, empty = zinc-800, today = ring. Streak = count of consecutive days ending today from the activity array.
-See: UPGRADES.md → "Home.jsx — Streak + Activity Heatmap"
-
----
-
-## Pending (pushed out this session)
-
-**Guided Paths — promote from tab to inline on Home returning-user view** `M effort`
-PAL surfaces the active guided path directly on its Progress page with named steps and a "Continue →" CTA. Our Learning Paths tab is a separate destination nobody finds. The fix is to inline the active path into `ReturningHomeView` in `Home.jsx` — detect the user's most-in-progress path from localStorage, render the next 3 steps, add a "Continue" CTA.
-Pushed out: lower urgency than sidebar + gym progress. Build after those ship.
-Source: PAL comparison, May 2026
-See: CLAUDE.md "Structural Upgrade" → Learning Paths as connective tissue
+**PrepLab — Keyboard shortcuts** `S effort` `LOW-MEDIUM`
+1/2/3/4 to select MCQ answer, Enter to confirm/advance. ExamMode and TrainerMode.
+File: `src/PrepLab.jsx`.
 
 ---
 
 ## Do NOT touch this session
 
 - Interview Strategy Tool — L effort, needs its own session
-- GT Series + Tags redesign — M-L effort, content taxonomy work needed first
-- React.lazy() code splitting — systematic architectural change, separate session
-- New modules / GT posts — content work, wrong session type
-- Career + AIPM consolidation — M-L effort, separate session
+- GT Series + Tags redesign — M-L effort
+- React.lazy() code splitting — systematic architectural change
+- Career + AIPM consolidation — M-L effort
+- New GT posts — wrong session type
 
 ---
 
@@ -110,5 +64,5 @@ See: CLAUDE.md "Structural Upgrade" → Learning Paths as connective tissue
 - [ ] Brace check on all modified files (diff must be 0)
 - [ ] Commit with descriptive message
 - [ ] Update CLAUDE.md sprint log
-- [ ] Update this file — move done items out, add anything new that came up
+- [ ] Update this file — move done items out, add anything new
 - [ ] Push: `cd ~/Documents/GitHub/genai-systems-lab && git push origin main`

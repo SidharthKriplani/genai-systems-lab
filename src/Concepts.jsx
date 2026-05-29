@@ -772,6 +772,14 @@ function TokenizerModule({ onNavigate }) {
 
 // ─── EMBEDDING MODULE ─────────────────────────────────────────────────────────
 
+const EMB_QUERIES = [
+  { label: "European cities", note: "A user searches for city information", anchor: { x: 0.66, y: 0.58 } },
+  { label: "AI / machine learning", note: "A user asks about ML concepts", anchor: { x: 0.51, y: 0.27 } },
+  { label: "Domestic pets", note: "A user looks up pet care guides", anchor: { x: -0.70, y: -0.65 } },
+  { label: "Feelings / mood", note: "A user describes emotional context", anchor: { x: 0.12, y: -0.33 } },
+  { label: "Royalty / monarchy", note: "A user queries about royal history", anchor: { x: -0.77, y: 0.65 } },
+];
+
 function EmbeddingModule({ onNavigate }) {
   const W = 680, H = 480;
   const pad = 40;
@@ -780,9 +788,25 @@ function EmbeddingModule({ onNavigate }) {
     y: ((1 - ny) / 2) * (H - pad * 2) + pad,
   });
 
+  const [embTab, setEmbTab] = useState("map");
   const [hovered, setHovered] = useState(null);
   const [arithIdx, setArithIdx] = useState(0);
   const [showArith, setShowArith] = useState(false);
+  const [queryIdx, setQueryIdx] = useState(0);
+  const [topK, setEmbTopK] = useState(5);
+
+  const searchResults = useMemo(() => {
+    const q = EMB_QUERIES[queryIdx];
+    return WORDS
+      .map(w => ({ ...w, sim: cosine(q.anchor, w) }))
+      .sort((a, b) => b.sim - a.sim)
+      .slice(0, 12);
+  }, [queryIdx]);
+
+  const EMB_TABS = [
+    { id: "map", label: "Semantic Map" },
+    { id: "search", label: "Similarity Search" },
+  ];
 
   const ex = ARITHMETIC_EXAMPLES[arithIdx];
   const getW = (name) => WORDS.find((w) => w.word === name);
@@ -806,9 +830,22 @@ function EmbeddingModule({ onNavigate }) {
     <div className="space-y-4">
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
         <p className="text-sm text-zinc-300 leading-relaxed">
-          An embedding converts text into a point in high-dimensional space, where meaning maps to distance. "Dog" and "puppy" land close together; "dog" and "database" do not. This is what makes semantic search work: instead of matching exact keywords, a retrieval system finds chunks whose embeddings are <strong className="text-white">closest in meaning</strong> to your query. The map below compresses those distances into 2D — hover any word to see its nearest neighbors, or run the arithmetic examples to see how meaning combines mathematically.
+          An embedding converts text into a point in high-dimensional space, where meaning maps to distance. "Dog" and "puppy" land close together; "dog" and "database" do not. This is what makes semantic search work: instead of matching exact keywords, a retrieval system finds chunks whose embeddings are <strong className="text-white">closest in meaning</strong> to your query.
         </p>
       </div>
+
+      {/* Tab selector */}
+      <div className="flex gap-1 border-b border-zinc-800">
+        {EMB_TABS.map(t => (
+          <button key={t.id} onClick={() => setEmbTab(t.id)}
+            className={`px-4 py-2 text-xs font-bold rounded-t transition-all ${embTab === t.id ? "bg-zinc-800 text-white border-b-2 border-violet-500" : "text-zinc-500 hover:text-zinc-300"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {embTab === "map" && (
+      <div className="space-y-4">
       {/* Controls */}
       <div className="flex items-center gap-4 flex-wrap">
         <button
@@ -986,6 +1023,89 @@ function EmbeddingModule({ onNavigate }) {
           ))}
         </div>
       </div>
+      </div>
+      )}
+
+      {embTab === "search" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-4 py-3">
+            <p className="text-xs text-zinc-400 leading-relaxed">Pick a query topic and see which words from the vocabulary are retrieved — ranked by cosine similarity. This is exactly what happens in a RAG system: your query vector is compared against all document chunk vectors and the top-k nearest are returned.</p>
+          </div>
+
+          {/* Query picker */}
+          <div className="space-y-2">
+            <div className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Query topic</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {EMB_QUERIES.map((q, i) => (
+                <button key={i} onClick={() => setQueryIdx(i)}
+                  className={`rounded-lg border p-3 text-left transition-all ${queryIdx === i ? "border-violet-600 bg-violet-950/30" : "border-zinc-700 bg-zinc-900/40 hover:border-zinc-600"}`}>
+                  <div className="text-xs font-bold text-zinc-200">{q.label}</div>
+                  <div className="text-[11px] text-zinc-500 mt-0.5">{q.note}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Top-k slider */}
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-zinc-400 font-bold">top_k — retrieve this many chunks</span>
+              <span className="text-violet-400 font-bold font-mono">{topK}</span>
+            </div>
+            <input type="range" min="1" max="12" step="1" value={topK}
+              onChange={e => setEmbTopK(+e.target.value)} className="w-full accent-violet-500" />
+            <div className="flex justify-between text-[10px] text-zinc-600 font-mono">
+              <span>1 (very precise)</span><span>12 (broad)</span>
+            </div>
+          </div>
+
+          {/* Results */}
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Retrieved chunks (top {topK})</div>
+              <div className="text-[10px] font-mono text-zinc-500">Query: "{EMB_QUERIES[queryIdx].label}"</div>
+            </div>
+            <div className="space-y-2">
+              {searchResults.slice(0, topK).map((w, i) => {
+                const pct = Math.max((w.sim + 1) / 2 * 100, 5);
+                const inPool = true;
+                return (
+                  <div key={w.word} className="flex items-center gap-3">
+                    <div className="text-xs font-mono w-4 text-zinc-600 shrink-0">{i + 1}</div>
+                    <div className={`text-xs font-mono w-16 shrink-0 ${i === 0 ? "text-white font-bold" : i < 3 ? "text-violet-300" : "text-zinc-400"}`}>
+                      {w.word}
+                    </div>
+                    <div className="flex-1 h-4 bg-zinc-800 rounded overflow-hidden">
+                      <div className="h-full rounded transition-all duration-300"
+                        style={{ width: `${pct}%`, background: i === 0 ? "#8b5cf6" : i < 3 ? "#6366f155" : "#3f3f46" }} />
+                    </div>
+                    <div className="text-xs font-mono w-14 text-right shrink-0 text-zinc-500">
+                      {w.sim.toFixed(3)}
+                    </div>
+                    <div className="text-[10px] shrink-0">
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold"
+                        style={{ background: CAT_COLORS[w.cat].dot + "33", color: CAT_COLORS[w.cat].dot }}>
+                        {w.cat}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Noise warning */}
+            {topK > 6 && (
+              <div className="rounded-lg border border-amber-800/50 bg-amber-950/15 px-3 py-2 text-xs text-amber-300">
+                <span className="font-bold">High top_k warning:</span> At top_k={topK}, result #{7} and beyond have lower similarity scores — these would add noise to your LLM's context. This is the noise injection failure mode from the RAG module: too many chunks overwhelm the signal.
+              </div>
+            )}
+
+            <div className="rounded-lg bg-zinc-950 border border-zinc-800 px-3 py-2 text-xs text-zinc-400 leading-relaxed">
+              In production, cosine similarity scores above ~0.85 are strong signal; 0.70–0.85 is usable; below 0.70 is noise. The threshold you set determines precision vs. recall — tighter means fewer but more relevant results.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Beat 3 — synthesis close */}
       <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
@@ -2136,7 +2256,52 @@ const RAG_FINAL_ANSWER =
   "For annual plans, refunds are prorated minus a 10% fee (Chunk 2). " +
   "If you're on an enterprise contract, your specific SLA applies — please check your agreement or contact your account manager.";
 
+const RAG_FAILURE_SCENARIOS = [
+  {
+    id: "stale",
+    title: "Stale Retrieval",
+    tag: "RETRIEVAL LAYER",
+    tagColor: "#f59e0b",
+    trigger: "Document re-indexed 18 months ago. Policy changed from 14-day to 7-day refund window.",
+    normal: "Chunk 1 (score 0.91): \"All SaaS subscriptions are eligible for a full refund within 14 days of purchase.\"",
+    broken: "Chunk 1 (score 0.91): \"All SaaS subscriptions are eligible for a full refund within 14 days of purchase.\" [STALE — actual policy: 7 days since March 2024]",
+    modelOutput: "You are eligible for a full refund within 14 days of purchase.",
+    realOutput: "You are eligible for a full refund within 7 days of purchase.",
+    diagnosis: "The model answered correctly — relative to its context. The retrieved chunk was authoritative (score 0.91) but outdated. The LLM has no access to document timestamps and no way to know a chunk is stale. Every confident answer is only as fresh as your index.",
+    fix: "Add freshness metadata to every chunk. Set a re-indexing cadence per document type (policies: weekly, docs: on-publish). Filter or down-weight chunks older than a threshold. Treat index freshness as an SLA, not a background job.",
+  },
+  {
+    id: "noise",
+    title: "Noise Injection (top_k too high)",
+    tag: "RETRIEVAL CONFIG",
+    tagColor: "#ef4444",
+    trigger: "top_k set to 15 instead of 3. 12 marginally-relevant chunks retrieved alongside the 3 correct ones.",
+    normal: "3 focused chunks, all about refund policy. Context is clean and scoped.",
+    broken: "15 chunks including: billing dispute procedures, enterprise renewal terms, EU VAT reclaim notes, payment method FAQ, general cancellation flow. Context: ~3,800 tokens.",
+    modelOutput: "Refund eligibility may depend on your region, contract type, and whether it is an annual or monthly subscription. For enterprise customers on custom contracts, please contact your account manager. EU customers may be subject to different VAT policies...",
+    realOutput: "You are eligible for a full refund within 14 days of purchase, unless on an annual plan.",
+    diagnosis: "Too many chunks forces the model to reconcile noise with signal. The answer becomes a hallucinated amalgamation of adjacent topics — technically sourced, but not grounded in the relevant chunk. The retriever did its job; the config broke it.",
+    fix: "Start with top_k=3–5 for most use cases. Measure Precision@k on a golden question set before going higher. If you need broader recall, use a reranker to filter before passing to the LLM — not raw top_k expansion.",
+  },
+  {
+    id: "parametric",
+    title: "Context Grounding Failure",
+    tag: "GENERATION LAYER",
+    tagColor: "#8b5cf6",
+    trigger: "Model has strong parametric prior about 30-day refund norms from training data. Retrieved chunk says 14 days.",
+    normal: "System prompt instructs: \"Answer only from the provided context.\" Chunk 1 clearly states 14 days.",
+    broken: "Model generates: \"Typically, most SaaS products offer a 30-day refund window...\" — ignoring the retrieved context entirely.",
+    modelOutput: "Typically, most SaaS products offer a 30-day money-back guarantee...",
+    realOutput: "You are eligible for a full refund within 14 days of purchase.",
+    diagnosis: "Strong parametric priors can override retrieval context, especially when the retrieved content contradicts common knowledge from training data. \"Answer only from context\" instructions reduce this but do not eliminate it — particularly with smaller models or when the retrieved content is ambiguous.",
+    fix: "Use explicit grounding prompts: \"If the context does not contain the answer, say so — do not use your training knowledge.\" Test with LLM-as-judge grounding evals. Prefer models that show lower parametric override rates on your domain. Log cases where the answer doesn't cite a chunk.",
+  },
+];
+
 function RAGPipelineModule({ onNavigate }) {
+  const [ragTab, setRagTab] = useState("pipeline");
+  const [activeFailure, setActiveFailure] = useState(null);
+  const [failureTriggered, setFailureTriggered] = useState(false);
   const [step, setStep] = useState(0);
   const [visibleChunks, setVisibleChunks] = useState(0);
   const [typedAnswer, setTypedAnswer] = useState("");
@@ -2178,14 +2343,31 @@ function RAGPipelineModule({ onNavigate }) {
   }
 
   const STEP_LABELS = ["Query → Retrieval", "Augmentation", "Generation"];
+  const RAG_TABS = [
+    { id: "pipeline", label: "Walk the Pipeline" },
+    { id: "breaks", label: "What Breaks" },
+  ];
 
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
         <p className="text-sm text-zinc-300 leading-relaxed">
-          LLMs are frozen at their training cutoff — they have no access to your documents, your database, or anything that happened since they were trained. <strong className="text-white">RAG fixes this</strong>: at query time, relevant chunks are retrieved from your data and injected into the model's context so the answer is grounded in what you actually have, not what the model memorised. The model's job becomes synthesis, not recall. Walk through the three steps below in order — each step builds on the last.
+          LLMs are frozen at their training cutoff — they have no access to your documents, your database, or anything that happened since they were trained. <strong className="text-white">RAG fixes this</strong>: at query time, relevant chunks are retrieved from your data and injected into the model's context so the answer is grounded in what you actually have, not what the model memorised. The model's job becomes synthesis, not recall.
         </p>
       </div>
+
+      {/* Tab selector */}
+      <div className="flex gap-1 border-b border-zinc-800">
+        {RAG_TABS.map(t => (
+          <button key={t.id} onClick={() => setRagTab(t.id)}
+            className={`px-4 py-2 text-xs font-bold rounded-t transition-all ${ragTab === t.id ? "bg-zinc-800 text-white border-b-2 border-indigo-500" : "text-zinc-500 hover:text-zinc-300"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {ragTab === "pipeline" && (
+      <div className="space-y-4">
       {/* Step indicator */}
       <div className="flex items-center gap-0">
         {STEP_LABELS.map((label, i) => (
@@ -2385,6 +2567,91 @@ function RAGPipelineModule({ onNavigate }) {
       <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
         <p className="text-sm text-zinc-400 leading-relaxed italic">RAG converts an LLM's job from recall to synthesis — and that is a more tractable problem for a language model. But the quality ceiling is set by retrieval, not generation: the best LLM in the world cannot answer correctly from a wrong or stale chunk. Treat the retrieval pipeline as a first-class engineering surface with its own evaluation metrics, freshness monitoring, and tuning cadence.</p>
       </div>
+      </div>
+      )}
+
+      {ragTab === "breaks" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-4 py-3">
+            <p className="text-xs text-zinc-400 leading-relaxed">RAG has three distinct failure layers. Select a scenario to see exactly where it breaks and what the output looks like — then read the production fix.</p>
+          </div>
+
+          {/* Scenario selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {RAG_FAILURE_SCENARIOS.map(s => (
+              <button key={s.id}
+                onClick={() => { setActiveFailure(s.id); setFailureTriggered(false); }}
+                className={`rounded-xl border p-4 text-left transition-all ${activeFailure === s.id ? "border-red-700 bg-red-950/20" : "border-zinc-700 bg-zinc-900/40 hover:border-zinc-600"}`}>
+                <div className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: s.tagColor }}>{s.tag}</div>
+                <div className="text-sm font-bold text-white">{s.title}</div>
+              </button>
+            ))}
+          </div>
+
+          {activeFailure && (() => {
+            const s = RAG_FAILURE_SCENARIOS.find(f => f.id === activeFailure);
+            return (
+              <div className="space-y-3">
+                {/* Trigger */}
+                <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 space-y-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Failure trigger</div>
+                  <div className="text-xs text-zinc-300 leading-relaxed font-mono bg-zinc-950 rounded-lg border border-zinc-800 px-3 py-2">{s.trigger}</div>
+                </div>
+
+                {/* Normal vs broken context */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/10 p-4 space-y-2">
+                    <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide">Healthy system</div>
+                    <p className="text-xs text-zinc-300 leading-relaxed">{s.normal}</p>
+                  </div>
+                  <div className="rounded-xl border border-red-800/50 bg-red-950/10 p-4 space-y-2">
+                    <div className="text-[10px] font-bold text-red-400 uppercase tracking-wide">With failure injected</div>
+                    <p className="text-xs text-zinc-300 leading-relaxed">{s.broken}</p>
+                  </div>
+                </div>
+
+                {/* Inject failure button */}
+                {!failureTriggered ? (
+                  <button onClick={() => setFailureTriggered(true)}
+                    className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all"
+                    style={{ backgroundColor: s.tagColor + "dd", border: `1px solid ${s.tagColor}` }}>
+                    Inject failure — see output
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Output comparison */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-red-700/60 bg-red-950/15 p-4 space-y-2">
+                        <div className="text-[10px] font-bold text-red-400 uppercase tracking-wide">Broken output</div>
+                        <p className="text-xs text-zinc-200 leading-relaxed font-mono">{s.modelOutput}</p>
+                      </div>
+                      <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/15 p-4 space-y-2">
+                        <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide">Correct output</div>
+                        <p className="text-xs text-zinc-200 leading-relaxed font-mono">{s.realOutput}</p>
+                      </div>
+                    </div>
+                    {/* Diagnosis + fix */}
+                    <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 space-y-3">
+                      <div>
+                        <div className="text-xs font-bold text-red-400 mb-1.5">Diagnosis</div>
+                        <p className="text-xs text-zinc-300 leading-relaxed">{s.diagnosis}</p>
+                      </div>
+                      <div className="border-t border-zinc-800 pt-3">
+                        <div className="text-xs font-bold text-emerald-400 mb-1.5">Production fix</div>
+                        <p className="text-xs text-zinc-300 leading-relaxed">{s.fix}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setFailureTriggered(false)}
+                      className="w-full py-2 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold transition-all">
+                      Reset failure
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Go deeper footer */}
       {onNavigate && (
@@ -4326,9 +4593,23 @@ const TEMP_CHALLENGES = [
 ];
 
 function TemperatureGame() {
+  const [tempTab, setTempTab] = useState("game");
   const [idx, setIdx] = useState(0);
   const [guesses, setGuesses] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [shaperExIdx, setShaperExIdx] = useState(0);
+  const [shaperTemp, setShaperTemp] = useState(0.7);
+
+  const shaperEx = LOGIT_EXAMPLES[shaperExIdx];
+  const shaperProbs = useMemo(
+    () => computeSoftmax(shaperEx.logits, shaperTemp),
+    [shaperExIdx, shaperTemp]
+  );
+  const shaperEntropy = -shaperProbs.reduce(
+    (s, p) => s + (p > 0 ? p * Math.log2(p) : 0),
+    0
+  );
+  const maxShaperProb = Math.max(...shaperProbs);
 
   const ch = TEMP_CHALLENGES[idx];
   const allGuessed = ch.outputs.every(o => guesses[o.id] !== undefined);
@@ -4337,7 +4618,6 @@ function TemperatureGame() {
     if (submitted) return;
     setGuesses(prev => {
       const next = { ...prev };
-      // If another output has this label, unset it
       Object.keys(next).forEach(k => { if (next[k] === label) delete next[k]; });
       next[outputId] = label;
       return next;
@@ -4358,113 +4638,294 @@ function TemperatureGame() {
   const tempLabels = ch.outputs.map(o => o.label);
   const correctCount = submitted ? ch.outputs.filter(o => guesses[o.id] === o.label).length : 0;
 
+  const TEMP_TABS = [
+    { id: "game", label: "Match the Output" },
+    { id: "live", label: "Live Logit Shaper" },
+  ];
+
+  const tempColor = shaperTemp <= 0.3
+    ? "#22c55e"
+    : shaperTemp <= 0.9
+    ? "#f59e0b"
+    : shaperTemp <= 1.4
+    ? "#f97316"
+    : "#ef4444";
+
+  const tempZone = shaperTemp <= 0.3
+    ? "Deterministic — factual tasks, classification"
+    : shaperTemp <= 0.9
+    ? "Balanced — conversational, light creative"
+    : shaperTemp <= 1.4
+    ? "High variance — creative, brainstorming"
+    : "Incoherence zone — rarely useful in production";
+
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
         <p className="text-sm text-zinc-300 leading-relaxed">
-          Temperature is a scalar applied to the logits before softmax. Divide by a number less than 1 and the distribution <strong className="text-white">sharpens</strong> — high-probability tokens dominate, outputs become predictable. Divide by a number greater than 1 and it <strong className="text-white">flattens</strong> — probability spreads across more tokens, outputs become varied and eventually incoherent. In production: 0–0.3 for factual extraction and classification, 0.7–1.0 for creative tasks, never above 1.2 in anything user-facing. It's one of the first parameters you tune — and one of the most common sources of silent quality regressions when changed without testing. Match the outputs below to their temperatures, then read why each sounds the way it does.
+          Temperature is a scalar applied to the logits before softmax. Divide by a number less than 1 and the distribution <strong className="text-white">sharpens</strong> — high-probability tokens dominate, outputs become predictable. Divide by a number greater than 1 and it <strong className="text-white">flattens</strong> — probability spreads across more tokens, outputs become varied and eventually incoherent. In production: 0–0.3 for factual extraction and classification, 0.7–1.0 for creative tasks, never above 1.2 in anything user-facing.
         </p>
       </div>
 
-      <div className="flex gap-1.5">
-        {TEMP_CHALLENGES.map((_, i) => (
-          <button key={i} onClick={() => { setIdx(i); setGuesses({}); setSubmitted(false); }}
-            className={`w-7 h-7 rounded text-xs font-bold transition-all ${idx === i ? "bg-amber-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-            {i + 1}
+      {/* Tab selector */}
+      <div className="flex gap-1 border-b border-zinc-800 pb-0">
+        {TEMP_TABS.map(t => (
+          <button key={t.id} onClick={() => setTempTab(t.id)}
+            className={`px-4 py-2 text-xs font-bold rounded-t transition-all ${tempTab === t.id ? "bg-zinc-800 text-white border-b-2 border-amber-500" : "text-zinc-500 hover:text-zinc-300"}`}>
+            {t.label}
           </button>
         ))}
       </div>
 
-      <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-4">
-        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Prompt</div>
-        <div className="rounded bg-zinc-950 border border-zinc-800 p-3 text-sm text-zinc-300 font-mono">"{ch.prompt}"</div>
-
-        <div className="text-xs text-zinc-500">Drag or click to assign a temperature label to each output. Each label can only be used once.</div>
-
-        <div className="flex gap-2 flex-wrap">
-          {tempLabels.map(label => {
-            const used = Object.values(guesses).includes(label);
-            return (
-              <span key={label} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${used ? "bg-amber-900/60 border-amber-700 text-amber-300" : "bg-zinc-800 border-zinc-700 text-zinc-400"}`}>
-                {label}
-              </span>
-            );
-          })}
-        </div>
-
-        <div className="space-y-3">
-          {ch.outputs.map((out, i) => {
-            const selectedLabel = guesses[out.id];
-            const isCorrect = submitted && selectedLabel === out.label;
-            const isWrong = submitted && selectedLabel && selectedLabel !== out.label;
-            return (
-              <div key={out.id} className={`rounded-lg border p-4 space-y-3 transition-all ${isCorrect ? "border-emerald-700 bg-emerald-950/30" : isWrong ? "border-red-700 bg-red-950/30" : "border-zinc-700 bg-zinc-900/40"}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="text-xs text-zinc-300 leading-relaxed flex-1">
-                    <span className="text-zinc-500 font-mono mr-2">[{String.fromCharCode(65 + i)}]</span>
-                    {out.text}
-                  </div>
-                  {submitted && (
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded shrink-0 ${isCorrect ? "bg-emerald-900 text-emerald-300" : "bg-red-900 text-red-300"}`}>
-                      {out.label} {isCorrect ? "✓" : "✗"}
-                    </span>
-                  )}
-                </div>
-                {!submitted && (
-                  <div className="flex gap-2 flex-wrap">
-                    {tempLabels.map(label => {
-                      const alreadyUsedElsewhere = Object.entries(guesses).some(([k, v]) => k !== out.id && v === label);
-                      const selected = guesses[out.id] === label;
-                      return (
-                        <button key={label} onClick={() => !alreadyUsedElsewhere && setGuess(out.id, label)}
-                          className={`px-2 py-1 rounded text-[11px] font-bold transition-all ${selected ? "bg-amber-600 text-white" : alreadyUsedElsewhere ? "bg-zinc-800 text-zinc-500 cursor-not-allowed" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"}`}>
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {!submitted ? (
-          <button onClick={submit} disabled={!allGuessed}
-            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${allGuessed ? "bg-amber-600 hover:bg-amber-500 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}>
-            Check answers
-          </button>
-        ) : (
-          <div className="space-y-3">
-            <div className={`rounded-lg p-3 text-center ${correctCount === 3 ? "bg-emerald-900/40 border border-emerald-700" : "bg-amber-900/40 border border-amber-700"}`}>
-              <div className={`text-xl font-black ${correctCount === 3 ? "text-emerald-300" : "text-amber-300"}`}>{correctCount}/3 correct</div>
-            </div>
-            <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-4">
-              <div className="text-xs font-bold text-amber-400 mb-2">Why these temperatures?</div>
-              <p className="text-xs text-zinc-300 leading-relaxed">{ch.explanation}</p>
-            </div>
-            {/* Beat 2 — what to notice (inline after reveal) */}
-            <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
-              <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
-              <p className="text-xs text-zinc-300 leading-relaxed">After checking answers, read the explanation carefully for any you got wrong. Temperature does not just control "creativity" — it controls distribution entropy. The code variable name challenge (tc3) is the most production-relevant: "temporal_user_session_inception_marker" is not wrong, it is just what high temperature looks like on a low-ambiguity task. The model loses the conventional signal at high temperature, so you lose code readability.</p>
-            </div>
-            <button onClick={next} className="w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all">
-              Next challenge →
-            </button>
+      {tempTab === "game" && (
+        <>
+          <div className="flex gap-1.5">
+            {TEMP_CHALLENGES.map((_, i) => (
+              <button key={i} onClick={() => { setIdx(i); setGuesses({}); setSubmitted(false); }}
+                className={`w-7 h-7 rounded text-xs font-bold transition-all ${idx === i ? "bg-amber-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                {i + 1}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
+
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-4">
+            <div className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Prompt</div>
+            <div className="rounded bg-zinc-950 border border-zinc-800 p-3 text-sm text-zinc-300 font-mono">"{ch.prompt}"</div>
+            <div className="text-xs text-zinc-500">Click to assign a temperature label to each output. Each label can only be used once.</div>
+
+            <div className="flex gap-2 flex-wrap">
+              {tempLabels.map(label => {
+                const used = Object.values(guesses).includes(label);
+                return (
+                  <span key={label} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${used ? "bg-amber-900/60 border-amber-700 text-amber-300" : "bg-zinc-800 border-zinc-700 text-zinc-400"}`}>
+                    {label}
+                  </span>
+                );
+              })}
+            </div>
+
+            <div className="space-y-3">
+              {ch.outputs.map((out, i) => {
+                const selectedLabel = guesses[out.id];
+                const isCorrect = submitted && selectedLabel === out.label;
+                const isWrong = submitted && selectedLabel && selectedLabel !== out.label;
+                return (
+                  <div key={out.id} className={`rounded-lg border p-4 space-y-3 transition-all ${isCorrect ? "border-emerald-700 bg-emerald-950/30" : isWrong ? "border-red-700 bg-red-950/30" : "border-zinc-700 bg-zinc-900/40"}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="text-xs text-zinc-300 leading-relaxed flex-1">
+                        <span className="text-zinc-500 font-mono mr-2">[{String.fromCharCode(65 + i)}]</span>
+                        {out.text}
+                      </div>
+                      {submitted && (
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded shrink-0 ${isCorrect ? "bg-emerald-900 text-emerald-300" : "bg-red-900 text-red-300"}`}>
+                          {out.label} {isCorrect ? "✓" : "✗"}
+                        </span>
+                      )}
+                    </div>
+                    {!submitted && (
+                      <div className="flex gap-2 flex-wrap">
+                        {tempLabels.map(label => {
+                          const alreadyUsedElsewhere = Object.entries(guesses).some(([k, v]) => k !== out.id && v === label);
+                          const selected = guesses[out.id] === label;
+                          return (
+                            <button key={label} onClick={() => !alreadyUsedElsewhere && setGuess(out.id, label)}
+                              className={`px-2 py-1 rounded text-[11px] font-bold transition-all ${selected ? "bg-amber-600 text-white" : alreadyUsedElsewhere ? "bg-zinc-800 text-zinc-500 cursor-not-allowed" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"}`}>
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {!submitted ? (
+              <button onClick={submit} disabled={!allGuessed}
+                className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all ${allGuessed ? "bg-amber-600 hover:bg-amber-500 text-white" : "bg-zinc-800 text-zinc-500 cursor-not-allowed"}`}>
+                Check answers
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className={`rounded-lg p-3 text-center ${correctCount === 3 ? "bg-emerald-900/40 border border-emerald-700" : "bg-amber-900/40 border border-amber-700"}`}>
+                  <div className={`text-xl font-black ${correctCount === 3 ? "text-emerald-300" : "text-amber-300"}`}>{correctCount}/3 correct</div>
+                </div>
+                <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-4">
+                  <div className="text-xs font-bold text-amber-400 mb-2">Why these temperatures?</div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">{ch.explanation}</p>
+                </div>
+                <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+                  <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">Temperature does not just control "creativity" — it controls distribution entropy. The code variable name challenge (tc3) is the most production-relevant: "temporal_user_session_inception_marker" is not wrong, it is just what high temperature looks like on a low-ambiguity task.</p>
+                </div>
+                <button onClick={next} className="w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all">
+                  Next challenge →
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {tempTab === "live" && (
+        <div className="space-y-4">
+          {/* Example picker */}
+          <div className="space-y-1.5">
+            <div className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Choose a prompt</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {LOGIT_EXAMPLES.map((ex, i) => (
+                <button key={i} onClick={() => setShaperExIdx(i)}
+                  className={`rounded-lg border p-3 text-left transition-all ${shaperExIdx === i ? "border-amber-600 bg-amber-950/30" : "border-zinc-700 bg-zinc-900/40 hover:border-zinc-600"}`}>
+                  <div className="text-xs font-mono text-zinc-300 truncate">{ex.prompt}</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">{ex.note}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Temperature slider */}
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Temperature</div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-black" style={{ color: tempColor }}>{shaperTemp.toFixed(1)}</span>
+              </div>
+            </div>
+            <input type="range" min="0.1" max="2.0" step="0.1" value={shaperTemp}
+              onChange={e => setShaperTemp(parseFloat(e.target.value))}
+              className="w-full accent-amber-500" />
+            <div className="flex justify-between text-[10px] text-zinc-600">
+              <span>0.1</span><span>0.5</span><span>1.0</span><span>1.5</span><span>2.0</span>
+            </div>
+            <div className="rounded-lg px-3 py-2 text-xs font-bold" style={{ backgroundColor: tempColor + "22", color: tempColor, border: `1px solid ${tempColor}55` }}>
+              {tempZone}
+            </div>
+          </div>
+
+          {/* Token probability bars */}
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Token Probabilities</div>
+              <div className="text-xs text-zinc-500">Entropy: <span className="text-white font-bold">{shaperEntropy.toFixed(2)} bits</span></div>
+            </div>
+            <div className="space-y-2">
+              {shaperEx.tokens.map((token, i) => {
+                const prob = shaperProbs[i];
+                const pct = (prob * 100).toFixed(1);
+                const isTop = prob === maxShaperProb;
+                const barColor = isTop ? "#22c55e" : "#22D3EE";
+                return (
+                  <div key={token} className="flex items-center gap-3">
+                    <div className={`text-xs font-mono w-16 shrink-0 text-right ${isTop ? "text-emerald-300 font-bold" : "text-zinc-400"}`}>
+                      {token}
+                    </div>
+                    <div className="flex-1 h-5 bg-zinc-800 rounded overflow-hidden">
+                      <div className="h-full rounded transition-all duration-300"
+                        style={{ width: `${Math.max(prob * 100, 0.5)}%`, backgroundColor: barColor + (isTop ? "ff" : "99") }} />
+                    </div>
+                    <div className={`text-xs font-bold w-12 shrink-0 ${isTop ? "text-emerald-300" : "text-zinc-500"}`}>
+                      {pct}%
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="rounded-lg bg-zinc-950/60 border border-zinc-800 px-4 py-3 mt-2 space-y-1">
+              <div className="text-xs font-bold text-amber-400">What you're seeing</div>
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                Entropy measures how spread the distribution is — {shaperEntropy < 1.5 ? "low entropy means the model is near-certain, most probability mass on one token. This is what you want for factual tasks." : shaperEntropy < 2.5 ? "moderate entropy — the model has a preference but considers alternatives. Good for conversational outputs." : "high entropy — probability spreads across many tokens. Each sample can produce very different output. Fine for creative tasks, dangerous for factual ones."} The top token gets {(maxShaperProb * 100).toFixed(1)}% of the probability mass at T={shaperTemp.toFixed(1)}.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Beat 3 — synthesis close */}
       <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
-        <p className="text-sm text-zinc-400 leading-relaxed italic">Temperature is one of the first parameters you tune and one of the most common sources of silent quality regressions when changed without testing. A production deployment should treat temperature as a versioned configuration parameter: log every change, compare output distributions before and after, and have a test set of golden examples you run against it. The team that changed temperature to "make outputs more interesting" and did not notice the 23% quality drop in the process is a real story.</p>
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Temperature is one of the first parameters you tune and one of the most common sources of silent quality regressions when changed without testing. Treat it as a versioned config parameter: log every change, compare output distributions before and after, and run golden test examples against it. The team that changed temperature to "make outputs more interesting" and did not notice the 23% quality drop is a real story.</p>
       </div>
     </div>
   );
 }
 
 // ─── FLASH ATTENTION MEMORY COMPLEXITY ───────────────────────────────────────
+
+const LOGIT_EXAMPLES = [
+  {
+    prompt: '"2 + 2 = ___"',
+    note: "Factual — near-certain answer",
+    tokens: ["4", "four", "Five", "two", "3", "2", "a", "the"],
+    logits: [5.2, 3.8, 2.1, 1.5, 1.2, 0.8, 0.2, -0.5],
+  },
+  {
+    prompt: '"The best language is ___"',
+    note: "Contested — distribution stays flat",
+    tokens: ["Python", "JS", "Rust", "Java", "C++", "Go", "TS", "C"],
+    logits: [3.2, 2.9, 2.6, 2.3, 2.1, 2.0, 1.8, 1.6],
+  },
+  {
+    prompt: '"The night felt ___"',
+    note: "Creative — many tokens equally plausible",
+    tokens: ["dark", "cold", "heavy", "electric", "strange", "alive", "endless", "hollow"],
+    logits: [2.8, 2.5, 2.3, 2.1, 2.0, 1.9, 1.7, 1.5],
+  },
+];
+function computeSoftmax(logits, temp) {
+  const scaled = logits.map(l => l / Math.max(temp, 0.01));
+  const maxVal = Math.max(...scaled);
+  const exps = scaled.map(l => Math.exp(l - maxVal));
+  const sum = exps.reduce((a, b) => a + b, 0);
+  return exps.map(e => e / sum);
+}
+
 function FlashAttentionConcept() {
+  const [flashTab, setFlashTab] = useState("calc");
+  const [traversalStep, setTraversalStep] = useState(-1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const traversalRef = useRef(null);
+  const TILE_N = 5; // 5×5 grid = 25 tiles
+  const totalTiles = TILE_N * TILE_N;
+
+  function tileLabel(idx) {
+    const row = Math.floor(idx / TILE_N);
+    const col = idx % TILE_N;
+    return `(${row},${col})`;
+  }
+
+  function hbmWritesDone(step) {
+    // HBM write happens once per row completion (writing O_i)
+    if (step < 0) return 0;
+    return Math.floor((step + 1) / TILE_N);
+  }
+
+  useEffect(() => {
+    if (isPlaying) {
+      traversalRef.current = setInterval(() => {
+        setTraversalStep(prev => {
+          if (prev >= totalTiles - 1) {
+            setIsPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 350);
+    } else {
+      clearInterval(traversalRef.current);
+    }
+    return () => clearInterval(traversalRef.current);
+  }, [isPlaying]);
+
+  function resetTraversal() {
+    setIsPlaying(false);
+    setTraversalStep(-1);
+  }
+
+  const FLASH_TABS = [
+    { id: "calc", label: "Memory Calculator" },
+    { id: "traversal", label: "Tile Traversal" },
+  ];
+
   const [seqLen, setSeqLen] = useState(1024);
   const [heads, setHeads] = useState(8);
   const headDim = 64;
@@ -4509,10 +4970,22 @@ function FlashAttentionConcept() {
       {/* Intro callout */}
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
         <p className="text-sm text-zinc-300 leading-relaxed">
-          Standard attention stores the full <strong className="text-white">n × n</strong> attention matrix in GPU memory (HBM) for every head — memory that grows quadratically with sequence length. At 128K tokens, that's roughly <span className="text-red-400 font-semibold">64 GB just for attention</span>. Flash Attention avoids this by tiling the computation: it processes small blocks that fit in fast SRAM, never writing the full matrix to HBM. The math is identical; the memory footprint stays <span className="text-green-400 font-semibold">linear</span>. This is why 128K+ context windows became practical — not a bigger GPU, a smarter memory access pattern. Adjust the sliders below to see where standard attention hits your GPU's VRAM wall and Flash Attention doesn't.
+          Standard attention stores the full <strong className="text-white">n × n</strong> attention matrix in GPU memory (HBM) for every head — memory that grows quadratically with sequence length. Flash Attention avoids this by tiling the computation: it processes small blocks that fit in fast SRAM, never writing the full matrix to HBM. The math is identical; the memory footprint stays <span className="text-green-400 font-semibold">linear</span>. This is why 128K+ context windows became practical.
         </p>
       </div>
 
+      {/* Tab selector */}
+      <div className="flex gap-1 border-b border-zinc-800">
+        {FLASH_TABS.map(t => (
+          <button key={t.id} onClick={() => setFlashTab(t.id)}
+            className={`px-4 py-2 text-xs font-bold rounded-t transition-all ${flashTab === t.id ? "bg-zinc-800 text-white border-b-2 border-violet-500" : "text-zinc-500 hover:text-zinc-300"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {flashTab === "calc" && (
+      <div className="space-y-4">
       {/* Controls */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-4">
@@ -4675,8 +5148,120 @@ function FlashAttentionConcept() {
       {/* Beat 2 — what to notice */}
       <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
         <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
-        <p className="text-xs text-zinc-300 leading-relaxed">Drag the sequence length to 8192 and look at the VRAM comparison — standard attention overflows a 16 GB GPU before you even reach 8k tokens with 8 heads. Now look at the growth table: at 16k tokens, Flash is using 34 MB while standard requires 34 GB. That 1000x gap is why 128K+ context windows became practical in 2023: not from bigger GPUs, but from this IO-awareness insight applied to the tiling algorithm.</p>
+        <p className="text-xs text-zinc-300 leading-relaxed">Drag the sequence length to 8192 and look at the VRAM comparison — standard attention overflows a 16 GB GPU before you even reach 8k tokens with 8 heads. At 16k tokens, Flash is using 34 MB while standard requires 34 GB. That 1000x gap is why 128K+ context windows became practical in 2023: not from bigger GPUs, but from this IO-awareness insight.</p>
       </div>
+      </div>
+      )}
+
+      {flashTab === "traversal" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-4 py-3">
+            <p className="text-xs text-zinc-400 leading-relaxed">Flash Attention sweeps through the attention matrix in tiles, processing one block at a time in fast SRAM. The full n×n matrix is never written to HBM — only the final output O and softmax statistics. Watch the traversal to see exactly when HBM writes happen.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Tile grid */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Attention matrix tiles ({TILE_N}×{TILE_N})</div>
+              <div className="inline-grid gap-1" style={{ gridTemplateColumns: `repeat(${TILE_N}, 1fr)` }}>
+                {Array.from({ length: totalTiles }).map((_, idx) => {
+                  const isActive = idx === traversalStep;
+                  const isDone = idx < traversalStep;
+                  const isRowEnd = (idx % TILE_N) === TILE_N - 1 && idx <= traversalStep;
+                  return (
+                    <div key={idx}
+                      className="w-10 h-10 rounded border flex items-center justify-center text-[9px] font-mono transition-all duration-200"
+                      style={{
+                        background: isActive ? "#6366f1" : isDone ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.03)",
+                        borderColor: isActive ? "#818cf8" : isDone ? "rgba(34,197,94,0.4)" : "rgba(255,255,255,0.08)",
+                        color: isActive ? "#fff" : isDone ? "#86efac" : "#3f3f46",
+                        transform: isActive ? "scale(1.12)" : "scale(1)",
+                        boxShadow: isActive ? "0 0 12px rgba(99,102,241,0.6)" : "none",
+                      }}>
+                      {tileLabel(idx)}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex gap-3 text-[10px] font-mono text-zinc-500">
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: "#6366f1" }} /> Active (SRAM)</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: "rgba(34,197,94,0.3)" }} /> Done</span>
+              </div>
+            </div>
+
+            {/* Step info panel */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-4">
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Step {traversalStep + 1} of {totalTiles}</div>
+
+              {traversalStep >= 0 ? (
+                <div className="space-y-3">
+                  <div className="rounded-lg bg-zinc-950 border border-violet-800/40 p-3 space-y-1">
+                    <div className="text-[10px] font-bold text-violet-400 uppercase tracking-wide">SRAM — loaded now</div>
+                    <div className="text-xs font-mono text-zinc-200">Tile {tileLabel(traversalStep)}</div>
+                    <div className="text-[10px] text-zinc-400">Q block row {Math.floor(traversalStep / TILE_N)} × K block col {traversalStep % TILE_N}</div>
+                  </div>
+
+                  <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-3 space-y-2">
+                    <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">HBM writes</div>
+                    <div className="flex items-end gap-2">
+                      <div className="text-3xl font-black text-emerald-400">{hbmWritesDone(traversalStep)}</div>
+                      <div className="text-xs text-zinc-500 mb-1">of {TILE_N} output rows written</div>
+                    </div>
+                    <div className="h-2 rounded bg-zinc-800 overflow-hidden">
+                      <div className="h-full bg-emerald-500 transition-all duration-300"
+                        style={{ width: `${(hbmWritesDone(traversalStep) / TILE_N) * 100}%` }} />
+                    </div>
+                    <div className="text-[10px] text-zinc-500">
+                      {traversalStep % TILE_N === TILE_N - 1
+                        ? "Row complete — writing O_" + Math.floor(traversalStep / TILE_N) + " to HBM"
+                        : "Row in progress — no HBM write yet"}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-3">
+                    <div className="text-[10px] font-bold text-red-400 uppercase tracking-wide mb-1">Standard attention would</div>
+                    <div className="text-[10px] text-zinc-400">Write all {TILE_N * TILE_N} tiles to HBM before softmax. That is {TILE_N * TILE_N}× more HBM traffic.</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-lg bg-zinc-950/60 border border-zinc-800 p-4 text-xs text-zinc-500 leading-relaxed">
+                  Press Play to watch Flash Attention sweep through the attention matrix tile by tile. Each tile loads into SRAM, computes its block, and discards. HBM writes only happen at row boundaries.
+                </div>
+              )}
+
+              {/* Controls */}
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => { resetTraversal(); setTimeout(() => setIsPlaying(true), 50); }}
+                  className="flex-1 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all">
+                  {isPlaying ? "Playing..." : traversalStep >= totalTiles - 1 ? "Replay" : "Play"}
+                </button>
+                <button onClick={() => setTraversalStep(prev => Math.min(prev + 1, totalTiles - 1))}
+                  disabled={isPlaying || traversalStep >= totalTiles - 1}
+                  className="px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all disabled:opacity-40">
+                  Step
+                </button>
+                <button onClick={resetTraversal}
+                  className="px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all">
+                  Reset
+                </button>
+              </div>
+              {isPlaying && (
+                <button onClick={() => setIsPlaying(false)}
+                  className="w-full py-1.5 rounded-lg border border-zinc-700 text-zinc-400 text-xs font-bold transition-all hover:bg-zinc-800">
+                  Pause
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-700/50 p-4 space-y-2" style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08), rgba(34,197,94,0.05))" }}>
+            <div className="text-xs font-bold text-zinc-300 uppercase tracking-wide">Key insight</div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Flash Attention computes <span className="text-zinc-200">exact attention</span> — not an approximation. The trick is the online softmax update: you can compute softmax incrementally as you sweep tiles, without seeing the full row first. This is what makes the tiling possible mathematically. The result: HBM writes drop from O(n²) to O(n).
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Beat 3 — synthesis close */}
       <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
