@@ -6,29 +6,63 @@ Standing rules and principles that govern every build decision. This is a prescr
 
 ---
 
-## 0. Business model — decision pending (May 2026)
+## 0. Business model — freemium (decided May 2026)
 
-The product is currently free, zero-backend, no login. This is a deliberate choice that has enabled fast iteration and zero operational overhead.
+The product is currently free with an access code gate (client-side, localStorage). This is the interim monetization state: community code shared freely during beta, code becomes paid when Stripe goes live.
 
-**The open question:** when and how to monetize.
+---
 
-**Recommended path** (from May 2026 audit): Freemium with PrepLab as the paid gate. Free tier keeps all interactive modules and GT posts (acquisition). Paid tier ($15/month or $99/year) gates: unlimited PrepLab, JD Prep mode, certificates, personalized gap analysis. The JD Prep mode — paste a job description, get a targeted drill — is the killer feature for monetization. Engineers prepping for Anthropic/Google interviews will pay for this.
+### Freemium split — standing rule
 
-**What this requires architecturally:**
-- Auth layer (Google OAuth minimum)
-- Payment processing (Stripe)
-- User record (progress, subscription status) — Supabase or PlanetScale, not localStorage
-- Cross-device sync
+**Free tier (acquisition layer — never gate these):**
+- All four Labs: RAG Lab, Agent Lab, Eval Lab, LLM Lab — every scenario, every module
+- All Systems, Explore, Concepts modules
+- All Ground Truth posts (222+)
+- PrepLab: Exam + Trainer modes, **10 questions per session** (unlimited sessions, but gate fires mid-session at question 11)
+- Interview Prep Plan: JD paste + self-rating questionnaire + skill assessment — **free**
 
-**Auth approach:** Supabase Auth or Firebase Auth work on static sites — no custom backend needed. Google OAuth, one JS import, free tier. This does NOT require rebuilding the app. It's an additive layer.
+**Gated (access code now, paid later):**
+- PrepLab: all questions beyond the 10/session limit (161 hard questions already marked `gated: true`)
+- PrepLab: Company Tracks mode (role-specific tracks)
+- Interview Prep Plan: the personalized study plan + sequenced module path — **gated after user completes 30% of the plan** (not upfront — let them get invested first)
 
-**Internal pay gate markers:** `gated: true` flag added to PrepLab questions and JD Prep mode in the data. Invisible to users, present in code. When Stripe is wired, the gate activates — no structural change needed at that point.
+**Why this split:**
+The Labs are the "wow" moment — unique, interactive, no equivalent exists. Give them away entirely. PrepLab is the "get hired" tool — people pay for things that directly help them pass interviews. The Interview Prep Plan is the highest-intent feature: someone with an interview in 2 weeks pays without hesitation. Gating it at 30% completion (not upfront) means the user is already invested and mid-goal when the gate fires — highest conversion moment.
 
-**This is the only decision that changes the zero-backend constraint.** Until this decision is made, the zero-backend rule stands. When the decision is made to monetize, the architecture rebuild is Tier 0 before any paid features.
+**The rule:** Free tier must feel like a real, complete product — not a demo. If a free user can't get genuine value without paying, the split is wrong.
 
-**Alternative paths considered:**
-- B2B / team licenses — higher ACV but requires sales. Wrong stage for a solo builder.
-- Cohort-based ($300/cohort) — highest "take my money" energy but requires facilitation time. Possible Tier 2 after product-market fit.
+---
+
+### Interview Prep Plan — unified feature (formerly "JD Prep mode" + "Defense Doc")
+
+These were two names for the same thing. Consolidated as "Interview Prep Plan." Flow:
+1. **Paste JD** → parse against 11 skill categories with keyword weightage
+2. **Self-rating questionnaire** → user rates each flagged skill: Weak / Okay / Strong (free)
+3. **Skill assessment** → gap score = JD weight × inverse rating, role profile output (free)
+4. **Personalized study plan** → 3-day / 7-day / 2-week plan sequencing GT posts + Systems modules + PrepLab clusters by gap priority (**gated after 30% completion**)
+
+localStorage tracks plan item checkmarks. Gate fires when `completedItems / totalItems >= 0.30`.
+
+---
+
+### Access code gate — interim auth (until Stripe)
+
+Client-side, localStorage. `accessGranted: true` stored on valid code entry. Community code shared freely during beta testing. Permanent UX pattern — "Enter your access code" framing feels like a community, not a paywall. When Stripe goes live: purchase generates a code, validation moves server-side. No structural UI change needed at that point.
+
+**Community code (beta):** Set in `src/utils/accessCode.js` as `COMMUNITY_CODE`. Change here only — referenced everywhere else.
+
+---
+
+### When Stripe goes live (future sprint)
+
+- Auth layer: Supabase Auth or Firebase Auth (Google OAuth, additive layer, no app rebuild)
+- Payment: Stripe
+- User record: Supabase (progress, subscription status) replacing localStorage
+- `gated: true` markers already in PrepLab data — gate activation requires no structural change
+
+**Alternative paths considered and rejected:**
+- B2B / team licenses — requires sales, wrong stage for solo builder
+- Cohort-based ($300/cohort) — requires facilitation time, Tier 2 after PMF confirmed
 
 ---
 

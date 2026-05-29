@@ -157,68 +157,79 @@ Format per entry:
 
 ## Access Code Gate (Interim Auth)
 
-**Component:** `src/PrepLab.jsx` + `src/App.jsx` — gated content access
+**Component:** `src/utils/accessCode.js` (new) + `src/PrepLab.jsx` + `src/App.jsx`
 
-**Current behavior:** `gated: true` markers exist on 163 PrepLab questions and JD Prep mode. No gate is active — all content is accessible to everyone.
+**Current behavior:** `gated: true` markers exist on 163 PrepLab questions. No gate is active — all content is accessible to everyone.
 
-**Target behavior:** A lightweight access code gate (client-side, localStorage) sits in front of gated content. On first access to a gated feature, user is prompted to enter an access code. Valid code stored in localStorage — not re-prompted on return. Community access code is public and shared freely. When Stripe goes live, replace community code with purchased codes (server-side validation). This is an interim solution — explicit, easy to understand, no backend required.
+**Target behavior:** Lightweight access code gate (client-side, localStorage) in front of gated content. Freemium split:
 
-**Trade-off to name explicitly:** Client-side validation is trivially bypassed by anyone who reads the JS. Acceptable for a community gate over free content. Not acceptable for paid content — that needs server-side validation when Stripe goes live.
+| Content | Free | Gated |
+|---|---|---|
+| All Labs (RAG, Agent, Eval, LLM) | ✓ all | — |
+| Systems / Explore / Concepts | ✓ all | — |
+| Ground Truth posts | ✓ all | — |
+| PrepLab Exam + Trainer | ✓ 10 q/session | beyond 10 |
+| PrepLab Company Tracks | — | ✓ gated |
+| Interview Prep Plan (phases 1–3) | ✓ free | — |
+| Interview Prep Plan (phase 4 — study plan) | ✓ first 30% | beyond 30% |
 
-**Effort:** S (localStorage check + simple modal/overlay for code entry)
+Gate UX: modal fires on first gated content access. User enters access code. On valid code: `accessGranted: true` written to localStorage, modal dismissed, never shown again. Community code: hardcoded in `src/utils/accessCode.js` as `COMMUNITY_CODE`. Single source of truth — change here only.
 
-**Dependencies:** Decide on the community code and the copy ("Enter your access code — get it free at [link]")
+**Trade-off:** Client-side validation trivially bypassed by anyone reading the JS. Acceptable for community gate over free content. Not acceptable for paid content — server-side validation required when Stripe goes live.
 
-**Priority:** Medium — not blocking Batch 0/1, but should be in before Batch 3 (pre-monetization test)
+**Effort:** S (localStorage check + gate modal component + wire into PrepLab session counter + Interview Prep Plan completion tracker)
 
-**Status:** Pending — idea surfaced in Batch 0 Walk 1 discussion
+**Dependencies:** None — build now
+
+**Priority:** High — should be live before Batch 2 opens
+
+**Status:** In progress
 
 ---
 
-## PrepLab — JD Prep Mode: Defense Strategy Upgrade
+## PrepLab — Interview Prep Plan (unified feature)
 
-**Component:** `src/PrepLab.jsx` → JD Prep mode (`mode === "jd"`)
+*Formerly called "JD Prep mode" and "Defense Doc" — these were two names for the same thing. Consolidated here as "Interview Prep Plan."*
 
-**Current behavior:** User pastes a job description → JD Prep mode extracts keywords and surfaces PrepLab questions loosely weighted to those keywords. The match is surface-level (keyword overlap), with no structured skill gap analysis and no sequenced prep plan output.
+**Component:** `src/PrepLab.jsx` → modes `jd` and `defense` (merge into single `prepplan` mode)
 
-**Target behavior:** Full interview defense strategy. Three-phase flow:
+**Current behavior:** JD Prep mode does surface-level keyword matching and surfaces loosely relevant questions. Defense Doc mode generates a generic document. No structured skill gap analysis, no sequenced plan, no personalization.
 
-1. **Parse + weight** — JD text parsed against 11 AI interview skill categories, each with a keyword map. Output: role profile (e.g., "RAG-heavy, eval-critical, agent architecture optional") with category weights derived from keyword frequency and JD language signals (e.g., "production", "at scale", "own the eval").
+**Target behavior:** Four-phase flow:
 
-   Skill categories:
-   - RAG architecture (chunking, retrieval, reranking, hybrid search)
-   - Evaluation design (LLM-as-judge, RAGAS, human eval, regression testing)
-   - Agent systems (tool use, memory, orchestration, failure modes)
-   - LLM fundamentals (tokenization, attention, context window, fine-tuning signals)
-   - Production/serving (latency, cost, batching, quantization, caching)
-   - Observability (tracing, monitoring, drift detection, alerting)
-   - Prompt engineering (system prompt, structured output, injection defense)
-   - Vector databases (index types, distance metrics, hybrid search, HNSW/IVF)
-   - Data pipelines (embedding pipeline, chunking strategy, data flywheel)
-   - Product/PM angle (metrics, tradeoffs, prioritization, stakeholder comms)
-   - Safety and alignment (guardrails, eval for safety, red-teaming)
+**Phase 1 — Parse + weight (free)**
+JD text parsed against 11 skill categories with keyword maps. Output: role profile showing which categories are JD-critical, JD-relevant, or not mentioned. Categories:
+- RAG architecture (chunking, retrieval, reranking, hybrid search)
+- Evaluation design (LLM-as-judge, RAGAS, human eval, regression testing)
+- Agent systems (tool use, memory, orchestration, failure modes)
+- LLM fundamentals (tokenization, attention, context window, fine-tuning)
+- Production/serving (latency, cost, batching, quantization, caching)
+- Observability (tracing, monitoring, drift detection, alerting)
+- Prompt engineering (system prompt, structured output, injection defense)
+- Vector databases (index types, distance metrics, HNSW/IVF, hybrid search)
+- Data pipelines (embedding pipeline, chunking strategy, data flywheel)
+- Product/PM angle (metrics, tradeoffs, prioritization, stakeholder comms)
+- Safety and alignment (guardrails, eval for safety, red-teaming)
 
-2. **Self-rating** — for each category flagged as JD-relevant (weight > threshold), user rates their readiness: Weak / Okay / Strong. Gap score = JD weight × inverse rating.
+**Phase 2 — Self-rating questionnaire (free)**
+For each JD-flagged category, user rates readiness: Weak / Okay / Strong. Gap score = JD weight × inverse rating (Weak=3, Okay=2, Strong=1).
 
-3. **Prep plan output** — sequenced by gap score (highest first). For each gap:
-   - Linked GT posts covering that category
-   - Linked Systems/Explore modules to practice
-   - PrepLab question cluster for that category (filtered + weighted)
-   - Honest gaps callout: if the lab doesn't have content for a JD-required skill, say so explicitly ("This role requires X. The lab doesn't cover this yet — recommended external resources: ...")
+**Phase 3 — Skill assessment output (free)**
+Role profile card: "This role is RAG-heavy, eval-critical, agent architecture optional." Top 3 gaps ranked by score. Honest gaps callout: if the JD requires a skill the lab doesn't cover, say so.
 
-**Effort:** M (one focused 3–4h session — all data is already in the codebase, no new infrastructure needed, no backend required)
+**Phase 4 — Personalized study plan (gated after 30% completion)**
+Sequenced prep plan: 3-day / 7-day / 2-week options. Each day: which GT posts to read, which Systems/Explore modules to run, which PrepLab question cluster to attempt — ordered by gap priority. Each item is a checkbox. localStorage tracks completion. Gate fires when `completedItems / totalItems >= 0.30` — user is mid-goal, invested, highest conversion moment.
+
+**Effort:** L (multi-session — parsing logic, rating UI, gap scoring, plan generation, plan tracking, gate wiring)
 
 **Dependencies:**
-- Existing PrepLab question bank with category tags (already partially tagged)
-- Existing GT post catalog with category alignment (can be inferred from post IDs)
-- Existing Systems/Explore module list (already in SYSTEMS_MODULES + Explore data)
-- No backend, no auth — all static logic
+- Access code gate must be live before plan gate is meaningful
+- PrepLab questions need category tags (`cluster` field already partially populated)
+- GT posts need category alignment map (infer from post IDs + existing tags)
 
-**Priority:** High (directly serves the highest-intent user: someone with an interview in 2 weeks. Also the primary paid-tier differentiator when monetization goes live.)
+**Priority:** Critical — primary paid-tier differentiator. Highest-intent user in the product.
 
-**Status:** Pending
-
-**Notes:** When Stripe goes live, this mode is the primary paid-tier feature. The `gated: true` markers are already on 163 PrepLab questions and the JD Prep mode card. The upgrade does not change the gate — it makes the gated feature worth paying for.
+**Status:** Pending — spec finalised May 2026. Build after access code gate is live.
 
 ---
 

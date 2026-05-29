@@ -12,19 +12,21 @@ This is the single most consequential open decision. Everything below is affecte
 
 ### Recommended: Freemium with PrepLab as the paid gate
 
-**Free tier** (acquisition funnel — keep everything free):
-- All interactive modules (RAG Lab, Agent Lab, Eval Lab, LLM Lab, Concepts, Playground, Explore, Systems, Agents)
-- All 222 Ground Truth posts
-- Basic PrepLab (limited questions per day, no JD Prep)
+**Free tier** (acquisition layer — never gate these):
+- All Labs: RAG Lab, Agent Lab, Eval Lab, LLM Lab — every scenario, every module
+- All Systems, Explore, Concepts modules
+- All Ground Truth posts
+- PrepLab Exam + Trainer modes: 10 questions per session (unlimited sessions)
+- Interview Prep Plan: JD paste + self-rating questionnaire + skill assessment (phases 1–3)
 
-**Paid tier** ($15/month or $99/year — the "get hired" layer):
-- Unlimited PrepLab
-- JD Prep mode — paste a job description, get a targeted question drill weighted to the gaps
-- Personalized gap analysis + "study these next" recommendations
-- Learning path tracking with milestone badges
-- Certificate of completion per learning path (verifiable)
+**Gated tier** (access code now → paid later):
+- PrepLab: all questions beyond 10/session (161 hard questions, already `gated: true`)
+- PrepLab: Company Tracks mode
+- Interview Prep Plan: personalized study plan (phase 4) — gated after 30% completion
 
-**Why PrepLab is the right gate:** People will pay for things that directly help them get hired. The JD Prep mode targets a specific high-intent moment — someone with an interview in 2 weeks. That person pays $99 without hesitation. The free modules build trust; PrepLab converts it.
+**Gate UX (interim):** Client-side access code (localStorage). Community code shared freely during beta. When Stripe goes live: purchased codes replace community code, validation moves server-side. See DECISIONS.md Section 0.
+
+**Why this split:** Labs are the "wow" — give them away entirely. PrepLab is the "get hired" tool — people pay for things that directly help them pass interviews. Interview Prep Plan is the highest-intent feature — someone with an interview in 2 weeks pays without hesitation. Gating at 30% completion (not upfront) means the user is mid-goal and invested when the gate fires.
 
 **Why not B2B:** Requires sales. Solo builder. Wrong stage.
 

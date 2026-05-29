@@ -167,6 +167,8 @@ The single most important path. If this doesn't work cleanly, nothing else matte
 - [ ] Batch 0 passed fully — all 8 walks complete, no console errors, no dead ends
 - [ ] RAG Lab Missing Answer scenario tested with 3 different configurations — failure arc fires correctly in all three, ✓ done card fires prominently in all three (done card placement fix must be shipped before this)
 - [ ] PrepLab Exam mode: 10-question session completed — progress bar, correct/wrong states, session end all work
+- [ ] **Access code gate live:** gate fires correctly at question 11 in a session. Community code entry grants access. localStorage persists across page reload. Gate does not fire for free content (Labs, GT).
+- [ ] **Welcome modal live:** fires on first visit, "What are you here to do?" 3 options route correctly, localStorage flag prevents re-showing.
 - [ ] Mobile: RAG Lab pill strip + PrepLab back button confirmed on real device
 
 **Tester brief (send verbatim):**
@@ -194,7 +196,7 @@ The single most important path. If this doesn't work cleanly, nothing else matte
 
 **Profile (draft):** Mix of AI engineers (same profile as Batch 1) and AI PMs or DS-to-AI-engineer transitioners. At least 2 testers who primarily use mobile. Batch 2 deliberately adds a non-engineer to probe whether the lab's framing makes sense to the PM/career-switcher persona.
 
-**Scope (draft):** Agent Lab + Ground Truth (3–5 posts) + PrepLab JD Prep mode. JD Prep is the primary paid-tier feature — it needs real tester signal before monetization goes live.
+**Scope (draft):** Agent Lab + Ground Truth (3–5 posts) + PrepLab beyond 10 questions (access code gate experience). Gate UX must be tested by real users — does it feel fair or does it feel like a wall? Interview Prep Plan phases 1–3 (free portion) also in scope for Batch 2.
 
 *Fill in fully only after Batch 1 closes.*
 

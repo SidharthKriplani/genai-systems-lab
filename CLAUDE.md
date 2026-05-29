@@ -26,7 +26,7 @@ Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harne
 
 Scale as of May 2026: 54 Systems modules (in nav), 25 Explore modules, 16 Agent Lab modules, 15 Concepts modules, 261 PrepLab questions, 222 Ground Truth posts. Nav: 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product) + KNOWLEDGE (Ground Truth). Legacy tabs (Concepts, Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
 
-**Business model:** Currently free. Recommended path: freemium with PrepLab as the paid gate — free modules + GT posts as acquisition funnel, paid tier ($15/month or $99/year) gates unlimited PrepLab, JD Prep mode, certificates. The zero-backend constraint is the blocker — auth + Stripe required when ready to monetize. See DECISIONS.md Section 0.
+**Business model:** Freemium with access code gate (decided May 2026). Free: all Labs, all GT, all modules, PrepLab 10q/session. Gated (access code now, paid later): full PrepLab, Company Tracks, Interview Prep Plan study plan (phase 4, gated after 30% completion). Community code shared freely during beta. Stripe + auth when ready to monetize. See DECISIONS.md Section 0.
 
 ---
 

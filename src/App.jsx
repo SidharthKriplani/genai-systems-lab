@@ -924,9 +924,66 @@ function getInitialView() {
   return "home";
 }
 
+// ─── WELCOME MODAL ────────────────────────────────────────────────────────────
+function WelcomeModal({ onSelect }) {
+  const goals = [
+    {
+      id: "interview",
+      label: "Get interview-ready",
+      sub: "Practice questions, simulate real interviews, prep for specific companies",
+      color: "#22c55e",
+      border: "border-emerald-700",
+      hover: "hover:border-emerald-500 hover:bg-emerald-950/30",
+    },
+    {
+      id: "build",
+      label: "Build production AI systems",
+      sub: "Understand failure modes, debug pipelines, design reliable agents",
+      color: "#3b82f6",
+      border: "border-blue-700",
+      hover: "hover:border-blue-500 hover:bg-blue-950/30",
+    },
+    {
+      id: "understand",
+      label: "Understand how it works",
+      sub: "Ground Truth posts, concepts, the why behind AI system design",
+      color: "#8b5cf6",
+      border: "border-violet-700",
+      hover: "hover:border-violet-500 hover:bg-violet-950/30",
+    },
+  ];
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-8 max-w-lg w-full space-y-6">
+        <div className="space-y-1">
+          <div className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Welcome</div>
+          <h2 className="text-2xl font-semibold text-white">What are you here to do?</h2>
+          <p className="text-zinc-400 text-sm">We'll point you to the right place.</p>
+        </div>
+        <div className="space-y-3">
+          {goals.map(g => (
+            <button key={g.id} onClick={() => onSelect(g.id)}
+              className={`w-full text-left p-4 rounded-xl border ${g.border} bg-zinc-800/40 ${g.hover} transition-all`}>
+              <div className="font-semibold text-white text-sm mb-0.5" style={{ color: g.color }}>{g.label}</div>
+              <div className="text-xs text-zinc-400 leading-relaxed">{g.sub}</div>
+            </button>
+          ))}
+        </div>
+        <button onClick={() => onSelect("explore")}
+          className="w-full text-center text-zinc-500 hover:text-zinc-300 text-sm py-1 transition-colors">
+          Explore on my own →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [topView, setTopView] = useState(getInitialView);
   const [warRoomOpen, setWarRoomOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return !localStorage.getItem("genai_welcomed"); } catch { return true; }
+  });
 
   // Secret key sequence: type "business2026" while in any BUILD-group tab
   // Refs pattern: listener registered once, reads current topView via ref — no stale closure
@@ -962,6 +1019,15 @@ export default function App() {
     window.addEventListener("keydown", onKeyDown, { capture: true });
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function dismissWelcome(goal) {
+    try { localStorage.setItem("genai_welcomed", "true"); } catch {}
+    setShowWelcome(false);
+    if (goal === "interview") navigate("preplab");
+    else if (goal === "build") navigate("lab");
+    else if (goal === "understand") navigate("groundtruth");
+    // "explore" = stay on home, just dismiss
+  }
 
   const [visited, setVisited] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited") || '["home"]')); }
@@ -1252,6 +1318,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex" data-palette={palette} style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif" }}>
+      {/* Welcome modal — first visit only */}
+      {showWelcome && <WelcomeModal onSelect={dismissWelcome} />}
+
       {/* Feedback fallback modal */}
       {feedbackModalOpen && <FeedbackFallbackModal onClose={() => setFeedbackModalOpen(false)} />}
 

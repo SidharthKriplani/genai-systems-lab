@@ -1,4 +1,59 @@
 import React, { useState, useEffect, useRef } from "react";
+import { isAccessGranted, grantAccess, validateCode, FREE_QUESTION_LIMIT } from "./utils/accessCode";
+
+// ─── GATE MODAL ───────────────────────────────────────────────────────────────
+function GateModal({ onUnlock, onClose }) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState(false);
+
+  function submit() {
+    if (validateCode(code)) { grantAccess(); onUnlock(); }
+    else setError(true);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-8 max-w-md w-full space-y-6">
+        <div className="space-y-2">
+          <div className="text-xs font-mono text-violet-400 uppercase tracking-widest">Access Required</div>
+          <h2 className="text-xl font-semibold text-white">Enter your access code</h2>
+          <p className="text-zinc-400 text-sm leading-relaxed">
+            You've used your {FREE_QUESTION_LIMIT} free questions for this session. Enter your access code to continue — it's free during beta.
+          </p>
+        </div>
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={code}
+            onChange={e => { setCode(e.target.value.toUpperCase()); setError(false); }}
+            onKeyDown={e => e.key === "Enter" && submit()}
+            placeholder="ENTER CODE"
+            autoFocus
+            className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-4 py-3 text-white font-mono text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+          />
+          {error && (
+            <p className="text-red-400 text-xs">Invalid code. Get the free beta code at genai-systems-lab-ivory.vercel.app</p>
+          )}
+        </div>
+        <div className="flex gap-3">
+          <button onClick={submit}
+            className="flex-1 bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors">
+            Unlock Access
+          </button>
+          <button onClick={onClose}
+            className="px-4 py-2.5 text-zinc-400 hover:text-zinc-200 text-sm transition-colors">
+            Cancel
+          </button>
+        </div>
+        <p className="text-zinc-500 text-xs text-center">
+          During beta, access is free for the community.{" "}
+          <a href="https://genai-systems-lab-ivory.vercel.app" target="_blank" rel="noopener noreferrer"
+            className="text-violet-400 hover:text-violet-300 underline">Get the code →</a>
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // ─── QUESTION BANK (60 questions) ────────────────────────────────────────────
 
@@ -3052,8 +3107,17 @@ function ExamMode({ onExit }) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [finished, setFinished] = useState(false);
   const [textOverrides, setTextOverrides] = useState({});
+  const [showGate, setShowGate] = useState(false);
   const timerRef = useRef(null);
   const DM = { 15: 20, 30: 35, 60: 55 };
+
+  function handleNext() {
+    if (current + 1 >= FREE_QUESTION_LIMIT && !isAccessGranted()) {
+      setShowGate(true);
+      return;
+    }
+    setCurrent(c => c + 1);
+  }
 
   function startExam(cfg) {
     const qs = drawQuestions(DM[cfg.duration] || 20, cfg.focus, cfg.difficulty);
@@ -3244,6 +3308,12 @@ function ExamMode({ onExit }) {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      {showGate && (
+        <GateModal
+          onUnlock={() => { setShowGate(false); setCurrent(c => c + 1); }}
+          onClose={() => setShowGate(false)}
+        />
+      )}
       <div className="sticky top-0 z-10 bg-zinc-950/90 backdrop-blur border-b border-zinc-800 px-3 sm:px-6 py-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
@@ -3269,7 +3339,7 @@ function ExamMode({ onExit }) {
           <button onClick={() => setCurrent(c => Math.max(0, c - 1))} disabled={current === 0}
             className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 disabled:opacity-30">← Previous</button>
           {current < questions.length - 1
-            ? <button onClick={() => setCurrent(c => c + 1)} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg">Next →</button>
+            ? <button onClick={handleNext} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg">Next →</button>
             : <button onClick={() => { clearInterval(timerRef.current); setFinished(true); }}
                 className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded-lg font-semibold">Finish Exam</button>
           }
@@ -3294,6 +3364,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
   const [weakTopics, setWeakTopics] = useState({});
   const [done, setDone] = useState(false);
   const [sessionAnswers, setSessionAnswers] = useState([]);
+  const [showGate, setShowGate] = useState(false);
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); }
     catch { return {}; }
@@ -3352,8 +3423,9 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
   }
 
   function next() {
-    if (current >= questions.length - 1) setDone(true);
-    else { setCurrent(c => c + 1); setAnswer(""); setSubmitted(false); setIsCorrect(false); }
+    if (current >= questions.length - 1) { setDone(true); return; }
+    if (current + 1 >= FREE_QUESTION_LIMIT && !isAccessGranted()) { setShowGate(true); return; }
+    setCurrent(c => c + 1); setAnswer(""); setSubmitted(false); setIsCorrect(false);
   }
 
   if (done) {
@@ -3397,6 +3469,12 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+      {showGate && (
+        <GateModal
+          onUnlock={() => { setShowGate(false); setCurrent(c => c + 1); setAnswer(""); setSubmitted(false); setIsCorrect(false); }}
+          onClose={() => setShowGate(false)}
+        />
+      )}
       <div className="max-w-2xl mx-auto space-y-5">
         <div className="flex items-center justify-between">
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
@@ -3824,11 +3902,21 @@ const COMPANY_ARCHETYPES = [
 ];
 
 function CompanyPrepMode({ onExit, onNavigate }) {
+  const [gated, setGated] = useState(() => !isAccessGranted());
   const [archetype, setArchetype] = useState(null);
   const [view, setView] = useState("overview"); // overview | questions | sysdesign
   const [qIdx, setQIdx] = useState(0);
   const [answer, setAnswer] = useState("");
   const [revealed, setRevealed] = useState(false);
+
+  if (gated) {
+    return (
+      <GateModal
+        onUnlock={() => setGated(false)}
+        onClose={onExit}
+      />
+    );
+  }
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [done, setDone] = useState(false);
   const [sessionQs, setSessionQs] = useState([]);
