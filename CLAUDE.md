@@ -317,6 +317,10 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Session build log (May 2026)
 
+**Resolved this session (sprint 16):**
+- **Dynamic homepage:** `Home.jsx` now detects returning vs. new user from localStorage on mount (`getActivityData()` reads `gsl-preplab-history`, `gsl-concepts-mastery`, `genai_visited_modules`, `genai_gt_read`). New users see existing hero. Returning users see `ReturningHomeView`: date/greeting header, Today section (daily tip card + date-seeded GT featured post card), Jump Back In (last 3 unique tabs from `visitedMods`), Progress snapshot (PrepLab: N answered + % correct; Concepts Gym: N/15 + progress bar), Where to Next (3 quick-entry cards). Both views share beta banner + footer. `onNavigateTo={navigateTo}` wired into `HomePage` from `App.jsx` for GT post deep-link. `TAB_META` constant maps tab IDs to labels + colors. Brace diff: 0. Commit `6f18011`.
+- **UPGRADES.md:** Font/color audit + Emoji→SVG upgrade entries logged. Commit `df51c5e`.
+
 **Resolved this session (sprint 15):**
 - **Concepts gym skeleton:** `GymSelectorView` (5-card grid with progress bars, coming-soon state), `GymRoomView` (PAL-style sequential module cards with insight teasers + time estimates), `ConceptsApp` rewritten as 3-view state machine (selector → room → module). `MODULE_META` constant (15 entries, insight + mins). `GYMS` constant (5 gyms: Language Models 7 modules, Retrieval 5, AI Agents 3, Evaluation + Production Systems as placeholders). `CONCEPT_GROUPS` sidebar removed; sidebar now shows only current gym's modules when in module view. Back navigation: gym room → selector, module → gym room. Lab forward pointer in GymRoomView footer. Brace diff: 0. Commit `e19fb27`.
 
