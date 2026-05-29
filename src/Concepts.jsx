@@ -4669,7 +4669,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
   const sidebarIds = currentGym ? currentGym.moduleIds : MODULES.map(m => m.id);
 
   return (
-    <div className="flex h-full min-h-0">
+    <div className="flex flex-col sm:flex-row h-full min-h-0">
       {/* ── Left sidebar ── */}
       <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4 hidden sm:block">
         <div className="px-3 mb-3">
