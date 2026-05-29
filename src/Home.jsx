@@ -534,6 +534,12 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
         <p className="text-[11px] text-zinc-500 max-w-lg mx-auto leading-relaxed">
           No login. No personal data requested. Usage analytics are used only to improve the beta.
         </p>
+        <p className="text-[11px] text-zinc-600 max-w-lg mx-auto">
+          Also by the same author:{" "}
+          <a href="https://ml-systems-lab-v9xe.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">ML Systems Lab</a>
+          {" · "}
+          <a href="https://experimentation-systems-lab.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">Product Analytics Lab</a>
+        </p>
       </div>
 
     </div>
