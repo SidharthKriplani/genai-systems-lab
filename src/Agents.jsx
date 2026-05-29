@@ -3489,6 +3489,10 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
           <div>
             <h1 className="text-base font-black text-white tracking-tight">Agent Lab</h1>
             <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">How agents think, act, and fail</p>
+            <button onClick={() => onNavigate({ tab: "concepts", gymId: "ai-agents" })}
+              className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded text-[9px] font-mono border border-zinc-800 text-zinc-500 hover:border-amber-800/60 hover:text-amber-400 transition-all">
+              Concepts: AI Agents →
+            </button>
             {done.size > 0 && (
               <div className="flex items-center gap-2 mt-2">
                 <div className="h-1 flex-1 rounded-full overflow-hidden" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)" }}>

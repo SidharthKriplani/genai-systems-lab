@@ -1078,6 +1078,7 @@ export default function App() {
   const [exploreModule, setExploreModule] = useState(null);
   const [agentsModule, setAgentsModule] = useState(null);
   const [gtPostId, setGtPostId] = useState(null);
+  const [conceptsGym, setConceptsGym] = useState(null);
   const [preplabInitialMode, setPreplabInitialMode] = useState(null);
   const [visitedModules, setVisitedModules] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited_modules") || "[]")); }
@@ -1153,13 +1154,14 @@ export default function App() {
   }, []);
   const SHORTCUT_TABS = ["home","lab","agentlab","evallab","llmlab","preplab","career","aipm","groundtruth","systems","agents","explore","playground","concepts","flows","consult"];
 
-  function navigateTo({ tab, moduleId, postId, topic, diff }) {
+  function navigateTo({ tab, moduleId, postId, topic, diff, gymId }) {
     if (moduleId) {
       if (tab === "systems" || tab === "evallab" || tab === "llmlab") setSystemsModule(moduleId);
       if (tab === "explore")  setExploreModule(moduleId);
       if (tab === "agents" || tab === "agentlab") setAgentsModule(moduleId);
     }
     if (postId) setGtPostId(postId);
+    if (gymId)  setConceptsGym(gymId);
     navigate(tab);
   }
   useEffect(() => {
@@ -1613,7 +1615,7 @@ export default function App() {
             </div>
           </div>
         }>
-          {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} />}
+          {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} initialGym={conceptsGym} />}
           {topView === "flows"      && <FlowsApp onNavigate={navigateTo} />}
           {topView === "consult"    && <ConsultationApp onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
@@ -1645,6 +1647,10 @@ export default function App() {
             <div className="px-4 pb-2">
               <div className="text-xs font-black text-white tracking-tight">RAG Lab</div>
               <div className="text-[10px] text-zinc-500 mt-0.5">6 production failure modes</div>
+              <button onClick={() => navigateTo({ tab: "concepts", gymId: "retrieval" })}
+                className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded text-[9px] font-mono border border-zinc-800 text-zinc-500 hover:border-blue-800/60 hover:text-blue-400 transition-all">
+                Concepts: Retrieval →
+              </button>
             </div>
             <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
             <div className="px-2 space-y-0.5">

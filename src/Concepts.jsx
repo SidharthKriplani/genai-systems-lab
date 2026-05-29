@@ -4609,13 +4609,18 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
 
 // ─── CONCEPTS APP ─────────────────────────────────────────────────────────────
 
-export default function ConceptsApp({ onNavigate }) {
+export default function ConceptsApp({ onNavigate, initialGym }) {
   const [active, setActive] = useState(null);
   const [activeGym, setActiveGym] = useState(null);
   const [mastery, setMastery] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem(MASTERY_KEY) || "[]")); }
     catch { return new Set(); }
   });
+
+  // Deep-link to a specific gym when navigated from a lab sidebar chip
+  useEffect(() => {
+    if (initialGym) setActiveGym(initialGym);
+  }, [initialGym]);
 
   function openModule(id) {
     setActive(id);
