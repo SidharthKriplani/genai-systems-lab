@@ -235,6 +235,10 @@ function PromptInjectionPlayground() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Prompt injection is not a theoretical risk — it is the most common security failure in deployed LLM applications. Every time user-controlled input reaches your model, an attacker can attempt to redirect its behavior. The inputs below are real attack patterns from production incidents. Run each one and watch the guardrail pipeline decide where to block: before the LLM or after it generates a response.</p>
+      </div>
+
       <div className="flex gap-2">
         {INJECTION_SCENARIOS.map((s, i) => (
           <button key={s.id} onClick={() => { setSIdx(i); setAttackId(null); setAnimStep(0); }}
@@ -272,6 +276,10 @@ function PromptInjectionPlayground() {
       )}
 
       {/* Attack buttons */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Direct injection is the easiest to catch because it is explicit. Indirect injection — where the attack hides inside retrieved content — is the hardest. A user-pasted review or a retrieved document can both carry instructions your model will follow.</p>
+      </div>
       <div className="space-y-2">
         {sc.attacks.map(a => (
           <button key={a.id} onClick={() => setAttackId(a.id)}
@@ -291,6 +299,10 @@ function PromptInjectionPlayground() {
           <p className="text-xs text-zinc-300 mt-1">{outcome.desc}</p>
         </div>
       )}
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-4">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The real question is not whether you can catch known attacks — it is whether your guardrails generalize to attacks you have not seen. Defense-in-depth (input classifier + output validator + content policy) catches more attack surface than any single layer. The gap in the middle — LLM processing of an attack that was missed at input — is where most production incidents happen.</p>
+      </div>
     </div>
   );
 }
@@ -301,6 +313,14 @@ function ChunkingLab() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Chunk size is one of the most consequential decisions in a RAG pipeline and one of the least tested. Too small: retrieved chunks lack context and the model generates vague answers. Too large: chunks mix multiple topics and retrieval precision drops. The document below is split by four strategies — compare how the same query retrieves very different content depending on how the document was divided.</p>
+      </div>
+
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Fixed-size chunking at 256 tokens is fast and simple but splits sentences arbitrarily. The model will occasionally receive half a sentence as context and generate a confident but contextually incomplete answer.</p>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {Object.entries(CHUNK_STRATEGIES).map(([key, val]) => (
           <button key={key} onClick={() => setStrategy(key)}
@@ -344,6 +364,10 @@ function ChunkingLab() {
           </div>
         ))}
       </div>
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-4">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">The right chunk size depends on your document structure, not a default number. Technical documentation, contracts, and narrative prose need different strategies. Run your real documents through multiple chunk strategies and compare retrieval scores before committing. Changing chunk size after indexing requires re-embedding everything.</p>
+      </div>
     </div>
   );
 }
@@ -381,6 +405,10 @@ function RerankerSim() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">A bi-encoder retriever is fast but imprecise — it scores each chunk independently against the query using dot product. A cross-encoder reranker reads the query and chunk together, producing a much more accurate relevance score. The cost is latency: rerankers are 20-100x slower per scored pair. This lab shows you what that tradeoff looks like on real retrieval results — and whether the accuracy gain is worth the latency hit for your use case.</p>
+      </div>
+
       <div className="flex gap-2">
         {RERANKER_SCENARIOS.map((s, i) => (
           <button key={i} onClick={() => setSIdx(i)}
@@ -428,10 +456,18 @@ function RerankerSim() {
           </div>
         ))}
       </div>
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Notice how the reranker promotes chunks that mention the query topic in context, not just in isolation. Retrieval by embedding often returns topically similar but contextually wrong chunks — the reranker surfaces the one that actually answers the question.</p>
+      </div>
       <button onClick={() => setRevealed(!revealed)}
         className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold rounded-lg">
         {revealed ? "Hide Scores" : "Reveal True Relevance Scores"}
       </button>
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-4">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Add a reranker when your retrieval recall is high but precision is low — you are getting relevant chunks, but the most relevant one is not at the top. Do not add a reranker to fix recall problems (that is a retrieval architecture problem). The reranker rescores; it cannot surface chunks that were not retrieved in the first place.</p>
+      </div>
     </div>
   );
 }
@@ -479,6 +515,10 @@ function SpotHallucination() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">LLMs confabulate. They generate plausible-sounding text that is factually wrong, and they do it confidently. The examples below show the four main hallucination types found in production RAG systems: factual errors, unsupported claims, entity confusion, and numeric fabrication. Your job is to identify which output is the hallucinated one — and understand the failure pattern behind it.</p>
+      </div>
+
       <div className="flex items-center justify-between">
         <div className="flex gap-1">{HALLUCINATION_ROUNDS.map((_, i) => (
           <div key={i} className={`w-2 h-2 rounded-full ${i < scores.length ? (scores[i] ? "bg-green-500" : "bg-red-500") : i === idx ? "bg-indigo-500" : "bg-zinc-700"}`} />
@@ -489,6 +529,10 @@ function SpotHallucination() {
         <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Question Asked</p>
         <p className="text-white font-medium">{round.question}</p>
         <p className="text-xs text-amber-400 mt-2">One of these responses contains a hallucinated fact. Which one?</p>
+      </div>
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Hallucinations often appear in the same grammatical register as correct answers — confident, specific, detailed. The tell is usually in the specificity: real answers cite sources; hallucinated answers invent them.</p>
       </div>
       <div className="space-y-2">
         {round.outputs.map(o => {
@@ -515,6 +559,10 @@ function SpotHallucination() {
           {"Next →"}
         </button>
       )}
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-4">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Hallucination is not a random failure — it clusters around specific conditions: sparse retrieval context, long-tail queries, numeric specificity, and instruction-following over factual grounding. The mitigation is not a better model; it is a confidence threshold that routes low-certainty queries to abstain or escalate rather than generate.</p>
+      </div>
     </div>
   );
 }
@@ -635,6 +683,10 @@ function BiasDetector() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Bias in LLM outputs is not always overtly offensive — the subtle forms are harder to detect and more damaging in production. Demographic bias, framing bias, and representation gaps can appear in recommendation systems, HR tools, and content generation pipelines without triggering any safety filters. The examples below show how the same question, asked with minor demographic variations, produces systematically different responses.</p>
+      </div>
+
       <div className="flex items-center justify-between">
         <div className="flex gap-1">{BIAS_ROUNDS.map((_, i) => (
           <div key={i} className={`w-2 h-2 rounded-full ${i < scores.length ? (scores[i] ? "bg-green-500" : "bg-red-500") : i === idx ? "bg-indigo-500" : "bg-zinc-700"}`} />
@@ -645,6 +697,10 @@ function BiasDetector() {
         <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Prompt</p>
         <p className="text-white font-medium">{round.prompt}</p>
         <p className="text-xs text-amber-400 mt-2">Which output contains a bias? Click to identify it.</p>
+      </div>
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Bias detection requires a contrastive test design: the same prompt with different demographic markers. Any statistically significant difference in output quality, length, or tone is evidence of a systematic bias. A single biased response can be noise; a pattern across 20 pairs is a system behavior.</p>
       </div>
       <div className="space-y-2">
         {round.outputs.map((out, i) => {
@@ -674,6 +730,10 @@ function BiasDetector() {
           {"Next →"}
         </button>
       )}
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-4">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Bias mitigation happens at four layers: training data, fine-tuning, system prompt, and output evaluation. Most production teams only address the last layer (output evaluation) and miss the others. If you are seeing consistent bias patterns, the fix is almost never in the prompt — it is in the evaluation feedback loop that shapes fine-tuning.</p>
+      </div>
     </div>
   );
 }
@@ -1776,6 +1836,10 @@ function StreamingLab() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Streaming is how users experience your model — not as a single response, but as a token-by-token flow. The failure modes are invisible in development and only appear at production scale: client disconnects, mid-stream tool calls, SSE buffer overflows. Configure the transport, latency, and failure injection below to see exactly where each failure occurs and what the client experiences.</p>
+      </div>
+
       {/* Config row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Transport */}
@@ -1831,6 +1895,11 @@ function StreamingLab() {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">The SSE buffer overflow failure is the most dangerous: the stream terminates silently with no error. The client receives partial output and has no way to distinguish it from a complete response. This is why production streaming systems need explicit termination signals and client-side timeout logic.</p>
       </div>
 
       {/* Run / status */}
@@ -1896,6 +1965,10 @@ function StreamingLab() {
           </p>
         </div>
       )}
+
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-4">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">TTFT and token generation time are different problems with different solutions. TTFT is a serving infrastructure problem (KV cache, queue depth, prefill optimization). Token rate is a model and hardware problem (quantization, speculative decoding, batching strategy). Measuring both separately is the prerequisite for fixing either.</p>
+      </div>
     </div>
   );
 }
