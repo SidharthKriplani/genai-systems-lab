@@ -3547,8 +3547,10 @@ function NextTokenGame() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-4">
-        <p className="text-sm text-zinc-300 leading-relaxed">Predict which token the model assigns the highest probability to. After guessing, see the full distribution — and understand <em>why</em> the distribution has that shape.</p>
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          Every LLM output reduces to a single repeated operation: given everything seen so far, assign a probability to every token in the vocabulary, then sample one. There is no understanding, no intent — just a <strong className="text-white">probability distribution shaped by training</strong>. When the distribution is sharp (one token dominates), the model is "confident." When it's flat (many tokens are plausible), the output is genuinely ambiguous. This matters in production because hallucinations often happen in exactly those flat regions — the model picks a plausible-sounding token where none was clearly correct. Guess below before revealing the distribution, then look at the shape and ask why it has that form.
+        </p>
       </div>
 
       <div className="flex items-center justify-between">
@@ -3704,8 +3706,10 @@ function TemperatureGame() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-amber-800 bg-amber-950/20 p-4">
-        <p className="text-sm text-zinc-300 leading-relaxed">Three outputs. Same prompt. Different temperatures. Match each output to its temperature — then see why the distribution shapes differ.</p>
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          Temperature is a scalar applied to the logits before softmax. Divide by a number less than 1 and the distribution <strong className="text-white">sharpens</strong> — high-probability tokens dominate, outputs become predictable. Divide by a number greater than 1 and it <strong className="text-white">flattens</strong> — probability spreads across more tokens, outputs become varied and eventually incoherent. In production: 0–0.3 for factual extraction and classification, 0.7–1.0 for creative tasks, never above 1.2 in anything user-facing. It's one of the first parameters you tune — and one of the most common sources of silent quality regressions when changed without testing. Match the outputs below to their temperatures, then read why each sounds the way it does.
+        </p>
       </div>
 
       <div className="flex gap-1.5">
@@ -3839,10 +3843,9 @@ function FlashAttentionConcept() {
   return (
     <div className="space-y-5">
       {/* Intro callout */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
         <p className="text-sm text-zinc-300 leading-relaxed">
-          Standard attention writes a full <span className="font-mono text-red-400">n × n</span> matrix to HBM (GPU memory) for every head — memory that grows <span className="font-bold text-red-400">quadratically</span> with sequence length.{" "}
-          Flash Attention tiles the computation so only a small block lives in fast SRAM at a time. VRAM stays <span className="font-bold text-green-400">linear</span>.
+          Standard attention stores the full <strong className="text-white">n × n</strong> attention matrix in GPU memory (HBM) for every head — memory that grows quadratically with sequence length. At 128K tokens, that's roughly <span className="text-red-400 font-semibold">64 GB just for attention</span>. Flash Attention avoids this by tiling the computation: it processes small blocks that fit in fast SRAM, never writing the full matrix to HBM. The math is identical; the memory footprint stays <span className="text-green-400 font-semibold">linear</span>. This is why 128K+ context windows became practical — not a bigger GPU, a smarter memory access pattern. Adjust the sliders below to see where standard attention hits your GPU's VRAM wall and Flash Attention doesn't.
         </p>
       </div>
 
