@@ -383,3 +383,50 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 **Priority:** High — Concepts is in primary nav. Beginners will land here.
 
 **Status:** In Progress — 15/15 framing texts done, gym skeleton shipped. Remaining: inline callouts + synthesis close pass (full 3-beat upgrade)
+
+---
+
+## Global — Font + Color Scheme Audit
+
+**Component:** `src/index.css` + all `.jsx` files — typography and color token usage
+
+**Current behavior:** Tailwind zinc-* palette is enforced but no systematic font stack decision has been made. No audit has been run on whether the chosen typeface, size scale, weight scale, and line-height hierarchy are optimal for a dense technical learning interface. Some components may be drifting from the palette or using ad-hoc font-size/weight combinations.
+
+**Target behavior:**
+- Explicit font stack decision documented and applied globally: one heading face, one body/UI face, one monospace face (for code blocks + token visualizers). All three locked in `index.css` / Tailwind config.
+- Size + weight scale reviewed: headings, body, labels, captions, code — each has a consistent rule, not per-component guesswork.
+- Color token audit: every zinc-* usage checked for contrast (WCAG AA at minimum on dark bg). Any ad-hoc `gray-*` or `slate-*` remnants caught and replaced.
+- Result documented in a short design-token reference block inside `index.css` (comments, not runtime code).
+
+**Effort:** M (audit + decision = 1h; sweep implementation = 1–2h)
+
+**Dependencies:** None. Run after interviews — low urgency, high polish impact.
+
+**Priority:** Medium — the product works without this; it matters for first impressions and credibility.
+
+**Status:** Pending
+
+---
+
+## Global — Replace All Emojis with Inline SVGs
+
+**Component:** All `.jsx` files — any literal emoji character used in UI text, buttons, badges, or labels
+
+**Current behavior:** Emojis are used in several places (e.g. ✓, →, ⚡, 🔬 etc. in module badges, status indicators, nav labels, done states). Emoji rendering is OS- and browser-dependent — inconsistent glyph shapes, sizing, and baseline alignment across Windows/Mac/Linux and across Chrome/Firefox/Safari. On some systems they appear pixelated or differently colored. They also can't be styled with CSS (color, stroke, size relative to text).
+
+**Target behavior:** Every emoji in the UI replaced with a purpose-built inline SVG or a Heroicons/Lucide-style path (already zero-dependency since we use no icon lib, so SVGs are inlined directly). SVGs are: CSS-colorable with `currentColor`, scalable at any size, consistent cross-platform, accessible with `aria-hidden="true"`. Each replacement SVG should be extracted into a small `src/icons.jsx` helper to avoid repeating 5-line SVG blocks everywhere.
+
+**Scope — audit pass needed to enumerate all occurrences before executing:**
+- Done/check marks (✓, ✔)
+- Arrows (→, ←, ↑)
+- Status/badge icons (⚡, 🔬, 🎯, 🏋️ etc.)
+- Any emoji in GT post content blocks (`.jsx` data arrays only — not markdown strings)
+- Nav group icons if any
+
+**Effort:** M (audit = S; replacement pass = M depending on count)
+
+**Dependencies:** Audit pass first — grep for emoji ranges in all `.jsx` files before writing any SVG replacements.
+
+**Priority:** Medium — correctness and polish, not functionality. Run after interviews.
+
+**Status:** Pending
