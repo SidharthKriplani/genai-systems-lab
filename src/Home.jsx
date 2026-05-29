@@ -179,7 +179,7 @@ const TAB_META = {
   agentlab:    { label: "Agent Lab",    color: "#f59e0b" },
   evallab:     { label: "Eval Lab",     color: "#22c55e" },
   llmlab:      { label: "LLM Lab",      color: "#8b5cf6" },
-  concepts:    { label: "Concepts",     color: "#6366f1" },
+  concepts:    { label: "Concepts",     color: "#4fb8cb" },
   preplab:     { label: "Prep Lab",     color: "#22c55e" },
   groundtruth: { label: "Ground Truth", color: "#8b5cf6" },
   career:      { label: "Career",       color: "#22c55e" },
@@ -235,7 +235,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
           </div>
           <button onClick={goPost}
             className="rounded-xl p-5 text-left transition-all flex flex-col gap-2 card-lift animate-cardSlideUp animate-delay-60"
-            style={{ animationFillMode: 'both', background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(139,92,246,0.5)" }}>
+            style={{ animationFillMode: 'both', background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(79,184,203,0.5)" }}>
             <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">Today's read · Ground Truth</p>
             <p className="text-sm font-bold text-white leading-snug">{featuredPost.title}</p>
             <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{featuredPost.desc}</p>
@@ -331,7 +331,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
             </button>
             <button onClick={() => onNavigate("groundtruth")}
               className="p-4 rounded-xl text-left card-lift animate-cardSlideUp animate-delay-120"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(139,92,246,0.55)" }}>
+              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(79,184,203,0.55)" }}>
               <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">KNOWLEDGE</p>
               <p className="text-sm font-bold text-white mt-1">222+ posts</p>
               <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Production depth, not tutorials</p>
@@ -366,8 +366,8 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
         <>
           {/* ── HERO ──────────────────────────────────────────────────────── */}
           <div className="relative overflow-hidden">
-            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 100% 70% at 50% -10%, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.08) 40%, transparent 75%)" }} />
-            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 35% at 50% 0%, rgba(139,92,246,0.15) 0%, transparent 70%)" }} />
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 100% 70% at 50% -10%, rgba(79,184,203,0.18) 0%, rgba(79,184,203,0.06) 40%, transparent 75%)" }} />
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 35% at 50% 0%, rgba(84,172,191,0.10) 0%, transparent 70%)" }} />
             <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8 relative">
 
               <div className="space-y-5">
@@ -375,7 +375,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   Configure it.{" "}
                   <span style={{ background: "linear-gradient(90deg, #ef4444 0%, #f59e0b 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Break it.</span>
                   <br />
-                  <span style={{ background: "linear-gradient(90deg, #818cf8 0%, #22d3ee 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Know exactly why.</span>
+                  <span style={{ background: "linear-gradient(90deg, #4fb8cb 0%, #a7efe0 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Know exactly why.</span>
                 </h1>
                 <p className="text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
                   Production AI systems fail in specific, predictable ways. This lab makes you <span className="text-zinc-300 font-medium">reproduce those failures</span> — not read about them. RAG pipelines, agent loops, eval harnesses. Free, no login.
@@ -451,7 +451,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                 {[
                   { label: "Stale retrieval",   color: "#ef4444" },
                   { label: "Prompt injection",  color: "#f59e0b" },
-                  { label: "Context overflow",  color: "#6366f1" },
+                  { label: "Context overflow",  color: "#4fb8cb" },
                   { label: "Hallucination",     color: "#3b82f6" },
                   { label: "Multi-hop failure", color: "#22c55e" },
                 ].map(f => (
@@ -487,7 +487,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
 
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <div className="mt-auto border-t border-zinc-800/60 text-center px-4 py-6"
-        style={{ boxShadow: "0 -8px 32px rgba(99,102,241,0.06)" }}>
+        style={{ boxShadow: "0 -8px 32px rgba(79,184,203,0.06)" }}>
         <p className="text-[11px] text-zinc-500">
           Also by the same team:{" "}
           <a href="https://ml-systems-lab-v9xe.vercel.app" target="_blank" rel="noopener noreferrer"
