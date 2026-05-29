@@ -340,7 +340,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
   useEffect(() => { track("home_viewed", { returning: activityData.isReturning }); }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-zinc-950 flex flex-col">
 
 
       {/* ── CONDITIONAL: returning user vs. new user ──────────────────────── */}
@@ -479,12 +479,15 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
       )}
 
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-4 pb-12 text-center space-y-3">
-        <p className="text-[11px] text-zinc-600 max-w-lg mx-auto">
-          Also by the same author:{" "}
-          <a href="https://ml-systems-lab-v9xe.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">ML Systems Lab</a>
+      <div className="mt-auto border-t border-zinc-800/60 text-center px-4 py-6"
+        style={{ boxShadow: "0 -8px 32px rgba(99,102,241,0.06)" }}>
+        <p className="text-[11px] text-zinc-500">
+          Also by the same team:{" "}
+          <a href="https://ml-systems-lab-v9xe.vercel.app" target="_blank" rel="noopener noreferrer"
+            className="text-zinc-500 underline underline-offset-2 hover:text-zinc-300 transition-colors">ML Systems Lab</a>
           {" · "}
-          <a href="https://experimentation-systems-lab.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">Product Analytics Lab</a>
+          <a href="https://experimentation-systems-lab.vercel.app" target="_blank" rel="noopener noreferrer"
+            className="text-zinc-500 underline underline-offset-2 hover:text-zinc-300 transition-colors">Product Analytics Lab</a>
         </p>
       </div>
 
