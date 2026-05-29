@@ -4,7 +4,7 @@
 // When Stripe goes live: replace COMMUNITY_CODE with server-side purchased code validation.
 // Single source of truth — change the code here only.
 
-export const COMMUNITY_CODE = "GENAI2026";
+export const COMMUNITY_CODE = "DAI2026";
 
 export const FREE_QUESTION_LIMIT = 10; // questions per session before gate fires
 
