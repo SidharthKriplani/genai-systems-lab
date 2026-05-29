@@ -447,6 +447,11 @@ function TokenizerModule({ onNavigate }) {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          LLMs don't read words — they read <strong className="text-white">tokens</strong>. A token is roughly 3–4 characters of English text, but can be much shorter for code or non-English languages. Every API call is priced per token, your context window is measured in tokens, and subtle tokenization quirks can shift your costs by 2–5×. Paste any text below to see exactly how a model splits it — and what it costs.
+        </p>
+      </div>
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Input Text</span>
@@ -607,6 +612,11 @@ function EmbeddingModule({ onNavigate }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          An embedding converts text into a point in high-dimensional space, where meaning maps to distance. "Dog" and "puppy" land close together; "dog" and "database" do not. This is what makes semantic search work: instead of matching exact keywords, a retrieval system finds chunks whose embeddings are <strong className="text-white">closest in meaning</strong> to your query. The map below compresses those distances into 2D — hover any word to see its nearest neighbors, or run the arithmetic examples to see how meaning combines mathematically.
+        </p>
+      </div>
       {/* Controls */}
       <div className="flex items-center gap-4 flex-wrap">
         <button
@@ -819,6 +829,11 @@ function AttentionModule({ onNavigate }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          A transformer reads your entire input at once and for each token decides how much to attend to every other token. That weight — the <strong className="text-white">attention score</strong> — determines which words are relevant to understanding which. It's why a model can read "the server crashed because it ran out of memory" and correctly figure out what "it" refers to. The heatmap below shows those weights: darker cells mean stronger attention. Switch between attention heads to see how each one tracks different relationships in the same sentence.
+        </p>
+      </div>
       {/* Sentence selector */}
       <div className="flex flex-wrap gap-2">
         {ATTENTION_EXAMPLES.map((e, i) => (
@@ -1698,6 +1713,11 @@ function RAGPipelineModule({ onNavigate }) {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          LLMs are frozen at their training cutoff — they have no access to your documents, your database, or anything that happened since they were trained. <strong className="text-white">RAG fixes this</strong>: at query time, relevant chunks are retrieved from your data and injected into the model's context so the answer is grounded in what you actually have, not what the model memorised. The model's job becomes synthesis, not recall. Walk through the three steps below in order — each step builds on the last.
+        </p>
+      </div>
       {/* Step indicator */}
       <div className="flex items-center gap-0">
         {STEP_LABELS.map((label, i) => (
@@ -2227,6 +2247,11 @@ function ContextWindowModule({ onNavigate }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          Everything the model can see at once — system prompt, conversation history, retrieved chunks, and the response it's generating — must fit inside the <strong className="text-white">context window</strong>. Exceed it and content is silently truncated. But a larger window isn't free: transformer attention scales quadratically, meaning 2× more tokens means 4× more compute. Every production RAG system is a battle to fit the right content into a fixed budget. Use the sliders below to build a realistic token budget and see where you run out of room.
+        </p>
+      </div>
       {/* Model selector */}
       <div className="flex gap-2 flex-wrap">
         {CTX_MODELS.map((m, i) => (
@@ -2486,6 +2511,11 @@ function AgentModule({ onNavigate }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          A single LLM call is a one-shot function: prompt in, completion out. An <strong className="text-white">agent</strong> is a loop: the model reasons, calls a tool, receives the result, and reasons again — repeating until it reaches an answer or hits a failure. This unlocks multi-step tasks that a single call can't handle. But loops introduce failure modes that one-shot calls never have: the model can hallucinate a tool call, retry endlessly, or lose track of its goal as context grows. Toggle "inject failure" on any scenario to see exactly what breaks.
+        </p>
+      </div>
       {/* Scenario picker */}
       <div className="flex flex-wrap gap-2">
         {REACT_SCENARIOS.map((s, i) => (
