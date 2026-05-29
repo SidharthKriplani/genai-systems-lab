@@ -836,172 +836,394 @@ function EmbeddingModule({ onNavigate }) {
 // ─── ATTENTION MODULE ─────────────────────────────────────────────────────────
 
 function AttentionModule({ onNavigate }) {
+  const [activeTab, setActiveTab] = useState("how");
+
+  // ── Tab 1: How It Works ──
+  const [queryIdx, setQueryIdx] = useState(1);
+  const [step, setStep] = useState(0);
+
+  // ── Tab 2: Explore ──
   const [exIdx, setExIdx] = useState(0);
   const [headIdx, setHeadIdx] = useState(0);
   const [hoveredRow, setHoveredRow] = useState(null);
 
+  // ── Tab 3: Scale ──
+  const [seqLen, setSeqLen] = useState(512);
+
+  // ─ QKV computation data ─
+  const QKV_TOKENS = ["The", "cat", "sat", "on", "the", "mat"];
+  const D_K = 4;
+  const RAW_SCORES = [
+    [1.80, 0.90, 0.70, 0.50, 1.60, 0.40],
+    [0.70, 2.10, 2.80, 0.90, 0.60, 1.20],
+    [0.60, 2.00, 2.20, 1.10, 0.50, 3.00],
+    [0.40, 0.80, 1.00, 1.90, 0.60, 1.30],
+    [1.50, 0.70, 0.60, 0.60, 1.70, 0.80],
+    [0.50, 1.20, 2.80, 1.40, 0.70, 2.20],
+  ];
+  const STEP_LABELS = ["Select query", "Raw Q·K scores", "Scale by sqrt(" + D_K + ")", "Softmax", "Weighted V sum"];
+
+  function sfmax(arr) {
+    const mx = Math.max(...arr);
+    const exps = arr.map(x => Math.exp(x - mx));
+    const s = exps.reduce((a, b) => a + b, 0);
+    return exps.map(x => x / s);
+  }
+
+  const rawRow = RAW_SCORES[queryIdx];
+  const scaledRow = rawRow.map(v => +(v / Math.sqrt(D_K)).toFixed(3));
+  const smRow = sfmax(scaledRow);
+
+  // ─ Explore data ─
   const ex = ATTENTION_EXAMPLES[exIdx];
   const head = ex.heads[headIdx];
   const tokens = ex.tokens;
   const weights = head.weights;
-
   const CELL = 52;
   const LABEL_W = 72;
-  const LABEL_H = 72;
+
+  // ─ Scale data ─
+  const attnOps = seqLen * seqLen;
+  const memMB = (seqLen * seqLen * 4) / (1024 * 1024);
+  const SCALE_CPS = [64, 256, 512, 1024, 2048, 4096];
+  const maxOps = 4096 * 4096;
 
   return (
     <div className="space-y-4">
+
+      {/* Framing */}
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
         <p className="text-sm text-zinc-300 leading-relaxed">
-          A transformer reads your entire input at once and for each token decides how much to attend to every other token. That weight — the <strong className="text-white">attention score</strong> — determines which words are relevant to understanding which. It's why a model can read "the server crashed because it ran out of memory" and correctly figure out what "it" refers to. The heatmap below shows those weights: darker cells mean stronger attention. Switch between attention heads to see how each one tracks different relationships in the same sentence.
+          A transformer reads your entire input at once and for each token decides how much to attend to every other token. The weight — the <strong className="text-white">attention score</strong> — comes from projecting each token into query, key, and value vectors, then computing dot-product similarities. "How It Works" walks through the computation step by step. "Explore" shows real attention patterns across multiple heads. "Scale Problem" shows why O(n²) cost led to Flash Attention.
         </p>
       </div>
-      {/* Sentence selector */}
-      <div className="flex flex-wrap gap-2">
-        {ATTENTION_EXAMPLES.map((e, i) => (
-          <button
-            key={i}
-            onClick={() => { setExIdx(i); setHeadIdx(0); setHoveredRow(null); }}
-            className={`px-3 py-2 rounded-lg text-xs font-mono transition-all ${exIdx === i ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
-          >
-            "{e.label}"
+
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b border-zinc-800">
+        {[["how", "How It Works"], ["explore", "Explore"], ["scale", "Scale Problem"]].map(([id, label]) => (
+          <button key={id} onClick={() => setActiveTab(id)}
+            className={`px-4 py-2 text-xs font-mono transition-all rounded-t-lg ${activeTab === id ? "bg-violet-600/20 text-violet-300 border-b-2 border-violet-500" : "text-zinc-500 hover:text-zinc-300"}`}>
+            {label}
           </button>
         ))}
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-        <p className="text-xs text-zinc-400 leading-relaxed">{ex.note}</p>
-      </div>
+      {/* ── TAB 1: HOW IT WORKS ── */}
+      {activeTab === "how" && (
+        <div className="space-y-4">
 
-      {/* Head selector */}
-      <div className="flex gap-2 flex-wrap items-center">
-        <span className="text-xs text-zinc-500">Attention head:</span>
-        {ex.heads.map((h, i) => (
-          <button
-            key={i}
-            onClick={() => { setHeadIdx(i); setHoveredRow(null); }}
-            className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${headIdx === i ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
-          >
-            {h.name}
-          </button>
-        ))}
-      </div>
-
-      <div className="text-xs text-zinc-500 italic">{head.desc}</div>
-
-      <div className="grid grid-cols-12 gap-4">
-        {/* Heatmap */}
-        <div className="col-span-12 lg:col-span-8">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-            <div className="text-xs text-zinc-500 mb-3 font-mono">
-              Row = query token (what is attending) · Column = key token (being attended to)
-            </div>
-            <div className="overflow-x-auto w-full">
-              <div style={{ display: "inline-block" }}>
-                {/* Column headers */}
-                <div style={{ display: "flex", marginLeft: LABEL_W }}>
-                  {tokens.map((t, j) => (
-                    <div key={j} style={{ width: CELL, textAlign: "center" }}
-                      className="text-xs font-mono text-zinc-400 pb-2 truncate">
-                      {t}
-                    </div>
-                  ))}
-                </div>
-                {/* Rows */}
-                {weights.map((row, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center" }}
-                    onMouseEnter={() => setHoveredRow(i)}
-                    onMouseLeave={() => setHoveredRow(null)}>
-                    {/* Row label */}
-                    <div style={{ width: LABEL_W, textAlign: "right", paddingRight: 10 }}
-                      className={`text-xs font-mono truncate ${hoveredRow === i ? "text-white font-bold" : "text-zinc-400"}`}>
-                      {tokens[i]}
-                    </div>
-                    {/* Cells */}
-                    {row.map((v, j) => (
-                      <div key={j}
-                        style={{
-                          width: CELL, height: CELL,
-                          background: heatColor(v),
-                          border: hoveredRow === i ? "1px solid #7c3aed" : "1px solid #18181b",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          transition: "background 0.2s",
-                          cursor: "default",
-                        }}
-                        title={`${tokens[i]} → ${tokens[j]}: ${v.toFixed(2)}`}
-                      >
-                        <span style={{ fontSize: 10, color: v > 0.4 ? "#fff" : "#71717a", fontFamily: "monospace" }}>
-                          {v.toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Step stepper */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {STEP_LABELS.map((label, i) => (
+              <button key={i} onClick={() => setStep(i)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${step === i ? "bg-violet-600 text-white" : step > i ? "bg-zinc-700 text-zinc-300" : "bg-zinc-800/60 text-zinc-500 hover:text-zinc-300"}`}>
+                {i + 1}. {label}
+              </button>
+            ))}
           </div>
-        </div>
 
-        {/* Bar chart for hovered row */}
-        <div className="col-span-12 lg:col-span-4 space-y-3">
-          {hoveredRow !== null ? (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
-              <div className="text-xs font-bold text-zinc-300 uppercase tracking-wide">
-                "{tokens[hoveredRow]}" attends to:
-              </div>
-              {weights[hoveredRow]
-                .map((v, j) => ({ v, j, tok: tokens[j] }))
-                .sort((a, b) => b.v - a.v)
-                .map(({ v, j, tok }) => (
-                  <div key={j} className="space-y-0.5">
-                    <div className="flex justify-between text-xs font-mono">
-                      <span className="text-zinc-300">{tok}</span>
-                      <span className="text-violet-400">{(v * 100).toFixed(0)}%</span>
-                    </div>
-                    <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-300"
-                        style={{ width: `${v * 100}%`, background: heatColor(v) }} />
-                    </div>
-                  </div>
-                ))}
+          {/* Token selector */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+            <div className="text-xs text-zinc-400 font-mono uppercase tracking-wide">Query token — click to select</div>
+            <div className="flex gap-2 flex-wrap">
+              {QKV_TOKENS.map((tok, i) => (
+                <button key={i} onClick={() => { setQueryIdx(i); setStep(0); }}
+                  className={`px-3 py-2 rounded-lg text-sm font-mono font-bold transition-all ${queryIdx === i ? "bg-violet-600 text-white ring-2 ring-violet-400" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                  {tok}
+                </button>
+              ))}
             </div>
-          ) : (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-center">
-              <p className="text-xs text-zinc-500">Hover a row to see what that token attends to</p>
-            </div>
-          )}
-
-          <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-3 space-y-2">
-            <div className="text-xs font-bold text-violet-400 uppercase tracking-wide">What this means</div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Each row sums to 1.0 (softmax). High values = strong attention. A real transformer has 12–96 heads — each specialising in a different relationship type. This is a simplified 4-head simulation.
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              The selected token becomes the <span className="text-violet-400 font-mono">query</span>. Its embedding is multiplied by W_Q to get vector Q. Every token (including itself) is multiplied by W_K to get key vectors K. The dot product Q·K measures alignment — how much each key matches this query.
             </p>
           </div>
 
-          {/* Color scale */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
-            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Colour scale</div>
-            <div className="flex gap-1">
-              {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map((v) => (
-                <div key={v} className="flex-1 h-4 rounded-sm" style={{ background: heatColor(v) }} title={v.toFixed(1)} />
-              ))}
+          {/* Step 1 — Raw scores */}
+          {step >= 1 && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+              <div className="text-xs font-bold text-zinc-300 uppercase tracking-wide font-mono">
+                Step 1 — Raw scores: Q[<span className="text-violet-400">{QKV_TOKENS[queryIdx]}</span>] · K[each token]
+              </div>
+              <div className="space-y-2">
+                {QKV_TOKENS.map((tok, j) => (
+                  <div key={j} className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-zinc-400 w-12 text-right">{tok}</span>
+                    <div className="flex-1 h-5 bg-zinc-800 rounded overflow-hidden">
+                      <div className="h-full bg-violet-600/70 rounded transition-all duration-500"
+                        style={{ width: `${(rawRow[j] / 3.2) * 100}%` }} />
+                    </div>
+                    <span className="text-xs font-mono text-zinc-300 w-10 text-right">{rawRow[j].toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-zinc-500">Raw dot products Q·K. Unbounded scores — not yet probabilities.</p>
             </div>
-            <div className="flex justify-between text-xs font-mono text-zinc-500">
-              <span>0.0</span><span>0.5</span><span>1.0</span>
+          )}
+
+          {/* Step 2 — Scaled */}
+          {step >= 2 && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+              <div className="text-xs font-bold text-zinc-300 uppercase tracking-wide font-mono">
+                Step 2 — Scaled: divide by sqrt(d_k) = sqrt({D_K}) = {Math.sqrt(D_K).toFixed(2)}
+              </div>
+              <div className="space-y-2">
+                {QKV_TOKENS.map((tok, j) => (
+                  <div key={j} className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-zinc-400 w-12 text-right">{tok}</span>
+                    <div className="flex-1 h-5 bg-zinc-800 rounded overflow-hidden">
+                      <div className="h-full bg-blue-500/70 rounded transition-all duration-500"
+                        style={{ width: `${(scaledRow[j] / 1.6) * 100}%` }} />
+                    </div>
+                    <span className="text-xs font-mono text-zinc-300 w-10 text-right">{scaledRow[j].toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-zinc-500">Dividing by sqrt(d_k) prevents large dot products in high dimensions from saturating softmax and killing gradients during training.</p>
+            </div>
+          )}
+
+          {/* Step 3 — Softmax */}
+          {step >= 3 && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+              <div className="text-xs font-bold text-zinc-300 uppercase tracking-wide font-mono">
+                Step 3 — Softmax: probabilities that sum to 1.0
+              </div>
+              <div className="space-y-2">
+                {QKV_TOKENS.map((tok, j) => (
+                  <div key={j} className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-zinc-400 w-12 text-right">{tok}</span>
+                    <div className="flex-1 h-5 bg-zinc-800 rounded overflow-hidden">
+                      <div className="h-full rounded transition-all duration-500"
+                        style={{ width: `${smRow[j] * 100}%`, background: heatColor(smRow[j]) }} />
+                    </div>
+                    <span className="text-xs font-mono w-12 text-right"
+                      style={{ color: smRow[j] > 0.22 ? "#a78bfa" : "#71717a" }}>
+                      {(smRow[j] * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-zinc-500">These are the attention weights — how much "{QKV_TOKENS[queryIdx]}" attends to each token. Rows always sum to 100%.</p>
+            </div>
+          )}
+
+          {/* Step 4 — Weighted V sum */}
+          {step >= 4 && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+              <div className="text-xs font-bold text-zinc-300 uppercase tracking-wide font-mono">
+                Step 4 — Weighted V sum: output for "{QKV_TOKENS[queryIdx]}"
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {QKV_TOKENS.map((tok, j) => (
+                  <div key={j} className={`rounded-lg px-3 py-2 border transition-all ${smRow[j] > 0.2 ? "border-violet-700/60 bg-violet-950/25" : "border-zinc-800 bg-zinc-900/30"}`}>
+                    <div className="flex justify-between items-center mb-0.5">
+                      <span className="text-xs font-mono font-bold text-zinc-200">{tok}</span>
+                      <span className="text-xs font-mono" style={{ color: smRow[j] > 0.2 ? "#a78bfa" : "#52525b" }}>{(smRow[j] * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="h-1 bg-zinc-800 rounded overflow-hidden">
+                      <div className="h-full rounded" style={{ width: `${smRow[j] * 100}%`, background: heatColor(smRow[j]) }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-zinc-500">Output = sum of (attention_weight[j] × V[j]) for all j. Tokens with higher weights contribute more. "{QKV_TOKENS[queryIdx]}"'s representation is enriched by what it attends to.</p>
+            </div>
+          )}
+
+          {/* Try this callout */}
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3">
+            <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">Try this</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Select <strong className="text-white font-mono">"cat"</strong> and step through to softmax — it attends most to "sat" (subject-verb). Select <strong className="text-white font-mono">"sat"</strong> — it attends to both "cat" and "mat" (verb knows its subject and object). The learned W_Q, W_K, W_V matrices encode these relationships — the mechanism itself is just multiply and normalize.
+            </p>
+          </div>
+
+        </div>
+      )}
+
+      {/* ── TAB 2: EXPLORE ── */}
+      {activeTab === "explore" && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {ATTENTION_EXAMPLES.map((e, i) => (
+              <button key={i} onClick={() => { setExIdx(i); setHeadIdx(0); setHoveredRow(null); }}
+                className={`px-3 py-2 rounded-lg text-xs font-mono transition-all ${exIdx === i ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                "{e.label}"
+              </button>
+            ))}
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+            <p className="text-xs text-zinc-400 leading-relaxed">{ex.note}</p>
+          </div>
+          <div className="flex gap-2 flex-wrap items-center">
+            <span className="text-xs text-zinc-500">Attention head:</span>
+            {ex.heads.map((h, i) => (
+              <button key={i} onClick={() => { setHeadIdx(i); setHoveredRow(null); }}
+                className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${headIdx === i ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                {h.name}
+              </button>
+            ))}
+          </div>
+          <div className="text-xs text-zinc-500 italic">{head.desc}</div>
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-12 lg:col-span-8">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                <div className="text-xs text-zinc-500 mb-3 font-mono">
+                  Row = query token · Column = key token (darker = stronger attention)
+                </div>
+                <div className="overflow-x-auto w-full">
+                  <div style={{ display: "inline-block" }}>
+                    <div style={{ display: "flex", marginLeft: LABEL_W }}>
+                      {tokens.map((t, j) => (
+                        <div key={j} style={{ width: CELL, textAlign: "center" }}
+                          className="text-xs font-mono text-zinc-400 pb-2 truncate">
+                          {t}
+                        </div>
+                      ))}
+                    </div>
+                    {weights.map((row, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center" }}
+                        onMouseEnter={() => setHoveredRow(i)}
+                        onMouseLeave={() => setHoveredRow(null)}>
+                        <div style={{ width: LABEL_W, textAlign: "right", paddingRight: 10 }}
+                          className={`text-xs font-mono truncate ${hoveredRow === i ? "text-white font-bold" : "text-zinc-400"}`}>
+                          {tokens[i]}
+                        </div>
+                        {row.map((v, j) => (
+                          <div key={j}
+                            style={{
+                              width: CELL, height: CELL,
+                              background: heatColor(v),
+                              border: hoveredRow === i ? "1px solid #7c3aed" : "1px solid #18181b",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              transition: "background 0.2s",
+                              cursor: "default",
+                            }}
+                            title={`${tokens[i]} → ${tokens[j]}: ${v.toFixed(2)}`}>
+                            <span style={{ fontSize: 10, color: v > 0.4 ? "#fff" : "#71717a", fontFamily: "monospace" }}>
+                              {v.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-span-12 lg:col-span-4 space-y-3">
+              {hoveredRow !== null ? (
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+                  <div className="text-xs font-bold text-zinc-300 uppercase tracking-wide">
+                    "{tokens[hoveredRow]}" attends to:
+                  </div>
+                  {weights[hoveredRow]
+                    .map((v, j) => ({ v, j, tok: tokens[j] }))
+                    .sort((a, b) => b.v - a.v)
+                    .map(({ v, j, tok }) => (
+                      <div key={j} className="space-y-0.5">
+                        <div className="flex justify-between text-xs font-mono">
+                          <span className="text-zinc-300">{tok}</span>
+                          <span className="text-violet-400">{(v * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-300"
+                            style={{ width: `${v * 100}%`, background: heatColor(v) }} />
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-center">
+                  <p className="text-xs text-zinc-500">Hover a row to see what that token attends to</p>
+                </div>
+              )}
+              <div className="rounded-xl border border-violet-800 bg-violet-950/20 p-3 space-y-2">
+                <div className="text-xs font-bold text-violet-400 uppercase tracking-wide">What this means</div>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Each row sums to 1.0 (softmax). A real transformer has 12–96 heads — each specialising in a different relationship type. This is a 4-head simulation.
+                </p>
+              </div>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+                <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Colour scale</div>
+                <div className="flex gap-1">
+                  {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map((v) => (
+                    <div key={v} className="flex-1 h-4 rounded-sm" style={{ background: heatColor(v) }} title={v.toFixed(1)} />
+                  ))}
+                </div>
+                <div className="flex justify-between text-xs font-mono text-zinc-500">
+                  <span>0.0</span><span>0.5</span><span>1.0</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Beat 2 — what to notice */}
-      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
-        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
-        <p className="text-xs text-zinc-300 leading-relaxed">Switch between attention heads and observe how each one has a different focus: one tracks syntactic structure, another tracks semantic coreference, another attends broadly. This specialization is not programmed — it emerges from training. When a model makes an unexpected output, the cause is usually visible in the attention pattern of one specific head, which is why attention visualization is the first tool any LLM debugger reaches for.</p>
-      </div>
+      {/* ── TAB 3: SCALE PROBLEM ── */}
+      {activeTab === "scale" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-xs font-mono text-zinc-300">Sequence length: <strong className="text-white">{seqLen.toLocaleString()} tokens</strong></span>
+              <span className="text-xs font-mono text-zinc-500">64 to 4,096</span>
+            </div>
+            <input type="range" min="64" max="4096" step="64" value={seqLen}
+              onChange={e => setSeqLen(Number(e.target.value))}
+              className="w-full accent-violet-500" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-3 space-y-1">
+                <div className="text-xs text-zinc-500 font-mono uppercase tracking-wide">Attention ops</div>
+                <div className="text-xl font-bold text-white font-mono">{(attnOps / 1e6).toFixed(2)}M</div>
+                <div className="text-xs text-zinc-500 font-mono">{seqLen}^2 = {attnOps.toLocaleString()}</div>
+                <div className="text-xs text-amber-400 mt-1">O(n^2) — quadruples every time n doubles</div>
+              </div>
+              <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-3 space-y-1">
+                <div className="text-xs text-zinc-500 font-mono uppercase tracking-wide">Attention matrix</div>
+                <div className="text-xl font-bold text-white font-mono">
+                  {memMB >= 1000 ? `${(memMB / 1024).toFixed(1)} GB` : `${memMB.toFixed(0)} MB`}
+                </div>
+                <div className="text-xs text-zinc-500 font-mono">n^2 x 4B (float32)</div>
+                <div className={`text-xs mt-1 ${seqLen >= 2048 ? "text-red-400" : "text-zinc-500"}`}>
+                  {seqLen >= 2048 ? "Exceeds typical VRAM budget" : "Within normal bounds"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+            <div className="text-xs font-mono text-zinc-400 uppercase tracking-wide">Ops at each sequence length (O(n^2))</div>
+            <div className="space-y-2">
+              {SCALE_CPS.map(n => {
+                const ops = n * n;
+                const pct = (ops / maxOps) * 100;
+                const barColor = pct > 50 ? "#ef4444" : pct > 15 ? "#f59e0b" : "#6366f1";
+                return (
+                  <div key={n} className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-zinc-500 w-10 text-right">{n >= 1000 ? (n / 1000) + "k" : n}</span>
+                    <div className="flex-1 h-5 bg-zinc-800 rounded overflow-hidden">
+                      <div className="h-full rounded transition-all duration-300"
+                        style={{ width: `${Math.max(pct, 2)}%`, background: barColor }} />
+                    </div>
+                    <span className="text-xs font-mono text-zinc-400 w-14 text-right">{(ops / 1e6).toFixed(0)}M</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3 space-y-2">
+            <div className="text-xs font-bold text-blue-400 uppercase tracking-wide">Why Flash Attention exists</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Standard attention materializes the full n×n matrix in HBM (GPU memory). At 4k tokens that is 64M float32 values = 256 MB — for one layer. Flash Attention rewrites the algorithm using <strong className="text-white">tiling</strong>: it computes attention in blocks that fit in SRAM (fast on-chip cache) and never writes the full matrix to HBM. Same output, O(n) memory instead of O(n²). This is why modern LLMs handle 128k+ context without running out of GPU memory.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Beat 3 — synthesis close */}
       <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
-        <p className="text-sm text-zinc-400 leading-relaxed italic">Multi-head attention is how the model reads the same sentence multiple times with different questions — syntax, reference, topic, context. The diversity of what each head finds is why attention-based models generalize better than anything that came before. When you debug unexpected outputs, the answer is usually in the attention pattern, not the weights — which is why interpretability tools like attention visualization exist and are worth learning before you reach for fine-tuning.</p>
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Multi-head attention is how the model reads the same sentence multiple times with different questions — syntax, reference, topic, context. The Q·K·V mechanism is just matrix multiplication and softmax, but the learned projection matrices encode all the linguistic structure the model knows. When you debug unexpected outputs, start with the attention patterns — which is why interpretability tools exist and are worth understanding before reaching for fine-tuning.</p>
       </div>
 
       {onNavigate && (
@@ -1013,11 +1235,11 @@ function AttentionModule({ onNavigate }) {
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "self-attention-deep-dive" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 Self-Attention Deep-Dive
+              Self-Attention Deep-Dive
             </button>
             <button onClick={() => onNavigate({ tab: "flows" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              🗺 Flows
+              Flows
             </button>
           </div>
         </div>
