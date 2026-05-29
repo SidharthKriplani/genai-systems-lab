@@ -1507,12 +1507,12 @@ Any `overflow-x-auto` scrollable container that may clip content on mobile now g
 
 | # | Component | Finding | Severity | Status |
 |---|---|---|---|---|
-| 1 | `Home.jsx` — hero badge + headline | "Free · No login · Layer 3 AI skills" — none of the three land. "Free" is table stakes. "No login" is a technical fact, not a benefit. "Layer 3 AI skills" is jargon. Hero headline "AI systems break in production" is generic — doesn't state the actual market claim (production readiness, not model knowledge). | **Critical** | ⚠️ Open — UPGRADES.md |
-| 2 | `Home.jsx` — hero body copy | "reading about RAG failures" frames the entire product as a RAG tool. Doesn't reflect agent, eval, serving, or observability content. Narrows perceived scope for cold visitors. | **High** | ⚠️ Open — UPGRADES.md |
+| 1 | `Home.jsx` — hero badge + headline | "Free · No login · Layer 3 AI skills" — none of the three land. "Free" is table stakes. "No login" is a technical fact, not a benefit. "Layer 3 AI skills" is jargon. Hero headline "AI systems break in production" is generic — doesn't state the actual market claim (production readiness, not model knowledge). | **Critical** | ✅ Fixed sprint 11 — badge removed, new gradient headline "Configure it. Break it. Know exactly why." |
+| 2 | `Home.jsx` — hero body copy | "reading about RAG failures" frames the entire product as a RAG tool. Doesn't reflect agent, eval, serving, or observability content. Narrows perceived scope for cold visitors. | **High** | ✅ Fixed sprint 11 — body rewritten: "Production AI systems fail in specific, predictable ways. This lab makes you reproduce those failures — not read about them." |
 | 3 | RAG Lab — routing | Door card routes correctly to RAG Lab. | ✅ Pass | Closed |
 | 4 | RAG Lab — scenario names | ROLLOUT.md checklist had wrong scenario names ("Retrieval Failure", "Context Overflow", etc.). Actual scenarios: Missing Answer, Ambiguous Query, Conflicting Policy Documents, Multi-hop Reasoning, Three Document Evidence Chain, Prompt Injection via Retrieval. | **Doc bug** | ✅ Fixed — ROLLOUT.md updated |
 | 5 | RAG Lab — done card placement | ✓ done card appears after scenario completion but is positioned in corner — not immediately visible. Primary CTA of the entire learn loop is being missed by users. | **Critical** | ⚠️ Open — UPGRADES.md |
-| 6 | RAG Lab — "Test your understanding" CTA | Crashes on click. Dead end — navigates to nothing. | **Critical** | ⚠️ Open — UPGRADES.md (bug fix) |
+| 6 | RAG Lab — "Test your understanding" CTA | Crashes on click. Dead end — navigates to nothing. | **Critical** | ✅ Fixed sprint 11 — `preplabInitialMode` state in App.jsx; `initialMode` prop in PrepLab.jsx; useEffect auto-selects Trainer mode. |
 | 7 | RAG Lab — "Read the full breakdown" CTA | ✅ Opens correct GT post. | ✅ Pass | Closed |
 | 8 | GT post quiz depth | Quiz fires correctly but too few questions. Needs minimum 5 to feel meaningful. | **Medium** | ⚠️ Open — UPGRADES.md |
 | 9 | PrepLab — depth + polish | Not sufficiently polished for external testers. No difficulty levels (easy/medium/hard). All questions single-select MCQ only — no multi-select option. Mode customization thin. | **High** | ⚠️ Open — UPGRADES.md |
@@ -1528,4 +1528,59 @@ Any `overflow-x-auto` scrollable container that may clip content on mobile now g
 
 4 critical findings, 2 high, 1 medium. **Batch 0 Walk 1 does not pass.** Critical fixes required before Batch 1 opens: done card placement (#5), "Test your understanding" crash (#6), hero copy (#1). Walk 2–8 not yet run.
 
-**Status:** ⚠️ Open — Walk 1 complete, critical findings block Batch 1.
+**Status:** ⚠️ Partially resolved — findings #1, #2, #6 fixed in sprints 11–12. Findings #5, #8, #9 still open.
+
+---
+
+## Audit 35 — Sprint 12 Review + Ask/Search Identity Audit (May 2026)
+
+**Type:** Sprint review + focused feature audit
+**Date:** May 2026
+**Scope:** Sprint 12 deliverables + full audit of Ask/Search/Consultation tab.
+
+### Sprint 12 deliverables — all verified
+
+| # | Feature | What Shipped | Brace Check | Status |
+|---|---|---|---|---|
+| 1 | `WeaknessHeatmapMode` (PrepLab) | Per-topic accuracy bars (worst-first), Hard Questions view, empty state, Reset button. PREPLAB_SIDEBAR entry + routing. | ✓ diff 0 | ✅ Done |
+| 2 | `recordHistory` module helper | Shared history persistence across TrainerMode + InterviewPrepMode. `HISTORY_KEY` constant. TrainerMode reset button uses constant. | — | ✅ Done |
+| 3 | `GateModal` unlock animation | `unlocked` success state: `gsl-pop` scale+fade (0.35s) + `gsl-glow` radial pulse (1.4s) + `gsl-fadein` text (0.4s delay). Keyframes injected inline. `setTimeout(onUnlock, 1400)`. | — | ✅ Done |
+| 4 | Concepts Gym | `GymPanel` component: track accordion (FOUNDATION/APPLICATION/PRACTICE), progress bars, per-module Start/Revisit, "Next up" CTA. `MASTERY_KEY` localStorage. `markComplete(id)` + ✓ sidebar badges + "Mark complete"/"✓ Completed" in module header. "GYM" button in sidebar. `MODULE_NEXT_STEP` lookup (13 modules). | ✓ diff 0 | ✅ Done |
+
+### Ask/Search identity audit — Audit 26 follow-up
+
+**Context:** Audit 26 (sprint 5) flagged: label says "Ask", mechanic is keyword search. Still open.
+
+**Current state (Consultation.jsx / Ask tab):**
+- Label: "Ask" or "Search" (changed in earlier sprint to "Search")
+- Mechanic: `toLowerCase().includes()` keyword match over GT post titles + body text snippets
+- No fuzzy matching — exact substring only
+- No module coverage — GT posts only, no Systems/Explore/Concepts module titles
+- No ranking — results returned in array order, not by relevance
+- No empty-state guidance — dead white box on zero results
+- No query suggestions, no example queries
+- Result cards show title + first 100 chars of description — no match highlighting
+
+**Gap:** User types "why does retrieval fail" → zero results (no post title contains that exact string). Types "retrieval" → returns some posts but not sorted by relevance. Zero coverage of Labs/Systems modules.
+
+**Fix plan (static, no backend):**
+1. Expand search corpus to include Systems module titles/subtitles + Explore module titles
+2. Replace exact `includes` with token-based scoring: split query into words, score each result by word-overlap count
+3. Sort results by score descending
+4. Add match highlighting on result cards (bold the matching fragment)
+5. Add example queries below search input
+6. Add empty-state with "Try searching for: RAG, agent memory, evaluation, embeddings"
+7. Relabel to "Search" permanently, update description to be honest about what it does
+
+**Effort:** S–M. All static. Consultation.jsx is the only file.
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | Exact-string matching misses natural queries | High | ✅ Fixed sprint 13 |
+| 2 | Only searches GT posts — misses modules | High | ✅ Fixed sprint 13 |
+| 3 | No result ranking by relevance | High | ✅ Fixed sprint 13 |
+| 4 | No match highlighting | Medium | ✅ Fixed sprint 13 |
+| 5 | Empty state is a blank box | Medium | ✅ Fixed sprint 13 |
+| 6 | "Ask" label vs search mechanic mismatch | Medium | ✅ Fixed sprint 13 — relabeled Search, honest description |
+
+**Status:** ✅ Fixed sprint 13 (this session).

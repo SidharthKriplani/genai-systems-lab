@@ -111,6 +111,17 @@ Topics and structures borrowed from major AI curricula — not built yet, just c
 
 ## Tier 1 — High Impact, Buildable Now
 
+### Ask/Search upgrade — Audit 35 (May 2026) ✅ Done sprint 13
+
+**Problem:** Label says "Ask", mechanic is exact-string `includes()` over GT post titles only. Natural queries like "why does retrieval fail" return zero results. No module coverage. No ranking. No match highlighting. No empty-state guidance.
+
+**Fix (all static, Consultation.jsx only):**
+- ~~Token-based scoring: split query → score each result by word-overlap count, sort descending~~ ✅
+- ~~Expand corpus to include Systems module titles/subtitles + Explore module titles~~ ✅
+- ~~Match highlighting on result cards~~ ✅
+- ~~Empty state with suggested queries~~ ✅
+- ~~Relabel to "Search" permanently~~ ✅
+
 ### CRITICAL — Audit 28: Lab Quality Gap (May 2026) — the 30% that stops this being million-dollar
 
 Full audit of Agent Lab (16), Eval Lab (18), LLM Lab (9) against RAG Lab standard. Only 3/16 Agent Lab modules, 2/9 LLM Lab modules, and 9/18 Eval Lab modules meet the configure→fail→diagnose standard. The rest are reference content or interactive calculators without a failure arc.
@@ -184,7 +195,7 @@ An AI interviewer found that candidates who claimed to have built 2-3 RAG system
 
 ### PrepLab
 - ~~**Questions for uncovered modules**~~ ✅ *built May 2026 — 15 questions: pid-1–5, ama-1–4, lcp-1–3, tok-1–3*
-- **JD Prep mode — Defense Strategy upgrade** — Current JD Prep does keyword matching. Target: full three-phase flow: (1) parse JD against 11 skill categories with keyword maps → category weights, (2) self-rating per flagged category (Weak/Okay/Strong) → gap score = weight × inverse rating, (3) sequenced prep plan output: GT posts + Systems modules + PrepLab clusters per gap, plus honest gaps callout for uncovered skills. All static, no backend. `gated: true` already in place. See UPGRADES.md for full spec. *Pending — Tier 1, M effort.*
+- ~~**JD Prep mode — Interview Prep Plan upgrade**~~ ✅ *Done sprint 11 — `InterviewPrepMode` replaces `JDPrepMode`: Phase 1 (JD → SKILL_KEYWORDS detection, topic weights), Phase 2 (self-rate Weak/Okay/Strong per topic), Phase 3 (gap-weighted 20-question drill with `DRILL_W = {weak:3, okay:1.5, strong:0.5}`), Results (score + per-topic breakdown + study resources + gated Phase 4 study plan teaser). `serving` added to TOPIC_LABELS/COLORS.*
 - **Scenario-type questions** — Multi-turn conversational scenarios where the user debugs a failing system across 3-4 exchanges. Higher fidelity than MCQ. *Pending.*
 - **More system design text questions** — Cover: vector DB selection, agent reliability, eval harness design, fine-tuning decision framework. *Pending.*
 
@@ -317,16 +328,16 @@ A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL
 - ~~**Learning Path: "Data Engineer to AI Engineer"**~~ ✅ *built May 2026 — 10-step path in LearningPaths.jsx*
 - **Home page positioning tweak** — add one line near the hero explicitly claiming Layer 3 depth: "The lab that builds Layer 3 skills — RAG, evals, observability, agent architecture." Zero build effort, direct resonance with DEs reading that post.
 
-### Concepts Gym — structured foundation layer (new cluster — May 2026)
+### Concepts Gym — structured foundation layer (new cluster — May 2026) ✅ v1 shipped sprint 12
 
-Ground Truth is a library: you read it when you need a reference. The Concepts tab is 15 good interactives with no progression, no coverage tracking, no mastery signal. There is no structured path from "I want to understand embeddings" that ends in demonstrated understanding. This gap is the biggest thing missing for beginners — a foundation layer that prepares them for the labs rather than assuming they arrive ready.
+~~Ground Truth is a library: you read it when you need a reference. The Concepts tab is 15 good interactives with no progression, no coverage tracking, no mastery signal.~~
 
-**The idea:** restructure around PAL-style foundation tracks. Not a tab rename — the mechanic must change.
+**Shipped (sprint 12):** `GymPanel` component with FOUNDATION/APPLICATION/PRACTICE track accordion, per-module progress bars, Start/Revisit buttons, "Next up" CTA. `gsl-concepts-mastery` localStorage. "Mark complete" button + ✓ sidebar badges. `MODULE_NEXT_STEP` lookup with lab forward pointers per module. "GYM" button in Concepts sidebar.
 
-- **Dependency graph becomes navigation** — currently cut from Home (was decorative). In a Concepts Gym it has a real job: click a node → concept opens → shows what you need first + what it unlocks → forward pointer to the lab that uses it. The graph earns its place here.
-- **Foundation tracks** (like PAL's Stat Foundations / A/B Foundations): RAG Foundations, LLM Foundations, Agent Foundations, Eval Foundations. Each track is: concept → interactive simulator → test recall → link to the lab where you practice it for real.
-- **Mastery signal** — per-concept coverage tracking (localStorage). User sees which concepts are covered, which are prerequisites for what they want to do next. Not just "visited" — actually tested.
-- **GT posts as concept references** — GT posts surface contextually inside the gym at the exact moment a concept is explained, not as a wall to browse. Fixes the "GT is just a blog" problem structurally.
+**Remaining (v2, lower priority now):**
+- **Foundation tracks** (RAG/LLM/Agent/Eval as distinct tracks beyond the current 3 groups) — requires remapping the MODULES array
+- **GT posts as concept references** — surface relevant GT posts contextually inside the Gym module view, not just lab pointers
+- **Prerequisite visibility** — show "requires: Attention" before unlocking Transformer module
 - **Interlinked with Labs** — every concept in the gym has a forward pointer to the lab scenario it enables. Tokenization → Context Window → RAG Lab "Missing Answer" scenario. The chain becomes explicit.
 
 **Why this is the right architectural direction:** the current product has learning material (GT), labs (RAG Lab etc.), and assessment (PrepLab) but no structured foundation layer connecting them. The dependency graph, Concepts interactives, and GT posts are all the right raw material — what's missing is the architecture that organizes them into a progression a beginner can follow.
@@ -369,7 +380,7 @@ Scan of ML Systems Lab and Product Analytics Lab (PAL/Experimentation Lab) surfa
 
 - **Role Readiness Score** — PAL has Junior/Analyst/Senior/Staff readiness derived from PrepLab performance. Build "AI Engineer Readiness" with tiers: Familiar → Practitioner → Senior → Staff. Derived from PrepLab session scores across domains. Shown on PrepLab or a Progress page. No backend needed — localStorage.
 
-- **Weakness Heatmap** — ML Systems Lab Trainer shows per-domain weakness heatmap. Adapt: after PrepLab sessions, show performance per domain (RAG / Agents / Evals / LLMs / Infra) as a heatmap grid. "You're weak on Evals and Serving. These PrepLab questions next." Builds study plan automatically.
+- ~~**Weakness Heatmap**~~ ✅ *Done sprint 12 — `WeaknessHeatmapMode` in PrepLab: per-topic accuracy bars (worst-first), Hard Questions view (most-missed), empty state, Reset. Reads `gsl-preplab-history`. Shared `recordHistory` helper — TrainerMode + InterviewPrepMode both write to it.*
 
 - **Defense Doc Generator** — PAL: input JD → 7-day study plan tiered by room importance, printable. Adapt: input a JD → ranked study plan with specific Systems modules, GT posts, and PrepLab clusters weighted to the gap. Different from our current JD Prep mode (which just generates questions). The study plan output is more immediately actionable.
 
