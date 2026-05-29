@@ -2,13 +2,13 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 20)*
+*Last updated: May 2026 (post sprint 21)*
 
 ---
 
-## Theme: Fix what's broken. Make existing content feel complete.
+## Theme: Fix broken loops. Tighten the shell. Surface progress.
 
-No new features. No new modules. Finish the remaining high-ROI gaps.
+No new modules. No new content. Make what exists work better.
 
 ---
 
@@ -25,7 +25,19 @@ Fix:
 - Brace check after. Diff must be 0.
 See: UPGRADES.md → "RAG Lab — Done Card Prominence"
 
-**2. Fidelity badges on Lab modules** `S effort` `HIGH`
+**2. Sidebar — collapse sparse groups, remove dead space** `S effort` `HIGH`
+PAL's sidebar is tight because it uses collapsible section groups with no padding waste. Ours has fixed-height nav groups that leave dead zones, especially GROW (3 entries) and KNOWLEDGE (2 entries).
+File: `src/App.jsx` — nav sidebar component, `NAV_GROUPS` constant and sidebar rendering.
+Fix:
+- Add per-group collapse state (`useState` per group ID, default open). A chevron icon on each group header toggles it.
+- When collapsed, the group header shows with a small item-count badge and nothing else — zero gap below.
+- Tighten sidebar item `py` from whatever it currently is to `py-2` minimum. Group headers: `py-1.5 px-3`.
+- Remove any hardcoded `min-height` or spacer divs between groups.
+- Check on mobile too — the mobile bottom nav bar should not be affected by this change.
+- Brace check after. Diff must be 0.
+Source: PAL comparison, May 2026
+
+**3. Fidelity badges on Lab modules** `S effort` `HIGH`
 ML Systems Lab ships `✓ Real execution` / `~ Simulated` on every module. Builds honest trust. Currently users have no signal about whether a simulator is running real logic or a pre-scripted scenario.
 File: all 4 lab files — `src/App.jsx` (RAG Lab), `src/Agents.jsx` (Agent Lab), `src/systems/modules.jsx` (LLM Lab + Eval Lab modules).
 Fix:
@@ -35,7 +47,18 @@ Fix:
 - Brace check each modified file. Diff must be 0.
 See: IDEAS.md → "Cross-product patterns" → Fidelity badges
 
-**3. PrepLab — Keyboard shortcuts** `S effort` `LOW-MEDIUM`
+**4. Concepts Gym — inline progress view + "next module" CTA** `S-M effort` `MEDIUM`
+PAL's Progress page shows per-room completion bars and a guided path with a named "NEXT" marker. Our Concepts Gym has the data (mastery set in localStorage, gym structure in GYMS constant) but no dedicated progress view. A returning user has no clear signal of where to go next within a gym.
+File: `src/Concepts.jsx` — `GymRoomView` and/or a new `GymProgressView` component.
+Fix:
+- In `GymRoomView`, add a progress summary at the top: `N / total modules done` bar (same style as the existing gym progress bar on the selector card, just surfaced inside the room).
+- Add a "Continue where you left off" CTA — detect the first incomplete module in the room's `moduleIds` list and render a button: `Continue: [module label] →` in the gym's accent color. If all done, render "All done — try the lab →" with the lab pointer.
+- Optionally: add a 2-line summary of what the user last completed (`mastery` set contains the IDs). "Last completed: Attention Mechanism."
+- This is essentially PAL's Guided Path right panel, scoped to one gym. Keep it to 8-10 lines of JSX — don't over-engineer.
+- Brace check after. Diff must be 0.
+Source: PAL comparison, May 2026
+
+**5. PrepLab — Keyboard shortcuts** `S effort` `LOW-MEDIUM`
 Every MCQ answer requires a mouse click. 1/2/3/4 to select + Enter to confirm is standard for any quiz tool. Power users on a study loop notice the friction immediately.
 File: `src/PrepLab.jsx` — ExamMode and TrainerMode components.
 Fix:
@@ -46,28 +69,6 @@ Fix:
 - Brace check after. Diff must be 0.
 See: UPGRADES.md → "PrepLab.jsx — Keyboard Shortcuts"
 
-**4. Concepts — inline callouts + synthesis close** `M effort` `MEDIUM`
-Sprint 14 added Beat 1 (setup framing text) to all 15 Concepts modules. Beats 2 and 3 are missing: no inline callout fires during the key interaction moment, and no synthesis close card appears when the module ends. The 3-beat standard applied to all 4 labs in sprint 18 is incomplete for Concepts.
-File: `src/Concepts.jsx` — all 15 module components (Tokenizer, Embeddings, ContextWindow, Attention, Transformer, NextToken, Temperature, FlashAttention, PositionalEncoding, KVCache, RLHF, RAGConcept, AgentLoop, EvalConcepts, PromptDesign or equivalent — check the actual module IDs in the GYMS constant).
-Fix:
-- Beat 2 (inline callout): for each module, identify the 1–2 highest-signal interaction moments. Examples: Tokenizer → when the user types and sees token count spike; Temperature → when slider crosses above 1.2 (incoherence zone) or below 0.1 (repetition zone); ContextWindow → when tokens exceed the limit. At that moment, surface a small amber or red callout: `{ t: "callout" }` style block explaining what just happened and why it matters in production. Condition it on the relevant state value.
-- Beat 3 (synthesis close): after the user has interacted (e.g. completed a flashcard set, reached the end of a walkthrough, triggered the main interaction at least once), render a ✓ done card at the bottom. Pattern from RAG Lab: violet gradient border, ✓ badge, one-sentence named lesson ("You just saw how temperature controls the probability distribution — not just creativity"), one forward pointer to a GT post or lab module. The `MODULE_NEXT_STEP` lookup in Concepts.jsx already maps 13 module IDs to forward pointers — use it.
-- Check each of the 15 modules individually. Some may already have partial Beat 2 logic (e.g. Temperature slider callout exists). Don't duplicate — just fill the gap.
-- Brace check after each file edit. Diff must be 0.
-See: UPGRADES.md → "Concepts — Inline Callouts + Synthesis Close"
-
-**5. GT thin post expansion** `S-M effort` `MEDIUM`
-Three GT posts are under the 8-block quality bar and feel like stubs next to the rest of the corpus. Flagged in Audit 17 and Audit 27. Dilutes corpus quality perception.
-Posts: `dpo-in-practice` (4 blocks), `llm-observability` (5 blocks), `instruction-tuning-datasets` (5 blocks).
-File: `src/groundTruthPosts.js` — find each post by ID and expand its content array.
-Fix per post:
-- `dpo-in-practice`: currently 4 blocks. Add: a concrete before/after example showing a DPO preference pair, a failure mode block (what happens when preference data is noisy or contradictory), a production callout block (when to use DPO vs RLHF vs SFT-only), and a `refs` block with 2–3 real papers/implementations. Target: 8–10 blocks.
-- `llm-observability`: currently 5 blocks. Add: a real trace example (what a bad trace looks like vs a good one), a failure mode block (silent degradation — model answers change without any error signal), a tooling comparison block (LangSmith vs Arize vs custom logging), and a `refs` block. Target: 8–10 blocks.
-- `instruction-tuning-datasets`: currently 5 blocks. Add: a dataset quality checklist block (what makes an instruction-response pair good vs bad), a failure mode block (instruction following collapse from low-quality data), a concrete dataset comparison (FLAN vs Alpaca vs ShareGPT vs synthetic), and a `refs` block. Target: 8–10 blocks.
-- Check `groundTruthIndex.js` after to confirm these 3 posts have `related[]` arrays and `labLink` set. If not, add them.
-- No brace check needed (groundTruthPosts.js is a data file, not JSX) — but run a quick `node -e "require('./src/groundTruthPosts.js')"` in the project root to confirm no syntax errors.
-See: CLAUDE.md → Known open issues; AUDITS.md → Audit 17 finding 5
-
 ---
 
 ## If time allows (pick one)
@@ -77,6 +78,16 @@ ReturningHomeView (sprint 16) shows progress stats but no streak or activity gri
 File: `src/Home.jsx` — `ReturningHomeView` component and `getActivityData()` helper.
 Fix: on every tab navigation (`navigate()` in App.jsx), write today's date key to localStorage (`gsl-activity-YYYY-MM-DD = 1`). In `getActivityData()`, read the last 28 day-keys and return a boolean array. In `ReturningHomeView`, render a 4-row × 7-col grid in the Today section: filled cell = green-500/30, empty = zinc-800, today = ring. Streak = count of consecutive days ending today from the activity array.
 See: UPGRADES.md → "Home.jsx — Streak + Activity Heatmap"
+
+---
+
+## Pending (pushed out this session)
+
+**Guided Paths — promote from tab to inline on Home returning-user view** `M effort`
+PAL surfaces the active guided path directly on its Progress page with named steps and a "Continue →" CTA. Our Learning Paths tab is a separate destination nobody finds. The fix is to inline the active path into `ReturningHomeView` in `Home.jsx` — detect the user's most-in-progress path from localStorage, render the next 3 steps, add a "Continue" CTA.
+Pushed out: lower urgency than sidebar + gym progress. Build after those ship.
+Source: PAL comparison, May 2026
+See: CLAUDE.md "Structural Upgrade" → Learning Paths as connective tissue
 
 ---
 
