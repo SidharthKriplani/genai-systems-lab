@@ -1460,7 +1460,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex" data-palette={palette} style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif" }}>
+    <div className="min-h-screen text-white flex" data-palette={palette} style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif", background: "var(--bg)" }}>
       {/* Welcome modal — first visit only */}
       {showWelcome && <WelcomeModal onSelect={dismissWelcome} />}
 
@@ -1624,8 +1624,8 @@ export default function App() {
         </div>
       )}
       {/* ── LEFT SIDEBAR (desktop only) ─────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-48 shrink-0 border-r border-zinc-800/70 sticky top-0 h-screen overflow-y-auto z-20"
-        style={{ background: "linear-gradient(180deg, #1c1c1f 0%, #0f0f11 60%, #09090b 100%)" }}>
+      <aside className="hidden lg:flex flex-col w-48 shrink-0 sticky top-0 h-screen overflow-y-auto z-20"
+        style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
         {/* Logo */}
         <button onClick={() => navigate("home")} className="flex items-center gap-2.5 px-4 py-4 group">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0 transition-all group-hover:scale-105"
@@ -1637,7 +1637,7 @@ export default function App() {
             <div className="text-[9px] text-zinc-500 mt-0.5 font-mono">GenAI Systems Lab</div>
           </div>
         </button>
-        <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
+        <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, var(--border-subtle), transparent)" }} />
         {/* Nav groups */}
         <nav className="flex-1 px-2 pb-4 space-y-0.5">
           {NAV_GROUPS.map((group, gi) => {
@@ -1701,10 +1701,10 @@ export default function App() {
           })}
         </nav>
         {/* Bottom utilities */}
-        <div className="px-2 pb-3 border-t border-zinc-800/60 pt-2 space-y-1">
+        <div className="px-2 pb-3 pt-2 space-y-1" style={{ borderTop: "1px solid var(--border-subtle)" }}>
           <button onClick={() => setSearchOpen(true)}
-            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg border text-left transition-all duration-150 hover:border-zinc-600"
-            style={{ background: "rgba(24,24,27,0.8)", borderColor: "#27272a" }}>
+            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-all duration-150"
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderColor: "var(--border)" }}>
             <svg width="10" height="10" viewBox="0 0 11 11" fill="none" className="text-zinc-500 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
             <span className="text-[11px] text-zinc-500 flex-1">Search…</span>
             <kbd className="text-[9px] border border-zinc-700/60 rounded px-1 text-zinc-500 font-mono">⌘K</kbd>
@@ -1720,7 +1720,7 @@ export default function App() {
       {/* ── MAIN COLUMN ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0">
 
-      <header role="banner" className="border-b border-zinc-800">
+      <header role="banner" className="border-b" style={{ borderBottomColor: "var(--border)" }}>
         {/* Row 1: Logo + Search + Utilities */}
         <div className="px-4 py-2 flex items-center gap-3 max-w-7xl mx-auto">
           {/* Mobile: hamburger opens left drawer */}
@@ -1819,8 +1819,8 @@ export default function App() {
       {topView === "lab" && (
         <div className="flex flex-col lg:flex-row h-full min-h-0">
           {/* Sidebar: scenario list — desktop only */}
-          <div className="hidden lg:flex flex-col w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4"
-            style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
+          <div className="hidden lg:flex flex-col w-52 shrink-0 overflow-y-auto py-4"
+            style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
             <div className="px-3 pt-5 pb-2">
               <h1 className="text-base font-black text-white tracking-tight">RAG Lab</h1>
               <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">6 production failure modes</p>
@@ -1837,7 +1837,7 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
+            <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, var(--border-subtle), transparent)" }} />
             <div className="px-2 space-y-0.5">
               {ALL_SCENARIOS.map((s, i) => {
                 const active = i === scenarioIdx;
@@ -2198,7 +2198,7 @@ export default function App() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileDrawerOpen(false)} />
           {/* Drawer panel */}
           <div className="relative flex flex-col w-72 max-w-[85vw] h-full overflow-y-auto"
-            style={{ background: "linear-gradient(180deg, #111113 0%, #0a0a0c 100%)", borderRight: "1px solid #27272a" }}>
+            style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
             {/* Header */}
             <div className="flex items-center justify-between px-4 pt-5 pb-3">
               <button onClick={() => { navigate("home"); setMobileDrawerOpen(false); }} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">

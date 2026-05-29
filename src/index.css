@@ -128,6 +128,16 @@ button:disabled:active {
   --gal-prove:      #22c55e;   /* green-500   — PROVE group */
   --gal-navigate:   #f59e0b;   /* amber-500   — NAVIGATE group */
   --gal-knowledge:  #8b5cf6;   /* violet-500  — KNOWLEDGE group */
+
+  /* ── Elevation token system (PAL-parity) ────────────────────────────────────
+     Blue-tinted darks with 12+ L* units between layers — cards float visibly.
+     Previously: flat zinc-950/900/800 with only ~9 L* steps (invisible edges).
+  */
+  --bg:             #111520;   /* page / outermost background */
+  --surface:        #191e30;   /* sidebar, panels, raised cards */
+  --surface-2:      #1f2438;   /* nested cards, hover fills */
+  --border:         #3d4668;   /* all borders — clearly visible against --surface */
+  --border-subtle:  #2a3255;   /* dividers, light separators */
 }
 
 /* ── Mobile contrast boost — low-brightness readability ────────────────────

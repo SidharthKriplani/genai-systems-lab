@@ -229,13 +229,13 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
       <div>
         <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Today</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-5 space-y-2 animate-cardSlideUp">
+          <div className="rounded-xl p-5 space-y-2 animate-cardSlideUp" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(245,158,11,0.4)" }}>
             <p className="text-[10px] font-mono text-amber-500 uppercase tracking-widest font-bold">Did you know · Today's tip</p>
             <p className="text-sm text-zinc-300 leading-relaxed">{tip}</p>
           </div>
           <button onClick={goPost}
-            className="rounded-xl border border-violet-800/40 bg-violet-900/10 p-5 text-left transition-all flex flex-col gap-2 card-lift animate-cardSlideUp animate-delay-60"
-            style={{ animationFillMode: 'both' }}>
+            className="rounded-xl p-5 text-left transition-all flex flex-col gap-2 card-lift animate-cardSlideUp animate-delay-60"
+            style={{ animationFillMode: 'both', background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(139,92,246,0.5)" }}>
             <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">Today's read · Ground Truth</p>
             <p className="text-sm font-bold text-white leading-snug">{featuredPost.title}</p>
             <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{featuredPost.desc}</p>
@@ -311,7 +311,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
           {/* BUILD — dominant */}
           <button onClick={() => onNavigate("lab")}
             className="w-full p-4 rounded-xl text-left card-lift animate-cardSlideUp"
-            style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.12) 0%, rgba(15,23,42,0.7) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "2px solid rgba(59,130,246,0.65)" }}>
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(59,130,246,0.65)" }}>
             <p className="text-[10px] font-mono text-blue-400 uppercase tracking-widest font-bold">BUILD</p>
             <p className="text-sm font-bold text-white mt-1 mb-1">4 interactive labs</p>
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -324,14 +324,14 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button onClick={() => onNavigate("preplab")}
               className="p-4 rounded-xl text-left card-lift animate-cardSlideUp animate-delay-60"
-              style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.25) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.55)" }}>
+              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.55)" }}>
               <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest font-bold">PROVE</p>
               <p className="text-sm font-bold text-white mt-1">261 questions</p>
               <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Exam, Trainer, or Interview Prep modes</p>
             </button>
             <button onClick={() => onNavigate("groundtruth")}
               className="p-4 rounded-xl text-left card-lift animate-cardSlideUp animate-delay-120"
-              style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.10) 0%, rgba(46,16,101,0.18) 100%)", border: "1px solid rgba(139,92,246,0.22)", borderTop: "2px solid rgba(139,92,246,0.55)" }}>
+              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(139,92,246,0.55)" }}>
               <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">KNOWLEDGE</p>
               <p className="text-sm font-bold text-white mt-1">222+ posts</p>
               <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Production depth, not tutorials</p>
@@ -389,7 +389,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                 <button
                   onClick={() => { track("door_clicked", { door: "builder" }); onNavigate("lab"); }}
                   className="w-full flex flex-col items-start p-5 rounded-2xl text-left card-lift animate-cardSlideUp"
-                  style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.14) 0%, rgba(15,23,42,0.85) 100%)", border: "1px solid rgba(59,130,246,0.28)", borderTop: "2px solid rgba(59,130,246,0.75)", boxShadow: "0 6px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(59,130,246,0.06) inset" }}>
+                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(59,130,246,0.75)" }}>
                   <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">BUILD</span>
                   <span className="text-base font-bold text-white mb-2 leading-snug">I'm building with LLMs</span>
                   <span className="text-xs text-zinc-400 leading-relaxed">Configure real AI systems, watch them fail in production-realistic ways, and understand exactly why. 4 labs, 46 interactive scenarios.</span>
@@ -405,7 +405,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   <button
                     onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
                     className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp animate-delay-60"
-                    style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.3) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
+                    style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.65)" }}>
                     <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">PROVE</span>
                     <span className="text-sm font-bold text-white mb-1.5 leading-snug">Interview prep</span>
                     <span className="text-xs text-zinc-400 leading-relaxed flex-1">261 questions. Exam mode, trainer, or JD-targeted drill.</span>
@@ -414,7 +414,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   <button
                     onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
                     className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp animate-delay-120"
-                    style={{ background: "linear-gradient(160deg, rgba(245,158,11,0.10) 0%, rgba(69,26,3,0.25) 100%)", border: "1px solid rgba(245,158,11,0.22)", borderTop: "2px solid rgba(245,158,11,0.6)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
+                    style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(245,158,11,0.6)" }}>
                     <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest mb-1.5">NAVIGATE</span>
                     <span className="text-sm font-bold text-white mb-1.5 leading-snug">Career clarity</span>
                     <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, salary data by role.</span>
@@ -431,7 +431,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                 return (
                   <button
                     onClick={() => { track("continue_clicked", { tab: nextStep.tab, step: nextStep.step }); onNavigate(nextStep.tab); }}
-                    className="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-violet-500 transition-all group">
+                    className="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl transition-all group" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
                     <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Continue where you left off</span>
                     <span className="w-px h-3 bg-zinc-700" />
                     <span className="text-xs font-bold text-white">Step {nextStep.step}: {nextStep.label}</span>
