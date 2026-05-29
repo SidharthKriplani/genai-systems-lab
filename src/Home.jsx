@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { track, FEEDBACK_URL, isFeedbackReady } from "./analytics";
 
 function CountUp({ target, duration = 1200, suffix = "" }) {
@@ -57,70 +57,6 @@ const DAILY_TIPS = [
   "Model distillation creates smaller, faster models by training them to mimic a larger model's output distribution (not just its labels). GPT-4 distilling into a smaller model is how many fine-tuned 7B models get strong general capabilities.",
 ];
 
-const PATHS = {
-  engineer: [
-    { step: 1, label: "Tokenization & Embeddings", tab: "concepts", desc: "How text becomes numbers" },
-    { step: 2, label: "RAG Pipeline", tab: "flows", desc: "The full retrieval pipeline" },
-    { step: 3, label: "RAG Lab", tab: "lab", desc: "Build intuition by breaking configs" },
-    { step: 4, label: "Systems: Evals Lab", tab: "systems", desc: "How to measure quality" },
-    { step: 5, label: "Agent Loop", tab: "agents", desc: "Multi-step tool-using agents" },
-    { step: 6, label: "Fine-Tuning Lab", tab: "systems", desc: "When and how to fine-tune" },
-    { step: 7, label: "Explore: 3D Visualisations", tab: "explore", desc: "Deep intuition builders" },
-    { step: 8, label: "Systems Design Interview", tab: "career", desc: "Practice designing AI systems" },
-  ],
-  pm: [
-    { step: 1, label: "What Is a Transformer?", tab: "groundtruth", desc: "Foundation without the math" },
-    { step: 2, label: "AI Product", tab: "aipm", desc: "PRDs, metrics, roadmaps for AI" },
-    { step: 3, label: "Should You Use AI?", tab: "systems", desc: "Decision framework for AI features" },
-    { step: 4, label: "RAG Lab", tab: "lab", desc: "See what AI failures look like" },
-    { step: 5, label: "Eval Frameworks", tab: "systems", desc: "How to measure AI quality as a PM" },
-    { step: 6, label: "Model Strategy", tab: "systems", desc: "Cost, latency, quality tradeoffs" },
-    { step: 7, label: "AI Product metrics post", tab: "groundtruth", desc: "What to track at each stage" },
-    { step: 8, label: "Stakeholder Explainer", tab: "aipm", desc: "How to talk about AI to execs" },
-  ],
-  researcher: [
-    { step: 1, label: "Transformer Architecture", tab: "flows", desc: "How the forward pass works" },
-    { step: 2, label: "Self-Attention Deep Dive", tab: "groundtruth", desc: "QKV matrices explained" },
-    { step: 3, label: "Explore: 3D Attention", tab: "explore", desc: "Visualise attention patterns" },
-    { step: 4, label: "Sampling Strategies", tab: "concepts", desc: "Temperature, top-p, top-k" },
-    { step: 5, label: "RLHF & DPO", tab: "groundtruth", desc: "Alignment training techniques" },
-    { step: 6, label: "Research Papers", tab: "groundtruth", desc: "15 landmark papers with commentary" },
-    { step: 7, label: "Fine-Tuning Lab", tab: "systems", desc: "LoRA, config simulator, 3D viz" },
-    { step: 8, label: "Eval Lab", tab: "systems", desc: "How to measure model quality" },
-  ],
-  interview: [
-    { step: 1, label: "Fluency: Timed Drills", tab: "fluency", desc: "Speed and breadth under pressure" },
-    { step: 2, label: "Fluency: Flashcards", tab: "fluency", desc: "Master the vocabulary" },
-    { step: 3, label: "Fluency: Mock Interview", tab: "fluency", desc: "Practice behavioural + technical Qs" },
-    { step: 4, label: "Career: System Design", tab: "career", desc: "Design AI systems on the whiteboard" },
-    { step: 5, label: "Career: Negotiation Sim", tab: "career", desc: "Practice offer negotiation" },
-    { step: 6, label: "RAG Lab", tab: "lab", desc: "The most common interview topic" },
-    { step: 7, label: "AI Readiness Assessment", tab: "fluency", desc: "Benchmark your knowledge" },
-    { step: 8, label: "Ground Truth: Interview Prep", tab: "groundtruth", desc: "All interview posts" },
-  ],
-};
-
-function SuggestedPath({ role, onNavigate }) {
-  const steps = PATHS[role] || [];
-  return (
-    <div className="space-y-1.5 pt-1">
-      {steps.map(s => (
-        <button key={s.step} onClick={() => onNavigate(s.tab)}
-          className="w-full text-left flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-zinc-800/60 transition-all group">
-          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 bg-violet-600/20 text-violet-400 group-hover:bg-violet-600/40">
-            {s.step}
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-xs font-bold text-white">{s.label}</span>
-            <span className="text-xs text-zinc-500 ml-1.5">{s.desc}</span>
-          </div>
-          <span className="text-zinc-500 group-hover:text-violet-400 text-xs transition-colors">→</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 const START_HERE_PATH = [
   { step: 1, label: "Tokenizer",     tab: "concepts", desc: "How text becomes numbers" },
   { step: 2, label: "Embeddings",    tab: "concepts", desc: "Meaning as geometry" },
@@ -131,283 +67,11 @@ const START_HERE_PATH = [
   { step: 7, label: "Debug RAG",     tab: "concepts", desc: "Diagnose 5 real incidents" },
 ];
 
-const LEARNING_PATHS = [
-  {
-    id: "rag",
-    nextPath: "engineer",
-    nextPathLabel: "AI Engineer Path",
-    title: "Production RAG Path",
-    color: "#6366f1",
-    tagline: "Go from RAG theory to breaking it in production. The fastest way to build real intuition.",
-    outcome: "You'll be able to configure a production RAG system, anticipate failure modes before they hit users, and explain the tradeoffs in a system design interview.",
-    duration: "~3 hrs",
-    steps: [
-      { tab: "concepts",   label: "Concepts",    desc: "Embeddings, chunking, context window" },
-      { tab: "flows",      label: "Flows",       desc: "End-to-end RAG pipeline diagrams" },
-      { tab: "lab",        label: "RAG Lab",     desc: "Simulate 6 production failure modes" },
-      { tab: "playground", label: "Playground",  desc: "Injection, chunking, reranker hands-on" },
-      { tab: "explore",    label: "Explore",     desc: "Vector DB comparison + red teaming" },
-    ],
-  },
-  {
-    id: "engineer",
-    nextPath: "interview",
-    nextPathLabel: "Interview Prep Path",
-    title: "AI Engineer Path",
-    color: "#3b82f6",
-    tagline: "Full stack: understand the stack, build with agents, and debug failures before they hit prod.",
-    outcome: "You'll be able to build and debug full AI systems — from RAG pipelines to multi-agent loops — and reason about production failures the way senior engineers do.",
-    duration: "~5 hrs",
-    steps: [
-      { tab: "concepts",   label: "Concepts",    desc: "Tokenizer → transformers → agents" },
-      { tab: "flows",      label: "Flows",       desc: "RAG, agent loop, guardrail pipeline" },
-      { tab: "lab",        label: "RAG Lab",     desc: "Production failure simulator" },
-      { tab: "agents",     label: "Agents",      desc: "Multi-agent loops and orchestration" },
-      { tab: "playground", label: "Playground",  desc: "Chunking, reranker, hallucination" },
-    ],
-  },
-  {
-    id: "pm",
-    nextPath: "interview",
-    nextPathLabel: "Interview Prep Path",
-    title: "PM / AI Product Path",
-    color: "#22c55e",
-    tagline: "Understand what LLMs actually do, what breaks, and how to write specs that don't get laughed at.",
-    outcome: "You'll be able to write credible AI feature specs, challenge engineering estimates, and explain to stakeholders exactly what LLMs can and can't do.",
-    duration: "~2.5 hrs",
-    steps: [
-      { tab: "concepts",   label: "Concepts",    desc: "What LLMs do — no fluff" },
-      { tab: "flows",      label: "Flows",       desc: "RAG pipeline + guardrails" },
-      { tab: "lab",        label: "RAG Lab",     desc: "See failure modes firsthand" },
-      { tab: "playground", label: "Playground",  desc: "Spot hallucinations, detect bias" },
-      { tab: "explore",    label: "Explore",     desc: "Model cards + latency tradeoffs" },
-    ],
-  },
-  {
-    id: "interview",
-    nextPath: null,
-    nextPathLabel: null,
-    title: "Interview Prep Path",
-    color: "#f59e0b",
-    tagline: "Cover the system design patterns, failure scenarios, and architecture questions that show up most.",
-    outcome: "You'll be able to answer the core system design and failure-diagnosis questions that appear in AI engineer and technical PM interviews at Spotify, Meta, Google, and Airbnb.",
-    duration: "~2.5 hrs",
-    steps: [
-      { tab: "concepts",   label: "Concepts",    desc: "Core architecture — attention, RAG, agents" },
-      { tab: "flows",      label: "Flows",       desc: "System design diagrams to sketch" },
-      { tab: "lab",        label: "RAG Lab",     desc: "Failure patterns interviewers test" },
-      { tab: "playground", label: "Playground",  desc: "Injection + hallucination detection" },
-      { tab: "explore",    label: "Explore",     desc: "Benchmarks + model card literacy" },
-    ],
-  },
-];
-
-const MODULE_MAP = [
-  {
-    group: "LEARN",
-    color: "#6366f1",
-    desc: "Build the mental model before you build the system.",
-    modules: [
-      { tab: "concepts", icon: "🧠", title: "Concepts", audience: "All levels",
-        desc: "After this: you can explain how tokenization, attention, and transformer architecture actually work — in the technical depth that gets you through senior AI engineer interviews.",
-        discovery: "Even if you know transformers: the attention weight explorer shows patterns most tutorials skip." },
-      { tab: "flows", icon: "🌊", title: "Flows", audience: "All levels",
-        desc: "After this: you can sketch RAG pipelines, agent loops, and guardrail architectures from memory — including the failure points interviewers specifically probe.",
-        discovery: "The RAG Architectures module covers Hybrid, CRAG, and Agentic RAG — often the gap between junior and senior engineers." },
-    ],
-  },
-  {
-    group: "BUILD",
-    color: "#3b82f6",
-    desc: "Simulate, break, and fix real production systems.",
-    modules: [
-      { tab: "lab", icon: "🔬", title: "RAG Lab", audience: "Engineers",
-        desc: "After this: you can configure, break, and diagnose the 6 most common RAG production failure modes — the kind of intuition that only comes from doing it, not reading about it.",
-        discovery: "Configure top_k=1 with no reranker and watch a 3-year-old policy answer confidently. Hard to forget." },
-      { tab: "systems", icon: "⚙️", title: "Systems", audience: "Engineers · PMs",
-        desc: "Evals, eval frameworks, model strategy, cost/latency, fine-tuning, observability, ML CI/CD, context compaction. 15 production modules.",
-        discovery: "The Incident Room has 5 real failure post-mortems. The Eval Frameworks module covers RAGAS, G-Eval, and custom grading." },
-      { tab: "playground", icon: "🛝", title: "Playground", audience: "All levels",
-        desc: "After this: you've built and defended against prompt injection attacks, compared chunking strategies first-hand, and caught hallucinations in real outputs.",
-        discovery: "Build your own prompt injection attack and watch it succeed — then switch sides and defend against it." },
-      { tab: "explore", icon: "🔭", title: "Explore", audience: "Engineers",
-        desc: "After this: you can compare vector DBs on real criteria, read model cards critically, and explain shadow A/B testing — the depth that separates senior from junior AI engineers.",
-        discovery: "The Shadow A/B module models what happens when two model versions run in parallel — a setup most engineers have never seen." },
-    ],
-  },
-  {
-    group: "GROW",
-    color: "#22c55e",
-    desc: "Communicate, ship, and advance your career.",
-    modules: [
-      { tab: "fluency", icon: "💬", title: "Fluency Gym", audience: "Interview prep",
-        desc: "Phrase bank, timed drills, mock interview (18 questions, 90s each), company case arena, prompt engineering lab.",
-        discovery: "The mock interview uses real question patterns from AI engineer and PM interviews at top companies." },
-      { tab: "aipm", icon: "📋", title: "AIPM Track", audience: "Product managers",
-        desc: "PRD simulator, roadmap prioritizer, stakeholder explainer, launch checklist, 'AI or not?' decision framework.",
-        discovery: "The AI-or-not? framework is the one thing most PMs say they needed a year ago." },
-      { tab: "career", icon: "🚀", title: "Career Track", audience: "Job seekers",
-        desc: "System design interviews, take-home challenges, negotiation flashcards, benchmark literacy.",
-        discovery: "The take-home challenges simulate the exact format used by most AI-forward companies: rank outputs, fix a broken prompt, design an eval." },
-    ],
-  },
-];
-
 const STATS = [
   { value: "3,400+", target: 3400, suffix: "+", label: "Learners",           sub: "Engineers & PMs",   tab: null           },
   { value: "222+",   target: 222,  suffix: "+", label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
   { value: "200+",   target: 200,  suffix: "+", label: "Challenges",         sub: "All interactive",   tab: null           },
 ];
-
-// ─── CONCEPT DEPENDENCY GRAPH ─────────────────────────────────────────────────
-const NODE_W = 108, NODE_H = 26;
-const DEP_NODES = [
-  { id: "tokenizer",  label: "Tokenization",  tab: "concepts", x: 75,  y: 22,  color: "#6366f1" },
-  { id: "embeddings", label: "Embeddings",    tab: "concepts", x: 75,  y: 93,  color: "#6366f1" },
-  { id: "attention",  label: "Attention",     tab: "concepts", x: 75,  y: 163, color: "#6366f1" },
-  { id: "context",    label: "Context Window",tab: "concepts", x: 218, y: 57,  color: "#3b82f6" },
-  { id: "sampling",   label: "Sampling",      tab: "concepts", x: 218, y: 127, color: "#3b82f6" },
-  { id: "rag_flow",   label: "RAG Pipeline",  tab: "flows",    x: 370, y: 22,  color: "#06b6d4" },
-  { id: "agent_flow", label: "Agent Loop",    tab: "flows",    x: 370, y: 93,  color: "#06b6d4" },
-  { id: "guardrail",  label: "Guardrails",    tab: "flows",    x: 370, y: 163, color: "#06b6d4" },
-  { id: "rag_lab",    label: "RAG Lab",       tab: "lab",      x: 522, y: 57,  color: "#22c55e" },
-  { id: "agent_lab",  label: "Agent Lab",     tab: "agentlab", x: 522, y: 135, color: "#22c55e" },
-  { id: "evals",      label: "Evals Lab",     tab: "evallab",  x: 672, y: 30,  color: "#f59e0b" },
-  { id: "finetune",   label: "Fine-Tuning",   tab: "llmlab",   x: 672, y: 103, color: "#f59e0b" },
-  { id: "systems",    label: "LLM Lab",       tab: "llmlab",   x: 672, y: 173, color: "#f59e0b" },
-];
-const DEP_EDGES = [
-  { from: "tokenizer",  to: "context"    },
-  { from: "tokenizer",  to: "sampling"   },
-  { from: "embeddings", to: "context"    },
-  { from: "embeddings", to: "rag_flow"   },
-  { from: "attention",  to: "agent_flow" },
-  { from: "attention",  to: "guardrail"  },
-  { from: "context",    to: "rag_flow"   },
-  { from: "context",    to: "agent_flow" },
-  { from: "sampling",   to: "rag_flow"   },
-  { from: "rag_flow",   to: "rag_lab"    },
-  { from: "agent_flow", to: "agent_lab"  },
-  { from: "guardrail",  to: "agent_lab"  },
-  { from: "rag_lab",    to: "evals"      },
-  { from: "rag_lab",    to: "finetune"   },
-  { from: "agent_lab",  to: "evals"      },
-  { from: "evals",      to: "systems"    },
-  { from: "finetune",   to: "systems"    },
-];
-function ConceptGraph({ onNavigate }) {
-  const [selected, setSelected] = useState(null);
-  const nodeMap = useMemo(() => Object.fromEntries(DEP_NODES.map(n => [n.id, n])), []);
-  const prereqs    = selected ? DEP_EDGES.filter(e => e.to   === selected).map(e => e.from) : [];
-  const dependents = selected ? DEP_EDGES.filter(e => e.from === selected).map(e => e.to)   : [];
-  const sel = selected ? DEP_NODES.find(n => n.id === selected) : null;
-
-  function edgeState(e) {
-    if (!selected) return "idle";
-    if (e.from === selected) return "unlocks";
-    if (e.to   === selected) return "prereq";
-    return "dim";
-  }
-  function nodeOpacity(n) {
-    if (!selected) return 1;
-    if (n.id === selected || prereqs.includes(n.id) || dependents.includes(n.id)) return 1;
-    return 0.2;
-  }
-  function nodeStroke(n) {
-    if (n.id === selected) return n.color;
-    if (prereqs.includes(n.id))    return "#f59e0b";
-    if (dependents.includes(n.id)) return "#22c55e";
-    return "#3f3f46";
-  }
-  function nodeFill(n) {
-    if (n.id === selected) return n.color + "33";
-    if (prereqs.includes(n.id))    return "#f59e0b18";
-    if (dependents.includes(n.id)) return "#22c55e18";
-    return "#18181b";
-  }
-  function nodeTextFill(n) {
-    if (n.id === selected) return "#fff";
-    if (prereqs.includes(n.id))    return "#f59e0b";
-    if (dependents.includes(n.id)) return "#22c55e";
-    return "#71717a";
-  }
-
-  return (
-    <div className="space-y-2">
-      <div className="relative overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/40">
-        <div className="absolute right-0 top-0 h-full w-10 pointer-events-none lg:hidden z-10 rounded-r-xl" style={{ background: "linear-gradient(to right, transparent, rgba(9,9,11,0.9))" }} />
-        <svg viewBox="0 0 762 205" className="w-full min-w-[600px]" style={{ height: 205 }}>
-          {/* Column labels */}
-          {[
-            { label: "FOUNDATION", x: 75,  c: "#6366f1" },
-            { label: "CONCEPTS",   x: 218, c: "#3b82f6" },
-            { label: "PATTERNS",   x: 370, c: "#06b6d4" },
-            { label: "PRACTICE",   x: 522, c: "#22c55e" },
-            { label: "ADVANCED",   x: 672, c: "#f59e0b" },
-          ].map(col => (
-            <text key={col.label} x={col.x} y={11} textAnchor="middle" fontSize="7.5"
-              fontFamily="monospace" fontWeight="700" letterSpacing="0.08em" fill={col.c + "88"}>{col.label}</text>
-          ))}
-          {/* Edges */}
-          {DEP_EDGES.map((e, i) => {
-            const s = nodeMap[e.from], d = nodeMap[e.to];
-            if (!s || !d) return null;
-            const x1 = s.x + NODE_W / 2, y1 = s.y + NODE_H / 2;
-            const x2 = d.x - NODE_W / 2, y2 = d.y + NODE_H / 2;
-            const cx = (x1 + x2) / 2;
-            const st = edgeState(e);
-            const col = st === "unlocks" ? "#22c55e" : st === "prereq" ? "#f59e0b" : st === "dim" ? "#27272a" : "#3f3f46";
-            return (
-              <path key={i} d={`M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`}
-                fill="none" stroke={col} strokeWidth={st !== "idle" && st !== "dim" ? 1.5 : 1}
-                strokeOpacity={st === "dim" ? 0.3 : 0.7}
-                style={{ transition: "stroke 0.18s, stroke-opacity 0.18s" }} />
-            );
-          })}
-          {/* Nodes */}
-          {DEP_NODES.map(n => (
-            <g key={n.id} style={{ opacity: nodeOpacity(n), cursor: "pointer", transition: "opacity 0.18s" }}
-              onClick={() => setSelected(prev => prev === n.id ? null : n.id)}
-              onDoubleClick={() => onNavigate(n.tab)}>
-              <rect x={n.x - NODE_W / 2} y={n.y} width={NODE_W} height={NODE_H} rx={5}
-                fill={nodeFill(n)} stroke={nodeStroke(n)} strokeWidth={n.id === selected ? 1.5 : 1}
-                style={{ transition: "fill 0.18s, stroke 0.18s" }} />
-              <text x={n.x} y={n.y + NODE_H / 2 + 4} textAnchor="middle" fontSize="9.5"
-                fontFamily="ui-sans-serif,system-ui,sans-serif"
-                fontWeight={n.id === selected ? "700" : "500"}
-                fill={nodeTextFill(n)}
-                style={{ transition: "fill 0.18s", pointerEvents: "none", userSelect: "none" }}>{n.label}</text>
-            </g>
-          ))}
-        </svg>
-      </div>
-      <div className="flex items-center flex-wrap gap-3 px-0.5 min-h-[24px]">
-        {sel ? (
-          <>
-            <span className="text-xs text-zinc-300">
-              <span className="font-bold text-white">{sel.label}</span>
-              {prereqs.length > 0 && <> · learn first: <span className="text-amber-400 font-semibold">{prereqs.map(id => DEP_NODES.find(n => n.id === id)?.label).join(", ")}</span></>}
-              {dependents.length > 0 && <> · unlocks: <span className="text-emerald-400 font-semibold">{dependents.map(id => DEP_NODES.find(n => n.id === id)?.label).join(", ")}</span></>}
-            </span>
-            <button onClick={() => onNavigate(sel.tab)}
-              className="text-[11px] px-2.5 py-1 rounded border border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-300 transition-all ml-auto">
-              Open →
-            </button>
-            <button onClick={() => setSelected(null)} className="text-[11px] text-zinc-500 hover:text-zinc-400 transition-colors">✕</button>
-          </>
-        ) : (
-          <>
-            <span className="text-[11px] text-zinc-500">Click any node · see what to learn first and what it unlocks · double-click to open</span>
-            <div className="flex items-center gap-3 ml-auto">
-              <span className="flex items-center gap-1 text-[10px] text-amber-400"><span className="w-4 h-px bg-amber-400 inline-block rounded" /> prerequisite</span>
-              <span className="flex items-center gap-1 text-[10px] text-emerald-400"><span className="w-4 h-px bg-emerald-400 inline-block rounded" /> unlocks</span>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
 
 const HERO_FAILURES = [
   {
@@ -499,33 +163,6 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
     if (onFeedback) { onFeedback(location); return; }
     if (isFeedbackReady()) window.open(FEEDBACK_URL, "_blank", "noopener,noreferrer");
   }
-  const [role, setRole] = useState(() => {
-    try { return localStorage.getItem("genai_role") || "all"; } catch { return "all"; }
-  });
-  function switchRole(r) {
-    setRole(r);
-    track("role_toggle", { role: r });
-    try { localStorage.setItem("genai_role", r); } catch {}
-  }
-  // Reorder MODULE_MAP groups + dim non-relevant modules based on selected role
-  const orderedGroups = useMemo(() => {
-    const order = role === "engineers" ? { BUILD: 0, LEARN: 1, GROW: 2 }
-                : role === "pms"       ? { GROW: 0, LEARN: 1, BUILD: 2 }
-                : { LEARN: 0, BUILD: 1, GROW: 2 };
-    return [...MODULE_MAP].sort((a, b) => (order[a.group] ?? 3) - (order[b.group] ?? 3));
-  }, [role]);
-  function isRelevant(audience) {
-    if (role === "all") return true;
-    if (role === "engineers") return !["Product managers"].includes(audience);
-    if (role === "pms") return !["Engineers"].includes(audience);
-    return true;
-  }
-  const [activePath, setActivePath] = useState(null);
-  const [pathRole, setPathRole] = useState(null);
-  const [showPath, setShowPath] = useState(false);
-  const [expandedModule, setExpandedModule] = useState(null);
-  const [subEmail, setSubEmail] = useState("");
-  const [subStatus, setSubStatus] = useState("idle"); // idle | sending | done | error
   const [betaBannerDismissed, setBetaBannerDismissed] = useState(() => {
     try { return localStorage.getItem("genai_beta_banner_dismissed") === "1"; } catch { return false; }
   });
@@ -535,11 +172,6 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
   function dismissBetaBanner() {
     setBetaBannerDismissed(true);
     try { localStorage.setItem("genai_beta_banner_dismissed", "1"); } catch {}
-  }
-
-  function pathProgress(path) {
-    const visited_count = path.steps.filter(s => visited.has(s.tab)).length;
-    return { visited: visited_count, total: path.steps.length };
   }
 
   return (
@@ -648,50 +280,6 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
       </div>
       </div>
 
-      {/* ── START HERE JOURNEY ──────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-4 pb-8">
-        <div className="rounded-2xl border border-violet-800/30 p-5" style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.08) 0%, rgba(24,24,27,0.95) 60%)", boxShadow: "0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(139,92,246,0.08)" }}>
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <div>
-              <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-0.5">Recommended first journey</p>
-              <h3 className="text-sm font-black text-white">From Tokens to Production Failures — ~45 min</h3>
-            </div>
-            <button onClick={() => { track("start_here_clicked", { location: "journey_strip" }); onNavigate("concepts"); }}
-              className="px-4 py-1.5 rounded-lg text-white font-bold text-xs transition-all shrink-0"
-              style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)", boxShadow: "0 0 16px rgba(99,102,241,0.45)" }}>
-              Begin →
-            </button>
-          </div>
-          <div className="relative">
-            <div className="flex items-start gap-0 overflow-x-auto pb-1 scrollbar-hide">
-              {START_HERE_PATH.map((s, i) => {
-                const done = visited.has(s.tab);
-                return (
-                  <div key={s.step} className="flex items-center shrink-0">
-                    <button onClick={() => onNavigate(s.tab)}
-                      className="flex flex-col items-center gap-1 px-3 hover:opacity-80 transition-opacity group min-w-[72px]">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${
-                        done
-                          ? "bg-emerald-600/20 border border-emerald-600/50 text-emerald-400"
-                          : "bg-violet-600/20 border border-violet-600/50 text-violet-400 group-hover:bg-violet-600/40"
-                      }`}>
-                        {done ? "✓" : s.step}
-                      </div>
-                      <span className={`text-[10px] font-bold text-center leading-tight ${done ? "text-emerald-400" : "text-white"}`}>{s.label}</span>
-                      <span className="text-[9px] text-zinc-500 text-center leading-tight">{s.desc}</span>
-                    </button>
-                    {i < START_HERE_PATH.length - 1 && (
-                      <div className={`w-6 h-px shrink-0 mb-4 ${done ? "bg-emerald-900/60" : "bg-violet-900/60"}`} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="absolute right-0 top-0 h-full w-10 pointer-events-none lg:hidden" style={{ background: "linear-gradient(to right, transparent, rgba(12,8,24,0.9))" }} />
-          </div>
-        </div>
-      </div>
-
       {/* ── STATS + FAILURE MODE STRIP ───────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-10 text-center space-y-6">
         <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:justify-center sm:gap-16 w-full">
@@ -728,317 +316,12 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
         </div>
       </div>
 
-      {/* ── SOCIAL PROOF ─────────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-4 pb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            { quote: "The RAG Lab is the best way I've found to build real intuition for why retrieval fails. You can read about stale docs all day — this makes you feel it.", role: "ML Engineer", company: "fintech startup", color: "#3b82f6" },
-            { quote: "I used the Start Here path to prep for my AI PM interview. The failure mode framing is exactly what interviewers want — 'what could go wrong and how would you know?'", role: "Senior PM", company: "SaaS company", color: "#22c55e" },
-            { quote: "Finally something that assumes you're technical but doesn't assume you're already an expert. The agent loop simulator especially.", role: "Software Engineer", company: "transitioning to AI", color: "#8b5cf6" },
-          ].map((t, i) => (
-            <div key={i} className="rounded-xl p-5 space-y-3"
-              style={{ background: "linear-gradient(160deg, rgba(39,39,42,0.6) 0%, rgba(15,15,17,0.95) 100%)", border: `1px solid rgba(255,255,255,0.06)`, borderLeft: `3px solid ${t.color}`, boxShadow: `0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)` }}>
-              <p className="text-sm text-zinc-200 leading-relaxed">"{t.quote}"</p>
-              <div className="text-[10px] font-mono" style={{ color: t.color + "99" }}>— {t.role} · {t.company}</div>
-            </div>
-          ))}
-        </div>
-        <p className="text-[10px] text-zinc-500 font-mono text-center mt-3">Early user feedback · names withheld</p>
-      </div>
-
-
-      {/* ── LEARNING PATHS ───────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-4 pb-16 space-y-8">
-        <div className="text-center space-y-1">
-          <h2 className="text-xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Choose Your Path</h2>
-          <p className="text-sm text-zinc-500">Each path is a curated sequence through the lab — or ignore them and explore freely.</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {LEARNING_PATHS.map(path => {
-            const prog = pathProgress(path);
-            const pct = Math.round((prog.visited / prog.total) * 100);
-            return (
-            <div key={path.id}
-              className={`rounded-2xl p-5 cursor-pointer transition-all ${activePath === path.id ? "scale-[1.01] shadow-xl" : "hover:shadow-lg"}`}
-              style={{
-                background: "linear-gradient(160deg, rgba(39,39,42,0.6) 0%, rgba(24,24,27,0.95) 100%)",
-                border: `1px solid ${activePath === path.id ? path.color + "60" : "#3f3f46"}`,
-                borderTop: `2px solid ${activePath === path.id ? path.color + "80" : path.color + "30"}`,
-                boxShadow: activePath === path.id ? `0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px ${path.color}20` : "0 1px 3px rgba(0,0,0,0.3)",
-              }}
-              onClick={() => setActivePath(activePath === path.id ? null : path.id)}>
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: path.color }}>{path.duration}</p>
-                  <h3 className="text-lg font-black text-white">{path.title}</h3>
-                </div>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: path.color + "22" }}>
-                  <span style={{ color: path.color }}>→</span>
-                </div>
-              </div>
-              <p className="text-sm text-zinc-400 leading-relaxed mb-2">{path.tagline}</p>
-              {path.outcome && (
-                <p className="text-xs text-zinc-500 leading-relaxed mb-3 border-l-2 pl-2.5" style={{ borderColor: path.color + "60" }}>
-                  {path.outcome}
-                </p>
-              )}
-
-              {/* Progress bar */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-zinc-500">{prog.visited}/{prog.total} steps visited</span>
-                  {prog.visited > 0 && <span className="text-xs font-bold" style={{ color: path.color }}>{pct}%</span>}
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)" }}>
-                  <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%`, background: path.color, opacity: pct === 0 ? 0 : 1, boxShadow: pct > 0 ? `2px 0 8px ${path.color}80` : "none" }} />
-                </div>
-              </div>
-
-              {/* Steps */}
-              <div className="space-y-1.5">
-                {path.steps.map((step, i) => {
-                  return (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ backgroundColor: path.color + "22", color: path.color }}>
-                        {i+1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs font-bold text-white">{step.label}</span>
-                        <span className="text-xs text-zinc-500 ml-1.5">{step.desc}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {activePath === path.id && (() => {
-                const isComplete = pct === 100;
-                const firstFree = path.steps[0];
-                const nextUnvisited = path.steps.find(s => !visited.has(s.tab));
-                if (isComplete && path.nextPath) {
-                  return (
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center gap-2 text-[10px] font-mono text-emerald-400 uppercase tracking-widest">
-                        <span>✓</span> Path complete
-                      </div>
-                      <button
-                        onClick={e => { e.stopPropagation(); onNavigate(LEARNING_PATHS.find(p => p.id === path.nextPath)?.steps[0]?.tab || "home"); }}
-                        className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all"
-                        style={{ background: `linear-gradient(135deg, ${path.color}cc 0%, ${path.color} 100%)`, boxShadow: `0 0 14px ${path.color}40` }}>
-                        Next: {path.nextPathLabel} →
-                      </button>
-                    </div>
-                  );
-                }
-                if (isComplete && !path.nextPath) {
-                  return (
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center gap-2 text-[10px] font-mono text-emerald-400 uppercase tracking-widest">
-                        <span>✓</span> Path complete
-                      </div>
-                      <div className="w-full py-2 rounded-lg text-xs font-bold text-center border"
-                        style={{ borderColor: path.color + "60", color: path.color }}>
-                        You're interview-ready. Test yourself in the RAG Lab →
-                      </div>
-                    </div>
-                  );
-                }
-                const target = nextUnvisited || firstFree;
-                return target ? (
-                  <button
-                    onClick={e => { e.stopPropagation(); onNavigate(target.tab); }}
-                    className="mt-4 w-full py-2 rounded-lg text-xs font-bold text-white transition-all"
-                    style={{ backgroundColor: path.color }}>
-                    {nextUnvisited ? `Continue: ${nextUnvisited.label} →` : `Start with ${target.label} →`}
-                  </button>
-                ) : null;
-              })()}
-            </div>
-            );
-          })}
-        </div>
-
-
-
-        {/* ---- BUILD MY PATH -------------------------------------------- */}
-        <div className="rounded-xl p-4 mx-0 mb-4 space-y-3" style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.4)" }}>
-          <p className="text-xs font-bold text-white">Get a personalised learning path</p>
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { id: "engineer", label: "I'm an Engineer" },
-              { id: "pm", label: "I'm a PM" },
-              { id: "researcher", label: "I'm a Researcher" },
-              { id: "interview", label: "Interview prep" },
-            ].map(r => (
-              <button key={r.id} onClick={() => { setPathRole(r.id); setShowPath(true); }}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-all ${pathRole === r.id ? "bg-violet-600 border-violet-500 text-white" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
-                {r.label}
-              </button>
-            ))}
-          </div>
-          {showPath && pathRole && <SuggestedPath role={pathRole} onNavigate={onNavigate} />}
-        </div>
-
-        {/* ── CONCEPT DEPENDENCY GRAPH ────────────────────────────────────── */}
-        <div className="space-y-2 pt-4">
-          <div className="text-center space-y-1 mb-3">
-            <h2 className="text-xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Concept Dependency Graph</h2>
-            <p className="text-sm text-zinc-500">Click a node to see prerequisites · Double-click to navigate</p>
-          </div>
-          <ConceptGraph onNavigate={onNavigate} />
-        </div>
-
-        {/* ── MODULE MAP ──────────────────────────────────────────────────── */}
-        <div className="space-y-2 pt-4">
-          <div className="text-center space-y-3 mb-6">
-            <h2 className="text-xl font-black" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Every Module — Mapped</h2>
-            {/* Role toggle */}
-            <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-zinc-900 border border-zinc-800">
-              {[
-                { id: "all",       label: "All" },
-                { id: "engineers", label: "Engineers" },
-                { id: "pms",       label: "PMs" },
-              ].map(r => (
-                <button key={r.id} onClick={() => switchRole(r.id)}
-                  className={`px-3 py-1 rounded text-xs font-bold transition-all ${role === r.id ? "bg-violet-600 text-white" : "text-zinc-500 hover:text-white"}`}>
-                  {r.label}
-                </button>
-              ))}
-            </div>
-            {role !== "all" && (
-              <p className="text-xs text-zinc-500">Showing modules most relevant to {role === "engineers" ? "engineers" : "product managers"} first</p>
-            )}
-          </div>
-          {orderedGroups.map(group => (
-            <div key={group.group}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-px flex-1 bg-zinc-800" />
-                <span className="text-xs font-mono font-bold uppercase tracking-widest px-2" style={{ color: group.color }}>{group.group}</span>
-                <span className="text-xs text-zinc-500 hidden sm:inline">{group.desc}</span>
-                <div className="h-px flex-1 bg-zinc-800" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                {group.modules.map(m => (
-                  <button key={m.tab}
-                    onClick={() => onNavigate(m.tab)}
-                    className={`text-left rounded-xl p-4 transition-all duration-200 group hover:-translate-y-0.5 ${!isRelevant(m.audience) ? "opacity-40" : ""}`}
-                    style={{ background: `linear-gradient(160deg, ${group.color}0e 0%, rgba(15,15,17,0.97) 100%)`, border: `1px solid ${group.color}28`, borderTop: `2px solid ${group.color}55`, boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-lg">{m.icon}</span>
-                      <span className="text-sm font-bold text-white">{m.title}</span>
-                      <div className="ml-auto flex items-center gap-1.5">
-                        {m.audience && (
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded hidden sm:inline" style={{ color: group.color + "cc", background: group.color + "15", border: `1px solid ${group.color}30` }}>
-                            {m.audience}
-                          </span>
-                        )}
-                        <span className="text-xs transition-colors" style={{ color: group.color + "80" }}>→</span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-zinc-400 leading-relaxed mb-2">{m.desc}</p>
-                    {m.discovery && (
-                      <p className="text-[11px] leading-relaxed pt-1.5 mt-1" style={{ color: group.color + "99", borderTop: `1px solid ${group.color}20` }}>
-                        💡 {m.discovery}
-                      </p>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ── HOW IT WORKS ───────────────────────────────────────────────── */}
-        <div className="rounded-2xl p-6" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.97) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid rgba(99,102,241,0.35)" }}>
-          <h3 className="text-sm font-black uppercase tracking-widest mb-4" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>How to use this lab</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {[
-              { n: "1", title: "Pick a path or module", desc: "Follow a learning path for structure, or jump to any module for what you need right now." },
-              { n: "2", title: "Read the objective first", desc: "Every module shows what skill you're building before you start. Don't skip it — it frames everything." },
-              { n: "3", title: "Do the challenges, not just read", desc: "The learning is in the doing. Answer questions before revealing answers. Score yourself honestly." },
-            ].map(s => (
-              <div key={s.n} className="space-y-2">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black text-white" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.4) 0%, rgba(99,102,241,0.2) 100%)", border: "1px solid rgba(99,102,241,0.4)", boxShadow: "0 0 10px rgba(99,102,241,0.2)" }}>{s.n}</div>
-                <p className="text-sm font-bold text-white">{s.title}</p>
-                <p className="text-xs text-zinc-500 leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── ABOUT THIS LAB ────────────────────────────────────────────── */}
-        <div className="rounded-2xl p-6 space-y-4" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.97) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid rgba(139,92,246,0.35)" }}>
-          <h3 className="text-sm font-black uppercase tracking-widest" style={{ background: "linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>About this lab</h3>
-          <p className="text-sm text-zinc-400 italic mb-3">
-            "I built this because I spent months debugging RAG systems in production and couldn't find a resource that let me <em>break</em> things instead of just read about them."
-          </p>
-          <p className="text-xs text-zinc-400 leading-relaxed">
-            GenAI Systems Lab is a static, zero-backend learning tool — no API calls, no live model, no login required. Everything runs entirely in your browser.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { tw: "emerald", color: "#22c55e", badge: "✓ Mathematically faithful", desc: "Real algorithm logic on toy inputs. Tokenizer, sampling, and cost models fall here." },
-              { tw: "amber",   color: "#f59e0b", badge: "~ Simplified",              desc: "Correct pattern, simplified scale. Attention, transformer, and agent trace — real concepts, not frontier-model internals." },
-              { tw: "zinc",    color: "#a1a1aa", badge: "◌ Conceptual",              desc: "Illustrative only. Embedding Space uses precomputed 2D coords, not live model embeddings. Useful for intuition, not introspection." },
-            ].map(t => (
-              <div key={t.badge} className="rounded-xl p-3 space-y-2 bg-zinc-800/50 border border-zinc-700/50">
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded inline-block" style={{ color: t.color, background: t.color + "20" }}>{t.badge}</span>
-                <p className="text-xs text-zinc-400 leading-relaxed">{t.desc}</p>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            RAG Lab scenarios are curated from real production failure patterns. The goal throughout is <em className="text-zinc-500">systems intuition</em> — not exact model introspection.
-          </p>
-          <p className="text-[11px] text-zinc-500 border-t border-zinc-800 pt-3 leading-relaxed">
-            No login. No personal data requested. Usage analytics are used only to improve the beta.
-          </p>
-        </div>
-
-        {/* ── EMAIL CAPTURE ─────────────────────────────────────────────── */}
-        {subStatus === "done" ? (
-          <div className="max-w-sm mx-auto rounded-xl border border-emerald-800/50 bg-emerald-950/20 px-4 py-3 text-center">
-            <p className="text-xs text-emerald-300">✓ You're in. New posts land in your inbox.</p>
-          </div>
-        ) : (
-          <div className="max-w-sm mx-auto space-y-3 text-center">
-            <p className="text-xs text-zinc-500">New Ground Truth posts drop every few weeks — production depth, no fluff.</p>
-            <form onSubmit={e => {
-              e.preventDefault();
-              if (!subEmail.trim()) return;
-              setSubStatus("sending");
-              track("email_subscribe_attempted", {});
-              // 👉 Replace REPLACE_WITH_YOUR_FORMSPREE_ID — sign up free at formspree.io
-              fetch("https://formspree.io/f/REPLACE_WITH_YOUR_FORMSPREE_ID", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Accept": "application/json" },
-                body: JSON.stringify({ email: subEmail, source: "genai-systems-lab-footer" }),
-              })
-                .then(r => { setSubStatus(r.ok ? "done" : "error"); if (r.ok) track("email_subscribe_success", {}); })
-                .catch(() => setSubStatus("error"));
-            }} className="flex gap-2">
-              <input
-                type="email" required value={subEmail} onChange={e => setSubEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="flex-1 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 focus:border-violet-600 text-xs text-white placeholder-zinc-600 outline-none transition-all font-mono" />
-              <button type="submit" disabled={subStatus === "sending"}
-                className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all disabled:opacity-50 shrink-0">
-                {subStatus === "sending" ? "…" : "Notify me"}
-              </button>
-            </form>
-            {subStatus === "error" && <p className="text-[10px] text-red-400 font-mono">Something went wrong — try again or open a GitHub issue.</p>}
-            <p className="text-[10px] text-zinc-500 font-mono">No spam. Unsubscribe any time.</p>
-          </div>
-        )}
-
-        {/* ── DAILY TIP ─────────────────────────────────────────────────── */}
+      {/* ── DAILY TIP ─────────────────────────────────────────────────────── */}
+      <div className="max-w-4xl mx-auto px-4 pb-10">
         {(() => {
           const tip = DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length];
           return (
-            <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4 mb-8">
+            <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4">
               <div className="flex items-start gap-3">
                 <span className="text-amber-400 text-base shrink-0">💡</span>
                 <div>
@@ -1049,14 +332,15 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             </div>
           );
         })()}
+      </div>
 
-        {/* ── FOOTER ────────────────────────────────────────────────────── */}
-        <div className="text-center pt-4 space-y-3">
-          <button onClick={() => handleFeedback("footer")}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 hover:border-violet-700 text-xs font-mono text-zinc-500 hover:text-violet-400 transition-all">
-            💬 Give feedback on this lab
-          </button>
-          <p className="text-sm text-zinc-400 font-medium">
+      {/* ── FOOTER ────────────────────────────────────────────────────────── */}
+      <div className="max-w-4xl mx-auto px-4 pb-12 text-center space-y-3">
+        <button onClick={() => handleFeedback("footer")}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 hover:border-violet-700 text-xs font-mono text-zinc-500 hover:text-violet-400 transition-all">
+          💬 Give feedback on this lab
+        </button>
+        <p className="text-sm text-zinc-400 font-medium">
           Built by{" "}
           <a href="https://github.com/SidharthKriplani" target="_blank" rel="noopener noreferrer"
             className="text-zinc-400 hover:text-violet-400 transition-colors underline underline-offset-2">
@@ -1073,11 +357,11 @@ export default function HomePage({ onNavigate, visited = new Set(), onFeedback }
             GitHub
           </a>
         </p>
-          <p className="text-[11px] text-zinc-500 max-w-lg mx-auto leading-relaxed">
-            No login. No personal data requested. Usage analytics are used only to improve the beta.
-          </p>
-        </div>
+        <p className="text-[11px] text-zinc-500 max-w-lg mx-auto leading-relaxed">
+          No login. No personal data requested. Usage analytics are used only to improve the beta.
+        </p>
       </div>
+
     </div>
   );
 }
