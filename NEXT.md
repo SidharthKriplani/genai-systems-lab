@@ -2,17 +2,22 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 21)*
+*Last updated: May 2026 (post sprint 22)*
 
 ---
 
-## Theme: Fix broken loops. Tighten the shell. Surface progress.
+## Theme: Close the loops users already opened. Surface progress clearly.
 
-No new modules. No new content. Make what exists work better.
+Sprint 22 structural overhaul complete (Build/Prove/Navigate). Product now has shape. This session: remaining interactive improvements that directly affect the learn loop.
 
 ---
 
 ## Do this (in order)
+
+**Done this session (sprint 22):**
+- ~~Fidelity badges on Lab modules~~ → FidelityBadge added to App.jsx, Agents.jsx, Systems.jsx. Commit `8578457`.
+- ~~Sidebar — Build/Prove/Navigate nav~~ → NAV_GROUPS rewritten, ALL_TABS updated, GROUP_COLORS updated. Commit `8578457`.
+- ~~Progress page three-lane rebuild~~ → ProgressView replaced with BUILD/PROVE/CONCEPTS lanes. Commit `8578457`.
 
 **1. RAG Lab — Done Card prominence fix** `S effort` `CRITICAL`
 The ✓ done card (forward pointer to PrepLab + GT post) is below the fold after a scenario completes. Users finish a scenario and leave without seeing it. The learn loop doesn't close.
@@ -26,7 +31,7 @@ Fix:
 See: UPGRADES.md → "RAG Lab — Done Card Prominence"
 
 **2. Sidebar — collapse sparse groups, remove dead space** `S effort` `HIGH`
-PAL's sidebar is tight because it uses collapsible section groups with no padding waste. Ours has fixed-height nav groups that leave dead zones, especially GROW (3 entries) and KNOWLEDGE (2 entries).
+PAL's sidebar is tight because it uses collapsible section groups with no padding waste. Ours has fixed-height nav groups that leave dead zones, especially PROVE (1 entry) and NAVIGATE (2 entries).
 File: `src/App.jsx` — nav sidebar component, `NAV_GROUPS` constant and sidebar rendering.
 Fix:
 - Add per-group collapse state (`useState` per group ID, default open). A chevron icon on each group header toggles it.
@@ -37,17 +42,7 @@ Fix:
 - Brace check after. Diff must be 0.
 Source: PAL comparison, May 2026
 
-**3. Fidelity badges on Lab modules** `S effort` `HIGH`
-ML Systems Lab ships `✓ Real execution` / `~ Simulated` on every module. Builds honest trust. Currently users have no signal about whether a simulator is running real logic or a pre-scripted scenario.
-File: all 4 lab files — `src/App.jsx` (RAG Lab), `src/Agents.jsx` (Agent Lab), `src/systems/modules.jsx` (LLM Lab + Eval Lab modules).
-Fix:
-- Create a small `FidelityBadge` inline component (or just a reusable JSX snippet): 2 variants. Variant A: `✓ Scenario-accurate` in emerald (used where failure logic is derived from real config input — RAG Lab, `agentcfg`, `serving`, `decoding`). Variant B: `~ Simulated` in zinc/amber (used where scenarios are pre-scripted — most Agent Lab modules, Eval Lab reference modules).
-- Place the badge in the module header area, to the right of the module title, consistent position across all labs.
-- Apply: RAG Lab scenarios → Variant A. Agent Lab: `agentcfg`, `simulator`, `design` → Variant A; all others → Variant B. LLM Lab: `serving`, `decoding`, `inference` → Variant A; `streaming`, `specdecoding`, `reasoning`, `kvcache`, `moe`, `quantization` → Variant B. Eval Lab: `evals`, `mlcicd`, `prompt-change-mgmt`, `router` → Variant A; all others → Variant B.
-- Brace check each modified file. Diff must be 0.
-See: IDEAS.md → "Cross-product patterns" → Fidelity badges
-
-**4. Concepts Gym — inline progress view + "next module" CTA** `S-M effort` `MEDIUM`
+**3. Concepts Gym — inline progress view + "next module" CTA** `S-M effort` `MEDIUM`
 PAL's Progress page shows per-room completion bars and a guided path with a named "NEXT" marker. Our Concepts Gym has the data (mastery set in localStorage, gym structure in GYMS constant) but no dedicated progress view. A returning user has no clear signal of where to go next within a gym.
 File: `src/Concepts.jsx` — `GymRoomView` and/or a new `GymProgressView` component.
 Fix:
@@ -58,7 +53,7 @@ Fix:
 - Brace check after. Diff must be 0.
 Source: PAL comparison, May 2026
 
-**5. PrepLab — Keyboard shortcuts** `S effort` `LOW-MEDIUM`
+**4. PrepLab — Keyboard shortcuts** `S effort` `LOW-MEDIUM`
 Every MCQ answer requires a mouse click. 1/2/3/4 to select + Enter to confirm is standard for any quiz tool. Power users on a study loop notice the friction immediately.
 File: `src/PrepLab.jsx` — ExamMode and TrainerMode components.
 Fix:
