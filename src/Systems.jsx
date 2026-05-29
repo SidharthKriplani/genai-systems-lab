@@ -67,9 +67,9 @@ const SYSTEMS_MODULES = [
 ];
 
 const SYSTEMS_GROUPS = [
-  { id: "DESIGN", label: "DESIGN", color: "#6366f1" },
-  { id: "BUILD",  label: "BUILD",  color: "#3b82f6" },
-  { id: "OPS",    label: "OPS",    color: "#22c55e" },
+  { id: "DESIGN", label: "DESIGN", color: "#52525b" },
+  { id: "BUILD",  label: "BUILD",  color: "#52525b" },
+  { id: "OPS",    label: "OPS",    color: "#52525b" },
 ];
 
 const RELATED_GT = {
