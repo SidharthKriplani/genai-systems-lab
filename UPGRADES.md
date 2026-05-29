@@ -391,4 +391,4 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 **Priority:** High — Concepts is now in primary nav (sprint 14). Beginners will land here. Thin text = poor first impression and incomplete learning.
 
-**Status:** In Progress — 6/15 framing texts done
+**Status:** In Progress — 15/15 framing texts done. Remaining: inline callouts + synthesis close pass (full 3-beat upgrade)
