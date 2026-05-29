@@ -160,6 +160,22 @@ There's a second origin underneath that one: the lab was built because LinkedIn 
 
 **Why not React Router:** Full router refactor would touch every navigation call and add complexity for marginal gain. Hash routing solves the user problem (shareable URLs, browser history) with ~20 lines of code.
 
+### CSS variable elevation token system (decided May 2026, sprint 24)
+
+**Decision:** Structural surface colors use CSS custom properties — never hardcoded zinc values for panel/sidebar/card backgrounds.
+
+**Tokens (defined in `index.css` `:root`):**
+- `--bg: #111520` — page / outermost background
+- `--surface: #191e30` — sidebars, raised panels
+- `--surface-2: #1f2438` — nested cards, module content areas
+- `--border: #3d4668` — all structural borders (clearly visible against surfaces)
+- `--border-subtle: #2a3255` — dividers, light separators
+- `--color-zinc-900: #191e30` — global remap of all `bg-zinc-900` instances to surface value
+
+**Rule:** All sidebar shells, modal wrappers, card boundaries, and header borders use these tokens. `bg-zinc-900` / `border-zinc-800` are still valid for chips, badges, code blocks, and hover fills where zinc tone is intentional.
+
+**Why:** The prior zinc-950 (#09090b) / zinc-900 (#18181b) system had ~9 L* luminance units between bg and card — visually flat, cards didn't float. These blue-tinted darks have ~12 L* units between layers — cards are visible without shadows or gradients. Same layered elevation system as PAL (sibling product). The `--color-zinc-900` remap fixes 300+ panel backgrounds in one CSS declaration, same technique used in sprint 8 for the zinc-500/600 contrast boost.
+
 ### Ground Truth post rendering
 
 **Decision:** All post content lives in `src/groundTruthPosts.js` as a flat JS object of typed content blocks. No markdown, no MDX.

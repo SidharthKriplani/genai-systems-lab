@@ -1832,3 +1832,44 @@ GitHub repo description and README updated to use "production AI judgment simula
 - Supabase auth (for this repo) — access code pattern is correct for current stage
 
 **Status:** ✅ Analysis complete. Positioning fix applied. All findings mapped to backlog or standing rules.
+
+---
+
+## Audit 39 — PAL Visual Gap Analysis (May 2026, Sprint 24)
+
+**Trigger:** User reported GAL "looks the same" after multiple sprint rounds. Formal comparison against PAL (sibling product) to identify root causes.
+
+**Method:** Fetched PAL's actual `index.css` and `Sidebar.jsx` from GitHub raw URLs. Measured L* luminance difference between background layers. Catalogued all structural visual gaps with impact ratings.
+
+### Root cause identified
+
+GAL's prior background elevation system: zinc-950 (#09090b) / zinc-900 (#18181b) — ~9 L* luminance units between page bg and card. Panel edges invisible. Cold gray palette, zero warmth.
+
+PAL uses blue-tinted darks: bg=#111520, surface=#191e30, surface-2=#1f2438 — ~12 L* units between layers. Cards float without shadows. Every structural boundary is legible.
+
+### Full gap inventory (pre-sprint 24)
+
+| Gap | PAL | GAL (before) | Impact |
+|---|---|---|---|
+| Background elevation | 3-token blue-tinted system | flat zinc-950 everywhere | HIGH |
+| Border visibility | #3d4668 (blue-gray) | zinc-800 (#27272a, near-invisible) | HIGH |
+| Sidebar background | --surface token (#191e30) | zinc-900 (same as content bg) | HIGH |
+| Mobile sidebar animation | CSS transform translateX | JSX display:none toggle | MED |
+| Sticky header | backdrop-blur + border | no sticky | MED |
+| Scrollbar | 2px custom thumb, themed | scrollbar-hide (hidden) | LOW |
+
+### Fixes applied (sprint 24)
+
+- `--bg`, `--surface`, `--surface-2`, `--border`, `--border-subtle` tokens added to `:root`
+- `--color-zinc-900: #191e30` single-line remap fixed 300+ `bg-zinc-900` instances app-wide
+- All 5 lab sidebar shells: `var(--surface)` + `var(--border)`
+- All modals (search, leaderboard, feedback, shortcuts): elevation tokens applied
+- Home.jsx: all door cards + Today section: `--surface-2`/`--border`
+- Standing rule added to DECISIONS.md § 2
+
+### Remaining gaps (deferred)
+
+- Mobile sidebar CSS transform slide animation (JSX toggle works, not animated)
+- Sticky header with backdrop-blur
+
+**Status:** ✅ All HIGH impact gaps resolved. Remaining LOW/MED gaps deferred. Standing rule in DECISIONS.md.

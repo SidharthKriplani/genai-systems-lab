@@ -11,7 +11,19 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: May 2026*
+*Last updated: May 2026 (post sprint 24)*
+
+---
+
+## ~~Global — Elevation Token System (PAL-parity)~~ DONE — sprint 24
+
+**Component:** `src/index.css`, `src/App.jsx`, `src/Home.jsx`, `src/Systems.jsx`, `src/Agents.jsx`, `src/PrepLab.jsx`, `src/Concepts.jsx`
+
+**Was:** Flat zinc-950/900/800 backgrounds with ~9 L* luminance steps between layers. Panel edges invisible. No warmth. 300+ hardcoded `bg-zinc-900` card backgrounds across all views.
+
+**Now:** Full CSS variable elevation system matching PAL. `--bg` / `--surface` / `--surface-2` / `--border` / `--border-subtle` in `:root`. `--color-zinc-900` remapped to surface value — single declaration fixes 300+ instances. All lab sidebar shells, modals, Home door cards, and header borders use tokens. Cards float visibly against background.
+
+**Status:** ✅ Done — sprint 24. Commits `08f4512`, `dc26961`, `4192c3a`. Standing rule in DECISIONS.md § 2.
 
 ---
 
@@ -548,7 +560,7 @@ The design principle the failure teaches. One decision rule a practitioner would
 
 **Priority:** Medium — the product works without this; it matters for first impressions and credibility.
 
-**Status:** Pending
+**Status:** Partially done — color token system shipped sprint 24 (elevation tokens + zinc-900 remap cover the color audit portion). Remaining: explicit font stack decision, size/weight scale documentation in index.css comments.
 
 ---
 
