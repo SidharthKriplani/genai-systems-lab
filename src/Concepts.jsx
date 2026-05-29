@@ -4304,36 +4304,230 @@ function GymPanel({ mastery, onOpen, onClose, onNavigate }) {
   );
 }
 
-const CONCEPT_GROUPS = [
+// ─── GYM METADATA ─────────────────────────────────────────────────────────────
+
+const MODULE_META = {
+  "tokenizer":    { insight: "LLMs price and limit by tokens, not words. Non-English text costs 2–5× more.", mins: 8 },
+  "embeddings":   { insight: "Meaning maps to distance. This is the engine of semantic search and RAG retrieval.", mins: 10 },
+  "attention":    { insight: "For each token, attention assigns relevance weights to every other. This is why context is O(n²).", mins: 10 },
+  "transformer":  { insight: "Embed → attend → FFN → predict. The exact architecture GPT runs, in your browser.", mins: 12 },
+  "context":      { insight: "Exceed the context window and content is silently cut. Every RAG system fights this limit.", mins: 8 },
+  "flashattn":    { insight: "128K+ context windows exist because Flash Attention keeps VRAM linear instead of quadratic.", mins: 8 },
+  "sampling":     { insight: "Same logits, different output. The decoding strategy is a separate choice from the model.", mins: 10 },
+  "nextoken":     { insight: "LLMs output probability distributions. Flat distributions are where hallucinations live.", mins: 6 },
+  "tempgame":     { insight: "Temperature is among the first things you tune — and one of the most common regression sources.", mins: 6 },
+  "chunking":     { insight: "Bad chunking kills good retrieval. Boundaries matter more than chunk size.", mins: 10 },
+  "rag-pipeline": { insight: "The model synthesises; it doesn't recall. RAG separates what it knows from what it needs.", mins: 10 },
+  "debug":        { insight: "Same wrong answer could be retrieval, context, hallucination, or config. Symptom alone won't tell you.", mins: 12 },
+  "agent":        { insight: "A loop fails in ways a function never does: stuck retries, hallucinated tool calls, context drift.", mins: 10 },
+  "guardrails":   { insight: "Without guardrails, even aligned models produce PII leaks and jailbreaks under the right prompt.", mins: 8 },
+  "multiagent":   { insight: "Multi-agent overhead only pays off when subtasks are genuinely independent and parallelizable.", mins: 10 },
+};
+
+const GYMS = [
   {
-    label: "FOUNDATION",
-    ids: ["tokenizer","embeddings","attention","transformer","context","flashattn","sampling"],
+    id: "language-models",
+    label: "Language Models",
+    desc: "How LLMs actually work — from tokenization through sampling. The foundation before you touch any lab.",
+    color: "#6366f1",
+    moduleIds: ["tokenizer", "attention", "transformer", "flashattn", "sampling", "nextoken", "tempgame"],
+    labId: "llmlab",
+    labLabel: "LLM Lab",
   },
   {
-    label: "APPLICATION",
-    ids: ["chunking","rag-pipeline","agent","guardrails","multiagent"],
+    id: "retrieval",
+    label: "Retrieval",
+    desc: "Embeddings, chunking, the RAG pipeline end-to-end, context budgets, and diagnosing when retrieval fails.",
+    color: "#3b82f6",
+    moduleIds: ["embeddings", "chunking", "rag-pipeline", "context", "debug"],
+    labId: "lab",
+    labLabel: "RAG Lab",
   },
   {
-    label: "PRACTICE",
-    ids: ["debug","nextoken","tempgame"],
+    id: "ai-agents",
+    label: "AI Agents",
+    desc: "The ReAct loop, multi-agent coordination patterns, and the safety layer every agent system needs.",
+    color: "#f59e0b",
+    moduleIds: ["agent", "multiagent", "guardrails"],
+    labId: "agentlab",
+    labLabel: "Agent Lab",
+  },
+  {
+    id: "evaluation",
+    label: "Evaluation",
+    desc: "Metrics, LLM-as-judge, RAGAS, and building eval pipelines that catch regressions before users do.",
+    color: "#22c55e",
+    moduleIds: [],
+    labId: "evallab",
+    labLabel: "Eval Lab",
+    comingSoon: true,
+  },
+  {
+    id: "production",
+    label: "Production Systems",
+    desc: "Cost, latency, caching, observability, and the engineering tradeoffs behind serving LLMs at scale.",
+    color: "#8b5cf6",
+    moduleIds: [],
+    labId: "systems",
+    labLabel: "Systems Lab",
+    comingSoon: true,
   },
 ];
 
+// ─── GYM SELECTOR VIEW ────────────────────────────────────────────────────────
+
+function GymSelectorView({ mastery, onEnterGym }) {
+  return (
+    <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold text-white">Concepts</h2>
+        <p className="text-sm text-zinc-400 mt-2 max-w-2xl leading-relaxed">
+          Before the labs, build the conceptual foundation. Each training room covers one domain — interactive modules with guided text, visualisations, and exercises. Pick a room to start, or dive into any module directly from inside.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {GYMS.map(gym => {
+          const gymMods = gym.moduleIds.map(id => MODULES.find(m => m.id === id)).filter(Boolean);
+          const completed = gymMods.filter(m => mastery.has(m.id)).length;
+          const total = gymMods.length;
+          const pct = total > 0 ? Math.round(completed / total * 100) : 0;
+          return (
+            <div
+              key={gym.id}
+              onClick={() => !gym.comingSoon && onEnterGym(gym.id)}
+              className={`rounded-2xl border p-5 flex flex-col gap-3 transition-all ${
+                gym.comingSoon
+                  ? "border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed"
+                  : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 cursor-pointer"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded border"
+                  style={{ color: gym.color, borderColor: `${gym.color}40`, background: `${gym.color}14` }}>
+                  {gym.comingSoon ? "COMING SOON" : `${total} modules`}
+                </span>
+                {!gym.comingSoon && total > 0 && (
+                  <span className="text-xs text-zinc-500">{completed}/{total} done</span>
+                )}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">{gym.label}</h3>
+                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{gym.desc}</p>
+              </div>
+              {!gym.comingSoon && total > 0 && (
+                <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: gym.color }} />
+                </div>
+              )}
+              {!gym.comingSoon && (
+                <div className="flex items-center justify-between mt-auto pt-1">
+                  <span className="text-[10px] text-zinc-600">→ {gym.labLabel}</span>
+                  <span className="text-xs font-semibold" style={{ color: gym.color }}>
+                    {completed === total && total > 0 ? "Revisit →" : "Enter →"}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── GYM ROOM VIEW ────────────────────────────────────────────────────────────
+
+function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
+  const gym = GYMS.find(g => g.id === gymId);
+  if (!gym) return null;
+  const modules = gym.moduleIds.map(id => MODULES.find(m => m.id === id)).filter(Boolean);
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+      <div>
+        <button onClick={onBack} className="text-xs text-zinc-500 hover:text-zinc-300 mb-4 flex items-center gap-1 transition-colors">
+          ← All training rooms
+        </button>
+        <div className="flex items-center gap-3 mb-2 flex-wrap">
+          <h2 className="text-xl font-bold text-white">{gym.label}</h2>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded border"
+            style={{ color: gym.color, borderColor: `${gym.color}40`, background: `${gym.color}14` }}>
+            {modules.length} modules
+          </span>
+        </div>
+        <p className="text-sm text-zinc-400 leading-relaxed">{gym.desc}</p>
+      </div>
+
+      <div className="space-y-3">
+        {modules.map((m, i) => {
+          const done = mastery.has(m.id);
+          const meta = MODULE_META[m.id] || {};
+          return (
+            <div
+              key={m.id}
+              onClick={() => onOpenModule(m.id)}
+              className={`rounded-xl border p-4 flex items-center gap-4 cursor-pointer transition-all hover:border-zinc-600 ${
+                done ? "border-zinc-800 bg-zinc-900/30" : "border-zinc-800 bg-zinc-900/50"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 text-xs font-bold ${
+                done ? "border-emerald-700/50 bg-emerald-900/30 text-emerald-400" : "border-zinc-700 bg-zinc-800 text-zinc-400"
+              }`}>
+                {done ? "✓" : i + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                  <span className="text-sm font-semibold text-white">{m.title}</span>
+                  <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
+                    m.level === "beginner"     ? "text-emerald-400 border-emerald-800/50 bg-emerald-950/30" :
+                    m.level === "intermediate" ? "text-amber-400 border-amber-800/50 bg-amber-950/30" :
+                    "text-red-400 border-red-800/50 bg-red-950/30"
+                  }`}>
+                    {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
+                  </span>
+                </div>
+                {meta.insight && <p className="text-xs text-zinc-500 leading-relaxed">{meta.insight}</p>}
+              </div>
+              <div className="shrink-0 flex flex-col items-end gap-1">
+                {meta.mins && <span className="text-[10px] text-zinc-600">~{meta.mins} min</span>}
+                <span className={`text-xs font-semibold ${done ? "text-zinc-500" : "text-violet-400"}`}>
+                  {done ? "Revisit" : "Start →"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-zinc-500 mb-0.5">Ready to apply these concepts?</p>
+          <p className="text-sm text-zinc-300 font-medium">Open the {gym.labLabel}</p>
+        </div>
+        <button
+          onClick={() => onNavigate(gym.labId)}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:opacity-80"
+          style={{ color: gym.color, borderColor: `${gym.color}40` }}
+        >
+          Go to lab →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CONCEPTS APP ─────────────────────────────────────────────────────────────
+
 export default function ConceptsApp({ onNavigate }) {
-  const [active, setActive] = useState("tokenizer");
-  const [gymView, setGymView] = useState(false);
+  const [active, setActive] = useState(null);
+  const [activeGym, setActiveGym] = useState(null);
   const [mastery, setMastery] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem(MASTERY_KEY) || "[]")); }
     catch { return new Set(); }
   });
 
-  const mod = MODULES.find((m) => m.id === active);
-  const Component = mod.component;
-
   function openModule(id) {
     setActive(id);
-    setGymView(false);
-    track("concept_module_opened", { module: id, source: gymView ? "gym" : "sidebar" });
+    track("concept_module_opened", { module: id, source: activeGym || "direct" });
   }
 
   function markComplete(id) {
@@ -4346,83 +4540,103 @@ export default function ConceptsApp({ onNavigate }) {
     track("concept_module_completed", { module: id });
   }
 
-  if (gymView) {
+  // ── View 1: gym selector (landing) ──
+  if (!active && !activeGym) {
     return (
-      <div className="flex h-full min-h-0">
-        <GymPanel mastery={mastery} onOpen={openModule} onClose={() => setGymView(false)} onNavigate={onNavigate} />
+      <div className="flex-1 overflow-y-auto">
+        <GymSelectorView mastery={mastery} onEnterGym={id => setActiveGym(id)} />
       </div>
     );
   }
+
+  // ── View 2: gym room (module list) ──
+  if (activeGym && !active) {
+    return (
+      <div className="flex-1 overflow-y-auto">
+        <GymRoomView
+          gymId={activeGym}
+          mastery={mastery}
+          onOpenModule={openModule}
+          onBack={() => setActiveGym(null)}
+          onNavigate={onNavigate}
+        />
+      </div>
+    );
+  }
+
+  // ── View 3: module ──
+  const mod = MODULES.find((m) => m.id === active);
+  if (!mod) return null;
+  const Component = mod.component;
+  const currentGym = GYMS.find(g => g.moduleIds.includes(active));
+  const sidebarIds = currentGym ? currentGym.moduleIds : MODULES.map(m => m.id);
 
   return (
     <div className="flex h-full min-h-0">
       {/* ── Left sidebar ── */}
       <div className="w-52 shrink-0 border-r border-zinc-800 overflow-y-auto py-4 hidden sm:block">
-        <div className="px-3 mb-3 flex items-center justify-between">
-          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Concepts</p>
-          <button onClick={() => setGymView(true)}
-            className="text-[9px] font-mono text-violet-400 hover:text-violet-300 border border-violet-800/40 hover:border-violet-600/60 rounded px-1.5 py-0.5 transition-colors">
-            GYM
+        <div className="px-3 mb-3">
+          <button
+            onClick={() => currentGym ? setActive(null) : setActiveGym(null)}
+            className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 flex items-center gap-1 transition-colors"
+          >
+            ← {currentGym ? currentGym.label : "All rooms"}
           </button>
         </div>
-        {CONCEPT_GROUPS.map((grp) => (
-          <div key={grp.label} className="mb-4">
-            <p className="px-3 mb-1 text-[9px] font-mono uppercase tracking-widest" style={{ color: grp.label === "FOUNDATION" ? "#6366f180" : grp.label === "APPLICATION" ? "#3b82f680" : "#22c55e80" }}>{grp.label}</p>
-            {grp.ids.map((id) => {
-              const m = MODULES.find((x) => x.id === id);
-              if (!m) return null;
-              const isActive = active === id;
-              const done = mastery.has(id);
-              return (
-                <button
-                  key={id}
-                  onClick={() => openModule(id)}
-                  className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 transition-all duration-150 ${
-                    isActive ? "font-semibold text-white" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60"
-                  }`}
-                  style={isActive ? {
-                    background: "linear-gradient(90deg, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.06) 100%)",
-                    boxShadow: "inset 2px 0 0 #6366f1",
-                  } : {}}
-                >
-                  <span className="text-xs font-medium truncate">{m.label}</span>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {done && <span className="text-[9px] text-emerald-500 font-bold">✓</span>}
-                    {m.level && (
-                      <span className={`text-[9px] font-mono ${
-                        m.level === "beginner" ? "text-emerald-500" :
-                        m.level === "intermediate" ? "text-amber-500" : "text-red-500"
-                      }`}>
-                        {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        ))}
+        {sidebarIds.map(id => {
+          const m = MODULES.find(x => x.id === id);
+          if (!m) return null;
+          const isActive = active === id;
+          const done = mastery.has(id);
+          return (
+            <button
+              key={id}
+              onClick={() => openModule(id)}
+              className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 transition-all duration-150 ${
+                isActive ? "font-semibold text-white" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60"
+              }`}
+              style={isActive ? {
+                background: "linear-gradient(90deg, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.06) 100%)",
+                boxShadow: "inset 2px 0 0 #6366f1",
+              } : {}}
+            >
+              <span className="text-xs font-medium truncate">{m.label}</span>
+              <div className="flex items-center gap-1 shrink-0">
+                {done && <span className="text-[9px] text-emerald-500 font-bold">✓</span>}
+                <span className={`text-[9px] font-mono ${
+                  m.level === "beginner" ? "text-emerald-500" :
+                  m.level === "intermediate" ? "text-amber-500" : "text-red-500"
+                }`}>
+                  {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
+                </span>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Mobile: horizontal scroll nav ── */}
-      <div className="sm:hidden w-full overflow-x-auto border-b border-zinc-800 flex gap-1 px-3 py-2 shrink-0" style={{position:"sticky",top:0,zIndex:10,background:"rgb(9,9,11)"}}>
-        {MODULES.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => openModule(m.id)}
-            className={`shrink-0 px-3 py-2.5 rounded text-xs font-medium transition-colors ${
-              active === m.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400"
-            }`}
-          >
-            {m.label}
-          </button>
-        ))}
+      <div className="sm:hidden w-full overflow-x-auto border-b border-zinc-800 flex gap-1 px-3 py-2 shrink-0" style={{ position: "sticky", top: 0, zIndex: 10, background: "rgb(9,9,11)" }}>
+        {sidebarIds.map(id => {
+          const m = MODULES.find(x => x.id === id);
+          if (!m) return null;
+          return (
+            <button
+              key={id}
+              onClick={() => openModule(id)}
+              className={`shrink-0 px-3 py-2.5 rounded text-xs font-medium transition-colors ${
+                active === id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400"
+              }`}
+            >
+              {m.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Right content panel ── */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-6 py-8">
-          {/* Module header */}
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="text-[10px] font-mono px-2 py-0.5 bg-violet-900/50 text-violet-400 rounded border border-violet-800">{mod.tag}</span>
@@ -4445,9 +4659,10 @@ export default function ConceptsApp({ onNavigate }) {
                       Mark complete
                     </button>
                 }
-                <button onClick={() => setGymView(true)}
+                <button
+                  onClick={() => setActive(null)}
                   className="hidden sm:block text-[9px] font-mono text-violet-400 hover:text-violet-300 border border-violet-800/40 rounded px-1.5 py-0.5 transition-colors">
-                  Gym view
+                  All rooms
                 </button>
               </div>
             </div>
