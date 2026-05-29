@@ -41,7 +41,7 @@ These were two names for the same thing. Consolidated as "Interview Prep Plan." 
 3. **Skill assessment** → gap score = JD weight × inverse rating, role profile output (free)
 4. **Personalized study plan** → 3-day / 7-day / 2-week plan sequencing GT posts + Systems modules + PrepLab clusters by gap priority (**gated after 30% completion**)
 
-localStorage tracks plan item checkmarks. Gate fires when `completedItems / totalItems >= 0.30`.
+Progress tracking: auto-detect from existing localStorage data where possible — `genai_leaderboard` for RAG Lab scenario completions, `gsl-preplab-history` for PrepLab question cluster attempts. GT post reads require lightweight per-post tracking (not yet implemented). Manual checkboxes only as fallback for steps with no auto-detectable signal. Gate fires when `completedItems / totalItems >= 0.30` on combined auto + manual count.
 
 ---
 

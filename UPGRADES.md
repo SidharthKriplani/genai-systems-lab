@@ -218,14 +218,23 @@ For each JD-flagged category, user rates readiness: Weak / Okay / Strong. Gap sc
 Role profile card: "This role is RAG-heavy, eval-critical, agent architecture optional." Top 3 gaps ranked by score. Honest gaps callout: if the JD requires a skill the lab doesn't cover, say so.
 
 **Phase 4 — Personalized study plan (gated after 30% completion)**
-Sequenced prep plan: 3-day / 7-day / 2-week options. Each day: which GT posts to read, which Systems/Explore modules to run, which PrepLab question cluster to attempt — ordered by gap priority. Each item is a checkbox. localStorage tracks completion. Gate fires when `completedItems / totalItems >= 0.30` — user is mid-goal, invested, highest conversion moment.
+Sequenced prep plan: 3-day / 7-day / 2-week options. Each day: which GT posts to read, which Systems/Explore modules to run, which PrepLab question cluster to attempt — ordered by gap priority. Gate fires when `completedItems / totalItems >= 0.30` — user is mid-goal, invested, highest conversion moment.
 
-**Effort:** L (multi-session — parsing logic, rating UI, gap scoring, plan generation, plan tracking, gate wiring)
+**Plan progress tracking — auto-detection where possible (do not use manual checkboxes only):**
+We already have rich localStorage data that can auto-check plan steps without user self-reporting:
+- `genai_leaderboard` — RAG Lab challenge results with `scenarioId` + `passed`. Any plan step mapped to a RAG Lab scenario can be auto-checked if that scenario appears in the leaderboard with a pass.
+- `gsl-preplab-history` — PrepLab question attempts keyed by question ID with `attempts` + `wrong` counts. Any plan step mapped to a PrepLab question cluster can be auto-checked when enough questions in that cluster have been attempted.
+- GT post reads — not currently tracked at the post level (`genai_visited` only records tab visits). Two options: (a) add lightweight post-read tracking (`localStorage.setItem("genai_gt_read_" + postId, "true")` on post open — trivial), or (b) keep GT steps as the only manual checkboxes. Prefer option (a) — one line per post open.
+
+Auto-detection covers ~60-70% of plan steps (all RAG Lab + PrepLab steps). GT post steps stay manual until post-read tracking is added. Gate fires on combined auto + manual completion count. This is a stronger signal than fully self-reported progress and removes friction for users who've already done the work.
+
+**Effort:** L (multi-session — parsing logic, rating UI, gap scoring, plan generation, auto-detection wiring, gate logic)
 
 **Dependencies:**
-- Access code gate must be live before plan gate is meaningful
+- Access code gate must be live before plan gate is meaningful ✅ (done)
 - PrepLab questions need category tags (`cluster` field already partially populated)
 - GT posts need category alignment map (infer from post IDs + existing tags)
+- Optional: add GT post-read tracking (trivial — one line per post open in GroundTruth.jsx)
 
 **Priority:** Critical — primary paid-tier differentiator. Highest-intent user in the product.
 
