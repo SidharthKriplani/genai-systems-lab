@@ -98,6 +98,21 @@ function Pill({ options, value, onChange }) {
   );
 }
 
+function FidelityBadge({ variant = "simulated" }) {
+  if (variant === "accurate") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-emerald-700/60 bg-emerald-950/40 text-emerald-400 shrink-0">
+        ✓ Scenario-accurate
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700/50 bg-zinc-900/30 text-zinc-500 shrink-0">
+      ~ Simulated
+    </span>
+  );
+}
+
 function MetricBar({ label, value, max = 1, isMs = false, isCost = false }) {
   const p = isMs ? Math.min((value / 2000) * 100, 100) : Math.min((value / max) * 100, 100);
   const colorClass = isMs || isCost ? METRIC_BAR_COLOR(value, true) : METRIC_BAR_COLOR(value);
@@ -563,37 +578,34 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
 // ─── PROGRESS VIEW ────────────────────────────────────────────────────────────
 
 const ALL_TABS = [
-  { id: "lab",         label: "RAG Lab",     group: "LABS",   audience: "Engineers" },
-  { id: "agentlab",    label: "Agent Lab",   group: "LABS",   audience: "Engineers" },
-  { id: "evallab",     label: "Eval Lab",    group: "LABS",   audience: "Engineers · PMs" },
-  { id: "llmlab",      label: "LLM Lab",     group: "LABS",   audience: "Engineers" },
-  { id: "preplab",     label: "Prep Lab",    group: "GROW",   audience: "Interview prep" },
-  { id: "career",      label: "Career",      group: "GROW",   audience: "Job seekers" },
-  { id: "aipm",        label: "AI Product",  group: "GROW",   audience: "Product managers" },
-  { id: "groundtruth", label: "Ground Truth",group: "LEARN",  audience: "All levels" },
-  // Legacy tabs — still accessible via #hash but not in primary nav
-  { id: "concepts",    label: "Concepts",    group: "LEARN",  audience: "All levels" },
-  { id: "flows",       label: "Diagrams",    group: "LEARN",  audience: "All levels" },
-  { id: "agents",      label: "Agents",      group: "BUILD",  audience: "Engineers" },
-  { id: "playground",  label: "Playground",  group: "BUILD",  audience: "All levels" },
-  { id: "explore",     label: "Explore",     group: "BUILD",  audience: "Engineers" },
-  { id: "systems",     label: "Systems",     group: "BUILD",  audience: "Engineers · PMs" },
-  { id: "paths",       label: "Paths",       group: "GROW",   audience: "All levels" },
-  { id: "fluency",     label: "Drills",      group: "GROW",   audience: "Interview prep" },
+  // Primary nav
+  { id: "lab",         label: "RAG Lab",     group: "BUILD",    audience: "Engineers" },
+  { id: "agentlab",    label: "Agent Lab",   group: "BUILD",    audience: "Engineers" },
+  { id: "evallab",     label: "Eval Lab",    group: "BUILD",    audience: "Engineers · PMs" },
+  { id: "llmlab",      label: "LLM Lab",     group: "BUILD",    audience: "Engineers" },
+  { id: "preplab",     label: "Prep Lab",    group: "PROVE",    audience: "Interview prep" },
+  { id: "career",      label: "Career",      group: "NAVIGATE", audience: "Job seekers" },
+  { id: "aipm",        label: "AI Product",  group: "NAVIGATE", audience: "Product managers" },
+  { id: "concepts",    label: "Concepts",    group: "KNOWLEDGE",audience: "All levels" },
+  { id: "groundtruth", label: "Ground Truth",group: "KNOWLEDGE",audience: "All levels" },
+  // Legacy tabs — accessible via #hash, not in primary nav
+  { id: "flows",       label: "Diagrams",    group: "LEGACY",   audience: "All levels" },
+  { id: "agents",      label: "Agents",      group: "LEGACY",   audience: "Engineers" },
+  { id: "playground",  label: "Playground",  group: "LEGACY",   audience: "All levels" },
+  { id: "explore",     label: "Explore",     group: "LEGACY",   audience: "Engineers" },
+  { id: "systems",     label: "Systems",     group: "LEGACY",   audience: "Engineers · PMs" },
+  { id: "paths",       label: "Paths",       group: "LEGACY",   audience: "All levels" },
+  { id: "fluency",     label: "Drills",      group: "LEGACY",   audience: "Interview prep" },
 ];
 
-const GROUP_COLORS = { LABS: "#3b82f6", GROW: "#22c55e", KNOWLEDGE: "#8b5cf6", LEARN: "#6366f1", BUILD: "#3b82f6" };
+const GROUP_COLORS = { BUILD: "#3b82f6", PROVE: "#22c55e", NAVIGATE: "#f59e0b", KNOWLEDGE: "#8b5cf6", LEGACY: "#3f3f46" };
 
 function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookmarks = new Set(), toggleBookmark = () => {} }) {
-  const tabsVisited = ALL_TABS.filter(t => visited.has(t.id));
-  const tabsByGroup = ["LABS","GROW","KNOWLEDGE"].map(g => ({
-    group: g,
-    color: GROUP_COLORS[g],
-    tabs: ALL_TABS.filter(t => t.group === g),
-    visitedCount: ALL_TABS.filter(t => t.group === g && visited.has(t.id)).length,
-  }));
+  // ── Read external localStorage data ─────────────────────────────────────────
+  const history = (() => { try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); } catch { return {}; } })();
+  const mastery = (() => { try { return new Set(JSON.parse(localStorage.getItem("gsl-concepts-mastery") || "[]")); } catch { return new Set(); } })();
 
-  // RAG challenge stats from leaderboard
+  // ── BUILD lane ────────────────────────────────────────────────────────────────
   const tierRank = t => SCORE_TIERS[t]?.rank || 0;
   const byScenario = ALL_SCENARIOS.map(s => {
     const entries = leaderboard.filter(e => e.scenarioId === s.scenario_id);
@@ -603,179 +615,194 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
     }, null);
     return { ...s, entries, bestTier, attempted: entries.length > 0 };
   });
-  const solved = byScenario.filter(s => s.bestTier && SCORE_TIERS[s.bestTier]?.rank >= 3).length;
-  const attempted = byScenario.filter(s => s.attempted).length;
-
-  // Best overall tier across all attempts
+  const ragSolved = byScenario.filter(s => s.bestTier && SCORE_TIERS[s.bestTier]?.rank >= 3).length;
   const bestOverall = leaderboard.reduce((best, e) => {
     if (!e.tier) return best;
     return !best || tierRank(e.tier) > tierRank(best) ? e.tier : best;
   }, null);
 
-  // Suggested next step
-  const nextTab = ALL_TABS.find(t => !visited.has(t.id));
-  const nextLabScenario = byScenario.find(s => !s.attempted);
+  const OTHER_LABS = [
+    { id: "agentlab", label: "Agent Lab", total: 16, color: "#f59e0b" },
+    { id: "evallab",  label: "Eval Lab",  total: 15, color: "#6366f1" },
+    { id: "llmlab",   label: "LLM Lab",   total: 9,  color: "#3b82f6" },
+  ];
+
+  // ── PROVE lane ────────────────────────────────────────────────────────────────
+  const TOPICS = [
+    { key: "rag",         label: "RAG" },
+    { key: "agents",      label: "Agents" },
+    { key: "eval",        label: "Evaluation" },
+    { key: "finetuning",  label: "Fine-Tuning" },
+    { key: "llmops",      label: "LLMOps" },
+    { key: "safety",      label: "Safety" },
+    { key: "product",     label: "Product" },
+    { key: "behavioral",  label: "Behavioral" },
+    { key: "multimodal",  label: "Multimodal" },
+    { key: "reasoning",   label: "Reasoning" },
+    { key: "serving",     label: "Serving" },
+  ];
+  const topicStats = TOPICS.map(({ key, label }) => {
+    const ids = Object.keys(history).filter(id => id.startsWith(key + "-"));
+    const total = ids.reduce((s, id) => s + (history[id]?.attempts || 0), 0);
+    const wrong = ids.reduce((s, id) => s + (history[id]?.wrong || 0), 0);
+    const correct = total - wrong;
+    const pct = total > 0 ? Math.round((correct / total) * 100) : null;
+    return { key, label, qCount: ids.length, total, correct, pct };
+  }).filter(t => t.qCount > 0).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
+  const totalPrepAttempts = Object.values(history).reduce((s, e) => s + (e.attempts || 0), 0);
+
+  // ── CONCEPTS lane ─────────────────────────────────────────────────────────────
+  const ACTIVE_GYMS = [
+    { id: "language-models", label: "Language Models", color: "#6366f1", modules: ["tokenizer","attention","transformer","flashattn","sampling","nextoken","tempgame"] },
+    { id: "retrieval",       label: "Retrieval",       color: "#3b82f6", modules: ["embeddings","chunking","rag-pipeline","context","debug"] },
+    { id: "ai-agents",       label: "AI Agents",       color: "#f59e0b", modules: ["agent","multiagent","guardrails"] },
+  ];
+  const totalConcepts = ACTIVE_GYMS.reduce((s, g) => s + g.modules.length, 0);
+  const masteredCount = ACTIVE_GYMS.reduce((s, g) => s + g.modules.filter(m => mastery.has(m)).length, 0);
+
+  function LaneCard({ color, label, right, children }) {
+    return (
+      <div className="rounded-xl p-5 space-y-4" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: `2px solid ${color}60` }}>
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-black uppercase tracking-widest" style={{ color }}>{label}</span>
+          {right}
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  function MiniBar({ value, total, color }) {
+    const p = total > 0 ? Math.round((value / total) * 100) : 0;
+    return (
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(39,39,42,0.8)" }}>
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${p}%`, background: color, boxShadow: p > 0 ? `2px 0 6px ${color}70` : "none" }} />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
+      {/* Header */}
       <div className="text-center space-y-1">
         <h1 className="text-2xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Your Progress</h1>
-        <p className="text-sm text-zinc-500">{tabsVisited.length} of {ALL_TABS.length} tabs visited · {leaderboard.length} challenge attempt{leaderboard.length !== 1 ? "s" : ""}</p>
+        <p className="text-xs text-zinc-500">{ragSolved}/6 RAG scenarios · {totalPrepAttempts} PrepLab attempts · {masteredCount}/{totalConcepts} concepts mastered</p>
       </div>
 
-      {/* Tab completion by group */}
-      <div className="rounded-xl p-5 space-y-4" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid rgba(99,102,241,0.35)" }}>
-        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Tab Coverage</div>
-        {tabsByGroup.map(({ group, color, tabs, visitedCount }) => {
-          const pct = Math.round((visitedCount / tabs.length) * 100);
-          return (
-            <div key={group}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold font-mono" style={{ color }}>{group}</span>
-                <span className="text-xs text-zinc-500 font-mono">{visitedCount}/{tabs.length}</span>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: "rgba(39,39,42,0.8)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)" }}>
-                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color, boxShadow: pct > 0 ? `2px 0 8px ${color}80` : "none" }} />
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {tabs.map(t => (
-                  <button key={t.id} onClick={() => onNavigate(t.id)}
-                    className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-all ${visited.has(t.id) ? "border-zinc-600 text-zinc-300 bg-zinc-800" : "border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-400"}`}>
-                    {visited.has(t.id) ? "✓ " : ""}{t.label}
-                  </button>
-                ))}
-              </div>
+      {/* ── BUILD ── */}
+      <LaneCard color="#3b82f6" label="BUILD — Labs" right={
+        <button onClick={() => onNavigate("lab")} className="text-[10px] font-mono text-blue-400 hover:text-blue-300 transition-all">Open RAG Lab →</button>
+      }>
+        {/* RAG Lab */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-zinc-300">RAG Lab</span>
+            <div className="flex items-center gap-2">
+              {bestOverall && <TierBadge tier={bestOverall} />}
+              <span className="text-[10px] font-mono text-zinc-500">{ragSolved}/6 solved</span>
             </div>
-          );
-        })}
-      </div>
-
-      {/* RAG challenge readiness */}
-      <div className="rounded-xl p-5 space-y-4" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "2px solid rgba(245,158,11,0.35)" }}>
-        <div className="flex items-center justify-between">
-          <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest">RAG Challenge</div>
-          {bestOverall && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-zinc-500">Best level:</span>
-              <TierBadge tier={bestOverall} />
+          </div>
+          {leaderboard.length === 0 ? (
+            <p className="text-xs text-zinc-600 italic">No challenge attempts yet — enable Challenge Mode in RAG Lab.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {byScenario.map((s, i) => (
+                <div key={s.scenario_id} className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-zinc-600 w-3 shrink-0">{i+1}</span>
+                  <span className="text-xs text-zinc-400 flex-1 truncate">{s.title}</span>
+                  {s.bestTier
+                    ? <TierBadge tier={s.bestTier} />
+                    : s.attempted
+                      ? <span className="text-[10px] font-mono text-amber-600 border border-amber-900/60 px-1.5 py-0.5 rounded">Tried</span>
+                      : <span className="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-1.5 py-0.5 rounded">Open</span>
+                  }
+                </div>
+              ))}
             </div>
           )}
         </div>
-        {leaderboard.length === 0 ? (
+        {/* Other labs */}
+        <div className="space-y-3 pt-1 border-t border-zinc-800/60">
+          {OTHER_LABS.map(lab => {
+            const visited_count = [...visitedModules].filter(k => k.startsWith(lab.id + ":")).length;
+            return (
+              <div key={lab.id}>
+                <div className="flex items-center justify-between mb-1">
+                  <button onClick={() => onNavigate(lab.id)} className="text-xs font-semibold text-zinc-300 hover:text-white transition-all">{lab.label}</button>
+                  <span className="text-[10px] font-mono text-zinc-500">{visited_count}/{lab.total} visited</span>
+                </div>
+                <MiniBar value={visited_count} total={lab.total} color={lab.color} />
+              </div>
+            );
+          })}
+        </div>
+      </LaneCard>
+
+      {/* ── PROVE ── */}
+      <LaneCard color="#22c55e" label="PROVE — Prep Lab" right={
+        <button onClick={() => onNavigate("preplab")} className="text-[10px] font-mono text-green-400 hover:text-green-300 transition-all">Open Prep Lab →</button>
+      }>
+        {topicStats.length === 0 ? (
           <div className="text-center py-3 space-y-2">
-            <p className="text-xs text-zinc-500">No challenge attempts yet.</p>
-            <button onClick={() => onNavigate("lab")} className="text-xs text-amber-400 hover:text-amber-300 font-mono transition-all">
-              Open RAG Lab → enable Challenge Mode →
-            </button>
+            <p className="text-xs text-zinc-500">No PrepLab attempts yet.</p>
+            <button onClick={() => onNavigate("preplab")} className="text-xs text-green-400 hover:text-green-300 font-mono transition-all">Start Trainer Mode →</button>
           </div>
         ) : (
-          <div className="space-y-2">
-            {byScenario.map((s, i) => (
-              <div key={s.scenario_id} className="flex items-center gap-3">
-                <span className="text-xs font-mono text-zinc-500 w-4 shrink-0">#{i+1}</span>
-                <span className="text-xs text-zinc-300 flex-1 truncate">{s.title}</span>
-                {s.bestTier
-                  ? <TierBadge tier={s.bestTier} />
-                  : s.attempted
-                    ? <span className="text-[10px] font-mono text-amber-600 border border-amber-900 px-1.5 py-0.5 rounded">Attempted</span>
-                    : <span className="text-[10px] font-mono text-zinc-500 border border-zinc-800 px-1.5 py-0.5 rounded">Open</span>
-                }
-              </div>
-            ))}
+          <div className="space-y-3">
+            {topicStats.map(t => {
+              const color = t.pct === null ? "#52525b" : t.pct >= 75 ? "#22c55e" : t.pct >= 50 ? "#f59e0b" : "#ef4444";
+              return (
+                <div key={t.key}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-zinc-300">{t.label}</span>
+                    <span className="text-[10px] font-mono" style={{ color }}>{t.pct !== null ? `${t.pct}%` : "—"} <span className="text-zinc-600">({t.correct}/{t.total})</span></span>
+                  </div>
+                  <MiniBar value={t.correct} total={t.total} color={color} />
+                </div>
+              );
+            })}
+            <p className="text-[10px] text-zinc-600 pt-1">{Object.keys(history).length} questions attempted · {topicStats.length} topic{topicStats.length !== 1 ? "s" : ""} active</p>
           </div>
         )}
-      </div>
+      </LaneCard>
 
-      {/* Suggested next step */}
-      {(nextTab || nextLabScenario) && (
-        <div className="rounded-xl border border-violet-800/50 bg-violet-950/20 p-4 space-y-2">
-          <div className="text-xs font-bold text-violet-400 uppercase tracking-widest">Suggested Next Step</div>
-          {nextLabScenario && leaderboard.length > 0 ? (
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-bold text-white">Try the next RAG scenario</div>
-                <div className="text-xs text-zinc-400">{nextLabScenario.title}</div>
-              </div>
-              <button onClick={() => onNavigate("lab")} className="px-3 py-1.5 rounded-lg text-white text-xs font-bold transition-all shrink-0"
-                style={{ background: "linear-gradient(135deg, #b45309 0%, #f59e0b 100%)", boxShadow: "0 0 14px rgba(245,158,11,0.35)" }}>
-                Go →
-              </button>
-            </div>
-          ) : nextTab ? (
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-bold text-white">Open {nextTab.label}</div>
-                <div className="text-xs text-zinc-400">{nextTab.audience}</div>
-              </div>
-              <button onClick={() => onNavigate(nextTab.id)} className="px-3 py-1.5 rounded-lg text-white text-xs font-bold transition-all shrink-0"
-                style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)", boxShadow: "0 0 14px rgba(99,102,241,0.4)" }}>
-                Go →
-              </button>
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      {tabsVisited.length === ALL_TABS.length && solved === ALL_SCENARIOS.length && (
-        <div className="rounded-xl border border-emerald-700/50 bg-emerald-950/20 p-4 text-center space-y-1">
-          <div className="text-2xl">🏆</div>
-          <div className="text-sm font-black text-emerald-300">Full coverage achieved</div>
-          <p className="text-xs text-zinc-400">Every tab visited and every RAG scenario solved at Senior-Ready or above.</p>
-        </div>
-      )}
-
-      {/* Certificates */}
-      {(() => {
-        const learnTabs = ALL_TABS.filter(t => t.group === "LABS");
-        const buildTabs = ALL_TABS.filter(t => t.group === "LABS");
-        const growTabs  = ALL_TABS.filter(t => t.group === "GROW");
-        const learnComplete = learnTabs.every(t => visited.has(t.id));
-        const buildComplete = false; // merged into LABS
-        const growComplete  = growTabs.every(t => visited.has(t.id));
-        if (!learnComplete && !buildComplete && !growComplete) return null;
-        function downloadCert(group) {
-          const canvas = document.createElement("canvas");
-          canvas.width = 800; canvas.height = 560;
-          const ctx = canvas.getContext("2d");
-          ctx.fillStyle = "#09090b";
-          ctx.fillRect(0, 0, 800, 560);
-          ctx.strokeStyle = "#6366f1";
-          ctx.lineWidth = 3;
-          ctx.strokeRect(20, 20, 760, 520);
-          ctx.fillStyle = "#ffffff";
-          ctx.font = "bold 32px system-ui";
-          ctx.textAlign = "center";
-          ctx.fillText("Certificate of Completion", 400, 100);
-          ctx.fillStyle = "#a1a1aa";
-          ctx.font = "18px system-ui";
-          ctx.fillText(`${group} Track — genai-systems-lab.com`, 400, 145);
-          ctx.fillStyle = "#6366f1";
-          ctx.font = "bold 48px system-ui";
-          ctx.fillText(group === "LEARN" ? "AI Foundations" : group === "BUILD" ? "AI Systems Builder" : "AI Career Ready", 400, 260);
-          ctx.fillStyle = "#71717a";
-          ctx.font = "16px system-ui";
-          ctx.fillText(`Completed ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, 400, 320);
-          ctx.fillStyle = "#52525b";
-          ctx.font = "13px system-ui";
-          ctx.fillText("genai-systems-lab.com · Built by Sidharth Kriplani", 400, 520);
-          const a = document.createElement("a");
-          a.download = `certificate-${group.toLowerCase()}.png`;
-          a.href = canvas.toDataURL("image/png");
-          a.click();
-        }
-        return (
-          <div className="rounded-xl border border-indigo-800/40 bg-indigo-900/10 p-4 space-y-3">
-            <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Certificates Earned</p>
-            <div className="space-y-2">
-              {learnComplete && <button onClick={() => downloadCert("LEARN")} className="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Download LEARN Certificate →</button>}
-              {buildComplete && <button onClick={() => downloadCert("BUILD")} className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold">Download BUILD Certificate →</button>}
-              {growComplete  && <button onClick={() => downloadCert("GROW")}  className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">Download GROW Certificate →</button>}
-            </div>
+      {/* ── CONCEPTS ── */}
+      <LaneCard color="#8b5cf6" label="KNOWLEDGE — Concepts Gym" right={
+        <button onClick={() => onNavigate("concepts")} className="text-[10px] font-mono text-violet-400 hover:text-violet-300 transition-all">Open Concepts →</button>
+      }>
+        {masteredCount === 0 ? (
+          <div className="text-center py-3 space-y-2">
+            <p className="text-xs text-zinc-500">No concepts marked complete yet.</p>
+            <button onClick={() => onNavigate("concepts")} className="text-xs text-violet-400 hover:text-violet-300 font-mono transition-all">Explore Concepts Gym →</button>
           </div>
-        );
-      })()}
+        ) : (
+          <div className="space-y-3">
+            {ACTIVE_GYMS.map(gym => {
+              const done = gym.modules.filter(m => mastery.has(m)).length;
+              return (
+                <div key={gym.id}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold text-zinc-300">{gym.label}</span>
+                    <span className="text-[10px] font-mono text-zinc-500">{done}/{gym.modules.length}</span>
+                  </div>
+                  <MiniBar value={done} total={gym.modules.length} color={gym.color} />
+                  {done > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {gym.modules.map(m => (
+                        <span key={m} className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${mastery.has(m) ? "border-zinc-600 bg-zinc-800 text-zinc-300" : "border-zinc-800 text-zinc-600"}`}>
+                          {mastery.has(m) ? "✓ " : ""}{m.replace(/-/g, " ")}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </LaneCard>
 
-      {/* Bookmarked Posts */}
+      {/* ── Bookmarked Posts ── */}
       {bookmarks.size > 0 && (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Bookmarked Posts</p>
@@ -1394,20 +1421,22 @@ export default function App() {
     { label: null, items: [
       { id: "home", label: "Home", audience: "All levels" },
     ]},
+    { label: "BUILD", color: "#3b82f6", items: [
+      { id: "lab",      label: "RAG Lab",   count: 6,  audience: "Engineers" },
+      { id: "agentlab", label: "Agent Lab", count: 16, audience: "Engineers" },
+      { id: "evallab",  label: "Eval Lab",  count: 15, audience: "Engineers · PMs" },
+      { id: "llmlab",   label: "LLM Lab",   count: 9,  audience: "Engineers" },
+    ]},
+    { label: "PROVE", color: "#22c55e", items: [
+      { id: "preplab", label: "Prep Lab",   audience: "Interview prep" },
+    ]},
+    { label: "NAVIGATE", color: "#f59e0b", items: [
+      { id: "career",  label: "Career",     count: 6,  audience: "Job seekers" },
+      { id: "aipm",    label: "AI Product", count: 5,  audience: "Product managers" },
+    ]},
     { label: "KNOWLEDGE", color: "#8b5cf6", items: [
       { id: "concepts",    label: "Concepts",     count: 15, audience: "All levels" },
       { id: "groundtruth", label: "Ground Truth",            audience: "All levels" },
-    ]},
-    { label: "LABS", color: "#3b82f6", items: [
-      { id: "lab",      label: "RAG Lab",   count: 6,  audience: "Engineers" },
-      { id: "agentlab", label: "Agent Lab", count: 16, audience: "Engineers" },
-      { id: "evallab",  label: "Eval Lab",  count: 18, audience: "Engineers · PMs" },
-      { id: "llmlab",   label: "LLM Lab",   count: 39, audience: "Engineers" },
-    ]},
-    { label: "GROW", color: "#22c55e", items: [
-      { id: "preplab", label: "Prep Lab",   audience: "Interview prep" },
-      { id: "career",  label: "Career",     count: 6,  audience: "Job seekers" },
-      { id: "aipm",    label: "AI Product", count: 5,  audience: "Product managers" },
     ]},
     { label: null, items: [
       { id: "progress", label: "My Progress", audience: "All levels" },
@@ -1570,8 +1599,8 @@ export default function App() {
             G
           </div>
           <div>
-            <div className="text-sm font-bold tracking-wide text-white leading-none">GenAI Lab</div>
-            <div className="text-[9px] text-zinc-500 mt-0.5 font-mono">v2</div>
+            <div className="text-sm font-bold tracking-wide text-white leading-none">GAL</div>
+            <div className="text-[9px] text-zinc-500 mt-0.5 font-mono">GenAI Systems Lab</div>
           </div>
         </button>
         <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
@@ -1815,8 +1844,9 @@ export default function App() {
           </div>
           <div className="mb-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="text-xs font-mono px-2 py-0.5 bg-violet-900 text-violet-300 rounded border border-violet-700">{scenario.tag}</span>
+                <FidelityBadge variant="accurate" />
               </div>
               <h1 className="text-lg sm:text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{scenario.title}</h1>
               <p className="text-sm text-zinc-400 mt-1">{scenario.description}</p>

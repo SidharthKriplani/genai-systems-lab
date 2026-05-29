@@ -122,6 +122,34 @@ const RELATED_GT = {
   buildthis:   [{ id: "ai-system-design-framework", title: "AI System Design Framework" }],
 };
 
+function FidelityBadge({ variant = "simulated" }) {
+  if (variant === "accurate") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-emerald-700/60 bg-emerald-950/40 text-emerald-400 shrink-0">
+        ✓ Scenario-accurate
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700/50 bg-zinc-900/30 text-zinc-500 shrink-0">
+      ~ Simulated
+    </span>
+  );
+}
+
+// Modules with real logic-derived outcomes (not pre-scripted)
+const MODULE_FIDELITY = {
+  // Eval Lab
+  evals:               "accurate",
+  mlcicd:              "accurate",
+  "prompt-change-mgmt":"accurate",
+  router:              "accurate",
+  // LLM Lab
+  serving:             "accurate",
+  decoding:            "accurate",
+  inference:           "accurate",
+};
+
 export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, allowedModules, labTitle, labSubtitle, suggestedStart, suggestedLabel, suggestedNote }) {
   const visibleModules = allowedModules ? SYSTEMS_MODULES.filter(m => allowedModules.includes(m.id)) : SYSTEMS_MODULES;
   const [activeModule, setActiveModule] = useState(initialModule || (allowedModules ? allowedModules[0] : "evals"));
@@ -276,6 +304,10 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
             </button>
           </div>
         )}
+
+        <div className="flex items-center justify-end mb-1">
+          <FidelityBadge variant={MODULE_FIDELITY[activeModule] || "simulated"} />
+        </div>
 
         <ActiveComponent />
 

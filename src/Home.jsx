@@ -377,7 +377,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   onClick={() => { track("door_clicked", { door: "builder" }); onNavigate("lab"); }}
                   className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
                   style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.12) 0%, rgba(15,23,42,0.8) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "2px solid rgba(59,130,246,0.7)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.05) inset" }}>
-                  <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">Engineer</span>
+                  <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">BUILD</span>
                   <span className="text-sm font-bold text-white mb-2 leading-snug">I'm building with LLMs</span>
                   <span className="text-xs text-zinc-400 leading-relaxed flex-1">Configure a RAG pipeline and break it 6 ways. Move to agent loops, eval harnesses, LLM internals. No tutorials — just systems and why they fail.</span>
                   <span className="mt-4 text-xs font-bold text-blue-300 flex items-center gap-1">Start with RAG Lab <span className="text-blue-400">→</span></span>
@@ -386,7 +386,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
                   className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
                   style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(5,46,22,0.3) 100%)", border: "1px solid rgba(34,197,94,0.22)", borderTop: "2px solid rgba(34,197,94,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(34,197,94,0.04) inset" }}>
-                  <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-2">Interview Prep</span>
+                  <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-2">PROVE</span>
                   <span className="text-sm font-bold text-white mb-2 leading-snug">I'm prepping for interviews</span>
                   <span className="text-xs text-zinc-400 leading-relaxed flex-1">261 questions. Timed exam mode, instant-feedback trainer, or paste a JD and get a targeted drill weighted to your gaps.</span>
                   <span className="mt-4 text-xs font-bold text-green-300 flex items-center gap-1">Open Prep Lab <span className="text-green-400">→</span></span>
@@ -395,7 +395,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
                   className="flex flex-col items-start p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 text-left"
                   style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.12) 0%, rgba(46,16,101,0.2) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderTop: "2px solid rgba(139,92,246,0.65)", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.05) inset" }}>
-                  <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-2">Career / PM</span>
+                  <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-2">NAVIGATE</span>
                   <span className="text-sm font-bold text-white mb-2 leading-snug">I'm navigating my AI career</span>
                   <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, system design interviews — and a salary calculator with data by role and region.</span>
                   <span className="mt-4 text-xs font-bold text-violet-300 flex items-center gap-1">Try Salary Calculator <span className="text-violet-400">→</span></span>

@@ -81,7 +81,21 @@ This distinction matters for the README, GitHub description, home page copy, and
 
 ---
 
-## 0b. Distribution before features (standing rule, May 2026)
+## 0b. Primary user — AI Builder (decided May 2026)
+
+**The standing rule:** Every role this product serves is ultimately an AI Builder. ML engineers, AI engineers, agentic systems engineers, data scientists transitioning to AI, and AI PMs are all people who build, configure, debug, or make decisions about production AI systems. "AI Builder" is the single primary user.
+
+**Implication for product decisions:**
+- Content depth must match someone who is building or will build, not just learning about
+- Interview prep (PrepLab) earns its place because builders get hired — Prove is a phase of the AI Builder journey, not a separate user
+- Career + AIPM earns its place because builders navigate roles and lead products
+- Content that doesn't serve a builder making production decisions doesn't belong in the primary nav
+
+**What this rules out:** Passive learners who want GenAI literacy without building anything. The product is not for them. Content that panders to that audience (watch-this animations, listicle-style references) belongs in PARKED.md.
+
+---
+
+## 0c. Distribution before features (standing rule, May 2026)
 
 **The rule:** Before starting any major new feature sprint, check PostHog for WAU + module-completion funnel. If you don't know which modules real users visit and where they drop, you are building inventory with no demand signal.
 
@@ -289,4 +303,69 @@ These are the settled patterns for mobile layout. Apply consistently; do not inv
 **Touch targets:** All interactive buttons must have minimum `py-2.5` vertical padding. `py-1` and `py-1.5` on tappable buttons are below the 44×44px WCAG minimum. Decorative chips (non-interactive labels) are exempt.
 
 **Contrast at low brightness:** Do not use `text-zinc-600` or `text-zinc-700` for any readable text. `text-zinc-500` is the minimum for secondary text. `text-zinc-400` is the minimum for primary body text. This is enforced globally via CSS custom property remap in `index.css` (see sprint 8).
+
+---
+
+## 5. Navigation architecture — Build / Prove / Navigate (decided May 2026)
+
+### The three front doors
+
+Every AI Builder is in one of three modes when they open the product:
+
+- **Build** — configuring, debugging, learning production AI systems. RAG Lab, Agent Lab, Eval Lab, LLM Lab are all Build. This is the product's core and must be the dominant front door.
+- **Prove** — preparing to demonstrate competence under interview pressure. PrepLab is the Prove front door. (This is also a phase of the Builder journey, not a separate user type.)
+- **Navigate** — understanding career paths, role transitions, PM tracks. Career + AIPM are Navigate.
+
+### Primary nav — what stays
+
+| Group | Tabs |
+|---|---|
+| BUILD (4 Labs) | RAG Lab, Agent Lab, Eval Lab, LLM Lab |
+| PROVE | PrepLab |
+| NAVIGATE | Career, AI Product |
+| KNOWLEDGE | Concepts, Ground Truth |
+
+The KNOWLEDGE group is the foundation layer beneath all three front doors. Concepts and GT are not destinations in themselves — they are reached from Build (from lab modules) and from Prove (from PrepLab readMore links). But they remain in nav for direct access.
+
+A fifth nav item: **Progress** — three-lane view (Build progress, Prove progress, Concepts mastery). This replaces the scattered localStorage widgets currently spread across Home and ReturningHomeView.
+
+### What exits primary nav (hash-accessible, not surfaced)
+
+These tabs do not earn primary nav placement under the AI Builder + interactive decision engine standard. Components remain in code, accessible via `#hash`. They are NOT deleted.
+
+| Tab | Reason |
+|---|---|
+| Flows | Passive animations — anti-thesis of the interactive standard |
+| Fluency | Phrase bank without coherent identity — no clear builder use case |
+| Explore | Content absorbed into Build (labs cover it) — legacy destination |
+| Systems | Content accessible via Labs — legacy flat module list |
+| Agents | Content accessible via Agent Lab — legacy tab |
+| Playground | Useful experiments but not a primary entry point — accessible via Build labs or direct hash |
+| Learning Paths | Content exists but nav item is unfound — paths surface inline on Progress page instead |
+| Ask/Search | Useful but not a nav-level destination — surfaces as a search bar component inside GT |
+
+**The rule:** If a user who just arrived would not know what to do there, it doesn't belong in primary nav.
+
+### Home page — three front-door cards
+
+Home's primary hero block renders three cards: Build / Prove / Navigate. Each card has: a one-line outcome statement, the 1-2 tab names it leads to, and a primary CTA button. This replaces the current 6-card door grid which conflates all destinations at equal weight.
+
+### Content schema — required fields (Phase 4 enforcement)
+
+Every new module going forward must include:
+- `fidelityBadge`: `"scenario-accurate"` or `"simulated"` (renders as FidelityBadge component in module header)
+- `forwardPointer`: one GT post ID or PrepLab topic slug — single pointer, not a list
+
+Backfill of existing modules: see NEXT.md fidelity badges task.
+
+### Progress page — three lanes
+
+A dedicated Progress route (`#progress`) shows:
+- **Build lane:** per-lab scenario completion counts (from `genai_visited_modules`, `genai_leaderboard`)
+- **Prove lane:** PrepLab per-topic accuracy bars (from `gsl-preplab-history`) — same data as WeaknessHeatmap but framed as progress, not weakness
+- **Concepts lane:** gym mastery (from `gsl-concepts-mastery`) — same data as ReturningHomeView progress snapshot
+
+ReturningHomeView retains a compact version of this (3 quick stats + CTA to full Progress page). The full Progress page is the canonical view.
+
+*Structural rebuild history: LINEAGE.md sprint 22.*
 

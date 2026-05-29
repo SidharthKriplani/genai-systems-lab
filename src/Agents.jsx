@@ -1,6 +1,28 @@
 import { useState, useEffect, useMemo } from "react";
 import HowTo from "./HowTo";
 
+// ─── FIDELITY BADGE ───────────────────────────────────────────────────────────
+function FidelityBadge({ variant = "simulated" }) {
+  if (variant === "accurate") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-emerald-700/60 bg-emerald-950/40 text-emerald-400 shrink-0">
+        ✓ Scenario-accurate
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700/50 bg-zinc-900/30 text-zinc-500 shrink-0">
+      ~ Simulated
+    </span>
+  );
+}
+
+const AGENT_FIDELITY = {
+  agentcfg:   "accurate",
+  simulator:  "accurate",
+  design:     "accurate",
+};
+
 // ─── REACT PATTERN ────────────────────────────────────────────────────────────
 
 const REACT_STEPS = [
@@ -3631,6 +3653,10 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
               style={{ background: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)", boxShadow: "0 0 12px rgba(59,130,246,0.35)" }}>Start →</button>
           </div>
         )}
+
+        <div className="flex items-center justify-end mb-1">
+          <FidelityBadge variant={AGENT_FIDELITY[activeModule] || "simulated"} />
+        </div>
 
         <ActiveComponent onNavigate={onNavigate} />
 
