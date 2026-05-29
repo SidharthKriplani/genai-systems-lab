@@ -2,17 +2,23 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 22)*
+*Last updated: May 2026 (post sprint 23)*
 
 ---
 
 ## Theme: Close the loops users already opened. Surface progress clearly.
 
-Sprint 22 structural overhaul complete (Build/Prove/Navigate). Product now has shape. This session: remaining interactive improvements that directly affect the learn loop.
+Sprint 22 structural overhaul complete (Build/Prove/Navigate). Sprint 23 visual redesign complete (CSS vars, collapsible sidebar, home hierarchy, lab shell parity). This session: interactive improvements that directly affect the learn loop.
 
 ---
 
 ## Do this (in order)
+
+**Done this session (sprint 23):**
+- ~~CSS variables~~ → `--gal-build/prove/navigate/knowledge` added to `index.css`. NAV_GROUPS use `var()`. Commit `b5b4d2e`.
+- ~~Sidebar collapse~~ → `collapsedGroups` + chevron + item-count badge. Desktop + mobile. Commit `b5b4d2e`.
+- ~~Home hierarchy~~ → BUILD full-width dominant card with 4 lab pills. PROVE+NAVIGATE secondary row. Stats row removed. Commit `b5b4d2e`.
+- ~~Lab shell consistency~~ → RAG Lab sidebar header promoted (text-base). `ragDone` + progress bar. Eval Lab gets GT chip. Commit `b5b4d2e`.
 
 **Done this session (sprint 22):**
 - ~~Fidelity badges on Lab modules~~ → FidelityBadge added to App.jsx, Agents.jsx, Systems.jsx. Commit `8578457`.
@@ -30,19 +36,7 @@ Fix:
 - Brace check after. Diff must be 0.
 See: UPGRADES.md → "RAG Lab — Done Card Prominence"
 
-**2. Sidebar — collapse sparse groups, remove dead space** `S effort` `HIGH`
-PAL's sidebar is tight because it uses collapsible section groups with no padding waste. Ours has fixed-height nav groups that leave dead zones, especially PROVE (1 entry) and NAVIGATE (2 entries).
-File: `src/App.jsx` — nav sidebar component, `NAV_GROUPS` constant and sidebar rendering.
-Fix:
-- Add per-group collapse state (`useState` per group ID, default open). A chevron icon on each group header toggles it.
-- When collapsed, the group header shows with a small item-count badge and nothing else — zero gap below.
-- Tighten sidebar item `py` from whatever it currently is to `py-2` minimum. Group headers: `py-1.5 px-3`.
-- Remove any hardcoded `min-height` or spacer divs between groups.
-- Check on mobile too — the mobile bottom nav bar should not be affected by this change.
-- Brace check after. Diff must be 0.
-Source: PAL comparison, May 2026
-
-**3. Concepts Gym — inline progress view + "next module" CTA** `S-M effort` `MEDIUM`
+**2. Concepts Gym — inline progress view + "next module" CTA** `S-M effort` `MEDIUM`
 PAL's Progress page shows per-room completion bars and a guided path with a named "NEXT" marker. Our Concepts Gym has the data (mastery set in localStorage, gym structure in GYMS constant) but no dedicated progress view. A returning user has no clear signal of where to go next within a gym.
 File: `src/Concepts.jsx` — `GymRoomView` and/or a new `GymProgressView` component.
 Fix:
@@ -53,7 +47,7 @@ Fix:
 - Brace check after. Diff must be 0.
 Source: PAL comparison, May 2026
 
-**4. PrepLab — Keyboard shortcuts** `S effort` `LOW-MEDIUM`
+**3. PrepLab — Keyboard shortcuts** `S effort` `LOW-MEDIUM`
 Every MCQ answer requires a mouse click. 1/2/3/4 to select + Enter to confirm is standard for any quiz tool. Power users on a study loop notice the friction immediately.
 File: `src/PrepLab.jsx` — ExamMode and TrainerMode components.
 Fix:
