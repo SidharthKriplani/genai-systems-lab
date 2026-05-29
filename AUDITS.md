@@ -1949,3 +1949,38 @@ All four adaptation items documented in:
 **Standing rule added:** One accent color in navigation chrome. No competing accent colors in sidebar group labels, module type badges, or scenario card accents. Semantic/chart/status colors exempt.
 
 **Status:** ✅ Resolved — commits `1b972b4`, `36a4360`, `9fce4d3`.
+
+---
+
+## Audit 42 — Concepts Gym Depth Pass: Sprint 28 (May 2026)
+
+**Type:** Content Integrity + Interactive Standard
+**Date:** May 2026 (sprint 28)
+**Trigger:** Concepts modules had framing text (sprint 14) and gym skeleton (sprint 15) but most interactive tabs were single-view — no failure modes, no configurability beyond the primary mechanic, no connection between module concept and production consequence.
+
+**Modules audited:** All 15 Concepts modules across Language Models, Retrieval, and AI Agents gyms.
+
+**Finding:** 4 modules had interactive depth gaps that blocked the standard "configure → observe → understand" loop:
+
+| Module | Gap | Fix |
+|---|---|---|
+| `TemperatureGame` | Shows game + output matching, but no real logit/probability visualization. User has no intuition about WHY temperature changes output distribution | Added "Live Logit Shaper" tab: real-time softmax on 3 example prompts (factual/contested/creative), temperature slider 0.1→2.0, 8-token probability bar chart, entropy readout with adaptive label |
+| `RAGPipelineModule` | "Walk the Pipeline" tab only. No failure modes shown — user sees what RAG does but never sees how it breaks | Added "What Breaks" tab: 3 production failure scenarios (stale retrieval, noise injection via top_k, context grounding failure). Each: trigger + normal vs broken context + "Inject failure" button revealing output comparison + diagnosis + production fix |
+| `FlashAttentionConcept` | Memory calculator (VRAM comparison) only. No dynamic visualization of WHY tiling reduces HBM writes | Added "Tile Traversal" tab: animated 5×5 tile grid (350ms/step), Play/Pause/Step/Reset controls, SRAM panel showing active tile + HBM write counter, online softmax callout |
+| `EmbeddingModule` | Semantic map (static 2D word plot) only. No connection to how embeddings power retrieval | Added "Similarity Search" tab: 5 preset query anchors, top-k slider 1→12, cosine similarity ranked results with category badges + score bars, noise warning at top_k > 6 |
+
+**All brace diffs:** 0. Commit: `7f0a88d`.
+
+**New constants added:**
+- `LOGIT_EXAMPLES` — 3 prompts with token arrays + raw logits (module-level, before FlashAttentionConcept)
+- `computeSoftmax(logits, temp)` — softmax with temperature scaling (module-level helper)
+- `RAG_FAILURE_SCENARIOS` — 3 production failure objects with trigger/normal/broken/output/diagnosis/fix (inside RAGPipelineModule)
+- `EMB_QUERIES` — 5 preset query anchors with 2D coordinates for cosine similarity search (module-level)
+
+**New state added per module:**
+- TemperatureGame: `tempTab`, `shaperExIdx`, `shaperTemp` + `shaperProbs` (useMemo), `shaperEntropy`
+- RAGPipelineModule: `ragTab`, `activeFailure`, `failureTriggered`
+- FlashAttentionConcept: `flashTab`, `traversalStep`, `isPlaying`, `traversalRef` (useRef) + `useEffect` interval
+- EmbeddingModule: `embTab`, `queryIdx`, `topK` (renamed `setEmbTopK`) + `searchResults` (useMemo)
+
+**Status:** ✅ All 4 gaps resolved. Remaining Concepts modules (ContextWindow, Attention, Tokenizer, AgentLoop, etc.) were upgraded in sprints 26 and earlier — this sprint closes the last 4 depth gaps in the active 15.

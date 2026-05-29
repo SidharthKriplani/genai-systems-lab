@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: May 2026 | Current scale: 54 Systems modules (in nav), 25 Explore, 16 Agent Lab, 261 PrepLab questions, 222 GT posts*
+*Last updated: May 2026 (post sprint 28) | Current scale: 54 Systems modules (in nav), 22 Explore, 16 Agent Lab, 15 Concepts, 261 PrepLab questions, 222 GT posts*
 
 ---
 

@@ -122,6 +122,10 @@ These are high-value signals not yet tracked:
 | PrepLab wrong-answer topics | Which topic areas have the lowest correct rate |
 | Time-on-module | Proxy for engagement depth |
 | OG referrer (whatsapp / linkedin / twitter) | Know which sharing channel drives traffic |
+| `concepts_tab_switched` | Which tabs inside Concepts modules get used — e.g. "Live Logit Shaper" vs "Match the Output" in TemperatureGame. Signals which interactive types land best |
+| `concepts_failure_injected` | When user clicks "Inject failure" in RAGPipelineModule "What Breaks" tab. High-intent action indicating deep engagement |
+| `concepts_traversal_played` | When user clicks Play in FlashAttentionConcept tile traversal. Tracks animation-based learning engagement |
+| `concepts_similarity_queried` | When user changes query in EmbeddingModule similarity search tab. Tracks search exploration depth |
 
 ---
 

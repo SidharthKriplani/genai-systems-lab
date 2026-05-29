@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: May 2026 (post sprint 24)*
+*Last updated: May 2026 (post sprint 28)*
 
 ---
 
@@ -424,19 +424,23 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 **Sprint 17 progress:** GYMS expanded to 14 rooms. 9 new coming-soon rooms added: Foundation Models, Prompt Engineering, Cloud AI Services, Vector Infrastructure, Observability & Tracing, Multimodal AI, AI Safety & Alignment, AI Product Strategy, Data for AI. Each fully described with color + lab pointer. Commit `a43fffe`.
 
+**Sprint 26 progress:** AttentionModule rebuilt as 3-tab QKV interactive (QKV Breakdown slider + Softmax Heatmap + Multi-Head Patterns). TokenizerModule BPE Algorithm tab added. ContextWindowModule "Lost in the Middle" recall heatmap tab added. Commit `86c943e`.
+
+**Sprint 28 progress:** 4 more module depth upgrades shipped (Audit 42). TemperatureGame: "Live Logit Shaper" tab — real-time softmax on 3 prompts, temperature slider, entropy readout. RAGPipelineModule: "What Breaks" tab — 3 production failure scenarios with failure injection + diagnosis. FlashAttentionConcept: "Tile Traversal" tab — animated 5×5 tile grid, Play/Pause/Step/Reset, HBM write counter. EmbeddingModule: "Similarity Search" tab — 5 preset queries, top-k slider, cosine similarity ranked results. Commit `7f0a88d`. All brace diffs: 0.
+
 **Remaining for all 15 modules (future pass):**
 - **Inline callouts** — annotations tied to specific interactive states (e.g. "When temperature hits 0 you're always picking the top token — this is why outputs become repetitive.")
 - **Synthesis close** — 1–2 sentences after the interactive: what this means for real system design decisions.
 
 **Target per module (full pass):** ~150–300 words across 3 beats: setup framing → inline callouts → synthesis close.
 
-**Effort:** L (multi-session, 15 modules × 2 beats each)
+**Effort:** M (most modules now have 2+ interactive tabs; remaining work is callout text + synthesis close)
 
 **Dependencies:** None — pure writing + JSX injection.
 
 **Priority:** High — Concepts is in primary nav. Beginners will land here.
 
-**Status:** In Progress — 15/15 framing texts done, gym skeleton shipped. Remaining: inline callouts + synthesis close pass (full 3-beat upgrade)
+**Status:** In Progress — 15/15 framing texts done, gym skeleton shipped, depth pass 60% done (4 modules upgraded in sprint 28, 3 in sprint 26). Remaining: inline callouts + synthesis close pass for modules not yet upgraded.
 
 ---
 

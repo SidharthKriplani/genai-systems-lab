@@ -22,7 +22,7 @@
 <br/>
 
 ```
-14 tabs  ·  150+ modules  ·  222+ posts  ·  261+ PrepLab questions  ·  zero backend  ·  no login
+15 Concepts modules  ·  16 Agent Lab modules  ·  54 Systems modules  ·  222+ posts  ·  261+ PrepLab questions  ·  zero backend  ·  no login
 ```
 
 </div>
@@ -35,7 +35,7 @@ The answer is wrong. Nobody catches it until the complaint arrives.
 
 **This lab teaches you to catch it before it ships.**
 
-Five curated RAG failure scenarios. Inference bottleneck diagnosis. Agent loop step-through. Eval design. MCP protocol. Context compaction. 150+ production systems modules. 222+ Ground Truth posts. 261+ PrepLab questions. All interactive. All in your browser. No account, no backend, no cost.
+Six curated RAG failure scenarios. Inference bottleneck diagnosis. Agent loop step-through. Eval design. MCP protocol. Context compaction. 150+ production systems modules. 222+ Ground Truth posts. 261+ PrepLab questions. All interactive. All in your browser. No account, no backend, no cost.
 
 → [**Open the lab**](https://genai-systems-lab-ivory.vercel.app)
 
@@ -68,10 +68,10 @@ Not a video. Not a blog post. Not a quiz. You make a configuration decision, the
 | Tab | Modules | What you'll find |
 |-----|---------|-----------------|
 | 🏠 **Home** | — | Start Here journey, learning paths, progress tracking, module map |
-| 🧠 **Concepts** | 11 | Tokenizer, Embeddings, Attention, Transformer, Chunking, Sampling, Context Window, Agent Loop, Guardrails, Debug RAG, Multi-Agent — interactive diagrams, sliders, credibility badges |
+| 🧠 **Concepts** | 15 | Tokenizer (BPE), Embeddings, Attention (QKV+heatmap), Transformer, Chunking, Sampling, Context Window, Agent Loop, Guardrails, Debug RAG, Multi-Agent, Flash Attention, Next Token, Temperature, Context Compaction — interactive diagrams, sliders, credibility badges |
 | 🌊 **Flows** | 6 | Animated pipelines: RAG, Agent Loop, Context Window, Guardrail Pipeline, Transformer Block, RAG Architectures (Hybrid / CRAG / Agentic) |
-| 🔬 **RAG Lab** | 5 scenarios | Production failure simulator — stale retrieval, hallucination, prompt injection, context overflow, multi-hop. Configure → observe → diagnose. Junior→Staff tiered scoring |
-| 🤖 **Agents** | 7 | ReAct Pattern, Tool Use Design + MCP Protocol, Agent Memory, Multi-Agent Patterns, Failure Modes, Planning Patterns, Loop Simulator |
+| 🔬 **RAG Lab** | 6 scenarios | Production failure simulator — stale retrieval, hallucination, prompt injection, context overflow, multi-hop, prompt injection via retrieval. Configure → observe → diagnose. Junior→Staff tiered scoring |
+| 🤖 **Agents** | 16 | ReAct Pattern, Tool Use Design + MCP Protocol, Agent Memory, Multi-Agent Patterns, Failure Modes, Planning Patterns, Loop Simulator, AgentConfigLab, LangSmith Tracing, and more |
 | ⚙️ **Systems** | 37+ | Evals, Eval Frameworks, Model Strategy, Cost/Latency, Fine-Tuning, India Scale, Prompt Caching, Model Router, Inference Optimizer, Context Compaction, Incident Room, Observability, A/B Testing, ML CI/CD, Debug Traces, Speculative Decoding, Streaming Patterns, Constrained Generation, Model Merging, and more |
 | 🛝 **Playground** | 5 | Injection attacks, chunking comparison, reranker, hallucination spotting, bias detection + 30-entry prompt library |
 | 🔭 **Explore** | 14 | Embedding Space, Shadow A/B, Latency Planner, Tokenizer Explorer, Model Card Reader, Vector DB Comparison, Structured Outputs, Red Teaming Lab, Embedding Model Selection + LLM Comparison Matrix |
@@ -79,17 +79,19 @@ Not a video. Not a blog post. Not a quiz. You make a configuration decision, the
 | 📋 **AI Product** | 5 | PRD simulator, roadmap prioritizer, stakeholder explainer, launch checklist, AI-or-not? decision framework |
 | 🚀 **Career** | 5 | System design interviews, take-home challenges, negotiation flashcards, benchmark literacy |
 | 💡 **Ask** | — | Consultation space — keyword search over 222+ posts + all module descriptions. Conversational UI. LLM-upgrade-ready |
-| 📝 **PrepLab** | 3 modes | Assessment (timed exam, 15/30/60 min), Trainer (immediate feedback + weak topic tracking), JD Prep (paste JD → skill gap → targeted drill) |
+| 📝 **PrepLab** | 5 modes | Assessment (timed exam, 15/30/60 min), Trainer (immediate feedback + weak topic tracking), Interview Prep Plan (paste JD → 11 skills → gap drill → gated study plan), Weakness Heatmap, Company Tracks |
 
 ---
 
 ## PrepLab — what makes it different
 
-**Assessment Mode:** Timed exam (15/30/60 min). 261+ questions across 8 skill categories. Scores hidden until end — final reveal shows per-category breakdown and "Strong in / Needs work" callout.
+**Assessment Mode:** Timed exam (15/30/60 min). 261+ questions across 11 skill categories. Scores hidden until end — final reveal shows per-category breakdown and "Strong in / Needs work" callout.
 
-**Trainer Mode:** Immediate feedback after each answer. Optional speech input (Web Speech API). Tracks weak topics. Session summary with "Study these next" recommendations.
+**Trainer Mode:** Immediate feedback after each answer. Tracks weak topics. Session summary with "Study these next" recommendations.
 
-**JD Prep Mode:** Paste a job description → keyword extraction against 8 skill categories → skill gap analysis vs your resume → 20-question targeted drill weighted by your gaps → Interview Readiness Score.
+**Interview Prep Plan:** Paste a job description → keyword extraction against 11 skill categories → self-rating questionnaire → gap-weighted 20-question drill → Interview Readiness Score. Phase 4 gated study plan after 30% completion.
+
+**Weakness Heatmap:** Per-topic accuracy bars sorted worst-first. Most-missed questions view.
 
 Not available anywhere else for this audience, for free.
 
@@ -133,7 +135,7 @@ Three tiers, shown as a badge on every Concepts and Explore module:
 A user should never mistake a 2D embedding visualization for actual Claude attention geometry. The badge prevents that.
 
 **📂 RAG Lab scenarios — drawn from real production failures**
-The five failure cases (stale retrieval, hallucination, prompt injection, context overflow, multi-hop failure) are not invented for pedagogy. Each maps to a documented failure pattern in production RAG deployments. The configs, metric scores, and failure explanations reflect how these systems actually break.
+The six failure cases (stale retrieval, hallucination, prompt injection, context overflow, multi-hop failure, prompt injection via retrieval) are not invented for pedagogy. Each maps to a documented failure pattern in production RAG deployments. The configs, metric scores, and failure explanations reflect how these systems actually break.
 
 **🧠 HowTo-first module design**
 Every module opens with a `HowTo` component: what skill you're building, what the steps are. Never more than 3 steps. The learning objective is set before any interaction begins.
@@ -220,9 +222,9 @@ Requires Node 18+. No environment variables. No API keys. No backend setup.
 src/
 ├── App.jsx                  # Root — nav, routing, ⌘K search, challenge log, what's new
 ├── Home.jsx                 # Hero, Start Here journey, learning paths, about section
-├── Concepts.jsx             # 11 concept modules with fidelity tags
+├── Concepts.jsx             # 15 concept modules with fidelity tags — gym-based progression
 ├── Flows.jsx                # 6 animated pipeline diagrams incl. RAG Architectures
-├── Agents.jsx               # Agents tab — 15 modules + AGENTS_RELATED_GT map
+├── Agents.jsx               # Agent Lab — 16 modules + AGENTS_RELATED_GT map
 ├── Systems.jsx              # Systems tab shell + SYSTEMS_MODULES registry
 ├── systems/
 │   └── modules.jsx          # All 48+ Systems module components
@@ -234,7 +236,7 @@ src/
 ├── GroundTruth.jsx          # GT post renderer — ELI5, search, reactions, quiz-me
 ├── groundTruthIndex.js      # Post metadata + related[] arrays
 ├── groundTruthPosts.js      # All 200+ post content as typed block arrays
-├── PrepLab.jsx              # Assessment exam, Trainer mode, JD+resume prep (200+ questions)
+├── PrepLab.jsx              # Assessment exam, Trainer mode, Interview Prep Plan, Heatmap (261+ questions)
 ├── LearningPaths.jsx        # 6 curated multi-tab learning paths
 ├── Consultation.jsx         # Ask tab — keyword retrieval over all posts + modules
 └── analytics.js             # PostHog event tracking (fails silently if unconfigured)

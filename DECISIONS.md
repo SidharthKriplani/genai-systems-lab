@@ -186,7 +186,7 @@ There's a second origin underneath that one: the lab was built because LinkedIn 
 
 ### Unified question bank (PrepLab)
 
-**Decision:** PrepLab.jsx contains a self-contained 57-question bank rather than importing from all other tab files. Each question has: topic, difficulty, type (mcq|text), options, correct index, explanation, readMore link.
+**Decision:** PrepLab.jsx contains a self-contained 261+ question bank rather than importing from all other tab files. Each question has: topic, difficulty, type (mcq|text), options, correct index, explanation, readMore link.
 
 **Why:** Cross-file imports across 8 files would create tight coupling and make the question bank hard to maintain. A single self-contained bank is simpler and LLM-upgrade-friendly (swap the scorer, not the data).
 
@@ -204,13 +204,17 @@ There's a second origin underneath that one: the lab was built because LinkedIn 
 
 **PrepLab** was added to the GROW group. Three modes: timed assessment exam (15/30/60 min), trainer with immediate feedback, and JD+resume gap analysis with targeted drill.
 
-### PrepLab — three modes
+### PrepLab — modes
 
 **Assessment Mode:** 15/30/60 min timed exam. All scores hidden until end. Final reveal: total score, per-category breakdown, "Strong in / Needs work" callout, wrong-answer review.
 
-**Trainer Mode:** Same question bank, immediate feedback after each answer. Optional speech input via Web Speech API (Chrome). Tracks weak topics. Session summary with "Study these next" recommendations.
+**Trainer Mode:** Same question bank, immediate feedback after each answer. Tracks weak topics. Session summary with "Study these next" recommendations.
 
-**JD Prep Mode:** Paste JD → keyword extraction against 8 skill categories → skill gap vs pasted resume → 20-question targeted drill weighted by gaps → Interview Readiness Score.
+**Interview Prep Plan (formerly "JD Prep Mode"):** Paste JD → keyword extraction against 11 skill categories → self-rating questionnaire (Weak/Okay/Strong per flagged skill) → gap-weighted 20-question drill → Interview Readiness Score. Phase 4 gated study plan shows after 30% completion.
+
+**Weakness Heatmap:** Reads `gsl-preplab-history` — shows per-topic accuracy bars sorted worst-first, plus "Hard Questions" view of most-missed questions. Data source for all modes.
+
+**Company Tracks:** Role-specific question sets weighted to company archetype's known interview patterns. Gated.
 
 **Speech support:** `window.SpeechRecognition || window.webkitSpeechRecognition` — if available, mic button appears. Transcribed text fills the answer field. Degrades gracefully to text input.
 
@@ -227,7 +231,7 @@ Every module opens with a `HowTo` component: what skill you're building, what th
 
 ### RAG Lab as the flagship module
 
-Five production failure scenarios (stale retrieval, hallucination, prompt injection, context overflow, multi-hop). Each scenario has 6-8 configs with detailed failure explanations and system design lessons. Most differentiated content in the app.
+Six production failure scenarios (stale retrieval, hallucination, prompt injection, context overflow, multi-hop, prompt injection via retrieval). Each scenario has 6-8 configs with detailed failure explanations and system design lessons. Most differentiated content in the app.
 
 ### Challenge Log (not "Leaderboard")
 
