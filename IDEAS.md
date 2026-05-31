@@ -69,19 +69,20 @@ Sprint items (in order of impact):
 
 ## 🔨 In Progress
 
-Items actively being built in the current or most recent session. Move here when you start, move to Tier 1 (struck through) when done.
+Nothing actively in progress. Last completed sprint: sprint 30 (4 items — RAG Lab done card reorder, Concepts Gym progress bar, PrepLab keyboard shortcuts, EvalLoopModule). See CLAUDE.md session build log for details.
 
-**UI Polish Sprint (May 2026)** ✅ *Complete.* — Completed: Inter font, hero glow + gradient headline, door cards with full gradients/shadows, stats with gradient text, testimonials with colored borders, RAG Lab sidebar/config/results, GT browser cards + header + filter pills, Systems/Agents right-panel breathing room, GT reading experience (body 15px/1.8lh, h2/h3 upgraded, quote border uses post color).
+---
 
-## 🎯 Next Polish Items (do in order)
+## Visual Polish backlog (carry-forward from UI sprint, May 2026)
 
-- **Consistent module headers** (Tier 1) — every module in modules.jsx renders its own ad-hoc title block. Need a standard: title, group tag, difficulty badge, estimated time. Build a `ModuleHeader` component in modules.jsx, apply to top 10 most-visited modules first.
-- **Explore tab module cards** (Tier 1) — 25 modules in a flat grid. Apply same card treatment as Home door cards: colored top border by group, hover lift, gradient bg. Change is in Explore.jsx.
-- **PrepLab question experience** (Tier 1) — question card, correct/wrong states, progress indicator all functional but visually flat. The moment of answering should feel satisfying — green flash for correct, explanation card with depth, progress bar that feels earned.
-- **Loading/skeleton states** (Tier 2) — Suspense fallback is four gray divs. Build a skeleton that matches the sidebar+content layout.
-- **Series cards depth in GT** (Tier 2) — series cards already have top accent line but background is flat. Apply same gradient card treatment.
-- ~~**Mobile bottom nav tray content**~~ ✅ *Obsolete — bottom nav replaced with left drawer in sprint 8.*
-- **RAG Lab HowTo block** (Tier 3) — the HowTo component at the top of RAG Lab is informational text. Could be replaced with a more visual onboarding strip (numbered steps with icons) that collapses after first visit.
+The UI Polish sprint completed font, glow system, door cards, GT browser, and reading experience. These items were identified as the next layer but not yet started. All are non-breaking cosmetic improvements.
+
+- **Consistent module headers** (Tier 1) — every module in `systems/modules.jsx` renders its own ad-hoc title block. Standardise: `ModuleHeader` component with title, group tag, difficulty badge, estimated time. Apply to top 10 most-visited modules first. `Effort: S`
+- **Explore tab module cards** (Tier 1) — 25 modules in a flat grid. Apply card treatment matching Home door cards: colored top border by group, hover lift, gradient bg. `File: Explore.jsx` `Effort: S`
+- **PrepLab question experience** (Tier 1) — question card, correct/wrong states, progress indicator all functional but visually flat. Green flash for correct, explanation card with depth, progress bar that feels earned. `File: PrepLab.jsx` `Effort: S-M`
+- **Series cards depth in GT** (Tier 2) — series cards have top accent line but background is flat. Apply same gradient card treatment as door cards. `File: GroundTruth.jsx` `Effort: XS`
+- **Loading/skeleton states** (Tier 2) — Suspense fallback is four gray divs. Build a skeleton that matches sidebar+content layout. `Effort: S`
+- **RAG Lab HowTo block** (Tier 3) — HowTo component at RAG Lab top is informational text. Could be a visual onboarding strip (numbered steps with icons) that collapses after first visit. `File: App.jsx` `Effort: S`
 
 ---
 

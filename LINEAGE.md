@@ -138,4 +138,8 @@ Core insight: most GenAI learning resources are either too academic (papers, tex
 
 ---
 
-*Last updated: May 2026 (sprint 30)*
+| May 2026 post-sprint 30 | No code shipped. Field intelligence logging + MD staleness sweep. Four practitioner posts assessed: Microsoft RAG interview (bi-encoder vs cross-encoder gap → Tier 1 IDEAS cluster); Qwen3.6 local inference (agentic latency bottleneck → Tier 2 cluster); Gumroad/Etsy builder (early revenue experiment → freemium section); Senior AI Engineer interview (Graph RAG + LangGraph/HITL → Tier 1 clusters). All MD files synced to sprint 30. NEXT.md Pending expanded with 3 new items. Commits: `0681ee4`, `43cfb08`. Scale: unchanged. |
+
+---
+
+*Last updated: May 2026 (post sprint 30)*
