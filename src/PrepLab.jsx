@@ -1117,6 +1117,8 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
     catch { return {}; }
   });
   const [weakOnly, setWeakOnly] = useState(false);
+  const [viewMode, setViewMode] = useState("drill"); // "drill" | "browse"
+  const [expandedId, setExpandedId] = useState(null);
 
   function recordAnswer(questionId, correct) {
     recordHistory(questionId, correct);
@@ -1143,6 +1145,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
     setAnswer("");
     setSubmitted(false);
     setIsCorrect(false);
+    setExpandedId(null);
   }, [groupFilter, diffFilter, weakOnly]);
 
   // Keyboard shortcuts: 1-4 selects MCQ option; Enter submits or advances
@@ -1239,9 +1242,19 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
       <div className="max-w-2xl mx-auto space-y-5">
         <div className="flex items-center justify-between">
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
-          <span className="text-sm text-zinc-500">{current + 1} / {questions.length}</span>
+          <div className="flex items-center gap-0.5 p-0.5 rounded-lg" style={{ background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.7)" }}>
+            {["drill", "browse"].map(vm => (
+              <button key={vm} onClick={() => setViewMode(vm)}
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${viewMode === vm ? "bg-zinc-100 text-zinc-900" : "text-zinc-400 hover:text-white"}`}>
+                {vm === "drill" ? "Drill" : "Browse"}
+              </button>
+            ))}
+          </div>
+          <span className="text-sm text-zinc-500">
+            {viewMode === "drill" ? `${current + 1} / ${questions.length}` : `${questions.length}q`}
+          </span>
         </div>
-        <PBar value={current} max={questions.length} />
+        {viewMode === "drill" && <PBar value={current} max={questions.length} />}
         {/* Filters */}
         <div className="space-y-3">
           {/* Topic group tiles */}
@@ -1327,7 +1340,77 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
           <div className="bg-zinc-900 rounded-xl p-8 border border-zinc-800 text-center text-zinc-500 text-sm">
             No questions match these filters. Try a different topic or difficulty.
           </div>
+        ) : viewMode === "browse" ? (
+          // ── BROWSE MODE ──────────────────────────────────────────────────
+          <div className="space-y-1.5">
+            {questions.map(bq => {
+              const isExp = expandedId === bq.id;
+              const diffColor = bq.difficulty === "hard" ? "#ef4444" : bq.difficulty === "medium" ? "#f59e0b" : "#3b82f6";
+              const bqGroup = TOPIC_GROUPS.find(g => g.topics.includes(bq.topic))?.id || "all";
+              return (
+                <div key={bq.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderLeft: `3px solid ${diffColor}40` }}
+                  className="rounded-xl overflow-hidden">
+                  {/* Row header — always visible */}
+                  <button className="w-full text-left px-4 py-3 flex items-start gap-3"
+                    onClick={() => setExpandedId(isExp ? null : bq.id)}>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm text-zinc-200 leading-snug ${!isExp ? "line-clamp-2" : ""}`}>{bq.question}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                      <TopicChip topic={bq.topic} />
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                        bq.difficulty === "hard" ? "bg-red-950/50 text-red-400 border border-red-800/40"
+                        : bq.difficulty === "medium" ? "bg-amber-950/50 text-amber-400 border border-amber-800/40"
+                        : "bg-blue-950/50 text-blue-400 border border-blue-800/40"
+                      }`}>{bq.difficulty[0].toUpperCase()}</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                        className={`text-zinc-600 transition-transform duration-150 ${isExp ? "rotate-180" : ""}`}>
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </div>
+                  </button>
+                  {/* Expanded answer */}
+                  {isExp && (
+                    <div className="px-4 pb-4 space-y-3 border-t border-zinc-800/50">
+                      {bq.type === "mcq" ? (
+                        <div className="space-y-1.5 pt-3">
+                          {bq.options.map((opt, i) => (
+                            <div key={i} style={i === bq.correct
+                              ? { background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.35)" }
+                              : { background: "rgba(39,39,42,0.5)", border: "1px solid rgba(63,63,70,0.5)" }}
+                              className="flex items-start gap-2.5 px-3 py-2 rounded-lg">
+                              <span className={`text-[10px] font-mono font-bold shrink-0 mt-0.5 ${i === bq.correct ? "text-emerald-400" : "text-zinc-500"}`}>{String.fromCharCode(65 + i)}</span>
+                              <span className={`text-sm flex-1 ${i === bq.correct ? "text-emerald-300 font-medium" : "text-zinc-400"}`}>{opt}</span>
+                              {i === bq.correct && <span className="text-emerald-500 text-xs shrink-0">✓</span>}
+                            </div>
+                          ))}
+                        </div>
+                      ) : bq.keywords && bq.keywords.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 items-center pt-3">
+                          <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mr-1">Key concepts:</span>
+                          {bq.keywords.map(k => (
+                            <span key={k} style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }}
+                              className="text-xs text-indigo-300 px-2 py-0.5 rounded-full">{k}</span>
+                          ))}
+                        </div>
+                      ) : null}
+                      <p className="text-sm text-zinc-400 leading-relaxed">{bq.explanation}</p>
+                      {bq.trap && <CommonTrapCallout trap={bq.trap} />}
+                      {bq.source && <p className="text-[10px] text-zinc-500 font-mono">Source: {bq.source}</p>}
+                      <button
+                        onClick={() => { setGroupFilter(bqGroup); setViewMode("drill"); setExpandedId(null); setCurrent(0); }}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:brightness-125"
+                        style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
+                        Drill this topic →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         ) : (
+          // ── DRILL MODE ───────────────────────────────────────────────────
           <>
             <div className="relative">
               <QuestionCard q={q} />

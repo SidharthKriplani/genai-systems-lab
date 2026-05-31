@@ -6,17 +6,30 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Theme: PrepLab Sprint E — Interview Strategy full rebuild
+## Theme: PrepLab — List View + Sprint E
 
-Sprints A, B, C, D shipped. Sprint E is the next unblocked item. Interview Strategy currently runs the InterviewPrepMode (JD → gap drill → Phase 4 gate). Sprint E rebuilds it into a full defense doc / day plan tool.
+Two items, in order. List View is S-M effort and unblocks the cramming use case immediately. Sprint E is L effort.
 
 ---
 
 ## Do this (in order)
 
-**1. PrepLab Sprint E — Interview Strategy full rebuild** `L effort` `HIGH`
+**1. TrainerMode — Browse/List View** `S effort` `HIGH`
 
-What: `InterviewPrepMode` in `src/PrepLab.jsx` (mode: "jdprep") is the current stub. Rebuild as a 5-step flow:
+What: TrainerMode currently forces one-at-a-time card flow. Anyone who comes to cram (interview tomorrow, scanning for gaps) has no way to see all questions at once. Add a view toggle.
+
+Implementation:
+- Add `viewMode` state (`"drill"` | `"browse"`) to TrainerMode
+- Add a toggle pill in the TrainerMode header: "Drill" | "Browse"
+- Browse mode renders all filtered questions as a scrollable list
+- Each row: left difficulty accent bar (red/amber/blue), truncated question text (~2 lines), topic chip, difficulty badge
+- Clicking a row expands it as an accordion: full question text, MCQ options with correct answer highlighted green (or open answer keywords), explanation block, `CommonTrapCallout` if `q.trap`, source line if `q.source`
+- Expanded rows have a "Drill this topic →" button that switches to drill mode with that topic group pre-filtered
+- Keep existing groupFilter + diffFilter chips — they work the same in both modes
+
+**2. PrepLab Sprint E — Interview Strategy full rebuild** `L effort` `HIGH`
+
+What: `InterviewPrepMode` in `src/PrepLab.jsx` (mode: "jdprep") is the current 3-phase stub. Rebuild as a 5-step flow:
 
 - Step 1: JD paste + company name (existing, keep)
 - Step 2: Role type selector (ML Engineer / AI Engineer / AI PM / Research Scientist)
@@ -45,11 +58,12 @@ Implementation notes:
 - ~~**PrepLab Sprint B**~~ — DONE (`73924a0`). Extracted PREP_QUESTIONS to `src/data/preplabQuestions.js`. All 261 questions have `difficulty` field. PrepLab.jsx 5079→2446 lines.
 - ~~**PrepLab Sprint C**~~ — DONE (`38d5330`). `trap` + `source` fields on 50 hardest questions. `src/shared.jsx` created with `CommonTrapCallout`. RevealCard renders amber callout + source attribution.
 - ~~**PrepLab Sprint D**~~ — DONE (`22cd963`). Assess results screen rebuild: per-topic bars worst-first, TOPIC_FORWARD_POINTERS gap chips, session comparison delta, free-user gate at Q11. `src/config/gating.js` created.
-- **PrepLab Sprint E** — Interview Strategy full rebuild. See Do This above.
+- **TrainerMode Browse/List View** — See Do This #1 above.
+- **PrepLab Sprint E** — Interview Strategy full rebuild. See Do This #2 above.
 
 ### Content depth + production grounding (was Sprint 31 — demoted to Pending)
-- **"Your Interview Story" block on RAG Lab + Agent Lab done cards** — collapsible block at forward pointer card. `S effort`. See previous NEXT.md for full spec (commit content + file locations documented there).
-- **"Maps to production" callout on RAG Lab root-cause cards** — `PRODUCTION_NOTES` constant + amber chip below `system_design_lesson` block in `src/App.jsx`. `S effort`. See previous NEXT.md for full spec.
+- **"Your Interview Story" block on RAG Lab + Agent Lab done cards** — collapsible block at forward pointer card. `S effort`.
+- **"Maps to production" callout on RAG Lab root-cause cards** — `PRODUCTION_NOTES` constant + amber chip below `system_design_lesson` block in `src/App.jsx`. `S effort`.
 - **RAG Lab static corpus — data realism v1** — `src/ragCorpus.js` (20–30 docs, two domains) + ChunkCard renders real text. `S-M effort`. See DECISIONS.md Section 7.
 - **Thin GT posts expansion — 3 stubs** — `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` each need 8+ blocks. `S-M effort`.
 
