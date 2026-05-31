@@ -2,7 +2,7 @@
 
 Standing rules and principles that govern every build decision. This is a prescriptive document — it says what IS true now, not what was built when. For build history, see LINEAGE.md. For open findings, see AUDITS.md.
 
-*Last updated: May 2026*
+*Last updated: May 2026 (sprint 30)*
 
 ---
 
@@ -408,4 +408,40 @@ ReturningHomeView retains a compact version of this (3 quick stats + CTA to full
 - GT posts can use narrative format — they are the knowledge layer, not interactive modules.
 
 **Source:** Third-party lab assessment, May 2026. Confirmed by external analysis that the failure simulation format is GAL's differentiated position vs. standard AI courses and case-study products.
+
+---
+
+## 7. Data realism and execution — what belongs in GAL and in what order (decided May 2026)
+
+### The core rule: static data before execution, always
+
+"Realism through data" and "execution environment" are two separate decisions with different costs and risk profiles. They are not the same decision. Always do them in order — static data first, execution second.
+
+**Static data (Tier 1):** A JSON corpus of documents, pre-computed similarity scores, and evaluation triples adds significant realism to RAG Lab and Eval Lab without WASM cost, cold-start latency, or execution risk. The user sees real text, reads actual retrieved chunks, watches concrete text pairs pass or fail the judge. This produces 80% of the realism gain at ~10% of the complexity cost of a live execution environment.
+
+**Execution environment (Tier 2, conditional):** Pyodide (client-side Python WASM) is the correct tool if execution is ever needed. Fixed notebooks only — not open cells. The value is in judgment checkpoints woven into a fixed cell sequence, not in testing Python API recall. Execution only becomes worth building when: (a) static data is already shipped, (b) engagement on the data-enhanced modules is measurable, and (c) the specific judgment call requires running something the user configured.
+
+### Marimo is the wrong tool for GAL in-browser
+
+Marimo is a standalone reactive notebook environment — its value is exploratory iteration (change a cell, everything downstream updates). GAL's mechanic is directed (configure → fail → diagnose), not exploratory. Rendering Marimo inside the lab UI breaks the product frame: users are suddenly in a notebook, not a lab. This is the wrong experience.
+
+Marimo is valid as offline companion content: a downloadable `.py` notebook per scenario, run locally by the user with their own API key. GitHub link + download button on the done card. Zero in-browser cost. This is the correct use of Marimo in GAL's context.
+
+### Where real data adds realism (the correct scope)
+
+- **RAG Lab:** rendering the actual retrieved chunks per scenario config. User reads the garbage doc that caused noise injection — not a label that says "noise injection." Stale retrieval, context overflow, and multi-hop failures all become concrete when the user can see what the retriever actually returned.
+- **Eval Lab:** showing real query-answer-context triples with pre-computed LLM judge scores. User sets judge parameters and watches specific text pairs flip from pass to fail. Calibration drift is tangible on actual examples, not on abstract score movements.
+
+### Where simulation is sufficient (do not add data)
+
+- **Agent Lab:** failure modes are behavioral — tool loops, context overflow, delegation failures, state amnesia. No static corpus closes the gap. The failure is in the agent's action sequence, not in what the retriever returned.
+- **LLM Lab:** temperature/decoding simulations (logit shapers, probability bar charts) already closely approximate what a real model would show for these judgment calls. The mechanic does not require running real inference.
+
+### The Python boundary rule
+
+GAL does not become a Python execution platform. There is no Python content in GAL. Pyodide is a borrowed capability for one specific narrow use case — eval metric computation in Eval Lab. It is not a general capability to be reused across modules.
+
+If a feature idea requires Pyodide, the correct question is: "does this judgment call genuinely require running something, or would static pre-computed data serve equally well?" In most cases for GAL, static data is sufficient. Pyodide is the exception, not the default.
+
+*Source: Architecture review session, May 2026 — evaluation of StrataScratch/PAL-style datamart approach for GAL context.*
 

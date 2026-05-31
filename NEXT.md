@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 30)*
+*Last updated: May 2026 (post sprint 30, field intelligence logged: 4 posts)*
 
 ---
 
@@ -37,6 +37,9 @@ File: `src/groundTruthPosts.js` — expand each post object.
 
 ## Pending (valid but lower priority)
 
+- Graph RAG + multi-hop retrieval — GT post + PrepLab questions (3–4). Senior AI Engineer interview signal (May 2026). Tier 1 in IDEAS.md. See "Graph RAG + multi-hop retrieval" cluster.
+- LangGraph reducers + HITL patterns — GT post ("When to Pause an Agent") + PrepLab questions. Tier 1 in IDEAS.md.
+- Bi-encoder vs cross-encoder two-stage retrieval — GT post + PrepLab questions + Query Refinement module extension. Tier 1 in IDEAS.md.
 - Interview Strategy Tool consolidation — L effort, needs its own session
 - GT Series + Tags redesign — M-L effort
 - React.lazy() code splitting — systematic architectural change

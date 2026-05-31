@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: May 2026 (post sprint 29) | Current scale: 54 Systems modules (in nav), 22 Explore, 16 Agent Lab, 15 Concepts, 261 PrepLab questions, 222 GT posts*
+*Last updated: May 2026 (post sprint 30) | Current scale: 54 Systems modules (in nav), 22 Explore, 16 Agent Lab, 16 Concepts, 261 PrepLab questions, 222 GT posts*
 
 ---
 
@@ -216,6 +216,21 @@ A Microsoft RAG interview transcript surfaced a hard gap: candidates who can imp
 - **GT post: "Two-Stage Retrieval — Why Vector Search Is Not Enough"** — bi-encoder recall vs cross-encoder precision, full-attention pair scoring explained, when each stage fails (embedding space collapse, reranker score miscalibration), production pattern (OpenSearch + Cohere Rerank / Bedrock Knowledge Base). `Effort: S`
 - **PrepLab questions (3–4)** — bi-encoder vs cross-encoder trade-off, reranker failure mode, latency cost of cross-encoding, when to skip the reranker. `Effort: S`
 - **Query Refinement module extension** — add reranker as an optional 4th stage to the existing module (HyDE/multi-query/decomposition already there); show precision lift + latency cost. `Effort: S-M`
+
+### Graph RAG + multi-hop retrieval (new cluster — from Senior AI Engineer interview post, May 2026)
+
+Senior AI Engineer interview loops are explicitly testing Graph RAG, multi-hop retrieval, and cross-document synthesis — architectural patterns above vanilla vector RAG. The lab covers flat retrieval failure modes well but has zero coverage of graph-structured retrieval: how entities and relationships are indexed, when multi-hop is necessary (vs. expensive), and how graph traversal fails differently from embedding-based retrieval. This is the natural ceiling content above the existing RAG Lab. High signal: appears in FAANG/unicorn Round 1 questions targeting senior candidates.
+
+- **GT post: "Graph RAG — When Vector Search Isn't Enough"** — entity-relationship indexing, multi-hop vs single-hop retrieval trade-off, cross-document synthesis failure modes (entity resolution errors, traversal depth misconfiguration), production tools (Neo4j + LangChain graph chain, AWS Neptune, Microsoft GraphRAG). `Effort: S-M`
+- **PrepLab questions (3–4)** — when to use Graph RAG vs flat retrieval, multi-hop retrieval failure modes, graph traversal depth trade-off, table extraction as a RAG input modality. `Effort: S`
+- **RAG Lab scenario extension** — optional: add "Graph Retrieval" scenario to RAG Lab (entity-based lookup, multi-hop config, traversal depth slider). Long-term build — depends on static corpus first. `Effort: M`
+
+### LangGraph state management + HITL patterns (new cluster — from Senior AI Engineer interview post, May 2026)
+
+Senior AI interviews are now testing LangGraph-specific abstractions (ReAct, reducers, state accumulation) and Human-in-the-Loop design decisions — not just generic agent loop concepts. Agent Lab covers failure modes but doesn't model the LangGraph mental model (nodes, edges, state reducers as accumulators) or when HITL is the right production pattern (approval gates, escalation triggers, override flows).
+
+- **GT post: "Human-in-the-Loop — When to Pause an Agent"** — approval gate patterns, escalation trigger design, override flow architecture, cost of false escalations vs missed halts, production examples (code review gate, financial transaction approval). `Effort: S`
+- **PrepLab questions (3–4)** — LangGraph reducer vs state replace, when reducers accumulate vs overwrite, HITL trigger conditions, ReAct loop failure modes. `Effort: S`
 
 ### Explore modules
 - ~~**Model Architecture Comparison**~~ ✅ *built May 2026 — architecture guide + use-case wizard*
