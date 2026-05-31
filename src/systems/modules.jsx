@@ -13998,8 +13998,319 @@ export function DecodingStrategiesLab() {
   );
 }
 
+// ─── GRAPH RAG MODULE ─────────────────────────────────────────────────────────
+
+function GraphRAGModule() {
+  const [tab, setTab] = useState("gap");
+  const [activeNode, setActiveNode] = useState(null);
+  const [travStep, setTravStep] = useState(0);
+  const [playing, setPlaying] = useState(false);
+
+  const GR_NODES = [
+    { id: "sequoia",   label: "Sequoia",   type: "investor", x: 120, y: 70,  color: "#4ade80" },
+    { id: "a16z",      label: "a16z",      type: "investor", x: 440, y: 70,  color: "#4ade80" },
+    { id: "anthropic", label: "Anthropic", type: "company",  x: 200, y: 185, color: "#22d3ee" },
+    { id: "openai",    label: "OpenAI",    type: "company",  x: 360, y: 185, color: "#22d3ee" },
+    { id: "rag",       label: "RAG",       type: "tech",     x: 120, y: 300, color: "#fbbf24" },
+    { id: "finetune",  label: "Fine-tune", type: "tech",     x: 280, y: 300, color: "#fbbf24" },
+    { id: "pinecone",  label: "Pinecone",  type: "provider", x: 450, y: 300, color: "#a78bfa" },
+  ];
+  const GR_EDGES = [
+    { id: "e1", from: "sequoia",   to: "anthropic", label: "invested_in" },
+    { id: "e2", from: "sequoia",   to: "openai",    label: "invested_in" },
+    { id: "e3", from: "a16z",      to: "anthropic", label: "invested_in" },
+    { id: "e4", from: "a16z",      to: "pinecone",  label: "invested_in" },
+    { id: "e5", from: "anthropic", to: "rag",       label: "uses" },
+    { id: "e6", from: "anthropic", to: "finetune",  label: "uses" },
+    { id: "e7", from: "openai",    to: "rag",       label: "uses" },
+    { id: "e8", from: "rag",       to: "pinecone",  label: "powered_by" },
+  ];
+  const TRAV = [
+    { title: "Multi-hop query", desc: "\"Which investors backed companies that use RAG?\" — a 2-hop relational query vector search cannot answer.", nodes: [], edges: [] },
+    { title: "Step 1 — Identify 'RAG' entity", desc: "Entity recognition finds 'RAG' in the query and locates the RAG node in the knowledge graph.", nodes: ["rag"], edges: [] },
+    { title: "Step 2 — Trace 'uses' edges inbound", desc: "Follow reverse 'uses' edges from RAG → both Anthropic and OpenAI use RAG in production.", nodes: ["rag","anthropic","openai"], edges: ["e5","e7"] },
+    { title: "Step 3 — Trace 'invested_in' edges inbound", desc: "Follow reverse 'invested_in' edges from each company → find all investors at both companies.", nodes: ["rag","anthropic","openai","sequoia","a16z"], edges: ["e5","e7","e1","e2","e3"] },
+    { title: "Step 4 — Intersect investor sets", desc: "Sequoia backed both Anthropic and OpenAI. a16z backed Anthropic only. Intersection: Sequoia Capital.", nodes: ["rag","anthropic","openai","sequoia"], edges: ["e5","e7","e1","e2"] },
+    { title: "Answer — 2-hop traversal complete", desc: "Sequoia Capital invested in both companies that use RAG. Vector search cannot answer this — it requires two relationship hops that don't exist in any single document.", nodes: ["sequoia","anthropic","openai","rag"], edges: ["e1","e2","e5","e7"] },
+  ];
+
+  useEffect(() => {
+    if (!playing) return;
+    if (travStep >= TRAV.length - 1) { setPlaying(false); return; }
+    const t = setTimeout(() => setTravStep(s => s + 1), 1500);
+    return () => clearTimeout(t);
+  }, [playing, travStep]);
+
+  const getGRNode = (id) => GR_NODES.find(n => n.id === id);
+  const getEdgeCoords = (e) => {
+    const f = getGRNode(e.from); const t2 = getGRNode(e.to);
+    if (!f || !t2) return null;
+    const dx = t2.x - f.x; const dy = t2.y - f.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const r = 24; const ux = dx / len; const uy = dy / len;
+    return { x1: f.x + ux * r, y1: f.y + uy * r, x2: t2.x - ux * r, y2: t2.y - uy * r };
+  };
+  const connNodes = (nid) => {
+    if (!nid) return [];
+    const conEdges = GR_EDGES.filter(e => e.from === nid || e.to === nid);
+    return [nid, ...conEdges.map(e => e.from === nid ? e.to : e.from)];
+  };
+  const connEdges = (nid) => !nid ? [] : GR_EDGES.filter(e => e.from === nid || e.to === nid).map(e => e.id);
+  const cur = TRAV[travStep];
+  const travActive = cur.nodes.length > 0;
+
+  const nOpacity = (id) => {
+    if (tab === "traversal") return !travActive || cur.nodes.includes(id) ? 1 : 0.2;
+    if (tab === "graph" && activeNode) return connNodes(activeNode).includes(id) ? 1 : 0.25;
+    return 1;
+  };
+  const eOpacity = (id) => {
+    if (tab === "traversal") return cur.edges.length === 0 || cur.edges.includes(id) ? 1 : 0.1;
+    if (tab === "graph" && activeNode) return connEdges(activeNode).includes(id) ? 1 : 0.1;
+    return 0.5;
+  };
+  const nActive = (id) => tab === "traversal" ? cur.nodes.includes(id) : (tab === "graph" && activeNode ? connNodes(activeNode).includes(id) : false);
+  const eActive = (id) => tab === "traversal" ? cur.edges.includes(id) : (tab === "graph" && activeNode ? connEdges(activeNode).includes(id) : false);
+
+  const KnowledgeGraph = () => (
+    <svg viewBox="0 0 560 360" style={{ width: "100%", maxHeight: 280 }}>
+      <defs>
+        <marker id="gr-arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L6,3 z" fill="#52525b" />
+        </marker>
+        <marker id="gr-arr-on" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L6,3 z" fill="#22d3ee" />
+        </marker>
+      </defs>
+      <text x="8" y="73" fontSize="8" fill="#3f3f46" fontFamily="monospace">INVESTOR</text>
+      <text x="8" y="188" fontSize="8" fill="#3f3f46" fontFamily="monospace">COMPANY</text>
+      <text x="8" y="303" fontSize="8" fill="#3f3f46" fontFamily="monospace">TECH / INFRA</text>
+      {GR_EDGES.map(e => {
+        const c = getEdgeCoords(e);
+        if (!c) return null;
+        const on = eActive(e.id);
+        const mx = (c.x1 + c.x2) / 2; const my = (c.y1 + c.y2) / 2;
+        return (
+          <g key={e.id} opacity={eOpacity(e.id)}>
+            <line x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2}
+              stroke={on ? "#22d3ee" : "#52525b"} strokeWidth={on ? 2 : 1}
+              markerEnd={on ? "url(#gr-arr-on)" : "url(#gr-arr)"}
+            />
+            <text x={mx} y={my - 4} fontSize="7" fill={on ? "#67e8f9" : "#52525b"} textAnchor="middle" fontFamily="monospace">{e.label}</text>
+          </g>
+        );
+      })}
+      {GR_NODES.map(n => {
+        const on = nActive(n.id);
+        return (
+          <g key={n.id} opacity={nOpacity(n.id)}
+            onClick={() => tab === "graph" && setActiveNode(activeNode === n.id ? null : n.id)}
+            style={{ cursor: tab === "graph" ? "pointer" : "default" }}>
+            <circle cx={n.x} cy={n.y} r={24}
+              fill={on ? `${n.color}1a` : "rgba(9,9,11,0.8)"}
+              stroke={on ? n.color : "#3f3f46"} strokeWidth={on ? 2 : 1}
+              style={on ? { filter: `drop-shadow(0 0 5px ${n.color})` } : {}}
+            />
+            <text x={n.x} y={n.y + 1} fontSize="9" fill={on ? n.color : "#a1a1aa"}
+              textAnchor="middle" dominantBaseline="middle" fontFamily="monospace" fontWeight={on ? "bold" : "normal"}>
+              {n.label}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl p-3 sm:p-3.5 space-y-1.5" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wide leading-snug">RETRIEVAL ARCHITECTURE — GRAPH RAG</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Vector search finds semantically similar chunks. Graph RAG follows entity relationships. The difference surfaces when a query requires multiple hops: "which investors backed companies that use RAG?" No single chunk answers that — you need graph traversal.</p>
+      </div>
+
+      <div className="flex gap-1 flex-wrap">
+        {[["gap","The Failure"],["graph","Knowledge Graph"],["traversal","Multi-Hop"],["when","When to Use"]].map(([k,l]) => (
+          <button key={k} onClick={() => { setTab(k); setActiveNode(null); setTravStep(0); setPlaying(false); }}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+            style={tab === k
+              ? { background: "rgba(34,211,238,0.12)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }
+              : { background: "var(--surface-2)", color: "#71717a", border: "1px solid var(--border)" }}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {tab === "gap" && (
+        <div className="space-y-3">
+          <div className="rounded-xl p-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+            <div className="text-xs font-mono text-zinc-400">Query: <span className="text-zinc-200">"Which investors backed companies that use RAG in production?"</span></div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <div className="text-[10px] font-mono text-red-400 uppercase tracking-wider">Vector RAG — fails</div>
+              <p className="text-xs text-zinc-400 leading-relaxed">Embeds the query and retrieves chunks mentioning "investors" and "RAG" separately. Cannot connect them — the relationship spans multiple documents with no shared embedding.</p>
+              <div className="space-y-1">
+                <div className="text-[10px] font-mono text-zinc-500">Retrieved chunks:</div>
+                {["Anthropic raised $7.3B from Sequoia and Google...", "OpenAI uses RAG for knowledge retrieval...", "Sequoia portfolio: crypto, SaaS, biotech..."].map((c,i) => (
+                  <div key={i} className="text-[10px] px-2 py-1 rounded font-mono border text-zinc-500 bg-zinc-900/60 border-zinc-800/40">{c}</div>
+                ))}
+              </div>
+              <div className="text-[10px] text-red-400 font-mono">Result: hallucinated answer or "cannot determine"</div>
+            </div>
+            <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.2)" }}>
+              <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Graph RAG — succeeds</div>
+              <p className="text-xs text-zinc-400 leading-relaxed">Recognises 'RAG' as entity → traverses: RAG ← uses ← Anthropic, OpenAI ← invested_in ← Sequoia (both). Intersection = Sequoia Capital.</p>
+              <div className="space-y-1">
+                <div className="text-[10px] font-mono text-zinc-500">Traversal path:</div>
+                {["1. RAG ← uses ← Anthropic, OpenAI", "2. Anthropic, OpenAI ← invested_in ← Sequoia", "3. Intersect → Sequoia Capital"].map((s,i) => (
+                  <div key={i} className="text-[10px] px-2 py-1 rounded font-mono border text-cyan-500/80 bg-zinc-900/60 border-zinc-800/40">{s}</div>
+                ))}
+              </div>
+              <div className="text-[10px] text-cyan-400 font-mono">Result: "Sequoia Capital — backed both"</div>
+            </div>
+          </div>
+          <div className="rounded-xl p-3 space-y-1.5" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+            <div className="text-xs font-bold text-amber-300">Why chunking and reranking can't fix this</div>
+            <p className="text-xs text-zinc-400 leading-relaxed">This isn't a retrieval precision problem. No single chunk contains both facts. The relationship only emerges from following edges across the graph. Better embeddings, larger chunks, and higher top-k don't help when the answer requires joining information across entity hops.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "graph" && (
+        <div className="space-y-3">
+          <div className="rounded-xl p-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+            <KnowledgeGraph />
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            {[["investor","#4ade80"],["company","#22d3ee"],["tech","#fbbf24"],["provider","#a78bfa"]].map(([type,color]) => (
+              <div key={type} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+                <span className="text-[10px] font-mono text-zinc-400 capitalize">{type}</span>
+              </div>
+            ))}
+          </div>
+          {activeNode ? (
+            <div className="rounded-xl p-3 space-y-2" style={{ background: "var(--surface-2)", border: "1px solid rgba(34,211,238,0.2)" }}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ background: getGRNode(activeNode)?.color }} />
+                <span className="text-sm font-bold text-zinc-200">{getGRNode(activeNode)?.label}</span>
+                <span className="text-[10px] font-mono text-zinc-500 px-1.5 py-0.5 rounded bg-zinc-800/60 capitalize">{getGRNode(activeNode)?.type}</span>
+              </div>
+              <div className="text-[10px] font-mono text-zinc-500 mt-1">Connected edges:</div>
+              {GR_EDGES.filter(e => e.from === activeNode || e.to === activeNode).map(e => (
+                <div key={e.id} className="text-[10px] px-2 py-1 rounded font-mono border border-zinc-800/40 bg-zinc-900/60 text-cyan-400/80">
+                  {e.from === activeNode ? `→ ${e.label} → ${getGRNode(e.to)?.label}` : `← ${e.label} ← ${getGRNode(e.from)?.label}`}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-[10px] text-zinc-600 font-mono text-center py-1">Click any node to explore connections</div>
+          )}
+        </div>
+      )}
+
+      {tab === "traversal" && (
+        <div className="space-y-3">
+          <div className="rounded-xl p-3 space-y-1" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,211,238,0.4)" }}>
+            <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">{cur.title}</div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{cur.desc}</p>
+          </div>
+          <div className="rounded-xl p-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+            <KnowledgeGraph />
+          </div>
+          <div className="flex gap-1.5 justify-center">
+            {TRAV.map((_,i) => (
+              <button key={i} onClick={() => { setTravStep(i); setPlaying(false); }}
+                className="w-2 h-2 rounded-full transition-all"
+                style={{ background: i === travStep ? "#22d3ee" : i < travStep ? "rgba(34,211,238,0.4)" : "#3f3f46" }} />
+            ))}
+          </div>
+          <div className="flex gap-2 justify-center">
+            <button onClick={() => { setTravStep(0); setPlaying(false); }}
+              className="px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-400 transition-all"
+              style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>Reset</button>
+            {playing ? (
+              <button onClick={() => setPlaying(false)}
+                className="px-4 py-1.5 rounded-lg text-xs font-mono font-bold transition-all"
+                style={{ background: "rgba(34,211,238,0.12)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }}>Pause</button>
+            ) : travStep < TRAV.length - 1 ? (
+              <>
+                <button onClick={() => setTravStep(s => Math.min(s + 1, TRAV.length - 1))}
+                  className="px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-300 transition-all"
+                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>Next →</button>
+                <button onClick={() => setPlaying(true)}
+                  className="px-4 py-1.5 rounded-lg text-xs font-mono font-bold transition-all"
+                  style={{ background: "rgba(34,211,238,0.12)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }}>&#9654; Play</button>
+              </>
+            ) : (
+              <button onClick={() => { setTravStep(0); setPlaying(false); }}
+                className="px-4 py-1.5 rounded-lg text-xs font-mono font-bold transition-all"
+                style={{ background: "rgba(34,211,238,0.12)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }}>Replay</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {tab === "when" && (
+        <div className="space-y-3">
+          <div className="overflow-x-auto rounded-xl" style={{ border: "1px solid var(--border)" }}>
+            <table className="w-full text-xs">
+              <thead>
+                <tr style={{ background: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
+                  <th className="text-left px-3 py-2 text-[10px] font-mono text-zinc-400 uppercase">Query type</th>
+                  <th className="text-left px-3 py-2 text-[10px] font-mono text-zinc-400 uppercase">Vector RAG</th>
+                  <th className="text-left px-3 py-2 text-[10px] font-mono text-zinc-400 uppercase">Graph RAG</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Single-hop factual ('What is X?')", "✓ Excellent", "Overkill"],
+                  ["Multi-hop relational ('Which X → Y → Z?')", "✗ Fails", "✓ Purpose-built"],
+                  ["Cross-document reasoning", "Partial — misses relationships", "✓ Native"],
+                  ["Structured entity data (org charts, supply chains)", "✗ Loses structure", "✓ Best fit"],
+                  ["Unstructured text (docs, articles)", "✓ Excellent", "Needs entity extraction first"],
+                  ["High-throughput, low-latency", "✓ Fast", "Slower — traversal overhead"],
+                ].map(([q,v,g],i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid var(--border)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                    <td className="px-3 py-2 text-zinc-300">{q}</td>
+                    <td className="px-3 py-2" style={{ color: v.startsWith("✓") ? "#4ade80" : v.startsWith("✗") ? "#f87171" : "#a1a1aa" }}>{v}</td>
+                    <td className="px-3 py-2" style={{ color: g.startsWith("✓") ? "#4ade80" : g.startsWith("✗") ? "#f87171" : "#a1a1aa" }}>{g}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+            <div className="text-xs font-bold text-amber-300">Production cost reality</div>
+            <div className="space-y-1.5 text-xs text-zinc-400 leading-relaxed">
+              <p><span className="text-zinc-300 font-medium">Graph construction:</span> Entity extraction + relationship parsing + canonicalization. One-time cost 2–5× a vector index build. Budget accordingly.</p>
+              <p><span className="text-zinc-300 font-medium">Hallucinated entities:</span> If NER invents nodes, every downstream hop amplifies the error. Validate canonicalization — 'AWS', 'Amazon Web Services', and 'Amazon AWS' must resolve to the same node.</p>
+              <p><span className="text-zinc-300 font-medium">Hybrid wins:</span> Vector search for recall + graph traversal for relationship resolution + LLM synthesis. Most production Graph RAG systems combine both layers.</p>
+            </div>
+          </div>
+          <div className="rounded-xl p-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+            <div className="text-[10px] font-mono text-zinc-500 mb-2">HYBRID PIPELINE</div>
+            <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
+              {[
+                ["Query","#71717a"],["→",""],["Vector Search","#60a5fa"],["→",""],
+                ["Entity Extraction","#fbbf24"],["→",""],["Graph Traversal","#22d3ee"],
+                ["→",""],["LLM Synthesis","#a78bfa"],
+              ].map(([s,c],i) => (
+                <span key={i} className={s === "→" ? "text-zinc-600" : "px-2 py-1 rounded border"}
+                  style={s !== "→" ? { color: c, background: `${c}1a`, borderColor: `${c}40` } : {}}>
+                  {s}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
 };

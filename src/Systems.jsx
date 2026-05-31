@@ -6,7 +6,7 @@ import InferenceOptimizer from "./InferenceOptimizer";
 import MLCiCdLab from "./MLCiCd";
 
 import {
-  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, DecodingStrategiesLab, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, DecodingStrategiesLab, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
 } from "./systems/modules";
 
 const SYSTEMS_MODULES = [
@@ -62,6 +62,7 @@ const SYSTEMS_MODULES = [
   { id: "vectordb", label: "Vector DB Engineering", tag: "INFRA", group: "BUILD", component: VectorDBEngineering },
   { id: "mcp", label: "MCP vs API vs Function Calling", tag: "PROTOCOL", group: "BUILD", component: MCPDecisionFramework },
   { id: "query-refinement", label: "Query Refinement Lab", tag: "RETRIEVAL", group: "BUILD", component: QueryRefinementLab },
+  { id: "graph-rag",       label: "Graph RAG",           tag: "RETRIEVAL", group: "BUILD", component: GraphRAGModule },
   { id: "prompt-change-mgmt", label: "Prompt Change Management", tag: "LLMOPS", group: "OPS", component: PromptChangeMgmt },
   { id: "ai-safety-eng", label: "AI Safety Engineering", tag: "SAFETY", group: "OPS", component: AISafetyEngineering },
 ];
@@ -120,6 +121,7 @@ const RELATED_GT = {
   indiascale:  [{ id: "llm-cost-optimization", title: "LLM Cost Optimization" }, { id: "cost-latency-tradeoffs", title: "Cost vs Latency Trade-offs" }],
   inference:   [{ id: "inference-optimisation", title: "Inference Optimisation" }],
   buildthis:   [{ id: "ai-system-design-framework", title: "AI System Design Framework" }],
+  "graph-rag": [{ id: "graph-rag-multi-hop", title: "Graph RAG: When Vector Search Isn't Enough" }],
 };
 
 function FidelityBadge({ variant = "simulated" }) {

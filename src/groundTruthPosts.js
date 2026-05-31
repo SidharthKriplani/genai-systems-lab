@@ -11704,6 +11704,59 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+// ─── GRAPH RAG ───────────────────────────────────────────────────────────────
+  "graph-rag-multi-hop": [
+    { t: "p", text: "Vector search retrieves documents that are semantically similar to a query. This works for most retrieval tasks. It fails for one specific class of problem that shows up constantly in enterprise AI: multi-hop relational queries. Questions like 'which investors funded companies that both use RAG and fine-tuning?' or 'which compliance policies apply to regulated customers who bought product X?' require following relationships across entities, not finding similar text. Graph RAG is the architecture that solves this. Senior AI engineer interviews now test it directly." },
+    { t: "h2", text: "The failure mode vector search can't fix" },
+    { t: "p", text: "The problem isn't retrieval precision. You could have perfect recall — every relevant document in the top-20 — and still be unable to answer a multi-hop query. The reason: the relationship only emerges from connecting entities across documents. No single chunk contains 'Sequoia invested in OpenAI AND OpenAI uses RAG.' The connection requires traversal." },
+    { t: "callout", v: "warning", text: "Common interview trap: candidates suggest that better chunking, higher top-k, or a reranker will fix multi-hop failures. These help with retrieval precision — they don't solve the fundamental problem that cross-document relationships don't exist in embedding space." },
+    { t: "h2", text: "What a knowledge graph is" },
+    { t: "p", text: "A knowledge graph represents information as entities (nodes) and relationships (edges). An entity is a named thing — a company, person, technology, regulation. A relationship is a typed, directional connection — 'Anthropic uses RAG', 'Sequoia invested_in Anthropic', 'RAG requires vector_search'. Graph RAG builds this structure from your document corpus through entity extraction and relationship parsing, then stores it in a graph database (Neo4j, Amazon Neptune, or a property graph layer over a relational DB)." },
+    { t: "list", items: [
+      "Entity extraction: Named entity recognition (NER) or LLM-based extraction identifies the 'things' in documents — organizations, products, technologies, people, locations.",
+      "Relationship parsing: For each pair of co-occurring entities, determine if a relationship exists and what type. LLM-based parsers handle ambiguous cases better than rule-based approaches, at higher cost.",
+      "Graph construction: Entities become nodes; relationships become directed, typed edges. Canonicalization is critical — 'AWS', 'Amazon Web Services', and 'Amazon AWS' must resolve to the same node or traversal breaks.",
+      "Hybrid storage: The knowledge graph stores structured relationships. The original document chunks remain in a vector index for unstructured retrieval. Production systems use both."
+    ]},
+    { t: "h2", text: "Multi-hop traversal" },
+    { t: "p", text: "A multi-hop query follows a chain of relationships to reach an answer. For 'which investors backed companies that use RAG?', the traversal is: find RAG node → follow 'uses' edges backward → find company nodes (Anthropic, OpenAI) → follow 'invested_in' edges backward → find investor nodes → intersect results. This is a 2-hop traversal. Production queries can require 3-5 hops, especially in compliance, supply chain, and organizational hierarchy use cases." },
+    { t: "table", headers: ["Query type", "Hops", "Example"], rows: [
+      ["Single-hop factual", "1", "'What does Anthropic build?' → company → products"],
+      ["Two-hop relational", "2", "'Which investors back RAG companies?' → tech → company → investor"],
+      ["Three-hop compliance", "3", "'Which policies apply to regulated enterprise customers using X?' → customer → segment → regulation → policy"],
+      ["Cross-domain inference", "4+", "'What are the second-order competitive risks of Y?' — multiple entity chains"],
+    ]},
+    { t: "h2", text: "The hybrid Graph + Vector architecture" },
+    { t: "p", text: "Pure graph traversal has a blind spot: it only knows what was explicitly extracted at graph construction time. Unstructured knowledge — nuance, context, implicit relationships — lives in the raw documents. The production architecture combines both: vector search for high-recall initial retrieval, graph traversal for relationship resolution, LLM synthesis for the final answer." },
+    { t: "list", items: [
+      "Step 1 — Entity recognition: Extract named entities and relationship intents from the user query.",
+      "Step 2 — Graph traversal: Follow the relationship chain from identified entities. Return the traversal path and candidate answer entities.",
+      "Step 3 — Vector retrieval: Use the candidate entities as anchors for targeted vector search — retrieve chunks specifically about those entities for context.",
+      "Step 4 — Context assembly: Combine traversal results (structured facts) with retrieved chunks (unstructured context) into a unified prompt.",
+      "Step 5 — LLM synthesis: Generate the final answer with citations to both graph paths and document sources."
+    ]},
+    { t: "h2", text: "Production failure modes" },
+    { t: "list", items: [
+      "Hallucinated entities: If your entity extractor invents nodes, every downstream hop amplifies the error. Validate entity canonicalization — 'GPT-4' and 'GPT4' and 'OpenAI GPT-4' must resolve to the same node, or traversal breaks.",
+      "Graph staleness: Relationships change. A company acquired last month may still be represented as independent. For time-sensitive domains, build freshness monitoring and incremental graph updates.",
+      "Traversal explosion: Poorly bounded traversal in a dense graph can return thousands of paths. Limit hop depth, prune by edge weight or recency, and define traversal budgets before production.",
+      "Entity extraction cost: LLM-based extraction is accurate but expensive. For large document corpora, use a smaller fine-tuned NER model for initial extraction and LLM-based verification only for ambiguous cases."
+    ]},
+    { t: "callout", v: "insight", text: "Graph RAG costs 2-5x more than standard vector RAG — graph construction, entity extraction, and traversal add both upfront and per-query overhead. It is only justified when your query distribution contains a meaningful fraction of multi-hop relational questions. Most customer support bots don't need it. Compliance, supply chain, competitive intelligence, and knowledge management systems often do." },
+    { t: "h2", text: "When to use it" },
+    { t: "table", headers: ["Use it when", "Skip it when"], rows: [
+      ["Queries span multiple entity types with named relationships", "Queries are single-hop factual or similarity-based"],
+      ["Data has explicit relational structure (org charts, supply chains, compliance maps)", "Data is unstructured text without clear entity boundaries"],
+      ["Explainability matters — you need to show the reasoning path", "Speed is critical — graph traversal adds latency vs pure vector"],
+      ["The relationship graph is relatively stable (slow-changing domain)", "The knowledge base updates in real-time (graph staleness becomes unmanageable)"],
+    ]},
+    { t: "refs", items: [
+      { label: "Microsoft GraphRAG (MSFT Research)", url: "https://microsoft.github.io/graphrag/" },
+      { label: "Neo4j — Graph RAG Pattern", url: "https://neo4j.com/developer-blog/graphrag-manifesto/" },
+      { label: "LlamaIndex — Knowledge Graphs", url: "https://docs.llamaindex.ai/en/stable/use_cases/knowledge_graph/" },
+    ]},
+  ],
+
 // ─── CONTEXT ISOLATION MULTIAGENT ────────────────────────────────────────────
   "context-isolation-multiagent": [
     { t: "p", text: "The most common multi-agent failure mode does not look like a bug. It looks like inconsistent, hard-to-reproduce behaviour where agents make decisions that seem correct in isolation but are wrong in the context of the overall task. The root cause is almost always context contamination." },
