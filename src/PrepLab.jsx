@@ -1446,21 +1446,21 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
   );
 }
 
-// ─── MODE 3: INTERVIEW PREP PLAN ─────────────────────────────────────────────
+// ─── MODE 3: INTERVIEW STRATEGY ──────────────────────────────────────────────
 
 function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
   const [step, setStep] = useState(1);
   const [jdText, setJdText] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [roleType, setRoleType] = useState("");
+  const [roundNum, setRoundNum] = useState("1");
+  const [interviewerType, setInterviewerType] = useState("tech-lead");
+  const [priorFeedback, setPriorFeedback] = useState("");
   const [detectedTopics, setDetectedTopics] = useState([]);
   const [ratings, setRatings] = useState({});
-  const [sessionQs, setSessionQs] = useState([]);
-  const [current, setCurrent] = useState(0);
-  const [answer, setAnswer] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [sessionAnswers, setSessionAnswers] = useState([]);
-  const [done, setDone] = useState(false);
+  const [brief, setBrief] = useState(null);
   const [showGate, setShowGate] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const allRated = detectedTopics.length > 0 && detectedTopics.every(t => ratings[t.key]);
 
@@ -1471,250 +1471,337 @@ function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
       .map(([key, v]) => ({ key, weight: v.weight }));
     setDetectedTopics(sorted);
     setRatings({});
+    try { localStorage.setItem("gsl-preplab-strategy-phase", "2"); } catch {}
     setStep(2);
   }
 
-  function buildDrillQs() {
-    let pool = [];
-    for (const q of PREP_QUESTIONS) {
-      const dt = detectedTopics.find(t => t.key === q.topic);
-      if (!dt) continue;
-      const w = Math.ceil(dt.weight * (DRILL_W[ratings[dt.key]] || 1));
-      for (let i = 0; i < w; i++) pool.push(q);
-    }
-    pool = shuffle(pool);
-    const seen = new Set(); const uniq = [];
-    for (const q of pool) {
-      if (!seen.has(q.id)) { seen.add(q.id); uniq.push(q); }
-      if (uniq.length >= 20) break;
-    }
-    if (uniq.length < 20) {
-      const extra = shuffle(PREP_QUESTIONS.filter(q => !seen.has(q.id)));
-      uniq.push(...extra.slice(0, 20 - uniq.length));
-    }
-    return uniq.slice(0, 20);
+  function generateBrief() {
+    const gapRanked = detectedTopics
+      .map(t => ({ ...t, rating: ratings[t.key] || "okay", gapScore: t.weight * (DRILL_W[ratings[t.key]] || 1) }))
+      .sort((a, b) => b.gapScore - a.gapScore)
+      .slice(0, 3);
+    return gapRanked.map(({ key, gapScore, rating }) => {
+      const topicQs = PREP_QUESTIONS.filter(q => q.topic === key);
+      const hardWithTrap = topicQs.find(q => q.difficulty === "hard" && q.trap);
+      const hardQ = hardWithTrap || topicQs.find(q => q.difficulty === "hard") || topicQs[0];
+      const medQ = topicQs.find(q => q.difficulty === "medium" && q.id !== hardQ?.id) || topicQs.find(q => q.id !== hardQ?.id);
+      const res = TOPIC_STUDY_RESOURCES[key];
+      const gtPost = res?.gtPosts?.[0] || null;
+      const lab = TOPIC_FORWARD_POINTERS[key] || null;
+      return { key, gapScore, rating, hardQ, medQ, gtPost, lab };
+    });
   }
 
-  function startDrill() {
-    setSessionQs(buildDrillQs());
-    setCurrent(0); setAnswer(""); setSubmitted(false);
-    setIsCorrect(false); setSessionAnswers([]); setDone(false);
-    setStep(3);
+  function buildBrief() {
+    const b = generateBrief();
+    setBrief(b);
+    try { localStorage.setItem("gsl-preplab-strategy-phase", "4"); } catch {}
+    setStep(4);
   }
 
-  function submit() {
-    const q = sessionQs[current];
-    if (q.type === "text") { setIsCorrect(false); setSubmitted(true); }
-    else {
-      const ok = parseInt(answer) === q.correct;
-      setIsCorrect(ok); setSubmitted(true);
-      setSessionAnswers(sa => [...sa, { q, correct: ok }]);
-      recordHistory(q.id, ok);
+  function copyBrief() {
+    const roleLabels = { "ai-engineer": "AI Engineer", "ml-engineer": "ML Engineer", "ai-pm": "AI PM", "research": "Research Scientist" };
+    const lines = [
+      `# Interview Brief — ${companyName || "Company"} · ${roleLabels[roleType] || "AI Role"} · Round ${roundNum}`,
+      `Date: ${new Date().toLocaleDateString()}`,
+      "",
+      "## Top 3 Focus Areas",
+      "",
+    ];
+    for (const area of (brief || [])) {
+      lines.push(`### ${TOPIC_LABELS[area.key] || area.key}`);
+      if (area.hardQ) lines.push(`**Q1 (Hard):** ${area.hardQ.question}`);
+      if (area.medQ) lines.push(`**Q2 (Medium):** ${area.medQ.question}`);
+      if (area.hardQ?.trap) lines.push(`**Trap to avoid:** ${area.hardQ.trap}`);
+      if (area.gtPost) lines.push(`**Read:** ${area.gtPost.title}`);
+      lines.push("");
     }
-  }
-
-  function selfGrade(ok) {
-    const q = sessionQs[current];
-    setSessionAnswers(sa => [...sa, { q, correct: ok }]);
-    recordHistory(q.id, ok);
-  }
-
-  function next() {
-    if (current >= sessionQs.length - 1) { setDone(true); return; }
-    setCurrent(c => c + 1); setAnswer(""); setSubmitted(false); setIsCorrect(false);
-  }
-
-  // ── Results ──────────────────────────────────────────────────────────────────
-  if (step === 3 && done) {
-    const tc = sessionAnswers.filter(a => a.correct).length;
-    const pct = Math.round((tc / Math.max(sessionAnswers.length, 1)) * 100);
-    const bt = {};
-    for (const { q, correct } of sessionAnswers) {
-      if (!bt[q.topic]) bt[q.topic] = { correct: 0, total: 0 };
-      bt[q.topic].total++;
-      if (correct) bt[q.topic].correct++;
+    if (priorFeedback.trim() && roundNum !== "1") {
+      lines.push("## Prior Round Feedback");
+      lines.push(priorFeedback.trim());
+      lines.push("");
     }
-    const weakTopics = Object.entries(bt)
-      .filter(([, v]) => Math.round(v.correct / v.total * 100) < 50)
-      .map(([t]) => t);
+    lines.push("## Day-of Checklist");
+    lines.push("- [ ] Re-read the 3 focus areas above");
+    lines.push("- [ ] Skim the linked GT posts");
+    lines.push("- [ ] Prepare a concrete example for each focus area");
+    lines.push("- [ ] Review any prior feedback points");
+    lines.push("- [ ] Rest — preparation is done");
+    navigator.clipboard.writeText(lines.join("\n")).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  }
+
+  // ── Step 4: Interview Brief ───────────────────────────────────────────────────
+  if (step === 4) {
+    const roleLabels = { "ai-engineer": "AI Engineer", "ml-engineer": "ML Engineer", "ai-pm": "AI PM", "research": "Research Scientist" };
+    const roleLabel = roleLabels[roleType] || "AI Role";
+    const roundLabel = roundNum === "final" ? "Final Round" : `Round ${roundNum}`;
+    const interviewerLabel = { "tech-lead": "Tech Lead", "hiring-manager": "Hiring Manager", "peer": "Peer" }[interviewerType] || interviewerType;
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
         {showGate && <GateModal onUnlock={() => setShowGate(false)} onClose={() => setShowGate(false)} />}
         <div className="max-w-2xl mx-auto space-y-5">
-          <button onClick={onExit} className="text-zinc-400 hover:text-zinc-200 text-sm">← Exit</button>
-          <div className="bg-zinc-900 rounded-2xl p-5 sm:p-8 border border-zinc-800 text-center">
-            <p className="text-zinc-400 text-sm mb-2">Interview Readiness Score</p>
-            <div className="text-5xl sm:text-7xl font-bold text-indigo-400 mb-1">{pct}%</div>
-            <p className="text-zinc-400">{tc} / {sessionAnswers.length} correct</p>
+          <div className="flex items-center justify-between">
+            <button onClick={() => setStep(3)} className="text-zinc-500 hover:text-zinc-300 text-sm">← Back</button>
+            <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">Exit</button>
           </div>
-          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 space-y-4">
-            <h3 className="font-semibold text-zinc-200">Per-Topic Breakdown</h3>
-            {Object.entries(bt).map(([t, v]) => {
-              const pctT = Math.round(v.correct / v.total * 100);
-              return (
-                <ScoreBar key={t} label={TOPIC_LABELS[t] || t} score={v.correct} max={v.total}
-                  color={pctT >= 70 ? "bg-emerald-500" : pctT >= 50 ? "bg-amber-500" : "bg-red-500"} />
-              );
-            })}
-          </div>
-          {weakTopics.length > 0 && (
-            <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800 space-y-4">
-              <h3 className="font-semibold text-zinc-200">Study Resources for Weak Areas</h3>
-              {weakTopics.map(t => {
-                const res = TOPIC_STUDY_RESOURCES[t];
-                if (!res) return null;
-                return (
-                  <div key={t} className="space-y-1.5">
-                    <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">{TOPIC_LABELS[t]}</div>
-                    {res.gtPosts.map(p => (
-                      <button key={p.id} onClick={() => onNavigateTo({ tab: "groundtruth", postId: p.id })}
-                        className="block w-full text-left text-sm text-indigo-400 hover:text-indigo-300">
-                        → {p.title}
-                      </button>
-                    ))}
-                    {res.modules.map((m, i) => (
-                      <button key={i} onClick={() => onNavigateTo({ tab: m.tab, moduleId: m.moduleId })}
-                        className="block w-full text-left text-sm text-zinc-400 hover:text-zinc-300">
-                        → {m.label}
-                      </button>
-                    ))}
-                  </div>
-                );
-              })}
+          {/* Header card */}
+          <div className="rounded-2xl p-5 border"
+            style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.12) 0%, rgba(8,10,20,0.95) 100%)", borderColor: "rgba(109,40,217,0.25)" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-violet-500/20 border border-violet-500/30 text-violet-400 uppercase tracking-widest">Interview Brief</span>
             </div>
-          )}
-          {/* Phase 4: Personalized Study Plan — gated */}
-          <div className="relative rounded-xl overflow-hidden border border-violet-500/20"
-            style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.08) 0%, rgba(15,15,17,0.95) 100%)" }}>
+            <h2 className="text-lg font-bold text-white mb-3">{companyName || "Your Interview"}</h2>
+            <div className="flex flex-wrap gap-2">
+              {[roleLabel, roundLabel, interviewerLabel, new Date().toLocaleDateString()].map((chip, i) => (
+                <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300">{chip}</span>
+              ))}
+            </div>
+          </div>
+          {/* Gated content */}
+          <div className="relative rounded-xl overflow-hidden">
             {!isAccessGranted() && (
-              <div className="absolute inset-0 backdrop-blur-sm bg-zinc-950/70 flex flex-col items-center justify-center z-10 gap-3 p-4">
+              <div className="absolute inset-0 backdrop-blur-sm bg-zinc-950/80 flex flex-col items-center justify-center z-10 gap-3 p-4 rounded-xl">
                 <div className="text-xs font-mono text-violet-400 uppercase tracking-widest">Access Required</div>
-                <p className="text-xs text-zinc-400 text-center max-w-xs">Unlock your prioritized 30-day study plan with per-topic resource lists.</p>
+                <p className="text-xs text-zinc-400 text-center max-w-xs">Unlock your full Interview Brief — top questions, traps to avoid, and GT posts to skim.</p>
                 <button onClick={() => setShowGate(true)}
                   className="px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors">
-                  Unlock Full Plan →
+                  Unlock Brief →
                 </button>
               </div>
             )}
-            <div className={`p-5 space-y-3 ${!isAccessGranted() ? "blur-sm pointer-events-none select-none" : ""}`}>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white">Your Personalized Study Plan</span>
-                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-violet-500/20 border border-violet-500/30 text-violet-400">PHASE 4</span>
-              </div>
-              <p className="text-xs text-zinc-400">Prioritized by gap score — JD weight × self-rating weakness. Study these in order.</p>
-              <div className="divide-y divide-zinc-800">
-                {detectedTopics
-                  .map(t => ({ ...t, rating: ratings[t.key] || "okay", gapScore: t.weight * (DRILL_W[ratings[t.key]] || 1) }))
-                  .sort((a, b) => b.gapScore - a.gapScore)
-                  .map(({ key, gapScore, rating }) => {
-                    const res = TOPIC_STUDY_RESOURCES[key];
-                    const wl = skillWeightLabel(Math.ceil(gapScore));
-                    return (
-                      <div key={key} className="flex items-center justify-between py-2.5">
-                        <div>
-                          <div className="text-sm text-zinc-200">{TOPIC_LABELS[key] || key}</div>
-                          <div className={`text-[10px] ${wl.color}`}>{wl.label} · rated {rating}</div>
-                        </div>
-                        <div className="text-[10px] text-zinc-500 text-right">
-                          {res ? `${res.gtPosts.length}p · ${res.modules.length}m` : ""}
-                        </div>
+            <div className={`space-y-3 ${!isAccessGranted() ? "blur-sm pointer-events-none select-none" : ""}`}>
+              <h3 className="font-semibold text-zinc-200 text-sm uppercase tracking-wide">Top 3 Focus Areas</h3>
+              {(brief || []).map((area, idx) => (
+                <div key={area.key} className="rounded-xl border overflow-hidden"
+                  style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+                  <div className="px-4 py-3 flex items-center gap-2 border-b border-zinc-800/60">
+                    <span className="w-5 h-5 rounded-full bg-violet-500/20 border border-violet-500/40 text-violet-400 text-xs flex items-center justify-center font-bold">{idx + 1}</span>
+                    <span className="font-semibold text-zinc-200 text-sm">{TOPIC_LABELS[area.key] || area.key}</span>
+                    <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border ${
+                      area.rating === "weak" ? "bg-red-500/15 border-red-500/30 text-red-400"
+                      : area.rating === "okay" ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
+                      : "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                    }`}>rated {area.rating}</span>
+                  </div>
+                  <div className="px-4 py-3 space-y-3">
+                    {area.hardQ && (
+                      <div className="space-y-1">
+                        <div className="text-[10px] font-mono text-red-400 uppercase tracking-wider">Likely Hard Q</div>
+                        <p className="text-sm text-zinc-300 leading-relaxed">{area.hardQ.question}</p>
                       </div>
-                    );
-                  })}
-              </div>
+                    )}
+                    {area.medQ && (
+                      <div className="space-y-1">
+                        <div className="text-[10px] font-mono text-amber-400 uppercase tracking-wider">Likely Medium Q</div>
+                        <p className="text-sm text-zinc-300 leading-relaxed">{area.medQ.question}</p>
+                      </div>
+                    )}
+                    {area.hardQ?.trap && (
+                      <div className="rounded-lg p-3" style={{ background: "rgba(120,53,15,0.25)", border: "1px solid rgba(180,83,9,0.3)" }}>
+                        <div className="text-[10px] font-mono text-amber-400 uppercase tracking-wider mb-1">Trap to avoid</div>
+                        <p className="text-xs text-amber-200/80">{area.hardQ.trap}</p>
+                      </div>
+                    )}
+                    {area.gtPost && (
+                      <button onClick={() => onNavigateTo({ tab: "groundtruth", postId: area.gtPost.id })}
+                        className="flex items-center gap-2 text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                        <span className="px-1.5 py-0.5 rounded bg-violet-500/15 border border-violet-500/25 font-mono text-[9px]">GT</span>
+                        {area.gtPost.title}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <button onClick={onExit} className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-sm">Back to Modes</button>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Drill (step 3) ───────────────────────────────────────────────────────────
-  if (step === 3) {
-    const q = sessionQs[current];
-    if (!q) return null;
-    const gapKeys = detectedTopics.filter(t => ratings[t.key] === "weak").map(t => t.key);
-    return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
-        <div className="max-w-2xl mx-auto space-y-5">
-          <div className="flex items-center justify-between">
-            <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
-            <span className="text-sm text-zinc-500">{current + 1} / {sessionQs.length}</span>
+          {/* Prior feedback */}
+          {priorFeedback.trim() && roundNum !== "1" && (
+            <div className="rounded-xl p-4 border space-y-1.5"
+              style={{ background: "rgba(239,68,68,0.06)", borderColor: "rgba(239,68,68,0.2)" }}>
+              <div className="text-[10px] font-mono text-red-400 uppercase tracking-wider">Prior Round Feedback</div>
+              <p className="text-xs text-zinc-300 whitespace-pre-wrap">{priorFeedback.trim()}</p>
+            </div>
+          )}
+          {/* Day-of checklist */}
+          <div className="rounded-xl p-4 border space-y-2" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+            <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider mb-2">Day-of Checklist</div>
+            {[
+              "Re-read the 3 focus areas above",
+              "Skim the linked GT posts",
+              "Prepare a concrete example for each focus area",
+              "Review any prior feedback points",
+              "Rest — preparation is done",
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <div className="w-4 h-4 mt-0.5 rounded border border-zinc-600 flex-shrink-0" />
+                <span className="text-sm text-zinc-300">{item}</span>
+              </div>
+            ))}
           </div>
-          <PBar value={current} max={sessionQs.length} />
-          <QuestionCard q={q} gaps={gapKeys} />
-          {!submitted && (
-            <>
-              {q.type === "mcq"
-                ? <MCQOptions options={q.options} selected={answer === "" ? undefined : parseInt(answer)} onSelect={i => setAnswer(String(i))} />
-                : <SpeechTextArea value={answer} onChange={setAnswer} />
-              }
-              <button onClick={submit} disabled={answer.toString().trim() === ""}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-medium rounded-xl">
-                Submit Answer
-              </button>
-            </>
-          )}
-          {submitted && (
-            <RevealCard isCorrect={isCorrect} q={q} onNext={next}
-              nextLabel={current >= sessionQs.length - 1 ? "See Results" : "Next →"}
-              onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current}
-              onSelfGrade={selfGrade} />
-          )}
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button onClick={copyBrief}
+              className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-colors border ${
+                copied ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-violet-600 hover:bg-violet-500 border-violet-500 text-white"
+              }`}>
+              {copied ? "Copied!" : "Copy Brief →"}
+            </button>
+            <button onClick={onExit} className="px-4 py-3 rounded-xl text-sm text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-600 transition-colors">
+              Exit
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // ── Steps 1 & 2 ─────────────────────────────────────────────────────────────
+  // ── Steps 1–3 ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
       <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header */}
         <div className="flex items-center gap-3">
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
-          <h2 className="text-xl font-bold">Interview Prep Plan</h2>
+          <h2 className="text-xl font-bold">Interview Strategy</h2>
         </div>
+        {/* Step indicator */}
         <div className="flex items-center gap-2">
           {[1, 2, 3].map(s => (
             <React.Fragment key={s}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= s ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-500"}`}>{s}</div>
-              {s < 3 && <div className={`flex-1 h-px ${step > s ? "bg-indigo-600" : "bg-zinc-700"}`} />}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step >= s ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-500"}`}>{s}</div>
+              {s < 3 && <div className={`flex-1 h-px transition-colors ${step > s ? "bg-violet-600" : "bg-zinc-700"}`} />}
             </React.Fragment>
           ))}
         </div>
         <div className="flex justify-between text-xs text-zinc-500">
-          <span>Paste JD</span><span>Rate Yourself</span><span>Drill</span>
+          <span>JD + Context</span><span>Role + Round</span><span>Rate Yourself</span>
         </div>
+
+        {/* Step 1: JD + company */}
         {step === 1 && (
-          <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800 space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Job Description</label>
-              <p className="text-xs text-zinc-500 mb-3">Paste the JD — we detect which AI skills it emphasizes, then you rate yourself. Weak spots get weighted 3× in your drill.</p>
+          <div className="space-y-4">
+            <div className="rounded-xl p-5 border border-zinc-800 space-y-4" style={{ background: "var(--surface)" }}>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Company Name <span className="text-zinc-500 font-normal">(optional)</span></label>
+                <input value={companyName} onChange={e => setCompanyName(e.target.value)}
+                  placeholder="e.g. Anthropic, Google DeepMind..."
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-zinc-200 text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Job Description</label>
+                <p className="text-xs text-zinc-500 mb-2">Paste the JD — we detect which AI skills it emphasizes for your brief.</p>
+                <textarea value={jdText} onChange={e => setJdText(e.target.value)}
+                  placeholder="Paste the full job description here..." rows={10}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-zinc-200 text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"
+                />
+              </div>
             </div>
-            <textarea value={jdText} onChange={e => setJdText(e.target.value)}
-              placeholder="Paste the full job description here..." rows={10}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-zinc-200 text-sm placeholder-zinc-600 focus:outline-none focus:border-indigo-500 resize-none"
-            />
             <button onClick={analyzeJD} disabled={!jdText.trim()}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-medium rounded-xl">
+              className="w-full py-3 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">
               Analyze JD →
             </button>
           </div>
         )}
+
+        {/* Step 2: Role + Round + Context */}
         {step === 2 && (
+          <div className="space-y-5">
+            <div className="rounded-xl p-5 border border-zinc-800 space-y-3" style={{ background: "var(--surface)" }}>
+              <div>
+                <h3 className="font-medium text-zinc-200 mb-0.5">What role are you interviewing for?</h3>
+                <p className="text-xs text-zinc-500">Shapes which questions appear in your brief.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: "ai-engineer", label: "AI Engineer", desc: "RAG, agents, serving" },
+                  { id: "ml-engineer", label: "ML Engineer", desc: "Training, fine-tuning, MLOps" },
+                  { id: "ai-pm", label: "AI PM", desc: "Strategy, roadmap, evals" },
+                  { id: "research", label: "Research Scientist", desc: "Architecture, reasoning" },
+                ].map(rt => (
+                  <button key={rt.id} onClick={() => setRoleType(rt.id)}
+                    className={`text-left px-3 py-3 rounded-xl border transition-all ${
+                      roleType === rt.id
+                        ? "border-violet-500/60 bg-violet-500/10 text-white"
+                        : "border-zinc-700 hover:border-zinc-600 text-zinc-300"
+                    }`}>
+                    <div className="font-medium text-sm">{rt.label}</div>
+                    <div className="text-[11px] text-zinc-500 mt-0.5">{rt.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-5 border border-zinc-800 space-y-4" style={{ background: "var(--surface)" }}>
+              <h3 className="font-medium text-zinc-200">Round context</h3>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-2 uppercase tracking-wider">Round Number</label>
+                <div className="flex gap-2 flex-wrap">
+                  {["1", "2", "3+", "final"].map(r => (
+                    <button key={r} onClick={() => setRoundNum(r)}
+                      className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                        roundNum === r ? "bg-violet-500/20 border-violet-500/50 text-violet-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-600"
+                      }`}>
+                      {r === "final" ? "Final" : `Round ${r}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-2 uppercase tracking-wider">Interviewer Type</label>
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { id: "tech-lead", label: "Tech Lead" },
+                    { id: "hiring-manager", label: "Hiring Manager" },
+                    { id: "peer", label: "Peer" },
+                  ].map(it => (
+                    <button key={it.id} onClick={() => setInterviewerType(it.id)}
+                      className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                        interviewerType === it.id ? "bg-violet-500/20 border-violet-500/50 text-violet-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-600"
+                      }`}>
+                      {it.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {roundNum !== "1" && (
+                <div>
+                  <label className="block text-xs text-zinc-400 mb-2 uppercase tracking-wider">Prior Round Feedback <span className="normal-case text-zinc-500">(optional)</span></label>
+                  <textarea value={priorFeedback} onChange={e => setPriorFeedback(e.target.value)}
+                    placeholder="e.g. Struggled to articulate trade-offs in system design..."
+                    rows={3}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-zinc-200 text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setStep(1)} className="px-4 py-3 rounded-xl text-sm text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-600 transition-colors">
+                Back
+              </button>
+              <button onClick={() => setStep(3)} disabled={!roleType}
+                className="flex-1 py-3 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">
+                Next: Rate Yourself →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Rate topics */}
+        {step === 3 && (
           <div className="space-y-4">
             {detectedTopics.length === 0 ? (
-              <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800">
+              <div className="rounded-xl p-5 border border-zinc-800" style={{ background: "var(--surface)" }}>
                 <p className="text-zinc-400 text-sm">No specific skill keywords detected.{" "}
-                  <button onClick={() => setStep(1)} className="text-indigo-400 hover:text-indigo-300">Try a more detailed JD.</button>
+                  <button onClick={() => setStep(1)} className="text-violet-400 hover:text-violet-300">Try a more detailed JD.</button>
                 </p>
               </div>
             ) : (
               <>
-                <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800">
+                <div className="rounded-xl p-5 border border-zinc-800" style={{ background: "var(--surface)" }}>
                   <h3 className="font-medium text-zinc-200 mb-1">How strong are you in each area?</h3>
-                  <p className="text-xs text-zinc-500 mb-4">Be honest — weak areas get 3× more questions in your drill.</p>
+                  <p className="text-xs text-zinc-500 mb-4">Weak areas get higher priority in your brief.</p>
                   <div className="divide-y divide-zinc-800">
                     {detectedTopics.map(({ key, weight }) => {
                       const wl = skillWeightLabel(weight);
@@ -1747,10 +1834,15 @@ function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
                     })}
                   </div>
                 </div>
-                <button onClick={startDrill} disabled={!allRated}
-                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold rounded-xl">
-                  Build My Drill →
-                </button>
+                <div className="flex gap-3">
+                  <button onClick={() => setStep(2)} className="px-4 py-3 rounded-xl text-sm text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-600 transition-colors">
+                    Back
+                  </button>
+                  <button onClick={buildBrief} disabled={!allRated}
+                    className="flex-1 py-4 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">
+                    Build My Brief →
+                  </button>
+                </div>
                 {!allRated && (
                   <p className="text-center text-xs text-zinc-500">Rate all {detectedTopics.length} topics to continue</p>
                 )}
