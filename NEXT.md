@@ -2,13 +2,13 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 32 — cold-start Home rewrite done)*
+*Last updated: May 2026 (post sprint 33 — Graph RAG shipped)*
 
 ---
 
-## Theme: Content gaps + Graph RAG.
+## Theme: Content gaps — remaining Tier 1 items.
 
-Home rewrite done. Next: Graph RAG is the highest-value Tier 1 content gap (completely absent, senior AI interview Round 1 signal).
+Graph RAG done. Next highest-value Tier 1 gap: LangGraph reducers + HITL patterns (Senior AI interview Round 2 signal, completely absent).
 
 ---
 
@@ -16,14 +16,16 @@ Home rewrite done. Next: Graph RAG is the highest-value Tier 1 content gap (comp
 
 **1. ~~Cold-start Home rewrite~~** — DONE (`d8c2d11`). Market signal chip, PrepLab question card primary CTA, belief-gap subtext, outcome-first door card copy.
 
-**2. Graph RAG + multi-hop retrieval** `M effort` `HIGH`
+**2. ~~Graph RAG + multi-hop retrieval~~** — DONE (`2a00754`). GT post + `GraphRAGModule` (interactive SVG knowledge graph, 6-step animated traversal, failure comparison, when-to-use table) + 4 PrepLab questions with trap fields.
 
-What: Completely absent from GAL. Senior AI interview Round 1 now tests this. Tier 1 content gap.
+**3. LangGraph reducers + HITL patterns** `M effort` `HIGH`
+
+What: Senior AI interview Round 2 signal. LangGraph-specific state model (reducers/nodes/edges) and human-in-the-loop checkpoint patterns completely absent from GAL.
 
 Implementation:
-- 1 GT post: "Graph RAG — when vector search isn't enough" (entity extraction, knowledge graphs, multi-hop traversal, when to use vs standard RAG)
-- 3–4 PrepLab questions covering graph construction, traversal, failure modes
-- Optional: extend Query Refinement Lab with a graph traversal scenario tab
+- 1 GT post: "LangGraph reducers and HITL: state machines for agentic workflows" (reducer functions, StateGraph, HITL checkpoint patterns, when graph-based orchestration beats custom loops)
+- 3–4 PrepLab questions covering reducer composition, HITL interrupt patterns, failure modes
+- Optional: extend Agent Lab with a LangGraph state machine tab
 
 ---
 
