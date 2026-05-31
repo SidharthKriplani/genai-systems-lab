@@ -233,6 +233,36 @@ Senior AI interviews are now testing LangGraph-specific abstractions (ReAct, red
 - **GT post: "Human-in-the-Loop — When to Pause an Agent"** — approval gate patterns, escalation trigger design, override flow architecture, cost of false escalations vs missed halts, production examples (code review gate, financial transaction approval). `Effort: S`
 - **PrepLab questions (3–4)** — LangGraph reducer vs state replace, when reducers accumulate vs overwrite, HITL trigger conditions, ReAct loop failure modes. `Effort: S`
 
+### Scaling laws (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026)
+
+Scaling laws (Kaplan et al., Chinchilla) are a Q1 fundamentals topic in senior AI interviews — tested before RAG, before agents. GAL has architecture coverage (Concepts tab: Transformer, Attention, Tokenizer, Context Window) but zero content on scaling laws. "Bigger model = better" is the single most common misconception GAL's audience holds; Chinchilla disproved it. The compute-optimal training insight (smaller model trained longer outperforms larger undertrained model) is immediately applicable to any engineer making deployment or fine-tuning decisions. Absent from GAL entirely.
+
+- **GT post: "What Scaling Laws Actually Tell You"** — Kaplan power law recap, Chinchilla compute-optimal ratio (20 tokens/parameter), why Llama 3.1 8B beats older 70B models, emergent abilities controversy, what this means for fine-tuning decisions (scale data before scaling parameters). `Effort: S`
+- **PrepLab questions (3–4)** — Chinchilla optimal compute, why bigger isn't always better, scaling law implications for fine-tuning, emergent abilities definition + controversy. `Effort: S`
+- **Concepts module: "Scaling Laws"** — interactive compute-optimal curve: slider for parameter count, token budget auto-computes from Chinchilla ratio, model "efficiency zone" visualised. `Effort: S-M`
+
+### Semantic caching (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026)
+
+Semantic caching is a Q2 prompt engineering topic (cost optimisation) that's absent from GAL. The concept: cache LLM responses keyed by semantic similarity of the query embedding, not exact string match — so "What is RAG?" and "Can you explain RAG?" hit the same cached response. It's a real production cost reduction lever that most teams discover late. GAL covers prompt engineering generally (Playground) but has no content on caching strategies.
+
+- **GT post: "Semantic Caching — The LLM Cost Reduction Most Teams Discover Late"** — how it works (embedding similarity threshold), when it breaks (paraphrase attacks, time-sensitive queries), GPTCache / Redis Vector Cache as production tools, what cache hit rates look like in practice. `Effort: S`
+- **PrepLab questions (2–3)** — semantic vs exact-match caching trade-offs, cache invalidation for LLM responses, when caching hurts accuracy. `Effort: S`
+
+### Dense vs sparse retrieval (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026)
+
+Dense retrieval (vector search via bi-encoder embeddings) vs sparse retrieval (BM25/TF-IDF keyword matching) is a Q3 RAG fundamentals question. GAL's RAG Lab covers failure modes but doesn't explain the two retrieval paradigms as architectural alternatives with different failure modes. BM25 excels on exact keyword matching (product codes, names, IDs) but fails on semantic paraphrases; dense retrieval is the reverse. Hybrid search combines both. This is a real system design decision at the RAG architecture stage — absent from both GT and PrepLab.
+
+- **GT post: "Dense vs Sparse Retrieval — When to Use Each"** — BM25 mechanics (TF-IDF term weighting, why it beats dense on exact terms), bi-encoder dense retrieval (semantic generalisation, embedding space collapse failure), hybrid search (RRF score fusion, when to weight BM25 higher), production tools (Elasticsearch BM25 + FAISS / OpenSearch hybrid). `Effort: S`
+- **PrepLab questions (3–4)** — BM25 vs vector search failure modes, when sparse beats dense, hybrid search fusion approaches, when NOT to use hybrid search. `Effort: S`
+
+### Fine-tuning depth — LoRA / QLoRA (elevated from skip — May 2026)
+
+Fine-tuning is increasingly expected knowledge for senior AI engineers, not just ML researchers. LoRA (Low-Rank Adaptation) and QLoRA (quantized LoRA) are the production-standard fine-tuning techniques — every interview guide, every JD, every team discussing cost reduction mentions them. GAL currently has a `finetune` module in LLM Lab and a stub `dpo-in-practice` GT post, but no interactive treatment of LoRA mechanics or QLoRA's role in enabling fine-tuning on consumer hardware. Previously deprioritised; elevating to Tier 1.
+
+- **Concepts module: "LoRA — Fine-Tuning Without the Compute Bill"** — rank decomposition mechanic (why low-rank works for adapter weights), parameter count math (trainable params in LoRA << full fine-tune), QLoRA extension (4-bit quantized base + full-precision adapters), when LoRA is sufficient vs when full fine-tuning is needed. `Effort: S-M`
+- **PrepLab questions (3–4)** — LoRA rank parameter trade-offs, QLoRA memory math, LoRA vs prompt tuning vs full fine-tune decision tree, catastrophic forgetting in LoRA. `Effort: S`
+- **GT post: "LoRA in Production — What the Papers Don't Tell You"** — merge at inference vs separate adapter weights, rank sensitivity to task type, instruction fine-tuning vs domain adaptation, dataset size requirements. `Effort: S`
+
 ### Explore modules
 - ~~**Model Architecture Comparison**~~ ✅ *built May 2026 — architecture guide + use-case wizard*
 - ~~**Tokenizer Comparison**~~ ✅ *built May 2026 — BPE/WordPiece/SentencePiece/tiktoken guide + live demo + cost calculator*
@@ -651,6 +681,15 @@ The problem: people have zero clue which side project to build to match what emp
 ---
 
 ## Tier 2 — High Impact, More Effort
+
+### Fintech / Lending AI — PrepLab Company Track (elevated from skip — May 2026)
+
+Fintech and lending have been among the earliest and densest AI adopters — production RAG systems for policy lookup, document intelligence pipelines for loan processing, credit decision AI with fairness and explainability constraints under RBI/SEBI regulatory pressure. These are not trivial domain applications — they surface real production AI system design questions that GAL's core audience (AI engineers at fintech, GCCs, and product companies) faces. Previously deprioritised as domain-specific; re-evaluated and elevated. The questions are fundamentally about AI system design in constrained, high-stakes environments — which is exactly GAL's domain.
+
+PrepLab Company Tracks is the right container (domain-specific lens without changing core lab content). Fintech/lending as the first track — both because of audience overlap and because it has the richest production AI design constraints.
+
+- **PrepLab Company Track: Fintech / Lending AI** — 10–15 questions covering: document intelligence pipeline design (bank statement extraction, OCR + LLM hybrid), adverse action reason code generation (explainability for credit decisions), fairness and bias testing in credit models (demographic parity, disparate impact), data residency and PII handling under Indian regulations (RBI Digital Lending Guidelines), RAG for policy lookup in lending workflows, uncertainty scoring for AI credit recommendations. `Effort: M`
+- **GT post: "AI in Credit Decisioning — What the Constraints Actually Are"** — why explainability is non-negotiable (regulatory + legal liability), adverse action reason codes as a structured output problem, fairness testing as an eval design problem (not just a model problem), what "human-in-the-loop" means in a lending context (approval gate design). `Effort: S`
 
 ### Local LLM inference for agentic use — latency constraint (new cluster — from Qwen3.6-27B post, May 2026)
 

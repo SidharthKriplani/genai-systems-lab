@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: May 2026 (post sprint 28)*
+*Last updated: May 2026 (post sprint 30)*
 
 ---
 
@@ -565,6 +565,44 @@ The design principle the failure teaches. One decision rule a practitioner would
 **Priority:** Medium — the product works without this; it matters for first impressions and credibility.
 
 **Status:** Partially done — color token system shipped sprint 24 (elevation tokens + zinc-900 remap cover the color audit portion). Remaining: explicit font stack decision, size/weight scale documentation in index.css comments.
+
+---
+
+## PrepLab — "Common Trap" Layer on Question Answers
+
+**Component:** `src/PrepLab.jsx` — question data objects + answer reveal UI in Exam mode + Trainer mode
+
+**Current behavior:** Each PrepLab question has `question`, `options[]`, `correct`, and `explanation`. After submitting, the user sees the correct answer + explanation. No signal about what the wrong answer pattern looks like — no "what weaker candidates say" distinction.
+
+**Target behavior:** Add a `trap` field to question objects: a 1–2 sentence description of the most common wrong answer pattern — what a candidate says who knows the topic superficially but hasn't worked with it in production. Displayed after the explanation, in an amber-tinted callout block: "Common trap: [text]." This is the single highest-leverage field addition for interview prep — knowing what not to say is often more valuable than knowing the correct answer.
+
+**Example:**
+```js
+{
+  id: "rag-3",
+  question: "What is the difference between a bi-encoder and a cross-encoder?",
+  options: [...],
+  correct: 1,
+  explanation: "Bi-encoders embed query and document independently...",
+  trap: "Saying a cross-encoder is 'just a reranker'. Interviewers want to hear full-attention pair scoring vs. independent embedding lookup — and when each is appropriate."
+}
+```
+
+**Implementation:**
+- Add `trap?: string` to the question schema (optional — not all questions need one; start with the 50 hardest)
+- In Trainer mode answer reveal: after `explanation` block, if `trap` exists render amber callout `bg-amber-950/40 border-amber-800/50 text-amber-300` with label "Common trap"
+- In Exam mode: show in the per-question review at session end
+- Priority for trap content: RAG architecture, agent failure modes, eval metrics, fine-tuning decisions — topics where subtle misunderstanding is common
+
+**Source:** LLM/GenAI Interview Master Guide (136 questions, 4-layer format), May 2026 — each question has a "Common Trap" layer explicitly. GAL's PrepLab is the only comparable resource missing this layer.
+
+**Effort:** M (field addition is trivial; writing 50 trap entries is the work — ~30 min per 10 questions)
+
+**Dependencies:** None — purely additive. Existing questions unchanged.
+
+**Priority:** High — highest-leverage single-field improvement to PrepLab quality. Differentiates from generic MCQ banks.
+
+**Status:** Pending
 
 ---
 
