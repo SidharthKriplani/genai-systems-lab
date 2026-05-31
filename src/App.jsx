@@ -2063,34 +2063,7 @@ export default function App() {
                     </div>
                   )}
 
-                  {result.suggested_fix && (
-                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "2px solid rgba(245,158,11,0.5)" }}>
-                      <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">Suggested Fix</div>
-                      <p className="text-sm text-zinc-300 leading-relaxed">{result.suggested_fix}</p>
-                    </div>
-                  )}
-
-                  <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderTop: "2px solid rgba(139,92,246,0.55)", boxShadow: "0 4px 16px rgba(139,92,246,0.08)" }}>
-                    <div className="text-[10px] font-mono font-black text-violet-400 uppercase tracking-widest">System Design Lesson</div>
-                    <p className="text-sm text-zinc-300 leading-relaxed">{result.system_design_lesson}</p>
-                  </div>
-
-                  {scenario.synthesis_close && (
-                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.3)", borderTop: "2px solid rgba(99,102,241,0.6)" }}>
-                      <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">Scenario Principle</div>
-                      <p className="text-sm text-zinc-200 leading-relaxed">{scenario.synthesis_close}</p>
-                    </div>
-                  )}
-
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 flex items-center justify-between gap-3">
-                    <p className="text-xs text-zinc-500">Was this scenario useful? Tell us what to improve.</p>
-                    <button onClick={() => openFeedback("rag_lab_post_evaluate")}
-                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-700 hover:border-violet-700 text-zinc-400 hover:text-violet-400 transition-all">
-                      Give Feedback →
-                    </button>
-                  </div>
-
-                  {/* ── Forward pointer — what to do next ── */}
+                  {/* ── Forward pointer — what to do next (promoted above detail blocks) ── */}
                   {(() => {
                     const fwd = SCENARIO_FORWARD_POINTERS[scenario.scenario_id];
                     if (!fwd) return null;
@@ -2123,6 +2096,33 @@ export default function App() {
                       </div>
                     );
                   })()}
+
+                  {result.suggested_fix && (
+                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "2px solid rgba(245,158,11,0.5)" }}>
+                      <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">Suggested Fix</div>
+                      <p className="text-sm text-zinc-300 leading-relaxed">{result.suggested_fix}</p>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderTop: "2px solid rgba(139,92,246,0.55)", boxShadow: "0 4px 16px rgba(139,92,246,0.08)" }}>
+                    <div className="text-[10px] font-mono font-black text-violet-400 uppercase tracking-widest">System Design Lesson</div>
+                    <p className="text-sm text-zinc-300 leading-relaxed">{result.system_design_lesson}</p>
+                  </div>
+
+                  {scenario.synthesis_close && (
+                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.3)", borderTop: "2px solid rgba(99,102,241,0.6)" }}>
+                      <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">Scenario Principle</div>
+                      <p className="text-sm text-zinc-200 leading-relaxed">{scenario.synthesis_close}</p>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 flex items-center justify-between gap-3">
+                    <p className="text-xs text-zinc-500">Was this scenario useful? Tell us what to improve.</p>
+                    <button onClick={() => openFeedback("rag_lab_post_evaluate")}
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-700 hover:border-violet-700 text-zinc-400 hover:text-violet-400 transition-all">
+                      Give Feedback →
+                    </button>
+                  </div>
                 </>
               )}
             </div>

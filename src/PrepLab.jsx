@@ -3286,6 +3286,24 @@ function ExamMode({ onExit }) {
     return () => clearInterval(timerRef.current);
   }, [config, finished]);
 
+  // Keyboard shortcuts: 1-4 selects MCQ option, Enter advances
+  useEffect(() => {
+    if (!config || finished) return;
+    function handleKey(e) {
+      const q = questions[current];
+      if (!q || q.type !== "mcq") return;
+      if (e.key >= "1" && e.key <= "4") {
+        const idx = parseInt(e.key) - 1;
+        if (idx < q.options.length) setAnswers(a => ({ ...a, [q.id]: idx }));
+      }
+      if (e.key === "Enter" && answers[questions[current]?.id] !== undefined) {
+        handleNext();
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [config, finished, current, questions, answers]);
+
   function computeResults() {
     const bt = {}; let tc = 0; const wrong = []; const textPending = [];
     for (const q of questions) {
@@ -3546,6 +3564,23 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
     setSubmitted(false);
     setIsCorrect(false);
   }, [topicFilter, diffFilter, weakOnly]);
+
+  // Keyboard shortcuts: 1-4 selects MCQ option; Enter submits or advances
+  useEffect(() => {
+    function handleKey(e) {
+      const q = questions[current];
+      if (!q || q.type !== "mcq") return;
+      if (e.key >= "1" && e.key <= "4") {
+        const idx = parseInt(e.key) - 1;
+        if (!submitted && idx < q.options.length) setAnswer(String(idx));
+      }
+      if (e.key === "Enter") {
+        if (!submitted && answer.toString().trim() !== "") { submit(); }
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [current, questions, submitted, answer]);
 
   const q = questions[current];
 

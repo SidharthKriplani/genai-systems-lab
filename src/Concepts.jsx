@@ -3783,6 +3783,325 @@ function GuardrailsModule({ onNavigate }) {
   );
 }
 
+// ─── EVAL LOOP MODULE ────────────────────────────────────────────────────────
+
+const EVAL_LOOP_QUESTIONS = [
+  {
+    id: "retrieve",
+    num: "1",
+    q: "What did I retrieve?",
+    detail: "Before evaluating the answer, read what the retriever actually returned. Check: are the chunks relevant to the query? Do they contain the information needed to answer? Are they from the right time period and source?",
+    metric: "Context Precision + Context Recall",
+    metricDesc: "Context Precision = fraction of retrieved chunks that are relevant. Context Recall = fraction of relevant chunks that were actually retrieved. A system can pass one and fail the other.",
+    failure: "You retrieved 5 chunks. Only 1 is relevant — the rest are similar-sounding but off-topic. Context Precision = 0.2. The retriever is noisy.",
+    color: "#3b82f6",
+  },
+  {
+    id: "relevant",
+    num: "2",
+    q: "Was the retrieved context actually used?",
+    detail: "Check whether the model's answer is grounded in the retrieved context or in its parametric memory. An answer that sounds right but cannot be traced to a retrieved chunk is a hallucination — even if it happens to be correct.",
+    metric: "Faithfulness",
+    metricDesc: "Faithfulness = fraction of claims in the answer that can be verified in the retrieved context. A faithfulness score of 1.0 means every claim in the answer is supported by a retrieved chunk. Anything below 0.8 is a concern in production.",
+    failure: "The answer says 'as of Q3 2024, the policy changed to 15 days.' No retrieved chunk mentions Q3 2024. That claim is unfaithful — the model introduced a fact from parametric memory. Faithfulness = 0.6.",
+    color: "#6366f1",
+  },
+  {
+    id: "answered",
+    num: "3",
+    q: "Did the answer actually address the question?",
+    detail: "A faithful, grounded answer can still miss the point. If the user asked 'how do I cancel my subscription?' and the system answered 'subscription options are available at tier 1, 2, and 3,' it is faithful but irrelevant. Answer relevance measures whether the response actually addresses the intent.",
+    metric: "Answer Relevance",
+    metricDesc: "Answer Relevance = how well the generated answer addresses the original query. Measured by embedding the question and the answer and comparing their semantic similarity — or by asking an LLM judge to rate topical alignment. Catches 'technically grounded but unhelpful' failures.",
+    failure: "The model answered a related but different question. Faithfulness = 0.95 (everything said is in the chunks). Answer Relevance = 0.4 (it answered 'what plans exist' not 'how do I cancel'). High faithfulness masked the real failure.",
+    color: "#8b5cf6",
+  },
+];
+
+const RAGAS_METRICS = [
+  {
+    id: "faithfulness",
+    label: "Faithfulness",
+    tagline: "Does the answer only use what was retrieved?",
+    formula: "Supported claims / Total claims in answer",
+    range: "0 → 1. Target ≥ 0.85 in production.",
+    fail: "Model adds a fact not present in any retrieved chunk. Common with small models or when retrieved context is ambiguous — the model fills gaps from parametric memory.",
+    fix: "Increase instruction strength ('Answer ONLY from the provided context. Do not add external facts.'). Use a faithfulness-tuned LLM judge to flag low-score responses for review.",
+    color: "#6366f1",
+  },
+  {
+    id: "answer-relevance",
+    label: "Answer Relevance",
+    tagline: "Does the answer address the actual question?",
+    formula: "Semantic similarity between question and answer (embedding cosine or LLM judge)",
+    range: "0 → 1. Target ≥ 0.80.",
+    fail: "System retrieves relevant chunks and generates a faithful answer — but answers a related question, not the asked one. Often occurs when the query is ambiguous or when the system prompt over-constrains the output format.",
+    fix: "Review the system prompt for format constraints that might redirect answers. Add answer-relevance checks to your CI pipeline. For ambiguous queries, consider query clarification before retrieval.",
+    color: "#3b82f6",
+  },
+  {
+    id: "context-precision",
+    label: "Context Precision",
+    tagline: "How much of what you retrieved was actually useful?",
+    formula: "Relevant retrieved chunks / Total retrieved chunks",
+    range: "0 → 1. Target ≥ 0.70 for top_k=5.",
+    fail: "top_k=10 returns 10 chunks, only 2 are relevant. 8 noise chunks increase token cost, dilute the model's attention, and increase the probability of a distraction hallucination. Precision = 0.20.",
+    fix: "Tune top_k down. Add a reranker to filter retrieved chunks before passing to the model. Improve embedding quality (domain-specific model or fine-tuned embeddings).",
+    color: "#f59e0b",
+  },
+  {
+    id: "context-recall",
+    label: "Context Recall",
+    tagline: "Did you retrieve everything needed to answer?",
+    formula: "Relevant chunks retrieved / Total relevant chunks in corpus",
+    range: "0 → 1. Target ≥ 0.80. Requires a golden set to measure.",
+    fail: "The corpus contains 4 chunks needed to answer a multi-hop query fully. top_k=2 retrieved 2 of them. The answer is partial — not wrong, just incomplete. Context Recall = 0.50.",
+    fix: "Increase top_k. Use query decomposition (split the query into sub-queries, retrieve separately, merge). Add chunk-level evaluation to catch recall gaps in staging.",
+    color: "#22c55e",
+  },
+];
+
+const EVAL_DEBUG_SCENARIOS = [
+  {
+    id: "A",
+    title: "The Confident Partial Answer",
+    query: "What changed in the Q4 pricing policy and how does it affect enterprise contracts?",
+    metrics: { faithfulness: 0.95, answerRelevance: 0.88, contextPrecision: 0.80, contextRecall: 0.35 },
+    answer: "The Q4 pricing policy introduced a 12% increase for all tiers. Standard contracts are affected immediately.",
+    observation: "The answer scores well on faithfulness and relevance — but it's missing the enterprise contract section entirely. No user complaints yet because the answer sounds complete.",
+    rootCause: "context-recall",
+    rootCauseLabel: "Low Context Recall",
+    explanation: "Context Recall = 0.35 means only 35% of the relevant chunks were retrieved. The corpus has 4 chunks covering this query — only 1-2 were returned. top_k=2 is too low for a multi-part query. The answer is faithful to what was retrieved, but what was retrieved was incomplete. Fix: increase top_k or decompose the query into 'Q4 pricing policy changes' and 'enterprise contract impacts' as two separate retrieval passes.",
+  },
+  {
+    id: "B",
+    title: "The Context-Ignoring Model",
+    query: "What is the refund window for digital products?",
+    metrics: { faithfulness: 0.41, answerRelevance: 0.90, contextPrecision: 0.90, contextRecall: 0.95 },
+    answer: "Digital products can be refunded within 30 days of purchase if unused. Contact support for exceptions.",
+    observation: "The answer is relevant and sounds right. But the retrieved context says the refund window is 14 days. The model generated a plausible-sounding answer from parametric memory instead of the context.",
+    rootCause: "faithfulness",
+    rootCauseLabel: "Low Faithfulness",
+    explanation: "Context Precision and Recall are both high — the retriever did its job. Faithfulness = 0.41 means less than half the claims in the answer are supported by the retrieved chunks. The model used parametric knowledge ('30 days') over the retrieved policy ('14 days'). This is a generation-layer failure, not a retrieval failure. Fix: stronger grounding instruction, smaller context window to reduce distraction, or a different base model with better instruction-following.",
+  },
+  {
+    id: "C",
+    title: "The Topic-Drifting Answer",
+    query: "How do I downgrade my subscription plan?",
+    metrics: { faithfulness: 0.93, answerRelevance: 0.32, contextPrecision: 0.75, contextRecall: 0.80 },
+    answer: "Our subscription plans include Starter ($9/mo), Professional ($29/mo), and Enterprise (custom). Each plan includes different feature limits. You can view all plans at the billing settings page.",
+    observation: "Every claim is verifiable in the retrieved context. But the user asked how to downgrade — this answer describes what plans exist. High faithfulness hid the real failure.",
+    rootCause: "answer-relevance",
+    rootCauseLabel: "Low Answer Relevance",
+    explanation: "Faithfulness = 0.93 — nothing hallucinated. But Answer Relevance = 0.32 — the answer addresses 'what are the plans' not 'how do I downgrade'. The retriever returned plan description chunks (high precision) but didn't retrieve the account management / downgrade procedure chunks. The model then faithfully answered from what it had. This is a retrieval scope failure: the embedding model matched 'subscription plan' keywords but missed the procedural intent. Fix: improve query intent classification before retrieval, or use HyDE to rewrite the query as a hypothetical answer about 'downgrade steps' before embedding.",
+  },
+];
+
+function EvalLoopModule() {
+  const [tab, setTab] = useState("loop");
+  const [expandedQ, setExpandedQ] = useState(null);
+  const [selectedMetric, setSelectedMetric] = useState(null);
+  const [debugPick, setDebugPick] = useState({});
+  const [debugRevealed, setDebugRevealed] = useState({});
+
+  const tabs = [
+    { id: "loop",    label: "The 3 Eval Questions" },
+    { id: "metrics", label: "RAGAS Metrics" },
+    { id: "debug",   label: "Debug an Eval Run" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(34,197,94,0.2)", borderTop: "2px solid rgba(34,197,94,0.45)" }}>
+        <div className="text-[10px] font-mono font-black text-emerald-400 uppercase tracking-widest">Why this matters</div>
+        <p className="text-sm text-zinc-300 leading-relaxed">Every RAG failure is a retrieval failure, a context failure, or a generation failure — and they look identical in the final answer. An eval loop measures each layer separately. Without it, you are debugging a 3-component system by looking only at the output.</p>
+      </div>
+
+      <div className="flex gap-1 flex-wrap">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${tab === t.id ? "bg-emerald-600/20 text-emerald-300 border border-emerald-700/50" : "text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-700"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "loop" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Every RAG eval run asks three questions in order. Click each to see which metric answers it and what failure looks like.</p>
+          {EVAL_LOOP_QUESTIONS.map((item, i) => {
+            const open = expandedQ === item.id;
+            return (
+              <div key={item.id}
+                onClick={() => setExpandedQ(open ? null : item.id)}
+                className="rounded-xl border border-zinc-800 cursor-pointer transition-all hover:border-zinc-600"
+                style={open ? { borderColor: `${item.color}40`, background: `${item.color}08` } : {}}
+              >
+                <div className="p-4 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full border flex items-center justify-center shrink-0 text-xs font-black"
+                    style={{ borderColor: `${item.color}60`, color: item.color, background: `${item.color}14` }}>
+                    {item.num}
+                  </div>
+                  <span className="text-sm font-semibold text-white flex-1">{item.q}</span>
+                  <span className="text-[10px] font-mono shrink-0" style={{ color: item.color }}>{open ? "▲" : "▼"}</span>
+                </div>
+                {open && (
+                  <div className="px-4 pb-4 space-y-3 border-t border-zinc-800">
+                    <p className="text-xs text-zinc-400 leading-relaxed pt-3">{item.detail}</p>
+                    <div className="rounded-lg p-3 space-y-1.5" style={{ background: `${item.color}10`, border: `1px solid ${item.color}30` }}>
+                      <div className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: item.color }}>Metric: {item.metric}</div>
+                      <p className="text-xs text-zinc-300 leading-relaxed">{item.metricDesc}</p>
+                    </div>
+                    <div className="rounded-lg p-3 space-y-1.5 bg-red-950/20 border border-red-800/30">
+                      <div className="text-[10px] font-mono font-bold text-red-400 uppercase tracking-widest">Failure example</div>
+                      <p className="text-xs text-zinc-300 leading-relaxed">{item.failure}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <p className="text-xs text-zinc-500 pt-1 leading-relaxed italic">Run these three checks in order on every eval batch. A single final score hides which layer broke. Separate scores per layer tell you whether to fix the retriever, the prompt, or the model.</p>
+        </div>
+      )}
+
+      {tab === "metrics" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">RAGAS provides four complementary scores. Each targets a different failure layer. Click any metric to see what it measures, its failure mode, and how to fix it.</p>
+          <div className="grid grid-cols-2 gap-2">
+            {RAGAS_METRICS.map(m => (
+              <button key={m.id} onClick={() => setSelectedMetric(selectedMetric === m.id ? null : m.id)}
+                className="rounded-xl p-3 border text-left transition-all hover:opacity-90"
+                style={selectedMetric === m.id
+                  ? { borderColor: `${m.color}60`, background: `${m.color}12`, borderTopColor: m.color, borderTopWidth: 2 }
+                  : { borderColor: "rgba(63,63,70,0.8)", background: "rgba(24,24,27,0.6)" }
+                }>
+                <div className="text-xs font-bold text-white mb-0.5">{m.label}</div>
+                <div className="text-[10px] text-zinc-500 leading-snug">{m.tagline}</div>
+              </button>
+            ))}
+          </div>
+          {selectedMetric && (() => {
+            const m = RAGAS_METRICS.find(x => x.id === selectedMetric);
+            if (!m) return null;
+            return (
+              <div className="rounded-xl p-4 space-y-3" style={{ border: `1px solid ${m.color}30`, borderTop: `2px solid ${m.color}`, background: `${m.color}08` }}>
+                <div className="text-sm font-bold text-white">{m.label}</div>
+                <div className="space-y-1">
+                  <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500">Formula</div>
+                  <p className="text-xs text-zinc-300">{m.formula}</p>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500">Range</div>
+                  <p className="text-xs font-mono" style={{ color: m.color }}>{m.range}</p>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-red-500">Failure mode</div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">{m.fail}</p>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-500">Fix</div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">{m.fix}</p>
+                </div>
+              </div>
+            );
+          })()}
+          <p className="text-xs text-zinc-500 leading-relaxed italic pt-1">In production, run all four metrics per eval batch. They tell different stories — a system can have high faithfulness and low recall simultaneously, meaning the model is well-behaved but the retriever is missing chunks. You need all four to know where to look.</p>
+        </div>
+      )}
+
+      {tab === "debug" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Three real-looking eval runs, each with a hidden failure. The metrics scores are shown — diagnose the root cause before revealing it.</p>
+          {EVAL_DEBUG_SCENARIOS.map(sc => {
+            const pick = debugPick[sc.id];
+            const revealed = debugRevealed[sc.id];
+            const isCorrect = pick === sc.rootCause;
+            const rootCauseOptions = [
+              { id: "context-recall", label: "Low Context Recall" },
+              { id: "faithfulness",   label: "Low Faithfulness" },
+              { id: "answer-relevance", label: "Low Answer Relevance" },
+              { id: "context-precision", label: "Low Context Precision" },
+            ];
+            return (
+              <div key={sc.id} className="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-400">Scenario {sc.id}</span>
+                    <span className="text-sm font-semibold text-white">{sc.title}</span>
+                  </div>
+                  <div className="rounded-lg p-2.5 bg-zinc-800/50 border border-zinc-700">
+                    <div className="text-[10px] font-mono text-zinc-500 mb-1">USER QUERY</div>
+                    <p className="text-xs text-zinc-200">{sc.query}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { key: "faithfulness",      label: "Faithfulness",       val: sc.metrics.faithfulness,      color: "#6366f1" },
+                      { key: "answerRelevance",    label: "Answer Relevance",   val: sc.metrics.answerRelevance,   color: "#3b82f6" },
+                      { key: "contextPrecision",   label: "Context Precision",  val: sc.metrics.contextPrecision,  color: "#f59e0b" },
+                      { key: "contextRecall",      label: "Context Recall",     val: sc.metrics.contextRecall,     color: "#22c55e" },
+                    ].map(met => (
+                      <div key={met.key} className="rounded-lg p-2.5 border border-zinc-700 bg-zinc-900/60 space-y-1.5">
+                        <div className="text-[10px] font-mono text-zinc-500">{met.label}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 rounded-full bg-zinc-700">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${met.val * 100}%`, background: met.val < 0.5 ? "#ef4444" : met.val < 0.75 ? "#f59e0b" : met.color }} />
+                          </div>
+                          <span className={`text-xs font-mono font-bold ${met.val < 0.5 ? "text-red-400" : met.val < 0.75 ? "text-amber-400" : "text-zinc-300"}`}>{met.val.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-lg p-2.5 bg-zinc-800/50 border border-zinc-700">
+                    <div className="text-[10px] font-mono text-zinc-500 mb-1">GENERATED ANSWER</div>
+                    <p className="text-xs text-zinc-300 italic leading-relaxed">"{sc.answer}"</p>
+                  </div>
+                  <div className="rounded-lg p-2.5 bg-amber-950/20 border border-amber-800/30">
+                    <div className="text-[10px] font-mono text-amber-400 mb-1">OBSERVATION</div>
+                    <p className="text-xs text-zinc-300 leading-relaxed">{sc.observation}</p>
+                  </div>
+                  {!revealed && (
+                    <div className="space-y-2">
+                      <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Root cause?</div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {rootCauseOptions.map(opt => (
+                          <button key={opt.id} onClick={() => setDebugPick(p => ({ ...p, [sc.id]: opt.id }))}
+                            className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all text-left ${
+                              pick === opt.id
+                                ? "border-indigo-500 bg-indigo-900/30 text-indigo-300"
+                                : "border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                            }`}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                      {pick && (
+                        <button onClick={() => setDebugRevealed(r => ({ ...r, [sc.id]: true }))}
+                          className="w-full py-2 rounded-lg text-xs font-semibold border border-indigo-600/50 bg-indigo-900/20 text-indigo-300 hover:bg-indigo-900/40 transition-all">
+                          Reveal diagnosis →
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {revealed && (
+                    <div className={`rounded-xl p-4 space-y-2 ${isCorrect ? "bg-emerald-950/20 border border-emerald-800/40" : "bg-red-950/20 border border-red-800/40"}`}>
+                      <div className={`text-[10px] font-mono font-black uppercase tracking-widest ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>
+                        {isCorrect ? "✓ Correct" : "✗ Not quite"} — {sc.rootCauseLabel}
+                      </div>
+                      <p className="text-xs text-zinc-300 leading-relaxed">{sc.explanation}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <p className="text-xs text-zinc-500 leading-relaxed italic">Each scenario had one broken metric while the others looked fine. That's the normal production pattern — single-layer failures masked by everything else passing. Build eval pipelines that surface each metric independently, not just a composite score.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── DEBUG RAG MODULE ─────────────────────────────────────────────────────────
 
 const ALL_FAILURE_MODES = [
@@ -5386,6 +5705,16 @@ const MODULES = [
     component: GuardrailsModule,
   },
   {
+    id: "eval-loop",
+    label: "Eval Loop",
+    tag: "LAYER 8",
+    level: "intermediate",
+    title: "The RAG Eval Loop",
+    subtitle: "Three questions. Four metrics. Three broken eval runs to diagnose. Know whether failure is in retrieval, context, or generation.",
+    fidelity: { tier: "simplified", note: "Curated eval scenarios — real RAGAS metric patterns, pre-computed scores" },
+    component: EvalLoopModule,
+  },
+  {
     id: "debug",
     label: "Debug RAG",
     tag: "CHALLENGE",
@@ -5442,6 +5771,7 @@ const MODULE_NEXT_STEP = {
   "agent":         { tab: "agentlab",  label: "Agent Lab — wire failure modes and recovery" },
   "multiagent":    { tab: "agentlab",  label: "Agent Lab — multi-agent patterns" },
   "guardrails":    { tab: "systems",   label: "Systems — AI Safety Engineering module" },
+  "eval-loop":     { tab: "evallab",   label: "Eval Lab — build and run a real eval harness" },
   "debug":         { tab: "lab",       label: "RAG Lab — diagnose pipeline failures" },
   "transformer":   { tab: "llmlab",    label: "LLM Lab — Decoding & sampling module" },
   "sampling":      { tab: "llmlab",    label: "LLM Lab — Decoding module" },
@@ -5577,6 +5907,7 @@ const MODULE_META = {
   "nextoken":     { insight: "LLMs output probability distributions. Flat distributions are where hallucinations live.", mins: 6 },
   "tempgame":     { insight: "Temperature is among the first things you tune — and one of the most common regression sources.", mins: 6 },
   "chunking":     { insight: "Bad chunking kills good retrieval. Boundaries matter more than chunk size.", mins: 10 },
+  "eval-loop":    { insight: "Faithfulness, Recall, Precision, Relevance — four separate signals, one broken layer at a time.", mins: 12 },
   "rag-pipeline": { insight: "The model synthesises; it doesn't recall. RAG separates what it knows from what it needs.", mins: 10 },
   "debug":        { insight: "Same wrong answer could be retrieval, context, hallucination, or config. Symptom alone won't tell you.", mins: 12 },
   "agent":        { insight: "A loop fails in ways a function never does: stuck retries, hallucinated tool calls, context drift.", mins: 10 },
@@ -5600,7 +5931,7 @@ const GYMS = [
     label: "Retrieval",
     desc: "Embeddings, chunking, the RAG pipeline end-to-end, context budgets, and diagnosing when retrieval fails.",
     color: "#3b82f6",
-    moduleIds: ["embeddings", "chunking", "rag-pipeline", "context", "debug"],
+    moduleIds: ["embeddings", "chunking", "rag-pipeline", "context", "eval-loop", "debug"],
     labId: "lab",
     labLabel: "RAG Lab",
   },
@@ -5840,6 +6171,10 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
   const gym = GYMS.find(g => g.id === gymId);
   if (!gym) return null;
   const modules = gym.moduleIds.map(id => MODULES.find(m => m.id === id)).filter(Boolean);
+  const completedCount = modules.filter(m => mastery.has(m.id)).length;
+  const nextModule = modules.find(m => !mastery.has(m.id));
+  const pct = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
+
   return (
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
       <div>
@@ -5854,6 +6189,38 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
           </span>
         </div>
         <p className="text-sm text-zinc-400 leading-relaxed">{gym.desc}</p>
+      </div>
+
+      {/* ── Progress bar + next module CTA ── */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-zinc-400 font-medium">{completedCount}/{modules.length} completed</span>
+          <span className="font-mono text-zinc-500">{pct}%</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${gym.color}cc, ${gym.color})` }}
+          />
+        </div>
+        {nextModule && (
+          <button
+            onClick={() => onOpenModule(nextModule.id)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-zinc-700 hover:border-zinc-500 bg-zinc-900/60 hover:bg-zinc-800/60 transition-all text-left group"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest shrink-0" style={{ color: gym.color }}>Continue</span>
+              <span className="text-xs text-zinc-300 truncate group-hover:text-white transition-colors">{nextModule.title}</span>
+            </div>
+            <span className="text-xs text-zinc-500 group-hover:text-zinc-300 transition-colors shrink-0 ml-2">→</span>
+          </button>
+        )}
+        {completedCount === modules.length && modules.length > 0 && (
+          <div className="flex items-center gap-2 text-xs text-emerald-400">
+            <span>✓</span>
+            <span>All modules done — head to the lab to apply them.</span>
+          </div>
+        )}
       </div>
 
       <div className="space-y-3">
