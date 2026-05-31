@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: May 2026 (post sprint 28) | Current scale: 54 Systems modules (in nav), 22 Explore, 16 Agent Lab, 15 Concepts, 261 PrepLab questions, 222 GT posts*
+*Last updated: May 2026 (post sprint 29) | Current scale: 54 Systems modules (in nav), 22 Explore, 16 Agent Lab, 15 Concepts, 261 PrepLab questions, 222 GT posts*
 
 ---
 
@@ -37,6 +37,15 @@ This is the single most consequential open decision. Everything below is affecte
 **Internal pay gate markers:** Add `gated: true` flag to each PrepLab question and JD Prep mode in the data. Invisible to users. When Stripe is ready, wire the gate — the flag is already there. No UI change needed now.
 
 **The blocker for actual gating:** Stripe + Supabase Auth. Not a blocker for building toward it. Current state: everything stays free, markers get added, auth comes in a focused sprint when the decision is made.
+
+### Early revenue experiment — Gumroad/Etsy PDF cheatsheet (distribution signal from builder story, May 2026)
+
+A practitioner built a quiz platform, distributed via Etsy/Gumroad, and hit £1,000+ without a formal launch — purely through search and marketplace discovery. The signal: static/PDF content sells via marketplaces before Stripe exists. GAL's PrepLab content is already high-density and structured — it maps directly to a PDF cheatsheet format (system design principles, RAG failure taxonomy, eval metrics reference, agentic failure modes). Gumroad/Etsy require no backend. Revenue would validate audience intent before Stripe is wired, and test which content cluster has the highest conversion signal.
+
+- **PrepLab "Cheat Sheet" PDF** — curated 2-page reference: top 20 RAG failure modes + production notes, RAGAS metrics quick reference, agentic failure taxonomy, GT post reading list by topic. Sell on Gumroad at $5–9. `Effort: S (pure content + PDF generation)`
+- **Etsy/Gumroad listing test** — list PDF and measure organic discovery rate over 30 days. No paid promotion. Pure signal test.
+
+**Decision gate:** Do not build until Stripe + auth decision is made and confirmed as "later." If Stripe is imminent (< 3 months), skip this and go direct. This is only the right path if auth is genuinely deferred 6+ months.
 
 ### "Take my money" experience sprint — separate from monetization
 
@@ -174,6 +183,20 @@ These are the highest-ROI moves identified in the first-ever MVP/Weight + IP/Moa
 - ~~**Prompt Change Management**~~ ✅ *built May 2026 — version/score/rollback lab, CI/CD workflow, serving patterns*
 - **Agent Context Architecture** — Configure which layers your agent uses (persistent memory / skill injection / delegation / hooks), see cost/failure mode changes. *Pending — from ADK patterns cluster.*
 
+### Datamart-backed realism — static corpus for RAG Lab + Eval Lab (new cluster — May 2026)
+
+The RAG Lab's configure→fail→diagnose mechanic fires against labels and metrics. "Top_k too high = noise injection" is a tag — the user reads it, doesn't experience it. A small static document corpus (JSON array) with pre-computed similarity scores would let the user read the actual retrieved chunk that caused the failure. Seeing the garbage doc that got pulled in is a materially different learning experience from reading "noise injection." No execution required — pure React state, zero WASM cost.
+
+Scope boundary: RAG Lab and Eval Lab benefit from real data. Agent Lab and LLM Lab do not — their failure modes are behavioral and distributional, not corpus-dependent. See DECISIONS.md Section 7 for the full architecture ruling.
+
+**Tier 1 items (build in order):**
+
+- **Static document corpus for RAG Lab** — JSON array of 20–30 doc objects (title, content, metadata, pre-computed similarity scores) across 2 domains (e-commerce product catalog, technical documentation). Render actual retrieved chunks per scenario config — user reads the garbage doc that caused noise injection, the truncated chunk that broke context, the irrelevant result that caused hallucination. Data fabrication is the constraint; rendering is straightforward React. `Effort: S-M`
+
+- **Pre-computed similarity matrix** — For each RAG Lab scenario config, a set of `{chunk_id, similarity_score, content_preview}` records as static JSON. No live embedding calls. Consistent across sessions. Decoupled from corpus — same data supports multiple config comparison views. `Effort: S (once corpus exists)`
+
+- **Eval Lab query-answer-context triples** — 20 pre-built `{query, golden_answer, retrieved_contexts, judge_score}` triples. User sets judge parameters (temperature, strictness), watches which triples flip pass/fail. Makes calibration drift tangible on actual text pairs, not abstract score movements. `Effort: S-M`
+
 ### Systems modules (depth improvements)
 - ~~**Evals Lab**~~ ✅ *built May 2026 — Build Your Eval 4-step wizard, generates judge prompts, implementation checklist*
 - **Context Compaction** — Add live compaction simulator: user adjusts conversation length, sees token count, triggers compaction, sees output quality change. *Pending.*
@@ -185,6 +208,14 @@ An AI interviewer found that candidates who claimed to have built 2-3 RAG system
 
 - ~~**PrepLab questions (3–4)**~~ ✅ *built May 2026 — cos-1, cos-2, cos-3*
 - ~~**Explore module: "Cosine Similarity — The Geometry of Retrieval"**~~ ✅ *built May 2026 — id: cosine in Explore*
+
+### Bi-encoder vs cross-encoder two-stage retrieval (new cluster — from Microsoft interview post, May 2026)
+
+A Microsoft RAG interview transcript surfaced a hard gap: candidates who can implement vector search can't explain *why* a reranker exists as a second stage, what a cross-encoder actually does (full-attention pair scoring vs. separate embedding lookup), or when each stage fails. The lab covers retrieval failure modes (noise injection, score threshold misconfiguration) but never explains the two-stage architecture — bi-encoder for recall, cross-encoder for precision — as a deliberate design decision with distinct failure modes per stage. High PrepLab signal: this question appears in FAANG/unicorn interview loops at exactly the level GAL's audience targets.
+
+- **GT post: "Two-Stage Retrieval — Why Vector Search Is Not Enough"** — bi-encoder recall vs cross-encoder precision, full-attention pair scoring explained, when each stage fails (embedding space collapse, reranker score miscalibration), production pattern (OpenSearch + Cohere Rerank / Bedrock Knowledge Base). `Effort: S`
+- **PrepLab questions (3–4)** — bi-encoder vs cross-encoder trade-off, reranker failure mode, latency cost of cross-encoding, when to skip the reranker. `Effort: S`
+- **Query Refinement module extension** — add reranker as an optional 4th stage to the existing module (HyDE/multi-query/decomposition already there); show precision lift + latency cost. `Effort: S-M`
 
 ### Explore modules
 - ~~**Model Architecture Comparison**~~ ✅ *built May 2026 — architecture guide + use-case wizard*
@@ -604,6 +635,21 @@ The problem: people have zero clue which side project to build to match what emp
 ---
 
 ## Tier 2 — High Impact, More Effort
+
+### Local LLM inference for agentic use — latency constraint (new cluster — from Qwen3.6-27B post, May 2026)
+
+A practitioner running Qwen3.6-27B locally via Claude Code (4-bit quantized, Mac M-series) reported ~80 tokens/sec — fast for conversational use but a latency bottleneck for agentic loops where 10–15 tool calls chain sequentially. The insight: local model quality is no longer the blocker; throughput at agentic call rates is. The lab has serving infrastructure content (ServingInfra, decoding) but no content framing local LLMs specifically in the agentic context — when throughput matters more than quality, what architectural choices change (batching, caching, speculative decoding), and what the practical floor is for production agentic workloads. Moderate signal — Tier 2 because agentic use of local models is a niche (vs. API-hosted agents which is the primary audience), but the "latency not quality breaks local agentic systems" framing is genuine and missing.
+
+- **GT post: "When Local LLMs Break Agentic Loops"** — throughput vs quality as distinct constraints for agentic vs conversational use, speculative decoding + KV cache reuse for agentic call patterns, practical throughput floor (tokens/sec) for sequential tool call chains, API vs local trade-off decision tree. `Effort: S`
+- **Serving module callout** — add one reactive callout to the `serving` module: "Agentic throughput constraint — 10+ sequential tool calls at 80 tok/s = X second wall clock per loop." `Effort: XS`
+
+### Datamart-backed realism — execution layer (follow-on from Tier 1 static corpus, May 2026)
+
+Do not build these until the Tier 1 static corpus is shipped and engagement on RAG Lab / Eval Lab is measurable. See DECISIONS.md Section 7.
+
+- **Pyodide execution for Eval Lab** — Fixed notebook (not open cells) wrapping the Tier 1 static triples. User writes `compute_ragas_score(context, answer, question)` and sees the real metric output. Same pattern as ML Systems Lab ProjectLabTab — judge checkpoints woven into a fixed cell sequence, not a blank canvas. Cold start: ~4–6 seconds first load (Pyodide WASM). Reuses static triples from Tier 1. `Effort: M`
+
+- **Marimo companion notebooks** — Downloadable `.py` Marimo notebooks per major RAG Lab scenario (e.g. "Context Overflow", "Stale Retrieval"). User runs locally with their own API key to reproduce what the lab simulated. Zero in-browser cost — a GitHub link + download button on the done card. Marimo is NOT for in-browser use in GAL (see DECISIONS.md Section 7 — wrong tool, breaks lab frame). This is offline companion content only. `Effort: S per notebook once scenario spec exists`
 
 ### New features
 - ~~**PrepLab spaced repetition**~~ ✅ *built*

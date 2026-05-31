@@ -170,6 +170,9 @@ When the user shares a screenshot of a LinkedIn post, tweet, or practitioner wri
 - Utkarsh Mangal post (May 2026) — Probability, Entropy, Cross-Entropy Loss, KL Divergence framed as "how surprised is the model?" Lab gap: Concepts tab has architecture but no training signal math.
 - Naresh Edagotti post (May 2026) — RNN to LSTM to Transformer arc as systems-level story. Encoder/decoder/encoder-decoder split. Lab gap: no historical architecture progression narrative.
 - Anonymous DE skills post (May 2026) — 3-layer DE stack: Layer 1 (SQL/Python/fundamentals, 80% of value), Layer 2 (AI productivity tools), Layer 3 (vector DBs, RAG, evals, observability — currently scarce). Lab is a Layer 3 training ground but never says so. Positioning opportunity.
+- Microsoft RAG interview transcript (May 2026) — candidate failed on bi-encoder vs cross-encoder two-stage architecture. Could describe vector search failure modes but not WHY a reranker exists as a second stage. Lab gap: two-stage retrieval design decision (recall vs precision, distinct failure modes per stage) absent from both GT and PrepLab. Added to IDEAS.md Tier 1.
+- Qwen3.6-27B local inference post (May 2026) — ~80 tok/s on quantized local model fine for conversational use, latency bottleneck for agentic loops with 10–15 sequential tool calls. Lab gap: serving module covers throughput generally but not the agentic call-rate constraint. Added to IDEAS.md Tier 2.
+- Builder story: £1000+ quiz platform on Gumroad/Etsy (May 2026) — distribution signal: structured static content sells via marketplaces before Stripe exists. Actionable: PrepLab cheat sheet PDF on Gumroad as early revenue test. Decision-gated: only relevant if Stripe deferred 6+ months. Added to IDEAS.md freemium section.
 
 **Sibling codebase reads (May 2026):**
 
