@@ -371,6 +371,14 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
             <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8 relative">
 
               <div className="space-y-5">
+                {/* Market signal chip */}
+                <div className="flex justify-center">
+                  <span className="inline-flex items-center gap-2 text-[10px] font-mono px-3 py-1.5 rounded-full border"
+                    style={{ background: "rgba(34,211,238,0.06)", borderColor: "rgba(34,211,238,0.2)", color: "#22D3EE" }}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
+                    Agentic AI engineer roles: +280% YoY · 90K+ open roles (Stanford HAI 2026)
+                  </span>
+                </div>
                 <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.05]">
                   Configure it.{" "}
                   <span style={{ background: "linear-gradient(90deg, #ef4444 0%, #f59e0b 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Break it.</span>
@@ -378,8 +386,27 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   <span style={{ background: "linear-gradient(90deg, #22D3EE 0%, #A5F3FC 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Know exactly why.</span>
                 </h1>
                 <p className="text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
-                  Production AI systems fail in specific, predictable ways. This lab makes you <span className="text-zinc-300 font-medium">reproduce those failures</span> — not read about them. RAG pipelines, agent loops, eval harnesses. Free, no login.
+                  Agentic AI engineer roles grew <span className="text-zinc-300 font-medium">280% last year</span>. The gap isn't building AI — it's <span className="text-zinc-300 font-medium">diagnosing production failures</span> under pressure. This lab puts you in the seat.
                 </p>
+              </div>
+
+              {/* PrepLab sample question — primary cold-visitor CTA */}
+              <div className="max-w-xl mx-auto w-full">
+                <div className="rounded-2xl p-4 space-y-3 text-left"
+                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.5)" }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Senior AI engineer interviews</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-red-400">Hard</span>
+                  </div>
+                  <p className="text-sm text-zinc-200 leading-snug">
+                    Why does RAG retrieve the right chunk but still return the wrong answer? Walk me through the failure modes.
+                  </p>
+                  <button onClick={() => { track("hero_preplab_cta", {}); onNavigate("preplab"); }}
+                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+                    style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.85) 0%, rgba(22,163,74,0.9) 100%)", boxShadow: "0 0 16px rgba(34,197,94,0.2)" }}>
+                    Test your interview readiness →
+                  </button>
+                </div>
               </div>
 
               <HeroFailureDemo onNavigate={onNavigate} />
@@ -391,8 +418,8 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   className="w-full flex flex-col items-start p-5 rounded-2xl text-left card-lift animate-cardSlideUp"
                   style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(59,130,246,0.75)" }}>
                   <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">BUILD</span>
-                  <span className="text-base font-bold text-white mb-2 leading-snug">I'm building with LLMs</span>
-                  <span className="text-xs text-zinc-400 leading-relaxed">Configure real AI systems, watch them fail in production-realistic ways, and understand exactly why. 4 labs, 46 interactive scenarios.</span>
+                  <span className="text-base font-bold text-white mb-2 leading-snug">Ship AI that holds up in production</span>
+                  <span className="text-xs text-zinc-400 leading-relaxed">Configure real AI systems, trigger real failure modes, and understand exactly why they break. 4 labs, 46 interactive scenarios.</span>
                   <div className="flex flex-wrap gap-1.5 mt-3 mb-1">
                     {["RAG Lab", "Agent Lab", "Eval Lab", "LLM Lab"].map(lab => (
                       <span key={lab} className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: "#93c5fd", background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}>{lab}</span>
@@ -407,8 +434,8 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                     className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp animate-delay-60"
                     style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.65)" }}>
                     <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">PROVE</span>
-                    <span className="text-sm font-bold text-white mb-1.5 leading-snug">Interview prep</span>
-                    <span className="text-xs text-zinc-400 leading-relaxed flex-1">261 questions. Exam mode, trainer, or JD-targeted drill.</span>
+                    <span className="text-sm font-bold text-white mb-1.5 leading-snug">Interview ready in hours, not weeks</span>
+                    <span className="text-xs text-zinc-400 leading-relaxed flex-1">261 questions across RAG, agents, evals, and MLOps — with traps weaker candidates fall into, clearly marked.</span>
                     <span className="mt-3 text-xs font-bold text-green-300 flex items-center gap-1">Open Prep Lab <span className="text-green-400">→</span></span>
                   </button>
                   <button
@@ -416,8 +443,8 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                     className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp animate-delay-120"
                     style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(245,158,11,0.6)" }}>
                     <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest mb-1.5">NAVIGATE</span>
-                    <span className="text-sm font-bold text-white mb-1.5 leading-snug">Career clarity</span>
-                    <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, AI PM track, salary data by role.</span>
+                    <span className="text-sm font-bold text-white mb-1.5 leading-snug">AI career, mapped</span>
+                    <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, salary benchmarks, and the AI PM track. Built for engineers, not recruiters.</span>
                     <span className="mt-3 text-xs font-bold text-amber-300 flex items-center gap-1">Try Salary Calculator <span className="text-amber-400">→</span></span>
                   </button>
                 </div>
