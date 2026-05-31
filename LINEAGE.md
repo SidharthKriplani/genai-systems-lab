@@ -158,4 +158,8 @@ Core insight: most GenAI learning resources are either too academic (papers, tex
 
 ---
 
-*Last updated: May 2026 (sprint 31E-pre, Browse/List View shipped)*
+| May 2026 sprint 31E | PrepLab Sprint E — Interview Strategy full rebuild. `InterviewPrepMode` replaced with 4-step "Interview Brief" flow. Step 1: JD paste + optional company name. Step 2: Role type (4 cards: AI Engineer / ML Engineer / AI PM / Research Scientist) + round selector (1/2/3+/Final) + interviewer type selector (Tech Lead/Hiring Manager/Peer) + prior round feedback textarea (visible when round > 1). Step 3: Self-rate detected topics (Weak/Okay/Strong) — preserved from prior step 2, button changed from "Build My Drill" to "Build My Brief". Step 4: Interview Brief output (gated behind isAccessGranted()). Brief shows: header card (company, role, round, interviewer, date chips); top 3 gap areas ranked by gapScore (each: hard Q likely to come up, medium Q, amber trap callout, GT post link); prior feedback block (red tint); day-of checklist (5 checkboxes). Copy Brief button generates markdown to clipboard with 2.5s feedback state. Removed: entire inline drill flow (buildDrillQs, startDrill, submit, selfGrade, next, results screen). Added: generateBrief(), buildBrief(), copyBrief(). localStorage: gsl-preplab-strategy-phase written at steps 2 and 4. Violet accent throughout (was indigo). Section comment: "MODE 3: INTERVIEW STRATEGY". Brace diff: 0. Commit: `a5af787`. Scale: unchanged — PrepLab Sprint series A through E now complete. |
+
+---
+
+*Last updated: May 2026 (sprint 31E, Interview Strategy full rebuild shipped)*

@@ -2,52 +2,37 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 31D — PrepLab Sprints A+B+C+D complete)*
+*Last updated: May 2026 (post sprint 31E — PrepLab Sprints A+B+C+D+E complete, Browse/List View done)*
 
 ---
 
-## Theme: PrepLab — List View + Sprint E
+## Theme: PrepLab complete. Next: cold-start Home + content gaps.
 
-Two items, in order. List View is S-M effort and unblocks the cramming use case immediately. Sprint E is L effort.
+Both PrepLab items done. Shift focus to the two highest-ROI remaining items: cold-start Home rewrite (belief gap) and Graph RAG content gap (Tier 1 senior interview signal).
 
 ---
 
 ## Do this (in order)
 
-**1. TrainerMode — Browse/List View** `S effort` `HIGH`
+**1. Cold-start Home rewrite** `M effort` `HIGH`
 
-What: TrainerMode currently forces one-at-a-time card flow. Anyone who comes to cram (interview tomorrow, scanning for gaps) has no way to see all questions at once. Add a view toggle.
+What: The current Home front-loads the product mechanic before establishing why it matters. Fix the belief gap per DECISIONS.md Section 9 + UPGRADES.md Hero Copy Rewrite entry.
 
 Implementation:
-- Add `viewMode` state (`"drill"` | `"browse"`) to TrainerMode
-- Add a toggle pill in the TrainerMode header: "Drill" | "Browse"
-- Browse mode renders all filtered questions as a scrollable list
-- Each row: left difficulty accent bar (red/amber/blue), truncated question text (~2 lines), topic chip, difficulty badge
-- Clicking a row expands it as an accordion: full question text, MCQ options with correct answer highlighted green (or open answer keywords), explanation block, `CommonTrapCallout` if `q.trap`, source line if `q.source`
-- Expanded rows have a "Drill this topic →" button that switches to drill mode with that topic group pre-filtered
-- Keep existing groupFilter + diffFilter chips — they work the same in both modes
+- Lead with market signal: "Agentic AI engineer postings: +280% YoY. 90K+ open roles." stat chip
+- PrepLab CTA visible above the fold for cold visitors: "Test your interview readiness →"
+- One concrete question preview with "[appeared at Google/Meta/Anthropic]" framing
+- Door card copy: outcome-first language, not feature descriptions
+- Returning user view unchanged
 
-**2. PrepLab Sprint E — Interview Strategy full rebuild** `L effort` `HIGH`
+**2. Graph RAG + multi-hop retrieval** `M effort` `HIGH`
 
-What: `InterviewPrepMode` in `src/PrepLab.jsx` (mode: "jdprep") is the current 3-phase stub. Rebuild as a 5-step flow:
+What: Completely absent from GAL. Senior AI interview Round 1 now tests this. Tier 1 content gap.
 
-- Step 1: JD paste + company name (existing, keep)
-- Step 2: Role type selector (ML Engineer / AI Engineer / AI PM / Research Scientist)
-- Step 3: Round context — round number, interviewer type (hiring manager / tech lead / peer)
-- Step 4: Prior round feedback — free text, parsed for keywords
-- Step 5: Day plan output — "Your Interview Brief" as a structured day plan:
-  - Top 3 topics to focus on (from gap detection)
-  - 2 questions likely to come up per topic (drawn from PREP_QUESTIONS matching topic + difficulty)
-  - Trap to avoid per topic (from `trap` field on hard questions)
-  - 3 GT posts to skim
-  - A "Defense Doc absorption" section if a Defense Doc was previously built (check localStorage)
-  - Download button: renders brief as copyable markdown
-
-Implementation notes:
-- Gating: Phase 4 (the brief itself) behind `isAccessGranted()` with GateModal
-- Reuse `TOPIC_STUDY_RESOURCES` (already in PrepLab.jsx) for GT post links
-- `TOPIC_FORWARD_POINTERS` (added in Sprint D) for Lab forward links
-- Store progress in `gsl-preplab-strategy-phase` (already exists)
+Implementation:
+- 1 GT post: "Graph RAG — when vector search isn't enough" (entity extraction, knowledge graphs, multi-hop traversal, when to use vs standard RAG)
+- 3–4 PrepLab questions covering graph construction, traversal, failure modes
+- Optional: extend Query Refinement Lab with a graph traversal scenario tab
 
 ---
 
@@ -58,8 +43,8 @@ Implementation notes:
 - ~~**PrepLab Sprint B**~~ — DONE (`73924a0`). Extracted PREP_QUESTIONS to `src/data/preplabQuestions.js`. All 261 questions have `difficulty` field. PrepLab.jsx 5079→2446 lines.
 - ~~**PrepLab Sprint C**~~ — DONE (`38d5330`). `trap` + `source` fields on 50 hardest questions. `src/shared.jsx` created with `CommonTrapCallout`. RevealCard renders amber callout + source attribution.
 - ~~**PrepLab Sprint D**~~ — DONE (`22cd963`). Assess results screen rebuild: per-topic bars worst-first, TOPIC_FORWARD_POINTERS gap chips, session comparison delta, free-user gate at Q11. `src/config/gating.js` created.
-- **TrainerMode Browse/List View** — See Do This #1 above.
-- **PrepLab Sprint E** — Interview Strategy full rebuild. See Do This #2 above.
+- ~~**TrainerMode Browse/List View**~~ — DONE (`eb84135`). Drill|Browse toggle, accordion expand with MCQ correct highlighting, trap callout, "Drill this topic →" chip.
+- ~~**PrepLab Sprint E**~~ — DONE (`a5af787`). InterviewPrepMode rebuilt as 4-step Interview Brief: JD+company → Role+Round+Context → Rate Topics → Interview Brief output (gated). `generateBrief()` + `copyBrief()`. Removed inline drill.
 
 ### Content depth + production grounding (was Sprint 31 — demoted to Pending)
 - **"Your Interview Story" block on RAG Lab + Agent Lab done cards** — collapsible block at forward pointer card. `S effort`.
