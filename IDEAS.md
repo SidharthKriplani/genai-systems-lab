@@ -734,6 +734,31 @@ Do not build these until the Tier 1 static corpus is shipped and engagement on R
 ### Career tab — India salary data refresh (2026)
 Current salary calculator likely uses stale data. 2026 benchmarks from 1,200+ AI engineer hires across GCCs and startups in India: Junior $22–34K, Mid $45–72K, Senior $85–135K, Staff/Principal $150–240K, GenAI/LLM Specialist +35–55% premium over base band, top 1% at FAANG GCCs $280–420K. Key framing shift: senior Bangalore now earns more than median senior in Berlin or Toronto. GCCs competing at 70–80% of US comp, not 30%. Update the salary calculator bands and add the "GenAI specialist premium" as a distinct band.
 
+### Tab keyboard shortcuts for power navigation (new cluster — from product density discussion, May 2026)
+
+GAL has grown to the density of an amusement park — 4 Labs, 54+ Systems modules, 16 Agent Lab modules, 15 Concepts modules, 261 PrepLab questions. Power users and returning visitors know what they want to open but spend 2–3 clicks getting there. Single-character keyboard shortcuts for the primary tabs would remove this friction entirely. PrepLab already has 1/2/3/4+Enter within a session — the same pattern extended to tab-level navigation. No backend, no new state, minimal maintenance cost.
+
+The clean, low-cost part of the "product map" idea. The keyboard shortcut layer addresses the navigation job without requiring a visual artifact that must be maintained as modules are added.
+
+**What to build:**
+- Single-key global shortcuts (when no text input is focused):
+  - `R` → RAG Lab (`#rag`)
+  - `A` → Agent Lab (`#agents`)
+  - `E` → Eval Lab (`#systems` with Eval context)
+  - `L` → LLM Lab (`#systems` with LLM context)
+  - `P` → PrepLab (`#preplab`)
+  - `G` → Ground Truth (`#groundtruth`)
+  - `C` → Concepts (`#concepts`)
+  - `?` → show keyboard shortcuts modal
+- A keyboard shortcuts modal (already exists in GAL — extend it with these tab shortcuts)
+- Tiny `?` hint in the sidebar footer: "Press ? for shortcuts"
+
+**Files:** `App.jsx` — add `keydown` event listener on `window` in a `useEffect`, check `document.activeElement` is not an input/textarea before routing. Update the existing `ShortcutsModal` (or create one if not already present) to document these shortcuts.
+
+**Effort:** `S` — extends existing keyboard shortcut infrastructure (PrepLab already has this pattern). `Maintenance: none` — tab shortcuts don't change as new modules are added.
+
+**Source:** Product density discussion, May 2026. Assessment: the navigation value is real; the discoverability value (showing users what exists) is better addressed upstream via Home page and PrepLab entry point — not by a navigation artifact.
+
 ### Architecture
 - **Split modules.jsx further** — Currently 9,500 lines. Could split by group: `src/systems/build.jsx`, `src/systems/ops.jsx`, `src/systems/design.jsx`. Low urgency (Vite handles it fine, file tools work with offset/limit).
 - **Lazy loading** — Import each module component dynamically (`React.lazy + Suspense`). Would improve initial load time. Low priority since Vite bundles well.
@@ -749,6 +774,20 @@ Individual login (Google OAuth or email) with a personal profile section. Progre
 **Why it matters:** right now progress doesn't sync across devices and is lost when localStorage is cleared. An account layer makes the lab sticky in a way that localStorage cannot. A profile also enables personalized path recommendations — "based on your goal and where you are, here's what's next."
 
 **The constraint:** this is the single biggest violation of the zero-backend principle. Needs auth infrastructure, a database, session management — none of which exist. This is not a tab addition, it is a product architecture change. Lives here until the backend decision is made. If the product ever moves off the pure static model, this becomes Tier 1 immediately.
+
+### Visual product map — discoverability artifact (new cluster — from product density discussion, May 2026)
+
+The "amusement park map" idea: a visual overview of what exists across all labs and modules, with keyboard labels, so users know what they can explore. The discoverability insight behind it is real — a returning user who has only touched RAG Lab genuinely doesn't know that the Eval Lab has 15 modules, or that PrepLab has 261 questions across 5 topic clusters. The map metaphor is vivid.
+
+**Why this is Tier 3:** The idea decomposes into two separate jobs. (1) Navigation for power users — solved more cheaply by tab keyboard shortcuts (Tier 2 above). (2) Discoverability for cold/mid-stage visitors — this is the genuine remaining job. But a visual map is the wrong solution layer for discoverability, for two reasons: a cold visitor doesn't yet know the vocabulary well enough for a map to orient them ("EvalLoopModule" on a map is opaque to someone who hasn't formed the belief that evals matter to their career), and the real discoverability problem is the belief gap — solved upstream on Home and PrepLab entry, not by a navigation artifact (see DECISIONS.md Section 9). The map would cost M-L effort and require maintenance every time a module is added. The same discoverability value is delivered at S effort by improving the Home page market signal and PrepLab cold-start journey.
+
+**Revisit condition:** valid to build if (a) keyboard shortcuts ship and navigation friction persists, or (b) user research shows mid-stage visitors explicitly say "I didn't know X existed." Do not build speculatively.
+
+**If built:** single-page HTML canvas or SVG, 4 lab quadrants, modules as labeled nodes, click-to-navigate. Keyboard labels shown as badges next to each node. Accessible from a `?` hint or a "See everything →" link in the sidebar. No new state needed — just a static diagram that calls `navigateTo` on click.
+
+**Effort:** `M` to build, ongoing maintenance cost per new module added.
+
+**Source:** Product density discussion, May 2026. Keyboard shortcuts (Tier 2) are the cleaner, lower-cost solution to the navigation half of this idea.
 
 - **Community features** — Upvotes on GT posts, comments, "found this helpful". Needs backend. Out of scope for static app.
 - **Export** — "Export my PrepLab session" to PDF/CSV. Nice to have.
