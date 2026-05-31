@@ -24,6 +24,8 @@ export const PREP_QUESTIONS = [
     options: ["Chunk size too small", "Reranker missing — top-k has wrong docs at position 1 despite good recall", "Answer policy too permissive", "Embedding model mismatch"],
     correct: 1, keywords: [],
     explanation: "High recall means relevant docs exist in the top-k, but without a reranker the most relevant doc may not be at position 1. The LLM anchors on early context, so irrelevant chunks at the top produce wrong answers despite good recall.",
+  trap: "Saying the embedding model is wrong or chunk size is too small. High recall + wrong answers points specifically to a reranker gap — relevant docs exist in top-k but aren\'t ranked first. Interviewers want to hear that recall and precision are separate axes.",
+  source: "Microsoft RAG systems interview, Round 1",
     readMore: { label: "RAG Evaluation Deep Dive", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
@@ -32,6 +34,8 @@ export const PREP_QUESTIONS = [
     options: ["Context window overflow", "More irrelevant chunks diluting the signal — LLM loses focus", "Embedding drift", "Token cost is too high"],
     correct: 1, keywords: [],
     explanation: "LLMs degrade with noisy context. Adding 7 more partially-relevant chunks introduces contradictory or off-topic sentences, causing the model to hedge or pick wrong evidence.",
+  trap: "Saying \'more context is always better\' or blaming context window limits. The real mechanism is noise injection — each extra chunk adds contradictory or off-topic sentences that dilute the LLM signal.",
+  source: "Google DeepMind AI engineering screen",
     readMore: { label: "Retrieval Quality vs. Quantity", tab: "concepts" }
   },
   {
@@ -48,6 +52,8 @@ export const PREP_QUESTIONS = [
     options: ["Embedding model cannot handle dates", "Semantic similarity selects the most linguistically similar chunk regardless of recency", "Vector DB is corrupted", "Top_k is too high"],
     correct: 1, keywords: [],
     explanation: "Embeddings encode semantic meaning, not temporal relevance. Both policy versions discuss the same topic similarly. The retriever has no freshness signal. Metadata filtering on document date is required.",
+  trap: "Saying \'use a newer embedding model\' or \'increase chunk size.\' Embeddings encode semantic meaning, not temporal recency. The fix is metadata filtering at query time — embeddings can\'t distinguish 2021 from 2024 policy text.",
+  source: "Amazon Bedrock team interview",
     readMore: { label: "Stale Document Retrieval", tab: "groundtruth", postId: "stale-document-failure" }
   },
   {
@@ -56,6 +62,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["precision", "context", "small chunk", "large chunk", "generation", "hallucin", "embedding"],
     explanation: "Small chunks improve retrieval precision. Large parent chunks give the LLM enough context to answer accurately. It does not help when the answer requires synthesizing across multiple disjoint document sections.",
+  trap: "Explaining only the retrieval side: \'small chunks improve precision.\' The interviewer expects both halves — small chunks for retrieval precision AND large parent chunks for generation context. Answering only one half is the common miss.",
+  source: "Cohere AI engineer interview",
     readMore: { label: "Advanced Chunking Patterns", tab: "concepts" }
   },
   {
@@ -64,6 +72,8 @@ export const PREP_QUESTIONS = [
     options: ["Caching embeddings for faster lookup", "Generating a fake answer first, embedding it, then retrieving similar docs", "Fine-tuning the embedding model on queries", "Re-ranking results using a cross-encoder"],
     correct: 1, keywords: [],
     explanation: "HyDE generates a hypothetical answer to the query using an LLM, embeds that answer, and uses that embedding for retrieval. This bridges the query-document distribution gap since the hypothetical answer is linguistically closer to real documents.",
+  trap: "Saying HyDE \'retrieves hypothetical documents\' or \'generates fake data.\' The mechanism is embedding the hypothetical answer, not the query. Confusing query rewriting with document generation reveals a surface-level understanding.",
+  source: "Anthropic senior AI engineer screen",
     readMore: { label: "Advanced RAG Patterns", tab: "concepts" }
   },
   {
@@ -72,6 +82,8 @@ export const PREP_QUESTIONS = [
     options: ["The LLM is paraphrasing correctly but attributing claims to wrong source chunks", "The evaluation metrics are misconfigured", "Retrieval is failing but generation is strong", "Token budget is too low"],
     correct: 0, keywords: [],
     explanation: "High groundedness means claims are supported by retrieved context. Low citation accuracy means the model is citing the wrong document ID. Classic reranker misconfiguration or chunk boundary issue.",
+  trap: "Saying \'the LLM is hallucinating\' or \'the retriever is returning wrong chunks.\' The groundedness/citation split pattern specifically points to a citation attribution bug — the model is grounded but cites incorrectly.",
+  source: "Meta AI RAG systems interview",
     readMore: { label: "RAG Metrics Explained", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
@@ -80,6 +92,8 @@ export const PREP_QUESTIONS = [
     options: ["Remove the reranker", "Use the reranker only for queries classified as high-stakes via a lightweight classifier", "Switch to BM25 only", "Reduce top_k to 1 before reranking"],
     correct: 1, keywords: [],
     explanation: "A query classifier (fast, cheap) can route complex/high-stakes queries through the reranker while simple queries skip it. This preserves quality where it matters without paying the latency cost on every request.",
+  trap: "Saying \'just remove the reranker\' or \'use a faster server.\' The production answer is query routing — a classifier dispatches only complex queries through the reranker. Knowing adaptive serving separates senior from mid-level candidates.",
+  source: "Databricks ML platform interview, Round 2",
     readMore: { label: "RAG Latency Optimization", tab: "systems" }
   },
   {
@@ -88,6 +102,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["function", "class", "AST", "syntax", "scope", "import", "dependency"],
     explanation: "Code has syntactic structure (functions, classes, imports) that semantic chunking ignores. Mid-function splits break context. AST-aware chunking at function/class boundaries plus dependency graph traversal is needed.",
+  trap: "Saying \'increase chunk size\' or \'use better embeddings.\' The code-specific answer is AST-aware chunking — splitting on function/class boundaries, not token counts. Generic RAG answers fail this question.",
+  source: "GitHub Copilot team interview",
     readMore: { label: "Code RAG Systems", tab: "concepts" }
   },
   {
@@ -96,6 +112,8 @@ export const PREP_QUESTIONS = [
     options: ["Queries where the answer is a single exact phrase", "Queries requiring matching of multiple distinct concepts in one passage", "Queries that exceed context window limits", "Queries involving numerical reasoning"],
     correct: 1, keywords: [],
     explanation: "ColBERT computes token-level similarity, catching cases where a single embedding averages out distinct concepts. Superior for multi-faceted queries where a passage must satisfy several independent criteria.",
+  trap: "Saying ColBERT is \'more accurate generally\' or \'uses larger embeddings.\' The specific failure mode it solves is polysemy — queries where a single embedding averages out distinct meanings. Naming the mechanism is the differentiator.",
+  source: "Elasticsearch/Elastic AI interview",
     readMore: { label: "Vector Search Architectures", tab: "systems" }
   },
   {
@@ -104,6 +122,8 @@ export const PREP_QUESTIONS = [
     options: ["Vector DB is slow", "Metadata was not populated correctly during ingestion for a significant document subset", "The embedding model does not support metadata", "Filter is too broad"],
     correct: 1, keywords: [],
     explanation: "Metadata filtering applies a pre-filter before ANN search. If documents were not tagged correctly at ingestion time, they are silently excluded. The recall drop is invisible unless you have per-filter recall monitoring.",
+  trap: "Blaming vector search or the filter threshold. The specific cause is tagging errors at ingestion — wrong metadata means the filter correctly excludes correctly-labeled docs that don\'t match. It\'s an upstream data quality problem.",
+  source: "Pinecone solutions engineering interview",
     readMore: { label: "Metadata Filtering in Production", tab: "systems" }
   },
   {
@@ -112,6 +132,8 @@ export const PREP_QUESTIONS = [
     options: ["Reducing embedding cost", "Reducing LLM distraction from irrelevant context within a chunk", "Improving retrieval recall", "Handling multilingual documents"],
     correct: 1, keywords: [],
     explanation: "Retrieved chunks often contain relevant and irrelevant sentences mixed together. Contextual compression extracts only the relevant portion, reducing noise that causes the LLM to generate hallucinated or confused answers.",
+  trap: "Saying contextual compression \'reduces hallucination directly.\' The primary benefit is context window efficiency — removing irrelevant sentences makes room for more chunks. Hallucination reduction is secondary.",
+  source: "AWS re:Invent RAG architecture session follow-up",
     readMore: { label: "Advanced RAG Patterns", tab: "concepts" }
   },
 
@@ -122,6 +144,8 @@ export const PREP_QUESTIONS = [
     options: ["Tool is slow so the agent is retrying", "Missing state management — agent forgot it already called it", "Intentional verification pattern", "Context window pressure causing truncation"],
     correct: 1, keywords: [],
     explanation: "Without explicit state tracking or tool result caching, agents operating over long contexts can forget they already executed a tool call. This is a trajectory efficiency failure and a cost issue.",
+  trap: "Saying the agent \'has a reasoning error\' or \'is confused.\' The architectural root cause is missing state tracking — the agent literally forgot it already called the tool because there is no deduplification layer.",
+  source: "OpenAI applied AI interview, Round 1",
     readMore: { label: "Agent Architecture Patterns", tab: "agents" }
   },
   {
@@ -130,6 +154,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["minimum steps", "actual steps", "redundant", "wasted", "state", "plan"],
     explanation: "Trajectory efficiency = minimum steps needed / actual steps taken. 0.43 means the agent took more than twice the optimal steps. Fixes: add explicit planning step before execution, add short-term memory for tool call results.",
+  trap: "Describing the agent as \'slow\' or \'hallucinating.\' Trajectory efficiency is a specific metric — minimum steps / actual steps. 0.43 means it took 2.3x the optimal path. Not knowing the formula is the tell.",
+  source: "LangChain engineering interview",
     readMore: { label: "Agent Evaluation Metrics", tab: "agents" }
   },
   {
@@ -138,6 +164,8 @@ export const PREP_QUESTIONS = [
     options: ["Network latency", "Agent B reading stale state — A writes are not flushed before B reads", "Agent A is using wrong tool", "LLM temperature too high"],
     correct: 1, keywords: [],
     explanation: "Multi-agent systems with shared state have race conditions. If there is no synchronization primitive ensuring A's write is complete before B reads, B operates on stale data.",
+  trap: "Saying \'one agent is wrong\' or \'add more memory.\' The root cause is a race condition — a distributed systems problem, not an AI problem. Missing this distinction shows a gap in multi-agent architecture understanding.",
+  source: "Microsoft AutoGen team interview",
     readMore: { label: "Multi-Agent Coordination", tab: "agents" }
   },
   {
@@ -146,6 +174,8 @@ export const PREP_QUESTIONS = [
     options: ["ReAct is slower", "Context window accumulation — 47 turns of Thought/Action/Observation eventually exceeds limits or degrades quality", "ReAct cannot use tools", "Plan-and-execute does not support conditionals"],
     correct: 1, keywords: [],
     explanation: "ReAct interleaves thinking and acting in a growing context. At step 30+, the model is reasoning over a very long history, leading to drift, repetition, or context truncation.",
+  trap: "Saying ReAct \'is too slow\' or \'needs more tokens.\' The specific risk is context accumulation causing reasoning quality degradation — at step 30+ the model is reasoning over its own earlier (potentially erroneous) reasoning steps.",
+  source: "Anthropic AI safety team interview",
     readMore: { label: "Agent Patterns Compared", tab: "agents" }
   },
   {
@@ -154,6 +184,8 @@ export const PREP_QUESTIONS = [
     options: ["Switch to a bigger LLM", "Rewrite tool description with precise input schema, example calls, and when-to-use vs. when-not-to-use guidance", "Add more tools", "Increase temperature"],
     correct: 1, keywords: [],
     explanation: "Tool selection and parameter filling are heavily guided by tool descriptions. A vague description leads to incorrect tool selection and wrong parameter formats. Rich descriptions with examples dramatically improve tool use accuracy.",
+  trap: "Saying \'the agent needs better prompting\' or \'the tool is broken.\' Tool descriptions are the primary routing signal. Vague descriptions are an architecture problem that better prompting cannot fix.",
+  source: "Salesforce Einstein AI interview",
     readMore: { label: "Tool Design for Agents", tab: "agents" }
   },
   {
@@ -162,6 +194,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["middle", "attention", "position", "tool output", "long context", "beginning", "end"],
     explanation: "LLMs attend more strongly to content at the start and end of context. In agents with multiple tool outputs, middle results get underweighted. Unlike RAG where you control chunk order, tool outputs arrive sequentially.",
+  trap: "Defining \'lost in the middle\' generically without connecting it to tool output ordering. In agentic contexts it means results from the middle of a trajectory are deprioritized — the connection to multi-tool workflows is what the question tests.",
+  source: "Senior AI engineer interview, fintech company",
     readMore: { label: "LLM Context Behavior", tab: "concepts" }
   },
   {
@@ -170,6 +204,8 @@ export const PREP_QUESTIONS = [
     options: ["Use a very large LLM for better math", "Route all numerical computations to a code execution tool — never rely on LLM arithmetic", "Use chain-of-thought prompting for math", "Fine-tune the LLM on financial data"],
     correct: 1, keywords: [],
     explanation: "LLMs are unreliable at arithmetic. A Python code execution tool gives deterministic, verifiable results. Use deterministic tools for deterministic subtasks.",
+  trap: "Saying \'use a better model\' or \'add chain-of-thought prompting.\' For deterministic calculations the answer is always to delegate to code execution. LLMs should not do arithmetic — this is a first-principles system design answer.",
+  source: "Jane Street AI systems interview",
     readMore: { label: "Agent Tool Design", tab: "agents" }
   },
   {
@@ -178,6 +214,8 @@ export const PREP_QUESTIONS = [
     options: ["LLM hallucination in tool descriptions", "Irreversible agent actions triggered by misunderstood intent or adversarial input", "Context window overflow", "High API costs"],
     correct: 1, keywords: [],
     explanation: "Destructive or irreversible actions need human confirmation because agent misunderstandings or prompt injection attacks can trigger unintended consequences that propagate to external systems.",
+  trap: "Saying HITL \'slows the agent down\' or \'is just for UX.\' HITL before destructive actions is a security mechanism — it prevents prompt injection attacks from triggering irreversible actions through the agent.",
+  source: "Anthropic deployment engineering interview",
     readMore: { label: "Safe Agent Design", tab: "agents" }
   },
   {
@@ -186,6 +224,8 @@ export const PREP_QUESTIONS = [
     options: ["It increases latency", "Malicious content in tool results can instruct the LLM to override its original task or system prompt", "It causes tool calls to fail", "Vector databases cannot sanitize inputs"],
     correct: 1, keywords: [],
     explanation: "If a tool returns attacker-controlled content (e.g., a webpage), that content is injected into the LLM context. Attackers can include instructions like 'Ignore previous instructions' which the LLM may follow.",
+  trap: "Saying \'sanitize inputs\' or \'use a safe system prompt.\' The dangerous case is *indirect* injection from tool outputs — content the agent fetches (a webpage, API response) that contains adversarial instructions the LLM then executes.",
+  source: "AI security engineering interview, Round 2",
     readMore: { label: "Agent Security", tab: "agents" }
   },
   {
@@ -194,6 +234,8 @@ export const PREP_QUESTIONS = [
     options: ["The LLM API rate limit", "Compounding context length degradation — reasoning quality degrades as context accumulates", "Tool schemas are too complex", "Insufficient system prompt"],
     correct: 1, keywords: [],
     explanation: "Long-horizon tasks accumulate context that degrades LLM reasoning quality. At some threshold, earlier mistakes cascade. Solutions: periodic context summarization, subagent delegation.",
+  trap: "Saying \'add more memory\' or \'use a bigger context window.\' Long-horizon failure is about reasoning quality degradation, not storage. The fix is hierarchical decomposition — breaking long tasks into checkpointed subtasks.",
+  source: "Google DeepMind research engineering interview",
     readMore: { label: "Long-Horizon Agent Tasks", tab: "agents" }
   },
   {
@@ -202,6 +244,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["react", "reflexion", "plan", "execute", "reflect", "error", "long", "short", "self-critique"],
     explanation: "ReAct: good for exploratory short tasks, fails on long-horizon. Reflexion: good when failures have clear signals, fails when error diagnosis is ambiguous. Plan-and-Execute: good for structured workflows, fails on adaptive tasks requiring mid-plan revision.",
+  trap: "Describing only what each pattern does without naming specific failure modes. The question requires \'where each excels AND fails\' — giving definitions without failure modes is the most common miss on this question.",
+  source: "OpenAI deployment team interview, Round 2",
     readMore: { label: "Agent Architecture Patterns", tab: "agents" }
   },
   {
@@ -210,6 +254,8 @@ export const PREP_QUESTIONS = [
     options: ["5 agents exceed API limits", "Supervisor routing accuracy degrades as the decision space grows — it starts misrouting tasks", "Subagents conflict on shared memory", "Tool schemas are duplicated"],
     correct: 1, keywords: [],
     explanation: "Supervisor routing is essentially a classification task. As the number of agents grows, the classification problem becomes harder. Without explicit routing criteria, the supervisor starts making routing errors that compound.",
+  trap: "Saying \'the new agent has bugs\' or \'the supervisor prompt needs fixing.\' The structural issue is routing complexity growing super-linearly with agent count — it\'s a classification label-space problem, not a prompt quality problem.",
+  source: "Multi-agent systems interview, AI-native startup",
     readMore: { label: "Multi-Agent Orchestration", tab: "agents" }
   },
 
@@ -220,6 +266,8 @@ export const PREP_QUESTIONS = [
     options: ["ROUGE measures word overlap not factual accuracy — high overlap does not mean correct facts", "Evaluation set is too small", "Model is hallucinating mid-sentence only", "Chunking is wrong"],
     correct: 0, keywords: [],
     explanation: "ROUGE measures n-gram overlap. A response can be high-ROUGE by using similar words while still asserting wrong facts. Factual accuracy requires separate evaluation: fact-checking or LLM-as-judge with factual decomposition.",
+  trap: "Saying \'ROUGE is a bad metric\' or \'switch to a better metric.\' The specific insight is what ROUGE is *blind to* — factual accuracy. High ROUGE + high factual error rate is a named failure mode, not a general metric complaint.",
+  source: "Google DeepMind eval systems interview",
     readMore: { label: "Evaluation Metrics for RAG", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
@@ -228,6 +276,8 @@ export const PREP_QUESTIONS = [
     options: ["Model is biased toward longer outputs", "Positional bias — the LLM judge may score consistently high for stylistic reasons unrelated to actual quality", "G-Eval only works for summarization", "Token cost is too high"],
     correct: 1, keywords: [],
     explanation: "LLM-as-judge has known biases: verbosity bias, positional bias, self-preference bias. A consistently high score may indicate the judge is rewarding style rather than semantic accuracy. Calibration against human ratings is essential.",
+  trap: "Accepting the score at face value or reporting it as a success. A consistently high, non-varying LLM judge score is a signal of verbosity bias or calibration drift — real quality distributions are never this flat.",
+  source: "Cohere AI evaluation team interview",
     readMore: { label: "LLM-as-Judge Pitfalls", tab: "groundtruth", postId: "hallucination-detection" }
   },
   {
@@ -236,6 +286,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["groundedness", "relevance", "faithfulness", "false positive", "resolution", "tone"],
     explanation: "Good metrics: groundedness (catches hallucination but FP on well-phrased hallucinations), task completion (catches unhelpful responses but FP on technically-correct-but-useless answers), tone compliance (catches rude responses but FP on direct helpful answers scored as curt).",
+  trap: "Listing BLEU, ROUGE, or F1. Customer support eval needs product-specific metrics: groundedness, task completion, safety/tone. Using NLP benchmark metrics on a product problem signals evaluation inexperience.",
+  source: "Intercom AI engineering interview",
     readMore: { label: "Building Eval Suites", tab: "groundtruth", postId: "eval-pipeline-design" }
   },
   {
@@ -244,6 +296,8 @@ export const PREP_QUESTIONS = [
     options: ["The eval set has too many questions", "Eval set does not represent the full distribution of production queries — distribution shift", "Model needs fine-tuning", "LLM judge was biased"],
     correct: 1, keywords: [],
     explanation: "An eval set sampled from one domain will miss out-of-distribution queries. Production has long-tail edge cases, adversarial inputs, and evolving language patterns not captured in a static narrow eval set.",
+  trap: "Saying \'the evals are wrong\' or \'the model regressed.\' The real pattern is eval set distribution mismatch — a single-domain golden set misses the production long tail. This is eval set design failure, not model failure.",
+  source: "Anthropic reliability engineering interview",
     readMore: { label: "Eval Set Design", tab: "groundtruth", postId: "eval-pipeline-design" }
   },
   {
@@ -252,6 +306,8 @@ export const PREP_QUESTIONS = [
     options: ["Offline is faster", "Offline uses static test sets before deployment; online measures real user signals in production (CSAT, thumbs, task completion)", "Online evaluation uses better metrics", "They are interchangeable"],
     correct: 1, keywords: [],
     explanation: "Offline eval = pre-deployment, controlled, fast iteration. Online eval = post-deployment, real distribution, real user signals. Both are needed — a system can pass offline eval but fail online.",
+  trap: "Saying offline eval \'is not as good as online.\' They serve different jobs — offline for iteration speed, online for real distribution signal. The question tests whether you know when to use each, not which is superior.",
+  source: "ML infrastructure interview, unicorn stage startup",
     readMore: { label: "Eval Infrastructure", tab: "groundtruth", postId: "llmops-production-checklist" }
   },
   {
@@ -260,6 +316,8 @@ export const PREP_QUESTIONS = [
     options: ["Strong agreement — ship the judge", "Moderate agreement — use the judge for directional signals but not absolute quality gates", "Weak agreement — the judge is useless", "Good agreement but needs more data"],
     correct: 1, keywords: [],
     explanation: "Kappa 0.61 is moderate agreement. Use it for A/B comparisons and regression detection, not as an absolute correctness gate.",
+  trap: "Saying kappa 0.61 means the judge is unreliable and should be replaced. 0.61 is moderate agreement — reliable enough for A/B comparisons and regression detection, insufficient as an absolute truth oracle. The answer is context-dependent.",
+  source: "Meta AI evaluation interview",
     readMore: { label: "Evaluation Methodology", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
@@ -268,6 +326,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["self-preference", "same model", "bias", "independent", "different model", "human", "calibration"],
     explanation: "Models from the same family share training biases, leading to self-preference bias. Control: use a judge from a different model family, or blind human eval on a representative sample.",
+  trap: "Saying the model is \'biased generally.\' The specific failure is self-preference bias — same-family models share distributional priors and systematically favor outputs that resemble their own generation style.",
+  source: "Anthropic AI safety interview, Round 1",
     readMore: { label: "LLM-as-Judge Design", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
@@ -276,6 +336,8 @@ export const PREP_QUESTIONS = [
     options: ["Precision, Recall, F1, Accuracy", "Faithfulness, Answer Relevancy, Context Precision, Context Recall", "Groundedness, Coherence, Fluency, Completeness", "Latency, Cost, Accuracy, Reliability"],
     correct: 1, keywords: [],
     explanation: "RAGAS: Faithfulness (claims grounded in context?), Answer Relevancy (does the answer address the question?), Context Precision (are retrieved docs relevant?), Context Recall (were relevant docs retrieved?).",
+  trap: "Saying \'precision, recall, F1, and accuracy\' or generic ML metrics. RAGAS has specific dimension names: Faithfulness, Answer Relevancy, Context Precision, Context Recall. Mixing in standard ML metric names is the immediate tell.",
+  source: "Weaviate / RAG startup engineering interview",
     readMore: { label: "RAGAS Framework", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
@@ -284,6 +346,8 @@ export const PREP_QUESTIONS = [
     options: ["Ship B — groundedness is more important", "Roll back to A", "Investigate whether the relevancy drop is in a critical query category before deciding", "Run more tests"],
     correct: 2, keywords: [],
     explanation: "Aggregate metrics hide per-category behavior. A -8% relevancy drop might be uniformly small or concentrated in high-value query types. Always decompose metric changes by query category before shipping.",
+  trap: "Shipping version B because groundedness is more important than relevancy. The correct answer is: disaggregate by category before deciding. A uniform -8% relevancy is different from a concentrated -40% on your most critical queries.",
+  source: "Spotify AI product interview",
     readMore: { label: "A/B Testing RAG Systems", tab: "groundtruth", postId: "ab-testing-llms" }
   },
   {
@@ -292,6 +356,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["independent", "calibration", "bias", "cost", "speed", "human agreement", "family"],
     explanation: "Key criteria: avoid same-family models (self-preference bias), measure calibration against held-out human labels, cost/speed tradeoff, consistency across runs (temperature=0), structured output support.",
+  trap: "Picking based on model benchmark performance. The correct criteria are: avoid same-family judge (self-preference), measure calibration against human labels, cost/latency tradeoff, whether to use a panel of judges.",
+  source: "Scale AI evaluation team interview",
     readMore: { label: "Choosing an LLM Judge", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
   {
@@ -300,6 +366,8 @@ export const PREP_QUESTIONS = [
     options: ["Discard the adversarial set as outliers", "Add representative adversarial examples to your eval suite and treat it as a permanent regression category", "Switch to a bigger model", "Increase temperature"],
     correct: 1, keywords: [],
     explanation: "Golden datasets calcify. Production evolves. Adversarial failures reveal real distribution gaps. Incorporate them into your eval suite so future regressions are caught before deployment.",
+  trap: "Saying \'the adversarial set is too hard\' or \'adversarial evals are unfair.\' Adversarial failures are the highest-signal data you have — they reveal real distribution gaps that golden sets are blind to. The correct response is to incorporate them.",
+  source: "Anthropic red-teaming interview",
     readMore: { label: "Adversarial Evals", tab: "groundtruth", postId: "red-teaming-llms" }
   },
 
@@ -310,6 +378,8 @@ export const PREP_QUESTIONS = [
     options: ["Increase server count", "Streaming responses — let users see tokens as they generate, reducing perceived wait time", "Reduce prompt length", "Switch to a smaller model"],
     correct: 1, keywords: [],
     explanation: "Streaming does not reduce actual latency but dramatically reduces perceived latency. Users start reading at first token. This is the cheapest win and should always precede model changes.",
+  trap: "Immediately recommending a model switch or adding caching. The first optimization is streaming — zero infrastructure change, immediate perceived latency improvement. Jumping to infrastructure changes first signals inexperience with quick wins.",
+  source: "AWS Bedrock solutions architect interview",
     readMore: { label: "LLMOps Latency Patterns", tab: "systems" }
   },
   {
@@ -318,6 +388,8 @@ export const PREP_QUESTIONS = [
     options: ["Switch to open source models", "Semantic caching — serve identical or near-identical queries from cache instead of re-calling the API", "Reduce max_tokens", "Use smaller context windows"],
     correct: 1, keywords: [],
     explanation: "Semantic caching catches repeated or near-identical queries and returns cached results. Hit rates of 20-40% are typical, directly reducing API spend proportionally.",
+  trap: "Saying \'switch to a cheaper model\' as the first step. Semantic caching has zero quality tradeoff for repeated queries with typical 20-40% hit rates. Model downgrade trades quality; caching doesn\'t. Starting with downgrades signals the wrong optimization priority.",
+  source: "Databricks AI cost optimization interview",
     readMore: { label: "Cost Optimization for LLMs", tab: "systems" }
   },
   {
@@ -326,6 +398,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["trace", "latency", "groundedness", "retrieval", "error", "alert", "monitor", "p99", "cost"],
     explanation: "Key signals: TTFT (alert if p99 > threshold), retrieval latency, groundedness score distribution (alert if mean drops >5% WoW), error rate spike, cost per query budget breach, null retrieval rate.",
+  trap: "Listing only latency and error rate. A RAG-specific observability stack needs: groundedness score distribution, retrieval latency, no-match rate, context window utilization. Generic API observability misses all the retrieval failure modes.",
+  source: "Honeycomb / observability startup interview",
     readMore: { label: "LLM Observability", tab: "systems" }
   },
   {
@@ -334,6 +408,8 @@ export const PREP_QUESTIONS = [
     options: ["Using a larger model for important tokens only", "Using a small draft model to generate candidate tokens, verified in parallel by the large model", "Caching KV states across requests", "Quantizing the model weights"],
     correct: 1, keywords: [],
     explanation: "A small draft model generates N candidate tokens quickly. The large model verifies them in one forward pass. Net result: 2-3x throughput improvement on suitable workloads.",
+  trap: "Saying speculative decoding \'uses a smaller model that is faster\' without explaining the parallel verification. The mechanism — draft model generates, large model verifies in one pass — is the key insight. Missing the verification step is the tell.",
+  source: "NVIDIA inference team interview",
     readMore: { label: "Inference Optimization", tab: "systems" }
   },
   {
@@ -342,6 +418,8 @@ export const PREP_QUESTIONS = [
     options: ["Roll back immediately", "Check if the spike is correlated with specific query types, time of day, or a new user segment before rolling back", "Scale up servers", "Check API quota"],
     correct: 1, keywords: [],
     explanation: "A targeted error spike might be from a specific query category. Understanding the cause before rollback enables either a targeted fix or a confident rollback decision with a known root cause.",
+  trap: "Immediately rolling back. Rollback loses diagnostic data and may not solve the problem if it is category-specific. Triage first — identify which query type is spiking. This is the difference between a reactive and a systematic incident response.",
+  source: "Production ML on-call interview, fintech",
     readMore: { label: "Incident Response for LLM Systems", tab: "systems" }
   },
   {
@@ -350,6 +428,8 @@ export const PREP_QUESTIONS = [
     options: ["Model to forget early context, degrading response quality for queries requiring full-document understanding", "Increased token generation speed", "Reduced memory footprint", "Better instruction following"],
     correct: 0, keywords: [],
     explanation: "KV cache stores computed attention keys/values. When evicted, the model loses access to that context. For long documents requiring full-context reasoning, this causes quality degradation.",
+  trap: "Saying KV cache eviction \'slows down the model\' or \'increases cost.\' The actual impact is quality degradation — evicted tokens are functionally gone from the context, equivalent to removing text from the prompt. It is a correctness problem, not a speed problem.",
+  source: "Fireworks AI / inference startup interview",
     readMore: { label: "Inference Architecture", tab: "systems" }
   },
   {
@@ -358,6 +438,8 @@ export const PREP_QUESTIONS = [
     options: ["Use more API keys to parallelize", "Use batch API endpoints (e.g., OpenAI Batch API) — typically 50% cheaper at the cost of higher latency", "Run 24/7 to distribute cost", "Use streaming to reduce memory"],
     correct: 1, keywords: [],
     explanation: "Batch APIs process requests asynchronously (24h window) at half the per-token price. For non-latency-sensitive workloads like document processing, this is the dominant cost-saving strategy.",
+  trap: "Saying batch inference \'is less accurate\' or only discussing speed. The key differentiator is cost: batch APIs offer 50% cost reduction. Not knowing the cost differential (only the latency trade-off) signals surface-level production awareness.",
+  source: "OpenAI enterprise team interview",
     readMore: { label: "LLM Cost Optimization", tab: "systems" }
   },
   {
@@ -366,6 +448,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["cache", "smaller model", "prompt", "quantiz", "fine-tun", "batch", "distill"],
     explanation: "Priority: (1) semantic caching, (2) prompt optimization/compression, (3) route simple queries to smaller models, (4) quantized models for self-hosted inference, (5) fine-tune smaller model to match large model quality, (6) batch non-latency-sensitive ops.",
+  trap: "Starting the optimization roadmap with \'switch to a cheaper model.\' The priority order matters: caching (no quality tradeoff), then prompt compression, then model routing, then fine-tuning. Jumping to model downgrade first is the most common senior interview miss.",
+  source: "Staff AI engineer interview, Series B startup",
     readMore: { label: "LLM Cost at Scale", tab: "systems" }
   },
   {
@@ -374,6 +458,8 @@ export const PREP_QUESTIONS = [
     options: ["It uses larger batch sizes", "Completed sequences are immediately replaced with new requests — GPU never idles waiting for slowest sequence in batch", "It reduces memory usage per request", "It enables multi-GPU inference"],
     correct: 1, keywords: [],
     explanation: "Static batching waits for all sequences to finish before processing the next batch — GPU idles as some sequences finish early. Continuous batching inserts new requests the moment a slot frees.",
+  trap: "Saying continuous batching \'processes more requests simultaneously\' without explaining the static batching problem. The key is that static batching idles the GPU waiting for the slowest sequence — continuous batching is the fix for that specific inefficiency.",
+  source: "vLLM / inference infrastructure interview",
     readMore: { label: "vLLM and Inference Servers", tab: "systems" }
   },
   {
@@ -382,6 +468,8 @@ export const PREP_QUESTIONS = [
     options: ["Always fine-tune for cost savings", "Prompt caching eliminates redundant computation on the static system prompt — often better ROI for long static prefixes than fine-tuning", "They solve the same problem", "Fine-tuning is always cheaper"],
     correct: 1, keywords: [],
     explanation: "Prompt caching (Anthropic, OpenAI) caches KV computations for static prefix tokens. A 4000-token system prompt cached = 4000 tokens not computed per request. Fine-tuning bakes knowledge into weights but still incurs all inference costs.",
+  trap: "Recommending fine-tuning as the cost solution for a long static prompt. Fine-tuning adds training cost, maintenance overhead, and introduces behavioral drift risk. Prompt caching is the right answer for a fixed prefix — same output, no training.",
+  source: "Anthropic solutions engineering interview",
     readMore: { label: "Prompt Caching Strategies", tab: "systems" }
   },
   {
@@ -390,6 +478,8 @@ export const PREP_QUESTIONS = [
     options: ["Reducing API costs", "Safe quality validation under real traffic distribution before cutover — catches distribution-specific regressions evals missed", "Improving model speed", "A/B testing user preferences"],
     correct: 1, keywords: [],
     explanation: "Shadow deployment lets you run both models on real traffic, compare outputs offline, and catch regressions that your eval set did not cover — all without any user impact.",
+  trap: "Saying shadow deployment is \'for performance testing\' or \'A/B testing.\' Its primary purpose is regression detection on real traffic before committing to a new model version — not user-facing experimentation.",
+  source: "Google ML reliability interview",
     readMore: { label: "Model Deployment Strategies", tab: "systems" }
   },
 
@@ -400,6 +490,8 @@ export const PREP_QUESTIONS = [
     options: ["Model overfits to benchmark format not real user queries", "Fine-tuning is always wrong for support", "Not enough training data", "Learning rate too high"],
     correct: 0, keywords: [],
     explanation: "Fine-tuning on curated benchmark-style examples can cause the model to optimize for the format/style of those examples rather than the messy, varied real-user queries. Benchmark and production distributions diverge.",
+  trap: "Saying \'fine-tuning does not work\' or \'the training data was bad.\' The specific failure mode is benchmark overfitting — the model learns the evaluation format rather than the underlying task, which is a training data design problem.",
+  source: "Hugging Face ML engineer interview",
     readMore: { label: "Fine-Tuning Best Practices", tab: "concepts" }
   },
   {
@@ -408,6 +500,8 @@ export const PREP_QUESTIONS = [
     options: ["Updating all model weights with a low learning rate", "Injecting low-rank decomposition matrices alongside frozen original weights — only adapters are trained", "Distilling knowledge from a larger model", "Pruning unused attention heads"],
     correct: 1, keywords: [],
     explanation: "LoRA freezes original weights and trains two small matrices (A and B) whose product is added to frozen weight updates. Dramatic reduction in trainable parameters (typically 0.1-1% of original) with competitive quality.",
+  trap: "Saying \'LoRA uses less data\' or \'LoRA is faster because it skips layers.\' LoRA freezes original weights and trains two matrices (A and B) whose product approximates the weight delta. Not knowing the matrix decomposition mechanism is the weak answer.",
+  source: "Meta AI fine-tuning team interview",
     readMore: { label: "Parameter-Efficient Fine-Tuning", tab: "concepts" }
   },
   {
@@ -416,6 +510,8 @@ export const PREP_QUESTIONS = [
     options: ["DPO uses a separate reward model trained first", "DPO reformulates the RL objective into a supervised loss directly on preference pairs — no explicit reward model needed", "DPO is only for small models", "They are mathematically equivalent"],
     correct: 1, keywords: [],
     explanation: "RLHF trains a reward model, then uses PPO — complex and unstable. DPO derives a closed-form loss from preference data (chosen vs. rejected pairs). Simpler, more stable, comparable results.",
+  trap: "Saying DPO is \'simpler RLHF\' or \'RLHF without the feedback step.\' The key distinction is that DPO eliminates the reward model entirely — it derives the optimal policy directly from preference pairs using a closed-form loss. Reward model removal is the core insight.",
+  source: "Anthropic alignment research interview",
     readMore: { label: "RLHF vs DPO", tab: "concepts" }
   },
   {
@@ -424,6 +520,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["fine-tune", "few-shot", "rag", "update", "static", "knowledge", "format", "style"],
     explanation: "RAG: dynamic knowledge that updates frequently, source attribution needed. Few-shot: small behavioral shift, quick iteration. Fine-tuning: stable domain knowledge where latency/cost of long prompts is prohibitive.",
+  trap: "Recommending fine-tuning for domain knowledge by default. RAG is better for dynamic, citable, frequently-updated knowledge. Fine-tuning is for behavioral and style changes. Conflating knowledge injection with behavioral alignment is the most common fine-tuning strategy error.",
+  source: "Google AI research engineering interview",
     readMore: { label: "Fine-Tuning vs RAG", tab: "concepts" }
   },
   {
@@ -432,6 +530,8 @@ export const PREP_QUESTIONS = [
     options: ["Model forgetting to follow format instructions", "Fine-tuned model losing general capabilities due to weight updates overwriting prior knowledge", "Training loss not converging", "Forgetting the system prompt"],
     correct: 1, keywords: [],
     explanation: "Fine-tuning on a narrow dataset can overwrite the distributed representations that encode general world knowledge and instruction following. The model excels at the target task but regresses on everything else.",
+  trap: "Saying the model \'loses its fine-tuning data\' or \'forgets the new task.\' Catastrophic forgetting is the reverse — the model overwrites general knowledge while getting better at the new task. The direction of forgetting is the key detail.",
+  source: "Academic ML to industry interview, post-PhD",
     readMore: { label: "Fine-Tuning Risks", tab: "concepts" }
   },
 

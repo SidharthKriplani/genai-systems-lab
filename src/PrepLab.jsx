@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { isAccessGranted, grantAccess, validateCode, FREE_QUESTION_LIMIT } from "./utils/accessCode";
 import { PREP_QUESTIONS } from "./data/preplabQuestions";
+import { CommonTrapCallout } from "./shared";
 
 // ─── GATE MODAL ───────────────────────────────────────────────────────────────
 function GateModal({ onUnlock, onClose }) {
@@ -518,6 +519,10 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
           <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-2">Model answer</p>
           <p className="text-[13px] text-zinc-300 leading-relaxed">{q.explanation}</p>
         </div>
+        {q.source && (
+          <p className="text-[10px] text-zinc-500 font-mono">Source: {q.source}</p>
+        )}
+        {q.trap && <CommonTrapCallout trap={q.trap} />}
         {q.readMore && (
           <button
             onClick={() => {
@@ -583,6 +588,10 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
       <div className="border-t border-zinc-800 pt-3">
         <p className="text-[13px] text-zinc-300 leading-relaxed">{q.explanation}</p>
       </div>
+      {q.source && (
+        <p className="text-[10px] text-zinc-500 font-mono">Source: {q.source}</p>
+      )}
+      {q.trap && <CommonTrapCallout trap={q.trap} />}
       {q.readMore && (
         <button
           onClick={() => {
