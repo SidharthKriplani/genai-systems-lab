@@ -154,4 +154,8 @@ Core insight: most GenAI learning resources are either too academic (papers, tex
 
 ---
 
-*Last updated: May 2026 (sprint 31D, PrepLab Sprints A+B+C+D complete)*
+| May 2026 sprint 31E-pre | TrainerMode Browse/List View shipped. `viewMode` state ("drill" | "browse") + `expandedId` accordion added to TrainerMode. Pill toggle in header; PBar hides in browse mode; counter adapts. Browse mode: scrollable list of all filtered questions, left difficulty accent bar (red/amber/blue), question text truncated to 2 lines, topic chip + difficulty badge + chevron per row. Accordion expand: MCQ options with correct highlighted green; open questions show keyword chips; both show explanation, CommonTrapCallout, source. "Drill this topic →" chip switches back to drill mode with topic pre-filtered. expandedId resets on filter changes. Brace diff: 0. Commit: `eb84135`. Scale: unchanged. |
+
+---
+
+*Last updated: May 2026 (sprint 31E-pre, Browse/List View shipped)*
