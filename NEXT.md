@@ -2,110 +2,148 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 30, field intelligence + architecture + cold-start analysis session)*
+*Last updated: May 2026 (post sprint 30, PrepLab revamp spec session)*
 
 ---
 
-## Theme: Content depth + production grounding
+## Theme: PrepLab revamp — Sprint A (naming + visual layer)
 
-Sprint 30 shipped 4 structural items (done card prominence, gym progress, keyboard shortcuts, EvalLoopModule). The product now has good interactive mechanics but the failure cards end too abstract — no production mapping, no interview narrative. Sprint 31 closes that gap, then adds real corpus data to RAG Lab so users read actual retrieved text, then expands 3 thin GT posts to full depth.
+PrepLab is the cold-start entry point (DECISIONS.md Section 9). The spec (PREPLAB_SPEC.md) defines the full revamp across 5 sprints. Sprint A is pure visual and naming — no logic changes, no data changes, ships value immediately, unblocks Sprints B–E. A cold visitor should open PrepLab after Sprint A and know which mode to open within 5 seconds.
 
 ---
 
 ## Do this (in order)
 
-**1. "Your Interview Story" block on RAG Lab + Agent Lab done cards** `S effort` `HIGH`
+**1. Rename modes in PREPLAB_SIDEBAR + hide Defense Doc / Weakness Map** `S effort` `HIGH`
 
-What: At the ✓ forward pointer card, add a collapsible "Your Interview Story" block that packages the scenario into a 3-line narrative: "I diagnosed [failure mode] → root cause [X] → fix [Y] → in production this maps to [Z]." This is pure copywriting/framing addition — all variables already exist on the card. No new logic, no new state.
+What: Update the `PREPLAB_SIDEBAR` constant in `src/PrepLab.jsx`. Three entries survive, two are hidden (not deleted — their components stay in the file for Sprint E).
 
-Files:
-- `src/App.jsx` — RAG Lab forward pointer card (the block rendered by `SCENARIO_FORWARD_POINTERS` lookup, around the `✓ "You've seen the failure. What's next?"` section). Add a collapsible `<details>` or toggle button below the two action buttons.
-- `src/Agents.jsx` — Agent Lab done screen cards (the purple gradient done cards at module end in `simulator`, `design`, and `agentcfg` modules). Same collapsible block.
-
-Content per RAG scenario (write inline as a lookup object keyed by `scenario_id`):
-- `missing_answer` → "I diagnosed a retrieval gap → corpus didn't contain the answer → fix: expand corpus + add fallback detection → in production: Bedrock Knowledge Base coverage audit + CloudWatch 'no-match' alarm"
-- `hallucination` → "I diagnosed grounding failure → retrieved chunks weren't used → fix: stricter context-forcing prompt + faithfulness eval → in production: RAGAS faithfulness monitor + LLM-as-judge in CI"
-- `noise_injection` → "I diagnosed precision failure → top_k too high pulled irrelevant chunks → fix: reduce top_k + add score threshold → in production: OpenSearch min_score filter + retrieval precision metric"
-- `stale_data` → "I diagnosed staleness → corpus not refreshed → fix: scheduled re-indexing + metadata freshness filter → in production: S3 event trigger → re-embed pipeline + date filter in query"
-- `context_overflow` → "I diagnosed context truncation → chunk size × top_k exceeded window → fix: smaller chunks + lower top_k → in production: chunk size calculator pre-deploy + token count guardrail"
-- `score_threshold` → "I diagnosed over-filtering → threshold too high dropped valid chunks → fix: lower threshold + evaluate retrieval recall → in production: Context Recall metric + threshold sweep during eval"
-
-Source: sprint 25 analysis, Audit 40 finding.
-
----
-
-**2. "Maps to production" callout on RAG Lab root-cause cards** `S effort` `HIGH`
-
-What: Each RAG Lab scenario's evaluated state ends with the `system_design_lesson` block — abstract failure mode, no production mapping. Add one `productionNote` per scenario rendered as a small amber chip/callout below the System Design Lesson block. "In production this is: [AWS service / OSS tool]."
-
-File: `src/App.jsx` — add a `PRODUCTION_NOTES` constant (object keyed by `scenario_id`) at the top of the file near the other scenario lookup constants. Then render it in the evaluated state, below the `system_design_lesson` block, as an amber-tinted chip: `bg-amber-950/40 border border-amber-800/50 text-amber-300`.
-
-Content for `PRODUCTION_NOTES`:
-```js
-const PRODUCTION_NOTES = {
-  missing_answer: "Bedrock Knowledge Base / OpenSearch + CloudWatch no-match alarm",
-  hallucination: "RAGAS faithfulness monitor / LLM-as-judge eval in CI pipeline",
-  noise_injection: "OpenSearch min_score filter / Pinecone score threshold + retrieval precision metric",
-  stale_data: "S3 event-triggered re-embed pipeline / scheduled re-indexing + metadata date filter",
-  context_overflow: "Token count guardrail pre-query / chunk size calculator + top_k cap",
-  score_threshold: "Context Recall metric + threshold sweep during eval / retrieval audit dashboard",
-};
+Target sidebar:
+```
+Assess         EXAM
+Interview Strategy  STRATEGY
+Company Tracks  ARCHETYPE
 ```
 
-Source: sprint 25 analysis.
+Changes:
+- `id: "exam"` → label: `"Assess"`, tag: `"EXAM"`, desc: `"Test yourself cold. Leave knowing your gaps."`
+- `id: "interview-prep"` → label: `"Interview Strategy"`, tag: `"STRATEGY"`, desc: `"JD → gap score → day-by-day plan."`
+- `id: "heatmap"` → remove from PREPLAB_SIDEBAR array (keep `WeaknessHeatmapMode` component)
+- `id: "defense"` → remove from PREPLAB_SIDEBAR array (keep `DefenseDocMode` component)
+- `id: "archetype"` (Company Tracks) — keep, no label change
+
+Source: PREPLAB_SPEC.md Section 3.
 
 ---
 
-**3. RAG Lab static corpus — data realism v1** `S-M effort` `MEDIUM`
+**2. Sidebar score badges for returning users** `S effort` `HIGH`
 
-What: The RAG Lab's ChunkCard currently renders abstract labels ("Chunk 3 — score 0.81"). Replace with actual retrieved text from a real static corpus. User should read the garbage doc that caused noise injection, the truncated chunk that broke context, the irrelevant result that caused hallucination. This is the single highest-leverage realism improvement — no backend needed, pure static JSON.
+What: Below each mode label in the sidebar, a 1-line stat for returning users sourced from localStorage. Invisible on first visit (no localStorage entry = render nothing).
 
-Files:
-- New `src/ragCorpus.js` — JSON array of 20–30 doc objects. Two domains: e-commerce product catalog (10–12 docs: product names, specs, prices, metadata) and technical documentation (10–12 docs: API reference snippets, error codes, setup guides). Each doc: `{ id, title, domain, content, metadata: { date, source, type } }`. Pre-computed per scenario: which chunk_ids are "relevant" and which are "noise" for each scenario config, with a `similarity_score` per chunk.
-- `src/App.jsx` — in the `ChunkCard` component (wherever chunks are currently rendered with abstract labels), import corpus and replace label with `corpus.find(d => d.id === chunk.id)?.content.slice(0, 200) + "…"`. Show title + domain badge alongside score.
+Logic per mode:
+- Assess: read `gsl-preplab-history`. If entries exist, compute last session's overall % and date. Render: `"Last: {pct}% · {N}d ago"` in `text-zinc-500 text-xs`.
+- Interview Strategy: read `gsl-preplab-strategy-phase` from localStorage. If > 1, render: `"In progress: Phase {N}"`.
+- Company Tracks: read `gsl-preplab-archetype-{trackId}` from localStorage. If any track started, render: `"{trackName}: {done}/{total}"`.
 
-See DECISIONS.md Section 7 for the full architecture ruling. See IDEAS.md "Datamart-backed realism — static corpus" cluster for context.
+Render as a `<p className="text-zinc-500 text-xs mt-0.5">` below the mode label inside the sidebar button. Conditional: only render if the data exists. No new state required.
+
+Source: PREPLAB_SPEC.md Section 4.
 
 ---
 
-**4. Thin GT posts expansion — 3 stubs** `S-M effort` `MEDIUM`
+**3. Question card visual upgrade** `S effort` `HIGH`
 
-What: Three posts are under 6 blocks (stub level) and read as incomplete. Each needs minimum 8 blocks, 1 callout block, 1 refs block. Write at "knowledgeable colleague" depth — not a survey, one specific production insight per post.
+What: The question card (rendered in `ExamMode`, `TrainerMode`, and wherever questions are shown) needs a difficulty accent, better option hover states, and an elevated Submit button. This is the highest-impact visual change — users interact with this on every question.
 
-File: `src/groundTruthPosts.js` — expand each post object's `blocks[]` array.
+Changes in `src/PrepLab.jsx` (the question render block, wherever `q.question` and `q.options` are mapped):
 
-Posts to expand:
-- `dpo-in-practice` — DPO vs PPO in production: why DPO is cheaper (no reward model), when PPO is still necessary (online RL, multi-turn), what a DPO training loop actually looks like (preference pairs → log-ratio loss), what breaks (distribution shift, preference noise). Production note: Anthropic's Constitutional AI uses a mix; smaller teams use DPO exclusively.
-- `llm-observability` — what to instrument: latency per token, TTFT, tool call count, context window utilisation, generation length vs input length ratio. What each metric reveals in production. OpenTelemetry + Langfuse/LangSmith as the standard stack. Callout: "most teams instrument latency but not faithfulness — that's backwards for RAG systems."
-- `instruction-tuning-datasets` — what makes a good instruction dataset (diversity of tasks, length distribution, format variation), common quality failures (sycophancy injection from RLHF preference data, format overfitting), key open datasets (FLAN, Dolly, OpenHermes, WizardLM evol-instruct). Production note: dataset curation is harder than training — quality of 10K examples > quantity of 100K.
+- **Left border accent:** wrap question card in a container with `border-l-4` — color keyed by `q.difficulty`: `easy` → `border-blue-500`, `medium` → `border-amber-500`, `hard` → `border-red-500`. Fall back to `border-zinc-700` if `q.difficulty` not yet present (Sprint B adds it to all questions).
+- **Difficulty chip:** above the question text, add `<span>` with difficulty label. Styles: hard → `bg-red-950/50 text-red-400 border border-red-800/40`, medium → `bg-amber-950/50 text-amber-400 border border-amber-800/40`, easy → `bg-blue-950/50 text-blue-400 border border-blue-800/40`. Add `text-xs px-2 py-0.5 rounded` to all.
+- **Answer options:** increase `py` from whatever it is to `py-3 px-4`. Hover state: `hover:border-violet-500/60 hover:bg-violet-950/20`. Selected state: `border-violet-500 bg-violet-950/30`. These replace the current plain border toggle.
+- **Submit button:** `bg-violet-600 hover:bg-violet-500 text-white px-6 py-2.5 rounded-lg font-medium` — not a flat outlined button.
+
+Source: PREPLAB_SPEC.md Section 4.
+
+---
+
+**4. Topic selector: replace 22 pills with 5 category tiles** `S effort` `MEDIUM`
+
+What: The `TrainerMode` topic selector is a 22-pill horizontal overflow strip. Replace with 5 topic tiles in a grid. "All Topics" is the default state (no tile selected = all active). Multi-select allowed.
+
+The 5 tiles (keyed to existing topic strings):
+```
+RAG & Retrieval     → topics: ["rag", "retrieval", "chunking", "embeddings", "reranking", "caching", "context-window"]
+Agents & Systems    → topics: ["agents", "agent-memory", "orchestration", "tool-use", "multi-agent"]
+Evals & Metrics     → topics: ["evaluation", "metrics", "ragas", "alignment"]
+LLM Fundamentals    → topics: ["transformers", "attention", "tokenization", "pretraining", "fine-tuning", "rlhf", "decoding", "reasoning"]
+Production & Serving → topics: ["serving", "inference", "deployment", "observability", "safety", "behavioral"]
+```
+
+Each tile: topic group title, question count (count questions where `q.topic` matches any of the group's topics), 2-line description, `hover:border-violet-500/40` lift. Grid: `grid grid-cols-2 gap-2 sm:grid-cols-3` or adjust to fit. Selected tile: `border-violet-500 bg-violet-950/20`.
+
+When tile(s) selected: filter questions to matching topics. "All" is restored by deselecting all tiles (not a separate button needed — just make deselect re-enable all).
+
+Source: PREPLAB_SPEC.md Section 4.
+
+---
+
+**5. Assess config screen copy** `S effort` `MEDIUM`
+
+What: The `ExamMode` config screen (the screen before the exam starts) uses "Configure Exam" as a heading and generic selectors. Reframe to create the "I'm about to be assessed on something real" feeling.
+
+Changes in `src/PrepLab.jsx` `ExamMode` config state render:
+
+- **Headline:** change from `"Configure Exam"` (or equivalent) to `"How interview-ready are you?"`
+- **Subtext:** below headline, add: `"20 production-level questions. No hints. See exactly where you stand."` in `text-zinc-400 text-sm`.
+- **Duration selector labels:** append question counts — e.g. `"15 min (10 questions)"`, `"30 min (20 questions)"`, `"60 min (40 questions)"`.
+- **CTA button:** change from `"Start Exam →"` (or equivalent) to `"Start Assessment →"`.
+- **Results preview:** below the config selectors and above the CTA, add a 2-line callout block (`bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-zinc-400`): `"After the assessment, you'll see your score by topic, your weakest areas, and the exact Lab modules and GT posts that address each gap."`
+
+Source: PREPLAB_SPEC.md Section 3 (Assess mode entry screen) + Section 5 (cold visitor journey).
 
 ---
 
 ## Pending (valid but lower priority)
 
-- **Graph RAG + multi-hop retrieval** — GT post ("Graph RAG — When Vector Search Isn't Enough") + PrepLab questions (3–4). Strong signal from Senior AI Engineer interview post (May 2026). Completely absent from GAL. Tier 1 in IDEAS.md.
-- **LangGraph reducers + HITL patterns** — GT post ("Human-in-the-Loop — When to Pause an Agent") + PrepLab questions (3–4). Senior AI interview Round 2 signal. Tier 1 in IDEAS.md.
-- **Bi-encoder vs cross-encoder two-stage retrieval** — GT post + PrepLab questions (3–4) + Query Refinement module extension (reranker as 4th stage). From Microsoft RAG interview transcript (May 2026). Tier 1 in IDEAS.md.
-- **Interview Strategy Tool consolidation** — merge Interview Prep Plan + Defense Doc into single unified mode. L effort, needs its own session. See UPGRADES.md.
-- **GT Series + Tags redesign** — Deep Dives IA (activates at 50+ posts — already past that at 222). M-L effort.
-- **React.lazy() code splitting** — systematic architectural change across all tabs. See MSL as reference. DECISIONS.md-worthy scope.
-- **Pyodide execution for Eval Lab** — Tier 2, only after static corpus (item 3 above) ships AND engagement is measurable. See DECISIONS.md Section 7.
-- **Concepts module: "Sequential vs Parallel — The Architecture Transition"** — RNN→LSTM→Transformer arc as systems-level story. Source: Naresh Edagotti post (May 2026).
-- **Concepts module: "The Training Signal — Entropy, Loss, and KL Divergence"** — "how surprised is the model?" framing. Source: Utkarsh Mangal post (May 2026).
-- **PrepLab Company Tracks** — company-specific architecture lens on failure modes. L effort.
-- **Visual polish backlog** — consistent module headers, Explore module cards, PrepLab question experience. See IDEAS.md "Visual Polish backlog" section.
-- **Modularisation pass (incremental, enforce going forward)** — (1) Extract PrepLab questions to `src/data/preplabQuestions.js`, (2) Create `src/config/gating.js` + `nav.js`, (3) Build `<ForwardPointerCard>` shared component when touching NEXT.md item 1. See DECISIONS.md Section 8 + UPGRADES.md entries.
+### PrepLab revamp — remaining sprints (from PREPLAB_SPEC.md)
+- **PrepLab Sprint B** — Extract QUESTIONS to `src/data/preplabQuestions.js` + add `difficulty` to all 261 questions. Wire to card accent + Hard Only filter. `S effort`.
+- **PrepLab Sprint C** — `trap` field for top 50 hardest + `source` for ~30 questions + `<CommonTrapCallout>` component in `src/shared.jsx`. `M effort`.
+- **PrepLab Sprint D** — Full Assess results screen rebuild: per-topic bars, gap forward pointers, session comparison, gate at Q11 with partial results visible. `M effort`.
+- **PrepLab Sprint E** — Interview Strategy full rebuild: resume input, round type, prior feedback, day plan, Defense Doc absorption as "Download Your Brief". `L effort`.
+
+### Content depth + production grounding (was Sprint 31 — demoted to Pending)
+- **"Your Interview Story" block on RAG Lab + Agent Lab done cards** — collapsible block at forward pointer card. `S effort`. See previous NEXT.md for full spec (commit content + file locations documented there).
+- **"Maps to production" callout on RAG Lab root-cause cards** — `PRODUCTION_NOTES` constant + amber chip below `system_design_lesson` block in `src/App.jsx`. `S effort`. See previous NEXT.md for full spec.
+- **RAG Lab static corpus — data realism v1** — `src/ragCorpus.js` (20–30 docs, two domains) + ChunkCard renders real text. `S-M effort`. See DECISIONS.md Section 7.
+- **Thin GT posts expansion — 3 stubs** — `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` each need 8+ blocks. `S-M effort`.
+
+### New content gaps (Tier 1 in IDEAS.md)
+- **Graph RAG + multi-hop retrieval** — GT post + PrepLab questions (3–4). Completely absent from GAL.
+- **LangGraph reducers + HITL patterns** — GT post + PrepLab questions (3–4). Senior AI interview Round 2 signal.
+- **Bi-encoder vs cross-encoder two-stage retrieval** — GT post + PrepLab questions + Query Refinement extension.
+
+### Architecture / polish
+- **Cold-start Home rewrite** — market signal first (agentic +280% YoY), PrepLab CTA for cold visitors, question preview with interview framing. See UPGRADES.md Hero Copy entry + DECISIONS.md Section 9.
+- **Interview Strategy Tool consolidation** — now part of PrepLab Sprint E above.
+- **GT Series + Tags redesign** — Deep Dives IA. M-L effort.
+- **React.lazy() code splitting** — systematic change. DECISIONS.md-worthy scope.
+- **Pyodide execution for Eval Lab** — Tier 2, after static corpus ships.
+- **Concepts module: "Sequential vs Parallel"** — RNN→LSTM→Transformer arc.
+- **Concepts module: "The Training Signal"** — entropy/loss/KL framing.
+- **Visual polish backlog** — consistent module headers, Explore module cards.
+- **Modularisation pass** — `src/config/gating.js` + `nav.js` (unblocked by Sprint D).
 
 ---
 
 ## Do NOT touch this session
 
-- Stripe + auth — not yet. See DECISIONS.md Section 0 for the gate condition.
-- Marimo in-browser execution — wrong tool for GAL (see DECISIONS.md Section 7). Only valid as offline companion content.
-- New GT posts beyond the 3 stubs in item 4 — no bulk additions this sprint.
-- Graph RAG module build — it is in Pending only; do not start without first shipping items 1–4.
+- Stripe + auth — not yet. See DECISIONS.md Section 0.
+- PrepLab Sprints B–E — Sprint A must ship and be verified first.
+- New GT posts (not in Pending list above) — no bulk additions.
+- Graph RAG module build — Pending only.
 - PAL codebase — separate product, out of scope.
-- TypeScript migration — never. Non-negotiable constraint (Vercel build breaks).
+- TypeScript migration — never.
+- Marimo — wrong tool (DECISIONS.md Section 7).
 
 ---
 
