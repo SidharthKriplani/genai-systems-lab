@@ -2,13 +2,13 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 33 — Graph RAG shipped)*
+*Last updated: May 2026 (post sprint 34 — LangGraph + HITL shipped)*
 
 ---
 
 ## Theme: Content gaps — remaining Tier 1 items.
 
-Graph RAG done. Next highest-value Tier 1 gap: LangGraph reducers + HITL patterns (Senior AI interview Round 2 signal, completely absent).
+Graph RAG + LangGraph done. Next highest-value Tier 1 gap: Bi-encoder vs cross-encoder two-stage retrieval (from Microsoft RAG interview signal).
 
 ---
 
@@ -18,14 +18,16 @@ Graph RAG done. Next highest-value Tier 1 gap: LangGraph reducers + HITL pattern
 
 **2. ~~Graph RAG + multi-hop retrieval~~** — DONE (`2a00754`). GT post + `GraphRAGModule` (interactive SVG knowledge graph, 6-step animated traversal, failure comparison, when-to-use table) + 4 PrepLab questions with trap fields.
 
-**3. LangGraph reducers + HITL patterns** `M effort` `HIGH`
+**3. ~~LangGraph reducers + HITL patterns~~** — DONE (`cfd4520`). GT post + `LangGraphModule` (Reducers demo with operator.add vs overwrite simulation, StateGraph SVG with click-to-explore nodes, animated 6-step HITL flow, when-to-use table) + 4 PrepLab questions (agents topic, 2 hard + 2 medium, all with trap fields).
 
-What: Senior AI interview Round 2 signal. LangGraph-specific state model (reducers/nodes/edges) and human-in-the-loop checkpoint patterns completely absent from GAL.
+**4. Bi-encoder vs cross-encoder two-stage retrieval** `M effort` `HIGH`
+
+What: Microsoft RAG interview signal — candidate failed on two-stage retrieval architecture. Could describe vector search failure modes but not WHY a reranker exists as a second stage (recall vs precision, distinct failure modes per stage). Completely absent from GAL GT and PrepLab.
 
 Implementation:
-- 1 GT post: "LangGraph reducers and HITL: state machines for agentic workflows" (reducer functions, StateGraph, HITL checkpoint patterns, when graph-based orchestration beats custom loops)
-- 3–4 PrepLab questions covering reducer composition, HITL interrupt patterns, failure modes
-- Optional: extend Agent Lab with a LangGraph state machine tab
+- 1 GT post: "Two-Stage Retrieval: Why a Reranker Exists" (bi-encoder recall tradeoff, cross-encoder precision, when one stage is enough, production latency cost)
+- 3–4 PrepLab questions covering bi-encoder vs cross-encoder tradeoffs, failure modes, when to add a reranker
+- Optional: extend Query Refinement Lab with a two-stage retrieval tab
 
 ---
 

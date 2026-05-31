@@ -226,12 +226,13 @@ Senior AI Engineer interview loops are explicitly testing Graph RAG, multi-hop r
 - **PrepLab questions (3–4)** — when to use Graph RAG vs flat retrieval, multi-hop retrieval failure modes, graph traversal depth trade-off, table extraction as a RAG input modality. `Effort: S`
 - **RAG Lab scenario extension** — optional: add "Graph Retrieval" scenario to RAG Lab (entity-based lookup, multi-hop config, traversal depth slider). Long-term build — depends on static corpus first. `Effort: M`
 
-### LangGraph state management + HITL patterns (new cluster — from Senior AI Engineer interview post, May 2026)
+### LangGraph state management + HITL patterns (new cluster — from Senior AI Engineer interview post, May 2026) ✅ BUILT (sprint 34, `cfd4520`)
 
 Senior AI interviews are now testing LangGraph-specific abstractions (ReAct, reducers, state accumulation) and Human-in-the-Loop design decisions — not just generic agent loop concepts. Agent Lab covers failure modes but doesn't model the LangGraph mental model (nodes, edges, state reducers as accumulators) or when HITL is the right production pattern (approval gates, escalation triggers, override flows).
 
-- **GT post: "Human-in-the-Loop — When to Pause an Agent"** — approval gate patterns, escalation trigger design, override flow architecture, cost of false escalations vs missed halts, production examples (code review gate, financial transaction approval). `Effort: S`
-- **PrepLab questions (3–4)** — LangGraph reducer vs state replace, when reducers accumulate vs overwrite, HITL trigger conditions, ReAct loop failure modes. `Effort: S`
+- **GT post: "LangGraph Reducers and HITL: State Machines for Agentic Workflows"** ✅ — reducer functions, StateGraph, HITL checkpoint patterns, when graph-based orchestration beats custom loops.
+- **`LangGraphModule` (4 tabs)** ✅ — Reducers demo, StateGraph SVG, HITL animated flow, When to Use table.
+- **PrepLab questions (4)** ✅ — reducer bug (parallel nodes + overwrite), interrupt_before timing, HITL design decision, checkpointer production bug. All with trap fields.
 
 ### Scaling laws (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026)
 
