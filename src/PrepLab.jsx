@@ -2746,6 +2746,40 @@ const TOPIC_LABELS = {
   serving: "Serving & Inference",
 };
 
+// Topic group tiles for TrainerMode selector (5 groups replacing 22 individual pills)
+const TOPIC_GROUPS = [
+  {
+    id: "rag",
+    label: "RAG & Retrieval",
+    desc: "Retrieval failure modes, chunking, embeddings, reranking, caching",
+    topics: ["rag"],
+  },
+  {
+    id: "agents",
+    label: "Agents & Systems",
+    desc: "Agent loops, memory architecture, orchestration, tool use",
+    topics: ["agents"],
+  },
+  {
+    id: "evals",
+    label: "Evals & Metrics",
+    desc: "Evaluation design, RAGAS, LLM-as-judge, hallucination scoring",
+    topics: ["evaluation"],
+  },
+  {
+    id: "llm",
+    label: "LLM & Fine-Tuning",
+    desc: "Transformers, attention, fine-tuning, reasoning models, multimodal",
+    topics: ["finetuning", "reasoning", "multimodal"],
+  },
+  {
+    id: "prod",
+    label: "Production & Ops",
+    desc: "Serving, inference, LLMOps, safety, behavioral, product strategy",
+    topics: ["serving", "llmops", "safety", "behavioral", "product"],
+  },
+];
+
 const SKILL_KEYWORDS = {
   rag:         ["rag", "retrieval", "vector", "embedding", "pinecone", "weaviate", "langchain", "chunking", "reranker", "hybrid search"],
   agents:      ["agent", "tool use", "react", "langgraph", "orchestrat", "agentic", "multi-agent", "tool calling"],
@@ -3009,29 +3043,40 @@ function SpeechTextArea({ value, onChange, rows = 5, placeholder = "Type your an
 }
 
 function MCQOptions({ options, selected, onSelect }) {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
   return (
     <div className="space-y-2.5">
       {options.map((opt, i) => {
         const isSelected = selected === i;
+        const isHovered = hoveredIdx === i && !isSelected;
         return (
           <button
             key={i}
             onClick={() => onSelect(i)}
+            onMouseEnter={() => setHoveredIdx(i)}
+            onMouseLeave={() => setHoveredIdx(null)}
             style={isSelected ? {
-              background: "linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.06) 100%)",
-              border: "1px solid rgba(99,102,241,0.5)",
-              boxShadow: "0 0 0 1px rgba(99,102,241,0.1) inset, 0 4px 12px rgba(99,102,241,0.12)",
+              background: "linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0.08) 100%)",
+              border: "1px solid rgba(139,92,246,0.6)",
+              boxShadow: "0 0 0 1px rgba(139,92,246,0.1) inset, 0 4px 12px rgba(139,92,246,0.12)",
+            } : isHovered ? {
+              background: "rgba(139,92,246,0.08)",
+              border: "1px solid rgba(139,92,246,0.4)",
             } : {
               background: "linear-gradient(160deg, rgba(39,39,42,0.5) 0%, rgba(15,15,17,0.8) 100%)",
               border: "1px solid rgba(63,63,70,0.7)",
             }}
-            className={`w-full text-left px-4 py-3.5 rounded-xl text-sm transition-all flex items-start gap-3 ${isSelected ? "text-indigo-100" : "text-zinc-300 hover:text-white"}`}
+            className={`w-full text-left px-4 py-3.5 rounded-xl text-sm transition-all flex items-start gap-3 ${isSelected ? "text-violet-100" : isHovered ? "text-white" : "text-zinc-300"}`}
           >
             <span
               style={isSelected ? {
-                background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+                background: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)",
                 color: "#fff",
-                boxShadow: "0 2px 6px rgba(99,102,241,0.4)",
+                boxShadow: "0 2px 6px rgba(139,92,246,0.4)",
+              } : isHovered ? {
+                background: "rgba(139,92,246,0.2)",
+                border: "1px solid rgba(139,92,246,0.4)",
+                color: "#c4b5fd",
               } : {
                 background: "rgba(39,39,42,0.9)",
                 border: "1px solid rgba(63,63,70,0.9)",
@@ -3050,19 +3095,27 @@ function MCQOptions({ options, selected, onSelect }) {
 }
 
 function QuestionCard({ q, gaps = [] }) {
-  const diffColor = q.difficulty === "hard" ? { bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.3)", text: "#f87171" } : { bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)", text: "#fbbf24" };
+  const diffAccent = q.difficulty === "hard" ? "rgba(239,68,68,0.9)" : q.difficulty === "easy" ? "rgba(59,130,246,0.9)" : "rgba(245,158,11,0.85)";
+  const diffChip = q.difficulty === "hard"
+    ? "bg-red-950/50 text-red-400 border border-red-800/40"
+    : q.difficulty === "easy"
+    ? "bg-blue-950/50 text-blue-400 border border-blue-800/40"
+    : "bg-amber-950/50 text-amber-400 border border-amber-800/40";
   return (
     <div
-      style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.9) 0%, rgba(15,15,17,1) 100%)", border: "1px solid rgba(63,63,70,0.7)", borderTop: "2px solid rgba(99,102,241,0.35)" }}
+      style={{
+        background: "linear-gradient(160deg, rgba(24,24,27,0.9) 0%, rgba(15,15,17,1) 100%)",
+        borderTop: "1px solid rgba(63,63,70,0.7)",
+        borderRight: "1px solid rgba(63,63,70,0.7)",
+        borderBottom: "1px solid rgba(63,63,70,0.7)",
+        borderLeft: `4px solid ${diffAccent}`,
+      }}
       className="rounded-xl p-5 space-y-3"
     >
       <div className="flex items-center gap-2 flex-wrap">
         <TopicChip topic={q.topic} />
-        <span
-          style={{ background: diffColor.bg, border: `1px solid ${diffColor.border}`, color: diffColor.text }}
-          className="text-[10px] font-mono font-black uppercase tracking-widest px-2 py-0.5 rounded"
-        >
-          {q.difficulty}
+        <span className={`text-[10px] font-mono font-black uppercase tracking-widest px-2.5 py-0.5 rounded ${diffChip}`}>
+          {q.difficulty || "medium"}
         </span>
         <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">{q.type === "mcq" ? "multiple choice" : "open answer"}</span>
         {gaps.includes(q.topic) && (
@@ -3194,14 +3247,17 @@ function ExamConfig({ onStart, onExit }) {
   const [duration, setDuration] = useState(30);
   const [focus, setFocus] = useState("all");
   const [difficulty, setDifficulty] = useState("mixed");
-  const DM = { 15: 20, 30: 35, 60: 55 };
+  const DM = { 15: 10, 30: 20, 60: 40 };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-4 sm:p-6">
       <div className="max-w-lg w-full space-y-6">
         <div className="flex items-center gap-3">
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Back</button>
-          <h2 className="text-2xl font-bold">Configure Exam</h2>
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-white tracking-tight">How interview-ready are you?</h2>
+          <p className="text-zinc-400 text-sm mt-1">{PREP_QUESTIONS.length} production-level questions. No hints. See exactly where you stand.</p>
         </div>
         <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 space-y-6">
           <div>
@@ -3209,8 +3265,8 @@ function ExamConfig({ onStart, onExit }) {
             <div className="grid grid-cols-3 gap-3">
               {[15, 30, 60].map(d => (
                 <button key={d} onClick={() => setDuration(d)}
-                  className={`py-3 rounded-lg border text-sm font-medium transition-all ${duration === d ? "bg-indigo-600/20 border-indigo-500 text-indigo-200" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
-                  {d} min<br /><span className="text-xs opacity-70">{DM[d]}Q</span>
+                  className={`py-3 rounded-lg border text-sm font-medium transition-all ${duration === d ? "bg-violet-600/20 border-violet-500 text-violet-200" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+                  {d} min<br /><span className="text-xs opacity-70">{DM[d]} questions</span>
                 </button>
               ))}
             </div>
@@ -3220,7 +3276,7 @@ function ExamConfig({ onStart, onExit }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[["all", "All Topics"], ["engineering", "Engineering"], ["pm", "Product / PM"], ["interview", "Interview Prep"]].map(([v, l]) => (
                 <button key={v} onClick={() => setFocus(v)}
-                  className={`py-3 rounded-lg border text-sm font-medium transition-all ${focus === v ? "bg-indigo-600/20 border-indigo-500 text-indigo-200" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+                  className={`py-3 rounded-lg border text-sm font-medium transition-all ${focus === v ? "bg-violet-600/20 border-violet-500 text-violet-200" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
                   {l}
                 </button>
               ))}
@@ -3231,18 +3287,21 @@ function ExamConfig({ onStart, onExit }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[["mixed", "Mixed"], ["hard", "Hard Only"]].map(([v, l]) => (
                 <button key={v} onClick={() => setDifficulty(v)}
-                  className={`py-3 rounded-lg border text-sm font-medium transition-all ${difficulty === v ? "bg-indigo-600/20 border-indigo-500 text-indigo-200" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+                  className={`py-3 rounded-lg border text-sm font-medium transition-all ${difficulty === v ? "bg-violet-600/20 border-violet-500 text-violet-200" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
                   {l}
                 </button>
               ))}
             </div>
           </div>
         </div>
+        <div className="bg-zinc-900 border border-zinc-700 rounded-xl px-5 py-4 text-sm text-zinc-400 leading-relaxed">
+          After the assessment, you'll see your score by topic, your weakest areas, and the exact Lab modules and GT posts that address each gap.
+        </div>
         <button
           onClick={() => onStart({ duration, focus, difficulty })}
-          className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all"
+          className="w-full py-4 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all"
         >
-          Start Exam →
+          Start Assessment →
         </button>
       </div>
     </div>
@@ -3522,7 +3581,7 @@ function ExamMode({ onExit }) {
 const TRAINER_TOPICS = ["all", ...Array.from(new Set(PREP_QUESTIONS.map(q => q.topic))).sort()];
 
 function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
-  const [topicFilter, setTopicFilter] = useState("all");
+  const [groupFilter, setGroupFilter] = useState("all");
   const [diffFilter, setDiffFilter] = useState("all");
   const [questions, setQuestions] = useState(() => shuffle(PREP_QUESTIONS));
   const [current, setCurrent] = useState(0);
@@ -3552,8 +3611,9 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
 
   // Recompute filtered+shuffled questions whenever filters change
   useEffect(() => {
+    const groupTopics = groupFilter === "all" ? null : TOPIC_GROUPS.find(g => g.id === groupFilter)?.topics;
     const filtered = PREP_QUESTIONS.filter(q => {
-      const topicOk = topicFilter === "all" || q.topic === topicFilter;
+      const topicOk = !groupTopics || groupTopics.includes(q.topic);
       const diffOk = diffFilter === "all" || q.difficulty === diffFilter;
       const weakOk = !weakOnly || (history[q.id]?.wrong > 0);
       return topicOk && diffOk && weakOk;
@@ -3563,7 +3623,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
     setAnswer("");
     setSubmitted(false);
     setIsCorrect(false);
-  }, [topicFilter, diffFilter, weakOnly]);
+  }, [groupFilter, diffFilter, weakOnly]);
 
   // Keyboard shortcuts: 1-4 selects MCQ option; Enter submits or advances
   useEffect(() => {
@@ -3663,23 +3723,38 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
         </div>
         <PBar value={current} max={questions.length} />
         {/* Filters */}
-        <div className="space-y-2">
-          {/* Topic pills */}
-          <div className="flex flex-wrap gap-1.5">
-            {TRAINER_TOPICS.map(t => {
-              const active = topicFilter === t;
+        <div className="space-y-3">
+          {/* Topic group tiles */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <button
+              onClick={() => setGroupFilter("all")}
+              style={groupFilter === "all" ? {
+                background: "linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(139,92,246,0.06) 100%)",
+                border: "1px solid rgba(139,92,246,0.5)",
+              } : {
+                background: "rgba(39,39,42,0.6)",
+                border: "1px solid rgba(63,63,70,0.7)",
+              }}
+              className={`col-span-2 sm:col-span-3 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all text-left ${groupFilter === "all" ? "text-violet-200" : "text-zinc-400 hover:text-white"}`}>
+              All Topics — {PREP_QUESTIONS.length} questions
+            </button>
+            {TOPIC_GROUPS.map(g => {
+              const count = PREP_QUESTIONS.filter(q => g.topics.includes(q.topic)).length;
+              const active = groupFilter === g.id;
               return (
-                <button key={t} onClick={() => setTopicFilter(t)}
+                <button key={g.id} onClick={() => setGroupFilter(active ? "all" : g.id)}
                   style={active ? {
-                    background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
-                    boxShadow: "0 2px 8px rgba(99,102,241,0.35)",
-                    border: "1px solid transparent",
+                    background: "linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(139,92,246,0.06) 100%)",
+                    border: "1px solid rgba(139,92,246,0.5)",
+                    boxShadow: "0 2px 8px rgba(139,92,246,0.15)",
                   } : {
-                    background: "rgba(39,39,42,0.8)",
-                    border: "1px solid rgba(63,63,70,0.8)",
+                    background: "rgba(39,39,42,0.6)",
+                    border: "1px solid rgba(63,63,70,0.7)",
                   }}
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize transition-all ${active ? "text-white" : "text-zinc-400 hover:text-white"}`}>
-                  {t === "all" ? "All topics" : t}
+                  className={`py-3 px-3 rounded-xl text-xs font-semibold transition-all text-left hover:-translate-y-px hover:shadow-md hover:shadow-black/30 ${active ? "text-violet-200" : "text-zinc-300 hover:text-white"}`}>
+                  <div className={`font-bold mb-0.5 ${active ? "text-violet-200" : "text-zinc-200"}`}>{g.label}</div>
+                  <div className="text-[10px] text-zinc-500 font-normal leading-snug mb-1.5">{g.desc}</div>
+                  <div className={`text-[10px] font-mono ${active ? "text-violet-400" : "text-zinc-500"}`}>{count}q</div>
                 </button>
               );
             })}
@@ -4869,6 +4944,7 @@ const MODE_CARDS = [
 export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClearInitialMode }) {
   const [mode, setMode] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
+  const [sidebarStats, setSidebarStats] = useState({});
 
   function selectMode(id) {
     setMode(id);
@@ -4888,13 +4964,32 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
     }
   }, [initialMode]);
 
+  // Sidebar stat badges — sourced from localStorage, shown only for returning users
+  useEffect(() => {
+    try {
+      const stats = {};
+      // Assess: last session score from gsl-preplab-history
+      const hist = JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}");
+      const entries = Object.values(hist);
+      if (entries.length > 0) {
+        const correct = entries.filter(e => e.attempts > 0 && e.wrong === 0).length;
+        const pct = Math.round((correct / entries.length) * 100);
+        stats.exam = `${entries.length} answered · ${pct}% correct`;
+      }
+      // Interview Strategy: phase progress
+      const stratPhase = localStorage.getItem("gsl-preplab-strategy-phase");
+      if (stratPhase && parseInt(stratPhase) > 1) {
+        stats.jdprep = `In progress: Phase ${stratPhase}`;
+      }
+      setSidebarStats(stats);
+    } catch {}
+  }, []);
+
+  // 3 modes: Defense Doc and Weakness Map components are kept but hidden from sidebar
   const PREPLAB_SIDEBAR = [
-    { id: "exam",        label: "Combined Assessment", tag: "EXAM",      desc: "Timed full-topic test" },
-    { id: "trainer",     label: "Trainer",             tag: "TRAIN",     desc: "Adaptive question drill" },
-    { id: "jdprep",      label: "Interview Prep Plan",  tag: "PLAN",      desc: "JD → gap score → targeted drill" },
-    { id: "companyprep", label: "Company Tracks",      tag: "ARCHETYPE", desc: "By company archetype" },
-    { id: "defense",     label: "Defense Doc",         tag: "WAR ROOM",  desc: "Anticipate hard pushbacks" },
-    { id: "heatmap",     label: "My Weakness Map",     tag: "TRACK",     desc: "Per-topic accuracy over time" },
+    { id: "exam",        label: "Assess",             tag: "EXAM",      desc: "Test yourself cold. Leave knowing your gaps." },
+    { id: "jdprep",      label: "Interview Strategy", tag: "STRATEGY",  desc: "JD → gap score → day-by-day plan." },
+    { id: "companyprep", label: "Company Tracks",     tag: "ARCHETYPE", desc: "By company archetype" },
   ];
 
   return (
@@ -4909,6 +5004,9 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
               className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "border-l-2 border-violet-500 bg-zinc-800/80" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
               <span className={`text-xs font-semibold leading-snug ${active ? "text-white" : "text-zinc-300"}`}>{m.label}</span>
               <span className={`text-[10px] font-mono ${active ? "text-violet-400" : "text-zinc-500"}`}>{m.tag}</span>
+              {sidebarStats[m.id] && (
+                <span className="text-[10px] text-zinc-500 leading-snug mt-0.5">{sidebarStats[m.id]}</span>
+              )}
             </button>
           );
         })}
