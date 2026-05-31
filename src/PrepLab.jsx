@@ -956,8 +956,8 @@ function ExamMode({ onExit }) {
 
 const TRAINER_TOPICS = ["all", ...Array.from(new Set(PREP_QUESTIONS.map(q => q.topic))).sort()];
 
-function TrainerMode({ onExit, onNavigate, onNavigateTo }) {
-  const [groupFilter, setGroupFilter] = useState("all");
+function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
+  const [groupFilter, setGroupFilter] = useState(initialGroup || "all");
   const [diffFilter, setDiffFilter] = useState("all");
   const [questions, setQuestions] = useState(() => shuffle(PREP_QUESTIONS));
   const [current, setCurrent] = useState(0);
@@ -2321,10 +2321,16 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
   const [mode, setMode] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
   const [sidebarStats, setSidebarStats] = useState({});
+  const [trainerInitGroup, setTrainerInitGroup] = useState("all");
 
   function selectMode(id) {
     setMode(id);
     setMobileSidebarOpen(false);
+  }
+
+  function openTrainer(groupId = "all") {
+    setTrainerInitGroup(groupId);
+    selectMode("trainer");
   }
 
   function exitMode() {
@@ -2401,49 +2407,76 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
           PrepLab
         </button>
         {mode === "exam"        && <ExamMode onExit={exitMode} />}
-        {mode === "trainer"     && <TrainerMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
+        {mode === "trainer"     && <TrainerMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} initialGroup={trainerInitGroup} />}
         {mode === "jdprep"      && <InterviewPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
         {mode === "companyprep" && <CompanyPrepMode onExit={exitMode} onNavigate={onNavigate} />}
         {mode === "defense"     && <DefenseDocMode onExit={exitMode} />}
         {mode === "heatmap"     && <WeaknessHeatmapMode onExit={exitMode} />}
         {!mode && (
-          <div className="p-6 sm:p-8 max-w-2xl">
-            <div className="mb-8">
-              <div
-                style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.12) 0%, rgba(24,24,27,0.95) 100%)", border: "1px solid rgba(109,40,217,0.2)", borderTop: "2px solid rgba(139,92,246,0.5)" }}
-                className="rounded-xl px-5 py-4 mb-6"
-              >
-                <div className="text-xl font-black text-white mb-1 tracking-tight">PrepLab</div>
-                <div className="text-sm text-zinc-400 leading-relaxed">{PREP_QUESTIONS.length} questions from real AI engineering interview loops — weighted toward the hard ones that actually matter.</div>
+          <div className="p-5 sm:p-7 space-y-6 overflow-y-auto">
+            {/* Header row */}
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-xl font-black text-white tracking-tight mb-1">PrepLab</div>
+                <div className="text-sm text-zinc-400">Production-level questions from real AI engineering interview loops.</div>
               </div>
-              <div className="grid grid-cols-1 gap-3">
-                {PREPLAB_SIDEBAR.map((m, i) => {
-                  const colors = ["#6366f1","#8b5cf6","#3b82f6","#f59e0b","#ef4444"];
-                  const c = colors[i] || "#6366f1";
+              <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                <span className="text-[10px] font-mono px-2 py-1 rounded" style={{ background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.3)", color: "#93c5fd" }}>{PREP_QUESTIONS.filter(q=>q.difficulty==="easy").length}E</span>
+                <span className="text-[10px] font-mono px-2 py-1 rounded" style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#fcd34d" }}>{PREP_QUESTIONS.filter(q=>q.difficulty==="medium").length}M</span>
+                <span className="text-[10px] font-mono px-2 py-1 rounded" style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5" }}>{PREP_QUESTIONS.filter(q=>q.difficulty==="hard").length}H</span>
+              </div>
+            </div>
+
+            {/* Mode cards — 3-up horizontal grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {PREPLAB_SIDEBAR.map((m, i) => {
+                const colors = ["#6366f1","#8b5cf6","#3b82f6"];
+                const c = colors[i] || "#6366f1";
+                return (
+                  <button key={m.id} onClick={() => selectMode(m.id)}
+                    style={{ background: `linear-gradient(160deg, ${c}0d 0%, rgba(15,15,17,0.9) 100%)`, border: `1px solid ${c}30`, borderLeft: `3px solid ${c}70` }}
+                    className="text-left p-4 rounded-xl hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40 transition-all duration-150">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-sm font-bold text-white">{m.label}</span>
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded" style={{ background: `${c}18`, border: `1px solid ${c}40`, color: c }}>{m.tag}</span>
+                    </div>
+                    <div className="text-xs text-zinc-500 leading-relaxed">{m.desc}</div>
+                    {sidebarStats[m.id] && (
+                      <div className="text-[10px] text-zinc-600 mt-2 font-mono">{sidebarStats[m.id]}</div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Browse by topic — fills the blank space, provides discoverability */}
+            <div>
+              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Browse by Topic</div>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                {TOPIC_GROUPS.map(g => {
+                  const count = PREP_QUESTIONS.filter(q => g.topics.includes(q.topic)).length;
                   return (
-                    <button key={m.id} onClick={() => selectMode(m.id)}
-                      style={{
-                        background: `linear-gradient(160deg, ${c}0d 0%, rgba(15,15,17,0.9) 100%)`,
-                        border: `1px solid ${c}30`,
-                        borderLeft: `3px solid ${c}70`,
-                      }}
-                      className="text-left p-4 rounded-xl hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40 transition-all duration-150 group">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-bold text-white">{m.label}</span>
-                        <span className="text-[9px] font-mono px-2 py-0.5 rounded" style={{ background: `${c}18`, border: `1px solid ${c}40`, color: c }}>{m.tag}</span>
+                    <button key={g.id} onClick={() => openTrainer(g.id)}
+                      style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
+                      className="text-left p-4 rounded-xl hover:border-violet-500/40 hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/30 transition-all duration-150">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <span className="text-sm font-semibold text-zinc-100 leading-snug">{g.label}</span>
+                        <span className="text-[10px] font-mono text-zinc-500 shrink-0 mt-0.5">{count}q</span>
                       </div>
-                      <div className="text-xs text-zinc-500">{m.desc}</div>
+                      <div className="text-[11px] text-zinc-500 leading-relaxed line-clamp-2">{g.desc}</div>
                     </button>
                   );
                 })}
-              </div>
-            </div>
-            <div className="border-t border-zinc-800 pt-4">
-              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Topics covered</div>
-              <div className="flex flex-wrap gap-1.5">
-                {Object.entries(TOPIC_LABELS).map(([t, l]) => (
-                  <span key={t} className={`text-xs px-2 py-0.5 rounded-full border ${TOPIC_COLORS[t]}`}>{l}</span>
-                ))}
+                {/* "All questions" tile */}
+                <button onClick={() => openTrainer("all")}
+                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
+                  className="text-left p-4 rounded-xl hover:border-violet-500/40 hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/30 transition-all duration-150">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <span className="text-sm font-semibold text-zinc-100 leading-snug">All Questions</span>
+                    <span className="text-[10px] font-mono text-zinc-500 shrink-0 mt-0.5">{PREP_QUESTIONS.length}q</span>
+                  </div>
+                  <div className="text-[11px] text-zinc-500 leading-relaxed">Full bank, shuffled. No filter.</div>
+                </button>
               </div>
             </div>
           </div>
