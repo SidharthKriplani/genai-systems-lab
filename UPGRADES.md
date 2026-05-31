@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: May 2026 (post sprint 30)*
+*Last updated: May 2026 (post sprint 34)*
 
 ---
 
@@ -31,19 +31,19 @@ Format per entry:
 
 **Component:** `src/PrepLab.jsx` — all modes + `PREPLAB_SIDEBAR`
 
-**Current behavior:** 6 peer-level sidebar modes — Exam, Trainer, Interview Prep Plan, Company Tracks, Defense Doc, Weakness Heatmap. They overlap in purpose (multiple modes serve "what should I practice for my interview"), unclear differentiation from the sidebar, and split the core interview prep flow across 3 separate modes. A user with an interview in 7 days doesn't know which to open.
+**Was:** 6 peer-level sidebar modes — Exam, Trainer, Interview Prep Plan, Company Tracks, Defense Doc, Weakness Heatmap. Overlapping purposes, unclear differentiation.
 
-**Target behavior:** 3 sidebar modes — Exam, Interview Strategy, Company Tracks. Interview Strategy is the new unified mode (full spec in IDEAS.md → "Interview Strategy Tool — full personalization funnel"). Trainer becomes the drill mechanism invoked from within Interview Strategy. Weakness Heatmap becomes an internal data source (reads `gsl-preplab-history` to supplement self-ratings), not a top-level nav item. Defense Doc is absorbed into the gap analysis step of Interview Strategy.
+**Sprint A–E delivered (May 2026):** Sidebar reduced from 6→3 modes: Assess (EXAM), Interview Strategy (STRATEGY), Company Tracks (ARCHETYPE). Defense Doc and Weakness Map components kept but hidden. Interview Strategy rebuilt as 4-step Interview Brief flow (JD paste → role/round/context → self-rate topics → gated Brief output). Trainer got Browse/List View. Difficulty classification across all 261→269 questions. Per-topic assessment bars. Trap + source fields on 50+ hardest questions. Full spec in IDEAS.md → PrepLab section.
 
-The sidebar decision becomes obvious: Exam = test yourself cold. Interview Strategy = personalized prep for an upcoming interview. Company Tracks = company-specific drill set.
+**Remaining (future sprint — the full "Interview Strategy Tool" spec):** Resume parsing (static text against skill taxonomy), day-by-day plan generation, auto-detection of completed plan items from localStorage, round-type-aware resource mix. This is the Tier 2 version of what Sprint E delivered. See IDEAS.md "Interview Strategy Tool — full personalization funnel" for the full spec.
 
-**Effort:** L — multi-session. Resume parsing (static text against skill taxonomy) is new. Day plan generation is new. Mode consolidation is structural surgery on PrepLab.jsx.
+**Effort for full spec:** L — multi-session.
 
-**Dependencies:** Interview Strategy Tool spec (logged in IDEAS.md May 2026). No backend needed — fully static, localStorage only.
+**Dependencies:** Access code gate live ✅. PrepLab questions have category tags ✅. Full spec finalised ✅.
 
-**Priority:** High
+**Priority:** Medium (Sprint A–E addressed the critical consolidation; full spec is the depth upgrade)
 
-**Status:** Pending
+**Status:** Partially done — Sprint A–E complete. Full "Interview Strategy Tool" spec is a future Tier 2 sprint.
 
 ---
 
@@ -189,21 +189,15 @@ Cut entirely:
 
 ---
 
-## PrepLab — Difficulty Levels (Easy / Medium / Hard)
+## ~~PrepLab — Difficulty Levels (Easy / Medium / Hard)~~ DONE — sprint 31B/D
 
-**Component:** `src/PrepLab.jsx` — question bank + Exam/Trainer modes
+**Component:** `src/PrepLab.jsx` + `src/data/preplabQuestions.js`
 
-**Current behavior:** No difficulty classification. All questions are presented with equal weight regardless of complexity.
+**Was:** No difficulty classification on any questions.
 
-**Target behavior:** Each question tagged with `difficulty: "easy" | "medium" | "hard"`. Exam mode lets user select difficulty filter before starting. Trainer mode shows difficulty badge on each question. Default: mixed (all difficulties). Easy = definitional recall. Medium = application. Hard = design tradeoff or production scenario.
+**Now:** All 269 questions have `difficulty: "easy" | "medium" | "hard"`. Initial distribution (1E/37M/62H) was miscalibrated — reclassified via Python heuristics + 35 explicit hard overrides to 47E/126M/87H (18%/48%/33%). Sprint A added `border-l-4` left accent keyed by difficulty to QuestionCard. Sprint D per-topic result bars render per-difficulty breakdown. Sprint 31B extracted all questions to `src/data/preplabQuestions.js`.
 
-**Effort:** M (tagging all 261 questions is the bulk of the work; UI change is small)
-
-**Dependencies:** None — tags can be added to the existing question objects
-
-**Priority:** High — difficulty levels are table stakes for any question bank targeting interview prep
-
-**Status:** Pending — Batch 0 Walk 1 finding #9
+**Status:** ✅ Done — sprints 31B + 31D.
 
 ---
 
@@ -281,7 +275,7 @@ Gate UX: modal fires on first gated content access. User enters access code. On 
 
 **Priority:** High — should be live before Batch 2 opens
 
-**Status:** In progress
+**Status:** ✅ Done — implemented in earlier sprint. `isAccessGranted()` in `src/utils/accessCode.js`, community code `DAI2026`, localStorage gate. 163+ hard PrepLab questions marked `gated: true`. Company Tracks mode gated. Interview Prep Plan phase 4 gated.
 
 ---
 
@@ -403,21 +397,44 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 ---
 
-## Home.jsx — Social Proof Overhaul
+## Home.jsx — Social Proof Overhaul + Testimonials Collection
 
-**Component:** `src/Home.jsx` — testimonials section
+**Component:** `src/Home.jsx` — testimonials section + Tally form integration
 
 **Current behavior:** 3 unnamed testimonials ("ML Engineer · fintech startup") with no verifiable signal. Easily dismissed.
 
-**Target behavior:** Replace with real social proof: LinkedIn screenshots with like/comment counts (signals resonance to new visitors), GitHub star count if significant, named quotes with handles from real users who've given permission. If none available yet, remove the section entirely rather than keep unconvincing placeholders.
+**Target behavior (Phase 1 — buildable now):**
+- Remove placeholder testimonials entirely (unconvincing filler is worse than nothing).
+- Add "Submit feedback" chip on Home → links to Tally.so form (rating 1–5 + free-text + optional role/company). Owner reviews Tally submissions via email notification, manually adds approved ones to `TESTIMONIALS` constant in `Home.jsx`.
+- Testimonials section hidden if `TESTIMONIALS.length === 0` — never shows empty state.
 
-**Effort:** S (once real quotes exist — content collection is the blocker, not the code)
+**Target behavior (Phase 2 — with Stripe):** Real submission → Supabase storage → admin approval UI → live display. See IDEAS.md "Testimonials / feedback section" for full two-phase spec.
 
-**Dependencies:** Real quotes/screenshots from users. Content blocker, not code blocker.
+**Effort:** XS–S (Phase 1 — Tally link + remove placeholders)
 
-**Priority:** Low (Audit 27 Finding 2 — flagged but unactionable until real social proof exists)
+**Dependencies:** Phase 1 needs no backend. Phase 2 needs Supabase (batch with Stripe).
 
-**Status:** Pending — blocked on content
+**Priority:** Medium — placeholder testimonials actively hurt credibility. Remove them now.
+
+**Status:** Pending — Phase 1 buildable now. Phase 2 deferred to Stripe sprint.
+
+---
+
+## Home.jsx / GT / Systems — Per-Page Ratings via PostHog
+
+**Component:** Shared `FeedbackBar` component → GT post end, Systems module done card, PrepLab session end
+
+**Current behavior:** No rating mechanism on any individual content piece.
+
+**Target behavior:** Small thumb up/down or 1–5 star widget at the bottom of: (1) each GT post, (2) each Systems module completion, (3) PrepLab session end screen. On submit: PostHog event `feedback_submitted { rating, page, content_type }`. No storage needed — PostHog handles it. Data tells you which modules are working, which are confusing.
+
+**Effort:** S — one shared `FeedbackBar` component, wired to PostHog in 3 places.
+
+**Dependencies:** PostHog already integrated (`src/analytics.js`). Zero backend needed.
+
+**Priority:** Medium — actionable product signal with almost no build cost.
+
+**Status:** Pending — build in next Home polish sprint.
 
 ---
 

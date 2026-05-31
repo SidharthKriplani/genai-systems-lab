@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: May 2026 (post sprint 30) | Current scale: 54 Systems modules (in nav), 22 Explore, 16 Agent Lab, 16 Concepts, 261 PrepLab questions, 222 GT posts*
+*Last updated: May 2026 (post sprint 34) | Current scale: 56 Systems modules (in nav), 22 Explore, 16 Agent Lab, 16 Concepts, 269 PrepLab questions, 224 GT posts*
 
 ---
 
@@ -69,7 +69,7 @@ Sprint items (in order of impact):
 
 ## 🔨 In Progress
 
-Nothing actively in progress. Last completed sprint: sprint 30 (4 items — RAG Lab done card reorder, Concepts Gym progress bar, PrepLab keyboard shortcuts, EvalLoopModule). See CLAUDE.md session build log for details.
+Nothing actively in progress. Last completed sprint: sprint 34 (LangGraph + HITL module, GraphRAG SVG mobile fix). Prior: sprint 33 (Graph RAG), sprint 32 (Cold-start Home rewrite), sprints 31A–E (PrepLab full revamp series). See CLAUDE.md session build log for full detail.
 
 ---
 
@@ -218,13 +218,14 @@ A Microsoft RAG interview transcript surfaced a hard gap: candidates who can imp
 - **PrepLab questions (3–4)** — bi-encoder vs cross-encoder trade-off, reranker failure mode, latency cost of cross-encoding, when to skip the reranker. `Effort: S`
 - **Query Refinement module extension** — add reranker as an optional 4th stage to the existing module (HyDE/multi-query/decomposition already there); show precision lift + latency cost. `Effort: S-M`
 
-### Graph RAG + multi-hop retrieval (new cluster — from Senior AI Engineer interview post, May 2026)
+### Graph RAG + multi-hop retrieval (new cluster — from Senior AI Engineer interview post, May 2026) ✅ BUILT (sprint 33, `2a00754`)
 
 Senior AI Engineer interview loops are explicitly testing Graph RAG, multi-hop retrieval, and cross-document synthesis — architectural patterns above vanilla vector RAG. The lab covers flat retrieval failure modes well but has zero coverage of graph-structured retrieval: how entities and relationships are indexed, when multi-hop is necessary (vs. expensive), and how graph traversal fails differently from embedding-based retrieval. This is the natural ceiling content above the existing RAG Lab. High signal: appears in FAANG/unicorn Round 1 questions targeting senior candidates.
 
-- **GT post: "Graph RAG — When Vector Search Isn't Enough"** — entity-relationship indexing, multi-hop vs single-hop retrieval trade-off, cross-document synthesis failure modes (entity resolution errors, traversal depth misconfiguration), production tools (Neo4j + LangChain graph chain, AWS Neptune, Microsoft GraphRAG). `Effort: S-M`
-- **PrepLab questions (3–4)** — when to use Graph RAG vs flat retrieval, multi-hop retrieval failure modes, graph traversal depth trade-off, table extraction as a RAG input modality. `Effort: S`
-- **RAG Lab scenario extension** — optional: add "Graph Retrieval" scenario to RAG Lab (entity-based lookup, multi-hop config, traversal depth slider). Long-term build — depends on static corpus first. `Effort: M`
+- **GT post: "Graph RAG: When Vector Search Isn't Enough"** ✅ — entity-relationship indexing, multi-hop traversal table, hybrid architecture, production failure modes, when-to-use decision table. `id: graph-rag-multi-hop`
+- **`GraphRAGModule` (4 tabs)** ✅ — failure comparison, interactive SVG knowledge graph (7 nodes, 8 typed edges, click-to-explore), animated 6-step multi-hop traversal, when-to-use decision table.
+- **PrepLab questions (4)** ✅ — `graph-rag-1` through `graph-rag-4`. Compliance multi-hop failure, pipeline construction + failure modes, what multi-hop retrieval is (MCQ), hybrid routing logic. All with trap fields.
+- **RAG Lab scenario extension** — optional: add "Graph Retrieval" scenario to RAG Lab (entity-based lookup, multi-hop config, traversal depth slider). Long-term build — depends on static corpus first. `Effort: M` — still pending.
 
 ### LangGraph state management + HITL patterns (new cluster — from Senior AI Engineer interview post, May 2026) ✅ BUILT (sprint 34, `cfd4520`)
 
@@ -233,6 +234,53 @@ Senior AI interviews are now testing LangGraph-specific abstractions (ReAct, red
 - **GT post: "LangGraph Reducers and HITL: State Machines for Agentic Workflows"** ✅ — reducer functions, StateGraph, HITL checkpoint patterns, when graph-based orchestration beats custom loops.
 - **`LangGraphModule` (4 tabs)** ✅ — Reducers demo, StateGraph SVG, HITL animated flow, When to Use table.
 - **PrepLab questions (4)** ✅ — reducer bug (parallel nodes + overwrite), interrupt_before timing, HITL design decision, checkpointer production bug. All with trap fields.
+
+### Testimonials / feedback section (new cluster — from session discussion, May 2026)
+
+Users who've gotten value from GAL currently have no way to signal that back, and new visitors have no social proof beyond a stat row. Two related but architecturally distinct problems.
+
+**Phase 1 — Tally-form collection (buildable now, no backend):**
+- "Submit feedback" link on Home → opens a Tally.so form (free tier). Fields: one 1–5 rating, one free-text testimonial, role/company optional.
+- Owner reviews via Tally email notification. Good ones get manually added to a `TESTIMONIALS` constant in `Home.jsx`.
+- Show/hide testimonials section on Home based on whether `TESTIMONIALS.length > 0`. Remove placeholder testimonials entirely until real ones exist.
+- `Effort: XS (Tally form + one JSX change)` — do in the next Home polish pass.
+
+**Phase 2 — Per-page ratings via PostHog (buildable now):**
+- Thumb up / thumb down (or 1–5 star) widget at the bottom of each GT post, each Systems module done card, each PrepLab session end. `Effort: XS`
+- Events: `feedback_submitted { rating: 4, page: "systems/graph-rag", type: "module" }`. Zero storage problem — PostHog handles it.
+- This is different from testimonials: it's signal for the builder (which modules are working), not social proof for new visitors.
+- `Effort: S` — PostHog event + 1 shared FeedbackBar component added to 3 completion points.
+
+**Phase 3 — Approval + edit workflow (requires Supabase, batch with Stripe):**
+- Real-time submission form → Supabase `feedback` table with `reviewed: false` flag → admin review UI at `/admin?key=...` → approve / edit / reject → displays on Home.
+- This is the right long-term design but requires a backend. Not buildable statically. Belongs in the Stripe + auth sprint.
+
+**Decision:** Build Phase 1 + Phase 2 in the next Home polish sprint. Build Phase 3 with Stripe. Do not use placeholder testimonials in the interim — the UPGRADES.md entry (Social Proof Overhaul) already flags this.
+
+### Interview Experiences section + skill graph (new cluster — from session discussion, May 2026)
+
+Real interview signal: which topics appear in which company-type interviews, how often, at what difficulty. No prep site has this as a data layer — they have anecdotes. GAL is positioned to build this because the CLAUDE.md field intelligence log already contains 15+ structured interview signals that can seed it.
+
+**The core insight:** A skill frequency graph built from 80+ interview experiences is actionable in a way that no topic-coverage checklist is. "Graph RAG appears in 38% of senior AI engineer Round 1 interviews" is a planning tool. PrepLab's topic weights in Company Tracks could be driven by this data.
+
+**Phase 1 — Editorial model (buildable now, no backend):**
+- New section on Home or separate page: `InterviewExperiences` — seeded with 20–30 structured entries manually (from CLAUDE.md field intelligence log + practitioner posts you've read).
+- Each entry schema: `{ role, companyTier: "FAANG|unicorn|startup|enterprise", round: 1|2|3, topics: ["rag", "agents", "evals"], difficultySignal: "hard"|"medium", notes, source }`.
+- Static skill frequency chart using recharts: bar chart showing % of experiences mentioning each topic. Filters: by company tier, by role type.
+- "Submit your experience" chip → Tally form (same pattern as testimonials).
+- Manual curation: good Tally submissions → add to data array, push. This gets to critical mass faster than crowd-sourcing because you already have 15+ signals to seed it.
+- `Effort: M` — data entry + recharts bar chart + Tally form link.
+
+**Phase 2 — Crowd-sourced with LLM validation (requires serverless function, batch with Stripe):**
+- Free-text submission → serverless LLM call checks completeness (role present, round present, topics mentioned, min 100 words) → pending review → admin approves → appears in graph.
+- Auto-extract skill mentions from submission text using LLM → update frequency chart in real time.
+- `Effort: L` — serverless function (Vercel edge function), Supabase storage, admin UI, LLM extraction prompt.
+
+**Legal note:** Frame as "skills and patterns observed" not "exact questions asked." Companies (especially FAANG) have issued DMCA requests against sites publishing verbatim interview questions. The pattern-level framing avoids this and is also more useful — specific questions change, skills don't.
+
+**Connection to Company Tracks:** Once the experience graph has enough data (50+ entries), Company Tracks' `topicWeights` can be data-driven rather than manually configured. The graph becomes the Company Tracks backend.
+
+**Decision:** Build Phase 1 in a Home polish sprint after Phase 1 testimonials ships. Build Phase 2 with Stripe.
 
 ### Scaling laws (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026)
 

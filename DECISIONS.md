@@ -2,7 +2,7 @@
 
 Standing rules and principles that govern every build decision. This is a prescriptive document — it says what IS true now, not what was built when. For build history, see LINEAGE.md. For open findings, see AUDITS.md.
 
-*Last updated: May 2026 (post sprint 30 — Sections 8 + 9 added)*
+*Last updated: May 2026 (post sprint 34 — LangGraph + HITL shipped; scale synced)*
 
 ---
 
@@ -17,12 +17,12 @@ The product is currently free with an access code gate (client-side, localStorag
 **Free tier (acquisition layer — never gate these):**
 - All four Labs: RAG Lab, Agent Lab, Eval Lab, LLM Lab — every scenario, every module
 - All Systems, Explore, Concepts modules
-- All Ground Truth posts (222+)
+- All Ground Truth posts (224+)
 - PrepLab: Exam + Trainer modes, **10 questions per session** (unlimited sessions, but gate fires mid-session at question 11)
 - Interview Prep Plan: JD paste + self-rating questionnaire + skill assessment — **free**
 
 **Gated (access code now, paid later):**
-- PrepLab: all questions beyond the 10/session limit (161 hard questions already marked `gated: true`)
+- PrepLab: all questions beyond the 10/session limit (163+ hard questions marked `gated: true` — grows with each sprint that adds hard questions)
 - PrepLab: Company Tracks mode (role-specific tracks)
 - Interview Prep Plan: the personalized study plan + sequenced module path — **gated after user completes 30% of the plan** (not upfront — let them get invested first)
 
@@ -186,7 +186,7 @@ There's a second origin underneath that one: the lab was built because LinkedIn 
 
 ### Unified question bank (PrepLab)
 
-**Decision:** PrepLab.jsx contains a self-contained 261+ question bank rather than importing from all other tab files. Each question has: topic, difficulty, type (mcq|text), options, correct index, explanation, readMore link.
+**Decision:** PREP_QUESTIONS array lives in `src/data/preplabQuestions.js` (extracted in sprint 31B from PrepLab.jsx), imported by PrepLab.jsx. 269+ questions as of sprint 34. Each question has: id, topic, difficulty, type (mcq|text), question, options, correct (index), keywords, explanation, readMore link. Optional fields added in sprint 31C+: `trap` (what weaker candidates say — amber callout in RevealCard), `source` (attribution), `gated` (boolean — hard questions behind access gate).
 
 **Why:** Cross-file imports across 8 files would create tight coupling and make the question bank hard to maintain. A single self-contained bank is simpler and LLM-upgrade-friendly (swap the scorer, not the data).
 
@@ -198,23 +198,23 @@ There's a second origin underneath that one: the lab was built because LinkedIn 
 
 **Current tabs:** Home, Concepts, Flows, RAG Lab, Agents, Systems, Playground, Explore, Fluency, AI Product, Career, **Ask** (Consultation), **PrepLab**, **Learning Paths**.
 
-**Systems modules in nav:** 54 active (as of sprint 7 — 3 removed from SYSTEMS_MODULES registry: `deploy`, `buildthis`, `abtesting-ai`). Components are kept in `modules.jsx` but not surfaced in nav — accessible only via direct link if needed.
+**Systems modules in nav:** 56 active (as of sprint 34 — `graph-rag` added sprint 33, `langgraph` added sprint 34; 3 previously removed from registry: `deploy`, `buildthis`, `abtesting-ai`). Components are kept in `modules.jsx` but not surfaced in nav — accessible only via direct link if needed.
 
 **Ask** was added as a lightweight consultation space — keyword search over all 222+ GT posts + 57 module descriptions. Conversational UI. LLM-ready: swap the scoring function for embeddings + add a generation step without touching the UI.
 
-**PrepLab** was added to the GROW group. Three modes: timed assessment exam (15/30/60 min), trainer with immediate feedback, and JD+resume gap analysis with targeted drill.
+**PrepLab** is in the PROVE group. Five modes: Assessment (10/20/40q timed exam with per-topic results screen), Trainer (immediate feedback + Browse/List view toggle), Interview Strategy (4-step interview brief: JD paste → role/round context → self-rate topics → gated brief output), Company Tracks (archetype-weighted drill, gated), and Weakness Heatmap (reads history localStorage, worst-topic-first view).
 
 ### PrepLab — modes
 
-**Assessment Mode:** 15/30/60 min timed exam. All scores hidden until end. Final reveal: total score, per-category breakdown, "Strong in / Needs work" callout, wrong-answer review.
+**Assessment Mode:** 10/20/40 question timed exam. All scores hidden until end. Final reveal: total score (% + correct/total + Strong/Developing/Needs Work badge), session delta vs last session, per-topic bars sorted worst-first, topic gap pointer chips (links to GT/Lab when topic score < 60%), wrong-answer review. Free gate at Q11 — users who set >10q get blurred results for the tail with GateModal.
 
-**Trainer Mode:** Same question bank, immediate feedback after each answer. Tracks weak topics. Session summary with "Study these next" recommendations.
+**Trainer Mode:** Same question bank, immediate feedback after each answer. Drill or Browse/List view toggle (`viewMode` state). Browse: scrollable accordion list, each question expandable with MCQ answer highlights, trap callout, "Drill this topic →" chip. TOPIC_GROUPS filter (5 groups: RAG & Retrieval, Agents & Systems, Evals & Metrics, LLM & Fine-Tuning, Production & Ops).
 
-**Interview Prep Plan (formerly "JD Prep Mode"):** Paste JD → keyword extraction against 11 skill categories → self-rating questionnaire (Weak/Okay/Strong per flagged skill) → gap-weighted 20-question drill → Interview Readiness Score. Phase 4 gated study plan shows after 30% completion.
+**Interview Strategy (formerly "Interview Prep Plan", formerly "JD Prep Mode"):** 4-step flow. Step 1: JD paste + company name. Step 2: role type + round number + interviewer type + optional prior-round feedback. Step 3: self-rate detected topics (Weak/Okay/Strong). Step 4: gated Interview Brief output — top 3 gaps with hard Q + medium Q + trap callout per gap, prior feedback block (red), day-of checklist, Copy Brief button.
 
-**Weakness Heatmap:** Reads `gsl-preplab-history` — shows per-topic accuracy bars sorted worst-first, plus "Hard Questions" view of most-missed questions. Data source for all modes.
+**Weakness Heatmap:** Reads `gsl-preplab-history` — per-topic accuracy bars sorted worst-first, plus "Hard Questions" view of most-missed questions.
 
-**Company Tracks:** Role-specific question sets weighted to company archetype's known interview patterns. Gated.
+**Company Tracks:** Role-specific drill weighted to company archetype's known interview patterns. Gated. 4 archetypes: bigtech, ainative, indiantech, enterprise. Each has topic weights and system design prompts.
 
 **Speech support:** `window.SpeechRecognition || window.webkitSpeechRecognition` — if available, mic button appears. Transcribed text fills the answer field. Degrades gracefully to text input.
 
@@ -241,9 +241,9 @@ Renamed from "Leaderboard." Tracks your own pass/fail record, not rankings. "Lea
 
 "Knowledgeable colleague" voice — technically precise but not academic. Emotional hooks and real failure stories used deliberately. The goal: readers finish feeling like they've talked to someone who shipped this in production.
 
-### Consultation Space (Ask tab) — architecture
+### Consultation Space (Search tab) — architecture
 
-Knowledge base built client-side on first render: all 222+ GT posts (title × 3, tags × 2, desc × 1 scoring weight) + 57 module descriptions. Stopword stripping. Top 5 scored results returned. 8 suggested questions. Session conversation history.
+Knowledge base built client-side on first render: all 224+ GT posts (title × 3, tags × 2, desc × 1 scoring weight) + 57 module descriptions. Stopword stripping. Top 7 scored results returned. 8 suggested questions. Session conversation history.
 
 **LLM upgrade path:** Replace the keyword scorer with embedding similarity (Voyage AI or OpenAI `text-embedding-3-small`) + add a Claude API generation step. UI and retrieval layer stay identical.
 

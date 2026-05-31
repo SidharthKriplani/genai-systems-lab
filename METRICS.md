@@ -31,6 +31,9 @@ Events are fired via `track(eventName, properties)` in `src/analytics.js`.
 | `moe_sim_run` | MoE Expert Simulator "Run Simulation" clicked | `numExperts`, `topK`, `batchSize`, `failureType` |
 | `failure_triggered` | AgentConfigLab / ServingInfra config produces a named failure | `moduleId`, `failureId`, `taskType` |
 | `forward_pointer_clicked` | Done-screen forward pointer button clicked | `moduleId`, `destination` (preplab / groundtruth) |
+| `preplab_gate_shown` | PrepLab question 11 free-user gate fires during exam | `questionCount`, `mode` |
+| `interview_brief_generated` | Interview Strategy step 4 brief generated | `role`, `round`, `topGapCount` |
+| `company_track_started` | Company Tracks drill session started | `archetype` |
 
 ---
 
@@ -98,6 +101,9 @@ These are not PostHog events but are equally important for understanding user st
 | `genai_visited_modules` | Array of recently visited tab IDs — used by ReturningHomeView "Jump Back In" |
 | `genai_gt_read` | Set of GT post IDs opened — used by ReturningHomeView GT card seeding |
 | `gsl-rag-done` | Set of RAG Lab scenario IDs completed — used by RAG Lab sidebar progress bar (sprint 23) |
+| `gsl-preplab-exam-sessions` | Array of MCQ exam snapshots capped at 20 entries — `{ pct, tc, total, count, date }` — used by ExamMode session delta comparison (sprint 31D) |
+| `gsl-preplab-strategy-phase` | Current interview strategy phase string (`"4"` when brief generated) — used by Interview Strategy 4-step flow (sprint 31E) |
+| `accessGranted` | Boolean — set to `"true"` on valid access code entry — checked by `isAccessGranted()` in `src/utils/accessCode.js` |
 
 **Planned keys (for cross-repo-inspired features — not yet implemented):**
 
