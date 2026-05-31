@@ -2,28 +2,19 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 31E — PrepLab Sprints A+B+C+D+E complete, Browse/List View done)*
+*Last updated: May 2026 (post sprint 32 — cold-start Home rewrite done)*
 
 ---
 
-## Theme: PrepLab complete. Next: cold-start Home + content gaps.
+## Theme: Content gaps + Graph RAG.
 
-Both PrepLab items done. Shift focus to the two highest-ROI remaining items: cold-start Home rewrite (belief gap) and Graph RAG content gap (Tier 1 senior interview signal).
+Home rewrite done. Next: Graph RAG is the highest-value Tier 1 content gap (completely absent, senior AI interview Round 1 signal).
 
 ---
 
 ## Do this (in order)
 
-**1. Cold-start Home rewrite** `M effort` `HIGH`
-
-What: The current Home front-loads the product mechanic before establishing why it matters. Fix the belief gap per DECISIONS.md Section 9 + UPGRADES.md Hero Copy Rewrite entry.
-
-Implementation:
-- Lead with market signal: "Agentic AI engineer postings: +280% YoY. 90K+ open roles." stat chip
-- PrepLab CTA visible above the fold for cold visitors: "Test your interview readiness →"
-- One concrete question preview with "[appeared at Google/Meta/Anthropic]" framing
-- Door card copy: outcome-first language, not feature descriptions
-- Returning user view unchanged
+**1. ~~Cold-start Home rewrite~~** — DONE (`d8c2d11`). Market signal chip, PrepLab question card primary CTA, belief-gap subtext, outcome-first door card copy.
 
 **2. Graph RAG + multi-hop retrieval** `M effort` `HIGH`
 
@@ -45,6 +36,7 @@ Implementation:
 - ~~**PrepLab Sprint D**~~ — DONE (`22cd963`). Assess results screen rebuild: per-topic bars worst-first, TOPIC_FORWARD_POINTERS gap chips, session comparison delta, free-user gate at Q11. `src/config/gating.js` created.
 - ~~**TrainerMode Browse/List View**~~ — DONE (`eb84135`). Drill|Browse toggle, accordion expand with MCQ correct highlighting, trap callout, "Drill this topic →" chip.
 - ~~**PrepLab Sprint E**~~ — DONE (`a5af787`). InterviewPrepMode rebuilt as 4-step Interview Brief: JD+company → Role+Round+Context → Rate Topics → Interview Brief output (gated). `generateBrief()` + `copyBrief()`. Removed inline drill.
+- ~~**Cold-start Home rewrite**~~ — DONE (`d8c2d11`). Market signal chip, PrepLab question card primary CTA, belief-gap subtext, outcome-first door card copy.
 
 ### Content depth + production grounding (was Sprint 31 — demoted to Pending)
 - **"Your Interview Story" block on RAG Lab + Agent Lab done cards** — collapsible block at forward pointer card. `S effort`.

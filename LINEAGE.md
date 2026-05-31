@@ -162,4 +162,8 @@ Core insight: most GenAI learning resources are either too academic (papers, tex
 
 ---
 
-*Last updated: May 2026 (sprint 31E, Interview Strategy full rebuild shipped)*
+| May 2026 sprint 32 | Cold-start Home rewrite — new-visitor section only. Three changes to `src/Home.jsx`. (1) Market signal chip added above headline: "Agentic AI engineer roles: +280% YoY · 90K+ open roles (Stanford HAI 2026)" with animated pulse dot — positions career-relevance belief before the mechanic description. Implements DECISIONS.md Section 9 cold-start belief gap rule. (2) Hero subtext rewritten: "Agentic AI engineer roles grew 280% last year. The gap isn't building AI — it's diagnosing production failures under pressure. This lab puts you in the seat." — bridges market signal → product thesis. (3) PrepLab sample question card added as primary cold-visitor CTA (above HeroFailureDemo): "Senior AI engineer interviews" label, hard RAG question, green "Test your interview readiness →" button linking to PrepLab. Addresses the funnel problem — cold visitors now encounter PrepLab (pre-installed interview belief) before RAG Lab (requires product belief). (4) Door card copy updated: BUILD → "Ship AI that holds up in production"; PROVE → "Interview ready in hours, not weeks"; NAVIGATE → "AI career, mapped". Returning user view (`ReturningHomeView`) untouched. Brace diff: 0. Commit: `d8c2d11`. Scale: unchanged. |
+
+---
+
+*Last updated: May 2026 (sprint 32, cold-start Home rewrite shipped)*

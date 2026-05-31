@@ -131,7 +131,7 @@ Cut entirely:
 
 **Priority:** Critical — first thing a new visitor sees. If the belief isn't built in 5 seconds, nothing else matters.
 
-**Status:** Pending — root cause now fully understood (DECISIONS.md Section 9). Build after RAG Lab done card + TYU crash are fixed.
+**Status:** ✅ Done — sprint 32. Commit `d8c2d11`. Market signal chip + PrepLab question card CTA + updated subtext + outcome-first door card copy.
 
 ---
 
