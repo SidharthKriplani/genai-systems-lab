@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { isAccessGranted, grantAccess, validateCode, FREE_QUESTION_LIMIT } from "./utils/accessCode";
+import { RESULTS_FREE_LIMIT } from "./config/gating";
 import { PREP_QUESTIONS } from "./data/preplabQuestions";
 import { CommonTrapCallout } from "./shared";
 
@@ -684,7 +685,25 @@ function ExamConfig({ onStart, onExit }) {
   );
 }
 
-function ExamMode({ onExit }) {
+// ─── EXAM SESSION HISTORY ─────────────────────────────────────────────────────
+const EXAM_SESSIONS_KEY = "gsl-preplab-exam-sessions";
+
+// Where to go when a topic is weak (pct < 60%) — one forward pointer per topic
+const TOPIC_FORWARD_POINTERS = {
+  rag:        { label: "RAG Lab",          tab: "lab" },
+  agents:     { label: "Agent Lab",        tab: "agentlab" },
+  evaluation: { label: "Eval Lab",         tab: "evallab" },
+  finetuning: { label: "LLM Lab",          tab: "llmlab" },
+  llmops:     { label: "Systems Lab",      tab: "systems" },
+  safety:     { label: "AI Safety module", tab: "systems" },
+  product:    { label: "AI Product",       tab: "aipm" },
+  behavioral: { label: "Career Track",     tab: "career" },
+  multimodal: { label: "Explore",          tab: "explore" },
+  reasoning:  { label: "Concepts",         tab: "concepts" },
+  serving:    { label: "LLM Lab",          tab: "llmlab" },
+};
+
+function ExamMode({ onExit, onNavigate, onNavigateTo }) {
   const [config, setConfig] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
@@ -693,6 +712,7 @@ function ExamMode({ onExit }) {
   const [finished, setFinished] = useState(false);
   const [textOverrides, setTextOverrides] = useState({});
   const [showGate, setShowGate] = useState(false);
+  const [showGateResults, setShowGateResults] = useState(false);
   const timerRef = useRef(null);
   const DM = { 15: 20, 30: 35, 60: 55 };
 
@@ -738,6 +758,22 @@ function ExamMode({ onExit }) {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [config, finished, current, questions, answers]);
+
+  // Save MCQ-based result snapshot to session history when exam finishes
+  useEffect(() => {
+    if (!finished || questions.length === 0) return;
+    try {
+      let tc = 0;
+      for (const q of questions) {
+        if (q.type === "mcq" && answers[q.id] === q.correct) tc++;
+      }
+      const mcqTotal = questions.filter(q => q.type === "mcq").length;
+      const pct = mcqTotal > 0 ? Math.round((tc / mcqTotal) * 100) : 0;
+      const prev = JSON.parse(localStorage.getItem(EXAM_SESSIONS_KEY) || "[]");
+      prev.push({ date: Date.now(), pct, tc, total: mcqTotal, count: questions.length });
+      localStorage.setItem(EXAM_SESSIONS_KEY, JSON.stringify(prev.slice(-20)));
+    } catch {}
+  }, [finished]);
 
   function computeResults() {
     const bt = {}; let tc = 0; const wrong = []; const textPending = [];
@@ -788,55 +824,163 @@ function ExamMode({ onExit }) {
 
   if (finished) {
     const r = computeResults();
+    // Sort topics worst-first
+    const sortedTopics = [...r.byTopic].sort((a, b) => a.pct - b.pct);
+
+    // Session comparison delta — read BEFORE current session is saved (useEffect fires after render)
+    let sessionDelta = null;
+    try {
+      const sessions = JSON.parse(localStorage.getItem(EXAM_SESSIONS_KEY) || "[]");
+      if (sessions.length > 0) {
+        const prior = sessions[sessions.length - 1];
+        sessionDelta = r.pct - prior.pct;
+      }
+    } catch {}
+
+    // Score badge
+    const badge = r.pct >= 70
+      ? { label: "Strong",      color: "#34d399", bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  top: "rgba(16,185,129,0.5)" }
+      : r.pct >= 50
+      ? { label: "Developing",  color: "#fbbf24", bg: "rgba(245,158,11,0.10)",  border: "rgba(245,158,11,0.3)",  top: "rgba(245,158,11,0.5)" }
+      : { label: "Needs Work",  color: "#f87171", bg: "rgba(239,68,68,0.10)",   border: "rgba(239,68,68,0.3)",   top: "rgba(239,68,68,0.5)" };
+
+    // Free-user gating: show only topics from first RESULTS_FREE_LIMIT questions
+    const free = !isAccessGranted();
+    const gated = free && questions.length > RESULTS_FREE_LIMIT;
+    let visibleTopics = sortedTopics;
+    if (gated) {
+      const first10 = questions.slice(0, RESULTS_FREE_LIMIT);
+      const bt10 = {};
+      for (const q of first10) {
+        if (!bt10[q.topic]) bt10[q.topic] = { correct: 0, total: 0 };
+        if (q.type === "text") {
+          if (textOverrides[q.id] !== undefined) {
+            bt10[q.topic].total++;
+            if (textOverrides[q.id]) bt10[q.topic].correct++;
+          }
+        } else {
+          bt10[q.topic].total++;
+          if (answers[q.id] === q.correct) bt10[q.topic].correct++;
+        }
+      }
+      visibleTopics = Object.entries(bt10)
+        .map(([t, v]) => ({ topic: t, ...v, pct: v.total > 0 ? Math.round(v.correct / v.total * 100) : 0 }))
+        .sort((a, b) => a.pct - b.pct);
+    }
+
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
-        <div className="max-w-3xl mx-auto space-y-6">
+        {showGateResults && (
+          <GateModal onUnlock={() => setShowGateResults(false)} onClose={() => setShowGateResults(false)} />
+        )}
+        <div className="max-w-3xl mx-auto space-y-5">
+
+          {/* Header row */}
           <div className="flex items-center justify-between">
             <button onClick={onExit} className="text-zinc-400 hover:text-zinc-200 text-sm">← Exit</button>
             <button onClick={() => copyResults(r)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-lg border border-zinc-700">
-              Download Results
+              Copy Results
             </button>
           </div>
-          <div
-            style={{
-              background: r.pct >= 70
-                ? "linear-gradient(160deg, rgba(16,185,129,0.12) 0%, rgba(15,15,17,0.97) 100%)"
-                : r.pct >= 50
-                ? "linear-gradient(160deg, rgba(245,158,11,0.1) 0%, rgba(15,15,17,0.97) 100%)"
-                : "linear-gradient(160deg, rgba(239,68,68,0.1) 0%, rgba(15,15,17,0.97) 100%)",
-              border: r.pct >= 70 ? "1px solid rgba(16,185,129,0.25)" : r.pct >= 50 ? "1px solid rgba(245,158,11,0.25)" : "1px solid rgba(239,68,68,0.25)",
-              borderTop: r.pct >= 70 ? "2px solid rgba(16,185,129,0.5)" : r.pct >= 50 ? "2px solid rgba(245,158,11,0.5)" : "2px solid rgba(239,68,68,0.5)",
-            }}
-            className="rounded-2xl p-5 sm:p-8 text-center"
-          >
+
+          {/* Score headline */}
+          <div style={{
+            background: `linear-gradient(160deg, ${badge.bg} 0%, rgba(9,9,11,0.97) 100%)`,
+            border: `1px solid ${badge.border}`,
+            borderTop: `2px solid ${badge.top}`,
+          }} className="rounded-2xl p-5 sm:p-7">
             <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Final Score</p>
-            <div
-              className="text-6xl sm:text-8xl font-black mb-2 tracking-tight"
-              style={{
-                background: r.pct >= 70
-                  ? "linear-gradient(180deg, #34d399 0%, #10b981 100%)"
-                  : r.pct >= 50
-                  ? "linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%)"
-                  : "linear-gradient(180deg, #f87171 0%, #ef4444 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >{r.pct}%</div>
-            <p className="text-zinc-400 text-sm">{r.tc} / {r.total} correct</p>
-            {(r.strong.length > 0 || r.weak.length > 0) && (
-              <div className="mt-5 flex flex-wrap gap-2 justify-center">
-                {r.strong.length > 0 && <span className="px-3 py-1.5 text-xs font-medium rounded-full" style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399" }}>Strong: {r.strong.join(" · ")}</span>}
-                {r.weak.length > 0 && <span className="px-3 py-1.5 text-xs font-medium rounded-full" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}>Needs work: {r.weak.join(" · ")}</span>}
+            <div className="flex flex-wrap items-baseline gap-3">
+              <div className="text-6xl sm:text-7xl font-black tracking-tight" style={{
+                background: `linear-gradient(180deg, ${badge.color} 0%, ${badge.color}bb 100%)`,
+                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              }}>{r.pct}%</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-lg text-zinc-400 font-mono">{r.tc}/{r.total}</span>
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{
+                  background: badge.bg, border: `1px solid ${badge.border}`, color: badge.color,
+                }}>{badge.label}</span>
+                {sessionDelta !== null && (
+                  <span className="text-xs font-mono" style={{ color: sessionDelta >= 0 ? "#34d399" : "#f87171" }}>
+                    {sessionDelta >= 0 ? "+" : ""}{sessionDelta}% vs last
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Per-topic breakdown — sorted worst-first */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)" }} className="rounded-xl p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-zinc-200 text-sm">Per-Topic Breakdown</h3>
+              <span className="text-[10px] font-mono text-zinc-500">worst first</span>
+            </div>
+
+            {visibleTopics.map(t => {
+              const pointer = t.pct < 60 ? TOPIC_FORWARD_POINTERS[t.topic] : null;
+              const barColor = t.pct >= 70 ? "#10b981" : t.pct >= 50 ? "#f59e0b" : "#ef4444";
+              const glowColor = t.pct >= 70 ? "rgba(16,185,129,0.5)" : t.pct >= 50 ? "rgba(245,158,11,0.5)" : "rgba(239,68,68,0.5)";
+              return (
+                <div key={t.topic} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-sm text-zinc-300">{TOPIC_LABELS[t.topic]}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-zinc-400">{t.correct}/{t.total} ({t.pct}%)</span>
+                      {pointer && onNavigate && (
+                        <button
+                          onClick={() => onNavigate(pointer.tab)}
+                          className="text-[10px] font-mono px-2 py-0.5 rounded transition-all hover:brightness-125"
+                          style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
+                          Go: {pointer.label} →
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="w-full rounded-full h-2 overflow-hidden" style={{ background: "rgba(39,39,42,0.9)" }}>
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${t.pct}%`, background: barColor, boxShadow: `2px 0 8px ${glowColor}` }} />
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Gate overlay for free users with >10q exam */}
+            {gated && (
+              <div className="relative mt-2 rounded-lg overflow-hidden">
+                {/* Blurred placeholder rows */}
+                <div className="space-y-3 p-4" style={{ filter: "blur(5px)", pointerEvents: "none", userSelect: "none" }}>
+                  {[55, 40, 70].map((w, i) => (
+                    <div key={i} className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-300">Topic</span>
+                        <span className="text-xs font-mono text-zinc-400">? / ? (?%)</span>
+                      </div>
+                      <div className="w-full rounded-full h-2 bg-zinc-800 overflow-hidden">
+                        <div className="h-full rounded-full bg-zinc-500" style={{ width: `${w}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Overlay CTA */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 rounded-lg"
+                  style={{ background: "linear-gradient(180deg, rgba(9,9,11,0.2) 0%, rgba(9,9,11,0.88) 35%, rgba(9,9,11,0.97) 100%)" }}>
+                  <p className="text-sm font-semibold text-zinc-100 mb-1 text-center">
+                    You answered {questions.length} questions. Unlock full results.
+                  </p>
+                  <p className="text-xs text-zinc-500 mb-3 text-center">
+                    Free plan shows breakdown for first {RESULTS_FREE_LIMIT} questions only.
+                  </p>
+                  <button
+                    onClick={() => setShowGateResults(true)}
+                    className="px-4 py-2 text-sm font-semibold text-white rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors">
+                    Unlock Full Results
+                  </button>
+                </div>
               </div>
             )}
           </div>
-          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 space-y-4">
-            <h3 className="font-semibold text-zinc-200">Per-Topic Breakdown</h3>
-            {r.byTopic.map(t => (
-              <ScoreBar key={t.topic} label={TOPIC_LABELS[t.topic]} score={t.correct} max={t.total}
-                color={t.pct >= 70 ? "bg-emerald-500" : t.pct >= 50 ? "bg-amber-500" : "bg-red-500"} />
-            ))}
-          </div>
+
+          {/* Open answers — self-assess */}
           {r.textPending && r.textPending.length > 0 && (
             <div style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(99,102,241,0.25)", borderTop: "2px solid rgba(99,102,241,0.5)" }} className="rounded-xl p-6 space-y-4">
               <div>
@@ -868,15 +1012,13 @@ function ExamMode({ onExit }) {
                     <button
                       onClick={() => setTextOverrides(o => ({ ...o, [q.id]: false }))}
                       style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}
-                      className="py-2 text-red-300 rounded-lg text-sm font-medium hover:brightness-110 transition-all"
-                    >
+                      className="py-2 text-red-300 rounded-lg text-sm font-medium hover:brightness-110 transition-all">
                       ✗ Missed it
                     </button>
                     <button
                       onClick={() => setTextOverrides(o => ({ ...o, [q.id]: true }))}
                       style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }}
-                      className="py-2 text-emerald-300 rounded-lg text-sm font-medium hover:brightness-110 transition-all"
-                    >
+                      className="py-2 text-emerald-300 rounded-lg text-sm font-medium hover:brightness-110 transition-all">
                       ✓ Got it
                     </button>
                   </div>
@@ -884,17 +1026,19 @@ function ExamMode({ onExit }) {
               ))}
             </div>
           )}
+
+          {/* Wrong answers */}
           {r.wrong.length > 0 && (
-            <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 space-y-4">
-              <h3 className="font-semibold text-zinc-200">Wrong Answers ({r.wrong.length})</h3>
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border)" }} className="rounded-xl p-5 sm:p-6 space-y-4">
+              <h3 className="font-semibold text-zinc-200 text-sm">Wrong Answers ({r.wrong.filter(q => q.type === "mcq").length})</h3>
               {r.wrong.filter(q => q.type === "mcq").map(q => (
-                <div key={q.id} className="border border-zinc-700 rounded-lg p-4 space-y-2">
+                <div key={q.id} className="border border-zinc-800 rounded-lg p-4 space-y-2">
                   <div className="flex gap-2 items-start">
                     <TopicChip topic={q.topic} />
                     <p className="text-zinc-200 text-sm flex-1">{q.question}</p>
                   </div>
-                  {q.type === "mcq" && <p className="text-emerald-400 text-sm">✓ {q.options[q.correct]}</p>}
-                  <p className="text-zinc-400 text-sm border-t border-zinc-700 pt-2">{q.explanation}</p>
+                  <p className="text-emerald-400 text-sm">✓ {q.options[q.correct]}</p>
+                  <p className="text-zinc-400 text-sm border-t border-zinc-800 pt-2">{q.explanation}</p>
                 </div>
               ))}
             </div>
@@ -2406,7 +2550,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           PrepLab
         </button>
-        {mode === "exam"        && <ExamMode onExit={exitMode} />}
+        {mode === "exam"        && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
         {mode === "trainer"     && <TrainerMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} initialGroup={trainerInitGroup} />}
         {mode === "jdprep"      && <InterviewPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
         {mode === "companyprep" && <CompanyPrepMode onExit={exitMode} onNavigate={onNavigate} />}
