@@ -11757,6 +11757,54 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+// ─── LANGGRAPH REDUCERS + HITL ────────────────────────────────────────────────
+  "langgraph-reducers-hitl": [
+    { t: "p", text: "Most agent loops are implicit: call the LLM, parse the tool call, execute it, call the LLM again. This works for simple chains. It breaks when you need parallel execution, human approval gates, durable state across restarts, or complex conditional routing. LangGraph makes the agent's control flow explicit — as a typed state machine with nodes, edges, and reducers." },
+    { t: "h2", text: "Why implicit loops fail at scale" },
+    { t: "p", text: "An implicit loop loses state on failure, has no natural pause point for human review, can't run nodes in parallel without custom threading code, and gives you no visibility into what the agent decided between steps. These are not implementation details — they are architectural constraints. LangGraph's state machine model directly addresses each one." },
+    { t: "callout", v: "warning", text: "Common interview trap: candidates describe LangGraph as 'LangChain with a graph.' It is a different programming model. The core abstraction is a typed StateGraph where every node receives the full state and returns a partial state update — not a chain of sequential transformations." },
+    { t: "h2", text: "The state schema and reducer functions" },
+    { t: "p", text: "Every LangGraph agent begins with a typed state schema — a TypedDict (Python) or equivalent that defines every field the graph can read or write. When a node returns a partial update, LangGraph must decide how to merge that update into the existing state. That merge logic is the reducer." },
+    { t: "list", items: [
+      "Overwrite reducer (default): the node's returned value replaces the existing field. Last write wins. Correct for scalar fields like status, current_step, or error.",
+      "operator.add reducer: appends to a list. Correct for accumulating messages, tool results, or intermediate outputs from parallel nodes.",
+      "Custom reducer: any pure function (existing, update) → merged. Correct for deduplication, max/min logic, or domain-specific merge rules.",
+      "No reducer declared: LangGraph throws at graph compile time. Reducer declaration is mandatory for every field that multiple nodes might write."
+    ]},
+    { t: "h2", text: "The HITL interrupt pattern" },
+    { t: "p", text: "Human-in-the-loop in LangGraph is not a polling mechanism — it is a first-class interrupt. You declare interrupt_before=[\"node_name\"] or interrupt_after=[\"node_name\"] when compiling the graph. When the graph reaches that node, execution halts, state is persisted via the checkpointer, and the process returns. A human reviews the state. When approved, graph.invoke(Command(resume=...)) continues from the exact interruption point." },
+    { t: "list", items: [
+      "interrupt_before: pauses before the named node executes. Use when a human must approve an action before it runs — sending an email, executing a SQL write, calling an external API.",
+      "interrupt_after: pauses after the node executes. Use when the agent has drafted a response and a human must review before it is surfaced to the end user.",
+      "Command(resume=value): the human's approval or correction is passed as the resume value. The interrupted node receives it as its input.",
+      "Checkpointer (required): the MemorySaver or SqliteSaver persists the graph state between the interrupt and the resume. Without a checkpointer, the interrupted state is lost and the graph cannot resume."
+    ]},
+    { t: "callout", v: "insight", text: "The most common HITL bug: the graph uses interrupt_before but no checkpointer is configured. The graph compiles without error and runs correctly until the first interrupt — then state is lost and the resume call raises a KeyError on the thread_id. Checkpointer configuration is not optional when HITL is used." },
+    { t: "h2", text: "Conditional edges and routing" },
+    { t: "p", text: "After a node runs, LangGraph decides which node to execute next. Static edges always route to the same target. Conditional edges call a routing function that reads the current state and returns the next node name. This is where agent decision-making lives — not in the LLM prompt, but in a deterministic Python function that reads state fields like route_decision, requires_human_review, or error_count." },
+    { t: "table", headers: ["Pattern", "When to use", "Risk if misused"], rows: [
+      ["Static edge", "Linear steps with no branching", "Inflexible — can't handle errors or escalation"],
+      ["Conditional edge on LLM output field", "Route based on agent's classification decision", "LLM non-determinism bleeds into control flow"],
+      ["Conditional edge on hard state field", "Route based on error_count, status, validated_by_human", "Safe — deterministic, testable routing"],
+      ["interrupt_before node", "Human approval before irreversible action", "State lost if checkpointer not configured"],
+    ]},
+    { t: "h2", text: "When graph-based orchestration beats a custom loop" },
+    { t: "list", items: [
+      "You need durable state across process restarts or network failures — the checkpointer serializes and restores the full graph state, so a crashed process can resume mid-execution.",
+      "Parallel node execution — nodes with no dependency on each other can run concurrently in the same graph step. A custom loop serializes everything.",
+      "Complex conditional routing — when the control flow has more than 2–3 branches, explicit conditional edges with named routing functions are easier to test and audit than deeply nested if/else in an implicit loop.",
+      "Human approval gates — interrupt_before/after is cleaner than polling a database for approval status in a loop.",
+      "Observability — LangSmith traces graph execution natively, showing which node ran, what state each node saw, and where interrupts fired."
+    ]},
+    { t: "h2", text: "When a custom loop is simpler" },
+    { t: "p", text: "LangGraph adds real overhead: state schema declaration, checkpointer configuration, graph compilation, and a different mental model. For agents with linear execution (call LLM → execute tool → return), a custom loop is faster to write, easier to read, and has fewer moving parts to debug. The graph model pays off when the control flow itself is the complexity — not the individual nodes." },
+    { t: "refs", items: [
+      { label: "LangGraph — State Reducers", url: "https://langchain-ai.github.io/langgraph/concepts/low_level/#reducers" },
+      { label: "LangGraph — Human-in-the-Loop", url: "https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/" },
+      { label: "LangGraph — Checkpointers", url: "https://langchain-ai.github.io/langgraph/concepts/persistence/" },
+    ]},
+  ],
+
 // ─── CONTEXT ISOLATION MULTIAGENT ────────────────────────────────────────────
   "context-isolation-multiagent": [
     { t: "p", text: "The most common multi-agent failure mode does not look like a bug. It looks like inconsistent, hard-to-reproduce behaviour where agents make decisions that seem correct in isolation but are wrong in the context of the overall task. The root cause is almost always context contamination." },

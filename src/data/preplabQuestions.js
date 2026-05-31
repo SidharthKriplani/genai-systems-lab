@@ -2785,6 +2785,56 @@ export const PREP_QUESTIONS = [
     readMore: { label: "Graph RAG →", tab: "groundtruth", postId: "graph-rag-multi-hop" }
   },
 
+  // ── LangGraph + HITL (4) ─────────────────────────────────────────────────────
+  {
+    id: "langgraph-1", topic: "agents", difficulty: "hard", gated: true, type: "text",
+    question: "You're building a document review agent. It reads a contract, flags issues, drafts a response email, and sends it to the counterparty. The legal team needs to approve the email before it goes out. Design this system: custom async loop vs LangGraph StateGraph. Which do you choose and what does the HITL implementation look like in each?",
+    options: [],
+    correct: 0,
+    keywords: ["interrupt_before", "checkpointer", "Command(resume)", "StateGraph", "state persistence", "thread_id"],
+    explanation: "LangGraph wins here because HITL is a first-class primitive. With interrupt_before=['send_email'], graph execution pauses before the send node, state is persisted by the checkpointer (SqliteSaver or Redis), and a notification is sent to the legal team via the interrupted thread_id. When they approve, graph.invoke(Command(resume='approved'), config={'configurable': {'thread_id': t}}) resumes from the exact pause point. A custom async loop requires polling a database for approval status on every iteration — correct but more code, more failure modes (missed polls, orphaned threads), and no native persistence. The StateGraph approach adds compile overhead but that is a one-time cost vs. ongoing operational complexity.",
+    trap: "Saying 'poll a database for approval status' for the LangGraph implementation. LangGraph's interrupt mechanism eliminates the polling loop. The process returns when the interrupt fires and resumes only when Command(resume=...) is called. Polling is the custom loop approach, not the LangGraph approach.",
+    source: "Senior AI Engineer interview, Round 2 — HITL workflow design",
+    readMore: { label: "LangGraph + HITL →", tab: "groundtruth", postId: "langgraph-reducers-hitl" }
+  },
+  {
+    id: "langgraph-2", topic: "agents", difficulty: "hard", gated: true, type: "text",
+    question: "You have two parallel nodes in a LangGraph StateGraph — one searches the web, one searches an internal knowledge base. Both append results to a 'messages' field. The graph compiles and runs, but only one set of results ever appears. What's the bug and how do you fix it?",
+    options: [],
+    correct: 0,
+    keywords: ["operator.add", "Annotated", "reducer", "overwrite", "parallel nodes", "TypedDict"],
+    explanation: "The bug is a missing reducer. By default, LangGraph uses an overwrite reducer for all state fields — the second parallel node's output replaces the first's. To accumulate from both parallel nodes, the messages field must be declared with operator.add: 'messages: Annotated[list, operator.add]' in the TypedDict state schema. With operator.add, both nodes' outputs are appended to the list. The fix is in the state schema, not in the nodes themselves — the nodes just return their partial updates, and the reducer controls the merge.",
+    trap: "Saying 'make the nodes run sequentially instead of in parallel'. This avoids the reducer bug by removing parallelism, but it loses the performance benefit of parallel execution and doesn't fix the underlying architectural misunderstanding. The correct answer is to declare the right reducer — that's the design fix.",
+    source: "LangGraph documentation, reducer section + common production bug pattern",
+    readMore: { label: "LangGraph + HITL →", tab: "groundtruth", postId: "langgraph-reducers-hitl" }
+  },
+  {
+    id: "langgraph-3", topic: "agents", difficulty: "medium", gated: false, type: "mcq",
+    question: "In LangGraph, when does interrupt_before=['node_name'] pause graph execution?",
+    options: [
+      "After the named node finishes executing, before its output is written to state",
+      "Before the named node begins executing — the node never runs until Command(resume=...) is called",
+      "Only if the node raises an exception during execution",
+      "After all parallel nodes at the same graph level have finished"
+    ],
+    correct: 1,
+    keywords: ["interrupt_before", "pause", "before execution", "Command(resume)"],
+    explanation: "interrupt_before=['node_name'] pauses before the named node executes. The node does not run. State is persisted. The process returns. The node only executes after graph.invoke(Command(resume=...)) is called with the correct thread_id. This is the mechanism that makes HITL safe for irreversible actions — the action (send email, execute write, call external API) never runs until a human explicitly approves it.",
+    trap: "Confusing interrupt_before with interrupt_after. interrupt_after pauses after the node runs — useful for human review of a draft, but the action has already executed. For approving before an irreversible action, always use interrupt_before.",
+    readMore: { label: "LangGraph + HITL →", tab: "groundtruth", postId: "langgraph-reducers-hitl" }
+  },
+  {
+    id: "langgraph-4", topic: "agents", difficulty: "medium", gated: true, type: "text",
+    question: "A LangGraph agent with interrupt_before configured works correctly in local testing. In production it raises a KeyError on thread_id when you try to resume after an interrupt. What is the root cause?",
+    options: [],
+    correct: 0,
+    keywords: ["checkpointer", "SqliteSaver", "MemorySaver", "thread_id", "state persistence", "required"],
+    explanation: "The root cause is a missing checkpointer. In local testing, MemorySaver keeps state in memory — it works as long as the process doesn't restart. In production, the interrupt fires, the process returns (or a different worker handles the resume request), and there is no checkpointer persisting the state across that boundary. When Command(resume=...) is called, the graph has no record of the interrupted thread_id and raises KeyError. Fix: configure a durable checkpointer (SqliteSaver for single-node, Redis or Postgres for distributed) when compiling the graph. Checkpointer configuration is not optional when HITL is used in any environment where the process might restart between interrupt and resume.",
+    trap: "Saying 'the thread_id must be wrong'. Thread ID mismatch is a possible cause but secondary. The primary production failure pattern is a missing or in-memory-only checkpointer — state evaporates on process restart. Always diagnose checkpointer configuration first.",
+    source: "LangGraph production HITL pattern — checkpointer requirement",
+    readMore: { label: "LangGraph + HITL →", tab: "groundtruth", postId: "langgraph-reducers-hitl" }
+  },
+
   {
     id: "ase-4", topic: "safety", difficulty: "medium", gated: true, type: "mcq",
     question: "Which P0 (before-launch) safety measure directly prevents system prompt exfiltration?",

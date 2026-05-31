@@ -14082,9 +14082,9 @@ function GraphRAGModule() {
           <path d="M0,0 L0,6 L6,3 z" fill="#22d3ee" />
         </marker>
       </defs>
-      <text x="8" y="73" fontSize="8" fill="#3f3f46" fontFamily="monospace">INVESTOR</text>
-      <text x="8" y="188" fontSize="8" fill="#3f3f46" fontFamily="monospace">COMPANY</text>
-      <text x="8" y="303" fontSize="8" fill="#3f3f46" fontFamily="monospace">TECH / INFRA</text>
+      <text x="8" y="73" fontSize="10" fill="#3f3f46" fontFamily="monospace">INVESTOR</text>
+      <text x="8" y="188" fontSize="10" fill="#3f3f46" fontFamily="monospace">COMPANY</text>
+      <text x="8" y="303" fontSize="10" fill="#3f3f46" fontFamily="monospace">TECH / INFRA</text>
       {GR_EDGES.map(e => {
         const c = getEdgeCoords(e);
         if (!c) return null;
@@ -14096,7 +14096,7 @@ function GraphRAGModule() {
               stroke={on ? "#22d3ee" : "#52525b"} strokeWidth={on ? 2 : 1}
               markerEnd={on ? "url(#gr-arr-on)" : "url(#gr-arr)"}
             />
-            <text x={mx} y={my - 4} fontSize="7" fill={on ? "#67e8f9" : "#52525b"} textAnchor="middle" fontFamily="monospace">{e.label}</text>
+            <text x={mx} y={my - 4} fontSize="9" fill={on ? "#67e8f9" : "#52525b"} textAnchor="middle" fontFamily="monospace">{e.label}</text>
           </g>
         );
       })}
@@ -14111,7 +14111,7 @@ function GraphRAGModule() {
               stroke={on ? n.color : "#3f3f46"} strokeWidth={on ? 2 : 1}
               style={on ? { filter: `drop-shadow(0 0 5px ${n.color})` } : {}}
             />
-            <text x={n.x} y={n.y + 1} fontSize="9" fill={on ? n.color : "#a1a1aa"}
+            <text x={n.x} y={n.y + 1} fontSize="11" fill={on ? n.color : "#a1a1aa"}
               textAnchor="middle" dominantBaseline="middle" fontFamily="monospace" fontWeight={on ? "bold" : "normal"}>
               {n.label}
             </text>
@@ -14309,8 +14309,316 @@ function GraphRAGModule() {
   );
 }
 
+// ─── LANGGRAPH MODULE ─────────────────────────────────────────────────────────
+
+function LangGraphModule() {
+  const [tab, setTab] = useState("reducers");
+  const [addMsgs, setAddMsgs] = useState([]);
+  const [overwriteMsg, setOverwriteMsg] = useState("");
+  const [hitlStep, setHitlStep] = useState(0);
+  const [hitlPlaying, setHitlPlaying] = useState(false);
+  const [activeNode, setActiveNode] = useState(null);
+
+  useEffect(() => {
+    if (!hitlPlaying) return;
+    if (hitlStep >= HITL_STEPS.length - 1) { setHitlPlaying(false); return; }
+    const t = setTimeout(() => setHitlStep(s => s + 1), 1800);
+    return () => clearTimeout(t);
+  }, [hitlPlaying, hitlStep]);
+
+  const HITL_STEPS = [
+    { label: "Agent reasons", desc: "agent node runs — LLM decides to send a follow-up email to the prospect.", color: "#22d3ee", nodeId: "agent" },
+    { label: "Tool call prepared", desc: "tools node prepares send_email(to='prospect@co.com', body='...'). Not yet executed.", color: "#fbbf24", nodeId: "tools" },
+    { label: "Interrupt fires", desc: "interrupt_before=['send_email'] pauses execution. State persisted via SqliteSaver. Process returns.", color: "#f87171", nodeId: "interrupt" },
+    { label: "Human reviews", desc: "Sales rep reads the draft. Edits the body. Clicks Approve.", color: "#a78bfa", nodeId: "human" },
+    { label: "Graph resumes", desc: "graph.invoke(Command(resume='approved')) re-enters after the interrupt point.", color: "#34d399", nodeId: "resume" },
+    { label: "Email sent", desc: "send_email executes with the reviewed body. Graph completes. LangSmith trace shows the interrupt span.", color: "#22d3ee", nodeId: "done" },
+  ];
+
+  const GRAPH_NODES = [
+    { id: "start",  label: "START",  x: 280, y: 40,  w: 90,  h: 32, color: "#52525b", fill: "#18181b", text: "#a1a1aa" },
+    { id: "agent",  label: "agent",  x: 280, y: 110, w: 110, h: 40, color: "#22d3ee", fill: "#0c1a1f", text: "#67e8f9" },
+    { id: "tools",  label: "tools",  x: 140, y: 200, w: 110, h: 40, color: "#fbbf24", fill: "#1a1200", text: "#fde68a" },
+    { id: "human",  label: "human_review", x: 420, y: 200, w: 130, h: 40, color: "#a78bfa", fill: "#130f1e", text: "#c4b5fd" },
+    { id: "end",    label: "END",    x: 280, y: 300, w: 90,  h: 32, color: "#52525b", fill: "#18181b", text: "#a1a1aa" },
+  ];
+
+  const GRAPH_EDGES = [
+    { from: "start", to: "agent",  label: "", x1: 280, y1: 56, x2: 280, y2: 110 },
+    { from: "agent", to: "tools",  label: "has tool call", x1: 225, y1: 130, x2: 195, y2: 200, dashed: false },
+    { from: "agent", to: "human",  label: "needs review", x1: 335, y1: 130, x2: 365, y2: 200, dashed: false },
+    { from: "agent", to: "end",    label: "done", x1: 280, y1: 150, x2: 280, y2: 300, dashed: true },
+    { from: "tools", to: "agent",  label: "result", x1: 140, y1: 220, x2: 225, y2: 126, dashed: false },
+    { from: "human", to: "agent",  label: "approved", x1: 420, y1: 220, x2: 335, y2: 126, dashed: false },
+  ];
+
+  const WHEN_ROWS = [
+    ["Durable state (survive restart)", "✓ Graph + checkpointer", "✗ Custom loop loses state on crash"],
+    ["Parallel node execution", "✓ Native concurrent nodes", "✗ Manual threading required"],
+    ["Human approval gate", "✓ interrupt_before/after", "✗ Polling DB for approval flag"],
+    ["Linear: call LLM → tool → return", "overkill — adds compile overhead", "✓ Simpler, fewer moving parts"],
+    ["Complex conditional routing", "✓ Named routing functions, testable", "✗ Nested if/else in loop body"],
+    ["LangSmith observability", "✓ Native trace with node spans", "partial — custom instrumentation"],
+  ];
+
+  function fireReducerDemo() {
+    const msgs = ["Tool result: found 3 records", "Agent: summarising...", "Tool result: sent email"];
+    setAddMsgs(prev => {
+      const next = msgs[prev.length % msgs.length];
+      return [...prev, next];
+    });
+    setOverwriteMsg(msgs[Math.floor(Math.random() * msgs.length)]);
+  }
+
+  const tabs = [
+    { id: "reducers", label: "Reducers" },
+    { id: "graph",    label: "StateGraph" },
+    { id: "hitl",     label: "HITL Flow" },
+    { id: "when",     label: "When to Use" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl p-3 sm:p-3.5 space-y-1.5" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wide leading-snug">AGENT ARCHITECTURE — LANGGRAPH STATE MACHINES</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">LangGraph models agents as explicit state machines: typed state schema, reducer functions that control how node outputs merge, and conditional edges for routing. HITL interrupt patterns pause execution at defined points, persist state, and resume only after human review.</p>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 flex-wrap">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="px-3 py-1.5 rounded-lg text-xs font-mono transition-colors"
+            style={tab === t.id
+              ? { background: "rgba(34,211,238,0.12)", border: "1px solid #22d3ee", color: "#22d3ee" }
+              : { background: "var(--surface-2)", border: "1px solid var(--border)", color: "#71717a" }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── REDUCERS TAB ── */}
+      {tab === "reducers" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-400 leading-relaxed">When a node returns a partial state update, LangGraph merges it into the current state using the field's reducer. The reducer is declared on the TypedDict — not in the node itself. Getting it wrong is a common production bug.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* operator.add */}
+            <div className="rounded-xl p-3 space-y-2" style={{ background: "var(--surface-2)", border: "1px solid #166534" }}>
+              <div className="text-xs font-mono text-emerald-400 font-semibold">operator.add — accumulate</div>
+              <pre className="text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap font-mono bg-black/30 rounded p-2">{`class AgentState(TypedDict):
+    messages: Annotated[
+        list, operator.add
+    ]`}</pre>
+              <p className="text-xs text-zinc-400">Each node appends. Two parallel nodes both writing to <code className="text-emerald-300 bg-black/30 px-1 rounded">messages</code> each get their entries added. Nothing is overwritten.</p>
+              <div className="text-xs font-mono text-zinc-500 mb-1">Simulated state:</div>
+              <div className="rounded p-2 min-h-[56px] space-y-1" style={{ background: "#0a1a0a", border: "1px solid #166534" }}>
+                {addMsgs.length === 0
+                  ? <div className="text-xs text-zinc-600 italic">messages: []</div>
+                  : addMsgs.map((m, i) => (
+                    <div key={i} className="text-xs font-mono text-emerald-300">messages[{i}]: "{m}"</div>
+                  ))
+                }
+              </div>
+            </div>
+            {/* overwrite */}
+            <div className="rounded-xl p-3 space-y-2" style={{ background: "var(--surface-2)", border: "1px solid #92400e" }}>
+              <div className="text-xs font-mono text-amber-400 font-semibold">overwrite (default) — last write wins</div>
+              <pre className="text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap font-mono bg-black/30 rounded p-2">{`class AgentState(TypedDict):
+    status: str
+    # no Annotated — default
+    # overwrite reducer`}</pre>
+              <p className="text-xs text-zinc-400">The node's returned value replaces whatever was there. Correct for scalar fields. <span className="text-red-400">Dangerous if two parallel nodes both write</span> — second write silently drops the first.</p>
+              <div className="text-xs font-mono text-zinc-500 mb-1">Simulated state:</div>
+              <div className="rounded p-2 min-h-[56px]" style={{ background: "#1a0a00", border: "1px solid #92400e" }}>
+                <div className="text-xs font-mono text-amber-300">
+                  {overwriteMsg ? `status: "${overwriteMsg}"` : <span className="text-zinc-600 italic">status: ""</span>}
+                </div>
+              </div>
+            </div>
+          </div>
+          <button onClick={fireReducerDemo}
+            className="w-full py-2 rounded-lg text-xs font-mono transition-colors"
+            style={{ background: "rgba(34,211,238,0.1)", border: "1px solid #22d3ee", color: "#22d3ee" }}>
+            Simulate node update →
+          </button>
+          <div className="rounded-xl p-3 space-y-1" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.25)" }}>
+            <div className="text-xs font-mono text-red-400 font-semibold">Common trap</div>
+            <p className="text-xs text-zinc-400">Two parallel nodes appending to a <code className="text-red-300 bg-black/20 px-1 rounded">messages</code> field with the <strong className="text-white">default overwrite reducer</strong>: only one message survives. The graph compiles without error. The bug appears at runtime when the second parallel branch writes. Fix: always annotate accumulation fields with <code className="text-emerald-300 bg-black/20 px-1 rounded">operator.add</code>.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── STATEGRAPH TAB ── */}
+      {tab === "graph" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-400 leading-relaxed">A StateGraph defines nodes (Python functions) and edges (routing rules). Conditional edges call a routing function that reads state and returns the next node name. Click any node to see what it does.</p>
+          <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+            <svg viewBox="0 0 560 360" style={{ width: "100%", maxHeight: 300 }}>
+              <defs>
+                <marker id="lg-arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L6,3 z" fill="#52525b" />
+                </marker>
+                <marker id="lg-arr-on" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L6,3 z" fill="#22d3ee" />
+                </marker>
+              </defs>
+              {GRAPH_EDGES.map((e, i) => {
+                const on = activeNode === e.from || activeNode === e.to;
+                return (
+                  <g key={i}>
+                    <line x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+                      stroke={on ? "#22d3ee" : "#3f3f46"} strokeWidth={on ? 2 : 1}
+                      strokeDasharray={e.dashed ? "5 3" : "none"}
+                      markerEnd={on ? "url(#lg-arr-on)" : "url(#lg-arr)"}
+                    />
+                    {e.label && (
+                      <text x={(e.x1 + e.x2) / 2 + 4} y={(e.y1 + e.y2) / 2 - 4}
+                        fontSize="10" fill={on ? "#67e8f9" : "#52525b"} textAnchor="middle" fontFamily="monospace">{e.label}</text>
+                    )}
+                  </g>
+                );
+              })}
+              {GRAPH_NODES.map(n => {
+                const on = activeNode === n.id;
+                return (
+                  <g key={n.id} onClick={() => setActiveNode(activeNode === n.id ? null : n.id)} style={{ cursor: "pointer" }}>
+                    <rect x={n.x - n.w / 2} y={n.y - n.h / 2} width={n.w} height={n.h} rx="6"
+                      fill={on ? `${n.fill}` : n.fill}
+                      stroke={on ? n.color : "#3f3f46"} strokeWidth={on ? 2 : 1}
+                      style={on ? { filter: `drop-shadow(0 0 6px ${n.color})` } : {}}
+                    />
+                    <text x={n.x} y={n.y + 1} fontSize="12" fill={on ? n.text : "#a1a1aa"}
+                      textAnchor="middle" dominantBaseline="middle" fontFamily="monospace" fontWeight={on ? "bold" : "normal"}>
+                      {n.label}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+          {activeNode && (() => {
+            const info = {
+              start:  { title: "START", body: "Entry point injected by LangGraph. Sends initial state to the first node (usually agent)." },
+              agent:  { title: "agent node", body: "Calls the LLM with current messages + available tools. Returns a partial state update. A conditional edge reads the output: if a tool call is present → tools; if human_review flag is set → human_review; otherwise → END." },
+              tools:  { title: "tools node", body: "Executes the tool call(s) from the agent's last message. Appends tool results to messages using operator.add. Routes back to agent." },
+              human:  { title: "human_review node", body: "interrupt_before=['human_review'] fires here. Execution pauses, state is persisted by the checkpointer. Resumes when graph.invoke(Command(resume=...)) is called with the human's decision." },
+              end:    { title: "END", body: "Terminal node. Graph returns the final state to the caller." },
+            };
+            const d = info[activeNode];
+            return (
+              <div className="rounded-xl p-3 space-y-1" style={{ background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.3)" }}>
+                <div className="text-xs font-mono text-cyan-300 font-semibold">{d.title}</div>
+                <p className="text-xs text-zinc-300">{d.body}</p>
+              </div>
+            );
+          })()}
+          {!activeNode && (
+            <p className="text-xs text-zinc-500 text-center">Click any node to explore its role</p>
+          )}
+        </div>
+      )}
+
+      {/* ── HITL TAB ── */}
+      {tab === "hitl" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-400 leading-relaxed">HITL in LangGraph is a first-class interrupt — not polling. Declare <code className="text-cyan-300 bg-black/20 px-1 rounded">interrupt_before=["node"]</code>, configure a checkpointer, and the graph pauses at that node until <code className="text-cyan-300 bg-black/20 px-1 rounded">Command(resume=...)</code> is called.</p>
+          {/* Step dots */}
+          <div className="flex items-center gap-1 flex-wrap">
+            {HITL_STEPS.map((s, i) => (
+              <button key={i} onClick={() => { setHitlStep(i); setHitlPlaying(false); }}
+                className="w-7 h-7 rounded-full text-[10px] font-mono font-bold transition-all"
+                style={i === hitlStep
+                  ? { background: s.color + "33", border: `2px solid ${s.color}`, color: s.color }
+                  : i < hitlStep
+                    ? { background: "rgba(34,211,238,0.1)", border: "1px solid #22d3ee55", color: "#22d3ee88" }
+                    : { background: "var(--surface-2)", border: "1px solid var(--border)", color: "#52525b" }}>
+                {i + 1}
+              </button>
+            ))}
+            <span className="ml-2 text-xs font-mono text-zinc-500">{HITL_STEPS[hitlStep].label}</span>
+          </div>
+          {/* Active step card */}
+          <div className="rounded-xl p-4 transition-all" style={{ background: `${HITL_STEPS[hitlStep].color}11`, border: `1px solid ${HITL_STEPS[hitlStep].color}55` }}>
+            <div className="text-xs font-mono font-bold mb-1.5" style={{ color: HITL_STEPS[hitlStep].color }}>
+              Step {hitlStep + 1} — {HITL_STEPS[hitlStep].label}
+            </div>
+            <p className="text-xs text-zinc-300 leading-relaxed">{HITL_STEPS[hitlStep].desc}</p>
+            {hitlStep === 2 && (
+              <pre className="mt-2 text-[10px] font-mono text-zinc-400 bg-black/30 rounded p-2 whitespace-pre-wrap">{`# graph compiled with:
+graph = builder.compile(
+  checkpointer=SqliteSaver.from_conn_string(":memory:"),
+  interrupt_before=["send_email"]
+)`}</pre>
+            )}
+            {hitlStep === 4 && (
+              <pre className="mt-2 text-[10px] font-mono text-zinc-400 bg-black/30 rounded p-2 whitespace-pre-wrap">{`graph.invoke(
+  Command(resume="approved"),
+  config={"configurable": {"thread_id": "t1"}}
+)`}</pre>
+            )}
+          </div>
+          {/* Controls */}
+          <div className="flex gap-2">
+            <button onClick={() => { setHitlStep(0); setHitlPlaying(false); }}
+              className="px-3 py-1.5 rounded text-xs font-mono"
+              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "#71717a" }}>
+              Reset
+            </button>
+            <button onClick={() => { if (hitlStep > 0) setHitlStep(s => s - 1); }}
+              className="px-3 py-1.5 rounded text-xs font-mono"
+              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "#71717a" }}>
+              ← Prev
+            </button>
+            <button onClick={() => { if (hitlStep < HITL_STEPS.length - 1) setHitlStep(s => s + 1); }}
+              className="px-3 py-1.5 rounded text-xs font-mono"
+              style={{ background: "rgba(34,211,238,0.1)", border: "1px solid #22d3ee", color: "#22d3ee" }}>
+              Next →
+            </button>
+            <button onClick={() => { if (hitlStep >= HITL_STEPS.length - 1) setHitlStep(0); setHitlPlaying(p => !p); }}
+              className="px-3 py-1.5 rounded text-xs font-mono"
+              style={{ background: "rgba(34,211,238,0.15)", border: "1px solid #22d3ee", color: "#22d3ee" }}>
+              {hitlPlaying ? "Pause" : "Play"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── WHEN TO USE TAB ── */}
+      {tab === "when" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-400 leading-relaxed">LangGraph adds real overhead — state schema, checkpointer config, graph compilation. For linear agents it's overkill. The graph model pays off when control flow itself is the complexity.</p>
+          <div className="rounded-xl overflow-x-auto" style={{ border: "1px solid var(--border)" }}>
+            <table className="w-full text-xs">
+              <thead>
+                <tr style={{ background: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
+                  <th className="p-2.5 text-left font-mono text-zinc-400">Scenario</th>
+                  <th className="p-2.5 text-left font-mono text-cyan-400">LangGraph</th>
+                  <th className="p-2.5 text-left font-mono text-amber-400">Custom loop</th>
+                </tr>
+              </thead>
+              <tbody>
+                {WHEN_ROWS.map((row, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td className="p-2.5 text-zinc-300 font-mono">{row[0]}</td>
+                    <td className="p-2.5 text-zinc-300">{row[1]}</td>
+                    <td className="p-2.5 text-zinc-300">{row[2]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="rounded-xl p-3 space-y-1" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.25)" }}>
+            <div className="text-xs font-mono text-red-400 font-semibold">The most common HITL bug</div>
+            <p className="text-xs text-zinc-400">Using <code className="text-red-300 bg-black/20 px-1 rounded">interrupt_before</code> without configuring a checkpointer. The graph compiles. The first interrupt fires. State is lost. The resume call raises <code className="text-red-300 bg-black/20 px-1 rounded">KeyError</code> on <code className="text-red-300 bg-black/20 px-1 rounded">thread_id</code>. Checkpointer configuration is not optional when HITL is used.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
 };
