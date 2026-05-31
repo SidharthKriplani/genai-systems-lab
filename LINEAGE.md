@@ -146,4 +146,8 @@ Core insight: most GenAI learning resources are either too academic (papers, tex
 
 ---
 
-*Last updated: May 2026 (sprint 31A, PrepLab revamp Sprint A)*
+| May 2026 sprint 31B+C | PrepLab Sprints B + C shipped. Sprint B: structural extraction only — `PREP_QUESTIONS` (261 questions) moved from `src/PrepLab.jsx` to `src/data/preplabQuestions.js` (Rule 1 compliance, DECISIONS.md Section 8). PrepLab.jsx: ~5079 → 2446 lines. All 261 questions already had `difficulty` field, no content work needed. Sprint C: `trap` + `source` fields added to 50 hardest questions (RAG 12, Agents 12, Eval 11, LLMOps 11, Fine-tuning 5). Each trap field answers "what weaker candidates say" — directly implementing the Common Trap layer identified as highest-value missing piece from LLM interview guide analysis. `src/shared.jsx` created (new shared component file, Rule 3) with `CommonTrapCallout` (amber chip). `RevealCard` in PrepLab.jsx updated to render source attribution + trap callout after explanation in both text and MCQ branches. Commits: `73924a0` (B), `38d5330` (C). Scale: unchanged. |
+
+---
+
+*Last updated: May 2026 (sprint 31B+C, PrepLab Sprints B+C)*

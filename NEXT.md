@@ -2,113 +2,49 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 30, PrepLab revamp spec session)*
+*Last updated: May 2026 (post sprint 31C — PrepLab Sprints A+B+C complete)*
 
 ---
 
-## Theme: PrepLab revamp — Sprint A (naming + visual layer)
+## Theme: PrepLab revamp — Sprint D (Assess results screen rebuild)
 
-PrepLab is the cold-start entry point (DECISIONS.md Section 9). The spec (PREPLAB_SPEC.md) defines the full revamp across 5 sprints. Sprint A is pure visual and naming — no logic changes, no data changes, ships value immediately, unblocks Sprints B–E. A cold visitor should open PrepLab after Sprint A and know which mode to open within 5 seconds.
+Sprints A, B, C shipped. Sprint D is the next unblocked item. The results screen after an Assess session currently shows a basic score summary. Sprint D rebuilds it into a per-topic breakdown with gap forward pointers and a partial-results gate at Q11.
 
 ---
 
 ## Do this (in order)
 
-**1. Rename modes in PREPLAB_SIDEBAR + hide Defense Doc / Weakness Map** `S effort` `HIGH`
+**1. Assess results screen — per-topic bars + gap pointers** `M effort` `HIGH`
 
-What: Update the `PREPLAB_SIDEBAR` constant in `src/PrepLab.jsx`. Three entries survive, two are hidden (not deleted — their components stay in the file for Sprint E).
+What: After an Assess session ends, the results view (`ExamResults` component in `src/PrepLab.jsx`) shows total score only. Replace with:
 
-Target sidebar:
-```
-Assess         EXAM
-Interview Strategy  STRATEGY
-Company Tracks  ARCHETYPE
-```
+- Score headline: `{pct}% · {correct}/{total}` in large text, difficulty badge (Strong / Developing / Needs Work at ≥70%, 50–69%, <50%)
+- Per-topic accuracy bars: group results by `q.topic`, compute `correct/total` per topic, render as a bar chart (use div width %, no external lib). Sort worst-first. Topic label + score + bar.
+- Gap forward pointer per weak topic: for each topic where pct < 60%, render a chip pointing to the relevant Lab module or GT post. Use a `TOPIC_FORWARD_POINTERS` constant keyed by topic string.
+- Session comparison: if `gsl-preplab-history` has prior entries, show "vs last session" delta (+ or - pct) next to the score headline. Small `text-zinc-500 text-xs`.
+- Copy results button (existing) — keep.
 
-Changes:
-- `id: "exam"` → label: `"Assess"`, tag: `"EXAM"`, desc: `"Test yourself cold. Leave knowing your gaps."`
-- `id: "interview-prep"` → label: `"Interview Strategy"`, tag: `"STRATEGY"`, desc: `"JD → gap score → day-by-day plan."`
-- `id: "heatmap"` → remove from PREPLAB_SIDEBAR array (keep `WeaknessHeatmapMode` component)
-- `id: "defense"` → remove from PREPLAB_SIDEBAR array (keep `DefenseDocMode` component)
-- `id: "archetype"` (Company Tracks) — keep, no label change
+**2. Partial results gate at Q11** `M effort` `HIGH`
 
-Source: PREPLAB_SPEC.md Section 3.
+What: For non-gated (free) users, show results only through Q10. At Q11+, show a gate overlay over the results that reads: "You've answered {N} questions. Unlock full results →" with the GateModal trigger. Free users still complete the full exam — the gate is on the results view only, not the exam itself.
 
----
+Implementation: in `ExamResults`, check `isAccessGranted()`. If false and `questions.length > 10`, render only the first 10 questions' per-topic data + blur/overlay on the rest with the gate CTA. Keep the score headline visible (don't hide the overall %).
 
-**2. Sidebar score badges for returning users** `S effort` `HIGH`
+**3. Create `src/config/gating.js`** `S effort` `MEDIUM`
 
-What: Below each mode label in the sidebar, a 1-line stat for returning users sourced from localStorage. Invisible on first visit (no localStorage entry = render nothing).
+What: Thin config file. Move `FREE_QUESTION_LIMIT` from `utils/accessCode.js` to `src/config/gating.js`. Re-export from `utils/accessCode.js` for backward compatibility. Add `RESULTS_FREE_LIMIT = 10` (questions shown in results before gate). Import in `PrepLab.jsx`.
 
-Logic per mode:
-- Assess: read `gsl-preplab-history`. If entries exist, compute last session's overall % and date. Render: `"Last: {pct}% · {N}d ago"` in `text-zinc-500 text-xs`.
-- Interview Strategy: read `gsl-preplab-strategy-phase` from localStorage. If > 1, render: `"In progress: Phase {N}"`.
-- Company Tracks: read `gsl-preplab-archetype-{trackId}` from localStorage. If any track started, render: `"{trackName}: {done}/{total}"`.
-
-Render as a `<p className="text-zinc-500 text-xs mt-0.5">` below the mode label inside the sidebar button. Conditional: only render if the data exists. No new state required.
-
-Source: PREPLAB_SPEC.md Section 4.
-
----
-
-**3. Question card visual upgrade** `S effort` `HIGH`
-
-What: The question card (rendered in `ExamMode`, `TrainerMode`, and wherever questions are shown) needs a difficulty accent, better option hover states, and an elevated Submit button. This is the highest-impact visual change — users interact with this on every question.
-
-Changes in `src/PrepLab.jsx` (the question render block, wherever `q.question` and `q.options` are mapped):
-
-- **Left border accent:** wrap question card in a container with `border-l-4` — color keyed by `q.difficulty`: `easy` → `border-blue-500`, `medium` → `border-amber-500`, `hard` → `border-red-500`. Fall back to `border-zinc-700` if `q.difficulty` not yet present (Sprint B adds it to all questions).
-- **Difficulty chip:** above the question text, add `<span>` with difficulty label. Styles: hard → `bg-red-950/50 text-red-400 border border-red-800/40`, medium → `bg-amber-950/50 text-amber-400 border border-amber-800/40`, easy → `bg-blue-950/50 text-blue-400 border border-blue-800/40`. Add `text-xs px-2 py-0.5 rounded` to all.
-- **Answer options:** increase `py` from whatever it is to `py-3 px-4`. Hover state: `hover:border-violet-500/60 hover:bg-violet-950/20`. Selected state: `border-violet-500 bg-violet-950/30`. These replace the current plain border toggle.
-- **Submit button:** `bg-violet-600 hover:bg-violet-500 text-white px-6 py-2.5 rounded-lg font-medium` — not a flat outlined button.
-
-Source: PREPLAB_SPEC.md Section 4.
-
----
-
-**4. Topic selector: replace 22 pills with 5 category tiles** `S effort` `MEDIUM`
-
-What: The `TrainerMode` topic selector is a 22-pill horizontal overflow strip. Replace with 5 topic tiles in a grid. "All Topics" is the default state (no tile selected = all active). Multi-select allowed.
-
-The 5 tiles (keyed to existing topic strings):
-```
-RAG & Retrieval     → topics: ["rag", "retrieval", "chunking", "embeddings", "reranking", "caching", "context-window"]
-Agents & Systems    → topics: ["agents", "agent-memory", "orchestration", "tool-use", "multi-agent"]
-Evals & Metrics     → topics: ["evaluation", "metrics", "ragas", "alignment"]
-LLM Fundamentals    → topics: ["transformers", "attention", "tokenization", "pretraining", "fine-tuning", "rlhf", "decoding", "reasoning"]
-Production & Serving → topics: ["serving", "inference", "deployment", "observability", "safety", "behavioral"]
-```
-
-Each tile: topic group title, question count (count questions where `q.topic` matches any of the group's topics), 2-line description, `hover:border-violet-500/40` lift. Grid: `grid grid-cols-2 gap-2 sm:grid-cols-3` or adjust to fit. Selected tile: `border-violet-500 bg-violet-950/20`.
-
-When tile(s) selected: filter questions to matching topics. "All" is restored by deselecting all tiles (not a separate button needed — just make deselect re-enable all).
-
-Source: PREPLAB_SPEC.md Section 4.
-
----
-
-**5. Assess config screen copy** `S effort` `MEDIUM`
-
-What: The `ExamMode` config screen (the screen before the exam starts) uses "Configure Exam" as a heading and generic selectors. Reframe to create the "I'm about to be assessed on something real" feeling.
-
-Changes in `src/PrepLab.jsx` `ExamMode` config state render:
-
-- **Headline:** change from `"Configure Exam"` (or equivalent) to `"How interview-ready are you?"`
-- **Subtext:** below headline, add: `"20 production-level questions. No hints. See exactly where you stand."` in `text-zinc-400 text-sm`.
-- **Duration selector labels:** append question counts — e.g. `"15 min (10 questions)"`, `"30 min (20 questions)"`, `"60 min (40 questions)"`.
-- **CTA button:** change from `"Start Exam →"` (or equivalent) to `"Start Assessment →"`.
-- **Results preview:** below the config selectors and above the CTA, add a 2-line callout block (`bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-zinc-400`): `"After the assessment, you'll see your score by topic, your weakest areas, and the exact Lab modules and GT posts that address each gap."`
-
-Source: PREPLAB_SPEC.md Section 3 (Assess mode entry screen) + Section 5 (cold visitor journey).
+Source: PREPLAB_SPEC.md Section 5 + DECISIONS.md Section 8 Rule 2.
 
 ---
 
 ## Pending (valid but lower priority)
 
 ### PrepLab revamp — remaining sprints (from PREPLAB_SPEC.md)
-- **PrepLab Sprint B** — Extract QUESTIONS to `src/data/preplabQuestions.js` + add `difficulty` to all 261 questions. Wire to card accent + Hard Only filter. `S effort`.
-- **PrepLab Sprint C** — `trap` field for top 50 hardest + `source` for ~30 questions + `<CommonTrapCallout>` component in `src/shared.jsx`. `M effort`.
-- **PrepLab Sprint D** — Full Assess results screen rebuild: per-topic bars, gap forward pointers, session comparison, gate at Q11 with partial results visible. `M effort`.
+- ~~**PrepLab Sprint A**~~ — DONE (`43e4a92`). Naming + visual layer: sidebar 6→3 modes, score badges, QuestionCard difficulty accent, MCQOptions hover, ExamConfig copy, TrainerMode topic tiles.
+- ~~**PrepLab Sprint B**~~ — DONE (`73924a0`). Extracted PREP_QUESTIONS to `src/data/preplabQuestions.js`. All 261 questions have `difficulty` field. PrepLab.jsx 5079→2446 lines.
+- ~~**PrepLab Sprint C**~~ — DONE (`38d5330`). `trap` + `source` fields on 50 hardest questions. `src/shared.jsx` created with `CommonTrapCallout`. RevealCard renders amber callout + source attribution.
+- **PrepLab Sprint D** — Full Assess results screen rebuild: per-topic bars, gap forward pointers, session comparison, gate at Q11 with partial results visible. `M effort`. See Do This above.
 - **PrepLab Sprint E** — Interview Strategy full rebuild: resume input, round type, prior feedback, day plan, Defense Doc absorption as "Download Your Brief". `L effort`.
 
 ### Content depth + production grounding (was Sprint 31 — demoted to Pending)
