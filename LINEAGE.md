@@ -138,8 +138,8 @@ Core insight: most GenAI learning resources are either too academic (papers, tex
 
 ---
 
-| May 2026 post-sprint 30 | No code shipped. Field intelligence logging + MD staleness sweep. Four practitioner posts assessed: Microsoft RAG interview (bi-encoder vs cross-encoder gap → Tier 1 IDEAS cluster); Qwen3.6 local inference (agentic latency bottleneck → Tier 2 cluster); Gumroad/Etsy builder (early revenue experiment → freemium section); Senior AI Engineer interview (Graph RAG + LangGraph/HITL → Tier 1 clusters). All MD files synced to sprint 30. NEXT.md Pending expanded with 3 new items. Commits: `0681ee4`, `43cfb08`. Scale: unchanged. |
+| May 2026 post-sprint 30 | No code shipped. Extended planning + field intelligence session. Phase A — field intelligence: 5 sources assessed (Microsoft RAG interview, Qwen3.6 local inference post, Gumroad/Etsy builder story, Senior AI Engineer interview post, LLM/GenAI Interview Master Guide PDF). New IDEAS.md clusters: Graph RAG, LangGraph/HITL, bi-encoder/cross-encoder, scaling laws, semantic caching, dense/sparse retrieval, LoRA/QLoRA (Tier 1), fintech/lending (Tier 2). UPGRADES.md: Common Trap layer added. Phase B — architecture: modularisation + config discipline decision formalised as DECISIONS.md Section 8 (Rule 1: data in data files; Rule 2: system settings in src/config/; Rule 3: shared UI components). Three UPGRADES.md entries added. All MD files audited + synced. NEXT.md fully rewritten. Commits: `0681ee4`, `43cfb08`, `2e9d428`, `fad8a6c`. Scale: unchanged. |
 
 ---
 
-*Last updated: May 2026 (post sprint 30)*
+*Last updated: May 2026 (post sprint 30, architecture session)*

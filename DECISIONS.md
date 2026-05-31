@@ -2,7 +2,7 @@
 
 Standing rules and principles that govern every build decision. This is a prescriptive document — it says what IS true now, not what was built when. For build history, see LINEAGE.md. For open findings, see AUDITS.md.
 
-*Last updated: May 2026 (sprint 30)*
+*Last updated: May 2026 (post sprint 30 — Section 8 added)*
 
 ---
 
@@ -444,4 +444,59 @@ GAL does not become a Python execution platform. There is no Python content in G
 If a feature idea requires Pyodide, the correct question is: "does this judgment call genuinely require running something, or would static pre-computed data serve equally well?" In most cases for GAL, static data is sufficient. Pyodide is the exception, not the default.
 
 *Source: Architecture review session, May 2026 — evaluation of StrataScratch/PAL-style datamart approach for GAL context.*
+
+---
+
+## 8. Modularisation and config discipline — standing rules (decided May 2026)
+
+### The problem this solves
+
+The codebase grew organically. Several patterns were established correctly (NAV_GROUPS, SYSTEMS_MODULES, ragScenarios.js, CSS variable tokens), but they were not enforced uniformly. The result: some constants live in config objects, others are magic numbers buried mid-component inside 1500-line files. System-wide changes — adding a field to every PrepLab question, changing the session gate limit, updating the forward pointer card design — require hunting through multiple large files instead of editing one config location.
+
+The goal is not "make everything pluggable" (that over-engineers a static React app). The goal is: **data out of components, system settings in config files, repeated UI patterns in shared components.** Three rules, applied incrementally — not a big-bang refactor.
+
+### Rule 1 — New data always lives in a data file, never inline in a component
+
+Any content that could be edited independently of rendering logic — question banks, scenario configs, GT post blocks, corpus documents, module registries — must live in a dedicated `src/data/` or standalone data file. Component files contain rendering logic and state only.
+
+**Current violations to fix incrementally (do not refactor all at once):**
+- PrepLab questions live in `PrepLab.jsx` — should move to `src/data/preplabQuestions.js`
+- Inline constants scattered in `App.jsx` (SCENARIO_FORWARD_POINTERS, PRODUCTION_NOTES, etc.) — should move to `src/data/ragConfig.js` or `src/ragScenarios.js`
+- New data files already planned follow this rule: `src/ragCorpus.js` (NEXT.md item 3)
+
+**The test:** Could a content editor update the data without touching any rendering logic? If no, the data is in the wrong place.
+
+### Rule 2 — System-wide settings live in `src/config/`
+
+Create `src/config/` as the single source of truth for values that control product behavior and may need to change as a unit. Start with:
+
+- `src/config/gating.js` — session limit (10q/session free), access code string, gate thresholds (30% completion for study plan), `gated: true` flag logic. Currently scattered: session counter in `PrepLab.jsx`, access code hardcoded in `utils/accessCode.js`, gate threshold inline in `InterviewPrepMode`. One file means one edit to change the business model.
+- `src/config/nav.js` — `NAV_GROUPS`, `ALL_TABS`, `GROUP_COLORS`. Currently in `App.jsx`. Extracting these means adding a nav item or changing a group label without touching the 1500-line root component.
+- `src/config/labs.js` — `SYSTEMS_MODULES`, `AGENTS_MODULES` registries. Currently in `Systems.jsx` and `Agents.jsx`. Same rationale.
+
+**Do not over-extend this pattern.** Config files are for values with broad behavioral impact. Component-specific constants (a local color, a one-off label) stay in the component.
+
+### Rule 3 — Repeated UI patterns become shared components
+
+Any UI pattern that appears in two or more places with the same intent — forward pointer card, production note chip, Common Trap callout, fidelity badge — must be a shared component, not copy-pasted JSX. Changes to the pattern propagate everywhere without hunting.
+
+**Components to extract (build as shared from the start, not after duplication):**
+- `<ForwardPointerCard preplabTopic gtPostId />` — already exists in two forms (RAG Lab App.jsx + Agent Lab Agents.jsx). First refactor candidate.
+- `<ProductionNoteChip note />` — planned for NEXT.md item 2. Build as a component, not inline JSX.
+- `<CommonTrapCallout trap />` — planned in UPGRADES.md. One component, used in Trainer + Exam review.
+- `<FidelityBadge tier note />` — already exists but duplicated across App.jsx / Agents.jsx / Systems.jsx. Consolidate.
+
+**What stays bespoke:** Each lab's core interactive mechanic (RAG Lab scenario panel, Agent Lab simulator, LLM Lab decoding viz) is intentionally different. Do not force these through a shared generic component. Bespokeness at the mechanic level is a feature, not a violation of this rule.
+
+### What this is NOT
+
+- Not a CMS or config-driven UI generation system. The product is too small for that abstraction layer — and a generic config schema would fight the bespoke mechanics that make each lab interesting.
+- Not a big-bang refactor. Apply these rules to new code immediately; migrate existing violations incrementally when touching a file for another reason.
+- Not an excuse to add indirection everywhere. If extracting a constant makes the code harder to follow without a clear benefit, leave it inline.
+
+### Enforcement
+
+Before any new file is created or existing file is modified: ask — does new data belong in a data file? Does new config belong in `src/config/`? Is this UI pattern being duplicated? If yes to any, fix it in the same commit, not later.
+
+*Source: Architecture review session, May 2026 — discussion of modularisation approach for system-wide change velocity.*
 

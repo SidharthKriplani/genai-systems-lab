@@ -632,6 +632,84 @@ The design principle the failure teaches. One decision rule a practitioner would
 
 ---
 
+## Global — `src/config/` folder (system-wide settings extraction)
+
+**Component:** `src/App.jsx`, `src/PrepLab.jsx`, `src/utils/accessCode.js` — system-wide behavioral constants
+
+**Current behavior:** Values that control product behavior across the whole app are scattered in component files as magic numbers or inline strings: session limit (`10`) is in `PrepLab.jsx`, the access code is in `src/utils/accessCode.js`, the gate threshold (30% completion) is in `InterviewPrepMode`, `NAV_GROUPS` / `ALL_TABS` / `GROUP_COLORS` are in `App.jsx`. Changing the free tier session limit requires knowing which file and which line to edit — no central config location.
+
+**Target behavior:** Create `src/config/` folder with three files as starting point:
+
+```
+src/config/
+  gating.js     — FREE_SESSION_LIMIT = 10, COMMUNITY_CODE, GATE_THRESHOLD = 0.30, gated tier rules
+  nav.js        — NAV_GROUPS, ALL_TABS, GROUP_COLORS (extracted from App.jsx)
+  labs.js       — SYSTEMS_MODULES, AGENTS_MODULES registries (extracted from Systems.jsx + Agents.jsx)
+```
+
+Each file exports named constants. Components import from config. Business model change (e.g. raise session limit to 15, change access code) = one file, one line.
+
+**What stays in components:** Component-local constants (a one-off colour, a local label) stay where they are. This is for values with cross-cutting behavioral impact.
+
+**Effort:** S per config file once the extraction pass starts. Total: S-M (3 files + import rewiring in affected components).
+
+**Dependencies:** None — purely mechanical extraction, no logic changes.
+
+**Priority:** Medium — no user-facing change, but high developer velocity impact. Build incrementally: `gating.js` first (highest business impact), then `nav.js`, then `labs.js`.
+
+**Status:** Pending — defined in DECISIONS.md Section 8.
+
+---
+
+## Global — PrepLab questions extraction to `src/data/preplabQuestions.js`
+
+**Component:** `src/PrepLab.jsx` — inline question bank (~261 questions hardcoded in the component file)
+
+**Current behavior:** All 261 PrepLab questions are defined as a `QUESTIONS` array inside `PrepLab.jsx`. Adding a new field to every question (e.g. `trap`, `difficulty`, `cluster`) requires editing a ~2000-line component file. The question bank is not auditable or editable independently of the rendering logic.
+
+**Target behavior:** Extract the `QUESTIONS` array to `src/data/preplabQuestions.js`. `PrepLab.jsx` imports it. The data file has a clear schema comment at the top:
+```js
+// Question schema: { id, topic, difficulty, question, type, options, correct, explanation, trap?, cluster?, gated? }
+```
+Adding `trap` field, adjusting difficulty tags, or updating an explanation = edit the data file only, never the component.
+
+**Effort:** S (pure extraction — no logic changes, just move the array and add one import).
+
+**Dependencies:** None. This is the first data file discipline migration and the simplest one.
+
+**Priority:** High — PrepLab.jsx is already one of the largest files. Adding `trap` + `difficulty` fields to 261 questions inside the component file is painful. Extract first, then add fields.
+
+**Status:** Pending — defined in DECISIONS.md Section 8.
+
+---
+
+## Global — Shared UI components for repeated patterns
+
+**Component:** `src/App.jsx`, `src/Agents.jsx` — forward pointer card duplicated; plus planned components
+
+**Current behavior:** The forward pointer card (`✓ "You've seen the failure. What's next?"`) exists in two separate implementations: one in `App.jsx` (RAG Lab) and one in `Agents.jsx` (Agent Lab done screens). They diverge over time. Planned UI patterns — Production Note chip, Common Trap callout — will be built inline in components and duplicated similarly without a shared component convention.
+
+**Target behavior:** A small `src/components/shared.jsx` (or `src/shared.jsx`) exporting reusable display components:
+
+```jsx
+export function ForwardPointerCard({ preplabTopic, gtPostId, onNavigate }) { ... }
+export function ProductionNoteChip({ note }) { ... }         // NEXT.md item 2
+export function CommonTrapCallout({ trap }) { ... }          // UPGRADES.md PrepLab entry
+export function FidelityBadge({ tier, note }) { ... }        // already duplicated in 3 files
+```
+
+Each takes minimal props, handles its own styling. Any lab that needs the pattern imports the component — no copy-paste. Visual changes propagate everywhere automatically.
+
+**Effort:** S per component. `ForwardPointerCard` first (already duplicated). Others built as needed rather than all at once.
+
+**Dependencies:** None per component — build each one when it's first needed.
+
+**Priority:** Medium — no immediate user impact, but prevents the copy-paste debt from compounding with each new lab addition.
+
+**Status:** Pending — defined in DECISIONS.md Section 8. Build `ForwardPointerCard` in the same sprint as NEXT.md item 1 ("Your Interview Story" block) since that touches both RAG Lab and Agent Lab versions.
+
+---
+
 ## GroundTruth.jsx — State-Aware Reading Mode ("Revise / Learn / What's Next")
 
 **Component:** `src/GroundTruth.jsx` — post list + filter UI

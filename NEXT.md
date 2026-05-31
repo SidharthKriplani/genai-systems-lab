@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 30, field intelligence logged: 4 posts)*
+*Last updated: May 2026 (post sprint 30, field intelligence + architecture session)*
 
 ---
 
@@ -94,6 +94,7 @@ Posts to expand:
 - **Concepts module: "The Training Signal — Entropy, Loss, and KL Divergence"** — "how surprised is the model?" framing. Source: Utkarsh Mangal post (May 2026).
 - **PrepLab Company Tracks** — company-specific architecture lens on failure modes. L effort.
 - **Visual polish backlog** — consistent module headers, Explore module cards, PrepLab question experience. See IDEAS.md "Visual Polish backlog" section.
+- **Modularisation pass (incremental, enforce going forward)** — (1) Extract PrepLab questions to `src/data/preplabQuestions.js`, (2) Create `src/config/gating.js` + `nav.js`, (3) Build `<ForwardPointerCard>` shared component when touching NEXT.md item 1. See DECISIONS.md Section 8 + UPGRADES.md entries.
 
 ---
 
