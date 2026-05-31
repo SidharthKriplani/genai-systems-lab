@@ -2,39 +2,39 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 31C — PrepLab Sprints A+B+C complete)*
+*Last updated: May 2026 (post sprint 31D — PrepLab Sprints A+B+C+D complete)*
 
 ---
 
-## Theme: PrepLab revamp — Sprint D (Assess results screen rebuild)
+## Theme: PrepLab Sprint E — Interview Strategy full rebuild
 
-Sprints A, B, C shipped. Sprint D is the next unblocked item. The results screen after an Assess session currently shows a basic score summary. Sprint D rebuilds it into a per-topic breakdown with gap forward pointers and a partial-results gate at Q11.
+Sprints A, B, C, D shipped. Sprint E is the next unblocked item. Interview Strategy currently runs the InterviewPrepMode (JD → gap drill → Phase 4 gate). Sprint E rebuilds it into a full defense doc / day plan tool.
 
 ---
 
 ## Do this (in order)
 
-**1. Assess results screen — per-topic bars + gap pointers** `M effort` `HIGH`
+**1. PrepLab Sprint E — Interview Strategy full rebuild** `L effort` `HIGH`
 
-What: After an Assess session ends, the results view (`ExamResults` component in `src/PrepLab.jsx`) shows total score only. Replace with:
+What: `InterviewPrepMode` in `src/PrepLab.jsx` (mode: "jdprep") is the current stub. Rebuild as a 5-step flow:
 
-- Score headline: `{pct}% · {correct}/{total}` in large text, difficulty badge (Strong / Developing / Needs Work at ≥70%, 50–69%, <50%)
-- Per-topic accuracy bars: group results by `q.topic`, compute `correct/total` per topic, render as a bar chart (use div width %, no external lib). Sort worst-first. Topic label + score + bar.
-- Gap forward pointer per weak topic: for each topic where pct < 60%, render a chip pointing to the relevant Lab module or GT post. Use a `TOPIC_FORWARD_POINTERS` constant keyed by topic string.
-- Session comparison: if `gsl-preplab-history` has prior entries, show "vs last session" delta (+ or - pct) next to the score headline. Small `text-zinc-500 text-xs`.
-- Copy results button (existing) — keep.
+- Step 1: JD paste + company name (existing, keep)
+- Step 2: Role type selector (ML Engineer / AI Engineer / AI PM / Research Scientist)
+- Step 3: Round context — round number, interviewer type (hiring manager / tech lead / peer)
+- Step 4: Prior round feedback — free text, parsed for keywords
+- Step 5: Day plan output — "Your Interview Brief" as a structured day plan:
+  - Top 3 topics to focus on (from gap detection)
+  - 2 questions likely to come up per topic (drawn from PREP_QUESTIONS matching topic + difficulty)
+  - Trap to avoid per topic (from `trap` field on hard questions)
+  - 3 GT posts to skim
+  - A "Defense Doc absorption" section if a Defense Doc was previously built (check localStorage)
+  - Download button: renders brief as copyable markdown
 
-**2. Partial results gate at Q11** `M effort` `HIGH`
-
-What: For non-gated (free) users, show results only through Q10. At Q11+, show a gate overlay over the results that reads: "You've answered {N} questions. Unlock full results →" with the GateModal trigger. Free users still complete the full exam — the gate is on the results view only, not the exam itself.
-
-Implementation: in `ExamResults`, check `isAccessGranted()`. If false and `questions.length > 10`, render only the first 10 questions' per-topic data + blur/overlay on the rest with the gate CTA. Keep the score headline visible (don't hide the overall %).
-
-**3. Create `src/config/gating.js`** `S effort` `MEDIUM`
-
-What: Thin config file. Move `FREE_QUESTION_LIMIT` from `utils/accessCode.js` to `src/config/gating.js`. Re-export from `utils/accessCode.js` for backward compatibility. Add `RESULTS_FREE_LIMIT = 10` (questions shown in results before gate). Import in `PrepLab.jsx`.
-
-Source: PREPLAB_SPEC.md Section 5 + DECISIONS.md Section 8 Rule 2.
+Implementation notes:
+- Gating: Phase 4 (the brief itself) behind `isAccessGranted()` with GateModal
+- Reuse `TOPIC_STUDY_RESOURCES` (already in PrepLab.jsx) for GT post links
+- `TOPIC_FORWARD_POINTERS` (added in Sprint D) for Lab forward links
+- Store progress in `gsl-preplab-strategy-phase` (already exists)
 
 ---
 
@@ -44,8 +44,8 @@ Source: PREPLAB_SPEC.md Section 5 + DECISIONS.md Section 8 Rule 2.
 - ~~**PrepLab Sprint A**~~ — DONE (`43e4a92`). Naming + visual layer: sidebar 6→3 modes, score badges, QuestionCard difficulty accent, MCQOptions hover, ExamConfig copy, TrainerMode topic tiles.
 - ~~**PrepLab Sprint B**~~ — DONE (`73924a0`). Extracted PREP_QUESTIONS to `src/data/preplabQuestions.js`. All 261 questions have `difficulty` field. PrepLab.jsx 5079→2446 lines.
 - ~~**PrepLab Sprint C**~~ — DONE (`38d5330`). `trap` + `source` fields on 50 hardest questions. `src/shared.jsx` created with `CommonTrapCallout`. RevealCard renders amber callout + source attribution.
-- **PrepLab Sprint D** — Full Assess results screen rebuild: per-topic bars, gap forward pointers, session comparison, gate at Q11 with partial results visible. `M effort`. See Do This above.
-- **PrepLab Sprint E** — Interview Strategy full rebuild: resume input, round type, prior feedback, day plan, Defense Doc absorption as "Download Your Brief". `L effort`.
+- ~~**PrepLab Sprint D**~~ — DONE (`22cd963`). Assess results screen rebuild: per-topic bars worst-first, TOPIC_FORWARD_POINTERS gap chips, session comparison delta, free-user gate at Q11. `src/config/gating.js` created.
+- **PrepLab Sprint E** — Interview Strategy full rebuild. See Do This above.
 
 ### Content depth + production grounding (was Sprint 31 — demoted to Pending)
 - **"Your Interview Story" block on RAG Lab + Agent Lab done cards** — collapsible block at forward pointer card. `S effort`. See previous NEXT.md for full spec (commit content + file locations documented there).
@@ -60,21 +60,19 @@ Source: PREPLAB_SPEC.md Section 5 + DECISIONS.md Section 8 Rule 2.
 
 ### Architecture / polish
 - **Cold-start Home rewrite** — market signal first (agentic +280% YoY), PrepLab CTA for cold visitors, question preview with interview framing. See UPGRADES.md Hero Copy entry + DECISIONS.md Section 9.
-- **Interview Strategy Tool consolidation** — now part of PrepLab Sprint E above.
 - **GT Series + Tags redesign** — Deep Dives IA. M-L effort.
 - **React.lazy() code splitting** — systematic change. DECISIONS.md-worthy scope.
 - **Pyodide execution for Eval Lab** — Tier 2, after static corpus ships.
 - **Concepts module: "Sequential vs Parallel"** — RNN→LSTM→Transformer arc.
 - **Concepts module: "The Training Signal"** — entropy/loss/KL framing.
 - **Visual polish backlog** — consistent module headers, Explore module cards.
-- **Modularisation pass** — `src/config/gating.js` + `nav.js` (unblocked by Sprint D).
+- **Modularisation pass** — `src/config/nav.js` (unblocked by Sprint D, `gating.js` done).
 
 ---
 
 ## Do NOT touch this session
 
 - Stripe + auth — not yet. See DECISIONS.md Section 0.
-- PrepLab Sprints B–E — Sprint A must ship and be verified first.
 - New GT posts (not in Pending list above) — no bulk additions.
 - Graph RAG module build — Pending only.
 - PAL codebase — separate product, out of scope.

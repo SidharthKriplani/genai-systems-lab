@@ -150,4 +150,8 @@ Core insight: most GenAI learning resources are either too academic (papers, tex
 
 ---
 
-*Last updated: May 2026 (sprint 31B+C, PrepLab Sprints B+C)*
+| May 2026 sprint 31D | PrepLab Sprint D shipped — Assess results screen full rebuild. (1) `src/config/gating.js` created: `RESULTS_FREE_LIMIT = 10`, re-exports `FREE_QUESTION_LIMIT` from `utils/accessCode.js`. Imported in PrepLab.jsx. (2) Session history: `EXAM_SESSIONS_KEY = "gsl-preplab-exam-sessions"`, `useEffect([finished])` saves MCQ-based snapshot on completion (pct, tc, total, count, date), capped at 20 entries. (3) `TOPIC_FORWARD_POINTERS` constant: 11 topics → `{ label, tab }` gap pointer chips. (4) ExamMode signature updated: `{ onExit, onNavigate, onNavigateTo }`. Root call updated accordingly. (5) `if (finished)` block rebuilt: score headline with `{pct}% · {correct}/{total}`, Strong/Developing/Needs Work badge, session delta "+N% vs last" in green/red; per-topic bars sorted worst-first with per-bar gap pointer chips for topics <60%; free-user gate for >10q exams — shows per-topic data from first 10q only, then blur+overlay placeholder rows with GateModal CTA; open answers self-assess and wrong answers sections preserved. Same session: difficulty reclassification (1E/37M/62H → 47E/126M/87H, 18%/48%/33%); 4 duplicate question IDs fixed from Sprint C inject; PrepLab landing layout rebuilt PAL-style (3-column mode card grid + Browse by Topic tile grid). Commit: `22cd963`. Scale: unchanged. |
+
+---
+
+*Last updated: May 2026 (sprint 31D, PrepLab Sprints A+B+C+D complete)*
