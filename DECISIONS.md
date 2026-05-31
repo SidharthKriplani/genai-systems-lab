@@ -2,7 +2,7 @@
 
 Standing rules and principles that govern every build decision. This is a prescriptive document — it says what IS true now, not what was built when. For build history, see LINEAGE.md. For open findings, see AUDITS.md.
 
-*Last updated: May 2026 (post sprint 30 — Section 8 added)*
+*Last updated: May 2026 (post sprint 30 — Sections 8 + 9 added)*
 
 ---
 
@@ -499,4 +499,57 @@ Any UI pattern that appears in two or more places with the same intent — forwa
 Before any new file is created or existing file is modified: ask — does new data belong in a data file? Does new config belong in `src/config/`? Is this UI pattern being duplicated? If yes to any, fix it in the same commit, not later.
 
 *Source: Architecture review session, May 2026 — discussion of modularisation approach for system-wide change velocity.*
+
+---
+
+## 9. Cold-start user flow — belief gap standing rule (decided May 2026)
+
+### The problem
+
+GAL is doing two jobs simultaneously: (1) building the belief that breaking AI systems is career-relevant, and (2) serving the practice for people who already have that belief. The product currently front-loads the second job while the first job is unfinished for new visitors.
+
+PAL does not have this problem. A new visitor sees the SQL Lab → instantly recognizes it → knows it matters for interviews → fires off their first query in 30 seconds. SQL has pre-installed belief. GAL's mechanic ("configure a system, watch it fail") requires the visitor to first understand WHY that matters before they can engage. No pre-installed belief exists. The visitor arrives cold, sees a "RAG Lab", and has no mental model for why this makes them hireable.
+
+This is not a UX problem or a copy problem. It is a **belief gap**. You cannot fix it by cleaning the nav or rewriting the hero. The product must build the belief before it serves the practice.
+
+### The standing rules
+
+**Rule 1 — PrepLab is the correct cold-start entry point.**
+
+PrepLab connects to a pre-existing belief that every technical job-seeker already has: "I need to pass interviews." No belief-building required. A new visitor who opens PrepLab and answers one question understands the product's value proposition instantly — they either knew the answer (good) or didn't (motivation to use the labs). The funnel should be PrepLab → Lab, not Lab → PrepLab.
+
+The current nav order (Build first, Prove second) is the belief-building order for someone who already knows why the labs matter. It is the wrong order for a first-time visitor.
+
+**Rule 2 — The Home page must answer "why does this make me hireable?" before any mechanic is described.**
+
+The hero's current job is to describe what the product does ("configure a RAG pipeline"). Its correct job is to establish why it matters ("senior engineers who can diagnose production AI failures earn 40% more and are hired faster"). The market signal is concrete and available: agentic AI engineer roles are at 90K postings, +280% YoY. That number — not a mechanic description — builds belief in 5 seconds.
+
+Copy sequence for cold visitors:
+1. Market signal ("engineers who can do X are the most in-demand AI role right now")
+2. What the product teaches ("you learn to diagnose production failures, not just deploy AI")
+3. Where to start ("test your readiness → [PrepLab]")
+
+**Rule 3 — The "Daily Diagnostic Challenge" format only works with interview framing.**
+
+A PrepLab question presented as "here's a broken system" is low-engagement for a cold visitor. The same question presented as "this exact scenario appeared in a real interview at [company]" is immediately compelling. The interview framing applies the pre-installed belief ("I need to pass interviews") to the product's mechanic. Without that framing, the challenge reads as a quiz. With it, the challenge reads as interview prep — which is what the visitor already wants.
+
+**Rule 4 — Market signal belongs on the home screen, not in a GT post.**
+
+The agentic AI +280% YoY number (Lightcast, Stanford HAI AI Index 2026, LinkedIn Economic Graph), the salary differential between Type A and Type B engineers, the senior AI engineer interview format changes — these are belief-building signals. They belong on the home page, near the top, before the hero mechanic. They're currently buried in GT posts that cold visitors never reach.
+
+**Rule 5 — Do not build more Lab content before fixing the cold-start funnel.**
+
+Adding more scenarios, more GT posts, or more PrepLab questions does not fix a belief gap. A user who doesn't believe the product is relevant to their career will not engage with better content. The belief gap is a conversion problem, not a content problem. Content investments yield returns only to users who believe. Fix the funnel first.
+
+**What this rules out:**
+- Building a "welcome modal" before the Home page hero builds belief (see UPGRADES.md — the welcome modal is explicitly blocked until hero copy + cold-start belief is fixed)
+- Treating the PrepLab as the "PROVE" secondary door and the Labs as the primary door for new visitors — this is correct for returning users, not first-time visitors
+- Assuming that fixing navigation order, adding a tagline, or improving the visual design will convert cold visitors — the gap is not aesthetic
+
+**What this allows:**
+- Restructuring the Home page hero so market signal precedes mechanic description
+- Adding a "PrepLab first" entry path as the primary CTA for new visitors (not replacing Labs, adding a parallel entry point)
+- "This appeared in a real interview at [company]" framing on PrepLab question previews anywhere they surface
+
+*Source: Product direction discussion, May 2026 — cold-start UX analysis using PAL SQL Lab as the comparison case.*
 

@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 30, field intelligence + architecture session)*
+*Last updated: May 2026 (post sprint 30, field intelligence + architecture + cold-start analysis session)*
 
 ---
 

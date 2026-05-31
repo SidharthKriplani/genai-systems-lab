@@ -110,19 +110,28 @@ Cut entirely:
 
 **Current behavior:** Badge reads "Free · No login · Layer 3 AI skills". Headline is "AI systems break in production." Body copy references "reading about RAG failures" which frames the product as a RAG tool. None of these land in 5 seconds for a cold visitor.
 
-**Target behavior:** Copy anchored to the real market claim: engineers who can make AI pipelines robust and production-ready are what the market pays for — not engineers who just know how to use AI. Specific changes:
-- Badge: remove "Free" (table stakes), "No login" (technical fact, not benefit), "Layer 3 AI skills" (jargon). Replace with one line that names the outcome, e.g. "Production AI skills. No fluff."
-- Headline: tighten to the production readiness thesis. Must land in under 5 seconds. No more than 8 words.
-- Body copy: remove all RAG-specific framing. Speak to the full AI pipeline — RAG, agents, evals, serving, observability. The copy should make a data engineer, an AI PM, and an agent builder all feel like this is for them.
-- The underlying thesis: the lab trains production debugging instinct, not model knowledge. That should be unmissable.
+**The root problem — belief gap (logged May 2026):** This is not purely a copy problem. There is a structural belief gap for cold visitors: GAL's mechanic ("configure a system, watch it fail") requires the visitor to first believe WHY that skill matters for their career before they can engage. The copy's job is not just to describe the product — it is to build that belief in the first 5 seconds. PAL avoids this problem entirely because SQL has pre-installed career belief. GAL must actively build it. See DECISIONS.md Section 9 for the full standing rule.
 
-**Effort:** S (copy work, no structural JSX changes)
+**The correct copy sequence for cold visitors:**
+1. **Market signal first** — establish "this is the most in-demand AI skill right now." Concrete data: agentic AI engineer roles at 90K+ postings, +280% YoY (Lightcast, Stanford HAI AI Index 2026). Engineers who can diagnose production AI failures earn 40% more than those who can only build prototypes. This signal belongs before the mechanic description.
+2. **What the product teaches** — "You learn to diagnose production failures, not just deploy AI." This frames the mechanic (configure → fail → diagnose) as the path to that career outcome.
+3. **Where to start** — primary CTA for cold visitors should be PrepLab ("Test your readiness"), not a Lab. PrepLab connects to pre-installed interview belief. Lab entry makes sense for returning users.
 
-**Dependencies:** Alignment on the headline direction before writing. One agreed-upon thesis statement first.
+**Specific copy changes:**
+- Badge: remove "Free" (table stakes), "No login" (technical fact, not benefit), "Layer 3 AI skills" (jargon). Replace with one line that names the outcome + the market claim.
+- Headline: lead with the belief signal, not the mechanic. "The most in-demand AI engineering skill is knowing why systems fail." ≤10 words, no more.
+- Subtext: bridge market signal → product thesis. "Agentic AI engineer roles grew 280% last year. The gap isn't building AI — it's diagnosing production failures."
+- Body: remove RAG-specific framing. Speak to the full AI pipeline — RAG, agents, evals, serving, observability. Add one CTA block: PrepLab for new visitors, RAG Lab for returning.
 
-**Priority:** Critical — first thing a new visitor sees. If this doesn't land, nothing else matters.
+**Effort:** S (copy work + minor JSX restructure for CTA block)
 
-**Status:** Pending — alignment in progress (Batch 0 Walk 1 finding #1, #2, #3)
+**Dependencies:**
+- DECISIONS.md Section 9 alignment on cold-start belief gap rule ✅ (done May 2026)
+- Done card prominence + TYU crash fix should ship first (see UPGRADES.md RAG Lab entries) — don't guide users into a broken learn loop
+
+**Priority:** Critical — first thing a new visitor sees. If the belief isn't built in 5 seconds, nothing else matters.
+
+**Status:** Pending — root cause now fully understood (DECISIONS.md Section 9). Build after RAG Lab done card + TYU crash are fixed.
 
 ---
 

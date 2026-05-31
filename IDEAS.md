@@ -678,6 +678,21 @@ The problem: people have zero clue which side project to build to match what emp
 - **Career module: "Side Project Matcher"** — static curated list: skill → what JDs are asking for → what side project demonstrates it → what module in the lab builds that skill. Updated periodically. Zero backend needed.
 - **Standalone product consideration** — a live version (scheduled scraper → embedding clustering → weekly digest) is a real product. Would not live in the lab but is a natural extension of the lab's audience and thesis.
 
+### Cold-start belief gap — positioning + onboarding (new cluster — May 2026)
+
+GAL is doing two jobs: building career-relevance belief (for cold visitors) and serving practice (for believers). The product currently front-loads the second job. PAL avoids this — SQL Lab gives visitors an instantly recognizable, career-relevant entry within 30 seconds, no belief-building required. GAL's mechanic requires belief first. Full standing rule: DECISIONS.md Section 9.
+
+**The conversion problem:** A cold visitor who lands on Home and sees "RAG Lab / Agent Lab" has no pre-installed reason to care. They can't connect it to "how does this make me job-ready?" without prior context. PrepLab connects to a belief everyone already has ("I need to pass interviews") — it is the correct cold-start entry. The funnel should be PrepLab → Lab, not Lab → PrepLab.
+
+**Buildable items (in order of impact):**
+
+- **Home page hero — market signal before mechanic** — Add one data-forward stat near the hero (above or near the headline): agentic AI engineer roles at 90K+ postings, +280% YoY. "The most in-demand AI skill is knowing why systems fail." This builds the belief that the product serves in 5 seconds without requiring the visitor to first understand what RAG Lab is. `File: Home.jsx` `Effort: S` — copy + one stat chip component
+- **PrepLab as primary CTA for new visitors** — Add a "Test your readiness" CTA block on Home targeting new visitors, routing to PrepLab Exam mode. Parallel to the existing Lab door cards — not replacing them. Returns the correct cold-start path: answer a question first, then explore the labs that teach you why. `File: Home.jsx` `Effort: S`
+- **"This appeared in a real interview at [company]" framing on PrepLab entries** — Any PrepLab question preview surfaced on Home, in Daily Diagnostic, or in forward pointers should include the company/interview context when known. "This scenario appeared in a Round 1 senior AI interview at Microsoft" converts a quiz into an interview drill — using pre-installed belief. `File: PrepLab.jsx data + any surface that previews questions` `Effort: S (content work — tag questions with source company)`
+- **Daily Diagnostic Challenge — PrepLab question as entry hook** — A daily PrepLab question surfaced on Home (in Today section for returning users, as a teaser for cold visitors). Framed as interview challenge, not quiz. "Today's diagnostic: this exact failure mode caused a production incident at [company]." Links to the relevant lab scenario after answer reveal. `File: Home.jsx ReturningHomeView` `Effort: S-M` — uses existing PrepLab data + daily seeding pattern from GT featured post
+
+**Source:** Product direction discussion, May 2026 — PAL SQL Lab cold-start comparison analysis.
+
 ---
 
 ## Tier 2 — High Impact, More Effort
