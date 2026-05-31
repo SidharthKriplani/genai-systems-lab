@@ -142,4 +142,8 @@ Core insight: most GenAI learning resources are either too academic (papers, tex
 
 ---
 
-*Last updated: May 2026 (post sprint 30, cold-start analysis session)*
+| May 2026 sprint 31A | PrepLab revamp Sprint A shipped — naming + visual layer only, no logic changes. `src/PrepLab.jsx` only. (1) PREPLAB_SIDEBAR: 6 → 3 modes ("Assess", "Interview Strategy", "Company Tracks"). Defense Doc + Weakness Map components kept but hidden. (2) Sidebar score badges: sidebarStats state from localStorage gsl-preplab-history — returning users see last session performance without navigating to a separate mode. (3) QuestionCard visual upgrade: border-l-4 left accent colored by difficulty (hard = red, medium = amber, easy = blue), full-pill difficulty chip, border-right/top/bottom kept subtle zinc. (4) MCQOptions hover states: hoveredIdx local state for felt hover (violet bg tint + border glow); selected state moved from indigo to violet; letter badge updates on all three states. (5) ExamConfig copy: "Configure Exam" → "How interview-ready are you?"; duration selectors show question counts (10/20/40q); CTA "Start Exam →" → "Start Assessment →"; all active states → violet; results preview callout block added. (6) TrainerMode: TOPIC_GROUPS constant (5 category groups); topicFilter → groupFilter; 22 individual topic pills → 5 group tiles with count badges, description, hover lift, deselect on re-click. Brace diff: 0. Commit: `43e4a92`. Also: IDEAS.md Tier 2 (tab keyboard shortcuts) + Tier 3 (visual product map) logged from density discussion (commits `f6d2c7c`). PREPLAB_SPEC.md + NEXT.md rewritten for Sprint A series (`f19228a`). Scale: unchanged — PrepLab revamp is visual/naming only in Sprint A. |
+
+---
+
+*Last updated: May 2026 (sprint 31A, PrepLab revamp Sprint A)*
