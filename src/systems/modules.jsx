@@ -9388,6 +9388,7 @@ const SERVING_FAILURE_SCENARIOS = [
     symptoms: ["CUDA out of memory mid-request", "Server crashes on concurrent long prompts", "P99 latency spikes to 30s+ before crash"],
     rootCause: "KV cache grows as O(batch × seq_len × layers × head_dim). A 70B model with 32K context at batch=32 needs ~400GB just for KV — exceeds any single GPU.",
     fix: ["Reduce max_model_len in vLLM config", "Enable PagedAttention with smaller block sizes (block_size=8)", "Use chunked prefill to limit KV materialization per step", "Add max_num_seqs cap to bound concurrent requests"],
+    productionNote: "vLLM PagedAttention with block_size=8–16 and max_model_len cap / AWS Inferentia KV cache limits / Production: Llama-3.1-70B on 8×A100 at batch=64 is the most common first OOM encounter",
   },
   {
     id: "taillatency",
@@ -9397,6 +9398,7 @@ const SERVING_FAILURE_SCENARIOS = [
     symptoms: ["Short requests wait behind long ones", "P50 latency fine, P99 is 10× worse", "TTFT good, total generation time unpredictable"],
     rootCause: "Continuous batching queues short requests behind in-flight long sequences. Head-of-line blocking — same fundamental problem as HTTP/1.1 on a single connection.",
     fix: ["Enable priority scheduling in vLLM (--enable-priority-scheduling)", "Separate short and long context request queues at the load balancer", "Use chunked prefill to interleave prefill/decode steps", "Set max_seq_len per request category"],
+    productionNote: "vLLM --enable-priority-scheduling or separate queues per request class at the load balancer / Production: most teams separate interactive (streaming) from batch (async) queues — Claude API does this separation",
   },
   {
     id: "coldstart",
@@ -9406,6 +9408,7 @@ const SERVING_FAILURE_SCENARIOS = [
     symptoms: ["First request takes 20–120s", "Normal latency after first request", "Kubernetes HPA scale-up causes user-visible delays"],
     rootCause: "Loading a 70B model from disk to GPU VRAM takes 60–90s. No warmup = first user pays full cost. Serverless without keep-alive has this on every cold replica.",
     fix: ["Pre-warm replicas with dummy requests after scale-up", "Keep minimum replica count >= 1 (no scale-to-zero for P99-sensitive paths)", "Pin model weights to shared GPU memory across replicas", "Use readiness probes gated on first successful inference"],
+    productionNote: "AWS SageMaker with minimum_instance_count=1 / GCP Cloud Run --min-instances / Production: the 'first user of the day' latency complaint — readiness probes on first successful inference are the standard fix",
   },
   {
     id: "queueblowup",
@@ -9415,6 +9418,7 @@ const SERVING_FAILURE_SCENARIOS = [
     symptoms: ["TTFT climbs steadily under load", "Memory usage stable but latency degrading", "Requests timing out at client before response arrives"],
     rootCause: "vLLM maintains a waiting queue. When arrival rate > throughput, queue grows unbounded. At 2× overload, a 1s request becomes 10s+. Queue depth is the leading indicator, not memory.",
     fix: ["Set max_waiting_tokens to cap queue depth", "Return 503 early when queue depth exceeds threshold (circuit breaker pattern)", "Scale horizontally before queue grows — add replicas proactively", "Use deadline headers; drop requests that cannot be served in time"],
+    productionNote: "vLLM max_waiting_tokens + 503 circuit breaker at ALB / Production: the 503-early pattern is the correct response — most teams add it after their first traffic spike degrades latency for everyone in queue",
   },
   {
     id: "tensorparallel",
@@ -9424,6 +9428,7 @@ const SERVING_FAILURE_SCENARIOS = [
     symptoms: ["Latency does not improve when adding more GPUs", "GPU utilization drops per-device as TP increases", "Throughput improves but TTFT stays high"],
     rootCause: "Tensor parallel splits matrix multiplications across GPUs and requires an all-reduce sync per transformer layer. At TP=8 on a 7B model, the all-reduce takes longer than the actual compute. You pay network costs to do less work.",
     fix: ["Use TP only when the model does not fit on a single GPU", "Prefer pipeline parallel over tensor parallel for throughput-heavy workloads", "Keep TP=2 or TP=4 max — diminishing returns beyond that", "Use SGLang RadixAttention for multi-call / agent workloads instead of increasing TP"],
+    productionNote: "vLLM TP=1–2 max for models ≤13B / SGLang RadixAttention for agent workloads / Production: TP=4 on 7B models is the most common over-optimization — NCCL all-reduce overhead exceeds compute gains",
   },
 ];
 
@@ -9633,6 +9638,12 @@ function ServingFailures() {
                   </div>
                 ))}
               </div>
+              {s.productionNote && (
+                <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800">
+                  <span className="text-zinc-600 text-xs shrink-0 mt-0.5">⚙</span>
+                  <p className="text-xs text-zinc-500 leading-relaxed"><span className="text-zinc-400 font-semibold">In production: </span>{s.productionNote}</p>
+                </div>
+              )}
             </div>
           )}
         </div>
