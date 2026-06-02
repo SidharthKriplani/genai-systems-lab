@@ -861,6 +861,24 @@ Ideas that were considered and consciously not built:
 - **TypeScript migration** — Would break Vercel builds with current setup. Not worth the migration cost.
 - **External UI library (shadcn, MUI)** — Added bundle weight and design constraints. Hand-rolled components are fine.
 
+### PrepLab revamp — individually retired concepts (June 2026)
+
+These ideas emerged from a multi-round ideation + devil's advocate session. Each was stress-tested until it broke. Specific failure reason logged so the next session doesn't re-propose the same thing.
+
+- **Trap Signature as named taxonomy** ("The Metric Namer," "The Overclaimer," etc.) — Requires clustering 182 individually-written trap fields into coherent named patterns. No backend, no ML clustering available. Manual curation would take weeks. Worse: the taxonomy would be displayed as authoritative before the underlying work exists. *Retired: build-order problem. Revisit only after trap fields are community-validated and a real taxonomy has been manually constructed.*
+
+- **Self-assessment YES/NO button as primary data source** — After seeing the correct answer and reading the trap, asking "did you fall into this?" produces motivated-reasoning data. Nobody self-reports failure accurately once the correct answer is visible. Trap Signature built on this is circular and flattering rather than diagnostic. *Retired: structurally biased by design. Any feature requiring reliable self-report of failure is invalid without a backend that evaluates actual free-text answers.*
+
+- **"40 characters to unlock options" gate** — Gameable in 2 seconds (type gibberish). Measures presence of characters, not cognitive effort. Creates friction for returning users who know the answer. Enforces theater, not retrieval. *Retired: security-theater UX. Free-text field as invitation (no gate) is the correct implementation.*
+
+- **Interviewer Lens — "what a strong answer at the senior level includes"** — We don't know what senior interviewers at Google DeepMind or Anthropic actually want to hear. The bullet points would be editorial guesses presented as insider knowledge. Users who memorize the lens and parrot it in interviews may sound rehearsed rather than competent. *Retired: authority we don't have. Revisit only if sourced from real interviewers who review this content.*
+
+- **"Defend Your Answer" as static follow-up** — The concept (adversarial probing based on your specific answer) requires an LLM to respond to what you actually said. Static pre-written follow-ups fire regardless of your answer, making them a second question not a defense mechanic. The name promises responsiveness the implementation can't deliver. *Retired: structurally impossible without a backend. The concept is correct; the static version is dishonest. Revisit when API backend is available.*
+
+- **Company Interview Simulation** ("Anthropic Round 1 simulation") — Our company frequency data is synthesized from public blogs and Glassdoor, not primary sources. Interview processes change every 6 months. Presenting inference as a "simulation" claims certainty we don't have. Exponent and others do this with more data and human coaches. *Retired: data quality gap. Triage mode (honest about uncertainty, explicit caveats) is the correct framing.*
+
+- **War Room home screen with Trap Signature as hero metric** — Depends on the Trap Signature taxonomy (retired above). Showing "The Metric Namer: 11×" in a polished chip before the taxonomy exists is mocking up finished work. The underlying Role Readiness Score (Familiar/Practitioner/Senior/Staff) is also circular — it measures PrepLab performance, not interview readiness. *Retired: depends on retired prerequisite. Home screen personalization (weakest topic, streak, targeted drill CTA) is valid if built on behavioral signals (time-on-task, error frequency) not self-report.*
+
 ---
 
 ## How to Use This File

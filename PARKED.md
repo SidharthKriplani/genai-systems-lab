@@ -86,6 +86,34 @@ The existing `ContextCompaction` module in Systems is reference content. To earn
 
 ---
 
+## PrepLab — Full Revamp System (deferred, conditions named)
+
+**What it is:** A complete reimagining of PrepLab as a Trap Trainer rather than a quiz. The full system includes: War Room home screen (Trap Signature as hero metric), answer-before-options retrieval mechanic with meaningful evaluation, named trap pattern taxonomy (The Metric Namer, The Overclaimer, etc.), Interviewer Lens (what strong answers at the senior level include), "Defend Your Answer" adversarial follow-up mechanic, Company Interview Simulation mode, behavioral debrief with trap pattern history.
+
+**Why it's parked and not retired:** The *direction* is correct — PrepLab should train failure patterns (traps), not just test recall. The individual components are not retired because the concept is wrong; they're deferred because the infrastructure to build them honestly doesn't exist yet. The difference from "Retired": retired ideas were wrong on first principles. These are right on first principles but require conditions that aren't met.
+
+**What's wrong with building it now:**
+- Trap Signature taxonomy requires manual curation of 182 trap fields into coherent named clusters — weeks of work not yet done
+- Interviewer Lens requires sourcing from real interviewers, not editorial invention
+- "Defend Your Answer" requires an LLM backend to respond to what the user actually said — static follow-ups are dishonest about the mechanic
+- The full revamp would be built before PostHog confirms anyone is using PrepLab at meaningful WAU
+
+**Conditions for leaving PARKED:**
+
+All three must be true before starting:
+
+1. **PostHog WAU baseline established** — PrepLab is getting meaningful weekly active sessions (>50 WAU). Building a revamp for a feature with 5 WAU is rearranging furniture nobody sits in.
+
+2. **Trap field taxonomy completed** — 182 trap fields manually reviewed and clustered into 8–10 named pattern types, with at least 10 trap fields per cluster. This is content work, not code work. Start here.
+
+3. **Either:** (a) LLM backend available (Vercel edge function + API key) for evaluating free-text answers, enabling real "Defend Your Answer" and honest Interviewer Lens sourcing — OR — (b) 10+ real interviewers have reviewed and signed off on trap field content, providing the authority the Interviewer Lens requires without an LLM.
+
+**What's shipping now instead (surgical modifications):** Three changes that survived full critique, logged in UPGRADES.md — reveal order swap, free-text invitation field, behavioral debrief. These improve PrepLab within its current ceiling without claiming structural capabilities that don't exist.
+
+**Source:** Full ideation + double devil's advocate cycle, June 2026 sprint 44.
+
+---
+
 ## Notes
 
 - Nothing in PARKED.md is deleted. Everything is reachable via main Systems tab or direct `#hash` navigation.

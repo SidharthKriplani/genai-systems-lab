@@ -11,7 +11,73 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: June 2026 (post sprint 43)*
+*Last updated: June 2026 (sprint 44 — PrepLab surgical modifications logged)*
+
+---
+
+## PrepLab — Three Surgical Modifications (June 2026)
+
+Outcome of a full ideation + devil's advocate cycle. Everything that couldn't survive two rounds of critique is in IDEAS.md Retired and PARKED.md. These three are what survived.
+
+---
+
+### 1. Swap the reveal order — trap before answer
+
+**Component:** `src/PrepLab.jsx` — `RevealCard` component, Exam mode + Trainer mode answer reveal
+
+**Current behavior:** Answer reveal shows: Correct/Wrong header → Correct answer explanation → Common Trap (amber chip at bottom). The trap is an afterthought. Users skim the explanation and skip the trap entirely.
+
+**Target behavior:** Correct/Wrong header → Trap panel first (full-width amber panel, prominent) → Correct answer explanation below → GT post forward pointer. The trap becomes the climax of the reveal, not the footnote. The answer is the confirmation, not the lesson.
+
+**Why this survives critique:** No self-assessment, no taxonomy, no invented authority, no backend. Just reordering JSX. Backed by retrieval practice research — learning from error before seeing the correct answer builds stronger memory traces than the reverse.
+
+**Effort:** XS — pure JSX reorder in RevealCard
+
+**Dependencies:** None
+
+**Priority:** High — single highest-impact change for zero build cost
+
+**Status:** Pending
+
+---
+
+### 2. Free-text field before options — invitation, not gate
+
+**Component:** `src/PrepLab.jsx` — `ExamMode` question card
+
+**Current behavior:** Question appears, four MCQ options appear immediately. User picks an option. Recognition, not retrieval.
+
+**Target behavior:** Question appears, a textarea appears below with placeholder "Write your answer before looking at the options — 2–3 sentences." Options appear below the textarea, always visible, never locked. No character minimum, no gate, no friction. The user who skips the textarea gets nothing extra. The user who engages gets the retrieval benefit. No theater.
+
+**Why this survives critique:** The 40-character gate was retired (gameable, measures characters not thought). This version enforces nothing — it invites. The mechanic works through intrinsic motivation not friction. Users who want to learn use it. Users who want to review skip it. Both are valid.
+
+**Effort:** S — add textarea above options in ExamMode question card, store attempt text in local state, show word count (not a gate, just feedback)
+
+**Dependencies:** None
+
+**Priority:** Medium
+
+**Status:** Pending
+
+---
+
+### 3. Behavioral debrief — time-on-task, not self-report
+
+**Component:** `src/PrepLab.jsx` — `ExamMode` session end screen
+
+**Current behavior:** Session end shows score + per-topic accuracy bars. No signal about which questions were hardest, no forward action grounded in session data.
+
+**Target behavior:** Score stays as hero number (users expect it — don't fight the mental model). Below it: "Questions you spent the most time on this session" — top 3 questions ranked by textarea dwell time (`Date.now()` delta from question render to option select). These are the hard ones, revealed by behavior not self-report. Each shows the question text + a CTA to re-drill. One specific forward action: "Re-drill your 3 hardest" button that starts a Trainer session scoped to those exact question IDs.
+
+**Why this survives critique:** Behavioral signal (time-on-task) is not biased by motivated reasoning. User can't fake how long they spent. Doesn't depend on self-assessment YES/NO. Doesn't require a taxonomy. Score remains the hero so the mental model isn't fought.
+
+**Effort:** S-M — `questionStartTime` ref in ExamMode, delta computed on option select, stored per question in session state, surfaced in results screen
+
+**Dependencies:** Free-text field (upgrade 2) should ship first — time-on-task signal is richer if it includes textarea dwell, not just option-selection time
+
+**Priority:** Medium
+
+**Status:** Pending — build after upgrade 2
 
 ---
 
