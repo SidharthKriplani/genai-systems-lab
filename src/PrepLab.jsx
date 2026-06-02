@@ -2178,37 +2178,37 @@ const COMPANY_ARCHETYPES = [
     id: "bigtech",
     icon: "🏢",
     label: "Big Tech AI",
-    companies: ["Google DeepMind", "Meta AI", "Amazon AI", "Apple ML"],
+    companies: ["Google DeepMind", "Meta AI", "Amazon AWS AI", "Microsoft Copilot"],
     color: "indigo",
-    topicWeights: { rag: 3, agents: 3, evals: 4, latency: 3, fine_tuning: 2, safety: 3, mlops: 4, multimodal: 2 },
-    traits: ["Scale-first thinking", "Infra ownership", "Distributed systems depth", "Eval culture"],
+    topicWeights: { rag: 4, agents: 4, evals: 5, latency: 4, fine_tuning: 3, safety: 3, mlops: 5, multimodal: 2 },
+    traits: ["Scale-first thinking", "End-to-end MLOps ownership", "Eval culture runs deep", "Distributed systems depth"],
     sysDesignPrompts: [
-      "Design Google Search's AI answer layer — how do you avoid hallucination at 8B queries/day?",
-      "Build Meta's content moderation pipeline for a billion-user platform using LLMs.",
-      "Design Amazon Alexa's next-gen reasoning layer — latency < 200 ms, runs on-device + cloud hybrid.",
-      "Apple wants on-device LLM inference for Siri. Design the model serving and fallback architecture.",
+      "Google: Design an agent eval harness for a multi-step web research agent — how do you catch regressions across non-deterministic outputs at 1M runs/day?",
+      "Meta: Design the ML serving layer for a feed ranking model — feature store, online inference, A/B experiment infrastructure, drift alerting.",
+      "Amazon: Design a RAG system for AWS documentation Q&A — chunking strategy, query decomposition, citation attribution, hallucination detection at scale.",
+      "Microsoft: Design the Copilot enterprise RAG pipeline — private document access control, staleness handling, multi-step agentic tool-calling, grounding policy.",
     ],
-    mustKnow: ["RLHF at scale", "Distributed training orchestration", "Eval harness design", "Latency SLOs", "Feature stores"],
+    mustKnow: ["Agent evals + regression testing", "Distributed training (DDP/FSDP)", "RAG pipeline design end-to-end", "Feature stores + online serving", "LoRA/PEFT for fine-tuning", "Latency SLOs + KV cache"],
     gtRecs: [
       { id: "the-eval-crisis", title: "The Eval Crisis" },
-      { id: "why-your-rag-system-lies", title: "Why Your RAG System Lies" },
+      { id: "two-stage-retrieval-reranker", title: "Two-Stage Retrieval: Why a Reranker Exists" },
     ],
   },
   {
     id: "ainative",
     icon: "🚀",
-    label: "AI-Native Startups",
+    label: "AI-Native Labs",
     companies: ["Anthropic", "OpenAI", "Perplexity", "Cursor"],
     color: "emerald",
-    topicWeights: { rag: 4, agents: 4, evals: 5, safety: 5, latency: 3, fine_tuning: 3, mlops: 2, multimodal: 2 },
-    traits: ["Safety-aware reasoning", "Agentic system design", "Eval obsession", "Research ↔ product bridge"],
+    topicWeights: { rag: 4, agents: 5, evals: 5, safety: 5, latency: 4, fine_tuning: 3, mlops: 2, multimodal: 2 },
+    traits: ["Safety-aware reasoning", "Eval obsession — evals are product quality", "Agentic system design", "Research ↔ product bridge"],
     sysDesignPrompts: [
-      "Design Anthropic's Constitutional AI feedback loop — how does RLAIF scale beyond human labelers?",
-      "Build Perplexity's answer engine: real-time retrieval + citation grounding + < 3 s TTFT.",
-      "Design Cursor's code agent: context management across 100k-token repos, edit diffing, rollback.",
-      "OpenAI needs a plugin/tool orchestration layer for GPT-5 that handles 1M parallel agent sessions.",
+      "Anthropic: Design a Constitutional AI feedback loop — how does RLAIF scale beyond human labelers? Where does the reward model fail?",
+      "Perplexity: Build the answer engine — real-time retrieval, reranking, citation grounding, < 800ms TTFT. Where is latency lost?",
+      "OpenAI: Design the tool orchestration layer for a GPT-5 agent handling 1M parallel sessions — state, fault tolerance, cost budgets.",
+      "Cursor: Design the code agent context management system — 200k-token repo, relevant chunk selection, edit diffing, rollback on test failure.",
     ],
-    mustKnow: ["Constitutional AI / RLAIF", "Agentic loops & tool use", "Evals as product quality signal", "MCP / function calling", "Streaming UX"],
+    mustKnow: ["Constitutional AI / RLAIF", "Agentic loops + tool use + HITL", "Evals as a first-class product signal", "MCP vs function calling trade-offs", "Retrieval latency optimization", "Async concurrency in Python"],
     gtRecs: [
       { id: "langgraph-reducers-hitl", title: "LangGraph Reducers and HITL" },
       { id: "agent-memory-architecture", title: "Agent Memory Architecture" },
@@ -2218,41 +2218,41 @@ const COMPANY_ARCHETYPES = [
   {
     id: "indiantech",
     icon: "🇮🇳",
-    label: "Indian Tech",
-    companies: ["Flipkart", "Swiggy", "Zepto", "Razorpay"],
+    label: "Indian Product Tech",
+    companies: ["Flipkart", "Swiggy", "Razorpay", "PhonePe"],
     color: "orange",
-    topicWeights: { rag: 3, agents: 2, evals: 2, latency: 5, fine_tuning: 3, safety: 1, mlops: 4, multimodal: 2 },
-    traits: ["Cost efficiency", "Low-latency at scale", "Hindi/regional language NLP", "Mobile-first constraints"],
+    topicWeights: { rag: 2, agents: 1, evals: 2, latency: 5, fine_tuning: 3, safety: 1, mlops: 5, multimodal: 1 },
+    traits: ["Classical ML depth expected", "Cost-optimized inference", "Real-time feature pipelines", "DSA + system design heavy"],
     sysDesignPrompts: [
-      "Flipkart: Build a product search + recommendation system that works across 500M SKUs with multilingual queries.",
-      "Swiggy: Design an ETA prediction system using LLM reasoning over real-time GPS + historical data.",
-      "Zepto: Build an LLM-powered ops assistant that reduces support tickets using conversation history.",
-      "Razorpay: Design a fraud detection system using LLM reasoning over transaction graphs.",
+      "Flipkart: Design a product recommendation system across 500M SKUs — feature engineering, model selection, A/B testing, latency under 100ms.",
+      "Swiggy: Design an ETA prediction system — real-time GPS features, model retraining on fresh data, serving under mobile latency constraints.",
+      "Razorpay: Design a fraud detection system — transaction graph features, AUC/precision trade-off, explainability for rejected transactions.",
+      "PhonePe: Build a UPI anomaly detection pipeline — real-time scoring, concept drift detection, human review queue design.",
     ],
-    mustKnow: ["Multilingual embeddings", "Cost-optimized inference", "MLOps on tight budgets", "Real-time feature pipelines", "Fine-tuning for domain adaptation"],
+    mustKnow: ["Classical ML (XGBoost, Random Forest, feature engineering)", "Model metrics — AUC, precision/recall, F1, threshold tuning", "MLOps on cost budgets (Spark, Airflow, feature stores)", "Real-time serving under mobile latency", "SQL + data pipeline design"],
     gtRecs: [
       { id: "ds-to-ai-engineer", title: "The DS to AI Engineer Arc" },
-      { id: "graph-rag-multi-hop", title: "Graph RAG: When Vector Search Isn't Enough" },
+      { id: "three-layer-de-skill-stack", title: "The Three-Layer DE Skill Stack" },
     ],
   },
   {
     id: "enterprise",
     icon: "🏦",
     label: "Enterprise AI",
-    companies: ["McKinsey QuantumBlack", "Accenture AI", "Deloitte AI", "IBM watsonx"],
+    companies: ["McKinsey QuantumBlack", "Accenture AI", "Quantiphi", "IBM watsonx"],
     color: "violet",
-    topicWeights: { rag: 5, agents: 3, evals: 3, latency: 2, fine_tuning: 2, safety: 4, mlops: 3, multimodal: 1 },
-    traits: ["Governance & compliance", "Private deployment", "Client communication", "ROI framing"],
+    topicWeights: { rag: 5, agents: 4, evals: 3, latency: 2, fine_tuning: 2, safety: 5, mlops: 3, multimodal: 1 },
+    traits: ["Governance & compliance first", "Private/VPC deployment", "Client communication + ROI framing", "Forward-deployed engineering model"],
     sysDesignPrompts: [
-      "A bank wants to deploy an LLM for internal policy Q&A. Design the RAG system with access control and audit trail.",
-      "McKinsey client: Replace a 200-person analyst team with an AI research synthesis pipeline. Design it.",
-      "Accenture: Build an enterprise AI governance layer — model cards, drift detection, bias auditing.",
-      "IBM: Design a private LLM deployment for a pharmaceutical company with HIPAA/GDPR constraints.",
+      "A bank wants an LLM for internal policy Q&A. Design the RAG system with role-based access control, full audit trail, and PII redaction.",
+      "McKinsey client: Replace a 200-person analyst team with an AI synthesis pipeline. Design it. What's the HITL approval gate?",
+      "Quantiphi: You're deploying Bedrock AgentCore for an enterprise client. How do you handle tool routing, session state, and observability without the client's IT team touching it?",
+      "IBM: Design a private LLM deployment for pharma — HIPAA/GDPR compliance, on-prem vector DB, explainable outputs for regulatory audit.",
     ],
-    mustKnow: ["Private RAG with access control", "Model governance & audit logs", "On-prem/VPC deployment", "Prompt injection defenses", "Explainability requirements"],
+    mustKnow: ["Private RAG with RBAC + audit logs", "Bedrock AgentCore vs custom LangGraph decision", "MCP architecture for enterprise tool integration", "Prompt injection defenses in multi-tenant systems", "Explainability for regulated domains"],
     gtRecs: [
       { id: "why-your-rag-system-lies", title: "Why Your RAG System Lies" },
-      { id: "hooks-vs-llm-safety", title: "AI Safety Engineering and LLM Hooks" },
+      { id: "forward-deployed-engineer", title: "The Forward Deployed Engineer" },
     ],
   },
 ];
@@ -3083,10 +3083,29 @@ const INTERVIEW_EXPERIENCES = [
   { id:20, role:"Senior AI Engineer", tier:"startup",    round:1, topics:["safety","llmops"],           difficulty:"hard",   notes:"Indirect prompt injection via user-editable corpus — real Bing Chat pattern, post-retrieval filter design, grounded-answer policy." },
   { id:21, role:"Research Scientist", tier:"unicorn",    round:1, topics:["finetuning","evals"],        difficulty:"hard",   notes:"Scaling law implications for fine-tuning — Chinchilla compute-optimal, when more data beats larger model, eval set contamination at scale." },
   { id:22, role:"Staff AI Engineer",  tier:"FAANG",      round:2, topics:["agents","evals","serving"],  difficulty:"hard",   notes:"Cross-domain system design: multi-agent orchestration, eval harness for non-deterministic outputs, serving budget per user session." },
+  // Research-sourced entries (June 2026) — patterns synthesized from public blogs, interview guides, Glassdoor reports
+  { id:23, role:"Senior AI Engineer", tier:"FAANG",      round:1, topics:["agents","evals"],            difficulty:"hard",   company:"Google DeepMind", notes:"Agent evals deep dive — DeepMind now runs a dedicated Agent Evals round. Tested on: golden trace design, how to eval multi-step tool-using agents when outputs are non-deterministic, detecting capability regressions without flipping pass/fail on every run." },
+  { id:24, role:"ML Engineer",        tier:"FAANG",      round:1, topics:["rag","agents"],               difficulty:"hard",   company:"Google DeepMind", notes:"Applied AI ML debugging round — unique to DeepMind. Given a broken RAG+agent pipeline, diagnose failure. Tested on: tracing through LangGraph state, identifying retrieval score miscalibration vs prompt injection vs context overflow as root cause." },
+  { id:25, role:"Senior AI Engineer", tier:"unicorn",    round:2, topics:["safety","evals"],             difficulty:"hard",   company:"Anthropic",       notes:"Constitutional AI + RLAIF design. How does RLAIF scale when human labeler throughput is the bottleneck? Where does the reward model overfit? Tested on: understanding KL divergence penalty in RLHF, when RLAIF introduces bias, constitutional AI critique-revise loop mechanics." },
+  { id:26, role:"AI Engineer",        tier:"unicorn",    round:1, topics:["agents","serving"],           difficulty:"hard",   company:"Anthropic",       notes:"Concurrency is a recurring theme — Python async, asyncio.gather for parallel tool calls, return_exceptions pattern. Tested on: designing an agentic tool loop where 3 tools run concurrently, one fails, the agent recovers gracefully without cancelling the others." },
+  { id:27, role:"Senior AI Engineer", tier:"unicorn",    round:1, topics:["serving","llmops"],           difficulty:"hard",   company:"OpenAI",          notes:"Distributed system design with fault tolerance emphasis — not just scalability. Design question: serving layer for 1M parallel agent sessions. Tested on: no single points of failure, replication strategy, what happens when a tool endpoint goes down mid-session, cost-per-session budgeting." },
+  { id:28, role:"Staff AI Engineer",  tier:"unicorn",    round:2, topics:["safety","evals"],             difficulty:"hard",   company:"OpenAI",          notes:"Safety evaluation framework for frontier models. How do you build an eval set for model behaviors you can't fully enumerate? Tested on: red-teaming methodology, human vs automated safety evals, when LLM-as-judge fails for safety (adversarial inputs gaming the judge)." },
+  { id:29, role:"ML Engineer",        tier:"FAANG",      round:1, topics:["llmops","serving"],           difficulty:"hard",   company:"Meta",            notes:"ML system design: ranking/recommendation end-to-end. Data pipeline → feature store → model training → online serving → A/B experiment → monitoring. Tested on: feature store read latency, how you retrain on fresh data without serving downtime, p99 latency SLO enforcement." },
+  { id:30, role:"Senior AI Engineer", tier:"FAANG",      round:2, topics:["serving","llmops"],           difficulty:"hard",   company:"Meta",            notes:"Model serving at Meta scale — content moderation LLM. Tested on: batching strategy for variable-length inputs, KV cache sizing, how you handle latency spikes when a single long request blocks others, rollback procedure when a new model checkpoint degrades quality metrics." },
+  { id:31, role:"ML Engineer",        tier:"FAANG",      round:1, topics:["rag","serving"],              difficulty:"hard",   company:"Amazon",          notes:"RAG system design for AWS documentation Q&A at scale. Tested on: chunk size trade-offs for technical docs, HyDE for technical queries where the user doesn't know the right vocabulary, citation attribution when multiple chunks contribute, handling docs that update frequently, scaling retrieval to millions of docs." },
+  { id:32, role:"Senior AI Engineer", tier:"FAANG",      round:1, topics:["rag","finetuning"],           difficulty:"hard",   company:"Microsoft",       notes:"Copilot RAG + LoRA deep dive. Tested on: enterprise doc RAG with role-based access control (user A can't see user B's docs in retrieval), LoRA rank selection for domain adaptation, PEFT vs full fine-tune when the target domain is close to pretraining distribution, grounding policy when retrieved context conflicts." },
+  { id:33, role:"ML Engineer",        tier:"FAANG",      round:2, topics:["safety","llmops"],            difficulty:"medium", company:"Microsoft",       notes:"Responsible AI for Copilot — content safety layer design. Tested on: where to place safety classifiers in the pipeline (pre-retrieval vs post-generation), semantic drift detection in production (when model behaviour shifts without a deployment), cost of running safety checks on every generation vs sampling." },
+  { id:34, role:"Senior AI Engineer", tier:"unicorn",    round:1, topics:["rag","serving"],              difficulty:"hard",   company:"Perplexity",      notes:"Real-time retrieval pipeline — latency obsession. TTFT target < 800ms with retrieval + reranking + generation in the loop. Tested on: where to cut latency (skip reranker on simple queries? cache embeddings?), dense vs sparse retrieval failure modes for factual queries, how to A/B test a new ranking signal without degrading answer quality for most users." },
+  { id:35, role:"ML Engineer",        tier:"indiantech",  round:1, topics:["llmops","serving"],          difficulty:"medium", company:"Flipkart",        notes:"E-commerce recommendation system design — classical ML focus. Tested on: feature engineering for purchase intent (recency, frequency, category affinity), model selection trade-offs (XGBoost vs two-tower neural), A/B testing at Flipkart scale (500M users), latency under 100ms for real-time recommendation serving. RAG/LLM not tested — classical ML depth was the bar." },
+  { id:36, role:"ML Engineer",        tier:"indiantech",  round:1, topics:["serving","safety"],          difficulty:"medium", company:"Razorpay",        notes:"Fraud detection ML design. Tested on: transaction graph features, precision vs recall trade-off when false negatives cost money vs false positives hurt user trust, threshold tuning for different merchant risk tiers, explainability for declined transactions (regulatory requirement in fintech), concept drift when fraud patterns shift." },
+  { id:37, role:"ML Engineer",        tier:"indiantech",  round:1, topics:["serving","llmops"],          difficulty:"medium", company:"Swiggy",          notes:"ETA prediction system under mobile latency constraints. Tested on: real-time GPS feature ingestion (Kafka → feature store), model retraining cadence (online learning vs daily batch), serving under 50ms on mobile, handling cold-start for new delivery partners, monitoring ETA error distribution across geographies." },
+  { id:38, role:"Senior ML Engineer", tier:"enterprise",  round:1, topics:["rag","agents"],              difficulty:"hard",   company:"Quantiphi",       notes:"Bedrock AgentCore vs custom LangGraph decision — when to use AWS-managed agent runtime vs build your own. Tested on: MCP architecture (what it solves vs function calling), multi-provider LLM fallback design, API failure handling with exponential backoff, session state management in AgentCore action groups. Honest + conceptual answers valued over overclaiming hands-on." },
+  { id:39, role:"AI Engineer",        tier:"startup",     round:1, topics:["agents","evals"],            difficulty:"hard",   notes:"Agentic product from scratch — what do you build first? Tested on: minimum viable eval harness before launch (what 3 metrics tell you the agent isn't broken?), cold-start corpus quality signal (how many documents before retrieval is useful?), token budget per agent run (when does 10 tool calls make a product economically unviable?)." },
+  { id:40, role:"Senior AI Engineer", tier:"enterprise",  round:2, topics:["rag","safety"],              difficulty:"hard",   notes:"Private RAG for regulated industry. Tested on: RBAC in vector retrieval (how do you prevent chunk leakage across security boundaries?), audit log design (what must be logged for a GDPR right-to-explanation request?), PII redaction before embedding vs after retrieval, explainable output requirements when the answer influences a regulated decision." },
 ];
 
 const INTEL_TOPIC_LABELS = { rag:"RAG & Retrieval", agents:"Agents & Systems", evals:"Evals & Metrics", finetuning:"LLM & Fine-Tuning", serving:"Production & Ops", llmops:"LLMOps", safety:"Safety & Guardrails", product:"Product & PM" };
-const TIER_LABELS  = { FAANG:"FAANG", unicorn:"Unicorn", enterprise:"Enterprise", startup:"Startup" };
+const TIER_LABELS  = { FAANG:"FAANG", unicorn:"Unicorn", indiantech:"Indian Tech", enterprise:"Enterprise", startup:"Startup" };
 const ROLE_LABELS  = { "Senior AI Engineer":"Sr AI Engineer", "ML Engineer":"ML Engineer", "Staff AI Engineer":"Staff AI Eng", "AI Engineer":"AI Engineer", "AI PM":"AI PM", "Research Scientist":"Research Sci" };
 
 function InterviewIntelMode({ onExit }) {
@@ -3103,7 +3122,7 @@ function InterviewIntelMode({ onExit }) {
   const maxCount = Math.max(...Object.values(topicCounts));
   const sortedTopics = Object.entries(topicCounts).sort((a,b) => b[1]-a[1]);
 
-  const tiers = ["all","FAANG","unicorn","enterprise","startup"];
+  const tiers = ["all","FAANG","unicorn","indiantech","enterprise","startup"];
   const roles = ["all","Senior AI Engineer","Staff AI Engineer","ML Engineer","AI Engineer","AI PM","Research Scientist"];
 
   return (
@@ -3166,6 +3185,7 @@ function InterviewIntelMode({ onExit }) {
             <div className="flex items-start justify-between gap-3 mb-2">
               <div>
                 <span className="text-xs font-semibold text-zinc-200">{e.role}</span>
+                {e.company && <span className="text-[10px] font-mono ml-2 px-1.5 py-0.5 rounded" style={{ background:"var(--gal-build-tint)", color:"var(--gal-build)" }}>{e.company}</span>}
                 <span className="text-[10px] text-zinc-500 ml-2">{TIER_LABELS[e.tier]} · Round {e.round}</span>
               </div>
               <span className={`text-[9px] font-mono px-2 py-0.5 rounded shrink-0 ${e.difficulty==="hard" ? "bg-red-950/50 text-red-400 border border-red-900/40" : "bg-amber-950/40 text-amber-400 border border-amber-900/30"}`}>
