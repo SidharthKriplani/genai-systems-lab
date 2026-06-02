@@ -2,13 +2,13 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 41 — Concepts gym expansion + Prompt Lab shipped)*
+*Last updated: June 2026 (sprint 42 — Foundation Models Lab + context management)*
 
 ---
 
-## Theme: Sprint 41 complete. 5 labs now live. PostHog check is still the gate before next major sprint.
+## Theme: Sprint 42 complete. 6 labs now live. PostHog check is still the gate before next major sprint.
 
-Sprint 41 delivered: 7 new Concepts modules activating 4 new gyms (Evaluation, Production, Foundation Models, Prompt Engineering); Prompt Engineering Lab (5th BUILD lab, 6 scenarios, fully wired in App.jsx + nav). Scale: 226 GT posts, 295 PrepLab questions, 27 Concepts modules (7 active gyms), 57 Systems modules, 5 labs.
+Sprint 42 delivered: context management (CLAUDE.md trimmed, HISTORY.md, CONTEXT_AUDIT.md), promptlab-5/6, Role Readiness Score in PrepLab sidebar, Foundation Models Lab (6th BUILD lab, 6 scenarios). Scale: 226 GT posts, 301 PrepLab questions, 27 Concepts modules (7 active gyms), 57 Systems modules, 6 labs.
 
 PostHog check (item 5 below) is still the gate before the next major content sprint.
 
@@ -52,6 +52,7 @@ Check before any new build: is PostHog receiving events in Vercel prod? WAU last
 - ~~**7 new Concepts modules**~~ — DONE batch-A (`ed54c5a`). LLMAsJudge, EvalDesign, AgentToolDesign, CostLatency, Observability, FewShot, ChainOfThought.
 - ~~**4 new active gyms**~~ — DONE batch-A. Evaluation, Production, Foundation Models, Prompt Engineering now active (not comingSoon).
 - ~~**Prompt Engineering Lab (5th BUILD lab)**~~ — DONE batch-B (`b93535e`). 6 scenarios, PromptLab.jsx 560 lines, wired in App.jsx + nav.js, 4 PrepLab questions.
+- ~~**Foundation Models Lab (6th BUILD lab)**~~ — DONE sprint 42 (`6cb2194`). 6 scenarios, FoundationModelsLab.jsx, wired in App.jsx + nav.js, 4 PrepLab questions (301 total).
 
 ### Sprint 40 completions (batches A–I)
 - ~~**`src/config/nav.js`**~~ — DONE batch-A (`992cfc4`). ALL_TABS + GROUP_COLORS extracted.

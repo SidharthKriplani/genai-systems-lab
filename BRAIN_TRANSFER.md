@@ -16,10 +16,10 @@
 
 | Asset | Count |
 |---|---|
-| Labs | **5** — RAG Lab, Agent Lab, Eval Lab, LLM Lab, **Prompt Lab** (new) |
+| Labs | **6** — RAG Lab, Agent Lab, Eval Lab, LLM Lab, Prompt Lab, **Foundation Models Lab** (new) |
 | Systems modules (in nav) | **57** |
 | Concepts modules | **27** (7 active gyms) |
-| PrepLab questions | **295** |
+| PrepLab questions | **301** |
 | GT posts (index) | **226** |
 | Explore modules | 22 |
 | Agent Lab modules | 16 |
@@ -162,14 +162,9 @@ PrepLab questions: promptlab-1 through promptlab-4.
 
 ## Next Build Queue (in priority order)
 
-### Batch 1 — Foundation Models Lab (new 6th lab)
-Fine-tuning failure simulation: LoRA rank too low, LR too high, dataset contamination, data volume insufficient, misaligned training objective, base model mismatch. Shell pattern identical to Prompt Lab. Pre-spec all 6 scenarios before building. **M-L effort, own session.**
-
-**Files to create/modify:**
-- Create `src/FoundationModelsLab.jsx`
-- Add lazy import + routing in `App.jsx`  
-- Add to `ALL_TABS` + `NAV_GROUPS` in `src/config/nav.js` (BUILD group, count: 6)
-- Add 4–6 PrepLab questions to `src/data/preplabQuestions.js`
+### ~~Batch 1 — Foundation Models Lab~~ ✅ DONE sprint 42 (`6cb2194`)
+`src/FoundationModelsLab.jsx` (6 scenarios): lora_rank_low, lr_too_high, eval_contamination, data_volume, objective_mismatch, base_model_mismatch. Each has 3 configs (fail/partial/pass), metrics grid, root cause, fix, design principle. 4 PrepLab questions (fmlab-1/2/3/4). Wired in App.jsx + nav.js. 301 PrepLab questions total.
+**PENDING FIX:** Lab accent uses amber — should be blue (#3b82f6) to match BUILD group convention. Fix in next polish pass.
 
 ### ~~Batch 2 — Role Readiness Score~~ ✅ DONE this session
 `getRoleReadiness()` helper + `readiness` state + sidebar widget in `src/PrepLab.jsx`. Tiers: Familiar/Practitioner/Senior/Staff derived from `gsl-preplab-history`. 4-dot visual + count + accuracy. Shows only after 5+ questions answered.
