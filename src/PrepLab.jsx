@@ -624,6 +624,20 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
           <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-2">Model answer</p>
           <p className="text-[13px] text-zinc-300 leading-relaxed">{q.explanation}</p>
         </div>
+        {q.staffLayer && (
+          isAccessGranted()
+            ? <div className="rounded-lg border-l-4 px-4 py-3 space-y-1.5" style={{ background: "rgba(99,102,241,0.12)", borderColor: "#818cf8" }}>
+                <p className="text-[10px] font-mono text-indigo-400 uppercase tracking-widest">How a staff engineer answers this</p>
+                <p className="text-sm text-indigo-100 leading-relaxed">{q.staffLayer}</p>
+              </div>
+            : <div className="rounded-lg border border-dashed border-zinc-700 px-4 py-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-0.5">Staff framing</p>
+                  <p className="text-xs text-zinc-600">How a senior AI engineer frames this in an interview — the language, the tradeoffs, the signal.</p>
+                </div>
+                <span className="text-[9px] font-mono text-zinc-500 border border-zinc-700 rounded px-1.5 py-0.5 shrink-0">Access code</span>
+              </div>
+        )}
         {q.source && (
           <p className="text-[10px] text-zinc-500 font-mono">Source: {q.source}</p>
         )}
@@ -703,6 +717,20 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
       <div className="border-t border-zinc-800 pt-3">
         <p className="text-[13px] text-zinc-300 leading-relaxed">{q.explanation}</p>
       </div>
+      {q.staffLayer && (
+        isAccessGranted()
+          ? <div className="rounded-lg border-l-4 px-4 py-3 space-y-1.5" style={{ background: "rgba(99,102,241,0.12)", borderColor: "#818cf8" }}>
+              <p className="text-[10px] font-mono text-indigo-400 uppercase tracking-widest">How a staff engineer answers this</p>
+              <p className="text-sm text-indigo-100 leading-relaxed">{q.staffLayer}</p>
+            </div>
+          : <div className="rounded-lg border border-dashed border-zinc-700 px-4 py-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-0.5">Staff framing</p>
+                <p className="text-xs text-zinc-600">How a senior AI engineer frames this in an interview — the language, the tradeoffs, the signal.</p>
+              </div>
+              <span className="text-[9px] font-mono text-zinc-500 border border-zinc-700 rounded px-1.5 py-0.5 shrink-0">Access code</span>
+            </div>
+      )}
       {q.source && (
         <p className="text-[10px] text-zinc-500 font-mono">Source: {q.source}</p>
       )}
@@ -737,6 +765,7 @@ function ExamConfig({ onStart, onExit }) {
   const [duration, setDuration] = useState(30);
   const [focus, setFocus] = useState("all");
   const [difficulty, setDifficulty] = useState("mixed");
+  const [timedMock, setTimedMock] = useState(false);
   const DM = { 15: 10, 30: 20, 60: 40 };
 
   return (
@@ -784,14 +813,28 @@ function ExamConfig({ onStart, onExit }) {
             </div>
           </div>
         </div>
+          {/* Mock Exam toggle */}
+          <div className="flex items-start justify-between gap-4 pt-2 border-t border-zinc-800">
+            <div>
+              <div className="text-sm font-medium text-zinc-300">Mock Exam Mode</div>
+              <div className="text-xs text-zinc-500 mt-0.5">No going back. Timer runs out, exam ends. Closest to the real thing.</div>
+            </div>
+            <button onClick={() => setTimedMock(t => !t)}
+              className={`shrink-0 mt-0.5 w-10 h-5 rounded-full transition-all duration-200 relative ${timedMock ? "bg-violet-600" : "bg-zinc-700"}`}>
+              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${timedMock ? "left-5" : "left-0.5"}`} />
+            </button>
+          </div>
+        </div>
         <div className="bg-zinc-900 border border-zinc-700 rounded-xl px-5 py-4 text-sm text-zinc-400 leading-relaxed">
-          After the assessment, you'll see your score by topic, your weakest areas, and the exact Lab modules and GT posts that address each gap.
+          {timedMock
+            ? "Mock Exam: forward-only, no reveals, timer ends the exam. Your score appears when time's up or you finish."
+            : "After the assessment, you'll see your score by topic, your weakest areas, and the exact Lab modules and GT posts that address each gap."}
         </div>
         <button
-          onClick={() => onStart({ duration, focus, difficulty })}
-          className="w-full py-4 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all"
+          onClick={() => onStart({ duration, focus, difficulty, timedMock })}
+          className={`w-full py-4 font-semibold rounded-xl transition-all text-white ${timedMock ? "bg-red-700 hover:bg-red-600" : "bg-violet-600 hover:bg-violet-500"}`}
         >
-          Start Assessment →
+          {timedMock ? `Start Mock Exam — ${duration} min →` : "Start Assessment →"}
         </button>
       </div>
     </div>
@@ -1241,7 +1284,9 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions }) {
   const q = questions[current];
   if (!q) return null;
   const answered = Object.keys(answers).length;
-  const timerColor = timeLeft < 300 ? "text-red-400" : timeLeft < 600 ? "text-amber-400" : "text-zinc-200";
+  const isMock = config?.timedMock;
+  const timerColor = timeLeft < 300 ? "text-red-400" : timeLeft < 600 ? "text-amber-400" : isMock ? "text-red-300" : "text-zinc-200";
+  const timerPulse = isMock && timeLeft < 300 ? "animate-pulse" : "";
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -1256,12 +1301,12 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions }) {
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
           <div className="flex-1 space-y-1">
             <div className="flex justify-between text-xs text-zinc-500">
-              <span>Q{current + 1} of {questions.length}</span>
+              <span>{isMock && <span className="text-red-400 font-mono font-bold mr-1.5">MOCK</span>}Q{current + 1} of {questions.length}</span>
               <span>{answered} answered</span>
             </div>
             <PBar value={answered} max={questions.length} />
           </div>
-          <div className={`text-xl font-mono font-bold ${timerColor} min-w-[4rem] text-right`}>
+          <div className={`font-mono font-bold ${timerColor} ${timerPulse} min-w-[4rem] text-right ${isMock ? "text-2xl" : "text-xl"}`}>
             {formatTime(timeLeft)}
           </div>
         </div>
@@ -1288,12 +1333,17 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions }) {
           : <SpeechTextArea value={answers[q.id] || ""} onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))} rows={6} />
         }
         <div className="flex justify-between items-center pt-2">
-          <button onClick={() => setCurrent(c => Math.max(0, c - 1))} disabled={current === 0}
-            className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 disabled:opacity-30">← Previous</button>
+          {isMock
+            ? <div className="text-xs text-zinc-600 font-mono">forward only</div>
+            : <button onClick={() => setCurrent(c => Math.max(0, c - 1))} disabled={current === 0}
+                className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 disabled:opacity-30">← Previous</button>
+          }
           {current < questions.length - 1
-            ? <button onClick={handleNext} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg">Next →</button>
+            ? <button onClick={handleNext} className={`px-5 py-2 text-white text-sm rounded-lg ${isMock ? "bg-red-700 hover:bg-red-600" : "bg-indigo-600 hover:bg-indigo-500"}`}>Next →</button>
             : <button onClick={() => { setQuestionTimes(t => ({ ...t, [questions[current].id]: Date.now() - questionStartTime.current })); clearInterval(timerRef.current); setFinished(true); }}
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded-lg font-semibold">Finish Exam</button>
+                className={`px-5 py-2 text-white text-sm rounded-lg font-semibold ${isMock ? "bg-red-700 hover:bg-red-600" : "bg-emerald-600 hover:bg-emerald-500"}`}>
+                {isMock ? "Submit Exam →" : "Finish Exam"}
+              </button>
           }
         </div>
       </div>
