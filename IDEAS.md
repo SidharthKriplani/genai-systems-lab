@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: May 2026 (post sprint 34) | Current scale: 56 Systems modules (in nav), 22 Explore, 16 Agent Lab, 16 Concepts, 269 PrepLab questions, 224 GT posts*
+*Last updated: May 2026 (post sprint 35) | Current scale: 56 Systems modules (in nav), 22 Explore, 16 Agent Lab, 16 Concepts, 277 PrepLab questions, 225 GT posts*
 
 ---
 
@@ -210,13 +210,13 @@ An AI interviewer found that candidates who claimed to have built 2-3 RAG system
 - ~~**PrepLab questions (3–4)**~~ ✅ *built May 2026 — cos-1, cos-2, cos-3*
 - ~~**Explore module: "Cosine Similarity — The Geometry of Retrieval"**~~ ✅ *built May 2026 — id: cosine in Explore*
 
-### Bi-encoder vs cross-encoder two-stage retrieval (new cluster — from Microsoft interview post, May 2026)
+### Bi-encoder vs cross-encoder two-stage retrieval (new cluster — from Microsoft interview post, May 2026) ✅ BUILT (sprint 35, `74160e7`)
 
 A Microsoft RAG interview transcript surfaced a hard gap: candidates who can implement vector search can't explain *why* a reranker exists as a second stage, what a cross-encoder actually does (full-attention pair scoring vs. separate embedding lookup), or when each stage fails. The lab covers retrieval failure modes (noise injection, score threshold misconfiguration) but never explains the two-stage architecture — bi-encoder for recall, cross-encoder for precision — as a deliberate design decision with distinct failure modes per stage. High PrepLab signal: this question appears in FAANG/unicorn interview loops at exactly the level GAL's audience targets.
 
-- **GT post: "Two-Stage Retrieval — Why Vector Search Is Not Enough"** — bi-encoder recall vs cross-encoder precision, full-attention pair scoring explained, when each stage fails (embedding space collapse, reranker score miscalibration), production pattern (OpenSearch + Cohere Rerank / Bedrock Knowledge Base). `Effort: S`
-- **PrepLab questions (3–4)** — bi-encoder vs cross-encoder trade-off, reranker failure mode, latency cost of cross-encoding, when to skip the reranker. `Effort: S`
-- **Query Refinement module extension** — add reranker as an optional 4th stage to the existing module (HyDE/multi-query/decomposition already there); show precision lift + latency cost. `Effort: S-M`
+- ~~**GT post: "Two-Stage Retrieval: Why a Reranker Exists"**~~ ✅ — bi-encoder recall vs cross-encoder precision, Stage 1/Stage 2 failure modes, 6-row comparison table, when-to-add-reranker list, when-one-stage-is-enough list. `id: two-stage-retrieval-reranker`
+- ~~**PrepLab questions (4)**~~ ✅ — `reranker-1` through `reranker-4`. Medical Q&A precision redesign (hard), lexical gap failure attribution (hard), bi-encoder primary limitation MCQ (medium free), recall_k=100 doc at position 120 (medium). All with trap fields.
+- ~~**Query Refinement module "Two-Stage" tab**~~ ✅ — `TWO_STAGE_QUERIES` (3 scenarios), side-by-side Stage 1 bi-encoder vs Stage 2 cross-encoder with ↑N/↓N rank-change arrows, failure mode cards, when-to-add-reranker decision list.
 
 ### Graph RAG + multi-hop retrieval (new cluster — from Senior AI Engineer interview post, May 2026) ✅ BUILT (sprint 33, `2a00754`)
 
