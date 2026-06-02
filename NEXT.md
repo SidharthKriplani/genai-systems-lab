@@ -24,6 +24,8 @@ Before the next major build sprint: check PostHog for WAU and module completion 
 
 **4. ~~Bi-encoder vs cross-encoder two-stage retrieval~~** — DONE (`74160e7`). GT post + QueryRefinementLab Two-Stage tab (bi-encoder vs cross-encoder side-by-side, rank-change arrows, failure modes) + 4 PrepLab questions (2 hard, 2 medium, all with trap fields). Also included CompanyTracks revamp: bug fix, text question handling, topic weight viz, GT recs.
 
+**4c. ~~Sprint 37 Batch 1~~** — DONE (`97360b7`). PrepLab share score button. "Your Interview Story" collapsible on all 6 RAG Lab done cards. Home daily tip removed. Stats synced (277q/225 posts).
+
 **4b. ~~Sprint 36 — Social proof + Maps to Production + GT Series~~** — DONE (`2a8c0bc`). Feedback chip on Home footer. productionNote on all 6 RAG Lab scenarios. GT Series taxonomy: 16/17 series now populated with real written posts.
 
 **5. PostHog distribution check** `S effort` `PREREQUISITE — do before next sprint`
@@ -45,7 +47,7 @@ Check before any new build: is PostHog receiving events in Vercel prod? WAU last
 - ~~**CompanyTracks revamp**~~ — DONE (`74160e7`). Bug fix + text Q handling + topic weight viz + GT recs.
 
 ### Content depth + production grounding
-- **"Your Interview Story" block on RAG Lab + Agent Lab done cards** — `S effort`.
+- ~~**"Your Interview Story" block on RAG Lab done cards**~~ — DONE sprint 37 (`97360b7`). All 6 scenarios. Agent Lab still pending.
 - ~~**"Maps to Production" callout on RAG Lab root-cause cards**~~ — DONE sprint 36 (`2a8c0bc`). All 6 RAG Lab scenarios have `productionNote` field.
 - **RAG Lab static corpus — data realism v1** — `S-M effort`. See DECISIONS.md Section 7.
 - **Thin GT posts expansion — 3 stubs** — `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets`. `S-M effort`.

@@ -331,6 +331,12 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Session build log (May 2026)
 
+**Resolved this session (sprint 37 — Share Score + Interview Story + Home trim):**
+- **PrepLab Share Score button.** `shareScore(r)` function added to ExamMode in `src/PrepLab.jsx`. Copies a short shareable string to clipboard: score %, strongest/weakest topic, and link. "Share score" button added to exam done-screen header row with violet→green copied feedback. `shareCopied` state added. Brace diff: 0. Commit `97360b7`.
+- **"Your Interview Story" on all 6 RAG Lab scenarios.** `INTERVIEW_STORIES` constant added to `src/App.jsx` (6 entries: missing_answer, ambiguous_query, conflicting_documents, multi_hop, three_hop_chain, prompt_injection — each with failure/rootCause/fix/production fields). `openStory` state added. Collapsible block rendered after productionNote chip and before feedback widget. Header: "Your interview story → ready to use". Expand: shows the full interview narrative + usage hint. Brace diff: 0. Commit `97360b7`.
+- **Home daily tip removed.** Daily tip section (💡 amber card, below failure strip) removed — below-fold noise, no conversion value. Home is now: hero → market signal chip → PrepLab question card → door cards → failure strip → footer. Stat counts synced: 222+ → 225+ posts, 261 → 277 questions. Brace diff: 0. Commit `97360b7`.
+- **Note: three stub GT posts (dpo-in-practice, llm-observability, instruction-tuning-datasets) were already fully expanded (17–21 blocks each) — no action needed.**
+
 **Resolved this session (sprint 36 — Home feedback chip + Maps to Production + GT Series taxonomy):**
 - **Home.jsx feedback chip.** Footer updated: "Share feedback" pill links to Tally.so form (tally.so/r/mYoQkl). Sibling links de-emphasized (zinc-600 instead of zinc-500). Brace diff: 0. Part of commit `2a8c0bc`.
 - **Maps to Production callout on all 6 RAG Lab scenarios.** `productionNote` field added to each scenario object in `src/ragScenarios.js`. Rendered in `src/App.jsx` after the System Design Lesson block as a subdued zinc chip: gear icon + "In production: [tools/services]". Covers: missing_answer (Bedrock KB / Weaviate), ambiguous_query (OpenSearch / LangChain), conflicting_documents (Pinecone batch-sync / regulated domains), multi_hop (flat vector DBs on relationship queries), three_hop_chain (legal/compliance RAG: Ironclad, Harvey), prompt_injection (Notion/Confluence/Slack corpora, Bing Chat documented). Brace diffs: 0. Part of commit `2a8c0bc`.
