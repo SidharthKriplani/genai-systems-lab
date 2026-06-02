@@ -1711,7 +1711,7 @@ const SIM_SCENARIOS = [
 
 const STEP_ICONS = { thought: "💭", action: "⚡", observation: "👁", final: "✓" };
 
-const AGENT_INTERVIEW_STORIES = {
+const AGENT_FAILURE_STORIES = {
   research: {
     failure: "an agent retrieving stale figures from training data instead of calling a live tool",
     rootCause: "the model didn't distinguish 'I saw this in training' from 'I know this is current' — no explicit reasoning step before tool selection",
@@ -1923,7 +1923,7 @@ function AgentLoopSimulator() {
           </div>
         </div>
         {(() => {
-          const story = AGENT_INTERVIEW_STORIES[scenarioId];
+          const story = AGENT_FAILURE_STORIES[scenarioId];
           if (!story) return null;
           const isOpen = openAgentStory === scenarioId;
           return (
