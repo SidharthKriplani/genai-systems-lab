@@ -14778,8 +14778,235 @@ graph = builder.compile(
   );
 }
 
+// ─── AGENT CONTEXT ARCHITECTURE ──────────────────────────────────────────────
+
+const CONTEXT_FAILURE_MODES = [
+  {
+    id: "state_drift",
+    title: "State drift across long sessions",
+    trigger: (cfg) => cfg.memory === "incontext" && cfg.delegation === "none",
+    why: "In-context-only memory fills the context window after ~45 minutes of tool-calling. The agent loses early session state silently — no error, just wrong answers referencing facts from earlier that are no longer in the window.",
+    fix: "Add episodic memory (Redis / Postgres): write key facts after each step, retrieve at session start. The agent knows what it did, not just what's currently in context.",
+    productionNote: "LangGraph checkpointer (SqliteSaver / RedisSaver) / Mem0 / Zep for persistent agent memory",
+  },
+  {
+    id: "prompt_injection",
+    title: "Prompt injection via retrieved content",
+    trigger: (cfg) => cfg.memory === "semantic" && cfg.hooks === "none",
+    why: "Semantic memory retrieves the most similar past content — including any adversarially crafted input a user or document left in memory. Without an input-validation hook, retrieved memory can override instructions.",
+    fix: "Add input and output validation hooks. Mark retrieved memory as <untrusted> in the prompt. Hooks run before and after the LLM call — the agent treats retrieved content as data, not instructions.",
+    productionNote: "LangSmith callbacks / LangGraph node-level hooks / Anthropic Constitutional AI output filtering",
+  },
+  {
+    id: "delegation_deadlock",
+    title: "Circular delegation in multi-agent systems",
+    trigger: (cfg) => cfg.delegation === "deep" && cfg.memory === "incontext",
+    why: "With 3+ levels of delegation and no shared state, worker agents request the same sub-tasks from each other. No agent has a global view — circular assignments emerge. No termination condition fires.",
+    fix: "Orchestrator must maintain a non-delegatable synthesis step. Use persistent shared state (Redis) so workers can check what has already been dispatched before creating new sub-tasks.",
+    productionNote: "LangGraph with shared State and max_delegation_depth per node / CrewAI hierarchical process",
+  },
+  {
+    id: "skill_staleness",
+    title: "Stale skill injection causing wrong tool calls",
+    trigger: (cfg) => cfg.skills === "claudemd" && cfg.hooks === "none",
+    why: "A CLAUDE.md-style context file injected at session start may reference tools or APIs that have changed since last update. Without a version-check hook, the agent confidently calls deprecated tool schemas.",
+    fix: "Add a startup hook that validates the context file version against the current tool schema. Flag mismatches before any tool calls fire.",
+    productionNote: "Startup validation hook in LangGraph __start__ node / CLAUDE.md with versioned tool definitions",
+  },
+];
+
+const LAYER_DECISION = [
+  { layer: "In-context only",        use: "Single-session tasks < 30 min with small tool outputs", avoid: "Long-running agents, multi-session workflows, large document processing" },
+  { layer: "Episodic memory",        use: "Agents that need to recall specific past events or actions across restarts", avoid: "High-frequency writes — cost and latency add up; use for checkpointing, not logging" },
+  { layer: "Semantic memory",        use: "User preference adaptation, long-term knowledge retrieval, personalisation", avoid: "Time-sensitive data; use TTL or avoid for real-time facts" },
+  { layer: "Skill injection (tools)", use: "Always — define tool schemas explicitly. Tool count should be ≤ 7 per agent", avoid: "15+ tools in one agent — hallucinated tool names become frequent above this threshold" },
+  { layer: "Context file (CLAUDE.md)", use: "Persistent agent personality, values, and architectural decisions the agent reads at startup", avoid: "Replacing episodic memory — context files are static per session, not updated mid-run" },
+  { layer: "Input/output hooks",     use: "Any agent touching external data sources or producing regulated output (PII, compliance)", avoid: "Blocking the inference path with heavy LLM validation — use async validation where possible" },
+];
+
+function AgentContextArchModule({ onNavigate }) {
+  const [tab, setTab] = useState("config");
+  const [memory, setMemory] = useState("incontext");
+  const [skills, setSkills] = useState("tools");
+  const [delegation, setDelegation] = useState("none");
+  const [hooks, setHooks] = useState("none");
+  const [simulated, setSimulated] = useState(false);
+
+  const cfg = { memory, skills, delegation, hooks };
+  const triggered = CONTEXT_FAILURE_MODES.filter(f => f.trigger(cfg));
+
+  const costScore = (memory === "semantic" ? 2 : memory === "episodic" ? 1 : 0) +
+    (skills === "both" ? 1 : 0) + (delegation === "deep" ? 2 : delegation === "shallow" ? 1 : 0) +
+    (hooks === "both" ? 1 : 0);
+
+  const costLabel = costScore <= 1 ? "Low" : costScore <= 3 ? "Moderate" : "High";
+  const costColor = costScore <= 1 ? "#22c55e" : costScore <= 3 ? "#f59e0b" : "#ef4444";
+
+  const tabs = [
+    { id: "config",  label: "Configure Layers" },
+    { id: "failures",label: "Failure Modes" },
+    { id: "when",    label: "When to Use Each" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      {/* Beat 1 */}
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "2px solid rgba(245,158,11,0.45)" }}>
+        <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">What you're building intuition for</div>
+        <p className="text-sm text-zinc-300 leading-relaxed">Every agent has a context architecture — the set of decisions about where state lives, what the agent knows at startup, how skills are injected, and where guardrails run. Most agent failures aren't model failures: they're architecture failures. The agent ran out of context window, hit a tool that changed, received an injected instruction from a retrieved document, or got into a delegation deadlock. This module makes context architecture choices concrete.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Configure memory type, skill injection, delegation depth, and hooks — then run the simulation to see which failure modes your architecture triggers and what the production fix is.</p>
+      </div>
+
+      <div className="flex gap-1 flex-wrap">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${tab === t.id ? "bg-amber-600/20 text-amber-300 border border-amber-700/50" : "text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-700"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "config" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Memory type */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Memory type</p>
+              {[["incontext","In-context only","No external store — all in the context window"],["episodic","Episodic (Redis/Postgres)","Stores and retrieves specific past events"],["semantic","Semantic (vector store)","Retrieves similar past knowledge by embedding"],["all","All three","Full memory stack — short + long + semantic"]].map(([v,l,sub]) => (
+                <button key={v} onClick={() => { setMemory(v); setSimulated(false); }}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all"
+                  style={memory === v ? { background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.4)" } : { background: "rgba(39,39,42,0.7)", border: "1px solid rgba(63,63,70,0.5)" }}>
+                  <p className={`font-semibold ${memory === v ? "text-amber-300" : "text-zinc-300"}`}>{l}</p>
+                  <p className="text-zinc-500 text-[10px] mt-0.5">{sub}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Right column config */}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Skill injection</p>
+                {[["tools","Tool schemas only"],["claudemd","Context file (CLAUDE.md)"],["both","Both"]].map(([v,l]) => (
+                  <button key={v} onClick={() => { setSkills(v); setSimulated(false); }}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs transition-all"
+                    style={skills === v ? { background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)", color: "#a5b4fc" } : { background: "rgba(39,39,42,0.7)", border: "1px solid rgba(63,63,70,0.5)", color: "#a1a1aa" }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Delegation depth</p>
+                {[["none","Single agent"],["shallow","2 levels (orchestrator + workers)"],["deep","3+ levels deep"]].map(([v,l]) => (
+                  <button key={v} onClick={() => { setDelegation(v); setSimulated(false); }}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs transition-all"
+                    style={delegation === v ? { background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.4)", color: "#c4b5fd" } : { background: "rgba(39,39,42,0.7)", border: "1px solid rgba(63,63,70,0.5)", color: "#a1a1aa" }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Guardrail hooks</p>
+                {[["none","No hooks"],["input","Input validation only"],["output","Output validation only"],["both","Input + output hooks"]].map(([v,l]) => (
+                  <button key={v} onClick={() => { setHooks(v); setSimulated(false); }}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs transition-all"
+                    style={hooks === v ? { background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.4)", color: "#67e8f9" } : { background: "rgba(39,39,42,0.7)", border: "1px solid rgba(63,63,70,0.5)", color: "#a1a1aa" }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button onClick={() => setSimulated(true)}
+            style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.85) 0%, rgba(234,88,12,0.9) 100%)", boxShadow: "0 4px 16px rgba(245,158,11,0.3)" }}
+            className="w-full py-3.5 text-white font-bold rounded-xl text-sm hover:brightness-110 transition-all">
+            Run Architecture Simulation
+          </button>
+
+          {simulated && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl p-3 text-center" style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)" }}>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Architecture cost</p>
+                  <p className="text-xl font-black" style={{ color: costColor }}>{costLabel}</p>
+                  <p className="text-[10px] text-zinc-500 mt-0.5">complexity + latency</p>
+                </div>
+                <div className="rounded-xl p-3 text-center" style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)" }}>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Failure risks</p>
+                  <p className="text-xl font-black" style={{ color: triggered.length === 0 ? "#22c55e" : "#ef4444" }}>{triggered.length}</p>
+                  <p className="text-[10px] text-zinc-500 mt-0.5">{triggered.length === 0 ? "none detected" : `risk${triggered.length > 1 ? "s" : ""} detected`}</p>
+                </div>
+              </div>
+              {triggered.length === 0 ? (
+                <div className="rounded-xl p-4" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                  <p className="text-sm text-emerald-300 font-semibold">No failure patterns triggered</p>
+                  <p className="text-xs text-zinc-400 mt-1">This configuration avoids the common agent context architecture mistakes. The memory stack and hooks are appropriate for the delegation depth.</p>
+                </div>
+              ) : triggered.map(f => (
+                <div key={f.id} className="rounded-xl p-4 space-y-3" style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                  <p className="text-sm font-bold text-red-400">⚠ {f.title}</p>
+                  <p className="text-xs text-zinc-300 leading-relaxed">{f.why}</p>
+                  <div className="rounded-lg p-3" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                    <p className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider mb-1">Fix</p>
+                    <p className="text-xs text-zinc-300">{f.fix}</p>
+                  </div>
+                  <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800">
+                    <span className="text-zinc-600 text-xs shrink-0 mt-0.5">⚙</span>
+                    <p className="text-xs text-zinc-500"><span className="text-zinc-400 font-semibold">In production: </span>{f.productionNote}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "failures" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Four common agent context architecture failure patterns. Try the configuration that triggers each one.</p>
+          {CONTEXT_FAILURE_MODES.map(f => (
+            <div key={f.id} className="rounded-xl p-4 space-y-2" style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)", borderLeft: "3px solid #ef4444" }}>
+              <p className="text-sm font-bold text-zinc-100">{f.title}</p>
+              <p className="text-xs text-zinc-400 leading-relaxed">{f.why}</p>
+              <div className="rounded-lg p-2.5" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
+                <p className="text-xs text-emerald-300 leading-relaxed">{f.fix}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "when" && (
+        <div className="space-y-2">
+          <p className="text-xs text-zinc-500">Decision table: when each context architecture layer is the right choice.</p>
+          {LAYER_DECISION.map((row, i) => (
+            <div key={i} className="rounded-xl p-3.5 space-y-2" style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)" }}>
+              <p className="text-xs font-bold text-zinc-200">{row.layer}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div><span className="text-emerald-400 font-semibold">Use when: </span><span className="text-zinc-400">{row.use}</span></div>
+                <div><span className="text-red-400 font-semibold">Avoid when: </span><span className="text-zinc-400">{row.avoid}</span></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Beat 2 */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In Configure Layers, try: memory=in-context only + delegation=none → no failures. Now switch to memory=semantic + hooks=none → prompt injection risk fires. Then switch to delegation=deep + memory=in-context → circular delegation risk fires. The failure modes map to specific configuration gaps, not to the agent's model quality. Interviewers ask about these by describing symptoms — state drift, wrong tool calls, injection — not by naming the architecture layer.</p>
+      </div>
+
+      {/* Beat 3 */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Context architecture is not a feature you add later — it's a production requirement you define at design time. The questions "where does state live?" and "what does the agent know at startup?" determine failure modes that cannot be fixed by changing the model or the prompt. Building the memory and hook architecture before shipping is always cheaper than debugging state drift or prompt injection in production.</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
 export {
-  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
 };

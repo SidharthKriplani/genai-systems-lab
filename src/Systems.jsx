@@ -7,7 +7,7 @@ import InferenceOptimizer from "./InferenceOptimizer";
 import MLCiCdLab from "./MLCiCd";
 
 import {
-  ABTestingForAI, ABTestingLab, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, DecodingStrategiesLab, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, DecodingStrategiesLab, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
 } from "./systems/modules";
 
 const SYSTEMS_MODULES = [
@@ -66,7 +66,8 @@ const SYSTEMS_MODULES = [
   { id: "graph-rag",       label: "Graph RAG",           tag: "RETRIEVAL", group: "BUILD", component: GraphRAGModule },
   { id: "langgraph",       label: "LangGraph + HITL",    tag: "AGENTS",    group: "BUILD", component: LangGraphModule },
   { id: "prompt-change-mgmt", label: "Prompt Change Management", tag: "LLMOPS", group: "OPS", component: PromptChangeMgmt },
-  { id: "ai-safety-eng", label: "AI Safety Engineering", tag: "SAFETY", group: "OPS", component: AISafetyEngineering },
+  { id: "ai-safety-eng",    label: "AI Safety Engineering",      tag: "SAFETY",  group: "OPS",   component: AISafetyEngineering   },
+  { id: "agent-ctx-arch", label: "Agent Context Architecture", tag: "AGENTS",  group: "BUILD", component: AgentContextArchModule },
 ];
 
 const SYSTEMS_GROUPS = [
@@ -126,6 +127,7 @@ const RELATED_GT = {
   "graph-rag":  [{ id: "graph-rag-multi-hop",     title: "Graph RAG: When Vector Search Isn't Enough" }],
   "langgraph":        [{ id: "langgraph-reducers-hitl",       title: "LangGraph Reducers and HITL: State Machines for Agentic Workflows" }],
   "query-refinement": [{ id: "two-stage-retrieval-reranker",  title: "Two-Stage Retrieval: Why a Reranker Exists" }],
+  "agent-ctx-arch":   [{ id: "agent-memory-architecture", title: "The Four Memory Problems Every Agent Has" }, { id: "claudemd-as-architecture", title: "The Agent Memory Layer" }],
 };
 
 function FidelityBadge({ variant = "simulated" }) {

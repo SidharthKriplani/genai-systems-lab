@@ -3136,4 +3136,56 @@ export const PREP_QUESTIONS = [
     readMore: { label: "Hybrid Search: BM25 + Vector →", tab: "groundtruth", postId: "hybrid-search" }
   },
 
+  {
+    id: "agentctx-1", topic: "agents", difficulty: "medium", gated: false, type: "mcq",
+    question: "An agent's answers become unreliable after 30 minutes of use. It correctly answers questions from the first 10 minutes but gives wrong answers referencing early-session facts. What is the root cause?",
+    options: [
+      "The model's quality degrades on longer inputs",
+      "In-context-only memory fills the context window — early session state is silently truncated",
+      "The agent is hitting rate limits on tool calls",
+      "The temperature setting is too high for long sessions"
+    ],
+    correct: 1,
+    explanation: "In-context-only memory has no external store — all state is in the context window. After 30+ minutes of tool-calling, accumulated results and reasoning fill the window. When the window overflows, earlier content is truncated silently — no error fires. The agent then gives confident but wrong answers based on what remains in context. The fix is episodic memory: write key findings to an external store (Redis, LangGraph checkpointer) after each step and retrieve them at session start.",
+    trap: "Saying 'use a model with a larger context window.' Larger context delays the problem but doesn't solve it — eventually any in-context-only approach overflows on long tasks. The architectural fix is external memory, not larger context.",
+    readMore: { label: "Agent Memory Architecture →", tab: "groundtruth", postId: "agent-memory-architecture" }
+  },
+
+  {
+    id: "agentctx-2", topic: "agents", difficulty: "hard", gated: true, type: "text",
+    question: "Design the context architecture for a legal research agent that needs: (1) access to a persistent document corpus, (2) memory of specific cases worked on across sessions, (3) adaptation to a lawyer's research style over time. What layers do you use for each requirement and why?",
+    options: [],
+    correct: 0,
+    keywords: ["semantic memory", "episodic memory", "in-context", "vector store", "skill injection", "persistent memory", "session memory"],
+    explanation: "Each requirement maps to a different memory layer. (1) Persistent document corpus: this is NOT agent memory — it's a RAG retrieval system. Documents live in a vector store (Qdrant/Weaviate), retrieved at query time by semantic similarity. The agent reads documents via tool calls, not from memory. (2) Cross-session case memory: episodic memory. Each session's key facts (case names, findings, citations) are written to Postgres or Redis after the session. Retrieved at session start: 'What do I know about this case from prior sessions?'. (3) Research style adaptation: semantic memory. User preferences (preferred citation format, summary depth, jurisdiction focus) are stored as embeddings in a vector store, retrieved by similarity at session start. This creates personalisation that improves over time. Hooks: input validation to catch prompt injection via retrieved documents (never let document content override instructions), output validation to check citation format compliance.",
+    trap: "Putting all three into the context window at session start. This conflates retrieval (on-demand, fresh) with memory (persistent, updated). Stuffing all prior cases into context is expensive, hits window limits, and can't scale past 10-20 sessions.",
+    readMore: { label: "Agent Memory Architecture →", tab: "groundtruth", postId: "agent-memory-architecture" }
+  },
+
+  {
+    id: "agentctx-3", topic: "agents", difficulty: "medium", gated: false, type: "mcq",
+    question: "Which agent architecture layer specifically prevents an agent from following injected instructions embedded in retrieved documents or memory entries?",
+    options: [
+      "Episodic memory with TTL",
+      "Input validation hook that marks retrieved content as untrusted before it enters the context",
+      "A larger context window to dilute injected content",
+      "Prompt caching of the system prompt"
+    ],
+    correct: 1,
+    explanation: "Prompt injection via retrieved content (indirect injection) works by embedding instruction-like text in documents or memory entries that the agent retrieves. When retrieved, this content enters the context and can override the system prompt if the agent treats all context as trusted. An input validation hook that marks retrieved content as <untrusted> or wraps it in a designated context block prevents the model from treating it as instructions. The model then processes it as data to summarise rather than commands to follow.",
+    trap: "Saying 'use a larger context window.' Dilution doesn't prevent injection — the injected instruction still gets processed. The fix is structural: the architecture must distinguish between trusted instructions and untrusted external data.",
+    readMore: { label: "Agent Memory Architecture →", tab: "groundtruth", postId: "agent-memory-architecture" }
+  },
+
+  {
+    id: "agentctx-4", topic: "agents", difficulty: "hard", gated: true, type: "text",
+    question: "A CLAUDE.md-style persistent context file is injected at every agent session start. After a tool API update, the agent starts calling deprecated endpoints confidently. What architectural layer is missing, and how do you fix it?",
+    options: [],
+    correct: 0,
+    keywords: ["startup hook", "version check", "skill injection", "tool schema", "validation", "context file"],
+    explanation: "The missing layer is a startup validation hook. CLAUDE.md-style context files describe the agent's tools, persona, and architectural decisions — but they are static snapshots that can drift from the live tool schemas. The fix: a __start__ node in the agent graph (LangGraph) or a startup lifecycle hook that (1) reads the current tool schema versions from the registry, (2) compares against the versions referenced in the context file, (3) raises a warning or halts if there is a mismatch before any tool calls fire. The agent should not proceed with stale skill injection. This pattern applies to any capability described in a context file: tool schemas, API endpoints, configuration flags, and permission levels all need version-aware validation at startup.",
+    trap: "Saying 'update the CLAUDE.md file more frequently.' Frequency doesn't solve the detection problem — the agent will still run with a stale context file in the window between updates. A startup validation hook that checks at runtime is the correct fix.",
+    readMore: { label: "The Agent Memory Layer →", tab: "groundtruth", postId: "claudemd-as-architecture" }
+  },
+
 ];
