@@ -290,8 +290,9 @@ For full audit findings see AUDITS.md.
 
 ## Session build log
 
-**Sprint 47 (June 2026) — cross-lab retention features:**
-- 91-day heatmap (was 28-day) in ReturningHomeView. GT bookmarks: `gsl-bookmarks` localStorage, bookmark icon on every post card, "🔖 Saved" filter chip, toggleBookmark(). PrepLab spaced repetition: `gsl-preplab-spaced` key tracks wrong-answer timestamps + wrongCount, SRS intervals (24h/3d/7d), getDueQuestions() surfaces due questions, "Review Due" sidebar mode auto-starts ExamMode with due questions. Brace diff: 0. Commit `97c2057`.
+**Sprint 47 (June 2026) — cross-lab retention + adversarial scenarios:**
+- 91-day heatmap, GT bookmarks (`gsl-bookmarks`), PrepLab spaced repetition (`gsl-preplab-spaced`, Review Due mode). Commit `97c2057`.
+- Sparse heatmap guard: <7 active days shows "Day N — keep going" message instead of empty grid. 6 adversarial PrepLab questions (adversarial-1 through adversarial-6): RAG vs context window, vector DB vs SQL, agent vs webhook, keyword rules vs vector routing, fine-tune vs system prompt, rules vs RAG for compliance. Brace diff: 0. Commit `2bcbcec`. Scale: **319 PrepLab questions**.
 
 **Sprint 46 (June 2026) — PrepLab content + polish + failure mode completeness:**
 - 6 Quantiphi Defense Pack questions added (quantiphi-1 through quantiphi-6). Trap field quality pass: 10 traps rewritten to overclaim→honest-reframe format. Commit `bff96ac`. Scale: **313 PrepLab questions**.

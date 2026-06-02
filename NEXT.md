@@ -70,8 +70,8 @@ Sprint 46 closed: 313 PrepLab questions, failure mode audit complete, GT links o
 1. ~~**Bookmarks**~~ — DONE sprint 47 (`97c2057`). `gsl-bookmarks`, bookmark icon on GT cards, 🔖 Saved filter.
 2. ~~**91-day heatmap**~~ — DONE sprint 47 (`97c2057`). Upgraded from 28→91 cells.
 3. ~~**Spaced repetition**~~ — DONE sprint 47 (`97c2057`). `gsl-preplab-spaced`, SRS intervals, Review Due mode in PrepLab sidebar.
-4. **Sparse heatmap guard** `XS` — hide 91-day grid when < 7 active days, show day-count message. Home.jsx one-liner.
-5. **"Do we even need it?" adversarial scenarios** `M` — 6–8 adversarial judgment questions testing when NOT to use AI. See IDEAS.md.
+4. ~~**Sparse heatmap guard**~~ — DONE sprint 47 (`2bcbcec`).
+5. ~~**"Do we even need it?" adversarial scenarios**~~ — DONE sprint 47 (`2bcbcec`). 6 questions (adversarial-1 through -6): RAG vs context window, vector DB vs SQL, agent vs webhook, rules vs ML routing, fine-tune vs prompt, rules vs RAG for compliance.
 6. **Timed exam lock (Combinator)** `S` — 30/45/60 min mode, answers locked until timer ends. See IDEAS.md.
 7. **Staff Layer** `M` — 3-tier PrepLab reveal: answer → trap → staff framing. Premium gated. See IDEAS.md.
 8. **Spot the Flaw** `M` — adversarial format on existing failure modes. See IDEAS.md.
