@@ -586,6 +586,12 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
             </div>
           </div>
         )}
+        {q.trap && (
+          <div className="rounded-lg border-l-4 px-4 py-3 space-y-1.5" style={{ background: "rgba(120,53,15,0.22)", borderColor: "#b45309" }}>
+            <p className="text-[10px] font-mono text-amber-500 uppercase tracking-widest">Most candidates say this — where they lose the room</p>
+            <p className="text-sm text-amber-200 leading-relaxed">{q.trap}</p>
+          </div>
+        )}
         <div className="border-t border-zinc-800 pt-3">
           <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-2">Model answer</p>
           <p className="text-[13px] text-zinc-300 leading-relaxed">{q.explanation}</p>
@@ -593,7 +599,6 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
         {q.source && (
           <p className="text-[10px] text-zinc-500 font-mono">Source: {q.source}</p>
         )}
-        {q.trap && <CommonTrapCallout trap={q.trap} />}
         {q.readMore && (
           <button
             onClick={() => {
@@ -661,13 +666,18 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
           }
         </div>
       )}
+      {q.trap && (
+        <div className="rounded-lg border-l-4 px-4 py-3 space-y-1.5" style={{ background: "rgba(120,53,15,0.22)", borderColor: "#b45309" }}>
+          <p className="text-[10px] font-mono text-amber-500 uppercase tracking-widest">Most candidates say this — where they lose the room</p>
+          <p className="text-sm text-amber-200 leading-relaxed">{q.trap}</p>
+        </div>
+      )}
       <div className="border-t border-zinc-800 pt-3">
         <p className="text-[13px] text-zinc-300 leading-relaxed">{q.explanation}</p>
       </div>
       {q.source && (
         <p className="text-[10px] text-zinc-500 font-mono">Source: {q.source}</p>
       )}
-      {q.trap && <CommonTrapCallout trap={q.trap} />}
       {q.readMore && (
         <button
           onClick={() => {
@@ -789,10 +799,15 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
   const [showGate, setShowGate] = useState(false);
   const [showGateResults, setShowGateResults] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [attemptTexts, setAttemptTexts] = useState({});
+  const [questionTimes, setQuestionTimes] = useState({});
   const timerRef = useRef(null);
+  const questionStartTime = useRef(Date.now());
   const DM = { 15: 20, 30: 35, 60: 55 };
 
   function handleNext() {
+    setQuestionTimes(t => ({ ...t, [questions[current].id]: Date.now() - questionStartTime.current }));
+    questionStartTime.current = Date.now();
     if (current + 1 >= FREE_QUESTION_LIMIT && !isAccessGranted()) {
       setShowGate(true);
       return;
@@ -804,6 +819,7 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
     const qs = drawQuestions(DM[cfg.duration] || 20, cfg.focus, cfg.difficulty);
     setQuestions(qs); setConfig(cfg); setTimeLeft(cfg.duration * 60);
     setAnswers({}); setCurrent(0); setFinished(false);
+    setAttemptTexts({}); setQuestionTimes({}); questionStartTime.current = Date.now();
   }
 
   useEffect(() => {
@@ -1021,6 +1037,34 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
             </div>
           </div>
 
+          {/* Hardest questions — behavioral signal from time-on-task */}
+          {(() => {
+            const timed = questions.filter(q => questionTimes[q.id] > 0);
+            if (timed.length < 2) return null;
+            const hardest = [...timed].sort((a, b) => (questionTimes[b.id] || 0) - (questionTimes[a.id] || 0)).slice(0, 3);
+            return (
+              <div style={{ background: "var(--surface)", border: "1px solid rgba(180,83,9,0.3)", borderTop: "2px solid rgba(180,83,9,0.6)" }} className="rounded-xl p-5 sm:p-6 space-y-3">
+                <div>
+                  <h3 className="font-semibold text-zinc-200 text-sm mb-0.5">You slowed down here</h3>
+                  <p className="text-[11px] text-zinc-500 font-mono">Questions where you spent the most time — your real gaps, not just what you got wrong</p>
+                </div>
+                {hardest.map(q => (
+                  <div key={q.id} style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)" }} className="rounded-lg p-3 space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <TopicChip topic={q.topic} />
+                      <p className="text-zinc-300 text-xs flex-1 leading-relaxed">{q.question}</p>
+                    </div>
+                    {q.trap && (
+                      <p className="text-[11px] text-amber-500/80 font-mono leading-relaxed pl-1">
+                        trap: {q.trap.length > 110 ? q.trap.slice(0, 110) + "…" : q.trap}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
           {/* Per-topic breakdown — sorted worst-first */}
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)" }} className="rounded-xl p-5 sm:p-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -1193,6 +1237,19 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
       </div>
       <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
         <QuestionCard q={q} />
+        {(q.type === "mcq" || q.type === "multi") && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-mono text-zinc-700 uppercase tracking-widest">Try your answer first — options below regardless</p>
+            <textarea
+              rows={3}
+              placeholder="Write 2–3 sentences before looking at the options. No pressure, no lock."
+              value={attemptTexts[q.id] || ""}
+              onChange={e => setAttemptTexts(a => ({ ...a, [q.id]: e.target.value }))}
+              className="w-full rounded-lg px-3 py-2 text-sm resize-none focus:outline-none"
+              style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.6)", color: "#d4d4d8" }}
+            />
+          </div>
+        )}
         {q.type === "mcq"
           ? <MCQOptions options={q.options} selected={answers[q.id]} onSelect={i => setAnswers(a => ({ ...a, [q.id]: i }))} />
           : q.type === "multi"
@@ -1204,7 +1261,7 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
             className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 disabled:opacity-30">← Previous</button>
           {current < questions.length - 1
             ? <button onClick={handleNext} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg">Next →</button>
-            : <button onClick={() => { clearInterval(timerRef.current); setFinished(true); }}
+            : <button onClick={() => { setQuestionTimes(t => ({ ...t, [questions[current].id]: Date.now() - questionStartTime.current })); clearInterval(timerRef.current); setFinished(true); }}
                 className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded-lg font-semibold">Finish Exam</button>
           }
         </div>
@@ -3299,7 +3356,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
     { id: "exam",        label: "Assess",             tag: "EXAM",      desc: "Test yourself cold. Leave knowing your gaps." },
     { id: "jdprep",      label: "Interview Strategy", tag: "STRATEGY",  desc: "JD → gap score → day-by-day plan." },
     { id: "companyprep", label: "Company Tracks",     tag: "ARCHETYPE", desc: "By company archetype" },
-    { id: "intexp",      label: "Interview Signal",  tag: "INTEL",     desc: "22 real loop patterns — what's actually tested." },
+    { id: "intexp",      label: "Interview Signal",  tag: "INTEL",     desc: "40 real loop patterns — what's actually tested, by company." },
   ];
 
   return (
