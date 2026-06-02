@@ -210,4 +210,59 @@ The single most important path. If this doesn't work cleanly, nothing else matte
 
 **Scope (draft):** Full product. All Labs, GT, PrepLab all modes. Focus: does the product feel worth paying for? Does the free-to-paid boundary (gated PrepLab questions, JD Prep) feel fair or frustrating?
 
+---
+
+## Launch Checklist (Community Beta)
+
+### Vercel environment variables
+Set all four in Vercel → Project Settings → Environment Variables:
+
+```
+VITE_POSTHOG_KEY   = phc_your_actual_key
+VITE_POSTHOG_HOST  = https://us.i.posthog.com
+VITE_FEEDBACK_URL  = https://forms.gle/your_form_id
+VITE_ADMIN_UNLOCK  = your_secret_preview_code
+```
+
+`VITE_ADMIN_UNLOCK` enables `?preview=CODE` to unlock all locked tabs. Use `?lock=1` to re-lock. All vars optional — app works without them (analytics silent, feedback shows fallback).
+
+### Analytics setup
+- [ ] Create PostHog project → copy Project API Key → add to Vercel env vars
+- [ ] Redeploy after adding vars
+- [ ] Visit app in incognito → confirm `home_viewed` appears in PostHog Live Events
+
+### Feedback form setup (Google Forms)
+Questions in order: (1) Background (Student/Analyst/Engineer/PM/Founder/Other), (2) Which module did you try?, (3) What was most useful?, (4) What was confusing?, (5) Would you share this with someone learning GenAI systems? Why/why not?, (6) Can we quote your feedback publicly? (Yes with name / Yes anonymously / No), (7) Email for follow-up (optional).
+
+- [ ] Create form → copy `/viewform` URL → add as `VITE_FEEDBACK_URL` in Vercel
+
+### Pre-launch QA (incognito window)
+- [ ] Hero CTA → RAG Lab routes correctly
+- [ ] Beta banner shows and dismissal persists on reload
+- [ ] Feedback button opens form
+- [ ] Mobile nav opens/closes; all tabs reachable
+- [ ] RAG Lab: configure scenario → Evaluate → metrics update
+- [ ] `?preview=YOUR_CODE` unlocks all locked tabs; `?lock=1` re-locks
+
+### Where to share (priority order)
+1. **Hacker News Show HN** — `Show HN: GenAI Systems Lab – interactive RAG/agent failure simulator, zero backend` (weekday 8–10am ET)
+2. **LinkedIn** — mention zero-login angle, screenshot of RAG Lab
+3. **r/MachineLearning** + **r/learnmachinelearning**
+4. **Twitter/X** — tag AI practitioners, #RAG #LLMOps #AIEngineering
+5. **Latent Space Discord** — `#show-and-tell`
+6. **AI Builders / Lenny's community** (if access)
+7. **Product Hunt** — use as launch moment once traction exists
+
+### 7-day feedback review
+- **Day 1–3:** Share everywhere. Don't read feedback yet.
+- **Day 4:** First pass — look for pattern words: "confusing", "unclear", "didn't understand"
+- **Day 5:** Triage — Bug / Clarity / Missing feature / Praise. Fix bugs immediately.
+- **Day 7:** Ship one clarity fix. Reply to anyone who left an email.
+- **Signal to watch for monetization readiness:** feedback pattern shifts from "confusing" → "missing X feature"
+
+### Red flags (PostHog week 1)
+- High `home_viewed`, very low `start_here_clicked` → hero copy not landing
+- High `module_opened` for one tab only → other tabs not discovered
+- Zero `evaluate_configuration_clicked` → RAG Lab being skipped
+
 *Fill in fully only after Batch 2 closes.*

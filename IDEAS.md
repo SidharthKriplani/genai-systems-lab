@@ -881,6 +881,22 @@ These ideas emerged from a multi-round ideation + devil's advocate session. Each
 
 ---
 
+---
+
+## Parked ideas (conditions for building named)
+
+**AI Systems Readiness Assessment + Certificate** — 20-question timed assessment across 5 skill dimensions. Score displayed as a client-side SVG certificate ("AI Systems Readiness" not "certified"). $29 one-time purchase. *Condition: 1,000+ MAU before building. At low WAU this is premature credentialing.*
+
+**Community features** (reactions beyond thumbs, topic threads, curated answer sharing) — *Condition: 5,000+ MAU + 10 verified organic testimonials + word-of-mouth as primary discovery channel. At lower scale, community maintenance overhead exceeds value.*
+
+**Deep-Link Routing (React Router)** — *Condition: user demand signal. No evidence anyone needs direct URL links to specific modules yet.*
+
+**Team / Org pricing** — *Condition: Stripe live + 50+ paid individual users first.*
+
+**Interview Mode** (live mock session with feedback) — *Condition: LLM backend available. Static version is theater.*
+
+---
+
 ## How to Use This File
 
 When starting a new build session:

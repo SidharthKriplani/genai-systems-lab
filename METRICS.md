@@ -167,3 +167,36 @@ These are high-value signals not yet tracked:
 | — | — | — |
 
 *Update this table when a metric directly changes a product decision.*
+
+---
+
+## PostHog Verification Checklist
+
+Run before every major build sprint. Owner: Avinash — verify via Vercel + PostHog dashboard.
+
+### Setup check
+- [ ] `VITE_POSTHOG_KEY` set in Vercel → Project Settings → Environment Variables
+- [ ] `VITE_POSTHOG_HOST` set to `https://us.i.posthog.com`
+- [ ] PostHog Live Events shows incoming events in past 24h
+- [ ] `app: "genai-systems-lab"` tag present on all events
+
+### WAU check (last 30 days)
+- PostHog → Insights → New insight → count of `home_viewed` events grouped by week
+- Record: WAU trend (growing / flat / declining?)
+- **Gate:** minimum 10 WAU before new content sprint is justified
+
+### Module visit breakdown
+- PostHog → Insights → `module_opened` events, segment by `module_id`
+- Record: top 5 modules by count over last 30 days
+
+### RAG Lab completion rate
+- `challenge_completed` count ÷ `rag_lab_opened` count × 100
+- **Target:** >20% indicates real engagement
+
+### PrepLab session depth
+- Average questions answered per session from `gsl-preplab-history` localStorage
+- **Healthy:** 3–5q per session. Red flag: <1q per session = leaky funnel
+
+### Decision gate
+- WAU <10 or completion <15% → next sprint = **distribution focus**, not content
+- WAU >10 AND completion >20% → proceed with content sprint

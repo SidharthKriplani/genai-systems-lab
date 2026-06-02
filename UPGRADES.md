@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: June 2026 (sprint 44 — PrepLab surgical modifications logged)*
+*Last updated: June 2026 (sprint 45 — PrepLab surgical mods marked Done; all completed entries pruned to summary block below)*
 
 ---
 
@@ -21,7 +21,7 @@ Outcome of a full ideation + devil's advocate cycle. Everything that couldn't su
 
 ---
 
-### 1. Swap the reveal order — trap before answer
+### ~~1. Swap the reveal order — trap before answer~~ ✅ Done — sprint 45 (`e1b7b38`)
 
 **Component:** `src/PrepLab.jsx` — `RevealCard` component, Exam mode + Trainer mode answer reveal
 
@@ -37,7 +37,7 @@ Outcome of a full ideation + devil's advocate cycle. Everything that couldn't su
 
 **Priority:** High — single highest-impact change for zero build cost
 
-**Status:** Pending
+**Status:** ✅ Done — sprint 45 (`e1b7b38`)
 
 ---
 
@@ -57,7 +57,7 @@ Outcome of a full ideation + devil's advocate cycle. Everything that couldn't su
 
 **Priority:** Medium
 
-**Status:** Pending
+**Status:** ✅ Done — sprint 45 (`e1b7b38`)
 
 ---
 
@@ -73,15 +73,55 @@ Outcome of a full ideation + devil's advocate cycle. Everything that couldn't su
 
 **Effort:** S-M — `questionStartTime` ref in ExamMode, delta computed on option select, stored per question in session state, surfaced in results screen
 
-**Dependencies:** Free-text field (upgrade 2) should ship first — time-on-task signal is richer if it includes textarea dwell, not just option-selection time
+**Dependencies:** Free-text field (upgrade 2) shipped first ✅
 
 **Priority:** Medium
 
-**Status:** Pending — build after upgrade 2
+**Status:** ✅ Done — sprint 45 (`e1b7b38`)
 
 ---
 
-## ~~Global — Elevation Token System (PAL-parity)~~ DONE — sprint 24
+---
+
+## Completed upgrades — summary
+
+These are done. Commit hashes and sprint detail in LINEAGE.md.
+
+| Upgrade | Sprint | Commit |
+|---|---|---|
+| PrepLab 3 surgical mods (trap-first reveal, free-text invite, behavioral debrief) | 45 | `e1b7b38` |
+| Global elevation token system (CSS vars: --bg, --surface, --surface-2, --border) | 24 | `08f4512`, `dc26961`, `4192c3a` |
+| PrepLab mode consolidation (6→4 modes, Interview Strategy 4-step Brief) | A–E | `a5af787` |
+| Home.jsx hero copy rewrite (market signal chip, outcome-first door cards) | 32 | `d8c2d11` |
+| RAG Lab done card prominence (forward pointer above fold) | 30 | `ada9b79` |
+| RAG Lab TYU CTA crash fix | 11 | `327a745` |
+| GT quiz depth (generateQuiz expanded to 5-7 questions) | batch-I | `2fe2fe0` |
+| PrepLab difficulty levels (easy/medium/hard, 307 questions classified) | 31B/D | `73924a0` |
+| PrepLab multi-select MCQ (type: "multi", checkboxes, scoring) | batch-E | `9c7ba18` |
+| Home.jsx welcome modal (goal-based, 3 options, localStorage flag) | ~30 | in App.jsx |
+| Access code gate (localStorage, DAI2026 community code, gated: true) | ~31 | `accessCode.js` |
+| PrepLab Common Trap layer (trap field + amber callout in RevealCard) | 31C | `38d5330` |
+| GT state-aware reading mode (Revise / Learn / What's Next lenses) | 37c | `a37d99c` |
+| Home.jsx streak + activity heatmap (ReturningHomeView, 28-cell grid) | batch-C | `0d7371f` |
+| PrepLab keyboard shortcuts (1/2/3/4 + Enter in Exam + Trainer) | 30 | `ada9b79` |
+| Labs "Maps to Production" callout (RAG sprint 36, Agent+LLM batch-4) | 36/batch-4 | `2a8c0bc`, `b253405` |
+| Labs "Your Interview Story" block (RAG sprint 37, Agent batch-2/3) | 37/batch-2 | `97360b7`, `2c9e282` |
+| FeedbackBar PostHog component (GT + PrepLab + Systems) | batch-D | `0e5b3ab` |
+| Shared UI components (shared.jsx: CommonTrapCallout, ForwardPointerCard, WhatNextCard, ProductionNoteChip, FeedbackBar) | batch-B | `2c57ff2` |
+| PrepLab questions extraction to src/data/preplabQuestions.js | 31B | `73924a0` |
+| src/config/ extraction (nav.js done, gating.js done) | batch-A / 31D | `992cfc4` |
+| Concepts full module text pass (27 modules, all 3-beat complete) | 14–41 | multiple |
+| Concepts ↔ Labs bidirectional connection (gym chips in lab sidebars) | 17 | `bf7cc6a` |
+| Labs guiding text pass (all 4 original labs, 3-beat standard) | 18 | multiple |
+| Home.jsx social proof (placeholder testimonials removed, Tally chip added) | 36 | `2a8c0bc` |
+| GT thin post expansion (dpo-in-practice 32 blocks, llm-observability 28, instruction-tuning-datasets 29) | ~37 | confirmed done |
+| Home.jsx simplification (cut: concept graph, journey strip, module grid) | ~32 | confirmed done |
+| PrepLab trap field quality pass (overclaim→honest-reframe) | — | **PENDING** |
+| GT Series + Tags Architecture (SERIES_META UI done; post taxonomy pending) | — | **PENDING** |
+
+---
+
+## ~~Global — Elevation Token System (PAL-parity)~~ → see completed table above
 
 **Component:** `src/index.css`, `src/App.jsx`, `src/Home.jsx`, `src/Systems.jsx`, `src/Agents.jsx`, `src/PrepLab.jsx`, `src/Concepts.jsx`
 
