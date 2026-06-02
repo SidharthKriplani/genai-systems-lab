@@ -411,6 +411,54 @@ function SpeechTextArea({ value, onChange, rows = 5, placeholder = "Type your an
   );
 }
 
+// Multi-select MCQ — selected is a sorted comma-joined string e.g. "0,2"
+// q.correct for multi is an array e.g. [0,2]; correctStr = q.correct.slice().sort().join(",")
+function MCQMultiOptions({ options, selected, onSelect }) {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const selectedSet = new Set((selected || "").split(",").filter(s => s !== "").map(Number));
+
+  function toggle(i) {
+    const next = new Set(selectedSet);
+    if (next.has(i)) next.delete(i); else next.add(i);
+    onSelect([...next].sort().join(","));
+  }
+
+  return (
+    <div className="space-y-2.5">
+      <p className="text-[10px] font-mono text-amber-500 uppercase tracking-widest">Select all that apply</p>
+      {options.map((opt, i) => {
+        const isSelected = selectedSet.has(i);
+        const isHovered = hoveredIdx === i && !isSelected;
+        return (
+          <button key={i} onClick={() => toggle(i)}
+            onMouseEnter={() => setHoveredIdx(i)} onMouseLeave={() => setHoveredIdx(null)}
+            style={isSelected ? {
+              background: "linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0.08) 100%)",
+              border: "1px solid rgba(139,92,246,0.6)",
+            } : isHovered ? {
+              background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.4)",
+            } : {
+              background: "linear-gradient(160deg, rgba(39,39,42,0.5) 0%, rgba(15,15,17,0.8) 100%)",
+              border: "1px solid rgba(63,63,70,0.7)",
+            }}
+            className={`w-full text-left px-4 py-3.5 rounded-xl text-sm transition-all flex items-start gap-3 ${isSelected ? "text-violet-100" : isHovered ? "text-white" : "text-zinc-300"}`}>
+            <span style={isSelected ? {
+              background: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)", color: "#fff",
+            } : isHovered ? {
+              background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.4)", color: "#c4b5fd",
+            } : {
+              background: "rgba(39,39,42,0.9)", border: "1px solid rgba(63,63,70,0.9)", color: "#a1a1aa",
+            }} className="flex-shrink-0 w-6 h-6 rounded text-xs font-bold flex items-center justify-center mt-0.5">
+              {isSelected ? "✓" : String.fromCharCode(65 + i)}
+            </span>
+            <span className="flex-1 leading-relaxed">{opt}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function MCQOptions({ options, selected, onSelect }) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
   return (
@@ -486,7 +534,7 @@ function QuestionCard({ q, gaps = [] }) {
         <span className={`text-[10px] font-mono font-black uppercase tracking-widest px-2.5 py-0.5 rounded ${diffChip}`}>
           {q.difficulty || "medium"}
         </span>
-        <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">{q.type === "mcq" ? "multiple choice" : "open answer"}</span>
+        <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">{q.type === "mcq" ? "multiple choice" : q.type === "multi" ? "select all that apply" : "open answer"}</span>
         {gaps.includes(q.topic) && (
           <span className="text-xs bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full">Gap</span>
         )}
@@ -580,10 +628,15 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
           {isCorrect ? "✓ Correct" : "✗ Incorrect"}
         </span>
       </div>
-      {!isCorrect && q.type === "mcq" && (
+      {!isCorrect && (q.type === "mcq" || q.type === "multi") && (
         <div style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }} className="rounded-lg px-4 py-2.5">
-          <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-1">Correct answer</p>
-          <p className="text-sm text-emerald-300 font-medium">{q.options[q.correct]}</p>
+          <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-1">Correct answer{q.type === "multi" ? "s" : ""}</p>
+          {q.type === "multi"
+            ? <div className="space-y-1">{(Array.isArray(q.correct) ? q.correct : [q.correct]).map(i => (
+                <p key={i} className="text-sm text-emerald-300 font-medium">✓ {q.options[i]}</p>
+              ))}</div>
+            : <p className="text-sm text-emerald-300 font-medium">{q.options[q.correct]}</p>
+          }
         </div>
       )}
       <div className="border-t border-zinc-800 pt-3">
@@ -747,10 +800,20 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
     if (!config || finished) return;
     function handleKey(e) {
       const q = questions[current];
-      if (!q || q.type !== "mcq") return;
+      if (!q || (q.type !== "mcq" && q.type !== "multi")) return;
       if (e.key >= "1" && e.key <= "4") {
         const idx = parseInt(e.key) - 1;
-        if (idx < q.options.length) setAnswers(a => ({ ...a, [q.id]: idx }));
+        if (idx < q.options.length) {
+          if (q.type === "multi") {
+            setAnswers(a => {
+              const cur = new Set((a[q.id] || "").split(",").filter(s => s !== "").map(Number));
+              if (cur.has(idx)) cur.delete(idx); else cur.add(idx);
+              return { ...a, [q.id]: [...cur].sort().join(",") };
+            });
+          } else {
+            setAnswers(a => ({ ...a, [q.id]: idx }));
+          }
+        }
       }
       if (e.key === "Enter" && answers[questions[current]?.id] !== undefined) {
         handleNext();
@@ -767,8 +830,9 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
       let tc = 0;
       for (const q of questions) {
         if (q.type === "mcq" && answers[q.id] === q.correct) tc++;
+      if (q.type === "multi" && answers[q.id] === (Array.isArray(q.correct) ? q.correct.slice().sort().join(",") : String(q.correct))) tc++;
       }
-      const mcqTotal = questions.filter(q => q.type === "mcq").length;
+      const mcqTotal = questions.filter(q => q.type === "mcq" || q.type === "multi").length;
       const pct = mcqTotal > 0 ? Math.round((tc / mcqTotal) * 100) : 0;
       const prev = JSON.parse(localStorage.getItem(EXAM_SESSIONS_KEY) || "[]");
       prev.push({ date: Date.now(), pct, tc, total: mcqTotal, count: questions.length });
@@ -793,10 +857,12 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
       }
       bt[q.topic].total++;
       const ans = answers[q.id];
-      const ok = ans === q.correct;
+      const ok = q.type === "multi"
+        ? ans === (Array.isArray(q.correct) ? q.correct.slice().sort().join(",") : String(q.correct))
+        : ans === q.correct;
       if (ok) { tc++; bt[q.topic].correct++; } else wrong.push(q);
     }
-    const mcqTotal = questions.filter(q => q.type === "mcq").length;
+    const mcqTotal = questions.filter(q => q.type === "mcq" || q.type === "multi").length;
     const gradedTotal = mcqTotal + Object.keys(textOverrides).length;
     const pct = gradedTotal > 0 ? Math.round((tc / gradedTotal) * 100) : 0;
     const ta = Object.entries(bt).map(([t, v]) => ({ topic: t, ...v, pct: v.total > 0 ? Math.round(v.correct / v.total * 100) : 0 }));
@@ -1107,6 +1173,8 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
         <QuestionCard q={q} />
         {q.type === "mcq"
           ? <MCQOptions options={q.options} selected={answers[q.id]} onSelect={i => setAnswers(a => ({ ...a, [q.id]: i }))} />
+          : q.type === "multi"
+          ? <MCQMultiOptions options={q.options} selected={answers[q.id] || ""} onSelect={s => setAnswers(a => ({ ...a, [q.id]: s }))} />
           : <SpeechTextArea value={answers[q.id] || ""} onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))} rows={6} />
         }
         <div className="flex justify-between items-center pt-2">
@@ -1196,8 +1264,14 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
 
   function submit() {
     if (q.type === "text") {
-      // Text questions: don't auto-grade — show self-assess UI, record after user decides
       setIsCorrect(false); setSubmitted(true);
+    } else if (q.type === "multi") {
+      const correctStr = Array.isArray(q.correct) ? q.correct.slice().sort().join(",") : String(q.correct);
+      const ok = answer === correctStr;
+      setIsCorrect(ok); setSubmitted(true);
+      if (!ok) setWeakTopics(wt => ({ ...wt, [q.topic]: (wt[q.topic] || 0) + 1 }));
+      setSessionAnswers(sa => [...sa, { q, correct: ok }]);
+      recordAnswer(q.id, ok);
     } else {
       const ok = parseInt(answer) === q.correct;
       setIsCorrect(ok); setSubmitted(true);
@@ -1451,6 +1525,8 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
               <>
                 {q.type === "mcq"
                   ? <MCQOptions options={q.options} selected={answer === "" ? undefined : parseInt(answer)} onSelect={i => setAnswer(String(i))} />
+                  : q.type === "multi"
+                  ? <MCQMultiOptions options={q.options} selected={answer} onSelect={s => setAnswer(s)} />
                   : <SpeechTextArea value={answer} onChange={setAnswer} />
                 }
                 <button onClick={submit} disabled={answer.toString().trim() === ""}
