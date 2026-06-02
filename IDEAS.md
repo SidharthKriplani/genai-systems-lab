@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: June 2026 (sprint 39 — batches 2–10) | Current scale: 56 Systems modules (in nav), 22 Explore, 16 Agent Lab, 20 Concepts, 287 PrepLab questions, 226 GT posts*
+*Last updated: June 2026 (sprint 41 — batches A–B) | Current scale: 57 Systems modules (in nav), 22 Explore, 16 Agent Lab, 27 Concepts (7 active gyms), 295 PrepLab questions, 226 GT posts, 5 labs*
 
 ---
 
@@ -69,7 +69,7 @@ Sprint items (in order of impact):
 
 ## 🔨 In Progress
 
-Nothing actively in progress. Last completed sprint: sprint 39 (batches 2–10): Maps to Production on Agent Lab + LLM Lab, EvalLoopModule Beat 2+3, ScalingLawsModule, semantic caching GT+PrepLab, dense/sparse retrieval PrepLab, LoRAModule, SequentialParallelModule, TrainingSignalModule. See CLAUDE.md session build log for full detail.
+Nothing actively in progress. Last completed sprint: sprint 41 (batches A–B): 7 new Concepts modules (LLMAsJudge, EvalDesign, AgentToolDesign, CostLatency, Observability, FewShot, ChainOfThought), 4 gyms activated (Evaluation, Production, Foundation Models, Prompt Engineering), Prompt Engineering Lab (5th BUILD lab, 6 scenarios, `src/PromptLab.jsx`). See CLAUDE.md session build log for full detail.
 
 ---
 
@@ -182,7 +182,7 @@ These are the highest-ROI moves identified in the first-ever MVP/Weight + IP/Moa
 - ~~**A/B Testing for AI Systems**~~ ✅ *built May 2026 — 5 strategies, why classic breaks, decision guide*
 - ~~**Query Refinement Lab**~~ ✅ *built May 2026 — 5 strategies, scenario lab, when-to-use guide*
 - ~~**Prompt Change Management**~~ ✅ *built May 2026 — version/score/rollback lab, CI/CD workflow, serving patterns*
-- **Agent Context Architecture** — Configure which layers your agent uses (persistent memory / skill injection / delegation / hooks), see cost/failure mode changes. *Pending — from ADK patterns cluster.*
+- ~~**Agent Context Architecture**~~ ✅ BUILT batch-G (`144618f`) — 3-tab interactive (Configure Layers, Failure Modes catalog, When to Use decision table). 57th Systems module + 4 PrepLab questions (agentctx-1/2/3/4).
 
 ### Datamart-backed realism — static corpus for RAG Lab + Eval Lab (new cluster — May 2026)
 
@@ -192,9 +192,9 @@ Scope boundary: RAG Lab and Eval Lab benefit from real data. Agent Lab and LLM L
 
 **Tier 1 items (build in order):**
 
-- **Static document corpus for RAG Lab** — JSON array of 20–30 doc objects (title, content, metadata, pre-computed similarity scores) across 2 domains (e-commerce product catalog, technical documentation). Render actual retrieved chunks per scenario config — user reads the garbage doc that caused noise injection, the truncated chunk that broke context, the irrelevant result that caused hallucination. Data fabrication is the constraint; rendering is straightforward React. `Effort: S-M`
+- ~~**Static document corpus for RAG Lab**~~ ✅ DONE sprint 38 (`9a985b5`) — `src/ragCorpus.js` created (149 lines): 24 real document objects across all 6 RAG Lab scenarios (3-4 docs per scenario). "Retrieved chunks" collapsible panel added in App.jsx showing actual retrieved text per scenario.
 
-- **Pre-computed similarity matrix** — For each RAG Lab scenario config, a set of `{chunk_id, similarity_score, content_preview}` records as static JSON. No live embedding calls. Consistent across sessions. Decoupled from corpus — same data supports multiple config comparison views. `Effort: S (once corpus exists)`
+- ~~**Pre-computed similarity matrix**~~ ✅ DONE sprint 38 — included in ragCorpus.js as similarity scores per doc object.
 
 - **Eval Lab query-answer-context triples** — 20 pre-built `{query, golden_answer, retrieved_contexts, judge_score}` triples. User sets judge parameters (temperature, strictness), watches which triples flip pass/fail. Makes calibration drift tangible on actual text pairs, not abstract score movements. `Effort: S-M`
 
@@ -562,28 +562,9 @@ A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL
 - **Jump back in precision** — surface the specific module name + "N days ago" timestamp. Currently shows tab-level only (e.g. "RAG Lab"). Requires storing last-opened module + timestamp in a separate key. *Pending.*
 - **PrepLab nudge in Today** — "Your weakest topic: X. Here are 3 questions." Pulls from WeaknessHeatmap data. Currently shows aggregate stats only. *Pending.*
 
-### Prompt Engineering Lab — new lab (May 2026)
+### Prompt Engineering Lab — new lab ✅ BUILT sprint 41 batch-B (`b93535e`)
 
-The clearest gap in the lab lineup. Every AI practitioner writes prompts. Prompt regressions are one of the most common and hardest-to-detect production failures (Aryan Sharma post — 23% quality drop undetected for 11 days). The "configure it, break it" mechanic maps perfectly: write a prompt, run it against test cases, introduce a change, observe the regression, diagnose the root cause.
-
-**Proposed scenarios (6–8):**
-- **Regression from prompt edit** — change one line of a system prompt, watch 3 test cases fail. Diagnose which edit caused which failure.
-- **System prompt injection via user input** — well-designed prompt overridden by adversarial user message. Diagnose the boundary failure.
-- **Few-shot degradation** — add a bad example to a few-shot prompt, watch output quality drop non-obviously. Diagnose example contamination.
-- **Structured output failure** — prompt that produces valid JSON 90% of the time. Find the edge cases that break schema compliance.
-- **Multi-turn drift** — system prompt designed for turn 1 degrades over a long conversation as context accumulates. Diagnose context pollution.
-- **Temperature miscalibration** — same prompt, wrong temperature for the task type. Diagnose determinism failure vs creative failure.
-- **Over-constrained prompt** — so many rules the model fails to complete the core task. Diagnose instruction conflict.
-- **Implicit persona bleed** — system prompt unintentionally establishes a persona that produces off-brand outputs under adversarial framing.
-
-**Nav entry:** Under LABS, between Agent Lab and Eval Lab.
-**Shell pattern:** Identical to RAG Lab — scenario list left, prompt config + test case output right, root cause + synthesis close below.
-**Concepts gym connection:** Prompt Engineering gym (coming soon) → this lab.
-**PrepLab coverage:** Add 6–8 questions per scenario after build.
-
-**Effort:** M (shell + 6 scenarios = ~1 full session if scenarios are well-specified before building)
-
-**Priority:** Tier 1 — highest-value new lab, clearest mechanic, broadest audience (engineers AND PMs)
+`src/PromptLab.jsx` — 6 scenarios: regression_edit (The 11-Day Quality Drop), user_injection (The Override), few_shot_contamination (The Bad Example), structured_output_failure (The Schema Drift), temperature_miscal (The Confident Hallucinator), over_constrained (The Instruction Conflict). Each has 3 configs, outcome cards, root cause + synthesis close, PrepLab forward pointer. Shell: same split-panel pattern as RAG Lab (mobile-responsive). 4 PrepLab questions (promptlab-1/2/3/4). Wired: lazy import in App.jsx, VALID_VIEWS, routing, nav.js BUILD group (count: 6). **Pending: promptlab-5 and promptlab-6 (one per remaining scenario).**
 
 ---
 
@@ -666,19 +647,19 @@ Both sibling products (ML Systems Lab and PAL) were fully read this session. The
 
 - **Fidelity badges on Lab modules** — ML Systems Lab ships `✓ Real execution` / `~ Simulated` labels on every module header. Builds user trust by being honest about what the simulator is doing vs what a real system would do. GenAI Lab modules currently present all outcomes as equivalent. Add: RAG Lab = `✓ Real scenario logic`, Agent Lab = `~ Simulated`, LLM Lab modules = `✓` where config drives real output, `~` where outcomes are pre-computed. Implementation: small label component in each lab header, 2 CSS classes. S effort. (Source: ml-systems-lab, May 2026)
 
-- **Share Session clipboard button in PrepLab** — one-click copy of score summary to clipboard: `GenAI Systems Lab PrepLab · 18/20 · 90% · Weak: evals → Strong: RAG`. ML Systems Lab ships this in exam debrief and trainer. Zero new infrastructure — reads from existing PrepLab session state. S effort. (Source: ml-systems-lab, May 2026)
+- ~~**Share Session clipboard button in PrepLab**~~ ✅ Done — sprint 37 (`97360b7`). `shareScore()` function in ExamMode, copies score %, strongest/weakest topic + link to clipboard.
 
-- **Keyboard shortcuts in PrepLab Exam/Trainer modes** — press 1/2/3/4 to select MCQ option, Enter to confirm. ML Systems Lab and PAL both ship this. Currently requires mouse click for every answer. S effort — one `useEffect` key listener. (Source: ml-systems-lab + PAL, May 2026)
+- ~~**Keyboard shortcuts in PrepLab Exam/Trainer modes**~~ ✅ Done — sprint 30 (`ada9b79`). 1/2/3/4 select MCQ option, Enter submits/advances.
 
-- **Streak + 4-week heatmap in returning user HomeTab view** — returning user HomeTab (sprint 16) has progress snapshot but no streak or activity heatmap. ML Systems Lab ships `msl_streak` / `msl_last_visit` (daily streak counter) + 7×13 GitHub-style activity grid using date-keyed localStorage keys. Apply same pattern: `gsl-streak`, `gsl-last-visit`, `gsl-activity-YYYY-MM-DD` (set on PrepLab attempt or module visit). Heatmap rendered in the Today section of `ReturningHomeView`. S-M effort. (Source: ml-systems-lab, May 2026)
+- ~~**Streak + 4-week heatmap in returning user HomeTab view**~~ ✅ Done — batch-C (`0d7371f`). `getStreakInfo()` + `gsl-streak`/`gsl-last-visit`/`gsl-activity-YYYY-MM-DD` keys. 4×7 cyan heatmap in `ReturningHomeView`.
 
 - **GT "Quiz Me" → direct "Practice this" linking** — PAL ships a "Practice this" link at the bottom of every Playbook article, routing directly to the most relevant case. GenAI Lab GT posts already have `related[]` arrays. The gap: no "Practice this in PrepLab" CTA at GT post end. Add a single "Drill this in PrepLab →" button per GT post that navigates to PrepLab filtered to the topic cluster matching the post tag. M effort (wiring tag → PrepLab topic filter). (Source: PAL, May 2026)
 
 **Tier 2 (more effort, still directly portable):**
 
-- **React.lazy() + Suspense code splitting** — both siblings fully implement lazy loading on all page components. GenAI Lab eagerly imports every tab and module in App.jsx, inflating the initial bundle. `React.lazy()` + `<Suspense fallback={<LoadingSpinner />}>` per route. PAL has this on all 20+ room components. Significant first-load improvement especially on mobile. M effort — systematic, no logic changes. (Source: ml-systems-lab + PAL, May 2026)
+- ~~**React.lazy() + Suspense code splitting**~~ ✅ Done — all 15 heavy components lazy-loaded in App.jsx (GroundTruth, QADashboard, ConceptsApp, SystemsApp, FluencyApp, FlowsApp, AIPMApp, PlaygroundApp, CareerApp, ExploreApp, AgentsApp, ConsultationApp, PrepLabApp, LearningPathsApp, PromptLabApp).
 
-- **State-aware GT reading mode — "Revise / Learn / What's Next"** — ML Systems Lab ships three reading lenses on the Gradient tab powered by localStorage data: (1) Revise = posts in topics where PrepLab scores are weak; (2) Learn = unread posts in topics the user is actively in; (3) What's Next = unread posts in topics not yet touched. Uses `gsl-preplab-history` + `genai_gt_read` — both already exist. This turns the GT wall into a personalized study queue without any backend. M effort. (Source: ml-systems-lab GradientTab, May 2026)
+- ~~**State-aware GT reading mode — "Revise / Learn / What's Next"**~~ ✅ Done — sprint 37c (`a37d99c`). Three reading lenses above category filter in GroundTruth.jsx. "Revise weak spots" reads `gsl-preplab-history` (topics with >40% miss rate). "What's next" reads `gsl-gt-read-[id]` + `genai_visited_modules`.
 
 - **GT Series + Tags redesign** — ML Systems Lab Gradient tab and PAL Deep Dives both flag the same pattern: activate Series + Tags UI once post count hits 50+. GenAI Lab is at 222 posts — 4× past that threshold. Group into named series (e.g. "Production Failures", "Architecture Decisions", "Inference Stack", "Agents in Production"). Tags enable cross-series filtering. Current flat wall at 222 posts is a content graveyard — users open it, see the wall, leave. This is the GT equivalent of the structural rebuild. M-L effort (content taxonomy work + UI). (Source: ml-systems-lab + PAL, May 2026)
 
@@ -817,8 +798,8 @@ The clean, low-cost part of the "product map" idea. The keyboard shortcut layer 
 **Source:** Product density discussion, May 2026. Assessment: the navigation value is real; the discoverability value (showing users what exists) is better addressed upstream via Home page and PrepLab entry point — not by a navigation artifact.
 
 ### Architecture
-- **Split modules.jsx further** — Currently 9,500 lines. Could split by group: `src/systems/build.jsx`, `src/systems/ops.jsx`, `src/systems/design.jsx`. Low urgency (Vite handles it fine, file tools work with offset/limit).
-- **Lazy loading** — Import each module component dynamically (`React.lazy + Suspense`). Would improve initial load time. Low priority since Vite bundles well.
+- **Split modules.jsx further** — Currently 15,012 lines (was 9,500). Could split by group: `src/systems/build.jsx`, `src/systems/ops.jsx`, `src/systems/design.jsx`. Low urgency (Vite handles it fine, Grep-first reading rule mitigates the context cost).
+- ~~**Lazy loading**~~ ✅ Done — all 15 heavy tab components lazy-loaded in App.jsx.
 
 ---
 

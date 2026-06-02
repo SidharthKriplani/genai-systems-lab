@@ -47,6 +47,14 @@
 - AgentContextArchModule — 57th Systems module, 4 PrepLab questions (`144618f`)
 - GT quiz depth: generateQuiz() 3→7 questions from 5 block types (`2fe2fe0`)
 
+### This session (June 2026) — MD sync + context management + builds
+- **CLAUDE.md trimmed** (587→371 lines): sprints 1–37 moved to `HISTORY.md`. Context limit prevention.
+- **CONTEXT_AUDIT.md created**: guide for all 3 sibling labs — file size audit, danger thresholds, fix patterns, operating rules.
+- **IDEAS.md + UPGRADES.md synced to sprint 41**: scale header, In Progress section, 10+ items marked done.
+- **promptlab-5 + promptlab-6**: temperature miscalibration (medium MCQ) + prompt decay diagnosis (hard text). 297 PrepLab questions total.
+- **Role Readiness Score**: `getRoleReadiness()` + sidebar widget in PrepLab.jsx. Tiers: Familiar/Practitioner/Senior/Staff.
+- **CONTEXT_LIMIT RULE added**: Never read `systems/modules.jsx` or `groundTruthPosts.js` in full. CLAUDE.md stays under 400 lines.
+
 ### Sprint 41 (batches A–B) — Gym expansion + Prompt Lab
 - **7 new Concepts modules** (`ed54c5a`): LLMAsJudge, EvalDesign, AgentToolDesign, CostLatency, Observability, FewShot, ChainOfThought
 - **4 new active gyms**: Evaluation, Production, Foundation Models, Prompt Engineering
@@ -56,13 +64,9 @@
 
 ## Current Git State
 
-Latest commit: `86d702b` (MD sync for sprint 41)  
+Latest commit: see `git log --oneline -3` on session open.  
 Branch: `main`  
-**2 commits ahead of origin/main** — user needs to push.
-
-```bash
-cd ~/Documents/GitHub/genai-systems-lab && git push origin main
-```
+**Push before starting:** `cd ~/Documents/GitHub/genai-systems-lab && git push origin main`
 
 ---
 
@@ -100,7 +104,7 @@ src/
 │   ├── nav.js                # ALL_TABS, GROUP_COLORS, NAV_GROUPS (source of truth)
 │   └── gating.js             # FREE_QUESTION_LIMIT, RESULTS_FREE_LIMIT
 └── data/
-    └── preplabQuestions.js   # 295 questions (all with difficulty + trap fields)
+    └── preplabQuestions.js   # 297 questions (all with difficulty + trap fields)
 ```
 
 ---
@@ -167,23 +171,19 @@ Fine-tuning failure simulation: LoRA rank too low, LR too high, dataset contamin
 - Add to `ALL_TABS` + `NAV_GROUPS` in `src/config/nav.js` (BUILD group, count: 6)
 - Add 4–6 PrepLab questions to `src/data/preplabQuestions.js`
 
-### Batch 2 — Role Readiness Score
-Derive AI Engineer Readiness tiers (Familiar / Practitioner / Senior / Staff) from PrepLab session history by topic. Shown on PrepLab or Progress page. **S effort.**
+### ~~Batch 2 — Role Readiness Score~~ ✅ DONE this session
+`getRoleReadiness()` helper + `readiness` state + sidebar widget in `src/PrepLab.jsx`. Tiers: Familiar/Practitioner/Senior/Staff derived from `gsl-preplab-history`. 4-dot visual + count + accuracy. Shows only after 5+ questions answered.
 
-**Files:** `src/PrepLab.jsx` — new read from `gsl-preplab-history`, compute tier per TOPIC_GROUPS, display in sidebar or header.
+### ~~Batch 3 — Welcome / Onboarding Modal~~ ✅ ALREADY DONE
+`WelcomeModal` confirmed live in App.jsx (line 1142). `genai_welcomed` localStorage flag, 3 goal options, fires once.
 
-### Batch 3 — Welcome / Onboarding Modal
-"What are you here to do?" — 3 options: Get interview-ready → PrepLab, Build in production → RAG Lab, Understand how it works → Concepts. localStorage flag, fires once. **S effort.**
+### ~~Batch 4 — React.lazy() code splitting~~ ✅ ALREADY DONE
+All 15 heavy components lazy-loaded in App.jsx.
 
-**Files:** `src/App.jsx` or `src/Home.jsx`. Already specced in UPGRADES.md.
+### ~~Batch 5 — Prompt Lab PrepLab questions expansion~~ ✅ DONE this session
+`promptlab-5` (temperature miscalibration, medium free MCQ) + `promptlab-6` (prompt decay diagnosis, hard gated text). Total: 297 PrepLab questions.
 
-### Batch 4 — React.lazy() code splitting audit
-Ensure all heavy tab components are lazy-loaded. Verify all lab components use `lazy(() => import(...))`. **S effort, systematic.**
-
-### Batch 5 — Prompt Lab PrepLab questions expansion
-Currently 4 questions for Prompt Lab. Should be 6 (one per scenario). Add promptlab-5 and promptlab-6. **XS effort.**
-
-### Batch 6 — Interview Experiences section
+### Batch 2 (renumbered) — Interview Experiences section
 Static editorial data (20-30 entries) seeded from field intelligence log in CLAUDE.md. Schema: `{ role, companyTier, round, topics[], difficultySignal, notes }`. Recharts bar chart. Tally link for submissions. **M effort.**
 
 ---

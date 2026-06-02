@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: May 2026 (post sprint 36)*
+*Last updated: June 2026 (post sprint 41)*
 
 ---
 
@@ -231,7 +231,7 @@ Cut entirely:
 
 **Priority:** Medium — good idea, wrong timing. Build after all Audit 34 critical findings are resolved.
 
-**Status:** Pending — do not build until hero copy, done card, and TYU crash are fixed
+**Status:** ✅ Done — `WelcomeModal` component in App.jsx (line 1142). Fires once via `localStorage.getItem("genai_welcomed")` flag. 3 goal options: interview-ready → PrepLab, build in production → RAG Lab, understand how it works → Concepts. `dismissWelcome(goal)` writes flag to localStorage.
 
 ---
 
@@ -477,7 +477,7 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 **Priority:** High — Concepts is in primary nav. Beginners will land here.
 
-**Status:** In Progress — 15/15 framing texts done. Depth pass: 7 modules with Beat 2+3 from sprints 26+28. EvalLoopModule Beat 2+3 added batch-5 (`04c7a51`). All 16 original modules now have Beat 3. 4 new modules added (ScalingLawsModule, LoRAModule, SequentialParallelModule, TrainingSignalModule) — all built with all 3 beats from the start. 20 modules total, all 3-beat complete.
+**Status:** ✅ Done — 27 modules total, all 3-beat complete. Sprint 41 added 7 new modules (LLMAsJudge, EvalDesign, AgentToolDesign, CostLatency, Observability, FewShot, ChainOfThought) — all built with all 3 beats from the start.
 
 ---
 
@@ -692,7 +692,7 @@ Each file exports named constants. Components import from config. Business model
 
 **Priority:** Medium — no user-facing change, but high developer velocity impact. Build incrementally: `gating.js` first (highest business impact), then `nav.js`, then `labs.js`.
 
-**Status:** Pending — defined in DECISIONS.md Section 8.
+**Status:** Partially done — `nav.js` (batch-A, `992cfc4`) + `gating.js` (sprint 31D) done. `labs.js` (SYSTEMS_MODULES + AGENTS_MODULES registries) still pending — blocked by component coupling in Systems.jsx + Agents.jsx.
 
 ---
 
@@ -754,7 +754,7 @@ Default when no filter selected: most-recently-visited-topic first (personalized
 
 **Priority:** Medium — GT is underutilized because 225 posts without personalization is overwhelming. This converts it from a library into a study queue.
 
-**Status:** Pending (Source: ml-systems-lab GradientTab, May 2026)
+**Status:** ✅ Done — sprint 37c (`a37d99c`). Three reading lenses above category filter pills in GroundTruth.jsx.
 
 ---
 
