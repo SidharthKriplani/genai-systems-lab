@@ -2,7 +2,89 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: June 2026 (sprint 43) | Current scale: 57 Systems modules (in nav), 22 Explore, 16 Agent Lab, 27 Concepts (7 active gyms), 307 PrepLab questions, 226 GT posts, 6 labs*
+*Last updated: June 2026 (sprint 46) | Current scale: 57 Systems modules (in nav), 22 Explore, 16 Agent Lab, 27 Concepts (7 active gyms), 313 PrepLab questions, 226 GT posts, 6 labs*
+
+---
+
+## Cross-lab intelligence — sourced from MSL + PAL analysis (June 2026)
+
+These ideas are validated by the sibling codebases (ML Systems Lab + Product Analytics Lab) running the same mechanic on a parallel audience. Not experiments — proven patterns that work on an identical user type.
+
+### Staff Layer in PrepLab — 3-tier answer reveal
+`Tier 1` `M effort` `Premium differentiator`
+
+Every hard PrepLab question currently has: correct answer + trap. Add a third tier: *how a staff/senior AI engineer frames this in an interview*. Not just the right answer — the senior framing, the tradeoff language, the signal that separates an interview pass from a "good but not senior" outcome. This is what MSL's Staff Layer does and it's the single most differentiated feature in that product.
+
+UI: a third collapsed section below the trap, styled distinctly (e.g. violet tint, "Staff framing" label). Content: written for all hard gated questions (~60 questions minimum). Gate it behind access code — free users see the trap, paid users see the staff framing.
+
+Why this is the premium feature: the correct answer is findable on Google. The trap is unique to GAL. The staff framing is unique to practitioners with years of experience — it's the thing you pay for.
+
+**Dependencies:** Content work (staff framing written for ~60 hard questions). No schema change beyond adding `staffLayer: string` field.
+
+---
+
+### Spaced repetition queue
+`Tier 1` `S effort` `Daily habit formation`
+
+PrepLab questions the user got wrong resurface on a schedule: 24h → 3 days → 7 days → 14 days. All localStorage, no backend. GAL already tracks `gsl-preplab-history` with `wrong` counts per question ID. The logic is: on session end, compute which questions need review based on last-wrong timestamp, surface them as a "Due for review" PrepLab mode or a home screen chip.
+
+MSL tracks this as `msl_trainer_history`. PAL has `pal-spaced-rep`. Both confirmed working. Dramatically improves retention — daily habit without a backend.
+
+**Dependencies:** `gsl-preplab-history` already exists. Add `gsl-preplab-last-wrong` timestamps. Add a "Review due" mode to PrepLab sidebar (or a chip on the Home returning user view).
+
+---
+
+### Bookmarks on GT posts and Systems modules
+`Tier 1` `XS effort` `User retention`
+
+A bookmark icon on every GT post card and every Systems module card. Saved to `gsl-bookmarks` localStorage key (already listed in METRICS.md as a planned key). A "Saved" filter in GT post list. PAL has `pal-bookmarks` across all rooms. MSL has equivalent. People read a GT post, want to come back, can't find it. This is pure friction removal.
+
+**Dependencies:** None. One state toggle per card, one filter mode.
+
+---
+
+### Timed exam lock — Combinator mode
+`Tier 1` `S effort` `PrepLab depth`
+
+A PrepLab exam mode where the user sets 30/45/60 min, all questions are visible, but answers are locked until time ends. After time ends: full debrief with per-question time spent, weak areas, recommended follow-up. MSL calls this Combinator. It changes the psychology from "quiz" to "mock interview." The pressure is the product.
+
+**Dependencies:** Add timer state to ExamMode. Lock answer submission until timer fires. Add Combinator entry to PrepLab sidebar.
+
+---
+
+### Spot the Flaw — adversarial format
+`Tier 1` `M effort` `Differentiated mechanic`
+
+Flip the failure mode mechanic. Instead of "configure this RAG pipeline until it fails," show a pipeline that *looks correct* and ask the user to find the flaw. "This system design was deployed to production. Find the failure mode." Answer reveals root cause + what makes this flaw subtle. This is what senior AI engineering interviews actually test. MSL has it for ML; PAL has it for stats (SRM, Simpson's Paradox, etc.). GAL has all the content — it's a framing change on existing failure modes.
+
+**Dependencies:** 8–12 adversarial scenarios written using existing failure mode content. New question type (`type: "flaw"`) in PrepLab, or a dedicated Spot the Flaw tab.
+
+---
+
+### 91-day activity heatmap
+`Tier 1` `XS effort` `Retention signal`
+
+Upgrade the current 28-day (4×7) heatmap in ReturningHomeView to 91 days (13×7). The difference is psychological: 28 days shows a month, 91 shows a season. For someone grinding for an interview over 2–3 months, 91 days of visible commitment history is more motivating. PAL and MSL both use 91 days. GAL is the only one using 28.
+
+**Dependencies:** `gsl-activity-YYYY-MM-DD` keys already written. Change grid from 28 to 91 cells in Home.jsx.
+
+---
+
+### Cross-lab Systems Engineer learning path
+`Tier 1` `XS effort` `Distribution + network effect`
+
+A GT post or a dedicated page describing a 6-week "Systems Engineer" learning path across all three labs (GAL + MSL + PAL). Each lab covers a distinct layer: GAL = AI systems and production failures, MSL = core ML/DE/MLOps, PAL = experimentation and product analytics. The combined path is more compelling than any individual lab for someone preparing for a senior AI/ML engineering role. Add a cross-lab section to GAL's README and one GT post. Zero code.
+
+MSL's README already states this as the "long-term north star." Execute on it now — it's free distribution.
+
+**Dependencies:** None. Write the GT post. Update READMEs.
+
+---
+
+### Distribution — non-negotiable
+`Tier 1` `XS effort` `Unlocks everything else`
+
+All three labs have 0 GitHub stars. One HN Show HN post. One LinkedIn thread explaining the trap field concept with a live example. One r/MachineLearning post. The content is already there. This is not optional and has been deferred long enough. Features don't compound without users. Do this before building another feature.
 
 ---
 

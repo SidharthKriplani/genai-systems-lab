@@ -6,11 +6,9 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Theme: Sprint 46 complete. All quick wins done. Failure mode audit complete. Remaining gap: Agent Lab production notes.
+## Theme: Sprint 47 starting. Cross-lab intelligence logged. Build queue: bookmarks → 91-day heatmap → spaced repetition → Staff Layer.
 
-Sprint 46 delivered: 6 Quantiphi questions, 10 trap rewrites, FidelityBadge dedup, R/A/E/L/P/G/C keyboard shortcuts, GT links on all 12 Prompt+FM Lab scenarios, production notes on all 6 FM Lab scenarios. Commits `bff96ac`, `f7ce93a`, `1dce7db`. Scale: 313 PrepLab questions.
-
-Failure mode audit finding: productionNote absent on Agent Lab modules 2–16 (~15 modules) and all Systems modules. That is the remaining structural gap. Lower urgency than what shipped.
+Sprint 46 closed: 313 PrepLab questions, failure mode audit complete, GT links on all Prompt+FM Lab scenarios. Cross-lab analysis of MSL + PAL completed June 2026 — 7 validated ideas logged to IDEAS.md.
 
 ---
 
@@ -67,8 +65,18 @@ Failure mode audit finding: productionNote absent on Agent Lab modules 2–16 (~
 - ~~**GT posts: Prompt Regression Testing + A/B Testing for AI**~~ — Already existed in groundTruthPosts.js. Verified.
 - ~~**GT Quiz depth**~~ — DONE batch-I (`2fe2fe0`). generateQuiz expanded to 5-7 questions from 5 block types.
 
-### ~~Next priority — failure mode completeness audit~~ DONE sprint 46 (`1dce7db`)
-Audit complete. GT links added to all 12 Prompt+FM Lab scenarios. Production notes added to all 6 FM Lab scenarios. Remaining gap: productionNote absent on 15 Agent Lab modules + all Systems modules. Lower priority — start with Agent Lab's interactive modules (agentcfg, simulator, design, tools, react) before tackling all 57 Systems modules.
+### Sprint 47 build queue (cross-lab intelligence — in priority order)
+
+1. **Bookmarks** `XS` — bookmark icon on GT posts + Systems modules, `gsl-bookmarks` key, Saved filter in GT. See IDEAS.md.
+2. **91-day heatmap** `XS` — upgrade Home.jsx from 28→91 cells. See IDEAS.md.
+3. **Spaced repetition** `S` — wrong-answer resurface queue, `gsl-preplab-last-wrong` timestamps, "Review due" PrepLab mode. See IDEAS.md.
+4. **Timed exam lock (Combinator)** `S` — 30/45/60 min mode, answers locked until timer ends. See IDEAS.md.
+5. **Staff Layer** `M` — 3-tier PrepLab reveal: answer → trap → staff framing. Premium gated. See IDEAS.md.
+6. **Spot the Flaw** `M` — adversarial format on existing failure modes. See IDEAS.md.
+7. **Cross-lab path** `XS` — GT post + README update. Zero code. See IDEAS.md.
+8. **Distribution** `XS` — HN + LinkedIn + Reddit. Non-negotiable. See IDEAS.md.
+
+### ~~Failure mode completeness audit~~ DONE sprint 46 (`1dce7db`)
 
 ### Still open (S effort)
 - ~~**6 new PrepLab questions**~~ — DONE sprint 46 (`bff96ac`). quantiphi-1 through quantiphi-6.
