@@ -290,6 +290,9 @@ For full audit findings see AUDITS.md.
 
 ## Session build log
 
+**Sprint 47 (June 2026) — cross-lab retention features:**
+- 91-day heatmap (was 28-day) in ReturningHomeView. GT bookmarks: `gsl-bookmarks` localStorage, bookmark icon on every post card, "🔖 Saved" filter chip, toggleBookmark(). PrepLab spaced repetition: `gsl-preplab-spaced` key tracks wrong-answer timestamps + wrongCount, SRS intervals (24h/3d/7d), getDueQuestions() surfaces due questions, "Review Due" sidebar mode auto-starts ExamMode with due questions. Brace diff: 0. Commit `97c2057`.
+
 **Sprint 46 (June 2026) — PrepLab content + polish + failure mode completeness:**
 - 6 Quantiphi Defense Pack questions added (quantiphi-1 through quantiphi-6). Trap field quality pass: 10 traps rewritten to overclaim→honest-reframe format. Commit `bff96ac`. Scale: **313 PrepLab questions**.
 - FidelityBadge dedup: moved to shared.jsx, removed from App.jsx + Systems.jsx. R/A/E/L/P/G/C tab keyboard shortcuts added. Quantiphi Interview Signal entry confirmed already present (id:38, `43545a7`). Commit `f7ce93a`.

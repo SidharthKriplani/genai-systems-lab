@@ -67,9 +67,9 @@ Sprint 46 closed: 313 PrepLab questions, failure mode audit complete, GT links o
 
 ### Sprint 47 build queue (cross-lab intelligence — in priority order)
 
-1. **Bookmarks** `XS` — bookmark icon on GT posts + Systems modules, `gsl-bookmarks` key, Saved filter in GT. See IDEAS.md.
-2. **91-day heatmap** `XS` — upgrade Home.jsx from 28→91 cells. See IDEAS.md.
-3. **Spaced repetition** `S` — wrong-answer resurface queue, `gsl-preplab-last-wrong` timestamps, "Review due" PrepLab mode. See IDEAS.md.
+1. ~~**Bookmarks**~~ — DONE sprint 47 (`97c2057`). `gsl-bookmarks`, bookmark icon on GT cards, 🔖 Saved filter.
+2. ~~**91-day heatmap**~~ — DONE sprint 47 (`97c2057`). Upgraded from 28→91 cells.
+3. ~~**Spaced repetition**~~ — DONE sprint 47 (`97c2057`). `gsl-preplab-spaced`, SRS intervals, Review Due mode in PrepLab sidebar.
 4. **Timed exam lock (Combinator)** `S` — 30/45/60 min mode, answers locked until timer ends. See IDEAS.md.
 5. **Staff Layer** `M` — 3-tier PrepLab reveal: answer → trap → staff framing. Premium gated. See IDEAS.md.
 6. **Spot the Flaw** `M` — adversarial format on existing failure modes. See IDEAS.md.
