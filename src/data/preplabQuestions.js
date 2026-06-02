@@ -566,6 +566,7 @@ export const PREP_QUESTIONS = [
     options: ["The ideal production target", "Theoretically impossible — safety and utility are in tension; aggressive filters increase false positives on legitimate queries", "Achievable with enough compute", "Only possible with fine-tuning"],
     correct: 1, keywords: [],
     explanation: "Safety is a precision-recall tradeoff. A filter that blocks everything has 100% recall on harm but 0% precision. Real systems must balance false negatives vs. false positives.",
+    trap: "Saying \'this is the ideal guardrail.\' 100% block with 0% false positive at meaningful scale is mathematically impossible on any real adversarial distribution. The interviewer wants to hear you acknowledge the precision-recall tradeoff explicitly.",
     readMore: { label: "Safety System Design", tab: "concepts" }
   },
   {
@@ -584,6 +585,7 @@ export const PREP_QUESTIONS = [
     options: ["Token cost per query", "The primary success metric tied to user value (task completion rate, CSAT) and the guardrail metric that cannot regress", "API response time", "Number of features in v1"],
     correct: 1, keywords: [],
     explanation: "PRDs without defined success and guardrail metrics lead to teams optimizing the wrong thing. The primary metric must be tied to user value. The guardrail metric prevents optimizing the primary metric in ways that violate core requirements.",
+    trap: "Saying \'user satisfaction\' or \'CSAT.\' The most important metric to define before building is the failure budget — what error rate is acceptable. Without a failure budget, teams build without a clear quality bar and cannot make principled architectural tradeoffs.",
     readMore: { label: "AI Product Management", tab: "concepts" }
   },
   {
@@ -600,6 +602,7 @@ export const PREP_QUESTIONS = [
     options: ["Switch to a better LLM", "Analyze the 22% dissatisfied sessions to identify failure patterns before any model changes", "Add more examples to the prompt", "Reduce response length"],
     correct: 1, keywords: [],
     explanation: "Dissatisfied sessions contain the actual failure modes. Without analyzing them, any change is guesswork. You might find the dissatisfaction is concentrated in one query type or triggered by a specific phrasing.",
+    trap: "Saying \'improve the model.\' The first step is diagnosis — understanding what the failing 22% have in common. Building a better general model without knowing the failure distribution is expensive and often misses the target.",
     readMore: { label: "AI Product Iteration", tab: "concepts" }
   },
   {
@@ -624,6 +627,7 @@ export const PREP_QUESTIONS = [
     options: ["Ship it — primary metric wins", "Roll back immediately", "Pause the rollout, segment the retention drop to find if specific user cohorts are churning, then decide", "Run a longer A/B test"],
     correct: 2, keywords: [],
     explanation: "Retention drop is a guardrail regression. A 12% task completion lift that costs 4% of your users coming back is a bad trade. But you need to understand the causal chain — is the feature itself causing churn, or is this a novelty effect? Segmentation tells you which users and which sessions are driving the drop.",
+    trap: "Saying \'the feature is a success.\' Task completion and engagement moving in opposite directions is a signal quality problem — users complete tasks but don\'t return. The likely cause: the AI completed tasks confidently but incorrectly.",
     readMore: { label: "AI Product Metrics", tab: "concepts" }
   },
   {
@@ -632,6 +636,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["accuracy", "escalation", "edge case", "trust", "liability", "cost", "hallucin", "eval", "benchmark", "pilot"],
     explanation: "Key points: LLMs hallucinate — wrong answers in support create liability and erode trust. Accuracy must be measured on your actual ticket corpus, not general benchmarks. Start with automation for high-confidence, low-stakes cases. Build an escalation path for everything else. Measure deflection rate AND satisfaction AND escalation rate together.",
+    trap: "Saying \'yes, we can build this.\' The correct PM answer is scoping: which query types, what is the handoff design for out-of-scope queries, what metric defines success vs. requiring human escalation.",
     readMore: { label: "Production AI reliability", tab: "groundtruth", postId: "llm-reliability-production" }
   },
   {
@@ -640,6 +645,7 @@ export const PREP_QUESTIONS = [
     options: ["Engineering — fine-tuning always produces better results", "PM — prompt engineering first, fine-tune only after you have labeled data proving the baseline fails", "Neither — use RAG", "It depends entirely on whether you have a GPU budget"],
     correct: 1, keywords: [],
     explanation: "Fine-tuning requires labeled training data you don't have yet, weeks of iteration, and a deployment pipeline. Prompt engineering ships in days and teaches you what the actual failure modes are. You cannot write good training labels until you know where prompting breaks. Start fast, collect failure cases, then fine-tune if needed.",
+    trap: "Saying \'fine-tuning gives better results.\' Fine-tuning requires 4–8 weeks minimum (data curation + training + eval). For a 4-week MVP, prompting + RAG is the only viable path — fine-tuning is a v2 investment, not a sprint scope.",
     readMore: { label: "Fine-tuning vs. prompting tradeoffs", tab: "groundtruth", postId: "fine-tuning-when-and-why" }
   },
   {
@@ -658,6 +664,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["data", "risk", "alternative", "outcome", "stakeholder", "reason", "impact"],
     explanation: "Strong answers: lead with shared goal, present data supporting pushback, offer alternative path to the underlying need, own the decision outcome whether it was accepted or overridden.",
+    trap: "Saying \'I explained the technical limitations.\' Strong candidates show a specific framework: lead with business impact of the concern, offer an alternative that addresses the stakeholder\'s underlying need, and propose a validation step.",
     readMore: null
   },
   {
@@ -666,6 +673,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["own", "responsible", "learn", "change", "mistake", "process", "retrospect"],
     explanation: "Strong answers show genuine ownership, specific causal analysis, concrete behavior change. Avoid: vague 'team failed', overly positive framing, no actual lesson.",
+    trap: "Saying \'I learned from it and moved on.\' Strong answers name the specific decision point where the failure originated, what signal was available but ignored, and a concrete process change that followed.",
     readMore: null
   },
   {
@@ -674,6 +682,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["disagree", "commit", "voice", "evidence", "escalat", "team", "execute"],
     explanation: "Best answer: disagree-and-commit framing — voice concern once with evidence, understand if decision is final, commit fully once decided, document your concern for retrospective review.",
+    trap: "Saying \'I raised my concerns and then aligned.\' Strong answers show raising concerns with data, proposing an experiment or alternative, setting a checkpoint to revisit the decision, and committing while preserving the ability to course-correct.",
     readMore: null
   },
   {
@@ -682,6 +691,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["priority", "scope", "tradeoff", "communicate", "bandwidth", "escalat", "negotiate"],
     explanation: "Strong answer: proactively communicate capacity and competing priorities, make tradeoffs explicit with impact framing, propose solutions (automate the analysis, route to data analyst, timebox).",
+    trap: "Saying \'I said no to the PM.\' The trap is the adversarial framing. Strong answers show a scoping conversation: align on the product goal, show what the extra tasks deprioritise, and propose a prioritisation framework rather than a binary refusal.",
     readMore: null
   },
   {
@@ -690,6 +700,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["mentor", "grow", "feedback", "project", "stretch", "skill", "specific", "outcome"],
     explanation: "Strong answers are specific: what was the person's starting point, what deliberate interventions (stretch assignments, code review, 1:1 structure, feedback cadence), what was the measurable outcome.",
+    trap: "Saying \'I explained things clearly.\' Strong answers describe a specific deliberate practice: pair programming on a real task, written code review feedback, or a project where the junior owned end-to-end delivery with defined escalation points.",
     readMore: null
   },
   {
@@ -708,6 +719,7 @@ export const PREP_QUESTIONS = [
     options: ["85 tokens", "512 tokens", "~1700 tokens", "4096 tokens"],
     correct: 2, keywords: [],
     explanation: "High-detail mode tiles the image into 512×512 sub-images. A 1024×1024 image produces 4 tiles × ~340 tokens each ≈ 1700 tokens plus the base 85 for a low-res overview. Image token cost is a critical budget consideration.",
+    trap: "Saying \'images always cost 85 tokens.\' High-detail mode tiles the image into 512px tiles and charges 85 tokens per tile plus 85 base. A 1024×1024 image at high detail costs approximately 765 tokens, not 85.",
     readMore: { label: "Multimodal AI →", tab: "systems" }
   },
   {
@@ -716,6 +728,7 @@ export const PREP_QUESTIONS = [
     options: ["Increase top_k", "Switch to CLIP-based cross-modal retrieval or pre-generate captions for all images", "Use a larger LLM", "Add OCR to all images"],
     correct: 1, keywords: [],
     explanation: "Text-only vector search can't find uncaptioned images because there's no text to embed. CLIP embeds images and text in a shared space — enabling text query to retrieve visually similar images. Captioning is simpler but loses visual detail the caption doesn't describe.",
+    trap: "Saying \'improve the embedding model.\' Image-text retrieval misses visual-only content because there is no text to embed. The fix is multimodal embedding or OCR/captioning during indexing — not retrieval model quality.",
     readMore: { label: "Multimodal RAG patterns →", tab: "systems" }
   },
   {
@@ -750,6 +763,7 @@ export const PREP_QUESTIONS = [
     options: ["Reduce thinking budget to 1K tokens", "Stream a live 'thinking...' indicator with elapsed time while reasoning runs", "Cache all responses", "Use a faster model instead"],
     correct: 1, keywords: [],
     explanation: "Users tolerate latency much better when they see visible progress. Streaming 'thinking...' with elapsed time manages perception. Reducing thinking budget trades quality for speed — only correct if your accuracy analysis shows the lower budget is sufficient.",
+    trap: "Saying \'use a faster model.\' The trap is substituting latency concern for use case analysis. 25s is acceptable for async tasks (code review, document analysis) and unacceptable for interactive chat. The right question is what the latency SLA for this task type actually is.",
     readMore: { label: "Reasoning Models Lab →", tab: "systems" }
   },
   {
@@ -758,6 +772,7 @@ export const PREP_QUESTIONS = [
     options: ["Competitive programming", "Multi-step mathematical proofs", "Sentiment classification on customer reviews", "Complex legal contract analysis"],
     correct: 2, keywords: [],
     explanation: "Sentiment classification is a pattern-matching task with no multi-step reasoning requirement. A fine-tuned small model beats o3 at 100× lower cost. Reasoning models shine on tasks requiring planning, backtracking, and checking multiple sub-conditions.",
+    trap: "Saying \'creative writing.\' Reasoning models add most value on multi-step logical tasks. Simple factual lookup and highly subjective tasks see minimal benefit — the thinking budget is consumed without improving the output.",
     readMore: { label: "When to use reasoning models →", tab: "systems" }
   },
   {
@@ -766,6 +781,7 @@ export const PREP_QUESTIONS = [
     options: ["Replace all calls with o3", "Classify query difficulty first; route only high-complexity queries to reasoning model, simple ones to GPT-4o", "Use reasoning models at low thinking budget for everything", "Cache reasoning model responses"],
     correct: 1, keywords: [],
     explanation: "Confidence-based routing is the highest-ROI optimization. A fast classifier identifies the ~30% of queries that actually need deep reasoning. The other 70% use the cheap standard model. This typically delivers 90%+ of reasoning model quality at 30–40% of cost.",
+    trap: "Saying \'use reasoning models for all hard queries.\' The production pattern is routing: classify query difficulty first, send only genuinely hard queries to reasoning models, route simple factual queries to cheaper standard models.",
     readMore: { label: "Reasoning model economics →", tab: "systems" }
   },
   {
@@ -774,6 +790,7 @@ export const PREP_QUESTIONS = [
     options: ["You're not billed for thinking tokens", "Thinking tokens are billed at the same rate as output tokens even though they're not shown to the user", "Thinking is free up to 16K tokens", "Only Claude charges for thinking tokens"],
     correct: 1, keywords: [],
     explanation: "Thinking tokens are real compute — billed at the model's output token rate regardless of whether they appear in the response. A 32K thinking budget can add $0.48+ to a single o3 call. Budget your thinking token allocation as carefully as output tokens.",
+    trap: "Saying \'it is just internal chain-of-thought.\' The practical implication is billing and debugging: scratchpad tokens count toward context and cost but are not accessible in the output. You cannot observe or prompt-engineer the reasoning steps.",
     readMore: { label: "Thinking budget deep dive →", tab: "systems" }
   },
   {
@@ -790,6 +807,7 @@ export const PREP_QUESTIONS = [
     options: ["Quality improves further", "No effect or slight degradation — reasoning models already do chain-of-thought internally, adding it to the prompt is redundant and may corrupt the thinking process", "The model produces a visible scratchpad", "It reduces thinking token usage"],
     correct: 1, keywords: [],
     explanation: "Chain-of-thought prompting was designed for standard models that don't natively reason. Reasoning models like o1/o3/Claude extended thinking run CoT internally. Adding it to the system prompt can clash with the model's internal reasoning strategy. Trust the model's thinking budget, not CoT prompt tricks.",
+    trap: "Saying \'it makes the model think more.\' Reasoning models (o1/o3) already think internally. Adding \'think step by step\' explicitly is redundant and does not improve outputs — it may duplicate what the model was already doing.",
     readMore: { label: "Reasoning Models Lab →", tab: "systems" }
   },
   {
@@ -798,6 +816,7 @@ export const PREP_QUESTIONS = [
     options: ["Cache all responses", "Use a reasoning model for offline batch processing and a faster model for real-time with an async 'thinking mode' for users who opt in", "Reduce thinking tokens to 512", "Accept the latency — quality matters more"],
     correct: 1, keywords: [],
     explanation: "Latency and reasoning depth are fundamentally in tension. The correct architecture separates the use cases: real-time paths use a fast model; async or background tasks use the reasoning model. An opt-in 'deep analysis' mode lets power users accept the 40s wait for higher-quality output.",
+    trap: "Saying \'optimise the prompt to reduce thinking budget.\' The correct solution is cascading: use reasoning model only for queries where a standard model fails, routing the majority to fast models to meet the p99 SLA.",
     readMore: { label: "Reasoning model economics →", tab: "systems" }
   },
   {
@@ -806,6 +825,7 @@ export const PREP_QUESTIONS = [
     options: ["The model forgets earlier context", "Overthinking — the model second-guesses a correct initial conclusion, explores low-probability paths, and converges on a wrong answer", "Token limit is exceeded", "The model runs out of RAM"],
     correct: 1, keywords: [],
     explanation: "Overthinking is a documented failure mode. On straightforward problems, longer reasoning chains introduce noise. Best practice: use the minimum thinking budget that achieves acceptable accuracy on your eval set. Blindly maximizing thinking tokens can reduce quality.",
+    trap: "Saying \'more thinking is always better.\' Reasoning models can over-think: explore dead ends, second-guess correct answers, and introduce errors through over-analysis. Well-specified tasks with clear constraints benefit less from extended thinking.",
     readMore: { label: "Reasoning Models Lab →", tab: "systems" }
   },
   {
@@ -832,6 +852,7 @@ export const PREP_QUESTIONS = [
     options: ["Tool is slow", "Agent is in an infinite loop — tool output isn't satisfying the reasoning step, causing repeated attempts", "Network timeout", "Temperature too high"],
     correct: 1, keywords: [],
     explanation: "Repeated identical tool calls is the canonical infinite loop signal. The tool's output format or content doesn't match what the LLM's reasoning expects — so it retries. Fix: duplicate-call detection (hash tool+args), inject loop-break prompt, or surface to human after 3 identical calls.",
+    trap: "Saying \'add more retries.\' Retries prevent infinite loops but don\'t prevent tool redundancy. The correct fix is an idempotency check before execution — has this exact tool call already succeeded?",
     readMore: { label: "Agentic Reliability →", tab: "agents" }
   },
   {
@@ -840,6 +861,7 @@ export const PREP_QUESTIONS = [
     options: ["Step budget", "Least-privilege tool access + confirmation gate before irreversible actions", "Context pruning", "Self-critique loop"],
     correct: 1, keywords: [],
     explanation: "Scope creep (taking actions outside intended scope) is prevented by: (1) only giving the agent access to tools/resources needed for the task, (2) requiring human confirmation before irreversible actions like delete. Step budget limits iterations but doesn't prevent destructive single actions.",
+    trap: "Saying \'add more confirmations.\' The correct pattern is structured planning: generate and show a full action plan before any execution, let the user approve, then execute atomically — not per-action prompts.",
     readMore: { label: "Agentic Reliability →", tab: "agents" }
   },
   {
@@ -858,6 +880,7 @@ export const PREP_QUESTIONS = [
     options: ["JSON mode is faster", "JSON mode guarantees valid JSON but NOT schema compliance; tool calling enforces the schema exactly", "Tool calling only works with OpenAI", "JSON mode supports nested objects better"],
     correct: 1, keywords: [],
     explanation: "JSON mode gives you syntactically valid JSON — the model may still omit required fields, add unexpected fields, or use wrong types. Tool calling forces the model to call a function matching a specific schema — highest reliability for production structured extraction.",
+    trap: "Saying \'they\'re basically the same.\' JSON mode constrains output format only; the model still chooses field names/values. Function calling provides a schema the model must conform to exactly, enabling reliable parsing.",
     readMore: { label: "Structured Outputs →", tab: "systems" }
   },
   {
@@ -866,6 +889,7 @@ export const PREP_QUESTIONS = [
     options: ["Switch to a larger model", "Log all failures with input+output, categorize by failure type (schema drift, type error, truncation), fix the top category", "Increase max_tokens", "Add more examples to the prompt"],
     correct: 1, keywords: [],
     explanation: "4% failure rate is high but diagnosable. Without logging, you're guessing. Categorizing failures by type reveals whether you need: retry logic (schema drift), type coercion (type errors), bigger max_tokens (truncation), or schema simplification. Each has a different fix.",
+    trap: "Saying \'switch to a more capable model.\' 4% schema failure is a prompting/architecture issue. Constrained generation (Outlines, Guidance) or strict function calling fixes schema compliance without a model change.",
     readMore: { label: "Structured Outputs →", tab: "systems" }
   },
   {
@@ -874,6 +898,7 @@ export const PREP_QUESTIONS = [
     options: ["Never — 1M context makes RAG obsolete", "When corpus is larger than 1M tokens, dynamically updated, or cost/latency constraints make full-context inference infeasible", "Only when using Claude", "When documents are in PDF format"],
     correct: 1, keywords: [],
     explanation: "1M context is transformative but not universal. Corpora often exceed 1M tokens; real-time/user-specific data changes faster than you can ingest; processing 1M tokens costs 50–200× a RAG call; TTFT for 1M contexts adds seconds. RAG remains essential for dynamic, large, or cost-sensitive workloads.",
+    trap: "Saying \'1M context eliminates the need for RAG.\' The trap misses latency cost (1M prefill takes seconds), dollar cost, and the Lost in the Middle problem — relevant chunks buried in the middle of 1M tokens get missed.",
     readMore: { label: "Context Window Engineering →", tab: "systems" }
   },
   {
@@ -900,6 +925,7 @@ export const PREP_QUESTIONS = [
     options: ["Always — open source is always cheaper", "Never — managed APIs scale better", "At approximately $50K+/month API spend where GPU costs justify the engineering overhead", "When you have more than 100 users"],
     correct: 2, keywords: [],
     explanation: "Below ~$50K/month API spend, engineering cost (infra setup, monitoring, ops) exceeds savings. Above that threshold, self-hosting on dedicated A100/H100 GPUs typically costs 70–90% less per token. The crossover depends on team size, traffic predictability, and data privacy requirements.",
+    trap: "Saying \'open source is always cheaper.\' Break-even requires sustained high volume. GPU reservation, ops engineering, uptime requirements, and on-call burden mean self-hosting only wins at significant scale (500K+ tokens/day sustained).",
     readMore: { label: "Llama Deep Dive →", tab: "groundtruth", postId: "llama-open-models" }
   },
   {
@@ -908,6 +934,7 @@ export const PREP_QUESTIONS = [
     options: ["95%+ — judge only removes clearly bad examples", "50–70% — significant portion fails quality threshold when judged rigorously", "10–20% — most LLM-generated data is low quality", "100% — the generator and judge use the same model"],
     correct: 1, keywords: [],
     explanation: "With a quality threshold of ~0.75/1.0, rigorous LLM-as-judge filtering typically keeps 50–70% of generated data. This is desirable — removing noisy examples reduces overfitting and improves fine-tuning outcomes. The goal is quality over quantity.",
+    trap: "Saying \'keep all generated examples.\' The quality gate is what makes synthetic data effective for fine-tuning. LLM-as-judge filtering typically accepts 50–70% of generated examples — optimising for quantity without quality filtering degrades model performance.",
     readMore: { label: "Synthetic Data →", tab: "systems" }
   },
   {
@@ -916,6 +943,7 @@ export const PREP_QUESTIONS = [
     options: ["It uses evolutionary algorithms to train the model", "It iteratively makes simple instructions more complex — creating a difficulty gradient that trains models to handle hard instructions", "It generates instructions in multiple languages", "It deduplicates by evolutionary distance"],
     correct: 1, keywords: [],
     explanation: "Flat self-instruct generates diverse but similarly-difficulty instructions. Evol-Instruct evolves each instruction into harder versions (add constraints, add error handling, add edge cases). The resulting dataset has a difficulty gradient — models trained on it generalize better to hard real-world inputs. Used to train WizardCoder and WizardLM.",
+    trap: "Saying \'it generates more examples.\' Evol-Instruct generates HARDER examples by iteratively applying complexity operators — the value is difficulty distribution and diversity, not volume.",
     readMore: { label: "Synthetic Data →", tab: "systems" }
   },
   {
@@ -924,6 +952,7 @@ export const PREP_QUESTIONS = [
     options: ["Decoder-only is cheaper to build", "Decoder-only scales more efficiently — simpler training objective (next-token prediction), no encoder bottleneck, stronger emergent few-shot abilities at scale", "Encoder-decoder can't do generation", "Patents prevent encoder-decoder use"],
     correct: 1, keywords: [],
     explanation: "After GPT-2/3 demonstrated that decoder-only models develop powerful emergent abilities through scale, the field converged on this architecture. The autoregressive next-token objective is simpler to optimize at scale, there's no cross-attention bottleneck between encoder/decoder, and the architecture naturally supports few-shot prompting.",
+    trap: "Saying \'it is simpler to implement.\' Decoder-only models handle any task as text completion, making the same architecture work for classification, generation, and reasoning without task-specific heads. The autoregressive objective also scales more predictably.",
     readMore: { label: "Transformer Architecture →", tab: "systems" }
   },
 
@@ -942,6 +971,7 @@ export const PREP_QUESTIONS = [
     options: ["Role-play jailbreak", "Many-shot jailbreaking — exploiting in-context learning by padding context with fabricated compliance examples", "System prompt injection", "Token smuggling"],
     correct: 1, keywords: [],
     explanation: "Many-shot jailbreaking exploits the model's in-context learning ability. With enough fabricated 'compliance' examples in context, the model treats the harmful answer as the expected pattern to continue. Defense: detect anomalous context length, rate-limit heavy-context requests, context length caps.",
+    trap: "Saying \'add a safety system prompt.\' This is a few-shot jailbreak — 200 examples with harmful completions override instruction-following. The fix is input sanitisation that detects and rejects instruction injection patterns before they reach the model.",
     readMore: { label: "AI Red Teaming →", tab: "systems" }
   },
 
@@ -1002,6 +1032,7 @@ export const PREP_QUESTIONS = [
     options: ["Compressing cache entries", "Routing requests with identical prefixes to the same serving replica so cached KV states are available locally", "Precomputing KV for all possible prompts", "Using a global shared KV cache across all GPUs"],
     correct: 1, keywords: [],
     explanation: "Without cache-aware routing, a request with a cached prefix on GPU-1 might land on GPU-2 (cache miss). llm-d and similar systems hash the request prefix and route to the replica most likely to have that prefix cached — dramatically improving cache hit rates without requiring a shared (expensive) cross-replica cache.",
+    trap: "Saying \'caching saves token costs.\' KV cache hit rate is a latency and throughput metric — it reduces time-to-first-token by avoiding re-prefill of cached prompts. The saving is compute, not token billing.",
     readMore: { label: "KV Cache Engineering →", tab: "systems" }
   },
   {
@@ -1020,6 +1051,7 @@ export const PREP_QUESTIONS = [
     options: ["Output validation is cheaper", "Input classifiers stop harmful requests before any LLM compute is spent — fail fast before incurring generation cost and latency", "Input classifiers are more accurate", "Regulations require both stages"],
     correct: 1, keywords: [],
     explanation: "If you only validate output, you've already run the full LLM inference for every harmful request. Input classification adds a fast, cheap gate (10-50ms) that rejects obvious bad inputs before generation. The dual-stage pattern: input classifier (fast) → LLM generation → output validator (slower, catches subtler failures). Defense-in-depth AND cost optimization.",
+    trap: "Saying \'two stages means twice as slow.\' Input and output classifiers run on different signals: input guards catch intent, output guards catch execution failures. The dual stage catches attacks that evade either guard alone — the architecture is additive, not redundant.",
     readMore: { label: "AI Guardrails →", tab: "systems" }
   },
   {
@@ -1036,6 +1068,7 @@ export const PREP_QUESTIONS = [
     options: ["It is faster", "It uses a programmable dialogue flow (Colang) to enforce conversational rails at the LLM reasoning level — not just keyword matching", "It only works with Nvidia GPUs", "It does not require any configuration"],
     correct: 1, keywords: [],
     explanation: "Filter-based guardrails detect bad inputs/outputs via classifiers. NeMo Guardrails uses Colang — a domain-specific language — to define what conversations are allowed at the dialogue level. This enables conversational policies like 'if topic is competitor, politely redirect' that can't be expressed as input/output classifiers.",
+    trap: "Saying \'it is a content filter.\' NeMo uses a programmable state machine (Colang language) to enforce dialogue flows — not just filter content. It can enforce multi-turn conversation patterns that pure content classifiers cannot.",
     readMore: { label: "AI Guardrails →", tab: "systems" }
   },
   {
@@ -1054,6 +1087,7 @@ export const PREP_QUESTIONS = [
     options: ["100% — all experts process every token", "~3% — only the 2 selected experts run, plus shared components", "50% — top-2 of 64 is 3%, but shared layers add ~47%", "6% — top-2 of 64 specialists only"],
     correct: 1, keywords: [],
     explanation: "MoE sparse activation: only top-K experts process each token. For top-2 of 64 experts, the expert fraction is 2/64 ≈ 3%. Adding shared components (embedding, attention layers, output head) brings total activated parameters to roughly 10-20% of total model size depending on architecture. DeepSeek-V3 (671B total) activates ~37B per token this way.",
+    trap: "Saying \'it uses all parameters at once.\' The defining MoE property: only top-K experts activate per token. Total parameters are large but active FLOPs per token are sparse — this is the memory vs. compute tradeoff.",
     readMore: { label: "MoE Architecture →", tab: "systems" }
   },
   {
@@ -1070,6 +1104,7 @@ export const PREP_QUESTIONS = [
     options: ["MoE uses 8-bit weights by default", "Only activated expert weights need to be in GPU VRAM at inference time — but all experts must fit somewhere across the cluster", "MoE weights are compressed during training", "Sparse attention reduces memory regardless of expert count"],
     correct: 1, keywords: [],
     explanation: "All expert weights must reside in memory (GPU or fast CPU/NVMe) but only activated experts are loaded to GPU registers per forward pass. For a cluster with enough GPUs, each GPU holds a shard of experts and the network routes tokens. Memory per GPU is fraction_of_experts × weight_size. This is why MoE models work well with expert parallelism across many GPUs.",
+    trap: "Saying \'because it is quantized.\' MoE memory efficiency comes from sparsity — only activated expert weights need to be loaded during inference, not all 671B parameters simultaneously.",
     readMore: { label: "MoE Architecture →", tab: "systems" }
   },
   {
@@ -1078,6 +1113,7 @@ export const PREP_QUESTIONS = [
     options: ["Memory usage", "The router overhead — shared experts always activate, ensuring there is always a fallback for tokens the router misclassifies or for generalizable features", "Gradient vanishing in experts", "Inference latency on single GPUs"],
     correct: 1, keywords: [],
     explanation: "Pure sparse routing can leave tokens without the right expert if routing is noisy, especially early in training. Shared experts (always-on subset, 2 in DeepSeek-V3) handle general patterns while specialist experts handle domain-specific features. This hybrid — 2 shared + top-K sparse — improves training stability and final model quality.",
+    trap: "Saying \'it improves routing accuracy.\' Shared experts address expert collapse (load imbalance) — a subset processes every token regardless of routing, ensuring stable base capability while specialist experts handle specifics.",
     readMore: { label: "MoE Architecture →", tab: "systems" }
   },
 
@@ -1088,6 +1124,7 @@ export const PREP_QUESTIONS = [
     options: ["Run unit tests only", "Define the success condition in advance before AI generates code — 'the test that tells me this is done correctly' precedes generation, not follows it", "Let the AI decide what correct output looks like", "Use formal specification languages"],
     correct: 1, keywords: [],
     explanation: "The common vibe coding failure: you accept AI code that 'looks right' without a pre-defined correctness criterion. Karpathy's protocol: write the test (or define the observable behavior) before prompting the AI. This forces you to know what done means, and catches AI-generated code that is plausible but wrong.",
+    trap: "Saying \'just use unit tests.\' The trap misses that AI-generated code needs a separate validation oracle checking the objective is actually met, not just that the code runs without errors.",
     readMore: { label: "Vibe Coding →", tab: "systems" }
   },
   {
@@ -1096,6 +1133,7 @@ export const PREP_QUESTIONS = [
     options: ["Code runs slower", "Subtle correlated errors — AI-generated code across multiple services may share the same blind spots, creating systemic failure modes that human review of individual PRs won't catch", "Higher test coverage needed", "License violations from training data"],
     correct: 1, keywords: [],
     explanation: "Human engineers introduce errors independently. AI-generated code from the same model introduces correlated errors — the same misunderstanding of a concurrency pattern, the same off-by-one in a data structure, replicated across the codebase. Traditional code review catches isolated bugs, not model-systematic blind spots. This requires integration tests, chaos engineering, and architectural review beyond per-PR diff inspection.",
+    trap: "Saying \'lower quality code.\' The primary production risk is subtle integration failures — AI-generated modules that pass unit tests but contain incorrect assumptions about shared state or API contracts.",
     readMore: { label: "Vibe Coding →", tab: "systems" }
   },
   {
@@ -1104,6 +1142,7 @@ export const PREP_QUESTIONS = [
     options: ["It has better autocomplete than Copilot", "It operates at the project/codebase level — context includes full repository, not just open file — enabling multi-file edits that Copilot's single-file context cannot do", "It is cheaper than alternatives", "It supports more programming languages"],
     correct: 1, keywords: [],
     explanation: "GitHub Copilot operates primarily on the current file. Cursor indexes the full codebase, understands cross-file dependencies, and can make coordinated multi-file edits with a single prompt. This difference — file-scope vs. codebase-scope — is why developers describe Cursor as qualitatively different rather than incrementally better.",
+    trap: "Saying \'good marketing.\' The engineering moat is the retrieval and indexing layer that embeds full codebase context into completions — not the chat interface.",
     readMore: { label: "Vibe Coding →", tab: "systems" }
   },
 
@@ -1114,6 +1153,7 @@ export const PREP_QUESTIONS = [
     options: ["Embedding model is broken", "Semantic similarity captures linguistic style and topic, not factual accuracy — the retrieved chunk discusses the right topic but contains a different fact", "Top-k is too low", "The LLM has hallucinated the embedding"],
     correct: 1, keywords: [],
     explanation: "This is the classic semantic similarity trap. A query about 'Q3 revenue' will match a chunk about 'Q2 revenue discussion' at high similarity — same domain, same style. Cosine similarity is a retrieval signal, not a correctness signal. Fixes: add metadata filtering (quarter, year), use hybrid search with exact-match keyword boost, or add post-retrieval answer verification.",
+    trap: "Saying \'lower the similarity threshold.\' High cosine similarity means retrieval is working correctly. Wrong answers with high similarity means the model is hallucinating from retrieved context — a generation-layer failure, not retrieval.",
     readMore: { label: "Traps Lab →", tab: "systems" }
   },
   {
@@ -1130,6 +1170,7 @@ export const PREP_QUESTIONS = [
     options: ["Network latency increases with task length", "Context window degradation — after 15+ steps of Thought/Action/Observation, early context (task goal, constraints) is positioned in the 'lost in the middle' zone and attention weight drops", "Tool rate limits kick in at 15 calls", "Temperature drift over long sequences"],
     correct: 1, keywords: [],
     explanation: "Long agent trajectories accumulate context. The original task specification, key constraints, and early tool results drift toward the middle of an ever-growing context. LLMs underweight middle-context content (Liu et al. 2023). Fix: periodic re-anchoring (re-inject the original goal every N steps), summarize completed sub-tasks, keep running context under 40K tokens with a sliding summary buffer.",
+    trap: "Saying \'the model is worse in production.\' The pattern (works short, fails long) points to context management — the agent is losing state after N turns, not degrading in capability.",
     readMore: { label: "Traps Lab →", tab: "systems" }
   },
   {
@@ -1138,6 +1179,7 @@ export const PREP_QUESTIONS = [
     options: ["Approximate attention with locality-sensitive hashing", "Tiling inputs into SRAM blocks and avoiding full N×N materialization", "Sparse attention patterns that skip non-local tokens", "Quantizing the attention weights to INT8"],
     correct: 1, keywords: [],
     explanation: "Flash Attention tiles the query/key/value matrices into SRAM-sized blocks and computes attention incrementally using the online softmax trick. This avoids writing the O(N²) attention matrix to HBM, reducing memory I/O from O(N²) to O(N). LSH attention (Reformer) is a different approach. Sparsity and quantization are orthogonal techniques.",
+    trap: "Saying \'it approximates attention.\' Flash Attention computes EXACT attention — the memory reduction comes from tiling that processes the attention matrix in fast SRAM blocks without writing the full N×N matrix to HBM.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1154,6 +1196,7 @@ export const PREP_QUESTIONS = [
     options: ["Fusing the softmax and matmul into a single kernel", "Computing softmax without seeing all attention scores simultaneously", "Replacing softmax with a linear approximation", "Parallelizing softmax across multiple GPUs"],
     correct: 1, keywords: [],
     explanation: "Online softmax maintains a running max and running sum as it processes tiles, allowing it to compute numerically stable softmax incrementally. This means Flash Attention never needs to materialize the full N×N score matrix — it can compute the output tile-by-tile. This is the key algorithmic insight that enables O(N) HBM reads.",
+    trap: "Saying \'it skips the softmax step.\' Online softmax computes the normalised output incrementally as new blocks arrive, without seeing the full sequence first — enabling block-wise attention without materialising the full matrix.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1162,6 +1205,7 @@ export const PREP_QUESTIONS = [
     options: ["Supporting longer sequence lengths via disk offloading", "Better parallelization across attention heads and sequence length dimension", "Switching from FP16 to INT8 arithmetic", "Adding support for causal masking for the first time"],
     correct: 1, keywords: [],
     explanation: "Flash Attention v2 introduced better work partitioning: parallelism across both attention heads AND the sequence length dimension (using warp-level parallelism). It also reduced non-matmul FLOPs. v1 only parallelized across the batch and head dimensions, leaving GPU utilization on the table for long sequences.",
+    trap: "Saying \'better approximation.\' Flash Attention v2 improved GPU warp work partitioning and reduced redundant HBM reads by increasing arithmetic intensity. The algorithm is unchanged — the improvement is implementation-level occupancy.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1170,6 +1214,7 @@ export const PREP_QUESTIONS = [
     options: ["Quantizing one layer at a time using second-order information to minimize output error", "Using QAT (quantization-aware training) with gradient checkpointing", "Applying quantization only to attention weights, not FFN weights", "Requiring a labeled dataset of 10K+ examples"],
     correct: 0, keywords: [],
     explanation: "GPTQ uses an OBQ (Optimal Brain Quantization) approach: it quantizes weights one-by-one per layer, using the Hessian (second-order information) to compensate for quantization error in remaining weights. This gives better quality than naive round-to-nearest. It only needs a small calibration set (~128 samples), not labeled data.",
+    trap: "Saying \'GPTQ is just lower precision.\' GPTQ minimises quantisation error layer-by-layer by solving a second-order optimisation problem using an approximate Hessian — it adjusts remaining weights to compensate for rounding error.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1178,6 +1223,7 @@ export const PREP_QUESTIONS = [
     options: ["Keeping 1% of weights in FP16 based on activation magnitude", "Using 3-bit quantization instead of 4-bit", "Applying quantization after each training step", "Reducing the model's vocabulary size before quantization"],
     correct: 0, keywords: [],
     explanation: "AWQ observes that a small subset of weights (~1%) are 'salient' — their corresponding input activations have large magnitudes, making them highly sensitive to quantization error. AWQ protects these weights by keeping them in FP16 or scaling them before quantization. This preserves model quality without requiring the complex per-weight Hessian computation of GPTQ.",
+    trap: "Saying \'AWQ uses better calibration data.\' AWQ\'s key insight is protecting salient weights — the 1% of weights with the highest activation magnitude are scaled up before quantisation so they lose proportionally less information.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1194,6 +1240,7 @@ export const PREP_QUESTIONS = [
     options: ["Minimize rounding error for uniformly distributed weights", "Optimally quantize weights that follow a normal distribution", "Support hardware-native 4-bit arithmetic on H100s", "Replace FP16 activations to reduce memory bandwidth"],
     correct: 1, keywords: [],
     explanation: "NF4 is an information-theoretically optimal quantization for normally distributed data. It places quantization levels non-uniformly: more levels near zero (where most weights cluster) and fewer at extremes. This minimizes quantization error for pretrained model weights, which empirically follow a normal distribution. It's not a hardware format — operations are dequantized to BF16 for actual compute.",
+    trap: "Saying \'it is just 4-bit floating point.\' NF4 places quantisation levels to minimise expected error under a Gaussian distribution — not uniformly. Standard INT4 does not exploit the fact that pretrained weights are normally distributed.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1226,6 +1273,7 @@ export const PREP_QUESTIONS = [
     options: ["vLLM supports more model architectures; TRT-LLM gives higher throughput on NVIDIA hardware with more engineering", "TRT-LLM is open source; vLLM is proprietary", "vLLM only supports A100 GPUs; TRT-LLM supports all NVIDIA GPUs", "TRT-LLM uses continuous batching; vLLM uses static batching"],
     correct: 0, keywords: [],
     explanation: "vLLM is the most flexible framework (wide model support, simple deployment, excellent for most teams) while TensorRT-LLM requires model-specific engine compilation but achieves higher raw throughput on NVIDIA GPUs via custom CUDA kernels and TensorRT optimization. For most teams vLLM is the right starting point; TRT-LLM is worth the complexity only at very high scale.",
+    trap: "Saying \'TensorRT-LLM is always better.\' TRT-LLM requires NVIDIA hardware and compilation overhead. vLLM wins on hardware flexibility and rapid model iteration; TRT-LLM wins on peak NVIDIA throughput with stable model versions.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1234,6 +1282,7 @@ export const PREP_QUESTIONS = [
     options: ["The model weights compressed to FP8", "The KV cache for the common prefix of a prompt", "The logit distribution for common output tokens", "The tokenized representation of the system prompt"],
     correct: 1, keywords: [],
     explanation: "When requests share a common prefix (system prompt, few-shot examples, document), the KV cache computed for that prefix can be stored server-side and reused. On a cache hit, the model skips computing attention over those tokens entirely, reducing both TTFT and cost. Only the KV tensors are cached — not weights or logits.",
+    trap: "Saying \'it caches the model outputs.\' Prompt caching stores and reuses the KV (key-value) cache from attention layers, not the text output. The cache is exact per prefix, not a fuzzy match.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1242,6 +1291,7 @@ export const PREP_QUESTIONS = [
     options: ["128 tokens", "512 tokens", "1024 tokens", "4096 tokens"],
     correct: 2, keywords: [],
     explanation: "Anthropic requires a minimum of 1024 tokens in the cache-eligible prefix (the part marked with cache_control: ephemeral or in the system prompt). OpenAI's automatic prefix caching activates at 1024 tokens as well. Shorter prefixes aren't worth caching because the overhead of cache lookup and storage management exceeds the savings.",
+    trap: "Saying \'any repeated text activates caching.\' Anthropic\'s cache activation threshold is 1,024 tokens minimum for the cached prefix. Shorter prefixes don\'t cache regardless of repetition frequency.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1274,6 +1324,7 @@ export const PREP_QUESTIONS = [
     options: ["The model forgetting to follow the instruction format after a few epochs", "Loss of general capabilities acquired during pretraining due to narrow fine-tuning distribution", "GPU memory overflow causing training to restart from checkpoint", "The optimizer forgetting gradient history when learning rate is reset"],
     correct: 1, keywords: [],
     explanation: "Catastrophic forgetting occurs when fine-tuning on a narrow task distribution overwrites the broader knowledge learned during pretraining. The model may become excellent at the specific task but lose capabilities like coding, math, or multilingual understanding. Mitigations: use LoRA (frozen base), include diverse data, train for fewer epochs, use a small learning rate.",
+    trap: "Saying \'the model forgets the training data.\' Catastrophic forgetting is the reverse: the model overwrites general capability while improving on the target task. The model gets better at the new task but loses broader knowledge.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1290,6 +1341,7 @@ export const PREP_QUESTIONS = [
     options: ["100–500 examples", "1,000–10,000 high-quality examples", "100,000+ examples required", "Dataset size doesn't matter; only format matters"],
     correct: 1, keywords: [],
     explanation: "Research (LIMA, Alpaca, OpenHermes) consistently shows that 1K–10K high-quality, diverse instruction pairs produce strong behavioral fine-tuning. The LIMA paper demonstrated that 1,000 carefully curated examples match models fine-tuned on 50K+ examples. Quality and diversity matter far more than quantity. Below 500 examples, results are inconsistent. Above 50K, you risk catastrophic forgetting.",
+    trap: "Saying \'the more data, the better.\' 500 high-quality examples is sufficient for meaningful behavioural change (LIMA paper). More low-quality examples can degrade the model. Quality and diversity matter more than volume for instruction fine-tuning.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1346,6 +1398,7 @@ export const PREP_QUESTIONS = [
     options: ["Late fusion is cheaper but can't model fine-grained image-text interactions", "Early fusion is cheaper but loses modality-specific representations", "Late fusion requires more GPU memory; early fusion requires less", "There is no meaningful quality difference between them"],
     correct: 0, keywords: [],
     explanation: "Late fusion (separate encoders, combined at the output) is computationally efficient and easy to train per-modality. But it can't model token-level interactions between image patches and text — e.g., 'the red car on the left' requires attending to specific image regions while reading each word. Early fusion (interleaved tokens from the start) or cross-attention fusion handles this but at higher compute cost.",
+    trap: "Saying \'early fusion is always better.\' Early fusion requires end-to-end multimodal training and is harder to update. Late fusion allows modality-specific pretraining and is easier to maintain — the tradeoff is integration depth versus modularity.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -1354,6 +1407,7 @@ export const PREP_QUESTIONS = [
     options: ["High-res images require retraining CLIP from scratch", "More visual tokens increase the LLM's sequence length quadratically in attention cost", "JPEG compression artifacts confuse the vision encoder", "LLMs cannot process more than 256 image tokens"],
     correct: 1, keywords: [],
     explanation: "A 336×336 image with patch size 14 produces 576 visual tokens. At 1344×1344 (4× resolution), that's 9,216 tokens — each added to the text tokens, making the total sequence very long. Attention is O(N²), so 9K visual tokens dramatically increases compute and memory. Solutions: LLaVA-HD uses dynamic tiling, InternVL uses pixel shuffle compression, mPLUG-Owl uses abstractor modules to compress visual tokens before passing to the LLM.",
+    trap: "Saying \'image quality degrades.\' The computational challenge is token count: high-resolution images produce large numbers of visual tokens that fill the context window, competing with prompt and conversation history.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
 
@@ -1383,6 +1437,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "HyDE addresses the query-document embedding mismatch: user queries are short and vague, documents are dense and specific. HyDE asks the LLM to generate a hypothetical document that would answer the query, then embeds that hypothetical document for retrieval. The hypothetical document lives in the same embedding space as real documents, dramatically improving recall on factual and technical queries.",
+    trap: "Saying \'HyDE is just query expansion.\' HyDE generates a hypothetical answer document and embeds THAT — not the query. It maps from question space to answer space before retrieval, which is fundamentally different from keyword expansion.",
     readMore: { label: "RAG Patterns →", tab: "systems" }
   },
   {
@@ -1409,6 +1464,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "Small chunks (128 tokens) embed well — they capture specific facts without noise — but lack surrounding context. Large chunks (1024 tokens) provide context but embed poorly as averaged-meaning representations. Parent-child chunking embeds small child chunks for retrieval precision, then returns the parent chunk (with full context) to the LLM. This gives the best of both: accurate retrieval + rich generation context.",
+    trap: "Saying \'use larger chunks for better context.\' Large chunks alone degrade retrieval precision. Parent-child chunking retrieves precisely with small chunks while providing the semantic frame via the parent — precision and context are decoupled.",
     readMore: { label: "RAG Patterns →", tab: "systems" }
   },
 
@@ -1425,6 +1481,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "Attention is O(N²) in sequence length — doubling context length quadruples attention compute and increases latency significantly. More critically, empirical research shows LLM recall and reasoning quality degrade with very long contexts (lost-in-the-middle, attention dilution). Cost is a secondary concern. The right approach is to retrieve/filter aggressively so only the most relevant content fills the window.",
+    trap: "Saying \'more context is always better.\' The Lost in the Middle finding (Liu et al.) shows attention degrades on middle-of-context content. Filling the context window with marginally relevant content can hurt answer quality.",
     readMore: { label: "Context Engineering →", tab: "systems" }
   },
   {
@@ -1438,6 +1495,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 0, keywords: [],
     explanation: "Sliding window attention restricts each token to attend only to the W most recent tokens (the window), keeping KV cache size at O(W) rather than O(sequence length). Tokens beyond W still influence later tokens through cascading windows across layers. Mistral uses W=4096 with rotary embeddings that handle relative positions within the window. GQA is used alongside to further reduce KV cache size.",
+    trap: "Saying \'it reduces quality.\' Sliding window reduces memory by attending only to the last K tokens. Long-range dependencies beyond the window break — which matters for some tasks and not others.",
     readMore: { label: "Context Engineering →", tab: "systems" }
   },
   {
@@ -1464,6 +1522,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "The hybrid approach outperforms any single strategy: a rolling summary captures what's been discussed without exact tokens, recent turns (last 3-5) are kept verbatim for coherence, and a retrieval step pulls turns specifically relevant to the current message. Truncating from the beginning loses critical early context (user goals, established facts). The retrieval-only approach misses conversational flow.",
+    trap: "Saying \'use a larger model with more context.\' Larger context is expensive and subject to Lost in the Middle. The correct answer is active context management: summarising earlier turns and using external memory to prune low-importance history.",
     readMore: { label: "Context Engineering →", tab: "systems" }
   },
 
@@ -1569,6 +1628,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: ["speculative decoding", "draft model", "verification", "throughput", "parallel"],
     explanation: "The small draft model generates k candidate tokens autoregressively (fast). The large target model then verifies all k tokens in a single forward pass (since verification is parallelizable unlike generation). Accepted tokens are kept; the first rejected token is resampled from the target distribution. Net effect: multiple tokens per large-model forward pass, 2-4× speedup with zero quality loss.",
+    trap: "Saying \'it parallelises token generation.\' Speculative decoding is sequential — a draft model generates K tokens cheaply, then the target model verifies them in ONE parallel forward pass. The speedup is from verification being faster than full-quality generation.",
     readMore: { label: "Speculative Decoding →", tab: "systems" }
   },
   {
@@ -1627,6 +1687,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: ["SSE", "Server-Sent Events", "WebSocket", "streaming", "unidirectional"],
     explanation: "LLM streaming is inherently unidirectional: the server generates tokens and pushes them to the client. SSE is purpose-built for this — it's a simple HTTP response with Content-Type: text/event-stream, no handshake protocol, automatic reconnection, and works through standard HTTP infrastructure (load balancers, CDNs). WebSockets add bidirectional complexity that streaming LLM responses don't need.",
+    trap: "Saying \'SSE is bidirectional.\' SSE is one-directional (server→client) which is the feature, not a limitation — LLM streaming is a one-way push. WebSockets add bidirectional complexity that token streaming does not need.",
     readMore: { label: "Streaming Patterns →", tab: "systems" }
   },
   {
@@ -1641,6 +1702,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: ["TTFT", "TBT", "time to first token", "prefill", "memory bandwidth", "latency"],
     explanation: "Prefill (computing KV cache for the input prompt) is a compute-bound operation that scales with prompt length — this is TTFT. Generation (producing each output token autoregressively) is memory-bandwidth-bound — the bottleneck is loading model weights from HBM per token, not compute. Optimizing one doesn't necessarily help the other: Flash Attention improves TTFT, speculative decoding improves TBT.",
+    trap: "Saying \'TTFT is more important than TBT.\' Both matter for different use cases: TTFT determines perceived responsiveness (how quickly the UI feels alive); TBT determines reading pace. Chat interfaces are TTFT-sensitive; long document generation is TBT-sensitive.",
     readMore: { label: "Streaming Patterns →", tab: "systems" }
   },
   {
@@ -1655,6 +1717,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: ["streaming", "DOM", "layout thrashing", "token rendering", "buffering"],
     explanation: "Updating the DOM on every single token (~5-20ms intervals) causes excessive reflows and can make the UI feel choppy, especially with markdown rendering. Buffering to word boundaries (space character) or sentence boundaries reduces DOM updates by 5-10× with no perceptible quality loss to the user. Full re-render on each token (option D) is particularly bad — it defeats React's virtual DOM optimization by invalidating the entire component tree.",
+    trap: "Saying \'render each token immediately.\' Per-token DOM updates at 30+ tokens/sec cause severe layout thrashing. The correct pattern is batching updates with requestAnimationFrame — accumulate 50-100ms of tokens then render in a single frame.",
     readMore: { label: "Streaming Patterns →", tab: "systems" }
   },
   {
@@ -1669,6 +1732,7 @@ export const PREP_QUESTIONS = [
     correct: 0,
     keywords: ["JSON", "streaming", "validation", "structured output", "incremental parsing"],
     explanation: "JSON validation requires a complete, closed document — you can't validate partial JSON. This creates a tension: you want to stream tokens for latency, but you need complete JSON for your downstream code. Solutions: stream raw tokens to the UI for display while buffering for validation, use streaming JSON parsers (like jsonstream) that parse incrementally, or use structured generation (Outlines/Guidance) to guarantee valid JSON token-by-token via logit masking.",
+    trap: "Saying \'wait for the complete JSON then parse.\' Partial JSON is not parseable. The correct approach is a streaming JSON parser with a state machine that extracts partial field values as they arrive.",
     readMore: { label: "Streaming Patterns →", tab: "systems" }
   },
 
@@ -1685,6 +1749,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: ["SLERP", "model merging", "interpolation", "weight magnitude", "hypersphere"],
     explanation: "Simple linear interpolation (lerp) shrinks weight magnitudes — the interpolated vector has smaller norm than either endpoint. SLERP maintains constant magnitude by traversing the geodesic path on the unit hypersphere, which better preserves the feature norms that pretrained models rely on. In practice this produces higher quality merged models, especially when merging models trained on different domains.",
+    trap: "Saying \'both produce the same result.\' Linear interpolation can cancel opposing weights (model A\'s +1 and model B\'s -1 average to 0, losing both capabilities). SLERP interpolates along the weight hypersphere surface, preserving more of each model\'s structure.",
     readMore: { label: "Model Merging →", tab: "systems" }
   },
   {
@@ -1727,6 +1792,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: ["Model Soup", "weight averaging", "hyperparameters", "generalization", "loss basin"],
     explanation: "Model Soup averages the weights of multiple models fine-tuned from the same pretrained base, each with different hyperparameters (learning rate, augmentation, etc.). Because fine-tuned models from the same base tend to reside in the same loss basin, their average lies in a flat region of the loss landscape — giving better generalization than any individual model. This is weight-space ensembling without the inference cost of a traditional ensemble.",
+    trap: "Saying \'averaging models hurts performance.\' Model Soup works specifically when merging models fine-tuned from the same pretrained checkpoint. The shared loss landscape means averaging does not push weights into out-of-distribution regions.",
     readMore: { label: "Model Merging →", tab: "systems" }
   },
 
@@ -1743,6 +1809,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: ["constrained generation", "Outlines", "Guidance", "logit masking", "schema"],
     explanation: "At each generation step, the constraint engine computes a binary mask over the vocabulary: tokens that would keep the partial output valid (per regex, JSON schema, or CFG) get logit 0, invalid tokens get -∞. After softmax, the model can only sample from the valid set. This is lossless — you get the model's original distribution restricted to valid tokens — and works with any LLM without fine-tuning.",
+    trap: "Saying \'it just adds a format instruction.\' Constrained generation enforces structure at the token-sampling level — only tokens continuing a valid grammar are allowed at each step. This is fundamentally different from prompt instructions, which the model can ignore.",
     readMore: { label: "Constrained Generation →", tab: "systems" }
   },
   {
@@ -1757,6 +1824,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: ["GBNF", "BNF", "llama.cpp", "grammar", "constrained generation", "finite automaton"],
     explanation: "GBNF is a BNF-style grammar format that defines the complete syntactic structure of valid outputs. llama.cpp compiles this grammar into a finite automaton that tracks the current parse state during generation. At each step, the automaton determines which tokens are valid continuations, and those tokens' logits are kept while all others are masked. This guarantees 100% grammatically valid outputs at the cost of ~5-15ms per token overhead.",
+    trap: "Saying \'it fine-tunes the model for the schema.\' GBNF applies grammar constraints during inference only — it masks logits to zero for tokens that would violate the grammar. No model training is required.",
     readMore: { label: "Constrained Generation →", tab: "systems" }
   },
   {
@@ -1771,6 +1839,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: ["constrained generation", "prompting", "schema compliance", "failure rate", "latency"],
     explanation: "Even GPT-4 with explicit JSON instructions fails 1-5% of the time on complex schemas — this is unacceptable for production pipelines that feed structured output to downstream code. Constrained generation eliminates this failure mode entirely. The cost is 5-15ms latency overhead per token (for logit masking) and added infrastructure complexity. For high-volume production use where schema failures cause pipeline errors, the reliability is worth the overhead.",
+    trap: "Saying \'constrained generation always produces better structured output.\' Constrained generation guarantees valid schema but can produce semantically wrong content that is structurally correct. Prompting allows more semantic flexibility at the cost of occasional schema violations.",
     readMore: { label: "Constrained Generation →", tab: "systems" }
   },
   {
@@ -1801,6 +1870,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: [],
     explanation: "Flash Attention uses tiling: it splits Q, K, V into blocks that fit in fast SRAM, performing the softmax and attention output computation block-by-block without materialising the full N×N attention matrix in slow HBM. Memory footprint drops from O(N²) to O(N) at the cost of re-computation during the backward pass.",
+    trap: "Saying \'Flash Attention approximates attention.\' Flash Attention computes EXACT attention — the memory reduction comes from tiling and fused kernels that avoid materialising the full N×N attention matrix in HBM.",
     readMore: { label: "Flash Attention & Inference →", tab: "systems" }
   },
   {
@@ -1824,6 +1894,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: [],
     explanation: "Speculative decoding uses a cheap draft model to propose k tokens speculatively. The large model verifies all k in a single parallel forward pass — accepting correct ones and rejecting at the first mismatch. Since the large model's forward pass cost is roughly constant for 1 vs k tokens (memory-bandwidth-bound decode), you get k tokens for the cost of ~1. Typical speedup: 2–3×.",
+    trap: "Saying \'because it uses a smaller model.\' The key mechanism: the target model validates K draft tokens in a SINGLE forward pass. Parallelism in the verification step is the source of speedup, not model size alone.",
     readMore: { label: "Speculative Decoding →", tab: "systems" }
   },
   {
@@ -1838,6 +1909,7 @@ export const PREP_QUESTIONS = [
     correct: 3,
     keywords: [],
     explanation: "Streaming doesn't change actual throughput or true end-to-end latency — the model still generates the same number of tokens at the same speed. What changes is perceived responsiveness: the user sees the first token within milliseconds of TTFT rather than waiting for the entire response. This is a UX win, not a performance win in the traditional sense.",
+    trap: "Saying \'faster total response time.\' Streaming does not reduce total generation time — the model still generates the same tokens. The improvement is perceived responsiveness: users see content immediately instead of waiting.",
     readMore: { label: "Streaming & Latency →", tab: "systems" }
   },
   {
@@ -1886,6 +1958,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: [],
     explanation: "Linear interpolation (LERP) between two weight vectors changes their magnitude (the average of two unit vectors is shorter than either). SLERP interpolates along the curved surface of the hypersphere, preserving magnitude throughout. For neural network weights where the norm encodes learned feature scales, this geometric correctness matters — SLERP generally produces better capability retention than LERP when merging models trained on different tasks.",
+    trap: "Saying \'linear interpolation and SLERP produce the same result.\' Linear interpolation can cancel opposing weights, losing both capabilities. SLERP interpolates along the weight hypersphere surface, preserving more of each model\'s learned structure.",
     readMore: { label: "Model Merging →", tab: "alignment" }
   },
   {
@@ -1923,6 +1996,7 @@ export const PREP_QUESTIONS = [
     correct: 0,
     keywords: ["catastrophic forgetting", "task vectors", "SLERP", "data availability", "compute", "distribution shift", "multi-task"],
     explanation: "Merging wins when: (1) You have a fine-tuned specialist model for the new capability but no access to its training data (proprietary or expensive to recreate) — merge the task vector instead of retraining. (2) You need to combine capabilities from two fine-tuned models without catastrophic forgetting — fine-tuning on task B erases task A; merging preserves both. (3) Compute budget is tight — merging is inference-only, no GPU hours. Fine-tuning wins when: the new capability requires deep distribution shift (not just task addition) — for example, adapting a general LLM to a highly specific domain like medical coding where the output format, vocabulary, and failure modes are all different from pretraining. Task vectors don't capture deep distributional changes well.",
+    trap: "Saying \'fine-tuning gives better results.\' Model merging is the right choice when you want to combine capabilities without additional training data. Fine-tuning risks forgetting one capability while improving another; merging preserves both at the cost of some specialisation.",
     readMore: { label: "Model Merging →", tab: "alignment" }
   },
 
@@ -1948,6 +2022,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: [],
     explanation: "The most common expensive mistake in AI system design is building before validating that AI is the right tool. A rule-based system, a search index, or a human workflow might solve the problem better, cheaper, and more reliably. Defining the non-AI baseline first also gives you a concrete improvement target and evaluation benchmark. Cost, infra, and vector DB are all downstream of this foundational question.",
+    trap: "Saying \'choose the model first.\' The first design decision is failure mode definition — what does a wrong answer cost? This determines the acceptable quality bar, which then constrains every subsequent architectural choice.",
     readMore: { label: "System Design Canvas →", tab: "systems" }
   },
   {
@@ -1971,6 +2046,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: [],
     explanation: "The failure budget (borrowed from SRE) defines what error rate the system can tolerate without violating user-facing SLAs. In AI systems this is especially important because models fail probabilistically — you need to decide upfront what hallucination rate, refusal rate, or latency breach rate is acceptable. This decision drives: model selection (more reliable but slower/costlier vs faster but hallucination-prone), whether a fallback to rule-based/human is needed, and what your evals must catch before ship.",
+    trap: "Saying \'it limits the number of errors allowed.\' The failure budget is a design contract defining how much error is acceptable given the use case risk profile. Without it, teams cannot make principled quality tradeoffs between cost, latency, and accuracy.",
     readMore: { label: "System Design Canvas →", tab: "systems" }
   },
 
@@ -1987,6 +2063,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: [],
     explanation: "LLM token streaming is inherently unidirectional — the server sends tokens, the client renders them. SSE is purpose-built for this: it works over plain HTTP/1.1, reconnects automatically, and doesn't require a protocol upgrade handshake like WebSockets. WebSockets add complexity (bidirectional state, connection management, proxy issues) with no benefit for streaming. The main exception: if your chat UI sends audio or large binary data back to the server, WebSockets may be warranted.",
+    trap: "Saying \'SSE is bidirectional.\' SSE is intentionally one-directional (server→client), which is exactly what LLM token streaming requires. WebSockets add bidirectional overhead that streaming responses do not need.",
     readMore: { label: "Streaming & Serving →", tab: "systems" }
   },
   {
@@ -1996,6 +2073,7 @@ export const PREP_QUESTIONS = [
     correct: 0,
     keywords: ["buffering", "nginx", "proxy", "generation", "speculative", "context switch", "KV cache eviction", "network", "X-Accel-Buffering"],
     explanation: "Most common causes in order: (1) Proxy/CDN buffering — Nginx, Cloudflare, or API gateways buffer SSE by default. Fix: set X-Accel-Buffering: no header, configure proxy_buffering off. (2) Application-level buffering — middleware or response wrappers accumulating tokens before flushing. Fix: ensure flush() is called after each token. (3) KV cache pressure mid-generation — if the context exceeds cached KV state, the model recomputes; shows as a consistent pause at a predictable token position. Fix: monitor KV cache utilisation. (4) Generation stalls — model hitting a low-probability region, attempting multiple speculative decode paths. Less common but diagnosable by correlating pause timing with token log-probs.",
+    trap: "Saying \'increase server timeout.\' Mid-stream pauses are almost always a buffering issue — a proxy, CDN, or nginx config is buffering tokens before forwarding. The fix is X-Accel-Buffering: no headers, not timeout changes.",
     readMore: { label: "Streaming & Serving →", tab: "systems" }
   },
 
@@ -2011,6 +2089,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "For d_k-dimensional vectors with unit-variance components, the dot product Q·K has variance d_k. As d_k grows, extreme scores push softmax into saturation — gradients vanish and learning slows. Dividing by √d_k restores variance to ~1 and keeps softmax in a well-behaved gradient region. This is why the formula is Attention(Q,K,V) = softmax(QKᵀ/√d_k)V.",
+    trap: "Saying \'it prevents gradient explosion.\' The √d_k scaling prevents softmax saturation (near-zero gradients in the softmax), not gradient explosion during backprop. Without scaling, high-dimensional dot products push softmax into extremely peaked distributions.",
     readMore: { label: "Transformer Architecture →", tab: "concepts" }
   },
   {
@@ -2024,6 +2103,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "Each decode step must load K and V matrices for all previous tokens from HBM (GPU memory) — for a 70B model with 80 layers and long sequences, this is gigabytes of reads per token. Compute (the attention operation itself) is trivial by comparison. This is why generation throughput is memory-bandwidth-bound, not compute-bound, and why techniques like GQA, quantized KV caches, and PagedAttention all target KV cache size.",
+    trap: "Saying \'use a smaller model.\' KV cache grows because each past token\'s K and V vectors must be stored for autoregressive generation. The fixes are KV cache management techniques: eviction policies, quantised KV, or grouped query attention (GQA) to reduce head count.",
     readMore: { label: "Flash Attention →", tab: "systems" }
   },
   {
@@ -2050,6 +2130,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "In cross-attention, the decoder generates Q from its current hidden state but reads K and V from the encoder's final representations. This is what allows the decoder to 'condition on' the encoded input at every generation step. Self-attention has Q, K, V all from the same sequence. There's no causal masking in cross-attention since the encoder output is fully observed — the decoder can attend to any encoder position.",
+    trap: "Saying \'cross-attention uses a different softmax.\' The structural difference: in cross-attention, Q comes from the decoder (target sequence), while K and V come from the encoder output (source sequence). This is what enables the encoder-to-decoder information flow.",
     readMore: { label: "Transformer Architecture →", tab: "concepts" }
   },
 
@@ -2132,6 +2213,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "Standard position interpolation (PI) uniformly scales all RoPE frequencies, which degrades high-frequency dimensions that encode fine-grained local patterns. YaRN applies NTK-aware scaling: high-frequency RoPE dimensions (which handle short-range dependencies) are interpolated conservatively, while low-frequency dimensions (long-range) are scaled more aggressively. Combined with a short fine-tuning run on longer sequences, YaRN achieves near-native performance at 4-16× the original context length. Used in Mistral and LLaMA extensions.",
+    trap: "Saying \'YaRN fine-tunes the model for longer context.\' YaRN is a positional embedding interpolation technique — it rescales RoPE encodings to extrapolate beyond training context length without full fine-tuning.",
     readMore: { label: "Context Engineering →", tab: "systems" }
   },
   {
@@ -2145,6 +2227,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "A 128K context window doesn't mean a model reasons equally well over all 128K tokens. Empirically, retrieval accuracy and reasoning quality degrade with more context (especially low-signal context). The practical implication: don't retrieve top-20 chunks and hope the model figures it out. Retrieve top-5 with a reranker, compress aggressively, and keep the effective reasoning context tight. Filling the window is not a free upgrade.",
+    trap: "Saying the advertised and effective context are the same. Due to Lost in the Middle, models attend well to beginning and end but have lower recall probability for middle-of-context content, making reliable context shorter than advertised.",
     readMore: { label: "Context Engineering →", tab: "systems" }
   },
   {
@@ -2158,6 +2241,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "System prompt first establishes the model's role and constraints before any content. Retrieved chunks come next — placing evidence before the question means the model has loaded the relevant context when it reaches the query. Conversation history last, with the most recent turn immediately before the model's response, leverages both primacy (system prompt is highly attended) and recency (recent history is well-recalled). This order minimises the lost-in-the-middle effect for the retrieved evidence and aligns with how attention patterns behave in practice.",
+    trap: "Saying \'put the instructions first.\' For RAG systems the optimal ordering is: system prompt → examples → conversation history → retrieved context → current query. Placing retrieved context last (recency effect) maximises recall of the most relevant chunks.",
     readMore: { label: "Context Engineering →", tab: "systems" }
   },
 
@@ -2173,6 +2257,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 0, keywords: [],
     explanation: "During prefill, all prompt tokens are processed in one forward pass — this is highly parallel and GPU-compute-bound. During decode, one token is generated per step by loading the full model's weights from HBM to compute a single output — this is sequential and memory-bandwidth-bound. These different bottlenecks explain why Flash Attention improves TTFT (prefill) while speculative decoding improves throughput (decode), and why large prompt + short output workloads need different serving configs than short prompt + long output.",
+    trap: "Saying \'both phases are memory-bound.\' Prefill is compute-bound (parallel attention over the full prompt); decode is memory-bound (sequential token generation, loading weights per step). This difference drives the case for disaggregated serving architectures.",
     readMore: { label: "Serving Infrastructure →", tab: "systems" }
   },
   {
@@ -2199,6 +2284,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "Throughput (tokens/second across all requests) and latency (time per request) are in tension — maximising throughput means larger batches and more queuing, which increases per-request latency. For real-time chat, you optimise for P95 TTFT and TBT. For async workloads (nightly document processing, embedding generation, offline evals), you maximise GPU utilisation via large batch sizes. Many teams run two serving tiers: a low-latency interactive cluster and a high-throughput batch cluster with the same model.",
+    trap: "Saying \'always optimise for latency.\' Batch/async workloads like document processing have no user waiting — optimising for throughput (larger batches, higher GPU utilisation) reduces cost per token without user impact.",
     readMore: { label: "Serving Infrastructure →", tab: "systems" }
   },
   {
@@ -2240,6 +2326,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "Caches are prefix-keyed: a cache hit requires the prefix to match exactly. Static content (system prompt, tool definitions, few-shot examples) that never changes should always come first — this prefix is always cacheable. The user's unique query is appended last, after the cached prefix. If you put dynamic content first, the prefix is always unique and the cache never hits. Also: keep static content identical across requests down to whitespace — even a single character difference is a cache miss.",
+    trap: "Saying \'repeat the system prompt frequently.\' The structural principle: static content (system prompt, tool schemas, examples) must come FIRST, before any dynamic content. Cache keys are prefix-based — dynamic content in the middle breaks caching for all subsequent requests.",
     readMore: { label: "Prompt Caching →", tab: "systems" }
   },
   {
@@ -2253,6 +2340,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "Output caching returns a stored response for an identical input — zero inference cost and zero latency. It's appropriate for: FAQ-style chatbots where the same questions recur, classification tasks with fixed schemas, batch processing where reruns should be idempotent. It's inappropriate when freshness matters (current events, personalised responses) or when stochastic diversity is valuable. Temperature doesn't matter — you're bypassing the model entirely, so the cached response is deterministic by definition.",
+    trap: "Saying \'cache everything to save cost.\' Output caching is only safe for deterministic, non-personalised queries where the same input reliably produces the correct output. Time-sensitive or user-specific queries must bypass output cache entirely.",
     readMore: { label: "Prompt Caching →", tab: "systems" }
   },
   {
@@ -2266,6 +2354,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "If the cache expires between requests, the next request pays the 1.25× cache write premium again. For high-volume applications (hundreds of requests per minute), the cache stays warm automatically. For low-volume applications (a few requests per hour), the cache expires constantly and caching may cost more than it saves — calculate break-even carefully. The correct design: architect your system prompt and tool definitions as a stable long prefix, keep request volume high enough to amortise write costs, and monitor cache hit rate in your observability stack.",
+    trap: "Saying \'cache every long prompt.\' The 5-minute TTL means caching is only effective for high-frequency repeated prompts within the same session window. Prompts used once per user per day don\'t benefit — traffic volume must justify the cache_write cost.",
     readMore: { label: "Prompt Caching →", tab: "systems" }
   },
 
@@ -2294,6 +2383,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "Every token being generated occupies a KV cache slot and GPU compute. When the user cancels (closes the connection, navigates away), the serving system should detect the broken connection, abort the generation worker, and immediately free the KV cache. Continuing generation wastes GPU capacity that could serve other requests. Most production serving frameworks (vLLM, TGI) handle this via connection lifecycle hooks. Not implementing cancellation is a common source of GPU under-utilisation in production.",
+    trap: "Saying \'just close the connection.\' The client closing the connection does not always propagate to the inference server. The correct behaviour is detecting the disconnect server-side and cancelling the generation request to free compute resources.",
     readMore: { label: "Streaming Patterns →", tab: "systems" }
   },
   {
@@ -2307,6 +2397,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 0, keywords: [],
     explanation: "Tool call arguments arrive as streamed JSON fragments — partial strings like name='get_weather', arguments='...city...London...' arrive token by token and cannot be parsed until the block is complete. You cannot invoke the function until the complete JSON is received and parseable. The client must detect that the current stream chunk is part of a tool call delta, buffer it, and only invoke the function when the tool_calls block is complete. OpenAI and Anthropic stream tool use deltas differently — tool use in Anthropic's streaming API uses input_json_delta events that must be concatenated before parsing.",
+    trap: "Saying \'tool calls cannot be streamed.\' They can be streamed, but complete tool call parameters must be buffered before execution — you cannot invoke a function on partial arguments. The streaming architecture needs to detect parameter completion before dispatch.",
     readMore: { label: "Streaming Patterns →", tab: "systems" }
   },
   {
@@ -2320,6 +2411,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1, keywords: [],
     explanation: "Users experience streaming as 'when does it start?' and 'does it feel smooth?'. P95 TTFT is the primary metric because users perceive a blank screen as the most frustrating wait — they'll tolerate a slower stream once it starts. P95 (not mean) because outliers matter for perceived reliability. Mean token inter-arrival time matters for smoothness but only after TTFT. Total throughput is a capacity metric, not a user experience metric. End-to-end latency matters for non-streaming use cases.",
+    trap: "Saying \'total response time is the primary metric.\' From user perception research, TTFT dominates satisfaction for interactive chat. Total time is more important for document tasks. Time to useful content is the metric that maps most closely to user satisfaction.",
     readMore: { label: "Streaming Patterns →", tab: "systems" }
   },
 
@@ -2338,6 +2430,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["direction", "angle", "normaliz", "magnitude", "length", "dot product", "unit vector"],
     explanation: "Cosine similarity divides the dot product by both magnitudes — normalising them to unit vectors. A 10-word chunk and a 1000-word chunk pointing in the same semantic direction score 1.0. This is correct for retrieval: you want topical alignment, not length matching. The tradeoff: two chunks can discuss different aspects of a topic and still score high because the overall direction is similar.",
+    trap: "Saying cosine measures \'similarity in meaning.\' Cosine specifically measures the angle between vectors, not magnitude — which is what you want for semantic similarity since embeddings are normalised. This is a precision question about the mathematical operation.",
     readMore: { label: "Cosine Similarity Explorer", tab: "explore" }
   },
   {
@@ -2346,6 +2439,7 @@ export const PREP_QUESTIONS = [
     options: ["Chunk size too large", "Orthogonal queries — these queries embed in a direction where the correct document is at cosine similarity near 0, so retrieval returns unrelated but non-orthogonal chunks instead", "LLM hallucination rate is exactly 10%", "Embedding model dimension too low"],
     correct: 1, keywords: [],
     explanation: "When a query embeds into a region of vector space not populated by your document corpus, all retrieval scores are mediocre (0.3–0.5). The system retrieves the least-wrong documents and the LLM makes up an answer from irrelevant context. This is the 'distribution mismatch' failure: your embedding model was trained on text unlike your documents. Fix: domain-specific fine-tuning of the embedding model, or hard-negative mining.",
+    trap: "Saying \'the embedding model is wrong.\' 10% random noise pattern suggests retrieval score threshold or top-k configuration issue, not model quality. Model quality failures are systematic by query type, not random.",
     readMore: { label: "Cosine Similarity Explorer", tab: "explore" }
   },
 
@@ -2364,6 +2458,7 @@ export const PREP_QUESTIONS = [
     options: ["Full context — concatenate all 200 papers", "Map-reduce — extract key findings per paper in parallel, then synthesise the extractions", "Chunk-then-summarise — summarise each paper sequentially", "Single embedding lookup per paper"],
     correct: 1, keywords: [],
     explanation: "Map-reduce is the right pattern for synthesis across many documents. The map step extracts relevant findings per paper (cheap, parallelisable). The reduce step synthesises across extractions. Full context fails because 200 papers vastly exceed any context window. Chunk-then-summarise is sequential (slow) and loses cross-paper relationships.",
+    trap: "Saying \'use a 1M context window.\' Even with large context, synthesis quality degrades across 200 papers — the model cannot reliably attend to all sources. Map-reduce over structured per-paper extractions consistently outperforms context stuffing at this scale.",
     readMore: { label: "Long Context Patterns →", tab: "systems" }
   },
   {
@@ -2372,6 +2467,7 @@ export const PREP_QUESTIONS = [
     options: ["Full context on every query", "Re-embed the document on every query", "Chunk-then-summarise once and cache the compressed representation; query the summaries", "Use a smaller model to reduce cost"],
     correct: 2, keywords: [],
     explanation: "Chunk-then-summarise amortises the summarisation cost across all queries. Pay once to compress 500 pages into a summary, then send only the summary (much fewer tokens) on each of the 100 daily queries. Full context at 100K tokens/query × 100 queries = 10M tokens/day. Summarise once (100K tokens) then query at 5K tokens each = 600K tokens/day — ~16× cheaper.",
+    trap: "Saying \'use RAG to chunk the document.\' 100 queries/day on the same 500-page document means prompt caching is the right tool. Cache the document prefix, pay 90% less per query — RAG adds retrieval latency and complexity without benefit when the full document is reused.",
     readMore: { label: "Long Context Patterns →", tab: "systems" }
   },
   {
@@ -2380,6 +2476,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["recall", "lost-in-the-middle", "degradation", "NIAH", "reliable", "benchmark", "design"],
     explanation: "The advertised window is the maximum tokens the model will accept. The reliable window is the range over which retrieval recall stays high (typically 85%+). For GPT-4o, advertised is 128K but reliable is ~64K. The gap matters for system design: a system designed around the 128K limit will silently miss facts in the outer range. Always design around the reliable window and use retrieval for anything beyond it.",
+    trap: "Saying they\'re the same. Models show attention degradation in the middle of long contexts (Lost in the Middle), so reliable context is shorter than the advertised maximum. Interviewers want to hear this specific distinction.",
     readMore: { label: "Long Context Patterns →", tab: "systems" }
   },
 
@@ -2390,6 +2487,7 @@ export const PREP_QUESTIONS = [
     options: ["Pinecone — managed SaaS removes all ops", "pgvector — Postgres extension, no new infrastructure", "Chroma — easiest to set up", "Weaviate — best hybrid search"],
     correct: 1, keywords: [],
     explanation: "pgvector as a Postgres extension means zero new infrastructure: install the extension, add a vector column, create an HNSW index. You keep your existing Postgres ops knowledge, backups, monitoring, and SQL query patterns. At 8M vectors it comfortably fits in RAM with HNSW. Pinecone is the right call when you need to scale past what Postgres can handle or have no ops team — not when you are already on Postgres.",
+    trap: "Saying \'use Pinecone for production.\' When the team already runs Postgres with 8M vectors, pgvector eliminates operational overhead and keeps vectors co-located with source data. Managed vector DBs add cost and complexity unjustified at this scale.",
     readMore: { label: "Vector DB Engineering →", tab: "systems" }
   },
   {
@@ -2398,6 +2496,7 @@ export const PREP_QUESTIONS = [
     options: ["IVFFlat — faster to build, lower memory, tune nprobe for recall", "HNSW — higher memory (full graph in RAM), very fast queries, high recall at default settings", "IVF+PQ — best for this scale, no trade-offs", "Flat — exact search, no approximation needed at this scale"],
     correct: 1, keywords: [],
     explanation: "HNSW is the right choice for low-latency, high-recall requirements when data fits in RAM. 20M 1536-dim float32 vectors = ~115GB — requires a large-memory instance. The trade-off is memory cost vs query speed. IVFFlat uses less memory but requires tuning nprobe to hit recall targets, and p99 latency is less predictable. Flat exact search at 20M vectors is orders of magnitude too slow for sub-5ms.",
+    trap: "Saying \'use cosine similarity with flat index.\' Flat index is O(N) linear scan — it will not meet p99 latency at 20M vectors. HNSW provides O(log N) approximate nearest-neighbour search at the required recall level.",
     readMore: { label: "Vector DB Engineering →", tab: "systems" }
   },
   {
@@ -2406,6 +2505,7 @@ export const PREP_QUESTIONS = [
     options: ["Embedding model dimension too small — increase to 3072", "Dense retrieval fails on exact strings — add BM25 sparse retrieval and merge with RRF for hybrid search", "Chunk size too small — increase to capture more context", "Reranker model needed"],
     correct: 1, keywords: [],
     explanation: "Dense (vector) retrieval finds semantically similar content but is poor at exact string matching. Product codes, CVE identifiers, and serial numbers don't have semantic neighbors — they need exact lexical match. BM25 sparse retrieval handles this natively. Hybrid search merges dense + sparse results using Reciprocal Rank Fusion (RRF score = Σ 1/(k+rank_i)), ensuring both semantic similarity and keyword matches contribute to final ranking.",
+    trap: "Saying \'fine-tune the embedding model.\' Exact-match failures on identifiers are an architecture issue, not model quality. Dense embeddings cannot reliably match rare identifiers — hybrid search (BM25 + dense with RRF fusion) is the correct fix.",
     readMore: { label: "Vector DB Engineering →", tab: "systems" }
   },
   {
@@ -2414,6 +2514,7 @@ export const PREP_QUESTIONS = [
     options: ["Separate vector DB index per customer — safest isolation", "Single index with customer_id metadata filter applied before vector search", "Single index, post-filter results by customer_id after retrieval", "Namespace per customer in Pinecone"],
     correct: 1, keywords: [],
     explanation: "A single index with pre-filtering by customer_id metadata is the standard production pattern. Pre-filtering (applied before ANN search) ensures the search space is restricted to the tenant's documents — correct isolation and efficient. Post-filtering (retrieve top-K globally, then filter) leaks information about other tenants' document existence in edge cases and wastes compute retrieving documents that will be discarded. Separate indexes per customer creates 500× the operational overhead.",
+    trap: "Saying \'use separate vector collections per customer.\' 500 collections adds significant operational overhead. Namespace or partition isolation within one collection with metadata filtering is the production-standard approach.",
     readMore: { label: "Vector DB Engineering →", tab: "systems" }
   },
   {
@@ -2512,6 +2613,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 2,
     explanation: "Sliding window is seductively simple but wrong in practice — you lose potentially critical earlier context (a user preference set in message 1 that matters in message 200). Increasing context window delays the problem but doesn't solve it, and 1M-token contexts have high latency and cost. The correct fix is selective memory: after each turn, the agent decides what's worth keeping in persistent long-term storage (user preferences, key decisions, entities) vs what's ephemeral (intermediate reasoning, tool call scaffolding). The long-term store is queried at the start of each session rather than kept in context. This is the Redis → Postgres → VectorDB production stack in practice.",
+    trap: "Saying \'use a larger context window.\' Larger context is expensive and delays the problem. The correct fix is external memory — write tool outputs to a file or Redis store so the agent prunes in-context history during the session.",
     readMore: { label: "Agent Memory Architecture →", tab: "systems" }
   },
   {
@@ -2525,6 +2627,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 2,
     explanation: "User preferences are semantic memory: they describe durable facts about the user that should be applied globally across sessions, not retrieved situationally. Semantic memory is structured (key-value or a preferences schema), always loaded at session start, and updated when preferences change — not retrieved by similarity. Episodic memory is for specific events ('user asked about Project X on March 5'). Vector memory is for similarity-based retrieval where you don't know in advance what you'll need. The semantic/episodic distinction is the one most teams collapse into a single vector store and then wonder why their agent forgets preferences.",
+    trap: "Saying \'store in the system prompt.\' User preferences change over time and the system prompt is static per session. Semantic memory in a vector store with retrieval at session start is the correct pattern for persistent, updateable user preferences.",
     readMore: { label: "Agent Memory Architecture →", tab: "systems" }
   },
   {
@@ -2574,6 +2677,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1,
     explanation: "Map-reduce processes each chunk independently and then aggregates answers — it works when the answer exists within a single chunk. Chunk-then-summarise first compresses each chunk to a dense summary (preserving key facts, discarding filler), then feeds all summaries into a single context for synthesis. The advantage: cross-chunk reasoning. If the answer requires combining information from chunk 3 and chunk 17, map-reduce misses it (each chunk is processed alone). Summaries fit more chunks into a single context pass, enabling the model to see the whole picture simultaneously. Trade-off: summarisation loses detail — if the exact wording matters (legal, compliance), chunk-then-summarise can drop critical nuance that raw map-reduce would preserve.",
+    trap: "Saying \'just use longer chunks.\' Very long documents with dense facts need per-section summarisation before synthesis. chunk-then-summarise decouples chunk length from synthesis quality — it is not a workaround for chunking but a deliberate two-stage architecture.",
     readMore: { label: "Long Context Patterns →", tab: "systems" }
   },
 
@@ -2589,6 +2693,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1,
     explanation: "Byte-level coverage is the critical property for multilingual consistency. Tokenizers without byte-level fallback assign unknown tokens ([UNK]) to characters outside their training vocabulary — common for scripts like Hindi (Devanagari) or Japanese (Kanji/Kana) in English-biased tokenizers. Unknown tokens mean the model has no meaningful representation for that text, and chunk size estimates become unreliable (one Japanese paragraph may be 50 tokens in a well-trained tokenizer or 200 [UNK] tokens in a poorly-adapted one). SentencePiece (used by T5, LLaMA) and tiktoken (used by GPT-4) both support byte-level fallback, making them safer for multilingual workloads. Vocabulary size matters but is secondary to coverage.",
+    trap: "Saying \'use word-count chunking.\' Word boundaries differ by language — Japanese has no spaces, Hindi uses Devanagari script. Token-count chunking via the model\'s actual tokenizer is the correct language-agnostic approach.",
     readMore: { label: "Tokenizer Comparison →", tab: "explore" }
   },
   {
@@ -2615,6 +2720,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1,
     explanation: "BPE (Byte Pair Encoding) builds its vocabulary by iteratively merging the most frequent byte or character pairs in the training corpus. Models like GPT-4 are trained on massive code datasets, so patterns like 'def ', 'import ', 'return ', 'SELECT * FROM', and common syntax like '():' become single high-frequency merge tokens. A Python function signature might be 8–10 characters but 2–3 tokens. By contrast, prose sentences have higher vocabulary diversity — unusual word combinations rarely merge. The practical implication: when estimating token budgets for mixed code/prose prompts, you cannot assume a uniform character-to-token ratio. Code typically runs 3–5 characters per token; formal prose runs 4–5; casual text varies more widely.",
+    trap: "Saying \'code uses fewer tokens because it is shorter.\' Code has highly repetitive patterns (indentation, reserved words) and fewer unique natural language tokens — the tokenizer compresses it more efficiently, producing fewer tokens per character.",
     readMore: { label: "Tokenizer Comparison →", tab: "explore" }
   },
 
@@ -2644,6 +2750,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1,
     explanation: "HyDE's core risk is hallucination bias. The LLM generates a plausible-sounding answer, but that answer may contain incorrect facts. The retrieval system then finds documents that are similar to this hallucinated answer — confidently pulling the wrong content. This is why HyDE works well for abstract conceptual queries (where the hypothesis shape matters more than the exact facts) but poorly for factual queries where precision is critical.",
+    trap: "Saying \'HyDE is just query expansion.\' HyDE generates a hypothetical answer document and embeds THAT — not the query. It maps from question space to answer space before retrieval, fundamentally different from keyword expansion.",
     readMore: { label: "Query Refinement Lab →", tab: "systems" }
   },
   {
@@ -2692,6 +2799,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1,
     explanation: "LLM-as-judge scores each test case output on defined criteria (task completion, faithfulness, format compliance). The limitation: it agrees with human judgment ~85% of the time on well-defined tasks, lower on complex multi-criteria assessments. This means the regression suite will have false positives (blocking good changes) and false negatives (allowing bad ones). Calibration on known good/bad outputs before deploying the judge is essential, and the judge prompt itself is code that needs versioning.",
+    trap: "Saying \'LLM-as-judge replaces human evaluation.\' LLM-as-judge has known biases (verbosity, position) and a calibration problem. It should flag regressions for human review, not replace human judgment on critical quality decisions.",
     readMore: { label: "Prompt Regression Testing →", tab: "groundtruth", postId: "prompt-regression-testing" }
   },
   {
@@ -2894,6 +3002,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1,
     explanation: "System prompt exfiltration — an attacker tricking the model into repeating its system prompt — is primarily caught at the output layer. Even if the LLM is convinced to reproduce the system prompt, output monitoring intercepts and redacts it before the user sees it. Input classifiers help but can be evaded. Explicit non-disclosure instructions in the system prompt help but rely on the model's instruction-following under adversarial conditions. The output monitor is the reliable safety net.",
+    trap: "Saying \'add a non-disclosure instruction to the system prompt.\' This relies on model instruction-following under adversarial conditions, which can be bypassed. Output monitoring that intercepts and redacts system prompt content before delivery is the reliable safety net.",
     readMore: { label: "AI Safety Engineering →", tab: "systems" }
   },
 
