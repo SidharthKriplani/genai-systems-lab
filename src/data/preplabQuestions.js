@@ -3188,4 +3188,58 @@ export const PREP_QUESTIONS = [
     readMore: { label: "The Agent Memory Layer →", tab: "groundtruth", postId: "claudemd-as-architecture" }
   },
 
+  // ── Prompt Engineering (4) ────────────────────────────────────────────────
+
+  {
+    id: "promptlab-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "A prompt change caused a 23% quality drop that went undetected for 11 days. The change was a single softened instruction — no structural change, no new variables. What architecture was missing?",
+    options: [
+      "A model fine-tuned on the new prompt to detect regressions",
+      "A regression test suite: canonical input-output pairs scored by an LLM-as-judge before the change merges",
+      "A larger context window so the model could process more instructions simultaneously",
+      "Manual review by a domain expert on every prompt change"
+    ],
+    correct: 1,
+    explanation: "The missing layer is a prompt regression suite. Canonical inputs are representative queries with expected outputs. Before any prompt change merges, the suite runs all canonical pairs through the new prompt and scores them with an LLM-as-judge. If the score drops more than a defined threshold (e.g. 3%), the merge is blocked. This is the direct equivalent of unit tests for code — it defines 'what correct looks like' at the time the prompt is written and enforces it on every change. Manual review cannot scale to 40+ canonical cases per change. Fine-tuning is the wrong layer — that changes model weights, not prompt behaviour.",
+    trap: "Recommending manual review by a domain expert on every change. Manual review does not scale, does not run overnight in CI, and cannot catch subtle distributional shifts across 40 canonical inputs. Automated LLM-as-judge scoring on a canonical set is the correct production-grade approach.",
+    readMore: { label: "Your Prompt Is Code →", tab: "groundtruth", postId: "your-prompt-is-code" }
+  },
+
+  {
+    id: "promptlab-2", topic: "llmops", difficulty: "hard", gated: true, type: "text",
+    question: "Your customer support bot occasionally adopts a different persona when users include specific phrases like 'ignore previous instructions' or 'new system update'. It outputs correct responses 96% of the time but the override rate is 4%. What is the attack, what architectural layers prevent it, and why is no single layer sufficient?",
+    options: [],
+    correct: 0,
+    keywords: ["prompt injection", "system prompt", "input validation", "output validation", "privilege separation", "defense in depth"],
+    explanation: "The attack is direct prompt injection. The user embeds instruction-like text in their message that the model interprets as a higher-priority directive than the system prompt. It works because the model cannot verify instruction source authenticity — it processes all text in the context window and follows the most contextually relevant instructions, regardless of where they came from. Three architectural layers are needed: (1) System prompt privilege: put all instructions in the system prompt, never in the user turn. This is the first separation. But it is not sufficient because sufficiently crafted messages can still cause partial overrides. (2) Input validation hook: pre-screen all user messages for instruction-pattern phrases before they reach the model. Regex + classifier catches naive attacks. But sophisticated injections that rephrase the override can slip through. (3) Output validation: post-screen all model outputs for persona drift, off-topic responses, or forbidden phrases. Catches what input validation missed. No single layer is sufficient because each has a bypass: system prompt can be overridden with authority-mimicking language, input validation can be evaded with paraphrasing, output validation can be fooled by outputs that satisfy the check but still contain harmful information.",
+    trap: "Saying 'move the system prompt to the user turn to make it more prominent.' This makes the problem worse — user turn has lower privilege than system prompt, so instructions placed there are even easier to override. The fix is privilege separation plus validation layers, not moving instructions to a less privileged position.",
+    readMore: { label: "Your Prompt Is Code →", tab: "groundtruth", postId: "your-prompt-is-code" }
+  },
+
+  {
+    id: "promptlab-3", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "A data extraction pipeline has a 4% JSON parse error rate using a system prompt instruction 'always output valid JSON'. You switch to JSON mode. The parse error rate drops to 1.5% but schema validation errors remain. What is the correct next step and why?",
+    options: [
+      "Add more examples of correct JSON output to the system prompt",
+      "Switch to function calling with strict: true — schema enforcement moves from instruction-following to constrained decoding",
+      "Increase the model's temperature so it explores the correct schema more thoroughly",
+      "Add a retry loop that re-runs the query on parse errors"
+    ],
+    correct: 1,
+    explanation: "JSON mode guarantees syntactic validity — you will always get parseable JSON. But it does not enforce your schema. The model decides which fields to include, what types to use, and whether to include optional fields. Schema validation errors (wrong types, missing required fields, unexpected keys) persist because the model is still making free choices within the syntactic constraint. Function calling with strict: true moves schema enforcement to constrained decoding at the API level — the model generates tokens within a grammar defined by your schema, and cannot deviate from it. This is a structural guarantee rather than a probabilistic one. Retry loops address symptoms not causes; more examples shift the probabilistic distribution but do not eliminate schema drift under distribution shift.",
+    trap: "Saying 'add a retry loop on parse errors.' Retries treat parse failures as transient errors. They add latency, increase cost by 2-3x on error paths, and do not fix the underlying issue — the model will produce the same output pattern on the retry. Structural enforcement at the API level is the correct fix.",
+    readMore: { label: "Your Prompt Is Code →", tab: "groundtruth", postId: "your-prompt-is-code" }
+  },
+
+  {
+    id: "promptlab-4", topic: "llmops", difficulty: "hard", gated: true, type: "text",
+    question: "A legal research assistant system prompt has accumulated 15 rules over 6 months. The model now refuses approximately 30% of legitimate user requests. Diagnose the root cause and redesign the prompt architecture.",
+    options: [],
+    correct: 0,
+    keywords: ["instruction conflict", "undefined behaviour", "principles over rules", "few-shot examples", "refusal rate", "prompt audit"],
+    explanation: "Root cause: conflicting instructions create undefined behaviour. When two rules fire simultaneously on the same input and their instructions diverge, the model defaults to the safest interpretation — usually refusal. With 15 rules accumulated over time, each designed to fix a specific complaint, the probability of rule intersection on real inputs is high. The model is not broken; it is behaving correctly under ambiguity by refusing. Redesign in three steps: (1) Audit for conflicts: run each rule pair through an LLM-based conflict detector ('do these two rules contradict each other on any input?'). You will likely find 4-6 conflicting pairs. (2) Replace rules with principles: instead of 15 specific prohibitions, write 5 high-level principles (e.g. 'Be accurate within your domain', 'Flag uncertainty rather than guessing', 'Stay within legal research scope'). Principles compose without conflicting because they express intent rather than specific behaviour. (3) Add worked examples: 3-5 examples showing the principles applied to edge cases that previously triggered wrong refusals. Examples ground the principles in concrete correct behaviour and are the most efficient way to transfer nuanced intent. Validate the redesign with a test suite of 50+ known-valid requests — measure refusal rate before and after.",
+    trap: "Adding a priority order comment at the top of the prompt ('Rule 1 takes precedence over Rule 3'). Natural language priority annotations are ambiguous to the model and do not reliably resolve conflicts. The model cannot implement a strict rule hierarchy from prose. The correct fix is to eliminate conflicts by reducing to non-overlapping principles, not to add meta-rules about which conflicting rule wins.",
+    readMore: { label: "Your Prompt Is Code →", tab: "groundtruth", postId: "your-prompt-is-code" }
+  },
+
 ];

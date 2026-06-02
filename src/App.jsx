@@ -21,6 +21,7 @@ const AgentsApp      = lazy(() => import("./Agents"));
 const ConsultationApp = lazy(() => import("./Consultation"));
 const PrepLabApp      = lazy(() => import("./PrepLab"));
 const LearningPathsApp = lazy(() => import("./LearningPaths"));
+const PromptLabApp    = lazy(() => import("./PromptLab"));
 
 import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
 import { RAG_CORPUS } from "./ragCorpus";
@@ -1075,7 +1076,7 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","qa","paths"];
+const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","qa","paths"];
 
 // ─── RAG LAB — scenario forward pointers ──────────────────────────────────────
 // One GT post + one PrepLab topic per scenario. Shown after result evaluation.
@@ -1441,6 +1442,7 @@ export default function App() {
       agentlab: "Agent Lab — GenAI Systems Lab",
       evallab: "Eval Lab — GenAI Systems Lab",
       llmlab: "LLM Lab — GenAI Systems Lab",
+      promptlab: "Prompt Lab — GenAI Systems Lab",
       systems: "Systems Lab — GenAI Systems Lab",
       playground: "Playground — GenAI Systems Lab",
       explore: "Explore — GenAI Systems Lab",
@@ -1532,10 +1534,11 @@ export default function App() {
       { id: "home", label: "Home", audience: "All levels" },
     ]},
     { label: "BUILD", color: "#52525b", items: [
-      { id: "lab",      label: "RAG Lab",   count: 6,  audience: "Engineers" },
-      { id: "agentlab", label: "Agent Lab", count: 16, audience: "Engineers" },
-      { id: "evallab",  label: "Eval Lab",  count: 15, audience: "Engineers · PMs" },
-      { id: "llmlab",   label: "LLM Lab",   count: 9,  audience: "Engineers" },
+      { id: "lab",       label: "RAG Lab",    count: 6,  audience: "Engineers" },
+      { id: "agentlab",  label: "Agent Lab",  count: 16, audience: "Engineers" },
+      { id: "evallab",   label: "Eval Lab",   count: 15, audience: "Engineers · PMs" },
+      { id: "llmlab",    label: "LLM Lab",    count: 9,  audience: "Engineers" },
+      { id: "promptlab", label: "Prompt Lab", count: 6,  audience: "Engineers" },
     ]},
     { label: "PROVE", color: "#52525b", items: [
       { id: "preplab", label: "Prep Lab",   audience: "Interview prep" },
@@ -1893,6 +1896,7 @@ export default function App() {
           {topView === "agentlab"   && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "evallab"    && <SystemsApp allowedModules={EVAL_LAB_MODULES} labTitle="Eval Lab" labSubtitle="Evaluation, observability & ops strategy" suggestedStart="evals" suggestedLabel="Evals Lab" suggestedNote="knowing how to measure is the skill every other module depends on" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "llmlab"     && <SystemsApp allowedModules={LLM_LAB_MODULES} labTitle="LLM Lab" labSubtitle="Architecture, training & inference systems" suggestedStart="decoding" suggestedLabel="Decoding Strategies Lab" suggestedNote="the interactive where you actually see what temperature and top-p do to token distributions" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
+          {topView === "promptlab"  && <PromptLabApp onNavigate={navigate} />}
 
           {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "fluency"    && <FluencyApp />}
