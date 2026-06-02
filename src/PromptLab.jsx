@@ -5,7 +5,7 @@ import { track } from "./analytics";
 
 const SCENARIOS = [
   {
-    id: "regression_edit",
+    id: "regression_edit", gtPost: { id: "ml-cicd", label: "Prompt CI/CD →" },
     title: "The 11-Day Quality Drop",
     tag: "REGRESSION",
     framing: "A single line changed in a customer-facing system prompt. No tests ran. Quality dropped 23% the next morning — but no alert fired, no metric turned red. The team discovered it 11 days later during a quarterly review. By then, thousands of users had received degraded responses.",
@@ -47,7 +47,7 @@ const SCENARIOS = [
     synthesis_close: "A prompt is a specification for model behaviour. Changing it without a regression test is the equivalent of pushing code with no tests and no review — the failure is not a question of if, it is a question of when. The 11-day gap is the cost of treating prompts as config rather than as code.",
   },
   {
-    id: "user_injection",
+    id: "user_injection", gtPost: { id: "prompt-injection-production", label: "Prompt Injection in Production →" },
     title: "The Override",
     tag: "INJECTION",
     framing: "A customer support bot handles billing inquiries for a SaaS product. The system prompt instructs it to stay on topic, never discuss competitor products, and always recommend contacting a human agent for refunds. A security researcher discovers a way to override all three constraints using a single user message.",
@@ -89,7 +89,7 @@ const SCENARIOS = [
     synthesis_close: "Prompt injection is not a model bug — it is an architectural gap. The model is doing exactly what it is designed to do: follow instructions. The fix is not to make the model distrust instructions, it is to ensure that adversarial instructions never reach it in a trusted position.",
   },
   {
-    id: "few_shot_contamination",
+    id: "few_shot_contamination", gtPost: { id: "prompting-token-economics", label: "Prompt Engineering & Token Economics →" },
     title: "The Bad Example",
     tag: "FEW-SHOT",
     framing: "A legal document classifier uses few-shot examples to output structured tags: contract type, jurisdiction, risk level. The team gradually adds examples to improve coverage. After one sprint, certain document types start being misclassified at a rate that wasn't there before. The regression is traced to example set composition.",
@@ -131,7 +131,7 @@ const SCENARIOS = [
     synthesis_close: "Few-shot examples are the highest-leverage part of a prompt — they define the task more powerfully than any instruction text. A single bad example is not a minor noise source, it is a systematic bias injected into every similar inference. Review them like you review training labels.",
   },
   {
-    id: "structured_output_failure",
+    id: "structured_output_failure", gtPost: { id: "schema-drift-failure", label: "Schema Drift Failure →" },
     title: "The Schema Drift",
     tag: "STRUCTURED",
     framing: "A data extraction pipeline processes 50,000 documents per day and feeds structured JSON into a downstream database. The pipeline has been running cleanly for two months. Under a load spike, JSON parse errors start appearing on 4% of requests. The errors are not random — they cluster around specific document types and longer outputs.",
@@ -173,7 +173,7 @@ const SCENARIOS = [
     synthesis_close: "Every parse error in a structured output pipeline is a silent data loss event. 'Output JSON' is not a schema contract — it is a polite request. If your downstream system depends on specific fields and types, enforce them structurally at the API level, not textually in the prompt.",
   },
   {
-    id: "temperature_miscal",
+    id: "temperature_miscal", gtPost: { id: "decoding-sampling", label: "Temperature, Top-P, Top-K →" },
     title: "The Confident Hallucinator",
     tag: "TEMPERATURE",
     framing: "A Q&A system answers factual questions about a company's product documentation. It has high user satisfaction scores for conversational tone, but the support team is flagging answers that contain plausible-sounding but incorrect version numbers, feature names, and pricing figures. The errors are not random — they correlate with questions that have definite correct answers.",
@@ -215,7 +215,7 @@ const SCENARIOS = [
     synthesis_close: "A high-temperature factual Q&A system is not engaging — it is a hallucination machine with good grammar. Temperature is not a personality dial, it is an entropy control. Matching temperature to task entropy requirements is one of the highest-leverage, lowest-effort configuration decisions in production LLM systems.",
   },
   {
-    id: "over_constrained",
+    id: "over_constrained", gtPost: { id: "llmops-production-checklist", label: "LLMOps Production Checklist →" },
     title: "The Instruction Conflict",
     tag: "CONSTRAINTS",
     framing: "A legal research assistant has accumulated 15 system prompt rules over six months of iteration. Each rule was added to fix a specific complaint. The assistant now refuses approximately 30% of legitimate user requests with generic 'I cannot help with that' responses. Users have stopped trusting it. The team cannot identify which rules are causing which refusals.",
@@ -528,18 +528,26 @@ export default function PromptLabApp({ onNavigate }) {
               </div>
 
               {/* Forward pointer */}
-              <div className="rounded-xl p-4 flex items-center justify-between gap-4" style={{ background: "linear-gradient(135deg, var(--gal-build-tint) 0%, rgba(34,211,238,0.02) 100%)", border: "1px solid var(--gal-build-border)" }}>
-                <div>
-                  <p className="text-[10px] font-mono tracking-widest uppercase font-semibold mb-1" style={{ color: "var(--gal-build)" }}>What's next</p>
-                  <p className="text-sm text-zinc-300">Test your prompt knowledge in PrepLab — interview-style questions on these failure modes.</p>
+              <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, var(--gal-build-tint) 0%, rgba(34,211,238,0.02) 100%)", border: "1px solid var(--gal-build-border)" }}>
+                <p className="text-[10px] font-mono tracking-widest uppercase font-semibold" style={{ color: "var(--gal-build)" }}>What's next</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => onNavigate && onNavigate("preplab")}
+                    className="px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90"
+                    style={{ background: "var(--gal-build-border)", border: "1px solid var(--gal-build-border)" }}
+                  >
+                    Test in Prep Lab →
+                  </button>
+                  {scenario.gtPost && (
+                    <button
+                      onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: scenario.gtPost.id })}
+                      className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90 text-zinc-300 hover:text-white"
+                      style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.3)" }}
+                    >
+                      {scenario.gtPost.label}
+                    </button>
+                  )}
                 </div>
-                <button
-                  onClick={() => onNavigate && onNavigate("preplab")}
-                  className="shrink-0 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90"
-                  style={{ background: "var(--gal-build-border)", border: "1px solid var(--gal-build-border)" }}
-                >
-                  Prep Lab →
-                </button>
               </div>
 
               {/* Try another scenario nudge */}

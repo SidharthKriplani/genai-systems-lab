@@ -3,6 +3,8 @@ import { useState } from "react";
 const FM_SCENARIOS = [
   {
     id: "lora_rank_low",
+    gtPost: { id: "lora-in-practice", label: "LoRA in Practice →" },
+    productionNote: "Hugging Face PEFT library — LoRAConfig(r=4) is the most common underfit. Increase r to 16–32 or add q_proj/v_proj/k_proj to target_modules. Axolotl default: r=16.",
     title: "The Underfitting Adapter",
     tag: "RANK",
     desc: "LoRA rank too low for task complexity",
@@ -45,6 +47,8 @@ const FM_SCENARIOS = [
   },
   {
     id: "lr_too_high",
+    gtPost: { id: "catastrophic-forgetting", label: "Catastrophic Forgetting →" },
+    productionNote: "Axolotl / LLaMA Factory full fine-tune — lr > 2e-4 without LoRA regularisation destroys RLHF alignment. Fix: LoRA rank 8–16, lr 2e-5, cosine schedule with warmup.",
     title: "The Forgetting Model",
     tag: "LEARNING RATE",
     desc: "High learning rate causes catastrophic forgetting",
@@ -87,6 +91,8 @@ const FM_SCENARIOS = [
   },
   {
     id: "eval_contamination",
+    gtPost: { id: "fine-tuning-evaluation", label: "Evaluating Fine-Tuned Models →" },
+    productionNote: "EleutherAI LM Eval Harness decontamination pass. Stratified split required for domain-specific corpora — random 80/10/10 on small datasets leaks examples into eval.",
     title: "The Leaky Benchmark",
     tag: "CONTAMINATION",
     desc: "Eval set leaks into training distribution",
@@ -129,6 +135,8 @@ const FM_SCENARIOS = [
   },
   {
     id: "data_volume",
+    gtPost: { id: "instruction-tuning-datasets", label: "Instruction Tuning Datasets →" },
+    productionNote: "TRL SFTTrainer + LIMA dataset principle — curated 1K quality instruction pairs match RLHF models trained on millions. Pack sequences to max_length for training efficiency.",
     title: "The Memorising Student",
     tag: "DATA VOLUME",
     desc: "Too few examples, too many epochs — memorisation not generalisation",
@@ -171,6 +179,8 @@ const FM_SCENARIOS = [
   },
   {
     id: "objective_mismatch",
+    gtPost: { id: "full-vs-peft-vs-prompting", label: "Full Fine-Tuning vs. PEFT →" },
+    productionNote: "Hugging Face SFTTrainer — track BOTH domain perplexity AND MMLU to catch capability degradation. Weights & Biases eval callback pattern for automated regression detection.",
     title: "The Confident Hallucinator",
     tag: "OBJECTIVE",
     desc: "Reward signal does not measure what you actually want",
@@ -213,6 +223,8 @@ const FM_SCENARIOS = [
   },
   {
     id: "base_model_mismatch",
+    gtPost: { id: "full-vs-peft-vs-prompting", label: "Base Model Selection →" },
+    productionNote: "Together AI / RunPod fine-tune API — CodeLlama-7B for code tasks, Mistral-7B-Instruct for instruction following. Always start from the instruct checkpoint when doing SFT.",
     title: "The Wrong Foundation",
     tag: "BASE MODEL",
     desc: "Fine-tuning cannot add capabilities the base model doesn't have",
@@ -398,15 +410,29 @@ export default function FoundationModelsLab({ onNavigate }) {
                 <p className="text-sm leading-relaxed italic" style={{ color: "rgba(165,243,252,0.8)" }}>{outcome.synthesisClose}</p>
               </div>
 
+              {/* Production note */}
+              {scenario.productionNote && (
+                <div className="p-3 rounded-lg" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)" }}>
+                  <div className="text-[9px] font-mono uppercase tracking-widest mb-1 text-amber-500">In Production</div>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{scenario.productionNote}</p>
+                </div>
+              )}
+
               {/* Forward pointer */}
               {onNavigate && (
-                <div className="flex items-center justify-between pt-1 border-t border-zinc-800/40">
-                  <span className="text-[11px] text-zinc-500">Drill this in PrepLab →</span>
+                <div className="flex flex-wrap gap-2 pt-1 border-t border-zinc-800/40">
                   <button onClick={() => onNavigate({ tab: "preplab" })}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-0.5"
                     style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
                     {outcome.preplabQ.label}
                   </button>
+                  {scenario.gtPost && (
+                    <button onClick={() => onNavigate({ tab: "groundtruth", postId: scenario.gtPost.id })}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-0.5 text-zinc-400 hover:text-zinc-200"
+                      style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)" }}>
+                      {scenario.gtPost.label}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
