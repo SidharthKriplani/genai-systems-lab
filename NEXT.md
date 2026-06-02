@@ -2,13 +2,13 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 40 — batches A–I: architecture cleanup, shared components, streak heatmap, FeedbackBar, multi-select MCQ, trap expansion, AgentContextArchModule, GT quiz depth)*
+*Last updated: June 2026 (sprint 41 — Concepts gym expansion + Prompt Lab shipped)*
 
 ---
 
-## Theme: Sprint 40 complete. PostHog check is the gate before next sprint.
+## Theme: Sprint 41 complete. 5 labs now live. PostHog check is still the gate before next major sprint.
 
-Batches A–I delivered: `src/config/nav.js` (ALL_TABS + GROUP_COLORS extracted); 4 shared components (ProductionNoteChip, ForwardPointerCard, WhatNextCard, FeedbackBar); streak + 4-week heatmap in ReturningHomeView; FeedbackBar wired to GT post end + PrepLab session end + Systems module footer; PrepLab multi-select MCQ type; 182 trap fields total (109 medium questions added); AgentContextArchModule (57th Systems module, 4 PrepLab questions); GT quiz depth expanded to 5-7 questions. Scale: 226 GT posts, 295 PrepLab questions, 20 Concepts modules, 57 Systems modules.
+Sprint 41 delivered: 7 new Concepts modules activating 4 new gyms (Evaluation, Production, Foundation Models, Prompt Engineering); Prompt Engineering Lab (5th BUILD lab, 6 scenarios, fully wired in App.jsx + nav). Scale: 226 GT posts, 295 PrepLab questions, 27 Concepts modules (7 active gyms), 57 Systems modules, 5 labs.
 
 PostHog check (item 5 below) is still the gate before the next major content sprint.
 
@@ -18,7 +18,7 @@ PostHog check (item 5 below) is still the gate before the next major content spr
 
 **1–4. ~~All prior sprints~~** — DONE. See CLAUDE.md session log.
 
-**5. PostHog distribution check** `S effort` `PREREQUISITE — do before next sprint` ← **STILL THE GATE**
+**5. PostHog distribution check** `S effort` `PREREQUISITE — do before next sprint` ← **STILL THE GATE. 5 labs now live. Check before building more.**
 
 Check before any new build: is PostHog receiving events in Vercel prod? WAU last 30 days? Top 5 modules by visit? RAG Lab scenario completion rate? PrepLab session depth? If data is unavailable or WAU is low, the next investment is sharing/distribution, not more content.
 
@@ -47,6 +47,11 @@ Check before any new build: is PostHog receiving events in Vercel prod? WAU last
 - ~~**Concepts module: "Scaling Laws"**~~ — DONE batch-6 (`fd73d26`).
 - ~~**Concepts module: "LoRA / QLoRA"**~~ — DONE batch-9 (`0915cb8`).
 - ~~**EvalLoopModule Beat 2 + Beat 3**~~ — DONE batch-5 (`04c7a51`).
+
+### Sprint 41 completions (batches A–B)
+- ~~**7 new Concepts modules**~~ — DONE batch-A (`ed54c5a`). LLMAsJudge, EvalDesign, AgentToolDesign, CostLatency, Observability, FewShot, ChainOfThought.
+- ~~**4 new active gyms**~~ — DONE batch-A. Evaluation, Production, Foundation Models, Prompt Engineering now active (not comingSoon).
+- ~~**Prompt Engineering Lab (5th BUILD lab)**~~ — DONE batch-B (`b93535e`). 6 scenarios, PromptLab.jsx 560 lines, wired in App.jsx + nav.js, 4 PrepLab questions.
 
 ### Sprint 40 completions (batches A–I)
 - ~~**`src/config/nav.js`**~~ — DONE batch-A (`992cfc4`). ALL_TABS + GROUP_COLORS extracted.
