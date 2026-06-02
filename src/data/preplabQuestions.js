@@ -3668,6 +3668,92 @@ export const PREP_QUESTIONS = [
     trap: "Increasing the eval set size. More questions from the wrong distribution produces higher confidence in the wrong answer. Distribution alignment is more important than statistical power — a 200-question eval sampled from production logs beats a 2,000-question eval built from internal FAQs every time.",
   },
 
+  // ── ADVERSARIAL: DO WE EVEN NEED IT? (6) ─────────────────────────────────
+  {
+    id: "adversarial-1", topic: "sysdesign", difficulty: "hard", gated: true, type: "mcq",
+    question: "A team is building a Q&A bot for their 40-page employee handbook. Expected usage: ~30 queries/day from a 200-person company. They're debating RAG vs. putting the document directly in the system prompt. Which is correct?",
+    options: [
+      "Build a RAG pipeline — chunk the handbook, embed it, store in a vector DB, and retrieve relevant sections at query time",
+      "Concatenate the entire handbook into the system prompt and skip retrieval — the document fits in the context window",
+      "Fine-tune a smaller model on handbook content for lower latency and higher consistency",
+      "Use a ReAct agent that searches the document iteratively until it finds the relevant section"
+    ],
+    correct: 1,
+    explanation: "A 40-page handbook is ~15–20K tokens — well within modern context windows (Claude 200K, GPT-4o 128K). RAG solves the context length problem. If the document fits in the prompt, retrieval is the problem you've invented, not the one you had. RAG adds chunking overhead, embedding costs, retrieval latency, and retrieval failure modes for zero benefit. Fine-tuning (option C) adds training cost and maintenance overhead for static content that a prompt already handles. Agent-based search (option D) multiplies latency by the number of search iterations.",
+    trap: "Saying 'RAG is best practice for document Q&A.' RAG is the right tool when the document is too large for the context window, or when you need to search across thousands of documents. For a single 40-page doc at 30 queries/day, just put the document in the prompt. Say instead: 'I'd use RAG when documents exceed the context window or when I'm querying across a large corpus — not for a single handbook that fits in context.'",
+    readMore: { label: "AI-or-Not? Decision Framework →", tab: "groundtruth" },
+  },
+  {
+    id: "adversarial-2", topic: "sysdesign", difficulty: "hard", gated: true, type: "mcq",
+    question: "An e-commerce team wants a 'find similar products' feature for their 800-SKU catalog. Products have structured attributes: category, price, material, color, brand. A PM proposes building a vector similarity search using product embeddings. What do you recommend?",
+    options: [
+      "Build a vector embedding pipeline — embed product descriptions, store in a vector DB, run cosine similarity at query time",
+      "Use SQL attribute filters on the existing Postgres catalog — category, price range, material, color, brand",
+      "Implement collaborative filtering using purchase co-occurrence data",
+      "Use a cross-encoder reranker to score all 800 products against the query product"
+    ],
+    correct: 1,
+    explanation: "800 SKUs is a small, fully structured catalog. SQL attribute filters return deterministic, explainable 'similar products' in milliseconds with zero additional infrastructure — no pipeline to maintain, no embedding model to update, no similarity threshold to tune. Vector search is designed for large unstructured corpora and semantic queries that don't match exact terms. At 800 structured products, the embedding captures what you'd describe in words; SQL captures exactly what you know. Collaborative filtering (C) requires significant purchase history to be meaningful and is a cold-start problem for a new or small catalog.",
+    trap: "Claiming semantic similarity is always better than attribute matching for product search. At small scale with structured data, explicit attribute matching outperforms learned embeddings — and you can explain every result to a user or a product manager. Say instead: 'I'd use vector search if users are describing products in natural language or if we're searching across unstructured descriptions. For structured attribute-based similarity at 800 SKUs, SQL is faster, cheaper, and more debuggable.'",
+    readMore: { label: "AI-or-Not? Decision Framework →", tab: "groundtruth" },
+  },
+  {
+    id: "adversarial-3", topic: "sysdesign", difficulty: "hard", gated: true, type: "mcq",
+    question: "When a deal is marked 'closed-won' in the CRM, a system must: (1) create a Jira ticket, (2) send a Slack notification, (3) schedule a Google Calendar kickoff. The team is evaluating an LLM agent to orchestrate these three fixed actions. What's the right call?",
+    options: [
+      "Build an LLM agent that receives the CRM event, reasons about what actions to take, and executes the three API calls via tool use",
+      "Write a deterministic event handler that executes the three API calls in sequence when the CRM webhook fires",
+      "Use a multi-agent system where each agent is responsible for one of the three actions",
+      "Use a ReAct agent with idempotency checks so it can verify each action completed before proceeding"
+    ],
+    correct: 1,
+    explanation: "The task is fully deterministic — the same three actions, always in the same order, always triggered by the same event. There is no reasoning required: no branching logic, no ambiguity, no natural language to interpret. An LLM agent adds: inference latency (500ms–2s per call), unpredictable output parsing, hallucination risk on API parameters, token cost, and a new failure mode (the model might decide not to take an action). A webhook handler with three API calls is 20 lines of code, runs in 50ms, costs nothing per execution, and never hallucinates a missing Jira ticket. Multi-agent (C) multiplies all agent problems by three.",
+    trap: "Saying 'LLM agents handle multi-step workflows better than code.' Agents earn their place on ambiguous, adaptive, open-ended tasks where the steps are unknown in advance. When the workflow is a fixed sequence triggered by a known event, a function is not just simpler — it's more reliable, cheaper, and faster. Say instead: 'I'd use an agent when the steps aren't known in advance or when the system needs to adapt to what it finds. For a fixed three-step automation, a webhook handler is strictly better.'",
+    readMore: { label: "AI-or-Not? Decision Framework →", tab: "groundtruth" },
+  },
+  {
+    id: "adversarial-4", topic: "sysdesign", difficulty: "medium", gated: false, type: "mcq",
+    question: "A support team receives 200 tickets/day and wants to auto-route them to billing, technical, or account management. An engineer proposes embedding each ticket and running cosine similarity against labeled examples in a vector DB. What's the best approach?",
+    options: [
+      "Embed tickets and route using cosine similarity against labeled examples in a vector DB",
+      "Write a keyword routing ruleset: 'invoice/charge/refund' → billing, 'error/crash/API' → technical, 'renewal/contract' → account",
+      "Use an LLM to read each ticket and classify it into one of the three categories",
+      "Train a text classifier (fastText or logistic regression) on historical labeled tickets"
+    ],
+    correct: 1,
+    explanation: "Three-class routing at 200 tickets/day is a regime where rule-based systems are optimal: interpretable (you can explain every routing decision), debuggable (add a rule when you see a miss), instantaneous (no inference latency), and free (no API costs or model maintenance). Keywords like 'invoice' and 'refund' have near-perfect precision for billing. A vector DB approach adds embedding pipeline costs, retrieval infrastructure, and similarity threshold tuning for a task that doesn't need semantic understanding. LLM classification (C) costs 100–500× more per ticket than rules for a task rules solve deterministically. A text classifier (D) is overkill before rules have been exhausted.",
+    trap: "Saying 'vector similarity handles edge cases that rules miss.' At 3-class routing, the edge cases rules miss are often the same edge cases vector similarity misclassifies — because both fail on genuinely ambiguous tickets. The right response to rule failures is: add rules, then escalate truly ambiguous cases to humans. Say instead: 'I'd start with a keyword ruleset, measure miss rate, and escalate what I can't route confidently to a human review queue. I'd only add ML when I have evidence that rules have a meaningful failure rate.'",
+    readMore: { label: "AI-or-Not? Decision Framework →", tab: "groundtruth" },
+  },
+  {
+    id: "adversarial-5", topic: "sysdesign", difficulty: "hard", gated: true, type: "mcq",
+    question: "A startup's LLM writing assistant should always: use a professional-but-approachable tone, avoid jargon, keep sentences under 20 words, end responses with one concrete next step. The CPO wants to fine-tune on 5,000 curated examples to 'bake in' this style. What do you recommend?",
+    options: [
+      "Fine-tune on 5,000 curated examples — more consistent than a system prompt and style guidelines",
+      "Expand the system prompt with explicit style rules, worked examples (few-shot), and an output format template",
+      "Fine-tune with LoRA on a smaller base model to reduce inference cost while adding style adherence",
+      "Use LLM-as-judge to score each output and auto-retry non-compliant responses"
+    ],
+    correct: 1,
+    explanation: "The style guide has 4 explicit rules — all capturable in a system prompt with few-shot examples in under 500 tokens. Fine-tuning costs: dataset curation time, training compute (~$50–500), hosting a separate model checkpoint, and retraining whenever the style guide changes. Fine-tuning is appropriate when the behavior cannot be captured in a prompt (domain-specific knowledge, subtle judgment) or when latency/cost requires a smaller model. Style adherence — explicit sentence length limits, tone directives, structural rules — is exactly what system prompts are designed for. Fine-tuning embeds behavior in weights that are hard to update; a system prompt is a version-controlled software change deployable in seconds.",
+    trap: "Claiming fine-tuning always produces more consistent style than a system prompt. Fine-tuning bakes behavior into weights that can't be changed without retraining. When the style guide changes — and it will — a fine-tuned model requires a new training run. Say instead: 'I'd exhaust the system prompt approach first. Fine-tuning is the right call when the behavior is too subtle or complex for a prompt to capture reliably, or when I need to serve many requests with a smaller, cheaper model.'",
+    readMore: { label: "Fine-Tuning Fundamentals →", tab: "groundtruth" },
+  },
+  {
+    id: "adversarial-6", topic: "sysdesign", difficulty: "hard", gated: true, type: "mcq",
+    question: "A fintech company needs to check planned transactions against 47 static, well-defined regulations (unchanged for 3 years). Compliance officers need an auditable decision trail. The engineering team proposes a multi-hop RAG pipeline to retrieve relevant regulation chunks and generate a compliance assessment. What's the correct architecture?",
+    options: [
+      "Build a multi-hop RAG pipeline — embed regulations, retrieve relevant chunks, use LLM to reason across context and generate a compliance verdict",
+      "Represent all 47 regulations as explicit if/else rules in code, triggered by structured transaction attributes",
+      "Use vector search to find the top-3 most relevant regulations, then prompt the LLM to assess compliance against only those",
+      "Fine-tune a classifier on historical compliance decisions labeled by legal counsel"
+    ],
+    correct: 1,
+    explanation: "47 static, well-defined regulations are a deterministic rule system. Each regulation maps to specific transaction attributes (counterparty country, amount, instrument type, license status). Rules in code: execute in microseconds, are fully auditable (you can show exactly which rule fired), and satisfy regulatory explainability requirements (GDPR, MiFID II, FINRA all require defensible, traceable compliance decisions). LLM-based assessment introduces hallucination risk on financial determinations, non-determinism across identical transactions, and latency. In regulated contexts, 'the LLM said this transaction appeared compliant' is not a defensible compliance record. A rule firing is. RAG (options A and C) adds retrieval complexity for a corpus of 47 documents you could read in 15 minutes.",
+    trap: "Saying 'RAG handles complex multi-regulation reasoning better than hardcoded rules.' When regulations are finite, explicit, and stable, hardcoded rules are the correct architecture — not a limitation to work around. RAG's advantage is finding relevant information in large unstructured corpora. For 47 numbered regulations, you don't need retrieval. You need a decision tree. Say instead: 'I'd model each regulation as an explicit rule with structured inputs. RAG would be appropriate if I had thousands of regulations, case law, and unstructured interpretations — not for 47 well-defined rules.'",
+    readMore: { label: "AI-or-Not? Decision Framework →", tab: "groundtruth" },
+  },
+
   // ── QUANTIPHI DEFENSE PACK (6) ────────────────────────────────────────────
   {
     id: "quantiphi-1", topic: "agents", difficulty: "hard", gated: true, type: "text",

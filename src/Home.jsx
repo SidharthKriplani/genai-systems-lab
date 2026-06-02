@@ -288,7 +288,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
         </div>
       </div>
 
-      {/* Streak + 4-week heatmap */}
+      {/* Streak + activity heatmap */}
       {streak > 0 && (
         <div>
           <div className="flex items-center gap-3 mb-3">
@@ -297,18 +297,32 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
               {streak} day streak {streak >= 7 ? "🔥" : ""}
             </span>
           </div>
-          <div className="flex gap-1 flex-wrap">
-            {grid.map((cell, i) => {
-              const intensity = cell.count === 0 ? 0 : cell.count === 1 ? 1 : cell.count <= 3 ? 2 : 3;
-              const bg = intensity === 0 ? "rgba(39,39,42,0.5)" : intensity === 1 ? "var(--gal-build-border)" : intensity === 2 ? "var(--gal-build-tint-str)" : "var(--gal-build-tint-str)";
+          {(() => {
+            const activeDays = grid.filter(c => c.count > 0).length;
+            if (activeDays < 7) {
               return (
-                <div key={i} title={cell.date + (cell.count ? ` · ${cell.count} action${cell.count > 1 ? "s" : ""}` : "")}
-                  className="rounded-sm transition-colors"
-                  style={{ width: "14px", height: "14px", background: bg, border: "1px solid rgba(39,39,42,0.3)" }} />
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Day {streak} — {streak < 3 ? "good start." : streak < 5 ? "building momentum." : "almost there."} Your history fills in after a week.
+                </p>
               );
-            })}
-          </div>
-          <p className="text-[10px] text-zinc-600 mt-1.5">Last 13 weeks</p>
+            }
+            return (
+              <>
+                <div className="flex gap-1 flex-wrap">
+                  {grid.map((cell, i) => {
+                    const intensity = cell.count === 0 ? 0 : cell.count === 1 ? 1 : cell.count <= 3 ? 2 : 3;
+                    const bg = intensity === 0 ? "rgba(39,39,42,0.5)" : intensity === 1 ? "var(--gal-build-border)" : "var(--gal-build-tint-str)";
+                    return (
+                      <div key={i} title={cell.date + (cell.count ? ` · ${cell.count} action${cell.count > 1 ? "s" : ""}` : "")}
+                        className="rounded-sm transition-colors"
+                        style={{ width: "14px", height: "14px", background: bg, border: "1px solid rgba(39,39,42,0.3)" }} />
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-zinc-600 mt-1.5">Last 13 weeks</p>
+              </>
+            );
+          })()}
         </div>
       )}
 
