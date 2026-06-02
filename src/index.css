@@ -134,6 +134,61 @@ h3 { letter-spacing: -0.02em; }
   box-shadow: inset 0 1px 0 rgba(34, 211, 238, 0.08);
 }
 
+/* ── Paper light mode ───────────────────────────────────────────────────────
+   Warm cream surfaces. Inverted zinc scale: 950 = lightest bg, 100 = darkest text.
+   Violet accent (#7c3aed) replaces electric cyan — legible and calm on warm cream.
+   Applied via data-theme="light" on both <html> and the root app div.
+*/
+html[data-theme="light"] {
+  --color-white:    #1c1410;   /* text-white → dark ink on light backgrounds */
+}
+
+[data-theme="light"] {
+  --color-zinc-950: #faf7f2;   /* page bg — warm cream */
+  --color-zinc-900: #f2ebe0;   /* sidebars, panels */
+  --color-zinc-800: #e8ddd0;   /* card surfaces */
+  --color-zinc-700: #d4c4b4;   /* borders */
+  --color-zinc-600: #9e8e80;   /* muted text */
+  --color-zinc-500: #78716c;   /* secondary text */
+  --color-zinc-400: #57534e;   /* body text */
+  --color-zinc-300: #3d3330;   /* stronger text */
+  --color-zinc-200: #2a201c;   /* heading sub */
+  --color-zinc-100: #1c1410;   /* primary text */
+  --color-zinc-50:  #fffefb;   /* brightest surfaces */
+
+  --bg:             #faf7f2;
+  --surface:        #f2ebe0;
+  --surface-2:      #fffefb;
+  --border:         #dfd3c4;
+  --border-subtle:  #ede5d8;
+
+  --gal-build:        #5b21b6;
+  --gal-build-tint:   rgba(91,33,182,0.07);
+  --gal-build-border: rgba(91,33,182,0.28);
+  --gal-knowledge:    #5b21b6;
+}
+
+/* Violet accent → warm purple in light mode */
+[data-palette="luna"][data-theme="light"] {
+  --color-violet-100: #f5f3ff;
+  --color-violet-200: #ede9fe;
+  --color-violet-300: #c4b5fd;
+  --color-violet-400: #7c3aed;
+  --color-violet-500: #6d28d9;
+  --color-violet-600: #5b21b6;
+  --color-violet-700: #4c1d95;
+  --color-violet-800: #3b0764;
+  --color-violet-900: #2e1065;
+  --color-violet-950: #1e0a3c;
+}
+
+/* Disable glow effects in light mode */
+[data-theme="light"] .text-violet-400,
+[data-theme="light"] .text-violet-300 { text-shadow: none; }
+[data-theme="light"] .border-violet-500 { box-shadow: none; }
+[data-theme="light"] .bg-violet-950,
+[data-theme="light"] .bg-violet-900 { box-shadow: none; }
+
 /* Global button press feedback */
 button {
   transition-property: transform, background-color, border-color, color, opacity;
@@ -159,33 +214,34 @@ button:disabled:active {
      text-zinc-600  →  zinc-500  (#71717a)   was ~2.1:1, now ~3.2:1
 */
 :root {
-  --color-zinc-500: oklch(70.2% 0.008 286.29);   /* remapped to zinc-400 value */
-  --color-zinc-600: oklch(55.2% 0.009 286.29);   /* remapped to zinc-500 value */
+  --color-zinc-500: #a89880;   /* warm secondary text — dark mode */
+  --color-zinc-600: #7a6e60;   /* warm muted text — dark mode */
 
   /* ── GAL accent colors ───────────────────────────────────────────────────── */
-  --gal-build:      #22D3EE;   /* electric cyan  — BUILD group (matches LUNA primary) */
-  --gal-prove:      #22c55e;   /* green-500      — PROVE group */
-  --gal-navigate:   #f59e0b;   /* amber-500      — NAVIGATE group */
-  --gal-knowledge:  #8b5cf6;   /* violet-500     — KNOWLEDGE group */
+  --gal-build:        #22D3EE;
+  --gal-build-tint:   rgba(34,211,238,0.07);
+  --gal-build-border: rgba(34,211,238,0.28);
+  --gal-prove:        #22c55e;
+  --gal-navigate:     #f59e0b;
+  --gal-knowledge:    #8b5cf6;
 
-  /* ── Elevation token system — LUNA void edition ──────────────────────────────
-     Near-void black base (#05060E) rising barely through deep-space surfaces.
-     Electric cyan accent creates maximum contrast against these near-null backgrounds.
-     Surfaces differentiate by L-stops of 1-4% — barely visible in isolation,
-     clearly distinct when stacked (bg → surface → surface-2 → card).
+  /* ── Elevation tokens — Paper warm dark ─────────────────────────────────────
+     Warm brown-black base. Dense technical content reads better on warm
+     surfaces than cold void — same contrast, less visual fatigue over sessions.
   */
-  --bg:             #05060E;   /* near-void page background (L=4%) */
-  --surface:        #080A14;   /* sidebars, panels (L=5%) */
-  --surface-2:      #0C0E1A;   /* cards, nested surfaces (L=8%) */
-  --border:         #191C2E;   /* visible borders */
-  --border-subtle:  #10122A;   /* subtle dividers */
+  --bg:             #110e0a;
+  --surface:        #1c1712;
+  --surface-2:      #231e17;
+  --border:         #3d2e26;
+  --border-subtle:  #2a201a;
 
-  /* ── Global zinc remap → LUNA void ──────────────────────────────────────────
-     bg-zinc-900 → LUNA surface (#080A14). bg-zinc-950 → near-void (#05060E).
-     Cascades through all 300+ Tailwind panel/card backgrounds in one declaration.
+  /* ── Global zinc remap → Paper warm dark ────────────────────────────────────
+     Replaces cold LUNA void with warm brown-blacks throughout the whole app.
   */
-  --color-zinc-900: #080A14;
-  --color-zinc-950: #05060E;
+  --color-zinc-950: #110e0a;
+  --color-zinc-900: #1c1712;
+  --color-zinc-800: #2a201a;
+  --color-zinc-700: #3d2e26;
 }
 
 /* ── Mobile contrast boost — low-brightness readability ────────────────────
@@ -201,7 +257,7 @@ button:disabled:active {
      border/bg-zinc-800 → zinc-700 (#3f3f46)
 */
 @media (max-width: 1023px) {
-  :root {
+  html:not([data-theme="light"]) {
     --color-zinc-400: oklch(87.1% 0.006 286.29);
     --color-zinc-500: oklch(87.1% 0.006 286.29);
     --color-zinc-600: oklch(70.2% 0.008 286.29);
