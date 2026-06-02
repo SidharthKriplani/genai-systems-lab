@@ -24,7 +24,7 @@ Act as a product and engineering partner, not an assistant. That means:
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of June 2026: 56 Systems modules (in nav), 22 Explore modules, 16 Agent Lab modules, 20 Concepts modules, 287 PrepLab questions, 226 Ground Truth posts. Nav: KNOWLEDGE (Concepts, Ground Truth) + 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product). Legacy tabs (Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
+Scale as of June 2026: 57 Systems modules (in nav), 22 Explore modules, 16 Agent Lab modules, 20 Concepts modules, 295 PrepLab questions, 226 Ground Truth posts. Nav: KNOWLEDGE (Concepts, Ground Truth) + 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product). Legacy tabs (Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
 
 **Business model:** Freemium with access code gate (decided May 2026). Free: all Labs, all GT, all modules, PrepLab 10q/session. Gated (access code now, paid later): full PrepLab, Company Tracks, Interview Prep Plan study plan (phase 4, gated after 30% completion). Community code shared freely during beta. Stripe + auth when ready to monetize. See DECISIONS.md Section 0.
 
@@ -330,6 +330,18 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 - Concepts inline callouts + synthesis close — framing text done (15/15), but inline + synthesis beats pending. See UPGRADES.md.
 
 ## Session build log (May 2026 — June 2026)
+
+**Resolved this session (sprint 40 — batches A–I, June 2026):**
+- **Batch A: Config extraction.** `src/config/nav.js` created — ALL_TABS and GROUP_COLORS extracted from App.jsx. Import added to App.jsx. Concepts count updated 15→20 in NAV_GROUPS. Brace diff: 0. Commit `992cfc4`.
+- **Batch B: Shared components.** `src/shared.jsx` expanded — `ProductionNoteChip`, `ForwardPointerCard`, `WhatNextCard`, `FeedbackBar` added alongside existing `CommonTrapCallout`. Each component documented. Brace diff: 0. Commit `2c57ff2`.
+- **Batch C: Streak + heatmap.** `getStreakInfo()` helper added to Home.jsx — reads/updates `gsl-streak`, `gsl-last-visit`, `gsl-activity-YYYY-MM-DD` localStorage keys. `ReturningHomeView` shows streak chip + 4-week GitHub-style activity grid (28 cells, 4 intensity levels, cyan tint). Concepts progress bar updated 15→20. Brace diff: 0. Commit `0d7371f`.
+- **Batch D: FeedbackBar.** `FeedbackBar` component in shared.jsx fires `feedback_submitted { rating, page, content_type }` PostHog event on thumb up/down. Wired into: GT post end (GroundTruth.jsx), PrepLab exam session end (PrepLab.jsx), Systems module footer (Systems.jsx). All imports updated. Brace diffs: 0. Commit `0e5b3ab`.
+- **Batch E: Multi-select MCQ.** `MCQMultiOptions` component added to PrepLab.jsx — checkboxes, "Select all that apply" label, toggle behaviour. `type: "multi"` questions use comma-joined sorted string for answers (e.g. "0,2"). Scoring updated in computeResults + session history snapshot. Keyboard shortcuts adapted (1/2/3/4 toggle). RevealCard shows all correct answers for multi. TrainerMode submit logic updated. Brace diff: 0. Commit `9c7ba18`.
+- **Batch F: Common Trap expansion.** Python transformation script added trap fields to all 109 medium-difficulty questions lacking them (182 trap fields total across the bank). All trap fields answer "what weaker candidates say." Brace diff: 0. Commit `204138f`.
+- **Batch G: AgentContextArchModule.** New Systems module in `src/systems/modules.jsx` — 3-tab interactive (Configure Layers with memory/skills/delegation/hooks config + simulation, Failure Modes catalog of 4 patterns, When to Use decision table). Added to SYSTEMS_MODULES + RELATED_GT in Systems.jsx. 4 PrepLab questions (agentctx-1/2/3/4). Scale: 57 Systems modules. Brace diffs: 0. Commit `144618f`.
+- **Batch H: GT posts verification.** `prompt-regression-testing` and `ab-testing-ai-systems` were already fully written in groundTruthPosts.js (15+ blocks each). No action needed.
+- **Batch I: GT Quiz depth.** `generateQuiz()` in GroundTruth.jsx expanded from max 3 to max 7 questions — now extracts from: callouts (×2), lists (×2), tables (×1), h2 headers (×1), labelled code blocks (×1). Brace diff: 0. Commit `2fe2fe0`.
+- **Scale after sprint 40:** 57 Systems modules (was 56), 226 GT posts (unchanged), 295 PrepLab questions (was 287 + 4 agentctx + 4 scaling previously in sprint 39), 20 Concepts modules (unchanged).
 
 **Resolved this session (sprint 39 — batches 2–10, June 2026):**
 - **Batch 2–3: "Your Interview Story" on Agent Lab.** `AGENT_INTERVIEW_STORIES` (8 agentcfg failure modes) + `SIMULATOR_INTERVIEW_STORIES` (5 scenarios) + design challenge stories (3 challenges) added to `src/Agents.jsx`. Story collapsible block rendered in all Agent Lab done screens with violet accordion pattern. Brace diffs: 0. Commits: `2c9e282`, `1b4346d`.

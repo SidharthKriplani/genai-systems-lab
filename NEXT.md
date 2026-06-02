@@ -2,13 +2,13 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 39 — batches 2–10: Maps to Production, Concepts depth, Scaling Laws, Semantic Caching, LoRA, Seq/Parallel, Training Signal)*
+*Last updated: June 2026 (sprint 40 — batches A–I: architecture cleanup, shared components, streak heatmap, FeedbackBar, multi-select MCQ, trap expansion, AgentContextArchModule, GT quiz depth)*
 
 ---
 
-## Theme: Sprint 39 content sprint complete. PostHog check still pending before next sprint.
+## Theme: Sprint 40 complete. PostHog check is the gate before next sprint.
 
-Batches 2–10 delivered: Maps to Production chips on Agent Lab (all 8 failure modes) and LLM Lab serving failures; EvalLoopModule Beat 2+3; 5 new Concepts modules (ScalingLawsModule, LoRAModule, SequentialParallelModule, TrainingSignalModule, plus EvalLoop 3-beat completion); semantic caching GT post + PrepLab; scaling laws PrepLab; dense/sparse retrieval PrepLab. Scale: 226 GT posts, 287 PrepLab questions, 20 Concepts modules.
+Batches A–I delivered: `src/config/nav.js` (ALL_TABS + GROUP_COLORS extracted); 4 shared components (ProductionNoteChip, ForwardPointerCard, WhatNextCard, FeedbackBar); streak + 4-week heatmap in ReturningHomeView; FeedbackBar wired to GT post end + PrepLab session end + Systems module footer; PrepLab multi-select MCQ type; 182 trap fields total (109 medium questions added); AgentContextArchModule (57th Systems module, 4 PrepLab questions); GT quiz depth expanded to 5-7 questions. Scale: 226 GT posts, 295 PrepLab questions, 20 Concepts modules, 57 Systems modules.
 
 PostHog check (item 5 below) is still the gate before the next major content sprint.
 
@@ -18,7 +18,7 @@ PostHog check (item 5 below) is still the gate before the next major content spr
 
 **1–4. ~~All prior sprints~~** — DONE. See CLAUDE.md session log.
 
-**5. PostHog distribution check** `S effort` `PREREQUISITE — do before next sprint`
+**5. PostHog distribution check** `S effort` `PREREQUISITE — do before next sprint` ← **STILL THE GATE**
 
 Check before any new build: is PostHog receiving events in Vercel prod? WAU last 30 days? Top 5 modules by visit? RAG Lab scenario completion rate? PrepLab session depth? If data is unavailable or WAU is low, the next investment is sharing/distribution, not more content.
 
@@ -48,11 +48,25 @@ Check before any new build: is PostHog receiving events in Vercel prod? WAU last
 - ~~**Concepts module: "LoRA / QLoRA"**~~ — DONE batch-9 (`0915cb8`).
 - ~~**EvalLoopModule Beat 2 + Beat 3**~~ — DONE batch-5 (`04c7a51`).
 
-### Medium-priority content still open
-- **Agent Context Architecture Systems module** — from ADK patterns cluster. Pending.
-- **PrepLab: "Common Trap" layer expansion** — ~50 hard questions have trap fields; remaining ~100 medium questions still lack trap. Ongoing.
-- **GT post: "Prompt Regression Testing"** — companion to "Your Prompt Is Code". Pending.
-- **GT post: "Why Classic A/B Testing Breaks for AI"** — companion to A/B Testing module. Pending.
+### Sprint 40 completions (batches A–I)
+- ~~**`src/config/nav.js`**~~ — DONE batch-A (`992cfc4`). ALL_TABS + GROUP_COLORS extracted.
+- ~~**ForwardPointerCard + WhatNextCard + ProductionNoteChip shared components**~~ — DONE batch-B (`2c57ff2`).
+- ~~**Streak + 4-week heatmap in ReturningHomeView**~~ — DONE batch-C (`0d7371f`).
+- ~~**FeedbackBar PostHog component**~~ — DONE batch-D (`0e5b3ab`). GT post end + PrepLab session end + Systems module footer.
+- ~~**PrepLab multi-select MCQ (`type: "multi"`)**~~ — DONE batch-E (`9c7ba18`).
+- ~~**PrepLab Common Trap expansion**~~ — DONE batch-F (`204138f`). 182 trap fields total across all medium + hard questions.
+- ~~**Agent Context Architecture Systems module**~~ — DONE batch-G (`144618f`). 57th Systems module + 4 PrepLab questions.
+- ~~**GT posts: Prompt Regression Testing + A/B Testing for AI**~~ — Already existed in groundTruthPosts.js. Verified.
+- ~~**GT Quiz depth**~~ — DONE batch-I (`2fe2fe0`). generateQuiz expanded to 5-7 questions from 5 block types.
+
+### Still open
+- **React.lazy() code splitting** — systematic change. DECISIONS.md-worthy scope.
+- **Pyodide execution for Eval Lab** — Tier 2, after static corpus engagement signal.
+- **Visual polish backlog** — consistent module headers, Explore module cards.
+- **Modularisation pass** — `src/config/nav.js` done; `labs.js` blocked by component coupling.
+- **Interview Experiences section** — editorial-first 20–30 entries.
+- **PrepLab scenario-type questions** — multi-turn conversational diagnosis format.
+- **Role Readiness Score** — AI Engineer Readiness tiers from PrepLab performance.
 
 ---
 

@@ -173,7 +173,7 @@ Cut entirely:
 
 **Priority:** Medium
 
-**Status:** Pending — Batch 0 Walk 1 finding #8
+**Status:** ✅ Done — batch-I (`2fe2fe0`). generateQuiz() expanded to extract from callouts (×2), lists (×2), tables (×1), h2 headers (×1), labelled code blocks (×1). Cap raised from 3 to 7. Most posts now generate 4-7 questions.
 
 ---
 
@@ -203,7 +203,7 @@ Cut entirely:
 
 **Priority:** Medium — adds real depth and closer to real interview format ("select all that apply" questions are common)
 
-**Status:** Pending — Batch 0 Walk 1 finding #9
+**Status:** ✅ Done — batch-E (`9c7ba18`). MCQMultiOptions component, type: "multi" schema, comma-joined answer scoring, keyboard toggle (1/2/3/4), RevealCard shows all correct answers, TrainerMode submit logic updated.
 
 ---
 
@@ -445,7 +445,7 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 **Priority:** Medium — actionable product signal with almost no build cost.
 
-**Status:** Pending — follow-on after feedback data starts accumulating from Tally.
+**Status:** ✅ Done — batch-D (`0e5b3ab`). FeedbackBar component in shared.jsx, wired to GT post end, PrepLab exam session end, and Systems module footer.
 
 ---
 
@@ -731,7 +731,7 @@ Each takes minimal props, handles its own styling. Any lab that needs the patter
 
 **Priority:** Medium — no immediate user impact, but prevents the copy-paste debt from compounding with each new lab addition.
 
-**Status:** Partially done. `src/shared.jsx` created with `CommonTrapCallout` (sprint 31C, `38d5330`). `FidelityBadge` exists in `App.jsx` / `Agents.jsx` / `Systems.jsx` — still duplicated, not yet extracted to shared. `ForwardPointerCard` and `ProductionNoteChip` still pending. Build `ForwardPointerCard` in the same sprint as "Your Interview Story" block (touches both RAG Lab and Agent Lab).
+**Status:** ✅ Done — batch-B (`2c57ff2`). `src/shared.jsx` now exports: `CommonTrapCallout`, `ProductionNoteChip`, `ForwardPointerCard`, `WhatNextCard`, `FeedbackBar`. `FidelityBadge` still duplicated in 3 files (lower priority, small component).
 
 ---
 
@@ -799,7 +799,7 @@ Storage: `gsl-streak` (number), `gsl-last-visit` (ISO date string), `gsl-activit
 
 **Priority:** Medium — visible progression is one of the "take my money" sprint items (IDEAS.md Business Model section). This is the static version that doesn't require a backend.
 
-**Status:** Pending (Source: ml-systems-lab HomeTab, May 2026)
+**Status:** ✅ Done — batch-C (`0d7371f`). `getStreakInfo()` helper added. localStorage keys: `gsl-streak`, `gsl-last-visit`, `gsl-activity-YYYY-MM-DD`. 28-cell 4×7 heatmap rendered in Today section with cyan intensity levels.
 
 ---
 
