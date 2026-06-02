@@ -24,7 +24,7 @@ Act as a product and engineering partner, not an assistant. That means:
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of June 2026: 57 Systems modules (in nav), 22 Explore modules, 16 Agent Lab modules, 27 Concepts modules (7 active gyms), 295 PrepLab questions, 226 Ground Truth posts. 5 labs: RAG Lab, Agent Lab, Eval Lab, LLM Lab, Prompt Lab. Nav: KNOWLEDGE (Concepts, Ground Truth) + 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product). Legacy tabs (Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
+Scale as of June 2026: 57 Systems modules (in nav), 22 Explore modules, 16 Agent Lab modules, 27 Concepts modules (7 active gyms), 307 PrepLab questions, 226 Ground Truth posts. 6 labs: RAG Lab, Agent Lab, Eval Lab, LLM Lab, Prompt Lab, Foundation Models Lab. Nav: KNOWLEDGE (Concepts, Ground Truth) + 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product). Legacy tabs (Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
 
 **Business model:** Freemium with access code gate (decided May 2026). Free: all Labs, all GT, all modules, PrepLab 10q/session. Gated (access code now, paid later): full PrepLab, Company Tracks, Interview Prep Plan study plan (phase 4, gated after 30% completion). Community code shared freely during beta. Stripe + auth when ready to monetize. See DECISIONS.md Section 0.
 
@@ -330,6 +330,13 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 - Concepts inline callouts + synthesis close — framing text done (15/15), but inline + synthesis beats pending. See UPGRADES.md.
 
 ## Session build log (May 2026 — June 2026)
+
+**Resolved this session (sprint 43 — June 2026):**
+- **Build fix: duplicate TOPIC_LABELS.** `InterviewIntelMode` in PrepLab.jsx redeclared `TOPIC_LABELS` at module scope (already declared at line 110). Renamed to `INTEL_TOPIC_LABELS`. Vercel build unblocked. Commit `f8969fc`.
+- **Company Tracks: lucide icons + company logos.** Archetype emoji (🏢🚀🇮🇳🏦) → lucide `Building2`/`Rocket`/`Globe2`/`Landmark`, tinted per archetype color. Company pills now show Simple Icons CDN logos for 12 companies (Google, Meta, Amazon, Apple, Anthropic, OpenAI, Perplexity, Flipkart, Razorpay, Accenture, Deloitte, IBM); letter-avatar fallback for Cursor, Swiggy, Zepto, McKinsey. `CompanyLogo` component + `COMPANY_ICONS` map + `ARCHETYPE_ICONS` map added. Commit `97ad851`.
+- **3 new PrepLab scenarios.** `scenario-4` (agents — tool poisoning via corpus contamination), `scenario-5` (finetuning — catastrophic forgetting, lr=5e-5 full fine-tune destroys RLHF alignment), `scenario-6` (evals — eval distribution mismatch, cross-encoder wins on FAQ eval loses in messy prod). Total: 307 PrepLab questions. Commit `adf93d1`.
+- **Graph RAG confirmed done.** Module fully implemented (4 tabs: The Failure, Knowledge Graph, Multi-Hop traversal, When to Use), in SYSTEMS_MODULES registry, RELATED_GT wired, 4 PrepLab questions (graph-rag-1 through graph-rag-4). Was listed as pending in NEXT.md — stale entry, closed.
+- **Scale after sprint 43:** 6 labs, 57 Systems modules, 27 Concepts (7 gyms), 307 PrepLab questions, 226 GT posts, 4 PrepLab modes.
 
 **Resolved this session (sprint 42 — June 2026):**
 - **Context management + MD sync.** CLAUDE.md trimmed 587→371 lines; sprints 1–37 moved to `HISTORY.md`. `CONTEXT_AUDIT.md` created for all 3 sibling labs (file size audit, danger thresholds, Grep-first rules, CLAUDE.md <400 line rule). IDEAS.md + UPGRADES.md synced to sprint 41 scale. Commit `bfb28d2`.

@@ -2,13 +2,13 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 42 — Foundation Models Lab + context management)*
+*Last updated: June 2026 (sprint 43 — build fixes, company logos, 3 scenario questions)*
 
 ---
 
-## Theme: Sprint 42 complete. 6 labs now live. PostHog check is still the gate before next major sprint.
+## Theme: Sprint 43 complete. 307 PrepLab questions. PostHog check still the gate before next major sprint.
 
-Sprint 42 delivered: context management, promptlab-5/6, Role Readiness Score, Foundation Models Lab (6th lab), Paper theme system (light/dark + toggle), duplicate declaration fixes, theme audit phase 2 (CSS vars), Interview Signal PrepLab mode (22 experiences), scenario-type questions + ScenarioPlayer (3 scenarios). Scale: 226 GT posts, 304 PrepLab questions, 27 Concepts (7 gyms), 57 Systems, 6 labs, 4 PrepLab modes.
+Sprint 43 delivered: TOPIC_LABELS duplicate build fix (`f8969fc`), Company Tracks lucide icons + SimpleIcons company logos (`97ad851`), 3 new scenario questions — tool poisoning / catastrophic forgetting / eval distribution mismatch — 307 total (`adf93d1`). Graph RAG confirmed already fully shipped (module + nav + RELATED_GT + 4 PrepLab questions). Role Readiness Score in NEXT.md "still open" was stale — already done sprint 42.
 
 PostHog check (item 5 below) is still the gate before the next major content sprint.
 
@@ -18,7 +18,7 @@ PostHog check (item 5 below) is still the gate before the next major content spr
 
 **1–4. ~~All prior sprints~~** — DONE. See CLAUDE.md session log.
 
-**5. PostHog distribution check** `S effort` `PREREQUISITE — do before next sprint` ← **STILL THE GATE. 5 labs now live. Check before building more.**
+**5. PostHog distribution check** `S effort` `PREREQUISITE — do before next sprint` ← **STILL THE GATE. 6 labs, 307 PrepLab questions now live. Check before building more.**
 
 Check before any new build: is PostHog receiving events in Vercel prod? WAU last 30 days? Top 5 modules by visit? RAG Lab scenario completion rate? PrepLab session depth? If data is unavailable or WAU is low, the next investment is sharing/distribution, not more content.
 
