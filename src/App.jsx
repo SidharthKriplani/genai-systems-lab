@@ -22,6 +22,7 @@ const PrepLabApp      = lazy(() => import("./PrepLab"));
 const LearningPathsApp = lazy(() => import("./LearningPaths"));
 
 import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
+import { RAG_CORPUS } from "./ragCorpus";
 
 function pct(v) { return (v * 100).toFixed(0) + "%"; }
 
@@ -1209,6 +1210,7 @@ export default function App() {
   const [config, setConfig] = useState(ALL_SCENARIOS[0].default_config);
   const [evaluated, setEvaluated] = useState(false);
   const [openStory, setOpenStory] = useState(null);
+  const [openChunks, setOpenChunks] = useState(false);
   const [ragDone, setRagDone] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("gsl-rag-done") || "[]")); } catch { return new Set(); }
   });
@@ -2133,6 +2135,38 @@ export default function App() {
                             </div>
                           </button>
                         </div>
+                      </div>
+                    );
+                  })()}
+
+                  {(() => {
+                    const corpusDocs = RAG_CORPUS[scenario.scenario_id];
+                    if (!corpusDocs) return null;
+                    return (
+                      <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                        <button
+                          onClick={() => setOpenChunks(v => !v)}
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-zinc-900/40 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono font-black text-blue-400 uppercase tracking-widest">Retrieved chunks</span>
+                            <span className="text-[10px] text-zinc-600">what the retriever actually returned</span>
+                          </div>
+                          <span className="text-zinc-600 text-xs">{openChunks ? "▲" : "▼"}</span>
+                        </button>
+                        {openChunks && (
+                          <div className="border-t border-zinc-800/60 divide-y divide-zinc-800/40">
+                            {corpusDocs.map((doc, i) => (
+                              <div key={doc.id} className="px-4 py-3 space-y-1.5">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[10px] font-mono text-zinc-500">#{i+1}</span>
+                                  <span className="text-[10px] font-semibold text-zinc-300 flex-1 leading-snug">{doc.title}</span>
+                                  <span className="text-[10px] font-mono text-blue-400 shrink-0">sim {doc.score.toFixed(2)}</span>
+                                </div>
+                                <p className="text-[11px] text-zinc-500 leading-relaxed pl-4">{doc.text}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
