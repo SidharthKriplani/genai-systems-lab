@@ -4098,6 +4098,17 @@ function EvalLoopModule() {
           <p className="text-xs text-zinc-500 leading-relaxed italic">Each scenario had one broken metric while the others looked fine. That's the normal production pattern — single-layer failures masked by everything else passing. Build eval pipelines that surface each metric independently, not just a composite score.</p>
         </div>
       )}
+
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the RAGAS Metrics tab, click each card and read the failure mode. Notice that faithfulness, context precision, context recall, and answer relevance can each be healthy while another is broken — they measure different pipeline layers. In the Debug tab, pick a diagnosis before revealing the answer: the scenarios are designed so that the obvious explanation is wrong. "The model hallucinated" is almost never the correct root cause when context precision is high and faithfulness is low.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">An eval loop is not a quality signal — it is a diagnostic decomposition. The same bad output can come from a retrieval failure, a context failure, or a generation failure, and the fix is completely different in each case. The team that improves faithfulness when the real problem is context recall will spend months not converging. Building the eval loop is not optional instrumentation — it is the prerequisite for making any improvement that actually transfers to production.</p>
+      </div>
     </div>
   );
 }
