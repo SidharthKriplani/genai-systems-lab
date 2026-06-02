@@ -290,9 +290,10 @@ For full audit findings see AUDITS.md.
 
 ## Session build log
 
-**Sprint 46 (June 2026) — PrepLab content + polish:**
+**Sprint 46 (June 2026) — PrepLab content + polish + failure mode completeness:**
 - 6 Quantiphi Defense Pack questions added (quantiphi-1 through quantiphi-6). Trap field quality pass: 10 traps rewritten to overclaim→honest-reframe format. Commit `bff96ac`. Scale: **313 PrepLab questions**.
 - FidelityBadge dedup: moved to shared.jsx, removed from App.jsx + Systems.jsx. R/A/E/L/P/G/C tab keyboard shortcuts added. Quantiphi Interview Signal entry confirmed already present (id:38, `43545a7`). Commit `f7ce93a`.
+- Failure mode completeness audit completed. GT links added to all 6 Prompt Lab scenarios + all 6 FM Lab scenarios (were the only 2 labs with no GT linkage). Production notes added to all 6 FM Lab scenarios (were entirely missing). Forward pointers updated in both labs to show GT post + PrepLab buttons. Commit `1dce7db`.
 
 **Sprint 45 (June 2026) — MD consolidation:**
 - 20 MD files → 12 active + archive. CLAUDE.md absorbs BRAIN_TRANSFER.md unique content. UPGRADES.md Done entries pruned. METRICS.md absorbs PostHog checklist. ROLLOUT.md absorbs beta launch checklist. docs/archive/ created with 7 files. Single commit: `6cc08c1`.
