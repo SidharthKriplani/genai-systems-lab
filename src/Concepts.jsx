@@ -5766,6 +5766,16 @@ const MODULES = [
     component: TemperatureGame,
   },
   {
+    id: "lora",
+    label: "LoRA / QLoRA",
+    tag: "TRAINING",
+    level: "intermediate",
+    title: "LoRA & QLoRA: Fine-Tuning Without the Compute Bill",
+    subtitle: "Adjust rank and model size. See how 99% of parameters disappear. Understand when LoRA beats RAG — and when it doesn't.",
+    fidelity: { tier: "simplified", note: "Parameter math is exact; VRAM estimates are illustrative" },
+    component: LoRAModule,
+  },
+  {
     id: "scaling-laws",
     label: "Scaling Laws",
     tag: "TRAINING",
@@ -5799,10 +5809,173 @@ const MODULE_NEXT_STEP = {
   "embeddings":    { tab: "systems",   label: "Systems — Vector DB Engineering" },
   "attention":     { tab: "concepts",  label: "Next: Transformer forward pass" },
   "tokenizer":     { tab: "concepts",  label: "Next: Embedding Space" },
+  "lora":          { tab: "groundtruth", postId: "lora-in-practice", label: "Ground Truth: LoRA in Practice →" },
   "scaling-laws":  { tab: "groundtruth", postId: "chinchilla-scaling-laws", label: "Ground Truth: Chinchilla Scaling Laws →" },
   "context":       { tab: "llmlab",    label: "LLM Lab — Long Context Patterns" },
   "flashattn":     { tab: "llmlab",    label: "LLM Lab — Serving Infrastructure" },
 };
+
+// ─── LORA / QLORA MODULE ─────────────────────────────────────────────────────
+
+const LORA_WHEN = [
+  { scenario: "Teach the model a new output format or style", winner: "lora", reason: "Behavioral changes are exactly what LoRA is optimised for — stable task, repeatable format" },
+  { scenario: "Inject domain knowledge that changes weekly", winner: "rag", reason: "Knowledge that updates frequently should live in a retrieval index, not baked into weights" },
+  { scenario: "Fine-tune a 70B model on a single A100 80GB", winner: "qlora", reason: "Full fine-tune needs ~560GB VRAM. QLoRA (NF4 base + BF16 adapters) fits in ~40GB" },
+  { scenario: "Adapt a small task-specific behaviour with 100 examples", winner: "prompt", reason: "Few-shot prompting is faster to iterate and easier to update — LoRA needs 500+ quality examples" },
+  { scenario: "Permanently encode compliance rules into model behaviour", winner: "lora", reason: "Rules that must hold regardless of prompt phrasing need weight-level changes, not prompt-level" },
+  { scenario: "Switch between 5 different customer personas at runtime", winner: "prompt", reason: "Multiple LoRA adapters at runtime adds latency and infra complexity; system prompt switching is free" },
+];
+
+function LoRAModule({ onNavigate }) {
+  const [tab, setTab] = useState("rank");
+  const [rank, setRank] = useState(16);
+  const [modelDim, setModelDim] = useState(4096);
+  const totalW = modelDim * modelDim;
+  const loraParams = 2 * modelDim * rank;
+  const reduction = ((1 - loraParams / totalW) * 100).toFixed(1);
+  const tabs = [
+    { id: "rank",  label: "Rank Decomposition" },
+    { id: "qlora", label: "QLoRA: 4-bit Base" },
+    { id: "when",  label: "When to Use LoRA" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      {/* Beat 1 */}
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">What you're building intuition for</div>
+        <p className="text-sm text-zinc-300 leading-relaxed">Full fine-tuning updates all billions of parameters — expensive, VRAM-heavy, and slow to iterate. LoRA freezes the original weights and trains two tiny matrices whose product approximates the weight change. For a 4096×4096 weight matrix, rank=16 drops trainable parameters from 16.7M to 131K — a 99% reduction with competitive quality. QLoRA extends this by quantising the frozen base to 4 bits (NF4), making 70B fine-tuning possible on a single GPU.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">This module makes the math concrete: adjust rank and model dimension, see the exact parameter reduction, and understand when LoRA is and isn't the right tool.</p>
+      </div>
+
+      <div className="flex gap-1 flex-wrap">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${tab === t.id ? "bg-indigo-600/20 text-indigo-300 border border-indigo-700/50" : "text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-700"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "rank" && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(24,24,27,0.9)", border: "1px solid rgba(63,63,70,0.6)" }}>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1">LoRA weight decomposition</p>
+            <p className="text-lg font-black font-mono text-indigo-300">W = W₀ + B·A</p>
+            <p className="text-xs text-zinc-400 leading-relaxed">W₀ = frozen pretrained weights (not trained). B ∈ ℝ<sup>d×r</sup>, A ∈ ℝ<sup>r×k</sup> = the two trainable adapter matrices. r = rank (the bottleneck dimension). At inference: merge B·A back into W₀ — zero latency overhead.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">LoRA rank: <span className="text-indigo-300">{rank}</span></p>
+              <input type="range" min={1} max={128} step={1} value={rank} onChange={e => setRank(Number(e.target.value))} className="w-full accent-indigo-500" />
+              <div className="flex justify-between text-[10px] text-zinc-500"><span>r=1</span><span>r=8</span><span>r=16</span><span>r=64</span><span>r=128</span></div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Model dim (d): <span className="text-indigo-300">{modelDim.toLocaleString()}</span></p>
+              <div className="grid grid-cols-4 gap-1">
+                {[512,1024,2048,4096].map(d => (
+                  <button key={d} onClick={() => setModelDim(d)}
+                    className={`py-1.5 rounded text-xs font-bold transition-all ${modelDim === d ? "bg-indigo-700/30 text-indigo-300 border border-indigo-700/60" : "bg-zinc-800 text-zinc-400 border border-zinc-700"}`}>
+                    {d >= 1000 ? (d/1000)+'k' : d}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl p-3 text-center" style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Full fine-tune</p>
+              <p className="text-lg font-black text-red-400">{(totalW/1e6).toFixed(1)}M</p>
+              <p className="text-[10px] text-zinc-500">parameters</p>
+            </div>
+            <div className="rounded-xl p-3 text-center" style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.3)" }}>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">LoRA adapters</p>
+              <p className="text-lg font-black text-indigo-300">{(loraParams/1e3).toFixed(0)}K</p>
+              <p className="text-[10px] text-zinc-500">parameters</p>
+            </div>
+            <div className="rounded-xl p-3 text-center" style={{ background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.25)" }}>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Reduction</p>
+              <p className="text-lg font-black text-emerald-400">{reduction}%</p>
+              <p className="text-[10px] text-zinc-500">fewer params</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl p-3 space-y-1.5" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}>
+            <p className="text-[10px] font-mono text-amber-400 uppercase tracking-wider">Rank tradeoff</p>
+            <p className="text-xs text-zinc-300">{rank <= 4 ? "Very low rank: minimal capacity. Only surface-level stylistic changes. May underfit on complex task adaptation." : rank <= 16 ? "Standard production range (r=8–16): covers most format and style adaptation tasks. Start here." : rank <= 32 ? "Higher rank: more capacity for complex task changes. VRAM and training time increase proportionally." : "High rank: approaching full fine-tune parameter count. Only warranted for deep domain adaptation. Prefer full fine-tune at this point."}</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "qlora" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderTop: "2px solid rgba(239,68,68,0.4)" }}>
+              <p className="text-[10px] font-mono font-black text-red-400 uppercase tracking-widest">Full LoRA on 70B</p>
+              <div className="space-y-1.5 text-xs text-zinc-300">
+                <p>Base weights: FP16 (2 bytes/param)</p>
+                <p>70B × 2 bytes = <span className="text-red-400 font-bold">~140GB VRAM</span></p>
+                <p className="text-zinc-500">+ optimizer states, activations</p>
+                <p className="text-red-400 text-sm font-bold mt-2">Needs 8× A100 80GB minimum</p>
+              </div>
+            </div>
+            <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderTop: "2px solid rgba(34,197,94,0.4)" }}>
+              <p className="text-[10px] font-mono font-black text-emerald-400 uppercase tracking-widest">QLoRA on 70B</p>
+              <div className="space-y-1.5 text-xs text-zinc-300">
+                <p>Base: NF4 quantised (0.5 bytes/param)</p>
+                <p>70B × 0.5 bytes = <span className="text-emerald-400 font-bold">~35GB VRAM</span></p>
+                <p>Adapters in BF16 (adds ~1GB for r=16)</p>
+                <p className="text-emerald-400 text-sm font-bold mt-2">Fits on 1× A100 40GB</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(24,24,27,0.9)", border: "1px solid rgba(63,63,70,0.6)" }}>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">QLoRA: two key innovations</p>
+            <div className="space-y-2 text-xs text-zinc-300">
+              <div className="flex items-start gap-2"><span className="text-indigo-400 shrink-0 font-bold">NF4:</span><span>Normal Float 4 — a 4-bit quantisation format designed for normally-distributed weights (which pretrained weights are). Preserves more information than INT4 for the same bit budget. The base model is frozen and never updated.</span></div>
+              <div className="flex items-start gap-2"><span className="text-indigo-400 shrink-0 font-bold">Double quant:</span><span>Quantise the quantisation constants themselves — saves another ~0.4 bits/param. Minor memory gain but adds up on large models.</span></div>
+            </div>
+          </div>
+          <div className="rounded-xl p-3" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}>
+            <p className="text-xs text-zinc-300"><span className="text-amber-400 font-semibold">Quality tradeoff:</span> QLoRA adapters have slightly higher perplexity than full LoRA (1–3% degradation). For most production tasks this is negligible. For tasks requiring maximum accuracy on complex reasoning, prefer full LoRA on a smaller base model over QLoRA on a larger one.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "when" && (
+        <div className="space-y-2">
+          <p className="text-xs text-zinc-500">Same task, six different configurations. Which tool wins and why.</p>
+          {LORA_WHEN.map((row, i) => {
+            const color = row.winner === "lora" ? "#6366f1" : row.winner === "qlora" ? "#22c55e" : row.winner === "rag" ? "#3b82f6" : "#f59e0b";
+            const label = row.winner === "lora" ? "LoRA" : row.winner === "qlora" ? "QLoRA" : row.winner === "rag" ? "RAG" : "Prompting";
+            return (
+              <div key={i} className="rounded-xl p-3.5" style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)", borderLeft: "3px solid " + color }}>
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <p className="text-xs font-semibold text-zinc-200">{row.scenario}</p>
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded shrink-0" style={{ background: color + "20", color, border: "1px solid " + color + "40" }}>{label}</span>
+                </div>
+                <p className="text-xs text-zinc-500">{row.reason}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Rank Decomposition tab, drag rank from 1 to 128 on a 4096-dim layer. At r=16, you're training 131K parameters instead of 16.7M — 99.2% reduction. At r=128, you're at 1M parameters — still 94% reduction. In the When to Use tab, notice that RAG and Prompting win for 3 of the 6 scenarios. LoRA is not a default upgrade — it's the right tool for a specific class of problems.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">LoRA made fine-tuning a day-one engineering option instead of a research project. The rank hyperparameter is the knob between "just style changes" (r=4–8) and "deep domain adaptation" (r=32+). QLoRA extends the same mechanic to hardware most teams actually have. The decision threshold hasn't changed — LoRA is still wrong for dynamic knowledge and right for stable behavioral changes.</p>
+      </div>
+    </div>
+  );
+}
 
 // ─── SCALING LAWS MODULE ─────────────────────────────────────────────────────
 
@@ -6101,6 +6274,7 @@ const MODULE_META = {
   "agent":        { insight: "A loop fails in ways a function never does: stuck retries, hallucinated tool calls, context drift.", mins: 10 },
   "guardrails":   { insight: "Without guardrails, even aligned models produce PII leaks and jailbreaks under the right prompt.", mins: 8 },
   "multiagent":   { insight: "Multi-agent overhead only pays off when subtasks are genuinely independent and parallelizable.", mins: 10 },
+  "lora":         { insight: "LoRA trains 131K parameters instead of 16.7M on a 4096-dim layer. Same model, 99% fewer trainable params.", mins: 8 },
   "scaling-laws": { insight: "Bigger isn't always better. A 7B model trained on 1T tokens beats a 70B model trained on 100B tokens.", mins: 8 },
 };
 
@@ -6111,7 +6285,7 @@ const GYMS = [
     label: "Language Models",
     desc: "How LLMs actually work — from tokenization through sampling. The foundation before you touch any lab.",
     color: "#6366f1",
-    moduleIds: ["tokenizer", "attention", "transformer", "flashattn", "sampling", "nextoken", "tempgame", "scaling-laws"],
+    moduleIds: ["tokenizer", "attention", "transformer", "flashattn", "sampling", "nextoken", "tempgame", "scaling-laws", "lora"],
     labId: "llmlab",
     labLabel: "LLM Lab",
   },
