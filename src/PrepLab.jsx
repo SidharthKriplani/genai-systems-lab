@@ -1,5 +1,26 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Building2, Rocket, Globe2, Landmark } from "lucide-react";
+
+// Inline SVG icons — no lucide-react dependency needed
+const IconBuilding2 = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 22V12a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v10"/><path d="M2 22h20"/><path d="M14 22v-4"/><path d="M10 22v-4"/><path d="M2 11l10-9 10 9"/>
+  </svg>
+);
+const IconRocket = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4.5 16.5c-1.5 1.5-1.5 4 0 5.5"/><path d="M17 3a4 4 0 0 1 4 4c0 6-5 10-10 14C6 17 2 13 2 7a4 4 0 0 1 4-4c1.4 0 2.7.6 3.6 1.6L12 7l2.4-2.4A4 4 0 0 1 17 3z"/><circle cx="12" cy="7" r="2"/>
+  </svg>
+);
+const IconGlobe2 = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>
+  </svg>
+);
+const IconLandmark = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 22h18"/><path d="M6 18V9"/><path d="M10 18V9"/><path d="M14 18V9"/><path d="M18 18V9"/><path d="M3 9l9-7 9 7"/>
+  </svg>
+);
 import { isAccessGranted, grantAccess, validateCode, FREE_QUESTION_LIMIT } from "./utils/accessCode";
 import { RESULTS_FREE_LIMIT } from "./config/gating";
 import { PREP_QUESTIONS } from "./data/preplabQuestions";
@@ -2122,10 +2143,10 @@ const COMPANY_ICONS = {
 };
 
 const ARCHETYPE_ICONS = {
-  bigtech:    <Building2 size={26} strokeWidth={1.5} />,
-  ainative:   <Rocket    size={26} strokeWidth={1.5} />,
-  indiantech: <Globe2    size={26} strokeWidth={1.5} />,
-  enterprise: <Landmark  size={26} strokeWidth={1.5} />,
+  bigtech:    <IconBuilding2 size={26} />,
+  ainative:   <IconRocket    size={26} />,
+  indiantech: <IconGlobe2    size={26} />,
+  enterprise: <IconLandmark  size={26} />,
 };
 
 function CompanyLogo({ name, size = 13 }) {
