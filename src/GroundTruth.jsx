@@ -36,15 +36,16 @@ const REACTIONS = [
 function generateQuiz(blocks) {
   const questions = [];
 
+  // Up to 2 questions from callout blocks
   const callouts = blocks.filter(b => b.t === "callout" && b.text?.length > 30);
-  callouts.slice(0, 2).forEach((b) => {
+  callouts.slice(0, 2).forEach(b => {
     const fact = b.text.split('.')[0];
     questions.push({
-      q: `Which statement best summarizes a key insight from this section?`,
+      q: "Which statement best summarizes a key insight from this section?",
       options: [
-        fact.length > 100 ? fact.slice(0, 100) + "..." : fact,
+        fact.length > 110 ? fact.slice(0, 110) + "..." : fact,
         "The opposite of the above is generally true in production",
-        "This only applies to systems with more than 1M users",
+        "This only applies to systems with more than 1M daily users",
         "This is a theoretical concept with no production relevance",
       ],
       correct: 0,
@@ -52,23 +53,72 @@ function generateQuiz(blocks) {
     });
   });
 
-  const lists = blocks.filter(b => b.t === "list" && b.items?.length >= 4);
-  lists.slice(0, 1).forEach(b => {
-    const item = b.items[0];
+  // Up to 2 questions from different list blocks
+  const lists = blocks.filter(b => b.t === "list" && b.items?.length >= 3);
+  const fakeSets = [
+    ["Reducing context window size always improves accuracy", "Fine-tuning is always cheaper than RAG at scale", "Token costs have no impact on architecture decisions"],
+    ["Always choose the largest available model for production", "Prompt engineering alone can solve all production failures", "Latency is irrelevant for non-interactive AI systems"],
+  ];
+  lists.slice(0, 2).forEach((b, i) => {
+    const item = b.items[Math.min(i, b.items.length - 1)];
     questions.push({
-      q: `Which of the following is explicitly mentioned in this post?`,
-      options: [
-        item,
-        "Reducing context window size always improves accuracy",
-        "Fine-tuning is always cheaper than RAG at scale",
-        "Token costs have no impact on architecture decisions",
-      ],
+      q: "Which of the following is explicitly mentioned in this post?",
+      options: [item, ...fakeSets[i]],
       correct: 0,
       source: "list"
     });
   });
 
-  return questions.slice(0, 3);
+  // Up to 1 question from a table
+  const tables = blocks.filter(b => b.t === "table" && b.rows?.length >= 2 && b.headers?.length >= 2);
+  tables.slice(0, 1).forEach(b => {
+    const val = b.rows[0][0];
+    questions.push({
+      q: `According to the comparison table in this post, which ${(b.headers[0] || "item").toLowerCase()} is listed first?`,
+      options: [
+        val,
+        b.rows.length > 1 ? b.rows[1][0] : "A different option",
+        b.rows.length > 2 ? b.rows[2][0] : "An unlisted option",
+        "All options are treated as equivalent",
+      ],
+      correct: 0,
+      source: "table"
+    });
+  });
+
+  // Up to 1 question from section headers
+  const headers = blocks.filter(b => b.t === "h2" && b.text?.length > 10);
+  if (headers.length >= 2) {
+    questions.push({
+      q: "Which section heading appears in this post?",
+      options: [
+        headers[1].text,
+        "How to avoid all production AI failures with a single rule",
+        "Why context window size determines all model quality",
+        "The single most important decision in AI system design",
+      ],
+      correct: 0,
+      source: "header"
+    });
+  }
+
+  // Up to 1 question from labelled code blocks
+  const codes = blocks.filter(b => b.t === "code" && b.label?.length > 5);
+  codes.slice(0, 1).forEach(b => {
+    questions.push({
+      q: `This post includes a code example: "${b.label.slice(0, 60)}". What does it illustrate?`,
+      options: [
+        "A practical implementation pattern relevant to the post's main topic",
+        "A deprecated approach that should no longer be used in production",
+        "A theoretical construct with no direct production application",
+        "An error in the original research paper that was later corrected",
+      ],
+      correct: 0,
+      source: "code"
+    });
+  });
+
+  return questions.slice(0, 7);
 }
 
 // ─── POST DETAIL RENDERER ────────────────────────────────────────────────────
