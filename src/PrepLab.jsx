@@ -3013,7 +3013,7 @@ const INTERVIEW_EXPERIENCES = [
   { id:22, role:"Staff AI Engineer",  tier:"FAANG",      round:2, topics:["agents","evals","serving"],  difficulty:"hard",   notes:"Cross-domain system design: multi-agent orchestration, eval harness for non-deterministic outputs, serving budget per user session." },
 ];
 
-const TOPIC_LABELS = { rag:"RAG & Retrieval", agents:"Agents & Systems", evals:"Evals & Metrics", finetuning:"LLM & Fine-Tuning", serving:"Production & Ops", llmops:"LLMOps", safety:"Safety & Guardrails", product:"Product & PM" };
+const INTEL_TOPIC_LABELS = { rag:"RAG & Retrieval", agents:"Agents & Systems", evals:"Evals & Metrics", finetuning:"LLM & Fine-Tuning", serving:"Production & Ops", llmops:"LLMOps", safety:"Safety & Guardrails", product:"Product & PM" };
 const TIER_LABELS  = { FAANG:"FAANG", unicorn:"Unicorn", enterprise:"Enterprise", startup:"Startup" };
 const ROLE_LABELS  = { "Senior AI Engineer":"Sr AI Engineer", "ML Engineer":"ML Engineer", "Staff AI Engineer":"Staff AI Eng", "AI Engineer":"AI Engineer", "AI PM":"AI PM", "Research Scientist":"Research Sci" };
 
@@ -3049,7 +3049,7 @@ function InterviewIntelMode({ onExit }) {
         <div className="space-y-2">
           {sortedTopics.map(([topic, count]) => (
             <div key={topic} className="flex items-center gap-3">
-              <div className="text-[10px] text-zinc-400 w-28 shrink-0 truncate">{TOPIC_LABELS[topic] || topic}</div>
+              <div className="text-[10px] text-zinc-400 w-28 shrink-0 truncate">{INTEL_TOPIC_LABELS[topic] || topic}</div>
               <div className="flex-1 h-2 rounded-full bg-zinc-800 overflow-hidden">
                 <div className="h-full rounded-full transition-all" style={{ width:`${Math.round((count/maxCount)*100)}%`, background:"var(--gal-build)" }} />
               </div>
