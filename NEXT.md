@@ -53,6 +53,7 @@ Check before any new build: is PostHog receiving events in Vercel prod? WAU last
 - **Thin GT posts expansion — 3 stubs** — `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets`. `S-M effort`.
 
 ### Architecture / polish
+- ~~**GT State-Aware Reading Mode**~~ — DONE sprint 37c (`a37d99c`). Revise + What's Next lenses powered by PrepLab history + gt-read keys.
 - ~~**GT Series + Tags redesign**~~ — DONE sprint 36 (`2a8c0bc`). 16/17 series populated; 2 new series added (LLM Fundamentals, Career & Strategy).
 - **React.lazy() code splitting** — systematic change. DECISIONS.md-worthy scope.
 - **Pyodide execution for Eval Lab** — Tier 2, after static corpus ships.
