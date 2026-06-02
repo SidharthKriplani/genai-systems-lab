@@ -2986,4 +2986,45 @@ export const PREP_QUESTIONS = [
     readMore: { label: "Chinchilla: Scaling Laws →", tab: "groundtruth", postId: "chinchilla-scaling-laws" }
   },
 
+  {
+    id: "retrieval-1", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
+    question: "A RAG system for a medical device knowledge base retrieves the wrong documents when users query specific model numbers like 'Medtronic 3830'. What is the root cause and correct fix?",
+    options: [
+      "Increase top_k to retrieve more candidates",
+      "Switch from dense-only retrieval to hybrid search — BM25 handles exact term matching that dense retrieval misses",
+      "Fine-tune the embedding model on medical device documentation",
+      "Add a reranker to improve precision after retrieval"
+    ],
+    correct: 1,
+    explanation: "Dense (vector) retrieval works by semantic similarity in embedding space. Rare identifiers like 'Medtronic 3830', CVE numbers, SKUs, and model names are often not in the embedding model's training vocabulary — their vectors don't cluster near the relevant documents. BM25 (sparse) retrieval uses inverted index exact matching and handles these cases perfectly: it matches the exact token string '3830' regardless of semantic context. Hybrid search (dense + BM25 with RRF fusion) handles both semantic queries and exact-match queries in one retrieval pass.",
+    trap: "Saying 'add a reranker.' A reranker improves precision from the candidate pool — but if the relevant document was never retrieved because dense retrieval missed the exact term, no reranker can surface it. Fix the retrieval stage first.",
+    readMore: { label: "Hybrid Search: BM25 + Vector →", tab: "groundtruth", postId: "hybrid-search" }
+  },
+
+  {
+    id: "retrieval-2", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
+    question: "In RRF (Reciprocal Rank Fusion), why is the score formula rank-based (1/(k+rank)) rather than score-based (direct cosine similarity)?",
+    options: [
+      "Cosine similarity is slower to compute than rank position",
+      "Dense and sparse scores are not on the same scale — rank normalises them without requiring calibration",
+      "RRF was designed to work without an inverted index",
+      "Score-based fusion requires a minimum of 3 retrievers"
+    ],
+    correct: 1,
+    explanation: "Dense retrieval produces cosine similarity scores (0–1 range, distribution depends on model). Sparse BM25 produces TF-IDF scores (0 to ∞, distribution depends on corpus statistics). These are on completely different scales with different distributions — you cannot average them directly. RRF uses rank position rather than raw scores, so both retrievers contribute based on 'this was the Nth most relevant document' rather than 'this had score X.' This makes fusion possible without any calibration step, which is why RRF became the standard approach.",
+    trap: "Saying score normalisation could work. It can — but requires calibrating the output distributions of each retriever, which changes with every corpus update. Rank-based fusion is distribution-free and requires no calibration.",
+    readMore: { label: "Hybrid Search: BM25 + Vector →", tab: "groundtruth", postId: "hybrid-search" }
+  },
+
+  {
+    id: "retrieval-3", topic: "rag", difficulty: "hard", gated: true, type: "text",
+    question: "A team building a legal document RAG system finds that pure dense retrieval misses specific statute references (e.g., 'Section 47(2)(b)') while pure BM25 misses thematic queries (e.g., 'what are the employer obligations for workplace safety?'). Design the retrieval architecture and explain how to weight the two signals.",
+    options: [],
+    correct: 0,
+    keywords: ["hybrid search", "BM25", "dense retrieval", "RRF", "alpha weighting", "exact match", "semantic", "legal"],
+    explanation: "This is the canonical hybrid search use case. Design: run both dense (bi-encoder embeddings via Cohere/Voyage) and sparse (BM25 via Elasticsearch or Weaviate) in parallel. Fuse with RRF or weighted fusion. For legal documents, lean toward BM25 for statute references (k = 60, RRF standard) but weight dense higher for thematic queries. Practical implementation: (1) Weaviate or Qdrant with hybrid search built-in, set alpha (dense weight) to 0.5–0.7 for general legal queries; (2) query classification: if query contains section number pattern (regex: Section [0-9]+) or case citation pattern, set alpha = 0.2 (BM25-dominant); for plain language questions, set alpha = 0.8 (dense-dominant). Test by building a golden evaluation set with 50 statute-reference queries and 50 thematic queries — measure recall@5 separately for each type.",
+    trap: "Proposing a single fixed alpha for all queries. The optimal balance between dense and sparse depends on query type — statute references need BM25-dominant retrieval, thematic questions need dense-dominant. Query-time routing between configurations is the production-grade approach.",
+    readMore: { label: "Hybrid Search: BM25 + Vector →", tab: "groundtruth", postId: "hybrid-search" }
+  },
+
 ];
