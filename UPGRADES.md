@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: May 2026 (post sprint 35)*
+*Last updated: May 2026 (post sprint 36)*
 
 ---
 
@@ -427,7 +427,7 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 **Priority:** Medium — placeholder testimonials actively hurt credibility. Remove them now.
 
-**Status:** Pending — Phase 1 buildable now. Phase 2 deferred to Stripe sprint.
+**Status:** Phase 1 done — sprint 36 (`2a8c0bc`). Placeholder testimonials were already removed in sprint 10. Tally.so feedback chip added to Home footer. Phase 2 (Supabase approval UI) deferred to Stripe sprint.
 
 ---
 
@@ -445,7 +445,7 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 **Priority:** Medium — actionable product signal with almost no build cost.
 
-**Status:** Pending — build in next Home polish sprint.
+**Status:** Pending — follow-on after feedback data starts accumulating from Tally.
 
 ---
 
@@ -840,7 +840,7 @@ Implementation: a small `productionNote` field on the failure scenario data obje
 
 **Priority:** High — single highest-leverage interview-readiness upgrade from the third-party lab assessment (May 2026). Low effort, directly closes the "judgment but no production connection" gap.
 
-**Status:** Pending (Source: third-party lab assessment, May 2026)
+**Status:** ✅ Done — sprint 36 (`2a8c0bc`). `productionNote` field added to all 6 RAG Lab scenarios in `ragScenarios.js`. Rendered in `App.jsx` as subdued zinc chip after System Design Lesson. Agent Lab + Eval/LLM Lab pending (still lower priority).
 
 ---
 
