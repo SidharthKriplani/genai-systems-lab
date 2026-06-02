@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Building2, Rocket, Globe2, Landmark } from "lucide-react";
 import { isAccessGranted, grantAccess, validateCode, FREE_QUESTION_LIMIT } from "./utils/accessCode";
 import { RESULTS_FREE_LIMIT } from "./config/gating";
 import { PREP_QUESTIONS } from "./data/preplabQuestions";
@@ -2104,6 +2105,53 @@ const TOPIC_WEIGHT_LABELS = {
   safety: "Safety", mlops: "MLOps", multimodal: "Multimodal",
 };
 
+// Simple Icons slugs for companies with known CDN entries
+const COMPANY_ICONS = {
+  "Google DeepMind": "google",
+  "Meta AI":         "meta",
+  "Amazon AI":       "amazon",
+  "Apple ML":        "apple",
+  "Anthropic":       "anthropic",
+  "OpenAI":          "openai",
+  "Perplexity":      "perplexity",
+  "Flipkart":        "flipkart",
+  "Razorpay":        "razorpay",
+  "Accenture AI":    "accenture",
+  "Deloitte AI":     "deloitte",
+  "IBM watsonx":     "ibm",
+};
+
+const ARCHETYPE_ICONS = {
+  bigtech:    <Building2 size={26} strokeWidth={1.5} />,
+  ainative:   <Rocket    size={26} strokeWidth={1.5} />,
+  indiantech: <Globe2    size={26} strokeWidth={1.5} />,
+  enterprise: <Landmark  size={26} strokeWidth={1.5} />,
+};
+
+function CompanyLogo({ name, size = 13 }) {
+  const slug = COMPANY_ICONS[name];
+  if (slug) {
+    return (
+      <img
+        src={`https://cdn.simpleicons.org/${slug}/ffffff`}
+        alt=""
+        width={size}
+        height={size}
+        className="inline-block shrink-0"
+        style={{ opacity: 0.75, verticalAlign: "middle" }}
+      />
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full shrink-0 font-bold text-white"
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.55), background: "rgba(255,255,255,0.18)", lineHeight: 1 }}
+    >
+      {name[0]}
+    </span>
+  );
+}
+
 const COMPANY_ARCHETYPES = [
   {
     id: "bigtech",
@@ -2240,11 +2288,14 @@ function CompanyPrepMode({ onExit, onNavigate }) {
             {COMPANY_ARCHETYPES.map(arc => (
               <div key={arc.id} onClick={() => setArchetype(arc)}
                 className={`bg-zinc-900 border border-${arc.color}-500/30 hover:border-${arc.color}-400/60 rounded-2xl p-5 cursor-pointer transition-all`}>
-                <div className="text-3xl mb-3">{arc.icon}</div>
+                <div className={`mb-3 text-${arc.color}-300`}>{ARCHETYPE_ICONS[arc.id] || arc.icon}</div>
                 <h3 className="font-bold text-lg mb-1">{arc.label}</h3>
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {arc.companies.map(c => (
-                    <span key={c} className={`text-xs px-2 py-0.5 rounded-full bg-${arc.color}-900/40 text-${arc.color}-300 border border-${arc.color}-500/20`}>{c}</span>
+                    <span key={c} className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-${arc.color}-900/40 text-${arc.color}-300 border border-${arc.color}-500/20`}>
+                      <CompanyLogo name={c} size={12} />
+                      {c}
+                    </span>
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
