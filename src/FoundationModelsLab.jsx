@@ -287,14 +287,13 @@ export default function FoundationModelsLab({ onNavigate }) {
           const active = s.id === activeId;
           return (
             <button key={s.id} onClick={() => switchScenario(s.id)}
-              className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "bg-zinc-800/80" : "border-l-2 border-transparent hover:bg-zinc-900"}`}
-              style={active ? { borderLeft: "2px solid #22D3EE" } : {}}>
+              className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "border-l-2 border-amber-500 bg-zinc-800/80" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
               <span className={`text-xs font-semibold leading-snug ${active ? "text-white" : "text-zinc-300"}`}>{s.title}</span>
-              <span className="text-[9px] font-mono" style={{ color: active ? "#22D3EE" : undefined }} >{s.tag}</span>
+              <span className={`text-[9px] font-mono ${active ? "text-amber-400" : "text-zinc-500"}`}>{s.tag}</span>
             </button>
           );
         })}
-        <div className="mt-4 mx-3 p-3 rounded-lg border border-zinc-800/60" style={{ background: "rgba(34,211,238,0.04)" }}>
+        <div className="mt-4 mx-3 p-3 rounded-lg border border-zinc-800/60" style={{ background: "rgba(245,158,11,0.04)" }}>
           <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-1">WHAT THIS LAB COVERS</div>
           <div className="text-[11px] text-zinc-400 leading-relaxed">Configure a fine-tuning setup. Watch it fail. Understand why the failure is architectural — not fixable by adding more data or training longer.</div>
         </div>
@@ -316,7 +315,7 @@ export default function FoundationModelsLab({ onNavigate }) {
           {/* Header */}
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded" style={{ background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.3)", color: "#22D3EE" }}>{scenario.tag}</span>
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded" style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#fcd34d" }}>{scenario.tag}</span>
             </div>
             <div className="text-xl font-black text-white tracking-tight mb-1">{scenario.title}</div>
             <div className="text-sm text-zinc-400">{scenario.desc}</div>
@@ -337,14 +336,14 @@ export default function FoundationModelsLab({ onNavigate }) {
                 const selected = selectedConfig === i;
                 return (
                   <button key={i} onClick={() => setSelectedConfig(i)}
-                    className={`text-left p-4 rounded-xl border transition-all duration-150 ${selected ? "" : "border-zinc-800 hover:border-zinc-700 hover:-translate-y-0.5"}`}
-                    style={{ background: selected ? "rgba(34,211,238,0.07)" : "var(--surface-2)", border: selected ? "1.5px solid rgba(34,211,238,0.5)" : undefined }}>
+                    className={`text-left p-4 rounded-xl border transition-all duration-150 ${selected ? "border-amber-500/60 bg-amber-950/20" : "border-zinc-800 hover:border-zinc-700 hover:-translate-y-0.5"}`}
+                    style={{ background: selected ? "rgba(245,158,11,0.08)" : "var(--surface-2)" }}>
                     <div className="text-xs font-bold text-zinc-100 mb-2">{cfg.buttonLabel}</div>
                     <div className="space-y-1">
                       {Object.entries(cfg.params).map(([k, v]) => (
                         <div key={k} className="flex items-center justify-between gap-2">
                           <span className="text-[10px] text-zinc-500">{k}</span>
-                          <span className="text-[10px] font-mono" style={{ color: selected ? "#67e8f9" : undefined }}>{v}</span>
+                          <span className={`text-[10px] font-mono ${selected ? "text-amber-300" : "text-zinc-400"}`}>{v}</span>
                         </div>
                       ))}
                     </div>
@@ -393,9 +392,9 @@ export default function FoundationModelsLab({ onNavigate }) {
               </div>
 
               {/* Synthesis close */}
-              <div className="p-3 rounded-lg" style={{ border: "1px solid rgba(34,211,238,0.2)", background: "rgba(34,211,238,0.04)" }}>
-                <div className="text-[9px] font-mono uppercase tracking-widest mb-1.5" style={{ color: "#22D3EE" }}>THE DESIGN PRINCIPLE</div>
-                <p className="text-sm leading-relaxed italic" style={{ color: "rgba(165,243,252,0.8)" }}>{outcome.synthesisClose}</p>
+              <div className="p-3 rounded-lg border border-amber-800/30" style={{ background: "rgba(245,158,11,0.04)" }}>
+                <div className="text-[9px] font-mono text-amber-600 uppercase tracking-widest mb-1.5">THE DESIGN PRINCIPLE</div>
+                <p className="text-sm text-amber-200/80 leading-relaxed italic">{outcome.synthesisClose}</p>
               </div>
 
               {/* Forward pointer */}
