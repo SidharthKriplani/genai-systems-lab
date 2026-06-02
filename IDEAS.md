@@ -2,7 +2,89 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: June 2026 (sprint 46) | Current scale: 57 Systems modules (in nav), 22 Explore, 16 Agent Lab, 27 Concepts (7 active gyms), 313 PrepLab questions, 226 GT posts, 6 labs*
+*Last updated: June 2026 (sprint 47) | Current scale: 57 Systems modules (in nav), 22 Explore, 16 Agent Lab, 27 Concepts (7 active gyms), 313 PrepLab questions, 226 GT posts, 6 labs*
+
+---
+
+## Cross-lab intelligence — deep read of MSL + PAL source + IDEAS.md (June 2026, sprint 47)
+
+*Second pass — reading CLAUDE.md, IDEAS.md, CROSS_LAB.md directly, not just READMEs.*
+
+### "Do we even need it?" adversarial scenario type
+`Tier 1` `M effort` `Genuinely differentiated — no competitor has this`
+
+MSL has a "Do we even need ML?" scenario type. For GAL the equivalent: "Do we even need RAG?" / "Do we even need an agent?" / "Do we even need LLM for this?" — adversarial judgment scenarios that test whether to use AI at all.
+
+You're presented with a business request framed as an AI problem. The user must judge whether the AI approach is warranted, or whether a simpler solution dominates. Senior engineers spend most of their time killing bad ideas, not building them. No existing AI interview prep tool tests this.
+
+Seed scenarios for GAL:
+- Customer support Q&A at 50 tickets/day → RAG pipeline vs. static FAQ page + Ctrl+F (the FAQ wins, RAG adds cost, latency, and hallucination risk for no gain)
+- Sales call summarisation → LLM vs. structured form filled by the rep (structured form is faster, cheaper, more consistent for the use case)
+- Code completion for a 3-person startup → full agent loop vs. GitHub Copilot autocomplete (agent is overkill, cost doesn't justify complexity)
+- Document Q&A over a 10-page internal policy → RAG vs. just putting the policy in the system prompt (context window is enough, RAG adds retrieval noise for no benefit)
+- Fraud detection at 0.001% rate → LLM classifier vs. two rules (rules win — LLM precision/recall economics are negative)
+
+Format: show the request, give 4 options (one is "build the AI system," three are simpler alternatives with varying trade-offs), reveal explains why the simpler approach wins and what signals to look for in production that confirm the choice.
+
+PrepLab question type: `type: "mcq"`, topic: `sysdesign`, difficulty: `hard`. Could also be a Systems tab module ("Should Use AI?" exists but doesn't have this adversarial framing — this is stronger).
+
+**Dependencies:** No new infrastructure. Write 6–8 questions + a Systems module upgrade.
+
+---
+
+### Interview Strategy v2 — resume input + round history
+`Tier 1` `M effort` `Directly actionable from MSL's DefenseDocTab v2 spec`
+
+MSL's DefenseDocTab v2 spec (not yet built in MSL either — logged May 2026) adds two critical inputs to the current 4-step flow:
+
+**Resume input (step 2):** Paste resume text. The system maps your actual background against JD requirements and shows the *delta* — skills in JD not evidenced in your resume. Self-rating then focuses only on gaps, not everything. Currently GAL asks you to rate yourself on everything the JD mentions — MSL identified this as noise. Rating 11 skills when 4 are already on your resume wastes time and dilutes signal.
+
+**Previous round history (step 5, optional):** If the user is mid-interview loop, they can describe what happened in round N and any feedback. "First technical went well but got dinged on scale estimation" → upweight scale estimation regardless of self-rating. This is the real personalization signal that no other tool captures because it requires a user who is mid-loop.
+
+GAL's Interview Strategy (jdprep mode) currently does steps 1–4. Adding resume input + round history makes it meaningfully more useful for the user who is 2 weeks out and has already had a screen.
+
+**Dependencies:** localStorage only. Resume text + round history are just text fields, no backend needed. Gate: don't rebuild until the current 4-step flow has confirmed traction (track interview_brief_generated events in PostHog).
+
+---
+
+### Sparse heatmap guard
+`Tier 1` `XS effort` `15-minute fix`
+
+GAL just upgraded to 91-day heatmap. For new users with ≤6 days of activity, the grid is 90 dark squares and 1–6 lit dots. It looks broken, not motivating. MSL identified the same issue and logged the fix: hide the grid until ≥7 active days, show a simple day-count message ("Day 3 — keep going") instead. After 7 days the full grid renders.
+
+One `if` statement in Home.jsx. Ship with the next commit that touches Home.
+
+---
+
+### RSS feed for GT posts
+`Tier 1` `XS effort` `Free distribution channel`
+
+Generate `/rss.xml` at build time from `groundTruthIndex.js` metadata. 20–30 most recent posts. Adds a distribution channel without any ongoing work — people who subscribe to RSS feeds tend to be exactly the senior engineers GAL is targeting. MSL and PAL both want this. 30–45 min to write a pre-build or Vite plugin script.
+
+---
+
+### CROSS_LAB.md — coordination file
+`Tier 1` `XS effort` `Coordination mechanism`
+
+PAL maintains a `CROSS_LAB.md` that explicitly routes ideas between the three labs. GAL doesn't have this. When a pattern is validated in one lab, it should be documented in a shared format so it doesn't get rediscovered from scratch next session. Create `CROSS_LAB.md` in GAL root documenting: what GAL owns (AI systems, RAG, agents, evals, LLM production), what MSL owns (classical ML, DE, MLOps, model training), what PAL owns (product analytics, experimentation, PM). Include known patterns each lab has that the others can borrow. Refer to it when reading external content.
+
+---
+
+### Verbal practice — Web Speech API
+`Tier 2` `M effort` `Real gap, no equivalent in GAL`
+
+MSL has VerbatimTab: voice recording + transcript + self-scoring on 4 criteria + words-per-minute readout. Senior IC interviews are verbal. Text-based prep has a documented transfer failure — people who only practice by reading/typing perform worse at verbal delivery than people who speak out loud. No other tool in the AI interview prep space has this for the GenAI systems domain specifically.
+
+GAL PrepLab equivalent: 25 hard PrepLab questions presented one at a time, user hits "Record" (Web Speech API), speaks their answer, gets transcript + word count + WPM, self-rates on 3 criteria (accuracy, structure, conciseness). Chrome/Edge only — show a clear fallback message for Safari.
+
+**Dependencies:** Web Speech API browser support check. No backend. Self-scoring only (no LLM eval without a backend). Chrome/Edge required for recording.
+
+---
+
+### Concept articles depth audit
+`Tier 2` `S effort` `Content quality`
+
+PAL's CROSS_LAB.md explicitly notes some GAL concept articles are under 300 words and need depth passes before the next beta push. Run a grep audit: `grep -c "\"t\":" src/groundTruthPosts.js` per post ID to get block counts. Posts under 8 blocks (approx. 300 words) need expansion. The three thin posts identified in earlier audits (dpo-in-practice, llm-observability, instruction-tuning-datasets) were expanded — but there may be others in the 226 that are thin.
 
 ---
 

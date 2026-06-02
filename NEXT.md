@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 46 — 313 PrepLab questions, failure mode audit complete)*
+*Last updated: June 2026 (sprint 47 — bookmarks, 91-day heatmap, spaced rep, deep cross-lab read)*
 
 ---
 
@@ -70,11 +70,13 @@ Sprint 46 closed: 313 PrepLab questions, failure mode audit complete, GT links o
 1. ~~**Bookmarks**~~ — DONE sprint 47 (`97c2057`). `gsl-bookmarks`, bookmark icon on GT cards, 🔖 Saved filter.
 2. ~~**91-day heatmap**~~ — DONE sprint 47 (`97c2057`). Upgraded from 28→91 cells.
 3. ~~**Spaced repetition**~~ — DONE sprint 47 (`97c2057`). `gsl-preplab-spaced`, SRS intervals, Review Due mode in PrepLab sidebar.
-4. **Timed exam lock (Combinator)** `S` — 30/45/60 min mode, answers locked until timer ends. See IDEAS.md.
-5. **Staff Layer** `M` — 3-tier PrepLab reveal: answer → trap → staff framing. Premium gated. See IDEAS.md.
-6. **Spot the Flaw** `M` — adversarial format on existing failure modes. See IDEAS.md.
-7. **Cross-lab path** `XS` — GT post + README update. Zero code. See IDEAS.md.
-8. **Distribution** `XS` — HN + LinkedIn + Reddit. Non-negotiable. See IDEAS.md.
+4. **Sparse heatmap guard** `XS` — hide 91-day grid when < 7 active days, show day-count message. Home.jsx one-liner.
+5. **"Do we even need it?" adversarial scenarios** `M` — 6–8 adversarial judgment questions testing when NOT to use AI. See IDEAS.md.
+6. **Timed exam lock (Combinator)** `S` — 30/45/60 min mode, answers locked until timer ends. See IDEAS.md.
+7. **Staff Layer** `M` — 3-tier PrepLab reveal: answer → trap → staff framing. Premium gated. See IDEAS.md.
+8. **Spot the Flaw** `M` — adversarial format on existing failure modes. See IDEAS.md.
+9. **CROSS_LAB.md** `XS` — coordination file documenting lab boundaries + cross-pollination patterns. See IDEAS.md.
+10. **Cross-lab path + Distribution** `XS` — GT post + README update + HN/LinkedIn post. See IDEAS.md.
 
 ### ~~Failure mode completeness audit~~ DONE sprint 46 (`1dce7db`)
 
