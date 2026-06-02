@@ -123,7 +123,8 @@ const RELATED_GT = {
   inference:   [{ id: "inference-optimisation", title: "Inference Optimisation" }],
   buildthis:   [{ id: "ai-system-design-framework", title: "AI System Design Framework" }],
   "graph-rag":  [{ id: "graph-rag-multi-hop",     title: "Graph RAG: When Vector Search Isn't Enough" }],
-  "langgraph":  [{ id: "langgraph-reducers-hitl", title: "LangGraph Reducers and HITL: State Machines for Agentic Workflows" }],
+  "langgraph":        [{ id: "langgraph-reducers-hitl",       title: "LangGraph Reducers and HITL: State Machines for Agentic Workflows" }],
+  "query-refinement": [{ id: "two-stage-retrieval-reranker",  title: "Two-Stage Retrieval: Why a Reranker Exists" }],
 };
 
 function FidelityBadge({ variant = "simulated" }) {

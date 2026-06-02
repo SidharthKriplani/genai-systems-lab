@@ -11805,6 +11805,55 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+// ─── TWO-STAGE RETRIEVAL ──────────────────────────────────────────────────────
+  "two-stage-retrieval-reranker": [
+    { t: "p", text: "Vector search returns documents that are similar to your query — and similarity is not relevance. A bi-encoder embeds your query and every document independently, then ranks by cosine similarity. It is fast enough to search millions of documents in milliseconds. But because query and document never see each other during encoding, the model cannot detect relevance signals that only emerge when you read them together. A cross-encoder fixes this — but introduces a latency cost that rules it out as a first-stage retriever." },
+    { t: "callout", text: "Vector search maximizes recall. A reranker maximizes precision. They solve different problems and fail in different ways. Two-stage retrieval is what happens when you need both." },
+    { t: "h2", text: "Stage 1 — Bi-Encoder: Recall at Speed" },
+    { t: "p", text: "A bi-encoder encodes the query and each document independently into a single dense vector. Relevance is approximated by cosine similarity between these vectors. This is fast — vectors are precomputed at index time, so retrieval is a nearest-neighbor lookup. The tradeoff: because query and document are encoded separately, the model cannot attend to the interaction between them. It sees 'Is this document similar in embedding space?' not 'Does this document answer this specific question?'" },
+    { t: "list", label: "Bi-encoder failure modes", items: [
+      "Lexical gap — query and relevant document use different vocabulary. 'What causes token budget overflow?' may not surface a doc titled 'Context window saturation at scale' even though it's the right answer.",
+      "False similarity — irrelevant documents that share vocabulary with the query rank highly. 'RAG architecture' matches many docs; few are relevant to the specific failure mode being asked about.",
+      "Asymmetric relevance — a short query matches a long document on a few keywords but the document answers a different question. Bi-encoder cannot detect this without reading both together.",
+    ]},
+    { t: "h2", text: "Stage 2 — Cross-Encoder: Precision at Cost" },
+    { t: "p", text: "A cross-encoder takes a query-document pair as a single concatenated input and produces a relevance score using full attention across both sequences. Because the model reads query and document together, it detects relevance signals invisible to a bi-encoder — nuance, negation, partial match, the difference between a document that mentions a topic and one that actually answers the question. The cost: you cannot precompute anything. Every query-document pair is scored at inference time, which is why cross-encoders are only viable for small candidate sets, not full-corpus retrieval." },
+    { t: "list", label: "Cross-encoder failure modes", items: [
+      "Recall dependency — if the bi-encoder didn't include the relevant document in the candidate set, the cross-encoder never sees it. A reranker cannot recall what was never retrieved.",
+      "Latency at scale — scoring 100 query-document pairs with a cross-encoder adds 50–200ms per query depending on model size and hardware. At 10K QPS, this becomes a serving bottleneck.",
+      "Distribution shift — a reranker fine-tuned on one domain (e.g. legal) degrades on out-of-distribution queries (e.g. code documentation). The bi-encoder generalizes better because it doesn't need paired training data.",
+    ]},
+    { t: "table", headers: ["Dimension", "Bi-Encoder (Stage 1)", "Cross-Encoder (Stage 2)"], rows: [
+      ["Input", "Query and docs encoded separately", "Query + doc concatenated together"],
+      ["Speed", "Milliseconds — precomputed doc vectors", "50–200ms per pair at inference time"],
+      ["Scales to", "Millions of documents", "100–1,000 candidates max"],
+      ["What it optimizes", "Recall — finds similar documents", "Precision — ranks by true relevance"],
+      ["Fails when", "Query/doc vocabulary gap", "Relevant doc not in candidate set"],
+      ["Typical models", "sentence-transformers, E5, BGE", "cross-encoder/ms-marco-MiniLM, Cohere Rerank"],
+    ]},
+    { t: "h2", text: "The Two-Stage Pipeline" },
+    { t: "p", text: "Two-stage retrieval combines both in sequence. Stage 1 (bi-encoder) retrieves recall_k candidates — typically 50 to 200 — using fast vector search. Stage 2 (cross-encoder) reranks those candidates and returns the final top-K. The bi-encoder handles scale; the cross-encoder handles quality. The most common production mistake is treating them as interchangeable, or assuming that improving Stage 1 fixes Stage 2 failures." },
+    { t: "callout", text: "The critical failure mode: setting recall_k too small. If the relevant document is at position 120 in the bi-encoder output and recall_k is 100, the cross-encoder never sees it. No amount of reranker quality fixes this. Recall is a Stage 1 problem." },
+    { t: "list", label: "When to add a reranker", items: [
+      "Precision matters more than recall — the cost of a wrong result is high (medical Q&A, legal search, compliance)",
+      "Your user queries use different vocabulary than your document corpus (lexical gap)",
+      "You see high retrieval scores but low faithfulness — bi-encoder is surfacing similar-but-not-relevant documents",
+      "Your latency SLO allows 50–200ms of reranking overhead per query",
+      "Corpus is large enough that bi-encoder errors are systematic, not random",
+    ]},
+    { t: "list", label: "When one stage is enough", items: [
+      "Simple factual lookups with specific vocabulary — bi-encoder alone has high precision because vocabulary predicts relevance",
+      "Latency SLO below 100ms total — cross-encoder overhead makes the pipeline too slow",
+      "Small corpus (under 10K docs) — exhaustive bi-encoder search with fine-tuning often matches two-stage quality",
+      "You already have very high precision from a fine-tuned domain-specific bi-encoder",
+    ]},
+    { t: "refs", items: [
+      { label: "Sentence Transformers — Cross-Encoders", url: "https://www.sbert.net/docs/cross_encoder/usage/usage.html" },
+      { label: "Cohere Rerank API", url: "https://docs.cohere.com/reference/rerank" },
+      { label: "BEIR Benchmark — Retrieval Evaluation", url: "https://github.com/beir-cellar/beir" },
+    ]},
+  ],
+
 // ─── CONTEXT ISOLATION MULTIAGENT ────────────────────────────────────────────
   "context-isolation-multiagent": [
     { t: "p", text: "The most common multi-agent failure mode does not look like a bug. It looks like inconsistent, hard-to-reproduce behaviour where agents make decisions that seem correct in isolation but are wrong in the context of the overall task. The root cause is almost always context contamination." },

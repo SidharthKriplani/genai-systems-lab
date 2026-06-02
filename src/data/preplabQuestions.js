@@ -2835,6 +2835,54 @@ export const PREP_QUESTIONS = [
     readMore: { label: "LangGraph + HITL →", tab: "groundtruth", postId: "langgraph-reducers-hitl" }
   },
 
+  // ── Two-Stage Retrieval (4) ───────────────────────────────────────────────────
+  {
+    id: "reranker-1", topic: "rag", difficulty: "hard", gated: true, type: "text",
+    question: "Your RAG system for a medical Q&A product uses a bi-encoder to retrieve the top-10 chunks. Precision is critical — a wrong citation could cause patient harm. The bi-encoder has 85% recall@10 but only 60% precision@3 on your test set. How would you redesign the retrieval pipeline, and what are the failure modes of your redesign?",
+    options: [],
+    correct: 0,
+    keywords: ["two-stage retrieval", "cross-encoder", "reranker", "recall_k", "precision", "latency", "candidate set"],
+    explanation: "Redesign: add a cross-encoder reranker as Stage 2. Keep the bi-encoder for Stage 1 with recall_k=50 (larger candidate pool than 10), then rerank with a cross-encoder to return top-3. The bi-encoder handles scale and recall; the cross-encoder handles precision by scoring query+document together with full attention. Failure modes: (1) Recall dependency — if the relevant chunk is not in the recall_k=50 set, the cross-encoder never sees it. Monitor Stage 1 recall@50 separately. (2) Latency — cross-encoder adds 50–200ms per query depending on model size. Benchmark against SLO. (3) Distribution shift — if your reranker was trained on general text, it may underperform on medical terminology. Fine-tune or evaluate on domain-specific evaluation set.",
+    trap: "Saying 'increase top-K to 20 to improve precision.' Increasing top-K improves recall but hurts precision — you get more documents, but more irrelevant ones too. Precision improvement requires a cross-encoder that reads query+document together, not more candidates from the same bi-encoder.",
+    source: "Microsoft RAG interview signal — two-stage retrieval architecture gap (May 2026)",
+    readMore: { label: "Two-Stage Retrieval →", tab: "groundtruth", postId: "two-stage-retrieval-reranker" }
+  },
+  {
+    id: "reranker-2", topic: "rag", difficulty: "hard", gated: true, type: "text",
+    question: "A user reports that your RAG chatbot answers questions perfectly when the query matches the document vocabulary, but gives wrong answers for the same information phrased differently. Which stage of a two-stage retrieval pipeline is responsible, and what specifically is failing?",
+    options: [],
+    correct: 0,
+    keywords: ["bi-encoder", "lexical gap", "vocabulary mismatch", "recall", "cosine similarity", "independent encoding"],
+    explanation: "This is a Stage 1 (bi-encoder) failure caused by a lexical gap. Bi-encoders encode query and document independently and compute cosine similarity between their vectors. When the query uses different vocabulary than the document — 'context budget saturation' vs 'token window overflow' — the independently-computed vectors are far apart in embedding space, and the document is not retrieved. The cross-encoder (Stage 2) never gets to see it. Fix options: (1) Query rewriting — use an LLM to rewrite the query to match likely document vocabulary before retrieval. (2) Multi-query expansion — generate multiple query variants and merge candidate sets. (3) Fine-tune the bi-encoder on in-domain query-document pairs to improve vocabulary generalization.",
+    trap: "Saying 'the cross-encoder is hallucinating.' The cross-encoder (if present) only reranks what the bi-encoder retrieved. If the relevant document was never retrieved, the cross-encoder cannot improve the answer. The failure is entirely in Stage 1 recall, not Stage 2 precision.",
+    readMore: { label: "Two-Stage Retrieval →", tab: "groundtruth", postId: "two-stage-retrieval-reranker" }
+  },
+  {
+    id: "reranker-3", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
+    question: "A bi-encoder retrieves candidates by embedding query and documents independently and ranking by cosine similarity. What is the primary limitation of this approach that a cross-encoder fixes?",
+    options: [
+      "It cannot handle documents longer than 512 tokens",
+      "It misses relevance signals that only emerge when reading the query and document together",
+      "It requires GPU hardware unavailable in most production environments",
+      "It cannot rank more than 1,000 documents at once"
+    ],
+    correct: 1,
+    keywords: ["bi-encoder", "cross-encoder", "independent encoding", "joint scoring", "relevance"],
+    explanation: "The primary limitation is that bi-encoders encode query and document separately — they never 'read' them together. This means they miss relevance signals that require seeing the query in the context of the document: negation, partial answers, subtle topic mismatch. A cross-encoder concatenates query + document and runs full attention across the pair, which catches these interactions. The tradeoff: cross-encoders cannot precompute document vectors, so they must score every candidate pair at query time — making them too slow for full-corpus retrieval.",
+    trap: "Saying 'it cannot handle long documents.' While bi-encoders do have token limits, this is not the primary limitation vs a cross-encoder — cross-encoders also have token limits. The fundamental architectural difference is independent vs joint encoding.",
+    readMore: { label: "Two-Stage Retrieval →", tab: "groundtruth", postId: "two-stage-retrieval-reranker" }
+  },
+  {
+    id: "reranker-4", topic: "rag", difficulty: "medium", gated: true, type: "text",
+    question: "In a two-stage retrieval system, you set recall_k=100 (bi-encoder candidate pool) and rerank_k=5 (final results after cross-encoder). Evaluation shows the correct answer is usually at position 120 in the bi-encoder output. What failure mode is this, and what are the correct fixes?",
+    options: [],
+    correct: 0,
+    keywords: ["recall_k", "candidate pool", "recall failure", "Stage 1", "bi-encoder fine-tuning", "recall@k"],
+    explanation: "This is a Stage 1 recall failure. The relevant document exists in the corpus but is at position 120 — outside the recall_k=100 candidate pool. The cross-encoder never sees it. No amount of reranker quality improvement fixes this: you cannot rerank a document that was never retrieved. Fix options: (1) Increase recall_k to 200 or higher — accept the additional cross-encoder latency cost. (2) Fine-tune the bi-encoder on domain-specific query-document pairs — improves recall@100 so the relevant document appears in the top-100. (3) Add query expansion (multi-query or HyDE) before Stage 1 — multiple query angles increase the chance the relevant document appears in the merged candidate set. Monitor recall@k as a Stage 1-specific metric, separate from final precision.",
+    trap: "Saying 'increase rerank_k to 20.' This changes how many results are shown to the user but does nothing if the relevant document is not in the candidate pool. The fix must operate at Stage 1 — either larger recall_k or better bi-encoder.",
+    readMore: { label: "Two-Stage Retrieval →", tab: "groundtruth", postId: "two-stage-retrieval-reranker" }
+  },
+
   {
     id: "ase-4", topic: "safety", difficulty: "medium", gated: true, type: "mcq",
     question: "Which P0 (before-launch) safety measure directly prevents system prompt exfiltration?",

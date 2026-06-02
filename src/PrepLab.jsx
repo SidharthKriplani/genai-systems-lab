@@ -1986,6 +1986,12 @@ function WeaknessHeatmapMode({ onExit }) {
 
 // ─── MODE 4: COMPANY PREP ─────────────────────────────────────────────────────
 
+const TOPIC_WEIGHT_LABELS = {
+  rag: "RAG & Retrieval", agents: "Agents & Tools", evals: "Evals",
+  latency: "Serving & Latency", fine_tuning: "Fine-Tuning",
+  safety: "Safety", mlops: "MLOps", multimodal: "Multimodal",
+};
+
 const COMPANY_ARCHETYPES = [
   {
     id: "bigtech",
@@ -2002,6 +2008,10 @@ const COMPANY_ARCHETYPES = [
       "Apple wants on-device LLM inference for Siri. Design the model serving and fallback architecture.",
     ],
     mustKnow: ["RLHF at scale", "Distributed training orchestration", "Eval harness design", "Latency SLOs", "Feature stores"],
+    gtRecs: [
+      { id: "the-eval-crisis", title: "The Eval Crisis" },
+      { id: "why-your-rag-system-lies", title: "Why Your RAG System Lies" },
+    ],
   },
   {
     id: "ainative",
@@ -2018,6 +2028,11 @@ const COMPANY_ARCHETYPES = [
       "OpenAI needs a plugin/tool orchestration layer for GPT-5 that handles 1M parallel agent sessions.",
     ],
     mustKnow: ["Constitutional AI / RLAIF", "Agentic loops & tool use", "Evals as product quality signal", "MCP / function calling", "Streaming UX"],
+    gtRecs: [
+      { id: "langgraph-reducers-hitl", title: "LangGraph Reducers and HITL" },
+      { id: "agent-memory-architecture", title: "Agent Memory Architecture" },
+      { id: "the-eval-crisis", title: "The Eval Crisis" },
+    ],
   },
   {
     id: "indiantech",
@@ -2034,6 +2049,10 @@ const COMPANY_ARCHETYPES = [
       "Razorpay: Design a fraud detection system using LLM reasoning over transaction graphs.",
     ],
     mustKnow: ["Multilingual embeddings", "Cost-optimized inference", "MLOps on tight budgets", "Real-time feature pipelines", "Fine-tuning for domain adaptation"],
+    gtRecs: [
+      { id: "ds-to-ai-engineer", title: "The DS to AI Engineer Arc" },
+      { id: "graph-rag-multi-hop", title: "Graph RAG: When Vector Search Isn't Enough" },
+    ],
   },
   {
     id: "enterprise",
@@ -2050,16 +2069,23 @@ const COMPANY_ARCHETYPES = [
       "IBM: Design a private LLM deployment for a pharmaceutical company with HIPAA/GDPR constraints.",
     ],
     mustKnow: ["Private RAG with access control", "Model governance & audit logs", "On-prem/VPC deployment", "Prompt injection defenses", "Explainability requirements"],
+    gtRecs: [
+      { id: "why-your-rag-system-lies", title: "Why Your RAG System Lies" },
+      { id: "hooks-vs-llm-safety", title: "AI Safety Engineering and LLM Hooks" },
+    ],
   },
 ];
 
 function CompanyPrepMode({ onExit, onNavigate }) {
   const [gated, setGated] = useState(() => !isAccessGranted());
   const [archetype, setArchetype] = useState(null);
-  const [view, setView] = useState("overview"); // overview | questions | sysdesign
+  const [view, setView] = useState("overview");
   const [qIdx, setQIdx] = useState(0);
   const [answer, setAnswer] = useState("");
   const [revealed, setRevealed] = useState(false);
+  const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [done, setDone] = useState(false);
+  const [sessionQs, setSessionQs] = useState([]);
 
   if (gated) {
     return (
@@ -2069,9 +2095,6 @@ function CompanyPrepMode({ onExit, onNavigate }) {
       />
     );
   }
-  const [score, setScore] = useState({ correct: 0, total: 0 });
-  const [done, setDone] = useState(false);
-  const [sessionQs, setSessionQs] = useState([]);
 
   function startQuestions(arc) {
     const wt = arc.topicWeights;
@@ -2126,6 +2149,8 @@ function CompanyPrepMode({ onExit, onNavigate }) {
   }
 
   if (view === "overview") {
+    const maxW = Math.max(...Object.values(archetype.topicWeights));
+    const sortedWeights = Object.entries(archetype.topicWeights).filter(([,w]) => w > 0).sort((a,b) => b[1]-a[1]);
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
         <div className="max-w-3xl mx-auto space-y-6">
@@ -2133,21 +2158,54 @@ function CompanyPrepMode({ onExit, onNavigate }) {
             <button onClick={() => setArchetype(null)} className="text-zinc-500 hover:text-zinc-300 text-sm">← Archetypes</button>
             <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm ml-auto">Exit</button>
           </div>
-          <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-700">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-700 space-y-5">
+            <div className="flex items-center gap-3">
               <span className="text-4xl">{archetype.icon}</span>
               <div>
                 <h2 className="text-xl font-bold">{archetype.label}</h2>
                 <p className="text-zinc-500 text-sm">{archetype.companies.join(" · ")}</p>
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-2">Must-Know Topics</h3>
-            <ul className="space-y-1 mb-5">
-              {archetype.mustKnow.map(k => (
-                <li key={k} className="flex items-start gap-2 text-sm text-zinc-300"><span className="text-green-400 mt-0.5">✓</span>{k}</li>
-              ))}
-            </ul>
-            <div className="flex gap-3 flex-wrap">
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-2">Must-Know Topics</h3>
+              <ul className="space-y-1">
+                {archetype.mustKnow.map(k => (
+                  <li key={k} className="flex items-start gap-2 text-sm text-zinc-300"><span className="text-green-400 mt-0.5">✓</span>{k}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-3">Topic Focus</h3>
+              <div className="space-y-2">
+                {sortedWeights.map(([topic, weight]) => (
+                  <div key={topic} className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-400 w-32 shrink-0">{TOPIC_WEIGHT_LABELS[topic] || topic}</span>
+                    <div className="flex-1 bg-zinc-800 rounded-full h-1.5">
+                      <div className={`h-1.5 rounded-full bg-${archetype.color}-500`}
+                        style={{ width: `${(weight/maxW)*100}%` }} />
+                    </div>
+                    <span className="text-xs text-zinc-500 w-14 text-right shrink-0">
+                      {weight === maxW ? "critical" : weight >= maxW*0.7 ? "high" : "medium"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {archetype.gtRecs && archetype.gtRecs.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-2">Ground Truth reading</h3>
+                <div className="space-y-1">
+                  {archetype.gtRecs.map(rec => (
+                    <button key={rec.id}
+                      onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: rec.id })}
+                      className="block text-sm text-violet-400 hover:text-violet-300 transition-colors py-0.5">
+                      → {rec.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3 flex-wrap pt-1">
               <button onClick={() => startQuestions(archetype)}
                 className={`px-5 py-2.5 rounded-xl bg-${archetype.color}-600 hover:bg-${archetype.color}-500 text-white font-semibold text-sm transition-colors`}>
                 Practice Questions (15)
@@ -2178,7 +2236,7 @@ function CompanyPrepMode({ onExit, onNavigate }) {
                 <span className={`text-xs font-bold px-2 py-0.5 rounded bg-${archetype.color}-900/50 text-${archetype.color}-300 mt-0.5 shrink-0`}>Q{i+1}</span>
                 <p className="text-zinc-200 leading-relaxed text-sm">{prompt}</p>
               </div>
-              <div className="mt-3 pl-8 space-y-1">
+              <div className="mt-3 pl-8">
                 <p className="text-xs text-zinc-500">Consider: scale, latency, cost, failure modes, observability</p>
               </div>
             </div>
@@ -2194,15 +2252,28 @@ function CompanyPrepMode({ onExit, onNavigate }) {
 
   if (view === "questions") {
     if (done) {
+      const pct = Math.round((score.correct / score.total) * 100);
       return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6 flex items-center justify-center">
           <div className="max-w-md w-full bg-zinc-900 rounded-2xl p-8 border border-zinc-700 text-center space-y-4">
             <div className="text-5xl">{archetype.icon}</div>
             <h2 className="text-2xl font-bold">{archetype.label} Session Complete</h2>
             <p className="text-zinc-400">{score.correct} / {score.total} correct</p>
-            <div className="text-3xl font-black text-emerald-400">{Math.round((score.correct/score.total)*100)}%</div>
+            <div className={`text-3xl font-black ${pct >= 70 ? "text-emerald-400" : pct >= 50 ? "text-amber-400" : "text-red-400"}`}>{pct}%</div>
+            {archetype.gtRecs && archetype.gtRecs.length > 0 && (
+              <div className="bg-zinc-800 rounded-xl p-4 border border-zinc-700 text-left">
+                <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wide mb-2">Read next</p>
+                {archetype.gtRecs.map(rec => (
+                  <button key={rec.id}
+                    onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: rec.id })}
+                    className="block w-full text-left text-sm text-violet-400 hover:text-violet-300 py-0.5 transition-colors">
+                    → {rec.title}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex gap-3 justify-center flex-wrap">
-              <button onClick={() => { startQuestions(archetype); }} className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm">Retry</button>
+              <button onClick={() => startQuestions(archetype)} className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm">Retry</button>
               <button onClick={() => setView("sysdesign")} className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm">System Design</button>
               <button onClick={() => setArchetype(null)} className="px-4 py-2 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-sm">Change Archetype</button>
             </div>
@@ -2213,19 +2284,26 @@ function CompanyPrepMode({ onExit, onNavigate }) {
 
     const q = sessionQs[qIdx];
     if (!q) return null;
+    const correctOpt = q.type === "mcq" ? q.options[q.correct] : null;
+    const isCorrect = revealed && q.type === "mcq" && answer === correctOpt;
 
     function submit() {
-      const correct = answer.trim().toLowerCase() === q.answer.toLowerCase();
-      setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+      if (q.type === "mcq") {
+        setScore(s => ({ correct: s.correct + (answer === correctOpt ? 1 : 0), total: s.total + 1 }));
+      }
       setRevealed(true);
+    }
+
+    function selfGrade(correct) {
+      setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+      if (qIdx + 1 >= sessionQs.length) { setDone(true); return; }
+      setQIdx(i => i + 1); setAnswer(""); setRevealed(false);
     }
 
     function next() {
       if (qIdx + 1 >= sessionQs.length) { setDone(true); return; }
       setQIdx(i => i + 1); setAnswer(""); setRevealed(false);
     }
-
-    const isCorrect = revealed && answer.trim().toLowerCase() === q.answer.toLowerCase();
 
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
@@ -2238,35 +2316,94 @@ function CompanyPrepMode({ onExit, onNavigate }) {
             <div className="flex gap-2 mb-3 flex-wrap">
               <span className={`text-xs px-2 py-0.5 rounded-full border ${TOPIC_COLORS[q.topic]}`}>{TOPIC_LABELS[q.topic]}</span>
               <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-500 border border-zinc-700">{q.difficulty}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-500 border border-zinc-700">{q.type === "mcq" ? "MCQ" : "Open"}</span>
             </div>
             <p className="text-zinc-100 font-medium leading-relaxed mb-4">{q.question}</p>
-            <div className="grid grid-cols-1 gap-2">
-              {q.options.map(opt => {
-                let cls = "w-full text-left px-4 py-2.5 rounded-xl border text-sm transition-colors ";
-                if (!revealed) cls += "border-zinc-700 bg-zinc-800 hover:border-zinc-500 text-zinc-300";
-                else if (opt === q.answer) cls += "border-emerald-500 bg-emerald-900/30 text-emerald-200";
-                else if (opt === answer && opt !== q.answer) cls += "border-red-500 bg-red-900/30 text-red-300";
-                else cls += "border-zinc-800 bg-zinc-900 text-zinc-500";
-                return (
-                  <button key={opt} disabled={revealed} onClick={() => setAnswer(opt)} className={cls}>
-                    {opt}
-                  </button>
-                );
-              })}
-            </div>
+
+            {q.type === "mcq" ? (
+              <div className="grid grid-cols-1 gap-2">
+                {q.options.map(opt => {
+                  let cls = "w-full text-left px-4 py-2.5 rounded-xl border text-sm transition-colors ";
+                  if (!revealed) cls += answer === opt ? "border-violet-500 bg-violet-900/20 text-violet-200" : "border-zinc-700 bg-zinc-800 hover:border-zinc-500 text-zinc-300";
+                  else if (opt === correctOpt) cls += "border-emerald-500 bg-emerald-900/30 text-emerald-200";
+                  else if (opt === answer && opt !== correctOpt) cls += "border-red-500 bg-red-900/30 text-red-300";
+                  else cls += "border-zinc-800 bg-zinc-900 text-zinc-500";
+                  return (
+                    <button key={opt} disabled={revealed} onClick={() => setAnswer(opt)} className={cls}>
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <textarea
+                value={answer}
+                onChange={e => setAnswer(e.target.value)}
+                disabled={revealed}
+                rows={3}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-200 text-sm resize-none focus:outline-none focus:border-zinc-500 disabled:opacity-60"
+                placeholder="Sketch your answer..."
+              />
+            )}
+
             {!revealed && (
-              <button onClick={submit} disabled={!answer}
+              <button onClick={submit} disabled={q.type === "mcq" && !answer}
                 className="mt-4 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors">
-                Submit
+                {q.type === "text" ? "Show Answer" : "Submit"}
               </button>
             )}
-            {revealed && (
+
+            {revealed && q.type === "mcq" && (
               <div className={`mt-4 p-4 rounded-xl border ${isCorrect ? "border-emerald-700 bg-emerald-900/20" : "border-red-700 bg-red-900/20"}`}>
-                <p className="text-sm font-semibold mb-1 {isCorrect ? 'text-emerald-400' : 'text-red-400'}">{isCorrect ? "✓ Correct" : "✗ Incorrect"}</p>
+                <p className={`text-sm font-semibold mb-1 ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>{isCorrect ? "✓ Correct" : "✗ Incorrect"}</p>
                 <p className="text-zinc-300 text-sm">{q.explanation}</p>
+                {q.trap && (
+                  <div className="mt-2 p-3 rounded-lg bg-amber-950/40 border border-amber-800/50">
+                    <p className="text-xs text-amber-400 font-semibold">Common trap</p>
+                    <p className="text-xs text-amber-300 mt-0.5">{q.trap}</p>
+                  </div>
+                )}
                 <button onClick={next} className="mt-3 px-4 py-1.5 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-zinc-200 text-sm">
                   {qIdx + 1 >= sessionQs.length ? "See Results" : "Next →"}
                 </button>
+              </div>
+            )}
+
+            {revealed && q.type === "text" && (
+              <div className="mt-4 p-4 rounded-xl border border-zinc-600 bg-zinc-800/40 space-y-3">
+                <div>
+                  <p className="text-xs text-zinc-400 font-semibold mb-1">Model answer</p>
+                  <p className="text-zinc-300 text-sm leading-relaxed">{q.explanation}</p>
+                </div>
+                {q.keywords && q.keywords.length > 0 && (
+                  <div>
+                    <p className="text-xs text-zinc-500 mb-1.5">Key terms</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {q.keywords.map(k => (
+                        <span key={k} className="text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-300 border border-zinc-600">{k}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {q.trap && (
+                  <div className="p-3 rounded-lg bg-amber-950/40 border border-amber-800/50">
+                    <p className="text-xs text-amber-400 font-semibold">Common trap</p>
+                    <p className="text-xs text-amber-300 mt-0.5">{q.trap}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs text-zinc-500 mb-2">How did you do?</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => selfGrade(true)}
+                      className="flex-1 py-2 rounded-xl bg-emerald-900/40 border border-emerald-700 text-emerald-300 text-sm font-semibold hover:bg-emerald-900/60 transition-colors">
+                      ✓ Got it
+                    </button>
+                    <button onClick={() => selfGrade(false)}
+                      className="flex-1 py-2 rounded-xl bg-red-900/40 border border-red-700 text-red-300 text-sm font-semibold hover:bg-red-900/60 transition-colors">
+                      ✗ Missed it
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

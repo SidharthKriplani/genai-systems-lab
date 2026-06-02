@@ -12823,13 +12823,57 @@ const QR_SCENARIOS = [
   },
 ];
 
+const TWO_STAGE_QUERIES = [
+  {
+    query: "Why does RAG return the right chunk but the wrong answer?",
+    biEncoder: [
+      { id: 1, title: "RAG Architecture Patterns", score: 0.88, relevant: false },
+      { id: 2, title: "Prompt Engineering for Grounded Responses", score: 0.85, relevant: true },
+      { id: 3, title: "Context Grounding and Faithfulness Failures", score: 0.83, relevant: true },
+      { id: 4, title: "Vector Database Indexing Guide", score: 0.79, relevant: false },
+      { id: 5, title: "LLM Hallucination and Faithfulness", score: 0.77, relevant: true },
+      { id: 6, title: "Chunking Strategy Best Practices", score: 0.72, relevant: false },
+    ],
+    crossEncoder: [2, 3, 5, 4, 6, 1],
+    insight: "Bi-encoder ranked 'RAG Architecture Patterns' #1 due to keyword overlap with 'RAG'. Cross-encoder reads both together and correctly identifies it's not about faithfulness failures. The relevant faithfulness doc moved from #3 to #2; hallucination doc from #5 to #3.",
+  },
+  {
+    query: "When does adding more retrieved context hurt answer quality?",
+    biEncoder: [
+      { id: 1, title: "Context Window Size Limits", score: 0.91, relevant: false },
+      { id: 2, title: "Noise Injection in RAG Pipelines", score: 0.84, relevant: true },
+      { id: 3, title: "Lost in the Middle: LLM Attention Patterns", score: 0.81, relevant: true },
+      { id: 4, title: "Chunking Strategy Best Practices", score: 0.76, relevant: false },
+      { id: 5, title: "Top-K Retrieval Tuning", score: 0.74, relevant: true },
+      { id: 6, title: "Embedding Model Comparison", score: 0.68, relevant: false },
+    ],
+    crossEncoder: [3, 2, 5, 1, 4, 6],
+    insight: "'Context Window Size Limits' ranks #1 by similarity (matches 'context') but is about architecture limits, not performance degradation from excess context. Cross-encoder correctly identifies the LLM attention pattern doc as most relevant — it directly addresses the performance question.",
+  },
+  {
+    query: "What is the latency cost of reranking at production scale?",
+    biEncoder: [
+      { id: 1, title: "Reranker Latency Benchmarks", score: 0.92, relevant: true },
+      { id: 2, title: "RAG Pipeline Performance at Scale", score: 0.86, relevant: true },
+      { id: 3, title: "Inference Optimization Patterns", score: 0.82, relevant: true },
+      { id: 4, title: "vLLM Serving Configuration", score: 0.78, relevant: false },
+      { id: 5, title: "GPU Memory Management", score: 0.72, relevant: false },
+      { id: 6, title: "Cost Optimization for LLM APIs", score: 0.69, relevant: false },
+    ],
+    crossEncoder: [1, 2, 3, 6, 4, 5],
+    insight: "Bi-encoder and cross-encoder largely agree here — the query is specific enough that vocabulary similarity predicts relevance well. This is when a reranker adds latency cost with minimal precision gain over the bi-encoder alone.",
+  },
+];
+
 function QueryRefinementLab({ onNavigate }) {
   const [strategy, setStrategy] = useState("original");
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [tab, setTab] = useState("lab");
+  const [tsQuery, setTsQuery] = useState(0);
   const scenario = QR_SCENARIOS[scenarioIdx];
   const strat = QR_STRATEGIES.find(s => s.id === strategy);
   const result = scenario[strategy];
+  const tsScenario = TWO_STAGE_QUERIES[tsQuery];
   const colorMap = { zinc: "text-zinc-400 border-zinc-700 bg-zinc-900", blue: "text-blue-400 border-blue-800 bg-blue-950/30", violet: "text-violet-400 border-violet-800 bg-violet-950/30", amber: "text-amber-400 border-amber-800 bg-amber-950/30", emerald: "text-emerald-400 border-emerald-800 bg-emerald-950/30" };
   const badgeMap = { zinc: "bg-zinc-800 text-zinc-400", blue: "bg-blue-900/50 text-blue-300", violet: "bg-violet-900/50 text-violet-300", amber: "bg-amber-900/50 text-amber-300", emerald: "bg-emerald-900/50 text-emerald-300" };
 
@@ -12838,8 +12882,8 @@ function QueryRefinementLab({ onNavigate }) {
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
         <p className="text-sm text-zinc-300 leading-relaxed">The query the user types is rarely the query you want to send to your retrieval system. HyDE, query decomposition, and multi-query expansion are three strategies for bridging the gap between a vague natural language question and the precise retrieval query that surfaces the right chunks. Each adds latency — the question is whether the retrieval quality improvement justifies the cost.</p>
       </div>
-      <div className="flex gap-2 border-b border-zinc-800 pb-3">
-        {[["lab","Lab"],["strategies","Strategies"],["when","When to Use"]].map(([id, label]) => (
+      <div className="flex gap-2 border-b border-zinc-800 pb-3 flex-wrap">
+        {[["lab","Lab"],["strategies","Strategies"],["when","When to Use"],["two-stage","Two-Stage"]].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${tab===id?"bg-blue-600 text-white":"text-zinc-400 hover:text-white"}`}>{label}</button>
         ))}
       </div>
@@ -12975,6 +13019,112 @@ function QueryRefinementLab({ onNavigate }) {
                   </div>
                   <span className="shrink-0 px-2 py-0.5 rounded bg-blue-900/40 text-blue-300 font-mono text-[10px]">{row.rec}</span>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "two-stage" && (
+        <div className="space-y-4">
+          <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 leading-relaxed space-y-1">
+            <p><span className="text-blue-400 font-semibold">Bi-encoder (Stage 1):</span> embeds query + docs independently — fast enough for millions of docs. Optimizes recall. Fails when query and relevant doc use different vocabulary.</p>
+            <p><span className="text-violet-400 font-semibold">Cross-encoder (Stage 2):</span> reads query + doc together with full attention — precise but slow. Optimizes precision. Fails when the relevant doc wasn't in the Stage 1 candidate set.</p>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-mono text-zinc-500 mb-2">SELECT QUERY</p>
+            <div className="flex flex-wrap gap-2">
+              {TWO_STAGE_QUERIES.map((q, i) => (
+                <button key={i} onClick={() => setTsQuery(i)}
+                  className={`text-xs px-3 py-1.5 rounded border transition-colors ${tsQuery===i ? "bg-blue-600 text-white border-blue-500" : "border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600"}`}>
+                  Q{i+1}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-zinc-400 mt-2 italic">"{tsScenario.query}"</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="bg-zinc-900 border border-blue-900/40 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-900/50 text-blue-300">STAGE 1</span>
+                <span className="text-xs font-semibold text-zinc-300">Bi-Encoder</span>
+                <span className="text-[10px] text-zinc-500 ml-auto">sim score</span>
+              </div>
+              <div className="space-y-1.5">
+                {tsScenario.biEncoder.map((doc, rank) => (
+                  <div key={doc.id} className={`flex items-center gap-2 p-2 rounded border text-[11px] ${doc.relevant ? "border-emerald-800/50 bg-emerald-950/10" : "border-zinc-800 bg-zinc-900/40"}`}>
+                    <span className="text-zinc-600 w-4 shrink-0">#{rank+1}</span>
+                    <span className={`flex-1 leading-tight ${doc.relevant ? "text-zinc-200" : "text-zinc-500"}`}>{doc.title}</span>
+                    <span className="text-blue-400 font-mono shrink-0">{doc.score.toFixed(2)}</span>
+                    {doc.relevant && <span className="text-emerald-400 shrink-0">✓</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-zinc-900 border border-violet-900/40 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-violet-900/50 text-violet-300">STAGE 2</span>
+                <span className="text-xs font-semibold text-zinc-300">Cross-Encoder</span>
+                <span className="text-[10px] text-zinc-500 ml-auto">rank change</span>
+              </div>
+              <div className="space-y-1.5">
+                {tsScenario.crossEncoder.map((docId, newRank) => {
+                  const doc = tsScenario.biEncoder.find(d => d.id === docId);
+                  const oldRank = tsScenario.biEncoder.findIndex(d => d.id === docId);
+                  const moved = newRank - oldRank;
+                  return (
+                    <div key={docId} className={`flex items-center gap-2 p-2 rounded border text-[11px] ${doc.relevant ? "border-emerald-800/50 bg-emerald-950/10" : "border-zinc-800 bg-zinc-900/40"}`}>
+                      <span className="text-zinc-600 w-4 shrink-0">#{newRank+1}</span>
+                      <span className={`flex-1 leading-tight ${doc.relevant ? "text-zinc-200" : "text-zinc-500"}`}>{doc.title}</span>
+                      {moved < 0 && <span className="text-emerald-400 text-[10px] font-mono shrink-0">↑{Math.abs(moved)}</span>}
+                      {moved > 0 && <span className="text-red-400 text-[10px] font-mono shrink-0">↓{moved}</span>}
+                      {moved === 0 && <span className="text-zinc-600 text-[10px] shrink-0">—</span>}
+                      {doc.relevant && <span className="text-emerald-400 shrink-0">✓</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-lg bg-amber-950/20 border border-amber-800/40 text-xs text-amber-200 leading-relaxed">
+            <span className="text-amber-300 font-semibold">What changed: </span>{tsScenario.insight}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-3 rounded-lg bg-zinc-900 border border-red-900/30 text-xs">
+              <p className="text-red-400 font-semibold mb-1.5">Bi-encoder fails when</p>
+              <ul className="space-y-1 text-zinc-400">
+                <li>• Query and relevant doc use different vocabulary</li>
+                <li>• Irrelevant docs share keywords with the query</li>
+                <li>• Relevance requires reading query + doc together</li>
+              </ul>
+            </div>
+            <div className="p-3 rounded-lg bg-zinc-900 border border-red-900/30 text-xs">
+              <p className="text-red-400 font-semibold mb-1.5">Cross-encoder fails when</p>
+              <ul className="space-y-1 text-zinc-400">
+                <li>• Relevant doc was cut from Stage 1 candidate set</li>
+                <li>• Per-pair latency violates production SLO</li>
+                <li>• Reranker is overtrained on a different domain</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-700 text-xs">
+            <p className="text-zinc-300 font-semibold mb-2">When to add a reranker</p>
+            {[
+              { add: true, label: "Precision > recall (medical, legal, compliance use cases)" },
+              { add: true, label: "User vocabulary differs from document vocabulary" },
+              { add: true, label: "High faithfulness scores but wrong answers — bi-encoder surfacing similar-but-wrong docs" },
+              { add: false, label: "Latency SLO < 150ms — cross-encoder adds 50–200ms per query" },
+              { add: false, label: "Corpus < 10K docs — fine-tuned bi-encoder usually sufficient" },
+            ].map((row, i) => (
+              <div key={i} className={`flex items-start gap-2 py-1 ${i < 4 ? "border-b border-zinc-800" : ""}`}>
+                <span className={`shrink-0 font-bold ${row.add ? "text-emerald-400" : "text-red-400"}`}>{row.add ? "✓" : "✗"}</span>
+                <span className="text-zinc-400">{row.label}</span>
               </div>
             ))}
           </div>
