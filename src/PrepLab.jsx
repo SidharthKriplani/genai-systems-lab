@@ -297,6 +297,15 @@ function recordHistory(questionId, correct) {
       ...prev,
       [questionId]: { attempts: entry.attempts + 1, wrong: entry.wrong + (correct ? 0 : 1) },
     }));
+    // Spaced repetition: on wrong answer, schedule a review
+    if (!correct) {
+      const spaced = getSpacedState();
+      const s = spaced[questionId] || { lastWrong: 0, wrongCount: 0 };
+      localStorage.setItem(SPACED_KEY, JSON.stringify({
+        ...spaced,
+        [questionId]: { lastWrong: Date.now(), wrongCount: s.wrongCount + 1 },
+      }));
+    }
   } catch {}
 }
 
@@ -342,6 +351,25 @@ function skillWeightLabel(weight) {
 const RATING_VALUES = { strong: 0.9, okay: 0.5, weak: 0.0 };
 const DRILL_W       = { weak: 3,    okay: 1.5,  strong: 0.5 };
 const HISTORY_KEY   = "gsl-preplab-history";
+const SPACED_KEY    = "gsl-preplab-spaced"; // { [questionId]: { lastWrong: timestamp, wrongCount: N } }
+
+// SRS intervals (ms): 1 wrong=24h, 2 wrong=3 days, 3+ wrong=7 days
+const SRS_INTERVALS = [0, 86400000, 259200000, 604800000];
+function getSRSInterval(wrongCount) {
+  return SRS_INTERVALS[Math.min(wrongCount, SRS_INTERVALS.length - 1)];
+}
+function getSpacedState() {
+  try { return JSON.parse(localStorage.getItem(SPACED_KEY) || "{}"); } catch { return {}; }
+}
+function getDueQuestions() {
+  const state = getSpacedState();
+  const now = Date.now();
+  return PREP_QUESTIONS.filter(q => {
+    const s = state[q.id];
+    if (!s || s.wrongCount < 1) return false;
+    return (now - s.lastWrong) >= getSRSInterval(s.wrongCount);
+  });
+}
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
@@ -788,12 +816,15 @@ const TOPIC_FORWARD_POINTERS = {
   serving:    { label: "LLM Lab",          tab: "llmlab" },
 };
 
-function ExamMode({ onExit, onNavigate, onNavigateTo }) {
-  const [config, setConfig] = useState(null);
-  const [questions, setQuestions] = useState([]);
+function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions }) {
+  const isReviewMode = !!reviewQuestions && reviewQuestions.length > 0;
+  const [config, setConfig] = useState(() =>
+    isReviewMode ? { duration: 15, focus: "all", difficulty: "all", isReview: true } : null
+  );
+  const [questions, setQuestions] = useState(() => isReviewMode ? reviewQuestions : []);
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(() => isReviewMode ? reviewQuestions.length * 90 : 0);
   const [finished, setFinished] = useState(false);
   const [textOverrides, setTextOverrides] = useState({});
   const [showGate, setShowGate] = useState(false);
@@ -3352,7 +3383,9 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
   }, []);
 
   // 3 modes: Defense Doc and Weakness Map components are kept but hidden from sidebar
+  const dueQuestions = getDueQuestions();
   const PREPLAB_SIDEBAR = [
+    ...(dueQuestions.length > 0 ? [{ id: "review", label: "Review Due", tag: "SPACED", desc: `${dueQuestions.length} question${dueQuestions.length > 1 ? "s" : ""} scheduled for review today.` }] : []),
     { id: "exam",        label: "Assess",             tag: "EXAM",      desc: "Test yourself cold. Leave knowing your gaps." },
     { id: "jdprep",      label: "Interview Strategy", tag: "STRATEGY",  desc: "JD → gap score → day-by-day plan." },
     { id: "companyprep", label: "Company Tracks",     tag: "ARCHETYPE", desc: "By company archetype" },
@@ -3404,6 +3437,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           PrepLab
         </button>
+        {mode === "review"      && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} reviewQuestions={dueQuestions} />}
         {mode === "exam"        && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
         {mode === "trainer"     && <TrainerMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} initialGroup={trainerInitGroup} />}
         {mode === "jdprep"      && <InterviewPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}

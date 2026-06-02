@@ -969,6 +969,18 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
     try { localStorage.setItem("genai_gt_helpful", JSON.stringify(next)); } catch {}
   }
 
+  const [bookmarkIds, setBookmarkIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("gsl-bookmarks") || "[]")); } catch { return new Set(); }
+  });
+  function toggleBookmark(postId, e) {
+    e.stopPropagation();
+    const next = new Set(bookmarkIds);
+    if (next.has(postId)) next.delete(postId); else next.add(postId);
+    setBookmarkIds(next);
+    try { localStorage.setItem("gsl-bookmarks", JSON.stringify([...next])); } catch {}
+    track("gt_bookmarked", { post: postId, action: next.has(postId) ? "add" : "remove" });
+  }
+
   // Feature 3 — Reactions (persisted in parent so they survive PostDetail unmount)
   const [reactions, setReactions] = useState(() => {
     try { return JSON.parse(localStorage.getItem("genai_reactions") || "{}"); } catch { return {}; }
@@ -1092,9 +1104,11 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
   // lensFiltered === null means lens is off (show all)
   const lensIsEmpty = Array.isArray(lensFiltered) && lensFiltered.length === 0;
   const base = (lensFiltered && lensFiltered.length > 0) ? lensFiltered : WRITTEN;
-  const visible = (lensFiltered !== null && !lensIsEmpty)
-    ? (filter === "all" ? lensFiltered : lensFiltered.filter(p => p.category === filter))
-    : (filter === "all" ? WRITTEN : WRITTEN.filter(p => p.category === filter));
+  const visible = filter === "saved"
+    ? WRITTEN.filter(p => bookmarkIds.has(p.id))
+    : (lensFiltered !== null && !lensIsEmpty)
+      ? (filter === "all" ? lensFiltered : lensFiltered.filter(p => p.category === filter))
+      : (filter === "all" ? WRITTEN : WRITTEN.filter(p => p.category === filter));
   const total = WRITTEN.length;
   const totalPlanned = POSTS.length;
 
@@ -1295,6 +1309,24 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
               </button>
             );
           })}
+          {bookmarkIds.size > 0 && (
+            <button
+              onClick={() => setFilter(filter === "saved" ? "all" : "saved")}
+              className="shrink-0 px-3 py-2.5 rounded-lg text-xs font-bold transition-all duration-150"
+              style={filter === "saved" ? {
+                background: "linear-gradient(90deg, rgba(245,158,11,0.28) 0%, rgba(245,158,11,0.10) 100%)",
+                boxShadow: "inset 2px 0 0 #f59e0b",
+                color: "#fde68a",
+                border: "1px solid rgba(245,158,11,0.35)",
+              } : {
+                background: "rgba(39,39,42,0.6)",
+                color: "#a1a1aa",
+                border: "1px solid rgba(63,63,70,0.6)",
+              }}>
+              🔖 Saved
+              <span className="ml-1.5 text-[9px] opacity-50">{bookmarkIds.size}</span>
+            </button>
+          )}
         </div>
 
         {/* Post grid */}
@@ -1389,6 +1421,11 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                     )}
                   </div>
                   <div className="flex items-center gap-2">
+                    <button onClick={(e) => toggleBookmark(post.id, e)}
+                      title={bookmarkIds.has(post.id) ? "Remove bookmark" : "Bookmark"}
+                      className={`text-[11px] transition-all ${bookmarkIds.has(post.id) ? "text-amber-400" : "text-zinc-600 hover:text-zinc-400"}`}>
+                      {bookmarkIds.has(post.id) ? "🔖" : "🔖"}
+                    </button>
                     <button onClick={(e) => markHelpful(post.id, e)}
                       className={`text-[10px] flex items-center gap-1 transition-all ${helpfulCounts[post.id] ? "text-emerald-400" : "text-zinc-500 hover:text-zinc-400"}`}>
                       👍 {helpfulCounts[post.id] ? "Helpful" : "Mark helpful"}

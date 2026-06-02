@@ -187,16 +187,16 @@ function getStreakInfo() {
     const count = parseInt(localStorage.getItem(actKey) || "0", 10);
     localStorage.setItem(actKey, String(count + 1));
 
-    // Build 28-day grid (4 weeks × 7 days)
+    // Build 91-day grid (13 weeks × 7 days)
     const grid = [];
-    for (let i = 27; i >= 0; i--) {
+    for (let i = 90; i >= 0; i--) {
       const d = new Date(Date.now() - i * 86400000);
       const key = "gsl-activity-" + toDateKey(d);
       grid.push({ date: toDateKey(d), count: parseInt(localStorage.getItem(key) || "0", 10) });
     }
     return { streak, grid };
   } catch {
-    return { streak: 0, grid: Array(28).fill({ date: "", count: 0 }) };
+    return { streak: 0, grid: Array(91).fill({ date: "", count: 0 }) };
   }
 }
 
@@ -308,7 +308,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
               );
             })}
           </div>
-          <p className="text-[10px] text-zinc-600 mt-1.5">Last 4 weeks</p>
+          <p className="text-[10px] text-zinc-600 mt-1.5">Last 13 weeks</p>
         </div>
       )}
 
