@@ -12,62 +12,107 @@
 
 ---
 
+## STATEFULNESS PROTOCOL — DO THIS EVERY SESSION
+
+At session END, before closing:
+
+1. **CLAUDE.md** — add sprint log entry (what was built, commit hashes, new scale numbers)
+2. **NEXT.md** — mark done items ~~struck~~, update sprint header + scale line
+3. **IDEAS.md** — mark any built items as ✅ DONE, update header scale line
+4. **UPGRADES.md** — mark any completed upgrades as Done, update "Last updated" line
+5. **BRAIN_TRANSFER.md** — update scale table, sprint log, next build queue
+6. Commit: `chore: MD sync sprint N — [brief summary]`
+
+**Why this matters:** Stale MD files = next session reads wrong state = 15-30 min wasted rediscovering context. If you read a file, you update it. No exceptions.
+
+---
+
+## GIT COMMIT PATTERN — THE ONLY WAY THAT WORKS
+
+The VM filesystem (virtiofs) creates `.lock` files that `rm` cannot delete. Always use this Python pattern:
+
+```python
+import os, subprocess, time
+
+for lock in ['.git/index.lock', '.git/HEAD.lock']:
+    try:
+        with open(lock, 'w') as f: f.write('')
+        os.rename(lock, lock + '.bak')
+    except: pass
+
+time.sleep(0.5)
+subprocess.run(['git', 'add', 'src/FILE.jsx'])
+r = subprocess.run(['git', 'commit', '-m', 'batch-X: description'], capture_output=True, text=True)
+print(r.stdout); print(r.stderr)
+```
+
+**Never use `git commit` directly in bash** — it will hang on the lock file.  
+**User pushes manually** — VM has no network push access.
+
+---
+
 ## Current Scale (June 2026, post sprint 42)
 
 | Asset | Count |
 |---|---|
-| Labs | **6** — RAG Lab, Agent Lab, Eval Lab, LLM Lab, Prompt Lab, **Foundation Models Lab** (new) |
+| Labs | **6** — RAG Lab, Agent Lab, Eval Lab, LLM Lab, Prompt Lab, Foundation Models Lab |
 | Systems modules (in nav) | **57** |
 | Concepts modules | **27** (7 active gyms) |
-| PrepLab questions | **301** |
+| PrepLab questions | **304** (301 MCQ/text + 3 scenario type) |
 | GT posts (index) | **226** |
+| PrepLab modes | **4** — Assess, Interview Strategy, Company Tracks, Interview Signal |
 | Explore modules | 22 |
 | Agent Lab modules | 16 |
 
 ---
 
-## What Was Built — Last 3 Sprints
+## What Was Built — Sprint 42 (this session, June 2026)
 
-### Sprint 39 (batches 2–10) — Content sprint
-- Agent Lab + LLM Lab Maps-to-Production chips (`b253405`)
-- EvalLoopModule Beat 2+3 (`04c7a51`)
-- ScalingLawsModule Concepts (`fd73d26`) + GT `chinchilla-scaling-laws` already existed + 4 PrepLab Qs
-- Semantic caching GT post `semantic-caching` + 3 PrepLab Qs (`267a552`)
-- Dense/sparse retrieval 3 PrepLab Qs — GT `hybrid-search` already existed (`d0d1459`)
-- LoRAModule Concepts — GT posts already existed (`0915cb8`)
-- SequentialParallelModule + TrainingSignalModule Concepts (`caaadb5`)
+### Context management
+- CLAUDE.md trimmed 587→371 lines, HISTORY.md created, CONTEXT_AUDIT.md for all 3 labs (`bfb28d2`)
 
-### Sprint 40 (batches A–I) — Architecture + polish sprint
-- `src/config/nav.js` extracted — ALL_TABS + GROUP_COLORS (`992cfc4`)
-- `src/shared.jsx` expanded — ProductionNoteChip, ForwardPointerCard, WhatNextCard, FeedbackBar (`2c57ff2`)
-- Streak + 4-week heatmap in ReturningHomeView (`0d7371f`)
-- FeedbackBar wired: GT post end + PrepLab session end + Systems footer (`0e5b3ab`)
-- PrepLab multi-select MCQ `type: "multi"` — full scoring + UI (`9c7ba18`)
-- 182 trap fields — all 109 medium questions now have trap (`204138f`)
-- AgentContextArchModule — 57th Systems module, 4 PrepLab questions (`144618f`)
-- GT quiz depth: generateQuiz() 3→7 questions from 5 block types (`2fe2fe0`)
+### PrepLab expansions
+- promptlab-5/6: temperature miscalibration + prompt decay (`f96bc4a`)
+- Role Readiness Score sidebar widget (Familiar/Practitioner/Senior/Staff) (`f96bc4a`)
+- Interview Signal mode: 22 real loop patterns, topic frequency bars, tier/role filters (`f33a123`)
+- Scenario questions: `ScenarioPlayer` component + 3 branching scenarios (`246f73f`)
 
-### Sprint 42 (this session, June 2026) — FM Lab + Paper theme + fixes
-- **Context management**: CLAUDE.md 587→371 lines, HISTORY.md, CONTEXT_AUDIT.md for all 3 labs (`bfb28d2`)
-- **promptlab-5/6**: temperature miscalibration + prompt decay diagnosis. 297→301 PrepLab questions (`f96bc4a`)
-- **Role Readiness Score**: `getRoleReadiness()` sidebar widget in PrepLab.jsx (`f96bc4a`)
-- **Foundation Models Lab**: `src/FoundationModelsLab.jsx` — 6 scenarios, 4 PrepLab questions, fully wired (`6cb2194`)
-- **Paper theme system**: warm dark default + `[data-theme="light"]` full zinc inversion + sun/moon toggle in header. `--gal-build-tint/border` CSS vars. FoundationModelsLab inline styles → CSS vars (`2884aa1`)
-- **Build fixes**: duplicate `INTERVIEW_STORIES` in App.jsx (`46bd398`), duplicate `AGENT_INTERVIEW_STORIES` → renamed `AGENT_FAILURE_STORIES` in Agents.jsx (`9a70d75`)
-- **Phase 2 theme debt**: other labs (PromptLab, Home, etc.) still have hardcoded `#22D3EE` inline styles — visible as cyan in light mode. Audit pass needed.
+### Foundation Models Lab
+- `src/FoundationModelsLab.jsx` — 6 scenarios, 4 PrepLab questions, wired in App.jsx + nav.js (`6cb2194`)
 
-### Sprint 41 (batches A–B) — Gym expansion + Prompt Lab
-- **7 new Concepts modules** (`ed54c5a`): LLMAsJudge, EvalDesign, AgentToolDesign, CostLatency, Observability, FewShot, ChainOfThought
-- **4 new active gyms**: Evaluation, Production, Foundation Models, Prompt Engineering
-- **Prompt Engineering Lab** (`b93535e`): 6 scenarios in `src/PromptLab.jsx`, wired in App.jsx, in nav.js BUILD group, 4 PrepLab questions
+### Paper theme system
+- Warm dark default replacing cold LUNA void (`2884aa1`)
+- `[data-theme="light"]` full zinc inversion — cream `#faf7f2` → ink `#1c1410`
+- `html[data-theme="light"]` remaps `text-white` → dark ink
+- `[data-palette="luna"][data-theme="light"]` swaps cyan → warm violet `#7c3aed`
+- Sun/moon toggle in desktop header
+- `--gal-build-tint`, `--gal-build-border`, `--gal-build-tint-md`, `--gal-build-tint-str`, `--gal-build-dark` CSS vars
+
+### Theme audit phase 2
+- Converted hardcoded `#22D3EE` / `rgba(34,211,238,...)` → CSS vars across 5 files (`c859fe6`)
+- 6 gradient endpoints at 0.02–0.04 opacity remain (cosmetic only, Phase 3)
+
+### Build fixes
+- Duplicate `INTERVIEW_STORIES` in App.jsx removed (`46bd398`)
+- Duplicate `AGENT_INTERVIEW_STORIES` → renamed `AGENT_FAILURE_STORIES` in Agents.jsx (`9a70d75`)
 
 ---
 
-## Current Git State
+## Next Build Queue
 
-Latest commit: see `git log --oneline -3` on session open.  
-Branch: `main`  
-**Push before starting:** `cd ~/Documents/GitHub/genai-systems-lab && git push origin main`
+### Immediate (non-negotiable)
+- **Connect PostHog** — add `VITE_POSTHOG_KEY` env var in Vercel project settings. The analytics.js integration is already written; it just needs the key. Without this, no usage data = no good build decisions.
+
+### S effort (one session each)
+- **Phase 3 theme cleanup** — 6 remaining gradient endpoints with hardcoded rgba values. Cosmetic only, no usability impact in light mode. Low priority.
+- **FidelityBadge dedup** — still duplicated in App.jsx / Agents.jsx / Systems.jsx. XS effort.
+
+### M effort (one session each)
+- **Interview Strategy Tool full spec** — resume parsing, day-by-day plan, auto-detection from localStorage. The 4-step Brief flow is done (sprint 31E); this is the Tier 2 depth upgrade. See IDEAS.md + UPGRADES.md.
+- **PrepLab scenario questions expansion** — 3 scenarios built; add 3 more covering agents/evals/finetuning.
+
+### L effort (multi-session, plan before starting)
+- **Structural rebuild** — Build/Prove/Navigate front doors. Do NOT start until PostHog WAU baseline established.
 
 ---
 
@@ -76,11 +121,21 @@ Branch: `main`
 1. **JSX only** — never `.tsx`. TypeScript breaks Vercel builds.
 2. **Hooks** — always `import { useState, useEffect } from "react"`. Never `React.useState()`.
 3. **Colors** — `zinc-*` palette only. Use CSS vars for structural surfaces: `var(--bg)`, `var(--surface)`, `var(--surface-2)`, `var(--border)`.
-4. **Brace check** before every commit: `node -e "const fs=require('fs'); const c=fs.readFileSync('src/FILE.jsx','utf8'); let o=(c.match(/\{/g)||[]).length, cl=(c.match(/\}/g)||[]).length; console.log('diff:',o-cl)"` → must be 0.
-5. **New Systems module pattern**: add component to `src/systems/modules.jsx` + export + add to `SYSTEMS_MODULES` in `Systems.jsx` + add to `RELATED_GT` + add ≥4 PrepLab questions.
-6. **New lab pattern**: create `src/LabName.jsx` + lazy import in `App.jsx` + add to `VALID_VIEWS` + add routing case + add to `ALL_TABS` and `NAV_GROUPS` in `src/config/nav.js`.
-7. **Git virtiofs workaround** — use Python pattern for commits, not direct git commands.
+4. **Accent colors** — use `var(--gal-build)` not `#22D3EE` directly. Theme-aware in light/dark.
+5. **Brace check** before every commit: `node -e "const fs=require('fs'); const c=fs.readFileSync('src/FILE.jsx','utf8'); let o=(c.match(/\{/g)||[]).length, cl=(c.match(/\}/g)||[]).length; console.log('diff:',o-cl)"` → must be 0.
+6. **New Systems module**: add component to `src/systems/modules.jsx` + export + add to `SYSTEMS_MODULES` in `Systems.jsx` + add to `RELATED_GT` + ≥4 PrepLab questions.
+7. **New lab pattern**: create `src/LabName.jsx` + lazy import in `App.jsx` + add to `VALID_VIEWS` + add routing case + add to `ALL_TABS` and `NAV_GROUPS` in `src/config/nav.js`.
 8. **No emojis in code** unless already in existing data arrays.
+
+---
+
+## Context Limit Prevention
+
+- **Never read `src/systems/modules.jsx` in full** — 15,012 lines. Grep for component name, then read that section only.
+- **Never read `src/groundTruthPosts.js` in full** — 11,937 lines. Grep for `"post-id"` then read ±50 lines.
+- **CLAUDE.md stays under 400 lines** — anything older than 4 sprints goes in HISTORY.md.
+- **One batch per session** — don't plan 6 batches in one context window.
+- **Session open: read CLAUDE.md + NEXT.md only.** Don't proactively read source files.
 
 ---
 
@@ -88,175 +143,115 @@ Branch: `main`
 
 ```
 src/
-├── App.jsx                   # Root — routing, nav, all topView states
-├── PromptLab.jsx             # Prompt Engineering Lab (NEW — 560 lines, 6 scenarios)
-├── Home.jsx                  # Landing — new/returning user views, streak heatmap
-├── Concepts.jsx              # 27 modules, 7 active gyms, GymSelectorView
-├── GroundTruth.jsx           # GT post renderer, generateQuiz() → 5-7 questions
-├── PrepLab.jsx               # 5 modes: Exam, Trainer, Interview Strategy, Company Tracks, Heatmap
-├── Systems.jsx               # 57 Systems modules shell + SYSTEMS_MODULES registry
-├── Agents.jsx                # 16 Agent Lab modules
-├── systems/modules.jsx       # All Systems module components (~15,000 lines)
-├── groundTruthIndex.js       # 226 GT post metadata
-├── groundTruthPosts.js       # GT post content blocks
-├── shared.jsx                # CommonTrapCallout, ProductionNoteChip, ForwardPointerCard, WhatNextCard, FeedbackBar
-├── analytics.js              # PostHog track()
+├── App.jsx                    # Root — routing, nav, theme toggle, all topView states
+├── PromptLab.jsx              # Prompt Engineering Lab (6 scenarios)
+├── FoundationModelsLab.jsx    # Foundation Models Lab (6 scenarios) — NEW
+├── Home.jsx                   # Landing — new/returning views, streak heatmap
+├── Concepts.jsx               # 27 modules, 7 active gyms
+├── GroundTruth.jsx            # GT post renderer, generateQuiz() → 5-7 questions
+├── PrepLab.jsx                # 4 modes + ScenarioPlayer + InterviewIntelMode (3225 lines)
+├── Systems.jsx                # 57 Systems modules shell + SYSTEMS_MODULES registry
+├── Agents.jsx                 # 16 Agent Lab modules
+├── systems/modules.jsx        # All Systems module components (~15,000 lines) ← NEVER READ IN FULL
+├── groundTruthPosts.js        # GT post content blocks ← NEVER READ IN FULL
+├── groundTruthIndex.js        # 226 GT post metadata
+├── shared.jsx                 # CommonTrapCallout, ProductionNoteChip, ForwardPointerCard, WhatNextCard, FeedbackBar
+├── analytics.js               # PostHog track() — needs VITE_POSTHOG_KEY env var
+├── index.css                  # Paper warm theme — dark default + [data-theme="light"] + CSS vars
 ├── config/
-│   ├── nav.js                # ALL_TABS, GROUP_COLORS, NAV_GROUPS (source of truth)
-│   └── gating.js             # FREE_QUESTION_LIMIT, RESULTS_FREE_LIMIT
+│   ├── nav.js                 # ALL_TABS, GROUP_COLORS, NAV_GROUPS (source of truth)
+│   └── gating.js              # FREE_QUESTION_LIMIT, RESULTS_FREE_LIMIT
 └── data/
-    └── preplabQuestions.js   # 297 questions (all with difficulty + trap fields)
+    └── preplabQuestions.js    # 304 questions (MCQ + text + multi + scenario types)
 ```
+
+---
+
+## PrepLab State
+
+**4 sidebar modes:**
+- `exam` — Assess
+- `jdprep` — Interview Strategy (4-step Brief)
+- `companyprep` — Company Tracks
+- `intexp` — Interview Signal (22 experiences, topic chart, filters) ← NEW
+
+**Hidden modes (component exists, not in sidebar):** `defense`, `heatmap`, `trainer`
+
+**Question schema — all types:**
+
+```js
+// MCQ / multi / text (existing)
+{
+  id: "unique-id", topic: "rag|agents|eval|finetuning|llmops|safety|product|behavioral|serving|reasoning",
+  difficulty: "easy|medium|hard", gated: false,
+  type: "mcq|text|multi",
+  question: "...", options: ["A","B","C","D"], correct: 0,
+  keywords: ["kw1"], explanation: "...", trap: "...",
+  readMore: { label: "...", tab: "groundtruth", postId: "post-id" }
+}
+
+// Scenario (new)
+{
+  id: "scenario-N", topic: "rag|agents|evals", difficulty: "hard", gated: true,
+  type: "scenario",
+  title: "...",       // shown in TrainerMode
+  incident: "...",    // the failing system — shown at step 1
+  steps: [{
+    prompt: "What do you investigate first?",
+    choices: ["A", "B", "C", "D"],
+    correct: 1,       // index of best choice
+    reveals: ["what A finds", "what B finds", "what C finds", "what D finds"],
+  }],
+  rootCause: "...",   // shown on completion
+  trap: "...",        // common wrong instinct
+}
+```
+
+**Scenario IDs built:** `scenario-1` (RAG corpus), `scenario-2` (agent loop), `scenario-3` (eval rubric)
+
+---
+
+## Theme System
+
+**Dark (default):** Paper warm dark — `#110e0a` base, warm brown-black zinc scale.  
+**Light:** `[data-theme="light"]` on both `<html>` and root div — cream `#faf7f2` base, full zinc inversion.  
+**Toggle:** sun/moon button in desktop header → `theme` state → `localStorage("gal-theme")`.  
+**Accent:** `var(--gal-build)` = `#22D3EE` dark / `#5b21b6` light. Never hardcode `#22D3EE` in new code.
 
 ---
 
 ## Concepts Gym State (27 modules, 7 active gyms)
 
-| Gym | Status | Modules |
-|---|---|---|
-| Language Models | ✅ Active | tokenizer, attention, transformer, seq-parallel, flashattn, sampling, nextoken, tempgame, training-signal |
-| Retrieval | ✅ Active | embeddings, chunking, rag-pipeline, context |
-| AI Agents | ✅ Active | agent, agent-tools, multiagent, guardrails |
-| Evaluation | ✅ Active (new sprint 41) | eval-loop, debug, llm-as-judge, eval-design |
-| Production | ✅ Active (new sprint 41) | cost-latency-concepts, observability-concepts |
-| Foundation Models | ✅ Active (new sprint 41) | training-signal, scaling-laws, lora |
-| Prompt Engineering | ✅ Active (new sprint 41) | few-shot, chain-of-thought |
-| Cloud AI Services | 🔜 Coming soon | — |
-| Vector Infrastructure | 🔜 Coming soon | — |
-| Observability & Tracing | 🔜 Coming soon | — |
-| Multimodal | 🔜 Coming soon | — |
-| AI Safety & Alignment | 🔜 Coming soon | — |
+| Gym | Modules |
+|---|---|
+| Language Models ✅ | tokenizer, attention, transformer, seq-parallel, flashattn, sampling, nextoken, tempgame, training-signal |
+| Retrieval ✅ | embeddings, chunking, rag-pipeline, context |
+| AI Agents ✅ | agent, agent-tools, multiagent, guardrails |
+| Evaluation ✅ | eval-loop, debug, llm-as-judge, eval-design |
+| Production ✅ | cost-latency-concepts, observability-concepts |
+| Foundation Models ✅ | training-signal, scaling-laws, lora |
+| Prompt Engineering ✅ | few-shot, chain-of-thought |
+| Cloud AI Services 🔜 | — |
+| Vector Infrastructure 🔜 | — |
+| Observability & Tracing 🔜 | — |
+| Multimodal 🔜 | — |
+| AI Safety & Alignment 🔜 | — |
 
 ---
 
-## Prompt Lab — Fully Built State
+## Business Model (current)
 
-`src/PromptLab.jsx` — 6 scenarios, each with 3 configs, outcome cards, root cause + synthesis close:
-
-| ID | Title | Tag |
-|---|---|---|
-| regression_edit | The 11-Day Quality Drop | REGRESSION |
-| user_injection | The Override | INJECTION |
-| few_shot_contamination | The Bad Example | FEW-SHOT |
-| structured_output_failure | The Schema Drift | STRUCTURED |
-| temperature_miscal | The Confident Hallucinator | TEMPERATURE |
-| over_constrained | The Instruction Conflict | CONSTRAINTS |
-
-Wired: lazy import in App.jsx, VALID_VIEWS, routing, page title, nav.js BUILD group (count: 6).  
-PrepLab questions: promptlab-1 through promptlab-4.
-
----
-
-## Open Issues (verified current)
-
-**Still open from UPGRADES.md:**
-- `failures` module in Agent Lab — still a reference catalog. Low priority.
-- 3 thin GT posts that were previously stubs but are now confirmed expanded — **closed**.
-- Concepts inline callouts + synthesis close — all 27 modules now have all 3 beats ✅.
-- GT Series + Tags — 16/17 series populated, taxonomy clean ✅.
-- FidelityBadge still duplicated in App.jsx / Agents.jsx / Systems.jsx — XS effort, deferred.
-
-**Gate before next major sprint:**
-- **PostHog check** (DECISIONS.md §0c) — WAU last 30 days, top 5 modules by visit, RAG Lab completion rate, PrepLab session depth. If WAU is low → distribution work, not features.
-
----
-
-## Next Build Queue (in priority order)
-
-### ~~Batch 1 — Foundation Models Lab~~ ✅ DONE sprint 42 (`6cb2194`)
-`src/FoundationModelsLab.jsx` (6 scenarios): lora_rank_low, lr_too_high, eval_contamination, data_volume, objective_mismatch, base_model_mismatch. Each has 3 configs (fail/partial/pass), metrics grid, root cause, fix, design principle. 4 PrepLab questions (fmlab-1/2/3/4). Wired in App.jsx + nav.js. 301 PrepLab questions total.
-**PENDING FIX:** Lab accent uses amber — should be blue (#3b82f6) to match BUILD group convention. Fix in next polish pass.
-
-### ~~Batch 2 — Role Readiness Score~~ ✅ DONE this session
-`getRoleReadiness()` helper + `readiness` state + sidebar widget in `src/PrepLab.jsx`. Tiers: Familiar/Practitioner/Senior/Staff derived from `gsl-preplab-history`. 4-dot visual + count + accuracy. Shows only after 5+ questions answered.
-
-### ~~Batch 3 — Welcome / Onboarding Modal~~ ✅ ALREADY DONE
-`WelcomeModal` confirmed live in App.jsx (line 1142). `genai_welcomed` localStorage flag, 3 goal options, fires once.
-
-### ~~Batch 4 — React.lazy() code splitting~~ ✅ ALREADY DONE
-All 15 heavy components lazy-loaded in App.jsx.
-
-### ~~Batch 5 — Prompt Lab PrepLab questions expansion~~ ✅ DONE this session
-`promptlab-5` (temperature miscalibration, medium free MCQ) + `promptlab-6` (prompt decay diagnosis, hard gated text). Total: 297 PrepLab questions.
-
-### Batch 2 (renumbered) — Interview Experiences section
-Static editorial data (20-30 entries) seeded from field intelligence log in CLAUDE.md. Schema: `{ role, companyTier, round, topics[], difficultySignal, notes }`. Recharts bar chart. Tally link for submissions. **M effort.**
-
----
-
-## PrepLab Question Schema (for new questions)
-
-```js
-{
-  id: "unique-id",           // kebab-case, topic prefix
-  topic: "rag|agents|eval|finetuning|llmops|safety|product|behavioral|serving|llm|reasoning",
-  difficulty: "easy|medium|hard",
-  gated: true,               // hard questions gated; medium free or gated; easy free
-  type: "mcq|text|multi",    // multi = select all that apply, correct is array [0,2]
-  question: "...",
-  options: ["A","B","C","D"],// MCQ/multi only; [] for text
-  correct: 0,                // index for mcq; [0,2] for multi; 0 for text (unused)
-  keywords: ["kw1","kw2"],   // text questions — keywords for self-grading
-  explanation: "...",        // full explanation
-  trap: "Saying X. The correct answer is Y because Z.",  // what weaker candidates say
-  source: "Company/context", // optional — where this appeared in the wild
-  readMore: { label: "...", tab: "groundtruth", postId: "post-id" }
-}
-```
-
----
-
-## Git Commit Pattern
-
-```python
-import os, subprocess, time
-
-for lock in ['.git/index.lock', '.git/HEAD.lock']:
-    if os.path.exists(lock):
-        with open(lock, 'w') as f: f.write('')
-        os.rename(lock, lock + '.x')
-
-time.sleep(0.5)
-subprocess.run(['git', 'add', 'src/FILE.jsx'])
-subprocess.run(['git', 'commit', '-m', 'batch-X: description'])
-```
-
----
-
-## Bash Path Mapping
-
-```
-/Users/ASUS/Documents/GitHub/genai-systems-lab  →  /sessions/.../mnt/genai-systems-lab/
-```
-
-Always use the `/sessions/...` path in bash commands, the full macOS path in Read/Write/Edit tools.
+**Free:** All 6 Labs, all 57 Systems, all GT posts, all Concepts. PrepLab 10q/session.  
+**Gated** (access code `DAI2026`, later Stripe): Full PrepLab, Company Tracks, Interview Brief phase 4.  
+**Gate UX:** `isAccessGranted()` in `src/utils/accessCode.js`.
 
 ---
 
 ## Session Opening Checklist
 
 1. Connect to `/Users/ASUS/Documents/GitHub/genai-systems-lab`
-2. `git log --oneline -5` — verify you're on the right commit
-3. Read `CLAUDE.md` + `NEXT.md`
-4. Check PostHog if doing a new feature sprint
-5. Plan batches — each batch = one commit, brace diff = 0
-
----
-
-## Key Decisions (standing rules)
-
-- **No TypeScript** — ever
-- **No backend** — static only, localStorage state
-- **Distribution before features** (DECISIONS.md §0c) — PostHog check gates every major sprint
-- **Interactive decision engine standard** — every module must configure → logic → outcome → diagnosis
-- **3-beat standard** — every module: Beat 1 (setup framing) + Beat 2 (inline callout) + Beat 3 (synthesis close)
-- **Format integrity** — failure simulation (GAL) must not converge with case study format (PAL)
-- **Cold-start rule** (DECISIONS.md §9) — PrepLab is the correct cold-start entry, not Labs
-
----
-
-## Business Model (current)
-
-**Free:** All 5 Labs, all 57 Systems modules, all GT posts, all Concepts. PrepLab 10q/session.  
-**Gated** (access code `DAI2026`, later Stripe): Full PrepLab beyond 10q/session, Company Tracks, Interview Brief phase 4.  
-**Gate UX:** `isAccessGranted()` in `src/utils/accessCode.js`. Community code `DAI2026`.
+2. `git log --oneline -5` — verify you're at the right commit
+3. Read `CLAUDE.md` + `NEXT.md` — don't read anything else until you know what you're building
+4. Check PostHog if doing a feature sprint — it's the gate
+5. Plan batches — one commit per batch, brace diff = 0 before every commit
+6. **At session end: update all 5 MD files + commit MD sync**

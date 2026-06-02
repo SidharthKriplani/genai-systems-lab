@@ -8,7 +8,7 @@ Read this at session start. Do only this. Update before closing.
 
 ## Theme: Sprint 42 complete. 6 labs now live. PostHog check is still the gate before next major sprint.
 
-Sprint 42 delivered: context management, promptlab-5/6, Role Readiness Score, Foundation Models Lab (6th lab), Paper theme system (full light/dark with toggle), duplicate declaration fixes. Scale: 226 GT posts, 301 PrepLab questions, 27 Concepts (7 gyms), 57 Systems, 6 labs.
+Sprint 42 delivered: context management, promptlab-5/6, Role Readiness Score, Foundation Models Lab (6th lab), Paper theme system (light/dark + toggle), duplicate declaration fixes, theme audit phase 2 (CSS vars), Interview Signal PrepLab mode (22 experiences), scenario-type questions + ScenarioPlayer (3 scenarios). Scale: 226 GT posts, 304 PrepLab questions, 27 Concepts (7 gyms), 57 Systems, 6 labs, 4 PrepLab modes.
 
 PostHog check (item 5 below) is still the gate before the next major content sprint.
 
@@ -52,7 +52,11 @@ Check before any new build: is PostHog receiving events in Vercel prod? WAU last
 - ~~**7 new Concepts modules**~~ — DONE batch-A (`ed54c5a`). LLMAsJudge, EvalDesign, AgentToolDesign, CostLatency, Observability, FewShot, ChainOfThought.
 - ~~**4 new active gyms**~~ — DONE batch-A. Evaluation, Production, Foundation Models, Prompt Engineering now active (not comingSoon).
 - ~~**Prompt Engineering Lab (5th BUILD lab)**~~ — DONE batch-B (`b93535e`). 6 scenarios, PromptLab.jsx 560 lines, wired in App.jsx + nav.js, 4 PrepLab questions.
-- ~~**Foundation Models Lab (6th BUILD lab)**~~ — DONE sprint 42 (`6cb2194`). 6 scenarios, FoundationModelsLab.jsx, wired in App.jsx + nav.js, 4 PrepLab questions (301 total).
+- ~~**Foundation Models Lab (6th BUILD lab)**~~ — DONE sprint 42 (`6cb2194`). 6 scenarios, FoundationModelsLab.jsx, wired in App.jsx + nav.js, 4 PrepLab questions.
+- ~~**Paper theme system**~~ — DONE sprint 42 (`2884aa1`). Warm dark default + light mode + CSS vars + sun/moon toggle.
+- ~~**Theme audit phase 2**~~ — DONE sprint 42 (`c859fe6`). All hardcoded #22D3EE → CSS vars across 5 files.
+- ~~**Interview Signal PrepLab mode**~~ — DONE sprint 42 (`f33a123`). 22 experiences, filters, topic chart.
+- ~~**Scenario-type questions**~~ — DONE sprint 42 (`246f73f`). ScenarioPlayer + 3 scenarios (RAG corpus, agent loop, eval rubric). 304 total PrepLab questions.
 
 ### Sprint 40 completions (batches A–I)
 - ~~**`src/config/nav.js`**~~ — DONE batch-A (`992cfc4`). ALL_TABS + GROUP_COLORS extracted.
