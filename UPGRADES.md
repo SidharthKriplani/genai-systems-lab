@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: June 2026 (post sprint 41)*
+*Last updated: June 2026 (post sprint 43)*
 
 ---
 
