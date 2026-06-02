@@ -2874,6 +2874,147 @@ const MODE_CARDS = [
   }
 ];
 
+// ─── INTERVIEW INTEL ──────────────────────────────────────────────────────────
+
+const INTERVIEW_EXPERIENCES = [
+  { id:1,  role:"Senior AI Engineer", tier:"FAANG",      round:1, topics:["rag","evals"],              difficulty:"hard",   notes:"Two-stage retrieval deep dive — bi-encoder recall vs cross-encoder precision, latency cost of the second stage, when to skip the reranker." },
+  { id:2,  role:"Senior AI Engineer", tier:"FAANG",      round:2, topics:["agents","serving"],          difficulty:"hard",   notes:"Agent reliability under load — retry budgets, tool call latency multipliers, graceful degradation when a tool times out." },
+  { id:3,  role:"ML Engineer",        tier:"FAANG",      round:1, topics:["finetuning","evals"],        difficulty:"hard",   notes:"Catastrophic forgetting diagnosis — how to detect it on general benchmarks, not just domain metrics. Eval contamination via random split." },
+  { id:4,  role:"Staff AI Engineer",  tier:"FAANG",      round:1, topics:["rag","agents","evals"],      difficulty:"hard",   notes:"Full-stack system design: RAG pipeline → agentic loop → eval harness. Bottleneck identification across all three stages." },
+  { id:5,  role:"ML Engineer",        tier:"FAANG",      round:2, topics:["serving","llmops"],          difficulty:"hard",   notes:"Serving infrastructure selection — vLLM vs TGI vs TRT-LLM trade-offs, KV cache sizing, observability for latency regressions." },
+  { id:6,  role:"Senior AI Engineer", tier:"unicorn",    round:1, topics:["agents","evals"],            difficulty:"hard",   notes:"Graph RAG for multi-hop retrieval, HITL workflow design, LangGraph state reducers — operator.add vs overwrite parallel node bug." },
+  { id:7,  role:"Senior AI Engineer", tier:"unicorn",    round:2, topics:["llmops","serving"],          difficulty:"hard",   notes:"LangGraph checkpointers for durable agent state, serverless vs K8s for agentic workloads, LangSmith trace diagnosis." },
+  { id:8,  role:"AI Engineer",        tier:"unicorn",    round:1, topics:["rag","finetuning"],          difficulty:"medium", notes:"RAG vs fine-tune decision framework — when retrieval ceiling forces fine-tuning, LoRA rank selection for the target task complexity." },
+  { id:9,  role:"Senior AI Engineer", tier:"unicorn",    round:1, topics:["safety","agents"],           difficulty:"hard",   notes:"Prompt injection via retrieval in an agentic pipeline — defense layers, instruction-content boundary, guardrail placement." },
+  { id:10, role:"ML Engineer",        tier:"unicorn",    round:2, topics:["evals","llmops"],            difficulty:"hard",   notes:"LLM-as-judge calibration drift — detecting when judge scores diverge from human ratings, prompt regression testing in CI." },
+  { id:11, role:"AI Engineer",        tier:"enterprise", round:1, topics:["rag","serving"],             difficulty:"medium", notes:"Document intelligence pipeline for financial reports — OCR + chunking strategy, latency budget, handling scanned PDFs." },
+  { id:12, role:"AI PM",              tier:"enterprise", round:1, topics:["product","evals"],           difficulty:"medium", notes:"Defining AI success metrics for a compliance use case — precision vs recall trade-off, when 95% isn't good enough, human review triggers." },
+  { id:13, role:"Senior AI Engineer", tier:"enterprise", round:1, topics:["finetuning","safety"],       difficulty:"hard",   notes:"LoRA fine-tuning for a regulated domain — dataset contamination prevention, fairness metrics, explainability constraints." },
+  { id:14, role:"ML Engineer",        tier:"enterprise", round:2, topics:["llmops","serving"],          difficulty:"medium", notes:"Production monitoring — semantic drift detection, cost spike alerting, A/B testing two prompt versions in a high-stakes pipeline." },
+  { id:15, role:"AI PM",              tier:"enterprise", round:2, topics:["product","agents"],          difficulty:"medium", notes:"HITL design for an approval workflow — what the agent decides autonomously vs escalates, how to measure escalation rate over time." },
+  { id:16, role:"AI Engineer",        tier:"startup",    round:1, topics:["rag","evals"],               difficulty:"medium", notes:"Build vs buy RAG — self-hosted vs managed vector DB, minimum viable eval harness before launch, cold-start corpus quality." },
+  { id:17, role:"Senior AI Engineer", tier:"startup",    round:1, topics:["agents","serving"],          difficulty:"hard",   notes:"Agentic loop cost at scale — token budget per run, parallel vs sequential tool calls, when 10 tool calls makes a product unviable." },
+  { id:18, role:"AI Engineer",        tier:"startup",    round:1, topics:["finetuning","llmops"],       difficulty:"medium", notes:"When to fine-tune vs prompt engineer — data volume thresholds, latency benefit of smaller fine-tuned model vs larger base." },
+  { id:19, role:"ML Engineer",        tier:"startup",    round:2, topics:["evals","rag"],               difficulty:"medium", notes:"RAGAS metrics deep dive — groundedness vs answer relevance failure modes, why BLEU/ROUGE mislead for RAG." },
+  { id:20, role:"Senior AI Engineer", tier:"startup",    round:1, topics:["safety","llmops"],           difficulty:"hard",   notes:"Indirect prompt injection via user-editable corpus — real Bing Chat pattern, post-retrieval filter design, grounded-answer policy." },
+  { id:21, role:"Research Scientist", tier:"unicorn",    round:1, topics:["finetuning","evals"],        difficulty:"hard",   notes:"Scaling law implications for fine-tuning — Chinchilla compute-optimal, when more data beats larger model, eval set contamination at scale." },
+  { id:22, role:"Staff AI Engineer",  tier:"FAANG",      round:2, topics:["agents","evals","serving"],  difficulty:"hard",   notes:"Cross-domain system design: multi-agent orchestration, eval harness for non-deterministic outputs, serving budget per user session." },
+];
+
+const TOPIC_LABELS = { rag:"RAG & Retrieval", agents:"Agents & Systems", evals:"Evals & Metrics", finetuning:"LLM & Fine-Tuning", serving:"Production & Ops", llmops:"LLMOps", safety:"Safety & Guardrails", product:"Product & PM" };
+const TIER_LABELS  = { FAANG:"FAANG", unicorn:"Unicorn", enterprise:"Enterprise", startup:"Startup" };
+const ROLE_LABELS  = { "Senior AI Engineer":"Sr AI Engineer", "ML Engineer":"ML Engineer", "Staff AI Engineer":"Staff AI Eng", "AI Engineer":"AI Engineer", "AI PM":"AI PM", "Research Scientist":"Research Sci" };
+
+function InterviewIntelMode({ onExit }) {
+  const [tierFilter, setTierFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+
+  const filtered = INTERVIEW_EXPERIENCES.filter(e =>
+    (tierFilter === "all" || e.tier === tierFilter) &&
+    (roleFilter === "all" || e.role === roleFilter)
+  );
+
+  const topicCounts = {};
+  INTERVIEW_EXPERIENCES.forEach(e => e.topics.forEach(t => { topicCounts[t] = (topicCounts[t] || 0) + 1; }));
+  const maxCount = Math.max(...Object.values(topicCounts));
+  const sortedTopics = Object.entries(topicCounts).sort((a,b) => b[1]-a[1]);
+
+  const tiers = ["all","FAANG","unicorn","enterprise","startup"];
+  const roles = ["all","Senior AI Engineer","Staff AI Engineer","ML Engineer","AI Engineer","AI PM","Research Scientist"];
+
+  return (
+    <div className="p-5 sm:p-7 space-y-6 overflow-y-auto">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-xl font-black text-white tracking-tight mb-1">Interview Signal</div>
+          <div className="text-sm text-zinc-400">{INTERVIEW_EXPERIENCES.length} real loop patterns — skills tested, not exact questions.</div>
+        </div>
+        <button onClick={onExit} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors shrink-0 pt-1">← Back</button>
+      </div>
+
+      <div className="p-4 rounded-xl border border-zinc-800/60" style={{ background:"var(--surface-2)" }}>
+        <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Topic frequency across all {INTERVIEW_EXPERIENCES.length} experiences</div>
+        <div className="space-y-2">
+          {sortedTopics.map(([topic, count]) => (
+            <div key={topic} className="flex items-center gap-3">
+              <div className="text-[10px] text-zinc-400 w-28 shrink-0 truncate">{TOPIC_LABELS[topic] || topic}</div>
+              <div className="flex-1 h-2 rounded-full bg-zinc-800 overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width:`${Math.round((count/maxCount)*100)}%`, background:"var(--gal-build)" }} />
+              </div>
+              <div className="text-[10px] font-mono text-zinc-500 w-8 text-right shrink-0">{Math.round((count/INTERVIEW_EXPERIENCES.length)*100)}%</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Company tier</div>
+          <div className="flex flex-wrap gap-2">
+            {tiers.map(t => (
+              <button key={t} onClick={() => setTierFilter(t)}
+                className="text-[10px] px-2.5 py-1 rounded-lg border transition-all"
+                style={tierFilter===t ? { background:"var(--gal-build-tint)", border:"1px solid var(--gal-build-border)", color:"var(--gal-build)" } : { background:"var(--surface-2)", borderColor:"var(--border)", color:"var(--color-zinc-500)" }}>
+                {t==="all" ? "All" : TIER_LABELS[t]}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Role</div>
+          <div className="flex flex-wrap gap-2">
+            {roles.map(r => (
+              <button key={r} onClick={() => setRoleFilter(r)}
+                className="text-[10px] px-2.5 py-1 rounded-lg border transition-all"
+                style={roleFilter===r ? { background:"var(--gal-build-tint)", border:"1px solid var(--gal-build-border)", color:"var(--gal-build)" } : { background:"var(--surface-2)", borderColor:"var(--border)", color:"var(--color-zinc-500)" }}>
+                {r==="all" ? "All roles" : (ROLE_LABELS[r]||r)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="text-[10px] font-mono text-zinc-500">{filtered.length} of {INTERVIEW_EXPERIENCES.length} experiences shown</div>
+
+      <div className="space-y-3">
+        {filtered.map(e => (
+          <div key={e.id} className="p-4 rounded-xl border border-zinc-800/50" style={{ background:"var(--surface-2)" }}>
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div>
+                <span className="text-xs font-semibold text-zinc-200">{e.role}</span>
+                <span className="text-[10px] text-zinc-500 ml-2">{TIER_LABELS[e.tier]} · Round {e.round}</span>
+              </div>
+              <span className={`text-[9px] font-mono px-2 py-0.5 rounded shrink-0 ${e.difficulty==="hard" ? "bg-red-950/50 text-red-400 border border-red-900/40" : "bg-amber-950/40 text-amber-400 border border-amber-900/30"}`}>
+                {e.difficulty}
+              </span>
+            </div>
+            <div className="text-xs text-zinc-400 leading-relaxed mb-2">{e.notes}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {e.topics.map(t => (
+                <span key={t} className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ background:"var(--gal-build-tint)", color:"var(--gal-build)" }}>
+                  {TOPIC_LABELS[t]||t}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between p-3 rounded-xl border border-zinc-800/40" style={{ background:"var(--surface-2)" }}>
+        <div>
+          <div className="text-xs font-semibold text-zinc-300 mb-0.5">Add your experience</div>
+          <div className="text-[11px] text-zinc-500">Help others prep. Skills + round + outcome — no employer details needed.</div>
+        </div>
+        <a href="https://tally.so/r/mYoQkl" target="_blank" rel="noopener noreferrer"
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 transition-all hover:-translate-y-0.5"
+          style={{ background:"var(--gal-build-tint)", border:"1px solid var(--gal-build-border)", color:"var(--gal-build)" }}>
+          Submit →
+        </a>
+      </div>
+    </div>
+  );
+}
+
 // ─── ROOT COMPONENT ───────────────────────────────────────────────────────────
 
 function getRoleReadiness(history) {
@@ -2954,6 +3095,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
     { id: "exam",        label: "Assess",             tag: "EXAM",      desc: "Test yourself cold. Leave knowing your gaps." },
     { id: "jdprep",      label: "Interview Strategy", tag: "STRATEGY",  desc: "JD → gap score → day-by-day plan." },
     { id: "companyprep", label: "Company Tracks",     tag: "ARCHETYPE", desc: "By company archetype" },
+    { id: "intexp",      label: "Interview Signal",  tag: "INTEL",     desc: "22 real loop patterns — what's actually tested." },
   ];
 
   return (
@@ -3006,6 +3148,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
         {mode === "jdprep"      && <InterviewPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
         {mode === "companyprep" && <CompanyPrepMode onExit={exitMode} onNavigate={onNavigate} />}
         {mode === "defense"     && <DefenseDocMode onExit={exitMode} />}
+        {mode === "intexp"      && <InterviewIntelMode onExit={exitMode} />}
         {mode === "heatmap"     && <WeaknessHeatmapMode onExit={exitMode} />}
         {!mode && (
           <div className="p-5 sm:p-7 space-y-6 overflow-y-auto">
