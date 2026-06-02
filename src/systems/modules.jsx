@@ -8,7 +8,7 @@ const EVAL_CASES = [
   {
     id: "factual",
     type: "Factual Recall",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     description: "Does the system correctly retrieve and state known facts?",
     example: "Q: What is the capital of France? Expected: Paris",
     weakPhrase: "The answer seems right",
@@ -19,7 +19,7 @@ const EVAL_CASES = [
   {
     id: "groundedness",
     type: "Groundedness",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     description: "Is every claim in the response supported by the retrieved context?",
     example: "Answer cites 'Q2 revenue was $4.2B' — verify it's in the chunk",
     weakPhrase: "Sounds grounded",
@@ -30,7 +30,7 @@ const EVAL_CASES = [
   {
     id: "refusal",
     type: "Refusal Quality",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     description: "Does the system correctly refuse out-of-scope or unsafe queries?",
     example: "Q: 'How do I hack this?' → Expected: graceful refusal",
     weakPhrase: "It refused, seems fine",
@@ -41,7 +41,7 @@ const EVAL_CASES = [
   {
     id: "format",
     type: "Format Compliance",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     description: "Does output match required structure (JSON, markdown, schema)?",
     example: "API expected {name, score, reason} — check all keys present",
     weakPhrase: "Output looks structured",
@@ -52,7 +52,7 @@ const EVAL_CASES = [
   {
     id: "coherence",
     type: "Coherence / Relevance",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     description: "Is the response coherent and relevant to the question asked?",
     example: "Q: 'Summarize the contract' → answer talks about unrelated project",
     weakPhrase: "It answered the question",
@@ -63,7 +63,7 @@ const EVAL_CASES = [
   {
     id: "edge",
     type: "Edge Case Coverage",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     description: "Does the system handle empty context, ambiguous queries, and language edge cases?",
     example: "No context retrieved → should say 'I don't know', not hallucinate",
     weakPhrase: "We tested happy path",
@@ -209,7 +209,7 @@ const STRATEGY_SCENARIOS = [
     id: "s1",
     title: "Customer Support at Scale",
     tag: "SCENARIO 1",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     context: "A SaaS company gets 50k support tickets/month. 70% are repeat questions (billing, password reset, feature how-tos). 30% are novel or edge cases. Response quality is critical — wrong answers hurt retention. Latency target: <3s. Budget: moderate.",
     question: "What is the right primary strategy?",
     options: [
@@ -231,7 +231,7 @@ const STRATEGY_SCENARIOS = [
     id: "s2",
     title: "Code Review Assistant",
     tag: "SCENARIO 2",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     context: "A fintech company wants an internal tool that reviews PRs for their proprietary coding standards, internal library usage, security patterns, and compliance rules. The standards are documented but highly specific to their stack. Standard models know nothing about their internal APIs.",
     question: "What is the right primary strategy?",
     options: [
@@ -253,7 +253,7 @@ const STRATEGY_SCENARIOS = [
     id: "s3",
     title: "Research Report Generator",
     tag: "SCENARIO 3",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     context: "A financial analyst team wants a tool that, given a company name, automatically: (1) fetches latest SEC filings, (2) pulls earnings call transcripts, (3) retrieves news from the last 30 days, (4) synthesizes a structured investment memo. Speed is less important — analysts check output. Accuracy is critical.",
     question: "What is the right primary strategy?",
     options: [
@@ -275,7 +275,7 @@ const STRATEGY_SCENARIOS = [
     id: "s4",
     title: "Multilingual Content Moderation",
     tag: "SCENARIO 4",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     context: "A social platform moderates 2M posts/day across 40 languages. They have 18 months of labeled moderation data (approved/removed + violation category). Latency must be <500ms. Cost sensitivity is high. The violation categories are specific to their community standards.",
     question: "What is the right primary strategy?",
     options: [
@@ -297,7 +297,7 @@ const STRATEGY_SCENARIOS = [
     id: "s5",
     title: "Internal Policy Q&A Bot",
     tag: "SCENARIO 5",
-    color: "#22D3EE",
+    color: "var(--gal-build)",
     context: "An HR team wants employees to ask questions about company policies (leave, benefits, code of conduct). The policy docs are 200 pages and updated quarterly. Questions are simple factual lookups. The team has no ML engineers — this needs to be buildable in a week by a product engineer.",
     question: "What is the right primary strategy?",
     options: [
@@ -14170,8 +14170,8 @@ function GraphRAGModule() {
   const GR_NODES = [
     { id: "sequoia",   label: "Sequoia",   type: "investor", x: 120, y: 70,  color: "#4ade80" },
     { id: "a16z",      label: "a16z",      type: "investor", x: 440, y: 70,  color: "#4ade80" },
-    { id: "anthropic", label: "Anthropic", type: "company",  x: 200, y: 185, color: "#22d3ee" },
-    { id: "openai",    label: "OpenAI",    type: "company",  x: 360, y: 185, color: "#22d3ee" },
+    { id: "anthropic", label: "Anthropic", type: "company",  x: 200, y: 185, color: "var(--gal-build)" },
+    { id: "openai",    label: "OpenAI",    type: "company",  x: 360, y: 185, color: "var(--gal-build)" },
     { id: "rag",       label: "RAG",       type: "tech",     x: 120, y: 300, color: "#fbbf24" },
     { id: "finetune",  label: "Fine-tune", type: "tech",     x: 280, y: 300, color: "#fbbf24" },
     { id: "pinecone",  label: "Pinecone",  type: "provider", x: 450, y: 300, color: "#a78bfa" },
@@ -14240,7 +14240,7 @@ function GraphRAGModule() {
           <path d="M0,0 L0,6 L6,3 z" fill="#52525b" />
         </marker>
         <marker id="gr-arr-on" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-          <path d="M0,0 L0,6 L6,3 z" fill="#22d3ee" />
+          <path d="M0,0 L0,6 L6,3 z" fill="var(--gal-build)" />
         </marker>
       </defs>
       <text x="8" y="73" fontSize="10" fill="#3f3f46" fontFamily="monospace">INVESTOR</text>
@@ -14254,7 +14254,7 @@ function GraphRAGModule() {
         return (
           <g key={e.id} opacity={eOpacity(e.id)}>
             <line x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2}
-              stroke={on ? "#22d3ee" : "#52525b"} strokeWidth={on ? 2 : 1}
+              stroke={on ? "var(--gal-build)" : "#52525b"} strokeWidth={on ? 2 : 1}
               markerEnd={on ? "url(#gr-arr-on)" : "url(#gr-arr)"}
             />
             <text x={mx} y={my - 4} fontSize="9" fill={on ? "#67e8f9" : "#52525b"} textAnchor="middle" fontFamily="monospace">{e.label}</text>
@@ -14294,7 +14294,7 @@ function GraphRAGModule() {
           <button key={k} onClick={() => { setTab(k); setActiveNode(null); setTravStep(0); setPlaying(false); }}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={tab === k
-              ? { background: "rgba(34,211,238,0.12)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }
+              ? { background: "var(--gal-build-tint-md)", color: "var(--gal-build)", border: "1px solid var(--gal-build-border)" }
               : { background: "var(--surface-2)", color: "#71717a", border: "1px solid var(--border)" }}>
             {l}
           </button>
@@ -14318,7 +14318,7 @@ function GraphRAGModule() {
               </div>
               <div className="text-[10px] text-red-400 font-mono">Result: hallucinated answer or "cannot determine"</div>
             </div>
-            <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.2)" }}>
+            <div className="rounded-xl p-3 space-y-2" style={{ background: "var(--gal-build-tint)", border: "1px solid var(--gal-build-border)" }}>
               <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Graph RAG — succeeds</div>
               <p className="text-xs text-zinc-400 leading-relaxed">Recognises 'RAG' as entity → traverses: RAG ← uses ← Anthropic, OpenAI ← invested_in ← Sequoia (both). Intersection = Sequoia Capital.</p>
               <div className="space-y-1">
@@ -14343,7 +14343,7 @@ function GraphRAGModule() {
             <KnowledgeGraph />
           </div>
           <div className="flex gap-3 flex-wrap">
-            {[["investor","#4ade80"],["company","#22d3ee"],["tech","#fbbf24"],["provider","#a78bfa"]].map(([type,color]) => (
+            {[["investor","#4ade80"],["company","var(--gal-build)"],["tech","#fbbf24"],["provider","#a78bfa"]].map(([type,color]) => (
               <div key={type} className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full" style={{ background: color }} />
                 <span className="text-[10px] font-mono text-zinc-400 capitalize">{type}</span>
@@ -14351,7 +14351,7 @@ function GraphRAGModule() {
             ))}
           </div>
           {activeNode ? (
-            <div className="rounded-xl p-3 space-y-2" style={{ background: "var(--surface-2)", border: "1px solid rgba(34,211,238,0.2)" }}>
+            <div className="rounded-xl p-3 space-y-2" style={{ background: "var(--surface-2)", border: "1px solid var(--gal-build-border)" }}>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ background: getGRNode(activeNode)?.color }} />
                 <span className="text-sm font-bold text-zinc-200">{getGRNode(activeNode)?.label}</span>
@@ -14372,7 +14372,7 @@ function GraphRAGModule() {
 
       {tab === "traversal" && (
         <div className="space-y-3">
-          <div className="rounded-xl p-3 space-y-1" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,211,238,0.4)" }}>
+          <div className="rounded-xl p-3 space-y-1" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid var(--gal-build-border)" }}>
             <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">{cur.title}</div>
             <p className="text-xs text-zinc-300 leading-relaxed">{cur.desc}</p>
           </div>
@@ -14383,7 +14383,7 @@ function GraphRAGModule() {
             {TRAV.map((_,i) => (
               <button key={i} onClick={() => { setTravStep(i); setPlaying(false); }}
                 className="w-2 h-2 rounded-full transition-all"
-                style={{ background: i === travStep ? "#22d3ee" : i < travStep ? "rgba(34,211,238,0.4)" : "#3f3f46" }} />
+                style={{ background: i === travStep ? "var(--gal-build)" : i < travStep ? "var(--gal-build-border)" : "#3f3f46" }} />
             ))}
           </div>
           <div className="flex gap-2 justify-center">
@@ -14393,7 +14393,7 @@ function GraphRAGModule() {
             {playing ? (
               <button onClick={() => setPlaying(false)}
                 className="px-4 py-1.5 rounded-lg text-xs font-mono font-bold transition-all"
-                style={{ background: "rgba(34,211,238,0.12)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }}>Pause</button>
+                style={{ background: "var(--gal-build-tint-md)", color: "var(--gal-build)", border: "1px solid var(--gal-build-border)" }}>Pause</button>
             ) : travStep < TRAV.length - 1 ? (
               <>
                 <button onClick={() => setTravStep(s => Math.min(s + 1, TRAV.length - 1))}
@@ -14401,12 +14401,12 @@ function GraphRAGModule() {
                   style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>Next →</button>
                 <button onClick={() => setPlaying(true)}
                   className="px-4 py-1.5 rounded-lg text-xs font-mono font-bold transition-all"
-                  style={{ background: "rgba(34,211,238,0.12)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }}>&#9654; Play</button>
+                  style={{ background: "var(--gal-build-tint-md)", color: "var(--gal-build)", border: "1px solid var(--gal-build-border)" }}>&#9654; Play</button>
               </>
             ) : (
               <button onClick={() => { setTravStep(0); setPlaying(false); }}
                 className="px-4 py-1.5 rounded-lg text-xs font-mono font-bold transition-all"
-                style={{ background: "rgba(34,211,238,0.12)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }}>Replay</button>
+                style={{ background: "var(--gal-build-tint-md)", color: "var(--gal-build)", border: "1px solid var(--gal-build-border)" }}>Replay</button>
             )}
           </div>
         </div>
@@ -14454,7 +14454,7 @@ function GraphRAGModule() {
             <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
               {[
                 ["Query","#71717a"],["→",""],["Vector Search","#60a5fa"],["→",""],
-                ["Entity Extraction","#fbbf24"],["→",""],["Graph Traversal","#22d3ee"],
+                ["Entity Extraction","#fbbf24"],["→",""],["Graph Traversal","var(--gal-build)"],
                 ["→",""],["LLM Synthesis","#a78bfa"],
               ].map(([s,c],i) => (
                 <span key={i} className={s === "→" ? "text-zinc-600" : "px-2 py-1 rounded border"}
@@ -14488,17 +14488,17 @@ function LangGraphModule() {
   }, [hitlPlaying, hitlStep]);
 
   const HITL_STEPS = [
-    { label: "Agent reasons", desc: "agent node runs — LLM decides to send a follow-up email to the prospect.", color: "#22d3ee", nodeId: "agent" },
+    { label: "Agent reasons", desc: "agent node runs — LLM decides to send a follow-up email to the prospect.", color: "var(--gal-build)", nodeId: "agent" },
     { label: "Tool call prepared", desc: "tools node prepares send_email(to='prospect@co.com', body='...'). Not yet executed.", color: "#fbbf24", nodeId: "tools" },
     { label: "Interrupt fires", desc: "interrupt_before=['send_email'] pauses execution. State persisted via SqliteSaver. Process returns.", color: "#f87171", nodeId: "interrupt" },
     { label: "Human reviews", desc: "Sales rep reads the draft. Edits the body. Clicks Approve.", color: "#a78bfa", nodeId: "human" },
     { label: "Graph resumes", desc: "graph.invoke(Command(resume='approved')) re-enters after the interrupt point.", color: "#34d399", nodeId: "resume" },
-    { label: "Email sent", desc: "send_email executes with the reviewed body. Graph completes. LangSmith trace shows the interrupt span.", color: "#22d3ee", nodeId: "done" },
+    { label: "Email sent", desc: "send_email executes with the reviewed body. Graph completes. LangSmith trace shows the interrupt span.", color: "var(--gal-build)", nodeId: "done" },
   ];
 
   const GRAPH_NODES = [
     { id: "start",  label: "START",  x: 280, y: 40,  w: 90,  h: 32, color: "#52525b", fill: "#18181b", text: "#a1a1aa" },
-    { id: "agent",  label: "agent",  x: 280, y: 110, w: 110, h: 40, color: "#22d3ee", fill: "#0c1a1f", text: "#67e8f9" },
+    { id: "agent",  label: "agent",  x: 280, y: 110, w: 110, h: 40, color: "var(--gal-build)", fill: "#0c1a1f", text: "#67e8f9" },
     { id: "tools",  label: "tools",  x: 140, y: 200, w: 110, h: 40, color: "#fbbf24", fill: "#1a1200", text: "#fde68a" },
     { id: "human",  label: "human_review", x: 420, y: 200, w: 130, h: 40, color: "#a78bfa", fill: "#130f1e", text: "#c4b5fd" },
     { id: "end",    label: "END",    x: 280, y: 300, w: 90,  h: 32, color: "#52525b", fill: "#18181b", text: "#a1a1aa" },
@@ -14551,7 +14551,7 @@ function LangGraphModule() {
           <button key={t.id} onClick={() => setTab(t.id)}
             className="px-3 py-1.5 rounded-lg text-xs font-mono transition-colors"
             style={tab === t.id
-              ? { background: "rgba(34,211,238,0.12)", border: "1px solid #22d3ee", color: "#22d3ee" }
+              ? { background: "var(--gal-build-tint-md)", border: "1px solid var(--gal-build)", color: "var(--gal-build)" }
               : { background: "var(--surface-2)", border: "1px solid var(--border)", color: "#71717a" }}>
             {t.label}
           </button>
@@ -14599,7 +14599,7 @@ function LangGraphModule() {
           </div>
           <button onClick={fireReducerDemo}
             className="w-full py-2 rounded-lg text-xs font-mono transition-colors"
-            style={{ background: "rgba(34,211,238,0.1)", border: "1px solid #22d3ee", color: "#22d3ee" }}>
+            style={{ background: "var(--gal-build-tint)", border: "1px solid var(--gal-build)", color: "var(--gal-build)" }}>
             Simulate node update →
           </button>
           <div className="rounded-xl p-3 space-y-1" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.25)" }}>
@@ -14620,7 +14620,7 @@ function LangGraphModule() {
                   <path d="M0,0 L0,6 L6,3 z" fill="#52525b" />
                 </marker>
                 <marker id="lg-arr-on" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                  <path d="M0,0 L0,6 L6,3 z" fill="#22d3ee" />
+                  <path d="M0,0 L0,6 L6,3 z" fill="var(--gal-build)" />
                 </marker>
               </defs>
               {GRAPH_EDGES.map((e, i) => {
@@ -14628,7 +14628,7 @@ function LangGraphModule() {
                 return (
                   <g key={i}>
                     <line x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
-                      stroke={on ? "#22d3ee" : "#3f3f46"} strokeWidth={on ? 2 : 1}
+                      stroke={on ? "var(--gal-build)" : "#3f3f46"} strokeWidth={on ? 2 : 1}
                       strokeDasharray={e.dashed ? "5 3" : "none"}
                       markerEnd={on ? "url(#lg-arr-on)" : "url(#lg-arr)"}
                     />
@@ -14667,7 +14667,7 @@ function LangGraphModule() {
             };
             const d = info[activeNode];
             return (
-              <div className="rounded-xl p-3 space-y-1" style={{ background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.3)" }}>
+              <div className="rounded-xl p-3 space-y-1" style={{ background: "var(--gal-build-tint)", border: "1px solid var(--gal-build-border)" }}>
                 <div className="text-xs font-mono text-cyan-300 font-semibold">{d.title}</div>
                 <p className="text-xs text-zinc-300">{d.body}</p>
               </div>
@@ -14691,7 +14691,7 @@ function LangGraphModule() {
                 style={i === hitlStep
                   ? { background: s.color + "33", border: `2px solid ${s.color}`, color: s.color }
                   : i < hitlStep
-                    ? { background: "rgba(34,211,238,0.1)", border: "1px solid #22d3ee55", color: "#22d3ee88" }
+                    ? { background: "var(--gal-build-tint)", border: "1px solid var(--gal-build)55", color: "#22d3ee88" }
                     : { background: "var(--surface-2)", border: "1px solid var(--border)", color: "#52525b" }}>
                 {i + 1}
               </button>
@@ -14732,12 +14732,12 @@ graph = builder.compile(
             </button>
             <button onClick={() => { if (hitlStep < HITL_STEPS.length - 1) setHitlStep(s => s + 1); }}
               className="px-3 py-1.5 rounded text-xs font-mono"
-              style={{ background: "rgba(34,211,238,0.1)", border: "1px solid #22d3ee", color: "#22d3ee" }}>
+              style={{ background: "var(--gal-build-tint)", border: "1px solid var(--gal-build)", color: "var(--gal-build)" }}>
               Next →
             </button>
             <button onClick={() => { if (hitlStep >= HITL_STEPS.length - 1) setHitlStep(0); setHitlPlaying(p => !p); }}
               className="px-3 py-1.5 rounded text-xs font-mono"
-              style={{ background: "rgba(34,211,238,0.15)", border: "1px solid #22d3ee", color: "#22d3ee" }}>
+              style={{ background: "var(--gal-build-tint-md)", border: "1px solid var(--gal-build)", color: "var(--gal-build)" }}>
               {hitlPlaying ? "Pause" : "Play"}
             </button>
           </div>
@@ -14909,7 +14909,7 @@ function AgentContextArchModule({ onNavigate }) {
                 {[["none","No hooks"],["input","Input validation only"],["output","Output validation only"],["both","Input + output hooks"]].map(([v,l]) => (
                   <button key={v} onClick={() => { setHooks(v); setSimulated(false); }}
                     className="w-full text-left px-3 py-2 rounded-lg text-xs transition-all"
-                    style={hooks === v ? { background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.4)", color: "#67e8f9" } : { background: "rgba(39,39,42,0.7)", border: "1px solid rgba(63,63,70,0.5)", color: "#a1a1aa" }}>
+                    style={hooks === v ? { background: "var(--gal-build-tint-md)", border: "1px solid var(--gal-build-border)", color: "#67e8f9" } : { background: "rgba(39,39,42,0.7)", border: "1px solid rgba(63,63,70,0.5)", color: "#a1a1aa" }}>
                     {l}
                   </button>
                 ))}

@@ -162,9 +162,12 @@ html[data-theme="light"] {
   --border:         #dfd3c4;
   --border-subtle:  #ede5d8;
 
-  --gal-build:        #5b21b6;
-  --gal-build-tint:   rgba(91,33,182,0.07);
-  --gal-build-border: rgba(91,33,182,0.28);
+  --gal-build:          #5b21b6;
+  --gal-build-dark:     #4c1d95;
+  --gal-build-tint:     rgba(91,33,182,0.07);
+  --gal-build-tint-md:  rgba(91,33,182,0.12);
+  --gal-build-tint-str: rgba(91,33,182,0.35);
+  --gal-build-border:   rgba(91,33,182,0.28);
   --gal-knowledge:    #5b21b6;
 }
 
@@ -218,9 +221,12 @@ button:disabled:active {
   --color-zinc-600: #7a6e60;   /* warm muted text — dark mode */
 
   /* ── GAL accent colors ───────────────────────────────────────────────────── */
-  --gal-build:        #22D3EE;
-  --gal-build-tint:   rgba(34,211,238,0.07);
-  --gal-build-border: rgba(34,211,238,0.28);
+  --gal-build:          #22D3EE;
+  --gal-build-dark:     #06b6d4;
+  --gal-build-tint:     rgba(34,211,238,0.07);
+  --gal-build-tint-md:  rgba(34,211,238,0.12);
+  --gal-build-tint-str: rgba(34,211,238,0.45);
+  --gal-build-border:   rgba(34,211,238,0.28);
   --gal-prove:        #22c55e;
   --gal-navigate:     #f59e0b;
   --gal-knowledge:    #8b5cf6;

@@ -5144,7 +5144,7 @@ function TemperatureGame() {
                 const prob = shaperProbs[i];
                 const pct = (prob * 100).toFixed(1);
                 const isTop = prob === maxShaperProb;
-                const barColor = isTop ? "#22c55e" : "#22D3EE";
+                const barColor = isTop ? "#22c55e" : "var(--gal-build)";
                 return (
                   <div key={token} className="flex items-center gap-3">
                     <div className={`text-xs font-mono w-16 shrink-0 text-right ${isTop ? "text-emerald-300 font-bold" : "text-zinc-400"}`}>

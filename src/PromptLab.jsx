@@ -343,8 +343,8 @@ export default function PromptLabApp({ onNavigate }) {
                   }
                 `}
                 style={active ? {
-                  background: "linear-gradient(135deg, rgba(34,211,238,0.10) 0%, rgba(34,211,238,0.04) 100%)",
-                  borderLeft: "2px solid #22D3EE",
+                  background: "linear-gradient(135deg, var(--gal-build-tint) 0%, rgba(34,211,238,0.04) 100%)",
+                  borderLeft: "2px solid var(--gal-build)",
                 } : { borderLeft: "2px solid transparent" }}
               >
                 <div className="flex items-start gap-2">
@@ -423,10 +423,10 @@ export default function PromptLabApp({ onNavigate }) {
                     `}
                     style={{
                       background: isSelected
-                        ? "linear-gradient(135deg, rgba(34,211,238,0.07) 0%, rgba(34,211,238,0.02) 100%)"
+                        ? "linear-gradient(135deg, var(--gal-build-tint) 0%, rgba(34,211,238,0.02) 100%)"
                         : "var(--surface-2)",
                       borderColor: isSelected
-                        ? (evaluated ? (resultForThis.status === "pass" ? "#22c55e" : resultForThis.status === "warn" ? "#f59e0b" : "#ef4444") : "#22D3EE")
+                        ? (evaluated ? (resultForThis.status === "pass" ? "#22c55e" : resultForThis.status === "warn" ? "#f59e0b" : "#ef4444") : "var(--gal-build)")
                         : "var(--border)",
                     }}
                   >
@@ -438,12 +438,12 @@ export default function PromptLabApp({ onNavigate }) {
                           background: isSelected
                             ? (evaluated
                                 ? (resultForThis.status === "pass" ? "rgba(34,197,94,0.2)" : resultForThis.status === "warn" ? "rgba(245,158,11,0.2)" : "rgba(239,68,68,0.2)")
-                                : "rgba(34,211,238,0.15)")
+                                : "var(--gal-build-tint-md)")
                             : "rgba(63,63,70,0.6)",
                           color: isSelected
                             ? (evaluated
                                 ? (resultForThis.status === "pass" ? "#22c55e" : resultForThis.status === "warn" ? "#f59e0b" : "#ef4444")
-                                : "#22D3EE")
+                                : "var(--gal-build)")
                             : "#71717a",
                         }}
                       >
@@ -488,8 +488,8 @@ export default function PromptLabApp({ onNavigate }) {
                 }
               `}
               style={selectedConfig !== null ? {
-                background: "linear-gradient(135deg, #22D3EE 0%, #06b6d4 100%)",
-                boxShadow: "0 0 20px rgba(34,211,238,0.25)",
+                background: "linear-gradient(135deg, var(--gal-build) 0%, var(--gal-build-dark) 100%)",
+                boxShadow: "0 0 20px var(--gal-build-border)",
               } : {
                 background: "var(--surface-2)",
                 border: "1px solid var(--border)",
@@ -510,8 +510,8 @@ export default function PromptLabApp({ onNavigate }) {
               </div>
 
               {/* System design lesson */}
-              <div className="rounded-xl p-4 space-y-1.5" style={{ background: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.2)" }}>
-                <p className="text-[10px] font-mono tracking-widest uppercase font-semibold" style={{ color: "#22D3EE" }}>System Design Lesson</p>
+              <div className="rounded-xl p-4 space-y-1.5" style={{ background: "var(--gal-build-tint)", border: "1px solid var(--gal-build-border)" }}>
+                <p className="text-[10px] font-mono tracking-widest uppercase font-semibold" style={{ color: "var(--gal-build)" }}>System Design Lesson</p>
                 <p className="text-sm text-zinc-300 leading-relaxed">{scenario.system_design_lesson}</p>
               </div>
 
@@ -528,15 +528,15 @@ export default function PromptLabApp({ onNavigate }) {
               </div>
 
               {/* Forward pointer */}
-              <div className="rounded-xl p-4 flex items-center justify-between gap-4" style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.08) 0%, rgba(34,211,238,0.02) 100%)", border: "1px solid rgba(34,211,238,0.2)" }}>
+              <div className="rounded-xl p-4 flex items-center justify-between gap-4" style={{ background: "linear-gradient(135deg, var(--gal-build-tint) 0%, rgba(34,211,238,0.02) 100%)", border: "1px solid var(--gal-build-border)" }}>
                 <div>
-                  <p className="text-[10px] font-mono tracking-widest uppercase font-semibold mb-1" style={{ color: "#22D3EE" }}>What's next</p>
+                  <p className="text-[10px] font-mono tracking-widest uppercase font-semibold mb-1" style={{ color: "var(--gal-build)" }}>What's next</p>
                   <p className="text-sm text-zinc-300">Test your prompt knowledge in PrepLab — interview-style questions on these failure modes.</p>
                 </div>
                 <button
                   onClick={() => onNavigate && onNavigate("preplab")}
                   className="shrink-0 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90"
-                  style={{ background: "rgba(34,211,238,0.2)", border: "1px solid rgba(34,211,238,0.4)" }}
+                  style={{ background: "var(--gal-build-border)", border: "1px solid var(--gal-build-border)" }}
                 >
                   Prep Lab →
                 </button>

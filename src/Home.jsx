@@ -221,7 +221,7 @@ const TAB_META = {
   agentlab:    { label: "Agent Lab",    color: "#f59e0b" },
   evallab:     { label: "Eval Lab",     color: "#22c55e" },
   llmlab:      { label: "LLM Lab",      color: "#8b5cf6" },
-  concepts:    { label: "Concepts",     color: "#22D3EE" },
+  concepts:    { label: "Concepts",     color: "var(--gal-build)" },
   preplab:     { label: "Prep Lab",     color: "#22c55e" },
   groundtruth: { label: "Ground Truth", color: "#8b5cf6" },
   career:      { label: "Career",       color: "#22c55e" },
@@ -279,7 +279,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
           </div>
           <button onClick={goPost}
             className="rounded-xl p-5 text-left transition-all flex flex-col gap-2 card-lift animate-cardSlideUp animate-delay-60"
-            style={{ animationFillMode: 'both', background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,211,238,0.5)" }}>
+            style={{ animationFillMode: 'both', background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid var(--gal-build-border)" }}>
             <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">Today's read · Ground Truth</p>
             <p className="text-sm font-bold text-white leading-snug">{featuredPost.title}</p>
             <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{featuredPost.desc}</p>
@@ -300,7 +300,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
           <div className="flex gap-1 flex-wrap">
             {grid.map((cell, i) => {
               const intensity = cell.count === 0 ? 0 : cell.count === 1 ? 1 : cell.count <= 3 ? 2 : 3;
-              const bg = intensity === 0 ? "rgba(39,39,42,0.5)" : intensity === 1 ? "rgba(34,211,238,0.2)" : intensity === 2 ? "rgba(34,211,238,0.45)" : "rgba(34,211,238,0.75)";
+              const bg = intensity === 0 ? "rgba(39,39,42,0.5)" : intensity === 1 ? "var(--gal-build-border)" : intensity === 2 ? "var(--gal-build-tint-str)" : "var(--gal-build-tint-str)";
               return (
                 <div key={i} title={cell.date + (cell.count ? ` · ${cell.count} action${cell.count > 1 ? "s" : ""}` : "")}
                   className="rounded-sm transition-colors"
@@ -399,7 +399,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
             </button>
             <button onClick={() => onNavigate("groundtruth")}
               className="p-4 rounded-xl text-left card-lift animate-cardSlideUp animate-delay-120"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,211,238,0.55)" }}>
+              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid var(--gal-build-border)" }}>
               <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">KNOWLEDGE</p>
               <p className="text-sm font-bold text-white mt-1">225+ posts</p>
               <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Production depth, not tutorials</p>
@@ -434,15 +434,15 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
         <>
           {/* ── HERO ──────────────────────────────────────────────────────── */}
           <div className="relative overflow-hidden">
-            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 100% 70% at 50% -10%, rgba(34,211,238,0.18) 0%, rgba(34,211,238,0.06) 40%, transparent 75%)" }} />
-            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 35% at 50% 0%, rgba(34,211,238,0.10) 0%, transparent 70%)" }} />
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 100% 70% at 50% -10%, rgba(34,211,238,0.18) 0%, var(--gal-build-tint) 40%, transparent 75%)" }} />
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 35% at 50% 0%, var(--gal-build-tint) 0%, transparent 70%)" }} />
             <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8 relative">
 
               <div className="space-y-5">
                 {/* Market signal chip */}
                 <div className="flex justify-center">
                   <span className="inline-flex items-center gap-2 text-[10px] font-mono px-3 py-1.5 rounded-full border"
-                    style={{ background: "rgba(34,211,238,0.06)", borderColor: "rgba(34,211,238,0.2)", color: "#22D3EE" }}>
+                    style={{ background: "var(--gal-build-tint)", borderColor: "var(--gal-build-border)", color: "var(--gal-build)" }}>
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
                     Agentic AI engineer roles: +280% YoY · 90K+ open roles (Stanford HAI 2026)
                   </span>
@@ -451,7 +451,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   Configure it.{" "}
                   <span style={{ background: "linear-gradient(90deg, #ef4444 0%, #f59e0b 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Break it.</span>
                   <br />
-                  <span style={{ background: "linear-gradient(90deg, #22D3EE 0%, #A5F3FC 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Know exactly why.</span>
+                  <span style={{ background: "linear-gradient(90deg, var(--gal-build) 0%, var(--gal-build-dark) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Know exactly why.</span>
                 </h1>
                 <p className="text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
                   Agentic AI engineer roles grew <span className="text-zinc-300 font-medium">280% last year</span>. The gap isn't building AI — it's <span className="text-zinc-300 font-medium">diagnosing production failures</span> under pressure. This lab puts you in the seat.
@@ -546,7 +546,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                 {[
                   { label: "Stale retrieval",   color: "#ef4444" },
                   { label: "Prompt injection",  color: "#f59e0b" },
-                  { label: "Context overflow",  color: "#22D3EE" },
+                  { label: "Context overflow",  color: "var(--gal-build)" },
                   { label: "Hallucination",     color: "#3b82f6" },
                   { label: "Multi-hop failure", color: "#22c55e" },
                 ].map(f => (
@@ -565,7 +565,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
 
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <div className="mt-auto border-t border-zinc-800/60 text-center px-4 py-6 space-y-3"
-        style={{ boxShadow: "0 -8px 32px rgba(34,211,238,0.06)" }}>
+        style={{ boxShadow: "0 -8px 32px var(--gal-build-tint)" }}>
         <a href="https://tally.so/r/mYoQkl" target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-zinc-700 text-zinc-400 hover:border-cyan-700 hover:text-cyan-400 transition-all">
           <span>★</span> Share feedback
