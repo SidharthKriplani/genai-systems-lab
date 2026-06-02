@@ -49,7 +49,7 @@ Check before any new build: is PostHog receiving events in Vercel prod? WAU last
 ### Content depth + production grounding
 - ~~**"Your Interview Story" block on RAG Lab done cards**~~ — DONE sprint 37 (`97360b7`). All 6 scenarios. Agent Lab still pending.
 - ~~**"Maps to Production" callout on RAG Lab root-cause cards**~~ — DONE sprint 36 (`2a8c0bc`). All 6 RAG Lab scenarios have `productionNote` field.
-- **RAG Lab static corpus — data realism v1** — `S-M effort`. See DECISIONS.md Section 7.
+- ~~**RAG Lab static corpus — data realism v1**~~ — DONE sprint 38 (`9a985b5`). 24 real docs, 6 scenarios, retrieved chunks collapsible panel.
 - **Thin GT posts expansion — 3 stubs** — `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets`. `S-M effort`.
 
 ### Architecture / polish
