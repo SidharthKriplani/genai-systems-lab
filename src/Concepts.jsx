@@ -5766,6 +5766,26 @@ const MODULES = [
     component: TemperatureGame,
   },
   {
+    id: "seq-parallel",
+    label: "Seq vs Parallel",
+    tag: "ARCH",
+    level: "intermediate",
+    title: "Sequential vs Parallel: Why the Transformer Exists",
+    subtitle: "Step through an RNN one token at a time. Watch the Transformer do it in one step. See why this determines what scale is possible.",
+    fidelity: { tier: "conceptual", note: "Illustrative processing model — the parallelism principle is exact" },
+    component: SequentialParallelModule,
+  },
+  {
+    id: "training-signal",
+    label: "Training Signal",
+    tag: "TRAINING",
+    level: "intermediate",
+    title: "Entropy, Cross-Entropy Loss, and KL Divergence",
+    subtitle: "Drag a probability. See the surprise. Understand why the model learns nothing from confident predictions — and everything from uncertain ones.",
+    fidelity: { tier: "faithful", note: "Entropy math is exact — -log₂(p) formula applied to real examples" },
+    component: TrainingSignalModule,
+  },
+  {
     id: "lora",
     label: "LoRA / QLoRA",
     tag: "TRAINING",
@@ -5809,11 +5829,279 @@ const MODULE_NEXT_STEP = {
   "embeddings":    { tab: "systems",   label: "Systems — Vector DB Engineering" },
   "attention":     { tab: "concepts",  label: "Next: Transformer forward pass" },
   "tokenizer":     { tab: "concepts",  label: "Next: Embedding Space" },
+  "seq-parallel":    { tab: "groundtruth", postId: "why-transformers-won", label: "Ground Truth: Why Transformers Won →" },
+  "training-signal": { tab: "groundtruth", postId: "how-surprised-is-the-model", label: "Ground Truth: How Surprised Is the Model? →" },
   "lora":          { tab: "groundtruth", postId: "lora-in-practice", label: "Ground Truth: LoRA in Practice →" },
   "scaling-laws":  { tab: "groundtruth", postId: "chinchilla-scaling-laws", label: "Ground Truth: Chinchilla Scaling Laws →" },
   "context":       { tab: "llmlab",    label: "LLM Lab — Long Context Patterns" },
   "flashattn":     { tab: "llmlab",    label: "LLM Lab — Serving Infrastructure" },
 };
+
+// ─── SEQUENTIAL VS PARALLEL MODULE ──────────────────────────────────────────
+
+const SEQ_STEPS = [
+  { label: "Read token 1", rnn: "Process word 1 → hidden state h₁", tf: "Attend to ALL tokens in parallel" },
+  { label: "Read token 2", rnn: "Process word 2 → h₂ (uses h₁)", tf: "(still computing — all at once)" },
+  { label: "Read token 3", rnn: "Process word 3 → h₃ (uses h₂)", tf: "(still computing — all at once)" },
+  { label: "Read token 4", rnn: "Process word 4 → h₄ (uses h₃)", tf: "(still computing — all at once)" },
+  { label: "Done", rnn: "Final hidden state carries the sequence", tf: "Full attention matrix computed ✓" },
+];
+
+const ARCH_LIMITS = [
+  { name: "RNN",         limit: "Cannot parallelise: token N needs token N-1's hidden state. Training is slow. GPUs are idle 90% of the time.", problem: "vanishing" },
+  { name: "LSTM",        limit: "Fixes vanishing gradients via gates. Still sequential — parallelism problem unchanged. Better quality, same speed ceiling.", problem: "sequential" },
+  { name: "Transformer", limit: "Parallel attention across all tokens simultaneously. Scales to 128K+ contexts. Enables billion-parameter training. The architecture that unlocked GPT-4.", problem: "none" },
+];
+
+function SequentialParallelModule({ onNavigate }) {
+  const [step, setStep] = useState(0);
+  const [arch, setArch] = useState("rnn");
+  const tabs = [
+    { id: "demo",  label: "Sequential vs Parallel" },
+    { id: "arcs",  label: "Architecture Arc" },
+  ];
+  const [tab, setTab] = useState("demo");
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">What you're building intuition for</div>
+        <p className="text-sm text-zinc-300 leading-relaxed">RNNs read one token at a time. Each step waits for the previous. With 1,000-token sequences on a GPU with 10,000 cores, 9,999 of those cores are idle. Transformers read all tokens simultaneously — every core is busy. This is not a minor optimisation: it's the difference between "scales to millions of examples" and "scales to trillions." The architecture transition from RNN to Transformer is why the current wave of LLMs exists.</p>
+      </div>
+
+      <div className="flex gap-1">
+        {[{id:"demo",label:"Sequential vs Parallel"},{id:"arcs",label:"Architecture Arc"}].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${tab === t.id ? "bg-indigo-600/20 text-indigo-300 border border-indigo-700/50" : "text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-700"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "demo" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderTop: "2px solid rgba(239,68,68,0.4)" }}>
+              <p className="text-[10px] font-mono font-black text-red-400 uppercase tracking-widest">RNN / LSTM — Sequential</p>
+              {SEQ_STEPS.map((s, i) => (
+                <div key={i} className={`text-xs px-2 py-1 rounded transition-all ${i <= step ? "text-zinc-200 bg-zinc-800/60" : "text-zinc-600"}`}>
+                  {i <= step ? s.rnn : "⏳ waiting..."}
+                </div>
+              ))}
+              <p className="text-[10px] text-red-400 font-mono">{step < 4 ? `Step ${step+1}/5 — GPU cores: mostly idle` : "Done — 5 sequential steps"}</p>
+            </div>
+            <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderTop: "2px solid rgba(34,197,94,0.4)" }}>
+              <p className="text-[10px] font-mono font-black text-emerald-400 uppercase tracking-widest">Transformer — Parallel</p>
+              {SEQ_STEPS.map((s, i) => (
+                <div key={i} className={`text-xs px-2 py-1 rounded transition-all ${step >= 1 ? "text-zinc-200 bg-zinc-800/60" : "text-zinc-600"}`}>
+                  {step >= 1 ? (i < 4 ? s.tf : "Full attention matrix computed ✓") : "⏳ waiting..."}
+                </div>
+              ))}
+              <p className="text-[10px] text-emerald-400 font-mono">{step >= 1 ? "Done — 1 parallel step (all tokens at once)" : "Not started"}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setStep(s => Math.min(s+1, SEQ_STEPS.length-1))}
+              disabled={step >= SEQ_STEPS.length-1}
+              style={{ background: step < SEQ_STEPS.length-1 ? "rgba(99,102,241,0.2)" : "rgba(39,39,42,0.4)", border: "1px solid rgba(99,102,241,0.4)" }}
+              className="flex-1 py-2 text-xs font-semibold text-indigo-300 rounded-lg transition-all disabled:opacity-40">
+              Next RNN step →
+            </button>
+            <button onClick={() => setStep(0)}
+              className="px-4 py-2 text-xs text-zinc-500 hover:text-zinc-300 rounded-lg border border-zinc-700 transition-all">
+              Reset
+            </button>
+          </div>
+          <div className="rounded-xl p-3" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}>
+            <p className="text-xs text-zinc-300"><span className="text-amber-400 font-semibold">The GPU utilisation gap: </span>At token 2, the RNN uses 1 GPU core and leaves 9,999 idle. The Transformer uses all 10,000 cores from step 1. At 1,000 tokens, the gap is 1000× better parallelism. This is why Transformers scale to billions of parameters while LSTMs peaked around 1-2 billion.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "arcs" && (
+        <div className="space-y-3">
+          {ARCH_LIMITS.map(a => {
+            const color = a.problem === "none" ? "#22c55e" : a.problem === "sequential" ? "#f59e0b" : "#ef4444";
+            return (
+              <div key={a.name} className="rounded-xl p-4 space-y-2" style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)", borderLeft: "3px solid " + color }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold text-zinc-100">{a.name}</p>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded" style={{ background: color + "20", color, border: "1px solid " + color + "40" }}>
+                    {a.problem === "none" ? "Current standard" : a.problem === "sequential" ? "Partially fixed" : "Bottleneck"}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">{a.limit}</p>
+              </div>
+            );
+          })}
+          <div className="rounded-xl p-3" style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.25)" }}>
+            <p className="text-xs text-zinc-300"><span className="text-indigo-400 font-semibold">The key transition: </span>LSTM solved the gradient problem but not the parallelism problem. The Transformer solved both simultaneously — full attention across all positions + gradient flow through direct connections. GPT-3 could not have been trained on RNNs at any cost. The architecture choice determined what scale was achievable.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">Step through the Sequential vs Parallel tab. At step 1, the Transformer is already done — the RNN has processed only one token. Step through to the end: the RNN took 5 sequential steps; the Transformer took 1 parallel step. Now scale this to 100,000 tokens. The Transformer still takes 1 parallel step (with more compute per step). The RNN takes 100,000 sequential steps — not feasible at production context lengths.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Parallelism is not a performance optimisation on top of the RNN architecture — it required a completely different architecture. The Transformer's attention mechanism is why LLMs can process 128K-token contexts and why training on trillions of tokens became feasible. When you see a long context window or a large training corpus, the Transformer's parallel attention is what made those numbers possible.</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── TRAINING SIGNAL MODULE ──────────────────────────────────────────────────
+
+function computeSurprise(prob) {
+  return prob > 0 ? -Math.log2(prob) : Infinity;
+}
+
+const SIGNAL_EXAMPLES = [
+  {
+    label: "Factual — near certain",
+    token: "Paris",
+    context: 'The capital of France is ___',
+    probCorrect: 0.97,
+    probAlt: 0.02,
+    altToken: "Lyon",
+    insight: "Low entropy — distribution is sharp. Model is near-certain. Cross-entropy loss ≈ 0.04 bits. Very little gradient signal.",
+  },
+  {
+    label: "Uncertain — multiple valid continuations",
+    token: "sunny",
+    context: 'Tomorrow the weather will be ___',
+    probCorrect: 0.25,
+    probAlt: 0.22,
+    altToken: "cloudy",
+    insight: "High entropy — flat distribution across weather words. Cross-entropy loss ≈ 2.0 bits. Strong gradient signal — model has much to learn.",
+  },
+  {
+    label: "Reverse knowledge gap",
+    token: "Turing",
+    context: 'The inventor of the Turing machine is ___',
+    probCorrect: 0.60,
+    probAlt: 0.15,
+    altToken: "Shannon",
+    insight: "Moderate entropy. Model knows the fact but isn't confident. Loss ≈ 0.74 bits. Moderate gradient — some learning still available.",
+  },
+];
+
+function TrainingSignalModule({ onNavigate }) {
+  const [tab, setTab] = useState("entropy");
+  const [exIdx, setExIdx] = useState(0);
+  const [prob, setProb] = useState(0.7);
+
+  const ex = SIGNAL_EXAMPLES[exIdx];
+  const surprise = computeSurprise(ex.probCorrect).toFixed(2);
+  const entropyApprox = (-ex.probCorrect * Math.log2(ex.probCorrect) - (1 - ex.probCorrect) * Math.log2(1 - ex.probCorrect + 0.0001)).toFixed(2);
+
+  const sliderSurprise = computeSurprise(prob).toFixed(2);
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(34,197,94,0.2)", borderTop: "2px solid rgba(34,197,94,0.45)" }}>
+        <div className="text-[10px] font-mono font-black text-emerald-400 uppercase tracking-widest">What you're building intuition for</div>
+        <p className="text-sm text-zinc-300 leading-relaxed">LLMs learn by being surprised. Every training step, the model predicts the next token — if it's confident and correct, almost no learning happens (low loss). If it's uncertain or wrong, a large gradient fires (high loss). Entropy quantifies how surprised the model expects to be. Cross-entropy loss is the training signal that shapes the weights. Understanding this explains why training data diversity matters, why repeated tokens produce low gradient, and why the model's confidence is not the same as its accuracy.</p>
+      </div>
+
+      <div className="flex gap-1 flex-wrap">
+        {[{id:"entropy",label:"Entropy Explorer"},{id:"examples",label:"Real Examples"}].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${tab === t.id ? "bg-emerald-600/20 text-emerald-300 border border-emerald-700/50" : "text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-700"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "entropy" && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Model's probability on the correct token: <span className="text-emerald-300">{(prob * 100).toFixed(0)}%</span></p>
+            <input type="range" min={0.01} max={0.99} step={0.01} value={prob} onChange={e => setProb(Number(e.target.value))} className="w-full accent-emerald-500" />
+            <div className="flex justify-between text-[10px] text-zinc-500"><span>1% (wrong)</span><span>50%</span><span>99% (confident)</span></div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl p-4 text-center space-y-1" style={{ background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.2)" }}>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Surprise (bits)</p>
+              <p className="text-2xl font-black" style={{ color: parseFloat(sliderSurprise) > 3 ? "#ef4444" : parseFloat(sliderSurprise) > 1 ? "#f59e0b" : "#22c55e" }}>{sliderSurprise}</p>
+              <p className="text-[10px] text-zinc-500">-log₂(p)</p>
+            </div>
+            <div className="rounded-xl p-4 text-center space-y-1" style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.2)" }}>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Gradient signal</p>
+              <p className="text-2xl font-black" style={{ color: prob < 0.3 ? "#ef4444" : prob < 0.7 ? "#f59e0b" : "#22c55e" }}>{prob < 0.3 ? "Strong" : prob < 0.7 ? "Moderate" : "Weak"}</p>
+              <p className="text-[10px] text-zinc-500">{prob < 0.3 ? "Model has much to learn" : prob < 0.7 ? "Some learning available" : "Near-certain, minimal update"}</p>
+            </div>
+          </div>
+          <div className="rounded-xl p-3" style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)" }}>
+            <p className="text-xs text-zinc-300">{prob >= 0.9 ? "When the model is 90%+ confident and correct, the training gradient is almost zero. Repeating facts the model already knows produces nearly no learning. This is why training data diversity matters — confident predictions don't update weights." : prob <= 0.2 ? "When the model assigns < 20% probability to the correct token, the training signal is very large. The model's weights update substantially. Rare words, unusual names, and domain-specific terminology produce strong gradients — that's why specialised fine-tuning works." : "In the moderate confidence range, the gradient is meaningful but not extreme. This is where most of the useful training signal lives — the model has a partial belief that can be refined without catastrophic weight updates."}</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "examples" && (
+        <div className="space-y-4">
+          <div className="flex gap-1 flex-wrap">
+            {SIGNAL_EXAMPLES.map((e, i) => (
+              <button key={i} onClick={() => setExIdx(i)}
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${exIdx === i ? "bg-emerald-700/30 text-emerald-300 border border-emerald-700/50" : "text-zinc-400 border border-zinc-700 hover:border-zinc-500"}`}>
+                {e.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(24,24,27,0.9)", border: "1px solid rgba(63,63,70,0.6)" }}>
+            <p className="text-xs font-mono text-zinc-500">Context: <span className="text-zinc-200 font-normal not-italic">"{ex.context}"</span></p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <p className="text-[10px] text-zinc-500">P(correct: "{ex.token}")</p>
+                <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-600 rounded-full transition-all" style={{ width: `${ex.probCorrect * 100}%` }} />
+                </div>
+                <p className="text-xs font-bold text-emerald-400">{(ex.probCorrect * 100).toFixed(0)}%</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-zinc-500">P(alt: "{ex.altToken}")</p>
+                <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-600 rounded-full transition-all" style={{ width: `${ex.probAlt * 100}%` }} />
+                </div>
+                <p className="text-xs font-bold text-amber-400">{(ex.probAlt * 100).toFixed(0)}%</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-800">
+              <div className="text-center">
+                <p className="text-[10px] text-zinc-500">Surprise (cross-entropy)</p>
+                <p className="text-xl font-black text-indigo-300">{surprise} bits</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-zinc-500">Binary entropy (H)</p>
+                <p className="text-xl font-black text-violet-300">{entropyApprox} bits</p>
+              </div>
+            </div>
+            <div className="rounded-lg p-2.5" style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.2)" }}>
+              <p className="text-xs text-zinc-300">{ex.insight}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Beat 2 */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Entropy Explorer, drag the probability slider from 1% to 99%. Watch the surprise number: at 1% confidence it's 6.6 bits — enormous gradient. At 99% it's 0.01 bits — barely any update. In Real Examples, compare the factual example (Paris, 97% confidence, 0.04 bits surprise) to the uncertain example (weather, 25% confidence, 2.0 bits). This is why models that already "know" a fact learn nothing from seeing it repeated — the training signal is essentially zero.</p>
+      </div>
+
+      {/* Beat 3 */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Every model capability came from a training step where the model was surprised — it predicted the wrong token with too little confidence, and the weights adjusted. A model that sees only things it already knows converges on the same weights it started with. This is why training data breadth matters more than repetition, why novel domains produce more learning than familiar ones, and why the training signal is the most direct expression of what a model does and doesn't yet understand.</p>
+      </div>
+    </div>
+  );
+}
 
 // ─── LORA / QLORA MODULE ─────────────────────────────────────────────────────
 
@@ -6274,6 +6562,8 @@ const MODULE_META = {
   "agent":        { insight: "A loop fails in ways a function never does: stuck retries, hallucinated tool calls, context drift.", mins: 10 },
   "guardrails":   { insight: "Without guardrails, even aligned models produce PII leaks and jailbreaks under the right prompt.", mins: 8 },
   "multiagent":   { insight: "Multi-agent overhead only pays off when subtasks are genuinely independent and parallelizable.", mins: 10 },
+  "seq-parallel":    { insight: "At 1,000 tokens, RNN needs 1,000 sequential steps. Transformer needs 1 parallel step. That gap is why LLMs exist.", mins: 7 },
+  "training-signal": { insight: "When the model is 99% confident and correct, loss ≈ 0.01 bits — nearly no learning. Surprise drives all weight updates.", mins: 8 },
   "lora":         { insight: "LoRA trains 131K parameters instead of 16.7M on a 4096-dim layer. Same model, 99% fewer trainable params.", mins: 8 },
   "scaling-laws": { insight: "Bigger isn't always better. A 7B model trained on 1T tokens beats a 70B model trained on 100B tokens.", mins: 8 },
 };
@@ -6285,7 +6575,7 @@ const GYMS = [
     label: "Language Models",
     desc: "How LLMs actually work — from tokenization through sampling. The foundation before you touch any lab.",
     color: "#6366f1",
-    moduleIds: ["tokenizer", "attention", "transformer", "flashattn", "sampling", "nextoken", "tempgame", "scaling-laws", "lora"],
+    moduleIds: ["tokenizer", "attention", "transformer", "seq-parallel", "flashattn", "sampling", "nextoken", "tempgame", "training-signal", "scaling-laws", "lora"],
     labId: "llmlab",
     labLabel: "LLM Lab",
   },
