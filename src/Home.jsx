@@ -158,6 +158,48 @@ function HeroFailureDemo({ onNavigate }) {
   );
 }
 
+// ── Streak + activity heatmap helpers ────────────────────────────────────────
+
+function toDateKey(d) {
+  return d.toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
+
+function getStreakInfo() {
+  try {
+    const today = toDateKey(new Date());
+    const lastVisit = localStorage.getItem("gsl-last-visit") || "";
+    let streak = parseInt(localStorage.getItem("gsl-streak") || "0", 10);
+    const yesterday = toDateKey(new Date(Date.now() - 86400000));
+
+    if (lastVisit === today) {
+      // already visited today — streak unchanged
+    } else if (lastVisit === yesterday) {
+      streak += 1;
+    } else if (lastVisit === "") {
+      streak = 1;
+    } else {
+      streak = 1; // gap — reset
+    }
+    localStorage.setItem("gsl-streak", String(streak));
+    localStorage.setItem("gsl-last-visit", today);
+    // record today's activity
+    const actKey = "gsl-activity-" + today;
+    const count = parseInt(localStorage.getItem(actKey) || "0", 10);
+    localStorage.setItem(actKey, String(count + 1));
+
+    // Build 28-day grid (4 weeks × 7 days)
+    const grid = [];
+    for (let i = 27; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      const key = "gsl-activity-" + toDateKey(d);
+      grid.push({ date: toDateKey(d), count: parseInt(localStorage.getItem(key) || "0", 10) });
+    }
+    return { streak, grid };
+  } catch {
+    return { streak: 0, grid: Array(28).fill({ date: "", count: 0 }) };
+  }
+}
+
 // ── Returning-user helpers ────────────────────────────────────────────────────
 
 function getActivityData() {
@@ -189,6 +231,8 @@ const TAB_META = {
 
 function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
   const { history, histKeys, mastery, visitedMods } = data;
+  const [streakInfo] = useState(() => getStreakInfo());
+  const { streak, grid } = streakInfo;
 
   const now     = new Date();
   const hour    = now.getHours();
@@ -244,6 +288,30 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
         </div>
       </div>
 
+      {/* Streak + 4-week heatmap */}
+      {streak > 0 && (
+        <div>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest">Activity</span>
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#fbbf24" }}>
+              {streak} day streak {streak >= 7 ? "🔥" : ""}
+            </span>
+          </div>
+          <div className="flex gap-1 flex-wrap">
+            {grid.map((cell, i) => {
+              const intensity = cell.count === 0 ? 0 : cell.count === 1 ? 1 : cell.count <= 3 ? 2 : 3;
+              const bg = intensity === 0 ? "rgba(39,39,42,0.5)" : intensity === 1 ? "rgba(34,211,238,0.2)" : intensity === 2 ? "rgba(34,211,238,0.45)" : "rgba(34,211,238,0.75)";
+              return (
+                <div key={i} title={cell.date + (cell.count ? ` · ${cell.count} action${cell.count > 1 ? "s" : ""}` : "")}
+                  className="rounded-sm transition-colors"
+                  style={{ width: "14px", height: "14px", background: bg, border: "1px solid rgba(39,39,42,0.3)" }} />
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-zinc-600 mt-1.5">Last 4 weeks</p>
+        </div>
+      )}
+
       {/* Jump back in */}
       {jumpTabs.length > 0 && (
         <div>
@@ -288,11 +356,11 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
                 <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Concepts Gym</p>
                 <p className="text-2xl font-black text-white mt-2">
                   {masteryCount}
-                  <span className="text-sm font-bold text-zinc-400 ml-1.5">/ 15 modules done</span>
+                  <span className="text-sm font-bold text-zinc-400 ml-1.5">/ 20 modules done</span>
                 </p>
                 <div className="w-full bg-zinc-800 rounded-full h-1.5 mt-2.5">
                   <div className="h-1.5 rounded-full bg-violet-500 transition-all"
-                    style={{ width: `${Math.round(masteryCount / 15 * 100)}%` }} />
+                    style={{ width: `${Math.round(masteryCount / 20 * 100)}%` }} />
                 </div>
                 <button onClick={() => onNavigate("concepts")}
                   className="mt-3 text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors">
