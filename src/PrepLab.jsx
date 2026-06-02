@@ -1518,36 +1518,39 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                 onNext={next}
                 nextLabel={current >= questions.length - 1 ? "See Results" : "Next Question →"} />
             )}
-            {q.type !== "scenario" && <div className="relative">
-              <QuestionCard q={q} />
-              {history[q.id]?.wrong > 0 && (
-                <span className="absolute top-2 right-2 text-[10px] text-red-400 font-semibold">
-                  ✗ {history[q.id].wrong}× wrong
-                </span>
-              )}
-            </div>
-            {!submitted && (
+            {q.type !== "scenario" && (
               <>
-                {q.type === "mcq"
-                  ? <MCQOptions options={q.options} selected={answer === "" ? undefined : parseInt(answer)} onSelect={i => setAnswer(String(i))} />
-                  : q.type === "multi"
-                  ? <MCQMultiOptions options={q.options} selected={answer} onSelect={s => setAnswer(s)} />
-                  : <SpeechTextArea value={answer} onChange={setAnswer} />
-                }
-                <button onClick={submit} disabled={answer.toString().trim() === ""}
-                  style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)", boxShadow: "0 4px 16px rgba(99,102,241,0.35), 0 1px 0 rgba(255,255,255,0.1) inset" }}
-                  className="w-full py-3.5 disabled:opacity-40 text-white font-semibold rounded-xl transition-all hover:brightness-110">
-                  Submit Answer
-                </button>
+                <div className="relative">
+                  <QuestionCard q={q} />
+                  {history[q.id]?.wrong > 0 && (
+                    <span className="absolute top-2 right-2 text-[10px] text-red-400 font-semibold">
+                      ✗ {history[q.id].wrong}× wrong
+                    </span>
+                  )}
+                </div>
+                {!submitted && (
+                  <>
+                    {q.type === "mcq"
+                      ? <MCQOptions options={q.options} selected={answer === "" ? undefined : parseInt(answer)} onSelect={i => setAnswer(String(i))} />
+                      : q.type === "multi"
+                      ? <MCQMultiOptions options={q.options} selected={answer} onSelect={s => setAnswer(s)} />
+                      : <SpeechTextArea value={answer} onChange={setAnswer} />
+                    }
+                    <button onClick={submit} disabled={answer.toString().trim() === ""}
+                      style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)", boxShadow: "0 4px 16px rgba(99,102,241,0.35), 0 1px 0 rgba(255,255,255,0.1) inset" }}
+                      className="w-full py-3.5 disabled:opacity-40 text-white font-semibold rounded-xl transition-all hover:brightness-110">
+                      Submit Answer
+                    </button>
+                  </>
+                )}
+                {submitted && (
+                  <RevealCard isCorrect={isCorrect} q={q} onNext={next}
+                    nextLabel={current >= questions.length - 1 ? "See Results" : "Next Question →"}
+                    onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current}
+                    onSelfGrade={selfGradePractice} />
+                )}
               </>
             )}
-            {submitted && (
-              <RevealCard isCorrect={isCorrect} q={q} onNext={next}
-                nextLabel={current >= questions.length - 1 ? "See Results" : "Next Question →"}
-                onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current}
-                onSelfGrade={selfGradePractice} />
-            )}
-            </div>}
           </>
         )}
       </div>
