@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { track } from "./analytics";
 import { POST_CONTENT } from "./groundTruthPosts";
 import { POSTS } from "./groundTruthIndex";
@@ -887,6 +887,7 @@ const SERIES_META = {
 
 export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, onPostOpened }) {
   const [filter, setFilter] = useState("all");
+  const [viewLens, setViewLens] = useState(null); // null | "revise" | "learn" | "next"
   const [openPost, setOpenPost] = useState(null);
   const [recentIds, setRecentIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem("genai_gt_recent") || "[]"); } catch { return []; }
@@ -958,7 +959,88 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
 
   // Only show posts that have written content
   const WRITTEN = POSTS.filter(p => !!POST_CONTENT[p.id]);
-  const visible = filter === "all" ? WRITTEN : WRITTEN.filter(p => p.category === filter);
+
+  // ── Reading lenses — powered by existing localStorage signals ──────────────
+  const TOPIC_CAT_MAP = {
+    rag: ["rag", "retrieval"], agents: ["agents"], evals: ["evaluation"],
+    mlops: ["llmops", "production", "production-mlops"], fine_tuning: ["finetuning", "training-stack"],
+    safety: ["safety"],
+  };
+  function topicFromQid(qid) {
+    if (/^(rag|reranker|graph-rag|hyde|litm|parent|cos|hard-neg)/.test(qid)) return "rag";
+    if (/^(agent|langgraph|multiagent|ase)/.test(qid)) return "agents";
+    if (/^(eval|ragas|judge|bench|ab-test)/.test(qid)) return "evals";
+    if (/^(ft-|sft-|dpo|lora|finetune|instruct)/.test(qid)) return "fine_tuning";
+    if (/^(mlops|serving|latency|pcm|kv)/.test(qid)) return "mlops";
+    if (/^(safe|guard|inject|red)/.test(qid)) return "safety";
+    return null;
+  }
+
+  const lensFiltered = useMemo(() => {
+    if (!viewLens) return null;
+    if (viewLens === "revise") {
+      try {
+        const hist = JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}");
+        if (Object.keys(hist).length === 0) return []; // no history yet — empty state
+        const topicStats = {};
+        Object.entries(hist).forEach(([qid, data]) => {
+          const t = topicFromQid(qid);
+          if (!t) return;
+          if (!topicStats[t]) topicStats[t] = { wrong: 0, attempts: 0 };
+          topicStats[t].attempts += (data.attempts || 1);
+          topicStats[t].wrong += (data.wrong || 0);
+        });
+        // Sort topics by miss rate descending; keep those with wrong/attempts > 0.4
+        const weakTopics = Object.entries(topicStats)
+          .filter(([, s]) => s.attempts > 0 && s.wrong / s.attempts > 0.4)
+          .sort(([, a], [, b]) => (b.wrong / b.attempts) - (a.wrong / a.attempts))
+          .map(([t]) => t);
+        if (weakTopics.length === 0) return []; // all strong — empty state
+        // Build ordered list: posts in most-missed topic first, up to 12
+        const result = [];
+        const seen = new Set();
+        for (const t of weakTopics) {
+          const cats = TOPIC_CAT_MAP[t] || [];
+          const posts = WRITTEN.filter(p => cats.some(c => p.category === c || (p.tags || []).some(tg => tg.toLowerCase().includes(c))));
+          for (const p of posts) {
+            if (!seen.has(p.id)) { seen.add(p.id); result.push(p); }
+            if (result.length >= 12) break;
+          }
+          if (result.length >= 12) break;
+        }
+        return result;
+      } catch { return []; }
+    }
+    if (viewLens === "next") {
+      try {
+        const openedIds = new Set(
+          Object.keys(localStorage).filter(k => k.startsWith("gsl-gt-read-")).map(k => k.slice("gsl-gt-read-".length))
+        );
+        const visited = JSON.parse(localStorage.getItem("genai_visited_modules") || "[]");
+        const TAB_CAT = { lab: ["rag", "retrieval"], agentlab: ["agents"], evallab: ["evaluation"], llmlab: ["llmops", "production-mlops"], systems: ["production", "sysdesign"] };
+        const visitedCats = new Set(visited.flatMap(t => TAB_CAT[t] || []).filter(Boolean));
+        const unread = WRITTEN.filter(p => !openedIds.has(p.id));
+        if (visitedCats.size > 0) {
+          // Prefer unread posts in visited categories
+          const prioritised = unread.filter(p => visitedCats.has(p.category));
+          const remainder = unread.filter(p => !visitedCats.has(p.category));
+          const combined = [...prioritised, ...remainder].slice(0, 15);
+          return combined.length > 0 ? combined : unread.slice(0, 15);
+        }
+        // No visited modules yet — newest unread (WRITTEN is ordered newest-first by index position)
+        return unread.slice(0, 15);
+      } catch { return []; }
+    }
+    return null;
+  }, [viewLens]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // lensFiltered === [] means "has history but no weak spots / no unread" (empty state)
+  // lensFiltered === null means lens is off (show all)
+  const lensIsEmpty = Array.isArray(lensFiltered) && lensFiltered.length === 0;
+  const base = (lensFiltered && lensFiltered.length > 0) ? lensFiltered : WRITTEN;
+  const visible = (lensFiltered !== null && !lensIsEmpty)
+    ? (filter === "all" ? lensFiltered : lensFiltered.filter(p => p.category === filter))
+    : (filter === "all" ? WRITTEN : WRITTEN.filter(p => p.category === filter));
   const total = WRITTEN.length;
   const totalPlanned = POSTS.length;
 
@@ -988,6 +1070,47 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
             )}
           </p>
         </div>
+
+        {/* Reading lens selector — only shown when filter is "all" */}
+        {filter === "all" && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Reading mode</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: null,     label: "All" },
+                { id: "revise", label: "Revise weak spots" },
+                { id: "next",   label: "What's next" },
+              ].map(lens => (
+                <button key={String(lens.id)} onClick={() => { setViewLens(lens.id); }}
+                  className="px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                  style={viewLens === lens.id ? {
+                    background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.4)", color: "#e9d5ff",
+                  } : {
+                    background: "rgba(39,39,42,0.5)", border: "1px solid rgba(63,63,70,0.5)", color: "#a1a1aa",
+                  }}>
+                  {lens.label}
+                </button>
+              ))}
+            </div>
+            {viewLens && !lensIsEmpty && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-[10px] text-zinc-500">
+                  {viewLens === "revise" && "Posts in topics where your PrepLab score is weak — study these to close the gaps."}
+                  {viewLens === "next" && "Unread posts in the areas you've been working on."}
+                </span>
+                <span className="text-[10px] font-mono text-zinc-600">· {lensFiltered.length} posts</span>
+              </div>
+            )}
+            {viewLens === "revise" && lensIsEmpty && (
+              <p className="mt-3 text-xs text-zinc-500">Complete a PrepLab session to see personalized suggestions.</p>
+            )}
+            {viewLens === "next" && lensIsEmpty && (
+              <p className="mt-3 text-xs text-zinc-500">Open some posts to track your progress.</p>
+            )}
+          </div>
+        )}
 
         {/* Series cards */}
         {filter === "all" && (
@@ -1121,6 +1244,16 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
         </div>
 
         {/* Post grid */}
+        {lensIsEmpty ? (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-6 py-10 text-center">
+            <p className="text-sm text-zinc-400 mb-1">
+              {viewLens === "revise" ? "Complete a PrepLab session to see personalized suggestions." : "Open some posts to track your progress."}
+            </p>
+            <button onClick={() => setViewLens(null)} className="mt-3 text-xs font-mono text-violet-400 hover:text-violet-300 transition-colors">
+              Show all posts →
+            </button>
+          </div>
+        ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map(post => {
             const color = CAT_COLORS[post.category] || "#6366f1";
@@ -1225,6 +1358,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
             );
           })}
         </div>
+        )}
 
         {/* Footer */}
         <div className="mt-12 text-center space-y-1">
