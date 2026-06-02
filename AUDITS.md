@@ -1984,3 +1984,45 @@ All four adaptation items documented in:
 - EmbeddingModule: `embTab`, `queryIdx`, `topK` (renamed `setEmbTopK`) + `searchResults` (useMemo)
 
 **Status:** ✅ All 4 gaps resolved. Remaining Concepts modules (ContextWindow, Attention, Tokenizer, AgentLoop, etc.) were upgraded in sprints 26 and earlier — this sprint closes the last 4 depth gaps in the active 15.
+
+---
+
+## Audit 43 — Content Gap Sprint Review: Sprints 33–35 (May 2026)
+
+**Type:** Content Integrity + PrepLab Coverage + UPGRADES.md staleness sweep
+**Date:** May 2026 (sprints 33–35 close)
+**Trigger:** Three Tier 1 content gaps from Senior AI Engineer interview signal all shipped in sequence. UPGRADES.md had multiple stale "Pending" entries for work done in sprints 11, 30, 31B, 31C.
+
+**What shipped (sprints 33–35):**
+
+| Sprint | Deliverable | Commit |
+|---|---|---|
+| 33 | `GraphRAGModule` (4-tab interactive SVG knowledge graph + multi-hop traversal animation) + GT post `graph-rag-multi-hop` + 4 PrepLab questions | `2a00754` |
+| 34 | `LangGraphModule` (Reducers demo + StateGraph SVG + HITL animated flow + when-to-use table) + GT post `langgraph-reducers-hitl` + 4 PrepLab questions. GraphRAG SVG mobile font fix. | `cfd4520` |
+| 35 | Two-stage retrieval GT post `two-stage-retrieval-reranker` + QueryRefinementLab "Two-Stage" 4th tab (side-by-side bi-encoder vs cross-encoder ranking with rank-change arrows) + 4 PrepLab questions. CompanyTracks revamp: bug fix (`q.answer` → `q.options[q.correct]`), text question handling, topic weight viz, GT recommendations per archetype. | `74160e7` |
+
+**Scale after sprint 35:** 56 Systems modules (in nav), 225 GT posts, 277 PrepLab questions.
+
+**UPGRADES.md staleness findings and resolutions:**
+
+| Entry | Stale Status | Correct Status |
+|---|---|---|
+| RAG Lab — Done Card Prominence | "Pending — Batch 0 Walk 1 #5" | ✅ Done sprint 30 (`ada9b79`) |
+| RAG Lab — TYU CTA Fix | "Pending — Batch 0 Walk 1 #6" | ✅ Done sprint 11 (`327a745`) |
+| PrepLab — Common Trap Layer | "Pending" | ✅ Done sprint 31C (`38d5330`) |
+| PrepLab — Keyboard Shortcuts | "Pending" | ✅ Done sprint 30 (`ada9b79`) |
+| Global — PrepLab questions extraction | "Pending — DECISIONS.md §8" | ✅ Done sprint 31B (`73924a0`) |
+| Global — Shared UI components | "Pending" | Partially done — `src/shared.jsx` with `CommonTrapCallout` exists; `FidelityBadge` still duplicated; `ForwardPointerCard` pending |
+| PrepLab — Interview Prep Plan | "Pending — spec finalised" | Partially done — Sprint E delivered 4-step Interview Brief; full personalization spec still pending (Tier 2) |
+
+All resolved in same commit as this audit log entry.
+
+**Still open (no change this sprint):**
+- GT State-Aware Reading Mode ("Revise / Learn / What's Next") — pending
+- GT Series + Tags Architecture — pending (222→225 posts, still at wall)
+- Home.jsx Social Proof — placeholder testimonials still showing
+- Systems/Explore reference tables → decision engines — pending
+- 3 thin GT stubs: `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` — pending
+- CompanyTracks: `gating.js` `FREE_SESSION_LIMIT` — `src/config/gating.js` exists (`38d5330`) but `nav.js` and `labs.js` not yet created
+
+**Status:** ✅ All sprint 33–35 deliverables verified. All UPGRADES.md stale entries corrected.

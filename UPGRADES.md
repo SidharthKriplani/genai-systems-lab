@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: May 2026 (post sprint 34)*
+*Last updated: May 2026 (post sprint 35)*
 
 ---
 
@@ -135,39 +135,27 @@ Cut entirely:
 
 ---
 
-## RAG Lab — Done Card Prominence
+## ~~RAG Lab — Done Card Prominence~~ DONE — sprint 30
 
-**Component:** `src/App.jsx` or RAG Lab scenario result panel — ✓ done card placement
+**Component:** `src/App.jsx` — RAG Lab scenario result panel
 
-**Current behavior:** The ✓ done card (forward pointer to PrepLab + GT post) appears in the corner of the results view after a scenario completes. It is not immediately visible — a user can complete a scenario and leave without ever seeing it.
+**Was:** Done card appeared at bottom-of-stack, invisible without scrolling.
 
-**Target behavior:** Done card must be the first thing seen after a scenario completes — not a corner element. Options: (a) full-width card below the failure diagnosis, above the fold, impossible to miss; (b) the scenario result panel scrolls down to the done card automatically on completion. Either way, it should not require the user to scroll down or look in a corner.
+**Now:** Forward pointer (`✓ "You've seen the failure. What's next?"`) moved to immediately after the Failure Mode block in `App.jsx` — visible without scrolling. Pure JSX reorder, no logic changes. Commit `ada9b79`.
 
-**Effort:** S (layout adjustment, no logic changes)
-
-**Dependencies:** None
-
-**Priority:** Critical — the done card is the entire learn loop closing mechanism. If it's invisible, the loop doesn't close.
-
-**Status:** Pending — Batch 0 Walk 1 finding #5
+**Status:** ✅ Done — sprint 30.
 
 ---
 
-## RAG Lab — "Test Your Understanding" CTA Fix
+## ~~RAG Lab — "Test Your Understanding" CTA Fix~~ DONE — sprint 11
 
-**Component:** `src/App.jsx` or RAG Lab scenario done card — "Test your understanding" button
+**Component:** `src/App.jsx`, `src/PrepLab.jsx`
 
-**Current behavior:** Button is present in the done card but crashes on click — navigates to nothing, dead end.
+**Was:** Button crashed on click — navigated to nothing.
 
-**Target behavior:** Button navigates to PrepLab filtered to the relevant question cluster for that scenario. E.g., Missing Answer scenario → PrepLab filtered to RAG retrieval failure questions.
+**Now:** `preplabInitialMode` state added to `App.jsx`. `initialMode` + `onClearInitialMode` props wired into `PrepLab.jsx`. `useEffect` auto-selects Trainer mode when navigated from RAG Lab forward pointer. Commit `327a745`.
 
-**Effort:** S (routing fix — wire the button to the correct PrepLab state)
-
-**Dependencies:** Done card prominence fix should ship first (no point fixing the routing if the card is invisible)
-
-**Priority:** Critical — a crashing CTA is a bug, not a UX issue.
-
-**Status:** Pending — Batch 0 Walk 1 finding #6
+**Status:** ✅ Done — sprint 11.
 
 ---
 
@@ -279,15 +267,38 @@ Gate UX: modal fires on first gated content access. User enters access code. On 
 
 ---
 
-## PrepLab — Interview Prep Plan (unified feature)
+## PrepLab — Interview Strategy Tool (partially done, full spec pending)
 
-*Formerly called "JD Prep mode" and "Defense Doc" — these were two names for the same thing. Consolidated here as "Interview Prep Plan."*
+*Formerly called "Interview Prep Plan" / "JD Prep mode" / "Defense Doc" — consolidated as "Interview Strategy".*
 
-**Component:** `src/PrepLab.jsx` → modes `jd` and `defense` (merge into single `prepplan` mode)
+**Sprint E delivered (sprint `a5af787`, May 2026):** 4-step Interview Brief flow fully rebuilt. Step 1: JD paste + company name. Step 2: role type + round number + interviewer type + optional prior-round feedback. Step 3: self-rate detected topics (Weak/Okay/Strong). Step 4: gated Interview Brief output — top 3 gaps each with hard Q + medium Q + trap callout, prior feedback block (red tint), day-of checklist, Copy Brief button. Helper functions: `generateBrief()` (ranks topics by gap score), `buildBrief()`, `copyBrief()` (markdown → clipboard).
 
-**Current behavior:** JD Prep mode does surface-level keyword matching and surfaces loosely relevant questions. Defense Doc mode generates a generic document. No structured skill gap analysis, no sequenced plan, no personalization.
+**Full "Interview Strategy Tool" spec — still pending (Tier 2 future sprint):**
 
-**Target behavior:** Four-phase flow:
+**Phase 1 — Parse + weight (free)**
+JD text parsed against 11 skill categories with keyword maps. Output: role profile showing which categories are JD-critical, JD-relevant, or not mentioned. Categories:
+- RAG architecture (chunking, retrieval, reranking, hybrid search)
+- Evaluation design (LLM-as-judge, RAGAS, human eval, regression testing)
+- Agent systems (tool use, memory, orchestration, failure modes)
+- LLM fundamentals (tokenization, attention, context window, fine-tuning)
+- Production/serving (latency, cost, batching, quantization, caching)
+- Observability (tracing, monitoring, drift detection, alerting)
+- Prompt engineering (system prompt, structured output, injection defense)
+- Vector databases (index types, distance metrics, HNSW/IVF, hybrid search)
+- Data pipelines (embedding pipeline, chunking strategy, data flywheel)
+- Product/PM angle (metrics, tradeoffs, prioritization, stakeholder comms)
+- Safety and alignment (guardrails, eval for safety, red-teaming)
+
+**Phase 2 — Self-rating questionnaire (free)**
+For each JD-flagged category, user rates readiness: Weak / Okay / Strong. Gap score = JD weight × inverse rating (Weak=3, Okay=2, Strong=1).
+
+**Phase 3 — Skill assessment output (free)**
+Role profile card: "This role is RAG-heavy, eval-critical, agent architecture optional." Top 3 gaps ranked by score. Honest gaps callout: if the JD requires a skill the lab doesn't cover, say so.
+
+**Phase 4 — Personalized study plan (gated after 30% completion)**
+Sequenced prep plan: 3-day / 7-day / 2-week options. Each day: which GT posts to read, which Systems/Explore modules to run, which PrepLab question cluster to attempt — ordered by gap priority. Gate fires when `completedItems / totalItems >= 0.30` — user is mid-goal, invested, highest conversion moment.
+
+**Plan progress tracking — auto-detection where possible:**
 
 **Phase 1 — Parse + weight (free)**
 JD text parsed against 11 skill categories with keyword maps. Output: role profile showing which categories are JD-critical, JD-relevant, or not mentioned. Categories:
@@ -594,11 +605,11 @@ The design principle the failure teaches. One decision rule a practitioner would
 
 ---
 
-## PrepLab — "Common Trap" Layer on Question Answers
+## ~~PrepLab — "Common Trap" Layer on Question Answers~~ DONE — sprint 31C
 
-**Component:** `src/PrepLab.jsx` — question data objects + answer reveal UI in Exam mode + Trainer mode
+**Component:** `src/PrepLab.jsx`, `src/data/preplabQuestions.js`, `src/shared.jsx`
 
-**Current behavior:** Each PrepLab question has `question`, `options[]`, `correct`, and `explanation`. After submitting, the user sees the correct answer + explanation. No signal about what the wrong answer pattern looks like — no "what weaker candidates say" distinction.
+**Was:** No trap field on any question. No amber callout in RevealCard.
 
 **Target behavior:** Add a `trap` field to question objects: a 1–2 sentence description of the most common wrong answer pattern — what a candidate says who knows the topic superficially but hasn't worked with it in production. Displayed after the explanation, in an amber-tinted callout block: "Common trap: [text]." This is the single highest-leverage field addition for interview prep — knowing what not to say is often more valuable than knowing the correct answer.
 
@@ -624,11 +635,9 @@ The design principle the failure teaches. One decision rule a practitioner would
 
 **Effort:** M (field addition is trivial; writing 50 trap entries is the work — ~30 min per 10 questions)
 
-**Dependencies:** None — purely additive. Existing questions unchanged.
+**Now:** `trap` + `source` fields injected into 50+ hardest questions across RAG (12), Agents (12), Evaluation (11), LLMOps (11), Fine-tuning (5). `src/shared.jsx` created with `CommonTrapCallout({ trap })` — amber chip rendered in RevealCard after explanation block in both Trainer and Exam review. `source` attribution also rendered. Commit `38d5330`. Extended in sprints 33–35: trap fields on all new questions (`graph-rag-*`, `langgraph-*`, `reranker-*`).
 
-**Priority:** High — highest-leverage single-field improvement to PrepLab quality. Differentiates from generic MCQ banks.
-
-**Status:** Pending
+**Status:** ✅ Done — sprint 31C. Ongoing: all new hard questions get trap fields at time of writing.
 
 ---
 
@@ -687,25 +696,15 @@ Each file exports named constants. Components import from config. Business model
 
 ---
 
-## Global — PrepLab questions extraction to `src/data/preplabQuestions.js`
+## ~~Global — PrepLab questions extraction to `src/data/preplabQuestions.js`~~ DONE — sprint 31B
 
-**Component:** `src/PrepLab.jsx` — inline question bank (~261 questions hardcoded in the component file)
+**Component:** `src/PrepLab.jsx` → `src/data/preplabQuestions.js`
 
-**Current behavior:** All 261 PrepLab questions are defined as a `QUESTIONS` array inside `PrepLab.jsx`. Adding a new field to every question (e.g. `trap`, `difficulty`, `cluster`) requires editing a ~2000-line component file. The question bank is not auditable or editable independently of the rendering logic.
+**Was:** All 261 questions inline in `PrepLab.jsx`.
 
-**Target behavior:** Extract the `QUESTIONS` array to `src/data/preplabQuestions.js`. `PrepLab.jsx` imports it. The data file has a clear schema comment at the top:
-```js
-// Question schema: { id, topic, difficulty, question, type, options, correct, explanation, trap?, cluster?, gated? }
-```
-Adding `trap` field, adjusting difficulty tags, or updating an explanation = edit the data file only, never the component.
+**Now:** `PREP_QUESTIONS` array extracted to `src/data/preplabQuestions.js`. `PrepLab.jsx` reduced from ~5079 to 2446 lines. Import added. All subsequent question additions (sprints 33–35) go in the data file. Schema: `{ id, topic, difficulty, type, question, options, correct, keywords, explanation, trap?, source?, gated?, readMore? }`. Commit `73924a0`.
 
-**Effort:** S (pure extraction — no logic changes, just move the array and add one import).
-
-**Dependencies:** None. This is the first data file discipline migration and the simplest one.
-
-**Priority:** High — PrepLab.jsx is already one of the largest files. Adding `trap` + `difficulty` fields to 261 questions inside the component file is painful. Extract first, then add fields.
-
-**Status:** Pending — defined in DECISIONS.md Section 8.
+**Status:** ✅ Done — sprint 31B.
 
 ---
 
@@ -732,7 +731,7 @@ Each takes minimal props, handles its own styling. Any lab that needs the patter
 
 **Priority:** Medium — no immediate user impact, but prevents the copy-paste debt from compounding with each new lab addition.
 
-**Status:** Pending — defined in DECISIONS.md Section 8. Build `ForwardPointerCard` in the same sprint as NEXT.md item 1 ("Your Interview Story" block) since that touches both RAG Lab and Agent Lab versions.
+**Status:** Partially done. `src/shared.jsx` created with `CommonTrapCallout` (sprint 31C, `38d5330`). `FidelityBadge` exists in `App.jsx` / `Agents.jsx` / `Systems.jsx` — still duplicated, not yet extracted to shared. `ForwardPointerCard` and `ProductionNoteChip` still pending. Build `ForwardPointerCard` in the same sprint as "Your Interview Story" block (touches both RAG Lab and Agent Lab).
 
 ---
 
@@ -740,7 +739,7 @@ Each takes minimal props, handles its own styling. Any lab that needs the patter
 
 **Component:** `src/GroundTruth.jsx` — post list + filter UI
 
-**Current behavior:** 222 posts displayed as a flat wall with category filter pills and a search box. No personalization. No reading history beyond the `genai_gt_read` localStorage set that tracks which posts have been opened.
+**Current behavior:** 225 posts displayed as a flat wall with category filter pills and a search box. No personalization. No reading history beyond the `genai_gt_read` localStorage set that tracks which posts have been opened.
 
 **Target behavior:** Three reading lenses surfaced as tabs or a sort selector above the post list, powered by existing localStorage data:
 1. **Revise** — posts in topics where PrepLab score history (`gsl-preplab-history`) shows weak performance. "You're scoring 45% on evals questions — here are the GT posts on that topic."
@@ -753,7 +752,7 @@ Default when no filter selected: most-recently-visited-topic first (personalized
 
 **Dependencies:** `gsl-preplab-history` (exists, from Weakness Heatmap), `genai_gt_read` (exists), `genai_visited_modules` (exists). Post tags already set in `groundTruthIndex.js`.
 
-**Priority:** Medium — GT is underutilized because 222 posts without personalization is overwhelming. This converts it from a library into a study queue.
+**Priority:** Medium — GT is underutilized because 225 posts without personalization is overwhelming. This converts it from a library into a study queue.
 
 **Status:** Pending (Source: ml-systems-lab GradientTab, May 2026)
 
@@ -763,7 +762,7 @@ Default when no filter selected: most-recently-visited-topic first (personalized
 
 **Component:** `src/GroundTruth.jsx` + `src/groundTruthIndex.js`
 
-**Current behavior:** 222 posts with flat category tags. Category filter pills work but give no narrative organization — the post wall has no series grouping, no reading order within topics, no sense of progression.
+**Current behavior:** 225 posts with flat category tags. Category filter pills work but give no narrative organization — the post wall has no series grouping, no reading order within topics, no sense of progression.
 
 **Target behavior:** Posts grouped into 5–7 named series (e.g. "Production Failures", "Architecture Decisions", "Inference Stack", "Agents in Production", "Evals & Observability"). Default landing = series cards grid (one card per series, post count + progress bar). Clicking a series shows the posts in reading order. Tag filter overrides series view and shows all posts with that tag, sortable. ML Systems Lab and PAL both gate this UI on 50+ posts; genai-systems-lab is at 222 and well past that threshold.
 
@@ -776,7 +775,7 @@ Default when no filter selected: most-recently-visited-topic first (personalized
 
 **Dependencies:** Series taxonomy decision (content work) before any UI. Should happen in the same session as the state-aware reading mode above.
 
-**Priority:** Medium-High — 222 posts on a wall is a known conversion killer. This is the fix.
+**Priority:** Medium-High — 225 posts on a wall is a known conversion killer. This is the fix.
 
 **Status:** Pending (Source: ml-systems-lab + PAL, May 2026)
 
@@ -804,26 +803,15 @@ Storage: `gsl-streak` (number), `gsl-last-visit` (ISO date string), `gsl-activit
 
 ---
 
-## PrepLab.jsx — Keyboard Shortcuts in Exam / Trainer Modes
+## ~~PrepLab.jsx — Keyboard Shortcuts in Exam / Trainer Modes~~ DONE — sprint 30
 
-**Component:** `src/PrepLab.jsx` — Exam mode + Trainer mode question view
+**Component:** `src/PrepLab.jsx` — Exam mode + Trainer mode
 
-**Current behavior:** All MCQ interactions require mouse clicks. No keyboard navigation.
+**Was:** All MCQ interactions required mouse clicks.
 
-**Target behavior:** When a question is displayed:
-- Press `1` / `2` / `3` / `4` → highlight the corresponding option
-- Press `Enter` → confirm selection (same as clicking "Submit")
-- Press `N` (after reveal) → next question
+**Now:** `useEffect` keydown handlers in both ExamMode and TrainerMode — keys 1/2/3/4 select MCQ options, Enter submits when option selected / advances when already submitted. Commit `ada9b79`.
 
-One `useEffect` key listener per mode, cleaned up on unmount. No UI change needed beyond the existing selection highlight state.
-
-**Effort:** S (30–40 lines, no logic changes)
-
-**Dependencies:** None
-
-**Priority:** Low-Medium — power users will love this; low effort to ship
-
-**Status:** Pending (Source: ml-systems-lab + PAL, May 2026)
+**Status:** ✅ Done — sprint 30.
 
 ---
 
