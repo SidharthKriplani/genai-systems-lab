@@ -2,15 +2,15 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 45 — MD consolidation, PrepLab surgical mods marked Done)*
+*Last updated: June 2026 (sprint 46 — 313 PrepLab questions, failure mode audit complete)*
 
 ---
 
-## Theme: Sprint 45 complete. MD files consolidated. Next: failure mode completeness audit + gaps.
+## Theme: Sprint 46 complete. All quick wins done. Failure mode audit complete. Remaining gap: Agent Lab production notes.
 
-Sprint 45 delivered: MD consolidation (20 files → 12 active + 8 archived), CLAUDE.md as single session-start file, 3 PrepLab surgical mods (trap-first reveal, free-text invitation, behavioral debrief) marked Done in UPGRADES.md. Commit `6cc08c1`.
+Sprint 46 delivered: 6 Quantiphi questions, 10 trap rewrites, FidelityBadge dedup, R/A/E/L/P/G/C keyboard shortcuts, GT links on all 12 Prompt+FM Lab scenarios, production notes on all 6 FM Lab scenarios. Commits `bff96ac`, `f7ce93a`, `1dce7db`. Scale: 313 PrepLab questions.
 
-The failure mode completeness audit was started in a prior session (data gathered, synthesis hit context limit before matrix was produced). That is the next build priority.
+Failure mode audit finding: productionNote absent on Agent Lab modules 2–16 (~15 modules) and all Systems modules. That is the remaining structural gap. Lower urgency than what shipped.
 
 ---
 
@@ -67,8 +67,8 @@ The failure mode completeness audit was started in a prior session (data gathere
 - ~~**GT posts: Prompt Regression Testing + A/B Testing for AI**~~ — Already existed in groundTruthPosts.js. Verified.
 - ~~**GT Quiz depth**~~ — DONE batch-I (`2fe2fe0`). generateQuiz expanded to 5-7 questions from 5 block types.
 
-### Next priority — failure mode completeness audit
-**Audit every failure mode across 6 labs against 5 dimensions:** lab scenario, GT post, PrepLab question, trap field, interview signal entry. Map the gaps. Build the most missing dimension across all failure modes first (one pass, not one failure mode at a time). This is the moat work — failure modes with all 5 dimensions are what no competitor can fast-replicate.
+### ~~Next priority — failure mode completeness audit~~ DONE sprint 46 (`1dce7db`)
+Audit complete. GT links added to all 12 Prompt+FM Lab scenarios. Production notes added to all 6 FM Lab scenarios. Remaining gap: productionNote absent on 15 Agent Lab modules + all Systems modules. Lower priority — start with Agent Lab's interactive modules (agentcfg, simulator, design, tools, react) before tackling all 57 Systems modules.
 
 ### Still open (S effort)
 - ~~**6 new PrepLab questions**~~ — DONE sprint 46 (`bff96ac`). quantiphi-1 through quantiphi-6.
