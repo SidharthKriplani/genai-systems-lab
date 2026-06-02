@@ -2,11 +2,11 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 47 — bookmarks, 91-day heatmap, spaced rep, deep cross-lab read)*
+*Last updated: June 2026 (sprint 48 — Mock Exam, Staff Layer x30, adversarial questions, CROSS_LAB.md, RSS)*
 
 ---
 
-## Theme: Sprint 47 starting. Cross-lab intelligence logged. Build queue: bookmarks → 91-day heatmap → spaced repetition → Staff Layer.
+## Theme: Sprint 48 complete. Session closed. Next: staffLayer further expansion + Spot the Flaw + Interview Strategy v2.
 
 Sprint 46 closed: 313 PrepLab questions, failure mode audit complete, GT links on all Prompt+FM Lab scenarios. Cross-lab analysis of MSL + PAL completed June 2026 — 7 validated ideas logged to IDEAS.md.
 
@@ -75,8 +75,9 @@ Sprint 46 closed: 313 PrepLab questions, failure mode audit complete, GT links o
 6. ~~**Timed exam lock (Combinator)**~~ — DONE sprint 48 (`f7af1f1`). Mock Exam Mode toggle, forward-only, red timer, MOCK badge.
 7. ~~**Staff Layer**~~ — DONE sprint 48 (`f7af1f1`). 3-tier reveal, access-gated, 10 questions seeded. Expand staffLayer to more hard questions each sprint.
 8. **Spot the Flaw** `M` — adversarial format on existing failure modes. See IDEAS.md.
-9. **CROSS_LAB.md** `XS` — coordination file documenting lab boundaries + cross-pollination patterns. See IDEAS.md.
-10. **Cross-lab path + Distribution** `XS` — GT post + README update + HN/LinkedIn post. See IDEAS.md.
+9. ~~**CROSS_LAB.md**~~ — DONE sprint 48 (`a44fe49`). Lab boundaries + cross-pollination patterns documented.
+10. **staffLayer further expansion** — 30 seeded, ~24 hard gated questions remain. Pure content, no code. See IDEAS.md.
+11. **Cross-lab path GT post + Distribution** `XS` — write the GT post for the 6-week Systems Engineer path, then HN/LinkedIn. See IDEAS.md.
 
 ### ~~Failure mode completeness audit~~ DONE sprint 46 (`1dce7db`)
 

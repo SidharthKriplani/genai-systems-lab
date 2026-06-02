@@ -290,8 +290,9 @@ For full audit findings see AUDITS.md.
 
 ## Session build log
 
-**Sprint 48 (June 2026) — Mock Exam Mode + Staff Layer:**
-- Mock Exam Mode toggle in ExamConfig: forward-only navigation, red timer, MOCK badge in header, timer pulses when < 5 min. Staff Layer: 3rd tier in RevealCard (answer → trap → staff framing), gated behind access code, 10 questions seeded (rag-1, rag-2, rag-5, agents-1, agents-9, eval-1, eval-2, langgraph-1, graph-rag-1, adversarial-3). Brace diff: 0. Commit `f7af1f1`.
+**Sprint 48 (June 2026) — Mock Exam Mode + Staff Layer + quick wins:**
+- Mock Exam Mode (forward-only, red timer, MOCK badge, pulses < 5 min). Staff Layer (3rd tier, access-gated). Commit `f7af1f1`.
+- staffLayer expanded: 10 → 30 questions across rag, agents, eval, llmops. CROSS_LAB.md created (lab boundary docs, cross-pollination map). RSS feed: `public/rss.xml` (30 GT posts). Commit `a44fe49`.
 
 **Sprint 47 (June 2026) — cross-lab retention + adversarial scenarios:**
 - 91-day heatmap, GT bookmarks (`gsl-bookmarks`), PrepLab spaced repetition (`gsl-preplab-spaced`, Review Due mode). Commit `97c2057`.
