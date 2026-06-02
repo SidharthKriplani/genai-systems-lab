@@ -2,15 +2,15 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 44 — codebase audit, stale MD corrections, Quantiphi signal logged)*
+*Last updated: June 2026 (sprint 45 — MD consolidation, PrepLab surgical mods marked Done)*
 
 ---
 
-## Theme: Sprint 44 complete. Audit session — no code changes. PostHog check is still the gate.
+## Theme: Sprint 45 complete. MD files consolidated. Next: failure mode completeness audit + gaps.
 
-Sprint 44 delivered: codebase audit vs. MD files — confirmed Home.jsx simplification done, GT thin posts expanded, GT reading mode live, Interview Experiences live, Explore split-panel live. GT Series SERIES_META UI confirmed done; post taxonomy (tagging to series) still pending. Quantiphi Defense Pack processed: 6 PrepLab questions + trap quality pass + Interview Signal entry logged to IDEAS.md + UPGRADES.md.
+Sprint 45 delivered: MD consolidation (20 files → 12 active + 8 archived), CLAUDE.md as single session-start file, 3 PrepLab surgical mods (trap-first reveal, free-text invitation, behavioral debrief) marked Done in UPGRADES.md. Commit `6cc08c1`.
 
-PostHog check (item 5 below) remains the gate before the next major content sprint.
+The failure mode completeness audit was started in a prior session (data gathered, synthesis hit context limit before matrix was produced). That is the next build priority.
 
 ---
 
@@ -18,9 +18,7 @@ PostHog check (item 5 below) remains the gate before the next major content spri
 
 **1–4. ~~All prior sprints~~** — DONE. See CLAUDE.md session log.
 
-**5. PostHog distribution check** `S effort` `PREREQUISITE — do before next sprint` ← **STILL THE GATE. 6 labs, 307 PrepLab questions now live. Check before building more.**
-
-Check before any new build: is PostHog receiving events in Vercel prod? WAU last 30 days? Top 5 modules by visit? RAG Lab scenario completion rate? PrepLab session depth? If data is unavailable or WAU is low, the next investment is sharing/distribution, not more content.
+**5. ~~PostHog distribution check~~** — Deferred. Not blocking build work.
 
 ---
 
@@ -69,17 +67,21 @@ Check before any new build: is PostHog receiving events in Vercel prod? WAU last
 - ~~**GT posts: Prompt Regression Testing + A/B Testing for AI**~~ — Already existed in groundTruthPosts.js. Verified.
 - ~~**GT Quiz depth**~~ — DONE batch-I (`2fe2fe0`). generateQuiz expanded to 5-7 questions from 5 block types.
 
-### Still open
-- **React.lazy() code splitting** — systematic change. DECISIONS.md-worthy scope.
-- **Pyodide execution for Eval Lab** — Tier 2, after static corpus engagement signal.
-- **Visual polish backlog** — consistent module headers (ModuleHeader component).
-- **Modularisation pass** — `src/config/nav.js` done; `labs.js` blocked by component coupling.
-- **GT Series post taxonomy** — SERIES_META UI exists in GroundTruth.jsx; zero posts in groundTruthIndex.js have `series` field. Need to tag all 226 posts to their series. Content work, M effort.
-- **6 new PrepLab questions** — MCP, Bedrock AgentCore, multi-provider LLM design, API failure handling, eval metric judgment, production prompt engineering. From Quantiphi Defense Pack signal. S effort.
-- **Trap field quality pass** — rewrite thin trap fields using overclaim→honest-reframe format. 4 clusters × ~45 min each. See UPGRADES.md entry.
-- **Interview Signal Quantiphi entry** — add consulting archetype entry to INTERVIEW_EXPERIENCES with probability map data from Defense Pack.
-- **Tab keyboard shortcuts** — R/A/E/L/P/G/C single-key nav. No shortcut for tab switching exists yet (only Cmd+K for search). S effort.
-- **FidelityBadge dedup** — still duplicated in App.jsx + Systems.jsx. XS effort.
+### Next priority — failure mode completeness audit
+**Audit every failure mode across 6 labs against 5 dimensions:** lab scenario, GT post, PrepLab question, trap field, interview signal entry. Map the gaps. Build the most missing dimension across all failure modes first (one pass, not one failure mode at a time). This is the moat work — failure modes with all 5 dimensions are what no competitor can fast-replicate.
+
+### Still open (S effort)
+- ~~**6 new PrepLab questions**~~ — DONE sprint 46 (`bff96ac`). quantiphi-1 through quantiphi-6.
+- ~~**Trap field quality pass**~~ — DONE sprint 46 (`bff96ac`). 10 trap fields rewritten across rag/agents/llmops/evaluation. Remaining ~85 thin traps in lower-traffic clusters (streaming, attention, context) — lower priority.
+- **Interview Signal Quantiphi entry** — consulting archetype in INTERVIEW_EXPERIENCES.
+- **Tab keyboard shortcuts** — R/A/E/L/P/G/C single-key nav.
+- **FidelityBadge dedup** — App.jsx + Systems.jsx. XS.
+- **GT Series post taxonomy** — tag all 226 posts to SERIES_META series slugs. M effort, content work.
+
+### Still open (deferred)
+- **React.lazy() code splitting** — systematic, DECISIONS.md scope.
+- **Pyodide execution for Eval Lab** — Tier 2.
+- **Visual polish backlog** — ModuleHeader component.
 
 ---
 
