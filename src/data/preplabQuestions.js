@@ -3268,4 +3268,56 @@ export const PREP_QUESTIONS = [
     readMore: { label: "Your Prompt Is Code →", tab: "groundtruth", postId: "your-prompt-is-code" }
   },
 
+  {
+    id: "fmlab-1", topic: "finetuning", difficulty: "medium", gated: false, type: "mcq",
+    question: "A team fine-tunes a 7B model for legal clause extraction using LoRA rank 4. Training accuracy is 94% but eval accuracy on held-out edge cases is 38%. Eval on in-distribution examples is 91%. What is the most likely root cause?",
+    options: [
+      "Training dataset is too small — the model has insufficient examples to generalise",
+      "LoRA rank 4 lacks the capacity to represent the task's full complexity across all clause types",
+      "The learning rate is too high, causing the model to memorise training patterns rather than generalise",
+      "The eval set is contaminated with training data, making in-distribution accuracy artificially high"
+    ],
+    correct: 1,
+    explanation: "The split between in-distribution accuracy (91%) and edge-case accuracy (38%) is the diagnostic signal. If the dataset were too small, performance would be uniformly low. If the learning rate were too high, you'd see 100% train accuracy with uniform collapse on eval. The contamination hypothesis is ruled out because in-distribution accuracy is different from edge-case accuracy — contamination would inflate both equally. LoRA rank 4 means the adapter can only represent 4 linearly independent patterns. Legal clause extraction involves dozens of clause types with subtle structural variations — the adapter's capacity is insufficient for this diversity, so it learns the top-4 patterns well and fails on the long tail.",
+    trap: "Saying the training dataset is too small. A small dataset would produce uniformly low eval accuracy — not the specific pattern of high in-distribution accuracy alongside low edge-case accuracy. That pattern is a capacity problem, not a data problem. More data would not fix rank 4.",
+    readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
+  },
+
+  {
+    id: "fmlab-2", topic: "finetuning", difficulty: "hard", gated: true, type: "text",
+    question: "A team fine-tunes a 13B model for medical Q&A at lr=5e-4 with no warmup for 5 epochs. Domain accuracy improves 41% but the model now fails arithmetic and multi-step reasoning tasks it previously passed. Diagnose the failure and describe the correct training configuration.",
+    options: [],
+    correct: 0,
+    keywords: ["catastrophic forgetting", "learning rate", "warmup", "overwrite", "pretrained", "2e-5", "1e-5", "schedule", "cosine"],
+    explanation: "This is catastrophic forgetting. lr=5e-4 produces large weight updates that overwrite the pretrained representations the model built during pretraining — billions of tokens worth of general knowledge. No warmup means these large updates happen at full speed from step 1. Medical accuracy improves because the model fits the domain distribution, but the general reasoning capabilities that medical inference depends on are destroyed. Correct configuration: lr=1e-5 to 5e-5 with a cosine schedule, 5-10% of total steps as warmup (for a 13B model fine-tuned on 10K examples with batch 8, ~300-500 warmup steps), 2-3 epochs maximum. LoRA at rank 16+ is significantly more forgiving because only adapter weights update — lr=1e-4 is acceptable for LoRA but still needs warmup. Always include a general capability holdout (not just domain eval) to detect forgetting before deployment.",
+    trap: "Reducing epochs to 2-3 while keeping lr=5e-4. Fewer epochs reduce the total number of large updates but each update is still destructive. The learning rate is the primary problem — reducing epochs is a partial mitigation, not a fix. The correct fix is reducing the learning rate by 1-2 orders of magnitude.",
+    readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
+  },
+
+  {
+    id: "fmlab-3", topic: "finetuning", difficulty: "medium", gated: false, type: "mcq",
+    question: "Which fine-tuning data split strategy is most likely to produce eval metrics that do not reflect real production performance?",
+    options: [
+      "Temporal split — train on data from months 1–9, eval on months 10–12",
+      "Random 90/10 split from the same time period without deduplication",
+      "Domain split — train on data from one business unit, eval on another",
+      "Stratified split ensuring equal representation of all label classes in both sets"
+    ],
+    correct: 1,
+    explanation: "A random split from the same time period means training and eval examples are drawn from identical distributions. The model does not need to generalise — it needs to recognise the shared distribution of topics, phrasings, and resolution patterns. Eval metrics become inflated estimates of memorisation ability rather than generalisation ability. Temporal splits are the most production-realistic because they reflect the actual challenge: the model will be deployed on future data it has never seen. Domain splits and stratified splits are better than random same-period splits but still risk shared distributional patterns.",
+    trap: "Saying stratified splits are problematic. Stratification ensures class balance — it is a best practice for classification tasks. It does not prevent distributional similarity between train and eval. The risk of a stratified random split from the same period is the same as an unstratified random split: shared distribution. Stratification addresses class imbalance, not temporal or distributional leakage.",
+    readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
+  },
+
+  {
+    id: "fmlab-4", topic: "finetuning", difficulty: "hard", gated: true, type: "text",
+    question: "A team runs an RLHF campaign to reduce hallucinations using thumbs-up/down ratings from 50 general contractors. After training, user satisfaction increases 34% but factual accuracy on an independent benchmark drops 15%. Explain what went wrong and describe a correct reward signal design.",
+    options: [],
+    correct: 0,
+    keywords: ["Goodhart's law", "proxy metric", "reward hacking", "factual accuracy", "golden source", "rater rubric", "automated", "claim verification"],
+    explanation: "This is Goodhart's Law in RLHF: when the measure becomes the target, it ceases to be a good measure. General contractors rate responses based on perceived quality — fluency, confidence, completeness, appropriate hedging. These correlate weakly with factual accuracy. The model learns to optimise for 'sounds like a correct answer' rather than 'is a correct answer.' Fluent, confident, authoritative-sounding responses get thumbs-up regardless of whether the underlying claims are true. Factual accuracy worsens because the model learned to suppress uncertainty markers ('I'm not sure') that would earn thumbs-down while inventing plausible-sounding facts. Correct reward signal design: (1) Automated fact-checking against a verified golden source — claim extraction from the response, then verification of each claim against the source. More consistent and scalable than human raters. (2) If human raters are required, train them with explicit rubrics that require claim verification before rating — not holistic impression scoring. Add inter-rater agreement thresholds. (3) Include a factual accuracy holdout that is completely independent of the reward signal — this detects reward hacking before deployment.",
+    trap: "Saying the fix is to hire domain experts instead of general contractors. Expert raters improve signal quality but do not solve the fundamental problem — if raters are still scoring holistic quality rather than per-claim factual accuracy, the model will still learn to sound authoritative rather than be accurate. The fix is the reward signal design, not the rater qualification.",
+    readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
+  },
+
 ];
