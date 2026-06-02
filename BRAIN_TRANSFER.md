@@ -52,7 +52,7 @@ print(r.stdout); print(r.stderr)
 
 ---
 
-## Current Scale (June 2026, post sprint 43)
+## Current Scale (June 2026, post sprint 44)
 
 | Asset | Count |
 |---|---|
@@ -66,6 +66,13 @@ print(r.stdout); print(r.stderr)
 | Agent Lab modules | 16 |
 
 ---
+
+## What Was Built — Sprint 44 (June 2026)
+
+- **Codebase audit vs. MD files** — no code changes. Verified and closed stale "pending" entries: Home.jsx simplification done, GT thin posts expanded (32/28/29 blocks), state-aware GT reading mode live, Interview Experiences live, Explore split-panel done.
+- **GT Series partial status confirmed** — SERIES_META + navigation UI in GroundTruth.jsx; zero posts have `series` field in groundTruthIndex.js. UI done, taxonomy pending.
+- **Quantiphi Defense Pack signal logged** — 6 PrepLab questions added to IDEAS.md, trap field quality pass (overclaim→honest-reframe format) added to UPGRADES.md, Interview Signal Quantiphi entry noted as pending.
+- **No commits** — pure audit + MD sync session.
 
 ## What Was Built — Sprint 43 (June 2026)
 
@@ -101,10 +108,14 @@ print(r.stdout); print(r.stderr)
 
 ### S effort
 - Phase 3 theme cleanup — 6 gradient endpoints at 0.02–0.04 opacity still hardcoded rgba. Cosmetic only.
-- FidelityBadge dedup — duplicated in App.jsx / Agents.jsx / Systems.jsx. XS effort.
+- FidelityBadge dedup — duplicated in App.jsx + Systems.jsx only (not 3 files). XS effort.
+- **6 new PrepLab questions** — MCP, Bedrock AgentCore, multi-provider LLM design, API failure handling, eval metric judgment, production prompt engineering. Writing only, no schema change.
+- **Tab keyboard shortcuts** — R/A/E/L/P/G/C single-key tab nav. Only Cmd+K for search exists now.
+- **Interview Signal Quantiphi entry** — add consulting archetype to INTERVIEW_EXPERIENCES with probability map data.
 
 ### M effort
-- 3 more scenario questions (topics open: serving/production, safety, product)
+- **Trap field quality pass** — rewrite thin trap fields using overclaim→honest-reframe format (4 clusters × ~45 min). See UPGRADES.md.
+- **GT Series post taxonomy** — tag all 226 posts to SERIES_META series slugs in groundTruthIndex.js. UI already done.
 - Interview Strategy Tool full spec — resume parsing, day-plan, auto-detection from localStorage
 
 ### L effort (plan before starting, needs PostHog baseline)

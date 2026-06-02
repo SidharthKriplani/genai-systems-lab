@@ -386,6 +386,22 @@ Fine-tuning is increasingly expected knowledge for senior AI engineers, not just
 - **Scenario-type questions** — Multi-turn conversational scenarios where the user debugs a failing system across 3-4 exchanges. Higher fidelity than MCQ. *Pending.*
 - **More system design text questions** — Cover: vector DB selection, agent reliability, eval harness design, fine-tuning decision framework. *Pending.*
 
+### New PrepLab questions — Quantiphi Defense Pack signal (new cluster — June 2026)
+
+Source: Quantiphi Senior ML Engineer interview prep PDF. 6 topics confirmed in-scope for GAL's domain. Do not bulk-import — only the GenAI/AI systems questions fit. AWS ops (SageMaker, Glue, Redshift, DynamoDB, Kafka) and classical ML (bagging/boosting, feature engineering) are out of scope. Python coding prompts are wrong format entirely.
+
+**6 questions to write (all hard, gated, with trap fields):**
+- **MCP architecture** — What is MCP, how does it differ from provider-specific function calling, what is the transport layer. What's being tested: awareness of the N×M problem it solves, not just the acronym. Trap: claiming you've built a production MCP server when you haven't — honest + conceptual is the right answer.
+- **AWS Bedrock AgentCore vs vanilla Bedrock** — agent runtime vs model API distinction, what AgentCore abstracts (session state, tool routing, observability). What's being tested: runtime vs model API distinction. Trap: "it's just Bedrock with agents on top" — undersells the managed runtime value. Also: conflating Bedrock Knowledge Bases (managed RAG) with AgentCore (agent orchestration).
+- **Multi-provider LLM design** — provider abstraction layer, fallback routing, A/B traffic split, token logging centralized in base class. What's being tested: resilience thinking, not just API call patterns. Trap: hardcoding provider logic in every call site instead of a router/base class.
+- **API failure handling + retry** — 429 rate limits, context window exceeded, provider 5xx, exponential backoff, provider priority fallback list, token cost attribution. What's being tested: production resilience, not just "I can call the API."
+- **Eval metric judgment** — metric selection driven by error cost ratio (precision/recall/F1/AUC for classification, RMSE/MAE for regression, RAGAS for GenAI), not just name recall. What's being tested: judgment, not memorization. Trap: leading with accuracy alone without the imbalance caveat.
+- **Production prompt engineering** — system prompt structure, few-shot placement, CoT for reasoning tasks, JSON schema + Pydantic validation, explicit fallback instructions, prompt versioning as code. What's being tested: practical judgment, not academic definitions. Trap: describing prompt engineering as "just writing good instructions."
+
+**Also add to Interview Signal (INTERVIEW_EXPERIENCES):** One Quantiphi/consulting archetype entry with probability map data from the PDF — Bedrock 85%, MCP 75%, Python coding 90%, RAG pipeline 90%, prompt engineering 70%. Tags: rag, agents, prompt-engineering, llmops, cloud-ai. Tier: enterprise/consulting.
+
+`Effort: S — writing only, no new schema`
+
 ### Agent Development Kit patterns (new cluster — from LuMay AI diagram, May 2026)
 
 The 5-layer framework (CLAUDE.md → Skills → Hooks → Subagents → Plugins) surfaces production patterns the lab doesn't teach as named concepts. The underlying ideas are tool-agnostic and interview-relevant.

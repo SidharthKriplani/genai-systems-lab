@@ -2,15 +2,15 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 43 — build fixes, company logos, 3 scenario questions)*
+*Last updated: June 2026 (sprint 44 — codebase audit, stale MD corrections, Quantiphi signal logged)*
 
 ---
 
-## Theme: Sprint 43 complete. 307 PrepLab questions. PostHog check still the gate before next major sprint.
+## Theme: Sprint 44 complete. Audit session — no code changes. PostHog check is still the gate.
 
-Sprint 43 delivered: TOPIC_LABELS duplicate build fix (`f8969fc`), Company Tracks lucide icons + SimpleIcons company logos (`97ad851`), 3 new scenario questions — tool poisoning / catastrophic forgetting / eval distribution mismatch — 307 total (`adf93d1`). Graph RAG confirmed already fully shipped (module + nav + RELATED_GT + 4 PrepLab questions). Role Readiness Score in NEXT.md "still open" was stale — already done sprint 42.
+Sprint 44 delivered: codebase audit vs. MD files — confirmed Home.jsx simplification done, GT thin posts expanded, GT reading mode live, Interview Experiences live, Explore split-panel live. GT Series SERIES_META UI confirmed done; post taxonomy (tagging to series) still pending. Quantiphi Defense Pack processed: 6 PrepLab questions + trap quality pass + Interview Signal entry logged to IDEAS.md + UPGRADES.md.
 
-PostHog check (item 5 below) is still the gate before the next major content sprint.
+PostHog check (item 5 below) remains the gate before the next major content sprint.
 
 ---
 
@@ -72,11 +72,14 @@ Check before any new build: is PostHog receiving events in Vercel prod? WAU last
 ### Still open
 - **React.lazy() code splitting** — systematic change. DECISIONS.md-worthy scope.
 - **Pyodide execution for Eval Lab** — Tier 2, after static corpus engagement signal.
-- **Visual polish backlog** — consistent module headers, Explore module cards.
+- **Visual polish backlog** — consistent module headers (ModuleHeader component).
 - **Modularisation pass** — `src/config/nav.js` done; `labs.js` blocked by component coupling.
-- **Interview Experiences section** — editorial-first 20–30 entries.
-- **PrepLab scenario-type questions** — multi-turn conversational diagnosis format.
-- **Role Readiness Score** — AI Engineer Readiness tiers from PrepLab performance.
+- **GT Series post taxonomy** — SERIES_META UI exists in GroundTruth.jsx; zero posts in groundTruthIndex.js have `series` field. Need to tag all 226 posts to their series. Content work, M effort.
+- **6 new PrepLab questions** — MCP, Bedrock AgentCore, multi-provider LLM design, API failure handling, eval metric judgment, production prompt engineering. From Quantiphi Defense Pack signal. S effort.
+- **Trap field quality pass** — rewrite thin trap fields using overclaim→honest-reframe format. 4 clusters × ~45 min each. See UPGRADES.md entry.
+- **Interview Signal Quantiphi entry** — add consulting archetype entry to INTERVIEW_EXPERIENCES with probability map data from Defense Pack.
+- **Tab keyboard shortcuts** — R/A/E/L/P/G/C single-key nav. No shortcut for tab switching exists yet (only Cmd+K for search). S effort.
+- **FidelityBadge dedup** — still duplicated in App.jsx + Systems.jsx. XS effort.
 
 ---
 

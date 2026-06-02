@@ -641,6 +641,31 @@ The design principle the failure teaches. One decision rule a practitioner would
 
 ---
 
+## PrepLab — Trap Field Quality Pass (overclaim → honest reframe format)
+
+**Component:** `src/data/preplabQuestions.js` — all hard questions with trap fields
+
+**Current behavior:** 182 trap fields exist but many are thin one-liners ("Don't say X"). They name the mistake but don't model the correct reframe. The Quantiphi Defense Pack (June 2026) surfaced a sharper format: "Overclaim risk → What to say instead" — pairs the wrong answer with a specific, honest alternative. This is more actionable than just naming the trap.
+
+**Target behavior:** Audit all hard question trap fields. Rewrite thin ones using the overclaim→honest-reframe pattern. Example upgrade:
+
+- Before: "Don't claim you've built an MCP server if you haven't."
+- After: "Trap: claiming production MCP experience without it. Say instead: 'I understand the protocol and have implemented the tool-calling pattern it formalizes. I haven't shipped a full MCP server end-to-end.'"
+
+Prioritize: RAG architecture (12 trap fields), agents (12), evaluation (11), LLMOps (11) — the four highest-traffic clusters. Skip easy questions; trap fields only matter on medium/hard.
+
+**Effort:** S-M (content rewrite — no schema change, no new UI. ~45 min per cluster × 4 clusters)
+
+**Dependencies:** None — trap field and amber callout already rendered in PrepLab.
+
+**Priority:** Medium — improves interview prep depth without any build work.
+
+**Source:** Quantiphi JD-Gap + Python Coding Interview Defense Pack, June 2026. Section 5 "Do Not Say This" is the reference format.
+
+**Status:** Pending
+
+---
+
 ## Global — Replace All Emojis with Inline SVGs
 
 **Component:** All `.jsx` files — any literal emoji character used in UI text, buttons, badges, or labels

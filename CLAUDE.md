@@ -331,6 +331,13 @@ Every piece of content surfaces exactly **one clear next step** — not a menu o
 
 ## Session build log (May 2026 — June 2026)
 
+**Resolved this session (sprint 44 — June 2026):**
+- **Codebase audit — stale MD entries corrected.** Verified code vs. MD files. Found and closed: Home.jsx simplification already done (585 lines, clean: hero + door cards + failure strip, no dependency graph/journey strip/module grid), GT thin posts fully expanded (dpo-in-practice 32 blocks, llm-observability 28 blocks, instruction-tuning-datasets 29 blocks), state-aware GT reading mode already live (viewLens + Revise/What's next lenses in GroundTruth.jsx), Interview Experiences section already done (InterviewIntelMode + INTERVIEW_EXPERIENCES in PrepLab.jsx), Explore already has split-panel with mobileSidebarOpen.
+- **GT Series + Tags — partial status confirmed.** SERIES_META + series navigation UI exists in GroundTruth.jsx. Zero posts in groundTruthIndex.js have a `series` field. UI is done, taxonomy (tagging posts to series) is pending.
+- **Quantiphi Defense Pack signal logged.** 6 new PrepLab questions added to IDEAS.md (MCP, Bedrock AgentCore, multi-provider design, API failure handling, eval metric judgment, production prompt engineering). Trap field quality pass (overclaim→honest-reframe format) added to UPGRADES.md. Interview Signal entry (Quantiphi/consulting archetype with probability map) noted as pending.
+- **No code commits this session** — audit + MD sync only.
+- **Scale unchanged:** 6 labs, 57 Systems, 27 Concepts (7 gyms), 307 PrepLab questions, 226 GT posts.
+
 **Resolved this session (sprint 43 — June 2026):**
 - **Build fix: duplicate TOPIC_LABELS.** `InterviewIntelMode` in PrepLab.jsx redeclared `TOPIC_LABELS` at module scope (already declared at line 110). Renamed to `INTEL_TOPIC_LABELS`. Vercel build unblocked. Commit `f8969fc`.
 - **Company Tracks: lucide icons + company logos.** Archetype emoji (🏢🚀🇮🇳🏦) → lucide `Building2`/`Rocket`/`Globe2`/`Landmark`, tinted per archetype color. Company pills now show Simple Icons CDN logos for 12 companies (Google, Meta, Amazon, Apple, Anthropic, OpenAI, Perplexity, Flipkart, Razorpay, Accenture, Deloitte, IBM); letter-avatar fallback for Cursor, Swiggy, Zepto, McKinsey. `CompanyLogo` component + `COMPANY_ICONS` map + `ARCHETYPE_ICONS` map added. Commit `97ad851`.
