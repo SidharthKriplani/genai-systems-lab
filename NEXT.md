@@ -8,7 +8,7 @@ Read this at session start. Do only this. Update before closing.
 
 ## Theme: Sprint 48 complete. Session closed. Next: staffLayer further expansion + Spot the Flaw + Interview Strategy v2.
 
-Sprint 46 closed: 313 PrepLab questions, failure mode audit complete, GT links on all Prompt+FM Lab scenarios. Cross-lab analysis of MSL + PAL completed June 2026 — 7 validated ideas logged to IDEAS.md.
+Sprint 48 closed: 319 PrepLab questions (was 307 at sprint 45), Mock Exam Mode, Staff Layer (30 questions), 6 adversarial questions, GT bookmarks, spaced repetition, 91-day heatmap, CROSS_LAB.md, RSS feed. See CLAUDE.md sprint log for full detail.
 
 ---
 

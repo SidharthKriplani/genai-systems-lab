@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: June 2026 (sprint 45 — PrepLab surgical mods marked Done; all completed entries pruned to summary block below)*
+*Last updated: June 2026 (sprint 48 — Mock Exam Mode + Staff Layer shipped; no new pending upgrades added this sprint)*
 
 ---
 
