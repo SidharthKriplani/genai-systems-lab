@@ -5765,6 +5765,16 @@ const MODULES = [
     fidelity: { tier: "conceptual", note: "Curated examples — representative of real temperature effects, not live model sampling" },
     component: TemperatureGame,
   },
+  {
+    id: "scaling-laws",
+    label: "Scaling Laws",
+    tag: "TRAINING",
+    level: "intermediate",
+    title: "Scaling Laws & Compute-Optimal Training",
+    subtitle: "Slide the parameter count. See the optimal token budget. Understand why a 7B model can beat a 70B — and when to overtrain small.",
+    fidelity: { tier: "simplified", note: "Chinchilla formula is real; model efficiency zones are illustrative" },
+    component: ScalingLawsModule,
+  },
 ];
 
 const LEVEL_STYLE = {
@@ -5789,9 +5799,176 @@ const MODULE_NEXT_STEP = {
   "embeddings":    { tab: "systems",   label: "Systems — Vector DB Engineering" },
   "attention":     { tab: "concepts",  label: "Next: Transformer forward pass" },
   "tokenizer":     { tab: "concepts",  label: "Next: Embedding Space" },
+  "scaling-laws":  { tab: "groundtruth", postId: "chinchilla-scaling-laws", label: "Ground Truth: Chinchilla Scaling Laws →" },
   "context":       { tab: "llmlab",    label: "LLM Lab — Long Context Patterns" },
   "flashattn":     { tab: "llmlab",    label: "LLM Lab — Serving Infrastructure" },
 };
+
+// ─── SCALING LAWS MODULE ─────────────────────────────────────────────────────
+
+const REAL_MODELS = [
+  { name: "GPT-3", params: 175, tokens: 0.3,  ratio: 1.7,   status: "under",   verdict: "11× undertrained vs Chinchilla optimal" },
+  { name: "Chinchilla", params: 70, tokens: 1.4, ratio: 20, status: "optimal",  verdict: "Compute-optimal — defined the rule" },
+  { name: "LLaMA-7B (v1)", params: 7, tokens: 1.0, ratio: 143, status: "over", verdict: "Inference-optimised — cheap to serve" },
+  { name: "LLaMA-3 8B", params: 8, tokens: 15.0, ratio: 1875, status: "over",  verdict: "Massively overtrained for cheap inference" },
+  { name: "Mistral 7B", params: 7, tokens: 1.0, ratio: 143,  status: "over",   verdict: "Compute-optimal + GQA architecture" },
+  { name: "Phi-2 (2.7B)", params: 2.7, tokens: 1.4, ratio: 519, status: "over",verdict: "Synthetic data, over-trained small model" },
+];
+
+function ScalingLawsModule({ onNavigate }) {
+  const [tab, setTab] = useState("formula");
+  const [paramB, setParamB] = useState(70);
+
+  const optimalTokensB = paramB * 20;
+  const gpt3Ratio = (300 / 175).toFixed(1);
+
+  const tabs = [
+    { id: "formula",  label: "The Formula" },
+    { id: "tradeoff", label: "Training vs Inference" },
+    { id: "models",   label: "Real Models" },
+  ];
+
+  const zone = paramB <= 10 ? "small" : paramB <= 50 ? "medium" : paramB <= 100 ? "large" : "xlarge";
+  const trainCostLabel = paramB <= 10 ? "Low" : paramB <= 50 ? "Moderate" : paramB <= 100 ? "High" : "Very High";
+  const inferCostLabel = paramB <= 10 ? "Low" : paramB <= 50 ? "Moderate" : paramB <= 100 ? "High" : "Very High";
+
+  return (
+    <div className="space-y-5">
+      {/* Beat 1 — setup framing */}
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">What you're building intuition for</div>
+        <p className="text-sm text-zinc-300 leading-relaxed">In 2022 DeepMind published the Chinchilla paper and overturned the "bigger is always better" rule. GPT-3 (175B parameters) was massively undertrained — it needed ~20× more tokens for its size. Chinchilla-70B, trained compute-optimally, outperformed it at 2.5× fewer parameters. This module makes the compute-optimal formula interactive and shows when to break the rule for inference efficiency.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The rule matters in production: the model you choose to deploy has an inference cost proportional to its parameter count, not its training quality. Getting this wrong means paying 10× more per API call than necessary.</p>
+      </div>
+
+      <div className="flex gap-1 flex-wrap">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${tab === t.id ? "bg-indigo-600/20 text-indigo-300 border border-indigo-700/50" : "text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-700"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "formula" && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(24,24,27,0.9)", border: "1px solid rgba(63,63,70,0.6)" }}>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Chinchilla compute-optimal rule</p>
+            <p className="text-2xl font-black font-mono text-indigo-300">D ≈ 20 × N</p>
+            <p className="text-xs text-zinc-400">D = training tokens  ·  N = model parameters  ·  Both should scale equally with compute budget</p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Model size: <span className="text-indigo-300">{paramB}B parameters</span></p>
+              <span className="text-[10px] text-zinc-500 font-mono">{inferCostLabel} inference cost</span>
+            </div>
+            <input type="range" min={1} max={200} step={1} value={paramB}
+              onChange={e => setParamB(Number(e.target.value))}
+              className="w-full accent-indigo-500" />
+            <div className="flex justify-between text-[10px] text-zinc-500">
+              <span>1B</span><span>7B</span><span>13B</span><span>70B</span><span>175B</span><span>200B</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl p-4 space-y-1" style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)" }}>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Optimal training tokens</p>
+              <p className="text-xl font-black text-indigo-300">{optimalTokensB >= 1000 ? (optimalTokensB/1000).toFixed(1) + "T" : optimalTokensB + "B"}</p>
+              <p className="text-xs text-zinc-500">= 20 × {paramB}B</p>
+            </div>
+            <div className="rounded-xl p-4 space-y-1" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">GPT-3 equivalent</p>
+              <p className="text-xl font-black text-red-400">{paramB === 175 ? "300B" : Math.round(paramB * 1.7) + "B"}</p>
+              <p className="text-xs text-zinc-500">at GPT-3's 1.7 tokens/param ratio</p>
+            </div>
+          </div>
+
+          {paramB >= 100 && (
+            <div className="rounded-xl p-3 space-y-1" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}>
+              <p className="text-[10px] font-mono text-amber-400 uppercase tracking-wider">Inference cost warning</p>
+              <p className="text-xs text-zinc-300">At {paramB}B+ parameters, inference cost is high. Ask: does the task actually require this size — or is a smaller, compute-optimal model sufficient?</p>
+            </div>
+          )}
+          {paramB <= 13 && (
+            <div className="rounded-xl p-3 space-y-1" style={{ background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.25)" }}>
+              <p className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider">Inference sweet spot</p>
+              <p className="text-xs text-zinc-300">At {paramB}B parameters, inference is cheap. Train on {optimalTokensB >= 1000 ? (optimalTokensB/1000).toFixed(1) + "T" : optimalTokensB + "B"} tokens for compute-optimal quality — or overtrain further to maximise quality per inference dollar.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "tradeoff" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.25)", borderTop: "2px solid rgba(99,102,241,0.5)" }}>
+              <p className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">Training-optimal strategy</p>
+              <p className="text-xs text-zinc-300 leading-relaxed">Minimise training compute to reach a given loss. Allocate FLOPs equally between parameters and tokens.</p>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex items-start gap-2 text-indigo-300"><span className="shrink-0">→</span><span>Best loss per training FLOP</span></div>
+                <div className="flex items-start gap-2 text-indigo-300"><span className="shrink-0">→</span><span>Correct when: training budget is the constraint</span></div>
+                <div className="flex items-start gap-2 text-red-400"><span className="shrink-0">✗</span><span>Not optimal if you serve millions of requests</span></div>
+              </div>
+              <p className="text-[10px] font-mono text-zinc-500">Used by: academic research, one-off fine-tunes</p>
+            </div>
+            <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.25)", borderTop: "2px solid rgba(34,197,94,0.5)" }}>
+              <p className="text-[10px] font-mono font-black text-emerald-400 uppercase tracking-widest">Inference-optimal strategy</p>
+              <p className="text-xs text-zinc-300 leading-relaxed">Overtrain a smaller model. Spend all compute on data, not parameters. Inference cost scales with params, not training tokens.</p>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex items-start gap-2 text-emerald-300"><span className="shrink-0">→</span><span>Small model, massive training data</span></div>
+                <div className="flex items-start gap-2 text-emerald-300"><span className="shrink-0">→</span><span>10–20× lower cost per inference request</span></div>
+                <div className="flex items-start gap-2 text-emerald-300"><span className="shrink-0">→</span><span>LLaMA-3 8B on 15T tokens: the standard approach</span></div>
+              </div>
+              <p className="text-[10px] font-mono text-zinc-500">Used by: production API models, edge deployment</p>
+            </div>
+          </div>
+          <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}>
+            <p className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">The decision rule</p>
+            <p className="text-xs text-zinc-300 leading-relaxed">If you run <span className="text-amber-300 font-semibold">one training run</span> and the model is for internal use or research → training-optimal. If you serve <span className="text-amber-300 font-semibold">millions of requests</span> → inference-optimal. Most production teams optimise for inference, not training. Meta trains LLaMA 3 8B on 15T tokens specifically because their inference volume makes every parameter count.</p>
+          </div>
+        </div>
+      )}
+
+      {tab === "models" && (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">Real models and their token/parameter ratio. The Chinchilla optimal is ~20 tokens per parameter. Higher ratios = more overtrained = cheaper to serve.</p>
+          <div className="space-y-2">
+            {REAL_MODELS.map(m => {
+              const isOptimal = m.status === "optimal";
+              const isUnder = m.status === "under";
+              const statusColor = isOptimal ? "#22c55e" : isUnder ? "#ef4444" : "#6366f1";
+              const statusLabel = isOptimal ? "Compute-optimal" : isUnder ? "Undertrained" : "Overtrained (inference)";
+              return (
+                <div key={m.name} className="rounded-xl p-3.5 space-y-2" style={{ background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.5)", borderLeft: "3px solid " + statusColor }}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-bold text-zinc-100">{m.name}</p>
+                      <p className="text-xs text-zinc-500">{m.params}B params · {m.tokens}T tokens · {m.ratio.toFixed(0)}× ratio</p>
+                    </div>
+                    <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded shrink-0" style={{ background: statusColor + "20", color: statusColor, border: "1px solid " + statusColor + "40" }}>{statusLabel}</span>
+                  </div>
+                  <p className="text-xs text-zinc-400">{m.verdict}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Beat 2 — what to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">In the Formula tab, drag to 175B (GPT-3's size) and see the optimal token count: 3.5T. GPT-3 was trained on 300B — 11× too few. Now drag to 7B and see LLaMA-3 8B's 15T: 1,875 tokens per parameter, far beyond compute-optimal. In the Models tab, notice that "undertrained" and "overtrained" are relative to the compute budget goal — overtrained for inference is exactly what you want when serving millions of requests.</p>
+      </div>
+
+      {/* Beat 3 — synthesis close */}
+      <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Scaling laws changed the question from "how many parameters?" to "how many tokens per parameter?" The compute budget is fixed — the choice is how to split it. For research, optimise training. For production at scale, overtrain small models until inference cost is acceptable. The model you choose to deploy is constrained by what it costs to serve, not what it cost to train.</p>
+      </div>
+    </div>
+  );
+}
 
 // ─── GYM PANEL ───────────────────────────────────────────────────────────────
 
@@ -5924,6 +6101,7 @@ const MODULE_META = {
   "agent":        { insight: "A loop fails in ways a function never does: stuck retries, hallucinated tool calls, context drift.", mins: 10 },
   "guardrails":   { insight: "Without guardrails, even aligned models produce PII leaks and jailbreaks under the right prompt.", mins: 8 },
   "multiagent":   { insight: "Multi-agent overhead only pays off when subtasks are genuinely independent and parallelizable.", mins: 10 },
+  "scaling-laws": { insight: "Bigger isn't always better. A 7B model trained on 1T tokens beats a 70B model trained on 100B tokens.", mins: 8 },
 };
 
 const GYMS = [
@@ -5933,7 +6111,7 @@ const GYMS = [
     label: "Language Models",
     desc: "How LLMs actually work — from tokenization through sampling. The foundation before you touch any lab.",
     color: "#6366f1",
-    moduleIds: ["tokenizer", "attention", "transformer", "flashattn", "sampling", "nextoken", "tempgame"],
+    moduleIds: ["tokenizer", "attention", "transformer", "flashattn", "sampling", "nextoken", "tempgame", "scaling-laws"],
     labId: "llmlab",
     labLabel: "LLM Lab",
   },

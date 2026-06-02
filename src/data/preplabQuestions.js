@@ -2897,4 +2897,56 @@ export const PREP_QUESTIONS = [
     readMore: { label: "AI Safety Engineering →", tab: "systems" }
   },
 
+  {
+    id: "scaling-1", topic: "llm", difficulty: "medium", gated: false, type: "mcq",
+    question: "The Chinchilla paper showed GPT-3 175B was trained suboptimally. What was the core problem?",
+    options: [
+      "The model was too large — it needed fewer parameters to reach the same loss",
+      "The model was undertrained — it needed roughly 20× more tokens for its parameter count",
+      "The learning rate schedule was incorrect",
+      "The architecture used MHA instead of GQA"
+    ],
+    correct: 1,
+    explanation: "Chinchilla (Hoffmann et al., 2022) established the compute-optimal rule: for a given training budget, parameters N and training tokens D should scale equally — roughly D ≈ 20 × N. GPT-3's 175B parameters should have been trained on ~3.5T tokens; it only saw 300B — 11× too few. Chinchilla-70B, trained on 1.4T tokens, outperformed GPT-3 at 2.5× fewer parameters and the same total compute.",
+    trap: "Saying the model was 'too large.' GPT-3's problem was not size but the token/parameter ratio being far off the compute-optimal curve. Making it smaller while keeping token count fixed would have made it worse.",
+    readMore: { label: "Chinchilla: Scaling Laws →", tab: "groundtruth", postId: "chinchilla-scaling-laws" }
+  },
+
+  {
+    id: "scaling-2", topic: "llm", difficulty: "hard", gated: true, type: "text",
+    question: "A team has a fixed training compute budget. Using Chinchilla's rule they find the compute-optimal model is 10B params on 200B tokens. But the product requirement is a model served at < $0.002 per 1K tokens. How does this change the model choice, and what training strategy follows?",
+    options: [],
+    correct: 0,
+    keywords: ["inference cost", "overtrain", "smaller model", "token budget", "compute-optimal vs inference-optimal"],
+    explanation: "Compute-optimal training minimises training compute to reach a given loss. Inference-optimal deployment minimises serving cost for a given quality bar. These are different constraints. When inference cost is primary, the right strategy is to overtrain a smaller model: spend the compute budget on data, not parameters. A 3B model trained on 1T tokens can match a compute-optimal 10B on many tasks at 3× lower inference cost per request. This is why Meta trains LLaMA 3 8B on 15T tokens — far beyond Chinchilla-optimal — explicitly to make cheap inference viable at scale. The correct choice: pick the smallest model that meets the quality bar, then overtrain it with as many tokens as the compute budget allows.",
+    trap: "Treating training efficiency and inference efficiency as the same optimisation. The Chinchilla-optimal model is optimal for reaching a loss target per training FLOP — not for minimising inference cost at deployment.",
+    readMore: { label: "Chinchilla: Scaling Laws →", tab: "groundtruth", postId: "chinchilla-scaling-laws" }
+  },
+
+  {
+    id: "scaling-3", topic: "llm", difficulty: "medium", gated: false, type: "mcq",
+    question: "Why did LLaMA-7B (2023) frequently match or outperform GPT-3 175B on practical benchmarks despite being 25× smaller?",
+    options: [
+      "LLaMA used a better architecture with rotary position embeddings",
+      "LLaMA was trained on ~1T tokens — far more data per parameter than GPT-3's ~1.7 tokens/parameter",
+      "GPT-3 used 16-bit training while LLaMA used 32-bit precision",
+      "LLaMA used instruction fine-tuning while GPT-3 was a base model"
+    ],
+    correct: 1,
+    explanation: "The core reason is the token/parameter ratio. GPT-3 trained 175B params on 300B tokens — ~1.7 tokens per parameter, far below Chinchilla's 20× rule. LLaMA-7B trained on ~1T tokens — ~143 tokens per parameter, far more compute-optimal. A model trained on more data per parameter learns richer representations and generalises better. Architecture improvements (RoPE, GQA) are secondary.",
+    trap: "Crediting instruction fine-tuning. LLaMA 1 was a base model with no instruction tuning and still outperformed GPT-3 base. The advantage was in pretraining data volume.",
+    readMore: { label: "Chinchilla: Scaling Laws →", tab: "groundtruth", postId: "chinchilla-scaling-laws" }
+  },
+
+  {
+    id: "scaling-4", topic: "llm", difficulty: "hard", gated: true, type: "text",
+    question: "An engineer says: 'Scaling laws show larger models always perform better, so request the biggest available model via API.' What's wrong, and what should guide model selection instead?",
+    options: [],
+    correct: 0,
+    keywords: ["inference cost", "overtrained", "benchmark vs production", "task fit", "token count", "compute-optimal"],
+    explanation: "Multiple problems. First, 'bigger is always better' was the pre-Chinchilla intuition — it breaks when training quality varies. A smaller well-trained model outperforms a larger undertrained one. Second, API model selection should be driven by task fit: a 7B-class model often matches a larger model on specific production tasks at 10–20× lower cost per token. Third, public benchmark scores don't map to performance on your specific task distribution. The correct process: benchmark shortlisted models on your actual production query distribution, then choose the smallest that meets your quality bar at acceptable cost and latency.",
+    trap: "Saying 'use the model with the highest benchmark score.' Benchmarks measure general capability — not performance on your task. A lower-MMLU model can outperform on your task due to different training data or capability profile.",
+    readMore: { label: "Chinchilla: Scaling Laws →", tab: "groundtruth", postId: "chinchilla-scaling-laws" }
+  },
+
 ];
