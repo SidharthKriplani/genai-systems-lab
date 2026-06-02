@@ -3242,4 +3242,30 @@ export const PREP_QUESTIONS = [
     readMore: { label: "Your Prompt Is Code →", tab: "groundtruth", postId: "your-prompt-is-code" }
   },
 
+  {
+    id: "promptlab-5", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "A summarisation model produces fluent, confident-sounding output at temperature 0.9. Reviewers flag that 12% of summaries contain plausible-sounding facts not present in the source. Lowering temperature to 0.1 reduces hallucinations but users complain outputs are repetitive and miss nuance. What is the correct architectural fix?",
+    options: [
+      "Use temperature 0.5 as a middle ground between creativity and accuracy",
+      "Add a grounding verification step: pass each summary through a separate check-facts-against-source pass before returning",
+      "Use beam search decoding to select the most probable sequence and eliminate sampling variation",
+      "Increase the system prompt specificity — tell the model explicitly not to hallucinate"
+    ],
+    correct: 1,
+    explanation: "Temperature controls sampling diversity. At 0.9, the model samples from a wide distribution including lower-probability tokens — plausible-sounding facts that weren't in the source but are likely completions of the sentence pattern. At 0.1, the model locks to the highest-probability token at every step — less hallucination but high repetition and loss of edge-case coverage. Splitting the temperature problem in two is the correct architecture: use a higher temperature for the generative pass (0.7) to preserve fluency and nuance, then run a separate grounding pass that checks each claim in the summary against the source document. The grounding check can be another LLM call or a simpler entailment model. This decouples creativity from factuality at the architectural level rather than trying to solve both with a single temperature knob.",
+    trap: "Choosing temperature 0.5 as a compromise. The compromise approach reduces hallucination rate by ~30-40% but does not solve it — you end up with a model that is both less creative and still produces hallucinated content on 6-8% of outputs. A two-pass architecture solves the underlying problem. The temperature knob optimises one thing at the expense of the other; it cannot simultaneously optimise both.",
+    readMore: { label: "Your Prompt Is Code →", tab: "groundtruth", postId: "your-prompt-is-code" }
+  },
+
+  {
+    id: "promptlab-6", topic: "llmops", difficulty: "hard", gated: true, type: "text",
+    question: "A customer service prompt has 23 rules governing tone, scope, escalation, and response format — built incrementally over 8 months. Response quality metrics are declining despite no recent changes. Describe how you would diagnose whether this is a prompt quality problem or a model drift problem, and outline a fix for each diagnosis.",
+    options: [],
+    correct: 0,
+    keywords: ["prompt regression testing", "version control", "LLM-as-judge", "instruction conflict", "baseline", "A/B test", "model drift"],
+    explanation: "Diagnosis first. Run the current prompt against a frozen test set of 50 known-good input/output pairs from 6 months ago — the same inputs that originally earned good metrics. If quality on this static test set has also declined, it is model drift: the underlying model changed (provider updated a minor version, quantisation scheme changed, system changed) and the prompt was tuned to an older model. If quality on the frozen test set is unchanged but live metrics are declining, it is prompt decay against the distribution shift of real user inputs — the inputs now hitting the prompt are different from what it was optimised for. Fix for model drift: re-tune the prompt against the new model's behaviour. Start from first principles — do not assume the 23 rules are still optimal. Run ablation tests: remove one rule at a time, test against the frozen set, and identify which rules are load-bearing vs vestigial. You will typically find 6-8 rules that produce measurable quality improvement and 12-15 that either have no effect or create instruction conflicts. Fix for prompt decay: instrument the live input distribution — cluster the last 1000 queries by topic and compare to the distribution the prompt was originally designed for. Identify the new clusters. Add 2-3 worked examples per new cluster to the prompt. Do not add more rules; add examples that ground existing principles in the new input patterns. Both diagnoses require a frozen test set — without one, you cannot distinguish the two failure modes.",
+    trap: "Adding more rules to the prompt to cover observed failure cases. When quality is declining in a 23-rule prompt, adding more rules almost always makes it worse — you increase instruction conflict surface area, add more opportunities for rule interaction, and dilute the model's attention to the rules that actually matter. The correct response to quality decline in a large rule-based prompt is audit and reduction, not addition.",
+    readMore: { label: "Your Prompt Is Code →", tab: "groundtruth", postId: "your-prompt-is-code" }
+  },
+
 ];

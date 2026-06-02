@@ -2876,10 +2876,32 @@ const MODE_CARDS = [
 
 // ─── ROOT COMPONENT ───────────────────────────────────────────────────────────
 
+function getRoleReadiness(history) {
+  const entries = Object.entries(history);
+  if (entries.length < 5) return null;
+  const answered = entries.filter(([, e]) => e.attempts > 0);
+  const correct  = answered.filter(([, e]) => e.wrong === 0).length;
+  const count    = answered.length;
+  const pct      = count > 0 ? Math.round((correct / count) * 100) : 0;
+
+  let tier, label, desc, dots;
+  if (count >= 100 && pct >= 70) {
+    tier = 4; label = "Staff"; desc = "System-level thinking · deep domain expertise"; dots = 4;
+  } else if (count >= 50 && pct >= 55) {
+    tier = 3; label = "Senior"; desc = "Judgment across complex trade-offs"; dots = 3;
+  } else if (count >= 15) {
+    tier = 2; label = "Practitioner"; desc = "Production-ready on core topics"; dots = 2;
+  } else {
+    tier = 1; label = "Familiar"; desc = "Building foundational knowledge"; dots = 1;
+  }
+  return { tier, label, desc, dots, count, pct };
+}
+
 export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClearInitialMode }) {
   const [mode, setMode] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
   const [sidebarStats, setSidebarStats] = useState({});
+  const [readiness, setReadiness] = useState(null);
   const [trainerInitGroup, setTrainerInitGroup] = useState("all");
 
   function selectMode(id) {
@@ -2923,6 +2945,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
         stats.jdprep = `In progress: Phase ${stratPhase}`;
       }
       setSidebarStats(stats);
+      setReadiness(getRoleReadiness(hist));
     } catch {}
   }, []);
 
@@ -2955,6 +2978,19 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
           <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-1">QUESTIONS</div>
           <div className="text-xs text-zinc-500">{PREP_QUESTIONS.length} across 8 topics</div>
         </div>
+        {readiness && (
+          <div className="mx-3 mt-3 p-3 rounded-lg border border-zinc-800/80" style={{ background: "rgba(99,102,241,0.06)" }}>
+            <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-2">AI ENG. READINESS</div>
+            <div className="flex items-center gap-1.5 mb-1">
+              {[1,2,3,4].map(i => (
+                <span key={i} className="w-2 h-2 rounded-full" style={{ background: i <= readiness.dots ? "#6366f1" : "rgba(99,102,241,0.2)" }} />
+              ))}
+              <span className="text-xs font-bold text-zinc-200 ml-1">{readiness.label}</span>
+            </div>
+            <div className="text-[10px] text-zinc-500 leading-snug mb-1.5">{readiness.desc}</div>
+            <div className="text-[9px] font-mono text-zinc-600">{readiness.count}q answered · {readiness.pct}% correct</div>
+          </div>
+        )}
       </div>
 
       {/* Right panel */}
