@@ -34,7 +34,7 @@ export const PREP_QUESTIONS = [
     options: ["Context window overflow", "More irrelevant chunks diluting the signal — LLM loses focus", "Embedding drift", "Token cost is too high"],
     correct: 1, keywords: [],
     explanation: "LLMs degrade with noisy context. Adding 7 more partially-relevant chunks introduces contradictory or off-topic sentences, causing the model to hedge or pick wrong evidence.",
-  trap: "Saying \'more context is always better\' or blaming context window limits. The real mechanism is noise injection — each extra chunk adds contradictory or off-topic sentences that dilute the LLM signal.",
+  trap: "Saying \'more context is always better\' or blaming context window limits. The real mechanism is noise injection — each extra chunk adds contradictory or off-topic sentences that dilute the LLM signal. Say instead: \'More retrieval hurts when chunks are partially relevant — each extra one injects noise. The fix is better relevance scoring, not a larger context window.\'",
   source: "Google DeepMind AI engineering screen",
     readMore: { label: "Retrieval Quality vs. Quantity", tab: "concepts" }
   },
@@ -154,7 +154,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["minimum steps", "actual steps", "redundant", "wasted", "state", "plan"],
     explanation: "Trajectory efficiency = minimum steps needed / actual steps taken. 0.43 means the agent took more than twice the optimal steps. Fixes: add explicit planning step before execution, add short-term memory for tool call results.",
-  trap: "Describing the agent as \'slow\' or \'hallucinating.\' Trajectory efficiency is a specific metric — minimum steps / actual steps. 0.43 means it took 2.3x the optimal path. Not knowing the formula is the tell.",
+  trap: "Describing the agent as \'slow\' or \'hallucinating.\' Trajectory efficiency is a specific metric — minimum steps / actual steps. 0.43 means it took 2.3x the optimal path. Not knowing the formula is the tell. Say instead: \'Trajectory efficiency = minimum steps ÷ actual steps. 0.43 means 2.3× redundant steps — the fix is better planning or deduplication, not model size.\'",
   source: "LangChain engineering interview",
     readMore: { label: "Agent Evaluation Metrics", tab: "agents" }
   },
@@ -184,7 +184,7 @@ export const PREP_QUESTIONS = [
     options: ["Switch to a bigger LLM", "Rewrite tool description with precise input schema, example calls, and when-to-use vs. when-not-to-use guidance", "Add more tools", "Increase temperature"],
     correct: 1, keywords: [],
     explanation: "Tool selection and parameter filling are heavily guided by tool descriptions. A vague description leads to incorrect tool selection and wrong parameter formats. Rich descriptions with examples dramatically improve tool use accuracy.",
-  trap: "Saying \'the agent needs better prompting\' or \'the tool is broken.\' Tool descriptions are the primary routing signal. Vague descriptions are an architecture problem that better prompting cannot fix.",
+  trap: "Saying \'the agent needs better prompting\' or \'the tool is broken.\' Tool descriptions are the primary routing signal. Vague descriptions are an architecture problem that better prompting cannot fix. Say instead: \'Tool descriptions are the routing signal — rewrite the tool schema to be unambiguous about when each tool applies. The system prompt cannot compensate for a vague tool description.\'",
   source: "Salesforce Einstein AI interview",
     readMore: { label: "Tool Design for Agents", tab: "agents" }
   },
@@ -214,7 +214,7 @@ export const PREP_QUESTIONS = [
     options: ["LLM hallucination in tool descriptions", "Irreversible agent actions triggered by misunderstood intent or adversarial input", "Context window overflow", "High API costs"],
     correct: 1, keywords: [],
     explanation: "Destructive or irreversible actions need human confirmation because agent misunderstandings or prompt injection attacks can trigger unintended consequences that propagate to external systems.",
-  trap: "Saying HITL \'slows the agent down\' or \'is just for UX.\' HITL before destructive actions is a security mechanism — it prevents prompt injection attacks from triggering irreversible actions through the agent.",
+  trap: "Saying HITL \'slows the agent down\' or \'is just for UX.\' HITL before destructive actions is a security mechanism — it prevents prompt injection attacks from triggering irreversible actions through the agent. Say instead: \'HITL before irreversible actions is a security boundary, not a UX choice — it prevents prompt injection from using the agent to execute destructive operations without human review.\'",
   source: "Anthropic deployment engineering interview",
     readMore: { label: "Safe Agent Design", tab: "agents" }
   },
@@ -276,7 +276,7 @@ export const PREP_QUESTIONS = [
     options: ["Model is biased toward longer outputs", "Positional bias — the LLM judge may score consistently high for stylistic reasons unrelated to actual quality", "G-Eval only works for summarization", "Token cost is too high"],
     correct: 1, keywords: [],
     explanation: "LLM-as-judge has known biases: verbosity bias, positional bias, self-preference bias. A consistently high score may indicate the judge is rewarding style rather than semantic accuracy. Calibration against human ratings is essential.",
-  trap: "Accepting the score at face value or reporting it as a success. A consistently high, non-varying LLM judge score is a signal of verbosity bias or calibration drift — real quality distributions are never this flat.",
+  trap: "Accepting the score at face value or reporting it as a success. A consistently high, non-varying LLM judge score is a signal of verbosity bias or calibration drift — real quality distributions are never this flat. Say instead: 'A judge that scores everything 9/10 has collapsed — calibrate it against human labels before trusting any LLM judge at scale.'",
   source: "Cohere AI evaluation team interview",
     readMore: { label: "LLM-as-Judge Pitfalls", tab: "groundtruth", postId: "hallucination-detection" }
   },
@@ -286,7 +286,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["groundedness", "relevance", "faithfulness", "false positive", "resolution", "tone"],
     explanation: "Good metrics: groundedness (catches hallucination but FP on well-phrased hallucinations), task completion (catches unhelpful responses but FP on technically-correct-but-useless answers), tone compliance (catches rude responses but FP on direct helpful answers scored as curt).",
-  trap: "Listing BLEU, ROUGE, or F1. Customer support eval needs product-specific metrics: groundedness, task completion, safety/tone. Using NLP benchmark metrics on a product problem signals evaluation inexperience.",
+  trap: "Listing BLEU, ROUGE, or F1. Customer support eval needs product-specific metrics: groundedness, task completion, safety/tone. Using NLP benchmark metrics on a product problem signals evaluation inexperience. Say instead: 'For customer support I'd measure groundedness, task completion rate, and safety flags — BLEU measures surface overlap, not whether the answer actually resolved the customer\'s issue.'",
   source: "Intercom AI engineering interview",
     readMore: { label: "Building Eval Suites", tab: "groundtruth", postId: "eval-pipeline-design" }
   },
@@ -326,7 +326,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["self-preference", "same model", "bias", "independent", "different model", "human", "calibration"],
     explanation: "Models from the same family share training biases, leading to self-preference bias. Control: use a judge from a different model family, or blind human eval on a representative sample.",
-  trap: "Saying the model is \'biased generally.\' The specific failure is self-preference bias — same-family models share distributional priors and systematically favor outputs that resemble their own generation style.",
+  trap: "Saying the model is \'biased generally.\' The specific failure is self-preference bias — same-family models share distributional priors and systematically favor outputs that resemble their own generation style. Say instead: \'The specific failure is self-preference bias — use a different-family judge or a panel. Saying \'the model is biased\' without naming this mechanism will lose you the interview.\'",
   source: "Anthropic AI safety interview, Round 1",
     readMore: { label: "LLM-as-Judge Design", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
@@ -356,7 +356,7 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["independent", "calibration", "bias", "cost", "speed", "human agreement", "family"],
     explanation: "Key criteria: avoid same-family models (self-preference bias), measure calibration against held-out human labels, cost/speed tradeoff, consistency across runs (temperature=0), structured output support.",
-  trap: "Picking based on model benchmark performance. The correct criteria are: avoid same-family judge (self-preference), measure calibration against human labels, cost/latency tradeoff, whether to use a panel of judges.",
+  trap: "Picking based on model benchmark performance. The correct criteria are: avoid same-family judge (self-preference), measure calibration against human labels, cost/latency tradeoff, whether to use a panel of judges. Say instead: 'The main criteria are: different family from the model being judged, calibration measured against human labels on your task, and cost. MMLU score tells you nothing about judge quality.'",
   source: "Scale AI evaluation team interview",
     readMore: { label: "Choosing an LLM Judge", tab: "groundtruth", postId: "llm-evaluation-guide" }
   },
@@ -478,7 +478,7 @@ export const PREP_QUESTIONS = [
     options: ["Reducing API costs", "Safe quality validation under real traffic distribution before cutover — catches distribution-specific regressions evals missed", "Improving model speed", "A/B testing user preferences"],
     correct: 1, keywords: [],
     explanation: "Shadow deployment lets you run both models on real traffic, compare outputs offline, and catch regressions that your eval set did not cover — all without any user impact.",
-  trap: "Saying shadow deployment is \'for performance testing\' or \'A/B testing.\' Its primary purpose is regression detection on real traffic before committing to a new model version — not user-facing experimentation.",
+  trap: "Saying shadow deployment is \'for performance testing\' or \'A/B testing.\' Its primary purpose is regression detection on real traffic before committing to a new model version — not user-facing experimentation. Say instead: \'Shadow deployment is a regression detection tool — you run the new model on live traffic without exposing users to its outputs, then compare quality before promoting it.\'",
   source: "Google ML reliability interview",
     readMore: { label: "Model Deployment Strategies", tab: "systems" }
   },
@@ -1032,7 +1032,7 @@ export const PREP_QUESTIONS = [
     options: ["Compressing cache entries", "Routing requests with identical prefixes to the same serving replica so cached KV states are available locally", "Precomputing KV for all possible prompts", "Using a global shared KV cache across all GPUs"],
     correct: 1, keywords: [],
     explanation: "Without cache-aware routing, a request with a cached prefix on GPU-1 might land on GPU-2 (cache miss). llm-d and similar systems hash the request prefix and route to the replica most likely to have that prefix cached — dramatically improving cache hit rates without requiring a shared (expensive) cross-replica cache.",
-    trap: "Saying \'caching saves token costs.\' KV cache hit rate is a latency and throughput metric — it reduces time-to-first-token by avoiding re-prefill of cached prompts. The saving is compute, not token billing.",
+    trap: "Saying \'caching saves token costs.\' KV cache hit rate is a latency and throughput metric — it reduces time-to-first-token by avoiding re-prefill of cached prompts. The saving is compute, not token billing. Say instead: \'KV cache hit rate is a latency metric, not a billing metric. High hit rate means lower TTFT because the prefill step is skipped — the saving is compute time, not token count.\'",
     readMore: { label: "KV Cache Engineering →", tab: "systems" }
   },
   {
@@ -3666,6 +3666,68 @@ export const PREP_QUESTIONS = [
     ],
     rootCause: "Eval set distribution mismatch. The eval was built from structured FAQ questions written by the product team. Production traffic is messier — typos, implicit intent, multi-turn context. Config B's cross-encoder reranker was calibrated on clean, explicit queries and won the eval because the eval matched its strengths, not production's characteristics. This is an eval design failure, not a retrieval failure.",
     trap: "Increasing the eval set size. More questions from the wrong distribution produces higher confidence in the wrong answer. Distribution alignment is more important than statistical power — a 200-question eval sampled from production logs beats a 2,000-question eval built from internal FAQs every time.",
+  },
+
+  // ── QUANTIPHI DEFENSE PACK (6) ────────────────────────────────────────────
+  {
+    id: "quantiphi-1", topic: "agents", difficulty: "hard", gated: true, type: "text",
+    question: "Your team is building a multi-agent system where 3 internal AI agents need shared access to the same tools (vector search, CRM lookup, calendar). An engineer proposes implementing MCP servers for each tool. What production considerations does MCP introduce that a direct function-calling setup wouldn't require?",
+    keywords: ["transport", "stdio", "SSE", "server lifecycle", "authentication", "tool discovery", "Resources vs Tools", "N+M", "process management"],
+    explanation: "MCP reduces integration surface (N+M vs N×M) but shifts operational complexity. Production considerations: (1) Server lifecycle — each MCP server is a separate process or HTTP endpoint requiring startup, health checks, and restart logic. (2) Transport selection — stdio works for co-located processes (Claude Desktop pattern); SSE/HTTP is required for agents on different machines. (3) Authentication — MCP has no built-in auth; you add it at the transport layer (OAuth, API keys in headers). (4) Dynamic tool discovery — agents call tools/list at runtime; a server restart that drops tools causes silent agent failures unless the agent handles discovery errors. (5) Resources vs Tools — data exposed as Resources (read-only, cacheable) behaves differently than Tools (callable, side-effectful) in how clients cache and retry. The N+M win only materialises if you commit fully — a hybrid setup (some tools MCP, some direct) creates two parallel integration surfaces.",
+    trap: "Claiming MCP eliminates operational complexity because 'one server works with any host.' MCP reduces integration breadth but does not reduce operational depth — it adds it. You're running persistent server processes instead of embedding tool logic. Say instead: 'MCP gives you the N+M integration win, but you're now responsible for server process management, health monitoring, and auth that function calling buries inside your application.'",
+  },
+  {
+    id: "quantiphi-2", topic: "agents", difficulty: "hard", gated: true, type: "mcq",
+    question: "A team is choosing between AWS Bedrock AgentCore, LangGraph, and a custom Python loop for a production support agent. Requirements: durable session memory, Jira + Salesforce + internal KB tool calling, human-in-the-loop escalation, deployment on AWS. What is the strongest architectural argument for Bedrock AgentCore over LangGraph?",
+    options: [
+      "Bedrock AgentCore is faster because it runs closer to AWS inference endpoints",
+      "Bedrock AgentCore provides managed infrastructure for session state, memory, and tool execution — eliminating the persistence layer you must build and operate with LangGraph",
+      "LangGraph cannot support human-in-the-loop escalation — only Bedrock AgentCore has that capability natively",
+      "Bedrock AgentCore supports more LLM providers than LangGraph does"
+    ],
+    correct: 1,
+    explanation: "LangGraph is a framework — powerful, but you operate it. You bring your own checkpointing store (Postgres, Redis), your own deployment infrastructure, your own session management. Bedrock AgentCore wraps this into a managed service: session memory is handled, tool execution is hosted, the agent runs as a managed AWS resource. For teams on AWS who don't want to own agent infrastructure, AgentCore removes a meaningful operational surface. Trade-off: AgentCore is AWS-locked; LangGraph is portable and gives you more control over the execution graph.",
+    trap: "Saying LangGraph can't do HITL. LangGraph has native interrupt_before/interrupt_after support and is specifically designed for human-in-the-loop workflows. The AgentCore advantage is managed infrastructure, not capability. Both can do HITL — AgentCore just hosts it for you.",
+  },
+  {
+    id: "quantiphi-3", topic: "llmops", difficulty: "hard", gated: true, type: "text",
+    question: "You're designing a production pipeline routing requests across GPT-4o (strong function calling, cost-efficient), Claude Sonnet (strong reasoning, long context), and Gemini 1.5 Pro (multimodal, large context). Describe your routing logic and failure handling strategy.",
+    keywords: ["routing", "fallback", "circuit breaker", "capability-based routing", "cost", "latency", "abstraction layer", "LiteLLM", "observability", "provider SLA"],
+    explanation: "A robust multi-provider design has three layers: (1) Routing logic — classify by capability requirements: multimodal input → Gemini; long document reasoning → Claude; structured output + function calling → GPT-4o; high-volume simple tasks → cheapest capable model. Store routing rules in config, not code — provider capabilities change quarterly. (2) Failure handling — independent circuit breakers per provider. When provider A hits degraded thresholds (>X% 5xx or >Y ms p99 latency), route to fallback. Hard rule: never retry on the same provider for timeout failures — it amplifies load during an incident. (3) Abstraction — wrap providers behind a common interface (LiteLLM or a thin adapter) so provider changes don't cascade through the codebase. Track per-provider cost, latency, and quality separately in observability — routing decisions must be data-driven.",
+    trap: "Designing routing as static per-task assignments ('RAG always uses GPT-4o'). Static routing breaks when provider pricing changes, a provider degrades, or task requirements shift. The correct design is configurable routing rules with dynamic fallback — not hardcoded provider assignments per pipeline step. Also: don't retry timeouts on the same provider; that amplifies the failure.",
+  },
+  {
+    id: "quantiphi-4", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "Your production RAG pipeline calls an LLM API synchronously. The API begins returning 429 (rate limit) errors on 15% of requests during a traffic spike. Which combination best handles this at the infrastructure level?",
+    options: [
+      "Retry immediately 3 times — rate limits are transient and clear within milliseconds",
+      "Exponential backoff with jitter on retries, queue overflow requests rather than dropping them, alert when queue depth exceeds a threshold",
+      "Switch all traffic to a cheaper model — rate limits only affect expensive models",
+      "Return an error on first 429 — retries create duplicate LLM requests"
+    ],
+    correct: 1,
+    explanation: "Exponential backoff with jitter prevents the thundering herd problem — if all clients retry at the same interval, they re-hit the rate limit simultaneously. Jitter spaces retries out across the window. A queue absorbs traffic during the spike and drains when capacity recovers. Alerting on queue depth gives operational visibility before backlog becomes user-visible. Immediate retry (option A) amplifies the original problem. Model switching (option C) doesn't address capacity limits, which apply per account not per model tier. Dropping on first error (option D) is correct for timeouts but wrong for rate limits — 429s are temporary capacity constraints, not permanent failures.",
+    trap: "Retrying immediately without backoff. The reasoning is 'rate limits clear fast, so retry fast.' But immediate retry from all clients simultaneously is the thundering herd — it's exactly what keeps the rate limit active. Exponential backoff with jitter is the correct pattern because it prevents coordinated retry storms from all clients firing at once.",
+  },
+  {
+    id: "quantiphi-5", topic: "evaluation", difficulty: "hard", gated: true, type: "text",
+    question: "Your RAG system eval shows: faithfulness 0.91, answer relevancy 0.88, context recall 0.73. Business stakeholders report users are still unhappy with answer quality. What does this metric pattern tell you and what do you investigate next?",
+    keywords: ["context recall", "retrieval gap", "faithfulness", "polished hallucination", "eval distribution", "metric interpretation", "upstream constraint", "retrieval failure"],
+    explanation: "Context recall at 0.73 means the retriever fails to surface relevant chunks 27% of the time. High faithfulness + high relevancy + low recall is the 'polished miss' pattern: the model generates fluent, topically relevant answers but misses the actual information the user needed because it was never retrieved. The business signal confirms it — users get answers that sound right but don't address their real question. The model can only be faithful to what's in the context window; if retrieval misses, generation can't compensate. Next steps: (1) Sample 50 failure cases, manually inspect retrieved vs expected chunks; (2) Check eval distribution — if your eval set is built from internal FAQs and production queries are messier, all three metrics may be inflated on the eval; (3) Investigate the retrieval layer: embedding model fit, chunking strategy, index freshness, top-k setting, whether a reranker would help.",
+    trap: "Optimising faithfulness and relevancy because they're the output-layer metrics. They're already high — marginal improvement there yields near zero user benefit. Context recall is the upstream constraint: when retrieval fails, no generation improvement fixes it. Say instead: 'The retrieval layer is the bottleneck. I'd focus exclusively on improving recall before touching the generation configuration.'",
+  },
+  {
+    id: "quantiphi-6", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "A prompt change was deployed to production. Three days later, an analyst notices answer quality dropped on a specific query type. No alerts fired. What process failure does this reveal?",
+    options: [
+      "The deployment pipeline should have required a senior engineer to review the prompt diff",
+      "Prompt changes should be version-controlled, tested against a regression suite before deployment, and monitored with automated quality metrics post-deploy",
+      "Prompts should be locked after initial deployment — changes require a full feature release cycle with sign-off",
+      "The analyst should have been monitoring production logs in real-time instead of after the fact"
+    ],
+    correct: 1,
+    explanation: "Prompts are code. The three-day detection lag reveals three missing practices: (1) No regression testing — a regression suite of representative queries with expected quality benchmarks, run before every prompt change, would have caught the degradation before deploy. (2) No version control — a prompt not in git cannot be rolled back or audited. (3) No automated quality monitoring — a post-deploy quality signal (LLM-as-judge sampling production traffic, or embedding similarity distribution monitoring) would have alerted within hours, not days. The minimum production prompt engineering stack: version control + regression suite + shadow eval + post-deploy monitoring.",
+    trap: "Saying 'code review would have caught it.' Code review catches obvious mistakes — wrong instructions, typos, logical contradictions. It does not catch distributional quality regressions. A reviewer cannot evaluate how a prompt change performs across the full query distribution by reading a diff. Regression testing against a representative eval set is what catches quality drops before they reach users.",
   },
 
 ];
