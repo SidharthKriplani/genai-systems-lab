@@ -290,6 +290,9 @@ For full audit findings see AUDITS.md.
 
 ## Session build log
 
+**Sprint 48 (June 2026) — Mock Exam Mode + Staff Layer:**
+- Mock Exam Mode toggle in ExamConfig: forward-only navigation, red timer, MOCK badge in header, timer pulses when < 5 min. Staff Layer: 3rd tier in RevealCard (answer → trap → staff framing), gated behind access code, 10 questions seeded (rag-1, rag-2, rag-5, agents-1, agents-9, eval-1, eval-2, langgraph-1, graph-rag-1, adversarial-3). Brace diff: 0. Commit `f7af1f1`.
+
 **Sprint 47 (June 2026) — cross-lab retention + adversarial scenarios:**
 - 91-day heatmap, GT bookmarks (`gsl-bookmarks`), PrepLab spaced repetition (`gsl-preplab-spaced`, Review Due mode). Commit `97c2057`.
 - Sparse heatmap guard: <7 active days shows "Day N — keep going" message instead of empty grid. 6 adversarial PrepLab questions (adversarial-1 through adversarial-6): RAG vs context window, vector DB vs SQL, agent vs webhook, keyword rules vs vector routing, fine-tune vs system prompt, rules vs RAG for compliance. Brace diff: 0. Commit `2bcbcec`. Scale: **319 PrepLab questions**.

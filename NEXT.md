@@ -72,8 +72,8 @@ Sprint 46 closed: 313 PrepLab questions, failure mode audit complete, GT links o
 3. ~~**Spaced repetition**~~ — DONE sprint 47 (`97c2057`). `gsl-preplab-spaced`, SRS intervals, Review Due mode in PrepLab sidebar.
 4. ~~**Sparse heatmap guard**~~ — DONE sprint 47 (`2bcbcec`).
 5. ~~**"Do we even need it?" adversarial scenarios**~~ — DONE sprint 47 (`2bcbcec`). 6 questions (adversarial-1 through -6): RAG vs context window, vector DB vs SQL, agent vs webhook, rules vs ML routing, fine-tune vs prompt, rules vs RAG for compliance.
-6. **Timed exam lock (Combinator)** `S` — 30/45/60 min mode, answers locked until timer ends. See IDEAS.md.
-7. **Staff Layer** `M` — 3-tier PrepLab reveal: answer → trap → staff framing. Premium gated. See IDEAS.md.
+6. ~~**Timed exam lock (Combinator)**~~ — DONE sprint 48 (`f7af1f1`). Mock Exam Mode toggle, forward-only, red timer, MOCK badge.
+7. ~~**Staff Layer**~~ — DONE sprint 48 (`f7af1f1`). 3-tier reveal, access-gated, 10 questions seeded. Expand staffLayer to more hard questions each sprint.
 8. **Spot the Flaw** `M` — adversarial format on existing failure modes. See IDEAS.md.
 9. **CROSS_LAB.md** `XS` — coordination file documenting lab boundaries + cross-pollination patterns. See IDEAS.md.
 10. **Cross-lab path + Distribution** `XS` — GT post + README update + HN/LinkedIn post. See IDEAS.md.
