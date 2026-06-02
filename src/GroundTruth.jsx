@@ -783,27 +783,27 @@ const DIFF_COLORS = { Beginner: "text-emerald-400", Intermediate: "text-amber-40
 const SERIES_META = {
   "rag-production": {
     title: "RAG in Production",
-    desc: "From basic retrieval to production-grade pipelines — chunking, hybrid search, reranking, architectures, and failure modes.",
+    desc: "From basic retrieval to production-grade pipelines — chunking, hybrid search, reranking, two-stage retrieval, Graph RAG, and every failure mode in between.",
     color: "#3b82f6",
-    postIds: ["how-rag-works", "chunking-strategies", "hybrid-search", "reranking-explained", "rag-architectures", "vector-db-selection-guide"],
+    postIds: ["how-rag-works", "why-rag-lies", "graph-rag-multi-hop", "two-stage-retrieval-reranker", "hard-negatives-retrieval", "chunking-strategies", "hybrid-search", "reranking-explained", "rag-architectures", "vector-db-selection-guide"],
   },
   "agent-engineering": {
     title: "Agent Engineering",
-    desc: "How to build agents that work in production — ReAct, tool design, memory, multi-agent orchestration, and the failure taxonomy.",
+    desc: "How to build agents that work in production — ReAct, memory patterns, LangGraph state machines, HITL, multi-agent systems, and the failure taxonomy.",
     color: "#06b6d4",
-    postIds: ["react-pattern", "tool-use-design", "agent-memory-types", "multi-agent-orchestration", "agent-failure-modes"],
+    postIds: ["react-pattern", "agent-failure-modes", "agent-memory-architecture", "building-reliable-agents", "langgraph-reducers-hitl", "context-isolation-multiagent", "claudemd-as-architecture", "hooks-vs-llm-safety", "tool-use-design", "multi-agent-orchestration"],
   },
   "eval-testing": {
     title: "Evaluation & Testing",
-    desc: "How to know if your LLM system is actually good — hallucination detection, eval pipelines, LLM-as-judge, and A/B testing.",
+    desc: "How to know if your LLM system is actually good — the eval crisis, LLM-as-judge, RAGAS, prompt regression testing, and A/B testing in production.",
     color: "#22c55e",
-    postIds: ["llm-evaluation-guide", "hallucination-detection", "eval-pipeline-design", "ab-testing-llms"],
+    postIds: ["the-eval-crisis", "llm-evaluation-guide", "prompt-regression-testing", "ab-testing-ai-systems", "benchmark-vs-business", "hallucination-detection", "eval-pipeline-design", "ab-testing-llms"],
   },
   "llmops": {
     title: "LLMOps in Production",
-    desc: "The full production checklist — observability, model routing, inference optimisation, CI/CD, and cost management.",
+    desc: "The full production checklist — observability, prompt CI/CD, model routing, inference optimisation, graceful degradation, and cost management.",
     color: "#f59e0b",
-    postIds: ["llmops-production-checklist", "model-routing", "inference-optimisation", "llm-observability", "ml-cicd", "context-compaction"],
+    postIds: ["your-prompt-is-code", "llmops-production-checklist", "graceful-degradation", "monitoring-that-predicts", "model-routing", "inference-optimisation", "llm-observability", "ml-cicd", "context-compaction"],
   },
   "case-studies": {
     title: "Production Case Studies",
@@ -870,6 +870,18 @@ const SERIES_META = {
     desc: "From supervised fine-tuning to RLHF to distillation — how models are shaped after pretraining.",
     color: "#8b5cf6",
     postIds: ["finetune-playbook", "rlhf-production", "dpo-vs-ppo", "knowledge-distillation"],
+  },
+  "llm-fundamentals": {
+    title: "LLM Fundamentals",
+    desc: "The mathematical and architectural foundations — why transformers won, how attention works, what entropy and loss actually measure, and the reversal curse.",
+    color: "#a855f7",
+    postIds: ["why-transformers-won", "how-surprised-is-the-model", "what-happens-during-pretraining", "the-reversal-curse", "what-is-a-transformer", "self-attention-deep-dive"],
+  },
+  "career-strategy": {
+    title: "Career & Strategy",
+    desc: "The market forces reshaping AI roles — the DS→AI engineer arc, Type A vs Type B engineers, the Forward Deployed Engineer, and the three-layer skill stack.",
+    color: "#22c55e",
+    postIds: ["type-a-vs-type-b-engineers", "ds-to-ai-engineer", "forward-deployed-engineer", "three-layer-de-skill-stack", "ai-engineer-role", "breaking-into-ai"],
   },
 };
 

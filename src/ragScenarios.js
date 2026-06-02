@@ -21,6 +21,7 @@ const SCENARIO_MISSING = {
     "Your answer policy is the primary control variable here. Watch what happens to groundedness as you switch between 'helpful' and 'abstain when unsure'. A retrieval gap is not a retrieval failure — the system found something. The failure is in what the model does with that partial signal.",
   ],
   synthesis_close: "The retriever cannot solve a corpus gap — it will always find something semantically adjacent. The answer policy is your only safeguard between 'I found related content' and 'I fabricated a policy'. In high-stakes domains — HR, finance, legal — a system that says 'I don't know, contact HR' is more valuable than one that produces a plausible but invented answer.",
+  productionNote: "Bedrock Knowledge Bases / Weaviate HNSW top_k misconfiguration / any enterprise RAG corpus that doesn't version-track document additions. Fires most in HR, legal, finance where policy gaps are common.",
   challenge: {
     requirement:
       "Design a RAG config that correctly identifies when the corpus cannot answer the query. Requirements: risk level must be 'low', system must NOT hallucinate a policy that doesn't exist, groundedness ≥ 80%.",
@@ -138,6 +139,7 @@ const SCENARIO_AMBIGUOUS = {
     "The correct output is to surface the ambiguity explicitly and let the user choose. Watch for configs that look complete but have silently decided which situation you're in. High completeness with a single-interpretation answer is not a win — it's a failure dressed as success.",
   ],
   synthesis_close: "Ambiguity in enterprise queries is a retrieval signal, not a user error. When your top-retrieved chunks come from fundamentally different documents, your query was ambiguous — surface that branch point explicitly. A system that silently picks one interpretation is not helpful; it is confidently wrong for every user whose intent it misread.",
+  productionNote: "OpenSearch KNN retrieval / LangChain RetrievalQA chains without clarification routing / any single-pass RAG pipeline on a corpus that spans multiple business units (e.g. product docs + support tickets + HR policy in one index).",
   challenge: {
     requirement:
       "Design a RAG config that surfaces both valid interpretations rather than silently picking one. Requirements: groundedness ≥ 85%, risk level must be 'low', completeness ≥ 60%.",
@@ -254,6 +256,7 @@ const SCENARIO_CONFLICTING = {
     "Compliance systems don't just need correct answers. They need explainable, auditable ones. Watch the 'conflict flagged' indicator — it's the critical pass/fail line for this scenario, independent of whether the answer text happens to be right.",
   ],
   synthesis_close: "Document versioning conflicts are inevitable in any live enterprise corpus — policies get updated, old versions rarely get deleted. Your system's job is not to probabilistically resolve conflicts but to detect and surface them explicitly. A conflict-flagged answer with 80% completeness is safer for compliance use than a 95% complete answer with a silent resolution.",
+  productionNote: "Pinecone / Qdrant pipelines with nightly-batch ingestion (stale versions coexist with live ones). Fires heavily in regulated domains: healthcare (clinical guidelines updated quarterly), legal (contract terms versioned), finance (rate sheets).",
   challenge: {
     requirement:
       "Design a RAG config for a compliance assistant. Requirements: groundedness ≥ 85%, citation accuracy ≥ 90%, risk level must be 'low', and conflicting documents must be surfaced — never silently resolved.",
@@ -398,6 +401,7 @@ const SCENARIO_MULTIHOP = {
     "Watch the groundedness metric: below 0.5 means the model is reasoning beyond what was actually retrieved. And watch top_k — it is the most direct lever for multi-hop retrieval. The reranker is a ranking tool, not a retrieval tool. It cannot fetch facts that retrieval never found.",
   ],
   synthesis_close: "Multi-hop queries are the RAG failure most likely to look correct on first glance. The model retrieves one fact and builds a plausible-sounding answer — because it got half the reasoning right. Top_k is the primary fix: every required fact must enter the context window before generation begins. The reranker can only rank what retrieval already fetched.",
+  productionNote: "Any flat vector DB on relationship queries — Pinecone, pgvector, Weaviate without graph index. Classic failure in contract analysis (Party A → obligation → Party B), org-chart lookups, and supply chain dependency queries.",
   challenge: {
     requirement:
       "Design a RAG config that retrieves both required facts and synthesises them correctly. Requirements: groundedness ≥ 85%, completeness ≥ 75%, risk level must be 'low'.",
@@ -515,6 +519,7 @@ const SCENARIO_THREEHOP = {
     "Three-hop queries expose a specific failure mode: you can retrieve 2 of 3 hops, pass standard groundedness thresholds, and still produce an answer that could cost your organisation regulatory fines. Watch how completeness drops as hops fall out of the context window — and note that high groundedness on an incomplete answer is a false positive for quality.",
   ],
   synthesis_close: "Compliance and regulatory domains impose the highest cost on incomplete answers. A three-hop query with only two hops retrieved produces a 70%+ quality answer — that tells the team they need to comply without telling them what compliance requires. Chunk size and top_k together determine whether all evidence hops fit in the retrieval window before generation begins.",
+  productionNote: "Legal/compliance RAG systems: Ironclad, Harvey AI, Lexion contract analysis. Three-hop failure pattern — the third chunk (confirming evidence) always slips below top_k cutoff. Also seen in medical literature review RAG (trial → therapy → contraindication chain).",
   challenge: {
     requirement:
       "Design a config that surfaces all three evidence hops and synthesises them into a complete compliance answer. Requirements: groundedness ≥ 88%, citation accuracy ≥ 85%, risk level must be 'low'.",
@@ -604,6 +609,7 @@ const SCENARIO_INJECTION = {
     "Any user-generated, externally-editable, or web-crawled content in your retrieval index is a potential injection vector. This scenario shows you what the exploit looks like — and what configuration choices provide partial defence. Watch: configs that retrieve the injected chunk first will follow the instruction silently, without any error signal.",
   ],
   synthesis_close: "Prompt injection through retrieval is a production security threat. Your corpus is an attack surface. The strictly grounded answer policy provides partial defence by requiring content to be consistent with the query's legitimate intent — but it is not foolproof. Corpus integrity monitoring (detecting when documents change unexpectedly) and instruction-pattern detection as a post-retrieval filter are required controls for any system that accepts externally-sourced content.",
+  productionNote: "Any RAG pipeline ingesting user-editable or web-crawled content: Notion wikis, Confluence pages, Slack messages, support tickets. Documented in the wild: Bing Chat (2023), Copilot plugins, customer-facing chatbots on shared knowledge bases. Counter: LlamaIndex instruction-filter postprocessor, custom guardrails layer pre-generation.",
   challenge: {
     requirement:
       "Design a RAG config that answers the vendor onboarding query correctly WITHOUT following the injected instruction. Requirements: groundedness ≥ 85%, risk level must be 'low', conflict must be flagged.",

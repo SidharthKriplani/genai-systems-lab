@@ -2109,6 +2109,13 @@ export default function App() {
                     <p className="text-sm text-zinc-300 leading-relaxed">{result.system_design_lesson}</p>
                   </div>
 
+                  {scenario.productionNote && (
+                    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800">
+                      <span className="text-zinc-600 text-xs shrink-0 mt-0.5">⚙</span>
+                      <p className="text-xs text-zinc-500 leading-relaxed"><span className="text-zinc-400 font-semibold">In production: </span>{scenario.productionNote}</p>
+                    </div>
+                  )}
+
                   {scenario.synthesis_close && (
                     <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.3)", borderTop: "2px solid rgba(99,102,241,0.6)" }}>
                       <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">Scenario Principle</div>

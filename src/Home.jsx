@@ -513,15 +513,19 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
       )}
 
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
-      <div className="mt-auto border-t border-zinc-800/60 text-center px-4 py-6"
+      <div className="mt-auto border-t border-zinc-800/60 text-center px-4 py-6 space-y-3"
         style={{ boxShadow: "0 -8px 32px rgba(34,211,238,0.06)" }}>
-        <p className="text-[11px] text-zinc-500">
+        <a href="https://tally.so/r/mYoQkl" target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-zinc-700 text-zinc-400 hover:border-cyan-700 hover:text-cyan-400 transition-all">
+          <span>★</span> Share feedback
+        </a>
+        <p className="text-[11px] text-zinc-600">
           Also by the same team:{" "}
           <a href="https://ml-systems-lab-v9xe.vercel.app" target="_blank" rel="noopener noreferrer"
-            className="text-zinc-500 underline underline-offset-2 hover:text-zinc-300 transition-colors">ML Systems Lab</a>
+            className="text-zinc-600 underline underline-offset-2 hover:text-zinc-400 transition-colors">ML Systems Lab</a>
           {" · "}
           <a href="https://experimentation-systems-lab.vercel.app" target="_blank" rel="noopener noreferrer"
-            className="text-zinc-500 underline underline-offset-2 hover:text-zinc-300 transition-colors">Product Analytics Lab</a>
+            className="text-zinc-600 underline underline-offset-2 hover:text-zinc-400 transition-colors">Product Analytics Lab</a>
         </p>
       </div>
 
