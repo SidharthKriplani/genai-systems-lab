@@ -1035,6 +1035,45 @@ const SCENARIO_FORWARD_POINTERS = {
   prompt_injection:        { postId: "how-rag-works",            postTitle: "How RAG Actually Works — And Why It's Harder Than It Looks",                        topic: "Prompt injection" },
 };
 
+const INTERVIEW_STORIES = {
+  missing_answer: {
+    failure: "a RAG system hallucinating a confident HR policy that didn't exist in the corpus",
+    rootCause: "the retriever found semantically adjacent content and the model filled the gap — the answer policy defaulted to helpful over grounded",
+    fix: "abstain-when-unsure policy: system detects retrieval gaps and says so instead of fabricating",
+    production: "Bedrock Knowledge Bases / any corpus where policy gaps exist",
+  },
+  ambiguous_query: {
+    failure: "a RAG pipeline confidently answering the wrong interpretation of an ambiguous query for half its users",
+    rootCause: "single-pass retrieval with no disambiguation gate — top chunks came from documents answering entirely different interpretations",
+    fix: "ambiguity detection: when top chunks diverge by source, surface the branch point and ask which context the user meant",
+    production: "OpenSearch KNN on multi-domain corpora — product docs, HR policy, and support tickets mixed in one index",
+  },
+  conflicting_documents: {
+    failure: "a RAG system giving conflicting answers to the same policy question because two document versions coexisted in the index",
+    rootCause: "batch ingestion with no version-conflict detection — the stale version was never evicted from the vector store",
+    fix: "corpus version management: each ingestion run detects modified documents and forces re-embedding; conflict detected pre-generation",
+    production: "Pinecone nightly-sync in regulated domains — healthcare, legal, finance with quarterly document updates",
+  },
+  multi_hop: {
+    failure: "a RAG pipeline getting multi-hop queries half right — one fact retrieved, connecting evidence missing, plausible-sounding but incomplete answer",
+    rootCause: "top_k too low: the second required evidence chunk sat at position 8, never entered context",
+    fix: "increased top_k to 8+, added reranker to filter noise from the larger candidate pool",
+    production: "flat vector DBs on relationship queries — any schema where two facts must combine",
+  },
+  three_hop_chain: {
+    failure: "a compliance RAG pipeline returning 70% complete answers on three-hop regulatory queries — confident enough to act on, not complete enough to be safe",
+    rootCause: "chunk size and top_k together couldn't fit all three evidence pieces; the third hop always fell outside the retrieval window",
+    fix: "increased chunk size + top_k to 12 + reranker; all three hops now reliably enter context before generation",
+    production: "legal contract analysis — Ironclad, Harvey; the three-hop failure is endemic in compliance: regulation → threshold → exemption",
+  },
+  prompt_injection: {
+    failure: "a RAG pipeline following attacker instructions embedded in a retrieved procurement document — indirect prompt injection via retrieval",
+    rootCause: "no distinction between content to summarise and instructions to execute; LLMs treat instruction-like text the same regardless of source",
+    fix: "instruction-pattern post-retrieval filter + strictly grounded answer policy; all output must be sourced from retrieved content",
+    production: "any RAG on user-editable corpora — Notion, Confluence, Slack; documented in Bing Chat (2023), enterprise copilots",
+  },
+};
+
 function getInitialView() {
   try {
     const hash = window.location.hash.replace('#', '').toLowerCase();
@@ -1169,6 +1208,7 @@ export default function App() {
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [config, setConfig] = useState(ALL_SCENARIOS[0].default_config);
   const [evaluated, setEvaluated] = useState(false);
+  const [openStory, setOpenStory] = useState(null);
   const [ragDone, setRagDone] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("gsl-rag-done") || "[]")); } catch { return new Set(); }
   });
@@ -2122,6 +2162,33 @@ export default function App() {
                       <p className="text-sm text-zinc-200 leading-relaxed">{scenario.synthesis_close}</p>
                     </div>
                   )}
+
+                  {(() => {
+                    const story = INTERVIEW_STORIES[scenario.scenario_id];
+                    if (!story) return null;
+                    const isOpen = openStory === scenario.scenario_id;
+                    return (
+                      <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                        <button
+                          onClick={() => setOpenStory(isOpen ? null : scenario.scenario_id)}
+                          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-900/40 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono font-black uppercase tracking-widest" style={{ color: "#a78bfa" }}>Your interview story</span>
+                            <span className="text-[10px] text-zinc-600">→ ready to use</span>
+                          </div>
+                          <span className="text-zinc-600 text-xs">{isOpen ? "▲" : "▼"}</span>
+                        </button>
+                        {isOpen && (
+                          <div className="px-4 pb-4 border-t border-zinc-800/60 space-y-2.5">
+                            <p className="text-xs text-zinc-400 leading-relaxed mt-3">
+                              <span className="text-zinc-200 font-medium">"I diagnosed {story.failure}. Root cause: {story.rootCause}. Fix: {story.fix}. In production this is the {story.production} pattern."</span>
+                            </p>
+                            <p className="text-[10px] text-zinc-600 italic">Use this when they ask: "Tell me about a time you debugged a production AI failure."</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 flex items-center justify-between gap-3">
                     <p className="text-xs text-zinc-500">Was this scenario useful? Tell us what to improve.</p>

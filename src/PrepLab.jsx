@@ -713,6 +713,7 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
   const [textOverrides, setTextOverrides] = useState({});
   const [showGate, setShowGate] = useState(false);
   const [showGateResults, setShowGateResults] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const timerRef = useRef(null);
   const DM = { 15: 20, 30: 35, 60: 55 };
 
@@ -806,6 +807,20 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
     };
   }
 
+  function shareScore(r) {
+    const topStrong = r.strong[0] || null;
+    const topWeak   = r.weak[0]   || null;
+    const lines = [
+      `I scored ${r.pct}% (${r.tc}/${r.total}) on the AI systems interview prep on GenAI Systems Lab.`,
+      topStrong ? `Strong: ${topStrong}.` : null,
+      topWeak   ? `Needs work: ${topWeak}.` : null,
+      `Can you beat it? → genai-systems-lab-ivory.vercel.app #AIEngineer #MachineLearning`,
+    ].filter(Boolean);
+    navigator.clipboard.writeText(lines.join(" "));
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2500);
+  }
+
   function copyResults(r) {
     const lines = [
       "PrepLab Exam Results",
@@ -876,11 +891,20 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
         <div className="max-w-3xl mx-auto space-y-5">
 
           {/* Header row */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <button onClick={onExit} className="text-zinc-400 hover:text-zinc-200 text-sm">← Exit</button>
-            <button onClick={() => copyResults(r)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-lg border border-zinc-700">
-              Copy Results
-            </button>
+            <div className="flex gap-2">
+              <button onClick={() => shareScore(r)}
+                className="px-4 py-2 text-sm rounded-lg border transition-all font-medium"
+                style={shareCopied
+                  ? { background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.4)", color: "#86efac" }
+                  : { background: "rgba(139,92,246,0.10)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>
+                {shareCopied ? "Copied! ✓" : "Share score"}
+              </button>
+              <button onClick={() => copyResults(r)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-lg border border-zinc-700">
+                Copy full results
+              </button>
+            </div>
           </div>
 
           {/* Score headline */}

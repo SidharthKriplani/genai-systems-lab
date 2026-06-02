@@ -70,7 +70,7 @@ const START_HERE_PATH = [
 
 const STATS = [
   { value: "3,400+", target: 3400, suffix: "+", label: "Learners",           sub: "Engineers & PMs",   tab: null           },
-  { value: "222+",   target: 222,  suffix: "+", label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
+  { value: "225+",   target: 225,  suffix: "+", label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
   { value: "200+",   target: 200,  suffix: "+", label: "Challenges",         sub: "All interactive",   tab: null           },
 ];
 
@@ -326,14 +326,14 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
               className="p-4 rounded-xl text-left card-lift animate-cardSlideUp animate-delay-60"
               style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.55)" }}>
               <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest font-bold">PROVE</p>
-              <p className="text-sm font-bold text-white mt-1">261 questions</p>
+              <p className="text-sm font-bold text-white mt-1">277 questions</p>
               <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Exam, Trainer, or Interview Prep modes</p>
             </button>
             <button onClick={() => onNavigate("groundtruth")}
               className="p-4 rounded-xl text-left card-lift animate-cardSlideUp animate-delay-120"
               style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,211,238,0.55)" }}>
               <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">KNOWLEDGE</p>
-              <p className="text-sm font-bold text-white mt-1">222+ posts</p>
+              <p className="text-sm font-bold text-white mt-1">225+ posts</p>
               <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Production depth, not tutorials</p>
             </button>
           </div>
@@ -435,7 +435,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                     style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.65)" }}>
                     <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">PROVE</span>
                     <span className="text-sm font-bold text-white mb-1.5 leading-snug">Interview ready in hours, not weeks</span>
-                    <span className="text-xs text-zinc-400 leading-relaxed flex-1">261 questions across RAG, agents, evals, and MLOps — with traps weaker candidates fall into, clearly marked.</span>
+                    <span className="text-xs text-zinc-400 leading-relaxed flex-1">277 questions across RAG, agents, evals, and MLOps — with traps weaker candidates fall into, clearly marked.</span>
                     <span className="mt-3 text-xs font-bold text-green-300 flex items-center gap-1">Open Prep Lab <span className="text-green-400">→</span></span>
                   </button>
                   <button
@@ -492,23 +492,6 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
             </div>
           </div>
 
-          {/* ── DAILY TIP ──────────────────────────────────────────────── */}
-          <div className="max-w-4xl mx-auto px-4 pb-10">
-            {(() => {
-              const tip = DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length];
-              return (
-                <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 p-4">
-                  <div className="flex items-start gap-3">
-                    <span className="text-amber-400 text-base shrink-0">💡</span>
-                    <div>
-                      <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Did you know · Today's tip</p>
-                      <p className="text-sm text-zinc-300 leading-relaxed">{tip}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
         </>
       )}
 
