@@ -24,7 +24,7 @@ Act as a product and engineering partner, not an assistant. That means:
 
 Core mechanic: configure real AI systems (RAG pipelines, agent loops, eval harnesses), watch them fail in realistic ways, and understand why. Every module is interactive and takes under 20 minutes.
 
-Scale as of May 2026: 54 Systems modules (in nav), 22 Explore modules, 16 Agent Lab modules, 15 Concepts modules, 261 PrepLab questions, 222 Ground Truth posts. Nav: KNOWLEDGE (Concepts, Ground Truth) + 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product). Legacy tabs (Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
+Scale as of May 2026: 56 Systems modules (in nav), 22 Explore modules, 16 Agent Lab modules, 16 Concepts modules, 277 PrepLab questions, 225 Ground Truth posts. Nav: KNOWLEDGE (Concepts, Ground Truth) + 4 Labs (RAG Lab, Agent Lab, Eval Lab, LLM Lab) + GROW (Prep Lab, Career, AI Product). Legacy tabs (Flows, Agents, Playground, Explore, Systems, Paths, Fluency) accessible via #hash but not in primary nav.
 
 **Business model:** Freemium with access code gate (decided May 2026). Free: all Labs, all GT, all modules, PrepLab 10q/session. Gated (access code now, paid later): full PrepLab, Company Tracks, Interview Prep Plan study plan (phase 4, gated after 30% completion). Community code shared freely during beta. Stripe + auth when ready to monetize. See DECISIONS.md Section 0.
 

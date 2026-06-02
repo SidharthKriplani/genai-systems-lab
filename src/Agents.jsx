@@ -1663,10 +1663,44 @@ const SIM_SCENARIOS = [
 
 const STEP_ICONS = { thought: "💭", action: "⚡", observation: "👁", final: "✓" };
 
+const AGENT_INTERVIEW_STORIES = {
+  research: {
+    failure: "an agent retrieving stale figures from training data instead of calling a live tool",
+    rootCause: "the model didn't distinguish 'I saw this in training' from 'I know this is current' — no explicit reasoning step before tool selection",
+    fix: "explicit think-before-act policy: agent must reason about data freshness before every factual lookup, then call the appropriate tool",
+    production: "any ReAct agent on financial or market data — the classic 'hallucinated statistics' failure in customer-facing pipelines",
+  },
+  debugging: {
+    failure: "an agent entering a debugging loop — repeatedly running the same failing test without changing strategy",
+    rootCause: "no exit condition on repeated failures and no self-critique step; the agent treated each retry as independent rather than tracking state across steps",
+    fix: "step budget + self-critique: after N failed attempts, agent must explicitly re-evaluate its approach before trying again",
+    production: "code agents and CI/CD agents — tool loops are the most common production failure and the hardest to catch without explicit retry limits",
+  },
+  incident: {
+    failure: "an agent taking a high-stakes remediation action (restarting a service) without a confirmation gate",
+    rootCause: "no distinction between read-only diagnostic tools and write/destructive actions — the agent had equal permission to observe and to act",
+    fix: "tiered tool permissions: read tools execute freely, write/destructive tools require a human confirmation step before execution",
+    production: "ops automation agents — LangGraph HITL interrupt_before is the standard pattern for write actions in production",
+  },
+  injection: {
+    failure: "an agent following attacker instructions embedded in a retrieved document — indirect prompt injection via tool output",
+    rootCause: "the agent treated tool output as trusted instructions rather than as external data to be summarised",
+    fix: "output sandboxing: tool results are marked as 'external untrusted content' in the context; strictly grounded response policy prevents instruction-following from retrieved text",
+    production: "any agent with web search or document retrieval tools — documented in Bing Chat (2023), documented in enterprise copilots reading shared Notion workspaces",
+  },
+  planning: {
+    failure: "an agent completing all sub-steps correctly but delivering an incomplete final answer because it didn't synthesise across its own outputs",
+    rootCause: "no explicit synthesis step in the plan; the agent treated sub-task completion as task completion",
+    fix: "plan with a mandatory synthesis node: after all sub-tasks complete, agent must explicitly combine results before returning to the user",
+    production: "multi-tool research agents — the 'correct steps, wrong answer' failure; most visible in financial and legal research agents",
+  },
+};
+
 function AgentLoopSimulator() {
   const [scenarioId, setScenarioId] = useState("research");
   const [stepIdx, setStepIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [openAgentStory, setOpenAgentStory] = useState(null);
   const [chosen, setChosen] = useState(null);
   const [scores, setScores] = useState([]);
   const [done, setDone] = useState(false);
@@ -1750,6 +1784,32 @@ function AgentLoopSimulator() {
             <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-failure-modes" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">📖 How AI Agents Fail in Production</button>
           </div>
         </div>
+        {(() => {
+          const story = AGENT_INTERVIEW_STORIES[scenarioId];
+          if (!story) return null;
+          const isOpen = openAgentStory === scenarioId;
+          return (
+            <div className="rounded-xl border border-zinc-800 overflow-hidden">
+              <button
+                onClick={() => setOpenAgentStory(isOpen ? null : scenarioId)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-900/40 transition-colors">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-black uppercase tracking-widest" style={{ color: "#a78bfa" }}>Your interview story</span>
+                  <span className="text-[10px] text-zinc-600">→ ready to use</span>
+                </div>
+                <span className="text-zinc-600 text-xs">{isOpen ? "▲" : "▼"}</span>
+              </button>
+              {isOpen && (
+                <div className="px-4 pb-4 border-t border-zinc-800/60 space-y-2.5">
+                  <p className="text-xs text-zinc-400 leading-relaxed mt-3">
+                    <span className="text-zinc-200 font-medium">"I diagnosed {story.failure}. Root cause: {story.rootCause}. Fix: {story.fix}. In production this is the {story.production} pattern."</span>
+                  </p>
+                  <p className="text-[10px] text-zinc-600 italic">Use this when they ask: "Tell me about a time you debugged a production AI failure."</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
     );
   }

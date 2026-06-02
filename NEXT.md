@@ -2,11 +2,11 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 36 — social proof + Maps to Production + GT Series shipped)*
+*Last updated: May 2026 (post sprint 37 — Share Score + Interview Story + Agent Lab stories + stat fixes + gt-read tracking)*
 
 ---
 
-## Theme: Sprint 36 shipped. Next: PostHog distribution check before next build sprint.
+## Theme: Sprint 37 shipped. Next: PostHog distribution check before next build sprint.
 
 Graph RAG (sprint 33), LangGraph (sprint 34), and two-stage retrieval (sprint 35) are all done. All three Tier 1 content gaps from the Senior AI Engineer interview signal are now closed. PrepLab revamp (sprints A–E) is complete. CompanyTracks fully revamped. The product is now at a content and UX completeness level where the limiting factor is distribution proof, not more features.
 

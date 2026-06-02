@@ -931,6 +931,12 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
 
   useEffect(() => { track("ground_truth_viewed", {}); }, []);
 
+  // Track individual post reads — one key per post, used by GT State-Aware Reading Mode
+  useEffect(() => {
+    if (!openPost) return;
+    try { localStorage.setItem("gsl-gt-read-" + openPost.id, "1"); } catch {}
+  }, [openPost]);
+
   // Deep-link from search: open the post matching initialPostId
   useEffect(() => {
     if (!initialPostId) return;

@@ -105,8 +105,8 @@ const MODULES_KB = [
   { id: "query-refinement", label: "Query Refinement Lab",      tab: "systems", group: "Systems", desc: "HyDE, multi-query, and decomposition strategies to improve RAG retrieval quality.", keywords: ["query refinement","HyDE","multi-query","query decomposition","retrieval improvement","query rewriting","RAG retrieval"] },
   { id: "ai-safety-eng",    label: "AI Safety Engineering",     tab: "systems", group: "Systems", desc: "6 attack patterns, 5 defense layers, and a production hardening checklist.", keywords: ["AI safety","safety engineering","attack patterns","defense layers","hardening","production safety","AI security"] },
 
-  // ── PrepLab (topic clusters — 261 questions) ─────────────────────────────────
-  { id: "preplab-rag",      label: "PrepLab: RAG & Retrieval",     tab: "preplab", group: "PrepLab", desc: "261 interview questions — RAG pipeline design, retrieval failure modes, chunking, reranking.", keywords: ["preplab","interview","quiz","RAG questions","retrieval questions","chunking interview","reranking","RAG interview"] },
+  // ── PrepLab (topic clusters — 277 questions) ─────────────────────────────────
+  { id: "preplab-rag",      label: "PrepLab: RAG & Retrieval",     tab: "preplab", group: "PrepLab", desc: "277 interview questions — RAG pipeline design, retrieval failure modes, chunking, reranking.", keywords: ["preplab","interview","quiz","RAG questions","retrieval questions","chunking interview","reranking","RAG interview"] },
   { id: "preplab-agents",   label: "PrepLab: Agents & Tool Use",   tab: "preplab", group: "PrepLab", desc: "Agent loop design, tool calling, failure modes, memory — interview-style questions.", keywords: ["preplab","interview","agents questions","tool use interview","agent design question","memory agent interview"] },
   { id: "preplab-evals",    label: "PrepLab: Evals & Metrics",     tab: "preplab", group: "PrepLab", desc: "Evaluation design, metric selection, LLM-as-judge, RAGAS — interview questions.", keywords: ["preplab","evals interview","evaluation questions","metrics interview","LLM judge interview","RAGAS question"] },
   { id: "preplab-inference",label: "PrepLab: Inference & Serving", tab: "preplab", group: "PrepLab", desc: "Batching, KV cache, quantization, speculative decoding — interview questions.", keywords: ["preplab","inference interview","serving questions","KV cache interview","quantization interview","batching question"] },
@@ -500,7 +500,7 @@ function ResultsPanel({ results, query, onNavigate, onNavigateTo, onRerun }) {
               ) : (
                 <span className="text-violet-400">browse Ground Truth</span>
               )}{" "}
-              for all 222+ posts.
+              for all 225+ posts.
             </p>
           </div>
           {onRerun && (
@@ -617,7 +617,7 @@ export default function Consultation({ onNavigate, onNavigateTo }) {
       <div>
         <h1 className="text-xl font-bold text-white">Search the Lab</h1>
         <p className="text-sm text-zinc-500 mt-1">
-          Keyword search across 222+ Ground Truth posts and every module.
+          Keyword search across 225+ Ground Truth posts and every module.
         </p>
       </div>
 
