@@ -2274,22 +2274,21 @@ export default function App() {
                     if (!story) return null;
                     const isOpen = openStory === scenario.scenario_id;
                     return (
-                      <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                      <div className="rounded-lg border border-violet-800/40 bg-violet-950/20 overflow-hidden">
                         <button
                           onClick={() => setOpenStory(isOpen ? null : scenario.scenario_id)}
-                          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-900/40 transition-colors">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono font-black uppercase tracking-widest" style={{ color: "#a78bfa" }}>Your interview story</span>
-                            <span className="text-[10px] text-zinc-600">→ ready to use</span>
-                          </div>
-                          <span className="text-zinc-600 text-xs">{isOpen ? "▲" : "▼"}</span>
+                          className="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-violet-950/30 transition-colors"
+                        >
+                          <span className="text-xs font-mono text-violet-400">▶ Your interview story → ready to use</span>
+                          <span className="text-xs text-zinc-500">{isOpen ? "▲" : "▼"}</span>
                         </button>
                         {isOpen && (
-                          <div className="px-4 pb-4 border-t border-zinc-800/60 space-y-2.5">
-                            <p className="text-xs text-zinc-400 leading-relaxed mt-3">
-                              <span className="text-zinc-200 font-medium">"I diagnosed {story.failure}. Root cause: {story.rootCause}. Fix: {story.fix}. In production this is the {story.production} pattern."</span>
-                            </p>
-                            <p className="text-[10px] text-zinc-600 italic">Use this when they ask: "Tell me about a time you debugged a production AI failure."</p>
+                          <div className="px-3 py-2.5 border-t border-violet-800/30 space-y-2 text-xs text-zinc-300">
+                            <p><span className="text-violet-400 font-mono">Challenge:</span> {story.challenge}</p>
+                            <p><span className="text-violet-400 font-mono">Scenario:</span> {story.scenario}</p>
+                            <p><span className="text-violet-400 font-mono">Key insight:</span> {story.keyInsight}</p>
+                            <p><span className="text-violet-400 font-mono">Production:</span> {story.productionExample}</p>
+                            <p className="bg-violet-950/30 border border-violet-800/30 rounded p-1.5"><span className="text-violet-300 font-mono">Interview cue:</span> <em>{story.interviewCue}</em></p>
                           </div>
                         )}
                       </div>
