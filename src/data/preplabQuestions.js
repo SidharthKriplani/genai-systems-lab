@@ -2898,6 +2898,43 @@ export const PREP_QUESTIONS = [
   },
 
   {
+    id: "semcache-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "A team builds an FAQ chatbot serving 10,000 queries/day. They implement semantic caching with a cosine similarity threshold of 0.92. Which type of query CANNOT safely be served from cache?",
+    options: [
+      "What is your return policy?",
+      "How long does shipping take?",
+      "What is the current price of item X?",
+      "What payment methods do you accept?"
+    ],
+    correct: 2,
+    explanation: "Price queries are time-sensitive — a cached answer from 3 hours ago may be wrong if prices change. Semantic caching requires TTL (time-to-live) per query type, with very short TTLs or no caching for real-time data. Return policy, shipping times, and payment methods are stable FAQ content where caching is safe. The semantic cache doesn't know the difference — it's purely similarity-based, which is why query classification by staleness risk is a required design step.",
+    trap: "Thinking that any factual query is safe to cache. The distinction isn't 'FAQ vs complex' — it's 'stable vs time-sensitive.' A complex question about return policy exceptions is safer to cache than a simple price query.",
+    readMore: { label: "Semantic Caching →", tab: "groundtruth", postId: "semantic-caching" }
+  },
+
+  {
+    id: "semcache-2", topic: "llmops", difficulty: "hard", gated: true, type: "text",
+    question: "A B2B SaaS uses semantic caching at threshold 0.90 for a shared customer support chatbot. A security audit finds that User A's query 'What is my account balance?' returned User B's cached balance response. What went wrong architecturally, and how do you fix it?",
+    options: [],
+    correct: 0,
+    keywords: ["user-specific", "personalised", "cache key", "user ID", "namespace", "PII", "cache isolation"],
+    explanation: "The fundamental error is caching personalised queries in a shared cache without user isolation. 'What is my account balance?' is semantically similar across all users — threshold 0.90 treats them as equivalent and returns a previous user's cached response. Two fixes: (1) Never cache queries that require user-specific context — classify queries on ingest and skip caching for any query matching personalisation patterns (my account, my orders, my transactions). (2) If caching personalised queries is required, namespace the cache by user ID — cache key = hash(user_id + query_embedding) — so each user has an isolated cache. The data leakage here is a regulatory issue (PII, GDPR Article 5 data minimisation) not just a quality issue.",
+    trap: "Saying 'lower the similarity threshold.' The threshold doesn't prevent user data cross-contamination — it only changes how similar queries need to be. Even at 0.99, 'What is my account balance?' from two different users would still match. The fix is architectural: query classification + cache namespacing.",
+    readMore: { label: "Semantic Caching →", tab: "groundtruth", postId: "semantic-caching" }
+  },
+
+  {
+    id: "semcache-3", topic: "llmops", difficulty: "medium", gated: true, type: "text",
+    question: "How does semantic caching differ from prompt caching (Anthropic/OpenAI prefix caching), and in what scenario would you deploy both?",
+    options: [],
+    correct: 0,
+    keywords: ["prompt caching", "prefix", "semantic similarity", "embedding", "LLM call bypass", "input token discount", "complementary"],
+    explanation: "Prompt caching (Anthropic/OpenAI): server-side feature that reuses computed KV cache for repeated prompt prefixes within a session window. Reduces input token cost by 50–90% on calls that do reach the LLM. Does not bypass the LLM call — just makes it cheaper. Semantic caching: application-layer cache that compares query embeddings to prior queries and returns a stored response without making an LLM call at all. Bypasses the LLM entirely. Requires embedding call + similarity lookup (~$0.0001) vs LLM call (~$0.001–$0.01). They are complementary: use semantic caching to skip the LLM call entirely for repeated intent; use prompt caching to reduce cost on the calls that do reach the LLM (long system prompts, tool schemas). Combined savings in high-volume FAQ: 70–85% total cost reduction.",
+    trap: "Treating them as alternatives. Prompt caching saves on input tokens for calls that reach the LLM. Semantic caching skips the LLM call entirely. A system with both benefits from both savings simultaneously.",
+    readMore: { label: "Semantic Caching →", tab: "groundtruth", postId: "semantic-caching" }
+  },
+
+  {
     id: "scaling-1", topic: "llm", difficulty: "medium", gated: false, type: "mcq",
     question: "The Chinchilla paper showed GPT-3 175B was trained suboptimally. What was the core problem?",
     options: [

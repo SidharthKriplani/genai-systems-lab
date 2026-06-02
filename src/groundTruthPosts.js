@@ -1057,6 +1057,61 @@ print(f"Cache write tokens: {usage.cache_creation_input_tokens}")` },
     { t: "lab", tab: "systems", label: "Configure a model router →", desc: "See how routing decisions change based on query type and how cost changes at scale." },
   ],
 
+  // ─── SEMANTIC CACHING ────────────────────────────────────────────────────────
+
+  "semantic-caching": [
+    { t: "p", text: "Prompt caching reduces cost on repeated prefixes. Semantic caching reduces cost on repeated intent — even when the wording changes. Instead of matching token sequences, it embeds the query, compares to a cache of prior queries using cosine similarity, and returns a cached response when the query is similar enough. 'What is RAG?' and 'Can you explain retrieval augmented generation?' hit the same cache entry." },
+
+    { t: "h2", text: "How semantic caching works" },
+    { t: "list", items: [
+      "On each query: embed the query text (using the same model you use for retrieval)",
+      "Search the cache: find the nearest prior query by cosine similarity",
+      "If similarity > threshold (e.g. 0.92): return the cached response — no LLM call",
+      "If below threshold: call the LLM, get a response, store (query embedding, response) in the cache",
+      "Cache stores: (embedding vector, original query text, response, timestamp, hit count)",
+    ]},
+
+    { t: "callout", v: "key", text: "Semantic caching bypasses the LLM entirely — not just the input tokens. A cache hit on a 500-token query costs ~$0.0001 (embedding call) vs ~$0.01 (LLM call). In high-volume FAQ or customer support use cases, hit rates of 30–60% are common, reducing cost by the same margin." },
+
+    { t: "h2", text: "The threshold calibration problem" },
+    { t: "p", text: "The similarity threshold is the critical parameter. Too high (0.98): only exact paraphrases hit the cache — low hit rate, minimal savings. Too low (0.80): semantically adjacent but factually different queries hit the same cache — wrong answers delivered with confidence. The correct threshold depends on your task: FAQ systems can tolerate 0.90–0.93 because answers to similar questions are usually the same; complex reasoning tasks should not use semantic caching at all." },
+    { t: "table", headers: ["Threshold", "Hit rate", "Risk", "Best for"], rows: [
+      ["0.98+",   "~5%",    "Minimal — only near-identical queries hit cache",     "Sensitive queries where slight differences matter"],
+      ["0.92–0.97","20–40%", "Low — paraphrases safely cached",                    "FAQ, customer support, product documentation"],
+      ["0.85–0.91","40–60%", "Medium — some semantically different queries merged", "High-volume, low-stakes, repetitive queries"],
+      ["< 0.85",  "60%+",   "High — topic drift causes wrong cached answers",      "Not recommended for most tasks"],
+    ]},
+
+    { t: "h2", text: "When semantic caching breaks" },
+    { t: "list", items: [
+      "Time-sensitive queries: 'What is the current price of X?' cached 2 hours ago is wrong now — add TTL (time-to-live) per query type",
+      "Personalised queries: 'What are my recent transactions?' is semantically similar across users but factually different — never cache user-specific queries",
+      "Paraphrase attacks: adversarial users can probe the cache boundary and extract prior responses to similar queries — a security issue in multi-tenant systems",
+      "High-variance tasks: creative writing, code generation — the same prompt should produce varied outputs; caching defeats this intentionally",
+      "Freshness requirements: news summarisation, price queries, availability checks — where staleness is expensive",
+    ]},
+
+    { t: "callout", v: "warning", text: "Never use semantic caching for personalised, user-specific, or time-sensitive queries. The cache is shared across users — a hit returns a previous user's response. This is not just a quality problem; it is a data leakage problem in regulated environments." },
+
+    { t: "h2", text: "Tooling" },
+    { t: "list", items: [
+      "GPTCache (open-source): drop-in semantic cache for OpenAI-compatible APIs, supports Redis and Faiss backends",
+      "Redis + pgvector: build your own with an embedding step, cosine similarity query, and TTL on entries",
+      "LangChain SemanticSimilarityExactMatchCache: built-in cache layer for LangChain chains",
+      "Momento Semantic Cache: managed service with embedding + cache in one API call",
+    ]},
+
+    { t: "h2", text: "Combining with prompt caching" },
+    { t: "p", text: "Semantic caching and prompt caching are complementary, not competing. Semantic caching reduces LLM calls entirely. Prompt caching (Anthropic/OpenAI) reduces input token cost on calls that do reach the LLM. Apply both: semantic cache at the application layer for repeated intent, prefix cache at the API layer for shared system prompts. The combination can reduce total inference cost by 70–85% in high-volume FAQ deployments." },
+
+    { t: "lab", tab: "systems", label: "Explore LLM cost optimisation strategies →", desc: "See how semantic caching fits in the full inference cost reduction stack." },
+    { t: "references", items: [
+      { label: "GPTCache: A Library for Creating Semantic Cache for LLM Queries", url: "https://github.com/zilliztech/GPTCache" },
+      { label: "Redis Vector Similarity Search — semantic caching pattern", url: "https://redis.io/docs/latest/develop/interact/search-and-query/query/vector-search/" },
+      { label: "LangChain SemanticSimilarityExactMatchCache documentation", url: "https://python.langchain.com/docs/integrations/llm_caching/" },
+    ]},
+  ],
+
   // ─── VECTOR DATABASES ────────────────────────────────────────────────────────
 
   "vector-databases-compared": [
