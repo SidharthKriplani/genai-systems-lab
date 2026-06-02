@@ -3494,4 +3494,178 @@ export const PREP_QUESTIONS = [
     trap: "Adding 'accuracy' as a criterion to a single judge prompt. Judges with multiple criteria tend to weight fluency and helpfulness more heavily because those signals are easier to detect in the response text. Factual accuracy requires comparison against a reference — a separate judge with a reference document produces more reliable accuracy signals than a blended rubric.",
   },
 
+  {
+    id: "scenario-4", topic: "agents", difficulty: "hard", gated: true, type: "scenario",
+    title: "The Agent That Trusted the Wrong Source",
+    incident: "Your customer service agent processed 2,300 tickets overnight without issues. In the morning, 47 tickets received responses that redirected customers to a competitor's support page. The agent has access to 4 tools: ticket_lookup, knowledge_base_search, policy_checker, send_response. No prompt changes were made overnight.",
+    steps: [
+      {
+        prompt: "Where do you look first?",
+        choices: [
+          "Check if the model was quietly updated overnight by the provider",
+          "Pull the full trace for one of the 47 affected tickets and read every tool call and response",
+          "Scan the send_response tool logs for the competitor URL pattern",
+          "Check if a team member accidentally edited the system prompt"
+        ],
+        correct: 1,
+        reveals: [
+          "The model version is unchanged — same checkpoint as the prior 48 hours. This eliminates a model regression.",
+          "The trace shows: knowledge_base_search('how to escalate a support issue') returned a chunk scored 0.91 similarity. The chunk reads: 'For faster resolution, visit competitor.com/support — our preferred escalation partner.' That chunk appears in 47 tickets where the user asked about escalation. The agent included it verbatim because it trusted the retriever.",
+          "The URL appears in the send_response output, but that only tells you what the agent sent — not why. You need the trace to see where the content originated.",
+          "System prompt is identical to the version 72 hours ago. No edits. The prompt isn't the source."
+        ]
+      },
+      {
+        prompt: "The knowledge base returned a poisoned chunk. How did it get there?",
+        choices: [
+          "A team member accidentally indexed a competitor FAQ page during a bulk import yesterday",
+          "The embedding model drifted and started mapping internal docs to competitor content",
+          "The chunk was always there — the similarity threshold was recently lowered, surfacing it",
+          "A prompt injection in a user ticket caused the retriever to add external content"
+        ],
+        correct: 0,
+        reveals: [
+          "Confirmed. The ingestion log shows a bulk import at 23:14 yesterday. A scraped competitor FAQ page was included in the zip file alongside internal policy docs. The pipeline indexed it without source validation — it has no mechanism to distinguish internal from external documents.",
+          "Embedding drift would affect all retrieval, not a specific chunk. Overall retrieval quality on other queries is unchanged. The model and embeddings are stable.",
+          "The chunk was added yesterday — it's 14 hours old. Threshold changes would affect existing content, not newly ingested content that didn't exist before.",
+          "Prompt injection via user tickets could affect the model's output, but not inject new documents into the vector store. The corpus is write-only from the ingestion pipeline."
+        ]
+      },
+      {
+        prompt: "How do you prevent corpus poisoning from recurring?",
+        choices: [
+          "Add a regex filter on send_response to block competitor domain URLs before they reach customers",
+          "Require source metadata on every ingested document — only serve chunks where source_type is 'internal'",
+          "Raise the similarity threshold to 0.95 so only highly relevant chunks surface",
+          "Add a post-retrieval LLM judge that reviews each chunk for competitor mentions before the agent sees it"
+        ],
+        correct: 1,
+        reveals: [
+          "URL filtering patches this specific attack but not the vulnerability. The next poisoned document might return wrong policy, exfiltrate customer data, or redirect to a phishing page — none of which a URL regex catches.",
+          "Correct. Tag every document at ingestion with source_type: internal | external | unverified. The retriever's metadata filter only serves internal-tagged chunks. An unsigned or external-tagged doc is quarantined for human review before indexing. Provenance is enforced at the corpus level, not the response level.",
+          "A well-crafted external document can score 0.95 on semantically relevant queries. Threshold tuning doesn't prevent poisoning — it just changes the attack surface slightly.",
+          "An LLM judge adds latency and cost to every retrieval call, and can still be fooled by subtly poisoned content that doesn't explicitly name competitors. Source provenance is a deterministic fix; an LLM judge is a probabilistic one."
+        ]
+      }
+    ],
+    rootCause: "The knowledge base ingestion pipeline had no source provenance validation. An external document was accidentally ingested and returned high-similarity chunks on legitimate queries. The agent has no mechanism to distinguish trusted internal content from external contamination — it treats all retrieved chunks equally, regardless of origin.",
+    trap: "Adding a competitor URL regex filter to the send_response tool. This patches the specific incident but not the vulnerability class. The corpus can contain poisoned content that returns wrong policy, extracts data, or redirects to phishing — none of which a URL filter catches. The fix is provenance enforcement at the corpus level: source metadata on every document, filter at retrieval time.",
+  },
+
+  {
+    id: "scenario-5", topic: "finetuning", difficulty: "hard", gated: true, type: "scenario",
+    title: "The Fine-Tune That Forgot",
+    incident: "You fine-tuned a 7B base model on 50K customer support tickets. ROUGE-L improved from 0.41 to 0.73. Domain exact-match went from 18% to 67%. You deploy. Within 48 hours, support escalations increase 40%. Human reviewers report the model ignores system prompt instructions, rambles instead of giving structured answers, and refuses to stay concise.",
+    steps: [
+      {
+        prompt: "What is your first diagnostic step?",
+        choices: [
+          "Audit the 50K training examples — bad data quality is the most common cause of post-deploy regressions",
+          "Run the fine-tuned model on a general instruction-following benchmark, not domain questions",
+          "Check whether the system prompt is being passed correctly in the API call — a formatting bug could explain the ignoring",
+          "Re-run ROUGE evaluation — the metric might have been miscalculated"
+        ],
+        correct: 1,
+        reveals: [
+          "The training data is clean — well-formatted tickets, correct answers, consistent formatting. A data audit won't explain why the model ignores the system prompt on questions it was never trained on.",
+          "MT-Bench instruction-following score: base model 7.2, fine-tuned model 4.1. The model learned domain vocabulary and style, but partially overwrote the RLHF alignment that made it follow instructions. It now responds in 'customer support ticket style' regardless of what the system prompt requests.",
+          "System prompt formatting is identical to what worked on the base model. The API call is correct. The model receives the instruction and ignores it — that is the failure.",
+          "ROUGE was calculated correctly. 0.73 is accurate for the domain eval set. The problem is that ROUGE measures lexical overlap, not instruction compliance — it cannot detect that instruction-following degraded."
+        ]
+      },
+      {
+        prompt: "Instruction-following dropped from 7.2 to 4.1. What caused this during fine-tuning?",
+        choices: [
+          "50K samples was insufficient — the model needed more data to retain general capability alongside domain knowledge",
+          "The fine-tuning data had no instruction-following examples — only raw Q&A pairs without system prompts",
+          "Full fine-tuning at lr=5e-5 overwrote alignment-critical weights — catastrophic forgetting of RLHF behaviour",
+          "The model was too small — a 7B model cannot simultaneously hold domain knowledge and instruction following"
+        ],
+        correct: 2,
+        reveals: [
+          "50K is a reasonable dataset size for 7B fine-tuning. The problem is training approach, not data volume. 500K samples at the same learning rate would produce the same catastrophic forgetting.",
+          "Missing instruction-following examples in training data is a real issue — but the deeper cause here is the learning rate. The optimizer overwrote the alignment layers regardless of what examples were present.",
+          "Exactly. Full fine-tuning at lr=5e-5 with no layer freezing gave the optimizer full access to every parameter, including the RLHF-aligned layers. It optimised them for customer support style — improving ROUGE while destroying the instruction-following behaviour the base model had. This is catastrophic forgetting: the model learned what you asked it to learn and forgot what it already knew.",
+          "7B models (Mistral, Llama-3, Qwen-2) maintain instruction following after fine-tuning when trained correctly. Size is not the constraint — the training configuration is."
+        ]
+      },
+      {
+        prompt: "How do you recover and prevent catastrophic forgetting in future runs?",
+        choices: [
+          "Roll back to base model and use RAG instead — fine-tuning is too risky for this use case",
+          "Use LoRA at rank 16 with lr=2e-4, and add 10-15% general instruction-following examples to the training mix",
+          "Fine-tune for fewer epochs — stop at 1 epoch to limit how much the base weights change",
+          "Apply RLHF after fine-tuning to re-align the model before deploying"
+        ],
+        correct: 1,
+        reveals: [
+          "RAG is a valid alternative but fine-tuning is not inherently risky — it was applied incorrectly here. Rolling back forfeits the real domain quality gains. The fix is training configuration, not abandoning fine-tuning.",
+          "Correct. LoRA modifies less than 1% of parameters via low-rank adapter matrices, leaving the base model's alignment-critical layers untouched. Rank 16 gives sufficient capacity for domain adaptation. Adding 10-15% instruction-following examples from FLAN or Alpaca to the training mix prevents style drift without requiring a separate alignment step. This preserves ROUGE gains while keeping instruction-following intact.",
+          "Fewer epochs reduce forgetting but don't eliminate it at lr=5e-5 with full fine-tuning. You trade domain performance for partial alignment recovery. LoRA is a cleaner architectural solution.",
+          "RLHF after fine-tuning can recover alignment, but it requires preference data collection, reward model training, and PPO — months of work for a problem that LoRA + data mixing prevents in the initial training run."
+        ]
+      }
+    ],
+    rootCause: "Full fine-tuning at high learning rate (lr=5e-5) caused catastrophic forgetting of the base model's RLHF alignment. Domain ROUGE improved because the model learned support ticket style, but instruction-following degraded because alignment-critical weights were overwritten by the optimizer. The eval suite didn't catch it because it measured only domain accuracy — not instruction compliance.",
+    trap: "Auditing the training data quality. The data was clean — the problem was the training configuration, not what was in the dataset. Blaming data quality sends teams on a multi-day audit while the production degradation continues. The diagnostic is instruction-following benchmarks on the fine-tuned model, not a data review.",
+  },
+
+  {
+    id: "scenario-6", topic: "evals", difficulty: "hard", gated: true, type: "scenario",
+    title: "The Eval That Picked the Wrong Winner",
+    incident: "Your team evaluated 4 retrieval configurations for your RAG pipeline using 200 test questions. Config B scored 76% vs Config A's 68%. Config B ships. Two weeks later, production quality drops below the baseline you had before the change. Users complain retrieval is returning irrelevant results on their queries.",
+    steps: [
+      {
+        prompt: "What do you check first?",
+        choices: [
+          "Re-run the eval — 200 questions may have had statistical variance that favoured Config B by chance",
+          "Check whether Config B's retrieval parameters drifted after deployment",
+          "Compare the eval question distribution to the actual distribution of production queries",
+          "Check whether the vector index was rebuilt correctly when Config B was deployed"
+        ],
+        correct: 2,
+        reveals: [
+          "Re-running the same eval would give the same result — Config B would win again on those 200 questions. The problem isn't variance in the existing eval; it's that the eval measures the wrong thing.",
+          "Config B's parameters are identical to what was evaluated. No drift. The configuration shipped as tested.",
+          "The eval set was built from your internal product FAQ — 200 structured, explicit questions written by the product team. Production queries are different: typos, abbreviations, implicit intent, multi-turn context. You pull a sample of 200 production queries and run both configs. Config A wins 61% vs Config B's 54%. The eval was measuring Config B's strengths, not production's characteristics.",
+          "Index rebuild was clean — confirmed by vector count and a spot-check of 20 known documents. The index is not the issue."
+        ]
+      },
+      {
+        prompt: "Config B wins on FAQ-style questions but loses on real user queries. Why?",
+        choices: [
+          "Config B uses a cross-encoder reranker calibrated on explicit queries — it degrades on messy, implicit production traffic",
+          "Config B's chunk size is wrong — it was tuned for the FAQ format, not for the longer, noisier production documents",
+          "The eval had 200 questions but production has thousands — sample size is the fundamental problem",
+          "Config B is simply a worse retriever — the 76% vs 68% gap was noise and Config A was always better"
+        ],
+        correct: 0,
+        reveals: [
+          "Exactly. Config B's reranker (MS-MARCO cross-encoder) was trained on web search queries — explicit, keyword-rich, structured. It excels on well-formed questions like your FAQ eval set. On production queries with typos, implicit references, and incomplete context, the cross-encoder mis-scores relevance. Config A's bi-encoder is less precise on structured queries but more robust to noise — which is what production actually sends.",
+          "Chunk size is identical between A and B. The corpus is unchanged. The difference is entirely in the retrieval and reranking logic.",
+          "200 is a reasonable eval size if it's representative. The issue is distribution, not sample size. A 2,000-question eval from the same FAQ would give you even more confidence in the wrong answer.",
+          "Config B is genuinely better — on the right query distribution. The problem is that the eval distribution didn't match production. Config B isn't a bad retriever; it's a retriever evaluated on the wrong test."
+        ]
+      },
+      {
+        prompt: "How do you build a retrieval eval that actually predicts production performance?",
+        choices: [
+          "Increase the eval set to 2,000+ questions to reduce variance and make the result more statistically reliable",
+          "Sample eval questions from production logs, have reviewers label retrieved chunk relevance, use this as your test set",
+          "Add a statistical significance test — the 68% vs 76% gap at n=200 may not be significant",
+          "Run A/B testing in production instead of offline eval — the only ground truth is real user behaviour"
+        ],
+        correct: 1,
+        reveals: [
+          "More questions from the same FAQ distribution gives higher confidence in the wrong distribution. Sample size is not the constraint — representativeness is.",
+          "Correct. Sample 500 queries from production logs. Anonymise, then have 2-3 reviewers label retrieved chunks as relevant/not relevant for each query. This is your eval set. An offline eval calibrated on production traffic is 10x more predictive than a curated FAQ set. Distribution alignment matters more than question count.",
+          "At n=200, a 68% vs 76% gap has p≈0.07 — borderline. Significance testing is good practice. But even if you ran this test and found the gap non-significant, the root cause would still be distribution mismatch. Statistical rigour on a misrepresentative eval still gives you the wrong answer.",
+          "Production A/B is the ultimate ground truth, but it exposes real users to a potentially worse system. Offline eval calibrated on production data lets you catch distribution failures before they go live. The fix is better offline eval, not skipping it."
+        ]
+      }
+    ],
+    rootCause: "Eval set distribution mismatch. The eval was built from structured FAQ questions written by the product team. Production traffic is messier — typos, implicit intent, multi-turn context. Config B's cross-encoder reranker was calibrated on clean, explicit queries and won the eval because the eval matched its strengths, not production's characteristics. This is an eval design failure, not a retrieval failure.",
+    trap: "Increasing the eval set size. More questions from the wrong distribution produces higher confidence in the wrong answer. Distribution alignment is more important than statistical power — a 200-question eval sampled from production logs beats a 2,000-question eval built from internal FAQs every time.",
+  },
+
 ];
