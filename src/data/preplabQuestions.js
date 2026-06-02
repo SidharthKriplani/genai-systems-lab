@@ -3320,4 +3320,178 @@ export const PREP_QUESTIONS = [
     readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
   },
 
+  {
+    id: "scenario-1", topic: "rag", difficulty: "hard", gated: true, type: "scenario",
+    title: "The Corpus That Broke at 2pm",
+    incident: "Your customer-facing Q&A bot went from 1% wrong-answer rate to 19% at 14:07 yesterday. No code was deployed. Users are getting confidently wrong answers about product features.",
+    steps: [
+      {
+        prompt: "What do you investigate first?",
+        choices: [
+          "Check if the embedding model or API was updated by the provider",
+          "Check retrieval logs — similarity scores, which chunks are being returned",
+          "Check application error logs for timeouts or API failures",
+          "Roll back to yesterday's snapshot and see if the rate drops"
+        ],
+        correct: 1,
+        reveals: [
+          "No model version changes in provider changelogs. API latency is normal. Dead end for now.",
+          "Retrieval scores look normal (0.78–0.85 avg). But you notice the top retrieved chunk for 34 different queries is from a document ingested at 13:52 — 15 minutes before the failure spike.",
+          "Logs show elevated timeout rates — but they start AFTER the quality drop, not before. Downstream symptom, not root cause.",
+          "Rate drops to 0.8% after rollback — confirming the corpus is the cause. But you've also lost legitimate updates made this morning. You need to find the specific document."
+        ]
+      },
+      {
+        prompt: "The new document ingested at 13:52 is ranking highly. What do you do next?",
+        choices: [
+          "Increase the similarity threshold to filter out lower-quality chunks",
+          "Read the document content — check it against your source of truth",
+          "Re-embed all documents ingested today to fix any corruption",
+          "Add a post-retrieval LLM fact-checker to catch wrong answers"
+        ],
+        correct: 1,
+        reveals: [
+          "Raising the threshold reduces volume but doesn't remove the bad document — it still ranks at 0.81, above the threshold. Wrong answers continue.",
+          "The document is a product spec uploaded by a sales rep — it describes a feature as active that was deprecated in Q1. It's factually incorrect and it's in 34 query paths.",
+          "Re-embedding is slow (2–4 hours for the full corpus) and won't fix a document with incorrect content. You'd re-embed the wrong information.",
+          "The fact-checker catches 60% of the wrong answers but misses the confident ones. You've treated the symptom. The bad document is still in the corpus."
+        ]
+      },
+      {
+        prompt: "You've confirmed the document is factually wrong. What's the correct fix?",
+        choices: [
+          "Delete the document, correct the source, re-ingest, and add a corpus validation step to your ingestion pipeline",
+          "Increase top_k from 4 to 12 to dilute the bad document with more correct ones",
+          "Fine-tune the model on correct answers to override the bad retrieval",
+          "Add a blocklist for the deprecated feature name so the model won't mention it"
+        ],
+        correct: 0,
+        reveals: [
+          "Correct. Removing the bad document restores the 1% baseline within minutes. Adding a validation step (human review or LLM quality gate on ingestion) prevents recurrence.",
+          "With top_k=12 the bad document still ranks #1 on affected queries — it just competes with more correct chunks. Hallucination rate drops to 9%, not 1%. The bad document is still there.",
+          "Fine-tuning is weeks of work and doesn't fix the retrieval — the model will still see the bad chunk in context and may defer to it. Wrong tool.",
+          "Blocklisting one term is brittle. The problem is the document — not the feature name. New wrong documents with different terms will bypass the blocklist."
+        ]
+      }
+    ],
+    rootCause: "A factually incorrect document was ingested into the corpus without validation. RAG systems have no way to distinguish authoritative from incorrect retrieved content — the model treats whatever is retrieved as ground truth. The failure mode is upstream (ingestion), not downstream (generation).",
+    trap: "Increasing top_k to dilute the bad document. This is the most common first instinct — 'more context will average it out.' It doesn't. The bad document still ranks first and the model still defers to it. The correct mental model: retrieval is a selection problem, not an averaging problem.",
+  },
+
+  {
+    id: "scenario-2", topic: "agents", difficulty: "hard", gated: true, type: "scenario",
+    title: "The Agent That Never Stops",
+    incident: "Your research agent — configured with 8 tools and no step limit — has been running for 47 minutes on a query that should take 90 seconds. It's accumulating $4.20 in API costs per run and never returning a final answer.",
+    steps: [
+      {
+        prompt: "What do you check first?",
+        choices: [
+          "Check if the model is hitting context length limits and truncating its reasoning",
+          "Look at the trace — what is the agent actually doing in each step?",
+          "Check API rate limits — the agent might be throttled and retrying",
+          "Increase the model's temperature so it explores more solution paths"
+        ],
+        correct: 1,
+        reveals: [
+          "Context is at 78% — not the limit yet. The model is still reasoning, just reasoning in circles.",
+          "The trace shows: Step 1 → web_search('market size AI 2024') → Step 2 → web_search('AI market 2024 global') → Step 3 → web_search('artificial intelligence market size') → Step 4 → web_search('AI industry revenue 2024'). The agent is rephrasing the same query with different wording and never synthesising an answer.",
+          "No rate limit errors in logs. All tool calls are succeeding in 800-1200ms. The agent is looping by choice, not by constraint.",
+          "Higher temperature makes the looping worse — the agent tries even more query variations. Wrong direction."
+        ]
+      },
+      {
+        prompt: "The agent is looping with similar searches. Why is this happening?",
+        choices: [
+          "The model needs better search results — the web_search tool is returning low-quality data",
+          "No termination condition: the agent has no signal for 'I have enough information to answer'",
+          "The system prompt is too long — the model forgot it needs to produce a final answer",
+          "The query is ambiguous and the model needs clarification before it can proceed"
+        ],
+        correct: 1,
+        reveals: [
+          "Search results are actually good — the first call returns 5 high-quality sources. The problem is the agent doesn't recognise them as sufficient.",
+          "Exactly. The agent has no 'sufficiency threshold' — no instruction that tells it when retrieved information is enough to synthesise an answer. It keeps searching because more data always feels better. This is scope creep: the agent completes adjacent tasks (more research) instead of the assigned task (answer the question).",
+          "The system prompt is 400 tokens — well within the model's attention. The model can see the final answer instruction. It's choosing not to execute it.",
+          "The original query ('What is the current AI market size?') is clear. The agent understood it — it just won't stop gathering data."
+        ]
+      },
+      {
+        prompt: "How do you fix an agent that loops without terminating?",
+        choices: [
+          "Add a step budget (max_steps=10) and explicit sufficiency instruction in the system prompt",
+          "Switch to a more capable model that knows when to stop",
+          "Remove tools until the agent has no choice but to answer",
+          "Add a 60-second timeout and return whatever the agent has at that point"
+        ],
+        correct: 0,
+        reveals: [
+          "Correct. Two changes: (1) max_steps=10 as a hard ceiling — any production agent without a step budget is not production-ready. (2) Add to system prompt: 'Once you have at least 2 corroborating sources for a factual claim, synthesise and return your answer. Do not search further.' The explicit sufficiency threshold breaks the loop.",
+          "The loop isn't a capability problem — it's a missing termination condition. A more capable model loops more efficiently but still loops. Model swaps don't fix architecture gaps.",
+          "Removing tools forces the agent to answer but breaks legitimate multi-step tasks. You've fixed the symptom by removing functionality.",
+          "Timeout is a circuit breaker, not a fix. You'll return partial answers and the underlying loop will recur on every run. Users get inconsistent output quality."
+        ]
+      }
+    ],
+    rootCause: "The agent had no step budget and no sufficiency threshold — two missing production requirements that every agentic system needs. Without a step ceiling, loops are unbounded. Without a sufficiency instruction, the model optimises for 'more information' rather than 'answer the question.'",
+    trap: "Switching to a better model. The loop is an architecture failure, not a capability failure. A smarter model will loop more intelligently — trying more diverse query variations, reasoning more carefully about each result — and still never terminate. The fix is structural: add the step limit and the sufficiency instruction.",
+  },
+
+  {
+    id: "scenario-3", topic: "evals", difficulty: "hard", gated: true, type: "scenario",
+    title: "The Eval That Lied",
+    incident: "Your LLM-as-judge eval pipeline shows 94% quality score on your weekly regression run. But 3 customers filed complaints this week about confidently wrong answers. Your human reviewers agree the answers are wrong. The judge disagrees.",
+    steps: [
+      {
+        prompt: "Where do you start investigating the eval failure?",
+        choices: [
+          "Expand the eval dataset — 94% on a small set might not generalise",
+          "Check the judge prompt — what criteria is it actually scoring against?",
+          "Run the same questions through a different model to get a second opinion",
+          "Check whether the customer complaints match questions in your eval set"
+        ],
+        correct: 1,
+        reveals: [
+          "Your eval set has 200 questions — not tiny. Adding more questions won't explain why the existing ones score 94% while real users see failures.",
+          "The judge prompt scores on: 'Is the response helpful, clear, and directly addresses the question?' No mention of factual accuracy. The judge is rating communication quality, not correctness. A confident wrong answer scores 5/5 on helpfulness.",
+          "The second model also rates the wrong answers highly — because both models are rewarding fluency and confidence, not accuracy. The problem is the rubric, not the judge model.",
+          "None of the customer complaint questions appear in your eval set. Your eval set covers common queries; the failures are on edge cases. This is a coverage gap — but the more urgent problem is the scoring rubric."
+        ]
+      },
+      {
+        prompt: "The judge is scoring helpfulness, not accuracy. How do you fix the rubric?",
+        choices: [
+          "Add 'factually accurate' as a criterion alongside helpfulness",
+          "Replace the judge with human reviewers for all questions",
+          "Split into two judges: one for helpfulness, one for factual accuracy against a reference",
+          "Lower the passing threshold from 94% to 80% to catch more failures"
+        ],
+        correct: 2,
+        reveals: [
+          "Adding accuracy as a criterion improves the rubric — but a single judge scoring both helpfulness and accuracy tends to weight them unequally. Confident fluent answers still drag the accuracy score up.",
+          "Human review is the ground truth but doesn't scale. You need humans to calibrate the judge, not replace it. 200 questions/week with human review is 10+ hours.",
+          "Correct. A factual accuracy judge receives the answer AND a reference document or golden answer, then scores only on claim correctness. Separated from helpfulness scoring, it correctly flags the confident wrong answers as 0/5.",
+          "Lowering the threshold catches more failures but also creates false positives on good answers. You've adjusted for the symptom without fixing the rubric."
+        ]
+      },
+      {
+        prompt: "You've split the judges. Now the accuracy judge flags 31% of answers as wrong — much higher than expected. What do you do?",
+        choices: [
+          "The judge is too strict — calibrate it with human-labelled examples to find the right threshold",
+          "The 31% is probably the real failure rate — investigate and fix the underlying model",
+          "Average the helpfulness and accuracy scores to get a balanced view",
+          "Throw out the accuracy judge and go back to human review"
+        ],
+        correct: 0,
+        reveals: [
+          "Correct. 31% is almost certainly not the real production failure rate — if it were, users would have noticed long before now. The judge needs calibration. Run 50 questions through both the judge and human reviewers. Find the score threshold where judge agrees with humans ≥90% of the time. Use that threshold, not a global pass/fail.",
+          "31% would be a catastrophic failure rate — customers, support tickets, and trust would have collapsed. Before acting on the number, validate it against human labels on a sample set.",
+          "Averaging compounds the problem — a 5/5 helpfulness score can mask a 1/5 accuracy score in the average. You're back to the original rubric failure.",
+          "Going back to human review loses the scalability you built. The judge needs calibration, not replacement."
+        ]
+      }
+    ],
+    rootCause: "The eval rubric was measuring the wrong thing — helpfulness and fluency instead of factual accuracy. An LLM judge is only as good as its scoring criteria. A judge that doesn't check correctness will give confident wrong answers perfect scores every time.",
+    trap: "Adding 'accuracy' as a criterion to a single judge prompt. Judges with multiple criteria tend to weight fluency and helpfulness more heavily because those signals are easier to detect in the response text. Factual accuracy requires comparison against a reference — a separate judge with a reference document produces more reliable accuracy signals than a blended rubric.",
+  },
+
 ];

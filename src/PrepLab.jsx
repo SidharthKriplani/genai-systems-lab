@@ -1513,7 +1513,12 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
         ) : (
           // ── DRILL MODE ───────────────────────────────────────────────────
           <>
-            <div className="relative">
+            {q.type === "scenario" && (
+              <ScenarioPlayer q={q}
+                onNext={next}
+                nextLabel={current >= questions.length - 1 ? "See Results" : "Next Question →"} />
+            )}
+            {q.type !== "scenario" && <div className="relative">
               <QuestionCard q={q} />
               {history[q.id]?.wrong > 0 && (
                 <span className="absolute top-2 right-2 text-[10px] text-red-400 font-semibold">
@@ -1542,6 +1547,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                 onNavigate={onNavigate} onNavigateTo={onNavigateTo} animKey={current}
                 onSelfGrade={selfGradePractice} />
             )}
+            </div>}
           </>
         )}
       </div>
@@ -2873,6 +2879,109 @@ const MODE_CARDS = [
     border: "border-rose-500/40 hover:border-rose-400", badge: "bg-rose-500/20 text-rose-300 border-rose-500/30"
   }
 ];
+
+// ─── SCENARIO PLAYER ──────────────────────────────────────────────────────────
+
+function ScenarioPlayer({ q, onNext, nextLabel }) {
+  const [step, setStep]           = useState(0);
+  const [chosen, setChosen]       = useState(null);
+  const [allCorrect, setAllCorrect] = useState(true);
+  const [finished, setFinished]   = useState(false);
+
+  function pick(idx) { setChosen(idx); }
+
+  function advance() {
+    const wasCorrect = chosen === q.steps[step].correct;
+    if (!wasCorrect) setAllCorrect(false);
+    recordHistory(q.id, wasCorrect);
+    if (step < q.steps.length - 1) {
+      setStep(s => s + 1);
+      setChosen(null);
+    } else {
+      setFinished(true);
+    }
+  }
+
+  const currentStep = q.steps[step];
+
+  if (finished) return (
+    <div className="p-5 sm:p-7 space-y-5">
+      <div className="flex items-center gap-2 mb-1">
+        <span className={`text-xs font-mono px-2 py-0.5 rounded ${allCorrect ? "bg-emerald-950/50 text-emerald-400 border border-emerald-900/40" : "bg-amber-950/40 text-amber-400 border border-amber-900/30"}`}>
+          {allCorrect ? "Optimal path" : "Completed"}
+        </span>
+      </div>
+      <div className="p-4 rounded-xl border border-zinc-800/60" style={{ background:"var(--surface-2)" }}>
+        <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Root cause</div>
+        <p className="text-sm text-zinc-300 leading-relaxed">{q.rootCause}</p>
+      </div>
+      <div className="p-4 rounded-xl border border-amber-800/30" style={{ background:"rgba(245,158,11,0.04)" }}>
+        <div className="text-[9px] font-mono text-amber-600 uppercase tracking-widest mb-2">Common trap</div>
+        <p className="text-sm text-amber-200/80 leading-relaxed italic">{q.trap}</p>
+      </div>
+      <button onClick={onNext}
+        style={{ background:"linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)" }}
+        className="w-full py-3 text-white font-semibold rounded-xl text-sm">
+        {nextLabel || "Next Question →"}
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="p-5 sm:p-7 space-y-5">
+      <div className="flex items-center gap-2">
+        <span className="text-[9px] font-mono text-zinc-500">Step {step+1} of {q.steps.length}</span>
+        <div className="flex gap-1">
+          {q.steps.map((_, i) => (
+            <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: i < step ? "var(--gal-build)" : i === step ? "var(--gal-build)" : "rgba(113,113,122,0.4)", opacity: i === step ? 1 : i < step ? 0.6 : 1 }} />
+          ))}
+        </div>
+      </div>
+
+      {step === 0 && (
+        <div className="p-4 rounded-xl border border-red-900/40" style={{ background:"rgba(239,68,68,0.05)" }}>
+          <div className="text-[9px] font-mono text-red-400 uppercase tracking-widest mb-2">Incident</div>
+          <p className="text-sm text-zinc-300 leading-relaxed">{q.incident}</p>
+        </div>
+      )}
+
+      <div className="p-4 rounded-xl border border-zinc-800/60" style={{ background:"var(--surface-2)" }}>
+        <p className="text-sm font-semibold text-zinc-200 leading-snug">{currentStep.prompt}</p>
+      </div>
+
+      {chosen === null ? (
+        <div className="space-y-2">
+          {currentStep.choices.map((choice, i) => (
+            <button key={i} onClick={() => pick(i)}
+              className="w-full text-left p-3.5 rounded-xl border border-zinc-800 hover:border-zinc-700 transition-all text-sm text-zinc-300 hover:-translate-y-0.5"
+              style={{ background:"var(--surface-2)" }}>
+              <span className="text-[10px] font-mono text-zinc-600 mr-2">{String.fromCharCode(65+i)}.</span>{choice}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="p-3.5 rounded-xl border" style={{
+            background: chosen === currentStep.correct ? "rgba(34,197,94,0.06)" : "rgba(245,158,11,0.06)",
+            borderColor: chosen === currentStep.correct ? "rgba(34,197,94,0.3)" : "rgba(245,158,11,0.3)"
+          }}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className={`text-[9px] font-mono uppercase tracking-widest ${chosen === currentStep.correct ? "text-emerald-400" : "text-amber-400"}`}>
+                {chosen === currentStep.correct ? "Good call" : "Not the sharpest path"}
+              </span>
+            </div>
+            <p className="text-sm text-zinc-300 leading-relaxed">{currentStep.reveals[chosen]}</p>
+          </div>
+          <button onClick={advance}
+            style={{ background:"linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)" }}
+            className="w-full py-3 text-white font-semibold rounded-xl text-sm">
+            {step < q.steps.length - 1 ? "Continue investigation →" : "See root cause →"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── INTERVIEW INTEL ──────────────────────────────────────────────────────────
 
