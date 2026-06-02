@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import HowTo from "./HowTo";
-import { FeedbackBar } from "./shared";
+import { FeedbackBar, FidelityBadge } from "./shared";
 import IndiaScaleLab from "./IndiaScale";
 import ModelRouterLab from "./ModelRouter";
 import InferenceOptimizer from "./InferenceOptimizer";
@@ -129,21 +129,6 @@ const RELATED_GT = {
   "query-refinement": [{ id: "two-stage-retrieval-reranker",  title: "Two-Stage Retrieval: Why a Reranker Exists" }],
   "agent-ctx-arch":   [{ id: "agent-memory-architecture", title: "The Four Memory Problems Every Agent Has" }, { id: "claudemd-as-architecture", title: "The Agent Memory Layer" }],
 };
-
-function FidelityBadge({ variant = "simulated" }) {
-  if (variant === "accurate") {
-    return (
-      <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-emerald-700/60 bg-emerald-950/40 text-emerald-400 shrink-0">
-        ✓ Scenario-accurate
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700/50 bg-zinc-900/30 text-zinc-500 shrink-0">
-      ~ Simulated
-    </span>
-  );
-}
 
 // Modules with real logic-derived outcomes (not pre-scripted)
 const MODULE_FIDELITY = {

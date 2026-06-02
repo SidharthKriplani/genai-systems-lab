@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock } from "./analytics";
 import { ALL_TABS, GROUP_COLORS } from "./config/nav";
+import { FidelityBadge } from "./shared";
 import WarRoom from "./WarRoom";
 import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
@@ -148,21 +149,6 @@ function Pill({ options, value, onChange }) {
         );
       })}
     </div>
-  );
-}
-
-function FidelityBadge({ variant = "simulated" }) {
-  if (variant === "accurate") {
-    return (
-      <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-emerald-700/60 bg-emerald-950/40 text-emerald-400 shrink-0">
-        ✓ Scenario-accurate
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700/50 bg-zinc-900/30 text-zinc-500 shrink-0">
-      ~ Simulated
-    </span>
   );
 }
 
@@ -1386,7 +1372,13 @@ export default function App() {
         return;
       }
       const n = parseInt(e.key);
-      if (n >= 1 && n <= SHORTCUT_TABS.length) { navigate(SHORTCUT_TABS[n - 1]); setMobileMenuOpen(false); }
+      if (n >= 1 && n <= SHORTCUT_TABS.length) { navigate(SHORTCUT_TABS[n - 1]); setMobileMenuOpen(false); return; }
+      // Single-letter tab shortcuts (no modifier)
+      if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const TAB_KEYS = { r:"lab", a:"agentlab", e:"evallab", l:"llmlab", p:"preplab", g:"groundtruth", c:"concepts" };
+        const dest = TAB_KEYS[e.key.toLowerCase()];
+        if (dest) { e.preventDefault(); navigate(dest); setMobileMenuOpen(false); return; }
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1577,10 +1569,19 @@ export default function App() {
               <button onClick={() => setShowShortcuts(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close shortcuts">✕ Close</button>
             </div>
             <div className="space-y-2">
-              {SHORTCUT_TABS.map((tab, i) => (
-                <div key={tab} className="flex items-center justify-between text-xs">
-                  <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">{i + 1}</kbd>
-                  <span className="text-zinc-400 capitalize">{tab.replace("lab", "RAG Lab")}</span>
+              <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest pb-1">Tab shortcuts</div>
+              {[
+                { key: "R", label: "RAG Lab" },
+                { key: "A", label: "Agent Lab" },
+                { key: "E", label: "Eval Lab" },
+                { key: "L", label: "LLM Lab" },
+                { key: "P", label: "Prep Lab" },
+                { key: "G", label: "Ground Truth" },
+                { key: "C", label: "Concepts" },
+              ].map(({ key, label }) => (
+                <div key={key} className="flex items-center justify-between text-xs">
+                  <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">{key}</kbd>
+                  <span className="text-zinc-400">{label}</span>
                 </div>
               ))}
               <div className="border-t border-zinc-800 pt-2 flex items-center justify-between text-xs">

@@ -152,3 +152,23 @@ export function FeedbackBar({ page, contentType = "module" }) {
     </div>
   );
 }
+
+/**
+ * FidelityBadge — "✓ Scenario-accurate" or "~ Simulated" chip on module headers.
+ * Moved from App.jsx + Systems.jsx to shared.jsx to eliminate duplication.
+ * Usage: <FidelityBadge variant="accurate" /> | <FidelityBadge variant="simulated" />
+ */
+export function FidelityBadge({ variant = "simulated" }) {
+  if (variant === "accurate") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-emerald-700/60 bg-emerald-950/40 text-emerald-400 shrink-0">
+        ✓ Scenario-accurate
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700/50 bg-zinc-900/30 text-zinc-500 shrink-0">
+      ~ Simulated
+    </span>
+  );
+}
