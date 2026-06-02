@@ -2,31 +2,21 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: May 2026 (post sprint 37 — Share Score + Interview Story + Agent Lab stories + stat fixes + gt-read tracking)*
+*Last updated: June 2026 (sprint 39 — batches 2–10: Maps to Production, Concepts depth, Scaling Laws, Semantic Caching, LoRA, Seq/Parallel, Training Signal)*
 
 ---
 
-## Theme: Sprint 37 shipped. Next: PostHog distribution check before next build sprint.
+## Theme: Sprint 39 content sprint complete. PostHog check still pending before next sprint.
 
-Graph RAG (sprint 33), LangGraph (sprint 34), and two-stage retrieval (sprint 35) are all done. All three Tier 1 content gaps from the Senior AI Engineer interview signal are now closed. PrepLab revamp (sprints A–E) is complete. CompanyTracks fully revamped. The product is now at a content and UX completeness level where the limiting factor is distribution proof, not more features.
+Batches 2–10 delivered: Maps to Production chips on Agent Lab (all 8 failure modes) and LLM Lab serving failures; EvalLoopModule Beat 2+3; 5 new Concepts modules (ScalingLawsModule, LoRAModule, SequentialParallelModule, TrainingSignalModule, plus EvalLoop 3-beat completion); semantic caching GT post + PrepLab; scaling laws PrepLab; dense/sparse retrieval PrepLab. Scale: 226 GT posts, 287 PrepLab questions, 20 Concepts modules.
 
-Before the next major build sprint: check PostHog for WAU and module completion funnel (DECISIONS.md Section 0c rule). If data is available, it should inform the next build direction.
+PostHog check (item 5 below) is still the gate before the next major content sprint.
 
 ---
 
 ## Do this (in order)
 
-**1. ~~Cold-start Home rewrite~~** — DONE (`d8c2d11`).
-
-**2. ~~Graph RAG + multi-hop retrieval~~** — DONE (`2a00754`).
-
-**3. ~~LangGraph reducers + HITL patterns~~** — DONE (`cfd4520`).
-
-**4. ~~Bi-encoder vs cross-encoder two-stage retrieval~~** — DONE (`74160e7`). GT post + QueryRefinementLab Two-Stage tab (bi-encoder vs cross-encoder side-by-side, rank-change arrows, failure modes) + 4 PrepLab questions (2 hard, 2 medium, all with trap fields). Also included CompanyTracks revamp: bug fix, text question handling, topic weight viz, GT recs.
-
-**4c. ~~Sprint 37 Batch 1~~** — DONE (`97360b7`). PrepLab share score button. "Your Interview Story" collapsible on all 6 RAG Lab done cards. Home daily tip removed. Stats synced (277q/225 posts).
-
-**4b. ~~Sprint 36 — Social proof + Maps to Production + GT Series~~** — DONE (`2a8c0bc`). Feedback chip on Home footer. productionNote on all 6 RAG Lab scenarios. GT Series taxonomy: 16/17 series now populated with real written posts.
+**1–4. ~~All prior sprints~~** — DONE. See CLAUDE.md session log.
 
 **5. PostHog distribution check** `S effort` `PREREQUISITE — do before next sprint`
 
@@ -36,33 +26,33 @@ Check before any new build: is PostHog receiving events in Vercel prod? WAU last
 
 ## Pending (valid but lower priority)
 
-### PrepLab revamp — all sprints DONE
-- ~~**PrepLab Sprint A**~~ — DONE (`43e4a92`).
-- ~~**PrepLab Sprint B**~~ — DONE (`73924a0`).
-- ~~**PrepLab Sprint C**~~ — DONE (`38d5330`).
-- ~~**PrepLab Sprint D**~~ — DONE (`22cd963`).
-- ~~**TrainerMode Browse/List View**~~ — DONE (`eb84135`).
-- ~~**PrepLab Sprint E**~~ — DONE (`a5af787`).
-- ~~**Cold-start Home rewrite**~~ — DONE (`d8c2d11`).
-- ~~**CompanyTracks revamp**~~ — DONE (`74160e7`). Bug fix + text Q handling + topic weight viz + GT recs.
-
 ### Content depth + production grounding
-- ~~**"Your Interview Story" block on RAG Lab done cards**~~ — DONE sprint 37 (`97360b7`). All 6 scenarios. Agent Lab still pending.
-- ~~**"Maps to Production" callout on RAG Lab root-cause cards**~~ — DONE sprint 36 (`2a8c0bc`). All 6 RAG Lab scenarios have `productionNote` field.
-- ~~**RAG Lab static corpus — data realism v1**~~ — DONE sprint 38 (`9a985b5`). 24 real docs, 6 scenarios, retrieved chunks collapsible panel.
-- **Thin GT posts expansion — 3 stubs** — `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets`. `S-M effort`.
+- ~~**"Your Interview Story" on RAG Lab done cards**~~ — DONE sprint 37 (`97360b7`).
+- ~~**"Your Interview Story" on Agent Lab done screens**~~ — DONE batch-2 (`2c9e282`).
+- ~~**"Maps to Production" on RAG Lab scenarios**~~ — DONE sprint 36 (`2a8c0bc`).
+- ~~**"Maps to Production" on Agent Lab + LLM Lab**~~ — DONE batch-4 (`b253405`). All 8 Agent Lab failure matrix entries + 5 LLM Lab serving failures.
+- ~~**RAG Lab static corpus — data realism v1**~~ — DONE sprint 38 (`9a985b5`).
+- ~~**Thin GT posts expansion**~~ — `dpo-in-practice`, `llm-observability`, `instruction-tuning-datasets` were already fully expanded (17–21 blocks each). Verified and closed.
 
 ### Architecture / polish
-- ~~**GT State-Aware Reading Mode**~~ — DONE sprint 37c (`a37d99c`). Revise + What's Next lenses powered by PrepLab history + gt-read keys.
-- ~~**GT Series + Tags redesign**~~ — DONE sprint 36 (`2a8c0bc`). 16/17 series populated; 2 new series added (LLM Fundamentals, Career & Strategy).
 - **React.lazy() code splitting** — systematic change. DECISIONS.md-worthy scope.
-- **Pyodide execution for Eval Lab** — Tier 2, after static corpus ships.
-- **Concepts module: "Sequential vs Parallel"** — RNN→LSTM→Transformer arc.
-- **Concepts module: "The Training Signal"** — entropy/loss/KL framing.
+- **Pyodide execution for Eval Lab** — Tier 2, after static corpus engagement signal.
 - **Visual polish backlog** — consistent module headers, Explore module cards.
 - **Modularisation pass** — `src/config/nav.js` (unblocked by Sprint D, `gating.js` done).
-- ~~**Testimonials/feedback — Phase 1**~~ — DONE sprint 36 (`2a8c0bc`). Tally.so feedback chip on Home footer. Phase 2 (Supabase + approval UI) deferred to Stripe sprint.
-- **Interview Experiences section** — editorial-first 20–30 entries seeded from field intelligence log. Phase 2: crowd-sourced with LLM validation. See IDEAS.md.
+- **Interview Experiences section** — editorial-first 20–30 entries seeded from field intelligence log.
+
+### Concepts gym depth
+- ~~**Concepts module: "Sequential vs Parallel"**~~ — DONE batch-10 (`caaadb5`).
+- ~~**Concepts module: "The Training Signal"**~~ — DONE batch-10 (`caaadb5`).
+- ~~**Concepts module: "Scaling Laws"**~~ — DONE batch-6 (`fd73d26`).
+- ~~**Concepts module: "LoRA / QLoRA"**~~ — DONE batch-9 (`0915cb8`).
+- ~~**EvalLoopModule Beat 2 + Beat 3**~~ — DONE batch-5 (`04c7a51`).
+
+### Medium-priority content still open
+- **Agent Context Architecture Systems module** — from ADK patterns cluster. Pending.
+- **PrepLab: "Common Trap" layer expansion** — ~50 hard questions have trap fields; remaining ~100 medium questions still lack trap. Ongoing.
+- **GT post: "Prompt Regression Testing"** — companion to "Your Prompt Is Code". Pending.
+- **GT post: "Why Classic A/B Testing Breaks for AI"** — companion to A/B Testing module. Pending.
 
 ---
 

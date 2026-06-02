@@ -477,7 +477,7 @@ All three are below the 8-block minimum and lack a callout block and refs sectio
 
 **Priority:** High — Concepts is in primary nav. Beginners will land here.
 
-**Status:** In Progress — 15/15 framing texts done, gym skeleton shipped, depth pass 60% done (4 modules upgraded in sprint 28, 3 in sprint 26). Remaining: inline callouts + synthesis close pass for modules not yet upgraded.
+**Status:** In Progress — 15/15 framing texts done. Depth pass: 7 modules with Beat 2+3 from sprints 26+28. EvalLoopModule Beat 2+3 added batch-5 (`04c7a51`). All 16 original modules now have Beat 3. 4 new modules added (ScalingLawsModule, LoRAModule, SequentialParallelModule, TrainingSignalModule) — all built with all 3 beats from the start. 20 modules total, all 3-beat complete.
 
 ---
 
@@ -840,7 +840,7 @@ Implementation: a small `productionNote` field on the failure scenario data obje
 
 **Priority:** High — single highest-leverage interview-readiness upgrade from the third-party lab assessment (May 2026). Low effort, directly closes the "judgment but no production connection" gap.
 
-**Status:** ✅ Done — sprint 36 (`2a8c0bc`). `productionNote` field added to all 6 RAG Lab scenarios in `ragScenarios.js`. Rendered in `App.jsx` as subdued zinc chip after System Design Lesson. Agent Lab + Eval/LLM Lab pending (still lower priority).
+**Status:** ✅ Done — sprint 36 (`2a8c0bc`) for RAG Lab. ✅ Done — batch-4 (`b253405`) for Agent Lab (all 8 AGENT_FAILURE_MATRIX entries) + LLM Lab (all 5 SERVING_FAILURE_SCENARIOS). Eval Lab failure callout modules deferred (lower traffic than RAG + Agent + LLM serving).
 
 ---
 
@@ -870,4 +870,4 @@ Collapsed by default ("See your interview story →"), expands on click. Copy is
 
 **Priority:** High — closes the gap between "I built judgment in the lab" and "I can articulate it in an interview." Zero infrastructure cost.
 
-**Status:** Pending (Source: third-party lab assessment, May 2026)
+**Status:** ✅ Done — RAG Lab all 6 scenarios (`97360b7`). Agent Lab simulator + design + agentcfg + 5 scenarios (`2c9e282`, `1b4346d`). Eval + LLM Lab completion states deferred.

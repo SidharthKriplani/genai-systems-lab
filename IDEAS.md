@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: May 2026 (post sprint 35) | Current scale: 56 Systems modules (in nav), 22 Explore, 16 Agent Lab, 16 Concepts, 277 PrepLab questions, 225 GT posts*
+*Last updated: June 2026 (sprint 39 — batches 2–10) | Current scale: 56 Systems modules (in nav), 22 Explore, 16 Agent Lab, 20 Concepts, 287 PrepLab questions, 226 GT posts*
 
 ---
 
@@ -69,7 +69,7 @@ Sprint items (in order of impact):
 
 ## 🔨 In Progress
 
-Nothing actively in progress. Last completed sprint: sprint 34 (LangGraph + HITL module, GraphRAG SVG mobile fix). Prior: sprint 33 (Graph RAG), sprint 32 (Cold-start Home rewrite), sprints 31A–E (PrepLab full revamp series). See CLAUDE.md session build log for full detail.
+Nothing actively in progress. Last completed sprint: sprint 39 (batches 2–10): Maps to Production on Agent Lab + LLM Lab, EvalLoopModule Beat 2+3, ScalingLawsModule, semantic caching GT+PrepLab, dense/sparse retrieval PrepLab, LoRAModule, SequentialParallelModule, TrainingSignalModule. See CLAUDE.md session build log for full detail.
 
 ---
 
@@ -282,7 +282,9 @@ Real interview signal: which topics appear in which company-type interviews, how
 
 **Decision:** Build Phase 1 in a Home polish sprint after Phase 1 testimonials ships. Build Phase 2 with Stripe.
 
-### Scaling laws (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026)
+### Scaling laws (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026) ✅ BUILT (sprint 39 batch-6, `fd73d26`)
+
+GT post `chinchilla-scaling-laws` already existed. 4 PrepLab questions (scaling-1 through scaling-4, 2 medium free + 2 hard gated, all with trap fields). ScalingLawsModule Concepts module: 3-tab interactive (formula slider, training vs inference tradeoff, real models table).
 
 Scaling laws (Kaplan et al., Chinchilla) are a Q1 fundamentals topic in senior AI interviews — tested before RAG, before agents. GAL has architecture coverage (Concepts tab: Transformer, Attention, Tokenizer, Context Window) but zero content on scaling laws. "Bigger model = better" is the single most common misconception GAL's audience holds; Chinchilla disproved it. The compute-optimal training insight (smaller model trained longer outperforms larger undertrained model) is immediately applicable to any engineer making deployment or fine-tuning decisions. Absent from GAL entirely.
 
@@ -290,21 +292,27 @@ Scaling laws (Kaplan et al., Chinchilla) are a Q1 fundamentals topic in senior A
 - **PrepLab questions (3–4)** — Chinchilla optimal compute, why bigger isn't always better, scaling law implications for fine-tuning, emergent abilities definition + controversy. `Effort: S`
 - **Concepts module: "Scaling Laws"** — interactive compute-optimal curve: slider for parameter count, token budget auto-computes from Chinchilla ratio, model "efficiency zone" visualised. `Effort: S-M`
 
-### Semantic caching (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026)
+### Semantic caching (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026) ✅ BUILT (sprint 39 batch-7, `267a552`)
+
+GT post `semantic-caching` written (10 blocks: how it works, threshold calibration table, when it breaks list, tooling list, combining with prompt caching). 3 PrepLab questions (semcache-1 medium free, semcache-2/3 hard gated, all with trap fields).
 
 Semantic caching is a Q2 prompt engineering topic (cost optimisation) that's absent from GAL. The concept: cache LLM responses keyed by semantic similarity of the query embedding, not exact string match — so "What is RAG?" and "Can you explain RAG?" hit the same cached response. It's a real production cost reduction lever that most teams discover late. GAL covers prompt engineering generally (Playground) but has no content on caching strategies.
 
 - **GT post: "Semantic Caching — The LLM Cost Reduction Most Teams Discover Late"** — how it works (embedding similarity threshold), when it breaks (paraphrase attacks, time-sensitive queries), GPTCache / Redis Vector Cache as production tools, what cache hit rates look like in practice. `Effort: S`
 - **PrepLab questions (2–3)** — semantic vs exact-match caching trade-offs, cache invalidation for LLM responses, when caching hurts accuracy. `Effort: S`
 
-### Dense vs sparse retrieval (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026)
+### Dense vs sparse retrieval (new cluster — from LLM/GenAI Interview Master Guide PDF, May 2026) ✅ BUILT (sprint 39 batch-8, `d0d1459`)
+
+GT post `hybrid-search` already existed (9 blocks, BM25 vs dense comparison table, RRF code, production tooling). 3 PrepLab questions (retrieval-1/2 medium free, retrieval-3 hard gated, all with trap fields).
 
 Dense retrieval (vector search via bi-encoder embeddings) vs sparse retrieval (BM25/TF-IDF keyword matching) is a Q3 RAG fundamentals question. GAL's RAG Lab covers failure modes but doesn't explain the two retrieval paradigms as architectural alternatives with different failure modes. BM25 excels on exact keyword matching (product codes, names, IDs) but fails on semantic paraphrases; dense retrieval is the reverse. Hybrid search combines both. This is a real system design decision at the RAG architecture stage — absent from both GT and PrepLab.
 
 - **GT post: "Dense vs Sparse Retrieval — When to Use Each"** — BM25 mechanics (TF-IDF term weighting, why it beats dense on exact terms), bi-encoder dense retrieval (semantic generalisation, embedding space collapse failure), hybrid search (RRF score fusion, when to weight BM25 higher), production tools (Elasticsearch BM25 + FAISS / OpenSearch hybrid). `Effort: S`
 - **PrepLab questions (3–4)** — BM25 vs vector search failure modes, when sparse beats dense, hybrid search fusion approaches, when NOT to use hybrid search. `Effort: S`
 
-### Fine-tuning depth — LoRA / QLoRA (elevated from skip — May 2026)
+### Fine-tuning depth — LoRA / QLoRA (elevated from skip — May 2026) ✅ BUILT (sprint 39 batch-9, `0915cb8`)
+
+GT posts already existed (lora-in-practice, qlora-consumer-hardware, lora-paper, fine-tuning-fundamentals). PrepLab already had ft-1/2/5 covering LoRA basics + trap fields. LoRAModule Concepts module built: 3-tab interactive (rank decomposition parameter math, QLoRA VRAM calculator, when-to-use decision table with 6 scenarios).
 
 Fine-tuning is increasingly expected knowledge for senior AI engineers, not just ML researchers. LoRA (Low-Rank Adaptation) and QLoRA (quantized LoRA) are the production-standard fine-tuning techniques — every interview guide, every JD, every team discussing cost reduction mentions them. GAL currently has a `finetune` module in LLM Lab and a stub `dpo-in-practice` GT post, but no interactive treatment of LoRA mechanics or QLoRA's role in enabling fine-tuning on consumer hardware. Previously deprioritised; elevating to Tier 1.
 
@@ -489,14 +497,14 @@ FDE postings grew 1,165% in one year. Palantir invented the model; OpenAI built 
 A practitioner post in the Data Science Community frames Probability, Entropy, Cross-Entropy Loss, and KL Divergence around one unifying question: "How surprised is the model when it sees the correct answer?" Strong framing — makes the math approachable. The lab's Concepts tab covers attention and transformer architecture but has nothing on the mathematical training signal. This gap matters: engineers who understand loss functions reason better about fine-tuning decisions, RLHF reward design, and eval scoring.
 
 - ~~**GT post: "How Surprised Is the Model?"**~~ ✅ *built May 2026 — id: how-surprised-is-the-model*
-- **Concepts module: "The Training Signal — Entropy, Loss, and KL Divergence"** — interactive: user adjusts model confidence distribution, sees entropy change in real time, sees cross-entropy vs KL divergence. Sits alongside existing Attention and Transformer modules. Fills the gap between "architecture" and "training."
+- ~~**Concepts module: "The Training Signal — Entropy, Loss, and KL Divergence"**~~ ✅ BUILT batch-10 (`caaadb5`) — `TrainingSignalModule`: 2-tab interactive (Entropy Explorer slider with real-time surprise/gradient signal, Real Examples with 3 scenarios showing probabilities + cross-entropy + insight).
 
 ### RNN to LSTM to Transformer architectural arc (new cluster — from Naresh Edagotti post, May 2026)
 
 A widely-shared educational post traces the full progression from RNN to LSTM to Transformer and explains why each transition was necessary — parallelism, long-range context, vanishing gradients. Covers encoder-only / decoder-only / encoder-decoder distinction. Key framing: "Transformers are not just a model choice. They are a systems-level breakthrough." The lab has transformer content but no narrative about the historical arc — why the transition happened, what each architecture hit its ceiling on, and why transformers unlocked scaling.
 
 - ~~**GT post: "Why Transformers Won"**~~ ✅ *built May 2026 — id: why-transformers-won*
-- **Concepts module addition: "Sequential vs Parallel — The Architecture Transition"** — interactive visualization of token processing as sequential (RNN) vs parallel (Transformer). Show long-range dependency handling and vanishing gradient behavior. Could extend the existing Transformer module or stand as a new Explore module.
+- ~~**Concepts module addition: "Sequential vs Parallel — The Architecture Transition"**~~ ✅ BUILT batch-10 (`caaadb5`) — `SequentialParallelModule`: 2-tab interactive (step-through demo showing RNN 5 sequential steps vs Transformer 1 parallel step, Architecture Arc cards for RNN/LSTM/Transformer with bottleneck labels).
 
 ### Diagnosis-sourced adaptations (new cluster — from third-party lab assessment, May 2026)
 
@@ -504,7 +512,7 @@ An external assessment of all three sibling labs (GAL, ML Systems Lab, PAL) for 
 
 Four concrete adaptations:
 
-- **"Maps to production" callout inside existing lab scenarios** — Each RAG Lab scenario root-cause card and Agent Lab failure diagnosis currently stops at the abstract failure mode. Add one line per scenario: "In production this is: [AWS service / OSS tool]." E.g., Missing Answer → "Bedrock Knowledge Base / OpenSearch / Weaviate + CloudWatch." No new module. 15 min per scenario. High interview-answer leverage. See UPGRADES.md for the implementation pattern.
+- ~~**"Maps to production" callout inside existing lab scenarios**~~ ✅ BUILT — RAG Lab done sprint 36 (`2a8c0bc`). Agent Lab all 8 AGENT_FAILURE_MATRIX entries + LLM Lab all 5 SERVING_FAILURE_SCENARIOS done batch-4 (`b253405`).
 
 - **Company-specific architecture in Company Tracks** — PrepLab Company Tracks currently asks topic questions in a company context but doesn't connect failure modes to that company's known architecture. Add a "this failure pattern at Swiggy looks like X (food catalog freshness)," "at PhonePe looks like Y (UPI retry handling)" framing to the Company Tracks drill set. The scenarios exist — the company-specific lens is the addition. Connects directly to what the diagnosis identified as PAL's generic frameworks gap.
 
@@ -542,8 +550,8 @@ A practitioner post frames the 2026 DE skill stack as three layers: Layer 1 (SQL
 - **Foundation tracks build-out** — RAG Foundations (tokenization → embeddings → retrieval → ranking → RAG Lab), LLM Foundations (architecture → attention → sampling → serving), Agent Foundations (ReAct → tool use → memory → agent lab), Eval Foundations (metrics → LLM-as-judge → eval frameworks). *Pending.*
 - **Dependency graph as navigation** — Restore the graph from Home (it was cut because it was decorative there, not because it was wrong). Wire it as the primary navigation layer in the gym. Click node → open concept. *Pending.*
 - **Per-concept mastery tracking** — localStorage coverage map, shown in the graph (node color changes on completion). Gate "unlocks" on prerequisite completion. *Pending.*
-- **Concepts module: "The Training Signal — Entropy, Loss, and KL Divergence"** — interactive: user adjusts confidence distribution, sees entropy/cross-entropy/KL change in real time. Fills gap between architecture and training. *Pending (from Utkarsh Mangal cluster).*
-- **Concepts module addition: "Sequential vs Parallel — The Architecture Transition"** — RNN token-by-token vs Transformer parallel processing. Why the transition was necessary. *Pending (from Naresh Edagotti cluster).*
+- ~~**Concepts module: "The Training Signal"**~~ ✅ BUILT batch-10 (`caaadb5`). See above.
+- ~~**Concepts module addition: "Sequential vs Parallel"**~~ ✅ BUILT batch-10 (`caaadb5`). See above.
 
 ### Returning user "Today" dashboard — PAL-inspired (new cluster — May 2026)
 
