@@ -73,9 +73,9 @@ The failure mode completeness audit was started in a prior session (data gathere
 ### Still open (S effort)
 - ~~**6 new PrepLab questions**~~ — DONE sprint 46 (`bff96ac`). quantiphi-1 through quantiphi-6.
 - ~~**Trap field quality pass**~~ — DONE sprint 46 (`bff96ac`). 10 trap fields rewritten across rag/agents/llmops/evaluation. Remaining ~85 thin traps in lower-traffic clusters (streaming, attention, context) — lower priority.
-- **Interview Signal Quantiphi entry** — consulting archetype in INTERVIEW_EXPERIENCES.
-- **Tab keyboard shortcuts** — R/A/E/L/P/G/C single-key nav.
-- **FidelityBadge dedup** — App.jsx + Systems.jsx. XS.
+- ~~**Interview Signal Quantiphi entry**~~ — already done, id:38 confirmed present (`43545a7`).
+- ~~**Tab keyboard shortcuts**~~ — DONE sprint 46 (`f7ce93a`). R/A/E/L/P/G/C live, shortcuts overlay updated.
+- ~~**FidelityBadge dedup**~~ — DONE sprint 46 (`f7ce93a`). Moved to shared.jsx.
 - **GT Series post taxonomy** — tag all 226 posts to SERIES_META series slugs. M effort, content work.
 
 ### Still open (deferred)

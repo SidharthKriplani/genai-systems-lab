@@ -290,8 +290,9 @@ For full audit findings see AUDITS.md.
 
 ## Session build log
 
-**Sprint 46 (June 2026) — PrepLab content:**
-- 6 Quantiphi Defense Pack questions added (quantiphi-1 through quantiphi-6): MCP production ops, Bedrock AgentCore vs LangGraph, multi-provider routing, API failure handling, eval metric pattern reading, production prompt engineering. Trap field quality pass: 10 traps rewritten to overclaim→honest-reframe format across rag, agents, llmops, evaluation clusters. Brace diff: 0. Commit `bff96ac`. Scale: **313 PrepLab questions**.
+**Sprint 46 (June 2026) — PrepLab content + polish:**
+- 6 Quantiphi Defense Pack questions added (quantiphi-1 through quantiphi-6). Trap field quality pass: 10 traps rewritten to overclaim→honest-reframe format. Commit `bff96ac`. Scale: **313 PrepLab questions**.
+- FidelityBadge dedup: moved to shared.jsx, removed from App.jsx + Systems.jsx. R/A/E/L/P/G/C tab keyboard shortcuts added. Quantiphi Interview Signal entry confirmed already present (id:38, `43545a7`). Commit `f7ce93a`.
 
 **Sprint 45 (June 2026) — MD consolidation:**
 - 20 MD files → 12 active + archive. CLAUDE.md absorbs BRAIN_TRANSFER.md unique content. UPGRADES.md Done entries pruned. METRICS.md absorbs PostHog checklist. ROLLOUT.md absorbs beta launch checklist. docs/archive/ created with 7 files. Single commit: `6cc08c1`.
