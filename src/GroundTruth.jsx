@@ -4,6 +4,7 @@ import { POST_CONTENT } from "./groundTruthPosts";
 import { POSTS } from "./groundTruthIndex";
 import TransformerWalkthrough from "./TransformerWalkthrough";
 import SalaryCalculator from "./SalaryCalculator";
+import { FeedbackBar } from "./shared";
 
 // Every post maps to at least one interactive module on the platform.
 // "labLink" is where the reader goes to test what they just read.
@@ -678,6 +679,9 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
               LinkedIn
             </a>
           </div>
+          {/* Feedback */}
+          <FeedbackBar page={`groundtruth/${post.id}`} contentType="gt_post" />
+
           {/* Back / lab nav */}
           <div className="flex items-center justify-between">
             <button onClick={onBack}

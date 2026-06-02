@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import HowTo from "./HowTo";
+import { FeedbackBar } from "./shared";
 import IndiaScaleLab from "./IndiaScale";
 import ModelRouterLab from "./ModelRouter";
 import InferenceOptimizer from "./InferenceOptimizer";
@@ -368,6 +369,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
               🧠 Prep Lab
             </button>
           </div>
+          <FeedbackBar page={`systems/${activeModule}`} contentType="module" />
         </div>
         </div>{/* closes px-5 inner wrapper */}
       </div>{/* closes right panel outer wrapper */}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { isAccessGranted, grantAccess, validateCode, FREE_QUESTION_LIMIT } from "./utils/accessCode";
 import { RESULTS_FREE_LIMIT } from "./config/gating";
 import { PREP_QUESTIONS } from "./data/preplabQuestions";
-import { CommonTrapCallout } from "./shared";
+import { CommonTrapCallout, FeedbackBar } from "./shared";
 
 // ─── GATE MODAL ───────────────────────────────────────────────────────────────
 function GateModal({ onUnlock, onClose }) {
@@ -1067,6 +1067,9 @@ function ExamMode({ onExit, onNavigate, onNavigateTo }) {
               ))}
             </div>
           )}
+          <div className="border-t border-zinc-800/60 pt-4">
+            <FeedbackBar page="preplab/exam" contentType="preplab_session" />
+          </div>
         </div>
       </div>
     );

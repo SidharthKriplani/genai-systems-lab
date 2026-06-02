@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import React from "react";
+import { track } from "./analytics";
 
 /**
  * CommonTrapCallout
@@ -109,6 +110,45 @@ export function WhatNextCard({ preplabTopic, gtPostId, gtPostTitle, onNavigate, 
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * FeedbackBar
+ * Thumb up / thumb down widget. Fires a PostHog event on submit.
+ * Usage: <FeedbackBar page="systems/graph-rag" contentType="module" />
+ * contentType: "module" | "gt_post" | "preplab_session"
+ */
+export function FeedbackBar({ page, contentType = "module" }) {
+  const [submitted, setSubmitted] = useState(null);
+
+  function submit(rating) {
+    if (submitted) return;
+    setSubmitted(rating);
+    track("feedback_submitted", { rating, page, content_type: contentType });
+  }
+
+  if (submitted) {
+    return (
+      <div className="flex items-center gap-2 py-2">
+        <span className="text-xs text-zinc-500">Thanks for the feedback</span>
+        <span className="text-sm">{submitted === "up" ? "👍" : "👎"}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 py-2">
+      <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-mono">Was this useful?</span>
+      <button onClick={() => submit("up")}
+        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs text-zinc-400 hover:text-emerald-400 hover:bg-emerald-950/30 border border-zinc-800 hover:border-emerald-800/50 transition-all">
+        👍 <span className="hidden sm:inline">Yes</span>
+      </button>
+      <button onClick={() => submit("down")}
+        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs text-zinc-400 hover:text-red-400 hover:bg-red-950/30 border border-zinc-800 hover:border-red-800/50 transition-all">
+        👎 <span className="hidden sm:inline">No</span>
+      </button>
     </div>
   );
 }
