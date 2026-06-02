@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock } from "./analytics";
+import { ALL_TABS, GROUP_COLORS } from "./config/nav";
 import WarRoom from "./WarRoom";
 import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
@@ -650,28 +651,7 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
 
 // ─── PROGRESS VIEW ────────────────────────────────────────────────────────────
 
-const ALL_TABS = [
-  // Primary nav
-  { id: "lab",         label: "RAG Lab",     group: "BUILD",    audience: "Engineers" },
-  { id: "agentlab",    label: "Agent Lab",   group: "BUILD",    audience: "Engineers" },
-  { id: "evallab",     label: "Eval Lab",    group: "BUILD",    audience: "Engineers · PMs" },
-  { id: "llmlab",      label: "LLM Lab",     group: "BUILD",    audience: "Engineers" },
-  { id: "preplab",     label: "Prep Lab",    group: "PROVE",    audience: "Interview prep" },
-  { id: "career",      label: "Career",      group: "NAVIGATE", audience: "Job seekers" },
-  { id: "aipm",        label: "AI Product",  group: "NAVIGATE", audience: "Product managers" },
-  { id: "concepts",    label: "Concepts",    group: "KNOWLEDGE",audience: "All levels" },
-  { id: "groundtruth", label: "Ground Truth",group: "KNOWLEDGE",audience: "All levels" },
-  // Legacy tabs — accessible via #hash, not in primary nav
-  { id: "flows",       label: "Diagrams",    group: "LEGACY",   audience: "All levels" },
-  { id: "agents",      label: "Agents",      group: "LEGACY",   audience: "Engineers" },
-  { id: "playground",  label: "Playground",  group: "LEGACY",   audience: "All levels" },
-  { id: "explore",     label: "Explore",     group: "LEGACY",   audience: "Engineers" },
-  { id: "systems",     label: "Systems",     group: "LEGACY",   audience: "Engineers · PMs" },
-  { id: "paths",       label: "Paths",       group: "LEGACY",   audience: "All levels" },
-  { id: "fluency",     label: "Drills",      group: "LEGACY",   audience: "Interview prep" },
-];
-
-const GROUP_COLORS = { BUILD: "#3b82f6", PROVE: "#22c55e", NAVIGATE: "#f59e0b", KNOWLEDGE: "#8b5cf6", LEGACY: "#3f3f46" };
+// ALL_TABS and GROUP_COLORS imported from src/config/nav.js
 
 function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookmarks = new Set(), toggleBookmark = () => {} }) {
   // ── Read external localStorage data ─────────────────────────────────────────
@@ -1565,7 +1545,7 @@ export default function App() {
       { id: "aipm",    label: "AI Product", count: 5,  audience: "Product managers" },
     ]},
     { label: "KNOWLEDGE", color: "#52525b", items: [
-      { id: "concepts",    label: "Concepts",     count: 15, audience: "All levels" },
+      { id: "concepts",    label: "Concepts",     count: 20, audience: "All levels" },
       { id: "groundtruth", label: "Ground Truth",            audience: "All levels" },
     ]},
     { label: null, items: [
