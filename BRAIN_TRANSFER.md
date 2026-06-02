@@ -12,7 +12,7 @@
 
 ---
 
-## Current Scale (June 2026, post sprint 41)
+## Current Scale (June 2026, post sprint 42)
 
 | Asset | Count |
 |---|---|
@@ -47,13 +47,14 @@
 - AgentContextArchModule — 57th Systems module, 4 PrepLab questions (`144618f`)
 - GT quiz depth: generateQuiz() 3→7 questions from 5 block types (`2fe2fe0`)
 
-### This session (June 2026) — MD sync + context management + builds
-- **CLAUDE.md trimmed** (587→371 lines): sprints 1–37 moved to `HISTORY.md`. Context limit prevention.
-- **CONTEXT_AUDIT.md created**: guide for all 3 sibling labs — file size audit, danger thresholds, fix patterns, operating rules.
-- **IDEAS.md + UPGRADES.md synced to sprint 41**: scale header, In Progress section, 10+ items marked done.
-- **promptlab-5 + promptlab-6**: temperature miscalibration (medium MCQ) + prompt decay diagnosis (hard text). 297 PrepLab questions total.
-- **Role Readiness Score**: `getRoleReadiness()` + sidebar widget in PrepLab.jsx. Tiers: Familiar/Practitioner/Senior/Staff.
-- **CONTEXT_LIMIT RULE added**: Never read `systems/modules.jsx` or `groundTruthPosts.js` in full. CLAUDE.md stays under 400 lines.
+### Sprint 42 (this session, June 2026) — FM Lab + Paper theme + fixes
+- **Context management**: CLAUDE.md 587→371 lines, HISTORY.md, CONTEXT_AUDIT.md for all 3 labs (`bfb28d2`)
+- **promptlab-5/6**: temperature miscalibration + prompt decay diagnosis. 297→301 PrepLab questions (`f96bc4a`)
+- **Role Readiness Score**: `getRoleReadiness()` sidebar widget in PrepLab.jsx (`f96bc4a`)
+- **Foundation Models Lab**: `src/FoundationModelsLab.jsx` — 6 scenarios, 4 PrepLab questions, fully wired (`6cb2194`)
+- **Paper theme system**: warm dark default + `[data-theme="light"]` full zinc inversion + sun/moon toggle in header. `--gal-build-tint/border` CSS vars. FoundationModelsLab inline styles → CSS vars (`2884aa1`)
+- **Build fixes**: duplicate `INTERVIEW_STORIES` in App.jsx (`46bd398`), duplicate `AGENT_INTERVIEW_STORIES` → renamed `AGENT_FAILURE_STORIES` in Agents.jsx (`9a70d75`)
+- **Phase 2 theme debt**: other labs (PromptLab, Home, etc.) still have hardcoded `#22D3EE` inline styles — visible as cyan in light mode. Audit pass needed.
 
 ### Sprint 41 (batches A–B) — Gym expansion + Prompt Lab
 - **7 new Concepts modules** (`ed54c5a`): LLMAsJudge, EvalDesign, AgentToolDesign, CostLatency, Observability, FewShot, ChainOfThought

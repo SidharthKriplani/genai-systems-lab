@@ -8,7 +8,7 @@ Read this at session start. Do only this. Update before closing.
 
 ## Theme: Sprint 42 complete. 6 labs now live. PostHog check is still the gate before next major sprint.
 
-Sprint 42 delivered: context management (CLAUDE.md trimmed, HISTORY.md, CONTEXT_AUDIT.md), promptlab-5/6, Role Readiness Score in PrepLab sidebar, Foundation Models Lab (6th BUILD lab, 6 scenarios). Scale: 226 GT posts, 301 PrepLab questions, 27 Concepts modules (7 active gyms), 57 Systems modules, 6 labs.
+Sprint 42 delivered: context management, promptlab-5/6, Role Readiness Score, Foundation Models Lab (6th lab), Paper theme system (full light/dark with toggle), duplicate declaration fixes. Scale: 226 GT posts, 301 PrepLab questions, 27 Concepts (7 gyms), 57 Systems, 6 labs.
 
 PostHog check (item 5 below) is still the gate before the next major content sprint.
 
