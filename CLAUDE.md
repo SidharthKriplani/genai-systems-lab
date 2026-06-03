@@ -307,7 +307,8 @@ For full audit findings see AUDITS.md.
 - PAL full product walkthrough: 42 screenshots analysed. 11 new IDEAS entries logged (`c517c46`).
 - Evaluation GT: 8 → 13 posts. New: `llm-as-judge-failure`, `ragas-metrics-explained`, `eval-production-gap`, `human-eval-vs-llm-eval`, `fine-tuning-evaluation`.
 - staffLayer: 41 → 60 entries. Added to: rag-8, reranker-1, retrieval-3, lctx-1, llmops-3, kv-2, serving-2, serving-6, a2a-4, ama-4, pcm-3, semcache-2, sd-q1, sd-q3, agentctx-2, agentctx-4, adversarial-1, adversarial-2, scenario-3. Commit `354dde4`.
-- Still open: guided path polish + Study Plan section on home (PAL pattern — personalized suggestions with reasons from localStorage).
+- Progress page upgraded `7390b00`: stats banner (total questions + lab scenarios + concepts + role level + streak), readiness by area (5 bars, clickable), Study Plan (5 personalized suggestions from localStorage — weakest topic, review queue due, unvisited hub, RAG lab prompt, GT read), Review Queue (SRS-due items surfaced by name), Guided Paths (3 tracks). Progress added to primary nav.
+- Still open (sprint 52): B3-B5 polish, module notes (B7), post-completion panel (B8), Supabase auth (B12-B15).
 
 **Sprint 48 (June 2026) — Mock Exam Mode + Staff Layer + quick wins:**
 - Mock Exam Mode (forward-only, red timer, MOCK badge, pulses < 5 min). Staff Layer (3rd tier, access-gated). Commit `f7af1f1`.
