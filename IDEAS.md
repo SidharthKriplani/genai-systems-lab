@@ -550,6 +550,19 @@ Fine-tuning is increasingly expected knowledge for senior AI engineers, not just
 - **Scenario-type questions** — Multi-turn conversational scenarios where the user debugs a failing system across 3-4 exchanges. Higher fidelity than MCQ. *Pending.*
 - **More system design text questions** — Cover: vector DB selection, agent reliability, eval harness design, fine-tuning decision framework. *Pending.*
 
+### New PrepLab questions — Swiggy prompt bloat signal (new cluster — June 2026)
+
+Source: LinkedIn post, "Asked at Swiggy · Round 2 · Senior AI Engineer (Q2 2026)." Real production cost framing: 10M requests/month, 3,200-token average prompt, $15K/month per 100 extra tokens. 5 named techniques: version control for prompts, CI token budget gates, LLMLingua/LLMZip compression, dynamic context assembly, rolling conversation history compression.
+
+**3 questions to write (llmops cluster, hard, gated):**
+- **Prompt bloat engineering** (hard text) — "Your team's average system prompt has grown to 3,200 tokens. At 10M requests/month, every 100 extra tokens costs $15K/month. Your lead proposes a monthly prompt review meeting. What's wrong with this approach, and what would you build instead?" Trap: "manual review + token tracking" — this is still a process built on hope. The answer requires CI token budget gates, prompt versioning with justification requirements, and compression at inference time.
+- **Dynamic context assembly vs full context** (hard MCQ) — test understanding of routing query type → relevant prompt sections only. Average context drop 40–60%. Trap: treating all queries identically.
+- **Conversation history compression** (medium text) — rolling summary pattern: every 5 turns, compress prior turns to ~150 tokens + keep last 2 verbatim. What are the failure modes? Trap: summarising too aggressively loses critical context; summarising too rarely negates the savings.
+
+**Also add to Interview Signal (INTERVIEW_EXPERIENCES):** Swiggy entry — Round 2, Senior AI Engineer, Q2 2026. Topics: llmops, cost-management, prompt-engineering. Key signal: production cost reasoning expected at round 2 — "manual review is not a process, it's a hope" is the delineator between passing and failing this question.
+
+`Effort: S — writing only, 3 questions`
+
 ### New PrepLab questions — Quantiphi Defense Pack signal (new cluster — June 2026)
 
 Source: Quantiphi Senior ML Engineer interview prep PDF. 6 topics confirmed in-scope for GAL's domain. Do not bulk-import — only the GenAI/AI systems questions fit. AWS ops (SageMaker, Glue, Redshift, DynamoDB, Kafka) and classical ML (bagging/boosting, feature engineering) are out of scope. Python coding prompts are wrong format entirely.
