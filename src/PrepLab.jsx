@@ -137,36 +137,36 @@ const TOPIC_LABELS = {
   serving: "Serving & Inference",
 };
 
-// Topic group tiles for TrainerMode selector (5 groups replacing 22 individual pills)
+// Topic group tiles — aligned to challenge area names (R8 redesign)
 const TOPIC_GROUPS = [
   {
     id: "rag",
-    label: "RAG & Retrieval",
-    desc: "Retrieval failure modes, chunking, embeddings, reranking, caching",
+    label: "Retrieval",
+    desc: "RAG failure modes, chunking, embeddings, reranking, context overflow",
     topics: ["rag"],
   },
   {
     id: "agents",
-    label: "Agents & Systems",
-    desc: "Agent loops, memory architecture, orchestration, tool use",
+    label: "Agents",
+    desc: "Agent loops, memory architecture, orchestration, tool use, injection",
     topics: ["agents"],
   },
   {
     id: "evals",
-    label: "Evals & Metrics",
-    desc: "Evaluation design, RAGAS, LLM-as-judge, hallucination scoring",
+    label: "Evaluation",
+    desc: "Eval design, RAGAS, LLM-as-judge, hallucination scoring, calibration",
     topics: ["evaluation"],
   },
   {
     id: "llm",
-    label: "LLM & Fine-Tuning",
-    desc: "Transformers, attention, fine-tuning, reasoning models, multimodal",
+    label: "Foundations",
+    desc: "Transformers, attention, fine-tuning, LoRA, DPO, reasoning, multimodal",
     topics: ["finetuning", "reasoning", "multimodal"],
   },
   {
     id: "prod",
-    label: "Production & Ops",
-    desc: "Serving, inference, LLMOps, safety, behavioral, product strategy",
+    label: "Production",
+    desc: "Serving, inference, LLMOps, cost, latency, safety, observability",
     topics: ["serving", "llmops", "safety", "behavioral", "product"],
   },
 ];
@@ -775,8 +775,8 @@ function ExamConfig({ onStart, onExit }) {
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Back</button>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">How interview-ready are you?</h2>
-          <p className="text-zinc-400 text-sm mt-1">{PREP_QUESTIONS.length} production-level questions. No hints. See exactly where you stand.</p>
+          <h2 className="text-2xl font-bold text-white tracking-tight">Test your production AI judgment.</h2>
+          <p className="text-zinc-400 text-sm mt-1">{PREP_QUESTIONS.length} questions from real AI engineering interviews. No hints. See exactly where your reasoning breaks.</p>
         </div>
         <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 space-y-6">
           <div>
@@ -3066,8 +3066,8 @@ function DefenseDocMode({ onExit }) {
 
 const MODE_CARDS = [
   {
-    id: "exam", icon: "⏱", title: "Combined Assessment", subtitle: "Timed Exam",
-    description: "Timed 15–60 min exam with configurable focus and difficulty. All scores hidden until the end. Animated results reveal with per-topic breakdown.",
+    id: "exam", icon: "⏱", title: "Judgment Exam", subtitle: "Timed · No hints",
+    description: "Timed 15–60 min exam with configurable focus and difficulty. All scores hidden until the end. Per-challenge-area breakdown shows exactly where your judgment breaks.",
     border: "border-indigo-500/40 hover:border-indigo-400", badge: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30"
   },
   {
@@ -3435,7 +3435,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
   const dueQuestions = getDueQuestions();
   const PREPLAB_SIDEBAR = [
     ...(dueQuestions.length > 0 ? [{ id: "review", label: "Review Due", tag: "SPACED", desc: `${dueQuestions.length} question${dueQuestions.length > 1 ? "s" : ""} scheduled for review today.` }] : []),
-    { id: "exam",        label: "Assess",             tag: "EXAM",      desc: "Test yourself cold. Leave knowing your gaps." },
+    { id: "exam",        label: "Judgment Exam",      tag: "EXAM",      desc: "Test yourself cold. Leave knowing where your reasoning breaks." },
     { id: "jdprep",      label: "Interview Strategy", tag: "STRATEGY",  desc: "JD → gap score → day-by-day plan." },
     { id: "companyprep", label: "Company Tracks",     tag: "ARCHETYPE", desc: "By company archetype" },
     { id: "intexp",      label: "Interview Signal",  tag: "INTEL",     desc: "40 real loop patterns — what's actually tested, by company." },
