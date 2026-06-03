@@ -3,7 +3,6 @@ import { useState } from "react";
 import { track } from "./analytics";
 import { supabase, signInWithGoogle, signInWithGitHub, signOut, pushProgress, pullProgress } from "./supabase";
 import { POSTS } from "./groundTruthIndex";
-import { getAllAreasReadiness } from "./readiness";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function initials(name, email) {
@@ -32,34 +31,7 @@ function StatPill({ label, value, color }) {
   );
 }
 
-// ── Area readiness row ────────────────────────────────────────────────────────
-function AreaBar({ label, id, readiness, onClick }) {
-  if (!readiness) {
-    return (
-      <button onClick={onClick}
-        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:opacity-80"
-        style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-        <div className="w-2 h-2 rounded-full bg-zinc-700 shrink-0" />
-        <span className="text-xs text-zinc-500 font-medium flex-1">{label}</span>
-        <span className="text-[10px] font-mono text-zinc-700">Not started →</span>
-      </button>
-    );
-  }
-  return (
-    <button onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:opacity-80"
-      style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-      <div className="w-2 h-2 rounded-full shrink-0" style={{ background: readiness.color }} />
-      <span className="text-xs text-white font-medium shrink-0 w-[88px]">{label}</span>
-      <div className="flex-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-        <div className="h-1.5 rounded-full animate-fillBar"
-          style={{ width: `${readiness.pct}%`, background: readiness.color }} />
-      </div>
-      <span className="text-[10px] font-mono shrink-0 w-8 text-right" style={{ color: readiness.color }}>{readiness.pct}%</span>
-      <span className="text-[10px] font-mono text-zinc-500 shrink-0 hidden sm:block">{readiness.level}</span>
-    </button>
-  );
-}
+
 
 // ── Achievements ──────────────────────────────────────────────────────────────
 const ACHIEVEMENTS = [
@@ -166,23 +138,13 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
   const masteredCount  = mastery.size;
   const bookmarksCount = bookmarkSet.size;
 
-  // ── Readiness ─────────────────────────────────────────────────────────────
-  const allReadiness = getAllAreasReadiness();
-  const AREAS = [
-    { id: "retrieval",   label: "Retrieval"   },
-    { id: "evaluation",  label: "Evaluation"  },
-    { id: "agentshub",   label: "Agents"      },
-    { id: "production",  label: "Production"  },
-    { id: "foundations", label: "Foundations" },
-  ].map(a => ({ ...a, readiness: allReadiness[a.id] || null }));
-
-  const maxPct = AREAS.reduce((m, a) => a.readiness ? Math.max(m, a.readiness.pct) : m, 0);
-  const overallLevel =
-    maxPct >= 82 ? "Staff Engineer" :
-    maxPct >= 60 ? "Senior"         :
-    maxPct >= 35 ? "Practitioner"   :
-    maxPct >= 15 ? "Building"       :
-    totalAnswered > 0 ? "Just Starting" : "Explorer";
+  // ── Overall level (lightweight — from preplab + lab data only) ──────────────
+  const overallLevel = (() => {
+    if (ragPassed >= 6 && totalAnswered >= 50) return "Practitioner";
+    if (totalAnswered >= 20 || ragPassed >= 2) return "Building";
+    if (totalAnswered >= 1 || ragPassed >= 1) return "Just Starting";
+    return "Explorer";
+  })();
 
   // ── Recent activity ───────────────────────────────────────────────────────
   const recentActivity = (() => {
@@ -320,20 +282,16 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
         <StatPill label="Labs done" value={ragPassed || "—"} />
       </div>
 
-      {/* ── Readiness by challenge area ──────────────────────────────── */}
-      <div>
-        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold mb-2.5">Readiness by challenge area</p>
-        <div className="space-y-2">
-          {AREAS.map(a => (
-            <AreaBar key={a.id} {...a}
-              onClick={() => { track("profile_area_click", { area: a.id }); onNavigate(a.id); }} />
-          ))}
+      {/* ── Quick link to Progress ────────────────────────────────────── */}
+      <button onClick={() => onNavigate("progress")}
+        className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-all hover:opacity-80"
+        style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <div>
+          <p className="text-xs font-bold text-white">Your readiness dashboard</p>
+          <p className="text-[10px] text-zinc-500 mt-0.5">Study plan, guided paths, readiness by area</p>
         </div>
-        <button onClick={() => onNavigate("progress")}
-          className="mt-3 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors underline underline-offset-2">
-          Full progress dashboard →
-        </button>
-      </div>
+        <span className="text-zinc-500 text-xs shrink-0">Progress →</span>
+      </button>
 
       {/* ── Recent activity ───────────────────────────────────────────── */}
       {recentActivity.length > 0 && (

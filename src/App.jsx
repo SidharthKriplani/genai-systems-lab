@@ -1896,15 +1896,15 @@ export default function App() {
         { id: "preplab", label: "Interview Signal",   note: "INTEL"    },
       ]},
     ]},
-    // LEARN — Ground Truth always open, shows reading series to entice discovery
+    // LEARN — Ground Truth always open; series items open their first post directly
     { label: "LEARN", color: "#a78bfa", items: [
       { id: "groundtruth", label: "Ground Truth", alwaysExpanded: true, subitems: [
-        { id: "groundtruth", label: "Agent Engineering"     },
-        { id: "groundtruth", label: "RAG Playbook"          },
-        { id: "groundtruth", label: "The Training Stack"    },
-        { id: "groundtruth", label: "Frontier Intelligence" },
-        { id: "groundtruth", label: "How I'd Build X"       },
-        { id: "groundtruth", label: "Data Flywheel"         },
+        { id: "groundtruth", label: "Agent Engineering",    postId: "react-pattern"          },
+        { id: "groundtruth", label: "RAG in Production",    postId: "how-rag-works"          },
+        { id: "groundtruth", label: "The Training Stack",   postId: "finetune-playbook"      },
+        { id: "groundtruth", label: "LLMOps in Production", postId: "your-prompt-is-code"    },
+        { id: "groundtruth", label: "How I'd Build X",      postId: "build-ai-search"        },
+        { id: "groundtruth", label: "The Data Flywheel",    postId: "flywheel-implicit-feedback" },
       ]},
     ]},
   ];
@@ -2130,31 +2130,38 @@ export default function App() {
                     const active = topView === item.id;
                     const grpColor = group.color || "#6366f1";
                     const hasSubitems = item.subitems && item.subitems.length > 0;
-                    const subActive  = hasSubitems && item.subitems.some(s => s.id === topView);
                     const forceOpen  = item.alwaysExpanded;
-                    const isExpanded = forceOpen || expandedItems.has(item.id) || subActive || active;
+                    // isExpanded: ONLY forceOpen or explicit user toggle — never auto-expand from active/subActive
+                    // This prevents all areas expanding when groundtruth is active
+                    const isExpanded = forceOpen || expandedItems.has(item.id);
                     const activeColor = group.color || "var(--gal-build)";
                     return (
                       <div key={item.id}>
                         <button
-                          onClick={() => { navigate(item.id); if (hasSubitems && !forceOpen) toggleItem(item.id); }}
+                          onClick={() => {
+                            navigate(item.id);
+                            // Auto-expand on navigate (but don't collapse if already open)
+                            if (hasSubitems && !forceOpen && !expandedItems.has(item.id)) {
+                              setExpandedItems(prev => { const n = new Set(prev); n.add(item.id); return n; });
+                            }
+                          }}
                           aria-current={active ? "page" : undefined}
-                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active && !subActive ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
-                          style={(active || subActive) ? {
+                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
+                          style={active ? {
                             background: `linear-gradient(90deg, ${activeColor}12 0%, ${activeColor}03 100%)`,
                             boxShadow: `inset 2px 0 0 ${activeColor}`,
                             color: "#ffffff",
                           } : {}}>
-                          <span className={(active || subActive) ? "text-white font-bold" : ""}>{item.label}</span>
+                          <span className={active ? "text-white font-bold" : ""}>{item.label}</span>
                           <span className="flex items-center gap-1.5">
-                            {visited.has(item.id) && !active && !subActive && (
+                            {visited.has(item.id) && !active && (
                               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: activeColor, opacity: 0.4 }} />
                             )}
                             {hasSubitems && !forceOpen && (
                               <button onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
                                 className="p-0.5 rounded hover:bg-zinc-700/60 transition-colors">
                                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none"
-                                  style={{ color: active || subActive ? activeColor : "#71717a", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 150ms" }}>
+                                  style={{ color: active ? activeColor : "#71717a", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 150ms" }}>
                                   <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                               </button>
@@ -2166,9 +2173,18 @@ export default function App() {
                           <div style={{ maxHeight: isExpanded ? `${item.subitems.length * 30}px` : '0px', overflow: 'hidden', transition: 'max-height 200ms cubic-bezier(0.4,0,0.2,1)' }}>
                             <div className="ml-3 pl-2.5 mb-1 space-y-0" style={{ borderLeft: `1px solid ${activeColor}20` }}>
                               {item.subitems.map((sub, si) => {
-                                const subIsActive = !forceOpen && topView === sub.id && sub.id !== item.id;
+                                const subIsActive = !forceOpen && topView === sub.id && !sub.postId;
                                 return (
-                                  <button key={si} onClick={() => navigate(sub.id)}
+                                  <button key={si}
+                                    onClick={() => {
+                                      if (sub.postId) {
+                                        // GT series: navigate to groundtruth and open specific post
+                                        setGtPostId(sub.postId);
+                                        navigate("groundtruth");
+                                      } else {
+                                        navigate(sub.id);
+                                      }
+                                    }}
                                     className={`w-full text-left px-2 py-[5px] rounded text-[11px] flex items-center justify-between transition-all duration-150 ${subIsActive ? "font-bold" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"}`}
                                     style={subIsActive ? { color: activeColor, fontWeight: 700 } : {}}>
                                     <span>{sub.label}</span>
