@@ -317,6 +317,14 @@ For full audit findings see AUDITS.md.
 - B12+B15 Supabase auth `355afae`: `src/supabase.js` client + helpers. Google OAuth login button in desktop header (avatar + name when signed in). Progress page shows real name/avatar + "Sign in to save across devices" CTA. Cross-device sync: pushProgress on every nav change, pushKey on lab completion. Pull on sign-in. Sync keys: gsl-preplab-history, genai_leaderboard, gsl-concepts-mastery, gsl-preplab-spaced, gsl-bookmarks, streak.
 - User action required: `npm install @supabase/supabase-js`, add VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY to Vercel, enable Google OAuth in Supabase Auth, run user_progress table SQL, add redirect URL.
 
+**Sprint 53 (June 2026) — Nav + Profile + Plans + GitHub OAuth:**
+- Nav restructured `2b91a5a`: TRACK group at top (Profile, Plans, Progress), CHALLENGES, PRACTICE (PrepLab), LEARN (Ground Truth). Mirrors PAL hierarchy.
+- Profile page `2b91a5a`: identity (avatar+name+email+member since), practice stats (5 pills), cross-device sync button, saved posts, settings (theme, export/import JSON). Google + GitHub sign-in buttons.
+- Plans page `2b91a5a`: 4 structured tracks (Getting Started, RAG Production Ready, Interview Sprint, Full-Stack AI Engineer). Expandable checklists, auto-progress from localStorage, week estimates.
+- GitHub OAuth `2b91a5a`: signInWithGitHub() in supabase.js, GitHub button in header + Profile + cold home page.
+- Cold home sign-in push `2b91a5a`: "Sign in to save progress" section on cold visitor view between PrepLab CTA and hero demo.
+- Session persistence fix `2b91a5a`: switched from getUser() (server round-trip) to supabase.auth.getSession() (localStorage, instant).
+
 **Sprint 48 (June 2026) — Mock Exam Mode + Staff Layer + quick wins:**
 - Mock Exam Mode (forward-only, red timer, MOCK badge, pulses < 5 min). Staff Layer (3rd tier, access-gated). Commit `f7af1f1`.
 - staffLayer expanded: 10 → 30 questions across rag, agents, eval, llmops. CROSS_LAB.md created (lab boundary docs, cross-pollination map). RSS feed: `public/rss.xml` (30 GT posts). Commit `a44fe49`.
