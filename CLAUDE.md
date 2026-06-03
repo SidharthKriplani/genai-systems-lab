@@ -294,7 +294,10 @@ For full audit findings see AUDITS.md.
 - Build fix: orphan `</div>` in ExamConfig removed — Vercel build broken since sprint 48. Commit `c64f929`.
 - User research: `USER_RESEARCH.md` created — 4 user types, belief gap verified, challenge-layer architecture decided.
 - Redesign plan: `REDESIGN.md` created — 10 batches R1–R10, challenge-layer nav, hub pages, home rewrite. Full plan logged in NEXT.md.
-- Batches R1–R10 queued. Execute in order, one batch per session.
+- R1 done `3b0b870` — 8-item challenge-layer nav, ChallengeStub routing, keyboard shortcuts remapped.
+- R2 done `66fa6b0` — Home rewrite: promise headline, challenge area cards (2+3 grid), judgment CTA, returning view updated.
+- R3 done `35fd2c7` — Retrieval hub page (template): lab hero + 4 concepts + 4 GT posts + 3 PrepLab Qs + progress snapshot.
+- R4–R7 in progress (Evaluation, Agents, Production, Foundations hub pages — one session).
 
 **Sprint 48 (June 2026) — Mock Exam Mode + Staff Layer + quick wins:**
 - Mock Exam Mode (forward-only, red timer, MOCK badge, pulses < 5 min). Staff Layer (3rd tier, access-gated). Commit `f7af1f1`.
