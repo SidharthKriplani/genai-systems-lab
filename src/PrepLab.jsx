@@ -824,7 +824,6 @@ function ExamConfig({ onStart, onExit }) {
               <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${timedMock ? "left-5" : "left-0.5"}`} />
             </button>
           </div>
-        </div>
         <div className="bg-zinc-900 border border-zinc-700 rounded-xl px-5 py-4 text-sm text-zinc-400 leading-relaxed">
           {timedMock
             ? "Mock Exam: forward-only, no reveals, timer ends the exam. Your score appears when time's up or you finish."
