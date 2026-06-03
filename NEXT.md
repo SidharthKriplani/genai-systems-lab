@@ -27,13 +27,13 @@ Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken 
 
 **Execution model:** R1 and R2 alone (one each). R3 alone as template. R4–R7 together in one session (same pattern, fill-in-the-blank). R8, R9, R10 alone. = 7 sessions total.
 
-**R3 — Retrieval hub page** `M` ← template session, must pass before R4–R7 ← NEXT
+**~~R3 — Retrieval hub page~~** `M` DONE `35fd2c7`
 - New `src/Retrieval.jsx`
 - Structure: challenge intro ("Why does my AI retrieve garbage?") → RAG Lab entry card → 3 concept cards → 3-4 GT posts → 3 inline PrepLab questions (topic: rag) → progress snapshot
 - Wire in App.jsx routing (`#retrieval`)
 - Commit: `feat: R3 — Retrieval hub page`
 
-**R4 — Evaluation hub page** `M`
+**R4–R7 — Evaluation, Agents, Production, Foundations hub pages** `M` ← NEXT (one session)
 - New `src/EvaluationHub.jsx`
 - Same structure as R3, wired to Eval Lab, evaluation concepts, evaluation GT posts, evaluation PrepLab cluster
 - Commit: `feat: R4 — Evaluation hub page`
