@@ -2,21 +2,74 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 48 — Mock Exam, Staff Layer x30, adversarial questions, CROSS_LAB.md, RSS)*
+*Last updated: June 2026 (sprint 49 kickoff — full structural redesign planned, batches R1–R10 queued)*
 
 ---
 
-## Theme: Sprint 48 complete. Session closed. Next: staffLayer further expansion + Spot the Flaw + Interview Strategy v2.
+## Theme: Sprint 49 — Full structural redesign. Challenge-layer architecture. Execute R1 → R10 in order, one batch per session.
 
-Sprint 48 closed: 319 PrepLab questions (was 307 at sprint 45), Mock Exam Mode, Staff Layer (30 questions), 6 adversarial questions, GT bookmarks, spaced repetition, 91-day heatmap, CROSS_LAB.md, RSS feed. See CLAUDE.md sprint log for full detail.
+Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken since sprint 48), user research completed (`USER_RESEARCH.md`), full redesign plan completed (`REDESIGN.md`). See CLAUDE.md sprint log.
 
 ---
 
-## Do this (in order)
+## Do this (in order) — Sprint 49 Redesign Batches
 
-**1–4. ~~All prior sprints~~** — DONE. See CLAUDE.md session log.
+**R1 — Nav collapse** `S` ← START HERE
+- `src/config/nav.js`: collapse to 8-item challenge-layer nav (Home, Retrieval, Evaluation, Agents, Production, Foundations, PrepLab, Ground Truth)
+- `src/App.jsx`: add routing for `#retrieval`, `#evaluation`, `#agents-hub`, `#production`, `#foundations` — all old routes stay functional
+- Brace check + commit: `feat: R1 — challenge-layer nav, 8 items`
 
-**5. ~~PostHog distribution check~~** — Deferred. Not blocking build work.
+**R2 — Home page rewrite** `M`
+- `src/Home.jsx`: full rewrite
+- Cold visitor: promise hero ("The only place that trains production AI judgment") + market signal (agentic AI +280%, $190K avg) + 5 challenge area cards + single PrepLab question as primary CTA
+- Returning visitor: compact progress snapshot + continue CTA + daily question + challenge area progress bars
+- Brace check + commit: `feat: R2 — home rewrite, cold/returning visitor states`
+
+**R3 — Retrieval hub page** `M`
+- New `src/Retrieval.jsx`
+- Structure: challenge intro ("Why does my AI retrieve garbage?") → RAG Lab entry card → 3 concept cards → 3-4 GT posts → 3 inline PrepLab questions (topic: rag) → progress snapshot
+- Wire in App.jsx routing (`#retrieval`)
+- Commit: `feat: R3 — Retrieval hub page`
+
+**R4 — Evaluation hub page** `M`
+- New `src/EvaluationHub.jsx`
+- Same structure as R3, wired to Eval Lab, evaluation concepts, evaluation GT posts, evaluation PrepLab cluster
+- Commit: `feat: R4 — Evaluation hub page`
+
+**R5 — Agents hub page** `M`
+- New `src/AgentsHub.jsx` (avoid name collision with existing `Agents.jsx`)
+- Wired to Agent Lab, agent concepts, agents GT posts, agents PrepLab cluster
+- Commit: `feat: R5 — Agents hub page`
+
+**R6 — Production hub page** `M`
+- New `src/ProductionHub.jsx`
+- Wired to LLM Lab, production/llmops concepts, llmops GT posts, llmops PrepLab cluster
+- Commit: `feat: R6 — Production hub page`
+
+**R7 — Foundations hub page** `M`
+- New `src/FoundationsHub.jsx`
+- Two lab entries: FM Lab + Prompt Lab (sub-entries, not separate pages)
+- Wired to foundation concepts, foundation GT posts, finetuning+safety PrepLab clusters
+- Commit: `feat: R7 — Foundations hub page`
+
+**R8 — PrepLab reframe** `S`
+- `src/PrepLab.jsx`: copy throughout → "judgment" framing ("Test your production AI judgment" not "Assess yourself")
+- Sidebar cluster labels aligned to challenge area names (Retrieval / Evaluation / Agents / Production / Foundations)
+- Commit: `feat: R8 — PrepLab judgment reframe, challenge-aligned clusters`
+
+**R9 — GT challenge area tagging** `M`
+- `src/groundTruthIndex.js`: add `challengeArea` field to all 226 posts
+- Values: `"retrieval"` | `"evaluation"` | `"agents"` | `"production"` | `"foundations"` | `"general"`
+- GT cards render challenge area chip
+- Hub pages pull posts by `challengeArea` from index
+- Commit: `feat: R9 — GT challenge area tagging, all 226 posts`
+
+**R10 — Visual polish + full MD sync** `S`
+- Challenge area accent colors (Retrieval: cyan, Evaluation: amber, Agents: violet, Production: green, Foundations: blue)
+- Mobile layout pass on all 5 hub pages
+- Consistent module header pattern across all labs
+- Full MD sync: CLAUDE.md sprint log, NEXT.md, LINEAGE.md, REDESIGN.md status update
+- Commit: `feat: R10 — visual polish` + `chore: MD sync sprint 49`
 
 ---
 

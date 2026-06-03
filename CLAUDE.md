@@ -290,6 +290,12 @@ For full audit findings see AUDITS.md.
 
 ## Session build log
 
+**Sprint 49 (June 2026) — Full structural redesign (in progress):**
+- Build fix: orphan `</div>` in ExamConfig removed — Vercel build broken since sprint 48. Commit `c64f929`.
+- User research: `USER_RESEARCH.md` created — 4 user types, belief gap verified, challenge-layer architecture decided.
+- Redesign plan: `REDESIGN.md` created — 10 batches R1–R10, challenge-layer nav, hub pages, home rewrite. Full plan logged in NEXT.md.
+- Batches R1–R10 queued. Execute in order, one batch per session.
+
 **Sprint 48 (June 2026) — Mock Exam Mode + Staff Layer + quick wins:**
 - Mock Exam Mode (forward-only, red timer, MOCK badge, pulses < 5 min). Staff Layer (3rd tier, access-gated). Commit `f7af1f1`.
 - staffLayer expanded: 10 → 30 questions across rag, agents, eval, llmops. CROSS_LAB.md created (lab boundary docs, cross-pollination map). RSS feed: `public/rss.xml` (30 GT posts). Commit `a44fe49`.
