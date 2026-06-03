@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { supabase, signInWithGoogle } from "./supabase";
 import { track } from "./analytics";
 import { POSTS } from "./groundTruthIndex";
 import { getAllAreasReadiness } from "./readiness";
@@ -654,6 +655,26 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   </button>
                 </div>
               </div>
+
+              {/* Sign-in push */}
+              {supabase && (
+                <div className="max-w-xl mx-auto w-full">
+                  <div className="rounded-2xl p-4 text-center space-y-3"
+                    style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(139,92,246,0.4)" }}>
+                    <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Save your progress · free</p>
+                    <p className="text-sm text-zinc-300 font-medium">Sign in to track your progress across all 5 challenge areas and PrepLab.</p>
+                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                      <button onClick={() => { track("cold_signin_cta", { provider: "google" }); signInWithGoogle(); }}
+                        className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
+                        style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.4)", color: "#c4b5fd" }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        Sign in with Google →
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-zinc-600">Free to start · No account required to explore</p>
+                  </div>
+                </div>
+              )}
 
               {/* Live failure demo */}
               <HeroFailureDemo onNavigate={onNavigate} />

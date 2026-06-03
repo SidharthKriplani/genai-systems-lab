@@ -20,6 +20,14 @@ export async function signInWithGoogle() {
   });
 }
 
+export async function signInWithGitHub() {
+  if (!supabase) return;
+  await supabase.auth.signInWithOAuth({
+    provider: "github",
+    options: { redirectTo: window.location.origin },
+  });
+}
+
 export async function signOut() {
   if (!supabase) return;
   await supabase.auth.signOut();

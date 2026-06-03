@@ -7,7 +7,7 @@ import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
 import { POSTS as GT_POSTS } from "./groundTruthIndex"; // lightweight metadata — no content bodies
 import { getAllAreasReadiness, AREA_CONFIG } from "./readiness";
-import { supabase, signInWithGoogle, signOut, onAuthChange, getUser, pullProgress, pushProgress, pushKey } from "./supabase";
+import { supabase, signInWithGoogle, signInWithGitHub, signOut, onAuthChange, getUser, pullProgress, pushProgress, pushKey } from "./supabase";
 
 // Heavy tab components — lazy-loaded on first visit to keep initial bundle small
 const GroundTruth    = lazy(() => import("./GroundTruth"));
@@ -31,6 +31,8 @@ const EvaluationHub          = lazy(() => import("./EvaluationHub"));
 const AgentsHub              = lazy(() => import("./AgentsHub"));
 const ProductionHub          = lazy(() => import("./ProductionHub"));
 const FoundationsHub         = lazy(() => import("./FoundationsHub"));
+const ProfilePage            = lazy(() => import("./Profile"));
+const PlansPage              = lazy(() => import("./Plans"));
 
 import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
 import { RAG_CORPUS } from "./ragCorpus";
@@ -1358,7 +1360,7 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","qa","paths","retrieval","evaluation","agentshub","production","foundations"];
+const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations"];
 
 // ─── RAG LAB — scenario forward pointers ──────────────────────────────────────
 // One GT post + one PrepLab topic per scenario. Shown after result evaluation.
@@ -1687,17 +1689,19 @@ export default function App() {
 
   // ── Supabase auth ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    // Get current session on mount
-    getUser().then(u => {
+    if (!supabase) return;
+    // Restore session from localStorage immediately (no server round-trip)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user || null;
       setUser(u);
       if (u) pullProgress(u.id);
     });
-    // Subscribe to auth changes
+    // Subscribe to all auth state changes (sign in, sign out, token refresh)
     const unsub = onAuthChange(u => {
       setUser(u);
       if (u) {
         pullProgress(u.id);
-        track("auth_sign_in", { provider: "google" });
+        track("auth_sign_in", { provider: u.app_metadata?.provider || "unknown" });
       }
     });
     return unsub;
@@ -2179,13 +2183,21 @@ export default function App() {
                   </button>
                 </div>
               ) : (
-                <button onClick={signInWithGoogle}
-                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-                  style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.35)", color: "#a5b4fc" }}
-                  title="Sign in to save progress across devices">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  Sign in
-                </button>
+                <div className="hidden lg:flex items-center gap-1.5">
+                  <button onClick={signInWithGoogle}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+                    style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.35)", color: "#a5b4fc" }}
+                    title="Sign in with Google">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Sign in
+                  </button>
+                  <button onClick={signInWithGitHub}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+                    style={{ background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.8)", color: "#a1a1aa" }}
+                    title="Sign in with GitHub">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                  </button>
+                </div>
               )
             )}
           </div>
@@ -2235,6 +2247,8 @@ export default function App() {
           {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} />}
 
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
+          {topView === "profile" && <ProfilePage onNavigate={navigateTo} user={user} onSignOut={() => setUser(null)} />}
+          {topView === "plans"   && <PlansPage   onNavigate={navigate} />}
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}
 
           {/* ── Challenge area stubs (R1) — replaced by hub pages in R3–R7 ── */}

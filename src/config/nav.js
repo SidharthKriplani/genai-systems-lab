@@ -7,6 +7,9 @@
 // Labs, Systems, Concepts, Career, AI Product remain hash-accessible (not deleted).
 
 export const ALL_TABS = [
+  // TRACK — identity + progress layer (top of nav, PAL-style)
+  { id: "profile",     label: "Profile",     group: "TRACK",      audience: "Your identity + saved items" },
+  { id: "plans",       label: "Plans",       group: "TRACK",      audience: "Structured learning tracks" },
   // Primary nav — challenge areas
   { id: "retrieval",   label: "Retrieval",   group: "CHALLENGES", audience: "RAG · context · hallucination" },
   { id: "evaluation",  label: "Evaluation",  group: "CHALLENGES", audience: "Testing · monitoring · evals" },
@@ -36,16 +39,19 @@ export const ALL_TABS = [
 ];
 
 export const GROUP_COLORS = {
+  TRACK:      "#8b5cf6",
   CHALLENGES: "var(--gal-build)",
-  PRIMARY:    "#8b5cf6",
+  PRIMARY:    "#6366f1",
   LEGACY:     "#3f3f46",
 };
 
 // Nav group structure — source of truth.
 // Local NAV_GROUPS const in App.jsx mirrors this shape.
 export const NAV_GROUPS = [
-  { label: null, items: [
-    { id: "home", label: "Home" },
+  { label: "TRACK", color: "#8b5cf6", items: [
+    { id: "profile",     label: "Profile" },
+    { id: "plans",       label: "Plans" },
+    { id: "progress",    label: "Progress" },
   ]},
   { label: "CHALLENGES", color: "var(--gal-build)", items: [
     { id: "retrieval",   label: "Retrieval" },
@@ -54,9 +60,10 @@ export const NAV_GROUPS = [
     { id: "production",  label: "Production" },
     { id: "foundations", label: "Foundations" },
   ]},
-  { label: null, items: [
+  { label: "PRACTICE", color: "#6366f1", items: [
     { id: "preplab",     label: "PrepLab" },
+  ]},
+  { label: "LEARN", color: "#a78bfa", items: [
     { id: "groundtruth", label: "Ground Truth" },
-    { id: "progress",    label: "Progress" },
   ]},
 ];
