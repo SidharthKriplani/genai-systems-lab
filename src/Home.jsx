@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { track } from "./analytics";
 import { POSTS } from "./groundTruthIndex";
 
+// ─── CountUp ──────────────────────────────────────────────────────────────────
 function CountUp({ target, duration = 1200, suffix = "" }) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
@@ -25,6 +26,61 @@ function CountUp({ target, duration = 1200, suffix = "" }) {
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 }
 
+// ─── Challenge area config — single source of truth for home page cards ───────
+const CHALLENGE_AREAS = [
+  {
+    id: "retrieval",
+    label: "Retrieval",
+    tagline: "Why does my AI give wrong answers?",
+    body: "RAG failures, context overflow, hallucination — configure the failure modes and diagnose them.",
+    color: "var(--gal-build)",
+    lab: "lab",
+    labLabel: "RAG Lab",
+    count: "6 scenarios",
+  },
+  {
+    id: "evaluation",
+    label: "Evaluation",
+    tagline: "How do I know if it's actually working?",
+    body: "79% of practitioners say this is their #1 challenge. Build evals, run LLM-as-judge, catch regressions.",
+    color: "#f59e0b",
+    lab: "evallab",
+    labLabel: "Eval Lab",
+    count: "15 modules",
+  },
+  {
+    id: "agentshub",
+    label: "Agents",
+    tagline: "Why can't it complete complex tasks reliably?",
+    body: "Tool loops, state amnesia, delegation failures — agents break in predictable ways. Learn each one.",
+    color: "#a78bfa",
+    lab: "agentlab",
+    labLabel: "Agent Lab",
+    count: "16 modules",
+  },
+  {
+    id: "production",
+    label: "Production",
+    tagline: "How do I scale without it breaking?",
+    body: "Inference latency, cost overruns, LLMOps gaps — the problems that kill demos in production.",
+    color: "#22c55e",
+    lab: "llmlab",
+    labLabel: "LLM Lab",
+    count: "9 modules",
+  },
+  {
+    id: "foundations",
+    label: "Foundations",
+    tagline: "Why does it behave this way?",
+    body: "Attention, tokenization, training dynamics, fine-tuning — what's actually happening inside the model.",
+    color: "#3b82f6",
+    lab: "foundationlab",
+    labLabel: "Foundation Models Lab",
+    count: "12 scenarios",
+  },
+];
+
+// ─── Daily tips ───────────────────────────────────────────────────────────────
 const DAILY_TIPS = [
   "Temperature 0 does not mean no randomness. It means greedy decoding. The model always picks the highest-probability token. Useful for deterministic tasks, but can cause repetitive loops.",
   "Prompt caching in Claude can cut costs by 90%. Structure prompts so the static system prompt comes first and dynamic user content comes last. Cache hits on the prefix.",
@@ -40,40 +96,15 @@ const DAILY_TIPS = [
   "Multi-agent systems fail in non-obvious ways: conflicting outputs from two agents, one agent waiting forever for another, cascading hallucinations. Always define a clear contract (schema) between agents.",
   "LoRA fine-tuning adds trainable rank-r matrices alongside frozen weights. r=16 gives 95% of full fine-tune quality at 1% of the compute cost. Start at r=16, only go higher if quality is insufficient.",
   "Guardrails have false positive rates. A well-tuned input classifier might block 2-5% of legitimate queries. Track your FP rate in production. Over-blocking is a real UX problem.",
-  "The helpful, harmless, honest alignment goal is easier said than done because they trade off. A maximally helpful response sometimes requires sharing information that is potentially harmful.",
   "Semantic caching saves cost by returning cached responses for semantically similar (not just identical) queries. At 50K queries/day, 30-40% of queries are semantically duplicate.",
   "RLHF does not teach models new facts. It shifts the distribution of outputs toward what human raters prefer. It is a style transfer, not a knowledge injection.",
-  "The context window is not free. Attention is O(n^2) in sequence length. Doubling context length quadruples compute cost for the attention mechanism. This is why just use a 1M context window is not always the answer.",
   "Tool calls from agents should have a consequence level: read-only (safe to call freely), idempotent write (safe to retry), destructive write (require confirmation). Never let an agent delete without a human gate.",
-  "Embedding models have a semantic tunnel vision problem: they capture topic similarity well but miss procedural or causal relationships. how to fix X and X is broken may score low similarity despite being highly relevant.",
-  "A/B testing LLM prompts is harder than testing UI changes because LLM outputs are not binary. Use multi-dimensional evals: quality, safety, helpfulness, and groundedness, not just a single thumbs-up metric.",
-  "The best eval metric is task completion rate, not output quality. A slightly lower-quality response that completes the user goal is better than a beautifully written response that does not.",
+  "Embedding models have a semantic tunnel vision problem: they capture topic similarity well but miss procedural or causal relationships.",
   "Structured output mode (JSON mode) dramatically reduces hallucinations for slot-filling tasks. The model is constrained to valid JSON, which forces it to be explicit about what it knows vs. what it is guessing.",
   "Observability for LLM apps needs four signal types: latency (per stage), quality (sampled evals), cost (per request), and safety (guardrail hit rates). Missing any one of these leaves you flying blind.",
-  "Human evaluation is the only ground truth for LLM quality, but it is expensive. The right approach: 50-100 human-labeled examples to calibrate an LLM-as-judge, then run the judge at scale.",
-  "Multimodal models do not see images the way humans do. They tokenize image patches and process them as token sequences. Resolution, aspect ratio, and image compression all affect what the model sees.",
-  "Constitutional AI (CAI) trains models to critique and revise their own outputs against a set of principles. It is more scalable than RLHF because it does not require human labelers for every revision.",
-  "The needle in a haystack benchmark tests whether a model can retrieve a specific fact from a long context. Most models struggle with facts placed in the middle 50% of a 128K+ context.",
-  "Hallucination rates vary by task: closed-book Q&A (~20-40%), math (~5-15%), code (~10-20%), factual extraction from given text (~2-8%). Always measure on your specific task. Averages are misleading.",
-  "Model distillation creates smaller, faster models by training them to mimic a larger model's output distribution (not just its labels). GPT-4 distilling into a smaller model is how many fine-tuned 7B models get strong general capabilities.",
 ];
 
-const START_HERE_PATH = [
-  { step: 1, label: "Tokenizer",     tab: "concepts", desc: "How text becomes numbers" },
-  { step: 2, label: "Embeddings",    tab: "concepts", desc: "Meaning as geometry" },
-  { step: 3, label: "Context Window",tab: "concepts", desc: "Attention cost + overflow" },
-  { step: 4, label: "RAG Flows",     tab: "flows",    desc: "End-to-end pipeline" },
-  { step: 5, label: "RAG Failures",  tab: "lab",      desc: "Break it to understand it" },
-  { step: 6, label: "Agent Loop",    tab: "concepts", desc: "ReAct trace step-by-step" },
-  { step: 7, label: "Debug RAG",     tab: "concepts", desc: "Diagnose 5 real incidents" },
-];
-
-const STATS = [
-  { value: "3,400+", target: 3400, suffix: "+", label: "Learners",           sub: "Engineers & PMs",   tab: null           },
-  { value: "225+",   target: 225,  suffix: "+", label: "Ground Truth posts", sub: "Production depth",  tab: "groundtruth"  },
-  { value: "200+",   target: 200,  suffix: "+", label: "Challenges",         sub: "All interactive",   tab: null           },
-];
-
+// ─── Hero failure demo ─────────────────────────────────────────────────────────
 const HERO_FAILURES = [
   {
     id: "stale",
@@ -112,7 +143,6 @@ function HeroFailureDemo({ onNavigate }) {
   return (
     <div className="max-w-xl mx-auto w-full text-left rounded-2xl p-4 space-y-3 fade-up"
       style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.97) 0%, rgba(15,15,17,0.99) 100%)", border: "1px solid rgba(63,63,70,0.7)", borderTop: `2px solid ${d.color}70`, boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px ${d.color}08 inset` }}>
-      {/* Tabs */}
       <div className="flex items-center gap-1.5 flex-wrap">
         {HERO_FAILURES.map((f, i) => (
           <button key={f.id} onClick={() => pick(i)}
@@ -125,7 +155,6 @@ function HeroFailureDemo({ onNavigate }) {
         ))}
         <span className="ml-auto text-[9px] text-zinc-500 font-mono">live failure demo</span>
       </div>
-      {/* Query / Answer */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <div className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest">User query</div>
@@ -137,7 +166,6 @@ function HeroFailureDemo({ onNavigate }) {
           <div className="text-xs text-white font-medium leading-snug px-2 py-1.5 rounded-lg" style={{ background: d.color + "0e", borderLeft: `2px solid ${d.color}60` }}>{d.answer}</div>
         </div>
       </div>
-      {/* Reveal */}
       {!revealed ? (
         <button onClick={() => setRevealed(true)}
           className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all"
@@ -158,11 +186,8 @@ function HeroFailureDemo({ onNavigate }) {
   );
 }
 
-// ── Streak + activity heatmap helpers ────────────────────────────────────────
-
-function toDateKey(d) {
-  return d.toISOString().slice(0, 10); // "YYYY-MM-DD"
-}
+// ─── Streak / activity helpers ─────────────────────────────────────────────────
+function toDateKey(d) { return d.toISOString().slice(0, 10); }
 
 function getStreakInfo() {
   try {
@@ -170,24 +195,14 @@ function getStreakInfo() {
     const lastVisit = localStorage.getItem("gsl-last-visit") || "";
     let streak = parseInt(localStorage.getItem("gsl-streak") || "0", 10);
     const yesterday = toDateKey(new Date(Date.now() - 86400000));
-
-    if (lastVisit === today) {
-      // already visited today — streak unchanged
-    } else if (lastVisit === yesterday) {
-      streak += 1;
-    } else if (lastVisit === "") {
-      streak = 1;
-    } else {
-      streak = 1; // gap — reset
-    }
+    if (lastVisit === today) { /* unchanged */ }
+    else if (lastVisit === yesterday) { streak += 1; }
+    else if (lastVisit === "") { streak = 1; }
+    else { streak = 1; }
     localStorage.setItem("gsl-streak", String(streak));
     localStorage.setItem("gsl-last-visit", today);
-    // record today's activity
     const actKey = "gsl-activity-" + today;
-    const count = parseInt(localStorage.getItem(actKey) || "0", 10);
-    localStorage.setItem(actKey, String(count + 1));
-
-    // Build 91-day grid (13 weeks × 7 days)
+    localStorage.setItem(actKey, String(parseInt(localStorage.getItem(actKey) || "0", 10) + 1));
     const grid = [];
     for (let i = 90; i >= 0; i--) {
       const d = new Date(Date.now() - i * 86400000);
@@ -200,49 +215,93 @@ function getStreakInfo() {
   }
 }
 
-// ── Returning-user helpers ────────────────────────────────────────────────────
-
 function getActivityData() {
   try {
-    const history       = JSON.parse(localStorage.getItem("gsl-preplab-history")   || "{}");
-    const mastery       = JSON.parse(localStorage.getItem("gsl-concepts-mastery")  || "[]");
-    const visitedMods   = JSON.parse(localStorage.getItem("genai_visited_modules") || "[]");
-    const gtRead        = JSON.parse(localStorage.getItem("genai_gt_read")         || "[]");
-    const histKeys      = Object.keys(history);
-    const isReturning   = histKeys.length > 0 || mastery.length > 0 || visitedMods.length > 0 || gtRead.length > 1;
+    const history     = JSON.parse(localStorage.getItem("gsl-preplab-history")   || "{}");
+    const mastery     = JSON.parse(localStorage.getItem("gsl-concepts-mastery")  || "[]");
+    const visitedMods = JSON.parse(localStorage.getItem("genai_visited_modules") || "[]");
+    const gtRead      = JSON.parse(localStorage.getItem("genai_gt_read")         || "[]");
+    const histKeys    = Object.keys(history);
+    const isReturning = histKeys.length > 0 || mastery.length > 0 || visitedMods.length > 0 || gtRead.length > 1;
     return { isReturning, history, histKeys, mastery, visitedMods, gtRead };
   } catch {
     return { isReturning: false, history: {}, histKeys: [], mastery: [], visitedMods: [], gtRead: [] };
   }
 }
 
+// Maps tab IDs → display metadata for returning-user "jump back" chips
 const TAB_META = {
-  lab:         { label: "RAG Lab",      color: "#3b82f6" },
+  retrieval:   { label: "Retrieval",    color: "var(--gal-build)" },
+  evaluation:  { label: "Evaluation",   color: "#f59e0b" },
+  agentshub:   { label: "Agents",       color: "#a78bfa" },
+  production:  { label: "Production",   color: "#22c55e" },
+  foundations: { label: "Foundations",  color: "#3b82f6" },
+  lab:         { label: "RAG Lab",      color: "var(--gal-build)" },
   agentlab:    { label: "Agent Lab",    color: "#f59e0b" },
   evallab:     { label: "Eval Lab",     color: "#22c55e" },
   llmlab:      { label: "LLM Lab",      color: "#8b5cf6" },
-  concepts:    { label: "Concepts",     color: "var(--gal-build)" },
-  preplab:     { label: "Prep Lab",     color: "#22c55e" },
+  preplab:     { label: "PrepLab",      color: "#22c55e" },
   groundtruth: { label: "Ground Truth", color: "#8b5cf6" },
-  career:      { label: "Career",       color: "#22c55e" },
-  systems:     { label: "Systems Lab",  color: "#3b82f6" },
-  explore:     { label: "Explore",      color: "#3b82f6" },
+  concepts:    { label: "Concepts",     color: "var(--gal-build)" },
 };
 
+// ─── Challenge area cards (shared between cold + returning views) ──────────────
+function ChallengeAreaCards({ onNavigate }) {
+  return (
+    <div className="space-y-3 w-full max-w-2xl mx-auto">
+      {/* Top row — Retrieval + Evaluation (most anxious areas) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {CHALLENGE_AREAS.slice(0, 2).map(c => (
+          <button key={c.id}
+            onClick={() => { track("challenge_card_clicked", { area: c.id }); onNavigate(c.id); }}
+            className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp"
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: `2px solid ${c.color}70` }}>
+            <span className="text-[10px] font-mono uppercase tracking-widest font-bold" style={{ color: c.color }}>{c.label}</span>
+            <span className="text-sm font-bold text-white mt-1.5 mb-1 leading-snug">{c.tagline}</span>
+            <span className="text-xs text-zinc-400 leading-relaxed flex-1">{c.body}</span>
+            <div className="flex items-center justify-between w-full mt-3">
+              <span className="text-[10px] font-mono text-zinc-500">{c.count}</span>
+              <span className="text-xs font-bold" style={{ color: c.color }}>Explore →</span>
+            </div>
+          </button>
+        ))}
+      </div>
+      {/* Bottom row — Agents, Production, Foundations */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {CHALLENGE_AREAS.slice(2).map(c => (
+          <button key={c.id}
+            onClick={() => { track("challenge_card_clicked", { area: c.id }); onNavigate(c.id); }}
+            className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp"
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: `2px solid ${c.color}70` }}>
+            <span className="text-[10px] font-mono uppercase tracking-widest font-bold" style={{ color: c.color }}>{c.label}</span>
+            <span className="text-sm font-bold text-white mt-1.5 mb-1 leading-snug">{c.tagline}</span>
+            <span className="text-xs text-zinc-400 leading-relaxed flex-1 line-clamp-2">{c.body}</span>
+            <div className="flex items-center justify-between w-full mt-3">
+              <span className="text-[10px] font-mono text-zinc-500">{c.count}</span>
+              <span className="text-xs font-bold" style={{ color: c.color }}>→</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Returning user view ───────────────────────────────────────────────────────
 function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
   const { history, histKeys, mastery, visitedMods } = data;
   const [streakInfo] = useState(() => getStreakInfo());
   const { streak, grid } = streakInfo;
 
-  const now     = new Date();
-  const hour    = now.getHours();
+  const now      = new Date();
+  const hour     = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const dateStr  = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
-  const tip           = DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length];
-  const featuredPost  = POSTS[Math.floor(Date.now() / 86400000) % POSTS.length];
+  const tip          = DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length];
+  const featuredPost = POSTS[Math.floor(Date.now() / 86400000) % POSTS.length];
 
-  // Last 3 unique tabs from visitedMods (most-recent first)
+  // Last 3 unique tabs (most-recent first) — favours challenge area IDs
   const jumpTabs = [];
   const seen = new Set();
   [...visitedMods].reverse().forEach(key => {
@@ -279,7 +338,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
           </div>
           <button onClick={goPost}
             className="rounded-xl p-5 text-left transition-all flex flex-col gap-2 card-lift animate-cardSlideUp animate-delay-60"
-            style={{ animationFillMode: 'both', background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid var(--gal-build-border)" }}>
+            style={{ animationFillMode: "both", background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid var(--gal-build-border)" }}>
             <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">Today's read · Ground Truth</p>
             <p className="text-sm font-bold text-white leading-snug">{featuredPost.title}</p>
             <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{featuredPost.desc}</p>
@@ -346,14 +405,14 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
         </div>
       )}
 
-      {/* Progress */}
+      {/* PrepLab progress */}
       {(totalAnswered > 0 || masteryCount > 0) && (
         <div>
           <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Your progress</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {totalAnswered > 0 && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Prep Lab</p>
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">PrepLab</p>
                 <p className="text-2xl font-black text-white mt-2">
                   {totalAnswered}
                   <span className="text-sm font-bold text-zinc-400 ml-1.5">questions answered</span>
@@ -367,7 +426,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
             )}
             {masteryCount > 0 && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Concepts Gym</p>
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Concepts</p>
                 <p className="text-2xl font-black text-white mt-2">
                   {masteryCount}
                   <span className="text-sm font-bold text-zinc-400 ml-1.5">/ 20 modules done</span>
@@ -386,58 +445,24 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
         </div>
       )}
 
-      {/* Where to next — mirrors BUILD/PROVE/NAVIGATE hierarchy */}
+      {/* Challenge areas — where to go next */}
       <div>
-        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Where to next</p>
-        <div className="space-y-3">
-          {/* BUILD — dominant */}
-          <button onClick={() => onNavigate("lab")}
-            className="w-full p-4 rounded-xl text-left card-lift animate-cardSlideUp"
-            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(59,130,246,0.65)" }}>
-            <p className="text-[10px] font-mono text-blue-400 uppercase tracking-widest font-bold">BUILD</p>
-            <p className="text-sm font-bold text-white mt-1 mb-1">4 interactive labs</p>
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {["RAG Lab", "Agent Lab", "Eval Lab", "LLM Lab"].map(l => (
-                <span key={l} className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: "#93c5fd", background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.22)" }}>{l}</span>
-              ))}
-            </div>
-          </button>
-          {/* PROVE + NAVIGATE secondary row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button onClick={() => onNavigate("preplab")}
-              className="p-4 rounded-xl text-left card-lift animate-cardSlideUp animate-delay-60"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.55)" }}>
-              <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest font-bold">PROVE</p>
-              <p className="text-sm font-bold text-white mt-1">277 questions</p>
-              <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Exam, Trainer, or Interview Prep modes</p>
-            </button>
-            <button onClick={() => onNavigate("groundtruth")}
-              className="p-4 rounded-xl text-left card-lift animate-cardSlideUp animate-delay-120"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid var(--gal-build-border)" }}>
-              <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">KNOWLEDGE</p>
-              <p className="text-sm font-bold text-white mt-1">225+ posts</p>
-              <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Production depth, not tutorials</p>
-            </button>
-          </div>
-        </div>
+        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-4">Where to go next</p>
+        <ChallengeAreaCards onNavigate={onNavigate} />
       </div>
 
     </div>
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────────
-
+// ─── Main export ──────────────────────────────────────────────────────────────
 export default function HomePage({ onNavigate, onNavigateTo, visited = new Set() }) {
   const [activityData] = useState(() => getActivityData());
-
   useEffect(() => { track("home_viewed", { returning: activityData.isReturning }); }, []);
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
 
-
-      {/* ── CONDITIONAL: returning user vs. new user ──────────────────────── */}
       {activityData.isReturning ? (
         <ReturningHomeView
           onNavigate={onNavigate}
@@ -446,14 +471,14 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
         />
       ) : (
         <>
-          {/* ── HERO ──────────────────────────────────────────────────────── */}
+          {/* ── HERO ────────────────────────────────────────────────────────── */}
           <div className="relative overflow-hidden">
             <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 100% 70% at 50% -10%, rgba(34,211,238,0.18) 0%, var(--gal-build-tint) 40%, transparent 75%)" }} />
             <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 35% at 50% 0%, var(--gal-build-tint) 0%, transparent 70%)" }} />
             <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8 relative">
 
               <div className="space-y-5">
-                {/* Market signal chip */}
+                {/* Market signal */}
                 <div className="flex justify-center">
                   <span className="inline-flex items-center gap-2 text-[10px] font-mono px-3 py-1.5 rounded-full border"
                     style={{ background: "var(--gal-build-tint)", borderColor: "var(--gal-build-border)", color: "var(--gal-build)" }}>
@@ -461,98 +486,46 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                     Agentic AI engineer roles: +280% YoY · 90K+ open roles (Stanford HAI 2026)
                   </span>
                 </div>
+
                 <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.05]">
-                  Configure it.{" "}
-                  <span style={{ background: "linear-gradient(90deg, #ef4444 0%, #f59e0b 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Break it.</span>
-                  <br />
-                  <span style={{ background: "linear-gradient(90deg, var(--gal-build) 0%, var(--gal-build-dark) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Know exactly why.</span>
+                  The only place that trains{" "}
+                  <span style={{ background: "linear-gradient(90deg, var(--gal-build) 0%, var(--gal-build-dark) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>production AI judgment.</span>
                 </h1>
+
                 <p className="text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
-                  Agentic AI engineer roles grew <span className="text-zinc-300 font-medium">280% last year</span>. The gap isn't building AI — it's <span className="text-zinc-300 font-medium">diagnosing production failures</span> under pressure. This lab puts you in the seat.
+                  Not what AI systems are — what happens when they <span className="text-zinc-300 font-medium">fail in production</span>, how to diagnose it, and what to do. Configure real failure modes. Break things. Understand why. Build the judgment that gets you hired.
                 </p>
               </div>
 
-              {/* PrepLab sample question — primary cold-visitor CTA */}
+              {/* PrepLab CTA — single question, primary cold-visitor entry */}
               <div className="max-w-xl mx-auto w-full">
                 <div className="rounded-2xl p-4 space-y-3 text-left"
                   style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.5)" }}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Senior AI engineer interviews</span>
+                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Senior AI engineer interviews · real question</span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-red-400">Hard</span>
                   </div>
                   <p className="text-sm text-zinc-200 leading-snug">
-                    Why does RAG retrieve the right chunk but still return the wrong answer? Walk me through the failure modes.
+                    Your AI system just gave a confident, well-formatted answer. How do you know if it was right?
                   </p>
                   <button onClick={() => { track("hero_preplab_cta", {}); onNavigate("preplab"); }}
                     className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all"
                     style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.85) 0%, rgba(22,163,74,0.9) 100%)", boxShadow: "0 0 16px rgba(34,197,94,0.2)" }}>
-                    Test your interview readiness →
+                    Test your production AI judgment →
                   </button>
                 </div>
               </div>
 
+              {/* Live failure demo */}
               <HeroFailureDemo onNavigate={onNavigate} />
 
-              <div className="space-y-3 max-w-2xl mx-auto text-left">
-                {/* BUILD — dominant full-width card */}
-                <button
-                  onClick={() => { track("door_clicked", { door: "builder" }); onNavigate("lab"); }}
-                  className="w-full flex flex-col items-start p-5 rounded-2xl text-left card-lift animate-cardSlideUp"
-                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(59,130,246,0.75)" }}>
-                  <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">BUILD</span>
-                  <span className="text-base font-bold text-white mb-2 leading-snug">Ship AI that holds up in production</span>
-                  <span className="text-xs text-zinc-400 leading-relaxed">Configure real AI systems, trigger real failure modes, and understand exactly why they break. 4 labs, 46 interactive scenarios.</span>
-                  <div className="flex flex-wrap gap-1.5 mt-3 mb-1">
-                    {["RAG Lab", "Agent Lab", "Eval Lab", "LLM Lab"].map(lab => (
-                      <span key={lab} className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: "#93c5fd", background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}>{lab}</span>
-                    ))}
-                  </div>
-                  <span className="mt-3 text-xs font-bold text-blue-300 flex items-center gap-1">Start with RAG Lab <span className="text-blue-400">→</span></span>
-                </button>
-                {/* PROVE + NAVIGATE — secondary row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    onClick={() => { track("door_clicked", { door: "interviewer" }); onNavigate("preplab"); }}
-                    className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp animate-delay-60"
-                    style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.65)" }}>
-                    <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest mb-1.5">PROVE</span>
-                    <span className="text-sm font-bold text-white mb-1.5 leading-snug">Interview ready in hours, not weeks</span>
-                    <span className="text-xs text-zinc-400 leading-relaxed flex-1">277 questions across RAG, agents, evals, and MLOps — with traps weaker candidates fall into, clearly marked.</span>
-                    <span className="mt-3 text-xs font-bold text-green-300 flex items-center gap-1">Open Prep Lab <span className="text-green-400">→</span></span>
-                  </button>
-                  <button
-                    onClick={() => { track("door_clicked", { door: "navigator" }); onNavigate("career"); }}
-                    className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp animate-delay-120"
-                    style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(245,158,11,0.6)" }}>
-                    <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest mb-1.5">NAVIGATE</span>
-                    <span className="text-sm font-bold text-white mb-1.5 leading-snug">AI career, mapped</span>
-                    <span className="text-xs text-zinc-400 leading-relaxed flex-1">Role transitions, salary benchmarks, and the AI PM track. Built for engineers, not recruiters.</span>
-                    <span className="mt-3 text-xs font-bold text-amber-300 flex items-center gap-1">Try Salary Calculator <span className="text-amber-400">→</span></span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Continue where you left off */}
-              {(() => {
-                const hasVisited = visited.size > 1;
-                const nextStep = START_HERE_PATH.find(s => !visited.has(s.tab));
-                if (!hasVisited || !nextStep) return null;
-                return (
-                  <button
-                    onClick={() => { track("continue_clicked", { tab: nextStep.tab, step: nextStep.step }); onNavigate(nextStep.tab); }}
-                    className="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl transition-all group" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Continue where you left off</span>
-                    <span className="w-px h-3 bg-zinc-700" />
-                    <span className="text-xs font-bold text-white">Step {nextStep.step}: {nextStep.label}</span>
-                    <span className="text-violet-400 group-hover:translate-x-0.5 transition-transform">→</span>
-                  </button>
-                );
-              })()}
+              {/* Challenge area cards */}
+              <ChallengeAreaCards onNavigate={onNavigate} />
 
             </div>
           </div>
 
-          {/* ── FAILURE MODE STRIP ──────────────────────────────────────── */}
+          {/* ── FAILURE STRIP ──────────────────────────────────────────────── */}
           <div className="max-w-4xl mx-auto px-4 pb-10 text-center">
             <div className="space-y-2">
               <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-widest">5 production failure patterns you can simulate right now</p>
@@ -573,7 +546,6 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
               </div>
             </div>
           </div>
-
         </>
       )}
 
