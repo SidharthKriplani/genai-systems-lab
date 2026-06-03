@@ -230,6 +230,75 @@ function getActivityData() {
   }
 }
 
+// ─── Guided paths ─────────────────────────────────────────────────────────────
+function computeGuidedPaths() {
+  try {
+    const leaderboard = JSON.parse(localStorage.getItem("genai_leaderboard") || "[]");
+    const visited     = new Set(JSON.parse(localStorage.getItem("genai_visited") || '["home"]'));
+    const history     = JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}");
+    const mastery     = JSON.parse(localStorage.getItem("gsl-concepts-mastery") || "[]");
+    const gtRead      = new Set(JSON.parse(localStorage.getItem("genai_gt_read") || "[]"));
+    const visitedMods = new Set(JSON.parse(localStorage.getItem("genai_visited_modules") || "[]"));
+
+    const histKeys    = Object.keys(history);
+    const ragPassed   = leaderboard.filter(e => e.passed).length;
+    const ragQs       = histKeys.filter(k => k.startsWith("rag"));
+    const evalQs      = histKeys.filter(k => k.startsWith("eval"));
+    const agentQs     = histKeys.filter(k => k.startsWith("agents"));
+    const ragAcc      = ragQs.length > 0 ? ragQs.filter(k => history[k]?.correct).length / ragQs.length : 0;
+    const agentAcc    = agentQs.length > 0 ? agentQs.filter(k => history[k]?.correct).length / agentQs.length : 0;
+    const evalAcc     = evalQs.length > 0 ? evalQs.filter(k => history[k]?.correct).length / evalQs.length : 0;
+
+    const PATHS = [
+      {
+        id: "getting-started", label: "Getting Started", color: "#6366f1",
+        desc: "Build the intuition to reason about any AI system in production.",
+        steps: [
+          { label: "Open Foundations hub",        done: visited.has("foundations"),      tab: "foundations" },
+          { label: "Complete Tokenizer concept",   done: mastery.includes("tokenizer"),   tab: "concepts" },
+          { label: "Open Retrieval hub",           done: visited.has("retrieval"),        tab: "retrieval" },
+          { label: "Pass a RAG Lab scenario",      done: ragPassed >= 1,                  tab: "lab" },
+          { label: "Open PrepLab",                 done: visited.has("preplab"),          tab: "preplab" },
+          { label: "Answer 10 questions",          done: histKeys.length >= 10,           tab: "preplab" },
+          { label: "Open Evaluation hub",          done: visited.has("evaluation"),       tab: "evaluation" },
+        ],
+      },
+      {
+        id: "rag-expert", label: "RAG Production Ready", color: "var(--gal-build)",
+        desc: "Master retrieval — the failure mode that breaks most production AI.",
+        steps: [
+          { label: "Pass 2 RAG Lab scenarios",     done: ragPassed >= 2,                         tab: "lab" },
+          { label: "Pass all 6 RAG Lab scenarios", done: ragPassed >= 6,                         tab: "lab" },
+          { label: "Complete Embeddings concept",  done: mastery.includes("embeddings"),          tab: "concepts" },
+          { label: "Complete Context concept",     done: mastery.includes("context"),             tab: "concepts" },
+          { label: "Read 'How RAG Works'",         done: gtRead.has("how-rag-works"),             tab: "groundtruth" },
+          { label: "Reach 60% RAG accuracy",       done: ragQs.length >= 5 && ragAcc >= 0.6,     tab: "retrieval" },
+        ],
+      },
+      {
+        id: "interview-sprint", label: "Interview Sprint", color: "#22c55e",
+        desc: "Get interview-ready across all challenge areas in one focused push.",
+        steps: [
+          { label: "Answer 20 PrepLab questions",  done: histKeys.length >= 20,                   tab: "preplab" },
+          { label: "60%+ RAG accuracy",            done: ragQs.length >= 5 && ragAcc >= 0.6,      tab: "retrieval" },
+          { label: "Open Agents hub",              done: visited.has("agentshub"),                tab: "agentshub" },
+          { label: "60%+ Agents accuracy",         done: agentQs.length >= 5 && agentAcc >= 0.6,  tab: "agentshub" },
+          { label: "60%+ Evaluation accuracy",     done: evalQs.length >= 5 && evalAcc >= 0.6,    tab: "evaluation" },
+          { label: "Answer 50 total questions",    done: histKeys.length >= 50,                   tab: "preplab" },
+        ],
+      },
+    ];
+
+    return PATHS.map(p => {
+      const done     = p.steps.filter(s => s.done).length;
+      const nextStep = p.steps.find(s => !s.done);
+      return { ...p, done, total: p.steps.length, pct: Math.round(done / p.steps.length * 100), nextStep };
+    });
+  } catch {
+    return [];
+  }
+}
+
 // Maps tab IDs → display metadata for returning-user "jump back" chips
 const TAB_META = {
   retrieval:   { label: "Retrieval",    color: "var(--gal-build)" },
@@ -293,6 +362,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
   const { history, histKeys, mastery, visitedMods } = data;
   const [streakInfo]  = useState(() => getStreakInfo());
   const [areasReady]  = useState(() => getAllAreasReadiness());
+  const [paths]       = useState(() => computeGuidedPaths());
   const { streak, grid } = streakInfo;
 
   const now      = new Date();
@@ -473,6 +543,43 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
                 </button>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Guided paths */}
+      {paths.length > 0 && (
+        <div>
+          <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-4">Guided paths</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {paths.map(path => (
+              <div key={path.id} className="rounded-xl p-4 space-y-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-widest mb-1" style={{ color: path.color }}>{path.label}</div>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{path.desc}</p>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-mono text-zinc-500">{path.done}/{path.total} steps</span>
+                    <span className="text-[10px] font-mono font-bold" style={{ color: path.color }}>{path.pct}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-zinc-800">
+                    <div className="h-1.5 rounded-full transition-all" style={{ width: `${path.pct}%`, background: path.color }} />
+                  </div>
+                </div>
+                {path.nextStep ? (
+                  <button onClick={() => { track("guided_path_continue", { path: path.id, step: path.nextStep.label }); onNavigate(path.nextStep.tab); }}
+                    className="w-full text-left text-xs font-bold py-2 px-3 rounded-lg transition-all hover:opacity-80"
+                    style={{ background: path.color + "15", border: `1px solid ${path.color}30`, color: path.color }}>
+                    Continue: {path.nextStep.label} →
+                  </button>
+                ) : (
+                  <div className="text-xs font-bold py-2 px-3 rounded-lg text-center" style={{ background: path.color + "15", border: `1px solid ${path.color}30`, color: path.color }}>
+                    Path complete
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

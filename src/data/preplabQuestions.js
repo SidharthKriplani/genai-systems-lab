@@ -120,7 +120,8 @@ export const PREP_QUESTIONS = [
     explanation: "ColBERT computes token-level similarity, catching cases where a single embedding averages out distinct concepts. Superior for multi-faceted queries where a passage must satisfy several independent criteria.",
   trap: "Saying ColBERT is \'more accurate generally\' or \'uses larger embeddings.\' The specific failure mode it solves is polysemy — queries where a single embedding averages out distinct meanings. Naming the mechanism is the differentiator.",
   source: "Elasticsearch/Elastic AI interview",
-    readMore: { label: "Vector Search Architectures", tab: "systems" }
+        staffLayer: 'The senior framing is: multi-vector retrieval (ColBERT-style late interaction) solves a specific failure mode — multi-concept queries where a single embedding averages out distinct meanings. Example: \'Python error handling async context manager\' — a single embedding averages these three concepts and may not find passages that address all three. ColBERT computes token-level MaxSim, catching passages that explicitly address multiple facets. The production tradeoff is index size: ColBERT stores one vector per token, so a 512-token passage generates 512 vectors vs. 1. This is why it\'s deployed selectively rather than by default — use it when retrieval failures cluster around multi-concept queries.',
+  readMore: { label: "Vector Search Architectures", tab: "systems" }
   },
   {
     id: "rag-11", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
@@ -130,7 +131,8 @@ export const PREP_QUESTIONS = [
     explanation: "Metadata filtering applies a pre-filter before ANN search. If documents were not tagged correctly at ingestion time, they are silently excluded. The recall drop is invisible unless you have per-filter recall monitoring.",
   trap: "Blaming vector search or the filter threshold. The specific cause is tagging errors at ingestion — wrong metadata means the filter correctly excludes correctly-labeled docs that don\'t match. It\'s an upstream data quality problem.",
   source: "Pinecone solutions engineering interview",
-    readMore: { label: "Metadata Filtering in Production", tab: "systems" }
+        staffLayer: 'The senior framing is: metadata filtering failures are almost always upstream data quality problems, not vector search problems. The diagnostic is simple: run the same query without the filter and compare recall. If unfiltered recall is 88% and filtered is 61%, you\'re missing about 27% of documents that should be tagged HR but aren\'t. Production fix: audit the ingestion pipeline for the affected document segment, check the tagging logic, and re-index affected documents. The monitoring question is: do you have per-filter recall tracking? If not, this class of failure is invisible until a user complaint surfaces it.',
+  readMore: { label: "Metadata Filtering in Production", tab: "systems" }
   },
   {
     id: "rag-12", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
@@ -140,7 +142,8 @@ export const PREP_QUESTIONS = [
     explanation: "Retrieved chunks often contain relevant and irrelevant sentences mixed together. Contextual compression extracts only the relevant portion, reducing noise that causes the LLM to generate hallucinated or confused answers.",
   trap: "Saying contextual compression \'reduces hallucination directly.\' The primary benefit is context window efficiency — removing irrelevant sentences makes room for more chunks. Hallucination reduction is secondary.",
   source: "AWS re:Invent RAG architecture session follow-up",
-    readMore: { label: "Advanced RAG Patterns", tab: "concepts" }
+        staffLayer: 'The senior framing is: contextual compression is primarily a context budget optimization, not a quality fix. A retrieved chunk is typically 500 tokens; the relevant sentence may be 30. For a top_k=5 query, you\'re spending 2,500 tokens on 150 tokens of signal. Contextual compression frees that budget for more chunks, improving coverage. The production tradeoff: compression requires an LLM call per chunk, adding latency. I use it selectively — for document types where chunk relevance is highly variable (financial reports, legal contracts) it\'s worth the latency cost. For FAQ corpora where whole chunks tend to be relevant, skip it.',
+  readMore: { label: "Advanced RAG Patterns", tab: "concepts" }
   },
 
   // ── AGENTS (12) ───────────────────────────────────────────────────────────
@@ -259,7 +262,8 @@ export const PREP_QUESTIONS = [
     explanation: "ReAct: good for exploratory short tasks, fails on long-horizon. Reflexion: good when failures have clear signals, fails when error diagnosis is ambiguous. Plan-and-Execute: good for structured workflows, fails on adaptive tasks requiring mid-plan revision.",
   trap: "Describing only what each pattern does without naming specific failure modes. The question requires \'where each excels AND fails\' — giving definitions without failure modes is the most common miss on this question.",
   source: "OpenAI deployment team interview, Round 2",
-    readMore: { label: "Agent Architecture Patterns", tab: "agents" }
+        staffLayer: 'The senior framing is: pattern selection is the most consequential early architectural decision for any agent system, and the answer depends on whether the failure modes of the task are diagnosable. ReAct: choose when tasks are exploratory and short-horizon (under 10 steps) — fails when context accumulates past window limits. Reflexion: choose when the agent can self-evaluate against a clear success criterion (code that compiles, SQL that returns results) — fails when success is ambiguous or multi-dimensional. Plan-and-Execute: choose when the optimal task decomposition is knowable upfront — fails when the environment is dynamic and the plan must adapt mid-execution. In production I default to Plan-and-Execute for anything over 8 steps, add Reflexion as a self-correction layer for verifiable subtasks, and reserve ReAct for exploration tasks only.',
+  readMore: { label: "Agent Architecture Patterns", tab: "agents" }
   },
   {
     id: "agents-12", topic: "agents", difficulty: "medium", gated: true, type: "mcq",
@@ -269,7 +273,8 @@ export const PREP_QUESTIONS = [
     explanation: "Supervisor routing is essentially a classification task. As the number of agents grows, the classification problem becomes harder. Without explicit routing criteria, the supervisor starts making routing errors that compound.",
   trap: "Saying \'the new agent has bugs\' or \'the supervisor prompt needs fixing.\' The structural issue is routing complexity growing super-linearly with agent count — it\'s a classification label-space problem, not a prompt quality problem.",
   source: "Multi-agent systems interview, AI-native startup",
-    readMore: { label: "Multi-Agent Orchestration", tab: "agents" }
+        staffLayer: 'The senior framing is: supervisor routing accuracy degrades super-linearly with agent count because it\'s a multi-class routing problem, and the decision boundary between similar agents becomes ambiguous as the label space grows. The production fix is not a better supervisor prompt — it\'s agent consolidation and explicit routing criteria. Each agent should have a formally-specified routing condition: \'Route to Agent B when query contains financial calculation AND regulatory reference.\' If you can\'t write that condition, the agent\'s scope is undefined. My threshold: if adding a 5th agent doesn\'t improve routing accuracy in eval, the system is over-agentified — consolidate agents with overlapping responsibility.',
+  readMore: { label: "Multi-Agent Orchestration", tab: "agents" }
   },
 
   // ── EVALUATION (11) ───────────────────────────────────────────────────────
@@ -461,7 +466,8 @@ export const PREP_QUESTIONS = [
     explanation: "Batch APIs process requests asynchronously (24h window) at half the per-token price. For non-latency-sensitive workloads like document processing, this is the dominant cost-saving strategy.",
   trap: "Saying batch inference \'is less accurate\' or only discussing speed. The key differentiator is cost: batch APIs offer 50% cost reduction. Not knowing the cost differential (only the latency trade-off) signals surface-level production awareness.",
   source: "OpenAI enterprise team interview",
-    readMore: { label: "LLM Cost Optimization", tab: "systems" }
+        staffLayer: 'The senior framing is: batch API usage is the highest-ROI cost optimization for non-interactive workloads, and it\'s consistently underutilized. 50% cost reduction at the cost of 24h latency is an excellent trade for document indexing, nightly summarization, classification pipelines, and any job where you\'re processing a queue. The production implementation: queue all batch requests, submit at off-peak hours, store results in a key-value store, retry any failed items. The one thing to watch: batch API rate limits are separate from real-time limits — configure your quota correctly before scaling.',
+  readMore: { label: "LLM Cost Optimization", tab: "systems" }
   },
   {
     id: "llmops-8", topic: "llmops", difficulty: "hard", gated: true, type: "text",
@@ -471,7 +477,8 @@ export const PREP_QUESTIONS = [
     explanation: "Priority: (1) semantic caching, (2) prompt optimization/compression, (3) route simple queries to smaller models, (4) quantized models for self-hosted inference, (5) fine-tune smaller model to match large model quality, (6) batch non-latency-sensitive ops.",
   trap: "Starting the optimization roadmap with \'switch to a cheaper model.\' The priority order matters: caching (no quality tradeoff), then prompt compression, then model routing, then fine-tuning. Jumping to model downgrade first is the most common senior interview miss.",
   source: "Staff AI engineer interview, Series B startup",
-    readMore: { label: "LLM Cost at Scale", tab: "systems" }
+        staffLayer: 'The senior framing is: $0.023 per DAU × 1M users = $23K/day = $690K/month. That\'s the number that makes this real. The cost reduction roadmap in strict priority order: (1) semantic caching — 20-40% hit rate, zero quality tradeoff, implement first; (2) prompt compression — remove redundant tokens, shrink system prompt, 10-30% token reduction; (3) model routing — simple queries to a 10x cheaper small model (70-80% of most query distributions are simple); (4) quantized self-hosted inference — INT8 or INT4, 3-4x throughput improvement; (5) distilled fine-tuned model — match large model quality at small model cost. At 1M DAU, step 1 alone saves $6K-14K/day. Do not skip to step 4 or 5 without exhausting the earlier steps.',
+  readMore: { label: "LLM Cost at Scale", tab: "systems" }
   },
   {
     id: "llmops-9", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
@@ -515,7 +522,8 @@ export const PREP_QUESTIONS = [
     explanation: "Fine-tuning on curated benchmark-style examples can cause the model to optimize for the format/style of those examples rather than the messy, varied real-user queries. Benchmark and production distributions diverge.",
   trap: "Saying \'fine-tuning does not work\' or \'the training data was bad.\' The specific failure mode is benchmark overfitting — the model learns the evaluation format rather than the underlying task, which is a training data design problem.",
   source: "Hugging Face ML engineer interview",
-    readMore: { label: "Fine-Tuning Best Practices", tab: "concepts" }
+        staffLayer: 'The senior framing is: benchmark overfitting happens when your training data is too similar to your eval set in format and style, not in task difficulty. A model fine-tuned on curated support tickets learns the format of well-written support resolutions — it scores well on similarly-formatted evals and fails on real user queries that are messily stated, multi-intent, or domain-shifted. The diagnostic: run your fine-tuned model on a random sample of real production queries alongside the curated eval. If production performance is significantly lower, you have a distribution mismatch problem. The fix is always training data curation — sample from the real production distribution, not from a cleaned/curated subset.',
+  readMore: { label: "Fine-Tuning Best Practices", tab: "concepts" }
   },
   {
     id: "ft-2", topic: "finetuning", difficulty: "easy", gated: true, type: "mcq",
@@ -545,7 +553,8 @@ export const PREP_QUESTIONS = [
     explanation: "RAG: dynamic knowledge that updates frequently, source attribution needed. Few-shot: small behavioral shift, quick iteration. Fine-tuning: stable domain knowledge where latency/cost of long prompts is prohibitive.",
   trap: "Recommending fine-tuning for domain knowledge by default. RAG is better for dynamic, citable, frequently-updated knowledge. Fine-tuning is for behavioral and style changes. Conflating knowledge injection with behavioral alignment is the most common fine-tuning strategy error.",
   source: "Google AI research engineering interview",
-    readMore: { label: "Fine-Tuning vs RAG", tab: "concepts" }
+        staffLayer: 'The senior framing is: the decision matrix has two axes — how often does the knowledge change, and how much does style/format matter. RAG is for knowledge that updates frequently (product docs, regulations, news) and where source attribution matters. Fine-tuning is for stable domain knowledge where latency or cost of long prompts is prohibitive, and where behavioral consistency (tone, format, persona) matters more than retrievable sources. Few-shot is for quick behavioral shifts where you have 5-20 good examples and need to iterate fast. The common mistake is using fine-tuning for knowledge injection — it doesn\'t work reliably because fine-tuning on factual data creates confident hallucination, not reliable factual recall.',
+  readMore: { label: "Fine-Tuning vs RAG", tab: "concepts" }
   },
   {
     id: "ft-5", topic: "finetuning", difficulty: "easy", gated: true, type: "mcq",
@@ -565,7 +574,8 @@ export const PREP_QUESTIONS = [
     options: ["Indirect is less dangerous", "The malicious instructions arrive via external data sources (tool outputs, retrieved documents) not from the user directly", "Direct injection exploits fine-tuning", "They are the same attack"],
     correct: 1, keywords: [],
     explanation: "Direct injection: user writes 'ignore system prompt.' Indirect: attacker embeds instructions in a webpage or document that the agent retrieves — the LLM executes attacker instructions while the user is unaware.",
-    readMore: { label: "LLM Security", tab: "agents" }
+        staffLayer: 'The senior framing is: indirect injection is the attack that kills production agents, and it\'s architecturally different from direct injection. Direct injection is a user input problem — solve it with input validation and jailbreak detection. Indirect injection is a trust boundary problem — the agent retrieves external content and that content is treated as trusted. The defense is architectural: treat all tool outputs as untrusted user input, apply the same validation logic you apply to user messages, and never let retrieved content modify agent behavior or permissions. In production I\'d add a post-retrieval filter that strips instruction-pattern content from tool outputs before they reach the model — this is the \'defense in depth\' layer that jailbreak classifiers alone can\'t provide.',
+  readMore: { label: "LLM Security", tab: "agents" }
   },
   {
     id: "safety-2", topic: "safety", difficulty: "easy", gated: true, type: "mcq",
@@ -581,7 +591,8 @@ export const PREP_QUESTIONS = [
     options: null, correct: null,
     keywords: ["jailbreak", "injection", "harmful", "refusal", "false positive", "adversarial", "category"],
     explanation: "Categories: jailbreaks, indirect injection, PII extraction, harmful content elicitation, false refusals. Generate prompts via: human red-teamers, adversarial LLM generation, fuzzing. Metrics: attack success rate, false refusal rate, harm severity distribution.",
-    readMore: { label: "Red-Teaming LLMs", tab: "concepts" }
+        staffLayer: 'The senior framing is: red-teaming categories should map to your product\'s actual risk surface, not generic LLM risks. For a customer-facing product, I\'d test: (1) direct jailbreaks — role-play, encoding tricks, hypothetical framing; (2) indirect injection — what if a competitor\'s product page contains adversarial instructions your agent retrieves; (3) data extraction — can an attacker get PII, system prompt content, or other users\' data; (4) false refusal rate — how often does the system refuse legitimate queries (this is a quality metric, not just a safety metric); (5) behavioral consistency — does the model behave differently under adversarial personas. Metrics: refusal rate on attack prompts, false positive rate on legitimate queries, and a consistency score. A red-team that only maximizes attack success without measuring false positive rate ships an unusable product.',
+  readMore: { label: "Red-Teaming LLMs", tab: "concepts" }
   },
   {
     id: "safety-4", topic: "safety", difficulty: "medium", gated: true, type: "mcq",
