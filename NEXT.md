@@ -25,7 +25,9 @@ Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken 
 - Returning visitor: compact progress snapshot + continue CTA + daily question + challenge area progress bars
 - Brace check + commit: `feat: R2 — home rewrite, cold/returning visitor states`
 
-**R3 — Retrieval hub page** `M`
+**Execution model:** R1 and R2 alone (one each). R3 alone as template. R4–R7 together in one session (same pattern, fill-in-the-blank). R8, R9, R10 alone. = 7 sessions total.
+
+**R3 — Retrieval hub page** `M` ← template session, must pass before R4–R7
 - New `src/Retrieval.jsx`
 - Structure: challenge intro ("Why does my AI retrieve garbage?") → RAG Lab entry card → 3 concept cards → 3-4 GT posts → 3 inline PrepLab questions (topic: rag) → progress snapshot
 - Wire in App.jsx routing (`#retrieval`)
