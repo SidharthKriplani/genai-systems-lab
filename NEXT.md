@@ -6,9 +6,9 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Theme: Sprint 49 complete. Next: readiness/progress layer (PAL-style per-area tracking) + staffLayer content expansion + GT evaluation depth.
+## Theme: Sprint 50 complete. Next: evaluation GT depth (8 posts thin) + staffLayer to 60+ + guided path polish.
 
-Sprint 49 closed: full challenge-layer redesign — 8-item nav, 5 hub pages, home rewrite, PrepLab judgment reframe, GT tagging (226 posts). See CLAUDE.md sprint log.
+Sprint 49: full challenge-layer redesign (R1–R9). Sprint 50: readiness layer, guided paths, staffLayer 30→41. See CLAUDE.md sprint log.
 
 ---
 
@@ -148,9 +148,11 @@ Sprint 49 closed: full challenge-layer redesign — 8-item nav, 5 hub pages, hom
 
 **Highest leverage (build first):**
 1. ~~**Readiness layer**~~ DONE `13f7eda` — `src/readiness.js`, badges on all 5 hub pages, bars on returning home view.
-2. **Guided paths** `M` — 3 curated sequences (Beginner Path, Retrieval Deep Dive, Interview Sprint). Each path sequences hub page → lab scenarios → concepts → PrepLab cluster. No new content needed — paths over existing content.
-3. **staffLayer content expansion** `S` — 30 questions seeded, ~24 hard gated remain. Pure content, no code.
-4. **Evaluation GT depth** — only 8 posts tagged `evaluation`. Eval is the #1 practitioner challenge (79%). Needs 4–6 new posts.
+2. ~~**Guided paths**~~ DONE `65db981` — Getting Started (7 steps), RAG Production Ready (6 steps), Interview Sprint (6 steps). All on returning home view.
+3. ~~**staffLayer expansion**~~ DONE `65db981` — 41 questions (was 30). 34 hard gated remain.
+4. **Evaluation GT depth** `M` ← NEXT — only 8 posts tagged evaluation. Needs 4–6 new posts.
+5. **staffLayer to 60+** `S` — 34 questions still missing. Pure content.
+6. **Guided path polish** `S` — path-specific PrepLab filtering, completion celebration.
 
 **Still open (deferred):**
 - **React.lazy() code splitting** — systematic, DECISIONS.md scope.

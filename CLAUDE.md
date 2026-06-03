@@ -301,6 +301,7 @@ For full audit findings see AUDITS.md.
 - R8 done `4f0becc` — PrepLab judgment reframe, TOPIC_GROUPS aligned to challenge area names.
 - R9 done `40ba9c6` — GT challenge area tagging, all 226 posts. Distribution: retrieval:19 agents:28 eval:8 prod:44 foundations:81 general:46.
 - Readiness layer `13f7eda` — `src/readiness.js` shared helper, readiness badges on all 5 hub pages, per-area progress bars on returning home view. Levels: Just Starting / Building / Practitioner / Senior / Staff.
+- Guided paths `65db981` — 3 curated sequences on returning home view: Getting Started (7 steps), RAG Production Ready (6 steps), Interview Sprint (6 steps). Each with progress bar + "Continue: [next step]" CTA. staffLayer expanded 30→41 questions (rag-10, rag-11, rag-12, agents-11, agents-12, llmops-7, llmops-8, safety-1, safety-3, ft-1, ft-4).
 
 **Sprint 48 (June 2026) — Mock Exam Mode + Staff Layer + quick wins:**
 - Mock Exam Mode (forward-only, red timer, MOCK badge, pulses < 5 min). Staff Layer (3rd tier, access-gated). Commit `f7af1f1`.

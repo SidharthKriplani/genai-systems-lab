@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: June 2026 (sprint 49 — full structural redesign shipped; hub pages, home rewrite, GT tagging complete)*
+*Last updated: June 2026 (sprint 50 — readiness layer, guided paths, staffLayer 30→41 shipped)*
 
 ---
 

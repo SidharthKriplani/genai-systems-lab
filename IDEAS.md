@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: June 2026 (sprint 49) | Current scale: 8-item challenge-layer nav, 5 hub pages, 319 PrepLab questions, 226 GT posts (all tagged), 6 labs, 27 Concepts (7 active gyms)*
+*Last updated: June 2026 (sprint 50) | Current scale: 8-item nav, 5 hub pages, readiness layer, 3 guided paths, 41 staffLayer questions, 319 PrepLab questions, 226 GT posts, 6 labs*
 
 ---
 
