@@ -7,6 +7,7 @@ import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
 import { POSTS as GT_POSTS } from "./groundTruthIndex"; // lightweight metadata — no content bodies
 import { getAllAreasReadiness, AREA_CONFIG } from "./readiness";
+import { supabase, signInWithGoogle, signOut, onAuthChange, getUser, pullProgress, pushProgress, pushKey } from "./supabase";
 
 // Heavy tab components — lazy-loaded on first visit to keep initial bundle small
 const GroundTruth    = lazy(() => import("./GroundTruth"));
@@ -671,7 +672,7 @@ function ChallengeStub({ label, tagline, body, labId, labLabel, onNavigate }) {
 
 // ALL_TABS and GROUP_COLORS imported from src/config/nav.js
 
-function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookmarks = new Set(), toggleBookmark = () => {} }) {
+function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookmarks = new Set(), toggleBookmark = () => {}, user = null }) {
   // ── Data reads ────────────────────────────────────────────────────────────────
   const history     = (() => { try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); } catch { return {}; } })();
   const mastery     = (() => { try { return new Set(JSON.parse(localStorage.getItem("gsl-concepts-mastery") || "[]")); } catch { return new Set(); } })();
@@ -863,6 +864,25 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
       {/* ── Stats Banner ─────────────────────────────────────────────────────── */}
       <div className="rounded-2xl p-5" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%)", border: "1px solid rgba(99,102,241,0.25)" }}>
         <div className="flex flex-wrap items-center gap-3 mb-4">
+          {user ? (
+            <div className="flex items-center gap-2">
+              {user.user_metadata?.avatar_url && (
+                <img src={user.user_metadata.avatar_url} alt="avatar" className="w-7 h-7 rounded-full border border-violet-700/50" />
+              )}
+              <span className="text-sm font-bold text-white">
+                {user.user_metadata?.full_name || user.email?.split("@")[0]}
+              </span>
+              <span className="text-[10px] text-zinc-500 font-mono">
+                since {user.created_at ? new Date(user.created_at).toLocaleDateString("en-US",{month:"short",year:"numeric"}) : "recently"}
+              </span>
+            </div>
+          ) : supabase && (
+            <button onClick={signInWithGoogle}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-90"
+              style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
+              Sign in to save across devices →
+            </button>
+          )}
           <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.4)", color: "#a5b4fc" }}>
             {roleLevel}
           </span>
@@ -1416,6 +1436,7 @@ function WelcomeModal({ onSelect }) {
 }
 
 export default function App() {
+  const [user, setUser] = useState(null);
   const [topView, setTopView] = useState(getInitialView);
   const [warRoomOpen, setWarRoomOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -1664,6 +1685,24 @@ export default function App() {
     initAnalytics();
   }, []);
 
+  // ── Supabase auth ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    // Get current session on mount
+    getUser().then(u => {
+      setUser(u);
+      if (u) pullProgress(u.id);
+    });
+    // Subscribe to auth changes
+    const unsub = onAuthChange(u => {
+      setUser(u);
+      if (u) {
+        pullProgress(u.id);
+        track("auth_sign_in", { provider: "google" });
+      }
+    });
+    return unsub;
+  }, []);
+
   useEffect(() => {
     const handler = () => {
       const h = window.location.hash.replace('#', '').toLowerCase();
@@ -1704,7 +1743,9 @@ export default function App() {
       foundations: "Foundations — GenAI Systems Lab",
     };
     document.title = TAB_TITLES[topView] || "GenAI Systems Lab";
-  }, [topView]);
+    // Push progress to Supabase on every nav change (sync checkpoint)
+    if (user) pushProgress(user.id);
+  }, [topView, user]);
 
   const scenario = ALL_SCENARIOS[scenarioIdx];
   const lookup = useMemo(() => lookupResult(scenario, config), [scenario, config]);
@@ -1752,6 +1793,7 @@ export default function App() {
       setLeaderboard(prev => {
         const updated = [...prev, entry];
         try { localStorage.setItem("genai_leaderboard", JSON.stringify(updated)); } catch {}
+        if (user) pushKey(user.id, "genai_leaderboard");
         return updated;
       });
     }
@@ -2120,6 +2162,32 @@ export default function App() {
               }
             </button>
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono" aria-label="Keyboard shortcuts">?</button>
+            {/* ── Auth button ── */}
+            {supabase && (
+              user ? (
+                <div className="hidden lg:flex items-center gap-2">
+                  {user.user_metadata?.avatar_url && (
+                    <img src={user.user_metadata.avatar_url} alt="avatar"
+                      className="w-6 h-6 rounded-full border border-zinc-700 shrink-0" />
+                  )}
+                  <span className="text-[11px] text-zinc-400 font-medium max-w-[80px] truncate">
+                    {user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0]}
+                  </span>
+                  <button onClick={() => { signOut(); setUser(null); track("auth_sign_out"); }}
+                    className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 border border-zinc-800 rounded px-1.5 py-0.5 transition-all">
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <button onClick={signInWithGoogle}
+                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+                  style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.35)", color: "#a5b4fc" }}
+                  title="Sign in to save progress across devices">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Sign in
+                </button>
+              )
+            )}
           </div>
         </div>
         {/* Row 2: Tab navigation — desktop nav moved to left sidebar */}
@@ -2167,7 +2235,7 @@ export default function App() {
           {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} />}
 
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
-          {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} />}
+          {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}
 
           {/* ── Challenge area stubs (R1) — replaced by hub pages in R3–R7 ── */}
           {topView === "retrieval" && <RetrievalHub onNavigate={navigate} onNavigateTo={navigateTo} />}
