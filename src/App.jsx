@@ -637,6 +637,30 @@ function LeaderboardView({ leaderboard, onClear, onRetry }) {
   );
 }
 
+// ─── CHALLENGE STUB (R1) — replaced by hub pages in R3–R7 ────────────────────
+// Minimal placeholder shown when a challenge area nav item is clicked.
+// Gives the user something real to land on while hub pages are built.
+function ChallengeStub({ label, tagline, body, labId, labLabel, onNavigate }) {
+  return (
+    <div className="min-h-screen flex items-start justify-center pt-24 px-6">
+      <div className="max-w-xl w-full space-y-6">
+        <div>
+          <div className="text-[10px] font-mono uppercase tracking-widest mb-2" style={{ color: "var(--gal-build)" }}>{label}</div>
+          <h1 className="text-2xl font-bold text-white leading-tight">{tagline}</h1>
+          <p className="text-zinc-400 text-sm mt-3 leading-relaxed">{body}</p>
+        </div>
+        <button
+          onClick={() => onNavigate(labId)}
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white transition-all"
+          style={{ background: "var(--gal-build-tint)", border: "1px solid var(--gal-build-border)" }}>
+          {labLabel} →
+        </button>
+        <p className="text-zinc-600 text-xs">Full {label} hub page coming in this sprint.</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── PROGRESS VIEW ────────────────────────────────────────────────────────────
 
 // ALL_TABS and GROUP_COLORS imported from src/config/nav.js
@@ -1063,7 +1087,7 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","qa","paths"];
+const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","qa","paths","retrieval","evaluation","agentshub","production","foundations"];
 
 // ─── RAG LAB — scenario forward pointers ──────────────────────────────────────
 // One GT post + one PrepLab topic per scenario. Shown after result evaluation.
@@ -1375,7 +1399,7 @@ export default function App() {
       if (n >= 1 && n <= SHORTCUT_TABS.length) { navigate(SHORTCUT_TABS[n - 1]); setMobileMenuOpen(false); return; }
       // Single-letter tab shortcuts (no modifier)
       if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        const TAB_KEYS = { r:"lab", a:"agentlab", e:"evallab", l:"llmlab", p:"preplab", g:"groundtruth", c:"concepts" };
+        const TAB_KEYS = { r:"retrieval", e:"evaluation", a:"agentshub", o:"production", f:"foundations", p:"preplab", g:"groundtruth" };
         const dest = TAB_KEYS[e.key.toLowerCase()];
         if (dest) { e.preventDefault(); navigate(dest); setMobileMenuOpen(false); return; }
       }
@@ -1422,6 +1446,11 @@ export default function App() {
       groundtruth: "Ground Truth — GenAI Systems Lab",
       progress: "Your Progress — GenAI Systems Lab",
       qa: "QA Dashboard — GenAI Systems Lab",
+      retrieval:   "Retrieval — GenAI Systems Lab",
+      evaluation:  "Evaluation — GenAI Systems Lab",
+      agentshub:   "Agents — GenAI Systems Lab",
+      production:  "Production — GenAI Systems Lab",
+      foundations: "Foundations — GenAI Systems Lab",
     };
     document.title = TAB_TITLES[topView] || "GenAI Systems Lab";
   }, [topView]);
@@ -1498,30 +1527,21 @@ export default function App() {
   const result = lookup?.result;
   const hasFallback = lookup && !lookup.curated;
 
+  // R1 — challenge-layer nav (Sprint 49). Mirrors nav.js NAV_GROUPS export.
   const NAV_GROUPS = [
     { label: null, items: [
-      { id: "home", label: "Home", audience: "All levels" },
+      { id: "home", label: "Home" },
     ]},
-    { label: "BUILD", color: "#52525b", items: [
-      { id: "lab",       label: "RAG Lab",    count: 6,  audience: "Engineers" },
-      { id: "agentlab",  label: "Agent Lab",  count: 16, audience: "Engineers" },
-      { id: "evallab",   label: "Eval Lab",   count: 15, audience: "Engineers · PMs" },
-      { id: "llmlab",    label: "LLM Lab",    count: 9,  audience: "Engineers" },
-      { id: "promptlab", label: "Prompt Lab", count: 6,  audience: "Engineers" },
-    ]},
-    { label: "PROVE", color: "#52525b", items: [
-      { id: "preplab", label: "Prep Lab",   audience: "Interview prep" },
-    ]},
-    { label: "NAVIGATE", color: "#52525b", items: [
-      { id: "career",  label: "Career",     count: 6,  audience: "Job seekers" },
-      { id: "aipm",    label: "AI Product", count: 5,  audience: "Product managers" },
-    ]},
-    { label: "KNOWLEDGE", color: "#52525b", items: [
-      { id: "concepts",    label: "Concepts",     count: 20, audience: "All levels" },
-      { id: "groundtruth", label: "Ground Truth",            audience: "All levels" },
+    { label: "CHALLENGES", color: "var(--gal-build)", items: [
+      { id: "retrieval",   label: "Retrieval" },
+      { id: "evaluation",  label: "Evaluation" },
+      { id: "agentshub",   label: "Agents" },
+      { id: "production",  label: "Production" },
+      { id: "foundations", label: "Foundations" },
     ]},
     { label: null, items: [
-      { id: "progress", label: "My Progress", audience: "All levels" },
+      { id: "preplab",     label: "PrepLab" },
+      { id: "groundtruth", label: "Ground Truth" },
     ]},
   ];
 
@@ -1571,13 +1591,13 @@ export default function App() {
             <div className="space-y-2">
               <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest pb-1">Tab shortcuts</div>
               {[
-                { key: "R", label: "RAG Lab" },
-                { key: "A", label: "Agent Lab" },
-                { key: "E", label: "Eval Lab" },
-                { key: "L", label: "LLM Lab" },
-                { key: "P", label: "Prep Lab" },
+                { key: "R", label: "Retrieval" },
+                { key: "E", label: "Evaluation" },
+                { key: "A", label: "Agents" },
+                { key: "O", label: "Production" },
+                { key: "F", label: "Foundations" },
+                { key: "P", label: "PrepLab" },
                 { key: "G", label: "Ground Truth" },
-                { key: "C", label: "Concepts" },
               ].map(({ key, label }) => (
                 <div key={key} className="flex items-center justify-between text-xs">
                   <kbd className="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 font-mono text-zinc-300">{key}</kbd>
@@ -1897,6 +1917,13 @@ export default function App() {
 
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} />}
+
+          {/* ── Challenge area stubs (R1) — replaced by hub pages in R3–R7 ── */}
+          {topView === "retrieval" && <ChallengeStub id="retrieval" label="Retrieval" tagline="Why does your AI retrieve the wrong thing?" body="RAG failures, context overflow, hallucination, multi-hop retrieval — this is where production systems break first. Configure real failure scenarios and diagnose exactly why." labId="lab" labLabel="Open RAG Lab" onNavigate={navigate} />}
+          {topView === "evaluation" && <ChallengeStub id="evaluation" label="Evaluation" tagline="How do you know if it's actually working?" body="79% of AI practitioners say evaluation is their #1 challenge — but 31% don't evaluate at all. Learn to build eval sets, run LLM-as-judge, and catch regressions before they reach users." labId="evallab" labLabel="Open Eval Lab" onNavigate={navigate} />}
+          {topView === "agentshub" && <ChallengeStub id="agentshub" label="Agents" tagline="Why can't it complete complex tasks reliably?" body="Tool loops, context overflow, delegation failures, and state amnesia — agents fail in predictable ways. Configure each failure mode and understand what's actually going wrong." labId="agentlab" labLabel="Open Agent Lab" onNavigate={navigate} />}
+          {topView === "production" && <ChallengeStub id="production" label="Production" tagline="How do you scale it without it breaking?" body="Inference latency, cost overruns, serving failures, and LLMOps gaps — the problems that kill demos in production. Build the judgment to architect reliable, cost-efficient AI systems." labId="llmlab" labLabel="Open LLM Lab" onNavigate={navigate} />}
+          {topView === "foundations" && <ChallengeStub id="foundations" label="Foundations" tagline="Why does it behave this way?" body="Attention, tokenization, training dynamics, fine-tuning — understanding what's actually happening inside the model is what separates engineers who debug from engineers who guess." labId="foundationlab" labLabel="Open Foundation Models Lab" onNavigate={navigate} />}
         </Suspense>
       </TabErrorBoundary>
       </main>

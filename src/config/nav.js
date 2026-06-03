@@ -2,64 +2,59 @@
 // Single source of truth for tab definitions, group colors, and nav group structure.
 // Change tab labels, groups, or counts here — App.jsx reads from this file.
 
+// ─── R1 redesign: challenge-layer nav (Sprint 49) ────────────────────────────
+// Primary nav: 8 items. Challenge areas replace the old BUILD group.
+// Labs, Systems, Concepts, Career, AI Product remain hash-accessible (not deleted).
+
 export const ALL_TABS = [
-  // Primary nav
-  { id: "lab",         label: "RAG Lab",     group: "BUILD",    audience: "Engineers" },
-  { id: "agentlab",    label: "Agent Lab",   group: "BUILD",    audience: "Engineers" },
-  { id: "evallab",     label: "Eval Lab",    group: "BUILD",    audience: "Engineers · PMs" },
-  { id: "llmlab",      label: "LLM Lab",     group: "BUILD",    audience: "Engineers" },
-  { id: "promptlab",      label: "Prompt Lab",           group: "BUILD",    audience: "Engineers" },
-  { id: "foundationlab",  label: "Foundation Models Lab", group: "BUILD",    audience: "Engineers" },
-  { id: "preplab",     label: "Prep Lab",    group: "PROVE",    audience: "Interview prep" },
-  { id: "career",      label: "Career",      group: "NAVIGATE", audience: "Job seekers" },
-  { id: "aipm",        label: "AI Product",  group: "NAVIGATE", audience: "Product managers" },
-  { id: "concepts",    label: "Concepts",    group: "KNOWLEDGE",audience: "All levels" },
-  { id: "groundtruth", label: "Ground Truth",group: "KNOWLEDGE",audience: "All levels" },
-  // Legacy tabs — accessible via #hash, not in primary nav
-  { id: "flows",       label: "Diagrams",    group: "LEGACY",   audience: "All levels" },
-  { id: "agents",      label: "Agents",      group: "LEGACY",   audience: "Engineers" },
-  { id: "playground",  label: "Playground",  group: "LEGACY",   audience: "All levels" },
-  { id: "explore",     label: "Explore",     group: "LEGACY",   audience: "Engineers" },
-  { id: "systems",     label: "Systems",     group: "LEGACY",   audience: "Engineers · PMs" },
-  { id: "paths",       label: "Paths",       group: "LEGACY",   audience: "All levels" },
-  { id: "fluency",     label: "Drills",      group: "LEGACY",   audience: "Interview prep" },
+  // Primary nav — challenge areas
+  { id: "retrieval",   label: "Retrieval",   group: "CHALLENGES", audience: "RAG · context · hallucination" },
+  { id: "evaluation",  label: "Evaluation",  group: "CHALLENGES", audience: "Testing · monitoring · evals" },
+  { id: "agentshub",   label: "Agents",      group: "CHALLENGES", audience: "Tool use · orchestration" },
+  { id: "production",  label: "Production",  group: "CHALLENGES", audience: "Serving · LLMOps · cost" },
+  { id: "foundations", label: "Foundations", group: "CHALLENGES", audience: "Training · fine-tuning · prompting" },
+  { id: "preplab",     label: "PrepLab",     group: "PRIMARY",    audience: "Test your judgment" },
+  { id: "groundtruth", label: "Ground Truth",group: "PRIMARY",    audience: "Practitioner knowledge" },
+  // Legacy — hash-accessible, not in primary nav
+  { id: "lab",         label: "RAG Lab",        group: "LEGACY", audience: "Engineers" },
+  { id: "agentlab",    label: "Agent Lab",      group: "LEGACY", audience: "Engineers" },
+  { id: "evallab",     label: "Eval Lab",       group: "LEGACY", audience: "Engineers · PMs" },
+  { id: "llmlab",      label: "LLM Lab",        group: "LEGACY", audience: "Engineers" },
+  { id: "promptlab",   label: "Prompt Lab",     group: "LEGACY", audience: "Engineers" },
+  { id: "foundationlab", label: "Foundation Models Lab", group: "LEGACY", audience: "Engineers" },
+  { id: "concepts",    label: "Concepts",       group: "LEGACY", audience: "All levels" },
+  { id: "career",      label: "Career",         group: "LEGACY", audience: "Job seekers" },
+  { id: "aipm",        label: "AI Product",     group: "LEGACY", audience: "Product managers" },
+  { id: "flows",       label: "Diagrams",       group: "LEGACY", audience: "All levels" },
+  { id: "agents",      label: "Agents (legacy)",group: "LEGACY", audience: "Engineers" },
+  { id: "playground",  label: "Playground",     group: "LEGACY", audience: "All levels" },
+  { id: "explore",     label: "Explore",        group: "LEGACY", audience: "Engineers" },
+  { id: "systems",     label: "Systems",        group: "LEGACY", audience: "Engineers · PMs" },
+  { id: "paths",       label: "Paths",          group: "LEGACY", audience: "All levels" },
+  { id: "fluency",     label: "Drills",         group: "LEGACY", audience: "Interview prep" },
 ];
 
 export const GROUP_COLORS = {
-  BUILD:    "#3b82f6",
-  PROVE:    "#22c55e",
-  NAVIGATE: "#f59e0b",
-  KNOWLEDGE:"#8b5cf6",
-  LEGACY:   "#3f3f46",
+  CHALLENGES: "var(--gal-build)",
+  PRIMARY:    "#8b5cf6",
+  LEGACY:     "#3f3f46",
 };
 
-// Static nav group structure for the sidebar.
-// Note: component keeps this as a local const (not imported) because it
-// references onNavigate — but shape is defined here for reference.
+// Nav group structure — source of truth.
+// Local NAV_GROUPS const in App.jsx mirrors this shape.
 export const NAV_GROUPS = [
   { label: null, items: [
-    { id: "home", label: "Home", audience: "All levels" },
+    { id: "home", label: "Home" },
   ]},
-  { label: "BUILD", color: "#52525b", items: [
-    { id: "lab",      label: "RAG Lab",   count: 6,  audience: "Engineers" },
-    { id: "agentlab", label: "Agent Lab", count: 16, audience: "Engineers" },
-    { id: "evallab",  label: "Eval Lab",  count: 15, audience: "Engineers · PMs" },
-    { id: "llmlab",    label: "LLM Lab",    count: 9,  audience: "Engineers" },
-    { id: "promptlab",     label: "Prompt Lab",           count: 6,  audience: "Engineers" },
-    { id: "foundationlab", label: "Foundation Models Lab", count: 6,  audience: "Engineers" },
-  ]},
-  { label: "PROVE", color: "#52525b", items: [
-    { id: "preplab", label: "Prep Lab",   audience: "Interview prep" },
-  ]},
-  { label: "NAVIGATE", color: "#52525b", items: [
-    { id: "career",  label: "Career",     count: 6,  audience: "Job seekers" },
-    { id: "aipm",    label: "AI Product", count: 5,  audience: "Product managers" },
-  ]},
-  { label: "KNOWLEDGE", color: "#52525b", items: [
-    { id: "concepts",    label: "Concepts",     count: 20, audience: "All levels" },
-    { id: "groundtruth", label: "Ground Truth",            audience: "All levels" },
+  { label: "CHALLENGES", color: "var(--gal-build)", items: [
+    { id: "retrieval",   label: "Retrieval" },
+    { id: "evaluation",  label: "Evaluation" },
+    { id: "agentshub",   label: "Agents" },
+    { id: "production",  label: "Production" },
+    { id: "foundations", label: "Foundations" },
   ]},
   { label: null, items: [
-    { id: "progress", label: "My Progress", audience: "All levels" },
+    { id: "preplab",     label: "PrepLab" },
+    { id: "groundtruth", label: "Ground Truth" },
   ]},
 ];
