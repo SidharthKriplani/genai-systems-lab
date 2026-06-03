@@ -2,11 +2,11 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 51 complete — eval GT 8→13, staffLayer 41→60, Progress page with Study Plan + nav. Sprint 52 next: auth + module UX)*
+*Last updated: June 2026 (sprint 52 complete — auth + module UX shipped. Sprint 53 next: staffLayer remaining 61, B10 Foundations hub module list, B16 export/import JSON)*
 
 ---
 
-## Theme: Sprint 52. Supabase auth (B12→B15) + module notes (B7) + post-completion panel (B8) + "Previous plan active" (B9).
+## Theme: Sprint 53. staffLayer remaining 61 questions + B10 Foundations hub module list + B16 export/import JSON + B18 React.lazy() code splitting.
 
 Sprint 49: full challenge-layer redesign (R1–R9). Sprint 50: readiness layer, guided paths, staffLayer 30→41. See CLAUDE.md sprint log.
 

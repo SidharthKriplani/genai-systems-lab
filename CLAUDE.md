@@ -310,6 +310,13 @@ For full audit findings see AUDITS.md.
 - Progress page upgraded `7390b00`: stats banner (total questions + lab scenarios + concepts + role level + streak), readiness by area (5 bars, clickable), Study Plan (5 personalized suggestions from localStorage — weakest topic, review queue due, unvisited hub, RAG lab prompt, GT read), Review Queue (SRS-due items surfaced by name), Guided Paths (3 tracks). Progress added to primary nav.
 - Still open (sprint 52): B3-B5 polish, module notes (B7), post-completion panel (B8), Supabase auth (B12-B15).
 
+**Sprint 52 (June 2026) — Auth + module UX:**
+- B7 module notes `f1282f7`: `ModuleNotes` shared component, localStorage `gsl-note-{id}`, autosave on blur, added to all Concepts gym modules.
+- B8 WhatNextCard `f1282f7`: bookmark toggle (★/☆, writes gsl-bookmarks), "Build interview plan" CTA routes to jdprep mode. All 3 CTAs now in post-completion panel.
+- B9 previous plan `f1282f7`: `gsl-interview-plan` key saved on analyzeJD + buildBrief. "PREVIOUS PLAN ACTIVE" banner on jdprep mount — Resume / Start fresh.
+- B12+B15 Supabase auth `355afae`: `src/supabase.js` client + helpers. Google OAuth login button in desktop header (avatar + name when signed in). Progress page shows real name/avatar + "Sign in to save across devices" CTA. Cross-device sync: pushProgress on every nav change, pushKey on lab completion. Pull on sign-in. Sync keys: gsl-preplab-history, genai_leaderboard, gsl-concepts-mastery, gsl-preplab-spaced, gsl-bookmarks, streak.
+- User action required: `npm install @supabase/supabase-js`, add VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY to Vercel, enable Google OAuth in Supabase Auth, run user_progress table SQL, add redirect URL.
+
 **Sprint 48 (June 2026) — Mock Exam Mode + Staff Layer + quick wins:**
 - Mock Exam Mode (forward-only, red timer, MOCK badge, pulses < 5 min). Staff Layer (3rd tier, access-gated). Commit `f7af1f1`.
 - staffLayer expanded: 10 → 30 questions across rag, agents, eval, llmops. CROSS_LAB.md created (lab boundary docs, cross-pollination map). RSS feed: `public/rss.xml` (30 GT posts). Commit `a44fe49`.
