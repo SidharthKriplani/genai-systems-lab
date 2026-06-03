@@ -316,6 +316,54 @@ const TAB_META = {
   concepts:    { label: "Concepts",     color: "var(--gal-build)" },
 };
 
+// ─── Ghost data snippets — floating ML metrics, hint at what's inside ────────
+const GHOST_SNIPPETS = [
+  "cosine_sim: 0.847",
+  "latency_p99: 1.8s",
+  "token_budget: 4096",
+  "retrieval@5: 0.71",
+  "eval_score: 3.2/5",
+  "cache_hit: 34%",
+  "context: 127k tok",
+  "gpu_util: 89%",
+  "rerank_delta: +0.12",
+  "halluc_rate: 0.04",
+  "chunk_size: 512",
+  "kv_reuse: 61%",
+];
+
+// Stable positions — computed once, never change between renders
+const GHOST_POSITIONS = [
+  { top: "12%",  left:  "4%" },
+  { top: "22%",  right: "5%" },
+  { top: "38%",  left:  "2%" },
+  { top: "52%",  right: "3%" },
+  { top: "65%",  left:  "6%" },
+  { top: "75%",  right: "6%" },
+  { top: "8%",   left: "18%" },
+  { top: "45%",  right:"16%" },
+  { top: "82%",  left: "12%" },
+  { top: "18%",  right:"20%" },
+  { top: "60%",  left: "14%" },
+  { top: "30%",  right:"14%" },
+];
+
+function GhostSnippets() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+      {GHOST_SNIPPETS.map((text, i) => (
+        <span key={i} className="ghost-snippet" style={{
+          position: "absolute",
+          ...GHOST_POSITIONS[i],
+          animationDelay: `${i * 0.4}s`,
+        }}>
+          {text}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ─── Challenge area cards (shared between cold + returning views) ──────────────
 function ChallengeAreaCards({ onNavigate }) {
   return (
@@ -615,6 +663,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
           <div className="relative overflow-hidden">
             <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 100% 70% at 50% -10%, rgba(34,211,238,0.18) 0%, var(--gal-build-tint) 40%, transparent 75%)" }} />
             <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 35% at 50% 0%, var(--gal-build-tint) 0%, transparent 70%)" }} />
+            <GhostSnippets />
             <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8 relative">
 
               <div className="space-y-5">

@@ -33,10 +33,11 @@ export async function signOut() {
   await supabase.auth.signOut();
 }
 
+// callback receives (event, user) — handle SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED, SIGNED_OUT
 export function onAuthChange(callback) {
   if (!supabase) return () => {};
   const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    (_event, session) => callback(session?.user || null)
+    (event, session) => callback(event, session?.user || null)
   );
   return () => subscription.unsubscribe();
 }

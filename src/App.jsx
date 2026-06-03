@@ -1690,22 +1690,39 @@ export default function App() {
   // ── Supabase auth ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!supabase) return;
-    // Restore session from localStorage immediately (no server round-trip)
+    // Restore session immediately from localStorage (no server round-trip)
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user || null;
       setUser(u);
-      if (u) pullProgress(u.id);
-    });
-    // Subscribe to all auth state changes (sign in, sign out, token refresh)
-    const unsub = onAuthChange(u => {
-      setUser(u);
       if (u) {
         pullProgress(u.id);
-        track("auth_sign_in", { provider: u.app_metadata?.provider || "unknown" });
+        setTopView(v => v === "home" ? "progress" : v);
+      }
+    });
+    // Handle all 4 auth events — DO NOT simplify (PAL spec / Supabase v2 gotcha)
+    // INITIAL_SESSION fires on page load when session exists — without it, refresh logs user out
+    const unsub = onAuthChange((event, u) => {
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
+        setUser(u);
+        if (u) pullProgress(u.id);
+        if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+          setTopView(v => v === "home" ? "progress" : v);
+        }
+        if (event === "SIGNED_IN") {
+          track("auth_sign_in", { provider: u?.app_metadata?.provider || "unknown" });
+        }
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+        setTopView("home");
       }
     });
     return unsub;
   }, []);
+
+  // Reactive redirect — catches sign-in that happens while on home via back-navigation
+  useEffect(() => {
+    if (user && topView === "home") setTopView("progress");
+  }, [user, topView]);
 
   useEffect(() => {
     const handler = () => {

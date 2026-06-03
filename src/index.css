@@ -61,6 +61,27 @@ h3 { letter-spacing: -0.02em; }
 .hero-anim-4 { animation: heroFadeUp 0.6s  0.50s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .hero-anim-5 { animation: heroFadeUp 0.6s  0.64s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+/* ── Ghost data snippets — floating ML metrics on cold home hero ─────────── */
+@keyframes ghostFloat {
+  0%   { opacity: 0; transform: translateY(0px); }
+  15%  { opacity: 1; }
+  80%  { opacity: 0.18; }
+  90%  { opacity: 0; transform: translateY(-8px); }
+  100% { opacity: 0; }
+}
+.ghost-snippet {
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--gal-build);
+  opacity: 0;
+  filter: blur(0.4px);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  animation: ghostFloat 5s ease-in-out infinite;
+  animation-fill-mode: both;
+}
+
 /* ── Card hover lift ─────────────────────────────────────────────────────── */
 .card-lift {
   transition: transform 160ms ease, box-shadow 160ms ease;
