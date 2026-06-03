@@ -33,7 +33,7 @@ Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken 
 - Wire in App.jsx routing (`#retrieval`)
 - Commit: `feat: R3 — Retrieval hub page`
 
-**R4–R7 — Evaluation, Agents, Production, Foundations hub pages** `M` ← NEXT (one session)
+**~~R4–R7 — Evaluation, Agents, Production, Foundations hub pages~~** `M` DONE `e7a68bc`
 - New `src/EvaluationHub.jsx`
 - Same structure as R3, wired to Eval Lab, evaluation concepts, evaluation GT posts, evaluation PrepLab cluster
 - Commit: `feat: R4 — Evaluation hub page`
