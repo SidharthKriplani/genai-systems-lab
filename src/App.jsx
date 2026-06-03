@@ -6,6 +6,7 @@ import WarRoom from "./WarRoom";
 import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
 import { POSTS as GT_POSTS } from "./groundTruthIndex"; // lightweight metadata — no content bodies
+import { getAllAreasReadiness, AREA_CONFIG } from "./readiness";
 
 // Heavy tab components — lazy-loaded on first visit to keep initial bundle small
 const GroundTruth    = lazy(() => import("./GroundTruth"));
@@ -671,11 +672,122 @@ function ChallengeStub({ label, tagline, body, labId, labLabel, onNavigate }) {
 // ALL_TABS and GROUP_COLORS imported from src/config/nav.js
 
 function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookmarks = new Set(), toggleBookmark = () => {} }) {
-  // ── Read external localStorage data ─────────────────────────────────────────
-  const history = (() => { try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); } catch { return {}; } })();
-  const mastery = (() => { try { return new Set(JSON.parse(localStorage.getItem("gsl-concepts-mastery") || "[]")); } catch { return new Set(); } })();
+  // ── Data reads ────────────────────────────────────────────────────────────────
+  const history     = (() => { try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); } catch { return {}; } })();
+  const mastery     = (() => { try { return new Set(JSON.parse(localStorage.getItem("gsl-concepts-mastery") || "[]")); } catch { return new Set(); } })();
+  const spaced      = (() => { try { return JSON.parse(localStorage.getItem("gsl-preplab-spaced") || "{}"); } catch { return {}; } })();
+  const streak      = (() => { try { return parseInt(localStorage.getItem("gsl-streak") || "0", 10); } catch { return 0; } })();
+  const gtRead      = (() => { try { return new Set(JSON.parse(localStorage.getItem("genai_gt_read") || "[]")); } catch { return new Set(); } })();
+  const areasReady  = getAllAreasReadiness();
 
-  // ── BUILD lane ────────────────────────────────────────────────────────────────
+  // ── Aggregate stats ───────────────────────────────────────────────────────────
+  const histKeys        = Object.keys(history);
+  const totalAnswered   = histKeys.length;
+  const correctCount    = histKeys.filter(k => history[k]?.correct).length;
+  const prepPct         = totalAnswered > 0 ? Math.round(correctCount / totalAnswered * 100) : 0;
+  const masteryArr      = [...mastery];
+  const ragPassed       = leaderboard.filter(e => e.passed).length;
+  const totalCompleted  = ragPassed + masteryArr.length + correctCount;
+
+  // Best readiness level across all areas
+  const LEVEL_RANK = { "Just Starting": 0, "Building": 1, "Practitioner": 2, "Senior": 3, "Staff": 4 };
+  const activeAreas  = Object.values(areasReady).filter(Boolean);
+  const roleLevel    = activeAreas.length === 0 ? "Getting Started"
+    : activeAreas.reduce((best, r) => (LEVEL_RANK[r.level] || 0) > (LEVEL_RANK[best] || 0) ? r.level : best, "Just Starting");
+
+  // ── Study Plan — personalised suggestions ─────────────────────────────────────
+  const studyPlan = [];
+  const TOPICS_MAP = { rag:"Retrieval", agents:"Agents", eval:"Evaluation", llmops:"Production", ft:"Foundations", finetuning:"Foundations", safety:"Foundations" };
+  // 1. Weakest PrepLab topic
+  const topicAccuracy = {};
+  histKeys.forEach(k => {
+    const topic = Object.keys(TOPICS_MAP).find(p => k.startsWith(p + "-"));
+    if (!topic) return;
+    if (!topicAccuracy[topic]) topicAccuracy[topic] = { correct: 0, total: 0 };
+    topicAccuracy[topic].total += 1;
+    if (history[k]?.correct) topicAccuracy[topic].correct += 1;
+  });
+  const weakTopic = Object.entries(topicAccuracy)
+    .filter(([, v]) => v.total >= 3)
+    .sort(([, a], [, b]) => (a.correct / a.total) - (b.correct / b.total))[0];
+  if (weakTopic) {
+    const [topicKey, { correct, total }] = weakTopic;
+    const pct = Math.round(correct / total * 100);
+    const areaLabel = TOPICS_MAP[topicKey] || topicKey;
+    const areaTab   = { rag:"retrieval", agents:"agentshub", eval:"evaluation", llmops:"production", ft:"foundations", finetuning:"foundations", safety:"foundations" }[topicKey] || "preplab";
+    studyPlan.push({ id: "weak-topic", label: `${areaLabel} accuracy is ${pct}% — your weakest area`, reason: `You've answered ${total} ${areaLabel.toLowerCase()} questions with only ${pct}% correct. One focused session should move this.`, tab: areaTab, cta: `Open ${areaLabel} →` });
+  }
+  // 2. Review queue due
+  const now = Date.now();
+  const SRS_INTERVALS = [86400000, 259200000, 604800000]; // 1d, 3d, 7d
+  const dueItems = Object.entries(spaced).filter(([, v]) => {
+    const interval = SRS_INTERVALS[Math.min(v.wrongCount - 1, SRS_INTERVALS.length - 1)] || SRS_INTERVALS[0];
+    return (now - v.lastWrong) >= interval;
+  });
+  if (dueItems.length > 0) {
+    studyPlan.push({ id: "review-due", label: `${dueItems.length} question${dueItems.length > 1 ? "s" : ""} due for review`, reason: `Spaced repetition: reviewing wrong answers at the right interval is the most efficient way to move them to long-term memory.`, tab: "preplab", cta: "Start Review →" });
+  }
+  // 3. Hub not visited
+  const hubOrder = [["retrieval","Retrieval"],["evaluation","Evaluation"],["agentshub","Agents"],["production","Production"],["foundations","Foundations"]];
+  const unvisitedHub = hubOrder.find(([id]) => !visited.has(id) && !areasReady[id]);
+  if (unvisitedHub && studyPlan.length < 4) {
+    studyPlan.push({ id: "unvisited-hub", label: `Explore ${unvisitedHub[1]} — you haven't started this area`, reason: `Every challenge area surfaces different production failure modes. ${unvisitedHub[1]} is the next one to unlock.`, tab: unvisitedHub[0], cta: `Open ${unvisitedHub[1]} →` });
+  }
+  // 4. RAG Lab if not tried
+  if (ragPassed === 0 && studyPlan.length < 4) {
+    studyPlan.push({ id: "rag-lab", label: "Try the RAG Lab — configure a real failure mode", reason: "The RAG Lab is the fastest way to build production intuition. Most people who try it become regulars.", tab: "lab", cta: "Open RAG Lab →" });
+  }
+  // 5. GT post if low read count
+  if (gtRead.size < 3 && studyPlan.length < 5) {
+    studyPlan.push({ id: "gt-read", label: "Read a Ground Truth post in your weakest area", reason: "Ground Truth posts are written by practitioners — they add context that interactive labs alone don't give.", tab: "groundtruth", cta: "Open Ground Truth →" });
+  }
+
+  // ── Review Queue ──────────────────────────────────────────────────────────────
+  const reviewQueue = dueItems.slice(0, 6).map(([qId]) => {
+    const topic = Object.keys(TOPICS_MAP).find(p => qId.startsWith(p + "-")) || "general";
+    return { qId, topicLabel: TOPICS_MAP[topic] || topic };
+  });
+
+  // ── Guided paths (compact) ────────────────────────────────────────────────────
+  const visitedSet = visited instanceof Set ? visited : new Set(visited);
+  const ragQs    = histKeys.filter(k => k.startsWith("rag-"));
+  const agentQs  = histKeys.filter(k => k.startsWith("agents-"));
+  const evalQs   = histKeys.filter(k => k.startsWith("eval-"));
+  const ragAcc   = ragQs.length   > 0 ? ragQs.filter(k => history[k]?.correct).length   / ragQs.length   : 0;
+  const agentAcc = agentQs.length > 0 ? agentQs.filter(k => history[k]?.correct).length / agentQs.length : 0;
+  const evalAcc  = evalQs.length  > 0 ? evalQs.filter(k => history[k]?.correct).length  / evalQs.length  : 0;
+  const PATHS = [
+    { id: "getting-started", label: "Getting Started", color: "#6366f1", desc: "Build intuition for production AI systems.",
+      steps: [
+        { label: "Open Foundations hub", done: visitedSet.has("foundations"), tab: "foundations" },
+        { label: "Complete Tokenizer concept", done: mastery.has("tokenizer"), tab: "concepts" },
+        { label: "Open Retrieval hub", done: visitedSet.has("retrieval"), tab: "retrieval" },
+        { label: "Pass a RAG Lab scenario", done: ragPassed >= 1, tab: "lab" },
+        { label: "Answer 10 PrepLab questions", done: histKeys.length >= 10, tab: "preplab" },
+        { label: "Open Evaluation hub", done: visitedSet.has("evaluation"), tab: "evaluation" },
+        { label: "Answer 20 questions total", done: histKeys.length >= 20, tab: "preplab" },
+      ]},
+    { id: "rag-expert", label: "RAG Production Ready", color: "var(--gal-build)", desc: "Master retrieval — the #1 production failure mode.",
+      steps: [
+        { label: "Pass 2 RAG Lab scenarios", done: ragPassed >= 2, tab: "lab" },
+        { label: "Pass all 6 RAG scenarios", done: ragPassed >= 6, tab: "lab" },
+        { label: "Complete Embeddings concept", done: mastery.has("embeddings"), tab: "concepts" },
+        { label: "Read 'How RAG Works'", done: gtRead.has("how-rag-works"), tab: "groundtruth" },
+        { label: "60%+ RAG accuracy", done: ragQs.length >= 5 && ragAcc >= 0.6, tab: "retrieval" },
+        { label: "60%+ Eval accuracy", done: evalQs.length >= 5 && evalAcc >= 0.6, tab: "evaluation" },
+      ]},
+    { id: "interview-sprint", label: "Interview Sprint", color: "#22c55e", desc: "Get interview-ready across all five challenge areas.",
+      steps: [
+        { label: "Answer 20 PrepLab questions", done: histKeys.length >= 20, tab: "preplab" },
+        { label: "60%+ RAG accuracy", done: ragQs.length >= 5 && ragAcc >= 0.6, tab: "retrieval" },
+        { label: "Open Agents hub", done: visitedSet.has("agentshub"), tab: "agentshub" },
+        { label: "60%+ Agents accuracy", done: agentQs.length >= 5 && agentAcc >= 0.6, tab: "agentshub" },
+        { label: "60%+ Evaluation accuracy", done: evalQs.length >= 5 && evalAcc >= 0.6, tab: "evaluation" },
+        { label: "Answer 50 total questions", done: histKeys.length >= 50, tab: "preplab" },
+      ]},
+  ].map(p => { const done = p.steps.filter(s => s.done).length; const next = p.steps.find(s => !s.done); return { ...p, done, total: p.steps.length, pct: Math.round(done / p.steps.length * 100), nextStep: next }; });
+
+  // ── BUILD lane data ───────────────────────────────────────────────────────────
   const tierRank = t => SCORE_TIERS[t]?.rank || 0;
   const byScenario = ALL_SCENARIOS.map(s => {
     const entries = leaderboard.filter(e => e.scenarioId === s.scenario_id);
@@ -685,7 +797,7 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
     }, null);
     return { ...s, entries, bestTier, attempted: entries.length > 0 };
   });
-  const ragSolved = byScenario.filter(s => s.bestTier && SCORE_TIERS[s.bestTier]?.rank >= 3).length;
+  const ragSolved   = byScenario.filter(s => s.bestTier && SCORE_TIERS[s.bestTier]?.rank >= 3).length;
   const bestOverall = leaderboard.reduce((best, e) => {
     if (!e.tier) return best;
     return !best || tierRank(e.tier) > tierRank(best) ? e.tier : best;
@@ -699,17 +811,11 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
 
   // ── PROVE lane ────────────────────────────────────────────────────────────────
   const TOPICS = [
-    { key: "rag",         label: "RAG" },
-    { key: "agents",      label: "Agents" },
-    { key: "eval",        label: "Evaluation" },
-    { key: "finetuning",  label: "Fine-Tuning" },
-    { key: "llmops",      label: "LLMOps" },
-    { key: "safety",      label: "Safety" },
-    { key: "product",     label: "Product" },
-    { key: "behavioral",  label: "Behavioral" },
-    { key: "multimodal",  label: "Multimodal" },
-    { key: "reasoning",   label: "Reasoning" },
-    { key: "serving",     label: "Serving" },
+    { key: "rag", label: "RAG" }, { key: "agents", label: "Agents" }, { key: "eval", label: "Evaluation" },
+    { key: "finetuning", label: "Fine-Tuning" }, { key: "llmops", label: "LLMOps" },
+    { key: "safety", label: "Safety" }, { key: "product", label: "Product" },
+    { key: "behavioral", label: "Behavioral" }, { key: "multimodal", label: "Multimodal" },
+    { key: "reasoning", label: "Reasoning" }, { key: "serving", label: "Serving" },
   ];
   const topicStats = TOPICS.map(({ key, label }) => {
     const ids = Object.keys(history).filter(id => id.startsWith(key + "-"));
@@ -753,10 +859,150 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
-      {/* Header */}
-      <div className="text-center space-y-1">
-        <h1 className="text-2xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Your Progress</h1>
-        <p className="text-xs text-zinc-500">{ragSolved}/6 RAG scenarios · {totalPrepAttempts} PrepLab attempts · {masteredCount}/{totalConcepts} concepts mastered</p>
+
+      {/* ── Stats Banner ─────────────────────────────────────────────────────── */}
+      <div className="rounded-2xl p-5" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%)", border: "1px solid rgba(99,102,241,0.25)" }}>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.4)", color: "#a5b4fc" }}>
+            {roleLevel}
+          </span>
+          {streak > 0 && (
+            <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#fbbf24" }}>
+              {streak} day streak
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <p className="text-2xl font-black text-white">{totalAnswered}</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">Questions</p>
+            {totalAnswered > 0 && <p className="text-xs text-zinc-400 mt-0.5">{prepPct}% correct</p>}
+          </div>
+          <div>
+            <p className="text-2xl font-black text-white">{ragPassed}</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">Lab Scenarios</p>
+          </div>
+          <div>
+            <p className="text-2xl font-black text-white">{masteredCount}</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">Concepts</p>
+            {totalConcepts > 0 && <p className="text-xs text-zinc-400 mt-0.5">of {totalConcepts} total</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Readiness by Area ─────────────────────────────────────────────────── */}
+      <div className="rounded-xl p-5 space-y-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Readiness by area</p>
+        {[
+          { id: "retrieval",   label: "Retrieval",   color: "var(--gal-build)" },
+          { id: "evaluation",  label: "Evaluation",  color: "#f59e0b" },
+          { id: "agentshub",   label: "Agents",      color: "#a78bfa" },
+          { id: "production",  label: "Production",  color: "#22c55e" },
+          { id: "foundations", label: "Foundations", color: "#3b82f6" },
+        ].map(area => {
+          const r = areasReady[area.id];
+          return (
+            <button key={area.id} onClick={() => onNavigate(area.id)}
+              className="w-full flex items-center gap-3 hover:opacity-80 transition-opacity text-left">
+              <span className="text-xs font-mono text-zinc-400 w-24 shrink-0">{area.label}</span>
+              <div className="flex-1 h-1.5 rounded-full bg-zinc-800">
+                <div className="h-1.5 rounded-full transition-all" style={{ width: `${r ? r.pct : 0}%`, background: area.color, opacity: r ? 1 : 0.3 }} />
+              </div>
+              <span className="text-[10px] font-mono w-24 shrink-0 text-right" style={{ color: r ? area.color : "#52525b" }}>
+                {r ? r.level : "Not started"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Study Plan ────────────────────────────────────────────────────────── */}
+      {studyPlan.length > 0 && (
+        <div className="rounded-xl p-5 space-y-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Study plan</p>
+            <span className="text-[10px] font-mono text-zinc-600">{studyPlan.length} suggestions</span>
+          </div>
+          <div className="space-y-2">
+            {studyPlan.map((item, i) => (
+              <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: "rgba(39,39,42,0.5)", border: "1px solid rgba(63,63,70,0.5)" }}>
+                <span className="text-[10px] font-bold text-zinc-600 w-4 shrink-0 mt-0.5">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-zinc-200 leading-snug">{item.label}</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5 leading-relaxed">{item.reason}</p>
+                </div>
+                <button onClick={() => onNavigate(item.tab)}
+                  className="text-[10px] font-bold shrink-0 px-2.5 py-1 rounded-md transition-all hover:opacity-80"
+                  style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.25)" }}>
+                  {item.cta}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Review Queue ──────────────────────────────────────────────────────── */}
+      {reviewQueue.length > 0 && (
+        <div className="rounded-xl p-5 space-y-3" style={{ background: "var(--surface-2)", border: "1px solid rgba(245,158,11,0.2)" }}>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-mono uppercase tracking-widest font-bold" style={{ color: "#f59e0b" }}>Review queue ({reviewQueue.length})</p>
+            <button onClick={() => onNavigate("preplab")}
+              className="text-[10px] font-mono font-bold transition-all hover:opacity-80" style={{ color: "#f59e0b" }}>
+              Start Review →
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {reviewQueue.map(item => (
+              <span key={item.qId} className="text-[10px] font-mono px-2.5 py-1 rounded-md"
+                style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#fbbf24" }}>
+                {item.qId} · {item.topicLabel}
+              </span>
+            ))}
+          </div>
+          <p className="text-[10px] text-zinc-600">These questions were answered incorrectly and are due for review based on spaced repetition intervals.</p>
+        </div>
+      )}
+
+      {/* ── Guided Paths ─────────────────────────────────────────────────────── */}
+      <div>
+        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold mb-3">Guided paths</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {PATHS.map(path => (
+            <div key={path.id} className="rounded-xl p-4 space-y-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+              <div>
+                <p className="text-[10px] font-mono uppercase tracking-widest font-bold mb-1" style={{ color: path.color }}>{path.label}</p>
+                <p className="text-[11px] text-zinc-500 leading-relaxed">{path.desc}</p>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-mono text-zinc-500">{path.done}/{path.total} steps</span>
+                  <span className="text-[10px] font-mono font-bold" style={{ color: path.color }}>{path.pct}%</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-zinc-800">
+                  <div className="h-1.5 rounded-full transition-all" style={{ width: `${path.pct}%`, background: path.color }} />
+                </div>
+              </div>
+              {path.nextStep ? (
+                <button onClick={() => onNavigate(path.nextStep.tab)}
+                  className="w-full text-left text-xs font-bold py-2 px-3 rounded-lg transition-all hover:opacity-80"
+                  style={{ background: path.color + "15", border: `1px solid ${path.color}30`, color: path.color }}>
+                  Continue: {path.nextStep.label} →
+                </button>
+              ) : (
+                <div className="text-xs font-bold py-2 px-3 rounded-lg text-center"
+                  style={{ background: path.color + "15", border: `1px solid ${path.color}30`, color: path.color }}>
+                  Path complete ✓
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Divider ────────────────────────────────────────────────────────────── */}
+      <div className="border-t border-zinc-800/60 pt-2">
+        <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Detailed breakdown</p>
       </div>
 
       {/* ── BUILD ── */}

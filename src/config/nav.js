@@ -15,6 +15,7 @@ export const ALL_TABS = [
   { id: "foundations", label: "Foundations", group: "CHALLENGES", audience: "Training · fine-tuning · prompting" },
   { id: "preplab",     label: "PrepLab",     group: "PRIMARY",    audience: "Test your judgment" },
   { id: "groundtruth", label: "Ground Truth",group: "PRIMARY",    audience: "Practitioner knowledge" },
+  { id: "progress",    label: "Progress",    group: "PRIMARY",    audience: "Your readiness + study plan" },
   // Legacy — hash-accessible, not in primary nav
   { id: "lab",         label: "RAG Lab",        group: "LEGACY", audience: "Engineers" },
   { id: "agentlab",    label: "Agent Lab",      group: "LEGACY", audience: "Engineers" },
@@ -56,5 +57,6 @@ export const NAV_GROUPS = [
   { label: null, items: [
     { id: "preplab",     label: "PrepLab" },
     { id: "groundtruth", label: "Ground Truth" },
+    { id: "progress",    label: "Progress" },
   ]},
 ];
