@@ -25,6 +25,10 @@ const LearningPathsApp = lazy(() => import("./LearningPaths"));
 const PromptLabApp          = lazy(() => import("./PromptLab"));
 const FoundationModelsLabApp = lazy(() => import("./FoundationModelsLab"));
 const RetrievalHub           = lazy(() => import("./Retrieval"));
+const EvaluationHub          = lazy(() => import("./EvaluationHub"));
+const AgentsHub              = lazy(() => import("./AgentsHub"));
+const ProductionHub          = lazy(() => import("./ProductionHub"));
+const FoundationsHub         = lazy(() => import("./FoundationsHub"));
 
 import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
 import { RAG_CORPUS } from "./ragCorpus";
@@ -1921,10 +1925,10 @@ export default function App() {
 
           {/* ── Challenge area stubs (R1) — replaced by hub pages in R3–R7 ── */}
           {topView === "retrieval" && <RetrievalHub onNavigate={navigate} onNavigateTo={navigateTo} />}
-          {topView === "evaluation" && <ChallengeStub id="evaluation" label="Evaluation" tagline="How do you know if it's actually working?" body="79% of AI practitioners say evaluation is their #1 challenge — but 31% don't evaluate at all. Learn to build eval sets, run LLM-as-judge, and catch regressions before they reach users." labId="evallab" labLabel="Open Eval Lab" onNavigate={navigate} />}
-          {topView === "agentshub" && <ChallengeStub id="agentshub" label="Agents" tagline="Why can't it complete complex tasks reliably?" body="Tool loops, context overflow, delegation failures, and state amnesia — agents fail in predictable ways. Configure each failure mode and understand what's actually going wrong." labId="agentlab" labLabel="Open Agent Lab" onNavigate={navigate} />}
-          {topView === "production" && <ChallengeStub id="production" label="Production" tagline="How do you scale it without it breaking?" body="Inference latency, cost overruns, serving failures, and LLMOps gaps — the problems that kill demos in production. Build the judgment to architect reliable, cost-efficient AI systems." labId="llmlab" labLabel="Open LLM Lab" onNavigate={navigate} />}
-          {topView === "foundations" && <ChallengeStub id="foundations" label="Foundations" tagline="Why does it behave this way?" body="Attention, tokenization, training dynamics, fine-tuning — understanding what's actually happening inside the model is what separates engineers who debug from engineers who guess." labId="foundationlab" labLabel="Open Foundation Models Lab" onNavigate={navigate} />}
+          {topView === "evaluation" && <EvaluationHub onNavigate={navigate} onNavigateTo={navigateTo} />}
+          {topView === "agentshub"  && <AgentsHub     onNavigate={navigate} onNavigateTo={navigateTo} />}
+          {topView === "production" && <ProductionHub  onNavigate={navigate} onNavigateTo={navigateTo} />}
+          {topView === "foundations"&& <FoundationsHub onNavigate={navigate} onNavigateTo={navigateTo} />}
         </Suspense>
       </TabErrorBoundary>
       </main>
