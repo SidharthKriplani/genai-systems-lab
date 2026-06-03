@@ -117,18 +117,24 @@ function SignInWall() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function ProfilePage({ onNavigate, user, onSignOut }) {
-  const [syncing,  setSyncing]  = useState(false);
-  const [syncMsg,  setSyncMsg]  = useState(null);
-  const [exported, setExported] = useState(false);
-  const [showAll,  setShowAll]  = useState(false);
-  const [theme,    setTheme]    = useState(() => localStorage.getItem("gal-theme") || "dark");
+  const [syncing,    setSyncing]    = useState(false);
+  const [syncMsg,    setSyncMsg]    = useState(null);
+  const [exported,   setExported]   = useState(false);
+  const [showAll,    setShowAll]    = useState(false);
+  const [theme,      setTheme]      = useState(() => localStorage.getItem("gal-theme") || "dark");
+  // bookmarks as state so removeBookmark triggers re-render reliably
+  const [bookmarkIds, setBookmarkIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("gsl-bookmarks") || "[]")); }
+    catch { return new Set(); }
+  });
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const history     = (() => { try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); } catch { return {}; } })();
   const leaderboard = (() => { try { return JSON.parse(localStorage.getItem("genai_leaderboard") || "[]"); } catch { return []; } })();
   const mastery     = (() => { try { return new Set(JSON.parse(localStorage.getItem("gsl-concepts-mastery") || "[]")); } catch { return new Set(); } })();
-  const bookmarkSet = (() => { try { return new Set(JSON.parse(localStorage.getItem("gsl-bookmarks") || "[]")); } catch { return new Set(); } })();
-  const streak      = (() => { try { return parseInt(localStorage.getItem("gsl-streak") || "0", 10); } catch { return 0; } })();
+  const streak         = (() => { try { return parseInt(localStorage.getItem("gsl-streak") || "0", 10); } catch { return 0; } })();
+  // Use state-driven bookmarkIds so removeBookmark triggers re-render
+  const bookmarkSet    = bookmarkIds;
 
   const histKeys       = Object.keys(history);
   const totalAnswered  = histKeys.length;
@@ -161,11 +167,13 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
   const savedPosts = POSTS ? POSTS.filter(p => bookmarkSet.has(p.id)) : [];
 
   function removeBookmark(id) {
-    const next = new Set(bookmarkSet);
-    next.delete(id);
-    localStorage.setItem("gsl-bookmarks", JSON.stringify([...next]));
+    setBookmarkIds(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      localStorage.setItem("gsl-bookmarks", JSON.stringify([...next]));
+      return next;
+    });
     track("bookmark_removed", { postId: id });
-    setSyncMsg(null); // trigger re-render
   }
 
   // ── Achievements ──────────────────────────────────────────────────────────
@@ -283,7 +291,7 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
       </div>
 
       {/* ── Quick link to Progress ────────────────────────────────────── */}
-      <button onClick={() => onNavigate("progress")}
+      <button onClick={() => onNavigate({ tab: "progress" })}
         className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-all hover:opacity-80"
         style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
         <div>

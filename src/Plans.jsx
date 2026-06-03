@@ -32,7 +32,7 @@ function Check({ color }) {
 }
 
 export default function PlansPage({ onNavigate }) {
-  const [code,      setCode]      = useState("");
+  const [code,      setCode]      = useState("DAI2026"); // pre-filled — community code is public
   const [status,    setStatus]    = useState(null); // null | "success" | "error"
   const [unlocked,  setUnlocked]  = useState(() => isAccessGranted());
   const [submitting, setSubmitting] = useState(false);
@@ -115,8 +115,12 @@ export default function PlansPage({ onNavigate }) {
 
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: "var(--gal-build)" }}>FULL ACCESS</p>
-            <p className="text-4xl font-black text-white">Free</p>
-            <p className="text-xs text-zinc-400 mt-1">Community access · Enter code below</p>
+            <p className="text-2xl font-black font-mono" style={{ color: "var(--gal-build)" }}>
+              {unlocked ? "ACTIVE" : "DAI2026"}
+            </p>
+            <p className="text-xs text-zinc-400 mt-1">
+              {unlocked ? "All features unlocked" : "Enter this code below to unlock everything"}
+            </p>
           </div>
           <div className="space-y-2.5">
             {FULL_FEATURES.map((f, i) => (
