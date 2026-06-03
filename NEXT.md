@@ -19,7 +19,7 @@ Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken 
 - `src/App.jsx`: add routing for `#retrieval`, `#evaluation`, `#agents-hub`, `#production`, `#foundations` — all old routes stay functional
 - Brace check + commit: `feat: R1 — challenge-layer nav, 8 items`
 
-**R2 — Home page rewrite** `M` ← NEXT
+**~~R2 — Home page rewrite~~** `M` DONE `66fa6b0`
 - `src/Home.jsx`: full rewrite
 - Cold visitor: promise hero ("The only place that trains production AI judgment") + market signal (agentic AI +280%, $190K avg) + 5 challenge area cards + single PrepLab question as primary CTA
 - Returning visitor: compact progress snapshot + continue CTA + daily question + challenge area progress bars
@@ -27,7 +27,7 @@ Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken 
 
 **Execution model:** R1 and R2 alone (one each). R3 alone as template. R4–R7 together in one session (same pattern, fill-in-the-blank). R8, R9, R10 alone. = 7 sessions total.
 
-**R3 — Retrieval hub page** `M` ← template session, must pass before R4–R7
+**R3 — Retrieval hub page** `M` ← template session, must pass before R4–R7 ← NEXT
 - New `src/Retrieval.jsx`
 - Structure: challenge intro ("Why does my AI retrieve garbage?") → RAG Lab entry card → 3 concept cards → 3-4 GT posts → 3 inline PrepLab questions (topic: rag) → progress snapshot
 - Wire in App.jsx routing (`#retrieval`)
