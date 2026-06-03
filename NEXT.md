@@ -14,12 +14,12 @@ Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken 
 
 ## Do this (in order) — Sprint 49 Redesign Batches
 
-**R1 — Nav collapse** `S` ← START HERE
+**~~R1 — Nav collapse~~** `S` DONE `3b0b870`
 - `src/config/nav.js`: collapse to 8-item challenge-layer nav (Home, Retrieval, Evaluation, Agents, Production, Foundations, PrepLab, Ground Truth)
 - `src/App.jsx`: add routing for `#retrieval`, `#evaluation`, `#agents-hub`, `#production`, `#foundations` — all old routes stay functional
 - Brace check + commit: `feat: R1 — challenge-layer nav, 8 items`
 
-**R2 — Home page rewrite** `M`
+**R2 — Home page rewrite** `M` ← NEXT
 - `src/Home.jsx`: full rewrite
 - Cold visitor: promise hero ("The only place that trains production AI judgment") + market signal (agentic AI +280%, $190K avg) + 5 challenge area cards + single PrepLab question as primary CTA
 - Returning visitor: compact progress snapshot + continue CTA + daily question + challenge area progress bars
