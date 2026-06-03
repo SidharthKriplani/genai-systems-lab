@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: June 2026 (sprint 50 — readiness layer, guided paths, staffLayer 30→41 shipped)*
+*Last updated: June 2026 (sprint 54 — PAL-parity auth/Profile/cold home/nav overhaul shipped)*
 
 ---
 
@@ -206,7 +206,7 @@ Cut entirely:
 
 **Priority:** High — Home is the first thing every visitor sees and currently creates confusion rather than momentum
 
-**Status:** Pending — build after MD checkpoint
+**Status:** ✅ Done — sprint 49 (R1-R9 challenge-layer redesign removed all non-converting sections) + sprint 54 (cold home rewrite: animated hero, sign-in as primary CTA, PrepLab as "try a free question", ghost data snippets). Commits `66fa6b0`, `fefde75`.
 
 ---
 
