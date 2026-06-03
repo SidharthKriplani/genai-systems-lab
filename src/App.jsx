@@ -24,6 +24,7 @@ const PrepLabApp      = lazy(() => import("./PrepLab"));
 const LearningPathsApp = lazy(() => import("./LearningPaths"));
 const PromptLabApp          = lazy(() => import("./PromptLab"));
 const FoundationModelsLabApp = lazy(() => import("./FoundationModelsLab"));
+const RetrievalHub           = lazy(() => import("./Retrieval"));
 
 import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
 import { RAG_CORPUS } from "./ragCorpus";
@@ -1919,7 +1920,7 @@ export default function App() {
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} />}
 
           {/* ── Challenge area stubs (R1) — replaced by hub pages in R3–R7 ── */}
-          {topView === "retrieval" && <ChallengeStub id="retrieval" label="Retrieval" tagline="Why does your AI retrieve the wrong thing?" body="RAG failures, context overflow, hallucination, multi-hop retrieval — this is where production systems break first. Configure real failure scenarios and diagnose exactly why." labId="lab" labLabel="Open RAG Lab" onNavigate={navigate} />}
+          {topView === "retrieval" && <RetrievalHub onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "evaluation" && <ChallengeStub id="evaluation" label="Evaluation" tagline="How do you know if it's actually working?" body="79% of AI practitioners say evaluation is their #1 challenge — but 31% don't evaluate at all. Learn to build eval sets, run LLM-as-judge, and catch regressions before they reach users." labId="evallab" labLabel="Open Eval Lab" onNavigate={navigate} />}
           {topView === "agentshub" && <ChallengeStub id="agentshub" label="Agents" tagline="Why can't it complete complex tasks reliably?" body="Tool loops, context overflow, delegation failures, and state amnesia — agents fail in predictable ways. Configure each failure mode and understand what's actually going wrong." labId="agentlab" labLabel="Open Agent Lab" onNavigate={navigate} />}
           {topView === "production" && <ChallengeStub id="production" label="Production" tagline="How do you scale it without it breaking?" body="Inference latency, cost overruns, serving failures, and LLMOps gaps — the problems that kill demos in production. Build the judgment to architect reliable, cost-efficient AI systems." labId="llmlab" labLabel="Open LLM Lab" onNavigate={navigate} />}
