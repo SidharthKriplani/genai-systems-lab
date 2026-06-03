@@ -298,6 +298,8 @@ For full audit findings see AUDITS.md.
 - R2 done `66fa6b0` — Home rewrite: promise headline, challenge area cards (2+3 grid), judgment CTA, returning view updated.
 - R3 done `35fd2c7` — Retrieval hub page (template): lab hero + 4 concepts + 4 GT posts + 3 PrepLab Qs + progress snapshot.
 - R4–R7 done `e7a68bc` — EvaluationHub, AgentsHub, ProductionHub, FoundationsHub. All ChallengeStubs replaced. 71 modules in build.
+- R8 done `4f0becc` — PrepLab judgment reframe, TOPIC_GROUPS aligned to challenge area names.
+- R9 done `40ba9c6` — GT challenge area tagging, all 226 posts. Distribution: retrieval:19 agents:28 eval:8 prod:44 foundations:81 general:46.
 
 **Sprint 48 (June 2026) — Mock Exam Mode + Staff Layer + quick wins:**
 - Mock Exam Mode (forward-only, red timer, MOCK badge, pulses < 5 min). Staff Layer (3rd tier, access-gated). Commit `f7af1f1`.

@@ -59,14 +59,14 @@ Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken 
 - Sidebar cluster labels aligned to challenge area names (Retrieval / Evaluation / Agents / Production / Foundations)
 - Commit: `feat: R8 — PrepLab judgment reframe, challenge-aligned clusters`
 
-**R9 — GT challenge area tagging** `M` ← NEXT
+**~~R9 — GT challenge area tagging~~** `M` DONE `40ba9c6` — retrieval:19 agents:28 eval:8 prod:44 foundations:81 general:46
 - `src/groundTruthIndex.js`: add `challengeArea` field to all 226 posts
 - Values: `"retrieval"` | `"evaluation"` | `"agents"` | `"production"` | `"foundations"` | `"general"`
 - GT cards render challenge area chip
 - Hub pages pull posts by `challengeArea` from index
 - Commit: `feat: R9 — GT challenge area tagging, all 226 posts`
 
-**R10 — Visual polish + full MD sync** `S`
+**R10 — Full MD sync + sprint close** `S` ← NEXT
 - Challenge area accent colors (Retrieval: cyan, Evaluation: amber, Agents: violet, Production: green, Foundations: blue)
 - Mobile layout pass on all 5 hub pages
 - Consistent module header pattern across all labs
