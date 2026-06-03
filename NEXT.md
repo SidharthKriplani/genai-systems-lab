@@ -2,11 +2,11 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 52 complete — auth + module UX shipped. Sprint 53 next: staffLayer remaining 61, B10 Foundations hub module list, B16 export/import JSON)*
+*Last updated: June 2026 (sprint 54 complete — PAL-parity auth, Profile, cold home, nav overhaul. Sprint 55 next: staffLayer remaining 61, PostHog baseline, GT series taxonomy, React.lazy() code splitting)*
 
 ---
 
-## Theme: Sprint 53. staffLayer remaining 61 questions + B10 Foundations hub module list + B16 export/import JSON + B18 React.lazy() code splitting.
+## Theme: Sprint 55. staffLayer to 60+ questions (pure content) + PostHog WAU baseline check + GT series taxonomy (tag all 226 posts) + React.lazy() code splitting.
 
 Sprint 49: full challenge-layer redesign (R1–R9). Sprint 50: readiness layer, guided paths, staffLayer 30→41. See CLAUDE.md sprint log.
 
