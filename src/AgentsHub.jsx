@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { track } from "./analytics";
+import { getAreaReadiness } from "./readiness";
 
 const CONCEPTS = [
   { id: "agent",       label: "Agent Loop",    fidelity: "~ Simplified", fidelityColor: "#a78bfa", desc: "The ReAct loop step by step — Thought → Action → Observation — and where each stage breaks.", gymId: "ai-agents" },
@@ -39,7 +40,8 @@ function SectionLabel({ children }) {
 }
 
 export default function AgentsHub({ onNavigate, onNavigateTo }) {
-  const [progress] = useState(getProgress);
+  const [progress]  = useState(getProgress);
+  const [readiness] = useState(() => getAreaReadiness("agentshub"));
   const COLOR = "#a78bfa";
 
   function goGT(postId) { track("agents_hub_gt", { postId }); if (onNavigateTo) onNavigateTo({ tab: "groundtruth", postId }); else onNavigate("groundtruth"); }
@@ -50,7 +52,10 @@ export default function AgentsHub({ onNavigate, onNavigateTo }) {
 
       {/* Intro */}
       <div className="space-y-3">
-        <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR }}>Agents</div>
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR }}>Agents</div>
+          {readiness && <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border" style={{ color: readiness.color, borderColor: readiness.color + "40", background: readiness.color + "12" }}>{readiness.level} · {readiness.pct}%</span>}
+        </div>
         <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight">Why can't it complete complex tasks reliably?</h1>
         <p className="text-zinc-400 text-sm leading-relaxed max-w-2xl">
           Agents fail in predictable ways — tool loops, state amnesia, cascade failures, indirect injection. 57% of organisations already have agents in production. The engineers who understand these failure modes aren't the ones who built agents from tutorials. They're the ones who've watched them fail and diagnosed why.

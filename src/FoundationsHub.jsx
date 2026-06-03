@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { track } from "./analytics";
+import { getAreaReadiness } from "./readiness";
 
 const CONCEPTS = [
   { id: "tokenizer",      label: "Tokenizer",       fidelity: "✓ Faithful",  fidelityColor: "#22c55e", desc: "How text becomes tokens — BPE, vocabulary, and why tokenization shapes everything downstream.", gymId: "language-models" },
@@ -37,7 +38,8 @@ function SectionLabel({ children }) {
 }
 
 export default function FoundationsHub({ onNavigate, onNavigateTo }) {
-  const [progress] = useState(getProgress);
+  const [progress]  = useState(getProgress);
+  const [readiness] = useState(() => getAreaReadiness("foundations"));
   const COLOR = "#3b82f6";
 
   function goGT(postId) { track("foundations_hub_gt", { postId }); if (onNavigateTo) onNavigateTo({ tab: "groundtruth", postId }); else onNavigate("groundtruth"); }
@@ -48,7 +50,10 @@ export default function FoundationsHub({ onNavigate, onNavigateTo }) {
 
       {/* Intro */}
       <div className="space-y-3">
-        <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR }}>Foundations</div>
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR }}>Foundations</div>
+          {readiness && <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border" style={{ color: readiness.color, borderColor: readiness.color + "40", background: readiness.color + "12" }}>{readiness.level} · {readiness.pct}%</span>}
+        </div>
         <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight">Why does it behave this way?</h1>
         <p className="text-zinc-400 text-sm leading-relaxed max-w-2xl">
           Attention, tokenization, training dynamics, fine-tuning — understanding what's actually happening inside the model is what separates engineers who debug from engineers who guess. You don't need to build foundation models. You need to understand them well enough to make confident architectural decisions and answer the "why" questions in interviews.

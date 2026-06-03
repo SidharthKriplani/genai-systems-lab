@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { track } from "./analytics";
+import { getAreaReadiness } from "./readiness";
 
 const CONCEPTS = [
   { id: "cost-latency-concepts", label: "Cost & Latency",  fidelity: "~ Simplified", fidelityColor: "#22c55e", desc: "TTFT, TBT, E2E latency — what each measures and the budget tradeoffs at inference time.", gymId: "production" },
@@ -37,7 +38,8 @@ function SectionLabel({ children }) {
 }
 
 export default function ProductionHub({ onNavigate, onNavigateTo }) {
-  const [progress] = useState(getProgress);
+  const [progress]  = useState(getProgress);
+  const [readiness] = useState(() => getAreaReadiness("production"));
   const COLOR = "#22c55e";
 
   function goGT(postId) { track("prod_hub_gt", { postId }); if (onNavigateTo) onNavigateTo({ tab: "groundtruth", postId }); else onNavigate("groundtruth"); }
@@ -48,7 +50,10 @@ export default function ProductionHub({ onNavigate, onNavigateTo }) {
 
       {/* Intro */}
       <div className="space-y-3">
-        <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR }}>Production</div>
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR }}>Production</div>
+          {readiness && <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border" style={{ color: readiness.color, borderColor: readiness.color + "40", background: readiness.color + "12" }}>{readiness.level} · {readiness.pct}%</span>}
+        </div>
         <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight">How do you scale it without it breaking?</h1>
         <p className="text-zinc-400 text-sm leading-relaxed max-w-2xl">
           The gap between a demo and a production system is where most AI engineers get stuck. Inference latency, cost overruns, KV cache eviction, monitoring gaps — these aren't AI problems, they're systems problems. 72% of enterprises adopting AI automation haven't built cost controls into their LLM infrastructure. This is where you learn what they missed.

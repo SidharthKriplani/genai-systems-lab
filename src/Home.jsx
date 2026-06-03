@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { track } from "./analytics";
 import { POSTS } from "./groundTruthIndex";
+import { getAllAreasReadiness } from "./readiness";
 
 // ─── CountUp ──────────────────────────────────────────────────────────────────
 function CountUp({ target, duration = 1200, suffix = "" }) {
@@ -290,7 +291,8 @@ function ChallengeAreaCards({ onNavigate }) {
 // ─── Returning user view ───────────────────────────────────────────────────────
 function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
   const { history, histKeys, mastery, visitedMods } = data;
-  const [streakInfo] = useState(() => getStreakInfo());
+  const [streakInfo]  = useState(() => getStreakInfo());
+  const [areasReady]  = useState(() => getAllAreasReadiness());
   const { streak, grid } = streakInfo;
 
   const now      = new Date();
@@ -441,6 +443,36 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Per-area readiness — shows when user has activity in any area */}
+      {Object.values(areasReady).some(r => r !== null) && (
+        <div>
+          <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-4">Your readiness</p>
+          <div className="space-y-3">
+            {[
+              { id: "retrieval",   label: "Retrieval",   color: "var(--gal-build)" },
+              { id: "evaluation",  label: "Evaluation",  color: "#f59e0b" },
+              { id: "agentshub",   label: "Agents",      color: "#a78bfa" },
+              { id: "production",  label: "Production",  color: "#22c55e" },
+              { id: "foundations", label: "Foundations", color: "#3b82f6" },
+            ].map(area => {
+              const r = areasReady[area.id];
+              return (
+                <button key={area.id} onClick={() => onNavigate(area.id)}
+                  className="w-full flex items-center gap-3 hover:opacity-80 transition-opacity text-left">
+                  <span className="text-xs font-mono text-zinc-400 w-20 shrink-0">{area.label}</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-zinc-800">
+                    <div className="h-1.5 rounded-full transition-all" style={{ width: `${r ? r.pct : 0}%`, background: area.color, opacity: r ? 1 : 0.3 }} />
+                  </div>
+                  <span className="text-[10px] font-mono w-20 shrink-0 text-right" style={{ color: r ? area.color : "#52525b" }}>
+                    {r ? `${r.level}` : "Not started"}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { track } from "./analytics";
+import { getAreaReadiness } from "./readiness";
 
 const CONCEPTS = [
   { id: "llm-as-judge", label: "LLM as Judge", fidelity: "~ Simplified", fidelityColor: "#f59e0b", desc: "How to use an LLM to grade other LLM outputs — biases, calibration, and when not to trust it.", gymId: "evaluation" },
@@ -37,7 +38,8 @@ function SectionLabel({ children }) {
 }
 
 export default function EvaluationHub({ onNavigate, onNavigateTo }) {
-  const [progress] = useState(getProgress);
+  const [progress]  = useState(getProgress);
+  const [readiness] = useState(() => getAreaReadiness("evaluation"));
 
   function goGT(postId) { track("eval_hub_gt", { postId }); if (onNavigateTo) onNavigateTo({ tab: "groundtruth", postId }); else onNavigate("groundtruth"); }
   function goConcepts(gymId) { track("eval_hub_concepts", { gymId }); if (onNavigateTo) onNavigateTo({ tab: "concepts", gymId }); else onNavigate("concepts"); }
@@ -47,7 +49,10 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
 
       {/* Intro */}
       <div className="space-y-3">
-        <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#f59e0b" }}>Evaluation</div>
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#f59e0b" }}>Evaluation</div>
+          {readiness && <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border" style={{ color: readiness.color, borderColor: readiness.color + "40", background: readiness.color + "12" }}>{readiness.level} · {readiness.pct}%</span>}
+        </div>
         <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight">How do you know if it's actually working?</h1>
         <p className="text-zinc-400 text-sm leading-relaxed max-w-2xl">
           79% of AI practitioners say evaluation is their #1 challenge — but 31% don't evaluate at all. The BLEU score story: a senior engineer prepared for months, got asked "your AI gave a confident answer — how do you know it was right?", said BLEU scores, and didn't get the offer. Evaluation is the question that separates $180K engineers from $340K ones.

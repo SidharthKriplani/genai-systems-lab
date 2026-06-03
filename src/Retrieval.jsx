@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { track } from "./analytics";
+import { getAreaReadiness } from "./readiness";
 
 // ─── Static data — Retrieval challenge area ───────────────────────────────────
 
@@ -122,7 +123,8 @@ function SectionLabel({ children }) {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function RetrievalHub({ onNavigate, onNavigateTo }) {
-  const [progress] = useState(() => getRetrievalProgress());
+  const [progress]  = useState(() => getRetrievalProgress());
+  const [readiness] = useState(() => getAreaReadiness("retrieval"));
 
   function goToGT(postId) {
     track("retrieval_hub_gt_click", { postId });
@@ -141,8 +143,13 @@ export default function RetrievalHub({ onNavigate, onNavigateTo }) {
 
       {/* ── 1. Challenge intro ──────────────────────────────────────────────── */}
       <div className="space-y-3">
-        <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--gal-build)" }}>
-          Retrieval
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--gal-build)" }}>Retrieval</div>
+          {readiness && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border" style={{ color: readiness.color, borderColor: readiness.color + "40", background: readiness.color + "12" }}>
+              {readiness.level} · {readiness.pct}%
+            </span>
+          )}
         </div>
         <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight">
           Why does your AI give wrong answers?
