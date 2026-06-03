@@ -2,7 +2,7 @@
 
 All analytics via PostHog (client-side, no backend). Events fire on user action and are visible in PostHog Live Events. Baselines are estimates — update this file when real numbers are available from the PostHog dashboard.
 
-*Last updated: May 2026*
+*Last updated: June 2026 (sprint 54)*
 
 ---
 
@@ -34,6 +34,18 @@ Events are fired via `track(eventName, properties)` in `src/analytics.js`.
 | `preplab_gate_shown` | PrepLab question 11 free-user gate fires during exam | `questionCount`, `mode` |
 | `interview_brief_generated` | Interview Strategy step 4 brief generated | `role`, `round`, `topGapCount` |
 | `company_track_started` | Company Tracks drill session started | `archetype` |
+| `cold_signin_cta` | Cold home sign-in button clicked | `provider` (google / github) |
+| `profile_wall_google` | Profile sign-in wall — Google button clicked | — |
+| `profile_wall_github` | Profile sign-in wall — GitHub button clicked | — |
+| `auth_sign_in` | User successfully signs in (SIGNED_IN event) | `provider` |
+| `profile_area_click` | Readiness area bar clicked in Profile | `area` |
+| `access_code_redeemed` | Access code submitted on Plans page | `valid` (bool) |
+| `progress_synced_manual` | "Sync now" clicked in Profile | — |
+| `theme_toggled` | Theme toggle clicked | `to` (dark / light) |
+| `progress_exported` | Progress JSON export triggered | — |
+| `progress_imported` | Progress JSON import completed | — |
+| `bookmark_removed` | GT bookmark removed from Profile | `postId` |
+| `signed_out` | Sign out clicked | — |
 
 ---
 

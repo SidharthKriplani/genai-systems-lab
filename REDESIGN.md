@@ -301,20 +301,15 @@ After all structure is in place:
 
 ---
 
-## Open decisions (resolve before Phase 3)
+## Open decisions — all resolved (sprint 54)
 
-1. **Challenge area accent colors** — each area should have a distinct color. Candidates:
-   - Retrieval: cyan (existing `--gal-build`)
-   - Evaluation: amber
-   - Agents: violet
-   - Production: green
-   - Foundations: blue
+1. ✅ **Challenge area accent colors** — Retrieval: cyan (`--gal-build`), Evaluation: amber, Agents: violet, Production: green, Foundations: blue. Sprint 49.
 
-2. **Foundations scope** — FM Lab + Prompt Lab are both relevant here. Do they merge into one Foundations challenge area entry, or do they stay separate sub-entries? Probably sub-entries.
+2. ✅ **Foundations scope** — FM Lab + Prompt Lab as separate sub-entries under Foundations in SKILL AREAS nav. Sprint 54.
 
-3. **PrepLab single-question CTA on home** — which question shows? Random from hard-but-free? Or a curated "daily question" seeded from a fixed pool?
+3. ✅ **PrepLab single-question CTA on home** — hardcoded curated hard question, framed as "try a free question first" below primary sign-in CTA. Sprint 54.
 
-4. **Challenge area page for Agents** — current Agents.jsx is the Agent Lab tab. The new challenge area page is a different component. The existing tab route (`#agentlab`) stays. The new route (`#agents`) is the hub page. Make sure routing is clean.
+4. ✅ **Agents routing** — `#agentshub` = AgentsHub.jsx (hub page), `#agentlab` = legacy Agent Lab route preserved. Sprint 49.
 
 ---
 

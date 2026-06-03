@@ -2026,3 +2026,36 @@ All resolved in same commit as this audit log entry.
 - CompanyTracks: `gating.js` `FREE_SESSION_LIMIT` — `src/config/gating.js` exists (`38d5330`) but `nav.js` and `labs.js` not yet created
 
 **Status:** ✅ All sprint 33–35 deliverables verified. All UPGRADES.md stale entries corrected.
+
+---
+
+## Audit 54 — Sprint 54 Runtime Bug Audit (June 2026)
+
+**Scope:** Full codebase audit of all files modified in sprint 54 (fefde75, c106aea, e00742a, 839eae5, 70e5604, 370b990).
+
+**Method:** Automated structural checks (brace diffs on all 44 src files, lazy import resolution, lucide-react detection, React.hook() anti-patterns) + manual logic audit of each changed file.
+
+**Automated checks — all clean:**
+- Brace diff: 0 across all 44 src files
+- All 23 lazy imports resolve to existing files
+- No lucide-react imports
+- No React.useState()/React.useEffect() anti-patterns
+- No gray-*/slate-* palette violations
+
+**Runtime bugs found and fixed:**
+
+| Bug | File | Root cause | Fix | Commit |
+|---|---|---|---|---|
+| `onNavigate("progress")` silently failed | Profile.jsx | `navigateTo` destructures `{tab}` from arg; passing a string gave `tab=undefined`, `navigate(undefined)` called, nothing happened | Changed to `onNavigate({ tab: "progress" })` | `370b990` |
+| `removeBookmark` re-render didn't fire | Profile.jsx | `setSyncMsg(null)` used as re-render hack; React bails out when new state = old state (syncMsg already null) | Converted `bookmarkIds` to proper `useState`, `removeBookmark` calls `setBookmarkIds(prev => ...)` | `370b990` |
+| Plans FULL ACCESS "Free" label | Plans.jsx | Both tiers appeared free ($0 vs "Free") — indistinguishable | Replaced "Free" with `DAI2026` code displayed prominently; pre-filled in input; shows "ACTIVE" when unlocked | `370b990` |
+| All SKILL AREAS expanded simultaneously | App.jsx | `isExpanded` included `subActive \|\| active`; all areas share `id: "groundtruth"` sub-items (Posts), so topView=groundtruth set `subActive=true` on all | Removed `subActive \|\| active` from `isExpanded`; now only `forceOpen \|\| expandedItems.has(id)` | `70e5604` |
+| GT series nav didn't open series | App.jsx | Series sub-items all had `id: "groundtruth"` with no way to open specific post | Added `postId` field to each series sub-item; click handler sets `gtPostId` and navigates | `70e5604` |
+| Sidebar items couldn't be collapsed | App.jsx | `active` in `isExpanded` forced item open regardless of toggle state | Same fix as above — removed `active` from `isExpanded`; auto-adds to expandedItems on navigate instead | `70e5604` |
+
+**Still open (pre-existing, not caused this sprint):**
+- GT Series taxonomy — SERIES_META UI exists, zero posts have `series` field in groundTruthIndex.js
+- Home.jsx social proof — placeholder testimonials
+- Profile.jsx `bookmarksCount` stat uses `bookmarkIds.size` correctly now but `accuracy` stat shows `—` for new users (correct behavior, not a bug)
+
+**Status:** ✅ All sprint 54 runtime bugs fixed. Structural checks clean.

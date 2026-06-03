@@ -53,6 +53,36 @@ Client-side, localStorage. `accessGranted: true` stored on valid code entry. Com
 
 ---
 
+### Supabase auth — mandatory event handling pattern (established sprint 54)
+
+The `onAuthStateChange` handler in `App.jsx` **must** handle all four events. Do not simplify.
+
+```js
+onAuthChange((event, u) => {
+  if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
+    setUser(u);
+    if (event === "SIGNED_IN" || event === "INITIAL_SESSION") setTopView(v => v === "home" ? "progress" : v);
+  } else if (event === "SIGNED_OUT") {
+    setUser(null); setTopView("home");
+  }
+});
+```
+
+**Why each event matters:**
+- `SIGNED_IN` — user actively logs in (OAuth redirect or magic link)
+- `INITIAL_SESSION` — fires on PAGE LOAD when session already exists (Supabase v2). Without this, every page refresh appears to log the user out. **This is the most common Supabase v2 gotcha.**
+- `TOKEN_REFRESHED` — silent JWT refresh; must update user object or it goes stale
+- `SIGNED_OUT` — must navigate home and clear user state
+
+Also add a reactive belt-and-suspenders redirect:
+```js
+useEffect(() => { if (user && topView === "home") setTopView("progress"); }, [user, topView]);
+```
+
+`onAuthChange` in `supabase.js` must pass `(event, session)` — not just `session`. If it discards event, all four handlers break silently.
+
+---
+
 ### When Stripe goes live (future sprint)
 
 - Auth layer: Supabase Auth or Firebase Auth (Google OAuth, additive layer, no app rebuild)
