@@ -2,13 +2,13 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 49 kickoff — full structural redesign planned, batches R1–R10 queued)*
+*Last updated: June 2026 (sprint 49 complete — full structural redesign shipped, R1–R9 done)*
 
 ---
 
-## Theme: Sprint 49 — Full structural redesign. Challenge-layer architecture. Execute R1 → R10 in order, one batch per session.
+## Theme: Sprint 49 complete. Next: readiness/progress layer (PAL-style per-area tracking) + staffLayer content expansion + GT evaluation depth.
 
-Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken since sprint 48), user research completed (`USER_RESEARCH.md`), full redesign plan completed (`REDESIGN.md`). See CLAUDE.md sprint log.
+Sprint 49 closed: full challenge-layer redesign — 8-item nav, 5 hub pages, home rewrite, PrepLab judgment reframe, GT tagging (226 posts). See CLAUDE.md sprint log.
 
 ---
 
@@ -66,7 +66,7 @@ Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken 
 - Hub pages pull posts by `challengeArea` from index
 - Commit: `feat: R9 — GT challenge area tagging, all 226 posts`
 
-**R10 — Full MD sync + sprint close** `S` ← NEXT
+**~~R10 — Full MD sync + sprint close~~** `S` DONE — sprint 49 complete
 - Challenge area accent colors (Retrieval: cyan, Evaluation: amber, Agents: violet, Production: green, Foundations: blue)
 - Mobile layout pass on all 5 hub pages
 - Consistent module header pattern across all labs
@@ -144,10 +144,18 @@ Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken 
 - ~~**FidelityBadge dedup**~~ — DONE sprint 46 (`f7ce93a`). Moved to shared.jsx.
 - **GT Series post taxonomy** — tag all 226 posts to SERIES_META series slugs. M effort, content work.
 
-### Still open (deferred)
+### Sprint 50 — Next priority queue
+
+**Highest leverage (build first):**
+1. **Readiness layer** `L` — per-challenge-area progress bars + readiness badges (Novice/Practitioner/Senior) surfaced on hub pages and home returning view. PAL's "Readiness by Room" is the pattern. Reads from existing localStorage keys.
+2. **Guided paths** `M` — 3 curated sequences (Beginner Path, Retrieval Deep Dive, Interview Sprint). Each path sequences hub page → lab scenarios → concepts → PrepLab cluster. No new content needed — paths over existing content.
+3. **staffLayer content expansion** `S` — 30 questions seeded, ~24 hard gated remain. Pure content, no code.
+4. **Evaluation GT depth** — only 8 posts tagged `evaluation`. Eval is the #1 practitioner challenge (79%). Needs 4–6 new posts.
+
+**Still open (deferred):**
 - **React.lazy() code splitting** — systematic, DECISIONS.md scope.
 - **Pyodide execution for Eval Lab** — Tier 2.
-- **Visual polish backlog** — ModuleHeader component.
+- **GT Series post taxonomy** — tag all 226 posts to SERIES_META slugs.
 
 ---
 

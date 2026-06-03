@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: June 2026 (sprint 48 — Mock Exam Mode + Staff Layer shipped; no new pending upgrades added this sprint)*
+*Last updated: June 2026 (sprint 49 — full structural redesign shipped; hub pages, home rewrite, GT tagging complete)*
 
 ---
 
