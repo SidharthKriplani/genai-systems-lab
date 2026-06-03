@@ -2,11 +2,11 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 51 in progress — PAL deep-read logged, building eval GT depth + staffLayer + Study Plan)*
+*Last updated: June 2026 (sprint 51 — eval GT 8→13, staffLayer 41→60 done. Next: Study Plan on home + guided path polish)*
 
 ---
 
-## Theme: Sprint 51. Evaluation GT depth (8 posts → 12+) + staffLayer to 60+ + Study Plan on home (personalized suggestions, PAL pattern).
+## Theme: Sprint 52. Study Plan section on returning home (personalized suggestions, PAL pattern) + guided path polish.
 
 Sprint 49: full challenge-layer redesign (R1–R9). Sprint 50: readiness layer, guided paths, staffLayer 30→41. See CLAUDE.md sprint log.
 
