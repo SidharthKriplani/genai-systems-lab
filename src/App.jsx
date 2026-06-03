@@ -1538,6 +1538,10 @@ export default function App() {
     next.has(label) ? next.delete(label) : next.add(label);
     return next;
   });
+  const [expandedItems, setExpandedItems] = useState(new Set());
+  const toggleItem = (id) => setExpandedItems(prev => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
+  });
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
@@ -1843,18 +1847,24 @@ export default function App() {
 
   // R1 — challenge-layer nav (Sprint 49). Mirrors nav.js NAV_GROUPS export.
   const NAV_GROUPS = [
-    { label: null, items: [
-      { id: "home", label: "Home" },
+    // TRACK — identity layer (PAL pattern: top of nav, above everything)
+    { label: "TRACK", color: "#8b5cf6", items: [
+      { id: "profile",  label: "Profile"  },
+      { id: "plans",    label: "Plans"    },
+      { id: "progress", label: "Progress" },
     ]},
+    // CHALLENGES — each expands to show its lab
     { label: "CHALLENGES", color: "var(--gal-build)", items: [
-      { id: "retrieval",   label: "Retrieval" },
-      { id: "evaluation",  label: "Evaluation" },
-      { id: "agentshub",   label: "Agents" },
-      { id: "production",  label: "Production" },
-      { id: "foundations", label: "Foundations" },
+      { id: "retrieval",   label: "Retrieval",   subitems: [{ id: "lab",          label: "RAG Lab"          }] },
+      { id: "evaluation",  label: "Evaluation",  subitems: [{ id: "evallab",      label: "Eval Lab"         }] },
+      { id: "agentshub",   label: "Agents",      subitems: [{ id: "agentlab",     label: "Agent Lab"        }] },
+      { id: "production",  label: "Production",  subitems: [{ id: "llmlab",       label: "LLM Lab"          }] },
+      { id: "foundations", label: "Foundations", subitems: [{ id: "foundationlab",label: "FM Lab" }, { id: "promptlab", label: "Prompt Lab" }] },
     ]},
-    { label: null, items: [
-      { id: "preplab",     label: "PrepLab" },
+    { label: "PRACTICE", color: "#6366f1", items: [
+      { id: "preplab",     label: "PrepLab"      },
+    ]},
+    { label: "LEARN", color: "#a78bfa", items: [
       { id: "groundtruth", label: "Ground Truth" },
     ]},
   ];
@@ -2071,7 +2081,7 @@ export default function App() {
                   </button>
                 )}
                 <div style={{
-                  maxHeight: (group.label && isCollapsed) ? '0px' : `${group.items.length * 38}px`,
+                  maxHeight: (group.label && isCollapsed) ? '0px' : '600px',
                   overflow: 'hidden',
                   opacity: (group.label && isCollapsed) ? 0 : 1,
                   transition: 'max-height 220ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease',
@@ -2079,29 +2089,55 @@ export default function App() {
                   {group.items.map(item => {
                     const active = topView === item.id;
                     const grpColor = group.color || "#6366f1";
+                    const hasSubitems = item.subitems && item.subitems.length > 0;
+                    const subActive  = hasSubitems && item.subitems.some(s => s.id === topView);
+                    const isExpanded = expandedItems.has(item.id) || subActive;
+                    const activeColor = group.color || "var(--gal-build)";
                     return (
-                      <button
-                        key={item.id}
-                        onClick={() => navigate(item.id)}
-                        aria-current={active ? "page" : undefined}
-                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
-                        style={active ? {
-                          background: "linear-gradient(90deg, rgba(34,211,238,0.10) 0%, rgba(34,211,238,0.02) 100%)",
-                          boxShadow: "inset 2px 0 0 var(--gal-build)",
-                          color: "#ffffff",
-                        } : {}}>
-                        <span className={active ? "text-white font-bold" : ""}>
-                          {item.label}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          {item.count && !active && (
-                            <span className="text-[9px] font-mono text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded tabular-nums leading-none">{item.count}</span>
-                          )}
-                          {visited.has(item.id) && !active && (
-                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--gal-build)", opacity: 0.45 }} />
-                          )}
-                        </span>
-                      </button>
+                      <div key={item.id}>
+                        <button
+                          onClick={() => { navigate(item.id); if (hasSubitems && !isExpanded) toggleItem(item.id); }}
+                          aria-current={active ? "page" : undefined}
+                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active && !subActive ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
+                          style={(active || subActive) ? {
+                            background: `linear-gradient(90deg, ${activeColor}12 0%, ${activeColor}03 100%)`,
+                            boxShadow: `inset 2px 0 0 ${activeColor}`,
+                            color: "#ffffff",
+                          } : {}}>
+                          <span className={(active || subActive) ? "text-white font-bold" : ""}>{item.label}</span>
+                          <span className="flex items-center gap-1.5">
+                            {visited.has(item.id) && !active && !subActive && (
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: activeColor, opacity: 0.4 }} />
+                            )}
+                            {hasSubitems && (
+                              <button onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
+                                className="p-0.5 rounded hover:bg-zinc-700/60 transition-colors">
+                                <svg width="8" height="8" viewBox="0 0 8 8" fill="none"
+                                  style={{ color: active || subActive ? activeColor : "#71717a", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 150ms" }}>
+                                  <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              </button>
+                            )}
+                          </span>
+                        </button>
+                        {/* Sub-items */}
+                        {hasSubitems && (
+                          <div style={{ maxHeight: isExpanded ? `${item.subitems.length * 34}px` : '0px', overflow: 'hidden', transition: 'max-height 180ms cubic-bezier(0.4,0,0.2,1)' }}>
+                            <div className="ml-3 pl-2.5 mb-1 space-y-0.5" style={{ borderLeft: `1px solid ${activeColor}25` }}>
+                              {item.subitems.map(sub => {
+                                const subIsActive = topView === sub.id;
+                                return (
+                                  <button key={sub.id} onClick={() => navigate(sub.id)}
+                                    className={`w-full text-left px-2 py-1 rounded text-[11px] font-medium transition-all duration-150 ${subIsActive ? "text-white font-bold" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"}`}
+                                    style={subIsActive ? { color: activeColor } : {}}>
+                                    {sub.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -2742,21 +2778,31 @@ export default function App() {
             </div>
             <div className="h-px mx-4 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
             {/* Nav sections */}
-            {NAV_GROUPS.map(grp => (
-              <div key={grp.id} className="px-3 mb-3">
-                <div className="text-[9px] font-bold uppercase tracking-widest px-2 py-1.5" style={{ color: grp.color + "99" }}>{grp.label}</div>
-                {[...grp.items, ...(grp.label === "GROW" ? [{ id: "progress", label: "My Progress" }] : [])].map(item => {
+            {NAV_GROUPS.map((grp, gi) => (
+              <div key={gi} className="px-3 mb-3">
+                {grp.label && <div className="text-[9px] font-bold uppercase tracking-widest px-2 py-1.5" style={{ color: (grp.color || "#6366f1") + "99" }}>{grp.label}</div>}
+                {grp.items.map(item => {
                   const active = topView === item.id;
+                  const subActive = item.subitems?.some(s => s.id === topView);
                   return (
-                    <button key={item.id} onClick={() => { navigate(item.id); setMobileDrawerOpen(false); }}
-                      className="w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-all mb-0.5"
-                      style={active
-                        ? { background: grp.color + "20", color: grp.color, boxShadow: "inset 3px 0 0 " + grp.color }
-                        : { color: "#d4d4d8" }}>
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0 transition-all"
-                        style={{ background: active ? grp.color : visited.has(item.id) ? "rgba(52,211,153,0.6)" : "transparent", border: active || visited.has(item.id) ? "none" : "1px solid #3f3f46" }} />
-                      {item.label}
-                    </button>
+                    <div key={item.id}>
+                      <button onClick={() => { navigate(item.id); setMobileDrawerOpen(false); }}
+                        className="w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-all mb-0.5"
+                        style={(active || subActive)
+                          ? { background: (grp.color || "#6366f1") + "20", color: grp.color || "#6366f1", boxShadow: "inset 3px 0 0 " + (grp.color || "#6366f1") }
+                          : { color: "#d4d4d8" }}>
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ background: (active || subActive) ? (grp.color || "#6366f1") : visited.has(item.id) ? "rgba(52,211,153,0.6)" : "transparent", border: (active || subActive || visited.has(item.id)) ? "none" : "1px solid #3f3f46" }} />
+                        {item.label}
+                      </button>
+                      {item.subitems?.map(sub => (
+                        <button key={sub.id} onClick={() => { navigate(sub.id); setMobileDrawerOpen(false); }}
+                          className="w-full text-left pl-8 pr-3 py-1.5 rounded-lg text-xs transition-all mb-0.5"
+                          style={topView === sub.id ? { color: grp.color || "#6366f1", fontWeight: 700 } : { color: "#71717a" }}>
+                          {sub.label}
+                        </button>
+                      ))}
+                    </div>
                   );
                 })}
               </div>
