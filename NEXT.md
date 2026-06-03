@@ -54,12 +54,12 @@ Sprint 48 closed: build fix (`c64f929` — orphan `</div>` in ExamConfig broken 
 - Wired to foundation concepts, foundation GT posts, finetuning+safety PrepLab clusters
 - Commit: `feat: R7 — Foundations hub page`
 
-**R8 — PrepLab reframe** `S`
+**~~R8 — PrepLab reframe~~** `S` DONE `4f0becc`
 - `src/PrepLab.jsx`: copy throughout → "judgment" framing ("Test your production AI judgment" not "Assess yourself")
 - Sidebar cluster labels aligned to challenge area names (Retrieval / Evaluation / Agents / Production / Foundations)
 - Commit: `feat: R8 — PrepLab judgment reframe, challenge-aligned clusters`
 
-**R9 — GT challenge area tagging** `M`
+**R9 — GT challenge area tagging** `M` ← NEXT
 - `src/groundTruthIndex.js`: add `challengeArea` field to all 226 posts
 - Values: `"retrieval"` | `"evaluation"` | `"agents"` | `"production"` | `"foundations"` | `"general"`
 - GT cards render challenge area chip
