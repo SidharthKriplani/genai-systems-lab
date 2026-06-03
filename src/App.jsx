@@ -1538,7 +1538,8 @@ export default function App() {
     next.has(label) ? next.delete(label) : next.add(label);
     return next;
   });
-  const [expandedItems, setExpandedItems] = useState(new Set());
+  // groundtruth always expanded by default — shows series to entice discovery
+  const [expandedItems, setExpandedItems] = useState(new Set(["groundtruth"]));
   const toggleItem = (id) => setExpandedItems(prev => {
     const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
   });
@@ -1847,25 +1848,64 @@ export default function App() {
 
   // R1 — challenge-layer nav (Sprint 49). Mirrors nav.js NAV_GROUPS export.
   const NAV_GROUPS = [
-    // TRACK — identity layer (PAL pattern: top of nav, above everything)
+    // TRACK — identity + progress layer
     { label: "TRACK", color: "#8b5cf6", items: [
       { id: "profile",  label: "Profile"  },
       { id: "plans",    label: "Plans"    },
       { id: "progress", label: "Progress" },
     ]},
-    // CHALLENGES — each expands to show its lab
-    { label: "CHALLENGES", color: "var(--gal-build)", items: [
-      { id: "retrieval",   label: "Retrieval",   subitems: [{ id: "lab",          label: "RAG Lab"          }] },
-      { id: "evaluation",  label: "Evaluation",  subitems: [{ id: "evallab",      label: "Eval Lab"         }] },
-      { id: "agentshub",   label: "Agents",      subitems: [{ id: "agentlab",     label: "Agent Lab"        }] },
-      { id: "production",  label: "Production",  subitems: [{ id: "llmlab",       label: "LLM Lab"          }] },
-      { id: "foundations", label: "Foundations", subitems: [{ id: "foundationlab",label: "FM Lab" }, { id: "promptlab", label: "Prompt Lab" }] },
+    // SKILL AREAS — each expands to show all components (lab + concepts + practice + posts)
+    { label: "SKILL AREAS", color: "var(--gal-build)", items: [
+      { id: "retrieval", label: "Retrieval", subitems: [
+        { id: "lab",         label: "RAG Lab",       note: "6 scenarios" },
+        { id: "concepts",    label: "Concepts",      note: "4 modules"   },
+        { id: "preplab",     label: "Practice Qs",   note: "51q"         },
+        { id: "groundtruth", label: "Posts",         note: "19 posts"    },
+      ]},
+      { id: "evaluation", label: "Evaluation", subitems: [
+        { id: "evallab",     label: "Eval Lab",      note: "15 modules"  },
+        { id: "concepts",    label: "Concepts",      note: "4 modules"   },
+        { id: "preplab",     label: "Practice Qs",   note: "12q"         },
+        { id: "groundtruth", label: "Posts",         note: "13 posts"    },
+      ]},
+      { id: "agentshub", label: "Agents", subitems: [
+        { id: "agentlab",    label: "Agent Lab",     note: "16 modules"  },
+        { id: "concepts",    label: "Concepts",      note: "4 modules"   },
+        { id: "preplab",     label: "Practice Qs",   note: "42q"         },
+        { id: "groundtruth", label: "Posts",         note: "28 posts"    },
+      ]},
+      { id: "production", label: "Production", subitems: [
+        { id: "llmlab",      label: "LLM Lab",       note: "9 modules"   },
+        { id: "concepts",    label: "Concepts",      note: "2 modules"   },
+        { id: "preplab",     label: "Practice Qs",   note: "84q"         },
+        { id: "groundtruth", label: "Posts",         note: "44 posts"    },
+      ]},
+      { id: "foundations", label: "Foundations", subitems: [
+        { id: "foundationlab",label: "FM Lab",       note: "6 scenarios" },
+        { id: "promptlab",   label: "Prompt Lab",    note: "6 scenarios" },
+        { id: "concepts",    label: "Concepts",      note: "7 modules"   },
+        { id: "preplab",     label: "Practice Qs",   note: "35q"         },
+      ]},
     ]},
+    // PRACTICE — PrepLab expands to show its 4 modes
     { label: "PRACTICE", color: "#6366f1", items: [
-      { id: "preplab",     label: "PrepLab"      },
+      { id: "preplab", label: "PrepLab", subitems: [
+        { id: "preplab", label: "Judgment Exam",      note: "EXAM"     },
+        { id: "preplab", label: "Interview Strategy", note: "STRATEGY" },
+        { id: "preplab", label: "Company Tracks",     note: "ARCHETYPE"},
+        { id: "preplab", label: "Interview Signal",   note: "INTEL"    },
+      ]},
     ]},
+    // LEARN — Ground Truth always open, shows reading series to entice discovery
     { label: "LEARN", color: "#a78bfa", items: [
-      { id: "groundtruth", label: "Ground Truth" },
+      { id: "groundtruth", label: "Ground Truth", alwaysExpanded: true, subitems: [
+        { id: "groundtruth", label: "Agent Engineering"     },
+        { id: "groundtruth", label: "RAG Playbook"          },
+        { id: "groundtruth", label: "The Training Stack"    },
+        { id: "groundtruth", label: "Frontier Intelligence" },
+        { id: "groundtruth", label: "How I'd Build X"       },
+        { id: "groundtruth", label: "Data Flywheel"         },
+      ]},
     ]},
   ];
 
@@ -2046,7 +2086,7 @@ export default function App() {
       <aside className="hidden lg:flex flex-col w-48 shrink-0 sticky top-0 h-screen overflow-y-auto z-20"
         style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
         {/* Logo */}
-        <button onClick={() => navigate("home")} className="flex items-center gap-2.5 px-4 py-4 group">
+        <button onClick={() => navigate(user ? "progress" : "home")} className="flex items-center gap-2.5 px-4 py-4 group">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0 transition-all group-hover:scale-105"
             style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)", boxShadow: "0 2px 10px rgba(99,102,241,0.45)" }}>
             G
@@ -2081,22 +2121,23 @@ export default function App() {
                   </button>
                 )}
                 <div style={{
-                  maxHeight: (group.label && isCollapsed) ? '0px' : '600px',
+                  maxHeight: (group.label && isCollapsed) ? '0px' : '1200px',
                   overflow: 'hidden',
                   opacity: (group.label && isCollapsed) ? 0 : 1,
-                  transition: 'max-height 220ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease',
+                  transition: 'max-height 250ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease',
                 }}>
                   {group.items.map(item => {
                     const active = topView === item.id;
                     const grpColor = group.color || "#6366f1";
                     const hasSubitems = item.subitems && item.subitems.length > 0;
                     const subActive  = hasSubitems && item.subitems.some(s => s.id === topView);
-                    const isExpanded = expandedItems.has(item.id) || subActive;
+                    const forceOpen  = item.alwaysExpanded;
+                    const isExpanded = forceOpen || expandedItems.has(item.id) || subActive || active;
                     const activeColor = group.color || "var(--gal-build)";
                     return (
                       <div key={item.id}>
                         <button
-                          onClick={() => { navigate(item.id); if (hasSubitems && !isExpanded) toggleItem(item.id); }}
+                          onClick={() => { navigate(item.id); if (hasSubitems && !forceOpen) toggleItem(item.id); }}
                           aria-current={active ? "page" : undefined}
                           className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active && !subActive ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
                           style={(active || subActive) ? {
@@ -2109,7 +2150,7 @@ export default function App() {
                             {visited.has(item.id) && !active && !subActive && (
                               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: activeColor, opacity: 0.4 }} />
                             )}
-                            {hasSubitems && (
+                            {hasSubitems && !forceOpen && (
                               <button onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
                                 className="p-0.5 rounded hover:bg-zinc-700/60 transition-colors">
                                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none"
@@ -2122,15 +2163,18 @@ export default function App() {
                         </button>
                         {/* Sub-items */}
                         {hasSubitems && (
-                          <div style={{ maxHeight: isExpanded ? `${item.subitems.length * 34}px` : '0px', overflow: 'hidden', transition: 'max-height 180ms cubic-bezier(0.4,0,0.2,1)' }}>
-                            <div className="ml-3 pl-2.5 mb-1 space-y-0.5" style={{ borderLeft: `1px solid ${activeColor}25` }}>
-                              {item.subitems.map(sub => {
-                                const subIsActive = topView === sub.id;
+                          <div style={{ maxHeight: isExpanded ? `${item.subitems.length * 30}px` : '0px', overflow: 'hidden', transition: 'max-height 200ms cubic-bezier(0.4,0,0.2,1)' }}>
+                            <div className="ml-3 pl-2.5 mb-1 space-y-0" style={{ borderLeft: `1px solid ${activeColor}20` }}>
+                              {item.subitems.map((sub, si) => {
+                                const subIsActive = !forceOpen && topView === sub.id && sub.id !== item.id;
                                 return (
-                                  <button key={sub.id} onClick={() => navigate(sub.id)}
-                                    className={`w-full text-left px-2 py-1 rounded text-[11px] font-medium transition-all duration-150 ${subIsActive ? "text-white font-bold" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"}`}
-                                    style={subIsActive ? { color: activeColor } : {}}>
-                                    {sub.label}
+                                  <button key={si} onClick={() => navigate(sub.id)}
+                                    className={`w-full text-left px-2 py-[5px] rounded text-[11px] flex items-center justify-between transition-all duration-150 ${subIsActive ? "font-bold" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"}`}
+                                    style={subIsActive ? { color: activeColor, fontWeight: 700 } : {}}>
+                                    <span>{sub.label}</span>
+                                    {sub.note && (
+                                      <span className="text-[9px] font-mono shrink-0 ml-1.5" style={{ color: subIsActive ? activeColor : "#52525b" }}>{sub.note}</span>
+                                    )}
                                   </button>
                                 );
                               })}
@@ -2765,7 +2809,7 @@ export default function App() {
             style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
             {/* Header */}
             <div className="flex items-center justify-between px-4 pt-5 pb-3">
-              <button onClick={() => { navigate("home"); setMobileDrawerOpen(false); }} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+              <button onClick={() => { navigate(user ? "progress" : "home"); setMobileDrawerOpen(false); }} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
                 <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center text-sm font-black text-white shrink-0">G</div>
                 <div className="text-left">
                   <div className="text-sm font-black text-white tracking-tight leading-none">GenAI Lab</div>
