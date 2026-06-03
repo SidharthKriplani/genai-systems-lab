@@ -1720,6 +1720,14 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
 // ─── MODE 3: INTERVIEW STRATEGY ──────────────────────────────────────────────
 
 function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
+  // ── Previous plan detection ──────────────────────────────────────────────────
+  const savedPlan = (() => {
+    try { return JSON.parse(localStorage.getItem("gsl-interview-plan") || "null"); } catch { return null; }
+  })();
+  const [showResume, setShowResume] = useState(() => {
+    return !!savedPlan && (savedPlan.phase || 1) > 1;
+  });
+
   const [step, setStep] = useState(1);
   const [jdText, setJdText] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -1742,7 +1750,13 @@ function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
       .map(([key, v]) => ({ key, weight: v.weight }));
     setDetectedTopics(sorted);
     setRatings({});
-    try { localStorage.setItem("gsl-preplab-strategy-phase", "2"); } catch {}
+    try {
+      localStorage.setItem("gsl-preplab-strategy-phase", "2");
+      localStorage.setItem("gsl-interview-plan", JSON.stringify({
+        company: companyName, jdSnippet: jdText.slice(0, 120), phase: 2,
+        savedAt: new Date().toISOString(),
+      }));
+    } catch {}
     setStep(2);
   }
 
@@ -1766,7 +1780,13 @@ function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
   function buildBrief() {
     const b = generateBrief();
     setBrief(b);
-    try { localStorage.setItem("gsl-preplab-strategy-phase", "4"); } catch {}
+    try {
+      localStorage.setItem("gsl-preplab-strategy-phase", "4");
+      localStorage.setItem("gsl-interview-plan", JSON.stringify({
+        company: companyName, jdSnippet: jdText.slice(0, 120), phase: 4,
+        savedAt: new Date().toISOString(),
+      }));
+    } catch {}
     setStep(4);
   }
 
@@ -1949,6 +1969,35 @@ function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
         <div className="flex justify-between text-xs text-zinc-500">
           <span>JD + Context</span><span>Role + Round</span><span>Rate Yourself</span>
         </div>
+
+        {/* Previous plan active banner */}
+        {showResume && step === 1 && savedPlan && (
+          <div className="rounded-xl p-4 mb-2" style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)" }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-violet-400">Previous plan active — Phase {savedPlan.phase}/4</span>
+              <button onClick={() => setShowResume(false)} className="text-zinc-600 hover:text-zinc-400 text-xs">✕</button>
+            </div>
+            {savedPlan.company && <p className="text-xs text-zinc-400 mb-1">Company: <span className="text-zinc-200 font-semibold">{savedPlan.company}</span></p>}
+            {savedPlan.jdSnippet && <p className="text-xs text-zinc-600 truncate mb-3">"{savedPlan.jdSnippet}..."</p>}
+            <p className="text-[11px] text-zinc-500 mb-3">
+              Saved {savedPlan.savedAt ? new Date(savedPlan.savedAt).toLocaleDateString() : "recently"}.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => { setShowResume(false); if (savedPlan.company) setCompanyName(savedPlan.company); }}
+                className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
+                style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.35)", color: "#a5b4fc" }}>
+                Resume plan →
+              </button>
+              <button onClick={() => {
+                setShowResume(false);
+                try { localStorage.removeItem("gsl-interview-plan"); localStorage.removeItem("gsl-preplab-strategy-phase"); } catch {}
+              }}
+                className="text-xs text-zinc-500 hover:text-zinc-300 px-3 py-1.5 rounded-lg border border-zinc-800 transition-all">
+                Start fresh
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Step 1: JD + company */}
         {step === 1 && (

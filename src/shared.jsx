@@ -81,13 +81,42 @@ export function ForwardPointerCard({ preplabTopic, gtPostId, gtPostTitle, onNavi
  * Replaces the corner-widget pattern with a deliberate full-width close.
  * Usage: <WhatNextCard preplabTopic="rag" gtPostId="hybrid-search" gtPostTitle="Hybrid Search" onNavigate={fn} />
  */
-export function WhatNextCard({ preplabTopic, gtPostId, gtPostTitle, onNavigate, label }) {
+export function WhatNextCard({ preplabTopic, gtPostId, gtPostTitle, onNavigate, label, bookmarkId }) {
+  const [bookmarked, setBookmarked] = useState(() => {
+    try {
+      const b = new Set(JSON.parse(localStorage.getItem("gsl-bookmarks") || "[]"));
+      return bookmarkId ? b.has(bookmarkId) : false;
+    } catch { return false; }
+  });
+
+  function toggleBookmark() {
+    if (!bookmarkId) return;
+    try {
+      const b = new Set(JSON.parse(localStorage.getItem("gsl-bookmarks") || "[]"));
+      if (bookmarked) { b.delete(bookmarkId); } else { b.add(bookmarkId); }
+      localStorage.setItem("gsl-bookmarks", JSON.stringify([...b]));
+      setBookmarked(!bookmarked);
+      track("bookmark_toggled", { id: bookmarkId, action: bookmarked ? "remove" : "add", source: "whatnext" });
+    } catch {}
+  }
+
   return (
     <div className="mt-6 space-y-3">
       <div className="border-t border-zinc-800/60" />
-      <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest px-1">
-        {label || "You've diagnosed this. Where does it take you?"}
-      </p>
+      <div className="flex items-center justify-between px-1">
+        <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest">
+          {label || "You've diagnosed this. Where does it take you?"}
+        </p>
+        {bookmarkId && (
+          <button onClick={toggleBookmark}
+            className="text-[10px] font-mono flex items-center gap-1 px-2 py-1 rounded-md border transition-all"
+            style={bookmarked
+              ? { background: "rgba(245,158,11,0.1)", borderColor: "rgba(245,158,11,0.3)", color: "#fbbf24" }
+              : { background: "rgba(39,39,42,0.6)", borderColor: "rgba(63,63,70,0.6)", color: "#71717a" }}>
+            {bookmarked ? "★ Saved" : "☆ Save"}
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {preplabTopic && onNavigate && (
           <button
@@ -107,6 +136,16 @@ export function WhatNextCard({ preplabTopic, gtPostId, gtPostTitle, onNavigate, 
             <p className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">Go deeper on the concept</p>
             <p className="text-sm font-semibold text-zinc-200">{gtPostTitle || "Ground Truth"} →</p>
             <p className="text-xs text-zinc-500">Read the production-depth breakdown</p>
+          </button>
+        )}
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate({ tab: "preplab", mode: "jdprep" })}
+            className="rounded-xl p-4 text-left space-y-1 transition-all hover:brightness-110"
+            style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(34,197,94,0.2)" }}>
+            <p className="text-[10px] font-mono text-green-400 uppercase tracking-wider">Interview preparation</p>
+            <p className="text-sm font-semibold text-zinc-200">Build interview plan →</p>
+            <p className="text-xs text-zinc-500">Paste a JD and get a personalised study plan</p>
           </button>
         )}
       </div>
@@ -149,6 +188,46 @@ export function FeedbackBar({ page, contentType = "module" }) {
         className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs text-zinc-400 hover:text-red-400 hover:bg-red-950/30 border border-zinc-800 hover:border-red-800/50 transition-all">
         👎 <span className="hidden sm:inline">No</span>
       </button>
+    </div>
+  );
+}
+
+/**
+ * ModuleNotes
+ * Personal notes field at the bottom of every Concepts gym module.
+ * Autosaves to localStorage key gsl-note-{moduleId} on blur.
+ * Usage: <ModuleNotes moduleId="tokenizer" />
+ */
+export function ModuleNotes({ moduleId }) {
+  const key = `gsl-note-${moduleId}`;
+  const [text, setText] = useState(() => {
+    try { return localStorage.getItem(key) || ""; } catch { return ""; }
+  });
+  const [saved, setSaved] = useState(false);
+
+  function handleBlur() {
+    try { localStorage.setItem(key, text); } catch {}
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  }
+
+  return (
+    <div className="mt-8 pt-6 border-t border-zinc-800/60">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">My notes</p>
+        {saved && <span className="text-[10px] font-mono text-emerald-600">Saved</span>}
+      </div>
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        onBlur={handleBlur}
+        placeholder="Add your own notes, reminders, or follow-up questions..."
+        rows={3}
+        className="w-full text-xs text-zinc-300 placeholder-zinc-600 bg-zinc-900/60 border border-zinc-800 rounded-lg px-3 py-2.5 resize-y focus:outline-none focus:border-zinc-600 transition-colors leading-relaxed"
+      />
+      {text.length > 0 && (
+        <p className="text-[10px] text-zinc-700 mt-1">{text.length} chars · auto-saves when you click away</p>
+      )}
     </div>
   );
 }

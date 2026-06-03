@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { track } from "./analytics";
+import { ModuleNotes } from "./shared";
 
 // ─── TOKENIZER DATA ───────────────────────────────────────────────────────────
 
@@ -8001,6 +8002,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
           </div>
 
           <Component onNavigate={onNavigate} />
+          <ModuleNotes moduleId={active} />
         </div>
       </div>
     </div>
