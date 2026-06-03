@@ -45,6 +45,21 @@ h3 { letter-spacing: -0.02em; }
 .animate-delay-120 { animation-delay: 120ms; }
 .animate-delay-180 { animation-delay: 180ms; }
 .animate-delay-240 { animation-delay: 240ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+
+/* ── Hero entrance — staggered fade-up ───────────────────────────────────── */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-anim-0 { animation: heroFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.hero-anim-1 { animation: heroFadeUp 0.6s  0.10s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.hero-anim-2 { animation: heroFadeUp 0.6s  0.22s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.hero-anim-3 { animation: heroFadeUp 0.6s  0.36s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.hero-anim-4 { animation: heroFadeUp 0.6s  0.50s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.hero-anim-5 { animation: heroFadeUp 0.6s  0.64s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 /* ── Card hover lift ─────────────────────────────────────────────────────── */
 .card-lift {
