@@ -2,11 +2,14 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 54 complete — PAL-parity auth, Profile, cold home, nav overhaul. Sprint 55 next: staffLayer remaining 61, PostHog baseline, GT series taxonomy, React.lazy() code splitting)*
+*Last updated: June 2026 (sprint 54 + bug fixes complete. Sprint 55 next: fix Plans "Free" label confusion, staffLayer remaining 61, PostHog baseline, GT series taxonomy, React.lazy() code splitting)*
 
 ---
 
-## Theme: Sprint 55. staffLayer to 60+ questions (pure content) + PostHog WAU baseline check + GT series taxonomy (tag all 226 posts) + React.lazy() code splitting.
+## Theme: Sprint 55. Fix Plans pricing label (FULL ACCESS "Free" is confusing — rename or show code) + staffLayer to 60+ + PostHog WAU baseline + GT series taxonomy.
+
+### Start here (open bugs)
+- **Plans "Free" label** — FULL ACCESS card says "Free" as price. Both tiers appear free. Fix: show "Community Access" + code `DAI2026` explicitly, or rephrase to make the value prop clear without looking like both tiers are identical.
 
 Sprint 49: full challenge-layer redesign (R1–R9). Sprint 50: readiness layer, guided paths, staffLayer 30→41. See CLAUDE.md sprint log.
 
