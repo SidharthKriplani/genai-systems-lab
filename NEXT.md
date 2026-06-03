@@ -147,7 +147,7 @@ Sprint 49 closed: full challenge-layer redesign — 8-item nav, 5 hub pages, hom
 ### Sprint 50 — Next priority queue
 
 **Highest leverage (build first):**
-1. **Readiness layer** `L` — per-challenge-area progress bars + readiness badges (Novice/Practitioner/Senior) surfaced on hub pages and home returning view. PAL's "Readiness by Room" is the pattern. Reads from existing localStorage keys.
+1. ~~**Readiness layer**~~ DONE `13f7eda` — `src/readiness.js`, badges on all 5 hub pages, bars on returning home view.
 2. **Guided paths** `M` — 3 curated sequences (Beginner Path, Retrieval Deep Dive, Interview Sprint). Each path sequences hub page → lab scenarios → concepts → PrepLab cluster. No new content needed — paths over existing content.
 3. **staffLayer content expansion** `S` — 30 questions seeded, ~24 hard gated remain. Pure content, no code.
 4. **Evaluation GT depth** — only 8 posts tagged `evaluation`. Eval is the #1 practitioner challenge (79%). Needs 4–6 new posts.
