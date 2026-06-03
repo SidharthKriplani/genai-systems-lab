@@ -1061,6 +1061,164 @@ These ideas emerged from a multi-round ideation + devil's advocate session. Each
 
 ---
 
+## PAL deep-read findings — June 2026 sprint 51 (42 screenshots, full product walkthrough)
+
+*Source: 42 PAL screenshots reviewed June 3 2026. These are patterns confirmed working in PAL that GSL has not yet implemented. Ordered by build effort, not priority.*
+
+---
+
+### Study Plan — personalized suggestions with specific reasons
+`Tier 1` `S effort` `Highest retention leverage`
+
+PAL's Progress page has a "Study Plan — Personalized based on your history" section showing 5 specific suggestions. Each one cites the exact reason: "You've completed 7 Stat Foundations modules. Growth Analytics is the next step to apply that knowledge to real business cases." Or: "You scored 'partial' after 1 attempt. One more pass should lock this in."
+
+This is fundamentally different from GSL's current guided paths. Guided paths show a sequence ("Continue: X"). The Study Plan shows *you specifically* what's broken and why to fix it now. The data is already in localStorage: `gsl-preplab-history` has wrong counts per question, `gsl-concepts-mastery` has module completion, `genai_leaderboard` has lab accuracy. The logic is: (1) find the PrepLab cluster where accuracy is lowest and show the specific question they got wrong most; (2) find the lab/hub they started but haven't finished; (3) find the Concepts module in their active area they haven't opened. Three rules, 5 suggestions, no backend.
+
+**GSL implementation:** A "Study Plan" collapsible section on the returning home view. 3–5 rows, each with a reason and an "Open →" CTA. Powered by localStorage reads in `Home.jsx`. No new data needed.
+
+**Dependencies:** None — all data sources exist.
+
+---
+
+### Review Queue — wrong items surfaced by name on home view
+`Tier 1` `S effort` `Closes the spaced repetition loop`
+
+PAL's Progress page has an explicit "Review Queue (3)" section showing the exact cases to re-attempt by name and room tag. GSL has a "Review Due" sidebar mode in PrepLab — but it's invisible from the home view. The user has to know it exists, navigate to PrepLab, find the sidebar mode, and click it. PAL puts the queue right on the dashboard: "p < 0.05. Ship it? · Stats · Retried" — one click to resume.
+
+**GSL implementation:** A "Review Queue (N)" collapsible section on the returning home view, powered by `gsl-preplab-spaced`. Shows up to 5 due questions by title, each with a one-click CTA that starts PrepLab in Review Due mode scoped to that question. Appears only when due questions exist.
+
+**Dependencies:** `gsl-preplab-spaced` already exists (sprint 47).
+
+---
+
+### Module-level notes field
+`Tier 1` `XS effort` `Retention multiplier, zero infrastructure`
+
+Every PAL Foundations module has a "MY NOTES — Add your own notes, reminders, or follow-up questions..." textarea at the bottom of the module. It's not a fancy feature — it's a text input saved to localStorage under a key like `gsl-note-{moduleId}`. But it fundamentally changes the relationship between the user and the content: they're not passively reading, they're annotating. And the next time they return to a module, their own notes are there.
+
+GSL has nothing like this in any module (Concepts, Systems, labs). It would take 15 minutes to add to any one module, and ~2 hours to add across all Concepts modules.
+
+**GSL implementation:** A `<ModuleNotes moduleId={id} />` shared component. Single textarea, `localStorage.getItem/setItem("gsl-note-" + moduleId)`. Autosave on blur. Shows character count. Render at the bottom of every Concepts gym module. Can extend to Systems modules later.
+
+**Dependencies:** None.
+
+---
+
+### Post-completion action panel
+`Tier 1` `S effort` `Converts completions into next steps`
+
+After completing a PAL module or case, there's an explicit "What to do next" panel — not a forward pointer chip but an interactive decision strip: "Next case →", "Build interview plan", "Company Tracks", "♦ Bookmark". It's wide, prominent, and gives 3–4 specific forward actions. This is different from GSL's `WhatNextCard` / `ForwardPointerCard` which are passive chips.
+
+The key difference: PAL's panel has a "Bookmark this" action built in, and it explicitly surfaces "Build interview plan" as a CTA right at the highest-motivation moment (just completed something). GSL's completion screens have PrepLab + GT post links — they don't surface the Interview Strategy mode or bookmarking.
+
+**GSL implementation:** Upgrade `WhatNextCard` in `shared.jsx` to accept a `bookmarkId` and `showInterviewStrategy` prop. At module completion render: "Next module", "Add to PrepLab review", "Build your interview plan", "Bookmark". Wire "Build your interview plan" to navigate to `#preplab` with `jdprep` mode active.
+
+**Dependencies:** `WhatNextCard` in `shared.jsx` already exists.
+
+---
+
+### Challenge Log — cross-module completion feed with per-attempt readiness badge
+`Tier 1` `S effort` `Makes progress visible across the whole product`
+
+PAL's Profile page and Progress page both show a "Challenge Log" — "Your 10 most recent completions across all rooms" — with date, room badge, case ID, and a per-completion readiness badge (Partial / Analyst / Senior / Staff). The readiness badge per attempt (not just per room total) is important: it shows whether you improved from last time on that specific item.
+
+GSL has per-area readiness bars on the returning home view but no cross-module completion feed. A user can't see "I completed agents-12 yesterday at Senior level" anywhere on the home screen — that signal is invisible.
+
+**GSL implementation:** A "Recent completions" section on the returning home view. Read from `gsl-preplab-history` (PrepLab) + `genai_leaderboard` (RAG Lab) + `gsl-concepts-mastery` (Concepts). Show last 8–10 completions with module/question label, area chip, timestamp, and readiness level. Each row is a one-click re-open.
+
+**Dependencies:** None — all data sources exist.
+
+---
+
+### Learning Paths (week-by-week tracks with checkboxes) — distinct from guided paths
+`Tier 1` `M effort` `Structured study for interview candidates`
+
+PAL has two separate constructs that GSL conflates. **Guided paths** (3 on GSL's returning home view) = "Continue: [next step]" sequences with a progress bar. **Learning Paths** = expandable multi-week structured tracks with checkboxes per step and an estimated total commitment. PAL has 4 tracks on the Progress page: "6-Week Analytics Interview Ready (10 steps)", "Metrics Mastery Track (5 steps)", "SQL Track (5 steps)", "PM & Product Sense Track (6 steps)". Each expands to show the full sequence with checkboxes.
+
+The key difference: Learning Paths are explicit time commitments ("3 weeks · 5 steps"), they have a stated goal ("Metrics Mastery"), and they show the full syllabus upfront. Guided paths are just "here's what to do next." Interview candidates want both: the next step (guided path) AND the full plan (learning track).
+
+**GSL implementation:** A "Study Tracks" section (separate from guided paths, collapsible) on the returning home view. 3 tracks to start: "2-Week Interview Sprint", "RAG Production Ready (3 weeks)", "Full Stack AI Engineer (6 weeks)". Each track is a checklist of modules/labs/PrepLab clusters with auto-check from localStorage and a "0% complete" bar. Gate full tracks behind access code (free users see the first 2 steps only).
+
+**Dependencies:** Guided paths already exist — this is additive, not a replacement.
+
+---
+
+### Foundations hub: full module list with difficulty filters and "Ready to practice" CTA
+`Tier 1` `M effort` `Surfaces the Concepts content that's currently buried`
+
+PAL's Foundations pages (RCA Foundations, Stat Foundations, etc.) are proper hub pages with: description paragraph, progress bar + "Continue where you left off" button, every module listed with difficulty badge (Beginner/Intermediate/Advanced) + time estimate + FREE badge, and a "Ready to practice? → [Room] | [Room]" CTA strip at the bottom. Clicking any module opens it directly. This is how you make Foundations feel deep, not thin.
+
+GSL's current hub pages (Retrieval, Evaluation, etc.) show 4 curated concept cards — they do not render the full module list with difficulty labels, and there's no "Continue where you left off" button. A user on the Retrieval hub sees 4 Concepts snippets but can't browse and filter all retrieval-related Concepts modules from there.
+
+**GSL implementation:** Each hub page gets a "Concepts in this area" section that renders the full list of Concepts modules tagged to that challenge area, with difficulty badge, time estimate, and a completion checkmark. The 4 curated cards stay as "Start here" highlights; the full list is in a collapsible "All modules (N)" section below. Wire completion state from `gsl-concepts-mastery`.
+
+**Dependencies:** `challengeArea` field needs to be added to Concepts module metadata (currently only GT posts have it).
+
+---
+
+### Foundations module sidebar — in-series navigation
+`Tier 2` `M effort` `Makes Concepts feel like a curriculum not a collection`
+
+Inside a PAL Foundations module, the right sidebar shows all modules in that series (e.g. all 32 Stat Foundations modules) with checkmarks on completed ones. You can jump to any module in the series from within any module. The current module is highlighted. This makes a 32-module series feel navigable, not overwhelming.
+
+GSL's Concepts gym has no in-gym navigation — you complete a module and return to the gym list. There's no "next module" within the gym, no jump-ahead, no sense of position in the series.
+
+**GSL implementation:** In the `GymRoomView` / module component, add a collapsible right-side or bottom module list showing all modules in the active gym with completion states. Each is a one-click jump. Show position: "Module 5 of 32". This is most valuable for the larger gyms (Stat Foundations has 32 modules; GSL's largest gym has ~8 — so this is lower priority until gyms grow).
+
+**Dependencies:** None — but less impactful at current gym sizes (max ~8 modules per gym).
+
+---
+
+### "Connects to" domain links within modules
+`Tier 2` `S effort` `Makes Concepts feel coherent not isolated`
+
+Every PAL Foundations module ends with a "CONNECTS TO EXPERIMENTS" block: "The test statistic in a t-test is essentially a z-score. (observed effect − expected under null) / standard error." This is not a forward pointer to another module — it's an explicit statement of how *this concept* maps to a real production decision in an adjacent domain. It closes the loop between theory and practice inline.
+
+GSL Concepts modules have Beat 3 (synthesis close) but no explicit cross-domain linking. A user who finishes the Embeddings module doesn't see "In retrieval: embedding distance is the core of every vector similarity search. In evaluation: embedding-based metrics like BERTScore use this to compare generated vs. reference text."
+
+**GSL implementation:** A `connectsTo` field in each Concepts module's `MODULE_META` entry: one sentence showing where this concept surfaces in practice. Rendered as a subdued callout at the end of the module, before the forward pointer. Pure data + 3-line render addition.
+
+**Dependencies:** None — additive to existing module structure.
+
+---
+
+### Export/import progress as JSON
+`Tier 2` `XS effort` `Enables cross-device use without auth`
+
+PAL's Profile page has "Export your progress as JSON for backup or device handoff" and "Import progress" buttons. This is the no-backend answer to cross-device sync: dump all localStorage keys to a JSON file, re-import on another device. For a product with no account system, this is the only way a user's work survives a browser clear or device change.
+
+**GSL implementation:** Two buttons on a future Profile/Settings page (or a collapsible "Settings" section on the home returning view). `exportProgress()`: reads all `gsl-*` and `genai_*` keys from localStorage, serialises to JSON, triggers a browser file download. `importProgress(json)`: parses the JSON, writes keys back to localStorage, refreshes. 30 lines of code total.
+
+**Dependencies:** None.
+
+---
+
+### "Previous plan active" detection in Interview Strategy
+`Tier 2` `XS effort` `Stops users losing their plan progress`
+
+When PAL's Defense Strategy (= GSL's Interview Strategy / jdprep mode) is opened after a plan has been built, it shows "PREVIOUS PLAN ACTIVE — 13% COMPLETE: 1 of 8 cases done · generated 5 days ago" with "Resume plan →" or "Start fresh" CTAs. GSL's jdprep mode always starts from scratch — there's no detection of a previously built plan.
+
+**GSL implementation:** Check localStorage for an existing `gsl-interview-plan` key on jdprep mode mount. If found, show the plan summary and offer Resume / Start fresh. One `useEffect` + a plan persistence write when the Brief is generated.
+
+**Dependencies:** None — additive to existing jdprep mode.
+
+---
+
+### Analytics Failures as a named reference catalog (GSL equivalent: Systems tab upgrade)
+`Tier 2` `M effort` `Makes failure patterns findable by name`
+
+PAL has an "Analytics Failures" page — 25 named failure patterns with severity badges (HIGH/MEDIUM/CRITICAL), category tags (Instrumentation, Measurement, SQL, Experimentation, Metrics), and a 2-sentence description per pattern. It's a flat, scannable catalog. GSL has 57 Systems modules which are much richer — but they're not scannable as a catalog. A user who wants to quickly look up "what's the failure mode for X" can't scan 57 cards efficiently.
+
+**GSL implementation:** Add a "Failure Catalog" view mode to the Systems tab — a condensed card grid showing module name, category chip, severity, and 1-sentence description. The existing module detail view stays; this is a new entry view. Filter by challenge area. This is a view mode change on Systems.jsx, not new content.
+
+**Dependencies:** Systems modules already have all the content. View mode toggle in Systems.jsx.
+
+---
+
+*All items above are confirmed working in PAL. None require a backend. Build order should be driven by PostHog signal (which challenge areas have the most engagement) + sprint theme, not by this list order.*
+
+---
+
 ## How to Use This File
 
 When starting a new build session:
