@@ -1854,47 +1854,28 @@ export default function App() {
       { id: "plans",    label: "Plans"    },
       { id: "progress", label: "Progress" },
     ]},
-    // SKILL AREAS — each expands to show all components (lab + concepts + practice + posts)
+    // SKILL AREAS — click area name → hub page (filtered content). Sub-item → specific lab.
     { label: "SKILL AREAS", color: "var(--gal-build)", items: [
-      { id: "retrieval", label: "Retrieval", subitems: [
-        { id: "lab",         label: "RAG Lab",       note: "6 scenarios" },
-        { id: "concepts",    label: "Concepts",      note: "4 modules"   },
-        { id: "preplab",     label: "Practice Qs",   note: "51q"         },
-        { id: "groundtruth", label: "Posts",         note: "19 posts"    },
+      { id: "retrieval",  label: "Retrieval",  subitems: [
+        { id: "lab",          label: "RAG Lab",    note: "6 scenarios" },
       ]},
       { id: "evaluation", label: "Evaluation", subitems: [
-        { id: "evallab",     label: "Eval Lab",      note: "15 modules"  },
-        { id: "concepts",    label: "Concepts",      note: "4 modules"   },
-        { id: "preplab",     label: "Practice Qs",   note: "12q"         },
-        { id: "groundtruth", label: "Posts",         note: "13 posts"    },
+        { id: "evallab",      label: "Eval Lab",   note: "15 modules"  },
       ]},
-      { id: "agentshub", label: "Agents", subitems: [
-        { id: "agentlab",    label: "Agent Lab",     note: "16 modules"  },
-        { id: "concepts",    label: "Concepts",      note: "4 modules"   },
-        { id: "preplab",     label: "Practice Qs",   note: "42q"         },
-        { id: "groundtruth", label: "Posts",         note: "28 posts"    },
+      { id: "agentshub",  label: "Agents",     subitems: [
+        { id: "agentlab",     label: "Agent Lab",  note: "16 modules"  },
       ]},
       { id: "production", label: "Production", subitems: [
-        { id: "llmlab",      label: "LLM Lab",       note: "9 modules"   },
-        { id: "concepts",    label: "Concepts",      note: "2 modules"   },
-        { id: "preplab",     label: "Practice Qs",   note: "84q"         },
-        { id: "groundtruth", label: "Posts",         note: "44 posts"    },
+        { id: "llmlab",       label: "LLM Lab",    note: "9 modules"   },
       ]},
       { id: "foundations", label: "Foundations", subitems: [
-        { id: "foundationlab",label: "FM Lab",       note: "6 scenarios" },
-        { id: "promptlab",   label: "Prompt Lab",    note: "6 scenarios" },
-        { id: "concepts",    label: "Concepts",      note: "7 modules"   },
-        { id: "preplab",     label: "Practice Qs",   note: "35q"         },
+        { id: "foundationlab", label: "FM Lab",    note: "6 scenarios" },
+        { id: "promptlab",     label: "Prompt Lab",note: "6 scenarios" },
       ]},
     ]},
-    // PRACTICE — PrepLab expands to show its 4 modes
+    // PRACTICE
     { label: "PRACTICE", color: "#6366f1", items: [
-      { id: "preplab", label: "PrepLab", subitems: [
-        { id: "preplab", label: "Judgment Exam",      note: "EXAM"     },
-        { id: "preplab", label: "Interview Strategy", note: "STRATEGY" },
-        { id: "preplab", label: "Company Tracks",     note: "ARCHETYPE"},
-        { id: "preplab", label: "Interview Signal",   note: "INTEL"    },
-      ]},
+      { id: "preplab", label: "PrepLab" },
     ]},
     // LEARN — Ground Truth always open; series items open their first post directly
     { label: "LEARN", color: "#a78bfa", items: [
@@ -2136,38 +2117,39 @@ export default function App() {
                     const isExpanded = forceOpen || expandedItems.has(item.id);
                     const activeColor = group.color || "var(--gal-build)";
                     return (
-                      <div key={item.id}>
+                      <div key={item.id} className="relative">
+                        {/* Nav item label — separate from chevron to avoid button-in-button */}
                         <button
                           onClick={() => {
                             navigate(item.id);
-                            // Auto-expand on navigate (but don't collapse if already open)
+                            // Auto-expand on navigate
                             if (hasSubitems && !forceOpen && !expandedItems.has(item.id)) {
                               setExpandedItems(prev => { const n = new Set(prev); n.add(item.id); return n; });
                             }
                           }}
                           aria-current={active ? "page" : undefined}
-                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
+                          className={`w-full text-left rounded-lg text-xs font-semibold flex items-center transition-all duration-150 ${hasSubitems && !forceOpen ? "pl-3 pr-8 py-1.5" : "px-3 py-1.5"} ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
                           style={active ? {
                             background: `linear-gradient(90deg, ${activeColor}12 0%, ${activeColor}03 100%)`,
                             boxShadow: `inset 2px 0 0 ${activeColor}`,
                             color: "#ffffff",
                           } : {}}>
                           <span className={active ? "text-white font-bold" : ""}>{item.label}</span>
-                          <span className="flex items-center gap-1.5">
-                            {visited.has(item.id) && !active && (
-                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: activeColor, opacity: 0.4 }} />
-                            )}
-                            {hasSubitems && !forceOpen && (
-                              <button onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
-                                className="p-0.5 rounded hover:bg-zinc-700/60 transition-colors">
-                                <svg width="8" height="8" viewBox="0 0 8 8" fill="none"
-                                  style={{ color: active ? activeColor : "#71717a", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 150ms" }}>
-                                  <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              </button>
-                            )}
-                          </span>
+                          {visited.has(item.id) && !active && (
+                            <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: activeColor, opacity: 0.4 }} />
+                          )}
                         </button>
+                        {/* Chevron — sibling to nav button (not nested inside) */}
+                        {hasSubitems && !forceOpen && (
+                          <button onClick={() => toggleItem(item.id)}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-zinc-700/60 transition-colors"
+                            aria-label={isExpanded ? "Collapse" : "Expand"}>
+                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none"
+                              style={{ color: active ? activeColor : "#71717a", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 150ms" }}>
+                              <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        )}
                         {/* Sub-items */}
                         {hasSubitems && (
                           <div style={{ maxHeight: isExpanded ? `${item.subitems.length * 30}px` : '0px', overflow: 'hidden', transition: 'max-height 200ms cubic-bezier(0.4,0,0.2,1)' }}>

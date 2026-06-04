@@ -122,6 +122,27 @@ function generateQuiz(blocks) {
 }
 
 // ─── POST DETAIL RENDERER ────────────────────────────────────────────────────
+// Extracted to its own component so useState is at top level (Rules of Hooks)
+function CodeBlock({ b }) {
+  const [isCopied, setIsCopied] = useState(false);
+  return (
+    <div className="rounded-lg border border-zinc-800 overflow-hidden">
+      {b.label && (
+        <div className="px-3 py-1.5 bg-zinc-900 border-b border-zinc-800 text-[10px] font-mono text-zinc-500">{b.label}</div>
+      )}
+      <div className="relative group">
+        <pre className="px-4 py-3 overflow-x-auto bg-zinc-950">
+          <code className="text-[11px] font-mono text-zinc-300 whitespace-pre">{b.text}</code>
+        </pre>
+        <button
+          onClick={() => { navigator.clipboard.writeText(b.text); setIsCopied(true); setTimeout(() => setIsCopied(false), 1500); }}
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] px-2 py-1 rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-300 font-mono"
+        >{isCopied ? "Copied!" : "Copy"}</button>
+      </div>
+    </div>
+  );
+}
+
 function Block({ b, onNavigate, color, postSearch }) {
   switch (b.t) {
     case "p":
@@ -169,25 +190,8 @@ function Block({ b, onNavigate, color, postSearch }) {
         </div>
       );
     }
-    case "code": {
-      const [isCopied, setIsCopied] = useState(false);
-      return (
-        <div className="rounded-lg border border-zinc-800 overflow-hidden">
-          {b.label && (
-            <div className="px-3 py-1.5 bg-zinc-900 border-b border-zinc-800 text-[10px] font-mono text-zinc-500">{b.label}</div>
-          )}
-          <div className="relative group">
-            <pre className="px-4 py-3 overflow-x-auto bg-zinc-950">
-              <code className="text-[11px] font-mono text-zinc-300 whitespace-pre">{b.text}</code>
-            </pre>
-            <button
-              onClick={() => { navigator.clipboard.writeText(b.text); setIsCopied(true); setTimeout(() => setIsCopied(false), 1500); }}
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] px-2 py-1 rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-300 font-mono"
-            >{isCopied ? "Copied!" : "Copy"}</button>
-          </div>
-        </div>
-      );
-    }
+    case "code":
+      return <CodeBlock b={b} />;
     case "table":
       return (
         <div className="overflow-x-auto rounded-lg border border-zinc-800">
