@@ -2059,3 +2059,25 @@ All resolved in same commit as this audit log entry.
 - Profile.jsx `bookmarksCount` stat uses `bookmarkIds.size` correctly now but `accuracy` stat shows `—` for new users (correct behavior, not a bug)
 
 **Status:** ✅ All sprint 54 runtime bugs fixed. Structural checks clean.
+
+---
+
+## Audit 27 — Sprint 55 Bug Audit
+
+**Date:** June 2026 (sprint 55 session 1)
+**Scope:** Runtime bugs reported after sprint 54 — GT posts not opening, sidebar nav issues
+**Trigger:** User reported React error on any GT post open, sidebar can't collapse, nav subitems opening wrong pages
+
+### Findings & Fixes
+
+| Bug | File | Root cause | Fix | Commit |
+|---|---|---|---|---|
+| GT posts not opening — React error on open | GroundTruth.jsx | `useState(false)` inside `case "code"` in the `Block` switch statement — violates Rules of Hooks. When block positions shift (key={i} with filter), React detects hook count mismatch and throws | Extracted `CodeBlock` component; `useState` now at top level of dedicated component | `5b653a9` |
+| Sidebar items couldn't be un-expanded | App.jsx | Chevron `<button>` was nested inside nav item `<button>` — invalid HTML nesting. Browsers may route inner-button click events to outer button, bypassing `e.stopPropagation()` | Restructured: chevron is now a sibling `<button>` with `position: absolute`, not a child. Nav item uses `pr-8` to leave room for chevron. | `5b653a9` |
+| "Concepts" / "Posts" / "Practice Qs" nav subitems opened wrong pages | App.jsx NAV_GROUPS | Subitems had `id: "concepts"` / `id: "groundtruth"` / `id: "preplab"` — navigated to the raw unfiltered tabs. Clicking "Concepts" under Retrieval opened ALL 27 Concepts modules. | Simplified subitems to lab-only entries. Hub pages already show filtered content; the nav area label click goes to the hub. | `5b653a9` |
+
+**Verified clean after fix:**
+- GroundTruth.jsx brace diff: 0
+- App.jsx brace diff: 0
+
+**Status:** ✅ Sprint 55 session 1 bugs fixed.
