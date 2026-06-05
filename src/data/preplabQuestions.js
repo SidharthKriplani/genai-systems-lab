@@ -320,7 +320,8 @@ export const PREP_QUESTIONS = [
   trap: "Saying \'the evals are wrong\' or \'the model regressed.\' The real pattern is eval set distribution mismatch — a single-domain golden set misses the production long tail. This is eval set design failure, not model failure.",
   source: "Anthropic reliability engineering interview",
     readMore: { label: "Eval Set Design", tab: "groundtruth", postId: "eval-pipeline-design" }
-  },
+  ,
+    staffLayer: 'The senior framing is: evals passing while production drops is the canonical sign of distribution mismatch — your eval set was a convenience sample, not a stratified sample of production. In production I always do a coverage analysis before shipping: what % of real production queries from the last 30 days would have been represented in my eval set? If it's below 60%, the eval set is not measuring what matters. The fix is stratified sampling across query clusters — including the long-tail queries you don't know about yet. Set up online eval (thumbs, task completion, CSAT) from day 1 so you detect shifts the moment they happen, not via a support ticket two weeks later.'},
   {
     id: "eval-5", topic: "evaluation", difficulty: "easy", gated: true, type: "mcq",
     question: "The difference between online and offline evaluation in LLM systems is:",
@@ -361,7 +362,8 @@ export const PREP_QUESTIONS = [
   trap: "Saying \'precision, recall, F1, and accuracy\' or generic ML metrics. RAGAS has specific dimension names: Faithfulness, Answer Relevancy, Context Precision, Context Recall. Mixing in standard ML metric names is the immediate tell.",
   source: "Weaviate / RAG startup engineering interview",
     readMore: { label: "RAGAS Framework", tab: "groundtruth", postId: "llm-evaluation-guide" }
-  },
+  ,
+    staffLayer: 'The senior framing: RAGAS gives you four dimensions, but they measure different failure modes. Faithfulness and Context Precision catch generation failures (the model hallucinating or using irrelevant context). Answer Relevancy and Context Recall catch retrieval failures (the right context wasn't retrieved). In production I weight them differently: Faithfulness matters most for factual domains (legal, medical, finance) where hallucination has real cost. Context Recall matters most when the answer requires synthesis across multiple documents. The trap is treating RAGAS as a single pass/fail — it's four signals, and each points to a different part of the pipeline to fix.'},
   {
     id: "eval-9", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "You run an A/B test. Version B has +12% groundedness but -8% answer relevancy. You should:",
@@ -602,7 +604,8 @@ export const PREP_QUESTIONS = [
     explanation: "Safety is a precision-recall tradeoff. A filter that blocks everything has 100% recall on harm but 0% precision. Real systems must balance false negatives vs. false positives.",
     trap: "Saying \'this is the ideal guardrail.\' 100% block with 0% false positive at meaningful scale is mathematically impossible on any real adversarial distribution. The interviewer wants to hear you acknowledge the precision-recall tradeoff explicitly.",
     readMore: { label: "Safety System Design", tab: "concepts" }
-  },
+  ,
+    staffLayer: 'The senior framing is to recast this as a product decision, not an engineering one. A guardrail is a binary classifier with a precision-recall tradeoff — the threshold you set determines where you sit on that curve. The right question isn't 'how do we block 100% of harm' but 'what is our false positive budget, and what is our false negative budget?' For a children's education product, false negatives cost more — you accept more false positives to protect users. For a general-purpose tool, false positives kill retention. I always recommend measuring both in production from day 1: harm rate (false negatives) and over-refusal rate (false positives). When someone asks for a 100% safe system, I tell them: we can get close, but the cost is refusing a % of legitimate queries — here's the tradeoff at different thresholds. Make the tradeoff explicit, then commit to a threshold.'},
   {
     id: "safety-5", topic: "safety", difficulty: "easy", gated: true, type: "mcq",
     question: "Alignment tax refers to:",
@@ -610,7 +613,8 @@ export const PREP_QUESTIONS = [
     correct: 1, keywords: [],
     explanation: "Safety alignment techniques (RLHF, CAI) can reduce model performance on reasoning, math, and coding benchmarks. Minimizing this tradeoff is an active research area.",
     readMore: { label: "Alignment Tradeoffs", tab: "concepts" }
-  },
+  ,
+    staffLayer: 'The senior framing: alignment tax is real but manageable, and the teams that manage it well treat it as an optimisation problem, not a constraint. Three approaches. First, targeted RLHF: only fine-tune for the specific safety properties you need rather than using a general safety fine-tune that penalises broad capability. Second, capability-aware data curation: include capability-preserving examples in the safety fine-tuning mix — the same way you mix general data into fine-tuning to prevent forgetting. Third, measure the tax explicitly: run a capability benchmark (MMLU, HumanEval, GSM8K) before and after every safety fine-tuning run. If the tax exceeds your threshold, iterate on the safety data before shipping. The Anthropic Constitutional AI approach does this well — it frames safety as an additional optimisation target, not a capability replacement.'},
 
   // ── PRODUCT (5) ───────────────────────────────────────────────────────────
   {
@@ -1361,7 +1365,8 @@ export const PREP_QUESTIONS = [
     explanation: "Catastrophic forgetting occurs when fine-tuning on a narrow task distribution overwrites the broader knowledge learned during pretraining. The model may become excellent at the specific task but lose capabilities like coding, math, or multilingual understanding. Mitigations: use LoRA (frozen base), include diverse data, train for fewer epochs, use a small learning rate.",
     trap: "Saying \'the model forgets the training data.\' Catastrophic forgetting is the reverse: the model overwrites general capability while improving on the target task. The model gets better at the new task but loses broader knowledge.",
     readMore: { label: "Flash Attention →", tab: "systems" }
-  },
+  ,
+    staffLayer: 'The senior framing is: catastrophic forgetting is proportional to how far the fine-tuning distribution is from pretraining. Three levers. First, data mixing: include 10-20% general instruction data (OpenHermes, ShareGPT) in the fine-tuning mix — this preserves general capabilities at minimal cost to task-specific performance. Second, LoRA: by only training adapter weights, you leave the frozen base entirely intact, which is the most robust forgetting prevention available. Third, measure it — always eval on a general benchmark (MMLU subset, HumanEval) before and after. If general capability drops more than 3-5 points, pull back the learning rate or increase the general data ratio. The framing I use with teams: fine-tuning changes the distribution the model is optimised for; make sure that new distribution still contains general capabilities.'},
   {
     id: "finetune-3", topic: "finetuning", difficulty: "easy", type: "mcq",
     question: "The key advantage of QLoRA over LoRA is:",
@@ -1378,7 +1383,8 @@ export const PREP_QUESTIONS = [
     explanation: "Research (LIMA, Alpaca, OpenHermes) consistently shows that 1K–10K high-quality, diverse instruction pairs produce strong behavioral fine-tuning. The LIMA paper demonstrated that 1,000 carefully curated examples match models fine-tuned on 50K+ examples. Quality and diversity matter far more than quantity. Below 500 examples, results are inconsistent. Above 50K, you risk catastrophic forgetting.",
     trap: "Saying \'the more data, the better.\' 500 high-quality examples is sufficient for meaningful behavioural change (LIMA paper). More low-quality examples can degrade the model. Quality and diversity matter more than volume for instruction fine-tuning.",
     readMore: { label: "Flash Attention →", tab: "systems" }
-  },
+  ,
+    staffLayer: 'The senior framing: dataset size is a proxy metric — quality and diversity are the real variables. LIMA showed you can get strong behavioral change from 1,000 examples if they're high-quality, diverse, and cover the full range of edge cases you care about. The failure mode I see most often is teams collecting 10K examples that are all the same format and query type — they get a model that performs well on that type and poorly on everything adjacent. I always ask: does this dataset cover the failure modes I've seen in production? Does it include hard examples — ambiguous queries, refusal cases, multi-step reasoning? A 1K dataset that covers the distribution beats a 10K dataset that doesn't.'},
   {
     id: "rlhf-1", topic: "alignment", difficulty: "easy", gated: true, type: "mcq",
     question: "In PPO-based RLHF, the KL divergence penalty between the policy and reference model serves to:",
@@ -2044,7 +2050,8 @@ export const PREP_QUESTIONS = [
     keywords: ["intent classification", "RAG", "escalation", "latency", "fine-tuning", "guardrails", "CSAT", "eval", "human handoff", "ticket routing"],
     explanation: "Strong answers cover: (1) Architecture — intent classifier → topic router → RAG retrieval from product/policy KB → LLM response → post-generation guardrails. (2) Model selection — smaller fast model (Haiku/Flash) for classification, mid-size model for generation to stay within 2s P95 latency budget. (3) Latency budget — intent classification <100ms, retrieval <300ms, generation <1.5s, total <2s. (4) Fallback — if confidence <0.7 or guardrails flag, route to human queue with context. (5) Eval — precision/recall on intent classification, CSAT correlation, resolution rate, escalation rate as primary business metric.",
     readMore: { label: "System Design Canvas →", tab: "systems" }
-  },
+  ,
+    staffLayer: 'A staff answer restructures the problem before designing. 10K tickets/day is roughly 0.1 tickets/second — that's not a scale problem, it's a quality and cost problem. I start with: what is the ticket distribution? Typically 60-70% are answerable from a knowledge base, 20-30% require API actions (order status, returns), 10% need human judgment. That distribution determines the architecture. Then I design the routing layer first — a lightweight intent classifier (DistilBERT, under 20ms) that routes to: (1) FAQ retrieval for known questions, (2) RAG over policy and product docs for complex questions, (3) agentic for actions, (4) human queue for edge cases. Latency budget: 3s total for bot responses, 1.5s retrieval, 1.5s generation. Fallback: always route to human when confidence is below threshold — a wrong confident answer costs more than a human escalation. Eval approach: resolution rate (ticket closed without reopening, measured 24h later), escalation rate, and CSAT. Never use BLEU. The failure mode most teams miss is the escalation path — design the failure case before the happy path.'},
   {
     id: "sd-q2", topic: "sysdesign", difficulty: "medium", type: "mcq",
     question: "When designing an AI system, which consideration should you address FIRST?",
@@ -2068,7 +2075,8 @@ export const PREP_QUESTIONS = [
     keywords: ["OCR", "vision model", "structured output", "constrained generation", "validation", "confidence", "human review", "fine-tuning", "extraction"],
     explanation: "Key decisions: (1) Input pipeline — vision LLM (GPT-4V/Claude Vision) for images/PDFs directly, or OCR first then text LLM for cost efficiency at scale. (2) Extraction architecture — constrained generation with JSON schema to force structured output; define field types and validation rules. (3) Confidence routing — low-confidence extractions flagged for human review; build a confidence signal from log-probs or second-pass verification. (4) Eval — field-level extraction accuracy (not just document-level), handling of missing/ambiguous fields, human-review rate as ops metric. (5) Fine-tuning consideration — if form templates are consistent, a fine-tuned smaller model will outperform a large general model at 10× lower cost.",
     readMore: { label: "System Design Canvas →", tab: "systems" }
-  },
+  ,
+    staffLayer: 'The staff framing: document intelligence on insurance forms has two hard problems — extraction accuracy and confidence calibration. Teams optimise for the first and ignore the second; production failures come from the second. Architecture: vision LLM (GPT-4V or Claude Vision) as the primary extractor gives you multimodal coverage across PDFs, images, and handwritten forms without a separate OCR pipeline. Constrained generation (JSON schema output) reduces hallucination on structured fields. But the critical layer is confidence scoring: for each extracted field, assign a confidence score and route low-confidence fields to human review. Define 'low confidence' empirically — start with a sample, measure field-level accuracy vs model confidence, set the threshold where accuracy drops below your SLA. This is what separates a demo from a production system: the human-in-the-loop routing for the 10-15% of fields the model is uncertain about.'},
   {
     id: "sd-q4", topic: "sysdesign", difficulty: "medium", type: "mcq",
     question: "In the AI system design canvas, what is the purpose of defining the 'failure budget' before building?",
