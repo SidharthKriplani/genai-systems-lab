@@ -2,11 +2,11 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 55 session 1: GT post error fixed, sidebar nav fixed. Next: staffLayer to 60+, PostHog WAU baseline, GT series taxonomy)*
+*Last updated: June 2026 (sprint 55 session 2: guest access model shipped. Next: Plans page redesign to show 3 tiers clearly, staffLayer to 60+, GT series taxonomy)*
 
 ---
 
-## Theme: Sprint 55. Bug fixes done. Next: staffLayer to 60+ (pure content) + PostHog WAU baseline check + GT series taxonomy (tag all 226 posts) + React.lazy() code splitting.
+## Theme: Sprint 55 continued. Guest model live. Next priorities: Plans page 3-tier redesign + staffLayer content + GT series taxonomy.
 
 Sprint 49: full challenge-layer redesign (R1–R9). Sprint 50: readiness layer, guided paths, staffLayer 30→41. See CLAUDE.md sprint log.
 

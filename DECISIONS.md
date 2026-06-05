@@ -583,3 +583,33 @@ Adding more scenarios, more GT posts, or more PrepLab questions does not fix a b
 
 *Source: Product direction discussion, May 2026 — cold-start UX analysis using PAL SQL Lab as the comparison case.*
 
+---
+
+## §10 — Guest access model (June 2026)
+
+Three-tier access model. Binding decisions:
+
+**Tier definitions:**
+- **Guest (no account):** Home, Plans, Profile, Progress (ghost), Foundations hub + FM Lab + Prompt Lab, 3 pinned GT posts, PrepLab demo. Everything else → sign-in gate.
+- **Free (signed in):** All 5 hubs, all 6 labs, all 226 GT posts, PrepLab 10q/session. Still gated: Company Tracks, Staff Layer, Interview Strategy, Scenarios, unlimited PrepLab.
+- **Full access (code):** Everything unlocked.
+
+**Always free — never gate:**
+- Foundations hub + FM Lab + Prompt Lab (the entry ramp).
+- Ground Truth posts (reading is free; unlimited practice is not).
+- Easy/foundational PrepLab questions within the 10q/session limit.
+
+**Gate UX rules:**
+- Single `GateOverlay` component for all lock states. Props: `context`, `user`.
+- No account → sign-in gate (Google + GitHub buttons).
+- Free user hitting gated content → upgrade gate ("Get full access →" + code input as secondary).
+- All gates use DAI2026 for now. Pack-level or per-room codes are post-launch.
+- Gate copy is contextual per room — see `GATE_COPY` in `src/GateOverlay.jsx`.
+
+**What's deferred:**
+- Device limiter (1 active session, invalidate on new device): after Stripe ships.
+- Pack-level gating: post-launch, after purchase signal.
+- Stripe + unique per-purchase codes: Plans page placeholder links only for now.
+
+*Source: Access model brainstorm + implementation, June 2026 sprint 55 (`e2d96bf`).*
+
