@@ -2112,4 +2112,120 @@ GSL/GAL references throughout the codebase are the correct product name. PAL is 
 - Concepts completeness: which gyms are hollow, which are done
 - Content depth across all parallel structures
 
-**Status:** Audit complete. Build order in NEXT.md.
+**Status:** ✅ All 8 fixes shipped. See CLAUDE.md sprint 56 log for commit hashes.
+
+---
+
+## Audit 29 — PM Product Critique (Sprint 57)
+
+**Date:** June 2026
+**Scope:** Full product management audit — identity, JTBD, user journey, IA, access model, retention, conversion, risks
+**Method:** Code review (Home.jsx, Plans.jsx, nav.js, App.jsx, hub pages), MD file analysis (CLAUDE.md, DECISIONS.md, IDEAS.md), first-principles PM critique
+**Trigger:** User-initiated. Product had shipped 56 sprints without a formal PM-lens audit. Multiple PAL-influenced decisions were unvalidated for GSL's actual user base.
+**Status:** Findings logged. Decisions required in DECISIONS.md §11–§12. Build order set in NEXT.md Sprint 57.
+
+---
+
+### Naming clarification (pre-audit requirement)
+
+| Name | What it is |
+|---|---|
+| **GSL** | "GenAI Systems Lab" — the product name, used in user-facing copy. Correct. |
+| **GAL** | Internal code shorthand — CSS vars (`--gal-build`), constants. Not user-facing. Creates dev confusion when used interchangeably with GSL. |
+| **PAL** | Separate product (Product Analytics Lab). Reference only. Several GSL decisions were PAL-influenced without independent GSL validation — flagged throughout. |
+
+**Rule going forward:** Use GSL in all MD files and copy. GAL stays in code constants only. Never use PAL patterns as justification for GSL decisions unless independently validated for GSL's users.
+
+---
+
+### Findings
+
+#### 1. Product identity — JTBD split (Critical)
+
+GSL is simultaneously:
+- **Learning platform:** Labs + Concepts + Systems modules + GT posts
+- **Interview prep tool:** PrepLab + Company Tracks + Staff Layer + Interview Prep Plan
+
+These require different retention loops, content strategies, and purchase triggers. The nav reflects both equally. Premium features are entirely interview-prep. Free features are learning. Result: learning users have no reason to upgrade; interview-prep users don't immediately recognize GSL as an interview tool.
+
+**Decision required:** See DECISIONS.md §11.
+
+#### 2. Cold visitor experience — value delivery too slow (High)
+
+Guest experience: Foundations hub + 3 pinned GT posts + 1 PrepLab demo question. The core mechanic (configure a real AI system, watch it fail, understand why) is completely hidden behind sign-in. Labels like "Retrieval / Evaluation / Agents" read like a textbook table of contents, not an interactive simulator.
+
+**The fix:** RAG Lab Scenario 1 ("Missing Answer") ungated for guests. Single strongest conversion hook. See DECISIONS.md §12.
+
+#### 3. Activation gap — aha moment too far from landing (High)
+
+The aha moment (completing one interactive scenario + synthesis card: "You just reproduced X failure") is several clicks deep. After sign-in, users land on Progress — empty bars, no streak, no first-timer guidance. No guided path from sign-in → first scenario completion exists.
+
+**Activation event definition:** First lab scenario completed with synthesis card viewed. This is the target activation metric.
+
+#### 4. Navigation cognitive load (Medium)
+
+Post-sprint 56 sidebar: Plans & Access / SKILL AREAS (5) / PRACTICE / LEARN = 8+ items. Problems: "SKILL AREAS" is vague (labs? quizzes? reading rooms?); PrepLab isolated from challenge areas implies practice is separate from the labs (wrong model); Plans & Access is a utility page in primary nav.
+
+#### 5. Access model — guest tier too restrictive (Medium)
+
+Guest sees almost none of the product's core mechanic. Signing up to see a hidden product is a high ask. The current guest tier signals low confidence in the product's first impression.
+
+#### 6. Access model — no real paid conversion (Medium)
+
+Access code (DAI2026) is public on LinkedIn. Full access is free for anyone who finds it. No revenue signal, no urgency, no real conversion event. Before any distribution push, a real paid tier or waitlist is required.
+
+#### 7. Content depth inconsistency — Evaluation critically thin (Medium)
+
+| Challenge area | GT posts tagged | Status |
+|---|---|---|
+| Production | 44 | ✓ |
+| Foundations | 81 | ✓ |
+| Agents | 28 | ✓ |
+| Retrieval | 19 | OK |
+| **Evaluation** | **8** | ⚠️ Thin |
+
+Evaluation is a primary interview topic and the thinnest area. Users entering via Evaluation lose trust in the product.
+
+#### 8. Retention loop is purely pull-based (Medium)
+
+Streak + SRS are retention indicators, not retention creators. No email, push, or daily trigger exists. Static site architecture limits this, so in-session habit mechanics must compensate. No "Daily Judgment" mechanic exists to give users a daily reason to open the product.
+
+#### 9. PAL-influenced decisions not independently validated (Ongoing)
+
+3-tier access model (§10), hub architecture (R3–R7), TRACK nav group, Plans structure — all PAL-influenced. GSL's users (mid-level engineers prepping for AI roles) may have different needs. No validation data exists yet.
+
+---
+
+### Prioritized fix order (from this audit)
+
+| Priority | Item | Effort |
+|---|---|---|
+| P0 | JTBD decision — interview prep primary frame (DECISIONS.md §11) | Decision only |
+| P0 | Ungate RAG Lab Scenario 1 for guests (DECISIONS.md §12) | S |
+| P0 | First-5-minutes onboarding path post sign-in | M |
+| P0 | Real paid tier before distribution (price replaces LinkedIn-only access) | M |
+| P1 | Evaluation GT depth — 5–6 new posts | M |
+| P1 | Synthesis card — specific failure name + direct PrepLab CTA per scenario | S |
+| P1 | Daily Judgment mechanic — one question on home/progress, themed to weakest area | M |
+| P1 | Simplify sidebar — Plans & Access to header utility | S |
+| P2 | Hub room decision — preview vs. full filtered room (needs PostHog data first) | Decision |
+| P2 | Concepts gym depth audit | M |
+
+---
+
+### Recommended metrics (12)
+
+1. Guest → sign-up conversion rate
+2. Activation rate — % of new sign-ups completing ≥1 lab scenario within 7 days
+3. D7 / D30 retention
+4. PrepLab questions answered per session (free users)
+5. Session limit gate views (how many users hit 10q cap)
+6. Gate view → Plans page view rate
+7. Plans → code entered rate (upgrade conversion)
+8. Hub page exit clicks ("All Concepts →" / "All PrepLab questions →")
+9. Lab scenario completion rate per scenario
+10. GT posts opened per session
+11. Streak length distribution
+12. Guided path step completion %
+
+**Status:** Findings logged. Decisions §11–§12 added to DECISIONS.md. P0–P2 build order in NEXT.md Sprint 57. P1/P2 items added to IDEAS.md. Activation + synthesis card upgrades in UPGRADES.md.

@@ -613,3 +613,56 @@ Three-tier access model. Binding decisions:
 
 *Source: Access model brainstorm + implementation, June 2026 sprint 55 (`e2d96bf`).*
 
+---
+
+## §11 — Primary JTBD and product frame (June 2026, sprint 57 PM audit)
+
+**The decision:** GSL's primary JTBD is **interview preparation** — specifically, helping mid-level engineers (3–6 years experience) develop production AI judgment before a FAANG-tier or AI-specialist interview. Learning mechanics (labs, concepts, GT posts) are the *delivery method* for that JTBD, not a competing purpose.
+
+**What this means for every downstream decision:**
+
+- The nav, homepage copy, and Plans page should lead with the interview outcome, not the learning taxonomy
+- "Retrieval / Evaluation / Agents / Production / Foundations" are challenge areas because interviewers test these domains — not because they're convenient content categories
+- PrepLab is the core product loop, not a supplementary quiz mode
+- Content that doesn't serve a user preparing for a production AI interview belongs in PARKED.md or as a secondary entry point
+- The primary ICP: **mid-level software engineer (3–6 years), transitioning into an AI engineering role, actively interviewing or 6–12 months from interviewing**
+
+**What this does NOT rule out:**
+- General learning users are welcome — the labs and GT posts serve them well
+- AI PMs are a secondary ICP — PrepLab Company Tracks + Interview Prep Plan serve them directly
+- Casual readers of GT posts are a distribution surface, not a conversion target
+
+**The single framing rule (do not overwrite §0a):** §0a says "production AI judgment simulator." §11 says the primary JTBD is interview prep. These are consistent: the simulator trains judgment, the judgment gets you hired. The tagline "The gap isn't knowledge. It's production judgment." is correct — it speaks to the interview-prep user who already knows the theory but fails the scenario question.
+
+**PAL flag:** The TRACK nav group, 3-tier access model, and hub architecture were PAL-influenced. These decisions should be validated against GSL's actual users before being treated as confirmed product decisions. PAL serves a different primary user (product analytics engineers). Until PostHog data confirms GSL user behaviour matches PAL's patterns, treat PAL comparisons as hypotheses, not evidence.
+
+*Source: PM Product Audit, Audit 29, June 2026.*
+
+---
+
+## §12 — Guest activation boundary (June 2026, sprint 57 PM audit)
+
+**The decision:** The guest experience must include one complete interactive lab scenario — specifically **RAG Lab Scenario 1 ("Missing Answer")** — ungated, no account required.
+
+**Rationale:**
+- The core mechanic (configure a real AI system, watch it fail, understand why) is GSL's single strongest differentiator
+- Currently this mechanic is completely hidden behind sign-in — guests see labels and descriptions but cannot do anything
+- "3 pinned GT posts + 1 PrepLab demo question" is a reading experience, not the product's product
+- A user who completes one scenario and reaches the synthesis card understands what GSL is and why it's different from any other resource
+- This is the correct conversion hook: experience first, account second
+
+**Implementation rules:**
+- `GUEST_ALLOWED_TABS` in App.jsx must include `"lab"` (RAG Lab)
+- RAG Lab must limit guests to Scenario 1 only — remaining 5 scenarios are behind sign-in
+- After scenario completion, the synthesis card CTA changes for guests: "Sign in to save your result and continue with all 6 scenarios"
+- GateOverlay fires if a guest attempts Scenario 2+
+
+**What this does NOT change:**
+- All other labs (Agent, Eval, LLM, Prompt, Foundation Models) remain sign-in gated
+- GT post access: 4 pinned posts remain free for guests (unchanged)
+- PrepLab: demo question (1) remains; do not expand guest PrepLab access
+
+**Why Scenario 1 specifically:** "Missing Answer" is the cleanest, fastest scenario (under 5 minutes to complete), requires no prior knowledge to engage, and demonstrates the core failure mechanic immediately. It is the product's best first impression.
+
+*Source: PM Product Audit, Audit 29, June 2026.*
+

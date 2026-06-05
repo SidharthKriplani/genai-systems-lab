@@ -326,6 +326,17 @@ For full audit findings see AUDITS.md.
 - Bug fixes `70e5604`: (1) Sidebar expansion — removed `subActive || active` from `isExpanded`; since all SKILL AREAS shared `id: "groundtruth"` sub-items, being on groundtruth expanded all areas simultaneously. Now only `forceOpen || expandedItems.has(id)`. (2) GT series deep-link — series sub-items now have `postId` field, click sets `gtPostId` + navigates to groundtruth (opens first post of series directly). Series names corrected to match SERIES_META. (3) Profile/Progress dedup — readiness bars removed from Profile (Progress owns them); Profile replaced with single "Your readiness dashboard →" link. AreaBar + getAllAreasReadiness import removed from Profile.jsx.
 - Bug fixes `370b990`: (1) `onNavigate("progress")` in Profile silently failed — `navigateTo` destructures an object, passing a string gave `tab=undefined`. Fixed to `onNavigate({ tab: "progress" })`. (2) `removeBookmark` used `setSyncMsg(null)` as re-render hack — when syncMsg was already null, React bailed out and bookmark stayed visible. Fixed by converting `bookmarkIds` to proper useState. (3) Plans FULL ACCESS card showed "Free" as price (indistinguishable from FREE $0 tier) — replaced with code `DAI2026` displayed prominently, pre-filled in input, label changes to "ACTIVE" when unlocked.
 
+**Sprint 57 (June 2026) — PM product audit + statefulness logging:**
+- Full PM product critique (Audit 29): identity, JTBD, user journey, IA, access model, retention, conversion, risks. No code this sprint.
+- Naming clarified: GSL = product name (user-facing). GAL = internal code shorthand only. PAL = separate product, never a justification for GSL decisions without independent validation.
+- DECISIONS.md §11: Primary JTBD is interview prep. ICP confirmed: mid-level engineer (3–6 years), transitioning into AI engineering, interviewing within 12 months.
+- DECISIONS.md §12: RAG Lab Scenario 1 ("Missing Answer") ungated for guests — binding decision. Scenarios 2–6 gated. Synthesis card CTA prompts sign-in after completion.
+- NEXT.md: Sprint 57 P0–P2 build order. P0: guest ungate + first-5-min onboarding path + real paid tier decision.
+- IDEAS.md: 6 new items — guest activation (P0), onboarding path (P0), Daily Judgment mechanic (P1), Evaluation GT depth 5–6 posts (P1), sidebar cleanup (P1), hub room decision (P2).
+- UPGRADES.md: 2 new entries — Activation Path, Synthesis Card Specificity.
+- GT "render error" resolved: groundTruthPosts.js clean, CodeBlock fix (5b653a9) intact. No build error.
+- Commit: `chore: MD sync sprint 57 — PM audit (Audit 29), DECISIONS §11–12, NEXT/IDEAS/UPGRADES/CLAUDE updated`
+
 **Sprint 56 (June 2026) — UX correction pass:**
 - UX/product audit completed. 8 issues found. See AUDITS.md Audit 28.
 - GT #300 confirmed fixed in production after push.

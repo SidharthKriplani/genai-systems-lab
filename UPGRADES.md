@@ -83,6 +83,46 @@ Outcome of a full ideation + devil's advocate cycle. Everything that couldn't su
 
 ---
 
+## Activation Path — First-time user onboarding (June 2026, sprint 57 PM audit)
+
+**Component:** `src/App.jsx` + sign-in flow + first-session state detection
+
+**Current behavior:** New users who sign in land on the Progress page — empty readiness bars, no streak, no guided context. There is no signal to the product that this is a first-time user, and no guided path to the product's aha moment (first lab scenario completion + synthesis card).
+
+**Target behavior:** On first sign-in, detect that the user has no prior activity (check `gsl-preplab-history`, `genai_leaderboard` — both empty for a new user). Show a lightweight "Start here" prompt (not a multi-screen wizard): one CTA — "Start with the RAG Lab — take your first scenario (5 min)." Routes directly to RAG Lab Scenario 1. After completion, the synthesis card CTA includes: "Save your result → sign in took 30 seconds." For already-signed-in new users, show the same CTA on the Progress page until first scenario is completed.
+
+**Why this matters:** The aha moment (completing a scenario + seeing the synthesis card) is the activation event. Without a guided path, new users encounter empty dashboards and navigate away. Activation rate is the single highest-leverage metric at this stage.
+
+**Effort:** S–M — first-time user detection is one localStorage key check. The "Start here" prompt is a conditional render in Progress.jsx / Home.jsx. The CTA routing already exists.
+
+**Dependencies:** RAG Lab Scenario 1 guest ungate (DECISIONS.md §12) should ship simultaneously — guests and new users share the same first experience.
+
+**Priority:** P0 — required before any distribution push.
+
+**Status:** Pending
+
+---
+
+## Synthesis Card Specificity — Lab scenario completion (June 2026, sprint 57 PM audit)
+
+**Component:** `src/App.jsx` RAG Lab scenario done cards + `src/Agents.jsx` done screens + hub completion states
+
+**Current behavior:** Lab scenario completion shows a generic synthesis card ("You completed this scenario") with a GT post link and a PrepLab CTA. The failure mode is not named explicitly in the card. The PrepLab CTA routes to the general PrepLab, not the specific cluster relevant to the failure mode just encountered.
+
+**Target behavior:** Each scenario's synthesis card names the specific failure mode experienced: "You reproduced the 'lost in the middle' failure — the model couldn't use information placed in the middle of a long retrieved context. This is what interviewers mean when they ask about context window management in RAG systems." Below: a direct PrepLab CTA filtered to the exact topic cluster (e.g. `topic: "rag"`, `subtopic: "context-window"`). Not a generic "go practice" — a specific "drill this failure mode now."
+
+**Why this matters:** The synthesis card is the product's core learning artifact. If it's generic, users feel like they completed a task. If it's specific, users feel like they learned something they can articulate. The difference in interview prep quality is significant.
+
+**Effort:** S — the scenario-to-failure-mode mapping already exists in `SCENARIO_FORWARD_POINTERS`. Upgrade the synthesis card copy per scenario (6 RAG scenarios + 16 Agent Lab modules = ~22 copy blocks). Add a `topic` filter param to the PrepLab CTA.
+
+**Dependencies:** None.
+
+**Priority:** P1.
+
+**Status:** Pending
+
+---
+
 ## Completed upgrades — summary
 
 These are done. Commit hashes and sprint detail in LINEAGE.md.

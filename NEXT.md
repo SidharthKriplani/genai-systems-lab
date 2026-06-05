@@ -2,26 +2,37 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 56: UX/product audit completed. Build order set. GT #300 push-fixed. Now fixing accordion, PrepLab duplication, hub exits, entry point, Plans, Home/Progress, Profile in order.)*
+*Last updated: June 2026 (sprint 57: full PM product audit completed. JTBD, activation, guest experience, content gaps diagnosed. Build order set below. No code yet — decisions first.)*
 
 ---
 
-## Theme: Sprint 56. UX correction pass before any new features. Fix what's broken and confusing first.
+## Theme: Sprint 57. Activation + guest experience + JTBD clarity. Fix the product shape before more features.
 
-**Sprint 56 UX correction pass — COMPLETE** ✅
+**Sprint 56 UX correction pass — COMPLETE** ✅ (see CLAUDE.md sprint 56 log)
 
-All 8 fixes shipped. Next priorities:
-1. **Push to Vercel** — user action required
-2. **Visual test pass** — confirm accordion, PrepLab entry, Plans display correctly in browser
-3. **PostHog WAU check** — user action required before next feature sprint
-4. **Content depth audit** — which concepts gyms are hollow? Which hub pages feel thin?
+**Sprint 57 — PM audit complete. Build order:**
 
-**Hold until content audit:**
-- Hub content depth decision (curated preview vs. full room) — product call
-- Concepts completeness — needs user direction on which gyms are hollow
-- New content of any kind
+### P0 — Required before any distribution push
 
-**⚠️ USER ACTION REQUIRED:** Check PostHog WAU. If WAU < 100, prioritise distribution after UX fixes.
+1. **JTBD decision** (DECISIONS.md §11) — read it, confirm or revise. No code until this is settled.
+2. **Ungate RAG Lab Scenario 1 for guests** `S` — make the core mechanic the conversion hook. App.jsx GUEST_ALLOWED_TABS + RAG Lab scenario 1 ungated. See DECISIONS.md §12.
+3. **First-5-minutes onboarding path** `M` — post sign-in, new users see a guided "start here" (not the Progress dashboard). Route: sign-in → Retrieval hub → RAG Lab Scenario 1 → synthesis card → PrepLab CTA.
+4. **Real paid tier** — pricing decision before distribution. Replace "get the code on LinkedIn" with a real price or waitlist. See DECISIONS.md §11. User action — not a code task.
+
+### P1 — This sprint or next
+
+5. **Evaluation GT depth** `M` — add 5–6 new GT posts tagged `challengeArea: "evaluation"`. Currently 8 posts vs. 44 in Production. This is the thinnest challenge area and a primary interview topic.
+6. **Synthesis card specificity** `S` — after each lab scenario completion, the synthesis card should name the specific failure ("You reproduced 'missing context' — the retrieval returned the right chunk but answered the wrong question") + direct PrepLab link scoped to that failure mode cluster. Currently too generic.
+7. **Daily Judgment mechanic** `M` — one PrepLab question surfaced on Home/Progress, themed to the user's weakest topic from history. Gives users a daily reason to open GSL without email or push.
+8. **Sidebar cleanup** `S` — Plans & Access to header utility (small link next to avatar). Remove TRACK group label (jargon). Target: 7 sidebar items max.
+
+### P2 — Post-launch
+
+9. **Hub room decision** — curated preview vs. full filtered room. Needs PostHog data on which areas get most engagement. Do not build until data exists.
+10. **Concepts gym depth audit** — which gyms are hollow? User direction required.
+11. **Brand clarity** — "GenAI Systems Lab" is descriptive but forgettable. Revisit after JTBD is confirmed.
+
+**⚠️ USER ACTION REQUIRED:** PostHog WAU check + pricing decision (P0 item 4). Both are required before distribution.
 
 Sprint 49: full challenge-layer redesign (R1–R9). Sprint 50: readiness layer, guided paths, staffLayer 30→41. See CLAUDE.md sprint log.
 

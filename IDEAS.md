@@ -1232,6 +1232,95 @@ PAL has an "Analytics Failures" page — 25 named failure patterns with severity
 
 ---
 
+---
+
+## PM Audit findings — Sprint 57 (June 2026)
+
+Items surfaced by Audit 29. Not from cross-lab intelligence — from first-principles PM critique of GSL's own product shape. See AUDITS.md Audit 29 for full context.
+
+---
+
+### Guest activation — ungate RAG Lab Scenario 1
+`Tier 1` `S effort` `P0 — highest-leverage conversion change`
+
+The core mechanic (configure a real AI system, watch it fail, understand why) is completely hidden from guests. RAG Lab Scenario 1 ("Missing Answer") should be guest-accessible — no account required. After completion, the synthesis card CTA changes to "Sign in to save and continue." This is the single strongest conversion hook in the product. See DECISIONS.md §12 for binding rules on scope.
+
+**Dependencies:** App.jsx GUEST_ALLOWED_TABS + RAG Lab scenario-level guest gate (allow scenario 1, gate scenarios 2–6).
+
+---
+
+### First-5-minutes onboarding path (post sign-in)
+`Tier 1` `M effort` `P0 — activation rate`
+
+New sign-ins currently land on Progress (empty readiness bars, no streak, no context). There is no guided path from "I just created an account" to "I completed my first scenario." The activation event (first lab scenario completed + synthesis card viewed) is unreachable without accidental discovery.
+
+Build: a first-time user detection on sign-in (check localStorage for any prior activity — if none, flag as new). Route new users to a lightweight "Start here" overlay or step: Retrieval hub → RAG Lab → Scenario 1 → synthesis card → PrepLab CTA. Not a multi-screen onboarding wizard — just a clear "where to start" path that disappears after first scenario completion.
+
+**Dependencies:** Guest ungate (above) should ship first. DECISIONS.md §11 (JTBD frame) must be confirmed.
+
+---
+
+### Daily Judgment mechanic
+`Tier 1` `M effort` `P1 — daily habit, return rate`
+
+GSL has no daily trigger. Streak is a habit indicator but not a habit creator — it shows consistency but doesn't pull users back on any given day. The Daily Judgment mechanic: one PrepLab question surfaced on the Home/Progress page, themed to the user's weakest topic from history (from `gsl-preplab-history`). Refreshes daily (`gsl-daily-question-date` key). The question should be the first thing a returning user sees.
+
+Why this works: it gives the user a concrete micro-task that takes 2 minutes and feels productive. It doesn't require email or push. It compounds into streak behaviour naturally.
+
+**Dependencies:** `gsl-preplab-history` (already exists). `gsl-preplab-spaced` for due-item prioritisation. No backend needed.
+
+---
+
+### Evaluation GT depth — 5–6 new posts
+`Tier 1` `M effort` `P1 — content trust`
+
+Evaluation has 8 GT posts vs. 44 in Production and 81 in Foundations. It is a primary AI engineering interview topic (LLM-as-judge, RAGAS, offline vs. online eval, eval set design, human-vs-model eval, eval production gap) and the thinnest challenge area. A user who enters GSL via the Evaluation hub and finds 8 posts compared to 44 elsewhere loses trust in the platform's depth.
+
+Target posts (5–6 new, tagged `challengeArea: "evaluation"`):
+- "Why your eval set is lying to you" — distribution shift, contamination, overfitting to benchmarks
+- "Designing eval rubrics for open-ended AI responses" — criteria selection, scoring dimensions, calibration
+- "When to use automated eval vs. human review" — cost/latency/accuracy trade-offs per domain
+- "The prod-eval gap: why 94% accuracy still breaks your product" — offline metrics vs. real user outcomes
+- "Building a regression test suite for LLM outputs" — prompt regression, versioning, CI/CD integration
+- "Eval for RAG: RAGAS metrics and what they actually measure" — faithfulness, relevance, recall, precision
+
+**Dependencies:** None. Content work only.
+
+---
+
+### Sidebar utility cleanup
+`Tier 1` `S effort` `P1 — navigation clarity`
+
+Plans & Access occupies primary sidebar real estate as item 1 but is a utility page (not a content destination). It should move to a small header link near the avatar. Target sidebar: 7 items max — 5 challenge areas + PrepLab + Ground Truth. Remove the TRACK group label (users don't know what "TRACK" means). This reduces cognitive load on first visit without hiding anything.
+
+**Dependencies:** App.jsx NAV_GROUPS update. Header component update.
+
+---
+
+### Real paid tier — before distribution
+`Tier 1` `Decision + M effort` `P0 — monetisation structure`
+
+The access code (DAI2026) is public on LinkedIn. Full access is effectively free. There is no revenue signal, no urgency, no real conversion event. Before any HN / LinkedIn distribution push, full access needs a real price ($19–$29/month for interview prep is in-range for this category) or a waitlist mechanism. The current structure makes it impossible to know if anyone would actually pay.
+
+This is partially a business decision (Stripe/pricing) and partially a product decision (what the paid tier feels like to a new user). DECISIONS.md §0 describes the Stripe path — execute it when the pricing decision is made.
+
+**Dependencies:** User decision on pricing. Then: Stripe or Gumroad integration (M–L effort).
+
+---
+
+### Hub room decision — full filtered room vs. curated preview
+`Tier 2` `Decision only` `P2 — requires PostHog data first`
+
+Each hub page (Retrieval, Evaluation, Agents, Production, Foundations) currently shows 4 curated concepts + 4 GT posts + 3 PrepLab questions. This is a preview, not a full room. Users who want depth hit a dead end or navigate to the raw Concepts/PrepLab tabs and lose the challenge-area framing.
+
+Two valid options:
+1. **Keep as curated preview** — strong clear exits ("All 27 Concepts →", "All 51 Retrieval questions →") on every section. Hub is the entry ramp, tabs are the full room.
+2. **Make hubs full filtered rooms** — hub page renders all content for that challenge area inline (all filtered Concepts modules, all filtered GT posts, all filtered PrepLab questions). Nav becomes the primary content surface, legacy tabs become legacy.
+
+**Decision gate:** Run PostHog for 30 days after next distribution push. Look at: hub page time-on-page, exit click rates, and whether users navigate to the full tabs after visiting the hub. If most users exit to tabs → option 2. If most users use hub as entry and don't need more → option 1.
+
+---
+
 ## How to Use This File
 
 When starting a new build session:
