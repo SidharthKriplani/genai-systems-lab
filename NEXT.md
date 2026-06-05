@@ -2,13 +2,29 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 55 complete. Guest model, Plans 3-tier, staffLayer 68, GT series taxonomy done. Sprint 56: PostHog WAU baseline check + Stripe/payment → device limiter → Evaluation GT depth)*
+*Last updated: June 2026 (sprint 56: UX/product audit completed. Build order set. GT #300 push-fixed. Now fixing accordion, PrepLab duplication, hub exits, entry point, Plans, Home/Progress, Profile in order.)*
 
 ---
 
-## Theme: Sprint 56. Monetisation groundwork: PostHog check → Stripe → device limiter. Or content: Evaluation GT depth (8 posts → 13+).
+## Theme: Sprint 56. UX correction pass before any new features. Fix what's broken and confusing first.
 
-**⚠️ USER ACTION REQUIRED before next feature sprint:** Check PostHog WAU baseline at posthog.com. If WAU < 100 active users, prioritise distribution over features. If WAU ≥ 100, proceed to Stripe integration.
+**Current build queue — do in this order, nothing else until done:**
+
+1. ~~Push existing commits~~ DONE — GT #300 fixed in production
+2. **Accordion single-open** — activeSection string, label toggles, remove chevron — `S`
+3. **PrepLab mode card dedup** — remove right-side mode cards, sidebar is the selector — `S`
+4. **Hub page exits** — "See all X →" links from each hub to full filtered content — `S`
+5. **PrepLab entry point** — personalized queue (SRS due → weakest topic → fresh start) — `M`
+6. **Plans 2-state** — remove Guest card, show free vs. full only — `S`
+7. **Home/Progress split** — Home = cold only, signed-in logo → Progress, remove Progress from sidebar — `M`
+8. **Profile → header** — remove from sidebar, lives in header avatar only — `S`
+
+**Hold until content audit:**
+- Hub content depth decision (curated preview vs. full room) — product call
+- Concepts completeness — needs user direction on which gyms are hollow
+- New content of any kind
+
+**⚠️ USER ACTION REQUIRED:** Check PostHog WAU. If WAU < 100, prioritise distribution after UX fixes.
 
 Sprint 49: full challenge-layer redesign (R1–R9). Sprint 50: readiness layer, guided paths, staffLayer 30→41. See CLAUDE.md sprint log.
 

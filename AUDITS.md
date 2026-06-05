@@ -2081,3 +2081,35 @@ All resolved in same commit as this audit log entry.
 - App.jsx brace diff: 0
 
 **Status:** ✅ Sprint 55 session 1 bugs fixed.
+
+---
+
+## Audit 28 — UX / Product Audit (Sprint 56)
+
+**Date:** June 2026
+**Scope:** Full product UX pass triggered by screenshot review — nav, PrepLab, Plans, Home/Progress
+**Method:** Screenshot analysis + codebase review. No code changes in this audit — diagnose only.
+**Status:** Findings documented. Fix build order set in NEXT.md.
+
+### Naming flag
+GSL/GAL references throughout the codebase are the correct product name. PAL is a separate product used as inspiration. Several sprint 55 decisions (3-tier access model, Plans structure, hub architecture) were influenced by PAL analysis without independent GAL validation. These are flagged for user validation, not assumed correct.
+
+### Findings
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | **GT #300 error in production** — CodeBlock fix was committed but not pushed. GT tab crashed for all users. | P0 | ✅ Fixed — user pushed existing commits |
+| 2 | **Accordion multi-open** — `expandedItems` is a Set; multiple sections stay open, clicking label re-adds on navigate, never collapses. Users cannot close sections. | P0 | 🔧 Fix #2 queued |
+| 3 | **PrepLab mode cards duplicate sidebar** — Left sidebar lists 4 modes; right-side main content shows same 4 modes as cards. No clear entry hierarchy. | P1 | 🔧 Fix #3 queued |
+| 4 | **Hub pages dead-end** — Each hub shows 4 curated items with no exit to full content. "Retrieval" hub has 4 concepts but no link to all 27. Users think that's all there is. | P1 | 🔧 Fix #4 queued |
+| 5 | **PrepLab entry point is a mode selector, not a practice queue** — Opens to mode cards + topic grid. No personalization, no queue, no "start here." | P1 | 🔧 Fix #5 queued |
+| 6 | **Plans shows "FREE $0"** — Confusing label. Guest card not needed on Plans (belongs in GateOverlay). Access code state is localStorage-only, not account-linked. | P1 | 🔧 Fix #6 queued |
+| 7 | **Home and Progress ~70% overlap** — Both show readiness bars, guided paths. Neither feels canonical. Returning users have two near-identical pages. | P2 | 🔧 Fix #7 queued |
+| 8 | **Profile in sidebar** — Profile is an account utility, not a navigation destination. Competes with content rooms for sidebar space. | P2 | 🔧 Fix #8 queued |
+
+### Product decisions deferred (need user direction before building)
+- Hub depth: curated preview vs. full filtered room — architectural call that changes information architecture
+- Concepts completeness: which gyms are hollow, which are done
+- Content depth across all parallel structures
+
+**Status:** Audit complete. Build order in NEXT.md.
