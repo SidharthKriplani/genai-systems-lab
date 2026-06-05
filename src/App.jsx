@@ -861,8 +861,32 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
     );
   }
 
+  // First-time user: signed in but no activity yet
+  const isFirstTime = ragPassed === 0 && totalAnswered === 0 && masteryArr.length === 0;
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
+
+      {/* ── First-time user start-here banner ────────────────────────────────── */}
+      {isFirstTime && (
+        <div className="rounded-2xl p-5 space-y-3" style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.08) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(34,211,238,0.25)", borderTop: "2px solid var(--gal-build)" }}>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black font-mono uppercase tracking-widest" style={{ color: "var(--gal-build)" }}>Start here</span>
+          </div>
+          <p className="text-sm text-zinc-200 leading-relaxed font-semibold">
+            Build your first production judgment in under 5 minutes.
+          </p>
+          <p className="text-xs text-zinc-400 leading-relaxed">
+            Configure a real RAG system, watch it hallucinate, understand exactly why — and what you would say about it in a senior AI engineering interview.
+          </p>
+          <button
+            onClick={() => onNavigate("lab")}
+            className="w-full py-3 rounded-xl text-sm font-black transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, var(--gal-build) 0%, #6366f1 100%)", color: "#fff" }}>
+            Open RAG Lab — Scenario 1 →
+          </button>
+        </div>
+      )}
 
       {/* ── Stats Banner ─────────────────────────────────────────────────────── */}
       <div className="rounded-2xl p-5" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%)", border: "1px solid rgba(99,102,241,0.25)" }}>
@@ -1370,6 +1394,7 @@ const GUEST_ALLOWED_TABS = new Set([
   "foundations", "foundationlab", "promptlab", // Foundations always free
   "groundtruth", // free but limited to 3 pinned posts (enforced in GroundTruth.jsx)
   "preplab",     // free but limited to 1 demo question (enforced in PrepLab.jsx)
+  "lab",         // RAG Lab Scenario 1 free for guests — per-scenario gate in RAG Lab render (DECISIONS.md §12)
 ]);
 
 // ─── RAG LAB — scenario forward pointers ──────────────────────────────────────
@@ -1786,6 +1811,8 @@ export default function App() {
   const lookup = useMemo(() => lookupResult(scenario, config), [scenario, config]);
 
   const switchScenario = (idx) => {
+    // Guests: only Scenario 1 (index 0) is free. Others require sign-in. (DECISIONS.md §12)
+    if (!user && idx > 0) return;
     setScenarioIdx(idx);
     setConfig(ALL_SCENARIOS[idx].default_config);
     setEvaluated(false);
@@ -1855,14 +1882,10 @@ export default function App() {
   const result = lookup?.result;
   const hasFallback = lookup && !lookup.curated;
 
-  // R1 — challenge-layer nav (Sprint 49). Mirrors nav.js NAV_GROUPS export.
+  // R1 — challenge-layer nav (Sprint 49). Sprint 58: labels clarified, Plans moved to bottom.
   const NAV_GROUPS = [
-    // Plans — only utility item in sidebar. Profile→header avatar. Progress→logo click.
-    { label: null, color: "#8b5cf6", items: [
-      { id: "plans", label: "Plans & Access" },
-    ]},
-    // SKILL AREAS — click area name → hub page (filtered content). Sub-item → specific lab.
-    { label: "SKILL AREAS", color: "var(--gal-build)", items: [
+    // CHALLENGE AREAS — click area name → hub page. Sub-item → specific lab.
+    { label: "CHALLENGE AREAS", color: "var(--gal-build)", items: [
       { id: "retrieval",  label: "Retrieval",  subitems: [
         { id: "lab",          label: "RAG Lab",    note: "6 scenarios" },
       ]},
@@ -1880,12 +1903,12 @@ export default function App() {
         { id: "promptlab",     label: "Prompt Lab",note: "6 scenarios" },
       ]},
     ]},
-    // PRACTICE
-    { label: "PRACTICE", color: "#6366f1", items: [
+    // Judgment practice
+    { label: null, color: "#6366f1", items: [
       { id: "preplab", label: "PrepLab" },
     ]},
-    // LEARN — Ground Truth always open; series items open their first post directly
-    { label: "LEARN", color: "#a78bfa", items: [
+    // Field notes — practitioner writing; series items open first post directly
+    { label: null, color: "#a78bfa", items: [
       { id: "groundtruth", label: "Ground Truth", alwaysExpanded: true, subitems: [
         { id: "groundtruth", label: "Agent Engineering",    postId: "react-pattern"          },
         { id: "groundtruth", label: "RAG in Production",    postId: "how-rag-works"          },
@@ -1894,6 +1917,10 @@ export default function App() {
         { id: "groundtruth", label: "How I'd Build X",      postId: "build-ai-search"        },
         { id: "groundtruth", label: "The Data Flywheel",    postId: "flywheel-implicit-feedback" },
       ]},
+    ]},
+    // Plans — utility only, bottom of sidebar. Profile→header avatar. Progress→logo click.
+    { label: null, color: "#8b5cf6", items: [
+      { id: "plans", label: "Plans & Access" },
     ]},
   ];
 
@@ -2367,7 +2394,7 @@ export default function App() {
       </main>
 
 
-      {topView === "lab" && (!user ? <GateOverlay context="free-account" user={null} /> : (
+      {topView === "lab" && (
         <div className="flex flex-col lg:flex-row h-full min-h-0">
           {/* Sidebar: scenario list — desktop only */}
           <div className="hidden lg:flex flex-col w-52 shrink-0 overflow-y-auto py-4"
@@ -2392,9 +2419,11 @@ export default function App() {
             <div className="px-2 space-y-0.5">
               {ALL_SCENARIOS.map((s, i) => {
                 const active = i === scenarioIdx;
+                const guestLocked = !user && i > 0;
                 return (
                   <button key={s.scenario_id} onClick={() => switchScenario(i)}
-                    className={`w-full text-left px-2 py-2.5 rounded-lg text-xs transition-all duration-150 ${!active ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60" : "font-semibold"}`}
+                    disabled={guestLocked}
+                    className={`w-full text-left px-2 py-2.5 rounded-lg text-xs transition-all duration-150 ${guestLocked ? "opacity-40 cursor-not-allowed" : !active ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60" : "font-semibold"}`}
                     style={active ? { background: "linear-gradient(90deg, rgba(139,92,246,0.22) 0%, rgba(139,92,246,0.06) 100%)", boxShadow: "inset 2px 0 0 #8b5cf6", color: "#ffffff" } : {}}>
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
@@ -2402,11 +2431,17 @@ export default function App() {
                         {s.tag}
                       </span>
                       <span className="text-zinc-500 text-[9px]">#{i + 1}</span>
+                      {guestLocked && <span className="text-[9px] text-zinc-600">🔒</span>}
                     </div>
                     <div className="leading-snug">{s.title}</div>
                   </button>
                 );
               })}
+              {!user && (
+                <div className="mt-2 mx-1 px-2 py-2 rounded-lg text-[10px] text-zinc-500 leading-snug" style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)" }}>
+                  Sign in (free) to unlock all 6 scenarios
+                </div>
+              )}
             </div>
           </div>
 
@@ -2622,16 +2657,18 @@ export default function App() {
                       <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.22)", borderTop: "2px solid rgba(99,102,241,0.5)" }}>
                         <div className="flex items-center gap-2">
                           <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
-                          <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">You've seen the failure. What's next?</span>
+                          <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
+                            You reproduced: <span style={{ color: "var(--gal-build)" }}>{scenario.failure_mode_taught}</span>
+                          </span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <button
-                            onClick={() => { track("module_forward_pointer_clicked", { type: "preplab", scenario: scenario.scenario_id }); setPreplabInitialMode("trainer"); navigate("preplab"); }}
+                            onClick={() => { track("module_forward_pointer_clicked", { type: "preplab", scenario: scenario.scenario_id, topic: fwd.topic }); navigateTo({ tab: "preplab", topic: fwd.topic }); }}
                             className="flex items-start gap-3 p-3 rounded-lg border border-zinc-700 hover:border-violet-500 bg-zinc-900/60 hover:bg-zinc-800/60 transition-all text-left group">
                             <span className="text-lg shrink-0">🧠</span>
                             <div>
-                              <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Test your understanding</div>
-                              <div className="text-[10px] text-zinc-500 mt-0.5">Opens Prep Lab Trainer · instant feedback</div>
+                              <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Drill this failure mode</div>
+                              <div className="text-[10px] text-zinc-500 mt-0.5">PrepLab · {fwd.topic} questions</div>
                             </div>
                           </button>
                           <button
@@ -2639,11 +2676,26 @@ export default function App() {
                             className="flex items-start gap-3 p-3 rounded-lg border border-zinc-700 hover:border-violet-500 bg-zinc-900/60 hover:bg-zinc-800/60 transition-all text-left group">
                             <span className="text-lg shrink-0">📖</span>
                             <div>
-                              <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Read the full breakdown</div>
+                              <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Read the production breakdown</div>
                               <div className="text-[10px] text-zinc-500 mt-0.5 leading-snug">{fwd.postTitle}</div>
                             </div>
                           </button>
                         </div>
+                        {/* Guest sign-in CTA — shown after Scenario 1 completion */}
+                        {!user && scenario.scenario_id === "missing_answer" && (
+                          <div className="mt-1 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3" style={{ background: "rgba(99,102,241,0.10)", border: "1px solid rgba(99,102,241,0.25)" }}>
+                            <p className="text-xs text-zinc-300 leading-snug">
+                              <span className="font-bold text-white">5 more failure modes wait.</span>{" "}
+                              Sign in (free) to save your result and continue.
+                            </p>
+                            <button
+                              onClick={() => { track("guest_signin_cta_clicked", { source: "rag_scenario1_synthesis" }); navigate("profile"); }}
+                              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-black transition-all"
+                              style={{ background: "linear-gradient(135deg, var(--gal-build) 0%, #6366f1 100%)", color: "#fff" }}>
+                              Sign in →
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -2766,7 +2818,7 @@ export default function App() {
             </footer>
           </div>
         </div>
-      ))}
+      )}
 
       {topView === "qa" && (
         <Suspense fallback={<div className="flex-1 flex items-center justify-center py-24 text-zinc-500 text-sm font-mono">Loading…</div>}>

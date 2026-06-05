@@ -162,7 +162,7 @@ export default function PlansPage({ onNavigate, user = null }) {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-2">
-              <p className="text-[10px] text-zinc-600">Community access code (free during beta):</p>
+              <p className="text-[10px] text-zinc-600">Enter your access code:</p>
               <div className="flex gap-2">
                 <input
                   value={code}
@@ -180,9 +180,10 @@ export default function PlansPage({ onNavigate, user = null }) {
               {status === "success" && <p className="text-[11px] text-emerald-400">Access granted. Reload to see changes.</p>}
               {status === "error"   && <p className="text-[11px] text-red-400">Code not recognised. Check and try again.</p>}
               <p className="text-[10px] text-zinc-600 leading-relaxed">
-                The community code is free while the platform is in beta.{" "}
+                Full access is invite-only during beta. Reach out on{" "}
                 <a href="https://www.linkedin.com/in/sidharthkriplani/" target="_blank" rel="noopener noreferrer"
-                  className="text-zinc-500 hover:text-zinc-400 underline transition-colors">Get it on LinkedIn →</a>
+                  className="text-zinc-500 hover:text-zinc-400 underline transition-colors">LinkedIn</a>{" "}
+                to request access.
               </p>
             </form>
           )}
