@@ -1548,11 +1548,10 @@ export default function App() {
     next.has(label) ? next.delete(label) : next.add(label);
     return next;
   });
-  // groundtruth always expanded by default — shows series to entice discovery
-  const [expandedItems, setExpandedItems] = useState(new Set(["groundtruth"]));
-  const toggleItem = (id) => setExpandedItems(prev => {
-    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
-  });
+  // Single-open accordion — one section at a time. null = all closed.
+  // Ground Truth uses forceOpen=true so it ignores this state.
+  const [activeSection, setActiveSection] = useState(null);
+  const toggleSection = (id) => setActiveSection(prev => prev === id ? null : id);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
@@ -2121,45 +2120,38 @@ export default function App() {
                     const active = topView === item.id;
                     const grpColor = group.color || "#6366f1";
                     const hasSubitems = item.subitems && item.subitems.length > 0;
-                    const forceOpen  = item.alwaysExpanded;
-                    // isExpanded: ONLY forceOpen or explicit user toggle — never auto-expand from active/subActive
-                    // This prevents all areas expanding when groundtruth is active
-                    const isExpanded = forceOpen || expandedItems.has(item.id);
+                    const forceOpen   = item.alwaysExpanded;
+                    // Single-open accordion: section is open if forceOpen OR it is the activeSection
+                    const isExpanded  = forceOpen || activeSection === item.id;
                     const activeColor = group.color || "var(--gal-build)";
                     return (
-                      <div key={item.id} className="relative">
-                        {/* Nav item label — separate from chevron to avoid button-in-button */}
+                      <div key={item.id}>
+                        {/* Nav item label — click navigates AND toggles open/close */}
                         <button
                           onClick={() => {
                             navigate(item.id);
-                            // Auto-expand on navigate
-                            if (hasSubitems && !forceOpen && !expandedItems.has(item.id)) {
-                              setExpandedItems(prev => { const n = new Set(prev); n.add(item.id); return n; });
-                            }
+                            if (hasSubitems && !forceOpen) toggleSection(item.id);
                           }}
                           aria-current={active ? "page" : undefined}
-                          className={`w-full text-left rounded-lg text-xs font-semibold flex items-center transition-all duration-150 ${hasSubitems && !forceOpen ? "pl-3 pr-8 py-1.5" : "px-3 py-1.5"} ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
+                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
                           style={active ? {
                             background: `linear-gradient(90deg, ${activeColor}12 0%, ${activeColor}03 100%)`,
                             boxShadow: `inset 2px 0 0 ${activeColor}`,
                             color: "#ffffff",
                           } : {}}>
                           <span className={active ? "text-white font-bold" : ""}>{item.label}</span>
-                          {visited.has(item.id) && !active && (
-                            <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: activeColor, opacity: 0.4 }} />
-                          )}
+                          <span className="flex items-center gap-1.5">
+                            {visited.has(item.id) && !active && (
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: activeColor, opacity: 0.4 }} />
+                            )}
+                            {hasSubitems && !forceOpen && (
+                              <svg width="8" height="8" viewBox="0 0 8 8" fill="none"
+                                style={{ color: active ? activeColor : "#71717a", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 150ms", flexShrink: 0 }}>
+                                <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </span>
                         </button>
-                        {/* Chevron — sibling to nav button (not nested inside) */}
-                        {hasSubitems && !forceOpen && (
-                          <button onClick={() => toggleItem(item.id)}
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-zinc-700/60 transition-colors"
-                            aria-label={isExpanded ? "Collapse" : "Expand"}>
-                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none"
-                              style={{ color: active ? activeColor : "#71717a", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 150ms" }}>
-                              <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </button>
-                        )}
                         {/* Sub-items */}
                         {hasSubitems && (
                           <div style={{ maxHeight: isExpanded ? `${item.subitems.length * 30}px` : '0px', overflow: 'hidden', transition: 'max-height 200ms cubic-bezier(0.4,0,0.2,1)' }}>
