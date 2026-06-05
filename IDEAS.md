@@ -2,7 +2,7 @@
 
 Prioritized backlog of ideas not yet built. Organized by effort and impact. Updated after each build session.
 
-*Last updated: June 2026 (sprint 55) | Current scale: 3-tier guest model, 5 hub pages, Plans 3-tier redesign, 68 staffLayer, 315 PrepLab questions, 231 GT posts (104 series-tagged), 6 labs, GateOverlay*
+*Last updated: June 2026 (sprint 57 PM audit) | Current scale: 3-tier guest model, 5 hub pages, 2-state Plans, 68 staffLayer, 319 PrepLab questions, 226 GT posts (104 series-tagged), 6 labs, GateOverlay, Supabase auth*
 
 ---
 
