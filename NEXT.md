@@ -12,19 +12,33 @@ Read this at session start. Do only this. Update before closing.
 
 **Sprint 57 — PM audit complete. Build order:**
 
-### P0 — Required before any distribution push
+### P0 — ✅ DONE (sprint 58, commit `7b249ee`)
 
-1. **JTBD decision** (DECISIONS.md §11) — read it, confirm or revise. No code until this is settled.
-2. **Ungate RAG Lab Scenario 1 for guests** `S` — make the core mechanic the conversion hook. App.jsx GUEST_ALLOWED_TABS + RAG Lab scenario 1 ungated. See DECISIONS.md §12.
-3. **First-5-minutes onboarding path** `M` — post sign-in, new users see a guided "start here" (not the Progress dashboard). Route: sign-in → Retrieval hub → RAG Lab Scenario 1 → synthesis card → PrepLab CTA.
-4. **Real paid tier** — pricing decision before distribution. Replace "get the code on LinkedIn" with a real price or waitlist. See DECISIONS.md §11. User action — not a code task.
+1. ~~**JTBD decision**~~ — DECISIONS.md §11 logged. Interview prep is primary frame.
+2. ~~**Ungate RAG Lab Scenario 1 for guests**~~ — DONE. GUEST_ALLOWED_TABS includes "lab". Scenarios 2–6 locked via guard + UI.
+3. ~~**First-time user path**~~ — DONE. `isFirstTime` banner on Progress page → "Open RAG Lab Scenario 1 →".
+4. ~~**Synthesis card specificity**~~ — DONE. Names `failure_mode_taught`, PrepLab CTA topic-filtered, guest sign-in CTA after Scenario 1.
+5. ~~**Navigation cleanup**~~ — DONE. "CHALLENGE AREAS" label, group labels removed, Plans moved to bottom.
+6. ~~**Plans copy**~~ — DONE. "Community code free during beta" removed. "Invite-only during beta" framing.
 
-### P1 — This sprint or next
+**Real paid tier** — pricing decision still required. User action, not a code task. Do before distribution.
 
-5. **Evaluation GT depth** `M` — add 5–6 new GT posts tagged `challengeArea: "evaluation"`. Currently 8 posts vs. 44 in Production. This is the thinnest challenge area and a primary interview topic.
-6. **Synthesis card specificity** `S` — after each lab scenario completion, the synthesis card should name the specific failure ("You reproduced 'missing context' — the retrieval returned the right chunk but answered the wrong question") + direct PrepLab link scoped to that failure mode cluster. Currently too generic.
-7. **Daily Judgment mechanic** `M` — one PrepLab question surfaced on Home/Progress, themed to the user's weakest topic from history. Gives users a daily reason to open GSL without email or push.
-8. **Sidebar cleanup** `S` — Plans & Access to header utility (small link next to avatar). Remove TRACK group label (jargon). Target: 7 sidebar items max.
+### P1 — Next sprint
+
+7. **Evaluation GT depth** `M` — 5–6 new GT posts tagged `challengeArea: "evaluation"`. Topics:
+   - "Why your eval set is lying to you" (distribution shift, contamination)
+   - "Designing eval rubrics for open-ended AI responses"
+   - "When to use automated eval vs. human review"
+   - "The prod-eval gap: why 94% accuracy still breaks your product"
+   - "Building a regression test suite for LLM outputs"
+   - "Eval for RAG: RAGAS metrics and what they actually measure" ← already exists as `ragas-metrics-explained`, needs tagging check
+8. **Mobile scenario strip guest lock** `S` — the mobile horizontal scroll strip for RAG scenarios doesn't yet show 🔒 for guests (only the desktop sidebar does). Apply same `guestLocked` pattern.
+9. **Daily Judgment mechanic** `M` — one PrepLab question on Home/Progress themed to weakest topic.
+
+### P2 — Post distribution signal
+
+10. Hub room decision (curated preview vs. full filtered room) — wait for PostHog data.
+11. Concepts gym depth audit — user direction needed.
 
 ### P2 — Post-launch
 

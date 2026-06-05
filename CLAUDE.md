@@ -326,6 +326,16 @@ For full audit findings see AUDITS.md.
 - Bug fixes `70e5604`: (1) Sidebar expansion — removed `subActive || active` from `isExpanded`; since all SKILL AREAS shared `id: "groundtruth"` sub-items, being on groundtruth expanded all areas simultaneously. Now only `forceOpen || expandedItems.has(id)`. (2) GT series deep-link — series sub-items now have `postId` field, click sets `gtPostId` + navigates to groundtruth (opens first post of series directly). Series names corrected to match SERIES_META. (3) Profile/Progress dedup — readiness bars removed from Profile (Progress owns them); Profile replaced with single "Your readiness dashboard →" link. AreaBar + getAllAreasReadiness import removed from Profile.jsx.
 - Bug fixes `370b990`: (1) `onNavigate("progress")` in Profile silently failed — `navigateTo` destructures an object, passing a string gave `tab=undefined`. Fixed to `onNavigate({ tab: "progress" })`. (2) `removeBookmark` used `setSyncMsg(null)` as re-render hack — when syncMsg was already null, React bailed out and bookmark stayed visible. Fixed by converting `bookmarkIds` to proper useState. (3) Plans FULL ACCESS card showed "Free" as price (indistinguishable from FREE $0 tier) — replaced with code `DAI2026` displayed prominently, pre-filled in input, label changes to "ACTIVE" when unlocked.
 
+**Sprint 58 (June 2026) — MVP coherence pass (Audit 29 implementation):**
+- P0 items from PM audit implemented. Commit `7b249ee`. Brace diff: 0.
+- Nav cleanup: "SKILL AREAS" → "CHALLENGE AREAS", "PRACTICE"/"LEARN" group labels removed (items speak for themselves), Plans & Access moved from top to bottom of sidebar.
+- Guest RAG Lab access: "lab" added to GUEST_ALLOWED_TABS. Scenario 1 fully accessible to guests. Scenarios 2–6 locked via `switchScenario` guard + disabled + 🔒 visual on sidebar tabs + "Sign in to unlock all 6" prompt.
+- Synthesis card: header now names the specific failure mode (`scenario.failure_mode_taught`). PrepLab CTA now routes via `navigateTo({ tab: "preplab", topic: fwd.topic })` instead of generic trainer. Guest sign-in CTA added after Scenario 1 completion ("5 more failure modes wait. Sign in to save and continue.").
+- First-time user nudge: `isFirstTime` detection in ProgressView (ragPassed === 0 && totalAnswered === 0 && masteryArr.length === 0). Shows prominent "Start here → Open RAG Lab Scenario 1" banner at top of Progress page before stats.
+- Plans copy: removed "Community code (free during beta)" + LinkedIn "Get it on LinkedIn →" link. Replaced with "Enter your access code" + "Full access is invite-only during beta. Reach out on LinkedIn to request access."
+- P1 (Evaluation GT depth): documented in NEXT.md. Content work — 5–6 posts needed, topics listed.
+- Still open (sprint 59): Evaluation GT posts (content), mobile scenario strip guest lock, hub page depth decision.
+
 **Sprint 57 (June 2026) — PM product audit + statefulness logging:**
 - Full PM product critique (Audit 29): identity, JTBD, user journey, IA, access model, retention, conversion, risks. No code this sprint.
 - Naming clarified: GSL = product name (user-facing). GAL = internal code shorthand only. PAL = separate product, never a justification for GSL decisions without independent validation.
