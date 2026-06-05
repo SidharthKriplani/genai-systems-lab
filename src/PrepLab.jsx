@@ -3561,53 +3561,129 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
         {mode === "defense"     && <DefenseDocMode onExit={exitMode} />}
         {mode === "intexp"      && <InterviewIntelMode onExit={exitMode} />}
         {mode === "heatmap"     && <WeaknessHeatmapMode onExit={exitMode} />}
-        {!mode && (
-          <div className="p-5 sm:p-7 space-y-6 overflow-y-auto">
-            {/* Header row */}
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-xl font-black text-white tracking-tight mb-1">PrepLab</div>
-                <div className="text-sm text-zinc-400">Production-level questions from real AI engineering interview loops.</div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0 pt-0.5">
-                <span className="text-[10px] font-mono px-2 py-1 rounded" style={{ background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.3)", color: "#93c5fd" }}>{PREP_QUESTIONS.filter(q=>q.difficulty==="easy").length}E</span>
-                <span className="text-[10px] font-mono px-2 py-1 rounded" style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#fcd34d" }}>{PREP_QUESTIONS.filter(q=>q.difficulty==="medium").length}M</span>
-                <span className="text-[10px] font-mono px-2 py-1 rounded" style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5" }}>{PREP_QUESTIONS.filter(q=>q.difficulty==="hard").length}H</span>
-              </div>
-            </div>
+        {!mode && (() => {
+          // Personalised entry: derive from localStorage without extra state
+          const hist = (() => { try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); } catch { return {}; } })();
+          const histEntries = Object.values(hist);
+          const totalAnswered = histEntries.length;
+          const correctCount  = histEntries.filter(e => e.attempts > 0 && e.wrong === 0).length;
+          const accuracy      = totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : null;
 
-            {/* Browse by topic — use sidebar to select a mode, use topic cards to start drilling */}
-            <div>
-              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Browse by Topic</div>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                {TOPIC_GROUPS.map(g => {
-                  const count = PREP_QUESTIONS.filter(q => g.topics.includes(q.topic)).length;
-                  return (
-                    <button key={g.id} onClick={() => openTrainer(g.id)}
-                      style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
-                      className="text-left p-4 rounded-xl hover:border-violet-500/40 hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/30 transition-all duration-150">
-                      <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <span className="text-sm font-semibold text-zinc-100 leading-snug">{g.label}</span>
-                        <span className="text-[10px] font-mono text-zinc-500 shrink-0 mt-0.5">{count}q</span>
-                      </div>
-                      <div className="text-[11px] text-zinc-500 leading-relaxed line-clamp-2">{g.desc}</div>
-                    </button>
-                  );
-                })}
-                {/* "All questions" tile */}
-                <button onClick={() => openTrainer("all")}
-                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
-                  className="text-left p-4 rounded-xl hover:border-violet-500/40 hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/30 transition-all duration-150">
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <span className="text-sm font-semibold text-zinc-100 leading-snug">All Questions</span>
-                    <span className="text-[10px] font-mono text-zinc-500 shrink-0 mt-0.5">{PREP_QUESTIONS.length}q</span>
+          // Weakest topic — topic with worst accuracy (min 3 attempts)
+          const topicStats = {};
+          histEntries.forEach(e => {
+            if (!e.topic) return;
+            if (!topicStats[e.topic]) topicStats[e.topic] = { correct: 0, total: 0 };
+            topicStats[e.topic].total++;
+            if (e.wrong === 0 && e.attempts > 0) topicStats[e.topic].correct++;
+          });
+          const weakest = Object.entries(topicStats)
+            .filter(([, s]) => s.total >= 3)
+            .sort(([, a], [, b]) => (a.correct / a.total) - (b.correct / b.total))
+            .map(([t]) => t)[0] || null;
+          const weakestGroup = weakest ? TOPIC_GROUPS.find(g => g.topics.includes(weakest)) : null;
+
+          const isReturning = totalAnswered > 0;
+
+          return (
+            <div className="p-5 sm:p-7 space-y-7 overflow-y-auto">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xl font-black text-white tracking-tight mb-1">PrepLab</div>
+                  <div className="text-sm text-zinc-400">Production-level questions from real AI engineering interview loops.</div>
+                </div>
+                {isReturning && accuracy !== null && (
+                  <div className="text-right shrink-0">
+                    <div className="text-2xl font-black text-white">{accuracy}%</div>
+                    <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">accuracy · {totalAnswered}q</div>
                   </div>
-                  <div className="text-[11px] text-zinc-500 leading-relaxed">Full bank, shuffled. No filter.</div>
-                </button>
+                )}
+              </div>
+
+              {/* Primary CTA — personalised */}
+              {dueQuestions.length > 0 ? (
+                <div className="rounded-xl p-5 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(15,15,17,0.9) 100%)", border: "1px solid rgba(99,102,241,0.3)", borderLeft: "3px solid #6366f1" }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-black text-white mb-0.5">Review due</div>
+                      <div className="text-xs text-zinc-400">{dueQuestions.length} question{dueQuestions.length > 1 ? "s" : ""} scheduled for today — spaced repetition.</div>
+                    </div>
+                    <button onClick={() => selectMode("review")}
+                      className="shrink-0 px-4 py-2.5 rounded-lg text-xs font-black transition-all"
+                      style={{ background: "#6366f1", color: "#fff" }}>
+                      Start review →
+                    </button>
+                  </div>
+                </div>
+              ) : weakestGroup ? (
+                <div className="rounded-xl p-5 space-y-3" style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(15,15,17,0.9) 100%)", border: "1px solid rgba(239,68,68,0.25)", borderLeft: "3px solid #ef4444" }}>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-[10px] font-mono text-red-400 uppercase tracking-widest mb-1">Weakest area</div>
+                      <div className="text-sm font-black text-white mb-0.5">{weakestGroup.label}</div>
+                      <div className="text-xs text-zinc-400">{topicStats[weakest] ? `${Math.round(topicStats[weakest].correct / topicStats[weakest].total * 100)}% accuracy · ${topicStats[weakest].total} answered` : ""}</div>
+                    </div>
+                    <button onClick={() => openTrainer(weakestGroup.id)}
+                      className="shrink-0 px-4 py-2.5 rounded-lg text-xs font-black transition-all"
+                      style={{ background: "#ef4444", color: "#fff" }}>
+                      Drill this →
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl p-5" style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.08) 0%, rgba(15,15,17,0.9) 100%)", border: "1px solid var(--gal-build-border)", borderLeft: "3px solid var(--gal-build)" }}>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-black text-white mb-0.5">Start fresh</div>
+                      <div className="text-xs text-zinc-400">315 questions across RAG, agents, evals, LLMOps, and more.</div>
+                    </div>
+                    <button onClick={() => selectMode("exam")}
+                      className="shrink-0 px-4 py-2.5 rounded-lg text-xs font-black transition-all"
+                      style={{ background: "var(--gal-build)", color: "#000" }}>
+                      Begin →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Topic grid */}
+              <div>
+                <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Practice by topic</div>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                  {TOPIC_GROUPS.map(g => {
+                    const count = PREP_QUESTIONS.filter(q => g.topics.includes(q.topic)).length;
+                    const gs = Object.entries(topicStats).filter(([t]) => g.topics.includes(t));
+                    const gTotal = gs.reduce((s, [,v]) => s + v.total, 0);
+                    const gCorrect = gs.reduce((s, [,v]) => s + v.correct, 0);
+                    const gPct = gTotal >= 3 ? Math.round(gCorrect / gTotal * 100) : null;
+                    const isWeak = weakestGroup?.id === g.id;
+                    return (
+                      <button key={g.id} onClick={() => openTrainer(g.id)}
+                        style={{ background: "var(--surface-2)", border: `1px solid ${isWeak ? "rgba(239,68,68,0.35)" : "var(--border)"}` }}
+                        className="text-left p-4 rounded-xl hover:border-violet-500/40 hover:-translate-y-0.5 transition-all duration-150">
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <span className="text-sm font-semibold text-zinc-100 leading-snug">{g.label}</span>
+                          <span className="text-[10px] font-mono text-zinc-500 shrink-0 mt-0.5">{gPct !== null ? `${gPct}%` : `${count}q`}</span>
+                        </div>
+                        <div className="text-[11px] text-zinc-500 leading-relaxed line-clamp-2">{g.desc}</div>
+                      </button>
+                    );
+                  })}
+                  <button onClick={() => openTrainer("all")}
+                    style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
+                    className="text-left p-4 rounded-xl hover:border-violet-500/40 hover:-translate-y-0.5 transition-all duration-150">
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <span className="text-sm font-semibold text-zinc-100 leading-snug">All Questions</span>
+                      <span className="text-[10px] font-mono text-zinc-500 shrink-0 mt-0.5">{PREP_QUESTIONS.length}q</span>
+                    </div>
+                    <div className="text-[11px] text-zinc-500 leading-relaxed">Full bank, shuffled. No filter.</div>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );
