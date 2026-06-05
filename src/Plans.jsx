@@ -197,7 +197,7 @@ export default function PlansPage({ onNavigate, user = null }) {
           {[
             { step: "01", label: "Explore free", body: "Foundations, GT posts, and one PrepLab question — no account needed. Get a feel for the quality." },
             { step: "02", label: "Sign in (free)", body: "Unlocks all 6 labs, 226 posts, and PrepLab. Progress saves across sessions. 30 seconds with Google." },
-            { step: "03", label: "Unlock everything", body: "Enter the community code. Unlimited PrepLab, Company Tracks, Staff Layer, Scenarios — all yours." },
+            { step: "03", label: "Unlock everything", body: "Enter your access code. Unlimited PrepLab, Company Tracks, Staff Layer, Scenarios — all yours." },
           ].map(({ step, label, body }) => (
             <div key={step} className="space-y-1.5">
               <span className="text-[10px] font-black font-mono" style={{ color: "var(--gal-build)" }}>{step}</span>

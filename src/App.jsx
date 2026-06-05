@@ -2452,14 +2452,17 @@ export default function App() {
               style={{ background: "linear-gradient(180deg, #161618 0%, #0f0f11 100%)" }}>
               {ALL_SCENARIOS.map((s, i) => {
                 const active = i === scenarioIdx;
+                const mobileGuestLocked = !user && i > 0;
                 return (
                   <button key={s.scenario_id} onClick={() => switchScenario(i)}
-                    className="shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap transition-all"
+                    disabled={mobileGuestLocked}
+                    className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap transition-all ${mobileGuestLocked ? "opacity-40 cursor-not-allowed" : ""}`}
                     style={active
                       ? { background: "rgba(139,92,246,0.22)", border: "1px solid rgba(139,92,246,0.45)", color: "#c4b5fd" }
                       : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.4)", color: "#a1a1aa" }}>
                     <span className="font-mono mr-1" style={{ color: active ? "#8b5cf6" : "#3f3f46" }}>#{i + 1}</span>
                     {s.title}
+                    {mobileGuestLocked && <span className="ml-1">🔒</span>}
                   </button>
                 );
               })}
