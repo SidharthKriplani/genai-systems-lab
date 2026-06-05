@@ -281,25 +281,7 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
         </div>
       </div>
 
-      {/* ── Stats ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-5 gap-2">
-        <StatPill label="Questions" value={totalAnswered || "0"} color={totalAnswered > 0 ? "var(--gal-build)" : undefined} />
-        <StatPill label="Accuracy"  value={totalAnswered > 0 ? `${accuracy}%` : "—"} color={accuracy >= 70 ? "#22c55e" : accuracy >= 50 ? "#f59e0b" : undefined} />
-        <StatPill label="Streak"    value={streak > 0 ? `${streak}d` : "—"} color={streak >= 7 ? "#f59e0b" : undefined} />
-        <StatPill label="Concepts"  value={masteredCount || "—"} />
-        <StatPill label="Labs done" value={ragPassed || "—"} />
-      </div>
-
-      {/* ── Quick link to Progress ────────────────────────────────────── */}
-      <button onClick={() => onNavigate({ tab: "progress" })}
-        className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-all hover:opacity-80"
-        style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-        <div>
-          <p className="text-xs font-bold text-white">Your readiness dashboard</p>
-          <p className="text-[10px] text-zinc-500 mt-0.5">Study plan, guided paths, readiness by area</p>
-        </div>
-        <span className="text-zinc-500 text-xs shrink-0">Progress →</span>
-      </button>
+      {/* Stats and readiness live on the Progress page — Profile is identity + achievements + settings only */}
 
       {/* ── Recent activity ───────────────────────────────────────────── */}
       {recentActivity.length > 0 && (
