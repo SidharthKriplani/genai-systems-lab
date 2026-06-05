@@ -1019,12 +1019,17 @@ function AgentDesignChallenge() {
           </div>
         )}
         <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
-            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Design complete — go deeper</span>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+              <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">{challenge.title} — design scored</span>
+            </div>
+            <p className="text-xs text-zinc-500 leading-relaxed pl-7">
+              The gaps in your decisions map directly to production agent failure modes — the same ones interviewers probe. Review what you got wrong before moving on.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => onNavigate && onNavigate("preplab")} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">🧠 Test in Prep Lab</button>
+            <button onClick={() => onNavigate && onNavigate({ tab: "preplab", topic: "agents" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">🧠 Drill agent design questions</button>
             <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-system-design" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">📖 Designing an Agent System</button>
           </div>
         </div>

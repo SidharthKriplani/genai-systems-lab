@@ -14,6 +14,10 @@ const GT_POSTS = [
   { id: "eval-pipeline-design",    title: "Building an Eval Pipeline That Actually Catches Production Failures", desc: "Why unit tests aren't enough for LLMs. Offline evals, online evals, and shadow evaluation.", readMin: 10, tag: "Pipeline" },
   { id: "hallucination-detection", title: "Hallucination Detection: Why It's Hard and What Actually Works", desc: "Factual vs. faithfulness vs. citation hallucinations. NLI-based detection, self-consistency, retrieval grounding.", readMin: 9, tag: "Failure mode" },
   { id: "ab-testing-llms",         title: "A/B Testing LLM Systems: Statistical Significance and Evaluation Metrics", desc: "How to run controlled experiments on LLM outputs — win-rate, NDCG, preference — and avoid common A/B traps.", readMin: 9, tag: "Experimentation" },
+  { id: "llm-as-judge-failure",    title: "LLM-as-Judge: The Four Biases Your Evaluator Won't Tell You About", desc: "Self-preference, verbosity, position, and style biases that make LLM judges systematically misleading — and how to correct them.", readMin: 9, tag: "Bias" },
+  { id: "ragas-metrics-explained", title: "RAGAS Metrics Explained: What They Measure, What They Miss, and When They Lie", desc: "Faithfulness, answer relevancy, context precision, context recall — what each score actually captures and where each one breaks down.", readMin: 9, tag: "Metrics" },
+  { id: "eval-production-gap",     title: "The Offline-Production Eval Gap: Why 91% RAGAS Doesn't Mean 91% User Satisfaction", desc: "Offline evals measure what you designed them to measure. Production measures what users actually care about. The gap is where products break.", readMin: 9, tag: "Production" },
+  { id: "human-eval-vs-llm-eval",  title: "Human Eval vs. LLM Eval: When to Use Each and How to Make Both Work", desc: "Why human eval is the gold standard, when automated eval is sufficient, and how to calibrate automated judges against human signal.", readMin: 8, tag: "Method" },
 ];
 
 const PREPLAB_Qs = [
@@ -118,7 +122,7 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
       <div>
         <div className="flex items-center justify-between mb-4">
           <SectionLabel>From the Field</SectionLabel>
-          <button onClick={() => onNavigate("groundtruth")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">All GT posts →</button>
+          <button onClick={() => onNavigate("groundtruth")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">All 13 evaluation posts →</button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {GT_POSTS.map(p => (
