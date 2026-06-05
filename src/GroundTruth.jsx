@@ -1001,6 +1001,10 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
     });
   }
 
+  // Guest gate state — declared here (before useEffects) to satisfy Rules of Hooks.
+  // useMemo below must also stay before the early returns for openPost / showGuestGate.
+  const [showGuestGate, setShowGuestGate] = useState(false);
+
   useEffect(() => { track("ground_truth_viewed", {}); }, []);
 
   // Track individual post reads — one key per post, used by GT State-Aware Reading Mode
@@ -1021,12 +1025,10 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
     }
   }, [initialPostId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Guest gate state — shown inline when a guest clicks a non-pinned post
-  const [showGuestGate, setShowGuestGate] = useState(false);
-  // 3 posts free for guests — matches PINNED_IDS below
+  // 4 posts free for guests — matches PINNED_IDS below
   const GUEST_FREE_POST_IDS = new Set(["what-is-a-transformer", "how-rag-works", "react-pattern", "agent-failure-modes"]);
 
-  // Wrapper: guests can only open the 3 pinned posts; all others show sign-in gate
+  // Wrapper: guests can only open pinned posts; all others show sign-in gate
   function openPostOrGate(post) {
     if (!user && !GUEST_FREE_POST_IDS.has(post.id)) {
       setShowGuestGate(true);
@@ -1037,22 +1039,6 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
     setRecentIds(updated);
     try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
     setOpenPost(post);
-  }
-
-  if (openPost) {
-    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onOpenPost={setOpenPost} onNavigate={onNavigate} onNavigateTo={onNavigateTo} activeReactions={reactions[openPost.id]} onReact={(id) => toggleReaction(openPost.id, id)} />;
-  }
-
-  // Guest gate modal
-  if (showGuestGate) {
-    return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4">
-        <GateOverlay context="free-account" user={null} />
-        <button onClick={() => setShowGuestGate(false)} className="mt-4 text-xs text-zinc-500 hover:text-zinc-400 transition-colors">
-          ← Back to posts
-        </button>
-      </div>
-    );
   }
 
   // "Start Here" pinned posts — shown above the category filter regardless of active filter
@@ -1146,6 +1132,22 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
       : (filter === "all" ? WRITTEN : WRITTEN.filter(p => p.category === filter));
   const total = WRITTEN.length;
   const totalPlanned = POSTS.length;
+
+  // Early returns AFTER all hooks — Rules of Hooks requires hooks before any conditional return
+  if (openPost) {
+    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onOpenPost={setOpenPost} onNavigate={onNavigate} onNavigateTo={onNavigateTo} activeReactions={reactions[openPost.id]} onReact={(id) => toggleReaction(openPost.id, id)} />;
+  }
+
+  if (showGuestGate) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4">
+        <GateOverlay context="free-account" user={null} />
+        <button onClick={() => setShowGuestGate(false)} className="mt-4 text-xs text-zinc-500 hover:text-zinc-400 transition-colors">
+          ← Back to posts
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950">
