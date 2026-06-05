@@ -30,55 +30,83 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 59 — Next build session
+## Sprint 59 — ✅ COMPLETE (commit `0d4f447`)
 
-**Objective:** MVP coherence continued. Content depth + Agent Lab synthesis gap. No new features.
+**Objective:** MVP coherence continued — verified real gaps vs. stale audit data.
 
-### Synthesis audit results (sprint 59 verification pass)
+### Key finding: stale PM audit data corrected
 
-| Lab | synthesis_close | Names failure | Production relevance | PrepLab routing | Action |
-|---|---|---|---|---|---|
-| RAG Lab | ✅ | ✅ `failure_mode_taught` | ✅ `productionNote` | ✅ topic-filtered | Done |
-| Prompt Lab | ✅ | ✅ in text | ✅ | ⚠️ generic `preplab` (personalized queue handles it) | Acceptable — log P2 |
-| FM Lab | ✅ `synthesisClose` per config | ✅ | ✅ | ✅ `preplabQ` rendered | Done |
-| Agent Lab | ⚠️ interview story only | Partial | Partial | ❌ no PrepLab routing | Fix P1 this sprint |
-| Eval Lab (SystemsApp) | ⚠️ no WhatNextCard in modules.jsx | ❓ per-module | ❓ | ❓ | Audit P1 |
-| LLM Lab (SystemsApp) | ⚠️ no WhatNextCard in modules.jsx | ❓ per-module | ❓ | ❓ | Audit P1 |
+The PM audit (sprint 57) stated "8 evaluation GT posts." Code verification revealed **13 fully-written posts** (25–32 blocks each), added in sprint 51. The "write 4 new posts" plan in the audit was solving a problem that no longer existed.
 
-### P1 — This sprint (in order)
+Real gaps identified and fixed:
+1. ~~EvaluationHub.jsx showed only 4 of 13 evaluation posts~~ — FIXED `0d4f447`. Hub now shows 8 posts (2×4 grid), "All 13 evaluation posts →" link updated.
+2. ~~Agent Lab done-state was generic~~ — FIXED `0d4f447`. `AgentDesignChallenge` now shows `{challenge.title} — design scored` + production context + topic-filtered PrepLab CTA (`topic: "agents"`).
 
-**1. Evaluation GT depth** `M` — 5–6 new GT posts. Content only, no code changes.
+### Synthesis audit — final status
 
-Post plan (write in order — each maps to a specific interview question):
-
-| Post ID | Title | Interview Q it answers | Priority |
+| Lab | Quality | PrepLab routing | Status |
 |---|---|---|---|
-| `eval-set-failure` | "Why your eval set is lying to you" | "How do you know your eval is trustworthy?" | P1 |
-| `eval-rubric-design` | "Designing eval rubrics for open-ended AI responses" | "How do you evaluate outputs with no single right answer?" | P1 |
-| `automated-vs-human-eval` | "When to use automated eval vs. human review" | "What's your eval stack in production?" | P1 |
-| `prod-eval-gap` | "The prod-eval gap: why 94% accuracy still breaks your product" | "Your metrics look good but users complain — why?" | P1 |
-| `llm-regression-testing` | "Building a regression test suite for LLM outputs" | "How do you prevent prompt regressions?" | P2 |
+| RAG Lab | Strong — names `failure_mode_taught` | ✅ topic-filtered | Done |
+| FM Lab | Good — `synthesisClose` + `preplabQ` rendered | ✅ specific question | Done |
+| Prompt Lab | Good — `synthesis_close` + forward pointer | ⚠️ generic (personalized queue handles it) | Acceptable |
+| Agent Lab | Now good — challenge title + production note | ✅ topic-filtered (`agents`) | Fixed sprint 59 |
+| Eval Lab (SystemsApp) | No WhatNextCard in modules.jsx | ❌ none | P2 structural — too big for coherence sprint |
+| LLM Lab (SystemsApp) | No WhatNextCard in modules.jsx | ❌ none | P2 structural — too big for coherence sprint |
 
-Note: `ragas-metrics-explained` already exists — verify it has `challengeArea: "evaluation"` tag in groundTruthIndex.js.
+### P2 — Deferred (not this sprint)
 
-**2. Agent Lab synthesis gap** `M` — Agent Lab has "interview story" button but no structured synthesis card or PrepLab forward pointer after module completion. Audit which modules have done-states and add a minimal forward pointer (PrepLab topic CTA) to the top 5 highest-traffic modules: `failures`, `memarch`, `tooldesign`, `orchestrator`, `simulator`.
-
-**3. Verify Eval/LLM Lab (SystemsApp) completion states** `S` — SystemsApp modules don't use WhatNextCard or ForwardPointerCard from shared.jsx. Spot-check 3–4 modules to confirm they have some completion state, then decide if a forward pointer pass is needed.
-
-### P2 — After P1
-
-- Daily Judgment mechanic (Ideas.md)
-- Hub room decision (needs PostHog data)
+- SystemsApp (Eval/LLM Lab) completion states — structural M–L effort, each of ~57 modules needs a done-state. Requires dedicated sprint.
+- Daily Judgment mechanic
+- Hub room decision (needs PostHog data first)
 - Concepts gym depth audit (user direction needed)
-- Prompt Lab PrepLab CTA topic-filter (minor gap, acceptable as-is)
-- Distribution push (after content depth is addressed)
+- Distribution push
 
-### Do NOT build this sprint
+### Do NOT build without explicit decision
 - Stripe / real pricing
-- Daily Judgment
 - Share cards
 - Brand rename
-- Any new lab or challenge area
+- New labs or challenge areas
+
+---
+
+## Private user test checklist
+
+**Ready for a 3–5 person guided private test.** Use this checklist.
+
+### Who to invite
+Mid-level software engineers (3–6 years) who are either actively interviewing for AI/ML engineering roles or plan to within 6 months. They should know basic ML/Python but don't need deep AI engineering experience. Do not invite people who already know the product well.
+
+### Starting path
+Send this link: `genai-systems-lab-ivory.vercel.app` — no instructions, no explanation. Let them land cold.
+
+If they ask "what should I do?", only say: "try whatever looks interesting."
+
+### First task to observe
+Can they reach **RAG Lab Scenario 1** and complete it without being told to? This is the product's aha moment. If testers can't find it or don't finish it, the first-session path still needs work.
+
+### Questions to ask after the session (5 minutes)
+
+1. "What did you think this product was in the first 30 seconds?"
+2. "What did you do first? Did you know what to do?"
+3. "Did you complete a scenario in the RAG Lab? If yes — what did you take away from it?"
+4. "Did the ending of the scenario feel like a learning moment, or just a task completed?"
+5. "Would you come back to this? Why or why not?"
+6. "What felt confusing or broken?"
+
+### Signals that mean ready for broader distribution
+
+- ≥3 of 5 testers reach and complete RAG Lab Scenario 1 without prompting
+- ≥3 of 5 testers can articulate one specific failure mode they learned about
+- ≥2 of 5 testers click the PrepLab CTA from the synthesis card
+- ≥2 of 5 testers sign in (or would sign in if asked)
+- Navigation confusion is specific ("I didn't see the Agents hub") not structural ("I didn't know what this product was")
+
+### Signals that mean one more coherence sprint needed
+
+- Majority can't explain what the product is after 5 minutes
+- Majority don't find the RAG Lab without prompting
+- Synthesis card doesn't land — testers say "I completed something but I'm not sure what I learned"
+- Multiple testers hit broken states (React errors, empty pages, nav dead ends)
 
 ### P2 — Post-launch
 
