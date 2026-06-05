@@ -326,10 +326,13 @@ For full audit findings see AUDITS.md.
 - Bug fixes `70e5604`: (1) Sidebar expansion — removed `subActive || active` from `isExpanded`; since all SKILL AREAS shared `id: "groundtruth"` sub-items, being on groundtruth expanded all areas simultaneously. Now only `forceOpen || expandedItems.has(id)`. (2) GT series deep-link — series sub-items now have `postId` field, click sets `gtPostId` + navigates to groundtruth (opens first post of series directly). Series names corrected to match SERIES_META. (3) Profile/Progress dedup — readiness bars removed from Profile (Progress owns them); Profile replaced with single "Your readiness dashboard →" link. AreaBar + getAllAreasReadiness import removed from Profile.jsx.
 - Bug fixes `370b990`: (1) `onNavigate("progress")` in Profile silently failed — `navigateTo` destructures an object, passing a string gave `tab=undefined`. Fixed to `onNavigate({ tab: "progress" })`. (2) `removeBookmark` used `setSyncMsg(null)` as re-render hack — when syncMsg was already null, React bailed out and bookmark stayed visible. Fixed by converting `bookmarkIds` to proper useState. (3) Plans FULL ACCESS card showed "Free" as price (indistinguishable from FREE $0 tier) — replaced with code `DAI2026` displayed prominently, pre-filled in input, label changes to "ACTIVE" when unlocked.
 
-**Sprint 56 (June 2026) — UX correction pass (in progress):**
-- UX/product audit completed. 8 issues found across nav, PrepLab, Plans, Home/Progress. Fix build order set. See AUDITS.md Audit 28.
-- GT #300 confirmed fixed in production after push (`5b653a9` CodeBlock extraction).
-- Accordion, PrepLab dedup, hub exits, PrepLab entry, Plans, Home/Progress split, Profile header — building in order.
+**Sprint 56 (June 2026) — UX correction pass:**
+- UX/product audit completed. 8 issues found. See AUDITS.md Audit 28.
+- GT #300 confirmed fixed in production after push.
+- Fix #2 `92a1c8c`: Accordion single-open — `activeSection` string replaces `expandedItems` Set. Label click toggles open/close. One section at a time.
+- Fix #3+#4 `aeacadd`: PrepLab mode card duplication removed from main area. Hub page exits added to all 5 hubs — "All Concepts →" and "All GT posts →" header links.
+- Fix #5 `04db0e8`: PrepLab entry point personalised — SRS due items first, then weakest topic with accuracy, then fresh start. Topic grid shows per-topic accuracy for returning users.
+- Fix #6-8 `2362e73`: Plans 2-state (Guest card removed — belongs in GateOverlay, not Plans). Profile removed from sidebar → header avatar click navigates to profile. Progress removed from sidebar → logo click navigates to progress. Plans & Access remains as single sidebar utility item.
 
 **Sprint 55 (June 2026) — Bug fixes + guest access model + Plans + content:**
 - Bug fixes `5b653a9`: (1) GT posts not opening — `useState(false)` inside `case "code"` of `Block` switch violated Rules of Hooks. Extracted `CodeBlock` component. (2) Sidebar chevron nested inside nav button (button-in-button) — restructured as sibling with `position:absolute`. (3) Nav subitems ("Concepts", "Posts", "Practice Qs") opened full unfiltered tabs — simplified to lab-only entries.

@@ -8,16 +8,13 @@ Read this at session start. Do only this. Update before closing.
 
 ## Theme: Sprint 56. UX correction pass before any new features. Fix what's broken and confusing first.
 
-**Current build queue — do in this order, nothing else until done:**
+**Sprint 56 UX correction pass — COMPLETE** ✅
 
-1. ~~Push existing commits~~ DONE — GT #300 fixed in production
-2. **Accordion single-open** — activeSection string, label toggles, remove chevron — `S`
-3. **PrepLab mode card dedup** — remove right-side mode cards, sidebar is the selector — `S`
-4. **Hub page exits** — "See all X →" links from each hub to full filtered content — `S`
-5. **PrepLab entry point** — personalized queue (SRS due → weakest topic → fresh start) — `M`
-6. **Plans 2-state** — remove Guest card, show free vs. full only — `S`
-7. **Home/Progress split** — Home = cold only, signed-in logo → Progress, remove Progress from sidebar — `M`
-8. **Profile → header** — remove from sidebar, lives in header avatar only — `S`
+All 8 fixes shipped. Next priorities:
+1. **Push to Vercel** — user action required
+2. **Visual test pass** — confirm accordion, PrepLab entry, Plans display correctly in browser
+3. **PostHog WAU check** — user action required before next feature sprint
+4. **Content depth audit** — which concepts gyms are hollow? Which hub pages feel thin?
 
 **Hold until content audit:**
 - Hub content depth decision (curated preview vs. full room) — product call
