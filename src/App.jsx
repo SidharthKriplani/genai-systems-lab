@@ -2358,7 +2358,7 @@ export default function App() {
 
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} user={user} />}
           {topView === "profile" && <ProfilePage onNavigate={navigateTo} user={user} onSignOut={() => setUser(null)} />}
-          {topView === "plans"   && <PlansPage   onNavigate={navigate} />}
+          {topView === "plans"   && <PlansPage   onNavigate={navigate} user={user} />}
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}
             </>
           )}
