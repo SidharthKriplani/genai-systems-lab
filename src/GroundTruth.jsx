@@ -5,6 +5,7 @@ import { POSTS } from "./groundTruthIndex";
 import TransformerWalkthrough from "./TransformerWalkthrough";
 import SalaryCalculator from "./SalaryCalculator";
 import { FeedbackBar } from "./shared";
+import GateOverlay from "./GateOverlay";
 
 // Every post maps to at least one interactive module on the platform.
 // "labLink" is where the reader goes to test what they just read.
@@ -943,7 +944,7 @@ const SERIES_META = {
   },
 };
 
-export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, onPostOpened }) {
+export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, onPostOpened, user = null }) {
   const [filter, setFilter] = useState("all");
   const [viewLens, setViewLens] = useState(null); // null | "revise" | "learn" | "next"
   const [openPost, setOpenPost] = useState(null);
@@ -1020,8 +1021,38 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
     }
   }, [initialPostId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Guest gate state — shown inline when a guest clicks a non-pinned post
+  const [showGuestGate, setShowGuestGate] = useState(false);
+  // 3 posts free for guests — matches PINNED_IDS below
+  const GUEST_FREE_POST_IDS = new Set(["what-is-a-transformer", "how-rag-works", "react-pattern", "agent-failure-modes"]);
+
+  // Wrapper: guests can only open the 3 pinned posts; all others show sign-in gate
+  function openPostOrGate(post) {
+    if (!user && !GUEST_FREE_POST_IDS.has(post.id)) {
+      setShowGuestGate(true);
+      track("gt_guest_gate_shown", { post: post.id });
+      return;
+    }
+    const updated = [post.id, ...recentIds.filter(id => id !== post.id)].slice(0, 5);
+    setRecentIds(updated);
+    try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
+    setOpenPost(post);
+  }
+
   if (openPost) {
     return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onOpenPost={setOpenPost} onNavigate={onNavigate} onNavigateTo={onNavigateTo} activeReactions={reactions[openPost.id]} onReact={(id) => toggleReaction(openPost.id, id)} />;
+  }
+
+  // Guest gate modal
+  if (showGuestGate) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4">
+        <GateOverlay context="free-account" user={null} />
+        <button onClick={() => setShowGuestGate(false)} className="mt-4 text-xs text-zinc-500 hover:text-zinc-400 transition-colors">
+          ← Back to posts
+        </button>
+      </div>
+    );
   }
 
   // "Start Here" pinned posts — shown above the category filter regardless of active filter
@@ -1199,7 +1230,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                 if (writtenCount === 0) return null;
                 return (
                   <button key={sid}
-                    onClick={() => { if (firstPost && POST_CONTENT[firstPost.id]) { setOpenPost(firstPost); } }}
+                    onClick={() => { if (firstPost && POST_CONTENT[firstPost.id]) { openPostOrGate(firstPost); } }}
                     className="text-left rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-150 group relative overflow-hidden"
                     style={{ background: `linear-gradient(160deg, ${s.color}0d 0%, rgba(15,15,17,0.97) 100%)`, border: `1px solid ${s.color}25`, borderTop: `2px solid ${s.color}55`, boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
                     <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${s.color}aa, transparent)` }} />
@@ -1237,10 +1268,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                     <button key={post.id}
                       onClick={() => {
                         track("ground_truth_pinned_clicked", { post: post.id });
-                        const updated = [post.id, ...recentIds.filter(id => id !== post.id)].slice(0, 5);
-                        setRecentIds(updated);
-                        try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
-                        setOpenPost(post);
+                        openPostOrGate(post);
                       }}
                       className="text-left rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-150 relative overflow-hidden"
                       style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(139,92,246,0.2)", borderTop: `2px solid ${color}88`, boxShadow: "0 4px 16px rgba(0,0,0,0.35)" }}>
@@ -1270,12 +1298,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                 {recentPosts.map(p => {
                   const color = CAT_COLORS[p.category] || "#6366f1";
                   return (
-                    <button key={p.id} onClick={() => {
-                        const updated = [p.id, ...recentIds.filter(id => id !== p.id)].slice(0, 5);
-                        setRecentIds(updated);
-                        try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
-                        setOpenPost(p);
-                      }}
+                    <button key={p.id} onClick={() => { openPostOrGate(p); }}
                       className="shrink-0 text-left rounded-lg px-3 py-2 transition-all duration-150 hover:-translate-y-0.5 max-w-[200px]"
                       style={{ background: `linear-gradient(135deg, ${color}12 0%, rgba(15,15,17,0.97) 100%)`, border: `1px solid ${color}28`, borderTop: `1px solid ${color}45` }}>
                       <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color }}>{p.category}</div>
@@ -1354,10 +1377,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                 key={post.id}
                 onClick={() => {
                   track("ground_truth_card_clicked", { post: post.id });
-                  const updated = [post.id, ...recentIds.filter(id => id !== post.id)].slice(0, 5);
-                  setRecentIds(updated);
-                  try { localStorage.setItem("genai_gt_recent", JSON.stringify(updated)); } catch {}
-                  setOpenPost(post);
+                  openPostOrGate(post);
                 }}
                 className="rounded-xl flex flex-col gap-3 relative overflow-hidden cursor-pointer transition-all duration-150 hover:-translate-y-0.5"
                 style={{

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { signInWithGoogle } from "./supabase";
 
 // Inline SVG icons — no lucide-react dependency needed
 const IconBuilding2 = ({ size = 24 }) => (
@@ -858,7 +859,7 @@ const TOPIC_FORWARD_POINTERS = {
   serving:    { label: "LLM Lab",          tab: "llmlab" },
 };
 
-function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions }) {
+function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions, user = null }) {
   const isReviewMode = !!reviewQuestions && reviewQuestions.length > 0;
   const [config, setConfig] = useState(() =>
     isReviewMode ? { duration: 15, focus: "all", difficulty: "all", isReview: true } : null
@@ -1310,6 +1311,23 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions }) {
           </div>
         </div>
       </div>
+      {/* Save-progress nudge — shown to guests after 5 answers, non-blocking */}
+      {!user && answered >= 5 && (
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-3">
+          <div className="rounded-lg px-4 py-3 flex items-center justify-between gap-3"
+            style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)" }}>
+            <p className="text-xs text-indigo-300 leading-snug">
+              <span className="font-bold">You've answered {answered} questions.</span> Sign in to save your progress and accuracy across sessions.
+            </p>
+            <button
+              onClick={() => signInWithGoogle()}
+              className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+              style={{ background: "rgba(99,102,241,0.25)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.4)" }}>
+              Save →
+            </button>
+          </div>
+        </div>
+      )}
       <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
         <QuestionCard q={q} />
         {(q.type === "mcq" || q.type === "multi") && (
@@ -3428,7 +3446,7 @@ function getRoleReadiness(history) {
   return { tier, label, desc, dots, count, pct };
 }
 
-export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClearInitialMode }) {
+export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClearInitialMode, user = null }) {
   const [mode, setMode] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
   const [sidebarStats, setSidebarStats] = useState({});
@@ -3535,8 +3553,8 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           PrepLab
         </button>
-        {mode === "review"      && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} reviewQuestions={dueQuestions} />}
-        {mode === "exam"        && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
+        {mode === "review"      && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} reviewQuestions={dueQuestions} user={user} />}
+        {mode === "exam"        && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} user={user} />}
         {mode === "trainer"     && <TrainerMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} initialGroup={trainerInitGroup} />}
         {mode === "jdprep"      && <InterviewPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
         {mode === "companyprep" && <CompanyPrepMode onExit={exitMode} onNavigate={onNavigate} />}

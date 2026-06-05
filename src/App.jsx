@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "rea
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock } from "./analytics";
 import { ALL_TABS, GROUP_COLORS } from "./config/nav";
 import { FidelityBadge } from "./shared";
+import GateOverlay from "./GateOverlay";
 import WarRoom from "./WarRoom";
 import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
@@ -1362,6 +1363,15 @@ const LLM_LAB_MODULES = [
 
 const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations"];
 
+// Tabs accessible without a free account (guest mode).
+// Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
+const GUEST_ALLOWED_TABS = new Set([
+  "home", "plans", "profile", "progress",
+  "foundations", "foundationlab", "promptlab", // Foundations always free
+  "groundtruth", // free but limited to 3 pinned posts (enforced in GroundTruth.jsx)
+  "preplab",     // free but limited to 1 demo question (enforced in PrepLab.jsx)
+]);
+
 // ─── RAG LAB — scenario forward pointers ──────────────────────────────────────
 // One GT post + one PrepLab topic per scenario. Shown after result evaluation.
 const SCENARIO_FORWARD_POINTERS = {
@@ -2322,6 +2332,11 @@ export default function App() {
             </div>
           </div>
         }>
+          {/* ── Guest gate — renders instead of content for non-allowed tabs ── */}
+          {!user && !GUEST_ALLOWED_TABS.has(topView) ? (
+            <GateOverlay context="free-account" user={null} />
+          ) : (
+            <>
           {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} initialGym={conceptsGym} />}
           {topView === "flows"      && <FlowsApp onNavigate={navigateTo} />}
           {topView === "consult"    && <ConsultationApp onNavigate={navigate} onNavigateTo={navigateTo} />}
@@ -2338,13 +2353,15 @@ export default function App() {
           {topView === "playground" && <PlaygroundApp onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} onNavigate={(tab, postId) => { if (postId) setGtPostId(postId); navigate(tab); }} />}
           {topView === "career"     && <CareerApp />}
-          {topView === "preplab"    && <PrepLabApp onNavigate={navigate} onNavigateTo={navigateTo} initialMode={preplabInitialMode} onClearInitialMode={() => setPreplabInitialMode(null)} />}
+          {topView === "preplab"    && <PrepLabApp onNavigate={navigate} onNavigateTo={navigateTo} initialMode={preplabInitialMode} onClearInitialMode={() => setPreplabInitialMode(null)} user={user} />}
           {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} />}
 
-          {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} />}
+          {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} user={user} />}
           {topView === "profile" && <ProfilePage onNavigate={navigateTo} user={user} onSignOut={() => setUser(null)} />}
           {topView === "plans"   && <PlansPage   onNavigate={navigate} />}
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}
+            </>
+          )}
 
           {/* ── Challenge area stubs (R1) — replaced by hub pages in R3–R7 ── */}
           {topView === "retrieval" && <RetrievalHub onNavigate={navigate} onNavigateTo={navigateTo} />}
@@ -2357,7 +2374,7 @@ export default function App() {
       </main>
 
 
-      {topView === "lab" && (
+      {topView === "lab" && (!user ? <GateOverlay context="free-account" user={null} /> : (
         <div className="flex flex-col lg:flex-row h-full min-h-0">
           {/* Sidebar: scenario list — desktop only */}
           <div className="hidden lg:flex flex-col w-52 shrink-0 overflow-y-auto py-4"
@@ -2756,7 +2773,7 @@ export default function App() {
             </footer>
           </div>
         </div>
-      )}
+      ))}
 
       {topView === "qa" && (
         <Suspense fallback={<div className="flex-1 flex items-center justify-center py-24 text-zinc-500 text-sm font-mono">Loading…</div>}>
