@@ -344,6 +344,8 @@ For full audit findings see AUDITS.md.
 - Evaluation GT content plan created: 4 P1 posts + 1 P2 post with titles, descriptions, and interview Q mapping. Logged in NEXT.md.
 - Agent Lab synthesis gap logged as P1 in NEXT.md: top 5 modules need PrepLab forward pointer.
 - NEXT.md: sprint 59 P1/P2 build order set. Theme: MVP coherence continued, no distribution yet.
+- Release-readiness pass: 11-item smoke checklist run against code. All pass. JS syntax failures were expected (Node can't parse JSX/ESM — Vite handles it; Vercel builds clean since `5eb6cbd`). PRIVATE_TEST.md created with tester profile, session instructions, observer questions, success/failure criteria, post-test decision framework.
+- Distribution remains blocked. Next gate: private test with 3–5 mid-level AI engineers. See PRIVATE_TEST.md.
 - Sprint 59 P1 code shipped `0d4f447`: EvaluationHub 4→8 GT posts + "All 13 evaluation posts →" label. Agent Lab `AgentDesignChallenge` done-state now names the specific challenge title + adds production context + routes PrepLab to `topic:"agents"`. Brace diff: 0.
 - Key correction: PM audit claimed 8 evaluation posts. Code verified 13 fully-written posts (25–32 blocks each), all added in sprint 51. The "write 4 new posts" plan was solving a problem that didn't exist. The real gap was hub page discoverability (4 of 13 shown) — now fixed.
 - Synthesis audit finalized: RAG strong, FM Lab good, Prompt Lab good, Agent Lab fixed this sprint, Eval/LLM Lab SystemsApp has no completion states — P2 structural work.

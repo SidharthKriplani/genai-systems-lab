@@ -2,11 +2,23 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 59: verification + P1 closure pass. Sprint 58 fully shipped. Objective remains MVP coherence before distribution.)*
+*Last updated: June 2026 (release-readiness pass complete. Sprints 58 + 59 shipped. PRIVATE_TEST.md created. Awaiting private test feedback before any distribution decision.)*
 
 ---
 
-## Theme: Sprint 59. MVP coherence — Evaluation GT depth + Agent Lab synthesis gap. No distribution yet. No Stripe yet. No Daily Judgment yet.
+## Theme: BLOCKED on private test. No new feature builds until 3–5 person private test is complete and feedback reviewed.
+
+**Current state:** Product is ready for guided private test. PRIVATE_TEST.md contains full tester profile, instructions, observer questions, and success criteria.
+
+**Next decision gate:** Run 3–5 person private test → evaluate against success criteria → either (A) controlled public launch prep or (B) one more coherence sprint. Nothing else gets built until this decision is made.
+
+### Do NOT build before private test feedback:
+- Daily Judgment mechanic
+- Stripe / real pricing
+- SystemsApp completion states (P2 — not blocking)
+- New content or labs
+- Share cards / social mechanics
+- Distribution push (HN, LinkedIn, Reddit)
 
 **Sprint 56 UX correction pass — COMPLETE** ✅ (see CLAUDE.md sprint 56 log)
 
