@@ -94,7 +94,10 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
 
       {/* Concepts */}
       <div>
-        <SectionLabel>Key Concepts</SectionLabel>
+        <div className="flex items-center justify-between mb-4">
+          <SectionLabel>Key Concepts</SectionLabel>
+          <button onClick={() => goConcepts("evaluation")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">All Concepts →</button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {CONCEPTS.map(c => (
             <button key={c.id} onClick={() => goConcepts(c.gymId)}
@@ -113,7 +116,10 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
 
       {/* GT */}
       <div>
-        <SectionLabel>From the Field</SectionLabel>
+        <div className="flex items-center justify-between mb-4">
+          <SectionLabel>From the Field</SectionLabel>
+          <button onClick={() => onNavigate("groundtruth")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">All GT posts →</button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {GT_POSTS.map(p => (
             <button key={p.id} onClick={() => goGT(p.id)}

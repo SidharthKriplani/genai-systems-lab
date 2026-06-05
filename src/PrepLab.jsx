@@ -3576,29 +3576,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
               </div>
             </div>
 
-            {/* Mode cards — 3-up horizontal grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {PREPLAB_SIDEBAR.map((m, i) => {
-                const colors = ["#6366f1","#8b5cf6","#3b82f6"];
-                const c = colors[i] || "#6366f1";
-                return (
-                  <button key={m.id} onClick={() => selectMode(m.id)}
-                    style={{ background: `linear-gradient(160deg, ${c}0d 0%, rgba(15,15,17,0.9) 100%)`, border: `1px solid ${c}30`, borderLeft: `3px solid ${c}70` }}
-                    className="text-left p-4 rounded-xl hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40 transition-all duration-150">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-bold text-white">{m.label}</span>
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded" style={{ background: `${c}18`, border: `1px solid ${c}40`, color: c }}>{m.tag}</span>
-                    </div>
-                    <div className="text-xs text-zinc-500 leading-relaxed">{m.desc}</div>
-                    {sidebarStats[m.id] && (
-                      <div className="text-[10px] text-zinc-600 mt-2 font-mono">{sidebarStats[m.id]}</div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Browse by topic — fills the blank space, provides discoverability */}
+            {/* Browse by topic — use sidebar to select a mode, use topic cards to start drilling */}
             <div>
               <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Browse by Topic</div>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
