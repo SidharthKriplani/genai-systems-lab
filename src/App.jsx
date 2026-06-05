@@ -1882,8 +1882,14 @@ export default function App() {
   const result = lookup?.result;
   const hasFallback = lookup && !lookup.curated;
 
-  // R1 — challenge-layer nav (Sprint 49). Sprint 58: labels clarified, Plans moved to bottom.
+  // R1 — challenge-layer nav (Sprint 49). Sprint 60: TRACK group added (Profile + Progress + Plans).
   const NAV_GROUPS = [
+    // TRACK — identity + progress layer (top of sidebar, PAL pattern)
+    { label: "TRACK", color: "#8b5cf6", items: [
+      { id: "profile",  label: "Profile" },
+      { id: "progress", label: "Progress" },
+      { id: "plans",    label: "Plans & Access" },
+    ]},
     // CHALLENGE AREAS — click area name → hub page. Sub-item → specific lab.
     { label: "CHALLENGE AREAS", color: "var(--gal-build)", items: [
       { id: "retrieval",  label: "Retrieval",  subitems: [
@@ -1918,10 +1924,7 @@ export default function App() {
         { id: "groundtruth", label: "The Data Flywheel",    postId: "flywheel-implicit-feedback" },
       ]},
     ]},
-    // Plans — utility only, bottom of sidebar. Profile→header avatar. Progress→logo click.
-    { label: null, color: "#8b5cf6", items: [
-      { id: "plans", label: "Plans & Access" },
-    ]},
+    // Plans now in TRACK group at top of sidebar.
   ];
 
   return (
