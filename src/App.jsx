@@ -1857,11 +1857,9 @@ export default function App() {
 
   // R1 — challenge-layer nav (Sprint 49). Mirrors nav.js NAV_GROUPS export.
   const NAV_GROUPS = [
-    // TRACK — identity + progress layer
-    { label: "TRACK", color: "#8b5cf6", items: [
-      { id: "profile",  label: "Profile"  },
-      { id: "plans",    label: "Plans"    },
-      { id: "progress", label: "Progress" },
+    // Plans — only utility item in sidebar. Profile→header avatar. Progress→logo click.
+    { label: null, color: "#8b5cf6", items: [
+      { id: "plans", label: "Plans & Access" },
     ]},
     // SKILL AREAS — click area name → hub page (filtered content). Sub-item → specific lab.
     { label: "SKILL AREAS", color: "var(--gal-build)", items: [
@@ -2267,13 +2265,16 @@ export default function App() {
             {supabase && (
               user ? (
                 <div className="hidden lg:flex items-center gap-2">
-                  {user.user_metadata?.avatar_url && (
-                    <img src={user.user_metadata.avatar_url} alt="avatar"
-                      className="w-6 h-6 rounded-full border border-zinc-700 shrink-0" />
-                  )}
-                  <span className="text-[11px] text-zinc-400 font-medium max-w-[80px] truncate">
-                    {user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0]}
-                  </span>
+                  {/* Avatar/name → Profile */}
+                  <button onClick={() => navigate("profile")} className="flex items-center gap-1.5 hover:opacity-80 transition-opacity" title="Your profile">
+                    {user.user_metadata?.avatar_url
+                      ? <img src={user.user_metadata.avatar_url} alt="avatar" className="w-6 h-6 rounded-full border border-zinc-700 shrink-0" />
+                      : <div className="w-6 h-6 rounded-full bg-violet-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">{(user.user_metadata?.full_name?.[0] || user.email?.[0] || "?").toUpperCase()}</div>
+                    }
+                    <span className="text-[11px] text-zinc-400 font-medium max-w-[80px] truncate">
+                      {user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0]}
+                    </span>
+                  </button>
                   <button onClick={() => { signOut(); setUser(null); track("auth_sign_out"); }}
                     className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 border border-zinc-800 rounded px-1.5 py-0.5 transition-all">
                     Sign out

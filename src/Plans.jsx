@@ -95,25 +95,10 @@ export default function PlansPage({ onNavigate, user = null }) {
         </p>
       </div>
 
-      {/* ── 3-tier cards ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* ── 2-state cards: Free account + Full access ────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-        {/* ── Tier 1: Guest ── */}
-        <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">GUEST</p>
-            <p className="text-2xl font-black text-zinc-400">No account</p>
-            <p className="text-xs text-zinc-600 mt-1">Just browsing</p>
-          </div>
-          <FeatureList features={GUEST_FEATURES} color="#71717a" />
-          <button
-            onClick={() => { track("plans_guest_explore"); onNavigate("foundations"); }}
-            className="w-full py-2.5 rounded-xl text-xs font-bold text-zinc-500 border border-zinc-800 hover:border-zinc-600 hover:text-zinc-300 transition-all">
-            Continue as guest
-          </button>
-        </div>
-
-        {/* ── Tier 2: Free account ── */}
+        {/* ── Free account ── */}
         <div className="rounded-2xl p-5 space-y-4 relative"
           style={{ background: user ? "linear-gradient(160deg, rgba(34,197,94,0.06) 0%, var(--surface-2) 100%)" : "var(--surface-2)", border: user ? "1px solid rgba(34,197,94,0.3)" : "1px solid rgba(34,197,94,0.4)", borderTop: "2px solid #22c55e" }}>
           {user && (
