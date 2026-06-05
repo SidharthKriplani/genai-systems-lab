@@ -172,12 +172,12 @@ export default function PlansPage({ onNavigate, user = null }) {
               {status === "error"   && <p className="text-[11px] text-red-400">Code not recognised. Check and try again.</p>}
               <p className="text-[10px] text-zinc-600 leading-relaxed">
                 No code?{" "}
-                <a href="https://www.linkedin.com/in/sidharthkriplani/" target="_blank" rel="noopener noreferrer"
+                <a href="https://chat.whatsapp.com/KqFoGxAW0XMF9hNllGyAo9" target="_blank" rel="noopener noreferrer"
                   className="text-zinc-500 hover:text-zinc-400 underline transition-colors">
                   Join the beta group
                 </a>
                 {" "}or{" "}
-                <a href="https://www.linkedin.com/in/sidharthkriplani/" target="_blank" rel="noopener noreferrer"
+                <a href="https://wa.me/917838438784" target="_blank" rel="noopener noreferrer"
                   className="text-zinc-500 hover:text-zinc-400 underline transition-colors">
                   DM the founder.
                 </a>
