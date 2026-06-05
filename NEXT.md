@@ -2,11 +2,11 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 57: full PM product audit completed. JTBD, activation, guest experience, content gaps diagnosed. Build order set below. No code yet — decisions first.)*
+*Last updated: June 2026 (sprint 59: verification + P1 closure pass. Sprint 58 fully shipped. Objective remains MVP coherence before distribution.)*
 
 ---
 
-## Theme: Sprint 57. Activation + guest experience + JTBD clarity. Fix the product shape before more features.
+## Theme: Sprint 59. MVP coherence — Evaluation GT depth + Agent Lab synthesis gap. No distribution yet. No Stripe yet. No Daily Judgment yet.
 
 **Sprint 56 UX correction pass — COMPLETE** ✅ (see CLAUDE.md sprint 56 log)
 
@@ -23,22 +23,62 @@ Read this at session start. Do only this. Update before closing.
 
 **Real paid tier** — pricing decision still required. User action, not a code task. Do before distribution.
 
-### P1 — Next sprint
+### Sprint 58 P1 — ✅ DONE (commit `80ca550`)
 
-7. **Evaluation GT depth** `M` — 5–6 new GT posts tagged `challengeArea: "evaluation"`. Topics:
-   - "Why your eval set is lying to you" (distribution shift, contamination)
-   - "Designing eval rubrics for open-ended AI responses"
-   - "When to use automated eval vs. human review"
-   - "The prod-eval gap: why 94% accuracy still breaks your product"
-   - "Building a regression test suite for LLM outputs"
-   - "Eval for RAG: RAGAS metrics and what they actually measure" ← already exists as `ragas-metrics-explained`, needs tagging check
-8. **Mobile scenario strip guest lock** `S` — the mobile horizontal scroll strip for RAG scenarios doesn't yet show 🔒 for guests (only the desktop sidebar does). Apply same `guestLocked` pattern.
-9. **Daily Judgment mechanic** `M` — one PrepLab question on Home/Progress themed to weakest topic.
+7. ~~**Mobile scenario strip guest lock**~~ — DONE. `mobileGuestLocked` + disabled + 🔒 on mobile pill buttons.
+8. ~~**Plans "community code" copy in step 03**~~ — DONE. "community code" → "your access code".
 
-### P2 — Post distribution signal
+---
 
-10. Hub room decision (curated preview vs. full filtered room) — wait for PostHog data.
-11. Concepts gym depth audit — user direction needed.
+## Sprint 59 — Next build session
+
+**Objective:** MVP coherence continued. Content depth + Agent Lab synthesis gap. No new features.
+
+### Synthesis audit results (sprint 59 verification pass)
+
+| Lab | synthesis_close | Names failure | Production relevance | PrepLab routing | Action |
+|---|---|---|---|---|---|
+| RAG Lab | ✅ | ✅ `failure_mode_taught` | ✅ `productionNote` | ✅ topic-filtered | Done |
+| Prompt Lab | ✅ | ✅ in text | ✅ | ⚠️ generic `preplab` (personalized queue handles it) | Acceptable — log P2 |
+| FM Lab | ✅ `synthesisClose` per config | ✅ | ✅ | ✅ `preplabQ` rendered | Done |
+| Agent Lab | ⚠️ interview story only | Partial | Partial | ❌ no PrepLab routing | Fix P1 this sprint |
+| Eval Lab (SystemsApp) | ⚠️ no WhatNextCard in modules.jsx | ❓ per-module | ❓ | ❓ | Audit P1 |
+| LLM Lab (SystemsApp) | ⚠️ no WhatNextCard in modules.jsx | ❓ per-module | ❓ | ❓ | Audit P1 |
+
+### P1 — This sprint (in order)
+
+**1. Evaluation GT depth** `M` — 5–6 new GT posts. Content only, no code changes.
+
+Post plan (write in order — each maps to a specific interview question):
+
+| Post ID | Title | Interview Q it answers | Priority |
+|---|---|---|---|
+| `eval-set-failure` | "Why your eval set is lying to you" | "How do you know your eval is trustworthy?" | P1 |
+| `eval-rubric-design` | "Designing eval rubrics for open-ended AI responses" | "How do you evaluate outputs with no single right answer?" | P1 |
+| `automated-vs-human-eval` | "When to use automated eval vs. human review" | "What's your eval stack in production?" | P1 |
+| `prod-eval-gap` | "The prod-eval gap: why 94% accuracy still breaks your product" | "Your metrics look good but users complain — why?" | P1 |
+| `llm-regression-testing` | "Building a regression test suite for LLM outputs" | "How do you prevent prompt regressions?" | P2 |
+
+Note: `ragas-metrics-explained` already exists — verify it has `challengeArea: "evaluation"` tag in groundTruthIndex.js.
+
+**2. Agent Lab synthesis gap** `M` — Agent Lab has "interview story" button but no structured synthesis card or PrepLab forward pointer after module completion. Audit which modules have done-states and add a minimal forward pointer (PrepLab topic CTA) to the top 5 highest-traffic modules: `failures`, `memarch`, `tooldesign`, `orchestrator`, `simulator`.
+
+**3. Verify Eval/LLM Lab (SystemsApp) completion states** `S` — SystemsApp modules don't use WhatNextCard or ForwardPointerCard from shared.jsx. Spot-check 3–4 modules to confirm they have some completion state, then decide if a forward pointer pass is needed.
+
+### P2 — After P1
+
+- Daily Judgment mechanic (Ideas.md)
+- Hub room decision (needs PostHog data)
+- Concepts gym depth audit (user direction needed)
+- Prompt Lab PrepLab CTA topic-filter (minor gap, acceptable as-is)
+- Distribution push (after content depth is addressed)
+
+### Do NOT build this sprint
+- Stripe / real pricing
+- Daily Judgment
+- Share cards
+- Brand rename
+- Any new lab or challenge area
 
 ### P2 — Post-launch
 

@@ -334,7 +334,16 @@ For full audit findings see AUDITS.md.
 - First-time user nudge: `isFirstTime` detection in ProgressView (ragPassed === 0 && totalAnswered === 0 && masteryArr.length === 0). Shows prominent "Start here → Open RAG Lab Scenario 1" banner at top of Progress page before stats.
 - Plans copy: removed "Community code (free during beta)" + LinkedIn "Get it on LinkedIn →" link. Replaced with "Enter your access code" + "Full access is invite-only during beta. Reach out on LinkedIn to request access."
 - P1 (Evaluation GT depth): documented in NEXT.md. Content work — 5–6 posts needed, topics listed.
-- Still open (sprint 59): Evaluation GT posts (content), mobile scenario strip guest lock, hub page depth decision.
+- Still open (sprint 59): Evaluation GT posts (content), Agent Lab synthesis gap, Eval/LLM Lab completion state audit.
+
+**Sprint 59 (June 2026) — Verification + P1 closure pass:**
+- Sprint 58 verification: 10-item code check against actual implementation. Two failures found and fixed. Commit `80ca550`.
+- Mobile scenario strip guest lock: `mobileGuestLocked` variable added, disabled + opacity-40 + 🔒 on mobile pill buttons. Parity with desktop sidebar.
+- Plans "How it works" step 03: "community code" → "your access code". All three places in Plans.jsx now consistent.
+- Synthesis audit across all 6 labs completed. Results: RAG (strong), FM Lab (good — preplabQ rendered), Prompt Lab (good — minor PrepLab routing gap, acceptable), Agent Lab (weakest — interview story only, no PrepLab routing), Eval/LLM Lab SystemsApp (no WhatNextCard found in modules.jsx — audit needed).
+- Evaluation GT content plan created: 4 P1 posts + 1 P2 post with titles, descriptions, and interview Q mapping. Logged in NEXT.md.
+- Agent Lab synthesis gap logged as P1 in NEXT.md: top 5 modules need PrepLab forward pointer.
+- NEXT.md: sprint 59 P1/P2 build order set. Theme: MVP coherence continued, no distribution yet.
 
 **Sprint 57 (June 2026) — PM product audit + statefulness logging:**
 - Full PM product critique (Audit 29): identity, JTBD, user journey, IA, access model, retention, conversion, risks. No code this sprint.
