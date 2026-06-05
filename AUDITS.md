@@ -2054,7 +2054,7 @@ All resolved in same commit as this audit log entry.
 | Sidebar items couldn't be collapsed | App.jsx | `active` in `isExpanded` forced item open regardless of toggle state | Same fix as above — removed `active` from `isExpanded`; auto-adds to expandedItems on navigate instead | `70e5604` |
 
 **Still open (pre-existing, not caused this sprint):**
-- GT Series taxonomy — SERIES_META UI exists, zero posts have `series` field in groundTruthIndex.js
+- ~~GT Series taxonomy~~ — DONE `3c29a1f`. 104 posts tagged with `series` field across 17 series.
 - Home.jsx social proof — placeholder testimonials
 - Profile.jsx `bookmarksCount` stat uses `bookmarkIds.size` correctly now but `accuracy` stat shows `—` for new users (correct behavior, not a bug)
 

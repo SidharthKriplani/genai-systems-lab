@@ -2,11 +2,13 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 55 session 2: guest access model shipped. Next: Plans page redesign to show 3 tiers clearly, staffLayer to 60+, GT series taxonomy)*
+*Last updated: June 2026 (sprint 55 complete. Guest model, Plans 3-tier, staffLayer 68, GT series taxonomy done. Sprint 56: PostHog WAU baseline check + Stripe/payment → device limiter → Evaluation GT depth)*
 
 ---
 
-## Theme: Sprint 55 continued. Guest model live. Next priorities: Plans page 3-tier redesign + staffLayer content + GT series taxonomy.
+## Theme: Sprint 56. Monetisation groundwork: PostHog check → Stripe → device limiter. Or content: Evaluation GT depth (8 posts → 13+).
+
+**⚠️ USER ACTION REQUIRED before next feature sprint:** Check PostHog WAU baseline at posthog.com. If WAU < 100 active users, prioritise distribution over features. If WAU ≥ 100, proceed to Stripe integration.
 
 Sprint 49: full challenge-layer redesign (R1–R9). Sprint 50: readiness layer, guided paths, staffLayer 30→41. See CLAUDE.md sprint log.
 

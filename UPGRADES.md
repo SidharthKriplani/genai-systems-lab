@@ -11,7 +11,7 @@ Format per entry:
 - **Priority** — Critical / High / Medium / Low
 - **Status** — Pending / In Progress / Done
 
-*Last updated: June 2026 (sprint 54 — PAL-parity auth/Profile/cold home/nav overhaul shipped)*
+*Last updated: June 2026 (sprint 55 — guest model, Plans 3-tier, staffLayer 68, GT series taxonomy done)*
 
 ---
 
