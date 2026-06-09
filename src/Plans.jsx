@@ -32,7 +32,7 @@ function Cell({ value, color }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function PlansPage({ onNavigate, user = null }) {
-  const [code,       setCode]       = useState("DAI2026");
+  const [code,       setCode]       = useState("");
   const [status,     setStatus]     = useState(null);
   const [unlocked,   setUnlocked]   = useState(() => isAccessGranted());
   const [submitting, setSubmitting] = useState(false);
