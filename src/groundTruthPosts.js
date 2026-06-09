@@ -12126,5 +12126,54 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     ]},
   ],
 
+// ─── VIBE CODING ROUND ───────────────────────────────────────────────────────
+  "vibe-coding-interview-round": [
+    { t: "p", text: "A new interview round has quietly become standard at the companies hiring senior AI engineers and Forward Deployed Engineers. They call it different things — Vibe Coding, rapid prototyping, hands-on build session. The format is the same: here is an ambiguous brief and 60–90 minutes. Build something that works." },
+    { t: "p", text: "Most candidates prepare for it the wrong way. They practice coding faster. They build muscle memory for scaffolding apps. Then they fail the round — because the evaluator was never watching their typing speed." },
+
+    { t: "h2", text: "What the round is actually testing" },
+    { t: "p", text: "The Vibe Coding round exists because AI tools have changed the economics of implementation. A senior engineer using Claude or GPT-4 can now scaffold a working RAG pipeline, agent loop, or API integration in the time it used to take to write a proper schema. Implementation speed is no longer the bottleneck. The bottleneck is knowing what to build." },
+    { t: "p", text: "The evaluator's scoring criteria are not: did you finish, did your code run. They are: did you correctly scope what was worth building in 90 minutes? Did you use AI tools to build the right thing, or to build the wrong thing faster? Did you produce something you could defend in a debrief — or something that only works in the happy path? The round is a product judgment test that happens to produce code as an artifact." },
+
+    { t: "callout", v: "warning", text: "The most common Vibe Coding failure mode: candidate builds something impressive that doesn't address the core problem in the brief. They score near-zero on problem framing despite strong implementation quality. The evaluator terminates the debrief early." },
+
+    { t: "h2", text: "Five questions to answer before touching a keyboard" },
+
+    { t: "h3", text: "1. What is the core problem, stated precisely?" },
+    { t: "p", text: "The brief will be ambiguous. Intentionally. A 'Policy Navigator' brief might mean keyword search over HR documents, RAG over a policy corpus, or an agent that resolves policy conflicts. These are architecturally different systems. Spending 5 minutes deciding which one is the actual problem saves 70 minutes of building the wrong thing." },
+
+    { t: "h3", text: "2. What is core vs. stretch?" },
+    { t: "p", text: "Under time pressure, candidates build features instead of depth. A core feature working end-to-end — with actual documents, a real query, a testable answer — scores higher than three half-built features. FDE assessment rubrics explicitly penalise overbuilding under a 'Scope Discipline' dimension: did they complete core before touching stretch?" },
+
+    { t: "h3", text: "3. Where does AI add real value in this system?" },
+    { t: "p", text: "Not every part of the solution needs an LLM. Document parsing is deterministic. Routing simple queries is often a regex. The LLM's value is in retrieval augmentation, synthesis, or judgment over ambiguous inputs. Candidates who wire an LLM into every step are demonstrating pattern-matching, not architecture judgment. Identify the one or two places where AI genuinely changes the answer quality — and focus the AI budget there." },
+
+    { t: "h3", text: "4. How will you know it works?" },
+    { t: "p", text: "A senior engineer does not demo a system they have not validated. Before the debrief, run your system on 5–10 representative inputs, including one adversarial case. Note what breaks. Know the failure modes before the evaluator asks about them. 'I know this breaks on multi-hop queries — here is what I would add with more time' signals engineering maturity. 'I haven't tried that' signals it's a demo, not a system." },
+
+    { t: "h3", text: "5. What would you do with 5x the time?" },
+    { t: "p", text: "The debrief always includes a version of this question. The answer reveals whether you understand actual production requirements. 'I would add a reranker, move from fixed-size to semantic chunking, and build an eval harness with 30 test cases' is a strong answer. 'I would add more features' is not." },
+
+    { t: "h2", text: "The document pipeline trap" },
+    { t: "p", text: "In RAG-adjacent Vibe Coding challenges — which is most of them — candidates spend the first 40 minutes parsing documents. The evaluator is watching a senior engineer write a PDF parser. By minute 40, there is no time left for the retrieval layer, the generation component, or the synthesis output that actually demonstrates AI engineering judgment." },
+    { t: "p", text: "The correct move: use the provided asset pack or synthetic documents. Tell the evaluator: 'I am assuming clean chunked text to focus build time on retrieval and generation — I would add production parsing with PyMuPDF or Textract in a real deployment.' This signals exactly the right priorities to an experienced interviewer." },
+
+    { t: "h2", text: "How GSL trains this judgment" },
+    { t: "p", text: "The RAG Lab, Agent Lab, and Evaluation hub are all training the same underlying skill: understanding AI system failure modes well enough to make correct scoping decisions under pressure. When you have watched a RAG system confidently hallucinate because of a retrieval gap, you understand why retrieval quality outranks UI polish in a 90-minute build. When you have traced an agent loop that burned 200 tool calls without producing output, you understand why circuit breakers belong in scope and additional tool integrations do not." },
+    { t: "p", text: "The PrepLab scenario format is specifically relevant here. Each scenario opens with a brief, walks through decision points, and forces judgment under pressure. The reveals show which decisions actually determined the outcome. That structure mirrors what an evaluator is watching during Vibe Coding." },
+
+    { t: "h2", text: "What GSL does not cover" },
+    { t: "p", text: "The Vibe Coding round has prerequisites GSL does not replace. You need working fluency with your implementation tools — if you have not called an LLM API in code recently, the round will expose it. You need enough DSA fluency to write clean helper functions quickly without syntax confusion. And you need to practise building under time pressure: completing end-to-end systems on a timer, not studying architecture diagrams." },
+    { t: "p", text: "For DSA preparation, LeetCode medium-difficulty Python problems are the right level. For implementation fluency, the best practice is to build the same RAG or agent pipeline three times until scaffolding is automatic. GSL provides the judgment layer — it does not replace hands-on build practice." },
+
+    { t: "callout", v: "tip", text: "The right prep ratio for Vibe Coding: 40% building end-to-end systems under time pressure, 40% understanding failure modes (GSL's territory), 20% DSA basics. Most candidates invert this — 80% LeetCode, 20% everything else — and fail the round on judgment, not implementation." },
+
+    { t: "h2", text: "The full FDE interview arc" },
+    { t: "p", text: "Vibe Coding is one round of a multi-round loop. The full arc at most companies includes: a timeline screen (background and motivation), a DSA round (3–4 medium problems, Python preferred), a Vibe Coding round (60–90 minute build with debrief), a values round (mission alignment, team situations), and an Agentic ML System Design round (design a production agent system at scale)." },
+    { t: "p", text: "The Agentic ML System Design round is where GSL coverage is most direct — and the deepest preparation gap for most candidates. The post on Forward Deployed Engineers covers what that round tests in more detail." },
+
+    { t: "lab", tab: "lab", label: "RAG Lab — build your retrieval judgment →", desc: "Scenario 1 puts you inside a failing RAG pipeline. Understanding why it fails is the first step to scoping correctly under build pressure." },
+  ],
+
 
 };
