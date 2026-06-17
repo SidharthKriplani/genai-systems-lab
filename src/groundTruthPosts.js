@@ -14655,3 +14655,476 @@ async def ready(response: Response):
     { t: "callout", c: "The single most impactful container optimisation for ML: separate model weights from the image layer. A 2GB model in the image means every CI push pulls 2GB. Use volume mounts or S3 download on startup for anything over ~100MB." },
     { t: "refs", c: ["Docker multi-stage builds documentation", "NVIDIA Container Toolkit documentation — GPU container setup", "FastAPI deployment guide — uvicorn with Docker"] }
   ]
+
+  "ndcg-mrr-from-scratch": [
+    { t: "h2", c: "Why Accuracy Is the Wrong Metric for Search and Recommendation" },
+    { t: "p", c: "A classifier is right or wrong. A ranker returns a list, and the list's quality depends on what appears at the top — not just whether the right items appear at all. A ranking where the correct result appears at position 10 is objectively worse than one where it appears at position 1, even if both have 100% recall@10." },
+    { t: "p", c: "Two metrics dominate search, recommendation, and retrieval evaluation: NDCG (Normalized Discounted Cumulative Gain) and MRR (Mean Reciprocal Rank). Both are ranking-aware. Both penalize relevant results buried deep in the list." },
+    { t: "h2", c: "MRR: Mean Reciprocal Rank" },
+    { t: "p", c: "MRR is the average reciprocal of the rank at which the first relevant result appears across all queries. If for query 1 the first relevant result is at rank 3, the reciprocal rank is 1/3. If for query 2 it's at rank 1, the reciprocal rank is 1. Average over all queries." },
+    { t: "code", c: `def reciprocal_rank(ranked_items: list, relevant_items: set) -> float:
+    """
+    Returns the reciprocal rank of the first relevant item.
+    1-indexed: first position has rank 1, not 0.
+    """
+    for rank, item in enumerate(ranked_items, start=1):
+        if item in relevant_items:
+            return 1.0 / rank
+    return 0.0   # no relevant item found in the list
+
+def mrr(queries: list[tuple[list, set]]) -> float:
+    """queries: list of (ranked_items, relevant_items) tuples"""
+    return sum(reciprocal_rank(ranked, rel) for ranked, rel in queries) / len(queries)
+
+# Example
+ranked_results = [
+    (["doc_c", "doc_a", "doc_b"], {"doc_a", "doc_b"}),   # first relevant at rank 2 → RR = 0.5
+    (["doc_x", "doc_y", "doc_a"], {"doc_a"}),             # first relevant at rank 3 → RR = 0.333
+    (["doc_a", "doc_b", "doc_c"], {"doc_a", "doc_c"}),    # first relevant at rank 1 → RR = 1.0
+]
+print(f"MRR = {mrr(ranked_results):.4f}")   # (0.5 + 0.333 + 1.0) / 3 = 0.611` },
+    { t: "p", c: "MRR is best for navigational queries where users want exactly one result — finding a specific page, a known artist, a product by name. It completely ignores what happens after the first relevant result, so it's a poor fit for exploratory queries where breadth matters." },
+    { t: "h2", c: "DCG and NDCG: Graded Relevance" },
+    { t: "p", c: "MRR treats relevance as binary. DCG (Discounted Cumulative Gain) handles graded relevance — a rating of 3 ('very relevant') is worth more than a rating of 1 ('somewhat relevant'). It also rewards multiple relevant results, not just the first." },
+    { t: "code", c: `import numpy as np
+
+def dcg_at_k(relevances: list[float], k: int) -> float:
+    """
+    Discounted Cumulative Gain at K.
+    relevances: graded relevance scores for ranked items (index 0 = rank 1)
+    Standard formula: sum( rel_i / log2(i + 1) ) for i in 1..k
+    """
+    relevances = np.array(relevances[:k], dtype=float)
+    if len(relevances) == 0:
+        return 0.0
+    discounts = np.log2(np.arange(2, len(relevances) + 2))   # log2(2), log2(3), ..., log2(k+1)
+    return np.sum(relevances / discounts)
+
+def ndcg_at_k(relevances: list[float], k: int) -> float:
+    """
+    Normalized DCG at K.
+    IDCG = DCG of the ideal (perfectly sorted) ranking.
+    NDCG = DCG / IDCG  → range [0, 1]
+    """
+    dcg  = dcg_at_k(relevances, k)
+    ideal_relevances = sorted(relevances, reverse=True)
+    idcg = dcg_at_k(ideal_relevances, k)
+    return dcg / idcg if idcg > 0 else 0.0
+
+# Example: 4 retrieved items with graded relevance [3, 1, 0, 2]
+# Ideal order would be [3, 2, 1, 0]
+relevances = [3, 1, 0, 2]
+print(f"DCG@4  = {dcg_at_k(relevances, 4):.4f}")
+print(f"NDCG@4 = {ndcg_at_k(relevances, 4):.4f}")   # 0.795 (not perfect — 2 is buried at rank 4)
+
+# Batch NDCG over multiple queries
+def mean_ndcg(query_results: list[tuple[list, list]], k: int) -> float:
+    """query_results: list of (system_ranking_ids, [(id, relevance)] judgments)"""
+    scores = []
+    for ranked_ids, judgments in query_results:
+        judgment_map = dict(judgments)
+        relevances_in_rank_order = [judgment_map.get(id_, 0) for id_ in ranked_ids[:k]]
+        all_relevances = [rel for _, rel in judgments]
+        scores.append(ndcg_at_k(relevances_in_rank_order + all_relevances, k))
+    return np.mean(scores)` },
+    { t: "h2", c: "Which Metric to Use" },
+    { t: "table", c: { headers: ["Metric", "Relevance Type", "Best For", "Ignores"], rows: [["MRR@K", "Binary", "Single correct answer (navigational queries)", "Results after first relevant"], ["Precision@K", "Binary", "When all top-K results matter equally", "Position within K"], ["Recall@K", "Binary", "Coverage of all relevant items", "Precision, position"], ["DCG@K", "Graded", "Exploratory queries, recommendation", "Inter-query normalization"], ["NDCG@K", "Graded", "Comparing systems across queries with different relevance distributions", "Nothing — most complete standard metric"]] } },
+    { t: "callout", c: "NDCG@10 is the de facto standard for web search evaluation. MRR@10 is preferred for QA and entity retrieval. Precision@K is still used in IR research. In recommendation, NDCG@20 or NDCG@50 are common because users scroll more." },
+    { t: "refs", c: ["Jarvelin and Kekalainen — Cumulated gain-based evaluation of IR techniques (2002)", "Microsoft LETOR benchmarks documentation", "TREC evaluation methodology — trec.nist.gov"] }
+  ],
+
+  "calibration-ece-from-scratch": [
+    { t: "h2", c: "The Confidence Calibration Problem" },
+    { t: "p", c: "A model that says it's 90% confident should be right about 90% of the time. If it's right 70% of the time when it says 90%, it's overconfident. If it's right 95% of the time when it says 90%, it's underconfident. Models that aren't calibrated are dangerous in high-stakes settings: a medical diagnosis model that outputs 0.92 when the true risk is 0.65 will cause clinicians to overtrust it." },
+    { t: "p", c: "Modern deep learning models are systematically overconfident. Guo et al. (2017) showed that neural networks with batch normalization and weight decay, trained on image classification, become more overconfident as they get deeper. The same effect appears in language models." },
+    { t: "h2", c: "Expected Calibration Error (ECE)" },
+    { t: "code", c: `import numpy as np
+
+def expected_calibration_error(
+    confidences: np.ndarray,
+    correct: np.ndarray,
+    n_bins: int = 10
+) -> dict:
+    """
+    ECE: weighted average of |accuracy - confidence| per bin.
+    confidences: predicted probability for the predicted class  (N,)
+    correct:     1 if prediction was correct else 0              (N,)
+    """
+    bin_edges = np.linspace(0.0, 1.0, n_bins + 1)
+    ece = 0.0
+    bin_stats = []
+    
+    for lo, hi in zip(bin_edges[:-1], bin_edges[1:]):
+        mask = (confidences > lo) & (confidences <= hi)
+        if mask.sum() == 0:
+            continue
+        bin_conf = confidences[mask].mean()
+        bin_acc  = correct[mask].mean()
+        bin_frac = mask.sum() / len(confidences)
+        ece += bin_frac * abs(bin_acc - bin_conf)
+        bin_stats.append({"bin": f"({lo:.1f},{hi:.1f}]", "conf": round(bin_conf, 3), "acc": round(bin_acc, 3), "n": int(mask.sum())})
+    
+    return {"ece": round(ece, 4), "bins": bin_stats}
+
+# Simulate overconfident model
+np.random.seed(42)
+confidences = np.random.uniform(0.6, 0.99, 1000)   # model outputs always high confidence
+correct = (np.random.rand(1000) < 0.75).astype(int)  # but only right 75% of the time
+result = expected_calibration_error(confidences, correct)
+print(f"ECE = {result['ece']}")   # should be high — model is overconfident` },
+    { t: "h2", c: "Visualizing Calibration: Reliability Diagrams" },
+    { t: "code", c: `import matplotlib.pyplot as plt
+
+def reliability_diagram(confidences: np.ndarray, correct: np.ndarray, n_bins: int = 10):
+    bin_edges = np.linspace(0, 1, n_bins + 1)
+    bin_centers, bin_accs, bin_sizes = [], [], []
+    
+    for lo, hi in zip(bin_edges[:-1], bin_edges[1:]):
+        mask = (confidences > lo) & (confidences <= hi)
+        if mask.sum() == 0: continue
+        bin_centers.append((lo + hi) / 2)
+        bin_accs.append(correct[mask].mean())
+        bin_sizes.append(mask.sum())
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+    
+    # Left: calibration curve — diagonal = perfect calibration
+    ax1.plot([0, 1], [0, 1], "k--", label="Perfect calibration")
+    ax1.bar(bin_centers, bin_accs, width=0.1, alpha=0.7, label="Model accuracy per bin")
+    ax1.set(xlabel="Confidence", ylabel="Accuracy", title="Reliability Diagram")
+    ax1.legend()
+    
+    # Right: confidence histogram
+    ax2.bar(bin_centers, bin_sizes, width=0.1, alpha=0.7, color="orange")
+    ax2.set(xlabel="Confidence", ylabel="Count", title="Confidence Distribution")
+    
+    plt.tight_layout()
+    return fig` },
+    { t: "h2", c: "Calibration Methods" },
+    { t: "p", c: "Platt scaling: fit a logistic regression on top of the model's raw scores using a held-out calibration set. Simple, works well when the model is monotonically miscalibrated (just a scaling issue)." },
+    { t: "p", c: "Temperature scaling: divide the logit by a learned scalar T before applying softmax. T > 1 makes the distribution softer (reduces overconfidence). T < 1 sharpens it. Guo et al. showed this single parameter often matches or beats more complex methods." },
+    { t: "code", c: `import torch
+import torch.nn.functional as F
+
+def temperature_scale(logits: torch.Tensor, temperature: float) -> torch.Tensor:
+    """Divide logits by temperature before softmax."""
+    return F.softmax(logits / temperature, dim=-1)
+
+def find_temperature(logits: torch.Tensor, labels: torch.Tensor) -> float:
+    """Find T that minimises NLL on calibration set."""
+    from scipy.optimize import minimize_scalar
+    logits_np = logits.numpy()
+    labels_np  = labels.numpy()
+    
+    def nll(T):
+        probs = torch.softmax(torch.tensor(logits_np) / T, dim=-1).numpy()
+        return -np.log(probs[np.arange(len(labels_np)), labels_np] + 1e-8).mean()
+    
+    result = minimize_scalar(nll, bounds=(0.1, 10.0), method="bounded")
+    return result.x
+
+# After finding T, wrap your model
+T = find_temperature(val_logits, val_labels)
+calibrated_probs = temperature_scale(test_logits, T)` },
+    { t: "p", c: "Isotonic regression: a non-parametric monotonic fit on confidence vs. accuracy. More flexible than Platt scaling. Risk of overfitting if calibration set is small." },
+    { t: "callout", c: "Always calibrate on a held-out set that was NOT used in training. Calibrating on the training set inflates ECE (the model already memorized those examples). Use a dedicated calibration split, separate from both training and test." },
+    { t: "refs", c: ["Guo et al. — On Calibration of Modern Neural Networks (ICML 2017)", "Platt — Probabilistic outputs for support vector machines (1999)", "scikit-learn CalibratedClassifierCV documentation"] }
+  ],
+
+  "annotation-inter-annotator-agreement": [
+    { t: "h2", c: "Why Annotation Quality Is a Model Quality Problem" },
+    { t: "p", c: "Garbage in, garbage out is a cliché. The precise version: if your annotators disagree with each other 30% of the time, your model's ceiling accuracy on that task is somewhere below 70% — regardless of architecture, data volume, or training time. The noise floor in your labels becomes a hard ceiling on model performance." },
+    { t: "p", c: "Inter-annotator agreement (IAA) measures how consistently multiple annotators produce the same label for the same item. Low IAA tells you one of three things: the task definition is ambiguous, the annotators are insufficiently trained, or the task is genuinely hard and requires richer label structures." },
+    { t: "h2", c: "Cohen's Kappa: Agreement Beyond Chance" },
+    { t: "p", c: "Raw agreement (proportion of items where annotators agree) is misleading. Two annotators randomly labeling a dataset with 90% class imbalance will agree 81% of the time by chance alone. Cohen's Kappa corrects for chance agreement." },
+    { t: "code", c: `import numpy as np
+from collections import Counter
+
+def cohens_kappa(labels_a: list, labels_b: list) -> float:
+    """
+    Cohen's Kappa: chance-corrected agreement.
+    κ = (P_o - P_e) / (1 - P_e)
+    P_o = observed agreement
+    P_e = expected agreement by chance
+    
+    Interpretation:
+      κ < 0:    worse than chance
+      0–0.2:    slight agreement
+      0.2–0.4:  fair agreement
+      0.4–0.6:  moderate agreement
+      0.6–0.8:  substantial agreement
+      0.8–1.0:  almost perfect agreement
+    """
+    assert len(labels_a) == len(labels_b)
+    n = len(labels_a)
+    
+    # Observed agreement
+    p_observed = sum(a == b for a, b in zip(labels_a, labels_b)) / n
+    
+    # Expected agreement by chance
+    classes = set(labels_a) | set(labels_b)
+    freq_a = Counter(labels_a)
+    freq_b = Counter(labels_b)
+    p_expected = sum((freq_a[c] / n) * (freq_b[c] / n) for c in classes)
+    
+    if p_expected == 1.0:
+        return 1.0
+    return (p_observed - p_expected) / (1 - p_expected)
+
+# Example: sentiment labeling task
+a = ["pos", "neg", "pos", "neg", "pos", "pos", "neg", "pos"]
+b = ["pos", "neg", "neg", "neg", "pos", "pos", "neg", "neg"]
+print(f"Raw agreement: {sum(x==y for x,y in zip(a,b))/len(a):.2f}")
+print(f"Cohen's Kappa: {cohens_kappa(a, b):.4f}")` },
+    { t: "h2", c: "Krippendorff's Alpha: Multi-Annotator and Ordinal Data" },
+    { t: "p", c: "Cohen's Kappa is designed for exactly two annotators with nominal labels. Krippendorff's Alpha generalises to: any number of annotators, nominal/ordinal/interval/ratio scales, and items with missing annotations. It's the standard for NLP annotation studies." },
+    { t: "code", c: `def krippendorffs_alpha(annotations: list[list], metric: str = "nominal") -> float:
+    """
+    annotations: outer list = annotators, inner list = their labels per item.
+    Use None for missing values.
+    metric: 'nominal' | 'ordinal' | 'interval'
+    """
+    import itertools
+    # Flatten to (annotator, item, value) format and compute D_o and D_e
+    # Full implementation: pip install krippendorff
+    # krippendorff.alpha(annotations, level_of_measurement=metric)
+    pass
+
+# In practice, use the library:
+# pip install krippendorff
+import krippendorff
+data = [
+    [1, 2, 3, 3, 2, 1, 4, 1],  # annotator 1
+    [1, 2, 3, 3, 2, 2, 4, 1],  # annotator 2
+    [None, 2, 3, 4, 2, 1, 4, 1],  # annotator 3 (missing first item)
+]
+alpha = krippendorff.alpha(data, level_of_measurement="ordinal")
+print(f"Krippendorff Alpha = {alpha:.4f}")` },
+    { t: "h2", c: "Annotation Pipeline Design" },
+    { t: "list", c: ["Write explicit annotation guidelines before collecting any labels. Ambiguous guidelines produce low IAA. Test your guidelines: pick 50 items, have two experienced team members label them, measure Kappa. A Kappa < 0.6 means iterate on guidelines before scaling.", "Always collect redundant annotations for a sample. For a 10,000-item dataset, have at least 1,000 items labeled by 3+ annotators to measure IAA.", "Use majority vote or adjudication for final labels. Don't just take annotator 1's label. For high-stakes tasks, flag items with 3+ annotators who all disagree for expert review.", "Track annotator drift over time. An annotator who produces Kappa 0.85 in week 1 might drift to 0.60 in week 8. Monitor per-annotator agreement with a gold standard set interspersed in batches.", "Label difficulty is signal. Items with low agreement are genuinely hard. These are often the most informative training examples and the ones your model will struggle most with. Give them extra attention."] },
+    { t: "callout", c: "If Cohen's Kappa on your task is below 0.4 after two rounds of guideline iteration, you should question whether the label scheme is appropriate. It may be that a softer label (probability distribution across classes) or a richer annotation structure (span + class + intensity) will produce more consistent annotations than forcing a binary choice." },
+    { t: "refs", c: ["Cohen — A coefficient of agreement for nominal scales (1960)", "Krippendorff — Content Analysis: An Introduction to Its Methodology (4th ed., 2019)", "Artstein and Poesio — Inter-coder agreement for computational linguistics (2008)"] }
+  ],
+
+  "eval-flywheel-implicit-feedback": [
+    { t: "h2", c: "The Eval Flywheel Problem" },
+    { t: "p", c: "A team ships a model. They evaluate it with a held-out test set. They retrain every month. Three months in, the test set has leaked into the training distribution. Six months in, their offline metrics are excellent and their product metrics are flat. This is the eval flywheel problem: the loop that should produce better models is producing models better at your test set rather than better in the world." },
+    { t: "p", c: "The solution is a self-reinforcing loop that connects real user behavior back to model improvement without the human-labeled-test-set bottleneck." },
+    { t: "h2", c: "Implicit Feedback Signals" },
+    { t: "p", c: "Implicit feedback is behavior that reveals preferences without explicit ratings. Users don't say 'this result is good' — they click it, they dwell on it, they return to the session, or they abandon it." },
+    { t: "table", c: { headers: ["Signal", "What It Measures", "Bias", "Quality"], rows: [["Click", "Perceived relevance at the time of viewing", "Position bias (rank 1 gets more clicks regardless of quality)", "Noisy but abundant"], ["Dwell time", "Satisfaction after clicking (did they read it?)", "Content length bias (long articles look more satisfying)", "Better than click alone"], ["Bounce rate", "Was the clicked result useful? (did they come back?)", "Session length confounders", "Strong signal for navigational queries"], ["Purchase / conversion", "Did it meet the user's actual need?", "Price, availability confounders", "Strongest signal, rare"], ["Reformulation rate", "Did they immediately rephrase the query?", "Less reliable on mobile", "Good signal for ranking failure"]] } },
+    { t: "h2", c: "Inverse Propensity Scoring (IPS) for Position Bias" },
+    { t: "p", c: "A click at rank 3 is worth more than a click at rank 1, because the probability of a user even examining rank 3 is lower. IPS weights each click inversely by the probability the user would have clicked given the position, regardless of quality." },
+    { t: "code", c: `import numpy as np
+
+# Examination propensity model: P(examined | rank)
+# Fitted from randomized experiments or swap experiments
+def examination_propensity(rank: int, alpha: float = 0.6) -> float:
+    """Power-law model: P(examine | rank) = 1 / rank^alpha"""
+    return 1.0 / (rank ** alpha)
+
+def ips_relevance(click: int, rank: int, alpha: float = 0.6) -> float:
+    """
+    IPS-debiased relevance estimate.
+    click=1 if user clicked, 0 otherwise.
+    IPS weight = 1 / P(examine | rank) applied to positive labels only.
+    """
+    if click == 0:
+        return 0.0
+    return click / examination_propensity(rank, alpha)
+
+# Training data with position-debiased labels
+training_data = [
+    {"query": "q1", "doc": "d1", "rank": 1, "click": 1},
+    {"query": "q1", "doc": "d2", "rank": 3, "click": 1},   # rank-3 click is more signal
+    {"query": "q2", "doc": "d3", "rank": 2, "click": 0},
+]
+for row in training_data:
+    row["ips_label"] = ips_relevance(row["click"], row["rank"])
+    print(f"rank {row['rank']}, click {row['click']} → IPS label = {row['ips_label']:.3f}")` },
+    { t: "h2", c: "The Flywheel: Closing the Loop" },
+    { t: "p", c: "Collect implicit feedback from production → clean and debias (IPS for position, filtering for bot/spam traffic) → generate weak supervision labels → retrain ranking/retrieval model → deploy via canary → collect new feedback. Each loop iteration produces a model that better reflects real user intent, which generates higher-quality implicit feedback for the next iteration." },
+    { t: "code", c: `# Minimal flywheel pipeline
+class EvalFlywheel:
+    def __init__(self, click_log_table: str, model_registry_path: str):
+        self.click_log = click_log_table
+        self.registry  = model_registry_path
+    
+    def generate_training_data(self, days: int = 30):
+        """Pull recent clicks, apply IPS debiasing, output training pairs."""
+        clicks = self.load_clicks(days)
+        pairs  = []
+        for click in clicks:
+            ips_weight = ips_relevance(click["clicked"], click["rank"])
+            if ips_weight > 0:
+                pairs.append({
+                    "query": click["query"],
+                    "positive_doc": click["doc_id"],
+                    "weight": ips_weight,
+                    "negative_docs": self.sample_negatives(click["query"], click["doc_id"])
+                })
+        return pairs
+    
+    def run_iteration(self):
+        data    = self.generate_training_data()
+        model   = self.train_on_pairs(data)
+        metrics = self.offline_eval(model)
+        if metrics["ndcg@10"] > self.current_champion_ndcg():
+            self.register(model)
+            self.deploy_canary(model, pct=0.05)` },
+    { t: "callout", c: "The flywheel only works if you resist the urge to immediately deploy models that beat the offline test set. Always canary-test against real user metrics (CTR, session success rate) before promoting. The whole point of the flywheel is to catch the gap between offline and online quality." },
+    { t: "refs", c: ["Joachims et al. — Unbiased learning-to-rank with biased feedback (2017)", "Ai et al. — Unbiased Learning to Rank with Unbiased Propensity Estimation (2018)", "Covington et al. — Deep Neural Networks for YouTube Recommendations (2016)"] }
+  ],
+
+  "llm-judge-calibration": [
+    { t: "h2", c: "LLMs as Evaluators" },
+    { t: "p", c: "LLM-as-judge (using one LLM to evaluate another's outputs) has become the dominant approach for evaluating generative AI systems. Human evaluation is expensive, slow, and doesn't scale to thousands of model iterations. LLM judges are cheap, fast, and surprisingly consistent — but they carry systematic biases that human judges do not." },
+    { t: "p", c: "If you use LLM-as-judge without understanding its failure modes, you're not evaluating your model — you're evaluating your judge's preferences." },
+    { t: "h2", c: "Known Biases in LLM Judges" },
+    { t: "list", c: ["Position bias: LLM judges prefer responses that appear first in a pairwise comparison, or responses in specific positions within a list. Mitigation: run each comparison twice with positions swapped; only count as a win if the same response wins both times.", "Verbosity bias: longer responses are rated higher regardless of quality. A verbose response that says less is preferred over a concise response that says more. Mitigation: limit response length in the prompt, or explicitly instruct the judge to evaluate information density.", "Self-consistency bias: when an LLM judges its own outputs versus those of another model, it systematically prefers its own style. Use a different model family for judging.", "Sycophancy: if the prompt contains any hint of which response is 'better', the judge will align with that hint. Keep the prompt neutral; don't label responses A (human) vs B (model).", "Anchoring: the judge's rating of the second response in a sequence is anchored to the first. It rates relative to context rather than on an absolute scale."] },
+    { t: "h2", c: "Structured Judging Rubric" },
+    { t: "code", c: `JUDGE_PROMPT_TEMPLATE = """
+You are an expert evaluator. Assess the following response to the given question.
+Do not consider which model produced it. Evaluate only the content.
+
+Question: {question}
+
+Response: {response}
+
+Rate the response on each criterion from 1-5:
+
+ACCURACY (1-5): Does it state correct information? Is anything false or misleading?
+RELEVANCE (1-5): Does it address what was asked? Is anything irrelevant?
+COMPLETENESS (1-5): Does it cover the key aspects? Are important aspects missing?
+CLARITY (1-5): Is it well-organised and easy to understand?
+CONCISENESS (1-5): Does it avoid unnecessary verbosity?
+
+Output your ratings in this JSON format and nothing else:
+{{
+  "accuracy": <int 1-5>,
+  "relevance": <int 1-5>,
+  "completeness": <int 1-5>,
+  "clarity": <int 1-5>,
+  "conciseness": <int 1-5>,
+  "brief_justification": "<one sentence per criterion, semicolon-separated>"
+}}
+"""
+
+import json, re
+
+def judge_response(question: str, response: str, judge_model) -> dict:
+    prompt = JUDGE_PROMPT_TEMPLATE.format(question=question, response=response)
+    raw = judge_model.generate(prompt)
+    json_match = re.search(r'\{.*\}', raw, re.DOTALL)
+    if not json_match:
+        raise ValueError(f"Judge returned non-JSON: {raw[:200]}")
+    scores = json.loads(json_match.group())
+    scores["composite"] = sum([scores[k] for k in ["accuracy","relevance","completeness","clarity","conciseness"]]) / 5
+    return scores` },
+    { t: "h2", c: "Calibrating Your Judge Against Human Labels" },
+    { t: "p", c: "Before trusting an LLM judge at scale, measure its agreement with human annotations on a calibration set. Take 200 items that humans have rated; compute Cohen's Kappa between human ratings and judge ratings. Kappa > 0.6 is the bar for using the judge in production evaluations." },
+    { t: "code", c: `def calibrate_judge(judge_fn, human_ratings: list[dict]) -> dict:
+    """
+    human_ratings: list of {question, response, human_score_1_to_5}
+    Returns calibration metrics.
+    """
+    judge_scores, human_scores = [], []
+    
+    for item in human_ratings:
+        try:
+            j = judge_fn(item["question"], item["response"])
+            judge_scores.append(round(j["composite"]))
+            human_scores.append(item["human_score"])
+        except Exception as e:
+            print(f"Judge failed on item: {e}")
+    
+    from scipy.stats import pearsonr, spearmanr
+    pearson,  _ = pearsonr(judge_scores,  human_scores)
+    spearman, _ = spearmanr(judge_scores, human_scores)
+    
+    return {
+        "pearson_r":      round(pearson,  4),
+        "spearman_rho":   round(spearman, 4),
+        "mean_abs_error": round(abs(np.array(judge_scores) - np.array(human_scores)).mean(), 3),
+        "n_judged":       len(judge_scores),
+    }` },
+    { t: "callout", c: "The single most important practice: never use the same model family as judge and evaluatee. If you're evaluating GPT-4o outputs, use Claude as the judge. If you're evaluating Claude, use Gemini. Cross-family judging reduces self-preference bias dramatically." },
+    { t: "refs", c: ["Zheng et al. — Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena (2023)", "Wang et al. — Large Language Models are not Fair Evaluators (2023)", "RAGAS documentation — LLM-based evaluation for RAG pipelines"] }
+  ],
+
+  "counterfactual-offline-eval": [
+    { t: "h2", c: "The Logging Policy Problem" },
+    { t: "p", c: "Your production ranking model has a bias problem that's invisible in offline evaluation. Every click you've logged was on an item your previous model chose to show. Items your model ranked low were shown to fewer users and clicked on less — not because they're irrelevant, but because they weren't exposed. Your offline eval data is not a random sample; it's a biased sample produced by your logging policy." },
+    { t: "p", c: "Naive offline evaluation using logged data systematically undervalues items that the old model buried. A new model that ranks those items higher will look worse in offline evaluation — but perform better in online A/B tests. This is the counterfactual evaluation problem." },
+    { t: "h2", c: "Inverse Propensity Scoring (IPS) for Offline Evaluation" },
+    { t: "p", c: "If we know the probability that each item was shown by the logging policy, we can reweight observations inversely by that probability to simulate what would have happened under the new policy." },
+    { t: "code", c: `import numpy as np
+
+def ips_offline_eval(
+    new_policy_scores:  np.ndarray,   # new model's score for each item
+    logging_propensity: np.ndarray,   # P(shown | logging_policy) for each item
+    reward:             np.ndarray,   # observed reward (1=click, 0=no click)
+    clip_threshold:     float = 10.0  # clip high weights to reduce variance
+) -> float:
+    """
+    IPS estimator for expected reward under new_policy.
+    Returns estimated reward if we had deployed new_policy.
+    """
+    # Importance weights: new_policy / logging_policy
+    # But we don't know new_policy propensities from scores alone —
+    # convert to a distribution via softmax
+    new_probs = np.exp(new_policy_scores) / np.exp(new_policy_scores).sum()
+    
+    weights = new_probs / (logging_propensity + 1e-8)
+    weights = np.clip(weights, 0, clip_threshold)   # reduce high-variance weights
+    
+    ips_estimate = (weights * reward).mean()
+    return float(ips_estimate)
+
+# Doubly Robust (DR) estimator — lower variance than pure IPS
+def doubly_robust_eval(
+    new_policy_scores:  np.ndarray,
+    logging_propensity: np.ndarray,
+    reward:             np.ndarray,
+    reward_model:       callable,     # trained on logged data: f(item) → predicted_reward
+    clip_threshold:     float = 10.0
+) -> float:
+    """
+    DR estimator: uses reward model as baseline, corrects with IPS.
+    Unbiased if EITHER propensity model OR reward model is correct.
+    """
+    new_probs = np.exp(new_policy_scores) / np.exp(new_policy_scores).sum()
+    weights = np.clip(new_probs / (logging_propensity + 1e-8), 0, clip_threshold)
+    
+    predicted_rewards = reward_model(np.arange(len(reward)))
+    dr_estimate = (predicted_rewards * new_probs).sum() + (weights * (reward - predicted_rewards)).mean()
+    return float(dr_estimate)` },
+    { t: "h2", c: "Logging Propensity Estimation" },
+    { t: "p", c: "To compute IPS weights, you need to know P(item shown | logging policy). For simple ranking, this is the examination propensity at each rank (power-law model). For complex policies with real-time filtering, you need to log the propensity at serving time." },
+    { t: "code", c: `# Log propensity at serving time — critical for offline eval
+import json, time
+
+def serve_and_log(query: str, user_id: str, production_model) -> dict:
+    ranked_items = production_model.rank(query)
+    
+    log_entry = {
+        "timestamp":  time.time(),
+        "query":      query,
+        "user_id":    user_id,
+        "served": [
+            {
+                "item_id":    item.id,
+                "rank":       rank,
+                "score":      item.score,
+                "propensity": 1.0 / (rank ** 0.6)   # or your propensity model
+            }
+            for rank, item in enumerate(ranked_items[:20], start=1)
+        ]
+    }
+    write_to_log(json.dumps(log_entry))
+    return {"items": [i["item_id"] for i in log_entry["served"][:10]]}` },
+    { t: "h2", c: "When to Use Counterfactual Evaluation" },
+    { t: "callout", c: "Counterfactual evaluation is most valuable when: (a) your A/B test budget is limited and you need to filter candidates before live testing; (b) your logging data is heavily biased by the previous model; (c) you're evaluating models that significantly change the ranking (not just marginal improvements). For marginal improvements to a stable ranking, standard offline metrics are sufficient." },
+    { t: "list", c: ["Always use DR estimator over pure IPS if you can train a reward model — it has lower variance and is robust to mis-specified propensity estimates.", "Log propensities at serving time. Reconstructing them offline from rank is approximate; the true propensity depends on the real-time filtering logic your serving stack applied.", "IPS estimates are unbiased but high-variance. Use clipping (cap at 10x or 100x) to reduce variance at the cost of slight bias.", "Counterfactual evaluation does not replace A/B testing — it narrows the candidate set. Only metrics from live experiments are fully trustworthy."] },
+    { t: "refs", c: ["Bottou et al. — Counterfactual Reasoning and Learning Systems (2013)", "Joachims et al. — Recommendations as treatments: debiasing learning and evaluation (2016)", "Swaminathan and Joachims — Batch learning from logged bandit feedback (2015)"] }
+  ]

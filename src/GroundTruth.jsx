@@ -948,6 +948,12 @@ const SERIES_META = {
     color: "#22d3ee",
     postIds: ["attention-from-scratch", "bm25-from-scratch", "minimal-rag-50-lines", "bpe-tokenization-from-scratch", "training-loop-from-scratch", "lora-from-scratch", "kv-cache-from-scratch", "faiss-from-scratch", "contrastive-learning-from-scratch"],
   },
+  "eval-depth": {
+    title: "Evaluation Deep Dives",
+    desc: "The metrics and methods behind trustworthy AI evaluation: ranking metrics (NDCG, MRR), calibration (ECE, temperature scaling), annotation quality (IAA, Kappa), implicit feedback flywheels, LLM-as-judge bias modes, and counterfactual offline evaluation.",
+    color: "#6366f1",
+    postIds: ["ndcg-mrr-from-scratch", "calibration-ece-from-scratch", "annotation-inter-annotator-agreement", "eval-flywheel-implicit-feedback", "llm-judge-calibration", "counterfactual-offline-eval"],
+  },
   "llmops-production": {
     title: "LLMOps & Production ML",
     desc: "The operational layer between training and serving: drift detection, deployment patterns, feature stores, model registries, retraining triggers, and containerization. What it takes to keep a model reliable in production.",
