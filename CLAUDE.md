@@ -21,7 +21,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 63, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 413 PrepLab questions, 281 GT index entries (7 new series, 3 interactive Systems modules), 5 PrepLab modes (+ Interview Sprint).
+**Scale (post-sprint 64, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 426 PrepLab questions, 286 GT index entries (9 new series, 3 interactive Systems modules), 5 PrepLab modes (+ Interview Sprint).
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
@@ -389,6 +389,16 @@ For full audit findings see AUDITS.md.
 - 27 new PrepLab questions: reco-1–12, ml-theory-1–12, mlsysdesign-1–3.
 - All posts registered in groundTruthIndex.js (281 entries), SERIES_META + sidebar updated. Commits `4544aaa`, `2ba0b67`. Brace diff = 0 on all files.
 - **Scale post-sprint 63:** 413 PrepLab questions, 281 GT index entries, 7 new GT series total, 5 PrepLab modes.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
+**Sprint 64 (June 2026) — High-TC company prep track:**
+- Honest role coverage gap analysis: Senior AIE (strong), Staff (decent), Lead (partial), Applied Scientist (improved), Research Engineer (missing), FDE (minimal), MLOps (solid).
+- 5 new GT posts: `bayesian-reasoning-ml` (completes ml-foundations — MAP/MLE/priors-as-regularization/uncertainty/GPs/VI), `reading-ml-papers-critically` (series: research-taste — 5-question framework, baseline gaming, contamination, ablation completeness, compute opacity), `benchmark-overfitting-goodhart` (research-taste — Goodhart's Law, MMLU contamination, metric gaming vs. optimization), `high-tc-ai-company-interviews` (series: high-tc-targets — Cohere/Anthropic/Mistral/Sarvam/Krutrim/staff-Flipkart patterns), `ambiguous-system-design-framework` (high-tc-targets — 4-phase no-spec design framework, clarification playbook, architecture argument, failure preemption).
+- 13 new PrepLab questions: firstp-1–6 (MAP prior, attention scaling, Adam second moment, cross-entropy/KL, BPR, AdamW), restaste-1–4 (significance, baseline tuning, MMLU contamination, Goodhart/CTR), hightc-1–3 (latency clarification, temperature scaling, staff week-1).
+- 2 new GT series: `research-taste`, `high-tc-targets`. ml-foundations expanded to 6 posts (+ bayesian). Sidebar +2 links.
+- 6 future items logged in IDEAS.md: think-out-loud mechanic, Research Engineer track, FDE track, Staff/Lead track, Bayesian extension, multilingual/Sarvam-Krutrim.
+- Commit `86602dd`. Brace diff = 0 on all files.
+- **Scale post-sprint 64:** 426 PrepLab questions, 286 GT index entries, 9 GT series.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
 **Sprint 60 (June 2026) — GT post + private Mastery Room (staged, not committed):**

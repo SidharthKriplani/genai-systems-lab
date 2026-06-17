@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 63 (June 2026) — Scale: 413 PrepLab questions, 281 GT index entries, 5 PrepLab modes*
+*Last updated: sprint 64 (June 2026) — Scale: 426 PrepLab questions, 286 GT index entries, 5 PrepLab modes, 9 GT series*
 
 ---
 

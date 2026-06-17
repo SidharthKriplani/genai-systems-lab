@@ -1329,3 +1329,64 @@ When starting a new build session:
 2. After building, move completed ideas to LINEAGE.md
 3. Add new ideas that emerged during the session to the appropriate tier
 4. Promote ideas from Tier 2→1 when adjacent modules make them easier to build
+
+---
+
+## High-TC / Research Role gaps — logged sprint 64 (June 2026)
+
+### Think-out-loud / ambiguous problem interactive module
+`Tier 1` `L effort` `Mechanic gap — no competitor trains this`
+
+GSL trains knowledge. It doesn't train the judgment-under-ambiguity skill that Cohere/Anthropic/Mistral interviews actually test. Need a new module format: user is given an ambiguous problem statement, they pick clarifying questions from a menu (4 options per step, wrong questions cost points), then they construct a solution from components. Each clarification attempt reveals a constraint that narrows the design space. The mechanic teaches the habit of questioning before designing.
+
+Format: Systems tab module. 3-4 scenarios. Scenario 1: design a search ranking system with no spec. Scenario 2: build an LLM eval framework for an unknown downstream task. Scenario 3: design a recommendation feed for a product with conflicting objectives.
+
+**Dependencies:** New module format + UI component (L effort). Content is ready from `ambiguous-system-design-framework` GT post.
+
+---
+
+### Research Engineer prep track
+`Tier 1` `M effort` `Fills the biggest role gap`
+
+GSL has zero content for Research Engineer interviews. These probe: paper reading ability (critique an evaluation), implementation from a paper (code the core contribution), research taste (what's the most important open problem in X), and experimental design (how would you test this hypothesis).
+
+Content needed: (1) GT post: "The Research Engineer Interview" — what it tests, how it differs from SWE and MLE. (2) GT post: "How to Implement a Paper" — reading the method section, identifying the key contribution, scoping a minimal implementation. (3) 10 PrepLab questions: research taste MCQs, paper critique scenarios. (4) Systems module: interactive paper critique (show paper excerpt → identify the flaw from 4 options).
+
+---
+
+### FDE (Forward Deployed Engineer) track
+`Tier 1` `M effort` `Niche but high-TC`
+
+One GT post exists (`forward-deployed-engineer`, `vibe-coding-interview-round`). FDE interviews test: build from an underspecified brief in 90 minutes, handle customer constraints that change mid-build, prioritize feature completeness over code quality. No PrepLab cluster exists for this.
+
+Content needed: 5 PrepLab questions (fde-1 through fde-5) on rapid prototyping judgment, constraint handling, and "what do you cut first" tradeoffs. One "How I'd Build" post: "How I'd Handle a 90-Minute Build Round" — scope clarification, architecture in 5 minutes, ruthless MVP definition.
+
+---
+
+### Staff/Lead interview track — week 1 and influence
+`Tier 1` `M effort` `Currently absent from all content`
+
+Staff and Lead interviews test things GSL doesn't cover: what do you do in week 1 at a new company, how do you influence a team without authority, how do you prioritize when you own nothing but affect everything, and how do you decide when to build vs. buy vs. defer.
+
+Content needed: (1) GT post: "Staff AI Engineer: What to Do in Week 1" — on-call runbook first, user interviews before code, identifying highest-leverage model improvement, deferring rewrites. (2) GT post: "Engineering Influence Without Authority" — the staff engineer's toolkit. (3) 8 PrepLab questions: staff-1 through staff-8 on prioritization, buy vs. build, cross-team decisions.
+
+---
+
+### Bayesian / probabilistic track extension
+`Tier 2` `S effort` `Completes Applied Scientist coverage`
+
+`bayesian-reasoning-ml` was built this sprint. Still missing for full AS coverage: (1) Probabilistic graphical models (Bayesian networks, MRFs, latent variable models). (2) Monte Carlo methods (MCMC, importance sampling — when VI isn't enough). (3) Conformal prediction — the rigorous frequentist alternative to Bayesian uncertainty that's used in production.
+
+---
+
+### "What's wrong with this eval?" interactive PrepLab scenario
+`Tier 2` `M effort` `High-signal for research taste`
+
+Show a paper's evaluation table (fabricated, GSL-authored). User must identify: (1) the under-tuned baseline, (2) the missing ablation, (3) the contamination risk. Multi-step scenario format. This trains the `reading-ml-papers-critically` skill interactively rather than through reading.
+
+---
+
+### Multilingual / low-resource NLP for Sarvam/Krutrim
+`Tier 2` `M effort` `India-specific differentiation`
+
+Sarvam and Krutrim interviews probe: BPE failure modes for Indic scripts, code-switching handling, transliteration ambiguity, building models for low-literacy voice interfaces. No GSL content covers this. 1 GT post + 5 PrepLab questions would close 80% of the gap.
