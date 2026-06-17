@@ -21,7 +21,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 61, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 319 PrepLab questions, 262 GT posts (4 new series), 4 PrepLab modes.
+**Scale (post-sprint 61, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 371 PrepLab questions, 262 GT posts (4 new series), 4 PrepLab modes.
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
