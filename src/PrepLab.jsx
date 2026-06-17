@@ -3153,7 +3153,7 @@ function BrowseMode({ onExit }) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="shrink-0 px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
+      <div className="shrink-0 px-4 sm:px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 transition-colors">
@@ -3161,28 +3161,29 @@ function BrowseMode({ onExit }) {
             </button>
             <h2 className="text-base font-bold text-white">Browse Questions</h2>
           </div>
-          <p className="text-xs text-zinc-500">{filtered.length} questions — expand any to see answer + explanation</p>
+          <p className="text-xs text-zinc-500">{filtered.length} questions — tap any to see answer</p>
         </div>
         {reviewedCount > 0 && (
-          <span className="text-[10px] font-mono text-emerald-400 border border-emerald-800/60 bg-emerald-950/30 px-2 py-1 rounded">
+          <span className="text-[10px] font-mono text-emerald-400 border border-emerald-800/60 bg-emerald-950/30 px-2 py-1 rounded shrink-0">
             {reviewedCount} reviewed
           </span>
         )}
       </div>
 
       {/* Filters */}
-      <div className="shrink-0 px-6 py-3 flex flex-wrap gap-2" style={{ borderBottom: "1px solid var(--border)" }}>
-        {/* Topic filter */}
-        <div className="flex flex-wrap gap-1">
+      <div className="shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
+        {/* Topic filter — horizontal scroll on mobile */}
+        <div className="overflow-x-auto px-4 sm:px-6 py-2.5 flex gap-1.5 scrollbar-none" style={{ scrollbarWidth: "none" }}>
           {["all", ...allTopics].map(t => (
             <button key={t} onClick={() => setTopic(t)}
-              className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${topic === t ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"}`}>
+              className={`shrink-0 px-2.5 py-1 rounded text-[11px] font-mono transition-all ${topic === t ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"}`}>
               {t === "all" ? "All topics" : (TOPIC_LABELS[t] || t)}
             </button>
           ))}
         </div>
-        {/* Difficulty filter */}
-        <div className="flex gap-1 ml-auto">
+        {/* Difficulty filter — always its own row */}
+        <div className="px-4 sm:px-6 pb-2.5 flex gap-1.5 items-center">
+          <span className="text-[10px] font-mono text-zinc-600 mr-1">Difficulty:</span>
           {["all", "easy", "medium", "hard"].map(d => (
             <button key={d} onClick={() => setDiff(d)}
               className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all capitalize ${diff === d ? "bg-zinc-600 text-white" : "bg-zinc-800/60 text-zinc-500 hover:text-zinc-300"}`}>
@@ -3193,7 +3194,7 @@ function BrowseMode({ onExit }) {
       </div>
 
       {/* Question list */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-2">
         {filtered.length === 0 && (
           <p className="text-zinc-500 text-sm text-center py-10">No questions match this filter.</p>
         )}
@@ -3229,8 +3230,8 @@ function BrowseMode({ onExit }) {
                       {q.options.map((opt, oi) => (
                         <div key={oi} className={`px-3 py-2 rounded-lg text-sm flex items-start gap-2 ${oi === q.correct ? "bg-emerald-950/40 border border-emerald-800/50 text-emerald-300" : "bg-zinc-800/40 text-zinc-400"}`}>
                           <span className="font-mono text-[11px] shrink-0 mt-0.5">{String.fromCharCode(65 + oi)}.</span>
-                          <span>{opt}</span>
-                          {oi === q.correct && <span className="ml-auto text-[10px] font-mono text-emerald-400 shrink-0">✓ CORRECT</span>}
+                          <span className="flex-1 leading-snug">{opt}</span>
+                          {oi === q.correct && <span className="text-[10px] font-mono text-emerald-400 shrink-0 mt-0.5">✓</span>}
                         </div>
                       ))}
                     </div>
