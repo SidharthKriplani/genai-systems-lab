@@ -21,7 +21,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 65, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 459 PrepLab questions, 293 GT index entries (11 new series, 3 interactive Systems modules), 5 PrepLab modes (+ Interview Sprint).
+**Scale (post-sprint 66, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 483 PrepLab questions, 301 GT index entries (12 new series, 3 interactive Systems modules), 5 PrepLab modes (+ Interview Sprint).
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
@@ -469,6 +469,17 @@ For full audit findings see AUDITS.md.
 - Role coverage post-sprint 65: Senior AIE 85%, MLOps 80%, Applied Scientist 85%, Staff 75%, Research Engineer 60%, FDE 60%, Indic/Sarvam 60%.
 - Commit `0c747f3`. Brace diff = 0 on all files.
 - **Scale post-sprint 65:** 459 PrepLab questions, 293 GT index entries, 11 GT series.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
+**Sprint 66 (June 2026) — Lead/EM track, RE depth, FDE depth:**
+- 8 new GT posts: `ic-to-em-transition`, `roadmap-ownership-ai-teams`, `managing-ai-engineers`, `ai-team-perf-calibration`, `rlhf-from-scratch`, `pretraining-data-decisions`, `customer-facing-ai-demos`, `ai-integration-debugging`.
+- New series: `engineering-leadership` (4 posts — Lead/EM track).
+- high-tc-targets expanded: +4 posts (RLHF, pretraining, demo patterns, integration debugging).
+- 24 new PrepLab questions: lead-1–12, redeep-1–6, fdedeep-1–6.
+- App.jsx sidebar: +1 series link (Engineering Leadership).
+- Role coverage post-sprint 66: Lead/EM 75%, RE 80%, FDE 75%. All major gaps closed.
+- Commit `256446c`. Brace diff = 0 on all files.
+- **Scale post-sprint 66:** 483 PrepLab questions, 301 GT index entries, 12 GT series.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
 **Sprints 37c–41** — see LINEAGE.md for detail. Key: GT state-aware reading mode, RAG Lab static corpus, 10 new PrepLab questions + sibling codebase analysis (39), shared components + streak heatmap + FeedbackBar + multi-select MCQ + CommonTrap expansion + AgentContextArch module (40), 7 new Concepts modules + 4 gyms activated + Prompt Lab (41).
