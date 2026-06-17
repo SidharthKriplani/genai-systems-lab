@@ -80,9 +80,9 @@ const SYSTEMS_GROUPS = [
 ];
 
 const RELATED_GT = {
-  evals:        [{ id: "llm-evaluation-guide", title: "The LLM Evaluation Guide" }, { id: "iv-eval-system", title: "Design an Eval System" }],
-  evalfw:       [{ id: "llm-evaluation-guide", title: "The LLM Evaluation Guide" }],
-  evalmetrics:  [{ id: "llm-evaluation-guide", title: "The LLM Evaluation Guide" }, { id: "fine-tuning-evaluation", title: "Fine-Tuning Evaluation" }],
+  evals:        [{ id: "llm-evaluation-guide", title: "The LLM Evaluation Guide" }, { id: "iv-eval-system", title: "Design an Eval System" }, { id: "llm-as-judge-failure", title: "LLM-as-Judge Failure Modes" }, { id: "eval-production-gap", title: "The Eval-to-Production Gap" }],
+  evalfw:       [{ id: "llm-evaluation-guide", title: "The LLM Evaluation Guide" }, { id: "ragas-metrics-explained", title: "RAGAS Metrics Explained" }, { id: "human-eval-vs-llm-eval", title: "Human Eval vs LLM Eval" }],
+  evalmetrics:  [{ id: "ndcg-mrr-from-scratch", title: "NDCG & MRR From Scratch" }, { id: "calibration-ece-from-scratch", title: "Calibration & ECE From Scratch" }, { id: "llm-judge-calibration", title: "LLM Judge Calibration" }, { id: "fine-tuning-evaluation", title: "Fine-Tuning Evaluation" }],
   strategy:     [{ id: "model-strategy", title: "Model Strategy" }, { id: "model-routing", title: "Model Routing" }],
   costlatency:  [{ id: "cost-latency-tradeoffs", title: "Cost vs Latency Trade-offs" }, { id: "llm-cost-optimization", title: "LLM Cost Optimization" }],
   finetune:     [{ id: "full-vs-peft-vs-prompting", title: "Full FT vs PEFT vs Prompting" }, { id: "lora-in-practice", title: "LoRA in Practice" }],
@@ -90,7 +90,7 @@ const RELATED_GT = {
   router:       [{ id: "model-routing", title: "Model Routing" }],
   incidents:    [{ id: "incident-room", title: "Incident Room Patterns" }],
   observability:[{ id: "llm-observability", title: "LLM Observability" }],
-  abtesting:    [{ id: "ab-testing-llms", title: "A/B Testing LLMs" }, { id: "shadow-ab-testing", title: "Shadow A/B Testing" }],
+  abtesting:    [{ id: "ab-testing-llms", title: "A/B Testing LLMs" }, { id: "shadow-ab-testing", title: "Shadow A/B Testing" }, { id: "eval-flywheel-implicit-feedback", title: "The Eval Flywheel" }, { id: "counterfactual-offline-eval", title: "Counterfactual Offline Eval" }],
   mlcicd:       [{ id: "ml-cicd", title: "ML CI/CD" }],
   debug_traces: [{ id: "tracing-agent-loops", title: "Tracing Agent Loops" }],
   compaction:   [{ id: "context-compaction", title: "Context Compaction" }],
@@ -101,8 +101,8 @@ const RELATED_GT = {
   moe:          [{ id: "moe-architecture-guide", title: "MoE Architecture Guide" }, { id: "mixtral-mixture-of-experts", title: "Mixtral: Mixture of Experts" }],
   specdecoding: [{ id: "inference-optimisation", title: "Inference Optimisation" }],
   streaming:    [{ id: "cost-latency-tradeoffs", title: "Cost vs Latency Trade-offs" }],
-  rlhf:         [{ id: "rlhf-dpo-explained", title: "RLHF & DPO Explained" }, { id: "rlhf-production", title: "RLHF in Production" }],
-  grpo:         [{ id: "rlhf-dpo-explained", title: "RLHF and DPO Explained" }, { id: "dpo-vs-ppo", title: "DPO vs PPO" }],
+  rlhf:         [{ id: "rlhf-dpo-explained", title: "RLHF & DPO Explained" }, { id: "rlhf-production", title: "RLHF in Production" }, { id: "rlhf-from-scratch", title: "RLHF From Scratch" }],
+  grpo:         [{ id: "rlhf-dpo-explained", title: "RLHF and DPO Explained" }, { id: "dpo-vs-ppo", title: "DPO vs PPO" }, { id: "rlhf-from-scratch", title: "RLHF From Scratch" }],
   multimodal:   [{ id: "multimodal-llms-architecture", title: "Multimodal LLMs Architecture" }],
   multimodal2:  [{ id: "multimodal-in-production", title: "Multimodal in Production" }],
   agentarch:    [{ id: "react-reasoning-acting", title: "ReAct: Reasoning + Acting" }, { id: "building-reliable-agents", title: "Building Reliable Agents" }],
@@ -134,6 +134,15 @@ const RELATED_GT = {
   "biencoder":        [{ id: "bi-encoder-vs-cross-encoder", title: "Bi-Encoder vs Cross-Encoder: Retrieval Architecture" }],
   "bert-pooling":     [{ id: "bert-internals-explained", title: "BERT Tokenization & Pooling Lab" }],
   "vecsim":           [{ id: "vector-databases-compared", title: "Vector Similarity Explorer" }],
+};
+
+const MODULE_PREPLAB_TOPIC = {
+  evals: "evals", evalfw: "evals", evalmetrics: "evals", abtesting: "evals", trapslab: "evals",
+  finetune: "finetuning", finetuning: "finetuning", rlhf: "finetuning", grpo: "finetuning", synthdata: "finetuning",
+  agentarch: "agents", agentmemory: "agents", "agent-ctx-arch": "agents", langgraph: "agents",
+  "graph-rag": "rag", "query-refinement": "rag", vectordb: "rag", biencoder: "rag", "bert-pooling": "rag", vecsim: "rag",
+  serving: "llmops", observability: "llmops", mlcicd: "llmops", "prompt-change-mgmt": "llmops", incidents: "llmops", costlatency: "llmops", deploy: "llmops", langsmith: "llmops",
+  txarch: "foundations", moe: "foundations", kvcache: "foundations", flashattn: "foundations", quantization: "foundations", specdecoding: "foundations", decoding: "foundations",
 };
 
 // Modules with real logic-derived outcomes (not pre-scripted)
@@ -357,7 +366,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
           <div className="flex items-center gap-2 pt-1 border-t border-zinc-800/60">
             <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Test your understanding →</span>
             <button
-              onClick={() => onNavigate && onNavigate("preplab")}
+              onClick={() => onNavigate && onNavigate({ tab: "preplab", mode: "trainer", topic: MODULE_PREPLAB_TOPIC[activeModule] || "evals" })}
               className="text-xs px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-300 hover:text-violet-300 font-medium transition-all">
               🧠 Prep Lab
             </button>
