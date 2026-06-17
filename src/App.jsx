@@ -1917,12 +1917,18 @@ export default function App() {
     // Field notes — practitioner writing; series items open first post directly
     { label: null, color: "#a78bfa", items: [
       { id: "groundtruth", label: "Ground Truth", alwaysExpanded: true, subitems: [
-        { id: "groundtruth", label: "Agent Engineering",    postId: "react-pattern"          },
-        { id: "groundtruth", label: "RAG in Production",    postId: "how-rag-works"          },
-        { id: "groundtruth", label: "The Training Stack",   postId: "finetune-playbook"      },
-        { id: "groundtruth", label: "LLMOps in Production", postId: "your-prompt-is-code"    },
-        { id: "groundtruth", label: "How I'd Build X",      postId: "build-ai-search"        },
-        { id: "groundtruth", label: "The Data Flywheel",    postId: "flywheel-implicit-feedback" },
+        { id: "groundtruth", label: "Agent Engineering",    postId: "react-pattern"                },
+        { id: "groundtruth", label: "RAG in Production",    postId: "how-rag-works"                },
+        { id: "groundtruth", label: "The Training Stack",   postId: "finetune-playbook"            },
+        { id: "groundtruth", label: "LLMOps in Production", postId: "your-prompt-is-code"          },
+        { id: "groundtruth", label: "How I'd Build X",      postId: "build-ai-search"              },
+        { id: "groundtruth", label: "The Data Flywheel",    postId: "flywheel-implicit-feedback"   },
+        { id: "groundtruth", label: "NLP Origins",          postId: "ngram-language-models"        },
+        { id: "groundtruth", label: "Build From Scratch",   postId: "attention-from-scratch"       },
+        { id: "groundtruth", label: "LLM Internals",        postId: "attention-variants-mha-gqa-mqa" },
+        { id: "groundtruth", label: "Retrieval Depth",      postId: "ann-algorithms-deep-dive"     },
+        { id: "groundtruth", label: "LLMOps Production",    postId: "drift-detection-production"   },
+        { id: "groundtruth", label: "Evaluation Depth",     postId: "ndcg-mrr-from-scratch"        },
       ]},
     ]},
     // Plans now in TRACK group at top of sidebar.

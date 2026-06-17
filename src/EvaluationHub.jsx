@@ -17,13 +17,26 @@ const GT_POSTS = [
   { id: "llm-as-judge-failure",    title: "LLM-as-Judge: The Four Biases Your Evaluator Won't Tell You About", desc: "Self-preference, verbosity, position, and style biases that make LLM judges systematically misleading — and how to correct them.", readMin: 9, tag: "Bias" },
   { id: "ragas-metrics-explained", title: "RAGAS Metrics Explained: What They Measure, What They Miss, and When They Lie", desc: "Faithfulness, answer relevancy, context precision, context recall — what each score actually captures and where each one breaks down.", readMin: 9, tag: "Metrics" },
   { id: "eval-production-gap",     title: "The Offline-Production Eval Gap: Why 91% RAGAS Doesn't Mean 91% User Satisfaction", desc: "Offline evals measure what you designed them to measure. Production measures what users actually care about. The gap is where products break.", readMin: 9, tag: "Production" },
-  { id: "human-eval-vs-llm-eval",  title: "Human Eval vs. LLM Eval: When to Use Each and How to Make Both Work", desc: "Why human eval is the gold standard, when automated eval is sufficient, and how to calibrate automated judges against human signal.", readMin: 8, tag: "Method" },
+  { id: "human-eval-vs-llm-eval",       title: "Human Eval vs. LLM Eval: When to Use Each and How to Make Both Work", desc: "Why human eval is the gold standard, when automated eval is sufficient, and how to calibrate automated judges against human signal.", readMin: 8, tag: "Method" },
+  { id: "ndcg-mrr-from-scratch",        title: "NDCG and MRR From Scratch: The Ranking Metrics Every AI Engineer Needs", desc: "Why accuracy is the wrong metric for search. MRR for single-answer queries, DCG for graded relevance, NDCG for cross-query comparison.", readMin: 10, tag: "Metrics" },
+  { id: "calibration-ece-from-scratch", title: "Model Calibration and ECE: When 90% Confidence Means 70% Accuracy", desc: "ECE from scratch, reliability diagrams, Platt scaling, and temperature scaling. Why calibrate on a separate held-out set.", readMin: 11, tag: "Calibration" },
+  { id: "annotation-inter-annotator-agreement", title: "Inter-Annotator Agreement: Why Low IAA Is a Model Problem", desc: "Cohen's Kappa, Krippendorff's Alpha, and annotation pipeline design. If annotators disagree 30% of the time, your model's ceiling is below 70%.", readMin: 10, tag: "Annotation" },
+  { id: "eval-flywheel-implicit-feedback", title: "The Eval Flywheel: From Implicit Feedback to Continuous Model Improvement", desc: "How clicks and dwell time become training signal. Position bias, IPS debiasing, and the loop connecting user behavior to retraining.", readMin: 11, tag: "Production" },
+  { id: "llm-judge-calibration",        title: "LLM-as-Judge Calibration, Bias Modes, and When to Trust It", desc: "Position, verbosity, and self-consistency bias. A structured rubric, measuring judge-human agreement, the cross-family judging rule.", readMin: 10, tag: "Bias" },
+  { id: "counterfactual-offline-eval",  title: "Counterfactual Offline Evaluation: IPS and Doubly Robust Estimators", desc: "The logging policy bias problem. IPS and the Doubly Robust estimator from scratch. When to log propensities at serving time.", readMin: 11, tag: "Offline eval" },
 ];
 
 const PREPLAB_Qs = [
-  { id: "eval-8", difficulty: "Easy",   diffColor: "#22c55e", gated: true, question: "RAGAS framework evaluates RAG systems on which 4 dimensions?" },
-  { id: "eval-5", difficulty: "Easy",   diffColor: "#22c55e", gated: true, question: "The difference between online and offline evaluation in LLM systems is:" },
-  { id: "eval-1", difficulty: "Medium", diffColor: "#f59e0b", gated: true, question: "You are evaluating a RAG system. ROUGE-L score is 0.71 but users report factual errors 40% of the time. Best explanation?" },
+  { id: "eval-8",        difficulty: "Easy",   diffColor: "#22c55e", gated: true,  question: "RAGAS framework evaluates RAG systems on which 4 dimensions?" },
+  { id: "calib-1",       difficulty: "Easy",   diffColor: "#22c55e", gated: false, question: "A clinical risk model outputs confidence 0.85 and is well-calibrated. What does this mean?" },
+  { id: "rankmetric-1",  difficulty: "Easy",   diffColor: "#22c55e", gated: false, question: "For a QA system where each query has exactly one correct answer, which metric is most appropriate?" },
+  { id: "iaa-1",         difficulty: "Easy",   diffColor: "#22c55e", gated: false, question: "Two annotators agree on 80% of items in a 90% negative dataset. Why is raw agreement misleading?" },
+  { id: "eval-1",        difficulty: "Medium", diffColor: "#f59e0b", gated: true,  question: "You are evaluating a RAG system. ROUGE-L score is 0.71 but users report factual errors 40% of the time. Best explanation?" },
+  { id: "calib-2",       difficulty: "Medium", diffColor: "#f59e0b", gated: true,  question: "Temperature scaling with T > 1 applied to a classifier's logits — what is the effect?" },
+  { id: "judge-1",       difficulty: "Medium", diffColor: "#f59e0b", gated: false, question: "An LLM judge consistently prefers whichever response appears first in pairwise comparison. Fix?" },
+  { id: "ips-1",         difficulty: "Medium", diffColor: "#f59e0b", gated: false, question: "Training directly on raw click counts teaches the model what systematic bias?" },
+  { id: "judge-4",       difficulty: "Hard",   diffColor: "#ef4444", gated: true,  question: "Before deploying an LLM judge at scale, how do you calibrate it and what threshold do you use?" },
+  { id: "ips-4",         difficulty: "Hard",   diffColor: "#ef4444", gated: true,  question: "Explain the Doubly Robust estimator for offline policy evaluation. What does 'doubly robust' mean?" },
 ];
 
 function getProgress() {
@@ -122,7 +135,7 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
       <div>
         <div className="flex items-center justify-between mb-4">
           <SectionLabel>From the Field</SectionLabel>
-          <button onClick={() => onNavigate("groundtruth")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">All 13 evaluation posts →</button>
+          <button onClick={() => onNavigate("groundtruth")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">All 19 evaluation posts →</button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {GT_POSTS.map(p => (

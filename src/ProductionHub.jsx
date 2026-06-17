@@ -14,12 +14,23 @@ const GT_POSTS = [
   { id: "inference-optimisation",      title: "LLM Inference Optimisation: Batching, Quantisation, and Speculative Decoding", desc: "How to reduce latency and cost at inference time without retraining. INT8/INT4 quantisation, continuous batching.", readMin: 10, tag: "Performance" },
   { id: "prompt-caching",              title: "Prompt Caching and Token Cost Optimisation at Scale", desc: "How prompt caching works, when it pays off, and how to reduce inference cost by 60-80% on repetitive workloads.", readMin: 7, tag: "Cost" },
   { id: "llm-observability",           title: "LLM Observability: What to Log, Trace, and Alert On", desc: "Prompt/response logging, latency tracing, cost tracking, quality signals, and alert thresholds for production.", readMin: 9, tag: "Monitoring" },
+  { id: "drift-detection-production",  title: "Drift Detection in Production ML: PSI, KS Tests, and MMD Explained", desc: "Data drift, concept drift, and label drift. PSI thresholds, KS for continuous distributions, MMD for embedding spaces.", readMin: 10, tag: "Monitoring" },
+  { id: "deployment-patterns-ml",      title: "Blue-Green, Canary, Shadow, Champion-Challenger: ML Deployment Patterns", desc: "Four patterns for deploying models without causing incidents. User-consistent canary routing, shadow mode, rollback mechanics.", readMin: 10, tag: "Deployment" },
+  { id: "feature-store-patterns",      title: "Feature Stores: Solving Training-Serving Skew and Point-in-Time Correctness", desc: "The training-serving skew problem. Offline vs. online store, point-in-time joins for leakage prevention, when not to use one.", readMin: 11, tag: "Infrastructure" },
+  { id: "model-registry-mlflow",       title: "Model Registry With MLflow: Versioning, Stage Transitions, and Audit Trails", desc: "What a model registry does that 'models folder in S3' doesn't. MLflow stage transitions, loading by stage alias in serving.", readMin: 10, tag: "Infrastructure" },
+  { id: "retraining-triggers-strategies", title: "When to Retrain: Accuracy Triggers, Drift Triggers, and Continuous Training Pipelines", desc: "Why retraining on schedule is wrong. Accuracy-based and distribution-shift triggers, full retrain vs. warm start, Airflow DAG.", readMin: 10, tag: "MLOps" },
+  { id: "ml-dockerization-patterns",   title: "ML Serving Containers: Docker, GPU, and Production-Grade FastAPI Patterns", desc: "Multi-stage Docker builds for ML, model weights as volume mounts, CUDA pinning, health/readiness probes, image size checklist.", readMin: 10, tag: "Infrastructure" },
 ];
 
 const PREPLAB_Qs = [
-  { id: "llmops-5", difficulty: "Medium", diffColor: "#f59e0b", gated: true, question: "You deploy a new model version. All evals pass. Production error rate spikes 3x in 2 hours. First diagnostic step?" },
-  { id: "llmops-1", difficulty: "Hard",   diffColor: "#ef4444", gated: true, question: "Your LLM API p99 latency is 4.2s. Users are complaining. The first optimization to try (before switching models) is:" },
-  { id: "llmops-2", difficulty: "Hard",   diffColor: "#ef4444", gated: true, question: "You are spending $12K/month on LLM API calls. The single most impactful cost reduction technique (without degrading quality) is typically:" },
+  { id: "llmops-5",    difficulty: "Medium", diffColor: "#f59e0b", gated: true,  question: "You deploy a new model version. All evals pass. Production error rate spikes 3x in 2 hours. First diagnostic step?" },
+  { id: "deploy-2",    difficulty: "Medium", diffColor: "#f59e0b", gated: false, question: "You want to validate a new model on real traffic with zero risk to users. Which deployment pattern?" },
+  { id: "drift-1",     difficulty: "Medium", diffColor: "#f59e0b", gated: false, question: "A fraud model's precision drops after a marketing campaign brings a new user cohort. Data drift, concept drift, or label drift?" },
+  { id: "retrain-1",   difficulty: "Medium", diffColor: "#f59e0b", gated: false, question: "Why is 'retrain every Monday at 2am' a poor default retraining strategy?" },
+  { id: "featstore-1", difficulty: "Medium", diffColor: "#f59e0b", gated: false, question: "A DS computes features in Python for training, an engineer re-implements them in Java for serving. Model underperforms. Cause?" },
+  { id: "llmops-1",    difficulty: "Hard",   diffColor: "#ef4444", gated: true,  question: "Your LLM API p99 latency is 4.2s. Users are complaining. First optimization to try (before switching models)?" },
+  { id: "deploy-1",    difficulty: "Hard",   diffColor: "#ef4444", gated: false, question: "In canary deployment, why must routing be user-consistent rather than request-random?" },
+  { id: "drift-3",     difficulty: "Hard",   diffColor: "#ef4444", gated: true,  question: "You want to detect drift in sentence embedding space. Why is PSI insufficient and what should you use instead?" },
 ];
 
 function getProgress() {
