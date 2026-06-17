@@ -14205,3 +14205,453 @@ print(f"\nFinal loss: {losses[-1]:.4f}")` },
   ],
 
 };
+
+  "drift-detection-production": [
+    { t: "h2", c: "Why Your Model Breaks Without Warning" },
+    { t: "p", c: "A model that achieves 92% accuracy in offline evaluation can silently degrade to 78% in production over six months — without a single error being thrown. The cause is drift: the statistical properties of the real world changed while your model stayed fixed." },
+    { t: "p", c: "There are three distinct drift phenomena, each requiring different detection methods and different remediation strategies. Confusing them leads to the wrong fix applied to the wrong problem." },
+    { t: "h2", c: "Three Kinds of Drift" },
+    { t: "p", c: "Data drift (covariate shift): P(X) changes but P(Y|X) is unchanged. Your inputs shifted — different user demographics, new device types, a language model upstream changed its output format. The relationship between features and labels is still valid; the distribution of inputs changed." },
+    { t: "p", c: "Concept drift: P(Y|X) changes. The meaning of your labels changed. 'Spam' in 2020 doesn't look like spam in 2024. A classifier trained on one year of emails learns outdated patterns. The inputs might be similar; what they signify changed." },
+    { t: "p", c: "Label drift (prior probability shift): P(Y) changes. The base rate of the thing you're predicting shifted. If fraud goes from 0.1% to 0.5% of transactions, a model calibrated for 0.1% will be systematically miscalibrated even if the underlying fraud patterns are unchanged." },
+    { t: "h2", c: "Statistical Tests for Input Drift" },
+    { t: "code", c: `import numpy as np
+from scipy import stats
+
+# Population Stability Index — industry standard for feature drift
+def psi(expected: np.ndarray, actual: np.ndarray, bins: int = 10) -> float:
+    """
+    PSI < 0.1: no drift
+    PSI 0.1–0.2: moderate drift, investigate
+    PSI > 0.2: significant drift, act
+    """
+    expected_perc = np.histogram(expected, bins=bins)[0] / len(expected) + 1e-8
+    actual_perc   = np.histogram(actual,   bins=bins)[0] / len(actual)   + 1e-8
+    return np.sum((actual_perc - expected_perc) * np.log(actual_perc / expected_perc))
+
+# Kolmogorov-Smirnov test — for continuous features
+def ks_drift(baseline: np.ndarray, production: np.ndarray) -> dict:
+    stat, p_value = stats.ks_2samp(baseline, production)
+    return {"ks_stat": round(stat, 4), "p_value": round(p_value, 4), "drifted": p_value < 0.05}
+
+# Chi-squared test — for categorical features
+def chi2_drift(baseline_counts: np.ndarray, production_counts: np.ndarray) -> dict:
+    # Normalize to same total
+    expected = baseline_counts / baseline_counts.sum() * production_counts.sum()
+    stat, p_value = stats.chisquare(production_counts, expected)
+    return {"chi2": round(stat, 4), "p_value": round(p_value, 4), "drifted": p_value < 0.05}
+
+# Maximum Mean Discrepancy — kernel-based, handles high-dimensional embeddings
+def mmd(x: np.ndarray, y: np.ndarray, sigma: float = 1.0) -> float:
+    """Gaussian kernel MMD. Use for embedding/vector drift detection."""
+    def rbf(a, b):
+        pairwise = np.sum((a[:, None] - b[None, :]) ** 2, axis=-1)
+        return np.exp(-pairwise / (2 * sigma ** 2))
+    return rbf(x, x).mean() - 2 * rbf(x, y).mean() + rbf(y, y).mean()` },
+    { t: "h2", c: "Monitoring Output Distributions" },
+    { t: "p", c: "When ground truth labels are delayed or unavailable, monitor proxy signals instead. For a ranking model: track CTR per position bucket, average rank of purchased items, zero-result rate. For a classification model: track score distribution, top class rate, entropy of the softmax output." },
+    { t: "code", c: `# Score distribution monitoring with control charts
+import pandas as pd
+
+class ScoreMonitor:
+    def __init__(self, baseline_scores: np.ndarray, window: int = 1000):
+        self.baseline_mean = baseline_scores.mean()
+        self.baseline_std  = baseline_scores.std()
+        self.window = window
+        self.buffer = []
+    
+    def add(self, score: float):
+        self.buffer.append(score)
+        if len(self.buffer) >= self.window:
+            self._check()
+            self.buffer = self.buffer[self.window // 2:]  # sliding window
+    
+    def _check(self):
+        recent = np.array(self.buffer)
+        z = (recent.mean() - self.baseline_mean) / (self.baseline_std / np.sqrt(len(recent)))
+        psi_val = psi(
+            np.random.normal(self.baseline_mean, self.baseline_std, 5000),
+            recent
+        )
+        print(f"Z-score: {z:.2f}, PSI: {psi_val:.3f}")
+        if abs(z) > 3.0:
+            print("ALERT: Score mean shifted > 3 sigma")
+        if psi_val > 0.2:
+            print("ALERT: PSI > 0.2 — significant drift")` },
+    { t: "h2", c: "The Monitoring Stack" },
+    { t: "list", c: ["Log predictions with timestamps, feature snapshots, and any available feedback signal. Store in a time-series-aware store (ClickHouse, Redshift, BigQuery).", "Run statistical tests on sliding windows — e.g. PSI on daily feature distributions vs. baseline week. Alert on thresholds, not just on errors.", "Track label distribution when feedback is available. Even soft signals — thumbs up/down, dwell time, return visits — are better than nothing.", "Segment by cohort. Drift in the whole population can mask severe drift in a slice (a user segment, a geography, a device type). Run per-segment monitoring for high-value populations.", "Ground truth delay is unavoidable in many settings. Design your monitoring to give leading indicators (feature drift, score drift) before the lagging indicator (accuracy drop) arrives."] },
+    { t: "h2", c: "Retraining Triggers" },
+    { t: "callout", c: "Rule of thumb: drift in inputs warrants investigation; drift in outputs warrants retraining; drift in labels after retraining suggests a concept drift that data collection alone cannot fix — you need to rethink the label schema." },
+    { t: "p", c: "Triggered retraining beats scheduled retraining because the model is retrained when it's needed, not on a fixed calendar. Common triggers: PSI > 0.2 on a key feature for 3 consecutive days; accuracy drop > 5% absolute vs. baseline on a held-out validation set; score entropy crosses a threshold (model is more uncertain on recent data than on training data)." },
+    { t: "refs", c: ["Failing Loudly: An Empirical Study of Methods for Detecting Dataset Shift — Rabanser et al. (2019)", "Evidently AI documentation — practical drift detection tooling", "PSI interpretation guide — Yiu (2020, Towards Data Science)"] }
+  ],
+
+  "deployment-patterns-ml": [
+    { t: "h2", c: "Four Patterns for Deploying Models to Production" },
+    { t: "p", c: "The naive deployment pattern is: train model, replace the running model, watch metrics. This is how teams cause incidents. The right question before any deployment is: what's the rollback path if the new model is wrong?" },
+    { t: "p", c: "There are four patterns worth knowing. Each trades risk against feedback speed and infrastructure complexity." },
+    { t: "h2", c: "Pattern 1: Blue-Green Deployment" },
+    { t: "p", c: "Two identical environments. Blue serves 100% of traffic. Green runs the new model and is validated in isolation. When green passes smoke tests, you flip the load balancer: green becomes the live environment, blue is on standby for instant rollback." },
+    { t: "code", c: `# Nginx config: blue-green toggle via upstream block
+upstream model_blue  { server blue-model:8080; }
+upstream model_green { server green-model:8080; }
+
+# To flip: swap the proxy_pass line
+server {
+    location /predict {
+        proxy_pass http://model_green;  # change to model_blue to roll back
+    }
+}` },
+    { t: "p", c: "Strengths: instant rollback (sub-second load balancer flip), clean separation between environments, easy to automate. Weakness: requires double the infrastructure cost while both environments are running." },
+    { t: "h2", c: "Pattern 2: Canary Deployment" },
+    { t: "p", c: "Route a small percentage of traffic — 1%, 5%, 10% — to the new model. Monitor business metrics on the canary slice. Gradually ramp up if metrics hold. Kill it immediately if they degrade." },
+    { t: "code", c: `# Python: deterministic canary routing by user ID
+import hashlib
+
+def route_to_canary(user_id: str, canary_pct: float = 0.05) -> bool:
+    """Deterministic: same user always hits same model during rollout."""
+    h = int(hashlib.md5(user_id.encode()).hexdigest(), 16) % 100
+    return h < (canary_pct * 100)
+
+# At inference time
+def predict(user_id: str, features: dict) -> dict:
+    if route_to_canary(user_id):
+        result = new_model.predict(features)
+        log_event("canary_prediction", user_id=user_id, result=result)
+    else:
+        result = stable_model.predict(features)
+    return result` },
+    { t: "p", c: "The crucial detail: canary routing must be user-consistent, not request-random. If a user hits the old model for one request and the new model for the next, you pollute both signals and introduce UX inconsistency. Hash on user_id, not on request_id." },
+    { t: "h2", c: "Pattern 3: Shadow Mode" },
+    { t: "p", c: "The new model runs alongside the production model and receives every request, but its predictions are discarded. Only the production model's output is served. This lets you collect a real production distribution of inputs and compare predictions without any user exposure." },
+    { t: "code", c: `import threading
+
+def shadow_predict(features: dict, user_id: str) -> dict:
+    # Serve production model result synchronously
+    prod_result = production_model.predict(features)
+    
+    # Run new model asynchronously — discard output, log for comparison
+    def _shadow():
+        shadow_result = new_model.predict(features)
+        log_comparison({
+            "user_id": user_id,
+            "prod_score": prod_result["score"],
+            "shadow_score": shadow_result["score"],
+            "agreed": prod_result["label"] == shadow_result["label"]
+        })
+    threading.Thread(target=_shadow, daemon=True).start()
+    
+    return prod_result  # user never sees shadow result` },
+    { t: "h2", c: "Pattern 4: Champion-Challenger" },
+    { t: "p", c: "An ongoing A/B test framework where the production model (champion) always serves the majority of traffic, and one or more challenger models receive a fixed minority slice. Unlike canary, this is a permanent split used to continuously evaluate candidates before promoting any to champion." },
+    { t: "h2", c: "When to Use Which" },
+    { t: "table", c: { headers: ["Pattern", "Risk Level", "Feedback Speed", "Infrastructure Cost", "Best For"], rows: [["Blue-Green", "Very low", "Slow (no real traffic)", "2x", "High-confidence models with instant rollback requirement"], ["Canary", "Low", "Moderate (real users, small %)", "~1.05x", "Gradual rollout with business metric monitoring"], ["Shadow", "Zero (no user exposure)", "Fast (100% of prod inputs)", "~1x + logging", "Validating prediction distribution before first exposure"], ["Champion-Challenger", "Medium", "Fast", "1.1–1.5x", "Continuous experimentation, long evaluation windows"]] } },
+    { t: "callout", c: "The most common mistake: deploying a model with no rollback mechanism at all. Blue-green is not 'gold standard overhead' — it's the minimum responsible deployment for a model in a user-facing path." },
+    { t: "refs", c: ["Sculley et al. — Hidden Technical Debt in Machine Learning Systems (2015)", "Google MLOps SRE book — deployment patterns chapter", "Martin Fowler — BlueGreenDeployment (martinfowler.com)"] }
+  ],
+
+  "feature-store-patterns": [
+    { t: "h2", c: "Why Feature Stores Exist" },
+    { t: "p", c: "Imagine building a churn prediction model. The data scientist computes rolling 30-day engagement features in a Jupyter notebook. The model ships to production. The engineer re-implements the same rolling window logic in the serving stack — in a different language, with a slightly different timestamp handling convention. Six months later you debug why the production model underperforms the offline evaluation. It's the feature skew." },
+    { t: "p", c: "A feature store solves three problems: (1) the training-serving skew from re-implementing features in multiple places; (2) the latency of computing expensive features at serving time; (3) the discoverability and reuse of features across teams." },
+    { t: "h2", c: "The Two Stores" },
+    { t: "p", c: "Every feature store has an offline store and an online store. They are different systems optimized for different access patterns." },
+    { t: "p", c: "Offline store: a column-oriented storage system (Parquet on S3, BigQuery, Redshift) optimized for bulk historical reads. Used for training data generation: 'give me all feature values for user X at timestamp T for every event in my training set'. Must support point-in-time correct joins to avoid leakage — a feature value seen after the label event must not appear in training data." },
+    { t: "p", c: "Online store: a key-value store (Redis, DynamoDB, Cassandra) optimized for low-latency single-entity lookups. Used at serving time: 'give me the current feature vector for user_id=12345 in <5ms'. Contains only the latest feature values, not history." },
+    { t: "code", c: `# Feast (open-source feature store) — minimal working pattern
+from feast import FeatureStore, Entity, FeatureView, Field
+from feast.types import Float32, Int64
+from datetime import timedelta
+
+# Define entity (the 'key' concept)
+user = Entity(name="user_id", description="User identifier")
+
+# Define feature view — specifies source, TTL, and schema
+user_engagement = FeatureView(
+    name="user_engagement",
+    entities=[user],
+    ttl=timedelta(days=7),   # evict from online store after 7 days of inactivity
+    schema=[
+        Field(name="rolling_30d_sessions",   dtype=Int64),
+        Field(name="avg_session_duration_s",  dtype=Float32),
+        Field(name="days_since_last_login",   dtype=Int64),
+    ],
+    source=bigquery_source,   # offline source
+)
+
+# Materialization: push offline → online
+store = FeatureStore(repo_path=".")
+store.materialize_incremental(end_date=datetime.utcnow())
+
+# Online retrieval at serving time (<5ms)
+feature_vector = store.get_online_features(
+    features=["user_engagement:rolling_30d_sessions",
+              "user_engagement:avg_session_duration_s"],
+    entity_rows=[{"user_id": 12345}]
+).to_dict()` },
+    { t: "h2", c: "Point-in-Time Correct Joins (Avoiding Leakage)" },
+    { t: "p", c: "When generating training data, you must retrieve the feature value that was actually available at the time of each training event — not the current value. If a user churned on March 1st, their 30-day rolling engagement should be computed from February 1–28, not from the latest batch run." },
+    { t: "code", c: `import pandas as pd
+
+# Training events: each row is (user_id, event_timestamp, label)
+training_events = pd.DataFrame({
+    "user_id":         [1001, 1002, 1001, 1003],
+    "event_timestamp": pd.to_datetime(["2024-01-15", "2024-01-20", "2024-02-01", "2024-02-10"]),
+    "churned":         [0, 1, 0, 1],
+})
+
+# Point-in-time correct join: Feast handles this automatically
+training_data = store.get_historical_features(
+    entity_df=training_events,      # timestamp column used for PIT join
+    features=["user_engagement:rolling_30d_sessions",
+              "user_engagement:avg_session_duration_s"],
+).to_df()
+# Each row now has the feature value AS OF event_timestamp — not the latest value` },
+    { t: "h2", c: "When You Don't Need a Feature Store" },
+    { t: "callout", c: "Feature stores add operational complexity. They're worth it when: (a) you have >3 models sharing features, (b) you've already been burned by training-serving skew, or (c) you need sub-5ms feature retrieval for a high-traffic serving path. For a single model with batch predictions, a well-named column in a database is often enough." },
+    { t: "list", c: ["Feast (open source, flexible backend)", "Tecton (managed, enterprise)", "Hopsworks (open source, includes MLflow-like experiment tracking)", "Vertex AI Feature Store (GCP)", "SageMaker Feature Store (AWS)"] },
+    { t: "refs", c: ["Feast documentation — feast.dev", "Chip Huyen — Designing Machine Learning Systems (chapter 5: Feature Engineering)", "Databricks — MLOps Feature Store architecture blog"] }
+  ],
+
+  "model-registry-mlflow": [
+    { t: "h2", c: "What a Model Registry Actually Does" },
+    { t: "p", c: "A model registry is a versioned catalog of trained models. It answers: which model is in production right now, what version is it, when was it trained, on what data, with what evaluation metrics, and who approved the deployment? Without this, these questions are answered by Slack archaeology." },
+    { t: "p", c: "The registry is not the serving infrastructure. It's the metadata and artifact store that sits between training and deployment. Models are promoted through stages (Staging → Production → Archived) with explicit transitions that create an audit trail." },
+    { t: "h2", c: "MLflow Model Registry — Core Workflow" },
+    { t: "code", c: `import mlflow
+import mlflow.sklearn
+from mlflow.tracking import MlflowClient
+
+# 1. TRAINING: log run + register model
+with mlflow.start_run() as run:
+    # ... train model ...
+    
+    # Log parameters and metrics
+    mlflow.log_params({"n_estimators": 200, "max_depth": 8, "min_samples_leaf": 10})
+    mlflow.log_metrics({"auc_roc": 0.91, "precision_at_k": 0.74, "ndcg": 0.82})
+    
+    # Log dataset fingerprint to prevent future "what data was used?" questions
+    mlflow.log_param("training_data_hash", training_data_sha256)
+    mlflow.log_param("training_cutoff", "2024-03-01")
+    
+    # Register model to registry (creates version N)
+    model_uri = f"runs:/{run.info.run_id}/model"
+    mlflow.register_model(model_uri, "churn_predictor")
+
+# 2. EVALUATION: transition to Staging after passing eval
+client = MlflowClient()
+client.transition_model_version_stage(
+    name="churn_predictor",
+    version=7,         # the version just registered
+    stage="Staging",
+    archive_existing_versions=False,   # don't auto-archive current Staging
+)
+
+# 3. LOAD FROM STAGING for integration tests
+model = mlflow.sklearn.load_model("models:/churn_predictor/Staging")
+
+# 4. PROMOTE to Production after approval
+client.transition_model_version_stage(
+    name="churn_predictor",
+    version=7,
+    stage="Production",
+    archive_existing_versions=True,   # archive old Production version
+)
+client.update_model_version(
+    name="churn_predictor",
+    version=7,
+    description="Sprint 4 model. AUC 0.91 vs 0.88 previous. Approved by @avinash 2024-03-15."
+)` },
+    { t: "h2", c: "Loading Production Model in Serving Code" },
+    { t: "code", c: `# Serving code always loads from stage alias, not version number
+# When you promote v8 to Production, serving auto-picks it up on next restart
+import mlflow.sklearn
+
+def load_production_model(model_name: str):
+    """Load current production model — decoupled from version numbers."""
+    return mlflow.sklearn.load_model(f"models:/{model_name}/Production")
+
+# Warm model on startup
+model = load_production_model("churn_predictor")
+
+# In FastAPI
+@app.post("/predict")
+async def predict(features: dict):
+    return {"score": float(model.predict_proba([list(features.values())])[0, 1])}` },
+    { t: "h2", c: "What to Store in the Registry" },
+    { t: "list", c: ["Hyperparameters: every param used in training, not just the ones you tuned.", "Evaluation metrics: all metrics on all splits (train, val, test). Not just the headline number.", "Data lineage: hash of training dataset, cutoff date, version of preprocessing code.", "Model artifact: the serialized model file (pickle, ONNX, SavedModel).", "Inference dependencies: conda.yaml or requirements.txt that pins every dependency version.", "Approval trail: who approved promotion, when, and with what justification."] },
+    { t: "callout", c: "The minimum viable registry is a spreadsheet with model version, git hash, training date, and AUC. It's embarrassing but it's better than nothing. Migrate to MLflow when the spreadsheet becomes a source of arguments." },
+    { t: "h2", c: "Registry Alternatives" },
+    { t: "table", c: { headers: ["Tool", "Best For", "Key Feature"], rows: [["MLflow Model Registry", "Self-hosted, polyglot", "Stage transitions, artifact storage, model flavors"], ["Weights & Biases", "Research teams", "Experiment comparison UI, rich artifact versioning"], ["SageMaker Model Registry", "AWS-native", "IAM-integrated approval workflows"], ["Vertex AI Model Registry", "GCP-native", "Tight integration with Vertex Pipelines"], ["DVC + Git", "Git-native workflows", "No extra server — model versions in Git + DVC remote"]] } },
+    { t: "refs", c: ["MLflow Model Registry documentation — mlflow.org", "Made With ML — model registry patterns (madewithml.com)", "Neptune.ai — comparison of model registry tools"] }
+  ],
+
+  "retraining-triggers-strategies": [
+    { t: "h2", c: "The Retrain-on-a-Schedule Trap" },
+    { t: "p", c: "Retraining every Monday is a popular default. It's also wrong. A model deployed on Tuesday might need retraining by Thursday if a major product change shipped. A stable model might not need retraining for three months. Schedule-based retraining ignores the actual signal in favour of calendar comfort." },
+    { t: "p", c: "The right retraining trigger is a condition, not a date. The conditions fall into three categories: performance degradation detected, input distribution shift detected, business event occurred." },
+    { t: "h2", c: "Trigger 1: Accuracy-Based Triggers" },
+    { t: "p", c: "When ground truth labels arrive with acceptable latency, use accuracy triggers. Compare a rolling window of production predictions against the labels when they arrive. Trigger retraining when accuracy drops below a threshold." },
+    { t: "code", c: `import numpy as np
+from collections import deque
+
+class AccuracyMonitor:
+    def __init__(self, window_size: int = 500, threshold: float = 0.85):
+        self.window_size = window_size
+        self.threshold = threshold
+        self.correct = deque(maxlen=window_size)
+    
+    def observe(self, prediction: int, ground_truth: int):
+        self.correct.append(int(prediction == ground_truth))
+        if len(self.correct) >= self.window_size:
+            acc = sum(self.correct) / len(self.correct)
+            if acc < self.threshold:
+                self._trigger_retrain(acc)
+    
+    def _trigger_retrain(self, current_acc: float):
+        alert(f"Accuracy {current_acc:.3f} < threshold {self.threshold}. Retraining triggered.")
+        submit_retraining_job()` },
+    { t: "h2", c: "Trigger 2: Distribution Shift Triggers" },
+    { t: "p", c: "When labels are delayed (days to weeks), use input distribution triggers as a leading indicator. Run PSI or KS tests daily on the input feature distributions vs. a baseline week. Trigger retraining when shift is detected before accuracy degrades." },
+    { t: "code", c: `from scipy import stats
+
+class DistributionMonitor:
+    def __init__(self, baseline_features: np.ndarray, psi_threshold: float = 0.2):
+        self.baseline = baseline_features
+        self.psi_threshold = psi_threshold
+    
+    def check(self, recent_features: np.ndarray) -> bool:
+        for i in range(recent_features.shape[1]):
+            baseline_col = self.baseline[:, i]
+            recent_col   = recent_features[:, i]
+            
+            # KS test for continuous features
+            _, p_value = stats.ks_2samp(baseline_col, recent_col)
+            if p_value < 0.01:
+                print(f"Feature {i}: KS test significant (p={p_value:.4f})")
+                return True  # drift detected
+        return False` },
+    { t: "h2", c: "Trigger 3: Business Event Triggers" },
+    { t: "p", c: "Some triggers bypass statistical monitoring entirely. They're manual but predictable: a major product launch (new user cohort), a marketing campaign (traffic spike with different intent distribution), a regulatory change, a competitor announcement that changes user behaviour patterns. These events are known in advance; you can pre-schedule retraining runs to execute immediately after them." },
+    { t: "h2", c: "Retraining Strategies" },
+    { t: "p", c: "Full retrain: retrain on all available data. Expensive. Required when the model architecture changes or the label schema changes. Ensures no stale patterns remain." },
+    { t: "p", c: "Rolling window retrain: keep only the last N weeks of data. Useful when older data is misleading (concept drift). Danger: if you use too short a window, you lose coverage of rare but important patterns (rare classes, seasonal events)." },
+    { t: "p", c: "Incremental/online learning: update model parameters on each new batch without full retraining. Efficient but only supported by certain algorithms (SGD-based models, river library for streaming). Risk: catastrophic forgetting if the gradient updates are too large." },
+    { t: "p", c: "Warm start: initialize new training run from the previous model's weights. Converges faster than random init. Good for fine-tuning on recent data without discarding old knowledge." },
+    { t: "callout", c: "Retraining cost is often underestimated. Include data pull, preprocessing, hyperparameter search, evaluation, registration, review, and deployment. For a complex model on a large dataset this can easily be 4–6 hours of wall time and meaningful compute cost. Know your cost before designing your trigger policy." },
+    { t: "h2", c: "Continuous Training Pipeline" },
+    { t: "code", c: `# Minimal Airflow DAG for event-triggered retraining
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from datetime import datetime, timedelta
+
+default_args = {"owner": "mlops", "retries": 1, "retry_delay": timedelta(minutes=10)}
+
+with DAG("triggered_retraining", schedule_interval=None,  # None = event-triggered only
+         start_date=datetime(2024, 1, 1), default_args=default_args) as dag:
+    
+    pull_data    = PythonOperator(task_id="pull_training_data",    python_callable=fetch_recent_data)
+    preprocess   = PythonOperator(task_id="preprocess",            python_callable=run_preprocessing)
+    train        = PythonOperator(task_id="train_model",           python_callable=train_and_register)
+    evaluate     = PythonOperator(task_id="evaluate_vs_champion",  python_callable=compare_to_champion)
+    promote      = PythonOperator(task_id="promote_if_better",     python_callable=promote_to_staging)
+    
+    pull_data >> preprocess >> train >> evaluate >> promote` },
+    { t: "refs", c: ["Chip Huyen — Designing Machine Learning Systems (chapter 9: Continual Learning)", "Google MLOps whitepaper — maturity model level 2 (automated retraining)", "Evidently AI — model monitoring and retraining strategy guide"] }
+  ],
+
+  "ml-dockerization-patterns": [
+    { t: "h2", c: "Why ML Containers Break Differently From Web Containers" },
+    { t: "p", c: "Dockerizing a Django app is solved. Dockerizing an ML serving stack is harder: GPU drivers must match between host and container, large model weights balloon image size, Python dependency hell intersects with CUDA version pinning, and you often need to serve the model with different runtime libraries than you used to train it." },
+    { t: "p", c: "The patterns below are specifically for ML serving — model inference in production containers, not training jobs." },
+    { t: "h2", c: "Pattern 1: Multi-Stage Build for Model Serving" },
+    { t: "code", c: `# Dockerfile — multi-stage build for a PyTorch serving container
+# Stage 1: dependency builder (keeps pip cache out of final image)
+FROM python:3.11-slim AS builder
+WORKDIR /build
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --target /build/packages -r requirements.txt
+
+# Stage 2: minimal runtime image
+FROM python:3.11-slim AS runtime
+WORKDIR /app
+
+# Copy only installed packages, not pip cache
+COPY --from=builder /build/packages /usr/local/lib/python3.11/site-packages/
+
+# Copy model artefact (baked into image — simpler for immutable deploys)
+COPY models/churn_v7.pkl /app/models/churn_v7.pkl
+
+# Copy application code
+COPY src/ /app/src/
+
+# Non-root user for security
+RUN useradd --no-create-home --shell /bin/false appuser
+USER appuser
+
+EXPOSE 8080
+CMD ["uvicorn", "src.serve:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2"]` },
+    { t: "h2", c: "Pattern 2: Model Weights as a Volume Mount" },
+    { t: "p", c: "Baking weights into the image keeps them immutable but bloats image size (a medium BERT model is ~500MB; GPT-style models are multi-GB). The alternative: store weights in S3/GCS and download at container startup, or mount them as a persistent volume." },
+    { t: "code", c: `# src/serve.py — model loaded from environment-specified path
+import os, pickle
+from fastapi import FastAPI
+
+MODEL_PATH = os.environ.get("MODEL_PATH", "/models/model.pkl")
+
+def load_model():
+    if MODEL_PATH.startswith("s3://"):
+        import boto3
+        s3 = boto3.client("s3")
+        bucket, key = MODEL_PATH[5:].split("/", 1)
+        local_path = "/tmp/model.pkl"
+        s3.download_file(bucket, key, local_path)
+        return pickle.load(open(local_path, "rb"))
+    return pickle.load(open(MODEL_PATH, "rb"))
+
+app = FastAPI()
+model = load_model()   # loaded once at startup
+
+@app.post("/predict")
+async def predict(payload: dict):
+    return {"score": float(model.predict_proba([[payload["feature_1"], payload["feature_2"]]])[0, 1])}` },
+    { t: "h2", c: "Pattern 3: GPU Container Base Image Selection" },
+    { t: "p", c: "The CUDA version in the container must match the driver version on the host. CUDA is not backward compatible across major versions. nvidia/cuda images encode the CUDA and cuDNN versions in the tag." },
+    { t: "code", c: `# requirements.txt pins must match Dockerfile base image
+# nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04 requires torch built for CUDA 12.1
+torch==2.2.0+cu121
+torchvision==0.17.0+cu121
+--extra-index-url https://download.pytorch.org/whl/cu121
+
+# Confirm at runtime:
+# python -c "import torch; print(torch.cuda.is_available(), torch.version.cuda)"` },
+    { t: "h2", c: "Pattern 4: Health and Readiness Probes" },
+    { t: "code", c: `from fastapi import FastAPI, Response
+
+app = FastAPI()
+_ready = False   # set True after model loads
+
+@app.on_event("startup")
+async def startup():
+    global model, _ready
+    model = load_model()
+    _ready = True
+
+@app.get("/health")
+async def health():
+    """Liveness probe — is the process alive?"""
+    return {"status": "ok"}
+
+@app.get("/ready")
+async def ready(response: Response):
+    """Readiness probe — is the model loaded and ready to serve?"""
+    if not _ready:
+        response.status_code = 503
+        return {"status": "not_ready", "detail": "model loading"}
+    return {"status": "ready"}` },
+    { t: "h2", c: "Image Size Checklist" },
+    { t: "list", c: ["Use slim or distroless base images. python:3.11-slim is ~130MB vs 1.2GB for the full python:3.11 image.", "Run apt-get install && rm -rf /var/lib/apt/lists/* in a single RUN layer to avoid caching package lists.", "Use multi-stage builds to exclude build tools from the final image.", "Add .dockerignore to exclude notebooks, data files, .git, and __pycache__ from build context.", "Consider distilling the model to a smaller format (ONNX, TorchScript) before baking in — often 50–80% size reduction.", "Layer order matters for cache reuse: COPY requirements.txt first, RUN pip install, then COPY src/. Code changes don't invalidate the pip cache."] },
+    { t: "callout", c: "The single most impactful container optimisation for ML: separate model weights from the image layer. A 2GB model in the image means every CI push pulls 2GB. Use volume mounts or S3 download on startup for anything over ~100MB." },
+    { t: "refs", c: ["Docker multi-stage builds documentation", "NVIDIA Container Toolkit documentation — GPU container setup", "FastAPI deployment guide — uvicorn with Docker"] }
+  ]

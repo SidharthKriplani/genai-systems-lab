@@ -948,6 +948,12 @@ const SERIES_META = {
     color: "#22d3ee",
     postIds: ["attention-from-scratch", "bm25-from-scratch", "minimal-rag-50-lines", "bpe-tokenization-from-scratch", "training-loop-from-scratch", "lora-from-scratch", "kv-cache-from-scratch", "faiss-from-scratch", "contrastive-learning-from-scratch"],
   },
+  "llmops-production": {
+    title: "LLMOps & Production ML",
+    desc: "The operational layer between training and serving: drift detection, deployment patterns, feature stores, model registries, retraining triggers, and containerization. What it takes to keep a model reliable in production.",
+    color: "#f59e0b",
+    postIds: ["drift-detection-production", "deployment-patterns-ml", "feature-store-patterns", "model-registry-mlflow", "retraining-triggers-strategies", "ml-dockerization-patterns"],
+  },
   "retrieval-depth": {
     title: "Retrieval Depth",
     desc: "The algorithms behind production search: ANN index selection, Learning to Rank, query understanding, inverted index construction, and two-tower model training. What every retrieval engineer actually builds.",
