@@ -18,6 +18,7 @@ function highlightText(text, term) {
 }
 
 function countMatches(blocks, term) {
+  blocks = blocks.map(normalizeBlock);
   if (!term || term.length < 2) return 0;
   const re = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
   let count = 0;
@@ -35,6 +36,7 @@ const REACTIONS = [
 ];
 
 function generateQuiz(blocks) {
+  blocks = blocks.map(normalizeBlock);
   const questions = [];
 
   // Up to 2 questions from callout blocks
@@ -122,6 +124,25 @@ function generateQuiz(blocks) {
   return questions.slice(0, 7);
 }
 
+// ─── BLOCK FORMAT NORMALIZER ─────────────────────────────────────────────────
+// Older posts use { t, text, items, headers, rows }.
+// Sprint 61+ posts use { t, c } where c is a string; list/table/refs use \n and | as separators.
+// This normalizer converts c: format → text:/items:/headers:/rows: so the renderer is unified.
+function normalizeBlock(b) {
+  if (b.c === undefined) return b;
+  const nb = { ...b, text: b.c };
+  if (b.t === "list") {
+    nb.items = b.c.split("\n").map(s => s.trim()).filter(Boolean);
+  } else if (b.t === "table") {
+    const rows = b.c.split("\n").map(r => r.split("|").map(s => s.trim()));
+    nb.headers = rows[0] || [];
+    nb.rows = rows.slice(1);
+  } else if (b.t === "refs") {
+    nb.items = b.c.split("|").map(s => ({ label: s.trim() }));
+  }
+  return nb;
+}
+
 // ─── POST DETAIL RENDERER ────────────────────────────────────────────────────
 // Extracted to its own component so useState is at top level (Rules of Hooks)
 function CodeBlock({ b }) {
@@ -144,7 +165,8 @@ function CodeBlock({ b }) {
   );
 }
 
-function Block({ b, onNavigate, color, postSearch }) {
+function Block({ b: rawB, onNavigate, color, postSearch }) {
+  const b = normalizeBlock(rawB);
   switch (b.t) {
     case "p":
       return <p className="text-[15px] text-zinc-300 leading-[1.8]">{highlightText(b.text, postSearch)}</p>;
@@ -502,7 +524,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
         {content ? (
           <div className="space-y-5">
             {(() => {
-              const headings = content.filter(b => b.t === "h2").map(b => b.text);
+              const headings = content.map(normalizeBlock).filter(b => b.t === "h2").map(b => b.text);
               return headings.length >= 3 ? (
                 <div className="rounded-xl border border-zinc-800/60 p-4 mb-6" style={{ background: "linear-gradient(135deg, rgba(39,39,42,0.5) 0%, rgba(24,24,27,0.8) 100%)" }}>
                   <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest mb-2.5">In this post</p>
