@@ -2,7 +2,16 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (release-readiness pass complete. Sprints 58 + 59 shipped. PRIVATE_TEST.md created. Awaiting private test feedback before any distribution decision.)*
+*Last updated: June 2026 (sprint 60 — GT post "vibe coding round" shipped. Mastery Room built + staged, NOT committed. See MASTERY_ROOM.md for exact pending steps.)*
+
+---
+
+## IMMEDIATE: Mastery Room needs 2 manual steps before it goes live
+
+1. **Run SQL** — paste `supabase_study_tables.sql` in Supabase SQL Editor (creates 3 tables with RLS)
+2. **Commit from terminal** — `git commit -m "feat: private mastery room"` + `git push` (sandbox can't remove HEAD.lock on macOS FUSE mount)
+
+See MASTERY_ROOM.md for full details.
 
 ---
 

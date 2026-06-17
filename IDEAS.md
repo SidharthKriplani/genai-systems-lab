@@ -953,6 +953,7 @@ Do not build these until the Tier 1 static corpus is shipped and engagement on R
 - **Marimo companion notebooks** — Downloadable `.py` Marimo notebooks per major RAG Lab scenario (e.g. "Context Overflow", "Stale Retrieval"). User runs locally with their own API key to reproduce what the lab simulated. Zero in-browser cost — a GitHub link + download button on the done card. Marimo is NOT for in-browser use in GAL (see DECISIONS.md Section 7 — wrong tool, breaks lab frame). This is offline companion content only. `Effort: S per notebook once scenario spec exists`
 
 ### New features
+- ~~**Private Mastery Room (FSRS SRS)**~~ ✅ *built sprint 60 — staged, not committed. 367 Anki cards (lane7/lane1/lane3), FSRS-4.5 scheduler, owner-gated via email + Supabase RLS. See MASTERY_ROOM.md.*
 - ~~**PrepLab spaced repetition**~~ ✅ *built*
 - ~~**Module search**~~ ✅ *built (Systems search bar)*
 - ~~**"Learning paths"**~~ ✅ *built (6 paths, Learning Paths tab)*

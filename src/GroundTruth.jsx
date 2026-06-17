@@ -936,6 +936,18 @@ const SERIES_META = {
     color: "#a855f7",
     postIds: ["why-transformers-won", "how-surprised-is-the-model", "what-happens-during-pretraining", "the-reversal-curse", "what-is-a-transformer", "self-attention-deep-dive"],
   },
+  "nlp-origins": {
+    title: "NLP Origins",
+    desc: "The arc from n-grams to neural language models: word2vec, RNNs, LSTMs, seq2seq, and Bahdanau attention. The history that makes transformers legible — not as a sudden invention but as the latest step in a thirty-year trajectory.",
+    color: "#a78bfa",
+    postIds: ["ngrams-to-neural", "word2vec-from-scratch", "rnn-lstm-vanishing-gradient", "seq2seq-bahdanau-attention", "text-preprocessing-pipeline", "bert-vs-gpt-architecture"],
+  },
+  "build-from-scratch": {
+    title: "Build From Scratch",
+    desc: "Implement the core components of modern AI systems from first principles — attention, BM25, and a full RAG pipeline — in pure Python. No frameworks. Run everything in Colab tonight.",
+    color: "#22d3ee",
+    postIds: ["attention-from-scratch", "bm25-from-scratch", "minimal-rag-50-lines"],
+  },
   "career-strategy": {
     title: "Career & Strategy",
     desc: "The market forces reshaping AI roles — the DS→AI engineer arc, Type A vs Type B engineers, the Forward Deployed Engineer, and the three-layer skill stack.",

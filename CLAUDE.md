@@ -362,6 +362,17 @@ For full audit findings see AUDITS.md.
 - GT "render error" resolved: groundTruthPosts.js clean, CodeBlock fix (5b653a9) intact. No build error.
 - Commit: `chore: MD sync sprint 57 — PM audit (Audit 29), DECISIONS §11–12, NEXT/IDEAS/UPGRADES/CLAUDE updated`
 
+**Sprint 60 (June 2026) — GT post + private Mastery Room (staged, not committed):**
+- GT post `3e10b95` — "The Vibe Coding Round Isn't About Coding" (id: `vibe-coding-interview-round`). Series: career-strategy. Tags: FDE, vibe coding, interview, career. Brace diff: 0.
+- Mastery Room built — 4 files staged, awaiting `git commit` + `git push` from host terminal (sandbox cannot clear `.git/HEAD.lock` on macOS FUSE mount):
+  - `src/utils/fsrs.js` — FSRS-4.5 algorithm (stability, difficulty, interval at 90% retention)
+  - `src/studySeed.js` — 367 Anki cards: 120 LLM Foundations (lane7), 168 RAG & Retrieval (lane1 retrieval subset), 79 LLMOps (lane3 LLM-relevant subset)
+  - `src/StudyRoom.jsx` — dual-gated (email check + Supabase RLS). Hub: module stats + due counts + one-click seed import. Study: card flip, 4-grade FSRS review, keyboard 1-4, progress bar, session tracking.
+  - `src/App.jsx` — lazy import, `study` route, owner-only 🧠 nav badge
+- `supabase_study_tables.sql` at `batch 1/` — run in Supabase SQL Editor before pushing
+- `MASTERY_ROOM.md` — full state doc with pending steps, how it works, optional future work
+- NEXT.md updated — two blocking manual steps at top of file
+
 **Sprint 56 (June 2026) — UX correction pass:**
 - UX/product audit completed. 8 issues found. See AUDITS.md Audit 28.
 - GT #300 confirmed fixed in production after push.

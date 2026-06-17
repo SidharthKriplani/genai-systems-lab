@@ -12175,5 +12175,802 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
     { t: "lab", tab: "lab", label: "RAG Lab — build your retrieval judgment →", desc: "Scenario 1 puts you inside a failing RAG pipeline. Understanding why it fails is the first step to scoping correctly under build pressure." },
   ],
 
+  "attention-from-scratch": [
+    { t: "p", text: "Every explanation of attention eventually says the same thing: Query, Key, Value matrices, scaled dot-product, softmax, weighted sum. The words are correct. They do not actually explain what is happening or why the mechanism works. The only way to get that is to implement it yourself, watch the numbers, and trace what each line is doing to the representation." },
+    { t: "p", text: "This post is 30 lines of NumPy. No PyTorch, no abstractions. Just the raw computation. If you run this in a Colab tonight and spend 20 minutes poking at the output, you will understand attention better than most people who have read the Transformer paper." },
+
+    { t: "h2", text: "What attention is actually solving" },
+    { t: "p", text: "Before RNNs were replaced, the fundamental problem with sequence models was that every token had to pass its information forward through a fixed-size hidden state. The word at position 1 in a 500-word document had to survive 499 compression steps to influence the output at position 500. It usually did not survive intact." },
+    { t: "p", text: "Attention eliminates this by letting every token look directly at every other token in the sequence — simultaneously, in parallel. No chain of handoffs. Token 1 and token 500 communicate directly. The mechanism that controls how much each token attends to each other token is what we are building below." },
+
+    { t: "h2", text: "The implementation" },
+    { t: "code", lang: "python", label: "Scaled dot-product attention — the entire mechanism in 20 lines", text: `import numpy as np
+
+np.random.seed(42)
+seq_len, d_model = 6, 8  # 6 tokens, 8-dim embeddings
+
+# Simulated token embeddings — in a real model these come from an embedding table
+X = np.random.randn(seq_len, d_model)
+
+# Learned projection matrices — random here, trained in a real model
+W_Q = np.random.randn(d_model, d_model) * 0.1
+W_K = np.random.randn(d_model, d_model) * 0.1
+W_V = np.random.randn(d_model, d_model) * 0.1
+
+# Project input into Q, K, V spaces
+Q = X @ W_Q   # (6, 8) — what each token is searching for
+K = X @ W_K   # (6, 8) — what each token is advertising about itself
+V = X @ W_V   # (6, 8) — what each token will contribute if attended to
+
+# Scaled dot-product: how well does each Q match each K?
+d_k = Q.shape[-1]
+scores = Q @ K.T / np.sqrt(d_k)  # (6, 6) — raw attention logits
+
+# Softmax: turn logits into a probability distribution over positions
+def softmax(x):
+    e = np.exp(x - x.max(axis=-1, keepdims=True))  # subtract max for numerical stability
+    return e / e.sum(axis=-1, keepdims=True)
+
+weights = softmax(scores)   # (6, 6) — each row sums to 1.0
+
+# Weighted sum of values: the actual attended output
+output = weights @ V        # (6, 8) — new representation for each token
+
+print("Attention weight matrix (row i = how token i distributes attention):")
+print(np.round(weights, 3))
+print("\\nRow 0 sums to:", round(weights[0].sum(), 6))
+print("Output shape:", output.shape)` },
+
+    { t: "h2", text: "What you should look at in the output" },
+    { t: "p", text: "The weight matrix is the interesting part. Row 0 tells you how token 0 distributes its attention across all 6 tokens. Each row is a probability distribution — all values positive, each row sums to 1. A value of 0.6 in position (0, 3) means token 0 is taking 60% of its new representation from token 3's value vector." },
+    { t: "p", text: "In a trained model, these weights encode learned linguistic relationships. Token 'it' attends heavily to the noun it refers to. Token 'bank' distributes attention differently in 'river bank' vs 'savings bank'. The model learns which tokens should attend to which by backpropagating through the weight matrix during training." },
+    { t: "p", text: "With random weights (as above), the pattern has no linguistic meaning — it is just the geometry of random projections. But the mechanics are identical to what GPT-4 runs billions of times per second." },
+
+    { t: "h2", text: "The sqrt(d_k) denominator — why it is there" },
+    { t: "p", text: "Try removing the division by sqrt(d_k) and printing the weights again. With high-dimensional vectors, dot products grow large in magnitude. Large logits make softmax extremely sharp — essentially a hard argmax where one weight is near 1.0 and the rest near 0. The model loses its ability to attend to multiple positions simultaneously. Dividing by sqrt(d_k) keeps the logits in a range where softmax is still smooth and gradients flow cleanly during training." },
+
+    { t: "callout", v: "tip", text: "Try this in Colab: add a causal mask before softmax. Set scores[i, j] = -1e9 for all j > i. Run softmax again. Every row now only attends to positions at or before it — this is exactly how GPT models are trained. Token i cannot see the future." },
+
+    { t: "h2", text: "What multi-head attention adds" },
+    { t: "p", text: "Single-head attention learns one set of Q/K/V projections. Multi-head attention runs h independent attention heads in parallel, each with different projection matrices, then concatenates the outputs. The intuition: one head might learn to attend to syntactic subjects, another to semantic similarity, another to positional proximity. Concatenating them gives the model richer composite representations than any single head could learn." },
+    { t: "code", lang: "python", label: "Sketch of multi-head attention — same idea, h parallel heads", text: `def multi_head_attention(X, num_heads=4):
+    d_model = X.shape[-1]
+    d_head = d_model // num_heads
+    heads = []
+    for _ in range(num_heads):
+        Wq = np.random.randn(d_model, d_head) * 0.1
+        Wk = np.random.randn(d_model, d_head) * 0.1
+        Wv = np.random.randn(d_model, d_head) * 0.1
+        Q, K, V = X @ Wq, X @ Wk, X @ Wv
+        scores = Q @ K.T / np.sqrt(d_head)
+        w = softmax(scores)
+        heads.append(w @ V)
+    return np.concatenate(heads, axis=-1)  # (seq_len, d_model)
+
+out = multi_head_attention(X, num_heads=4)
+print("Multi-head output shape:", out.shape)  # (6, 8) — same as input` },
+
+    { t: "h2", text: "What to build next in Colab" },
+    { t: "p", text: "Once this runs: add positional encoding (a sine/cosine pattern added to X before the projections — this is how the model knows token order). Then add a feed-forward layer after attention (two linear layers with a ReLU in between). Then a residual connection (add X back to the attention output before the FFN). You now have one Transformer block. Stack 12 of them and you have a GPT-2-scale architecture." },
+    { t: "p", text: "The thing to notice at each step: none of these components are magical. Each one solves a specific, identifiable problem — positional encoding gives the model order information, residual connections prevent gradient vanishing, the FFN adds nonlinearity between attention steps. Understanding why each piece exists is what makes the whole thing click." },
+
+    { t: "lab", tab: "concepts", label: "Transformer architecture in Concepts →", desc: "The txarch module walks through the full Transformer block — attention, FFN, residuals, LayerNorm — with interactive visualisations." },
+  ],
+
+  "bm25-from-scratch": [
+    { t: "p", text: "BM25 is 40 years old. It predates neural networks, embeddings, and transformers. It has no learned parameters. It fits in 50 lines of Python. It still beats dense retrieval on a large fraction of real-world queries — and if you are building a RAG system without it, you are probably leaving recall on the table." },
+    { t: "p", text: "Most engineers who use BM25 treat it as a black box: 'sparse retrieval, handles keywords, pass.' This post makes you build it from scratch. Once you have, you will understand exactly when it wins, when it loses, and what the k1 and b parameters actually do — which is what an interviewer is actually asking when they say 'explain hybrid search.'" },
+
+    { t: "h2", text: "What BM25 is computing" },
+    { t: "p", text: "BM25 scores a document against a query by combining two signals: how often a query term appears in the document (term frequency, with saturation), and how rare the term is across the whole corpus (inverse document frequency). The IDF component is the insight: a document that contains the word 'the' matches every query that uses 'the', which is useless. A document that contains 'reciprocal rank fusion' matches a very specific query, which is highly informative." },
+    { t: "p", text: "The saturation is the other key insight. TF-IDF scores grow linearly with term frequency — a document that says 'transformer' 20 times scores twice as high as one that says it 10 times. BM25 saturates: after a term appears a few times, additional occurrences add diminishing returns. This makes BM25 less gameable and more robust to repetitive documents." },
+
+    { t: "h2", text: "The implementation" },
+    { t: "code", lang: "python", label: "BM25 from scratch — 50 lines, no dependencies", text: `import math
+from collections import Counter
+
+class BM25:
+    def __init__(self, corpus, k1=1.5, b=0.75):
+        """
+        k1: term frequency saturation. Higher = TF matters more, no saturation.
+            k1=0 reduces BM25 to IDF-only. Typical range: 1.2–2.0.
+        b:  length normalisation. b=1 fully normalises by doc length.
+            b=0 ignores length entirely. Typical range: 0.5–0.9.
+        """
+        self.k1 = k1
+        self.b = b
+        self.corpus = [doc.lower().split() for doc in corpus]
+        self.N = len(self.corpus)
+        self.avgdl = sum(len(d) for d in self.corpus) / self.N
+        # df[term] = number of documents containing term
+        self.df = {}
+        for doc in self.corpus:
+            for term in set(doc):
+                self.df[term] = self.df.get(term, 0) + 1
+
+    def _score(self, query_terms, doc_idx):
+        doc = self.corpus[doc_idx]
+        tf = Counter(doc)
+        dl = len(doc)
+        score = 0.0
+        for term in query_terms:
+            if term not in self.df:
+                continue
+            # IDF: rare terms get high weight, common terms near zero
+            idf = math.log((self.N - self.df[term] + 0.5) / (self.df[term] + 0.5) + 1)
+            # TF with saturation (k1) and length normalisation (b)
+            tf_norm = (tf[term] * (self.k1 + 1)) / (
+                tf[term] + self.k1 * (1 - self.b + self.b * dl / self.avgdl)
+            )
+            score += idf * tf_norm
+        return score
+
+    def retrieve(self, query, k=3):
+        terms = query.lower().split()
+        scores = [(i, self._score(terms, i)) for i in range(self.N)]
+        ranked = sorted(scores, key=lambda x: -x[1])[:k]
+        return [(self.corpus[i], round(s, 3)) for i, s in ranked if s > 0]
+
+
+corpus = [
+    "BM25 is a probabilistic retrieval function used in search engines",
+    "Dense retrieval uses neural embeddings to find semantically similar documents",
+    "BM25 outperforms dense retrieval on exact keyword and rare term queries",
+    "Hybrid search combines BM25 sparse retrieval with dense vector search using RRF",
+    "Vector databases store embeddings for approximate nearest neighbour search",
+    "The k1 parameter in BM25 controls how quickly term frequency saturates",
+    "The b parameter controls length normalisation — b=0.75 is the standard default",
+    "Reciprocal rank fusion merges ranked lists from multiple retrievers without score normalisation",
+]
+
+bm25 = BM25(corpus)
+for query in ["BM25 keyword exact", "neural embedding similarity", "k1 parameter"]:
+    print(f"\\nQuery: '{query}'")
+    for doc, score in bm25.retrieve(query, k=2):
+        print(f"  [{score}] {' '.join(doc[:8])}...")` },
+
+    { t: "h2", text: "What to watch when you run this" },
+    { t: "p", text: "Query 'BM25 keyword exact': the document containing all three terms scores highest. The word 'exact' is relatively rare in the corpus, so its IDF is high — it does significant work in separating documents. Query 'neural embedding similarity': BM25 returns the dense retrieval document, not because it understood semantics, but because the words 'neural' and 'embedding' appear in the right document. This is BM25's strength and its limit in one example." },
+    { t: "p", text: "Now try a query like 'how do transformers learn meaning?' — BM25 returns nothing or near-zero scores because 'transformers', 'learn', and 'meaning' do not appear in the corpus. Dense retrieval would return a semantically relevant document even with vocabulary mismatch. This is the exact complementarity that hybrid search exploits." },
+
+    { t: "callout", v: "tip", text: "Experiment: set k1=0 and observe how every result now ignores term frequency entirely — pure IDF scoring. Then set b=0 and watch short documents suddenly outrank long ones. Understanding these parameters is what lets you tune BM25 for domain-specific corpora rather than accepting defaults." },
+
+    { t: "h2", text: "When BM25 beats dense retrieval" },
+    { t: "p", text: "Exact product codes (SKU-A4821), proper nouns, rare technical terms, legal citations, numeric identifiers. Dense retrieval embeds 'SKU-A4821' into a point in vector space near other product codes — but cosine similarity between 'SKU-A4821' and 'SKU-B3920' may be high because they look structurally similar. BM25 treats them as distinct strings. If the user wants the exact SKU, BM25 wins cleanly." },
+    { t: "p", text: "BM25 also wins when the corpus is small (fewer than ~10k documents), when queries are highly specific, and when low latency matters more than semantic coverage. Dense retrieval requires encoding the query through a neural network at query time. BM25 is a lookup and a few multiplications — microseconds vs. milliseconds." },
+
+    { t: "h2", text: "What RRF does when you combine them" },
+    { t: "p", text: "Hybrid search gets its power from Reciprocal Rank Fusion, not from averaging scores. You cannot average BM25 scores and cosine similarities directly — they have completely different scales and distributions. RRF converts each ranked list into reciprocal ranks (1/rank) and sums them. Document ranked 1st by BM25 gets score 1/(1+60), document ranked 2nd gets 1/(2+60), and so on. The 60 is a constant that smooths the curve. This lets you combine any two ranked lists regardless of their original score distributions." },
+
+    { t: "lab", tab: "lab", label: "Hybrid search in the RAG Lab →", desc: "Configure BM25 weight vs. dense retrieval in Scenario 3 and watch how result sets change on the same query." },
+  ],
+
+  "minimal-rag-50-lines": [
+    { t: "p", text: "LangChain exists to abstract away the pieces of a RAG pipeline so you can assemble them quickly. The cost of that abstraction is that you stop understanding what is actually happening. When something breaks — the wrong chunks are retrieved, the answer is hallucinated, latency is unexpectedly high — you are debugging configuration, not code. You do not know what to look at." },
+    { t: "p", text: "The fix is to build RAG manually first. 50 lines. No framework. Free to run on Colab. Once you have done it, every LangChain abstraction becomes legible — you know what it replaced and why. This post is that 50-line build." },
+
+    { t: "h2", text: "What the pipeline actually does" },
+    { t: "p", text: "RAG is five steps: chunk the source documents into retrievable pieces, embed each chunk into a vector, store those vectors, embed the user query the same way, find the most similar chunks by cosine similarity, inject those chunks into a prompt, and call an LLM. That is the entire pattern. Every production RAG system is a variation on this loop with better chunking, better retrieval, reranking, and evaluation on top." },
+
+    { t: "h2", text: "The implementation" },
+    { t: "code", lang: "python", label: "Install once in Colab", text: `# Run this cell first
+!pip install sentence-transformers -q` },
+    { t: "code", lang: "python", label: "50-line RAG — runs free, no API key required for retrieval", text: `import numpy as np
+from sentence_transformers import SentenceTransformer
+
+# ── 1. Your corpus ────────────────────────────────────────────────────────────
+# In production: load PDFs, split by paragraph, clean whitespace.
+# Here: plain strings simulating pre-chunked documents.
+corpus = [
+    "Transformers replaced RNNs because self-attention processes all tokens in parallel, enabling training on much larger datasets.",
+    "The context window is the maximum number of tokens a model can attend to at once. GPT-4 supports up to 128k tokens.",
+    "Retrieval-augmented generation reduces hallucination by grounding the model in retrieved documents before generating.",
+    "BM25 is a sparse retrieval method that uses term frequency and inverse document frequency without neural embeddings.",
+    "Dense retrieval encodes queries and documents as vectors; retrieval is a nearest-neighbour search in embedding space.",
+    "Chunking strategy affects retrieval quality significantly. Fixed-size chunks are simple; semantic chunks preserve meaning better.",
+    "Reranking uses a cross-encoder to re-score the top-k retrieved chunks — more accurate than bi-encoder retrieval but slower.",
+    "Hallucination in RAG often occurs when the retrieved context does not contain the answer but the model generates one anyway.",
+    "Fine-tuning adapts a pre-trained model using labelled examples. It changes the model weights, unlike RAG which leaves them unchanged.",
+    "The embedding model used for retrieval must match between indexing time and query time or retrieval quality collapses.",
+]
+
+# ── 2. Embed corpus (downloads ~80MB model on first run, cached after) ────────
+model = SentenceTransformer("all-MiniLM-L6-v2")
+corpus_embeddings = model.encode(corpus, normalize_embeddings=True)  # (10, 384)
+
+# ── 3. Retrieve: embed query, cosine similarity, return top-k ─────────────────
+def retrieve(query, k=3):
+    q_emb = model.encode([query], normalize_embeddings=True)   # (1, 384)
+    scores = corpus_embeddings @ q_emb.T                        # (10, 1)
+    top_k_idx = np.argsort(scores[:, 0])[::-1][:k]
+    return [(corpus[i], float(scores[i, 0])) for i in top_k_idx]
+
+# ── 4. Build the prompt ───────────────────────────────────────────────────────
+def build_prompt(query, chunks):
+    context = "\\n\\n".join(
+        f"[Chunk {i+1}] {chunk}" for i, (chunk, _) in enumerate(chunks)
+    )
+    return f"""You are a helpful assistant. Answer using only the context below.
+If the answer is not in the context, say "I don't know based on the provided context."
+
+Context:
+{context}
+
+Question: {query}
+Answer:"""
+
+# ── 5. Run it ─────────────────────────────────────────────────────────────────
+query = "Why does RAG reduce hallucination?"
+chunks = retrieve(query, k=3)
+
+print("Retrieved chunks:")
+for chunk, score in chunks:
+    print(f"  [similarity={score:.3f}] {chunk[:80]}...")
+
+prompt = build_prompt(query, chunks)
+print("\\n" + "="*60)
+print("Prompt ready to send to any LLM:")
+print("="*60)
+print(prompt)
+
+# ── 6. Send to an LLM (add your own key) ────────────────────────────────────
+# Option A — OpenAI:
+# from openai import OpenAI
+# client = OpenAI(api_key="sk-...")
+# response = client.chat.completions.create(
+#     model="gpt-4o-mini",
+#     messages=[{"role": "user", "content": prompt}]
+# )
+# print(response.choices[0].message.content)
+#
+# Option B — Free via HuggingFace Inference API:
+# import requests
+# API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+# headers = {"Authorization": "Bearer hf_..."}
+# response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
+# print(response.json()[0]["generated_text"])` },
+
+    { t: "h2", text: "What to observe when this runs" },
+    { t: "p", text: "The retrieval step takes about 50ms for 10 documents. For 100k documents you would use FAISS instead of numpy dot product — but the cosine computation is identical. Note which chunks are returned and whether they actually answer the query. That mismatch — the retriever surfacing chunks that are topically similar but do not contain the specific answer — is the 'missing context' failure mode. The prompt explicitly instructs the model to say 'I don't know' when context is insufficient, but LLMs frequently ignore this instruction. That is the hallucination failure mode." },
+    { t: "p", text: "Run the same query with k=1, k=3, k=5. Watch what happens to the prompt length. At k=5 you are using significantly more of the context window. At some point you are retrieving chunks that are not relevant, adding noise to the prompt and increasing the chance the model anchors on the wrong information. This is the retrieval precision vs. recall tradeoff made visible." },
+
+    { t: "callout", v: "tip", text: "Try breaking it intentionally: change the embedding model to a different one between corpus indexing and query encoding. The similarity scores collapse — you get garbage retrieval. This is the 'embedding model mismatch' failure mode that silently breaks RAG systems when models are updated without re-indexing." },
+
+    { t: "h2", text: "What to add next" },
+    { t: "p", text: "This pipeline has no chunking (corpus is pre-split), no reranking, no evaluation, and no streaming. Each addition teaches something. Add chunking: split a real PDF by paragraph and observe how chunk boundaries affect what gets retrieved. Add a reranker: take the top-10 BM25 results and re-score them with a cross-encoder — watch precision improve at the cost of latency. Add FAISS: replace the numpy dot product with a FAISS IndexFlatIP — same results, 100x faster at scale. Add an eval harness: create 10 question-answer pairs from your corpus and measure Recall@3 automatically after any config change." },
+    { t: "p", text: "LangChain, LlamaIndex, and every other RAG framework is wrapping exactly these steps. Having built them manually, you now read their documentation differently — you are reading about configuration choices for operations you understand, not magic." },
+
+    { t: "lab", tab: "lab", label: "RAG Lab — configure the failure modes →", desc: "The RAG Lab puts you inside a production pipeline with real failure modes. Run this 50-line version first, then the lab shows you what each failure looks like at scale." },
+  ],
+,
+
+  "ngrams-to-neural": [
+    { t: "p", text: "Before transformers, before neural networks, language models were built from counting. The n-gram era lasted thirty years and built every autocomplete, every spell-checker, every early speech recogniser. Understanding it is not nostalgia — it reveals exactly what problem neural language models solved, and why that solution was so disruptive." },
+    { t: "p", text: "An n-gram language model estimates the probability of the next word given the previous n-1 words. For n=2 (bigram), you ask: given the word 'machine', what word comes next? For n=3 (trigram), you ask: given 'learning' followed by 'is', what word follows? You answer by counting: look through a training corpus, find every time the history appeared, count how often each continuation appeared, divide. That ratio is your probability estimate." },
+
+    { t: "h2", text: "The chain rule and the Markov assumption" },
+    { t: "p", text: "Formally, the probability of a sentence w1, w2, ..., wn is P(w1)P(w2|w1)P(w3|w1,w2)...P(wn|w1..wn-1). This is exact — it follows from the chain rule of probability. The problem is that conditioning on the full history P(wn|w1..wn-1) requires having seen that exact sequence in training. With even a 10-word sentence, the history is essentially unique. You will never have enough data." },
+    { t: "p", text: "The n-gram approximation truncates this: instead of conditioning on all previous words, condition only on the last n-1. This is the Markov assumption — history beyond a fixed window does not matter. It is wrong in principle (the sentence 'The bank by the river...' needs context from further back to know whether 'bank' means finance or geography), but it worked surprisingly well in practice because most local transitions are highly predictable." },
+
+    { t: "h2", text: "Maximum likelihood estimation and the sparsity problem" },
+    { t: "code", lang: "python", label: "Bigram language model in 30 lines", text: `from collections import defaultdict, Counter
+import math
+
+def train_bigram(corpus_text):
+    words = corpus_text.lower().split()
+    unigram = Counter(words)
+    bigram = defaultdict(Counter)
+    
+    for w1, w2 in zip(words[:-1], words[1:]):
+        bigram[w1][w2] += 1
+    
+    # Maximum likelihood: P(w2 | w1) = count(w1, w2) / count(w1)
+    probs = {}
+    for w1, continuations in bigram.items():
+        total = sum(continuations.values())
+        probs[w1] = {w2: count / total for w2, count in continuations.items()}
+    
+    return probs, unigram
+
+def score_sentence(sentence, probs, unigram, vocab_size, alpha=0.01):
+    words = sentence.lower().split()
+    log_prob = 0.0
+    for w1, w2 in zip(words[:-1], words[1:]):
+        # Laplace (add-alpha) smoothing to handle unseen bigrams
+        count_w1w2 = probs.get(w1, {}).get(w2, 0) * unigram.get(w1, 0)
+        count_w1 = unigram.get(w1, 0)
+        p = (count_w1w2 + alpha) / (count_w1 + alpha * vocab_size)
+        log_prob += math.log(p)
+    return log_prob
+
+corpus = """the dog saw the cat the cat ran the dog chased the cat the dog barked"""
+probs, unigram = train_bigram(corpus)
+vocab_size = len(unigram)
+
+sentences = [
+    "the dog chased the cat",   # likely — seen pattern
+    "the cat chased the dog",   # plausible — words seen, bigram less common
+    "cat the dog barked ran",   # unlikely — weird order
+]
+for s in sentences:
+    score = score_sentence(s, probs, unigram, vocab_size)
+    print(f"  {score:.2f}  |  {s}")` },
+    { t: "p", text: "Maximum likelihood means P(w2|w1) = count(w1,w2) / count(w1). With a small corpus this immediately breaks: any bigram you did not see in training gets probability zero. Assign zero to any word in a sentence and the whole sentence has probability zero. You cannot compare sentences." },
+    { t: "p", text: "Smoothing is the fix: add a small constant (alpha) to every count, spreading probability mass to unseen events. Laplace smoothing (alpha=1) is simple but too aggressive. Kneser-Ney smoothing — which estimates how likely a word is to appear in novel contexts rather than how frequently it appears overall — became the standard because it respects the actual structure of the problem. 'Francisco' is common in 'San Francisco' but nearly never starts a new context; Kneser-Ney captures this. Standard n-gram systems used Kneser-Ney through most of the 2000s." },
+
+    { t: "h2", text: "Why n-grams failed — and the exact problem neural language models solved" },
+    { t: "p", text: "Two fundamental limits. First, the curse of dimensionality: with a vocabulary of 100k words, there are 10^10 possible bigrams. You will see a tiny fraction. No amount of smoothing fixes the fact that your estimates for unseen bigrams are garbage. Second, no generalisation: the bigram model that learns from 'the cat sat' knows nothing about 'the dog sat'. The word 'cat' and the word 'dog' are completely unrelated tokens with independent probability tables. There is no notion of similarity." },
+    { t: "p", text: "In 2003, Yoshua Bengio published 'A Neural Probabilistic Language Model'. The key insight: instead of a discrete lookup table, represent words as continuous vectors in a learned space. Words that appear in similar contexts (cat, dog, bird) get pushed to similar regions. The probability model is a neural network that takes these continuous representations as input. Now, statistics learned from 'the cat ate' transfer to 'the dog ate' because cat and dog land near each other in embedding space. This is the jump that made modern NLP possible." },
+    { t: "p", text: "Every architecture since — word2vec, GloVe, ELMo, BERT, GPT — is a variation on this idea. Bengio's contribution was to show that distributed representations and prediction could be learned jointly, and that this jointly learned system dramatically outperformed the best count-based models." },
+
+    { t: "h2", text: "What this means for how you read modern LLMs" },
+    { t: "p", text: "A GPT model is still, at its core, a language model: predict the next token given the previous tokens. The objective is the same as the bigram model above. What changed is the model that computes those probabilities. Instead of a lookup table + smoothing, it is a transformer with billions of parameters that learned to compress the distributional statistics of the training corpus into its weights. Perplexity — the standard LLM quality metric — is directly derived from n-gram model evaluation: lower perplexity means the model is less surprised by the test data, and thus has learned a better probability distribution. When an LLM paper reports perplexity, it is reporting on the same fundamental question the bigram model asked: how well does the model predict the next word?" },
+
+    { t: "callout", v: "tip", text: "Implement: run the bigram code above on a real text (Project Gutenberg novels, Wikipedia dumps). Observe how perplexity changes as you increase n from 2 to 3 to 4. Watch Kneser-Ney smoothing outperform Laplace on unseen test data. This gives you intuition for why larger context windows help, and why you always need some form of regularisation." },
+
+    { t: "refs", items: [
+      { label: "A Neural Probabilistic Language Model — Bengio et al. (2003)", url: "https://jmlr.org/papers/volume3/bengio03a/bengio03a.pdf" },
+      { label: "Speech and Language Processing — Chapter 3: N-gram Language Models (Jurafsky & Martin)", url: "https://web.stanford.edu/~jurafsky/slp3/3.pdf" },
+    ]},
+  ],
+
+  "word2vec-from-scratch": [
+    { t: "p", text: "In 2013, Mikolov et al. published two papers that changed NLP. The core idea fits in one sentence: words that appear in similar contexts have similar meanings — so train a neural network to predict context from word (or word from context), and the hidden layer weights become the word vectors. The training objective is a proxy. The embeddings are the prize." },
+    { t: "p", text: "This post implements skip-gram with negative sampling from scratch in NumPy. You will end up with word vectors where king - man + woman ≈ queen, where similar words cluster in space, and where you can do arithmetic on meaning. Understanding the mechanics explains why modern embedding models work the way they do." },
+
+    { t: "h2", text: "The distributional hypothesis" },
+    { t: "p", text: "'You shall know a word by the company it keeps.' — J.R. Firth, 1957. The intuition: 'cat' and 'dog' appear in similar sentences — 'my ___ ate the food', 'the ___ ran outside', 'I pet my ___'. If you can find a vector space where words with similar contexts land nearby, you have captured semantic similarity without any explicit labelling." },
+    { t: "p", text: "Word2Vec operationalises this. The skip-gram model takes a word (the 'center word') and tries to predict its surrounding words (the 'context words'). During training, the network adjusts the vectors for the center word and context words so the prediction improves. Words that appear in the same contexts end up with similar vectors because the same adjustment pressure is applied to all of them." },
+
+    { t: "h2", text: "Architecture: skip-gram with negative sampling" },
+    { t: "p", text: "Two embedding matrices: W_in (center word embeddings, shape vocab×d) and W_out (context word embeddings, shape vocab×d). For each (center, context) training pair: take the center word's row from W_in, take the context word's row from W_out, compute their dot product, push it through sigmoid to get a probability, and maximise it. That is the positive signal." },
+    { t: "p", text: "The full softmax over the vocabulary — P(context|center) = exp(center·context) / sum_over_all_words — is too expensive with a 100k-word vocabulary. Negative sampling approximates it: for each real (center, context) pair, sample k random 'noise' words and minimise their probability. With k=5, each update touches 6 words instead of 100k. The objective becomes: maximise P(real context | center word) while minimising P(noise | center word)." },
+
+    { t: "code", lang: "python", label: "Skip-gram with negative sampling — NumPy from scratch", text: `import numpy as np
+from collections import Counter
+import random
+
+class Word2Vec:
+    def __init__(self, vocab, d=50, lr=0.025, n_neg=5):
+        self.vocab = vocab
+        self.w2i = {w: i for i, w in enumerate(vocab)}
+        V = len(vocab)
+        # Two matrices: center-word embeddings and context-word embeddings
+        self.W_in  = (np.random.rand(V, d) - 0.5) / d   # center
+        self.W_out = np.zeros((V, d))                     # context
+        self.lr = lr
+        self.n_neg = n_neg
+        self.freq = np.ones(V)  # for negative sampling distribution
+
+    def set_freq(self, word_counts):
+        counts = np.array([word_counts.get(w, 1) for w in self.vocab], dtype=float)
+        # Raise to 3/4 power — reduces frequency of common words, as in original paper
+        self.freq = counts ** 0.75
+        self.freq /= self.freq.sum()
+
+    def _sigmoid(self, x):
+        return 1 / (1 + np.exp(-np.clip(x, -10, 10)))
+
+    def train_pair(self, center_idx, context_idx):
+        # Sample negative examples (never the real context word)
+        neg_indices = np.random.choice(
+            len(self.vocab), size=self.n_neg, p=self.freq, replace=True
+        )
+        # Center embedding
+        h = self.W_in[center_idx]   # shape (d,)
+
+        # Gradient accumulator for center word
+        dh = np.zeros_like(h)
+
+        # Positive example: label=1, want sigmoid(h · ctx) → 1
+        for idx, label in [(context_idx, 1)] + [(n, 0) for n in neg_indices]:
+            score = self._sigmoid(h @ self.W_out[idx])
+            err   = (label - score)
+            # Update context (or negative) embedding
+            self.W_out[idx] += self.lr * err * h
+            # Accumulate gradient for center embedding
+            dh              += self.lr * err * self.W_out[idx]
+
+        # Update center embedding
+        self.W_in[center_idx] += dh
+
+    def similarity(self, w1, w2):
+        v1 = self.W_in[self.w2i[w1]]
+        v2 = self.W_in[self.w2i[w2]]
+        return float(v1 @ v2 / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-9))
+
+    def most_similar(self, word, k=5):
+        v = self.W_in[self.w2i[word]]
+        norms = np.linalg.norm(self.W_in, axis=1, keepdims=True) + 1e-9
+        sims = (self.W_in / norms) @ (v / (np.linalg.norm(v) + 1e-9))
+        top = np.argsort(sims)[::-1][1:k+1]
+        return [(self.vocab[i], round(float(sims[i]), 3)) for i in top]
+
+
+# ── Tiny demo ────────────────────────────────────────────────────────────────
+sentences = [
+    "the king rules the kingdom",
+    "the queen rules the kingdom",
+    "the man wore a crown",
+    "the woman wore a crown",
+    "the king and the queen married",
+    "the dog chased the cat",
+    "the cat ran from the dog",
+    "the dog barked at the cat",
+    "the puppy chased the kitten",
+] * 50   # repeat to get enough signal
+
+# Build vocab
+all_words = [w for s in sentences for w in s.split()]
+counts = Counter(all_words)
+vocab = list(counts.keys())
+w2v = Word2Vec(vocab, d=30, lr=0.05, n_neg=5)
+w2v.set_freq(counts)
+
+# Training: sliding window, window_size=2
+window = 2
+for epoch in range(5):
+    random.shuffle(sentences)
+    for sentence in sentences:
+        words = sentence.split()
+        for i, center in enumerate(words):
+            ci = w2v.w2i[center]
+            ctx_range = range(max(0, i-window), min(len(words), i+window+1))
+            for j in ctx_range:
+                if j != i:
+                    w2v.train_pair(ci, w2v.w2i[words[j]])
+
+# Results
+print("Most similar to 'king':", w2v.most_similar("king"))
+print("Most similar to 'dog':",  w2v.most_similar("dog"))
+print("Similarity (king, queen):", w2v.similarity("king", "queen"))
+print("Similarity (king, dog):",   w2v.similarity("king", "dog"))` },
+
+    { t: "h2", text: "What you should see" },
+    { t: "p", text: "With 50 repetitions of the tiny corpus, the vectors are noisy but directionally correct. 'King' and 'queen' should have higher cosine similarity than 'king' and 'dog'. 'Dog' and 'cat' should be close. With a real corpus (Wikipedia, Common Crawl), the geometry becomes precise: king - man + woman lands within a few nearest neighbours of queen. Relationships like country-capital, comparative-superlative, and verb-past-tense are all linear transformations in this space." },
+    { t: "p", text: "The magic is not in the architecture — it is in the training objective. By predicting context, the network is forced to compress the co-occurrence structure of the language into a fixed-dimensional vector. That structure is meaning." },
+
+    { t: "h2", text: "From word2vec to modern embeddings" },
+    { t: "p", text: "Word2vec produces static embeddings: 'bank' always has the same vector regardless of whether you mean the river bank or the financial institution. GloVe (2014) improved on word2vec by optimising directly on the word-word co-occurrence matrix rather than predicting context window by window. Both are context-free." },
+    { t: "p", text: "ELMo (2018) changed this: it ran a bidirectional LSTM over the whole sentence and produced a different embedding for each word based on its context. 'Bank' in 'river bank' and 'bank account' got different vectors. This contextual embedding idea is what BERT and GPT took and scaled up — the transformer replaced the LSTM, and pre-training on massive corpora gave the embeddings the depth that made them useful for every downstream task. Word2vec is the ancestor. Understanding it makes the whole arc from word vectors to GPT legible." },
+
+    { t: "callout", v: "tip", text: "Run this with a real corpus: download the text8 dataset (Wikipedia subset, ~100MB) and train for 5 epochs with d=100. Training takes ~10 minutes on CPU. Then query most_similar('paris') and verify that 'france', 'london', 'berlin' appear. Verify that the analogy man:woman :: king:queen holds by computing king_vec - man_vec + woman_vec and finding the nearest word." },
+
+    { t: "refs", items: [
+      { label: "Efficient Estimation of Word Representations in Vector Space — Mikolov et al. (2013)", url: "https://arxiv.org/abs/1301.3781" },
+      { label: "GloVe: Global Vectors for Word Representation — Pennington et al. (2014)", url: "https://nlp.stanford.edu/pubs/glove.pdf" },
+    ]},
+  ],
+
+  "rnn-lstm-vanishing-gradient": [
+    { t: "p", text: "For six years — from roughly 2012 to 2018 — LSTMs were the engine of nearly every production NLP system. Machine translation at Google, speech recognition at Apple, autocomplete at Gmail. Then transformers appeared and in eighteen months every LSTM was replaced. Understanding what LSTMs solved, and why they still could not solve it completely, is the clearest explanation of what makes transformers different." },
+
+    { t: "h2", text: "The recurrent architecture" },
+    { t: "p", text: "An RNN reads a sequence one token at a time. At each step t, it combines the current input xt with a hidden state ht-1 carried forward from the previous step: ht = tanh(Wx·xt + Wh·ht-1 + b). The hidden state is a fixed-dimensional vector — say, 256 numbers — that must compress all information from the past. After reading the whole sequence, ht encodes, in theory, the entire history. In practice, it encodes mostly the recent past." },
+
+    { t: "h2", text: "The vanishing gradient problem" },
+    { t: "p", text: "Backpropagation through time (BPTT) unrolls the RNN into a very deep network — one layer per timestep — and computes gradients by the chain rule. The gradient at step t depends on the gradient at step t+1 multiplied by the Jacobian of the hidden state transition. That Jacobian involves the same weight matrix Wh applied again and again. If the eigenvalues of Wh are less than 1, gradients shrink exponentially toward zero as you go backward through time. If they are greater than 1, gradients explode. Either way, the error signal from token 50 barely reaches token 1." },
+    { t: "code", lang: "python", label: "Vanishing gradient in an RNN — numerical demonstration", text: `import numpy as np
+
+def rnn_forward(xs, Wx, Wh, bh, seq_len=50):
+    """Forward pass collecting hidden states and pre-activations."""
+    d_h = Wh.shape[0]
+    h = np.zeros(d_h)
+    hs, pre_acts = [], []
+    for x in xs[:seq_len]:
+        z = Wx @ x + Wh @ h + bh
+        pre_acts.append(z)
+        h = np.tanh(z)
+        hs.append(h.copy())
+    return hs, pre_acts
+
+np.random.seed(42)
+d_in, d_h = 10, 32
+Wx = np.random.randn(d_h, d_in) * 0.1
+Wh = np.random.randn(d_h, d_h) * 0.1   # small weights → vanishing
+bh = np.zeros(d_h)
+xs = [np.random.randn(d_in) for _ in range(50)]
+
+hs, pre_acts = rnn_forward(xs, Wx, Wh, bh)
+
+# Compute gradient magnitude at each step (simplified BPTT)
+# dL/dh50 = ones (upstream gradient)
+grad = np.ones(d_h)
+grad_norms = []
+for t in reversed(range(len(hs))):
+    tanh_grad = 1 - hs[t]**2          # derivative of tanh
+    grad = Wh.T @ (tanh_grad * grad)  # chain rule through Wh
+    grad_norms.append(np.linalg.norm(grad))
+
+print("Gradient norm at each step (most-recent to oldest):")
+for i, g in enumerate(grad_norms):
+    bar = "█" * min(40, int(g * 200))
+    print(f"  step {len(grad_norms)-i:3d}: {g:.6f} {bar}")` },
+    { t: "p", text: "Run this and you will see the gradient norm drop from ~1.0 at the last step to ~0.0001 by step 30. The error signal from the final prediction barely changes weights that processed the first tokens. This is why vanilla RNNs cannot remember that the subject of a 50-word sentence was singular when trying to predict verb agreement at the end." },
+
+    { t: "h2", text: "LSTM: learned gating as gradient highways" },
+    { t: "p", text: "The Long Short-Term Memory network (Hochreiter & Schmidhuber, 1997) adds a cell state ct — a second, more slowly changing memory that flows forward with minimal transformation. Three gates — input, forget, output — are sigmoid functions (output 0 to 1) that learn when to write, erase, and read from the cell state. The key equation: ct = ft ⊙ ct-1 + it ⊙ g̃t. The forget gate ft controls how much of the old cell state to keep. The input gate it controls how much of the new candidate g̃t to add. The output gate ot controls how much of the cell state to expose as the hidden state." },
+    { t: "code", lang: "python", label: "LSTM cell forward pass — from scratch", text: `import numpy as np
+
+class LSTMCell:
+    def __init__(self, d_in, d_h):
+        # Concatenate all four gate weight matrices for efficiency
+        self.W = np.random.randn(4 * d_h, d_in + d_h) * 0.1
+        self.b = np.zeros(4 * d_h)
+        self.d_h = d_h
+
+    def forward(self, x, h_prev, c_prev):
+        # Concatenate input and previous hidden state
+        xh = np.concatenate([x, h_prev])   # (d_in + d_h,)
+        gates = self.W @ xh + self.b        # (4*d_h,)
+
+        # Split into four gates
+        d = self.d_h
+        i  = self._sigmoid(gates[0*d:1*d])   # input gate
+        f  = self._sigmoid(gates[1*d:2*d])   # forget gate
+        o  = self._sigmoid(gates[2*d:3*d])   # output gate
+        g  = np.tanh(gates[3*d:4*d])         # cell gate (candidate)
+
+        # Cell state update: forget old, write new
+        c = f * c_prev + i * g               # ← gradient highway
+        # Hidden state: read from cell state through output gate
+        h = o * np.tanh(c)
+
+        return h, c, {"i": i, "f": f, "o": o, "g": g}
+
+    def _sigmoid(self, x):
+        return 1 / (1 + np.exp(-np.clip(x, -20, 20)))
+
+# Run a sequence through the LSTM cell
+d_in, d_h, seq_len = 10, 32, 20
+cell = LSTMCell(d_in, d_h)
+h, c = np.zeros(d_h), np.zeros(d_h)
+for t in range(seq_len):
+    x = np.random.randn(d_in)
+    h, c, gates = cell.forward(x, h, c)
+    if t % 5 == 0:
+        print(f"Step {t:2d} | forget gate mean: {gates['f'].mean():.3f} | "
+              f"cell norm: {np.linalg.norm(c):.3f}")` },
+    { t: "p", text: "The gradient highway is the cell state update: ct = ft ⊙ ct-1 + it ⊙ g̃t. Because this is addition, not multiplication through a squashing function, gradients can flow backward through the cell state path without shrinking. The forget gate is the key — when ft is close to 1, the cell state is preserved almost perfectly, and gradients flow back unchanged. The LSTM does not eliminate the vanishing gradient problem; it gives the network a learnable mechanism to route gradients around the problematic multiplicative path." },
+
+    { t: "h2", text: "Why transformers replaced them" },
+    { t: "p", text: "Two reasons, both fundamental. First, LSTMs are sequential by construction — you cannot compute ht until you have ht-1. This means you cannot parallelise across time steps during training. Transformers use self-attention, which computes all positions simultaneously. On modern GPUs with thousands of cores, this difference in parallelism translates directly into training speed and scale." },
+    { t: "p", text: "Second, the LSTM hidden state still has a fixed capacity bottleneck. Information from 100 steps ago must be compressed into the same 256-dimensional vector as information from 1 step ago. The forget gate helps, but it is a learned compression. Attention has no such bottleneck: every position can attend directly to every other position with full fidelity. Long-range dependencies that LSTMs handle imperfectly, transformers handle natively." },
+    { t: "p", text: "LSTMs are not obsolete — they run efficiently on embedded hardware, train fast on short sequences, and still appear in production systems where GPU scale is not available. But for any task where long context, parallelism, or scale matters, transformers are the right architecture. Knowing exactly why is what makes you useful in a system design interview." },
+
+    { t: "refs", items: [
+      { label: "Long Short-Term Memory — Hochreiter & Schmidhuber (1997)", url: "https://www.bioinf.jku.at/publications/older/2604.pdf" },
+      { label: "The Unreasonable Effectiveness of Recurrent Neural Networks — Karpathy (2015)", url: "https://karpathy.github.io/2015/05/21/rnn-effectiveness/" },
+    ]},
+  ],
+
+  "seq2seq-bahdanau-attention": [
+    { t: "p", text: "In 2014, two papers were published that changed how machines translate language. The first — Sutskever, Vinyals, Le — showed that an encoder LSTM could compress a sentence into a vector, and a decoder LSTM could expand that vector into a translation. The second — Bahdanau, Cho, Bengio — added a mechanism for the decoder to look back at all encoder states instead of a single compressed vector. That mechanism was called attention. It is the direct ancestor of the self-attention in transformers." },
+
+    { t: "h2", text: "The bottleneck problem in encoder-decoder" },
+    { t: "p", text: "The encoder reads the source sentence token by token and produces a final hidden state — a fixed-size vector that must encode everything the decoder will need to produce the translation. For short sentences this works. For sentences of 30+ words, the encoder must compress an arbitrary amount of information into a 512-dimensional vector. Quality degrades sharply with sentence length. This was the bottleneck problem." },
+
+    { t: "h2", text: "Bahdanau attention: query the encoder at every decoder step" },
+    { t: "p", text: "Bahdanau's insight: instead of compressing the source into a single vector, keep all encoder hidden states h1, h2, ..., hT and let the decoder query them at every step. At each decoder step, compute a score between the current decoder state st and each encoder state hi. Normalise the scores with softmax to get attention weights αi. Compute a context vector c = Σ αi·hi. Concatenate c with the decoder state and use this to generate the next output token." },
+    { t: "code", lang: "python", label: "Bahdanau attention mechanism — NumPy", text: `import numpy as np
+
+def bahdanau_attention(encoder_states, decoder_state, W_a, U_a, v_a):
+    """
+    encoder_states: (T, d_h) — all encoder hidden states
+    decoder_state:  (d_h,)   — current decoder hidden state
+    W_a, U_a:       (d_a, d_h) — alignment model weights
+    v_a:            (d_a,)    — alignment model vector
+    """
+    T, d_h = encoder_states.shape
+    d_a = v_a.shape[0]
+
+    # Energy function: e_i = v_a · tanh(W_a·s + U_a·h_i)
+    # Broadcast decoder projection across all encoder states
+    decoder_proj  = (W_a @ decoder_state)              # (d_a,)
+    encoder_proj  = (U_a @ encoder_states.T).T        # (T, d_a)
+    combined      = np.tanh(encoder_proj + decoder_proj)  # (T, d_a)
+    energies      = combined @ v_a                     # (T,)
+
+    # Softmax to get attention weights
+    e_max    = energies.max()
+    exp_e    = np.exp(energies - e_max)
+    weights  = exp_e / exp_e.sum()                     # (T,)
+
+    # Context vector: weighted sum of encoder states
+    context  = (weights[:, None] * encoder_states).sum(axis=0)  # (d_h,)
+
+    return weights, context
+
+
+# ── Demo ─────────────────────────────────────────────────────────────────────
+np.random.seed(42)
+T_src, d_h, d_a = 8, 64, 32
+
+# Simulate encoder reading "The quick brown fox jumped over the fence"
+encoder_states = np.random.randn(T_src, d_h) * 0.5
+decoder_state  = np.random.randn(d_h) * 0.5
+
+# Alignment model parameters
+W_a = np.random.randn(d_a, d_h) * 0.1
+U_a = np.random.randn(d_a, d_h) * 0.1
+v_a = np.random.randn(d_a) * 0.1
+
+weights, context = bahdanau_attention(encoder_states, decoder_state, W_a, U_a, v_a)
+
+src_tokens = ["The", "quick", "brown", "fox", "jumped", "over", "the", "fence"]
+print("Attention weights at this decoder step:")
+for token, weight in zip(src_tokens, weights):
+    bar = "█" * int(weight * 80)
+    print(f"  {token:8s}: {weight:.3f} {bar}")
+print(f"\\nContext vector shape: {context.shape}, norm: {np.linalg.norm(context):.3f}")` },
+
+    { t: "h2", text: "The connection to transformer self-attention" },
+    { t: "p", text: "Bahdanau attention computes: energy(st, hi) = v·tanh(W·st + U·hi). The transformer attention computes: score(Q, K) = Q·Kᵀ / sqrt(dk). Different parameterisation, same conceptual operation: compare the current query (decoder state / Q vector) against all available keys (encoder states / K vectors), produce a weighted sum of values (encoder states / V vectors). The critical difference is that transformer attention is multiplicative (dot product) rather than additive (MLP), which is faster and easier to parallelise. The scaling by sqrt(dk) prevents the dot products from growing too large with high-dimensional vectors, which would cause the softmax to saturate." },
+    { t: "p", text: "In transformers, every token can attend to every other token simultaneously. In Bahdanau attention, only the decoder queries the encoder, and it does so sequentially, one decoder step at a time. The 'self' in self-attention means the same sequence queries itself — every token queries every other token in the same sequence. This is the generalisation that made transformers so powerful: you can model relationships within a sequence without any recurrence at all." },
+
+    { t: "h2", text: "What this means for encoder-decoder architectures today" },
+    { t: "p", text: "T5, BART, and mT5 are still encoder-decoder models. The encoder reads the full source and produces bidirectional representations. The decoder attends to encoder representations via cross-attention (which is Bahdanau attention, upgraded to transformer form) and generates autoregressively. Tasks that are natural fits: translation, summarisation, question answering where the source and target are different sequences." },
+    { t: "p", text: "GPT is decoder-only: no separate encoder, just a single sequence processed with causal masking. BERT is encoder-only: bidirectional processing, no generation. The architectural choice is not arbitrary — it determines what the model can do. Encoder-only models are efficient for classification and retrieval (embed a full sentence bidirectionally). Decoder-only models are efficient for generation (each token conditions on all previous tokens). Encoder-decoder models are natural for sequence-to-sequence tasks. Knowing where Bahdanau attention sits in this history tells you why these three families exist." },
+
+    { t: "refs", items: [
+      { label: "Neural Machine Translation by Jointly Learning to Align and Translate — Bahdanau et al. (2015)", url: "https://arxiv.org/abs/1409.0473" },
+      { label: "Sequence to Sequence Learning with Neural Networks — Sutskever et al. (2014)", url: "https://arxiv.org/abs/1409.3215" },
+    ]},
+  ],
+
+  "text-preprocessing-pipeline": [
+    { t: "p", text: "LLM tokenization and search tokenization solve different problems. An LLM tokenizer (BPE, WordPiece) converts text into subword integers optimised for neural network consumption — it cares about coverage, vocabulary size, and feeding a model. A search tokenizer converts text into terms optimised for index lookups — it cares about matching, recall, and what a user actually typed. They are different algorithms solving different problems. Using LLM tokenization logic for a BM25 index is a common mistake." },
+
+    { t: "h2", text: "What the search preprocessing pipeline actually does" },
+    { t: "p", text: "A standard search preprocessing pipeline runs in order: tokenize the text into terms, case-fold to lowercase, remove or handle stopwords, and apply stemming or lemmatization. Each step trades recall for precision or precision for recall in specific ways. Understanding each step means knowing when to deviate from the defaults." },
+
+    { t: "code", lang: "python", label: "Full text preprocessing pipeline from scratch", text: `import re
+from collections import Counter
+
+# ─── 1. Tokenisation ─────────────────────────────────────────────────────────
+def tokenize(text):
+    """Split on whitespace and punctuation, keep hyphens in compound words."""
+    return re.findall(r"\\b\\w+(?:-\\w+)*\\b", text.lower())
+
+# ─── 2. Stopwords ────────────────────────────────────────────────────────────
+STOPWORDS = {
+    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would", "could",
+    "should", "may", "might", "must", "can", "shall", "of", "in", "on",
+    "at", "by", "for", "with", "about", "against", "to", "from", "up", "down",
+    "and", "but", "or", "nor", "so", "yet", "both", "either", "neither",
+    "not", "no", "nor", "only", "own", "same", "than", "too", "very",
+    "just", "because", "as", "until", "while", "that", "this", "these", "those"
+}
+
+def remove_stopwords(tokens, custom_keep=None):
+    keep = custom_keep or set()
+    return [t for t in tokens if t not in STOPWORDS or t in keep]
+
+# ─── 3. Stemming (Porter-lite) ───────────────────────────────────────────────
+def stem(word):
+    """Minimal Porter rules — not complete, but illustrates the idea."""
+    if word.endswith("ing") and len(word) > 6:
+        return word[:-3]
+    if word.endswith("tion") and len(word) > 6:
+        return word[:-4]
+    if word.endswith("ness") and len(word) > 6:
+        return word[:-4]
+    if word.endswith("ies") and len(word) > 5:
+        return word[:-3] + "y"
+    if word.endswith("es") and len(word) > 4:
+        return word[:-2]
+    if word.endswith("s") and len(word) > 4 and not word.endswith("ss"):
+        return word[:-1]
+    return word
+
+# ─── 4. Lemmatization (rule-based toy version) ───────────────────────────────
+LEMMA_MAP = {
+    "running": "run", "runs": "run", "ran": "run",
+    "better": "good", "best": "good",
+    "children": "child", "mice": "mouse", "geese": "goose",
+    "studies": "study", "studied": "study", "studying": "study",
+}
+def lemmatize(word):
+    return LEMMA_MAP.get(word, word)
+
+# ─── Full pipeline ────────────────────────────────────────────────────────────
+def preprocess(text, use_stemming=False, use_lemmatization=False, remove_stops=True):
+    tokens = tokenize(text)
+    if remove_stops:
+        tokens = remove_stopwords(tokens)
+    if use_stemming:
+        tokens = [stem(t) for t in tokens]
+    elif use_lemmatization:
+        tokens = [lemmatize(t) for t in tokens]
+    return tokens
+
+# ─── Demo ─────────────────────────────────────────────────────────────────────
+docs = [
+    "The machine learning model is running well and improving",
+    "Deep learning models run faster on GPUs",
+    "Children are studying machine learning at universities",
+    "The study of artificial intelligence is growing quickly",
+]
+
+print("Pipeline comparison:")
+for doc in docs[:2]:
+    print(f"\\nOriginal:     {doc}")
+    print(f"Tokenized:    {preprocess(doc, remove_stops=False)}")
+    print(f"No stops:     {preprocess(doc)}")
+    print(f"Stemmed:      {preprocess(doc, use_stemming=True)}")
+    print(f"Lemmatized:   {preprocess(doc, use_lemmatization=True)}")` },
+
+    { t: "h2", text: "Stopwords: when NOT to remove them" },
+    { t: "p", text: "The naive rule is: remove stopwords because they carry no meaning. This is wrong in several important cases. Phrase queries: 'to be or not to be' consists entirely of stopwords, but removing them destroys the query. 'How to cook pasta' — 'how' and 'to' are often stopped, but the user intent is procedural, and 'how' is the most discriminative word. Named entities: 'Who' is a stopword, but also a band. 'The The' is a band. 'It' is a pronoun but also a Stephen King novel and a pronoun that is often the query term when someone searches 'IT support'." },
+    { t: "p", text: "Production systems typically use a context-aware stopword list. BM25 naturally reduces the weight of high-frequency terms (via IDF), so you do not need aggressive stopword removal to fix BM25 quality. Aggressive stopword removal is more useful for reducing index size than for improving recall." },
+
+    { t: "h2", text: "Stemming vs lemmatization: the actual tradeoff" },
+    { t: "p", text: "Stemming is fast (regex rules), over-aggressively conflates forms (senses of 'university' and 'universal' merge to 'univers'), and makes no attempt at linguistic correctness. It is language-agnostic if you build per-language rules. Lemmatization uses a dictionary and grammatical rules to reduce words to their canonical form — 'running' → 'run', 'ran' → 'run', 'better' → 'good'. It is linguistically correct but slower (dictionary lookup), and requires language-specific resources." },
+    { t: "p", text: "In practice: use stemming for high-throughput search over large corpora where you need low latency and are willing to accept some over-merging. Use lemmatization for precision-critical search (legal, medical) where conflating 'well' → 'good' would be a problem. For semantic search with dense embeddings, you often skip both entirely — the embedding model captures morphological variants." },
+
+    { t: "h2", text: "Field-specific pipeline decisions" },
+    { t: "p", text: "E-commerce: preserve hyphens (model-number), do NOT remove 'for' and 'compatible with' (intent), do NOT stem 'USB' to 'US'. Medical: lemmatize to canonical forms, do NOT remove negation words ('not', 'no', 'without' carry clinical meaning). Legal: preserve all stopwords, case-fold with care (proper nouns), no stemming. Code search: tokenise on camelCase and snake_case boundaries, do NOT lowercase everything (Python is case-sensitive)." },
+    { t: "p", text: "The preprocessing pipeline is not a set-and-forget configuration. Every domain has different requirements. The rule is: understand each step well enough to know which to skip, modify, or configure per field. The defaults will be wrong for something in every corpus." },
+
+    { t: "callout", v: "tip", text: "Implement a controlled experiment: run BM25 retrieval on the same 1000 queries with and without stemming. Measure Recall@10. On most corpora, stemming improves recall by 2-5% and reduces precision by 1-3%. Then run the same experiment with aggressive stopword removal vs. only the top-20 most frequent stopwords. You will find the aggressive list hurts navigational queries disproportionately." },
+
+    { t: "refs", items: [
+      { label: "An Introduction to Information Retrieval — Manning, Raghavan, Schütze (free online)", url: "https://nlp.stanford.edu/IR-book/information-retrieval-book.html" },
+      { label: "NLTK Stemmer and Lemmatizer documentation", url: "https://www.nltk.org/howto/stem.html" },
+    ]},
+  ],
+
+  "bert-vs-gpt-architecture": [
+    { t: "p", text: "BERT and GPT are both transformer models. They share the same core attention mechanism, the same positional encodings, the same feedforward sublayers. They differ in one architectural choice — masking — that determines everything else: what they can learn, what tasks they are good at, and how you use them in production." },
+
+    { t: "h2", text: "The core architectural difference" },
+    { t: "p", text: "BERT is an encoder: it reads the full sequence bidirectionally. Every token can attend to every other token. If you feed BERT 'The cat sat on the mat', the representation of 'cat' is computed using all six other tokens simultaneously — it can look left and right. This produces rich contextual representations but cannot generate text, because generation requires attending only to the past." },
+    { t: "p", text: "GPT is a decoder: it reads the sequence with causal masking. Each token can only attend to previous tokens. The representation of 'cat' in position 2 can see 'The' and 'cat' but not 'sat on the mat'. This means GPT can be used autoregressively: generate token 1, feed it back in, generate token 2, and so on. The masking is the generation mechanism." },
+
+    { t: "code", lang: "python", label: "Causal masking vs bidirectional attention — what the model sees", text: `import numpy as np
+
+def show_attention_mask(tokens, causal=False):
+    n = len(tokens)
+    if causal:
+        # Lower triangular: token i can see tokens 0..i
+        mask = np.tril(np.ones((n, n), dtype=int))
+    else:
+        # Full: every token sees every other token
+        mask = np.ones((n, n), dtype=int)
+    
+    print(f"\\n{'Causal (GPT-style)' if causal else 'Bidirectional (BERT-style)'} attention mask:")
+    header = "         " + "  ".join(f"{t[:5]:5s}" for t in tokens)
+    print(header)
+    for i, row_token in enumerate(tokens):
+        row = "  ".join("  ✓  " if mask[i, j] else "  ✗  " for j in range(n))
+        print(f"{row_token[:8]:8s} {row}")
+
+tokens = ["[CLS]", "The", "cat", "sat", "on", "[SEP]"]
+show_attention_mask(tokens, causal=False)   # BERT
+show_attention_mask(tokens, causal=True)    # GPT` },
+
+    { t: "h2", text: "Training objectives and what they learn" },
+    { t: "p", text: "BERT is trained with Masked Language Modeling (MLM): randomly mask 15% of tokens, train the model to predict the masked tokens using both left and right context. Because the model sees the full context, it learns deep bidirectional representations. The task forces it to understand each word in relation to everything around it. BERT also used Next Sentence Prediction (NSP) — later shown to be mostly useless — but MLM is what drives the representation quality." },
+    { t: "p", text: "GPT is trained with Causal Language Modeling (CLM): predict the next token given all previous tokens. This is just predicting the next word, repeated billions of times. The model learns everything that is predictable from context: grammar, facts, reasoning patterns, style. Scale this to billions of parameters and hundreds of billions of tokens, and you get a general-purpose reasoner. The generation objective is the reason GPT-style models dominate production: the same training that teaches prediction also teaches everything else." },
+    { t: "p", text: "T5 uses a span corruption objective: randomly mask spans of text (not individual tokens), replace each span with a single sentinel token, and train the encoder to produce the original spans. This encoder-decoder training makes T5 excellent at tasks framed as text-to-text: translate X to Y, summarise X, answer question X using context Y." },
+
+    { t: "h2", text: "What each architecture is good at" },
+    { t: "p", text: "Encoder-only (BERT, RoBERTa, DeBERTa): classification tasks (sentiment, intent detection, NLI), named entity recognition (sequence labelling), retrieval/embeddings (the bidirectional representation is richer for capturing full sentence meaning), extractive question answering (highlight the answer span in a document)." },
+    { t: "p", text: "Decoder-only (GPT-2, GPT-3/4, LLaMA, Mistral, Claude, Gemini): generation tasks (summarisation, translation, code completion, instruction following, chat), few-shot and zero-shot tasks (the next-token objective learns to follow patterns), system design and reasoning." },
+    { t: "p", text: "Encoder-decoder (T5, BART, mT5): translation, abstractive summarisation, question answering with context, text editing, any task where the input and output sequences are different in structure. The encoder produces a rich bidirectional representation; the decoder generates autoregressively from it." },
+
+    { t: "h2", text: "Why decoder-only models won at scale" },
+    { t: "p", text: "Three reasons. First, the CLM objective is simpler and scales better: every token in every training sequence is a prediction target, so there is no wasted computation. MLM masks only 15% of tokens — 85% of the sequence contributes nothing to the loss. Second, decoder-only architectures are trivially generalisable to in-context learning and instruction following. A decoder can read instructions, examples, and a query all as a flat sequence and produce an answer. Third, the Chinchilla scaling laws apply cleanly: more compute → lower CLM loss → better generation across every task. BERT-style models plateau earlier because bidirectional pre-training is harder to scale without architectural changes." },
+    { t: "p", text: "The result: GPT-3 showed that a large enough decoder-only model, with zero task-specific fine-tuning, could outperform fine-tuned BERT on many benchmarks. The architecture convergence in modern AI — Claude, GPT-4, Gemini, Mistral, LLaMA — is all decoder-only. Encoder models still win for pure retrieval (embedding a sentence bidirectionally is better than embedding it causally), but for every generation task, the decoder won." },
+
+    { t: "callout", v: "tip", text: "Implement both: run BERT-base and GPT-2-small on the same classification task using HuggingFace. Fine-tune BERT for 3 epochs (it converges fast, needs very little data). Use GPT-2 zero-shot with a carefully formatted prompt. Compare on 100 held-out examples. You will find BERT wins with <1k labelled examples; GPT-2 wins with 0 labelled examples if the prompt is well-designed. This is the fundamental trade-off between supervised fine-tuning and in-context learning." },
+
+    { t: "refs", items: [
+      { label: "BERT: Pre-training of Deep Bidirectional Transformers — Devlin et al. (2019)", url: "https://arxiv.org/abs/1810.04805" },
+      { label: "Language Models are Few-Shot Learners (GPT-3) — Brown et al. (2020)", url: "https://arxiv.org/abs/2005.14165" },
+      { label: "Exploring the Limits of Transfer Learning with T5 — Raffel et al. (2020)", url: "https://arxiv.org/abs/1910.10683" },
+    ]},
+  ],
 
 };

@@ -34,6 +34,7 @@ const ProductionHub          = lazy(() => import("./ProductionHub"));
 const FoundationsHub         = lazy(() => import("./FoundationsHub"));
 const ProfilePage            = lazy(() => import("./Profile"));
 const PlansPage              = lazy(() => import("./Plans"));
+const StudyRoom              = lazy(() => import("./StudyRoom"));
 
 import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
 import { RAG_CORPUS } from "./ragCorpus";
@@ -2295,6 +2296,15 @@ export default function App() {
             {supabase && (
               user ? (
                 <div className="hidden lg:flex items-center gap-2">
+                  {/* Mastery Room badge — owner only */}
+                  {user.email === "claudesubscription12@gmail.com" && (
+                    <button
+                      onClick={() => navigate("study")}
+                      title="Mastery Room"
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-all ${topView === "study" ? "border-emerald-600 text-emerald-400 bg-emerald-950" : "border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300"}`}>
+                      🧠
+                    </button>
+                  )}
                   {/* Avatar/name → Profile */}
                   <button onClick={() => navigate("profile")} className="flex items-center gap-1.5 hover:opacity-80 transition-opacity" title="Your profile">
                     {user.user_metadata?.avatar_url
@@ -2392,6 +2402,7 @@ export default function App() {
           {topView === "agentshub"  && <AgentsHub     onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "production" && <ProductionHub  onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "foundations"&& <FoundationsHub onNavigate={navigate} onNavigateTo={navigateTo} />}
+          {topView === "study"      && <StudyRoom user={user} onNavigate={navigate} />}
         </Suspense>
       </TabErrorBoundary>
       </main>
