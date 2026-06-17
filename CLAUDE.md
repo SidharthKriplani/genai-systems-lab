@@ -21,7 +21,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 61, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 386 PrepLab questions, 267 GT posts (5 new series, 3 interactive Systems modules), 4 PrepLab modes.
+**Scale (post-sprint 63, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 413 PrepLab questions, 281 GT index entries (7 new series, 3 interactive Systems modules), 5 PrepLab modes (+ Interview Sprint).
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
@@ -369,6 +369,26 @@ For full audit findings see AUDITS.md.
 - Batch 6 Evaluation Deep Dives `c558470`: 6 posts — `ndcg-mrr-from-scratch`, `calibration-ece-from-scratch`, `annotation-inter-annotator-agreement`, `eval-flywheel-implicit-feedback`, `llm-judge-calibration`, `counterfactual-offline-eval`. Series `eval-depth` added.
 - (Batches 1–3 were in previous session: NLP Origins 6 posts `0401439`, Build From Scratch Extended 6 posts `86763b9`, LLM Architecture Internals 6 posts `29863a1`. Series: `nlp-origins`, `build-from-scratch` extended, `llm-internals`.)
 - **Scale post-sprint 61:** 262 GT index entries (was 235), 4 new series in SERIES_META. Brace diff = 0 on all commits.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
+**Sprint 62 (June 2026) — NLP Practitioners series + interactive Systems modules:**
+- NLP Practitioners GT series (5 posts): `bert-internals-explained`, `bi-encoder-vs-cross-encoder`, `sentence-transformers-production`, `vector-databases-compared`, `encoder-decoder-architecture`. Interview Sprint cheat sheet GT post added to career-strategy series.
+- 3 interactive animated Systems modules: `BiEncoderVsCrossEncoder` (parallel vs sequential scoring animation), `BertPoolingLab` (WordPiece tokenizer + CLS vs mean pooling comparison), `VectorSimilarityExplorer` (SVG scatter plot + nearest neighbor highlighting).
+- +15 PrepLab questions (bert-1/3, bienc-1/4, sbert-1/3, vecdb-1/3, encdec-1/2). RetrievalHub +3 posts +4 Qs. FoundationsHub +2 posts +2 Qs. Sidebar +1 series link.
+- Bug fixes: duplicate exports (`1fcef9f`), groundTruthPosts.js malformed orphan fixed.
+- Scale post-sprint 62: 386 PrepLab questions, 267 GT posts.
+
+**Sprint 63 (June 2026) — Bangalore AI engineer prep track:**
+- Bangalore market research: senior/staff/lead/applied scientist/researcher/FDE/MLOps role gaps vs existing GSL content. IDs of companies: Flipkart, Swiggy, Google, Amazon, Meesho, CRED, PhonePe.
+- Interview Sprint PrepLab mode `fb05214`: 4 time horizons (2h/1d/3d/1w), color-coded urgency, GT post + exam CTAs.
+- Bug fixes: 7 broken readMore postIds (`b3a9dcd`), NLP Origins + LLM Internals sidebar postIds (`dc98b12`).
+- 13 new GT posts across 2 new series + how-i-build extensions:
+  - `recommendation-systems` (5): two-tower-reco-architecture, collaborative-filtering-deep-dive, candidate-generation-vs-ranking, cold-start-problem, explore-exploit-recommendations.
+  - `ml-foundations` (5): loss-functions-deep-dive, optimizers-explained, bias-variance-in-production, statistical-testing-ml, experimental-design-ablations.
+  - `how-i-build` additions (3): how-id-build-recommendation-feed, how-id-build-fraud-detection, how-id-build-search-ranking-ecommerce.
+- 27 new PrepLab questions: reco-1–12, ml-theory-1–12, mlsysdesign-1–3.
+- All posts registered in groundTruthIndex.js (281 entries), SERIES_META + sidebar updated. Commits `4544aaa`, `2ba0b67`. Brace diff = 0 on all files.
+- **Scale post-sprint 63:** 413 PrepLab questions, 281 GT index entries, 7 new GT series total, 5 PrepLab modes.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
 **Sprint 60 (June 2026) — GT post + private Mastery Room (staged, not committed):**
