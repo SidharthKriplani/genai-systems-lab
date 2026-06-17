@@ -14648,8 +14648,7 @@ async def ready(response: Response):
     { t: "list", c: ["Use slim or distroless base images. python:3.11-slim is ~130MB vs 1.2GB for the full python:3.11 image.", "Run apt-get install && rm -rf /var/lib/apt/lists/* in a single RUN layer to avoid caching package lists.", "Use multi-stage builds to exclude build tools from the final image.", "Add .dockerignore to exclude notebooks, data files, .git, and __pycache__ from build context.", "Consider distilling the model to a smaller format (ONNX, TorchScript) before baking in — often 50–80% size reduction.", "Layer order matters for cache reuse: COPY requirements.txt first, RUN pip install, then COPY src/. Code changes don't invalidate the pip cache."] },
     { t: "callout", c: "The single most impactful container optimisation for ML: separate model weights from the image layer. A 2GB model in the image means every CI push pulls 2GB. Use volume mounts or S3 download on startup for anything over ~100MB." },
     { t: "refs", c: ["Docker multi-stage builds documentation", "NVIDIA Container Toolkit documentation — GPU container setup", "FastAPI deployment guide — uvicorn with Docker"] }
-  ]
-
+  ],
   "ndcg-mrr-from-scratch": [
     { t: "h2", c: "Why Accuracy Is the Wrong Metric for Search and Recommendation" },
     { t: "p", c: "A classifier is right or wrong. A ranker returns a list, and the list's quality depends on what appears at the top — not just whether the right items appear at all. A ranking where the correct result appears at position 10 is objectively worse than one where it appears at position 1, even if both have 100% recall@10." },
@@ -15237,8 +15236,7 @@ def serve_and_log(query: str, user_id: str, production_model) -> dict:
     { t: "table", c: "Architecture | Best for | Why\nEncoder-decoder (T5/BART) | Translation, structured summarization, seq2seq | Explicit input processing + controlled generation\nDecoder-only (GPT/Llama) | Open-ended generation, chat, coding, reasoning | Scales better with parameters, unified architecture\nEncoder-only (BERT) | Classification, NER, retrieval (bi-encoder) | Bidirectional context, no generation" },
     { t: "callout", c: "The trend is toward decoder-only dominance. At large scales (>10B parameters), decoder-only models match or exceed encoder-decoder on most seq2seq benchmarks while being architecturally simpler. The encoder-decoder advantage shrinks as scale increases. For most new production systems, use a decoder-only LLM for generation tasks and encoder-only for embedding tasks." },
     { t: "refs", c: ["Raffel et al. — Exploring the Limits of Transfer Learning with T5 (2020)", "Lewis et al. — BART: Denoising Sequence-to-Sequence Pre-training (2020)", "Chung et al. — Scaling Instruction-Finetuned Language Models / Flan-T5 (2022)"] }
-  ]
-
+  ],
   "interview-sprint-cheat-sheet": [
     { t: "h2", c: "The AI Engineering Interview Sprint: A Time-Horizon Prep Guide" },
     { t: "p", c: "Most interview prep fails not because the candidate doesn't know enough, but because they studied the wrong things in the wrong order. This post gives you a concrete plan — organized by how much time you have left. The structure assumes you're interviewing for mid-level to senior AI engineer roles covering RAG, agents, evaluation, LLMOps, and NLP foundations." },
