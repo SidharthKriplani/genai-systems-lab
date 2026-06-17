@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: June 2026 (sprint 61 — GT expansion complete: +23 posts across 4 new series. 262 total index entries. Ready to push.)*
+*Last updated: sprint 62 (June 2026)
 
 ---
 
