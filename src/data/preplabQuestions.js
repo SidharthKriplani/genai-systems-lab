@@ -4880,6 +4880,417 @@ export const PREP_QUESTIONS = [
     explanation: "In each decoder layer, cross-attention computes Q from the decoder's current hidden state, but K and V from the encoder output (fixed for all decoder steps). This gives the decoder dynamic access to any part of the source sequence at each generation step. For translation, cross-attention learns to align source and target tokens. For summarization, it learns to attend to salient source passages. Self-attention in the decoder only attends to previously generated output tokens — it cannot access the source without cross-attention.",
     trap: "Overclaim: cross-attention gives the decoder perfect access to source information. Honest reframe: cross-attention quality depends on what the encoder learned to represent. A weak encoder produces poor K/V representations regardless of the cross-attention mechanism.",
     readMore: { postId: "encoder-decoder-architecture", label: "Encoder-Decoder Architecture" }
+  },,
+
+  // ─── RECOMMENDATION SYSTEMS ──────────────────────────────────────────────────
+
+  {
+    id: "reco-1", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
+    question: "A two-tower model uses in-batch negative sampling during training. What's the main bias this introduces?",
+    options: [
+      "The model overfits to the positive pairs since there are too few negatives",
+      "Popular items appear as negatives more often, causing the model to underestimate their relevance",
+      "The model learns item embeddings but not user embeddings effectively",
+      "In-batch negatives have too much overlap with positive pairs, making training unstable"
+    ],
+    correct: 1,
+    explanation: "Popular items appear more frequently in batches and therefore more often as negatives. The model learns to push popular items away from user embeddings — suppressing legitimate popular recommendations. Fix: popularity-based correction (down-weight the loss contribution from popular-item negatives by their appearance probability).",
+    trap: "Overclaim: in-batch negatives are unbiased because items are randomly sampled. Honest reframe: in-batch negatives are biased toward popular items by construction — any item proportionally represented in the training set will disproportionately appear as a negative.",
+    readMore: { postId: "two-tower-reco-architecture", label: "Two-Tower Recommendation Architecture" }
   },
+
+  {
+    id: "reco-2", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
+    question: "Why does a two-tower model L2-normalize the output embeddings before computing similarity?",
+    options: [
+      "To prevent gradient explosion during training",
+      "To make dot product equivalent to cosine similarity and prevent embedding norm from growing unboundedly",
+      "To ensure the ANN index can use Euclidean distance instead of cosine distance",
+      "To reduce the dimensionality of embeddings at serving time"
+    ],
+    correct: 1,
+    explanation: "Without normalization, the model can game the similarity score by growing embedding norms rather than learning meaningful directions. L2 normalization constrains embeddings to the unit hypersphere, making dot product equivalent to cosine similarity. This also makes FAISS inner product search equivalent to cosine search.",
+    trap: "Overclaim: L2 normalization is just a numerics trick with no semantic meaning. Honest reframe: normalization enforces that similarity is determined by direction, not magnitude — a meaningful inductive bias for recommendation where you want 'taste alignment,' not 'how much we talked about this item.'",
+    readMore: { postId: "two-tower-reco-architecture", label: "Two-Tower Recommendation Architecture" }
+  },
+
+  {
+    id: "reco-3", topic: "recommendations", difficulty: "hard", gated: true, type: "mcq",
+    question: "Your recommendation system's offline NDCG@20 improved from 0.31 to 0.34 with a new model. In A/B test, CTR is flat but session length decreased 8%. What's the most likely explanation?",
+    options: [
+      "The new model is overfitting to the test set and the A/B test is correct",
+      "NDCG@20 and CTR are unrelated metrics so neither result is meaningful",
+      "The new model improved relevance but reduced diversity, causing users to exhaust the feed faster",
+      "The A/B test has insufficient statistical power to detect the CTR improvement"
+    ],
+    correct: 2,
+    explanation: "Higher NDCG means more relevant items at the top — users find what they want faster and leave sooner. This is a diversity-vs-relevance tradeoff. The model is doing its job (surfacing relevant items) but reducing serendipity and exploration. The fix: add diversity constraints to re-ranking, optimize for long-term engagement signals (return next day), not just per-session CTR.",
+    trap: "Overclaim: offline metrics predict online behavior. Honest reframe: offline metrics measure what you optimized for in training. They don't capture second-order effects like saturation, diversity fatigue, or the explore-exploit balance that shape session length and return rate.",
+    readMore: { postId: "candidate-generation-vs-ranking", label: "Candidate Generation vs Ranking" }
+  },
+
+  {
+    id: "reco-4", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
+    question: "In a two-stage recommender (retrieval + ranking), a new item added to the catalog gets zero recommendations for its first week. What's the most likely cause?",
+    options: [
+      "The ranking model hasn't been retrained to include the new item's features",
+      "The new item has no embedding in the ANN index so the retrieval stage never surfaces it as a candidate",
+      "The re-ranking layer is filtering the new item due to low review count",
+      "The feature store hasn't computed velocity features for the new item yet"
+    ],
+    correct: 1,
+    explanation: "The retrieval stage depends on pre-computed item embeddings in the ANN index. If the item isn't indexed, no user will ever retrieve it as a candidate, so the ranking model never sees it. New item cold start requires: (1) computing an embedding from content features (not interaction data), (2) adding it to the ANN index. Only then can it reach the ranking stage.",
+    trap: "Overclaim: cold start is a ranking problem — just train the ranking model on new items. Honest reframe: if the retrieval stage never surfaces the item, the ranking model is irrelevant. Cold start must be fixed at the retrieval stage first.",
+    readMore: { postId: "cold-start-problem", label: "The Cold Start Problem" }
+  },
+
+  {
+    id: "reco-5", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
+    question: "What does BPR (Bayesian Personalized Ranking) optimize that standard matrix factorization with MSE loss does not?",
+    options: [
+      "BPR handles missing data by treating unobserved items as negative examples",
+      "BPR directly optimizes the ranking order: that clicked items should score higher than unclicked items for the same user",
+      "BPR adds a Bayesian prior over the latent factors to prevent overfitting",
+      "BPR uses Bayesian inference to estimate uncertainty in the predicted ratings"
+    ],
+    correct: 1,
+    explanation: "MSE optimizes absolute rating prediction — it tries to predict the exact score a user would give an item. For implicit feedback (clicks), you don't have absolute ratings. BPR optimizes relative ordering: for each user, clicked items should rank above unclicked items. This is the right objective for the actual task (ranking) rather than a proxy task (rating prediction).",
+    trap: "Overclaim: MSE works fine for implicit feedback — just treat 0 as 'not interested.' Honest reframe: unobserved (0) doesn't mean the user dislikes the item — they may never have seen it. MSE on implicit feedback conflates 'not exposed' with 'disliked,' leading to systematically poor recommendations for items with low exposure.",
+    readMore: { postId: "collaborative-filtering-deep-dive", label: "Collaborative Filtering Deep Dive" }
+  },
+
+  {
+    id: "reco-6", topic: "recommendations", difficulty: "hard", gated: true, type: "mcq",
+    question: "You're implementing Thompson Sampling for exploration in a recommender. Your rewards are delayed by 45 minutes (order completion). How do you handle this?",
+    options: [
+      "Use a proxy reward (click) instead of the delayed reward to update the bandit immediately",
+      "Buffer the (item, context) tuple at impression time; update the Beta distribution when the delayed reward arrives",
+      "Switch to UCB which doesn't require reward updates",
+      "Increase the exploration rate to compensate for the delayed signal"
+    ],
+    correct: 1,
+    explanation: "Buffer the impression context (item ID, user context, timestamp) at decision time. When the reward arrives 45 minutes later, look up the buffered context and update alpha (success) or beta (failure) accordingly. Using a proxy reward (click) introduces a different signal — click doesn't equal order. UCB also requires reward updates so the same problem applies.",
+    trap: "Overclaim: delayed rewards require immediate proxy rewards to keep bandits functioning. Honest reframe: delayed reward bandits are standard and well-studied. The buffering pattern is simple and correct. Proxy rewards introduce reward signal mismatch that can be worse than the delay.",
+    readMore: { postId: "explore-exploit-recommendations", label: "Explore-Exploit in Recommendations" }
+  },
+
+  {
+    id: "reco-7", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
+    question: "Matrix factorization decomposes the user-item matrix R ≈ U × V^T. What does the dot product u_i · v_j represent geometrically?",
+    options: [
+      "The Euclidean distance between user i and item j in the latent space",
+      "The projection of the item vector onto the user vector, measuring alignment of their latent factors",
+      "The probability that user i has seen item j in the training data",
+      "The magnitude of the combined user-item representation"
+    ],
+    correct: 1,
+    explanation: "The dot product u_i · v_j = |u_i| |v_j| cos(θ), where θ is the angle between them. It measures how aligned the user's latent preferences are with the item's latent characteristics. High dot product means user i's tastes are well-aligned with item j's properties. With L2-normalized vectors, this reduces to pure cosine similarity.",
+    trap: "Overclaim: the dot product is just a computational convenience with no geometric meaning. Honest reframe: the latent factor geometry is the core learning signal. Users with similar latent vectors have similar tastes. Items with similar latent vectors are interchangeable. The geometry IS the model.",
+    readMore: { postId: "collaborative-filtering-deep-dive", label: "Collaborative Filtering Deep Dive" }
+  },
+
+  {
+    id: "reco-8", topic: "recommendations", difficulty: "hard", gated: true, type: "mcq",
+    question: "Your e-commerce ranking model optimizes CTR but you observe that high-CTR items have 3x the return rate of low-CTR items. What's happening and how do you fix it?",
+    options: [
+      "The model is working correctly — clicks indicate intent and return rate is a supply chain problem",
+      "The model learned to optimize for deceptive presentation rather than genuine relevance; fix by adding return rate as a negative signal in the objective",
+      "Return rates are a delayed signal that can't be incorporated into real-time ranking",
+      "High CTR with high returns means customers liked the items initially but changed their minds"
+    ],
+    correct: 1,
+    explanation: "Optimizing CTR teaches the model to exploit visual tricks — misleading thumbnails, artificially low displayed prices, exaggerated descriptions. Users click but are disappointed on receipt. Fix: multi-objective ranking with CTR weighted alongside satisfaction signals (low return rate, positive reviews, repeat purchase from same seller). This is the misalignment between the proxy metric (CTR) and the true objective (customer satisfaction).",
+    trap: "Overclaim: CTR is a reliable signal for item quality because users click on what they want. Honest reframe: CTR measures curiosity and deception susceptibility as much as genuine interest. Any metric you optimize for can be gamed — by fraudsters, by sellers, and by the model itself through spurious correlations.",
+    readMore: { postId: "how-id-build-search-ranking-ecommerce", label: "How I'd Build Search Ranking at E-commerce Scale" }
+  },
+
+  {
+    id: "reco-9", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
+    question: "In the candidate generation + ranking cascade, the retrieval stage has Recall@500 of 85%. What does this mean?",
+    options: [
+      "85% of the 500 candidates retrieved are items the user would actually engage with",
+      "For 85% of users, the item they eventually engaged with was in the 500 candidates retrieved",
+      "The retrieval stage has 85% precision among the top 500 results",
+      "85% of all items in the catalog are reachable by the retrieval stage"
+    ],
+    correct: 1,
+    explanation: "Recall@500 = 85% means: for 85% of historical sessions, the item the user actually engaged with appeared somewhere in the top 500 retrieved candidates. The retrieval stage succeeded. The ranking model's job is to find and surface that item from among the 500. The 15% miss rate is the ceiling on what the full system can ever achieve — if retrieval misses it, ranking can't fix it.",
+    trap: "Overclaim: 85% recall@500 means 85% of retrieved items are relevant. That's precision, not recall. Honest reframe: retrieval optimizes recall (did we get the relevant items in the candidate set?). Ranking optimizes precision (within the candidate set, did we put the relevant items first?).",
+    readMore: { postId: "candidate-generation-vs-ranking", label: "Candidate Generation vs Ranking" }
+  },
+
+  {
+    id: "reco-10", topic: "recommendations", difficulty: "hard", gated: true, type: "mcq",
+    question: "A GRU4Rec session-based model outperforms collaborative filtering for new users but underperforms for users with 50+ historical interactions. Why?",
+    options: [
+      "GRU4Rec overfits to long interaction histories because it processes all items in sequence",
+      "Session-based models capture within-session intent but can't leverage the rich cross-session preference signal that collaborative filtering extracts from extensive history",
+      "GRU4Rec requires more training data than is available for users with long histories",
+      "Collaborative filtering is architecturally superior for all user types but harder to train"
+    ],
+    correct: 1,
+    explanation: "Session-based models excel at cold start because they only need the current session to make recommendations. For users with rich history, collaborative filtering extracts a latent preference representation that spans many sessions and captures stable, long-term tastes. The right architecture for mature systems: session-based model for cold-start users, gradually blend toward CF as history accumulates.",
+    trap: "Overclaim: one model architecture should be used uniformly across all user cohorts. Honest reframe: user cohorts have fundamentally different data availability. Architecture decisions should follow data availability, not architectural preferences.",
+    readMore: { postId: "cold-start-problem", label: "The Cold Start Problem" }
+  },
+
+  {
+    id: "reco-11", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
+    question: "What's the key difference between user-user collaborative filtering and item-item collaborative filtering at scale?",
+    options: [
+      "User-user CF has better cold start performance because users have more features than items",
+      "Item-item CF is more computationally efficient at serving time because item similarity is precomputed and stable; user-user requires finding similar users at query time",
+      "Item-item CF requires explicit ratings while user-user CF works with implicit feedback",
+      "User-user CF produces more diverse recommendations because users have varying tastes"
+    ],
+    correct: 1,
+    explanation: "Item-item similarity (which items co-occur in purchases) can be precomputed offline and cached — items don't change their behavior rapidly. User-user similarity requires finding similar users at query time, which is O(n_users) or requires a user ANN index. Item-item CF scales better and is more stable because items are a smaller, slower-changing set than users in most consumer apps.",
+    trap: "Overclaim: user-user CF is better because it captures personalized tastes more directly. Honest reframe: user-user CF has severe scaling problems. Amazon famously switched to item-item CF for this reason (Linden et al., 2003) and it became the industry standard for a decade before neural CF replaced it.",
+    readMore: { postId: "collaborative-filtering-deep-dive", label: "Collaborative Filtering Deep Dive" }
+  },
+
+  {
+    id: "reco-12", topic: "recommendations", difficulty: "hard", gated: true, type: "mcq",
+    question: "You want to add diversity to your recommender's output. Your team proposes: (A) add diversity as a penalty in the ranking loss, (B) apply MMR (Maximal Marginal Relevance) at re-ranking. What's the tradeoff?",
+    options: [
+      "Option A is better because end-to-end training is always superior to post-hoc adjustments",
+      "Option B is better because re-ranking is simpler to implement and doesn't affect model training stability",
+      "Option A changes what the model learns globally; Option B applies diversity as a controllable post-processing step. B is easier to tune and A may hurt relevance in non-diverse contexts",
+      "Both approaches are equivalent because they optimize the same objective"
+    ],
+    correct: 2,
+    explanation: "Training-time diversity (A) bakes diversity into every prediction — good for consistent behavior, bad for contexts where diversity hurts (e.g., when a user clearly wants 5 pairs of running shoes). Re-ranking diversity (B) lets you tune the diversity-relevance tradeoff per context and revert if it hurts metrics. MMR in re-ranking is the industry standard because it's interpretable, tunable, and doesn't destabilize model training.",
+    trap: "Overclaim: end-to-end training is always the right approach because it optimizes the full objective. Honest reframe: modularity wins at scale. Controllable re-ranking lets product and ML teams adjust behavior without retraining. Baking constraints into training makes them inflexible and hard to debug.",
+    readMore: { postId: "explore-exploit-recommendations", label: "Explore-Exploit in Recommendations" }
+  },
+
+  // ─── CLASSICAL ML THEORY ─────────────────────────────────────────────────────
+
+  {
+    id: "ml-theory-1", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
+    question: "Your regression model has MSE = 100 but MAE = 2. What does this tell you about the error distribution?",
+    options: [
+      "The model is performing well on most examples but has a few very large errors (outliers)",
+      "The model has systematic bias — it consistently underpredicts by about 2 units",
+      "MSE and MAE are measuring different things and can't be compared directly",
+      "The model is overfitting because MSE is much higher than MAE"
+    ],
+    correct: 0,
+    explanation: "MSE penalizes errors quadratically — an error of 10 contributes 100 to MSE but only 10 to MAE. MSE=100 with MAE=2 means typical errors are small (around 2 units) but occasional large errors (e.g., a few errors of 10+) are driving up MSE dramatically. This is the signature of outliers. Investigate which examples have large individual errors.",
+    trap: "Overclaim: high MSE relative to MAE means the model is broken. Honest reframe: it means your error distribution has heavy tails. Whether this is a problem depends on whether those outliers are important examples (fraud, safety-critical) or noise (mislabeled data).",
+    readMore: { postId: "loss-functions-deep-dive", label: "Loss Functions Deep Dive" }
+  },
+
+  {
+    id: "ml-theory-2", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
+    question: "Why does cross-entropy loss work better than MSE for classification tasks?",
+    options: [
+      "Cross-entropy is computationally faster to optimize than MSE",
+      "MSE produces near-zero gradients when softmax outputs are close to 0 or 1, slowing learning; cross-entropy gradients are proportional to prediction error at all values",
+      "Cross-entropy automatically handles class imbalance while MSE does not",
+      "MSE requires normalized outputs while cross-entropy works with raw logits"
+    ],
+    correct: 1,
+    explanation: "Consider a misclassified example where softmax output is 0.001 for the true class. MSE gradient is proportional to (0.001 - 1)² ≈ 1 — but the derivative of softmax near 0 is also near 0, causing vanishing gradients. Cross-entropy gradient is proportional to (p - y) directly, giving a gradient of (0.001 - 1) = -0.999 — a large, useful update. This is why cross-entropy trains faster and more stably for classification.",
+    trap: "Overclaim: MSE simply doesn't work for classification. Honest reframe: MSE can work for binary classification in some settings (especially with careful initialization), but its gradient behavior near the extremes makes training significantly slower and less stable than cross-entropy.",
+    readMore: { postId: "loss-functions-deep-dive", label: "Loss Functions Deep Dive" }
+  },
+
+  {
+    id: "ml-theory-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
+    question: "You're training a fraud detection model (0.1% fraud rate). You use standard binary cross-entropy and achieve 99.9% accuracy. What went wrong and how do you fix it?",
+    options: [
+      "Nothing went wrong — 99.9% accuracy is excellent for fraud detection",
+      "The model learned to always predict 'legitimate' since it's correct 99.9% of the time; fix with Focal Loss or class-weighted BCE",
+      "You need to use MSE instead of cross-entropy for imbalanced classes",
+      "The issue is feature engineering, not the loss function"
+    ],
+    correct: 1,
+    explanation: "At 0.1% fraud rate, predicting 'legitimate' for every transaction achieves 99.9% accuracy. Standard BCE optimizes accuracy implicitly and the model collapses to the majority class. Fixes: (1) Class-weighted BCE: weight fraud examples by inverse class frequency (999x). (2) Focal Loss: downweight easy legitimate examples so training focuses on hard fraud cases. (3) Undersample legitimate transactions in training. Evaluate with precision-recall curve, not accuracy.",
+    trap: "Overclaim: any loss function works for imbalanced classes if you have enough data. Honest reframe: imbalanced loss functions are not just about data quantity — the optimization landscape itself is distorted. The model's gradient updates are dominated by the majority class regardless of dataset size unless you explicitly correct for it.",
+    readMore: { postId: "loss-functions-deep-dive", label: "Loss Functions Deep Dive" }
+  },
+
+  {
+    id: "ml-theory-4", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
+    question: "Adam uses a second moment estimate (v_t) to scale learning rates per parameter. What does this actually do to training?",
+    options: [
+      "It reduces the learning rate for all parameters uniformly to prevent divergence",
+      "It gives smaller effective learning rates to parameters that receive large gradients frequently, and larger learning rates to parameters that receive small gradients rarely",
+      "It normalizes gradients to have unit variance, making all parameters train at the same rate",
+      "It acts as a momentum term that smooths gradient updates over time"
+    ],
+    correct: 1,
+    explanation: "v_t accumulates the squared gradient for each parameter. Parameters with consistently large gradients (e.g., embeddings of common words) accumulate large v_t, which shrinks their effective learning rate (lr / √v_t). Parameters with small, rare gradients accumulate small v_t, giving them larger effective learning rates. This adaptive behavior helps rare features (uncommon tokens, rare user behaviors) learn effectively.",
+    trap: "Overclaim: Adam's adaptive learning rates always outperform SGD. Honest reframe: Adam finds minima faster but they can be sharper and generalize worse than SGD's minima on some tasks (particularly image classification). For transformers, AdamW (Adam + proper weight decay) is the standard.",
+    readMore: { postId: "optimizers-explained", label: "Optimizers: SGD, Adam, AdamW Explained" }
+  },
+
+  {
+    id: "ml-theory-5", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
+    question: "Your model has 95% validation accuracy but 78% production accuracy. Walk through your debugging process in priority order.",
+    options: [
+      "Retrain with more data → add regularization → check for label errors",
+      "Check for distribution shift between val and production → check for feature leakage in training → check label quality in production → check model serving correctness",
+      "Increase model capacity → collect more diverse training data → reduce learning rate",
+      "Run error analysis on val set → add data augmentation → increase ensemble size"
+    ],
+    correct: 1,
+    explanation: "17% accuracy gap almost always indicates distribution shift or leakage before it indicates model capacity issues. Priority: (1) Distribution shift — are production inputs different from validation inputs? (2) Feature leakage — are any training features not available at serving time? (3) Label quality — are production labels being collected correctly? (4) Serving bugs — is the preprocessing identical between training and serving? Only after ruling these out does model capacity matter.",
+    trap: "Overclaim: large train-production accuracy gaps indicate overfitting and require more regularization. Honest reframe: overfitting shows as train-val gap, not val-production gap. A val-production gap is almost always a data distribution problem, not a model capacity problem.",
+    readMore: { postId: "bias-variance-in-production", label: "Bias-Variance in Production" }
+  },
+
+  {
+    id: "ml-theory-6", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
+    question: "You compare two models on the same 1,000-example test set: Model A has 85% accuracy, Model B has 87% accuracy. Is Model B significantly better?",
+    options: [
+      "Yes — a 2% accuracy difference on 1,000 examples is statistically significant at p < 0.05",
+      "Not necessarily — you need a statistical test (McNemar's test or bootstrap confidence interval) to determine significance",
+      "Yes — with 1,000 examples you have sufficient statistical power for any practical difference",
+      "No — you need at least 10,000 examples for any comparison to be meaningful"
+    ],
+    correct: 1,
+    explanation: "A 2% accuracy difference on 1,000 examples corresponds to 20 more correct predictions. McNemar's test on the disagreement pattern would show this is not statistically significant (roughly p ≈ 0.15 depending on the disagreement distribution). With 10,000 examples, the same 2% difference would be highly significant. Always apply statistical tests before claiming model improvement.",
+    trap: "Overclaim: larger absolute differences are always statistically significant regardless of sample size. Honest reframe: statistical significance depends on sample size, effect size, and variance simultaneously. A 2% difference on 100 examples, 1,000 examples, and 100,000 examples have completely different significance levels.",
+    readMore: { postId: "statistical-testing-ml", label: "Statistical Testing for ML" }
+  },
+
+  {
+    id: "ml-theory-7", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
+    question: "You train 10 model variants and find that Variant 7 has the best validation metric with p = 0.03 vs baseline. Should you ship it?",
+    options: [
+      "Yes — p < 0.05 is the standard threshold for statistical significance",
+      "Not without multiple comparison correction — testing 10 variants inflates the false positive rate to ~40%; Bonferroni correction requires p < 0.005",
+      "Yes — comparing to a fixed baseline doesn't require multiple comparison correction",
+      "Only if Variant 7's improvement holds on a held-out test set you haven't seen"
+    ],
+    correct: 1,
+    explanation: "Testing 10 variants against a baseline: P(at least one false positive) = 1 - 0.95^10 ≈ 40%. Variant 7's p=0.03 has a high probability of being a false positive. Bonferroni correction: require p < 0.05/10 = 0.005. Alternatively, Benjamini-Hochberg FDR control is less conservative. Also valid: hold a separate test set used only for final validation of the winner — if it holds there, it's likely real.",
+    trap: "Overclaim: each comparison is independent so p < 0.05 is valid for each one. Honest reframe: independence of tests doesn't prevent family-wise error rate inflation. Running 20 independent comparisons guarantees roughly one false positive at α=0.05.",
+    readMore: { postId: "statistical-testing-ml", label: "Statistical Testing for ML" }
+  },
+
+  {
+    id: "ml-theory-8", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
+    question: "What's the difference between L1 and L2 regularization in terms of the solutions they produce?",
+    options: [
+      "L1 produces sparse solutions (many weights exactly zero); L2 produces small but non-zero weights",
+      "L1 is better for preventing overfitting; L2 is better for handling multicollinearity",
+      "L1 uses absolute value so it's computationally harder; L2 uses squared values so it's faster",
+      "L2 produces sparse solutions; L1 produces small but distributed weights"
+    ],
+    correct: 0,
+    explanation: "L1 (Lasso) penalty: the diamond-shaped constraint region has corners on the axes — optimization is likely to hit a corner, giving sparse solutions with many exactly-zero weights. L2 (Ridge) penalty: the circular constraint region has no corners — optimization lands somewhere on the circle, giving small but non-zero weights for all features. Use L1 when you believe most features are irrelevant. Use L2 when all features are likely relevant but should be small.",
+    trap: "Overclaim: L2 is always preferred because L1 is non-differentiable and harder to optimize. Honest reframe: L1's non-differentiability is a solved problem (subgradient methods, proximal gradient). The sparsity L1 produces is often exactly what you want for interpretability and feature selection.",
+    readMore: { postId: "bias-variance-in-production", label: "Bias-Variance in Production" }
+  },
+
+  {
+    id: "ml-theory-9", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
+    question: "You're designing an ablation study for a new RAG pipeline component (a query rewriter). What are the minimum requirements for a valid ablation?",
+    options: [
+      "Compare the full pipeline with and without the query rewriter on any reasonable test set",
+      "Fix all other components, use the same test set for both conditions, run multiple seeds, and apply a statistical test to the metric difference",
+      "Run the ablation on the validation set used for hyperparameter tuning to save compute",
+      "Compare on at least 3 different test sets to show generalization"
+    ],
+    correct: 1,
+    explanation: "Valid ablation requirements: (1) Only one variable changes — remove the query rewriter, nothing else. (2) Same test set — different test sets introduce evaluation variance. (3) Multiple seeds — a single run has high variance from random initialization and batch ordering. (4) Statistical test — is the metric difference larger than expected by chance? Without these, you can't attribute performance change to the component you removed.",
+    trap: "Overclaim: ablation studies are just A/B comparisons — run both systems on the same data and compare. Honest reframe: ablations are arguments, not observations. The validity of the argument depends on controlling for confounders (random seeds, test set variance, implementation differences).",
+    readMore: { postId: "experimental-design-ablations", label: "Experimental Design and Ablation Studies" }
+  },
+
+  {
+    id: "ml-theory-10", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
+    question: "AdamW differs from Adam in how it handles weight decay. Why does this matter?",
+    options: [
+      "AdamW applies weight decay to the gradient before the Adam update, making it equivalent to L2 regularization",
+      "Adam applies weight decay through L2 regularization added to the loss, which gets scaled by Adam's adaptive learning rates — making effective regularization non-uniform; AdamW decouples weight decay from gradient updates",
+      "AdamW removes weight decay entirely, relying on gradient clipping instead",
+      "The difference is purely numerical and doesn't affect model quality in practice"
+    ],
+    correct: 1,
+    explanation: "In Adam + L2: the regularization gradient (λθ) gets added to the gradient and then divided by √v_t. Parameters with large gradients (large v_t) get less effective regularization. AdamW applies weight decay directly: θ ← θ×(1-ηλ) - η×adam_update. Every parameter gets the same regularization regardless of gradient magnitude. This is the correct behavior and why GPT, BERT, and LLaMA all use AdamW.",
+    trap: "Overclaim: L2 regularization and weight decay are the same thing. Honest reframe: they're mathematically equivalent for SGD but different for adaptive optimizers like Adam. This was a known but ignored issue until Loshchilov & Hutter (2019) published the AdamW paper.",
+    readMore: { postId: "optimizers-explained", label: "Optimizers Explained" }
+  },
+
+  {
+    id: "ml-theory-11", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
+    question: "Your model achieves 90% precision and 40% recall on fraud detection. Your product team says precision is more important. The data scientist says recall matters more. Who's right and how do you resolve it?",
+    options: [
+      "The product team is right — false positives hurt customer experience more than missed fraud",
+      "The data scientist is right — missed fraud (false negatives) costs more money than false positives",
+      "Neither is categorically right — compute the business cost of a false positive and a false negative, then find the threshold that minimizes total expected cost",
+      "Use F1 score as a compromise between precision and recall"
+    ],
+    correct: 2,
+    explanation: "False positive cost: customer blocked from legitimate transaction → support ticket, churn risk, brand damage. Estimate: ₹500 per false positive. False negative cost: fraudulent transaction goes through → direct loss, chargeback fee, potential regulatory fine. Estimate: ₹5,000 per false negative. Optimal threshold: minimize (FP_count × 500 + FN_count × 5000). At this cost ratio, you should accept lower precision (more FPs) to improve recall (fewer FNs). The right threshold is a business decision, not a model decision.",
+    trap: "Overclaim: there's a universally correct trade-off between precision and recall that applies to all fraud systems. Honest reframe: the optimal threshold depends entirely on the cost structure of your specific business. A bank and a UPI app have completely different false positive and false negative costs.",
+    readMore: { postId: "how-id-build-fraud-detection", label: "How I'd Build Fraud Detection" }
+  },
+
+  {
+    id: "ml-theory-12", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
+    question: "What does learning rate warmup do in transformer training, and why is it necessary?",
+    options: [
+      "Warmup prevents the model from memorizing training data in the first few steps",
+      "Warmup starts with a small learning rate to prevent large, unstable gradient updates when the model weights are randomly initialized and gradients are noisy",
+      "Warmup gradually increases batch size to match the learning rate",
+      "Warmup is a regularization technique that reduces overfitting in the early training phase"
+    ],
+    correct: 1,
+    explanation: "At initialization, transformer weights are random and gradients are noisy and large. Starting with a high learning rate causes large weight updates that can destabilize training or push weights into bad regions from which recovery is slow. Warmup linearly increases the learning rate from near-zero to the target LR over N steps (typically 1,000-10,000). By then, the model has found a better region of parameter space and gradients are more meaningful.",
+    trap: "Overclaim: warmup is unique to transformers and not needed for other architectures. Honest reframe: warmup helps any architecture with high learning rate targets, but it's particularly important for transformers because the attention mechanism is sensitive to initialization and the loss landscape is complex.",
+    readMore: { postId: "optimizers-explained", label: "Optimizers Explained" }
+  },
+
+  // ─── ML SYSTEM DESIGN ────────────────────────────────────────────────────────
+
+  {
+    id: "mlsysdesign-1", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
+    question: "You're designing a real-time fraud scoring system at 10,000 TPS with a 50ms SLA. Which feature computation approach is correct?",
+    options: [
+      "Compute all features in the request path — this ensures freshness and simplifies the architecture",
+      "Pre-compute batch features offline (user history, risk scores), stream velocity features via Kafka+Flink, serve both from a low-latency feature store; never compute expensive features in the request path",
+      "Use an async feature computation queue and respond with a preliminary score while features compute",
+      "Cache all features for each user-merchant pair and refresh them every hour"
+    ],
+    correct: 1,
+    explanation: "At 10,000 TPS with 50ms SLA, you have ~5-10ms for feature computation. Batch features (30-day transaction history, user risk score) are expensive to compute — pre-compute them in batch jobs and serve from Redis/DynamoDB (<1ms lookup). Velocity features (transactions in last 1 hour) change with each transaction — compute via streaming (Kafka→Flink) and keep in Redis. Never compute velocity features from raw transaction logs in the request path — it won't fit in the latency budget at this scale.",
+    trap: "Overclaim: real-time feature freshness requires computing all features in the request path. Honest reframe: real-time freshness for velocity features requires a streaming feature pipeline that precomputes and maintains these aggregations in a low-latency store. Computing from scratch in the request path is a non-starter at scale.",
+    readMore: { postId: "how-id-build-fraud-detection", label: "How I'd Build Fraud Detection" }
+  },
+
+  {
+    id: "mlsysdesign-2", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
+    question: "Your LTR (learning to rank) model for e-commerce search uses historical click data. What's the main validity threat to your training labels?",
+    options: [
+      "Clicks are too sparse — most queries have fewer than 10 historical clicks",
+      "Position bias — items shown at rank 1 get clicked more due to their position, not their relevance; the model learns to recommend popular positions rather than relevant items",
+      "Click timestamps are unreliable because of network latency in log collection",
+      "Historical clicks reflect past relevance but products change over time"
+    ],
+    correct: 1,
+    explanation: "Position bias is the fundamental validity threat in learning from clicks. An item shown at rank 1 gets 10x more clicks than the same item at rank 5, regardless of quality. Training on raw clicks teaches the model that rank-1 items are always better. Fix: Inverse Propensity Scoring (IPS) — weight each click by 1/P(item was seen at its position), estimated from randomization experiments. Or use pairwise loss only on items shown at the same position.",
+    trap: "Overclaim: position bias can be ignored if you have enough click data. Honest reframe: more data amplifies position bias — you get more confident estimates of the biased signal. The only fix is to correct for the propensity scores, not collect more biased data.",
+    readMore: { postId: "how-id-build-search-ranking-ecommerce", label: "How I'd Build Search Ranking" }
+  },
+
+  {
+    id: "mlsysdesign-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
+    question: "Design question: you need to add a 'sponsored items' insertion layer to a recommendation feed without degrading organic recommendation quality metrics. What's your approach?",
+    options: [
+      "Train a single model that jointly optimizes organic relevance and sponsored item insertion probability",
+      "Apply sponsored item insertion as a post-ranking re-ranking layer with guaranteed slot positions; measure organic quality metrics on non-sponsored slots separately from overall feed metrics",
+      "Use A/B testing to find the sponsored insertion ratio that doesn't hurt key metrics",
+      "Let the ranking model naturally learn to balance organic and sponsored items through training on user engagement"
+    ],
+    correct: 1,
+    explanation: "Joint optimization couples business monetization objectives with organic relevance — sponsored items will corrupt the organic quality signal. Separate layers: (1) Organic ranking runs independently with standard relevance objective. (2) Sponsored insertion layer inserts ads at contracted positions after organic ranking. (3) Measure organic quality (NDCG, CTR on non-ad positions) independently of overall feed metrics. This keeps the ML system accountable for relevance while the business layer handles monetization.",
+    trap: "Overclaim: jointly training on both objectives will naturally find the optimal balance. Honest reframe: jointly training organic and sponsored objectives leads to the model implicitly deprioritizing organic relevance to satisfy the sponsored constraint. Architectural separation is the right design — it makes each component auditable and tunable independently.",
+    readMore: { postId: "how-id-build-recommendation-feed", label: "How I'd Build a Recommendation Feed" }
+  }
 
 ];

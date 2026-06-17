@@ -15300,5 +15300,506 @@ def serve_and_log(query: str, user_id: str, production_model) -> dict:
       "Not knowing the numbers. Vague answers like 'HNSW is fast' are much weaker than 'HNSW recall@10 at efSearch=16 is typically 0.85 on 1M vectors, and you tune efSearch up to trade latency for recall.'"
     ]},
     { t: "refs", c: ["GSL PrepLab — Interview Signal mode (22 practitioner experiences)", "GSL Systems — BiEncoderVsCrossEncoder, BertPoolingLab, VectorSimilarityExplorer modules", "GSL Ground Truth — NLP Practitioners series, Retrieval Deep Dives, Evaluation Deep Dives"] }
+  ],
+
+  // ─── RECOMMENDATION SYSTEMS ──────────────────────────────────────────────────
+
+  "two-tower-reco-architecture": [
+    { t: "h2", c: "Why Recommendation Is a Retrieval Problem" },
+    { t: "p", c: "Flipkart has 500 million products. Swiggy has 200,000 restaurants. Meesho has 100 million items. When a user opens the app, you have 100 milliseconds to surface 20 things they might want. You cannot score 500 million candidates with any model that takes more than a microsecond per item. This is the fundamental constraint that shapes every large-scale recommender system: the problem must be decomposed into two stages, and the first stage must be fast." },
+    { t: "p", c: "The two-tower architecture is the dominant solution. One tower encodes the user. One tower encodes the item. Both towers independently produce embedding vectors. Similarity between user and item is computed as a dot product. The item embeddings are pre-computed offline and indexed in a vector store. At serving time, you embed the user and run approximate nearest neighbour search — the same HNSW or IVF index you use in RAG. You retrieve 500-1000 candidates in milliseconds. Then a slower, more accurate ranking model scores just those candidates." },
+    { t: "h2", c: "The Two-Tower Architecture" },
+    { t: "p", c: "Each tower is a neural network that takes features as input and produces a dense embedding as output. The user tower takes user features: user ID (as a learned embedding), recent interaction history, demographic signals, device type, time of day. The item tower takes item features: item ID embedding, category, price range, textual description (optionally encoded with a language model), seller rating, historical engagement rates." },
+    { t: "p", c: "Training objective: given a user and an item they interacted with (a positive pair), the model should produce similar embeddings. Given a user and a random item (a negative pair), the model should produce dissimilar embeddings. The standard loss is in-batch softmax: treat every other item in the training batch as a negative. With batch size 4096, each positive gets 4095 negatives for free. This is called in-batch negative sampling and is what makes two-tower training tractable at scale." },
+    { t: "code", c: `class UserTower(nn.Module):
+    def __init__(self, n_users, n_items, embed_dim=128):
+        super().__init__()
+        self.user_embed = nn.Embedding(n_users, embed_dim)
+        self.item_history_embed = nn.Embedding(n_items, embed_dim)
+        self.mlp = nn.Sequential(
+            nn.Linear(embed_dim * 2, 256),
+            nn.ReLU(),
+            nn.Linear(256, embed_dim)
+        )
+    
+    def forward(self, user_ids, history_item_ids):
+        user_emb = self.user_embed(user_ids)
+        history_emb = self.item_history_embed(history_item_ids).mean(dim=1)
+        combined = torch.cat([user_emb, history_emb], dim=-1)
+        return F.normalize(self.mlp(combined), dim=-1)  # L2 normalize
+
+class ItemTower(nn.Module):
+    def __init__(self, n_items, embed_dim=128):
+        super().__init__()
+        self.item_embed = nn.Embedding(n_items, embed_dim)
+        self.mlp = nn.Sequential(
+            nn.Linear(embed_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, embed_dim)
+        )
+    
+    def forward(self, item_ids):
+        item_emb = self.item_embed(item_ids)
+        return F.normalize(self.mlp(item_emb), dim=-1)
+
+# In-batch softmax loss
+def two_tower_loss(user_embs, item_embs, temperature=0.07):
+    logits = torch.matmul(user_embs, item_embs.T) / temperature
+    labels = torch.arange(len(user_embs)).to(user_embs.device)
+    return F.cross_entropy(logits, labels)` },
+    { t: "h2", c: "The In-Batch Negative Problem" },
+    { t: "p", c: "In-batch negatives are efficient but introduce a bias: popular items appear more often in batches and therefore appear as negatives more often. The model learns to penalize popular items, which suppresses legitimate recommendations. The fix is popularity-based negative correction: downweight the loss contribution from negatives that are popular items, since their appearance as negatives may be misleading." },
+    { t: "p", c: "A more fundamental problem is false negatives: items that appear as negatives in the batch but the user would actually click if shown them. At scale, with millions of items and thousands of users, any given batch will contain many false negatives. Hard negative mining — deliberately sampling items the user nearly interacted with — improves model quality but must be done carefully to avoid making the task too hard during early training." },
+    { t: "h2", c: "Serving: Offline Index + Online Lookup" },
+    { t: "p", c: "Once trained, the item tower runs offline over the entire item catalog. Every item gets an embedding. These embeddings are indexed in FAISS (IVF or HNSW depending on corpus size). At serving time: user features arrive, user tower runs online (single forward pass, ~5ms), FAISS ANN search retrieves top-500 candidates (~1ms), ranking model scores the 500 candidates (~50-100ms). Total retrieval latency: under 10ms. This is why the two stages can have completely different model architectures and cost budgets." },
+    { t: "h2", c: "What Interviewers Actually Ask" },
+    { t: "list", c: [
+      "How do you handle the cold start problem? (New users have no history — fall back to popularity or content-based; new items have no interactions — use item features only tower.)",
+      "Why L2 normalize the embeddings? (Makes dot product equivalent to cosine similarity, prevents embedding collapse where norms grow without bound.)",
+      "How do you update the item index as new items arrive? (Incremental index updates vs periodic full rebuilds — tradeoff between freshness and consistency.)",
+      "What's the difference between retrieval recall and ranking precision? (Retrieval maximizes recall — get the right items in the candidate set. Ranking maximizes precision — put the best items at the top.)",
+      "How do you evaluate offline? (Hit rate@K, Recall@K. But offline doesn't predict online — always shadow-test before A/B.)"
+    ]},
+    { t: "callout", c: "The single biggest mistake in two-tower interviews: confusing the retrieval recall metric with the final ranking metric. A retrieval model that puts the right item at rank 450 out of 500 has succeeded — the ranker's job is to find it. Conflating the two stages shows you haven't shipped a real recommender." },
+    { t: "refs", c: ["Covington et al. (2016) — Deep Neural Networks for YouTube Recommendations (the original two-tower paper)", "Yi et al. (2019) — Sampling-Bias-Corrected Neural Modeling for Large Corpus Item Recommendations (Google, in-batch correction)", "FAISS documentation — Index selection guide"] }
+  ],
+
+  "collaborative-filtering-deep-dive": [
+    { t: "h2", c: "The Core Insight: Users Who Agreed Before Will Agree Again" },
+    { t: "p", c: "Collaborative filtering doesn't need to understand what an item is. It only needs to know who interacted with what. If user A and user B both bought the same 10 books, and user A bought an 11th book, collaborative filtering predicts user B will like the 11th book too. The intelligence is entirely in the co-occurrence structure of the interaction matrix, not in any understanding of content." },
+    { t: "p", c: "This is simultaneously collaborative filtering's greatest strength and its greatest weakness. Strength: it captures latent taste signals that content-based approaches miss entirely — the vibe of a movie, the aesthetic of a product, the feel of a restaurant that no metadata captures. Weakness: it requires interaction data. New users have no co-occurrence signal. New items have no co-occurrence signal. The cold start problem is structural, not incidental." },
+    { t: "h2", c: "Matrix Factorization: The Classic Approach" },
+    { t: "p", c: "The user-item interaction matrix R has shape (n_users × n_items). Most entries are missing (the user hasn't interacted with most items). Matrix factorization decomposes R into two low-rank matrices: R ≈ U × V^T, where U has shape (n_users × k) and V has shape (n_items × k). k is the latent dimension (typically 32-256). Each row of U is a user embedding. Each row of V is an item embedding. The predicted rating for user i and item j is the dot product of their embeddings: u_i · v_j." },
+    { t: "code", c: `import torch
+import torch.nn as nn
+
+class MatrixFactorization(nn.Module):
+    def __init__(self, n_users, n_items, k=64):
+        super().__init__()
+        self.user_emb = nn.Embedding(n_users, k)
+        self.item_emb = nn.Embedding(n_items, k)
+        self.user_bias = nn.Embedding(n_users, 1)
+        self.item_bias = nn.Embedding(n_items, 1)
+        self.global_bias = nn.Parameter(torch.zeros(1))
+        
+        # Initialize with small values
+        nn.init.normal_(self.user_emb.weight, std=0.01)
+        nn.init.normal_(self.item_emb.weight, std=0.01)
+    
+    def forward(self, user_ids, item_ids):
+        u = self.user_emb(user_ids)
+        v = self.item_emb(item_ids)
+        dot = (u * v).sum(dim=1)
+        bias = self.user_bias(user_ids).squeeze() + self.item_bias(item_ids).squeeze() + self.global_bias
+        return dot + bias
+
+# Training: minimize MSE on observed ratings + L2 regularization
+# Loss = sum over observed (r_ui - u_i · v_j)^2 + λ(||U||^2 + ||V||^2)` },
+    { t: "h2", c: "Implicit vs Explicit Feedback" },
+    { t: "p", c: "Explicit feedback is ratings: a user explicitly rates an item 4 out of 5. Clean signal, but rare — most users don't rate things. Implicit feedback is behavioral: clicks, views, purchases, time spent, scroll depth. Abundant, but noisy. A click doesn't mean the user liked the item. Not clicking doesn't mean they wouldn't like it — they may never have seen it." },
+    { t: "p", c: "BPR (Bayesian Personalized Ranking) handles implicit feedback by learning that a user prefers clicked items over unclicked items. For each observed interaction (user u, item i), sample a negative item j that u hasn't interacted with. Optimize: P(score(u,i) > score(u,j)). This pairwise objective is more appropriate than pointwise regression for implicit data because you're learning preference ordering, not absolute ratings." },
+    { t: "h2", c: "Neural Collaborative Filtering" },
+    { t: "p", c: "Standard matrix factorization uses dot product as the interaction function. NCF replaces this with an MLP: instead of u_i · v_j, concatenate [u_i; v_j] and pass through several fully-connected layers. This allows the model to learn complex, non-linear user-item interactions that dot product can't express. The trade-off: slower inference, requires more data to train, doesn't benefit from FAISS for retrieval (since the interaction isn't a simple dot product anymore). In practice, NCF is used for ranking, not retrieval." },
+    { t: "h2", c: "When Collaborative Filtering Fails" },
+    { t: "list", c: [
+      "Cold start: new users and new items have no interaction history. No co-occurrence signal means random recommendations. Fix: fall back to content-based or popularity-based.",
+      "Popularity bias: popular items dominate the training signal. The model learns to recommend popular items to everyone, suppressing long-tail recommendations that might be exactly what a specific user wants.",
+      "Filter bubbles: if the model only recommends things similar to what the user has already seen, the user gets trapped in a feedback loop. Diversity-promoting objectives or exploration mechanisms (bandits) break the loop.",
+      "Sparsity: when most users have interacted with very few items, the co-occurrence signal is too sparse to learn meaningful embeddings. Minimum interaction thresholds (e.g., only train on users with ≥5 interactions) help but reduce coverage."
+    ]},
+    { t: "callout", c: "Interview trap: 'collaborative filtering doesn't need content features so it's simpler to build.' Wrong. Handling cold start, popularity bias, and data sparsity makes CF systems substantially more complex to operate than content-based systems. The interaction matrix is also expensive to store and update at scale." },
+    { t: "refs", c: ["Koren et al. (2009) — Matrix Factorization Techniques for Recommender Systems (Netflix Prize)", "He et al. (2017) — Neural Collaborative Filtering", "Rendle et al. (2009) — BPR: Bayesian Personalized Ranking from Implicit Feedback"] }
+  ],
+
+  "candidate-generation-vs-ranking": [
+    { t: "h2", c: "Why One Model Can't Do Both Jobs" },
+    { t: "p", c: "The recommender system at Swiggy needs to pick 20 restaurants from 200,000. The ideal model for this would score every restaurant with perfect accuracy and return the top 20. But a model accurate enough to do this takes 50ms per restaurant — 200,000 × 50ms = 10,000 seconds per request. That's not a production system, that's a science project." },
+    { t: "p", c: "The solution is a cascade: a fast, approximate first stage (candidate generation) that retrieves 500-2000 candidates, followed by a slow, accurate second stage (ranking) that scores only those candidates. The first stage optimizes for recall — get all the good items in the candidate set, even if it also retrieves some bad ones. The second stage optimizes for precision — within the candidate set, put the best items at the top." },
+    { t: "h2", c: "Candidate Generation: Fast + High Recall" },
+    { t: "p", c: "Multiple retrieval signals feed candidate generation in parallel. Each signal retrieves candidates independently, then results are merged and deduplicated. Typical signals at a food delivery company:" },
+    { t: "list", c: [
+      "Two-tower retrieval: user embedding → ANN search over restaurant embeddings. High-quality personalized recall. ~1-5ms.",
+      "Collaborative filtering: users similar to you liked these restaurants. Adds diversity beyond personal history.",
+      "Content-based: restaurants matching the user's stated cuisine preferences or recent search queries.",
+      "Popularity/trending: top restaurants in the user's delivery zone right now. Cold start fallback.",
+      "Re-engagement: restaurants the user has ordered from before but not recently. High conversion, easy personalization.",
+      "Contextual: it's Sunday morning → breakfast places get boosted. Rainy day → comfort food. Temporal signals."
+    ]},
+    { t: "p", c: "Merging strategies: union of all candidates (deduplicated), or weighted union where signals with better historical precision get more candidate slots. Typically 500-2000 candidates reach the ranking stage." },
+    { t: "h2", c: "Ranking: Slow + High Precision" },
+    { t: "p", c: "The ranking model scores each candidate given rich features that were too expensive to use during retrieval. Cross-features between user and item: has this specific user ordered from this specific restaurant before? Cross-features with context: is it lunchtime and is this restaurant typically ordered for lunch? Real-time features: what's the current delivery time estimate for this restaurant given current driver availability?" },
+    { t: "p", c: "Ranking models are typically gradient-boosted trees (LightGBM, XGBoost) or DNNs with wide-and-deep architecture. They take hundreds of features and produce a score per candidate. The feature set is where the real ML engineering work happens — feature engineering, point-in-time correct joins from the feature store, ensuring no leakage from future data." },
+    { t: "code", c: `# Ranking model feature categories
+features = {
+    # User features (from user profile store)
+    "user_avg_order_value": float,
+    "user_cuisine_preferences": list,  # top-5 historical cuisines
+    "user_price_sensitivity": float,   # derived from historical choices
+    
+    # Item features (from restaurant catalog)  
+    "restaurant_avg_rating": float,
+    "restaurant_delivery_time_p50": float,
+    "restaurant_order_volume_7d": int,
+    
+    # Cross features (user × item interactions)
+    "user_ordered_from_restaurant_count": int,  # personal history
+    "user_ordered_cuisine_match_score": float,  # cuisine preference alignment
+    
+    # Context features (real-time)
+    "current_delivery_eta_minutes": float,  # live, from dispatch system
+    "time_since_last_order_hours": float,
+    "is_lunch_hour": bool,
+    
+    # Position/session features (for de-biasing)
+    "candidate_position_in_list": int,  # for position bias correction
+}` },
+    { t: "h2", c: "The Objective: What Are You Actually Ranking For?" },
+    { t: "p", c: "Click-through rate (CTR) is easy to measure but optimizing for CTR produces clickbait. A restaurant with a great photo gets clicks; a restaurant that reliably delivers good food gets repeat orders. Most mature recommenders optimize for a business metric — order completion rate, gross merchandise value, or long-term retention — not raw clicks. This requires delayed labels (order completed 45 minutes later) and careful attribution." },
+    { t: "callout", c: "The most important question in any ranking interview: 'what metric are you optimizing and why?' If the answer is CTR, ask what happens to user satisfaction. If the answer is GMV, ask what happens to new restaurant discovery. Every objective has a shadow metric it sacrifices. Knowing this is the senior signal." },
+    { t: "h2", c: "Re-ranking: Business Rules Layer" },
+    { t: "p", c: "After ranking, a re-ranking layer applies business constraints the ML model shouldn't learn: sponsored restaurants get boosted by contracted position, restaurants currently out of delivery range are filtered, restaurants that would result in very long ETAs during peak periods get penalized, diversity constraints ensure at least 2 cuisine types in the top 10. Re-ranking is where the business talks to the model." },
+    { t: "refs", c: ["Covington et al. (2016) — Deep Neural Networks for YouTube Recommendations (candidate generation + ranking cascade)", "Cheng et al. (2016) — Wide & Deep Learning for Recommender Systems (Google Play ranking)", "Zhao et al. (2019) — Recommending What Video to Watch Next: A Multitask Ranking System (YouTube ranking)"] }
+  ],
+
+  "cold-start-problem": [
+    { t: "h2", c: "The Cold Start Problem Is Three Different Problems" },
+    { t: "p", c: "Cold start is treated as one problem but it's actually three, and each requires a different solution. New user cold start: a user who just installed the app has no interaction history. New item cold start: a new restaurant that just joined Swiggy has no order history, no ratings, no behavioral signals. System cold start: a brand new recommender system with no data at all — this is the bootstrapping problem that only matters at company founding." },
+    { t: "p", c: "Most interviews only ask about new user and new item cold start. These are genuinely hard because the two-tower model and collaborative filtering both require interaction data that doesn't exist yet. The question isn't whether cold start is hard — it's what you do in each phase, how you detect when a user or item has graduated out of cold start, and how you measure whether your cold start solution is working." },
+    { t: "h2", c: "New User Cold Start" },
+    { t: "p", c: "Phase 1 — onboarding signals. Explicitly ask the user: what cuisines do you like? What's your typical price range? Do you care more about speed or quality? Even 3-5 stated preferences dramatically improve the first session. The cost is friction; the gain is a meaningful first recommendation. Most apps ask during signup, but users often skip. Smart defaults (show the most popular restaurants in their delivery zone) provide a safe fallback." },
+    { t: "p", c: "Phase 2 — session signals. Within the first session, behavioral signals accumulate fast. The user scrolled past Italian but stopped on Thai — implicit preference signal. They clicked a restaurant and spent 2 minutes looking at the menu but didn't order — interest signal. They added an item to cart then removed it — indecision signal, possibly price sensitivity. A session-based recommender (GRU4Rec, BERT4Rec) updates recommendations in real time based on within-session behavior, without needing historical data." },
+    { t: "code", c: `# GRU4Rec: Session-based recommendation
+class GRU4Rec(nn.Module):
+    def __init__(self, n_items, hidden_size=100, embed_dim=50):
+        super().__init__()
+        self.item_embed = nn.Embedding(n_items, embed_dim, padding_idx=0)
+        self.gru = nn.GRU(embed_dim, hidden_size, batch_first=True)
+        self.output = nn.Linear(hidden_size, n_items)
+    
+    def forward(self, item_sequence):
+        # item_sequence: (batch, seq_len) — items clicked in this session
+        x = self.item_embed(item_sequence)
+        output, hidden = self.gru(x)
+        # Predict next item from last hidden state
+        return self.output(output[:, -1, :])` },
+    { t: "p", c: "Phase 3 — graduated user. After 5-10 interactions, the collaborative filtering signal becomes meaningful. The user can transition from cold start to standard two-tower retrieval. The transition threshold is a product decision: transition too early and recommendations are noisy; too late and you miss personalization opportunities." },
+    { t: "h2", c: "New Item Cold Start" },
+    { t: "p", c: "A new restaurant on Swiggy has photos, a menu, a location, a price range, and cuisine tags. It has no orders, no ratings, no interaction embeddings. The content-based approach: encode item features through the item tower without training on interactions — use the feature embedding directly. This gives a reasonable initial representation based on what the item is, even before any user has interacted with it." },
+    { t: "p", c: "Exploration budget: deliberately show new items to a small percentage of users who match the predicted audience. Measure actual interaction rates. This bootstraps interaction data while managing the cost of showing potentially bad recommendations. The exploration vs exploitation tradeoff here is explicit — you're spending some recommendation quality today to learn faster." },
+    { t: "h2", c: "Detecting Cold Start Graduation" },
+    { t: "p", c: "A user has graduated from cold start when their collaborative filtering predictions have lower uncertainty than the content-based fallback. In practice: track the user's interaction count and set a threshold (typically 5-15 interactions). For items: track order count and set a threshold (typically 10-50 orders). Below threshold → cold start treatment. Above threshold → full model." },
+    { t: "callout", c: "Interview pattern: interviewers ask 'how do you handle cold start' expecting you to name session-based models or content-based fallback. The senior answer adds: how do you detect when a user has graduated from cold start, how do you measure whether your cold start solution is actually working (first-session retention, not just CTR), and what the cost is of getting it wrong in each direction." },
+    { t: "refs", c: ["Hidasi et al. (2016) — Session-based Recommendations with Recurrent Neural Networks (GRU4Rec)", "Schein et al. (2002) — Methods and Metrics for Cold-Start Recommendations", "Sun et al. (2019) — BERT4Rec: Sequential Recommendation with BERT"] }
+  ],
+
+  "explore-exploit-recommendations": [
+    { t: "h2", c: "The Feedback Loop Problem" },
+    { t: "p", c: "A recommender system trained on its own outputs creates a feedback loop. It recommends popular items → popular items get more interactions → interactions train the model → model recommends popular items more strongly. Over time, the diversity of recommendations collapses. The system becomes confidently narrow, showing every user a slight variation of the same popular items. Long-tail items that might be perfect for specific users never get shown, never accumulate data, and the model never learns they're good." },
+    { t: "p", c: "The explore-exploit dilemma is the core tension: exploiting known good recommendations maximizes short-term engagement, but exploring unknown items is necessary to avoid long-term stagnation. Pure exploitation → filter bubble. Pure exploration → random recommendations. The question is how to balance them." },
+    { t: "h2", c: "ε-Greedy: The Baseline" },
+    { t: "p", c: "With probability ε, show a random item instead of the top-ranked recommendation. With probability 1-ε, show the best predicted item. Simple to implement, easy to tune. ε = 0.1 means 10% of recommendations are random exploration. Problems: random exploration is inefficient — you're equally likely to explore a clearly bad item as a potentially good one. And ε is a global constant that doesn't adapt to uncertainty." },
+    { t: "h2", c: "Upper Confidence Bound (UCB)" },
+    { t: "p", c: "UCB adds an exploration bonus to items with high uncertainty. Score(item) = estimated_value(item) + c × √(log(t) / n_i), where t is total impressions, n_i is impressions for item i, and c controls exploration aggressiveness. Items shown rarely get a high exploration bonus. As items accumulate data, the bonus shrinks. UCB naturally shifts from exploration to exploitation as confidence grows." },
+    { t: "h2", c: "Thompson Sampling: The Production Standard" },
+    { t: "p", c: "Thompson sampling maintains a probability distribution over the true value of each item. At decision time, sample from each distribution and recommend the item with the highest sampled value. Items with high uncertainty have wide distributions — they'll sometimes get high samples and get shown, generating the data needed to narrow the distribution. Items with low uncertainty have narrow distributions — they get shown when they're actually good." },
+    { t: "code", c: `import numpy as np
+from scipy.stats import beta
+
+class ThompsonSamplingBandit:
+    def __init__(self, n_items):
+        # Beta distribution parameters for each item
+        # α = successes (clicks/orders), β = failures (impressions without click)
+        self.alpha = np.ones(n_items)  # prior: 1 success
+        self.beta = np.ones(n_items)   # prior: 1 failure
+    
+    def select_item(self, candidate_items):
+        # Sample from each item's beta distribution
+        samples = np.array([
+            np.random.beta(self.alpha[i], self.beta[i])
+            for i in candidate_items
+        ])
+        return candidate_items[np.argmax(samples)]
+    
+    def update(self, item_id, reward):
+        # reward = 1 for click/order, 0 for impression without interaction
+        if reward:
+            self.alpha[item_id] += 1
+        else:
+            self.beta[item_id] += 1` },
+    { t: "h2", c: "Contextual Bandits: The Real Production Setup" },
+    { t: "p", c: "Pure bandits treat all users the same. Contextual bandits condition on user context: given this user's features, which item's true value is highest? LinUCB models the expected reward as a linear function of context features and maintains a confidence interval. Neural contextual bandits (NeuralUCB, NeuralTS) use a neural network for the reward model and UCB/TS for exploration. At scale, contextual bandits are typically applied to a subset of recommendation slots (e.g., the top-3 positions) while the rest use the standard ranking model." },
+    { t: "h2", c: "What Gets Asked in Interviews" },
+    { t: "list", c: [
+      "Why not just A/B test everything? (A/B test is offline experiment design — it assigns users to treatments upfront. Bandits adapt in real time. A/B test is better for measuring, bandit is better for optimizing while measuring.)",
+      "How do you handle delayed rewards? (In food delivery, the outcome — did they order and enjoy it? — is known 45-90 minutes after the recommendation. Thompson sampling with delayed updates — buffer the outcome and update when it arrives.)",
+      "How do you prevent exploration from hurting key business metrics? (Cap exploration rate, apply exploration only in designated slots, ensure explored items meet minimum quality thresholds.)",
+      "What's the regret bound of Thompson sampling? (O(√(KT log T)) where K is items, T is timesteps — theoretically near-optimal.)"
+    ]},
+    { t: "callout", c: "The most common interview mistake: treating exploration as a nice-to-have diversity feature. It's not. Without systematic exploration, a recommender's performance degrades over time as the training data distribution narrows. Exploration is what keeps the feedback loop from collapsing the system." },
+    { t: "refs", c: ["Chapelle & Li (2011) — An Empirical Evaluation of Thompson Sampling", "Li et al. (2010) — A Contextual-Bandit Approach to Personalized News Article Recommendation (LinUCB)", "Chen et al. (2019) — Top-K Off-Policy Correction for a REINFORCE Recommender System (YouTube)"] }
+  ],
+
+  // ─── CLASSICAL ML THEORY ─────────────────────────────────────────────────────
+
+  "loss-functions-deep-dive": [
+    { t: "h2", c: "Loss Functions Are Assumptions About Your Data" },
+    { t: "p", c: "A loss function is not an arbitrary choice. It encodes a specific assumption about the distribution of your errors and what kinds of mistakes you're willing to make. Choosing the wrong loss function doesn't just slow training — it trains a model that's wrong in a systematic way that your metrics might not catch. Applied Scientist interviews go deep here because loss function choice reveals whether you understand what your model is actually learning." },
+    { t: "h2", c: "Mean Squared Error (MSE)" },
+    { t: "p", c: "MSE = (1/n) Σ(y_i - ŷ_i)². Assumption: errors are normally distributed. Consequence: outliers have quadratic impact — a prediction error of 10 contributes 100x more to the loss than an error of 1. This means MSE trains models that are pulled toward outliers. Use MSE when outliers are real signal (a $10,000 transaction in fraud detection is important) and when errors should be penalized proportionally to their magnitude." },
+    { t: "p", c: "MAE = (1/n) Σ|y_i - ŷ_i|. Assumption: errors are Laplace-distributed. Consequence: all errors contribute linearly — an error of 10 contributes 10x an error of 1. Use MAE when outliers are noise (a mislabeled data point shouldn't dominate training). MAE is not differentiable at 0 (subgradient methods required). Huber loss combines MSE for small errors and MAE for large errors, controlled by a threshold δ." },
+    { t: "h2", c: "Binary Cross-Entropy" },
+    { t: "p", c: "BCE = -(y log(p) + (1-y) log(1-p)). This is the negative log likelihood under a Bernoulli distribution — you're assuming each label is independently drawn from a Bernoulli with parameter p. When y=1 and p→0, the loss → ∞: the model is severely penalized for being confidently wrong. When y=1 and p→1, loss → 0. The log prevents the model from simply outputting 0.5 to minimize risk — confident correct predictions are rewarded." },
+    { t: "code", c: `import torch
+import torch.nn.functional as F
+
+# Why BCE needs sigmoid (not softmax for binary)
+logits = torch.tensor([2.0, -1.0, 0.5])  # raw model outputs
+probs = torch.sigmoid(logits)  # [0.88, 0.27, 0.62]
+labels = torch.tensor([1.0, 0.0, 1.0])
+
+# Numerically stable version (BCEWithLogitsLoss)
+loss = F.binary_cross_entropy_with_logits(logits, labels)
+# Equivalent to: -mean(y*log(σ(x)) + (1-y)*log(1-σ(x)))
+
+# For multiclass: softmax + cross entropy
+logits_multi = torch.tensor([[2.0, 1.0, 0.1]])
+labels_multi = torch.tensor([0])  # true class is 0
+loss_multi = F.cross_entropy(logits_multi, labels_multi)
+# cross_entropy = NLLLoss(LogSoftmax(logits))` },
+    { t: "h2", c: "Focal Loss: When Classes Are Imbalanced" },
+    { t: "p", c: "In fraud detection, 99.9% of transactions are legitimate. Standard cross-entropy trains the model to always predict 'not fraud' — this achieves 99.9% accuracy while being useless. Focal Loss (Lin et al., 2017) = -(1-p_t)^γ × log(p_t). The factor (1-p_t)^γ downweights easy examples. When γ=0, this is standard cross-entropy. When γ=2, examples the model classifies with 90% confidence contribute 100x less loss than hard examples. The model focuses on hard examples — the ones near the decision boundary." },
+    { t: "h2", c: "Contrastive and Triplet Loss" },
+    { t: "p", c: "Used for metric learning — when you want embeddings to be close for similar items and far for dissimilar items. Contrastive loss: L = (1-y) × (1/2) × d² + y × (1/2) × max(0, margin - d)², where d is distance between embeddings and y=1 for dissimilar pairs. Triplet loss: L = max(0, d(anchor, positive) - d(anchor, negative) + margin). The margin ensures negatives are pushed beyond a minimum distance from positives. This is what trains SBERT and two-tower recommendation models." },
+    { t: "h2", c: "The Applied Scientist Question Pattern" },
+    { t: "list", c: [
+      "'Your regression model has high MSE but low MAE — what does this tell you?' → Outliers are pulling MSE up. The model's median prediction is good but there are some very wrong predictions on edge cases.",
+      "'You're training a CTR model on imbalanced data (1% CTR). What loss do you use?' → Focal loss, or reweight BCE (positive weight = negative count / positive count), or undersample negatives.",
+      "'Why does cross-entropy work better than MSE for classification?' → Softmax outputs near 0 have near-zero gradients under MSE (vanishing gradient). Cross-entropy gradients are proportional to prediction error at all values.",
+      "'What loss would you use for learning to rank?' → Pairwise: BPR or RankNet. Listwise: LambdaMART. Pointwise: can work but ignores rank structure."
+    ]},
+    { t: "refs", c: ["Lin et al. (2017) — Focal Loss for Dense Object Detection (Focal Loss paper)", "Schroff et al. (2015) — FaceNet: A Unified Embedding for Face Recognition (Triplet Loss)", "Chopra et al. (2005) — Learning a Similarity Metric Discriminatively (Contrastive Loss)"] }
+  ],
+
+  "optimizers-explained": [
+    { t: "h2", c: "What Gradient Descent Is Actually Doing" },
+    { t: "p", c: "Gradient descent updates parameters by moving in the direction opposite to the gradient of the loss. θ ← θ - η∇L(θ). The learning rate η controls step size. Too large: overshoot the minimum, loss oscillates or diverges. Too small: training takes forever and can get stuck in flat regions. The entire history of optimization research is the search for better ways to adapt this step." },
+    { t: "h2", c: "SGD with Momentum" },
+    { t: "p", c: "Vanilla SGD has high variance — each mini-batch gradient is a noisy estimate. Momentum accumulates a running average of gradients: v_t = β × v_{t-1} + (1-β) × ∇L, θ ← θ - η × v_t. With β=0.9, each update is a weighted average of the last ~10 gradients. This smooths out noise and accelerates convergence in directions of consistent gradient. The physical intuition: a ball rolling downhill accumulates momentum, overshoots flat regions, and dampens oscillations in high-curvature dimensions." },
+    { t: "h2", c: "Adam: Adaptive Moment Estimation" },
+    { t: "p", c: "Adam maintains per-parameter learning rates by tracking both the first moment (mean gradient) and second moment (uncentered variance). m_t = β₁ m_{t-1} + (1-β₁) g_t (first moment). v_t = β₂ v_{t-1} + (1-β₂) g_t² (second moment). Bias-corrected: m̂_t = m_t/(1-β₁^t), v̂_t = v_t/(1-β₂^t). Update: θ ← θ - η × m̂_t / (√v̂_t + ε)." },
+    { t: "p", c: "The key insight: parameters that receive large, frequent gradients (e.g., common word embeddings in NLP) get smaller effective learning rates. Parameters that receive small, rare gradients get larger effective learning rates. This adaptive behavior makes Adam work well out of the box across many architectures and data types — it's the reason it became the default." },
+    { t: "code", c: `# Adam from scratch (simplified)
+def adam_update(param, grad, m, v, t, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8):
+    m = beta1 * m + (1 - beta1) * grad          # first moment
+    v = beta2 * v + (1 - beta2) * grad**2        # second moment
+    m_hat = m / (1 - beta1**t)                   # bias correction
+    v_hat = v / (1 - beta2**t)                   # bias correction
+    param -= lr * m_hat / (torch.sqrt(v_hat) + eps)
+    return param, m, v
+
+# Default hyperparameters: lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
+# These work for most cases. When they don't:
+# - lr too high: loss spikes or NaN. Try 3e-4.
+# - beta2 too high: slow adaptation to changing loss landscape. Try 0.99.
+# - eps too small: numerical instability on sparse gradients. Try 1e-6.` },
+    { t: "h2", c: "AdamW: The Modern Standard" },
+    { t: "p", c: "Standard Adam implements L2 regularization incorrectly. L2 reg adds λθ to the gradient, but Adam's adaptive scaling means the effective regularization is different for each parameter. AdamW decouples weight decay from the gradient update: θ ← θ × (1 - η × λ) - η × adam_update. This is the standard for transformer training — GPT, BERT, LLaMA all use AdamW." },
+    { t: "h2", c: "When SGD Beats Adam" },
+    { t: "p", c: "Despite Adam's practical dominance, SGD with momentum + learning rate schedule often achieves better final generalization on image classification tasks (ResNet, VGG). Hypothesis: Adam's adaptive learning rates can find sharp minima that generalize poorly, while SGD's uniform scaling finds flatter minima that generalize better. In practice: for new architectures or tasks, start with Adam. If generalization is poor, try SGD + cosine LR schedule. For transformers: always AdamW." },
+    { t: "h2", c: "Learning Rate Schedules" },
+    { t: "list", c: [
+      "Warmup + cosine decay: start with a small LR, ramp up linearly for N steps, then decay following a cosine curve to near-zero. Standard for transformers. Warmup prevents early instability when gradients are large and model is far from optimum.",
+      "One-cycle policy: LR increases then decreases within a single training run. Often achieves good results in fewer epochs (super-convergence).",
+      "Reduce on plateau: monitor validation loss, reduce LR by factor (e.g. 0.5) when loss stops improving. Simple but effective for CNNs.",
+      "Constant LR: sometimes the right answer, especially for fine-tuning. Avoids the complexity of schedule tuning."
+    ]},
+    { t: "refs", c: ["Kingma & Ba (2015) — Adam: A Method for Stochastic Optimization", "Loshchilov & Hutter (2019) — Decoupled Weight Decay Regularization (AdamW)", "Wilson et al. (2017) — The Marginal Value of Momentum for Small Learning Rate SGD"] }
+  ],
+
+  "bias-variance-in-production": [
+    { t: "h2", c: "Bias-Variance Is About the Training Process, Not One Model" },
+    { t: "p", c: "The bias-variance tradeoff is a statement about the expected behavior of a model class over many possible training sets. Bias measures how far the average prediction of your model (trained on many different datasets) is from the true value. Variance measures how much your model's predictions vary across different training sets. These can't both be minimized simultaneously — reducing bias typically increases variance, and vice versa." },
+    { t: "p", c: "In practice you only have one training set. But the framework is still useful because it tells you what to do when your model is wrong: high bias means your model is systematically wrong in the same direction regardless of training data — you need more capacity or better features. High variance means your model is sensitive to which specific samples you trained on — you need more data, regularization, or ensembling." },
+    { t: "h2", c: "Diagnosing in Production: Not Just Train/Val Curves" },
+    { t: "p", c: "Train loss high, val loss high → high bias (underfitting). Add model capacity, more features, longer training. Train loss low, val loss high → high variance (overfitting). Add regularization (dropout, L2, early stopping), more data, simpler model. Train loss low, val loss low → good fit. But this is where most engineers stop, and it's where the production problems start." },
+    { t: "p", c: "A model that performs well on your validation set can still have high bias or high variance in production. Sources: (1) Distribution shift — your val set doesn't represent production inputs. The model has low variance on the val distribution but high variance on production inputs. (2) Label quality — noisy labels on val set mask the true bias. (3) Temporal leakage — future information leaked into training features. The model appears unbiased but is actually using signals it won't have at serving time." },
+    { t: "h2", c: "Regularization: Controlling Variance" },
+    { t: "list", c: [
+      "L2 (weight decay): adds λΣw² to the loss. Penalizes large weights. Keeps the model from fitting to noise by preventing any single weight from becoming too large. Equivalent to placing a Gaussian prior on weights.",
+      "L1 (Lasso): adds λΣ|w| to the loss. Produces sparse weights — many become exactly zero. Useful when you believe most features are irrelevant. Equivalent to Laplace prior.",
+      "Dropout: randomly zero out p% of neurons during training. Prevents co-adaptation — no neuron can rely on any specific other neuron being present. Ensemble interpretation: training exponentially many thinned networks simultaneously.",
+      "Data augmentation: artificially increase training set size by applying label-preserving transformations. Reduces variance without changing model capacity.",
+      "Early stopping: stop training when validation loss stops improving. Implicit regularization — the model hasn't had time to overfit."
+    ]},
+    { t: "h2", c: "The Irreducible Error Floor" },
+    { t: "p", c: "Total error = Bias² + Variance + Irreducible Error. Irreducible error is the noise in the data that no model can explain — measurement error, stochastic outcomes, genuinely unpredictable variation. The practical implication: if your metric has plateaued and you've addressed bias and variance, you may have hit the noise floor. Collecting better (cleaner, more relevant) data lowers the noise floor. No amount of architecture search will help." },
+    { t: "callout", c: "Applied Scientist interview question: 'Your model has 95% validation accuracy but 80% production accuracy. What's your debugging process?' This is a bias-variance-distribution question. Start by checking for distribution shift (are production inputs different from val inputs?), then leakage (are any val features not available at serving time?), then label quality (are production labels being collected correctly?)." },
+    { t: "refs", c: ["Geman et al. (1992) — Neural Networks and the Bias/Variance Dilemma (original framework)", "Srivastava et al. (2014) — Dropout: A Simple Way to Prevent Neural Networks from Overfitting", "Domingos (2000) — A Unified Bias-Variance Decomposition and Its Applications"] }
+  ],
+
+  "statistical-testing-ml": [
+    { t: "h2", c: "Your Model Improved. Did It Actually Improve?" },
+    { t: "p", c: "A model's offline metric goes from 0.82 to 0.84. Is this real? It depends entirely on how much variance there is in your measurement, how many comparisons you've made, and whether your test set is representative. Applied Scientist interviews go hard on statistical testing because bad statistical practice is the leading cause of models that look good offline but fail in production." },
+    { t: "h2", c: "The Null Hypothesis Framework" },
+    { t: "p", c: "Null hypothesis H₀: there is no difference between model A and model B. You compute a test statistic from your data. The p-value is the probability of observing a test statistic at least as extreme as yours if H₀ were true. If p < α (typically 0.05), you reject H₀ and conclude the difference is statistically significant. If p ≥ α, you fail to reject H₀ — but this does NOT mean the models are equivalent. You might just not have enough data to detect the difference." },
+    { t: "h2", c: "Comparing Two Models on the Same Test Set" },
+    { t: "p", c: "McNemar's test: for binary classification, compare the error patterns of two models on the same examples. Build a 2×2 table: how many examples did A get right and B wrong? How many did B get right and A wrong? The test asks whether these disagreements are symmetric. If they're not, one model is systematically better. More powerful than comparing accuracies because it uses the paired structure of the data." },
+    { t: "code", c: `from scipy.stats import chi2
+import numpy as np
+
+def mcnemar_test(model_a_correct, model_b_correct):
+    """
+    model_a_correct: boolean array, True if model A correct on example i
+    model_b_correct: boolean array, True if model B correct on example i
+    """
+    # Build 2x2 contingency table
+    a_right_b_wrong = np.sum(model_a_correct & ~model_b_correct)   # b
+    a_wrong_b_right = np.sum(~model_a_correct & model_b_correct)   # c
+    
+    # McNemar statistic (with continuity correction)
+    statistic = (abs(a_right_b_wrong - a_wrong_b_right) - 1)**2 / (a_right_b_wrong + a_wrong_b_right)
+    p_value = 1 - chi2.cdf(statistic, df=1)
+    return statistic, p_value
+
+# Paired t-test for continuous metrics (e.g., RMSE per user)
+from scipy.stats import ttest_rel
+per_user_metric_a = [...]  # RMSE for each user from model A
+per_user_metric_b = [...]  # RMSE for each user from model B
+statistic, p_value = ttest_rel(per_user_metric_a, per_user_metric_b)` },
+    { t: "h2", c: "Multiple Comparisons Problem" },
+    { t: "p", c: "You train 20 model variants and compare each to baseline. Even if none is truly better, the probability that at least one appears better by chance (p < 0.05) is 1 - 0.95^20 = 64%. Running many comparisons inflates your false positive rate. Bonferroni correction: require p < α/n where n is the number of comparisons. FDR control (Benjamini-Hochberg): controls the expected proportion of false positives among significant results. More powerful than Bonferroni when many comparisons are made." },
+    { t: "h2", c: "Statistical Power and Sample Size" },
+    { t: "p", c: "Power = probability of detecting a real effect if one exists (= 1 - probability of false negative). Typical target: 0.8. Power depends on: effect size (how big is the real difference?), sample size (more data → more power), significance threshold α, and variance. Before running an experiment: power analysis tells you how much data you need to detect the effect size you care about. Running underpowered experiments wastes resources and produces false negatives." },
+    { t: "callout", c: "The most common statistical mistake in ML: reporting 'model A is 2% better than model B on our test set' with no statistical test. With a test set of 500 examples, a 2% accuracy difference is not statistically significant (p ≈ 0.3). With 10,000 examples, the same difference is highly significant (p < 0.001). Always report confidence intervals or p-values alongside metric improvements." },
+    { t: "refs", c: ["Dietterich (1998) — Approximate Statistical Tests for Comparing Supervised Classification Learning Algorithms", "Dror et al. (2018) — The Hitchhiker's Guide to Testing Statistical Significance in NLP", "Kohavi et al. (2020) — Trustworthy Online Controlled Experiments (A/B testing book)"] }
+  ],
+
+  "experimental-design-ablations": [
+    { t: "h2", c: "Ablation Studies Are Arguments, Not Experiments" },
+    { t: "p", c: "An ablation study removes components of a system one at a time and measures the performance impact. The goal is to attribute performance gains to specific design choices. But an ablation study is only as good as the claim it's making. A bad ablation: 'we added components A, B, C and performance improved 5%.' A good ablation: 'component B accounts for 3.2% of the 5% improvement (±0.4%, p=0.02), component A accounts for 1.1% (±0.3%, p=0.01), and component C has no statistically significant effect (p=0.31).' The good version is an argument with evidence. The bad version is a story." },
+    { t: "h2", c: "Designing a Clean Ablation" },
+    { t: "p", c: "The key requirement: each ablation should change exactly one thing. If you change two things simultaneously, you can't attribute the performance difference. Common violations: removing component A requires also changing the architecture (now you're measuring A + architecture change). Removing A changes the number of parameters (now you're measuring A + capacity change). Good ablation design controls for these confounders explicitly." },
+    { t: "list", c: [
+      "Isolate the variable: remove only what you're testing. If removing a component changes model size, add a dummy component to restore the parameter count.",
+      "Run multiple seeds: a single run has high variance. Report mean and standard deviation across 3-5 random seeds for stable metrics.",
+      "Use the same test set: changing the test set between ablations introduces evaluation variance. Freeze the test set before any ablations.",
+      "Report the right metric: ablate on the metric that matters for your research claim, not the easiest metric to improve."
+    ]},
+    { t: "h2", c: "Baselines: The Other Half of the Argument" },
+    { t: "p", c: "Your proposed method needs to be compared against the right baselines. A strong baseline makes a convincing paper and a convincing interview answer. Common mistakes: (1) Weak baselines — comparing against a method from 5 years ago that newer work has superseded. (2) Poorly tuned baselines — your method with extensive hyperparameter search vs. baseline with default settings. (3) Missing oracle baseline — a baseline that represents an upper bound (e.g., using ground-truth features instead of predicted features) that tells you how much headroom exists." },
+    { t: "h2", c: "Hyperparameter Search and Reporting" },
+    { t: "p", c: "If you searched over hyperparameters, you must report the search strategy and the final values used. Grid search over {0.001, 0.01, 0.1} is a 3-point search. Random search over log-uniform(1e-4, 1e-1) is more thorough. Bayesian optimization (Optuna, Ray Tune) is the production standard for expensive experiments. Critical: use a separate validation set for hyperparameter search and a held-out test set for final evaluation. Using the test set for hyperparameter tuning inflates reported metrics." },
+    { t: "code", c: `import optuna
+
+def objective(trial):
+    lr = trial.suggest_float("lr", 1e-4, 1e-1, log=True)
+    dropout = trial.suggest_float("dropout", 0.1, 0.5)
+    hidden_size = trial.suggest_categorical("hidden_size", [128, 256, 512])
+    
+    model = build_model(hidden_size=hidden_size, dropout=dropout)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+    
+    # Train on train set, evaluate on VALIDATION set
+    val_metric = train_and_evaluate(model, optimizer, train_data, val_data)
+    return val_metric  # Optuna maximizes this
+
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=100)
+best_params = study.best_params
+
+# Only now evaluate on test set — once, with best_params
+final_model = build_model(**best_params)
+test_metric = evaluate(final_model, test_data)` },
+    { t: "h2", c: "What Applied Scientist Interviewers Are Testing" },
+    { t: "p", c: "The interviewer isn't asking you to memorize statistical tests. They're testing whether you understand the difference between a result and evidence of a result. 'Our model improved' is not a research finding. 'Our model improved by X on metric Y, statistically significant at p=0.02 over N experiments, with ablations showing component Z accounts for most of the improvement' is a research finding. The discipline of experimental design is what separates applied research from exploratory hacking." },
+    { t: "refs", c: ["Bouthillier et al. (2021) — Accounting for Variance in Machine Learning Benchmarks", "Dodge et al. (2019) — Show Your Work: Improved Reporting of Experimental Results", "Henderson et al. (2018) — Deep Reinforcement Learning That Matters (reproducibility in ML)"] }
+  ],
+
+  // ─── HOW I'D BUILD (BANGALORE PRODUCT CO SERIES) ─────────────────────────────
+
+  "how-id-build-recommendation-feed": [
+    { t: "h2", c: "The Problem: 50M Users, 200M Items, 100ms Budget" },
+    { t: "p", c: "The brief: build a personalized feed for a consumer app with 50 million daily active users. Each user opens the app and expects to see items they actually want. You have 100ms end-to-end latency budget. Your catalog has 200 million items. The naive solution — score every item for every user — is computationally impossible. This is the design problem Meesho, Flipkart, and every large consumer app solves every day." },
+    { t: "h2", c: "Architecture: Three Stages" },
+    { t: "p", c: "Stage 1 — Candidate Generation (10ms budget): multiple retrieval signals in parallel. Two-tower ANN retrieval pulls 300 personalized candidates. Collaborative filtering retrieves 100 from similar-user history. Trending/popularity retrieves 100 high-engagement items in the user's category affinity. Rule-based retrieval adds 50 re-engagement items (items user viewed but didn't purchase in the last 7 days). Total: ~550 candidates, deduplicated to ~400." },
+    { t: "p", c: "Stage 2 — Ranking (50ms budget): a LightGBM or DNN ranker scores all 400 candidates. Features: user-item cross features (has the user viewed this brand before?), real-time context (device, time of day, session length so far), item quality signals (return rate, seller rating, price competitiveness), and position bias correction features. Output: 400 ranked candidates." },
+    { t: "p", c: "Stage 3 — Re-ranking (10ms budget): business rules applied. Diversity constraints (no more than 3 items from the same seller in top 20). Sponsored items inserted at contracted positions. Filter items currently out of stock. Apply safety filters. Output: final 20-item feed." },
+    { t: "h2", c: "The Feature Store" },
+    { t: "p", c: "Real-time features (current delivery ETA, live inventory, session signals) come from an online feature store (Redis or DynamoDB). Batch features (historical click rates, user embedding, item embedding) come from an offline feature store (Hive or BigQuery) refreshed daily. The critical discipline: training-serving skew prevention. Every feature used at serving time must be constructed identically during training, with point-in-time correctness (no leakage from future signals)." },
+    { t: "h2", c: "What to Optimize For" },
+    { t: "p", c: "CTR is easy to measure but produces clickbait feeds. Purchase rate is better but has delayed labels and is sparse. Optimizing for purchase value (GMV) risks showing only expensive items. The right objective for a consumer feed is typically a blend: weighted combination of click probability, purchase probability given click, and a long-term engagement signal (did the user return tomorrow?). Each component requires its own model and separate training data." },
+    { t: "h2", c: "Evaluation: Offline vs Online" },
+    { t: "p", c: "Offline: NDCG@20, Recall@100 (did the items the user actually engaged with appear in the top 100 candidates from retrieval?). Hit rate per category. But offline metrics are unreliable predictors of online performance — the test set doesn't capture position effects, impression effects, or novelty effects. Always shadow-test before A/B: run the new model in shadow mode, log its recommendations, then compare with held-out user cohort." },
+    { t: "callout", c: "The question every interviewer asks: how do you prevent the feedback loop? Your model recommends item X → X gets more clicks → X gets more training signal → X gets recommended more. Left unchecked, the feed collapses to a small set of viral items. Solutions: exploration budget (Thompson sampling on 5% of feed slots), counterfactual debiasing in training (inverse propensity scoring), diversity constraints in re-ranking." },
+    { t: "refs", c: ["Covington et al. (2016) — YouTube Recommendations (the template for this architecture)", "Zhao et al. (2019) — Recommending What Video to Watch Next: Multitask Ranking", "Bottou et al. (2013) — Counterfactual Reasoning and Learning Systems (IPS for debiasing)"] }
+  ],
+
+  "how-id-build-fraud-detection": [
+    { t: "h2", c: "The Problem Is Not Classification. It's an Adversarial Cat-and-Mouse." },
+    { t: "p", c: "Fraud detection at a payments company like PhonePe or Juspay is not a standard ML classification problem. The label is imbalanced (0.01% to 0.1% fraud rate). The distribution shifts daily as fraudsters adapt to your model. Latency is hard-constrained (must score in <50ms to not block the transaction). False positives hurt real customers and drive churn. False negatives lose money. And the moment you deploy a model that works, fraudsters start probing it to find the blind spots." },
+    { t: "h2", c: "Feature Engineering: Where the Real Work Is" },
+    { t: "p", c: "Raw transaction features (amount, merchant, timestamp) are necessary but insufficient. The real signal is in behavioral patterns: velocity features (how many transactions has this card made in the last 1 hour / 24 hours / 7 days?), graph features (is this merchant connected to other merchants that were recently flagged?), device fingerprint (is this device ID associated with multiple account IDs?), location coherence (is the transaction location consistent with the user's historical behavior?)." },
+    { t: "p", c: "Computing these features in real time at transaction time requires a streaming feature pipeline. Kafka ingests transaction events. Flink or Spark Streaming computes velocity aggregations and updates in real time. The feature store serves pre-computed and real-time features to the scoring model within the latency budget." },
+    { t: "h2", c: "Model Architecture" },
+    { t: "p", c: "Layer 1 — Rule engine (< 5ms): hard rules that block obviously fraudulent transactions immediately. Same account logged in from 3 countries in 1 hour → block. Transaction amount 50x the account's historical maximum → review queue. Rules are fast, interpretable, and auditable. They catch the easy cases and reduce the load on the ML model." },
+    { t: "p", c: "Layer 2 — ML model (< 30ms): a gradient-boosted tree (LightGBM or XGBoost) scoring the full feature set. Why trees over neural nets for the core model? Interpretability (regulators require explanations), speed (tree inference is faster than neural net inference at this latency budget), and robustness to noisy/missing features. Output: fraud probability score." },
+    { t: "p", c: "Layer 3 — Graph neural network (async, for enrichment): a GNN over the transaction graph detects fraud rings — coordinated groups of accounts and merchants working together. This runs async and enriches the feature store, not the real-time path." },
+    { t: "h2", c: "Handling Class Imbalance" },
+    { t: "list", c: [
+      "Undersample majority class: train on 10% of legitimate transactions + 100% of fraud. Adjust decision threshold at inference to account for the sampling ratio.",
+      "Focal loss: downweight easy (clearly legitimate) examples so training focuses on hard cases near the decision boundary.",
+      "Anomaly detection as a complementary signal: train an autoencoder on legitimate transactions only. Transactions with high reconstruction error are anomalous — good for catching novel fraud patterns the classifier hasn't seen.",
+      "Calibration: the model output is a score, not a calibrated probability. Platt scaling or isotonic regression calibrates the score to a true probability, enabling threshold selection with meaningful precision-recall interpretation."
+    ]},
+    { t: "h2", c: "The Adversarial Problem" },
+    { t: "p", c: "Fraudsters probe your model. They run small test transactions to find the threshold below which you don't flag. They rotate device IDs and account IDs to defeat velocity features. They use money mule networks to launder through legitimate-looking accounts. The ML model must be retrained frequently (daily or weekly) on recent fraud patterns. New fraud patterns that don't match historical training data require anomaly detection. Human reviewers close the loop — their decisions feed back into training labels." },
+    { t: "callout", c: "The interview question that trips people: 'your fraud model has 99.9% accuracy — is it good?' No. At 0.1% fraud rate, predicting 'legitimate' for every transaction achieves 99.9% accuracy while catching zero fraud. The right metric is precision-recall at a fixed threshold (e.g., precision@80% recall) or area under the PR curve." },
+    { t: "refs", c: ["Branco et al. (2016) — A Survey of Predictive Modeling Under Imbalanced Distributions", "Liu et al. (2021) — Pick and Choose: A GNN-Based Imbalanced Learning Approach for Fraud Detection", "Akoglu et al. (2015) — Graph-Based Anomaly Detection and Description (fraud ring detection)"] }
+  ],
+
+  "how-id-build-search-ranking-ecommerce": [
+    { t: "h2", c: "E-commerce Search Is Not Information Retrieval" },
+    { t: "p", c: "When a user searches 'running shoes under 2000' on Flipkart, they're not looking for the most relevant documents about running shoes. They're looking for the shoes most likely to result in a purchase they'll be happy with. These are different objectives. A shoe that ranks first in BM25 relevance (many mentions of 'running', 'shoe') might have a 30% return rate and terrible reviews. A shoe with fewer keyword matches but a 4.8 rating and free delivery might be the right answer." },
+    { t: "h2", c: "Query Understanding: Before Retrieval" },
+    { t: "p", c: "The query 'running shoes' needs to be understood before any retrieval happens. Query classification: is this a navigational query (user knows what they want), informational, or transactional? For transactional queries, extraction matters: extract price constraint (under 2000), category (running shoes), implicit constraints (user's historical size from past orders, preferred brands from browsing). Spell correction and synonym expansion: 'nike runing shoes' → 'nike running shoes', 'shoes' → also includes 'footwear', 'sneakers'." },
+    { t: "h2", c: "Two-Stage Retrieval" },
+    { t: "p", c: "Stage 1 — Recall: BM25 on product text (title, description, attributes) for keyword matches. Dense retrieval (bi-encoder) for semantic matches — catches 'running shoes' when the product description says 'athletic footwear for jogging'. Category/attribute filtering: if query intent is classified as 'running shoes', filter to footwear category, apply attribute filters from extracted constraints. Union of signals, target 500-1000 candidates." },
+    { t: "p", c: "Stage 2 — Ranking: LTR (Learning to Rank) model with hundreds of features. Query-item relevance features (BM25 score, semantic similarity score, category match). Item quality features (rating, review count, return rate, seller reliability). Business features (is it Prime-eligible? Current delivery estimate? Price competitiveness vs. similar items). User-item personalization features (has this user bought from this brand? What's their price sensitivity?). Historical CTR and conversion rate of this item for similar queries." },
+    { t: "code", c: `# Learning to Rank with LightGBM
+import lightgbm as lgb
+
+# Features for each (query, item) pair
+features = [
+    "bm25_score", "semantic_similarity", "category_match",
+    "item_rating", "review_count", "return_rate",
+    "user_brand_affinity", "price_vs_budget_ratio",
+    "historical_ctr_for_similar_queries",
+    "delivery_eta_minutes", "is_prime_eligible"
+]
+
+# Training data: (query_id, item_features, label)
+# Labels: 0=not relevant, 1=clicked, 2=purchased, 3=repurchased
+# LambdaMART directly optimizes NDCG
+
+params = {
+    "objective": "lambdarank",  # directly optimizes ranking metric
+    "metric": "ndcg",
+    "ndcg_eval_at": [5, 10, 20],
+    "num_leaves": 127,
+    "learning_rate": 0.05,
+}
+
+model = lgb.train(
+    params, 
+    train_data,
+    valid_sets=[val_data],
+    num_boost_round=500
+)` },
+    { t: "h2", c: "Dealing With Position Bias" },
+    { t: "p", c: "Items ranked higher get more clicks, not because they're better but because they're seen more often. Training on click data without correcting for position bias teaches the model to recommend popular positions, not good items. Inverse Propensity Scoring (IPS): upweight clicks on lower-ranked items (where click probability is lower) and downweight clicks on top-ranked items. Propensity estimation: from randomization experiments where you occasionally show items in random positions and measure the click rate by position." },
+    { t: "h2", c: "Query-Item Feature Freshness" },
+    { t: "p", c: "The historical CTR of an item for a query is a powerful ranking feature but goes stale. An item's CTR for 'winter jackets' in summer is irrelevant. A new product has no historical CTR. Solution: stratify CTR estimates by season, recency-weight historical observations (exponential decay), use category-level priors for new items with no query-specific history. This is the feature engineering work that takes months to get right and is what differentiates mature search systems from basic ones." },
+    { t: "callout", c: "The system design question interviewers love: 'how do you handle a brand new query that has never appeared before in your system?' Your LTR model has no historical features for this query. Fallback: semantic similarity from dense retrieval, global item quality features (rating, sales velocity), category-level signals from query classification. This is why the retrieval stage must be robust to cold-start queries before the ranking stage can do its job." },
+    { t: "refs", c: ["Joachims et al. (2017) — Unbiased Learning-to-Rank with Biased Feedback", "Guo et al. (2019) — PAL: A Position-Bias Aware Learning Framework for CTR Prediction", "Ma et al. (2018) — Entire Space Multi-Task Model: An Effective Approach for Estimating Post-Click Conversion Rate"] }
   ]
 };
