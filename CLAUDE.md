@@ -21,7 +21,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 66, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 483 PrepLab questions, 301 GT index entries (12 new series, 3 interactive Systems modules), 5 PrepLab modes (+ Interview Sprint).
+**Scale (post-sprint 67, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 483 PrepLab questions, 301 GT index entries (12 new series, 3 interactive Systems modules), 6 PrepLab modes (+ Interview Sprint + Browse All).
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
@@ -481,6 +481,20 @@ For full audit findings see AUDITS.md.
 - Commit `256446c`. Brace diff = 0 on all files.
 - **Scale post-sprint 66:** 483 PrepLab questions, 301 GT index entries, 12 GT series.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
+**Sprint 67 (June 2026) — Bug audit + Browse mode + normalizeBlock:**
+- **Root cause audit:** All sprint 61–66 GT posts stored with `c:` key (new format), but GroundTruth.jsx renderer only read `b.text`, `b.items`, `b.headers`, `b.rows`. Every post from those sprints was rendering blank. Fixed by adding `normalizeBlock()` to GroundTruth.jsx — converts `c:` key to all legacy keys expected by `Block`, `countMatches`, `generateQuiz`, and TOC heading extraction. Commit `3ea40b3`.
+- **6 bug classes fixed in groundTruthPosts.js:**
+  1. `},\n    {` literal (4-space) — Python `fix_multiline_strings` merged adjacent block objects with `\n` inside string. Restored to real newline. `bee927a`.
+  2. `},\n      {` literal (6-space variant) — same cause. Fixed same commit `7fe66bc`.
+  3. Missing closing `"` in indic-nlp-challenges list block — stray `'` from single-quote draft origin. `3ccd359`.
+  4. Missing closing `"` in ai-integration-debugging list block — same pattern. `7fe66bc`.
+  5. Two bare `,` lines (15933, 16078) between post entries — orphaned after prior block removal. `0cd366d`.
+  6. 15 posts stored as `{ title, date, content: [...] }` objects — renderer does `POST_CONTENT[id].filter(...)` which fails on objects. Extracted blocks arrays via Node vm and rewrote as flat arrays. `3ea40b3`.
+- **Browse All PrepLab mode:** `BrowseMode` component added to PrepLab.jsx. Topic + difficulty filters, scrollable question list, expandable cards showing MCQ options (correct highlighted), explanation, trap, mark-reviewed button. Sidebar entry added. Commit `802cf17`.
+- **Process fix:** Node vm validation (`node -e "require('./validate.cjs')"`) must run after every groundTruthPosts.js write — brace diff only catches `{}` imbalance, misses quote errors, bare commas, object-format posts.
+- **Role coverage post-sprint 67:** Senior AIE 85%, Applied Scientist 85%, MLOps 80%, RE 80%, Staff/Lead 75%, Lead/EM 75%, FDE 75%, Indic/Sarvam 60%. Gaps remaining: Research Scientist (no publication strategy), pure SWE→AI switcher path, live coding assessment prep.
+- **Scale post-sprint 67:** 483 PrepLab questions, 301 GT index entries, 12 GT series, 6 PrepLab modes (Browse All added).
 
 **Sprints 37c–41** — see LINEAGE.md for detail. Key: GT state-aware reading mode, RAG Lab static corpus, 10 new PrepLab questions + sibling codebase analysis (39), shared components + streak heatmap + FeedbackBar + multi-select MCQ + CommonTrap expansion + AgentContextArch module (40), 7 new Concepts modules + 4 gyms activated + Prompt Lab (41).
 

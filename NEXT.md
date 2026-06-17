@@ -2,7 +2,19 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 64 (June 2026) — Scale: 426 PrepLab questions, 286 GT index entries, 5 PrepLab modes, 9 GT series*
+*Last updated: sprint 67 (June 2026) — Scale: 483 PrepLab questions, 301 GT index entries, 6 PrepLab modes (Browse All added), 12 GT series*
+
+---
+
+## Sprint 67 — ✅ COMPLETE
+
+**Objective:** Bug audit + renderer fix + Browse mode.
+
+1. ~~**6 bug class audit + fixes in groundTruthPosts.js**~~ — DONE. `bee927a`, `3ccd359`, `7fe66bc`, `0cd366d`, `3ea40b3`.
+2. ~~**normalizeBlock() in GroundTruth.jsx**~~ — DONE. All sprint 61–66 posts now render correctly. `3ea40b3`.
+3. ~~**Browse All PrepLab mode**~~ — DONE. Topic+difficulty filters, expandable answer cards, mark-reviewed. `802cf17`.
+
+**Process fix added:** Run `node -e "require('./validate.cjs')"` after every groundTruthPosts.js write.
 
 ---
 
