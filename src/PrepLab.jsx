@@ -3129,6 +3129,145 @@ function DefenseDocMode({ onExit }) {
 }
 
 
+// ─── BROWSE MODE ─────────────────────────────────────────────────────────────
+function BrowseMode({ onExit }) {
+  const [topic, setTopic] = useState("all");
+  const [diff, setDiff] = useState("all");
+  const [expanded, setExpanded] = useState({});
+  const [reviewed, setReviewed] = useState({});
+
+  const allTopics = Array.from(new Set(PREP_QUESTIONS.map(q => q.topic))).sort();
+
+  const filtered = PREP_QUESTIONS.filter(q => {
+    if (topic !== "all" && q.topic !== topic) return false;
+    if (diff !== "all" && q.difficulty !== diff) return false;
+    if (q.type === "scenario") return false; // scenarios don't suit browse
+    return true;
+  });
+
+  const toggle = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  const markReviewed = (id) => setReviewed(prev => ({ ...prev, [id]: !prev[id] }));
+
+  const reviewedCount = Object.values(reviewed).filter(Boolean).length;
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="shrink-0 px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <h2 className="text-base font-bold text-white">Browse Questions</h2>
+          </div>
+          <p className="text-xs text-zinc-500">{filtered.length} questions — expand any to see answer + explanation</p>
+        </div>
+        {reviewedCount > 0 && (
+          <span className="text-[10px] font-mono text-emerald-400 border border-emerald-800/60 bg-emerald-950/30 px-2 py-1 rounded">
+            {reviewedCount} reviewed
+          </span>
+        )}
+      </div>
+
+      {/* Filters */}
+      <div className="shrink-0 px-6 py-3 flex flex-wrap gap-2" style={{ borderBottom: "1px solid var(--border)" }}>
+        {/* Topic filter */}
+        <div className="flex flex-wrap gap-1">
+          {["all", ...allTopics].map(t => (
+            <button key={t} onClick={() => setTopic(t)}
+              className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${topic === t ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"}`}>
+              {t === "all" ? "All topics" : (TOPIC_LABELS[t] || t)}
+            </button>
+          ))}
+        </div>
+        {/* Difficulty filter */}
+        <div className="flex gap-1 ml-auto">
+          {["all", "easy", "medium", "hard"].map(d => (
+            <button key={d} onClick={() => setDiff(d)}
+              className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all capitalize ${diff === d ? "bg-zinc-600 text-white" : "bg-zinc-800/60 text-zinc-500 hover:text-zinc-300"}`}>
+              {d}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Question list */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+        {filtered.length === 0 && (
+          <p className="text-zinc-500 text-sm text-center py-10">No questions match this filter.</p>
+        )}
+        {filtered.map((q, idx) => {
+          const isOpen = !!expanded[q.id];
+          const isDone = !!reviewed[q.id];
+          const diffColor = q.difficulty === "hard" ? "text-red-400 border-red-900/50 bg-red-950/20"
+            : q.difficulty === "medium" ? "text-amber-400 border-amber-900/50 bg-amber-950/20"
+            : "text-emerald-400 border-emerald-900/50 bg-emerald-950/20";
+
+          return (
+            <div key={q.id} className={`rounded-xl border transition-all ${isDone ? "border-emerald-800/40 bg-emerald-950/10" : "border-zinc-800 bg-zinc-900/40"} ${isOpen ? "border-violet-700/60" : ""}`}>
+              {/* Question row */}
+              <button onClick={() => toggle(q.id)}
+                className="w-full text-left px-4 py-3 flex items-start gap-3">
+                <span className="text-zinc-600 font-mono text-[11px] shrink-0 mt-0.5">{String(idx + 1).padStart(3, "0")}</span>
+                <span className="flex-1 text-sm text-zinc-200 leading-snug">{q.question}</span>
+                <div className="shrink-0 flex items-center gap-2">
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${diffColor}`}>{q.difficulty}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    className={`text-zinc-500 transition-transform ${isOpen ? "rotate-180" : ""}`}>
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
+              </button>
+
+              {/* Expanded answer */}
+              {isOpen && (
+                <div className="px-4 pb-4 space-y-3 border-t border-zinc-800/60 pt-3">
+                  {/* Options for MCQ */}
+                  {q.type === "mcq" && q.options && (
+                    <div className="space-y-1">
+                      {q.options.map((opt, oi) => (
+                        <div key={oi} className={`px-3 py-2 rounded-lg text-sm flex items-start gap-2 ${oi === q.correct ? "bg-emerald-950/40 border border-emerald-800/50 text-emerald-300" : "bg-zinc-800/40 text-zinc-400"}`}>
+                          <span className="font-mono text-[11px] shrink-0 mt-0.5">{String.fromCharCode(65 + oi)}.</span>
+                          <span>{opt}</span>
+                          {oi === q.correct && <span className="ml-auto text-[10px] font-mono text-emerald-400 shrink-0">✓ CORRECT</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Explanation */}
+                  <div className="rounded-lg bg-zinc-800/50 px-3 py-2.5">
+                    <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Explanation</p>
+                    <p className="text-sm text-zinc-300 leading-relaxed">{q.explanation}</p>
+                  </div>
+
+                  {/* Trap */}
+                  {q.trap && (
+                    <div className="rounded-lg border border-amber-800/40 bg-amber-950/20 px-3 py-2.5">
+                      <p className="text-[10px] font-mono text-amber-500 uppercase tracking-widest mb-1">Common Trap</p>
+                      <p className="text-sm text-amber-300/80 leading-relaxed">{q.trap}</p>
+                    </div>
+                  )}
+
+                  {/* Footer: mark reviewed */}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] font-mono text-zinc-600">{TOPIC_LABELS[q.topic] || q.topic} · {q.difficulty}</span>
+                    <button onClick={() => markReviewed(q.id)}
+                      className={`text-[11px] px-2.5 py-1 rounded font-mono transition-all border ${isDone ? "border-emerald-700 bg-emerald-900/30 text-emerald-400" : "border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500"}`}>
+                      {isDone ? "✓ Reviewed" : "Mark reviewed"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── HOME SCREEN ──────────────────────────────────────────────────────────────
 
 const MODE_CARDS = [
@@ -3790,6 +3929,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
     { id: "jdprep",      label: "Interview Strategy", tag: "STRATEGY",  desc: "JD → gap score → day-by-day plan." },
     { id: "companyprep", label: "Company Tracks",     tag: "ARCHETYPE", desc: "By company archetype" },
     { id: "intexp",      label: "Interview Signal",  tag: "INTEL",     desc: "40 real loop patterns — what's actually tested, by company." },
+    { id: "browse",      label: "Browse All",        tag: "REVIEW",    desc: "Scroll through every question. Expand to see answer + trap." },
   ];
 
   return (
@@ -3845,6 +3985,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
         {mode === "companyprep" && <CompanyPrepMode onExit={exitMode} onNavigate={onNavigate} />}
         {mode === "defense"     && <DefenseDocMode onExit={exitMode} />}
         {mode === "intexp"      && <InterviewIntelMode onExit={exitMode} />}
+        {mode === "browse"      && <BrowseMode onExit={exitMode} />}
         {mode === "heatmap"     && <WeaknessHeatmapMode onExit={exitMode} />}
         {!mode && (() => {
           // Personalised entry: derive from localStorage without extra state
