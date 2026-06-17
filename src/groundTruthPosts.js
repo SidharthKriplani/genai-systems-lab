@@ -15242,5 +15242,70 @@ def serve_and_log(query: str, user_id: str, production_model) -> dict:
     { t: "callout", c: "The trend is toward decoder-only dominance. At large scales (>10B parameters), decoder-only models match or exceed encoder-decoder on most seq2seq benchmarks while being architecturally simpler. The encoder-decoder advantage shrinks as scale increases. For most new production systems, use a decoder-only LLM for generation tasks and encoder-only for embedding tasks." },
     { t: "refs", c: ["Raffel et al. — Exploring the Limits of Transfer Learning with T5 (2020)", "Lewis et al. — BART: Denoising Sequence-to-Sequence Pre-training (2020)", "Chung et al. — Scaling Instruction-Finetuned Language Models / Flan-T5 (2022)"] }
   ]
+,
 
+  "interview-sprint-cheat-sheet": [
+    { t: "h2", c: "The AI Engineering Interview Sprint: A Time-Horizon Prep Guide" },
+    { t: "p", c: "Most interview prep fails not because the candidate doesn't know enough, but because they studied the wrong things in the wrong order. This post gives you a concrete plan — organized by how much time you have left. The structure assumes you're interviewing for mid-level to senior AI engineer roles covering RAG, agents, evaluation, LLMOps, and NLP foundations." },
+    { t: "callout", c: "This post maps directly to GSL's content. Each section links to specific modules and PrepLab question clusters so you know exactly what to open next. Work through it top to bottom based on when your interview is." },
+
+    { t: "h2", c: "One Week Out: Build the Architecture Map" },
+    { t: "p", c: "With a week, you have time to build genuine understanding — not just memorize answers. The goal this week is to internalize the mental models that let you answer novel questions, not just rehearsed ones. Interviewers at senior levels ask about tradeoffs, not facts." },
+    { t: "list", c: [
+      "RAG pipeline: Can you trace a query from raw text to final answer and name what can break at each step? Know: chunking strategies, embedding models (bi-encoder), ANN index choice, reranking (cross-encoder), prompt assembly. Read: how-rag-works, bi-encoder-vs-cross-encoder, ann-algorithms-deep-dive.",
+      "Agents: Do you understand ReAct, memory patterns, tool use, and where agents fail? Know: the four memory problem types, when to use LangGraph vs simple orchestration, how tool poisoning works. Read: react-pattern, agent-memory-architecture, agent-failure-modes.",
+      "Evaluation: Can you pick the right metric for a given task? Know: NDCG vs MRR (when each applies), LLM-as-judge bias modes, when human eval is required, calibration. Read: ndcg-mrr-from-scratch, llm-judge-calibration, calibration-ece-from-scratch.",
+      "Production: Can you describe a monitoring stack for an LLM system? Know: what to log, PSI/KS/MMD for drift detection, canary vs shadow deployment, retraining triggers. Read: llm-observability, drift-detection-production, deployment-patterns-ml.",
+      "NLP foundations: Do you know the difference between bi-encoder and cross-encoder, why [CLS] pooling fails, and when to use T5 vs a decoder-only model? Read: bert-internals-explained, sentence-transformers-production, encoder-decoder-architecture."
+    ]},
+    { t: "p", c: "End-of-week check: open PrepLab, pick 10 questions across all topics, and track your accuracy. Identify your two weakest topic clusters. Those become your focus for the next phase." },
+
+    { t: "h2", c: "Three Days Out: Harden the Weak Spots and Run Scenarios" },
+    { t: "p", c: "With three days, you should no longer be doing broad surveys. You now know what you don't know. Spend these three days on: (1) drilling your weak topic clusters in PrepLab, (2) working through at least two scenario questions, and (3) running the Systems modules for your weakest areas." },
+    { t: "table", c: "Weak area | Key concept to nail | PrepLab cluster | System module to run\nRetrieval | Bi-encoder vs cross-encoder — the architecture and latency numbers | bienc-1/4, sbert-1/3 | BiEncoderVsCrossEncoder\nEvaluation | When LLM-as-judge is unreliable and how to fix it | judge-1/4, calib-1/4 | EvalsLab\nAgents | Memory patterns and what causes state drift | agents-9/12 | AgentContextArchModule\nLLMOps | Drift detection: what PSI measures and when to use MMD instead | drift-1/4, deploy-1/4 | LLMObservability\nFine-tuning | LoRA rank, catastrophic forgetting, when NOT to fine-tune | ft-1/4, lora-1/2 | FineTuningLab\nNLP/Embeddings | Why [CLS] fails, mean pooling vs SBERT | bert-1/3, sbert-1/3 | BertPoolingLab" },
+    { t: "p", c: "Run at least one full PrepLab scenario (tools: scenario-4 tool poisoning, scenario-5 catastrophic forgetting, scenario-6 eval distribution mismatch). These are 4-step walkthroughs of production incidents — exactly the structure some interviews use." },
+    { t: "callout", c: "The most common three-day mistake: drilling MCQs and calling it prep. MCQs build recognition, not production reasoning. Make yourself explain your answers aloud. If you can't say why the other three options are wrong, you haven't learned it yet." },
+
+    { t: "h2", c: "One Day Out: The 20 Highest-Signal Questions" },
+    { t: "p", c: "With 24 hours left, stop acquiring new information. Every hour spent learning something new is an hour not spent sharpening what you already know. Your job today is to make your existing knowledge retrieval-fast under pressure." },
+    { t: "p", c: "These are the questions most likely to appear in a mid-to-senior AI engineering loop, based on interview signal data from 22 practitioners. Have a crisp answer to each:" },
+    { t: "list", c: [
+      "Walk me through how you'd build a RAG system from scratch. What are the failure modes at each step?",
+      "When would you use a bi-encoder vs a cross-encoder? What's the production pattern?",
+      "Your LLM system's quality has degraded in production. How do you diagnose it?",
+      "How does fine-tuning differ from RAG? When would you choose one over the other?",
+      "What is NDCG and when do you use it instead of accuracy?",
+      "Explain how an agent can fail even when the underlying LLM is working correctly.",
+      "What is training-serving skew and how do feature stores prevent it?",
+      "You're using LLM-as-judge for evaluation. What biases should you control for?",
+      "How does KV cache reduce LLM inference latency?",
+      "What does temperature do to an LLM's output distribution? When do you set it to 0?",
+      "How does BERT's masked language modeling differ from GPT's causal language modeling?",
+      "You want to fine-tune a sentence transformer for medical retrieval. What training data and loss function?",
+      "How does speculative decoding improve throughput without degrading quality?",
+      "A canary deployment reveals a regression for a specific user segment. What does this tell you about routing?",
+      "How would you detect that your embedding model has drifted for your domain?",
+      "You need to search 10M documents with filtering by category and date. Which vector database and why?",
+      "Explain the difference between data drift, concept drift, and label drift.",
+      "How does LoRA reduce fine-tuning memory cost without reducing model expressiveness significantly?",
+      "What is a two-tower model and why does it dominate large-scale retrieval?",
+      "Your cross-encoder reranker is accurate but too slow for your latency SLA. What's the fix?"
+    ]},
+
+    { t: "h2", c: "Two Hours Out: The Mental Model Refresher" },
+    { t: "p", c: "Stop drilling questions. You're in consolidation mode. Read these numbers and frameworks once, slowly, and let them settle. These are the facts that create instant credibility when stated precisely." },
+    { t: "table", c: "Concept | Number to know | Why it matters\nBi-encoder latency | ~60ms (encode + ANN search, any corpus size) | Instant credibility in retrieval design questions\nCross-encoder latency | ~1-2ms per pair — scales linearly | Explains why two-stage is mandatory at scale\nBERT max tokens | 512 — hard architectural limit | Shows you know the constraint, not just the concept\nSBERT CLS vs mean | CLS is near-random; mean pooling is better; SBERT-trained is the solution | The [CLS] trap is a top-5 interview question\nHNSW parameters | M (connections, ~16 default), efConstruction (~128) | Shows depth on vector index configuration\nPSI thresholds | <0.1 no drift, 0.1-0.2 moderate, >0.2 significant | Shows you know the operational number, not just the concept\nLoRA rank | Low r (4-8) = less expressive, faster; high r (32-64) = more expressive | Shows you understand the tradeoff\nTemperature | 0 = greedy (deterministic), >1 = flatter distribution | Know both extremes and their failure modes\nCalibration fix | Temperature scaling: single parameter T, T>1 softens distribution | Simplest effective calibration method\nKV cache memory | 2 × n_layers × n_kv_heads × d_head × seq_len × batch × bytes | Shows you can back-of-envelope the cost" },
+    { t: "callout", c: "The two-hour rule: if you don't know something in the next two hours, you won't learn it in time. Stop trying to patch knowledge gaps. Focus entirely on communicating clearly what you already know. Clarity > coverage at this stage." },
+
+    { t: "h2", c: "What Interviewers Actually Penalize" },
+    { t: "p", c: "Based on 22 practitioner interview experiences in the GSL Interview Signal database, the most common reasons candidates fail AI engineering loops are not knowledge gaps — they're communication patterns:" },
+    { t: "list", c: [
+      "Giving the definition instead of the tradeoff. Interviewers know what NDCG is. They want to know when you'd use it instead of accuracy, and when you wouldn't.",
+      "Treating every problem as a fine-tuning problem or every problem as a RAG problem. The correct answer is almost always 'it depends, and here are the factors I'd consider.'",
+      "Not naming the failure mode. When asked about any system, the candidate who says 'and here's where this breaks' is immediately more credible than the candidate who only describes the happy path.",
+      "Saying 'we used X at my company' without explaining why X was chosen. Process answers without reasoning signals pattern-following, not engineering judgment.",
+      "Not knowing the numbers. Vague answers like 'HNSW is fast' are much weaker than 'HNSW recall@10 at efSearch=16 is typically 0.85 on 1M vectors, and you tune efSearch up to trade latency for recall.'"
+    ]},
+    { t: "refs", c: ["GSL PrepLab — Interview Signal mode (22 practitioner experiences)", "GSL Systems — BiEncoderVsCrossEncoder, BertPoolingLab, VectorSimilarityExplorer modules", "GSL Ground Truth — NLP Practitioners series, Retrieval Deep Dives, Evaluation Deep Dives"] }
+  ]
 };
