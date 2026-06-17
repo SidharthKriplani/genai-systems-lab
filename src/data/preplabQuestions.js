@@ -675,7 +675,7 @@ export const PREP_QUESTIONS = [
     keywords: ["accuracy", "escalation", "edge case", "trust", "liability", "cost", "hallucin", "eval", "benchmark", "pilot"],
     explanation: "Key points: LLMs hallucinate — wrong answers in support create liability and erode trust. Accuracy must be measured on your actual ticket corpus, not general benchmarks. Start with automation for high-confidence, low-stakes cases. Build an escalation path for everything else. Measure deflection rate AND satisfaction AND escalation rate together.",
     trap: "Saying \'yes, we can build this.\' The correct PM answer is scoping: which query types, what is the handoff design for out-of-scope queries, what metric defines success vs. requiring human escalation.",
-    readMore: { label: "Production AI reliability", tab: "groundtruth", postId: "llm-reliability-production" }
+    readMore: { label: "Production AI reliability", tab: "groundtruth", postId: "llmops-production-checklist" }
   },
   {
     id: "product-8", topic: "product", difficulty: "medium", gated: true, type: "mcq",
@@ -684,7 +684,7 @@ export const PREP_QUESTIONS = [
     correct: 1, keywords: [],
     explanation: "Fine-tuning requires labeled training data you don't have yet, weeks of iteration, and a deployment pipeline. Prompt engineering ships in days and teaches you what the actual failure modes are. You cannot write good training labels until you know where prompting breaks. Start fast, collect failure cases, then fine-tune if needed.",
     trap: "Saying \'fine-tuning gives better results.\' Fine-tuning requires 4–8 weeks minimum (data curation + training + eval). For a 4-week MVP, prompting + RAG is the only viable path — fine-tuning is a v2 investment, not a sprint scope.",
-    readMore: { label: "Fine-tuning vs. prompting tradeoffs", tab: "groundtruth", postId: "fine-tuning-when-and-why" }
+    readMore: { label: "Fine-tuning vs. prompting tradeoffs", tab: "groundtruth", postId: "fine-tuning-fundamentals" }
   },
   {
     id: "product-9", topic: "product", difficulty: "hard", gated: true, type: "text",
@@ -4491,7 +4491,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "In the original skip-gram formulation, predicting the context word requires a softmax over all |V| vocabulary words — computing |V| dot products at every training step. For a vocabulary of 100K words, this is 100K operations per gradient update. Negative sampling replaces this with a binary classification task: is this (word, context) pair real or noise? Each update requires only k+1 dot products (k negatives + 1 positive). This makes training tractable on large corpora while producing comparable embedding quality.",
     trap: "Saying negative sampling 'prevents overfitting.' The motivation is computational efficiency, not regularization. Full softmax and negative sampling converge to similar embedding quality — the difference is training cost. Framing this as a quality argument rather than an efficiency argument misidentifies the key insight.",
-    readMore: { label: "Word2Vec and Distributional Semantics", tab: "groundtruth", postId: "word2vec-distributional-semantics" }
+    readMore: { label: "Word2Vec and Distributional Semantics", tab: "groundtruth", postId: "word2vec-from-scratch" }
   },
   {
     id: "nlpfound-2", topic: "finetuning", difficulty: "medium", gated: true, type: "mcq",
@@ -4505,7 +4505,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "Vanishing gradients: in an RNN, the gradient of the loss at time T with respect to a hidden state at time t is a product of T-t Jacobian matrices — each multiplied by the tanh derivative (max 1, typically <1). Over long sequences this product approaches zero exponentially. LSTMs introduce a cell state that flows linearly through time, protected by the forget gate. Gradients through the cell state are not squashed by nonlinearities at each step, allowing the gradient to propagate to early time steps without exponential decay.",
     trap: "Saying LSTMs use 'more layers' to fix vanishing gradients. Depth increases the number of nonlinear transformations, which worsens vanishing gradients. The LSTM fix is architectural: the cell state provides a linear, gradient-friendly path through time. More layers is the wrong axis; the gating mechanism is the key mechanism.",
-    readMore: { label: "RNN and LSTM Architecture", tab: "groundtruth", postId: "rnn-lstm-from-scratch" }
+    readMore: { label: "RNN and LSTM Architecture", tab: "groundtruth", postId: "rnn-lstm-vanishing-gradient" }
   },
   {
     id: "nlpfound-3", topic: "finetuning", difficulty: "hard", gated: true, type: "mcq",
@@ -4549,7 +4549,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "KV cache memory scales directly with n_kv_heads: memory = 2 × n_layers × n_kv_heads × d_head × seq_len × bytes_per_element. With MHA: 32 KV heads. With GQA (8 groups): 8 KV heads. The ratio is 32/8 = 4x memory reduction in the KV cache. For a 70B model at 128K sequence length, this difference determines whether the model fits on 2 GPUs or requires 4. GQA is the architectural choice in Llama 3 and Mistral precisely for this serving cost reduction at long contexts.",
     trap: "Saying 'GQA affects compute, not memory.' GQA reduces both: fewer KV heads means fewer matrices to store (memory) and fewer attention computations per forward pass (compute). But in production LLM serving, KV cache memory is often the binding constraint, making the memory benefit more significant than the compute benefit. The specific reduction factor (4x for 32→8 heads) is the expected precision in an interview context.",
-    readMore: { label: "Multi-Head, Grouped Query, and Multi-Query Attention", tab: "groundtruth", postId: "attention-variants-mha-gqa-mqa" }
+    readMore: { label: "Multi-Head, Grouped Query, and Multi-Query Attention", tab: "groundtruth", postId: "mha-mqa-gqa-explained" }
   },
   {
     id: "internals-2", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
@@ -4563,7 +4563,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "Without PagedAttention, each request pre-allocates a contiguous KV cache block for its maximum sequence length. A request with max_new_tokens=2048 reserves 2048 positions even if it only generates 300 tokens — wasting ~85% of its allocation. This fragmentation limits batch size to far fewer requests than the GPU memory could theoretically fit. PagedAttention uses non-contiguous paged blocks (like OS virtual memory), allocating KV cache memory on demand as tokens are generated. The result: near-zero internal fragmentation, 2–4x more concurrent requests, proportional throughput improvement.",
     trap: "Saying PagedAttention speeds up the attention computation itself. The attention math is unchanged — PagedAttention is a memory management optimization. The speedup comes from fitting more requests into GPU memory simultaneously (higher batch utilization), not from faster per-token computation. Framing it as a compute optimization rather than a memory management innovation is the common miss.",
-    readMore: { label: "PagedAttention and Continuous Batching", tab: "groundtruth", postId: "paged-attention-kv-cache" }
+    readMore: { label: "PagedAttention and Continuous Batching", tab: "groundtruth", postId: "vllm-paged-attention-explained" }
   },
   {
     id: "internals-3", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
@@ -4577,7 +4577,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "Sinusoidal embeddings add absolute position vectors to token embeddings — the model must learn to decode the absolute position from the sum. RoPE applies a rotation to the Q and K vectors based on position, so the dot product Q·K naturally encodes the relative distance between positions (rotation angle difference). Two key advantages: (1) relative position awareness is built into the attention mechanism rather than baked into the embedding; (2) RoPE extrapolates more gracefully to longer sequences at inference time via interpolation tricks (e.g. YaRN, RoPE scaling), which is why LLM context windows have been extended from 4K to 1M+ tokens.",
     trap: "Saying RoPE 'uses learned parameters.' RoPE frequencies are typically fixed (not learned), similar to sinusoidal. The advantage is not learnability — it is the relative position encoding property, which enables better length generalization. Conflating RoPE with ALiBi (which uses a learned bias) or other positional schemes reveals shallow familiarity with the options.",
-    readMore: { label: "Positional Encodings Compared", tab: "groundtruth", postId: "positional-encodings-compared" }
+    readMore: { label: "Positional Encodings Compared", tab: "groundtruth", postId: "positional-encoding-variants" }
   },
   {
     id: "internals-4", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
