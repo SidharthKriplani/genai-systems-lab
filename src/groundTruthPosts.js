@@ -13357,5 +13357,440 @@ for step in range(500):
       { label: "SimCSE: Simple Contrastive Learning of Sentence Embeddings", url: "https://arxiv.org/abs/2104.08821" },
     ]},
   ],
+,
+
+  "mha-mqa-gqa-explained": [
+    { t: "p", text: "LLaMA-3, Mistral, Gemma, and every other modern open-weight model specifies a number of key-value heads that is different from — and smaller than — the number of query heads. This is Grouped Query Attention. Understanding why it exists requires understanding the memory arithmetic of the KV cache and exactly how Multi-Head Attention was changed to reduce it." },
+    { t: "h2", text: "Multi-Head Attention: the baseline" },
+    { t: "p", text: "In standard Multi-Head Attention (MHA), you have h heads. Each head has its own Q, K, V projection matrices. During generation, you cache the K and V tensors for every layer and every head. If you have 32 heads and 32 layers, you store 32×32 = 1,024 key and value tensors per sequence. Memory grows linearly with sequence length, number of layers, and number of heads." },
+    { t: "code", lang: "python", label: "MHA vs MQA vs GQA — memory comparison", text: `import math
+
+def kv_cache_bytes(n_layers, n_kv_heads, d_head, seq_len, dtype_bytes=2):
+    """Memory for the KV cache (K and V, both stored)."""
+    return 2 * n_layers * n_kv_heads * d_head * seq_len * dtype_bytes
+
+# LLaMA-3-8B configuration
+n_layers = 32
+d_head   = 128
+
+print("KV cache memory per request at different context lengths:\n")
+print(f"{'Model':30s} {'n_q':>5} {'n_kv':>5} {'4k ctx':>12} {'32k ctx':>12} {'128k ctx':>12}")
+print("-" * 80)
+
+configs = [
+    ("LLaMA-2-7B (MHA)",       32, 32,  32, d_head),
+    ("LLaMA-3-8B (GQA-8)",     32, 32,   8, d_head),
+    ("Mistral-7B (GQA-8)",     32, 32,   8, d_head),
+    ("LLaMA-3-70B (GQA-8)",    80, 64,   8, 128),
+    ("Falcon-7B (MQA)",        32, 71,   1, 64),
+]
+
+for name, layers, n_q, n_kv, dh in configs:
+    b4k   = kv_cache_bytes(layers, n_kv, dh, 4_096)   / 1e9
+    b32k  = kv_cache_bytes(layers, n_kv, dh, 32_768)  / 1e9
+    b128k = kv_cache_bytes(layers, n_kv, dh, 131_072) / 1e9
+    print(f"{name:30s} {n_q:>5} {n_kv:>5} {b4k:>11.2f}G {b32k:>11.2f}G {b128k:>11.2f}G")
+
+print("\nConclusion: GQA-8 reduces KV cache by 4x vs MHA with minimal quality loss.")
+print("At 128k context, MHA LLaMA-2-7B would use 64GB — full A100. GQA uses 16GB.")` },
+    { t: "h2", text: "Multi-Query Attention: one K/V head for all Q heads" },
+    { t: "p", text: "Multi-Query Attention (MQA, Shazeer 2019) uses a single K and V head shared across all query heads. For 32 query heads but 1 K/V head, the KV cache is 32× smaller. Quality degrades somewhat — each head is querying the same key and value representations, which limits the diversity of things different heads can attend to. MQA was adopted by Falcon and early PaLM variants where inference cost dominated quality concerns." },
+    { t: "h2", text: "Grouped Query Attention: the middle ground that won" },
+    { t: "p", text: "GQA (Ainslie et al., 2023) groups query heads into G groups, where each group shares one K/V head. With 32 query heads and G=8 groups, you have 4 query heads per K/V head — and 8 K/V heads total. KV cache is 4× smaller than MHA. Empirically, GQA-8 matches MHA quality on most benchmarks while providing nearly the memory savings of MQA. This is why every major model released after mid-2023 uses GQA: LLaMA-3, Mistral, Qwen, Gemma." },
+    { t: "h2", text: "The attention computation with GQA" },
+    { t: "p", text: "For each group of 4 query heads sharing 1 K/V head: the 4 Q projections are different (each head learns to query differently), but they all key into the same K and value-project through the same V. This means different query heads can attend to different positions (because their Q projections differ) but they read the same information from those positions (because V is shared). The diversity is in what you attend to, not in what you read. This is the quality trade-off GQA makes." },
+    { t: "callout", v: "tip", text: "Calculate: for your production model, what is the KV cache footprint at your target context length? Use the formula: 2 × n_layers × n_kv_heads × d_head × seq_len × 2 (FP16). For LLaMA-3-8B at 8k context: 2×32×8×128×8192×2 = 536MB per request. With 80GB A100 and ~16GB model weights: (80-16)GB / 0.54GB ≈ 118 concurrent requests at this context length. This calculation determines your serving infrastructure." },
+    { t: "refs", items: [
+      { label: "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints", url: "https://arxiv.org/abs/2305.13245" },
+      { label: "Fast Transformer Decoding: One Write-Head is All You Need (MQA)", url: "https://arxiv.org/abs/1911.02150" },
+    ]},
+  ],
+
+  "vllm-paged-attention-explained": [
+    { t: "p", text: "Before vLLM, most LLM serving systems pre-allocated a contiguous memory block for the maximum possible sequence length of each request. A request with a maximum length of 2048 tokens reserved 2048 tokens of KV cache memory — even if it only needed 50. GPU memory utilization was typically 20-40%. vLLM changed this with PagedAttention, borrowing the virtual memory paging idea from operating systems and applying it to the KV cache. GPU utilization went to 80-90%." },
+    { t: "h2", text: "The problem with contiguous pre-allocation" },
+    { t: "p", text: "A KV cache must be contiguous in memory for efficient access patterns. But you do not know in advance how long a sequence will be — you only discover its length as you generate. The standard approach: allocate for the maximum possible length upfront. For a batch of 8 requests, each allocated 4096 tokens, you reserve 8×4096 = 32,768 token-slots, even if the actual generated lengths are 100, 200, 150... The unused pre-allocated memory is wasted GPU VRAM." },
+    { t: "h2", text: "PagedAttention: virtual KV cache pages" },
+    { t: "p", text: "PagedAttention divides the KV cache into fixed-size pages (e.g., 16 tokens per page). A sequence allocates pages on demand as it generates. A block table maps logical page numbers (sequence position 0-15, 16-31, etc.) to physical page slots in GPU memory. The attention kernel knows how to use this non-contiguous mapping — it follows the block table to collect the right K and V values from wherever they are stored." },
+    { t: "code", lang: "python", label: "PagedAttention memory management — conceptual implementation", text: `class PagedKVCache:
+    """
+    Conceptual model of PagedAttention memory management.
+    Real vLLM uses CUDA kernels for the actual attention computation.
+    """
+    def __init__(self, total_pages=1000, page_size=16, n_layers=32, d_head=128, n_heads=8):
+        self.page_size   = page_size
+        self.n_layers    = n_layers
+        self.total_pages = total_pages
+        # Physical storage: each page holds page_size K/V vectors per layer
+        # Shape: (total_pages, page_size, 2, n_layers, n_heads, d_head)
+        print(f"Physical KV store: {total_pages} pages × {page_size} tokens")
+
+        self.free_pages = list(range(total_pages))   # physical page pool
+        self.sequences  = {}                          # seq_id → block_table
+
+    def allocate(self, seq_id, n_tokens):
+        """Allocate pages for a new sequence on demand."""
+        pages_needed = (n_tokens + self.page_size - 1) // self.page_size
+        if len(self.free_pages) < pages_needed:
+            raise RuntimeError("Out of KV cache memory (no free pages)")
+        block_table = []
+        for _ in range(pages_needed):
+            physical_page = self.free_pages.pop(0)
+            block_table.append(physical_page)
+        self.sequences[seq_id] = block_table
+        return block_table
+
+    def extend(self, seq_id):
+        """Add one more page when the sequence grows past a page boundary."""
+        if not self.free_pages:
+            raise RuntimeError("Out of pages — need to preempt a sequence")
+        physical_page = self.free_pages.pop(0)
+        self.sequences[seq_id].append(physical_page)
+        return physical_page
+
+    def free(self, seq_id):
+        """Return pages to the pool when a sequence finishes."""
+        pages = self.sequences.pop(seq_id, [])
+        self.free_pages.extend(pages)
+        return len(pages)
+
+    def utilization(self):
+        used = self.total_pages - len(self.free_pages)
+        return used / self.total_pages
+
+# ── Simulation ────────────────────────────────────────────────────────────────
+cache = PagedKVCache(total_pages=200, page_size=16)
+
+import random
+random.seed(42)
+
+# Simulate 20 requests generating different numbers of tokens
+for seq_id in range(20):
+    n_gen = random.randint(20, 200)
+    try:
+        bt = cache.allocate(seq_id, n_gen)
+        # Simulate incremental extension (every page_size tokens, add a page)
+        extra_pages = max(0, (n_gen // cache.page_size) - len(bt))
+        for _ in range(extra_pages):
+            cache.extend(seq_id)
+        if random.random() < 0.4:   # 40% of requests finish early
+            freed = cache.free(seq_id)
+            print(f"Seq {seq_id:2d}: generated {n_gen:3d} tokens, freed {freed} pages → utilization: {cache.utilization():.1%}")
+        else:
+            print(f"Seq {seq_id:2d}: generated {n_gen:3d} tokens, still running → utilization: {cache.utilization():.1%}")
+    except RuntimeError as e:
+        print(f"Seq {seq_id:2d}: {e}")` },
+    { t: "h2", text: "Continuous batching" },
+    { t: "p", text: "PagedAttention enables continuous batching (also called dynamic batching or iteration-level scheduling). In naive batch serving, you form a batch and wait for every request in the batch to finish before starting new ones. With continuous batching, the serving loop processes one iteration (one generated token) at a time. When a request finishes, its KV cache pages are immediately freed and new requests can be inserted into the next iteration. GPU utilization stays high throughout because the batch is never waiting for slow sequences." },
+    { t: "h2", text: "vLLM vs other serving options" },
+    { t: "p", text: "TorchServe: wraps any PyTorch model in a REST API, handles model loading and basic batching, but has no KV cache optimization. Good for non-LLM models. TGI (HuggingFace Text Generation Inference): implements continuous batching and flash attention, good for HuggingFace-format models, slightly less optimized than vLLM on throughput. vLLM: best throughput on NVIDIA GPUs, supports PagedAttention + continuous batching + tensor parallelism. Ollama: wraps llama.cpp, focuses on CPU/Apple Silicon, not designed for high-throughput multi-user serving." },
+    { t: "p", text: "The production choice: vLLM if you have NVIDIA GPUs and need maximum throughput (research, API serving). TGI if you need easy HuggingFace integration. Ollama if you are serving locally on CPU or Mac. TorchServe if you are serving non-LLM PyTorch models alongside LLMs." },
+    { t: "callout", v: "tip", text: "Benchmark vLLM vs naive serving on your model: run 100 concurrent requests and measure throughput (tokens/second) and p99 latency. vLLM should be 2-4× higher throughput at the same GPU count. This benchmark is what you run before committing to serving infrastructure." },
+    { t: "refs", items: [
+      { label: "Efficient Memory Management for Large Language Model Serving with PagedAttention", url: "https://arxiv.org/abs/2309.06180" },
+      { label: "vLLM GitHub", url: "https://github.com/vllm-project/vllm" },
+    ]},
+  ],
+
+  "transformer-ffn-explained": [
+    { t: "p", text: "The transformer block has two sublayers: multi-head attention and a position-wise feed-forward network. Attention gets all the academic attention (pun intended). The FFN is treated as a box. But the FFN contains the majority of the model's parameters in large models — in GPT-3 175B, roughly 65% of parameters are in FFN layers. It does something distinct and specific. This post is about what it actually does." },
+    { t: "h2", text: "The architecture" },
+    { t: "p", text: "The FFN in the original transformer: FFN(x) = max(0, x·W1 + b1)·W2 + b2. Two linear layers with a ReLU in between. W1 has shape (d_model, d_ff) and W2 has shape (d_ff, d_model). The hidden dimension d_ff is typically 4 × d_model. For a 4096-dimensional model, d_ff = 16384. The FFN expands the representation by 4×, applies non-linearity, then projects back." },
+    { t: "code", lang: "python", label: "FFN variants — ReLU vs SwiGLU", text: `import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class FFN_ReLU(nn.Module):
+    """Original transformer FFN (Vaswani et al., 2017)."""
+    def __init__(self, d_model, d_ff=None):
+        super().__init__()
+        d_ff = d_ff or 4 * d_model
+        self.W1 = nn.Linear(d_model, d_ff)
+        self.W2 = nn.Linear(d_ff, d_model)
+
+    def forward(self, x):
+        return self.W2(F.relu(self.W1(x)))
+
+
+class FFN_SwiGLU(nn.Module):
+    """
+    SwiGLU FFN (Shazeer 2020), used in LLaMA, Mistral, PaLM, Gemma.
+    Gated linear unit: output = (xW1) ⊙ swish(xW3) → xW2
+    Uses d_ff = 2/3 × 4 × d_model to keep parameter count similar.
+    """
+    def __init__(self, d_model, d_ff=None):
+        super().__init__()
+        d_ff = d_ff or int(2/3 * 4 * d_model)
+        self.W1 = nn.Linear(d_model, d_ff, bias=False)   # gate projection
+        self.W2 = nn.Linear(d_ff,    d_model, bias=False) # down projection
+        self.W3 = nn.Linear(d_model, d_ff,    bias=False) # up projection
+
+    def forward(self, x):
+        # Gate controls which "slots" of the expanded space pass through
+        gate = F.silu(self.W1(x))    # silu = x * sigmoid(x) = swish
+        up   = self.W3(x)
+        return self.W2(gate * up)    # element-wise gating
+
+d_model = 512
+ffn_relu  = FFN_ReLU(d_model)
+ffn_swiglu = FFN_SwiGLU(d_model)
+
+params_relu   = sum(p.numel() for p in ffn_relu.parameters())
+params_swiglu = sum(p.numel() for p in ffn_swiglu.parameters())
+print(f"ReLU FFN parameters:   {params_relu:,}  (d_ff = {4*d_model})")
+print(f"SwiGLU FFN parameters: {params_swiglu:,}  (d_ff = {int(2/3*4*d_model)}, 3 matrices)")
+
+# Forward pass
+x = torch.randn(4, 16, d_model)  # batch=4, seq=16, d_model=512
+print(f"\nInput shape:       {x.shape}")
+print(f"ReLU FFN output:   {ffn_relu(x).shape}")
+print(f"SwiGLU FFN output: {ffn_swiglu(x).shape}")
+
+# Dead neuron analysis for ReLU
+with torch.no_grad():
+    activated = F.relu(ffn_relu.W1(x))  # (4, 16, d_ff)
+    dead_pct = (activated == 0).float().mean().item()
+    print(f"\nReLU: {dead_pct:.1%} of neurons are dead (zero) on this batch")` },
+    { t: "h2", text: "What the FFN actually computes" },
+    { t: "p", text: "The attention sublayer handles where — which positions to pull information from. The FFN sublayer handles what — given the aggregated information from attention, what should this representation become? The 4× expansion acts as a bottleneck: the input is projected into a higher-dimensional space where the non-linearity can carve out complex decision boundaries, then projected back down. Think of it as: first write many competing hypotheses about what this token might mean given its context (expand), pick the best ones (non-linearity kills weak hypotheses), synthesise (compress)." },
+    { t: "p", text: "Research has shown that FFN layers function as key-value memories (Geva et al., 2021). The rows of W1 are 'keys' that activate when the input matches a certain pattern. The corresponding rows of W2 are 'values' that fire when the key is activated. The FFN is literally implementing a lookup table over learned concepts." },
+    { t: "h2", text: "SwiGLU: why almost everyone switched" },
+    { t: "p", text: "SwiGLU replaces ReLU with a gating mechanism: output = (x·W1) ⊙ swish(x·W3), where swish(x) = x·sigmoid(x) is smooth and does not have the dead neuron problem. The gate (the SiLU/swish activation) learns which dimensions of the expanded representation to pass through versus suppress. This learnable gating is more expressive than a fixed threshold. LLaMA, Mistral, Qwen, Gemma, PaLM all use SwiGLU or a variant (GeGLU uses GELU instead of SiLU)." },
+    { t: "p", text: "The parameter count stays similar despite adding a third matrix: SwiGLU uses d_ff = 2/3 × 4 × d_model (rounded to a multiple of 64 for GPU efficiency), so the third matrix (W3) is offset by the smaller d_ff. Practically, SwiGLU trains faster per loss unit and is now the default for any new model." },
+    { t: "callout", v: "tip", text: "Visualise FFN activations: run a real LLaMA model with access to intermediate layers (via hooks in PyTorch). Collect the FFN hidden activations across a batch of sentences. Measure what fraction are near-zero — these are the 'dead' in ReLU, or near-suppressed by the SwiGLU gate. Neurons that are consistently zero across all inputs are learning nothing. This is a useful sanity check for fine-tuned models that may have overfit." },
+    { t: "refs", items: [
+      { label: "GLU Variants Improve Transformer — Noam Shazeer (2020)", url: "https://arxiv.org/abs/2002.05202" },
+      { label: "Transformer Feed-Forward Layers Are Key-Value Memories — Geva et al. (2021)", url: "https://arxiv.org/abs/2012.14913" },
+    ]},
+  ],
+
+  "positional-encoding-variants": [
+    { t: "p", text: "Attention has no inherent notion of position. The sentence 'the dog bit the man' and 'the man bit the dog' produce identical sets of token embeddings — every word embedding is the same regardless of where the word appears. Without positional encoding, the model cannot distinguish these sentences. Every modern transformer uses some form of positional information. How that information is injected has changed substantially since the original transformer paper, and the choice has real production implications for context length." },
+    { t: "h2", text: "Sinusoidal positional encoding: the original" },
+    { t: "p", text: "Vaswani et al. (2017) added position-specific vectors to the token embeddings before the first attention layer. The vectors use sinusoidal functions: PE(pos, 2i) = sin(pos / 10000^(2i/d_model)) and PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model)). This produces a unique pattern for each position. Different dimensions oscillate at different frequencies — position 1 is distinguishable from position 1000 in every dimension. The rationale: the model can learn to attend to relative positions because PE(pos+k) is a linear function of PE(pos) for any offset k." },
+    { t: "code", lang: "python", label: "All three positional encoding families — implemented", text: `import numpy as np
+import torch
+
+# ─── 1. Sinusoidal (Vaswani 2017) ────────────────────────────────────────────
+def sinusoidal_pe(seq_len, d_model):
+    pe = np.zeros((seq_len, d_model))
+    pos = np.arange(seq_len)[:, None]               # (seq_len, 1)
+    i   = np.arange(0, d_model, 2)[None, :]         # (1, d_model/2)
+    div = 10000 ** (i / d_model)
+    pe[:, 0::2] = np.sin(pos / div)                 # even dims
+    pe[:, 1::2] = np.cos(pos / div)                 # odd dims
+    return pe
+
+# ─── 2. RoPE — Rotary Position Embedding (Su et al., 2022) ──────────────────
+def rotate_half(x):
+    """Rotate the last dimension: [x1, x2, ..., xn] → [-x2, x1, ..., -xn, xn-1]"""
+    x1, x2 = x[..., :x.shape[-1]//2], x[..., x.shape[-1]//2:]
+    return torch.cat([-x2, x1], dim=-1)
+
+def apply_rope(q, k, seq_len, d_head, theta=10000.0):
+    """Apply RoPE to Q and K tensors. Position is baked into Q@K products."""
+    device = q.device
+    i      = torch.arange(0, d_head, 2, dtype=torch.float32, device=device)
+    freqs  = 1.0 / (theta ** (i / d_head))                   # (d_head/2,)
+    pos    = torch.arange(seq_len, dtype=torch.float32, device=device)
+    angle  = torch.outer(pos, freqs)                          # (seq_len, d_head/2)
+    cos    = torch.cos(angle).unsqueeze(0).unsqueeze(0)       # (1, 1, seq_len, d_head/2)
+    sin    = torch.sin(angle).unsqueeze(0).unsqueeze(0)
+    # Expand to full d_head by repeating
+    cos_full = torch.cat([cos, cos], dim=-1)
+    sin_full = torch.cat([sin, sin], dim=-1)
+    # Rotate Q and K
+    q_rot = q * cos_full + rotate_half(q) * sin_full
+    k_rot = k * cos_full + rotate_half(k) * sin_full
+    return q_rot, k_rot
+
+# ─── 3. ALiBi — Attention with Linear Biases (Press et al., 2022) ──────────
+def alibi_bias(n_heads, max_seq_len):
+    """ALiBi adds a fixed negative bias proportional to distance, per head."""
+    slopes = torch.tensor(
+        [2 ** (-(8/n_heads) * (i+1)) for i in range(n_heads)], dtype=torch.float32
+    )   # different slope per head
+    # Position difference matrix: -|i - j| for all (i, j)
+    pos   = torch.arange(max_seq_len)
+    rel   = pos[None, :] - pos[:, None]                       # (seq_len, seq_len)
+    bias  = slopes[:, None, None] * rel[None, :, :]           # (n_heads, seq, seq)
+    # Only apply to past positions (lower triangle, standard in causal LM)
+    causal_mask = torch.tril(torch.ones(max_seq_len, max_seq_len))
+    return bias * causal_mask
+
+# ── Comparison ────────────────────────────────────────────────────────────────
+print("1. Sinusoidal PE — position 0 vs position 10:")
+pe = sinusoidal_pe(20, 8)
+print(f"   pos 0:  {pe[0].round(3)}")
+print(f"   pos 10: {pe[10].round(3)}")
+print(f"   dot(pos_0, pos_10) = {pe[0] @ pe[10]:.3f}  (less similar = positions distinguishable)")
+
+print("\n2. RoPE — modifies Q,K before attention, not the embedding:")
+B, H, T, dh = 1, 4, 10, 32
+q = torch.randn(B, H, T, dh)
+k = torch.randn(B, H, T, dh)
+q_rot, k_rot = apply_rope(q, k, T, dh)
+print(f"   Q shape unchanged: {q_rot.shape}  (position is in the rotation, not added)")
+
+print("\n3. ALiBi — attention bias matrix (negative, lower-triangular):")
+bias = alibi_bias(4, 6)
+print(f"   Head 0 bias (causal):")
+print((bias[0] * 10).round(1).numpy())` },
+    { t: "h2", text: "RoPE: position in the rotation, not the embedding" },
+    { t: "p", text: "Rotary Position Embedding (Su et al., 2022) does not add a positional vector to the token embedding. Instead, it rotates the Q and K vectors in the attention computation. The rotation angle is proportional to position. When you compute Q·Kᵀ between position i and position j, the dot product naturally captures the relative distance (i-j) through the interaction of the rotations. This is the critical advantage: RoPE captures relative positions, not absolute ones, which makes it generalise better to long sequences and supports techniques like YaRN and RoPE scaling for context extension." },
+    { t: "p", text: "LLaMA, Mistral, Qwen, Gemma, and most modern open-weight models use RoPE. It is the current default for new architectures because of its relative-position property and empirically superior performance at long context." },
+    { t: "h2", text: "ALiBi: no learned positions, just distance penalties" },
+    { t: "p", text: "Attention with Linear Biases (Press et al., 2022) adds a fixed negative bias to attention scores, proportional to the distance between tokens: bias = -slope × |i - j|. Different heads use different slopes. No position vectors, no rotation — just a penalty that grows with distance. ALiBi can be applied to models at inference time for sequences longer than the training context without fine-tuning, because the bias is a simple distance function with no learned parameters." },
+    { t: "callout", v: "tip", text: "The practical production question: which positional encoding allows the best context extension? RoPE with YaRN scaling currently wins — LLaMA models can be extended from 8k to 128k+ context with RoPE scaling at a fraction of the fine-tuning cost of re-training with sinusoidal PE. If you are serving a model and want to serve longer contexts cheaply, understanding which PE was used is the first step." },
+    { t: "refs", items: [
+      { label: "RoFormer: Enhanced Transformer with Rotary Position Embedding", url: "https://arxiv.org/abs/2104.09864" },
+      { label: "Train Short, Test Long: ALiBi — Press et al. (2022)", url: "https://arxiv.org/abs/2108.12409" },
+    ]},
+  ],
+
+  "speculative-decoding-explained": [
+    { t: "p", text: "Autoregressive LLM generation is sequential by construction: you cannot generate token t+1 until you have generated token t. This means you cannot parallelise generation across the time dimension. Or can you? Speculative decoding breaks this constraint using a clever insight: a small fast 'draft' model generates several candidate tokens, and the large 'target' model verifies them all in a single parallel forward pass. When the draft is right — which it usually is on easy tokens — you get multiple tokens per target model call." },
+    { t: "h2", text: "The algorithm" },
+    { t: "p", text: "Step 1: Use a small draft model (e.g., LLaMA-3-8B) to greedily generate k tokens. Step 2: Run the large target model (e.g., LLaMA-3-70B) on the original context plus all k draft tokens simultaneously. The target model produces k+1 output distributions in a single forward pass (because it can process all positions in parallel with the full K/V). Step 3: Accept or reject each draft token based on a rejection sampling criterion. If all k tokens are accepted, you also take the last target distribution's sample. If a draft token is rejected, you sample from the corrected distribution and discard subsequent draft tokens." },
+    { t: "code", lang: "python", label: "Speculative decoding — verification and rejection sampling", text: `import numpy as np
+
+def rejection_sampling(p_target, p_draft, draft_token):
+    """
+    Accept draft token sampled from p_draft if it fits p_target.
+    The acceptance rule: accept with probability min(1, p_target / p_draft).
+    If rejected, sample from the adjusted distribution p_corrected.
+    This guarantees the output distribution matches p_target exactly.
+    """
+    accept_prob = min(1.0, p_target[draft_token] / (p_draft[draft_token] + 1e-12))
+
+    if np.random.random() < accept_prob:
+        return draft_token, True       # accepted
+
+    # Rejection: sample from corrected distribution
+    # p_corrected ∝ max(0, p_target - p_draft)
+    p_corrected = np.maximum(0, p_target - p_draft)
+    if p_corrected.sum() > 0:
+        p_corrected /= p_corrected.sum()
+        corrected_token = np.random.choice(len(p_target), p=p_corrected)
+    else:
+        corrected_token = np.argmax(p_target)
+
+    return corrected_token, False      # rejected, use corrected token
+
+
+def simulate_speculative_decoding(vocab_size=50, k=4, n_steps=10, draft_accuracy=0.7):
+    """Simulate the accept/reject loop and count effective tokens per target call."""
+    total_target_calls = 0
+    total_tokens_generated = 0
+
+    for step in range(n_steps):
+        # Target generates k+1 distributions in one call
+        total_target_calls += 1
+
+        # Draft produces k tokens (simplified: accept with draft_accuracy probability)
+        accepted_count = 0
+        for i in range(k):
+            if np.random.random() < draft_accuracy:
+                accepted_count += 1
+            else:
+                break   # once a draft token is rejected, stop
+
+        # We get accepted_count + 1 tokens (last one from target distribution)
+        tokens_this_step = accepted_count + 1
+        total_tokens_generated += tokens_this_step
+
+    tokens_per_call = total_tokens_generated / total_target_calls
+    print(f"k={k}, draft_accuracy={draft_accuracy:.0%}")
+    print(f"  Tokens per target call: {tokens_per_call:.2f}  (vs 1.0 baseline)")
+    print(f"  Theoretical max: {k+1} tokens per call if all k accepted")
+    print(f"  Speedup (ignoring draft overhead): ~{tokens_per_call:.1f}x")
+
+for acc in [0.5, 0.7, 0.85]:
+    simulate_speculative_decoding(k=5, draft_accuracy=acc)
+    print()` },
+    { t: "h2", text: "Why acceptance rate matters more than k" },
+    { t: "p", text: "If the draft model has 70% per-token acceptance rate and k=5, the expected number of accepted draft tokens follows a geometric-like distribution: P(at least 5 accepted) = 0.7^5 = 0.17, P(at least 4) = 0.7^4 = 0.24, and so on. The expected tokens per target call is Σ_{i=0}^{k} (acceptance_rate^i) = (1 - acceptance_rate^(k+1)) / (1 - acceptance_rate). For 70% acceptance rate: ~2.7 tokens per target call vs 1.0 without speculative decoding. At 85%: ~3.9 tokens per call. The draft model quality is the dominant factor." },
+    { t: "h2", text: "What pairs well" },
+    { t: "p", text: "Draft and target models must share the same tokenizer and vocabulary — the draft produces token indices that the target verifies. The most effective pairings are models from the same family: LLaMA-3-8B drafting for LLaMA-3-70B (same vocabulary, similar distribution), or even smaller scratch models (LLaMA-3-1B) drafting for larger ones. Self-speculation uses a single model at multiple draft depths; Medusa adds parallel 'heads' to the model itself that produce draft tokens." },
+    { t: "p", text: "Speculative decoding is most valuable when target model latency is the bottleneck and draft model compute is cheap relative to memory bandwidth. In practice, it provides 2-4× throughput improvements on text generation workloads with high draft accuracy, with no change to output quality (rejection sampling guarantees exact distribution match)." },
+    { t: "callout", v: "tip", text: "Measure draft acceptance rate on your production query distribution. Take 100 representative queries. For each query, run your target model greedily and your draft model greedily, compare token-by-token. The fraction of positions where they agree is your expected acceptance rate. If it is below 60%, speculative decoding may not be worth the infrastructure complexity." },
+    { t: "refs", items: [
+      { label: "Fast Inference from Transformers via Speculative Decoding — Leviathan et al. (2023)", url: "https://arxiv.org/abs/2211.17192" },
+      { label: "Medusa: Simple LLM Inference Acceleration Framework with Multiple Decoding Heads", url: "https://arxiv.org/abs/2401.10774" },
+    ]},
+  ],
+
+  "sampling-strategies-deep-dive": [
+    { t: "p", text: "After the forward pass, an LLM produces a distribution over its entire vocabulary for the next token. Which token you select from that distribution — and how — determines the character of the output. A temperature change alone can turn a confident, deterministic response into a creative, surprising one. A top-p cutoff eliminates the long tail of improbable tokens. The decisions compound over hundreds of tokens. This post makes these mechanics precise with implementation and experiments." },
+    { t: "h2", text: "Temperature: scale the logits before softmax" },
+    { t: "p", text: "Logits are the raw scores before softmax. Temperature divides the logits: prob(token) = softmax(logit / T). With T=1 (default), you get the natural distribution. With T<1, the distribution sharpens: the highest-probability token dominates. With T>1, the distribution flattens: all tokens become more equiprobable. T=0 is greedy decoding — always take the argmax." },
+    { t: "code", lang: "python", label: "All sampling strategies implemented and compared", text: `import numpy as np
+
+def softmax(x):
+    e = np.exp(x - x.max())
+    return e / e.sum()
+
+def greedy(logits):
+    return np.argmax(logits)
+
+def temperature_sample(logits, T=1.0):
+    probs = softmax(logits / T)
+    return np.random.choice(len(probs), p=probs)
+
+def top_k_sample(logits, k=50, T=1.0):
+    """Keep only the top-k logits; sample from those."""
+    top_k_idx = np.argpartition(logits, -k)[-k:]
+    filtered = np.full_like(logits, -np.inf)
+    filtered[top_k_idx] = logits[top_k_idx]
+    probs = softmax(filtered / T)
+    return np.random.choice(len(probs), p=probs)
+
+def top_p_sample(logits, p=0.9, T=1.0):
+    """Nucleus sampling: keep the smallest set of tokens whose cumulative prob >= p."""
+    probs = softmax(logits / T)
+    sorted_idx = np.argsort(probs)[::-1]
+    sorted_probs = probs[sorted_idx]
+    cumsum = np.cumsum(sorted_probs)
+    # Keep tokens until we exceed p
+    cutoff = np.searchsorted(cumsum, p) + 1
+    filtered = np.full_like(logits, -np.inf)
+    filtered[sorted_idx[:cutoff]] = logits[sorted_idx[:cutoff]]
+    filtered_probs = softmax(filtered / T)
+    return np.random.choice(len(filtered_probs), p=filtered_probs)
+
+# ── Simulation: compare strategies on the same distribution ──────────────────
+np.random.seed(42)
+vocab_size = 20
+# Skewed distribution: one token is strongly preferred (like 'the' in a sentence)
+logits = np.random.randn(vocab_size) * 2
+logits[0] = 5.0    # token 0 is clearly best
+logits[1] = 3.0    # token 1 is second
+
+print("Logits (top 5):", np.sort(logits)[::-1][:5].round(2))
+print(f"Base probs (T=1): {softmax(logits)[:5].round(3)}\n")
+
+def sample_n(strategy_fn, n=1000, **kwargs):
+    counts = np.zeros(vocab_size)
+    for _ in range(n):
+        tok = strategy_fn(logits.copy(), **kwargs)
+        counts[tok] += 1
+    top3 = np.argsort(counts)[::-1][:3]
+    return {int(i): int(counts[i]) for i in top3}
+
+print(f"Greedy (always):                   token {greedy(logits)}")
+print(f"T=0.1 (1000 samples, top tokens):  {sample_n(temperature_sample, T=0.1)}")
+print(f"T=1.0 (1000 samples, top tokens):  {sample_n(temperature_sample, T=1.0)}")
+print(f"T=2.0 (1000 samples, top tokens):  {sample_n(temperature_sample, T=2.0)}")
+print(f"top_k=5 (1000 samples):            {sample_n(top_k_sample, k=5)}")
+print(f"top_p=0.9 (1000 samples):          {sample_n(top_p_sample, p=0.9)}")` },
+    { t: "h2", text: "Top-k: fixed nucleus size" },
+    { t: "p", text: "Top-k sampling keeps only the k highest-probability tokens and samples from them. The problem: k is a fixed number regardless of the shape of the distribution. If the model is very confident (one token at 95% probability), top-k=50 includes 49 near-zero-probability tokens, creating noise. If the model is very uncertain (uniform distribution), top-k=50 cuts off most reasonable options. k=50 is commonly used but it is an awkward hyperparameter because it does not adapt to distribution shape." },
+    { t: "h2", text: "Top-p (nucleus sampling): adaptive nucleus" },
+    { t: "p", text: "Top-p keeps the smallest set of tokens whose cumulative probability exceeds p. With p=0.9, when the model is confident (one token at 95%), the nucleus has 1 token. When the model is uncertain, the nucleus expands to include many tokens. This adapts to the distribution shape automatically — which is why top-p is generally preferred over top-k for text generation." },
+    { t: "h2", text: "Production defaults and when to change them" },
+    { t: "p", text: "Most production APIs default to temperature=0.7-1.0, top-p=0.9-0.95, no top-k. For factual question answering (RAG, structured extraction): use low temperature (0.1-0.3) or greedy (T=0). For creative tasks (copy, brainstorming): use temperature=0.8-1.2, top-p=0.9. For code generation: temperature=0.2-0.5 (need syntactic correctness, some exploration). The interaction matters: if temperature is very low, top-p has little effect because the distribution is already peaked. Temperature is the primary control; top-p is a safety net." },
+    { t: "p", text: "Repetition penalty: adds a penalty to tokens already generated, reducing the probability of the model repeating itself. Useful for long generation tasks but can cause incoherence if set too high. min-p (a newer alternative to top-p): keep tokens whose probability is at least p_min × max_prob. More robust to extreme distributions than top-p." },
+    { t: "callout", v: "tip", text: "Run an experiment: generate 20 completions of the same prompt with T=0.1 vs T=1.5. At T=0.1, completions should be nearly identical. At T=1.5, they should vary substantially — and some should be incoherent. This gives you direct intuition for how temperature controls the creativity/reliability tradeoff, which is the decision you make every time you set generation parameters for a production system." },
+  ],
 
 };

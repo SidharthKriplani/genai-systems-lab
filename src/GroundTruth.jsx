@@ -948,6 +948,12 @@ const SERIES_META = {
     color: "#22d3ee",
     postIds: ["attention-from-scratch", "bm25-from-scratch", "minimal-rag-50-lines", "bpe-tokenization-from-scratch", "training-loop-from-scratch", "lora-from-scratch", "kv-cache-from-scratch", "faiss-from-scratch", "contrastive-learning-from-scratch"],
   },
+  "llm-internals": {
+    title: "LLM Internals",
+    desc: "MHA/GQA memory math, PagedAttention, the FFN block, RoPE vs ALiBi, speculative decoding, and sampling strategies. The architecture decisions that determine cost, latency, and capability — made precise.",
+    color: "#f59e0b",
+    postIds: ["mha-mqa-gqa-explained", "vllm-paged-attention-explained", "transformer-ffn-explained", "positional-encoding-variants", "speculative-decoding-explained", "sampling-strategies-deep-dive"],
+  },
   "career-strategy": {
     title: "Career & Strategy",
     desc: "The market forces reshaping AI roles — the DS→AI engineer arc, Type A vs Type B engineers, the Forward Deployed Engineer, and the three-layer skill stack.",
