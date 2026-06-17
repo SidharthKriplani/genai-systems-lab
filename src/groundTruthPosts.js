@@ -12972,5 +12972,390 @@ show_attention_mask(tokens, causal=True)    # GPT` },
       { label: "Exploring the Limits of Transfer Learning with T5 — Raffel et al. (2020)", url: "https://arxiv.org/abs/1910.10683" },
     ]},
   ],
+,
+
+  "bpe-tokenization-from-scratch": [
+    { t: "p", text: "Every token an LLM processes was produced by a tokenizer. The tokenizer determines how text maps to integers, how much of the context window a sentence occupies, and whether rare words are handled gracefully or fragmented into noise. Yet most engineers who work with LLMs have never implemented the algorithm that produces these tokens. Byte Pair Encoding is 30 lines of code. This is those 30 lines." },
+    { t: "p", text: "BPE was originally a data compression algorithm (Gage, 1994). Sennrich et al. repurposed it for NLP in 2015. The insight: start with individual characters as your vocabulary, then repeatedly merge the most frequent pair of adjacent symbols. After enough merges, you have a vocabulary of subword units that covers common words whole while handling rare words by decomposing them into frequent subwords." },
+    { t: "h2", text: "The algorithm" },
+    { t: "p", text: "Step 1: Split every word in the corpus into characters, with a special end-of-word symbol. 'low' becomes ['l', 'o', 'w', '</w>']. Step 2: Count every adjacent pair in the character-split corpus. Step 3: Merge the most frequent pair everywhere. Step 4: Update the vocabulary. Step 5: Repeat until the vocabulary reaches the target size. The merge rules learned during training are applied in the same order to new text at inference time." },
+    { t: "code", lang: "python", label: "BPE from scratch — 40 lines", text: `from collections import Counter, defaultdict
+import re
+
+def get_vocab(corpus_text):
+    vocab = Counter()
+    for word in corpus_text.split():
+        chars = tuple(list(word) + ["</w>"])
+        vocab[chars] += 1
+    return vocab
+
+def get_stats(vocab):
+    pairs = defaultdict(int)
+    for word, freq in vocab.items():
+        for i in range(len(word) - 1):
+            pairs[(word[i], word[i+1])] += freq
+    return pairs
+
+def merge_vocab(best_pair, vocab):
+    new_vocab = {}
+    bigram = re.escape(' '.join(best_pair))
+    p = re.compile(r'(?<!\S)' + bigram + r'(?!\S)')
+    for word_tuple, freq in vocab.items():
+        word_str = ' '.join(word_tuple)
+        merged = p.sub(''.join(best_pair), word_str)
+        new_vocab[tuple(merged.split())] = freq
+    return new_vocab
+
+def bpe_train(corpus_text, num_merges=30):
+    vocab = get_vocab(corpus_text)
+    merge_rules = []
+    for i in range(num_merges):
+        pairs = get_stats(vocab)
+        if not pairs:
+            break
+        best = max(pairs, key=pairs.get)
+        vocab = merge_vocab(best, vocab)
+        merge_rules.append(best)
+        if i < 5:
+            print(f"  Merge {i+1}: {best[0]!r} + {best[1]!r} → {''.join(best)!r}  (freq={pairs[best]})")
+    return vocab, merge_rules
+
+def tokenize_bpe(word, merge_rules):
+    tokens = list(word) + ["</w>"]
+    for pair in merge_rules:
+        i = 0
+        new_tokens = []
+        while i < len(tokens):
+            if i < len(tokens)-1 and (tokens[i], tokens[i+1]) == pair:
+                new_tokens.append(''.join(pair))
+                i += 2
+            else:
+                new_tokens.append(tokens[i])
+                i += 1
+        tokens = new_tokens
+    return tokens
+
+corpus = """low lower lowest new newer newest wide wider widest
+            low frequency low power low latency low rank adapter
+            learning machine learning deep learning representation learning"""
+print("Training BPE:")
+vocab, rules = bpe_train(corpus, num_merges=25)
+print("\nTokenizing:")
+for word in ["lowest", "lower", "newer", "learning", "unlowered"]:
+    print(f"  {word:15s} → {tokenize_bpe(word, rules)}")` },
+    { t: "h2", text: "What you should observe" },
+    { t: "p", text: "After training, 'low' becomes a single token. 'lower' becomes ['low', 'er</w>']. 'lowest' becomes ['low', 'est</w>']. The suffix 'er' and 'est' become subword units because they are frequent across many words — the morphological structure of English emerging from statistics alone, with no linguistic knowledge given to the algorithm." },
+    { t: "p", text: "'unlowered' did not appear in the corpus. The algorithm tokenizes it using the merge rules it learned: ['un', 'low', 'er', 'ed</w>']. This is BPE's key property: out-of-vocabulary words are always representable, just with more tokens. Compare to fixed vocabularies where unseen words map to a single [UNK], discarding all information." },
+    { t: "h2", text: "From BPE to tiktoken and HuggingFace tokenizers" },
+    { t: "p", text: "OpenAI's tiktoken is BPE at scale: GPT-4o uses ~100k tokens, trained on a corpus orders of magnitude larger. WordPiece (BERT) is similar but selects pairs by likelihood rather than frequency. SentencePiece (LLaMA, T5, Mistral) operates on raw Unicode without whitespace pre-tokenization — which matters for Chinese, Japanese, Arabic." },
+    { t: "p", text: "The vocabulary size tradeoff: large vocabulary (100k tokens) → most common words are single tokens, short sequences, low compute cost per word. Small vocabulary (32k) → more subword splits, longer sequences, higher cost — but potentially better generalisation to rare words. This architectural decision is made before a single training step and persists for the model's entire lifetime." },
+    { t: "callout", v: "tip", text: "Train BPE with num_merges=10, 30, 100 on the same corpus. Count average tokens per word at each vocabulary size. This directly shows how vocabulary size affects context window efficiency — a core production cost variable. Then compare your tokenization to tiktoken on the same sentences." },
+    { t: "refs", items: [
+      { label: "Neural Machine Translation of Rare Words with Subword Units — Sennrich et al. (2016)", url: "https://arxiv.org/abs/1508.07909" },
+      { label: "tiktoken — OpenAI's fast BPE tokenizer", url: "https://github.com/openai/tiktoken" },
+    ]},
+  ],
+
+  "training-loop-from-scratch": [
+    { t: "p", text: "Every neural network trains through the same loop: forward pass, compute loss, backward pass, update weights. PyTorch automates the backward pass. But if you do not understand what happens before the automation, you cannot debug training failures, interpret learning curves, or make informed decisions about optimisers. This post implements the full loop in NumPy: no autograd, no magic." },
+    { t: "h2", text: "The forward pass" },
+    { t: "p", text: "For a two-layer MLP: Z1 = X·W1 + b1, A1 = ReLU(Z1), output = A1·W2 + b2. Mean squared error loss: L = mean((output - y)^2). Everything before this is computation. The gradient tells you which direction decreases this loss." },
+    { t: "code", lang: "python", label: "Full training loop in NumPy — no autograd", text: `import numpy as np
+
+np.random.seed(0)
+X = np.linspace(-np.pi, np.pi, 200).reshape(-1, 1)
+y = np.sin(X) + 0.1 * np.random.randn(*X.shape)
+
+d_in, d_h, d_out = 1, 64, 1
+W1 = np.random.randn(d_in, d_h) * np.sqrt(2/d_in)
+b1 = np.zeros((1, d_h))
+W2 = np.random.randn(d_h, d_out) * np.sqrt(2/d_h)
+b2 = np.zeros((1, d_out))
+lr = 0.01
+losses = []
+
+for step in range(2001):
+    # Forward
+    Z1  = X @ W1 + b1
+    A1  = np.maximum(0, Z1)          # ReLU
+    out = A1 @ W2 + b2
+    loss = np.mean((out - y) ** 2)
+    losses.append(loss)
+
+    # Backward — chain rule by hand
+    N = X.shape[0]
+    d_out_layer = 2 * (out - y) / N
+    dW2 = A1.T @ d_out_layer
+    db2 = d_out_layer.sum(axis=0, keepdims=True)
+    d_A1 = d_out_layer @ W2.T
+    d_Z1 = d_A1 * (Z1 > 0)          # ReLU gradient
+    dW1 = X.T @ d_Z1
+    db1 = d_Z1.sum(axis=0, keepdims=True)
+
+    # Gradient descent update
+    W1 -= lr * dW1; b1 -= lr * db1
+    W2 -= lr * dW2; b2 -= lr * db2
+
+    if step % 500 == 0:
+        print(f"Step {step:5d}  loss={loss:.6f}")` },
+    { t: "h2", text: "What each gradient means" },
+    { t: "p", text: "dL/dW2 tells you: if you increase W2[i,j] by epsilon, the loss changes by dW2[i,j] * epsilon. The ReLU backward is d_Z1 = d_A1 * (Z1 > 0) — zero wherever Z1 was negative (dead neuron), gradient passes through wherever Z1 was positive. This is why initialisation matters: bad random initialisation → many dead neurons from step 1 that never recover." },
+    { t: "h2", text: "Why PyTorch's autograd does the same thing" },
+    { t: "p", text: "torch.tensor(..., requires_grad=True) builds a computation graph during the forward pass. Every operation records how to compute its gradient. loss.backward() traverses this graph in reverse, applying the chain rule above. param.grad holds the result. optimizer.step() runs the weight update. You called the same NumPy code, but derivative calculations were automated." },
+    { t: "h2", text: "Adam vs SGD: a better update rule" },
+    { t: "p", text: "SGD: W -= lr * dW. Adam maintains a running average of gradients (m, first moment) and squared gradients (v, second moment). Update: W -= lr * m / (sqrt(v) + eps). Adam automatically gives smaller updates to parameters with consistently large gradients and larger updates to parameters with small gradients. Same chain-rule derivatives as above — just a smarter step size per parameter." },
+    { t: "callout", v: "tip", text: "Extend this to cross-entropy classification. The combined gradient for cross-entropy+softmax is d_logits = softmax(out) - one_hot(y). This elegant result is one of the cleanest in backpropagation — implement it and trace exactly where each term comes from." },
+  ],
+
+  "lora-from-scratch": [
+    { t: "p", text: "Fine-tuning a 7B parameter model updates 7 billion floats. At FP16 that is 14GB of weight updates, plus optimizer states requiring another 28GB. LoRA (Hu et al., 2021) makes this feasible with one observation: weight updates during fine-tuning have low intrinsic rank. Instead of learning a full delta matrix ΔW of shape (d_in × d_out), learn two small matrices A (d_in × r) and B (r × d_out) where r is tiny. ΔW = BA. For r=8 and 4096×4096: 8×8192 = 65,536 parameters instead of 16,777,216 — a 256× reduction." },
+    { t: "h2", text: "Why low-rank updates work" },
+    { t: "p", text: "The pre-trained model has learned rich priors. Fine-tuning nudges them toward a specific task. The empirical claim (verified in the LoRA paper) is that this nudge lives in a low-dimensional subspace of the full weight matrix. Gradient descent during fine-tuning is mostly making low-rank moves. LoRA constrains the update to exactly this subspace, throwing away directions that would not be used anyway." },
+    { t: "code", lang: "python", label: "LoRA layer — minimal PyTorch", text: `import torch
+import torch.nn as nn
+
+class LoRALinear(nn.Module):
+    def __init__(self, in_features, out_features, rank=8, alpha=16):
+        super().__init__()
+        self.base   = nn.Linear(in_features, out_features, bias=False)
+        self.base.weight.requires_grad_(False)        # freeze base
+
+        self.lora_A = nn.Linear(in_features,  rank,          bias=False)
+        self.lora_B = nn.Linear(rank,          out_features,  bias=False)
+        self.scaling = alpha / rank
+
+        nn.init.kaiming_uniform_(self.lora_A.weight)
+        nn.init.zeros_(self.lora_B.weight)            # zero init → no change at start
+
+    def forward(self, x):
+        return self.base(x) + self.scaling * self.lora_B(self.lora_A(x))
+
+    def merge(self):
+        """Merge LoRA into base for inference (zero overhead)."""
+        delta_W = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+        self.base.weight.data += delta_W
+        return self.base
+
+# Parameter count comparison
+d = 4096
+full  = nn.Linear(d, d, bias=False)
+lora  = LoRALinear(d, d, rank=8, alpha=16)
+
+full_p  = sum(p.numel() for p in full.parameters())
+train_p = sum(p.numel() for p in lora.parameters() if p.requires_grad)
+print(f"Full fine-tuning:  {full_p:,} trainable parameters")
+print(f"LoRA trainable:    {train_p:,}  ({train_p/full_p*100:.2f}%)")
+print(f"Ratio: {full_p//train_p}x fewer gradients to store")` },
+    { t: "h2", text: "Rank, alpha, and which modules to target" },
+    { t: "p", text: "Rank r controls expressiveness. r=4 or r=8 works for most tasks. Higher rank is not always better — it means more parameters and potential overfitting on small datasets. Alpha controls the scale: effective_update = (B@A) * (alpha/r). Many practitioners use alpha=2r as a default." },
+    { t: "p", text: "Standard targets: Q, K, V, O attention matrices. Adding FFN layers often improves performance at a small cost. Do not target embedding layers unless you are doing domain adaptation with unusual vocabulary." },
+    { t: "h2", text: "Merging for zero-overhead inference" },
+    { t: "p", text: "merge() adds the LoRA update into the base weights: base.weight += (B@A) * scaling. After merging, the model is identical in compute to the original — no overhead per forward pass. Multiple adapters (one per user, one per domain) can be stored separately and swapped at serving time. This is what makes multi-tenant fine-tuned serving practical." },
+    { t: "callout", v: "tip", text: "Inject LoRALinear into a HuggingFace model's attention layers (monkey-patch self.q_proj, self.v_proj). Count trainable parameters. Run a forward+backward pass. Verify that base.weight.grad is None and lora_A.weight.grad is populated. This confirms the freeze is working — the base weights receive no gradient update." },
+    { t: "refs", items: [
+      { label: "LoRA: Low-Rank Adaptation of Large Language Models — Hu et al. (2021)", url: "https://arxiv.org/abs/2106.09685" },
+    ]},
+  ],
+
+  "kv-cache-from-scratch": [
+    { t: "p", text: "Without a KV cache, generating a 100-token response recomputes K and V for the entire sequence 100 times. With a KV cache, each K and V is computed once and reused. This is not an optimisation — it is the difference between a practical system and an unusable one. Understanding it precisely means you can calculate exactly how much memory your KV cache consumes and design systems around that constraint." },
+    { t: "h2", text: "Why recomputation is wasteful" },
+    { t: "p", text: "At step t you have generated tokens [t1...t_{t-1}] and predict t_t. You compute Q, K, V for all t tokens. At step t+1, the K, V vectors for t1...t_{t-1} are identical — those tokens did not change. You are recomputing them from scratch every step, wasting compute proportional to sequence length." },
+    { t: "code", lang: "python", label: "KV cache — implementation and timing comparison", text: `import numpy as np
+import time
+
+def sdpa(Q, K, V):
+    d_k = Q.shape[-1]
+    scores = Q @ K.T / np.sqrt(d_k)
+    w = np.exp(scores - scores.max(axis=-1, keepdims=True))
+    w /= w.sum(axis=-1, keepdims=True)
+    return w @ V
+
+class AttentionLayer:
+    def __init__(self, d_model, d_k):
+        self.W_q = np.random.randn(d_model, d_k) * 0.1
+        self.W_k = np.random.randn(d_model, d_k) * 0.1
+        self.W_v = np.random.randn(d_model, d_k) * 0.1
+        self.cache_K = None
+        self.cache_V = None
+
+    def forward_no_cache(self, x):
+        Q = x @ self.W_q
+        K = x @ self.W_k
+        V = x @ self.W_v
+        return sdpa(Q, K, V)
+
+    def forward_with_cache(self, x_new):
+        k_new = x_new @ self.W_k
+        v_new = x_new @ self.W_v
+        q_new = x_new @ self.W_q
+        self.cache_K = k_new if self.cache_K is None else np.vstack([self.cache_K, k_new])
+        self.cache_V = v_new if self.cache_V is None else np.vstack([self.cache_V, v_new])
+        return sdpa(q_new, self.cache_K, self.cache_V)
+
+    def reset_cache(self):
+        self.cache_K = None; self.cache_V = None
+
+d_model, d_k = 512, 64
+layer = AttentionLayer(d_model, d_k)
+tokens = [np.random.randn(1, d_model) for _ in range(50)]
+
+t0 = time.perf_counter()
+for t in range(1, 51):
+    _ = layer.forward_no_cache(np.vstack(tokens[:t]))
+no_cache = time.perf_counter() - t0
+
+layer.reset_cache()
+t0 = time.perf_counter()
+for tok in tokens:
+    _ = layer.forward_with_cache(tok)
+cache = time.perf_counter() - t0
+
+print(f"No cache: {no_cache*1000:.1f}ms  |  With cache: {cache*1000:.1f}ms  |  Speedup: {no_cache/cache:.1f}x")
+print(f"Cache K shape: {layer.cache_K.shape}")` },
+    { t: "h2", text: "The memory calculation" },
+    { t: "p", text: "KV cache memory per request: 2 × n_layers × n_kv_heads × d_head × seq_len × bytes_per_float. For LLaMA-3-8B (32 layers, 8 KV heads from GQA, d_head=128, FP16): 2 × 32 × 8 × 128 × seq_len × 2 = 131,072 × seq_len bytes. At 4k context: 0.5GB per request. At 128k context: 16GB per request — on an 80GB A100, that is only 4 simultaneous long-context requests before VRAM is full." },
+    { t: "p", text: "This is why context length is a cost and deployment decision, not just a feature. Every token in context costs memory that could serve another request. PagedAttention in vLLM solves this: instead of pre-allocating a contiguous block for the maximum sequence length, it allocates KV cache in pages and maps them dynamically, dramatically increasing concurrent request capacity." },
+    { t: "h2", text: "GQA and MQA: shrinking the cache" },
+    { t: "p", text: "Multi-Query Attention uses 1 K/V head shared across all Q heads → 32× smaller KV cache. Grouped Query Attention (LLaMA-3's approach): 32 Q heads, 8 K/V heads → 4× smaller cache with less quality loss than MQA. This is a direct engineering response to the memory arithmetic above, traded against a small quality reduction." },
+    { t: "callout", v: "tip", text: "Calculate KV cache for GPT-4 (if known), LLaMA-3-8B, and LLaMA-3-70B at 4k and 128k context. This tells you exactly which configuration fits on which GPU — the most practical constraint in production LLM deployment planning." },
+    { t: "refs", items: [
+      { label: "Efficient Memory Management for LLM Serving with PagedAttention", url: "https://arxiv.org/abs/2309.06180" },
+    ]},
+  ],
+
+  "faiss-from-scratch": [
+    { t: "p", text: "Every semantic search system eventually runs a nearest neighbour query: given a query vector, find the most similar vectors in a corpus. For 10 documents, compute 10 similarities and take the max. For 100 million documents, you need approximate nearest neighbour search. FAISS made this practical. Understanding its internals means understanding the core retrieval tradeoff: recall vs. latency." },
+    { t: "h2", text: "Exact search: the baseline" },
+    { t: "code", lang: "python", label: "Flat search → IVF approximate search from scratch", text: `import numpy as np
+import time
+
+def exact_search(query, corpus, k=5):
+    q_n = query  / (np.linalg.norm(query)  + 1e-9)
+    c_n = corpus / (np.linalg.norm(corpus, axis=1, keepdims=True) + 1e-9)
+    sims = c_n @ q_n
+    top_k = np.argpartition(sims, -k)[-k:]
+    return top_k[np.argsort(sims[top_k])[::-1]]
+
+class IVFIndex:
+    def __init__(self, n_clusters=64):
+        self.n_clusters = n_clusters
+        self.centroids = None
+        self.cells = {}
+
+    def train(self, corpus, n_iter=20):
+        N, d = corpus.shape
+        self.centroids = corpus[np.random.choice(N, self.n_clusters, replace=False)].copy()
+        for _ in range(n_iter):
+            dists = np.linalg.norm(corpus[:, None] - self.centroids[None], axis=2)
+            assigns = dists.argmin(axis=1)
+            new_c = np.zeros_like(self.centroids)
+            counts = np.zeros(self.n_clusters)
+            for i, c in enumerate(assigns):
+                new_c[c] += corpus[i]; counts[c] += 1
+            mask = counts > 0
+            new_c[mask] /= counts[mask, None]
+            if np.allclose(new_c, self.centroids, atol=1e-4):
+                break
+            self.centroids = new_c
+
+    def add(self, corpus):
+        dists = np.linalg.norm(corpus[:, None] - self.centroids[None], axis=2)
+        for i, c in enumerate(dists.argmin(axis=1)):
+            self.cells.setdefault(c, []).append((i, corpus[i]))
+
+    def search(self, query, k=5, nprobe=8):
+        centroid_dists = np.linalg.norm(self.centroids - query, axis=1)
+        probe_cells = np.argpartition(centroid_dists, nprobe)[:nprobe]
+        candidates = []
+        for c in probe_cells:
+            for idx, vec in self.cells.get(c, []):
+                sim = float(vec @ query / (np.linalg.norm(vec) * np.linalg.norm(query) + 1e-9))
+                candidates.append((sim, idx))
+        candidates.sort(reverse=True)
+        return [idx for _, idx in candidates[:k]]
+
+N, d = 10_000, 128
+corpus = np.random.randn(N, d).astype(np.float32)
+query  = np.random.randn(d).astype(np.float32)
+
+t0 = time.perf_counter(); exact = exact_search(query, corpus, k=5); exact_t = time.perf_counter() - t0
+ivf = IVFIndex(); ivf.train(corpus); ivf.add(corpus)
+t0 = time.perf_counter(); approx = ivf.search(query, k=5, nprobe=8); ivf_t = time.perf_counter() - t0
+print(f"Exact: {exact_t*1000:.1f}ms  IVF: {ivf_t*1000:.1f}ms  Speedup: {exact_t/ivf_t:.1f}x")
+print(f"Recall@5: {len(set(exact)&set(approx))}/5")` },
+    { t: "h2", text: "HNSW and PQ: the production choices" },
+    { t: "p", text: "IVF partitions vectors into clusters. nprobe controls how many clusters to search — more probes = higher recall, more latency. HNSW (Hierarchical Navigable Small World) uses a multi-layer navigable graph. Search starts at the top (coarsest) level, greedily follows edges to the nearest neighbour, descends to finer levels. HNSW often beats IVF on recall-at-latency for datasets up to ~100M vectors and does not require a training step." },
+    { t: "p", text: "Product Quantization (PQ) compresses vectors: split each 128-d float32 vector (512 bytes) into 8 sub-vectors, encode each with a 256-entry codebook (1 byte per sub-vector). Result: 8 bytes instead of 512 bytes — 64× compression. IVF + PQ enables billion-scale retrieval on a single machine. The tradeoff: slightly lower recall versus uncompressed IVF." },
+    { t: "h2", text: "Index selection guide" },
+    { t: "p", text: "IndexFlatIP: exact, for evaluation or <100k vectors. IndexIVFFlat: approximate, no compression, good for <10M vectors. IndexHNSWFlat: graph-based, often best recall/latency, no training step needed, ~100M vectors. IndexIVFPQ: billions of vectors, accepts recall trade-off for massive memory savings. Understanding the algorithms (which you now do) makes the FAISS decision guide interpretable rather than arbitrary." },
+    { t: "callout", v: "tip", text: "Install faiss-cpu and compare IndexFlatIP vs IndexIVFFlat vs IndexHNSWFlat on 100k random vectors. Time 100 search queries. Measure Recall@10 vs. exact. Plot recall vs. latency — this is the ANN-Benchmarks methodology, and the results will tell you which index wins for your production constraints." },
+    { t: "refs", items: [
+      { label: "FAISS: A Library for Efficient Similarity Search — Johnson et al. (2019)", url: "https://arxiv.org/abs/1702.08734" },
+      { label: "FAISS wiki — index selection guide", url: "https://github.com/facebookresearch/faiss/wiki/Guidelines-to-choose-an-index" },
+    ]},
+  ],
+
+  "contrastive-learning-from-scratch": [
+    { t: "p", text: "The embedding models that power semantic search — all-MiniLM-L6-v2, text-embedding-3-small, E5, BGE — were trained with contrastive learning. You feed (query, relevant document) pairs, and the training signal is: push the query embedding closer to the relevant document embedding, push it away from all other documents in the batch. No labels beyond relevance pairs. The result is an embedding space where vector similarity corresponds to semantic similarity." },
+    { t: "h2", text: "In-batch negatives: the key ingredient" },
+    { t: "p", text: "For each (query, positive) pair in a batch, every other document in the batch serves as a negative. A batch of 32 pairs provides 31 negatives per query without any additional data collection. You compute all embeddings once, then compute a similarity matrix in a single matmul. The training signal comes from the ratio: similarity to the positive vs. similarities to all negatives." },
+    { t: "code", lang: "python", label: "Contrastive bi-encoder with in-batch negatives — PyTorch", text: `import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class BiEncoder(nn.Module):
+    def __init__(self, vocab_size=1000, d_model=64, d_emb=32):
+        super().__init__()
+        self.embed   = nn.Embedding(vocab_size, d_model, padding_idx=0)
+        self.project = nn.Linear(d_model, d_emb)
+
+    def encode(self, token_ids):
+        mask = (token_ids != 0).float()
+        x    = self.embed(token_ids)
+        x    = (x * mask.unsqueeze(-1)).sum(dim=1) / mask.sum(dim=1, keepdim=True)
+        return F.normalize(self.project(x), dim=-1)
+
+    def forward(self, query_ids, doc_ids):
+        return self.encode(query_ids), self.encode(doc_ids)
+
+def contrastive_loss(q_emb, d_emb, temperature=0.05):
+    # (B, B) similarity matrix — diagonal is the positive pairs
+    sim    = q_emb @ d_emb.T / temperature
+    labels = torch.arange(sim.shape[0], device=sim.device)
+    return F.cross_entropy(sim, labels)
+
+torch.manual_seed(42)
+model     = BiEncoder(vocab_size=200, d_model=32, d_emb=16)
+optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
+
+def make_batch(B=16, L=10, V=200):
+    q = torch.randint(1, V, (B, L))
+    d = torch.randint(1, V, (B, L))
+    d[:, :L//2] = q[:, :L//2]    # docs share half tokens with their query
+    return q, d
+
+for step in range(500):
+    q_ids, d_ids = make_batch(B=32)
+    q_emb, d_emb = model(q_ids, d_ids)
+    loss = contrastive_loss(q_emb, d_emb)
+    optimizer.zero_grad(); loss.backward(); optimizer.step()
+    if step % 100 == 0:
+        with torch.no_grad():
+            q_e, d_e = model(q_ids, d_ids)
+            sim   = q_e @ d_e.T
+            ranks = (sim > sim.diagonal().unsqueeze(1)).sum(dim=1)
+            r1    = (ranks == 0).float().mean().item()
+        print(f"Step {step:4d}  loss={loss.item():.4f}  Recall@1={r1:.2%}")` },
+    { t: "h2", text: "Temperature: the most important hyperparameter" },
+    { t: "p", text: "Temperature controls how sharply the model distinguishes positives from negatives. Low temperature (0.05): softmax is very peaked, strong signal from small similarity differences. High temperature: flatter distribution, signal only from large differences. SimCSE and SBERT both found 0.05-0.07 works well. Too low → training collapse (model overconfidently pushes everything apart). Too high → signal too weak." },
+    { t: "h2", text: "Hard negatives: beyond random in-batch negatives" },
+    { t: "p", text: "Random in-batch negatives are easy: 'What is BERT?' vs 'What is the capital of France?' is obviously not relevant. Hard negatives are topically similar but not relevant: 'What is BERT?' vs 'What is GPT?' The model must learn fine-grained distinctions. Mining hard negatives — using an initial retriever to find high-scoring false negatives — is the key difference between a mediocre embedding model and a strong one." },
+    { t: "callout", v: "tip", text: "Fine-tune all-MiniLM-L6-v2 on your domain using the SBERT library. Provide (query, positive) pairs from your corpus. Measure Recall@10 before and after on a held-out evaluation set. On most domain-specific corpora, you will see 5-20% improvement from even 1-2k training pairs." },
+    { t: "refs", items: [
+      { label: "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks", url: "https://arxiv.org/abs/1908.10084" },
+      { label: "SimCSE: Simple Contrastive Learning of Sentence Embeddings", url: "https://arxiv.org/abs/2104.08821" },
+    ]},
+  ],
 
 };

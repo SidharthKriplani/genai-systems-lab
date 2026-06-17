@@ -946,7 +946,7 @@ const SERIES_META = {
     title: "Build From Scratch",
     desc: "Implement the core components of modern AI systems from first principles — attention, BM25, and a full RAG pipeline — in pure Python. No frameworks. Run everything in Colab tonight.",
     color: "#22d3ee",
-    postIds: ["attention-from-scratch", "bm25-from-scratch", "minimal-rag-50-lines"],
+    postIds: ["attention-from-scratch", "bm25-from-scratch", "minimal-rag-50-lines", "bpe-tokenization-from-scratch", "training-loop-from-scratch", "lora-from-scratch", "kv-cache-from-scratch", "faiss-from-scratch", "contrastive-learning-from-scratch"],
   },
   "career-strategy": {
     title: "Career & Strategy",
