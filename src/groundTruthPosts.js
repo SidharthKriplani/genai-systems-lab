@@ -13792,5 +13792,416 @@ print(f"top_p=0.9 (1000 samples):          {sample_n(top_p_sample, p=0.9)}")` },
     { t: "p", text: "Repetition penalty: adds a penalty to tokens already generated, reducing the probability of the model repeating itself. Useful for long generation tasks but can cause incoherence if set too high. min-p (a newer alternative to top-p): keep tokens whose probability is at least p_min × max_prob. More robust to extreme distributions than top-p." },
     { t: "callout", v: "tip", text: "Run an experiment: generate 20 completions of the same prompt with T=0.1 vs T=1.5. At T=0.1, completions should be nearly identical. At T=1.5, they should vary substantially — and some should be incoherent. This gives you direct intuition for how temperature controls the creativity/reliability tradeoff, which is the decision you make every time you set generation parameters for a production system." },
   ],
+,
+
+  "ann-algorithms-deep-dive": [
+    { t: "p", text: "Every vector database — Pinecone, Qdrant, Weaviate, pgvector, FAISS — is built on approximate nearest neighbour algorithms. The algorithm you choose determines recall, latency, memory footprint, and whether you can update the index online. Understanding the tradeoffs at the algorithm level is what separates engineers who configure vector DBs from engineers who can choose between them and predict where each will fail." },
+    { t: "h2", text: "The three families" },
+    { t: "p", text: "Flat (exact): store all vectors, compute every distance at query time. O(N×d) per query. Perfect recall. Not practical above ~1M vectors. Use for: offline evaluation, small corpora, ground-truth computation. IVF (Inverted File): partition vectors into clusters (Voronoi cells) via k-means. At query time, search only the nprobe closest clusters. Recall vs. latency controlled by nprobe. Use for: medium-to-large corpora, acceptable training cost, tunable recall. HNSW (Hierarchical Navigable Small World): a multilayer graph. Higher layers are sparse (long-range connections), lower layers are dense (fine-grained). Search starts at top, greedy descent to bottom. No training step. Use for: production retrieval, best recall/latency tradeoff for <1B vectors." },
+    { t: "code", lang: "python", label: "IVF vs HNSW — algorithmic comparison with FAISS", text: `# pip install faiss-cpu numpy
+import numpy as np
+import faiss
+import time
+
+np.random.seed(42)
+N, d, k = 100_000, 128, 10
+
+# Generate random corpus and queries
+corpus  = np.random.randn(N, d).astype(np.float32)
+faiss.normalize_L2(corpus)
+queries = np.random.randn(100, d).astype(np.float32)
+faiss.normalize_L2(queries)
+
+# Ground truth via exact flat search
+flat_index = faiss.IndexFlatIP(d)
+flat_index.add(corpus)
+t0 = time.perf_counter()
+gt_scores, gt_ids = flat_index.search(queries, k)
+flat_time = time.perf_counter() - t0
+print(f"Flat (exact):    {flat_time*1000:.1f}ms for 100 queries  Recall@10: 100%  (ground truth)")
+
+# IVF — train required
+n_clusters = 256
+ivf_index = faiss.IndexIVFFlat(faiss.IndexFlatIP(d), d, n_clusters, faiss.METRIC_INNER_PRODUCT)
+ivf_index.train(corpus)
+ivf_index.add(corpus)
+
+for nprobe in [8, 32, 64]:
+    ivf_index.nprobe = nprobe
+    t0 = time.perf_counter()
+    ivf_scores, ivf_ids = ivf_index.search(queries, k)
+    ivf_time = time.perf_counter() - t0
+    # Measure recall@10
+    recall = np.mean([len(set(ivf_ids[i]) & set(gt_ids[i])) / k for i in range(len(queries))])
+    print(f"IVF nprobe={nprobe:3d}:  {ivf_time*1000:.1f}ms  Recall@10: {recall:.2%}  Speedup: {flat_time/ivf_time:.1f}x")
+
+# HNSW — no training required
+hnsw_index = faiss.IndexHNSWFlat(d, 32)   # M=32 connections per node
+hnsw_index.hnsw.efSearch = 64             # search budget
+hnsw_index.add(corpus)
+t0 = time.perf_counter()
+hnsw_scores, hnsw_ids = hnsw_index.search(queries, k)
+hnsw_time = time.perf_counter() - t0
+recall = np.mean([len(set(hnsw_ids[i]) & set(gt_ids[i])) / k for i in range(len(queries))])
+print(f"HNSW M=32 ef=64: {hnsw_time*1000:.1f}ms  Recall@10: {recall:.2%}  Speedup: {flat_time/hnsw_time:.1f}x")` },
+    { t: "h2", text: "HNSW: the graph structure" },
+    { t: "p", text: "Each vector is a node. At the bottom layer, every node connects to M nearest neighbours (M=32 is a common default). At each higher layer, a fraction of nodes are promoted (roughly e^-layer). Top-layer nodes serve as entry points for coarse navigation; bottom-layer nodes serve fine-grained retrieval. Search: start at a random top-layer node, greedily navigate to the nearest node, descend a layer, repeat. Build time is O(N × M × log(N)). Query time is O(log(N) × M × efSearch) where efSearch is the beam width." },
+    { t: "p", text: "M controls the connectivity. Higher M = higher recall, more memory (each node stores M connections per layer). efSearch controls the search budget per query — more expansive search = higher recall, higher latency. efConstruction (build-time parameter) controls recall quality of the index: higher efC = better index structure, slower build. These three parameters are the HNSW tuning surface." },
+    { t: "h2", text: "Product Quantization: billion-scale compression" },
+    { t: "p", text: "For billion-scale corpora, storing full float32 vectors is not feasible. PQ splits each d-dimensional vector into M sub-vectors of d/M dimensions each. Each sub-vector is quantised to one of 256 codewords (1 byte). A 128-d float32 vector (512 bytes) becomes 8 bytes — 64× compression. Distance computation uses lookup tables over sub-vector distances. Recall loss is 3-8% compared to exact. IVF+PQ combines cluster-based filtering with per-cluster quantisation — the standard configuration for billion-scale production retrieval." },
+    { t: "callout", v: "tip", text: "Decision framework: < 100k vectors → IndexFlatIP (exact). 100k-10M → IndexHNSWFlat (no training, best recall/latency). 10M-1B → IndexIVFFlat (if memory allows) or IndexIVFPQ (memory-constrained). > 1B → distributed IVF+PQ across multiple GPUs/nodes. Always validate with recall@k vs. your latency budget before committing to an index type." },
+    { t: "refs", items: [
+      { label: "FAISS index selection guide", url: "https://github.com/facebookresearch/faiss/wiki/Guidelines-to-choose-an-index" },
+      { label: "Efficient and Robust Approximate Nearest Neighbor Search Using HNSW", url: "https://arxiv.org/abs/1603.09320" },
+    ]},
+  ],
+
+  "learning-to-rank-explained": [
+    { t: "p", text: "BM25 and dense retrieval produce scores. Those scores rank documents. But the ranking those scores produce is not the ranking a human evaluator would produce — it optimises term frequency and vector similarity, not relevance to the user's actual intent. Learning to Rank (LTR) trains a model to produce the ranking directly, using features from the query, the document, and their interaction. It is the standard production technique at every large search engine." },
+    { t: "h2", text: "Three problem formulations" },
+    { t: "p", text: "Pointwise: treat ranking as regression or classification over individual documents. Train a model to predict a relevance score for a (query, document) pair. Rank by predicted score at query time. Advantage: simple. Disadvantage: optimises absolute scores, not ordering — a model can have good MAE but produce terrible rankings. Pairwise: train the model to correctly order pairs of documents: given (query, doc_A, doc_B), which should rank higher? RankNet and LambdaRank use pairwise objectives. Listwise: directly optimise the ranking metric (NDCG, MAP) over the full ranked list. LambdaMART and ListNet use listwise objectives. Best quality, most complex." },
+    { t: "code", lang: "python", label: "Pairwise ranking loss (RankNet) and NDCG evaluation from scratch", text: `import numpy as np
+
+# ─── Pairwise loss (RankNet) ──────────────────────────────────────────────────
+def ranknet_loss(score_i, score_j, label_ij):
+    """
+    label_ij = 1  if document i should rank higher than j
+    label_ij = 0  if equal
+    label_ij = -1 if document j should rank higher
+    P_ij = sigmoid(s_i - s_j) = probability model says i > j
+    """
+    def sigmoid(x): return 1 / (1 + np.exp(-np.clip(x, -10, 10)))
+    p_ij = sigmoid(score_i - score_j)
+    t = (label_ij + 1) / 2                 # convert {-1,0,1} to {0, 0.5, 1}
+    # Cross-entropy
+    loss = -(t * np.log(p_ij + 1e-9) + (1-t) * np.log(1 - p_ij + 1e-9))
+    return loss
+
+# ─── NDCG@K implementation ────────────────────────────────────────────────────
+def dcg_at_k(relevances, k):
+    """Discounted Cumulative Gain at K."""
+    r = np.array(relevances[:k], dtype=float)
+    if r.size == 0:
+        return 0.0
+    # Gain / log2(rank+1). Rank starts at 1 → log2(2), log2(3), ...
+    discounts = 1.0 / np.log2(np.arange(2, r.size + 2))
+    return (r * discounts).sum()
+
+def ndcg_at_k(relevances, k):
+    """Normalised DCG: DCG / ideal DCG."""
+    ideal = sorted(relevances, reverse=True)
+    ideal_dcg = dcg_at_k(ideal, k)
+    if ideal_dcg == 0:
+        return 0.0
+    return dcg_at_k(relevances, k) / ideal_dcg
+
+# ── Demo: compare two rankings ────────────────────────────────────────────────
+# Relevance labels for 5 documents (0=irrelevant, 1=relevant, 2=highly relevant)
+true_labels = [2, 1, 0, 2, 1]  # in original order
+
+# Ranking A: nearly perfect (puts both 2s first)
+ranking_A = [0, 3, 1, 4, 2]    # sorted positions by score_A
+# Ranking B: poor (irrelevant first)
+ranking_B = [2, 4, 1, 0, 3]
+
+relevances_A = [true_labels[i] for i in ranking_A]
+relevances_B = [true_labels[i] for i in ranking_B]
+
+for k in [1, 3, 5]:
+    print(f"NDCG@{k}  |  Ranking A: {ndcg_at_k(relevances_A, k):.3f}  |  Ranking B: {ndcg_at_k(relevances_B, k):.3f}")
+
+# ── Pairwise loss on the same data ────────────────────────────────────────────
+print("\nRankNet pairwise losses for Ranking B (wrong pairs should have high loss):")
+scores_B = [0.1, 0.6, 0.3, 0.8, 0.5]    # model scores for docs 0-4 (bad ranking)
+true_labels = [2, 1, 0, 2, 1]
+for i in range(len(scores_B)):
+    for j in range(i+1, len(scores_B)):
+        label = np.sign(true_labels[i] - true_labels[j])
+        loss  = ranknet_loss(scores_B[i], scores_B[j], label)
+        if loss > 0.4:
+            print(f"  doc{i}(rel={true_labels[i]}, score={scores_B[i]}) vs doc{j}(rel={true_labels[j]}, score={scores_B[j]}): loss={loss:.3f}")` },
+    { t: "h2", text: "LambdaMART: the production standard" },
+    { t: "p", text: "LambdaMART (Burges et al., 2010) is the most widely deployed LTR algorithm. It trains a gradient boosted tree ensemble where each tree is fitted to 'lambda gradients' — a modified gradient that upweights pairs whose swap would most improve NDCG. The key insight: directly computing the gradient of NDCG is infeasible (it is not differentiable), but you can approximate it by weighting pairwise gradients by the expected NDCG improvement from swapping each pair. XGBoost and LightGBM both implement rank:pairwise and rank:ndcg objectives — equivalent to LambdaMART in practice." },
+    { t: "h2", text: "Features in a production LTR model" },
+    { t: "p", text: "Document features: BM25 score, dense retrieval score, document freshness, document click-through rate, page authority. Query features: query length, query type (navigational/informational), user intent classification. Query-document interaction features: BM25F per field, exact match count, URL keyword match, anchor text match. Cross-encoder score (if available). LTR models in production typically use 50-200 features. The gradient-boosted tree handles non-linear combinations automatically — no feature engineering beyond knowing what to include." },
+    { t: "callout", v: "tip", text: "Start with a baseline: train LightGBM ranker on (BM25 score, dense score, query length, document length) with NDCG@10 as objective. Measure offline NDCG@10. Then add one feature group at a time (freshness, click signals, exact match). Track NDCG@10 improvement per feature group. This is how real search teams iterate on ranking — not tuning BM25 parameters, but building the feature set that captures the dimensions of relevance their users care about." },
+    { t: "refs", items: [
+      { label: "From RankNet to LambdaRank to LambdaMART: An Overview — Burges (2010)", url: "https://www.microsoft.com/en-us/research/uploads/prod/2016/02/MSR-TR-2010-82.pdf" },
+    ]},
+  ],
+
+  "query-understanding-pipeline": [
+    { t: "p", text: "The query is what the user typed. The intent is what they actually want. These two things are often different. 'Apple' could mean the company, the fruit, or the Beatles record label depending on context. 'Python tutorial' could mean beginner or advanced. The query understanding pipeline is the set of transformations between raw text and a structured retrieval plan — intent classification, spelling correction, query expansion, and rewriting. Getting this right often has more impact than tuning the retrieval algorithm." },
+    { t: "h2", text: "Spelling correction" },
+    { t: "p", text: "Edit-distance based correction: find the dictionary word with minimum edit distance to the query term. Fast, covers most typos. Context-free: 'form' might be corrected to 'from' in a query where both are valid. Statistical correction: use a language model or an n-gram model to pick the most probable correction given query context. Context-aware but slower. The production heuristic: only auto-correct if confidence is above a threshold; otherwise show 'Did you mean: ...' with the option to keep the original query." },
+    { t: "code", lang: "python", label: "Query understanding pipeline — intent, expansion, rewriting", text: `import re
+from collections import Counter
+
+# ─── 1. Query classification (intent) ────────────────────────────────────────
+# In production: use a fine-tuned classifier or embedding similarity to templates
+NAVIGATIONAL_PATTERNS = [r'\b(login|homepage|official site|contact|careers|support)\b']
+TRANSACTIONAL_PATTERNS = [r'\b(buy|price|cost|discount|order|shipping|checkout)\b']
+INFORMATIONAL_PATTERNS = [r'\b(what|how|why|explain|define|tutorial|example|guide)\b']
+
+def classify_intent(query):
+    q = query.lower()
+    if any(re.search(p, q) for p in NAVIGATIONAL_PATTERNS):
+        return "navigational"
+    if any(re.search(p, q) for p in TRANSACTIONAL_PATTERNS):
+        return "transactional"
+    if any(re.search(p, q) for p in INFORMATIONAL_PATTERNS):
+        return "informational"
+    return "unclassified"
+
+# ─── 2. Spelling correction (edit distance) ───────────────────────────────────
+def edit_distance(s1, s2):
+    m, n = len(s1), len(s2)
+    dp = [[0]*(n+1) for _ in range(m+1)]
+    for i in range(m+1): dp[i][0] = i
+    for j in range(n+1): dp[0][j] = j
+    for i in range(1, m+1):
+        for j in range(1, n+1):
+            if s1[i-1] == s2[j-1]:
+                dp[i][j] = dp[i-1][j-1]
+            else:
+                dp[i][j] = 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
+    return dp[m][n]
+
+VOCABULARY = {"machine", "learning", "deep", "neural", "network", "transformer",
+              "retrieval", "embedding", "attention", "tokenization", "language",
+              "model", "training", "inference", "gradient", "python", "pytorch"}
+
+def correct_query(query, max_edit=2):
+    corrected = []
+    for word in query.lower().split():
+        if word in VOCABULARY:
+            corrected.append(word)
+            continue
+        candidates = [(w, edit_distance(word, w)) for w in VOCABULARY if abs(len(w)-len(word)) <= max_edit]
+        candidates = [(w, d) for w, d in candidates if d <= max_edit]
+        if candidates:
+            best = min(candidates, key=lambda x: x[1])
+            corrected.append(best[0])
+        else:
+            corrected.append(word)   # unknown, keep as is
+    return " ".join(corrected)
+
+# ─── 3. Query expansion (synonym and related terms) ───────────────────────────
+SYNONYMS = {
+    "fast":      ["quick", "rapid", "efficient", "low-latency"],
+    "retrieve":  ["fetch", "get", "search", "query"],
+    "embedding": ["vector", "representation", "encoding"],
+    "llm":       ["large language model", "language model", "GPT", "Claude"],
+}
+
+def expand_query(query, max_expansions=2):
+    words = query.lower().split()
+    expansions = []
+    for word in words:
+        if word in SYNONYMS:
+            expansions.extend(SYNONYMS[word][:max_expansions])
+    if expansions:
+        return query + " " + " ".join(expansions)
+    return query
+
+# ── Pipeline ─────────────────────────────────────────────────────────────────
+test_queries = [
+    "buy pytorch tutoral for machien learinng",
+    "how to train a transformar model",
+    "what is the diffrence between embedding and vector",
+    "fast llm retrieval python",
+]
+
+for q in test_queries:
+    intent    = classify_intent(q)
+    corrected = correct_query(q)
+    expanded  = expand_query(corrected)
+    print(f"Original:  {q}")
+    print(f"Intent:    {intent}")
+    print(f"Corrected: {corrected}")
+    print(f"Expanded:  {expanded[:100]}")
+    print()` },
+    { t: "h2", text: "Query rewriting: the LLM approach" },
+    { t: "p", text: "Modern retrieval systems use LLMs to rewrite queries into multiple variants: decompose multi-hop queries into sub-queries, expand abbreviations, add explicit context. HyDE (Hypothetical Document Embeddings) goes further: use an LLM to generate a hypothetical document that would answer the query, then embed that document and use it as the retrieval query. The hypothesis: the hypothetical document's embedding is closer to relevant documents than the original sparse query." },
+    { t: "h2", text: "When query expansion hurts" },
+    { t: "p", text: "Aggressive synonym expansion reduces precision. 'Bank' expanded to 'river bank' and 'financial institution' will retrieve both, causing irrelevant results for queries where the user had a specific sense. The standard production heuristic: expand only when the original query retrieves few results (low recall case), and only with high-confidence synonyms (word embeddings similarity > 0.85). Do not expand navigational queries at all — the user wants a specific destination." },
+    { t: "callout", v: "tip", text: "A/B test each component of your query understanding pipeline independently. Start with just spelling correction and measure precision@5. Then add intent classification and measure whether navigational queries (where you should return a single result) improve. Add query expansion last and measure recall@10. Each component should show an improvement in its target metric without degrading others. This is the standard search AB testing methodology." },
+  ],
+
+  "inverted-index-from-scratch": [
+    { t: "p", text: "Every search engine — from Elasticsearch to Lucene to the search inside your own application — is built on an inverted index. It is one of the most important data structures in computer science for information retrieval. The word 'inverted' refers to the inversion: instead of document → words (a forward index), it maps word → documents. This inversion makes term lookup O(1) instead of O(N), which is what makes text search at scale possible." },
+    { t: "h2", text: "Building the inverted index" },
+    { t: "code", lang: "python", label: "Full inverted index from scratch — build, TF-IDF score, query", text: `import math
+import re
+from collections import defaultdict, Counter
+
+class InvertedIndex:
+    def __init__(self):
+        self.postings   = defaultdict(dict)    # term → {doc_id: tf}
+        self.doc_lengths = {}                  # doc_id → total token count
+        self.N           = 0                   # number of documents
+        self.docs        = {}                  # doc_id → original text
+
+    def _tokenize(self, text):
+        return re.findall(r'\b[a-z]+\b', text.lower())
+
+    def add_document(self, doc_id, text):
+        tokens = self._tokenize(text)
+        tf = Counter(tokens)
+        for term, count in tf.items():
+            self.postings[term][doc_id] = count       # store raw TF
+        self.doc_lengths[doc_id] = len(tokens)
+        self.docs[doc_id] = text
+        self.N += 1
+
+    def df(self, term):
+        """Document frequency: how many docs contain this term."""
+        return len(self.postings.get(term, {}))
+
+    def tfidf_score(self, term, doc_id):
+        """TF-IDF score for a term in a document."""
+        tf = self.postings.get(term, {}).get(doc_id, 0)
+        if tf == 0:
+            return 0.0
+        # Log-normalised TF × IDF
+        tf_norm = 1 + math.log(tf)
+        idf     = math.log(self.N / (self.df(term) + 1)) + 1
+        return tf_norm * idf
+
+    def bm25_score(self, term, doc_id, k1=1.5, b=0.75):
+        """BM25 score."""
+        tf  = self.postings.get(term, {}).get(doc_id, 0)
+        if tf == 0:
+            return 0.0
+        df  = self.df(term)
+        idf = math.log((self.N - df + 0.5) / (df + 0.5) + 1)
+        avgdl = sum(self.doc_lengths.values()) / self.N
+        dl    = self.doc_lengths[doc_id]
+        tf_norm = (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * dl / avgdl))
+        return idf * tf_norm
+
+    def search(self, query, k=5, method="bm25"):
+        terms  = self._tokenize(query)
+        scores = defaultdict(float)
+        for term in terms:
+            for doc_id in self.postings.get(term, {}):
+                if method == "bm25":
+                    scores[doc_id] += self.bm25_score(term, doc_id)
+                else:
+                    scores[doc_id] += self.tfidf_score(term, doc_id)
+        ranked = sorted(scores.items(), key=lambda x: -x[1])[:k]
+        return [(doc_id, round(score, 3), self.docs[doc_id][:80]) for doc_id, score in ranked]
+
+    def stats(self):
+        print(f"Documents: {self.N}  |  Unique terms: {len(self.postings)}")
+        print(f"Avg doc length: {sum(self.doc_lengths.values())/self.N:.1f} tokens")
+
+
+# ── Build index ───────────────────────────────────────────────────────────────
+idx = InvertedIndex()
+documents = {
+    "d1": "BM25 is a probabilistic retrieval function used in search engines and information retrieval",
+    "d2": "Dense retrieval uses neural embeddings to find semantically similar documents in vector space",
+    "d3": "Hybrid search combines BM25 sparse retrieval with dense vector search using reciprocal rank fusion",
+    "d4": "The inverted index maps each term to a list of documents containing that term with frequencies",
+    "d5": "BM25 parameters k1 and b control term frequency saturation and length normalisation respectively",
+    "d6": "Information retrieval systems must balance precision and recall for effective document search",
+    "d7": "Dense embeddings capture semantic similarity while sparse BM25 captures exact lexical matches",
+}
+for doc_id, text in documents.items():
+    idx.add_document(doc_id, text)
+idx.stats()
+
+print("\nSearch: 'BM25 retrieval parameters'")
+for doc_id, score, text in idx.search("BM25 retrieval parameters", k=3):
+    print(f"  [{doc_id}] score={score}  {text}...")
+
+print("\nPostings for term 'retrieval':", list(idx.postings.get("retrieval", {}).keys()))` },
+    { t: "h2", text: "Positional index and phrase queries" },
+    { t: "p", text: "The basic inverted index stores (doc_id, tf) per term. A positional index stores (doc_id, [position_1, position_2, ...]) — every position where the term appears. With positions, you can answer phrase queries: 'information retrieval' requires 'information' and 'retrieval' to appear consecutively. The algorithm: find documents where both terms appear, then check if any position of 'information' is immediately followed by a position of 'retrieval'." },
+    { t: "p", text: "The cost: positional indexes are 2-4× larger than non-positional indexes. On a corpus with average document length 200 tokens, each posting stores ~200 positions instead of 1. Elasticsearch and Lucene use positional indexes by default. For most production search, the phrase query capability is worth the storage cost." },
+    { t: "h2", text: "Index updates and merging" },
+    { t: "p", text: "Real indexes are built with segment-based architecture (Lucene's model): new documents go into a small in-memory index (buffer). When the buffer is full, it is flushed to disk as a new segment. At query time, search all segments and merge results. Periodically, small segments are merged into larger ones. Deletion: mark documents as deleted (a delete bitmap), filter results at query time, and physically remove on the next merge. This segment model enables low-latency writes without rewriting the full index." },
+    { t: "callout", v: "tip", text: "Extend this to a fielded index: create separate postings for title and body. Implement BM25F (BM25 with field weights) where title matches score higher than body matches. Then implement a positional index and test phrase queries. Building the full Lucene-style index from scratch takes about 200 lines and gives you a deep model of what Elasticsearch is doing when you call it." },
+  ],
+
+  "two-tower-training-from-scratch": [
+    { t: "p", text: "The two-tower model is the dominant retrieval architecture at scale. Netflix, Google, Spotify, LinkedIn — the candidate retrieval stage of every large recommendation system uses two-tower. One tower encodes queries (or users); the other encodes documents (or items). The inner product between their outputs is the relevance score. The towers are trained jointly with in-batch negatives. Understanding the training loop means you can fine-tune retrieval for your domain, diagnose retrieval failures, and design the feature engineering that makes your towers work." },
+    { t: "h2", text: "Architecture and the serving trick" },
+    { t: "p", text: "The key serving property: item (document) embeddings are computed once at indexing time and stored in a FAISS index. At query time, you only need to encode the query (one forward pass through the query tower) and run ANN search. Contrast with cross-encoders, which must encode (query, document) pairs at query time — O(N) forward passes vs. O(1) plus ANN lookup." },
+    { t: "code", lang: "python", label: "Two-tower training with in-batch negatives — minimal PyTorch", text: `import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class Tower(nn.Module):
+    """Query or item tower. In practice: replace with a pre-trained transformer."""
+    def __init__(self, input_dim, hidden_dim=128, output_dim=64):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, output_dim),
+        )
+    def forward(self, x):
+        return F.normalize(self.net(x), dim=-1)   # unit-norm embeddings
+
+class TwoTowerModel(nn.Module):
+    def __init__(self, query_dim, item_dim, embed_dim=64):
+        super().__init__()
+        self.query_tower = Tower(query_dim, output_dim=embed_dim)
+        self.item_tower  = Tower(item_dim,  output_dim=embed_dim)
+
+    def forward(self, query_features, item_features):
+        q_emb = self.query_tower(query_features)   # (B, embed_dim)
+        i_emb = self.item_tower(item_features)     # (B, embed_dim)
+        return q_emb, i_emb
+
+
+def two_tower_loss(q_emb, i_emb, temperature=0.05):
+    """
+    In-batch negatives: for each (query_i, item_i) pair,
+    all other items in the batch are negatives.
+    Exact same formulation as contrastive learning.
+    """
+    sim    = q_emb @ i_emb.T / temperature     # (B, B) — diagonal = positives
+    labels = torch.arange(sim.shape[0], device=sim.device)
+    return F.cross_entropy(sim, labels)
+
+
+# ── Training ──────────────────────────────────────────────────────────────────
+torch.manual_seed(42)
+B = 64             # batch size — larger batches = more negatives = stronger signal
+query_dim, item_dim = 32, 48
+model     = TwoTowerModel(query_dim, item_dim, embed_dim=32)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+def make_batch(B, query_dim, item_dim, correlation=0.7):
+    """Simulate paired (query, item) features with some correlation."""
+    shared = torch.randn(B, min(query_dim, item_dim) // 2)
+    queries = torch.cat([shared + 0.1*torch.randn_like(shared), torch.randn(B, query_dim - shared.shape[1])], dim=1)
+    items   = torch.cat([shared + 0.1*torch.randn_like(shared), torch.randn(B, item_dim  - shared.shape[1])], dim=1)
+    return queries, items
+
+losses = []
+for step in range(500):
+    q_feat, i_feat = make_batch(B, query_dim, item_dim)
+    q_emb, i_emb  = model(q_feat, i_feat)
+    loss = two_tower_loss(q_emb, i_emb)
+    optimizer.zero_grad(); loss.backward(); optimizer.step()
+    losses.append(loss.item())
+    if step % 100 == 0:
+        with torch.no_grad():
+            sim   = q_emb @ i_emb.T
+            ranks = (sim > sim.diagonal().unsqueeze(1)).sum(dim=1)
+            r1    = (ranks == 0).float().mean().item()
+        print(f"Step {step:4d}  loss={loss.item():.4f}  Recall@1={r1:.2%}")
+
+print(f"\nFinal loss: {losses[-1]:.4f}")` },
+    { t: "h2", text: "In-batch false negatives" },
+    { t: "p", text: "If item_j is genuinely relevant to query_i (but is being used as a negative in the batch), the model gets a noisy gradient — it is being pushed away from a relevant item. This 'false negative' problem degrades training quality. Mitigation: filter known positive pairs from the negatives before computing the loss. Or use larger batches (with more negatives, any single false negative has less influence). Or use hard negative mining (explicit non-relevant items) rather than in-batch random negatives." },
+    { t: "h2", text: "Feature engineering for the towers" },
+    { t: "p", text: "Query tower features: query text (tokenised), session context, user history (past clicks, history embeddings), user demographics. Item tower features: item text (title, description), item category, item popularity, item freshness, item embeddings from a separate embedding model. The critical rule: any feature that requires interaction between query and item (e.g., 'has user clicked this item before?') cannot go into either tower — towers must be computed independently. Interaction features belong in the reranker." },
+    { t: "callout", v: "tip", text: "Fine-tune a two-tower retrieval model on your domain: take a pre-trained bi-encoder (e.g., sentence-transformers/all-MiniLM-L6-v2), replace the final projection layer with a LoRA adapter, and train with in-batch negatives from your (query, relevant document) pairs. This is domain adaptation for retrieval — the same concept as contrastive-learning-from-scratch, applied to a pre-trained model that already knows language." },
+  ],
 
 };

@@ -948,6 +948,12 @@ const SERIES_META = {
     color: "#22d3ee",
     postIds: ["attention-from-scratch", "bm25-from-scratch", "minimal-rag-50-lines", "bpe-tokenization-from-scratch", "training-loop-from-scratch", "lora-from-scratch", "kv-cache-from-scratch", "faiss-from-scratch", "contrastive-learning-from-scratch"],
   },
+  "retrieval-depth": {
+    title: "Retrieval Depth",
+    desc: "The algorithms behind production search: ANN index selection, Learning to Rank, query understanding, inverted index construction, and two-tower model training. What every retrieval engineer actually builds.",
+    color: "#22c55e",
+    postIds: ["ann-algorithms-deep-dive", "learning-to-rank-explained", "query-understanding-pipeline", "inverted-index-from-scratch", "two-tower-training-from-scratch"],
+  },
   "llm-internals": {
     title: "LLM Internals",
     desc: "MHA/GQA memory math, PagedAttention, the FFN block, RoPE vs ALiBi, speculative decoding, and sampling strategies. The architecture decisions that determine cost, latency, and capability — made precise.",
