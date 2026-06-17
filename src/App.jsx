@@ -1893,19 +1893,19 @@ export default function App() {
     ]},
     // CHALLENGE AREAS — click area name → hub page. Sub-item → specific lab.
     { label: "CHALLENGE AREAS", color: "var(--gal-build)", items: [
-      { id: "retrieval",  label: "Retrieval",  subitems: [
+      { id: "retrieval",  label: "Retrieval",  desc: "4 Concepts · 19 GT posts · 51q", subitems: [
         { id: "lab",          label: "RAG Lab",    note: "6 scenarios" },
       ]},
-      { id: "evaluation", label: "Evaluation", subitems: [
+      { id: "evaluation", label: "Evaluation", desc: "4 Concepts · 13 GT posts · 40q", subitems: [
         { id: "evallab",      label: "Eval Lab",   note: "15 modules"  },
       ]},
-      { id: "agentshub",  label: "Agents",     subitems: [
+      { id: "agentshub",  label: "Agents",     desc: "4 Concepts · 28 GT posts · 50q", subitems: [
         { id: "agentlab",     label: "Agent Lab",  note: "16 modules"  },
       ]},
-      { id: "production", label: "Production", subitems: [
+      { id: "production", label: "Production", desc: "5 Concepts · 44 GT posts · 50q", subitems: [
         { id: "llmlab",       label: "LLM Lab",    note: "9 modules"   },
       ]},
-      { id: "foundations", label: "Foundations", subitems: [
+      { id: "foundations", label: "Foundations", desc: "5 Concepts · 81 GT posts · 80q", subitems: [
         { id: "foundationlab", label: "FM Lab",    note: "6 scenarios" },
         { id: "promptlab",     label: "Prompt Lab",note: "6 scenarios" },
       ]},
@@ -2198,7 +2198,7 @@ export default function App() {
                         </button>
                         {/* Sub-items */}
                         {hasSubitems && (
-                          <div style={{ maxHeight: isExpanded ? `${item.subitems.length * 30}px` : '0px', overflow: 'hidden', transition: 'max-height 200ms cubic-bezier(0.4,0,0.2,1)' }}>
+                          <div style={{ maxHeight: isExpanded ? `${item.subitems.length * 30 + (item.desc ? 22 : 0)}px` : '0px', overflow: 'hidden', transition: 'max-height 200ms cubic-bezier(0.4,0,0.2,1)' }}>
                             <div className="ml-3 pl-2.5 mb-1 space-y-0" style={{ borderLeft: `1px solid ${activeColor}20` }}>
                               {item.subitems.map((sub, si) => {
                                 const subIsActive = !forceOpen && topView === sub.id && !sub.postId;
@@ -2222,6 +2222,9 @@ export default function App() {
                                   </button>
                                 );
                               })}
+                              {item.desc && (
+                                <p className="px-2 pt-0.5 pb-1 text-[9px] font-mono leading-tight" style={{ color: "#3f3f46" }}>{item.desc}</p>
+                              )}
                             </div>
                           </div>
                         )}
