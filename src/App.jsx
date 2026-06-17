@@ -1937,6 +1937,7 @@ export default function App() {
         { id: "groundtruth", label: "Research Engineer",     postId: "research-engineer-interview"        },
         { id: "groundtruth", label: "Staff & Lead",          postId: "staff-ai-engineer-week-one"         },
         { id: "groundtruth", label: "Indic NLP",             postId: "indic-nlp-challenges"               },
+        { id: "groundtruth", label: "Engineering Leadership", postId: "ic-to-em-transition"               },
       ]},
     ]},
     // Plans now in TRACK group at top of sidebar.

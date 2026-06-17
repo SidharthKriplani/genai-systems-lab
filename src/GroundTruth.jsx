@@ -1006,7 +1006,13 @@ const SERIES_META = {
     title: "High-TC Targets",
     desc: "What Cohere, Anthropic, Mistral, Sarvam, Krutrim, and staff-level roles at Flipkart and Swiggy actually test — first-principles depth, research taste, production judgment. The no-spec system design framework, company-specific interview patterns, and what separates senior from staff candidates.",
     color: "#f59e0b",
-    postIds: ["high-tc-ai-company-interviews", "ambiguous-system-design-framework", "research-engineer-interview", "staff-ai-engineer-week-one", "engineering-influence-without-authority", "fde-build-round-survival", "indic-nlp-challenges"],
+    postIds: ["high-tc-ai-company-interviews", "ambiguous-system-design-framework", "research-engineer-interview", "staff-ai-engineer-week-one", "engineering-influence-without-authority", "fde-build-round-survival", "indic-nlp-challenges", "rlhf-from-scratch", "pretraining-data-decisions", "customer-facing-ai-demos", "ai-integration-debugging"],
+  },
+  "engineering-leadership": {
+    title: "Engineering Leadership",
+    desc: "The IC to EM transition, roadmap ownership, managing AI engineers, and perf calibration. What changes and what doesn't when you move from shipping models to shipping through people.",
+    color: "#6366f1",
+    postIds: ["ic-to-em-transition", "roadmap-ownership-ai-teams", "managing-ai-engineers", "ai-team-perf-calibration"],
   },
 };
 
