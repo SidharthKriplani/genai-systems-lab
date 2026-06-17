@@ -1932,6 +1932,8 @@ export default function App() {
         { id: "groundtruth", label: "NLP Practitioners",     postId: "bert-internals-explained"          },
         { id: "groundtruth", label: "Recommendation Sys",   postId: "two-tower-reco-architecture"       },
         { id: "groundtruth", label: "ML Foundations",        postId: "loss-functions-deep-dive"          },
+        { id: "groundtruth", label: "Research Taste",        postId: "reading-ml-papers-critically"      },
+        { id: "groundtruth", label: "High-TC Targets",       postId: "high-tc-ai-company-interviews"     },
       ]},
     ]},
     // Plans now in TRACK group at top of sidebar.

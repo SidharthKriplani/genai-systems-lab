@@ -992,9 +992,21 @@ const SERIES_META = {
   },
   "ml-foundations": {
     title: "ML Foundations (Bangalore Track)",
-    desc: "Loss functions, optimizers, bias-variance, statistical testing, and experimental design — the theory that Bangalore senior AI engineer interviews actually test. Built from the gap between what engineers learn in courses and what companies like Flipkart, Swiggy, and Google ask.",
+    desc: "Loss functions, optimizers, bias-variance, statistical testing, experimental design, and Bayesian reasoning — the theory that Bangalore senior AI engineer and Applied Scientist interviews actually test.",
     color: "#a855f7",
-    postIds: ["loss-functions-deep-dive", "optimizers-explained", "bias-variance-in-production", "statistical-testing-ml", "experimental-design-ablations"],
+    postIds: ["loss-functions-deep-dive", "optimizers-explained", "bias-variance-in-production", "statistical-testing-ml", "experimental-design-ablations", "bayesian-reasoning-ml"],
+  },
+  "research-taste": {
+    title: "Research Taste",
+    desc: "How to read ML papers critically — spot under-tuned baselines, test set contamination, missing ablations, and compute opacity. How benchmarks get gamed. What Goodhart's Law means for MMLU and leaderboard SOTA. The skill that separates researchers from engineers at frontier labs.",
+    color: "#ef4444",
+    postIds: ["reading-ml-papers-critically", "benchmark-overfitting-goodhart"],
+  },
+  "high-tc-targets": {
+    title: "High-TC Targets",
+    desc: "What Cohere, Anthropic, Mistral, Sarvam, Krutrim, and staff-level roles at Flipkart and Swiggy actually test — first-principles depth, research taste, production judgment. The no-spec system design framework, company-specific interview patterns, and what separates senior from staff candidates.",
+    color: "#f59e0b",
+    postIds: ["high-tc-ai-company-interviews", "ambiguous-system-design-framework"],
   },
 };
 
