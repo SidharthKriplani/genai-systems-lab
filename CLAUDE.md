@@ -21,7 +21,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 64, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 426 PrepLab questions, 286 GT index entries (9 new series, 3 interactive Systems modules), 5 PrepLab modes (+ Interview Sprint).
+**Scale (post-sprint 65, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 459 PrepLab questions, 293 GT index entries (11 new series, 3 interactive Systems modules), 5 PrepLab modes (+ Interview Sprint).
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
@@ -459,6 +459,17 @@ For full audit findings see AUDITS.md.
 
 **Sprint 42 (June 2026):**
 - CLAUDE.md trimmed 587→371 lines + HISTORY.md created (`bfb28d2`). promptlab-5/6 + Role Readiness Score (`f96bc4a`). Foundation Models Lab: 6 scenarios (`6cb2194`). Paper warm theme + light mode + CSS vars + sun/moon toggle (`2884aa1`). Build fixes: duplicate declarations (`46bd398`, `9a70d75`). Theme audit phase 2: hardcoded #22D3EE → CSS vars (`c859fe6`). Interview Signal PrepLab mode: 22 experiences (`f33a123`). Scenario questions: ScenarioPlayer + 3 scenarios (`246f73f`). Scale: 6 labs, 304 PrepLab, 27 Concepts, 226 GT.
+
+**Sprint 65 (June 2026) — Role coverage expansion (RE/Staff/FDE/Bayesian-ext/Indic tracks):**
+- 7 new GT posts: `research-engineer-interview`, `staff-ai-engineer-week-one`, `engineering-influence-without-authority`, `fde-build-round-survival`, `conformal-prediction-production`, `probabilistic-graphical-models`, `indic-nlp-challenges`.
+- high-tc-targets series expanded: 2→7 posts (added RE, staff week-1, influence, FDE build round, Indic NLP).
+- ml-foundations series expanded: 6→8 posts (added conformal prediction, PGMs).
+- 33 new PrepLab questions: re-1–10, staff-1–8, fde-1–5, bayesext-1–5, indic-1–5.
+- App.jsx sidebar: 3 new series links (Research Engineer, Staff & Lead, Indic NLP).
+- Role coverage post-sprint 65: Senior AIE 85%, MLOps 80%, Applied Scientist 85%, Staff 75%, Research Engineer 60%, FDE 60%, Indic/Sarvam 60%.
+- Commit `0c747f3`. Brace diff = 0 on all files.
+- **Scale post-sprint 65:** 459 PrepLab questions, 293 GT index entries, 11 GT series.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
 **Sprints 37c–41** — see LINEAGE.md for detail. Key: GT state-aware reading mode, RAG Lab static corpus, 10 new PrepLab questions + sibling codebase analysis (39), shared components + streak heatmap + FeedbackBar + multi-select MCQ + CommonTrap expansion + AgentContextArch module (40), 7 new Concepts modules + 4 gyms activated + Prompt Lab (41).
 
