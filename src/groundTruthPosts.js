@@ -12442,7 +12442,6 @@ print(prompt)
 
     { t: "lab", tab: "lab", label: "RAG Lab — configure the failure modes →", desc: "The RAG Lab puts you inside a production pipeline with real failure modes. Run this 50-line version first, then the lab shows you what each failure looks like at scale." },
   ],
-,
 
   "ngrams-to-neural": [
     { t: "p", text: "Before transformers, before neural networks, language models were built from counting. The n-gram era lasted thirty years and built every autocomplete, every spell-checker, every early speech recogniser. Understanding it is not nostalgia — it reveals exactly what problem neural language models solved, and why that solution was so disruptive." },
@@ -12972,7 +12971,6 @@ show_attention_mask(tokens, causal=True)    # GPT` },
       { label: "Exploring the Limits of Transfer Learning with T5 — Raffel et al. (2020)", url: "https://arxiv.org/abs/1910.10683" },
     ]},
   ],
-,
 
   "bpe-tokenization-from-scratch": [
     { t: "p", text: "Every token an LLM processes was produced by a tokenizer. The tokenizer determines how text maps to integers, how much of the context window a sentence occupies, and whether rare words are handled gracefully or fragmented into noise. Yet most engineers who work with LLMs have never implemented the algorithm that produces these tokens. Byte Pair Encoding is 30 lines of code. This is those 30 lines." },
@@ -13357,7 +13355,6 @@ for step in range(500):
       { label: "SimCSE: Simple Contrastive Learning of Sentence Embeddings", url: "https://arxiv.org/abs/2104.08821" },
     ]},
   ],
-,
 
   "mha-mqa-gqa-explained": [
     { t: "p", text: "LLaMA-3, Mistral, Gemma, and every other modern open-weight model specifies a number of key-value heads that is different from — and smaller than — the number of query heads. This is Grouped Query Attention. Understanding why it exists requires understanding the memory arithmetic of the KV cache and exactly how Multi-Head Attention was changed to reduce it." },
@@ -13792,7 +13789,6 @@ print(f"top_p=0.9 (1000 samples):          {sample_n(top_p_sample, p=0.9)}")` },
     { t: "p", text: "Repetition penalty: adds a penalty to tokens already generated, reducing the probability of the model repeating itself. Useful for long generation tasks but can cause incoherence if set too high. min-p (a newer alternative to top-p): keep tokens whose probability is at least p_min × max_prob. More robust to extreme distributions than top-p." },
     { t: "callout", v: "tip", text: "Run an experiment: generate 20 completions of the same prompt with T=0.1 vs T=1.5. At T=0.1, completions should be nearly identical. At T=1.5, they should vary substantially — and some should be incoherent. This gives you direct intuition for how temperature controls the creativity/reliability tradeoff, which is the decision you make every time you set generation parameters for a production system." },
   ],
-,
 
   "ann-algorithms-deep-dive": [
     { t: "p", text: "Every vector database — Pinecone, Qdrant, Weaviate, pgvector, FAISS — is built on approximate nearest neighbour algorithms. The algorithm you choose determines recall, latency, memory footprint, and whether you can update the index online. Understanding the tradeoffs at the algorithm level is what separates engineers who configure vector DBs from engineers who can choose between them and predict where each will fail." },
@@ -15242,7 +15238,6 @@ def serve_and_log(query: str, user_id: str, production_model) -> dict:
     { t: "callout", c: "The trend is toward decoder-only dominance. At large scales (>10B parameters), decoder-only models match or exceed encoder-decoder on most seq2seq benchmarks while being architecturally simpler. The encoder-decoder advantage shrinks as scale increases. For most new production systems, use a decoder-only LLM for generation tasks and encoder-only for embedding tasks." },
     { t: "refs", c: ["Raffel et al. — Exploring the Limits of Transfer Learning with T5 (2020)", "Lewis et al. — BART: Denoising Sequence-to-Sequence Pre-training (2020)", "Chung et al. — Scaling Instruction-Finetuned Language Models / Flan-T5 (2022)"] }
   ]
-,
 
   "interview-sprint-cheat-sheet": [
     { t: "h2", c: "The AI Engineering Interview Sprint: A Time-Horizon Prep Guide" },
