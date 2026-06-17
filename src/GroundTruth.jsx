@@ -922,7 +922,7 @@ const SERIES_META = {
     title: "How I'd Build X",
     desc: "Opinionated, first-person walkthroughs of production AI systems — architecture decisions, failure modes, and the tradeoffs you actually face when building for real users.",
     color: "#f59e0b",
-    postIds: ["build-ai-search","build-code-review-bot","build-customer-support-ai","build-voice-ai","build-document-intelligence","build-coding-assistant"],
+    postIds: ["build-ai-search","build-code-review-bot","build-customer-support-ai","build-voice-ai","build-document-intelligence","build-coding-assistant","how-id-build-recommendation-feed","how-id-build-fraud-detection","how-id-build-search-ranking-ecommerce"],
   },
   "data-flywheel": {
     title: "The Data Flywheel",
@@ -983,6 +983,18 @@ const SERIES_META = {
     desc: "The market forces reshaping AI roles — the DS→AI engineer arc, Type A vs Type B engineers, the Forward Deployed Engineer, and the three-layer skill stack.",
     color: "#22c55e",
     postIds: ["type-a-vs-type-b-engineers", "ds-to-ai-engineer", "forward-deployed-engineer", "three-layer-de-skill-stack", "ai-engineer-role", "breaking-into-ai"],
+  },
+  "recommendation-systems": {
+    title: "Recommendation Systems",
+    desc: "Two-tower retrieval, collaborative filtering, candidate generation vs ranking, cold start, and explore-exploit. The architecture behind YouTube, Spotify, and Flipkart — explained for AI engineers preparing for senior interviews.",
+    color: "#f97316",
+    postIds: ["two-tower-reco-architecture", "collaborative-filtering-deep-dive", "candidate-generation-vs-ranking", "cold-start-problem", "explore-exploit-recommendations"],
+  },
+  "ml-foundations": {
+    title: "ML Foundations (Bangalore Track)",
+    desc: "Loss functions, optimizers, bias-variance, statistical testing, and experimental design — the theory that Bangalore senior AI engineer interviews actually test. Built from the gap between what engineers learn in courses and what companies like Flipkart, Swiggy, and Google ask.",
+    color: "#a855f7",
+    postIds: ["loss-functions-deep-dive", "optimizers-explained", "bias-variance-in-production", "statistical-testing-ml", "experimental-design-ablations"],
   },
 };
 

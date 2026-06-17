@@ -1929,7 +1929,9 @@ export default function App() {
         { id: "groundtruth", label: "Retrieval Depth",      postId: "ann-algorithms-deep-dive"     },
         { id: "groundtruth", label: "LLMOps Production",    postId: "drift-detection-production"   },
         { id: "groundtruth", label: "Evaluation Depth",     postId: "ndcg-mrr-from-scratch"        },
-        { id: "groundtruth", label: "NLP Practitioners",   postId: "bert-internals-explained"     },
+        { id: "groundtruth", label: "NLP Practitioners",     postId: "bert-internals-explained"          },
+        { id: "groundtruth", label: "Recommendation Sys",   postId: "two-tower-reco-architecture"       },
+        { id: "groundtruth", label: "ML Foundations",        postId: "loss-functions-deep-dive"          },
       ]},
     ]},
     // Plans now in TRACK group at top of sidebar.
