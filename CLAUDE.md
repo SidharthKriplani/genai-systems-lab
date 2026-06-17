@@ -496,6 +496,10 @@ For full audit findings see AUDITS.md.
 - **Role coverage post-sprint 67:** Senior AIE 85%, Applied Scientist 85%, MLOps 80%, RE 80%, Staff/Lead 75%, Lead/EM 75%, FDE 75%, Indic/Sarvam 60%. Gaps remaining: Research Scientist (no publication strategy), pure SWE→AI switcher path, live coding assessment prep.
 - **Scale post-sprint 67:** 483 PrepLab questions, 301 GT index entries, 12 GT series, 6 PrepLab modes (Browse All added).
 
+**Sprint 67 polish (June 2026) — Mobile + sidebar UX:**
+- BrowseMode mobile layout fixed `e7fdb0a`: topic filter → horizontal scroll strip (no more wrap wall), difficulty filter → own dedicated row with label, padding `px-6` → `px-4 sm:px-6`, MCQ correct label shortened to `✓` to prevent overflow on narrow widths.
+- Sidebar challenge area descriptor line `83597fa`: each Challenge Area now shows a muted monospace hint below the lab link when expanded (e.g. `4 Concepts · 28 GT posts · 50q`). Communicates hub page contents without duplicating nav. `maxHeight` animation accounts for the extra line height.
+
 **Sprints 37c–41** — see LINEAGE.md for detail. Key: GT state-aware reading mode, RAG Lab static corpus, 10 new PrepLab questions + sibling codebase analysis (39), shared components + streak heatmap + FeedbackBar + multi-select MCQ + CommonTrap expansion + AgentContextArch module (40), 7 new Concepts modules + 4 gyms activated + Prompt Lab (41).
 
 *Sprints 1–37: see docs/archive/HISTORY.md*

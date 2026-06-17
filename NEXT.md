@@ -6,6 +6,13 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
+## Sprint 67 polish — ✅ COMPLETE (`e7fdb0a`, `83597fa`)
+
+1. ~~**BrowseMode mobile layout**~~ — topic filter horizontal scroll, difficulty own row, responsive padding, MCQ overflow fix.
+2. ~~**Sidebar challenge area desc line**~~ — muted `4 Concepts · N GT posts · Nq` hint below lab link when expanded.
+
+---
+
 ## Sprint 67 — ✅ COMPLETE
 
 **Objective:** Bug audit + renderer fix + Browse mode.
