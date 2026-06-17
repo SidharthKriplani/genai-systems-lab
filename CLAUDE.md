@@ -21,7 +21,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 45, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 307 PrepLab questions, 226 GT posts, 4 PrepLab modes.
+**Scale (post-sprint 61, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 319 PrepLab questions, 262 GT posts (4 new series), 4 PrepLab modes.
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
@@ -361,6 +361,15 @@ For full audit findings see AUDITS.md.
 - UPGRADES.md: 2 new entries — Activation Path, Synthesis Card Specificity.
 - GT "render error" resolved: groundTruthPosts.js clean, CodeBlock fix (5b653a9) intact. No build error.
 - Commit: `chore: MD sync sprint 57 — PM audit (Audit 29), DECISIONS §11–12, NEXT/IDEAS/UPGRADES/CLAUDE updated`
+
+**Sprint 61 (June 2026) — GT mega-expansion (+23 posts, 4 new series):**
+- Gap analysis: 367 Anki cards vs 235 existing GT posts. Identified 4 gap clusters: NLP origins, LLM internals, retrieval algorithms, LLMOps production, evaluation methods.
+- Batch 4 Retrieval Deep Dives `6747996`: 5 posts — `ann-algorithms-deep-dive`, `learning-to-rank-explained`, `query-understanding-pipeline`, `inverted-index-from-scratch`, `two-tower-training-from-scratch`. Series `retrieval-depth` added to SERIES_META.
+- Batch 5 LLMOps Production `0f2632b`: 6 posts — `drift-detection-production`, `deployment-patterns-ml`, `feature-store-patterns`, `model-registry-mlflow`, `retraining-triggers-strategies`, `ml-dockerization-patterns`. Series `llmops-production` added.
+- Batch 6 Evaluation Deep Dives `c558470`: 6 posts — `ndcg-mrr-from-scratch`, `calibration-ece-from-scratch`, `annotation-inter-annotator-agreement`, `eval-flywheel-implicit-feedback`, `llm-judge-calibration`, `counterfactual-offline-eval`. Series `eval-depth` added.
+- (Batches 1–3 were in previous session: NLP Origins 6 posts `0401439`, Build From Scratch Extended 6 posts `86763b9`, LLM Architecture Internals 6 posts `29863a1`. Series: `nlp-origins`, `build-from-scratch` extended, `llm-internals`.)
+- **Scale post-sprint 61:** 262 GT index entries (was 235), 4 new series in SERIES_META. Brace diff = 0 on all commits.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
 **Sprint 60 (June 2026) — GT post + private Mastery Room (staged, not committed):**
 - GT post `3e10b95` — "The Vibe Coding Round Isn't About Coding" (id: `vibe-coding-interview-round`). Series: career-strategy. Tags: FDE, vibe coding, interview, career. Brace diff: 0.
