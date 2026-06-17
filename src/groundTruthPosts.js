@@ -15814,10 +15814,7 @@ model = lgb.train(
     { t: "p", c: "P(θ | data) = P(data | θ) × P(θ) / P(data). Posterior = Likelihood × Prior / Evidence. The evidence P(data) is just a normalizing constant — it doesn't depend on θ, so for optimization you can ignore it. You're maximizing Likelihood × Prior." },
     { t: "h3", c: "Why Uncertainty Quantification Matters" },
     { t: "p", c: "MLE gives you a point estimate — one set of parameters. Bayesian inference gives you a posterior distribution over parameters. The difference matters when you're making decisions under uncertainty." },
-    { t: "list", c: "Point estimate: model says 87% probability. What's the confidence interval on that 87%? Unknown.
-Posterior: model says 87% ± 12%. You know you should hedge.
-Applied Scientist interviews: they'll ask 'how confident are you in this model's output?' MLE can't answer that rigorously.
-Calibration (ECE) is a frequentist approximation of this — checking if predicted probabilities match observed frequencies." },
+    { t: "list", c: "Point estimate: model says 87% probability. What's the confidence interval on that 87%? Unknown.\nPosterior: model says 87% ± 12%. You know you should hedge.\nApplied Scientist interviews: they'll ask 'how confident are you in this model\'s output?' MLE can't answer that rigorously.\nCalibration (ECE) is a frequentist approximation of this — checking if predicted probabilities match observed frequencies." },
     { t: "h3", c: "Conjugate Priors: The Closed-Form Cases" },
     { t: "p", c: "When prior and likelihood are from the same exponential family, the posterior is also in that family — called a conjugate pair. The posterior has a closed-form solution, no MCMC needed." },
     { t: "table", c: "Likelihood|Prior|Posterior|Use case
