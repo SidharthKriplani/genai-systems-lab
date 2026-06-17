@@ -994,7 +994,7 @@ const SERIES_META = {
     title: "ML Foundations (Bangalore Track)",
     desc: "Loss functions, optimizers, bias-variance, statistical testing, experimental design, and Bayesian reasoning — the theory that Bangalore senior AI engineer and Applied Scientist interviews actually test.",
     color: "#a855f7",
-    postIds: ["loss-functions-deep-dive", "optimizers-explained", "bias-variance-in-production", "statistical-testing-ml", "experimental-design-ablations", "bayesian-reasoning-ml"],
+    postIds: ["loss-functions-deep-dive", "optimizers-explained", "bias-variance-in-production", "statistical-testing-ml", "experimental-design-ablations", "bayesian-reasoning-ml", "conformal-prediction-production", "probabilistic-graphical-models"],
   },
   "research-taste": {
     title: "Research Taste",
@@ -1006,7 +1006,7 @@ const SERIES_META = {
     title: "High-TC Targets",
     desc: "What Cohere, Anthropic, Mistral, Sarvam, Krutrim, and staff-level roles at Flipkart and Swiggy actually test — first-principles depth, research taste, production judgment. The no-spec system design framework, company-specific interview patterns, and what separates senior from staff candidates.",
     color: "#f59e0b",
-    postIds: ["high-tc-ai-company-interviews", "ambiguous-system-design-framework"],
+    postIds: ["high-tc-ai-company-interviews", "ambiguous-system-design-framework", "research-engineer-interview", "staff-ai-engineer-week-one", "engineering-influence-without-authority", "fde-build-round-survival", "indic-nlp-challenges"],
   },
 };
 

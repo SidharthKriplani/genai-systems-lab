@@ -1934,6 +1934,9 @@ export default function App() {
         { id: "groundtruth", label: "ML Foundations",        postId: "loss-functions-deep-dive"          },
         { id: "groundtruth", label: "Research Taste",        postId: "reading-ml-papers-critically"      },
         { id: "groundtruth", label: "High-TC Targets",       postId: "high-tc-ai-company-interviews"     },
+        { id: "groundtruth", label: "Research Engineer",     postId: "research-engineer-interview"        },
+        { id: "groundtruth", label: "Staff & Lead",          postId: "staff-ai-engineer-week-one"         },
+        { id: "groundtruth", label: "Indic NLP",             postId: "indic-nlp-challenges"               },
       ]},
     ]},
     // Plans now in TRACK group at top of sidebar.
