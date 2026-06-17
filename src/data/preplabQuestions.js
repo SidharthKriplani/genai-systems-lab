@@ -3884,4 +3884,770 @@ export const PREP_QUESTIONS = [
     trap: "Saying 'code review would have caught it.' Code review catches obvious mistakes — wrong instructions, typos, logical contradictions. It does not catch distributional quality regressions. A reviewer cannot evaluate how a prompt change performs across the full query distribution by reading a diff. Regression testing against a representative eval set is what catches quality drops before they reach users.",
   },
 
+
+  // ── ANN / VECTOR RETRIEVAL (5) ──────────────────────────────────────────────
+  {
+    id: "ann-1", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
+    question: "You need ANN search over 10M vectors with <5ms p99 latency and can tolerate 5% recall loss. Which FAISS index is the right starting point?",
+    options: [
+      "IndexFlatIP — exact search, guaranteed recall",
+      "IndexIVFFlat — inverted file with nprobe tuning gives recall/latency tradeoff at this scale",
+      "IndexHNSWFlat — graph-based, best latency but high memory",
+      "IndexIVFPQ — best for memory-constrained GPU deployments"
+    ],
+    correct: 1,
+    explanation: "IndexIVFFlat partitions vectors into clusters and searches only nprobe clusters at query time. At 10M vectors, Flat is too slow. HNSW has high memory cost (~1.5 bytes/dim for graph links). IVFFlat gives direct recall/latency control via nprobe — increase nprobe to improve recall, decrease to reduce latency.",
+    trap: "Defaulting to HNSW because it has 'best recall at low latency.' HNSW is excellent but uses significantly more memory than IVFFlat due to graph structure. For 10M vectors with a latency-first constraint and acceptable recall loss, IVFFlat with nprobe tuning is the pragmatic choice. HNSW is better when memory is not a constraint and recall must be maximized.",
+    readMore: { label: "ANN Algorithms Deep Dive", tab: "groundtruth", postId: "ann-algorithms-deep-dive" }
+  },
+  {
+    id: "ann-2", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
+    question: "In HNSW, increasing the M parameter (number of connections per node) has which effect?",
+    options: [
+      "Improves recall and reduces memory — more connections means fewer hops",
+      "Improves recall but increases memory and build time — denser graph catches more neighbours",
+      "Reduces recall — more connections introduce false neighbours at long distances",
+      "Has no effect on recall — only affects build speed"
+    ],
+    correct: 1,
+    explanation: "M controls the number of bidirectional connections each node has in the HNSW graph. Higher M builds a denser graph: recall improves because more neighbours are reachable from each entry point. Cost: memory grows roughly linearly with M (each edge stored twice), and build time increases. Typical production values: M=16 for balanced recall/memory, M=32-64 for high-recall at memory cost.",
+    trap: "Saying 'more connections = faster search.' More connections improve recall but do not reduce latency — if anything, evaluating more neighbours per hop can increase per-query compute slightly. The recall-memory tradeoff is the key axis. Candidates who confuse graph density with speed reveal they have read HNSW descriptions without working with the actual parameter space.",
+    readMore: { label: "ANN Algorithms Deep Dive", tab: "groundtruth", postId: "ann-algorithms-deep-dive" }
+  },
+  {
+    id: "ann-3", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
+    question: "Product Quantization (PQ) in FAISS trades what for what?",
+    options: [
+      "Search speed for recall — PQ is an exact index that skips distance computation",
+      "Memory for recall — PQ compresses vectors aggressively (10–25x), small recall drop, dramatically smaller index",
+      "Build time for latency — PQ builds slowly but searches fast",
+      "Recall for throughput — PQ parallelises distance computation across sub-vectors"
+    ],
+    correct: 1,
+    explanation: "PQ splits each vector into M sub-vectors, quantizes each sub-vector independently, and stores only the codebook index (1-2 bytes per sub-vector). A 768-dim float32 vector (3072 bytes) becomes ~96 bytes with PQ96 — a 32x compression. Recall drops slightly because distances are approximated. This enables billion-scale indexes on commodity hardware that would be impossible with full-precision vectors.",
+    trap: "Saying PQ improves speed by parallelizing computation. The primary benefit is memory compression — fitting more vectors in RAM or GPU memory. The speed benefit is secondary (smaller memory footprint means better cache locality). In interview, the mechanism should be 'aggressive compression of vectors using learned codebooks, with a small recall tradeoff' — not a compute optimization.",
+    readMore: { label: "ANN Algorithms Deep Dive", tab: "groundtruth", postId: "ann-algorithms-deep-dive" }
+  },
+  {
+    id: "ann-4", topic: "rag", difficulty: "hard", gated: true, type: "text",
+    question: "Explain the false negative problem in two-tower training with in-batch negatives, and describe two mitigation strategies.",
+    keywords: ["false negative", "in-batch", "hard negative", "same batch", "relevant", "anchor", "contamination"],
+    explanation: "In-batch negatives use other items in the same training batch as negatives for each anchor query. False negatives occur when a randomly selected 'negative' item is actually relevant to the anchor query — but this relevance is unknown because we only have sparse positive labels. The model learns to push away items that should be pulled closer, corrupting the embedding space. Mitigations: (1) Hard negative mining — explicitly retrieve the model's top-K items for each query, manually label any that are actually positive, and remove them before using as negatives. (2) Popularity-based debiasing — popular items appear as in-batch negatives disproportionately often; down-weight high-frequency negatives to reduce the probability of false negatives from popular but relevant items.",
+    trap: "Describing false negatives as 'labeling errors' or 'noisy data.' The mechanism is structural — in-batch negatives are randomly sampled from the batch, and with sparse supervision you cannot verify their true relevance. The false negative rate grows with batch size (more random negatives = more chance of a hidden positive). The senior framing: in-batch negatives are a scalable approximation that works well empirically but degrades in domains with high item-relevance correlation or low label density.",
+    readMore: { label: "Two-Tower Training From Scratch", tab: "groundtruth", postId: "two-tower-training-from-scratch" }
+  },
+  {
+    id: "ann-5", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
+    question: "When is IndexFlatIP (exact brute-force search) the right FAISS choice in production?",
+    options: [
+      "Never — approximate methods always outperform exact search on latency",
+      "When the corpus is small (<100K vectors) and recall-at-1 must be perfect, e.g. deduplication or safety filtering",
+      "When index build time is the bottleneck — Flat builds in O(1)",
+      "When the embedding dimension is high (>1024) — approximate methods break at high dimensions"
+    ],
+    correct: 1,
+    explanation: "Flat is exact brute-force. At small corpus sizes (<100K vectors), it is fast enough for production latency requirements. It's the correct choice when: (a) you cannot accept recall loss (dedup, safety checks, PII detection), (b) the corpus is small, or (c) you need a recall baseline to calibrate approximate indexes. ANN approximation methods earn their overhead starting around 100K–1M vectors.",
+    trap: "Saying Flat is never acceptable in production. Flat is the right choice at small scale and when recall loss has unacceptable consequences. Over-engineering with IVF/HNSW at 10K vectors adds configuration complexity with zero latency benefit. Interviewers notice when candidates default to complex solutions without checking whether simpler ones are sufficient.",
+    readMore: { label: "ANN Algorithms Deep Dive", tab: "groundtruth", postId: "ann-algorithms-deep-dive" }
+  },
+
+  // ── LEARNING TO RANK (4) ────────────────────────────────────────────────────
+  {
+    id: "ltr-1", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
+    question: "What is the key advantage of listwise LTR (e.g. LambdaMART) over pairwise LTR (e.g. RankNet) for production ranking?",
+    options: [
+      "Listwise trains faster — fewer pairs to compare",
+      "Listwise directly optimizes a ranking metric (NDCG) rather than pairwise preference, which can diverge from the metric you care about",
+      "Listwise requires fewer labels — pairs need two relevant docs, lists need only one",
+      "Listwise models are smaller — pairwise generates O(n²) parameters"
+    ],
+    correct: 1,
+    explanation: "Pairwise LTR optimizes whether item A should rank above item B — a surrogate that does not directly optimize NDCG or MAP. You can win every pairwise comparison but still have poor NDCG if your errors are concentrated at top positions. LambdaMART addresses this with LambdaGradients: it weights each pair's gradient by the change in NDCG that swapping those items would cause. This means errors at rank 1 receive much larger gradient updates than errors at rank 50.",
+    trap: "Saying listwise is better because it 'considers the full list.' The mechanism matters: listwise directly optimizes ranking metrics by weighting gradients by their metric impact. The interview signal is explaining LambdaGradients, not just saying 'listwise sees more context.'",
+    readMore: { label: "Learning to Rank Explained", tab: "groundtruth", postId: "learning-to-rank-explained" }
+  },
+  {
+    id: "ltr-2", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
+    question: "A search system returns 4 docs with relevance scores [3, 1, 0, 2] (rank 1 to 4). The ideal order is [3, 2, 1, 0]. NDCG@4 is approximately:",
+    options: ["1.0 — all relevant docs are present", "0.92 — close to ideal but 2 is at rank 4 instead of rank 2", "0.75 — rank 3 is irrelevant (score 0)", "0.50 — two docs are out of ideal order"],
+    correct: 1,
+    explanation: "DCG@4 = 3/log2(2) + 1/log2(3) + 0/log2(4) + 2/log2(5) ≈ 3.0 + 0.631 + 0 + 0.861 = 4.492. IDCG@4 = 3/log2(2) + 2/log2(3) + 1/log2(4) + 0/log2(5) ≈ 3.0 + 1.261 + 0.5 + 0 = 4.761. NDCG = 4.492/4.761 ≈ 0.944. The discount on position 4 (log2(5)≈2.32) reduces the penalty for having score=2 buried there.",
+    trap: "Saying NDCG is 1.0 because 'all relevant docs are returned.' NDCG penalizes relevant docs appearing at low ranks — returning all relevant docs does not guarantee a high score if they are not ordered correctly. The key: DCG discounts each position by log2(rank+1), so a grade-2 doc at rank 4 contributes much less than a grade-2 doc at rank 2.",
+    readMore: { label: "NDCG and MRR From Scratch", tab: "groundtruth", postId: "ndcg-mrr-from-scratch" }
+  },
+  {
+    id: "ltr-3", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
+    question: "Which feature type typically provides the strongest signal in a Learning to Rank model for e-commerce search?",
+    options: [
+      "Document features only (product description length, price, stock status)",
+      "Query features only (query length, detected intent, user session length)",
+      "Query-document interaction features (BM25 score, embedding similarity, click-through rate for this query-item pair)",
+      "Position features (expected CTR at rank K from historical data)"
+    ],
+    correct: 2,
+    explanation: "Query-document interaction features capture the relationship between a specific query and a specific document — which is exactly what ranking needs. BM25 score, embedding cosine similarity, and historical click-through rate for the (query, item) pair encode information neither the query nor the document alone can express. Pure document features (popularity, rating) are query-agnostic and cannot distinguish which items are relevant to which queries.",
+    trap: "Selecting document features (popularity, ratings) because 'popular items get clicked more.' Popularity is a document feature, not a relevance signal — a popular item in the wrong category still has high CTR regardless of query relevance. Interaction features that encode query-specific relevance are the highest-signal input class in production LTR models.",
+    readMore: { label: "Learning to Rank Explained", tab: "groundtruth", postId: "learning-to-rank-explained" }
+  },
+  {
+    id: "ltr-4", topic: "rag", difficulty: "hard", gated: true, type: "text",
+    question: "Your team has a working BM25 ranker. Describe when and how you would introduce a Learning to Rank layer on top of it.",
+    keywords: ["click logs", "judgment labels", "features", "offline eval", "NDCG", "training data", "reranker", "baseline"],
+    explanation: "Introduce LTR when: (a) you have click logs or explicit relevance judgments at sufficient volume (minimum ~10K (query, doc, label) triples), and (b) offline BM25 NDCG on a test set has plateaued despite tuning. Setup: use BM25 as one feature alongside query-doc interaction features (TF, IDF, field match, recency, CTR). Train a LambdaMART model with NDCG@10 as the optimization metric. Evaluate offline against a held-out labeled set. A/B test in production before full rollout. BM25 should always remain as a fallback and as an LTR feature — it captures exact keyword match that dense models miss.",
+    trap: "Jumping to LTR before checking if you have the training data. LTR requires (query, document, relevance label) triples — either explicit human judgments or cleaned click logs. Teams that deploy LTR before collecting sufficient signal end up with a model that learned from noise. The minimum bar before starting LTR: 10K labeled pairs, a held-out eval set, and a clear NDCG baseline from BM25 to beat.",
+    readMore: { label: "Learning to Rank Explained", tab: "groundtruth", postId: "learning-to-rank-explained" }
+  },
+
+  // ── BM25 / INVERTED INDEX (3) ───────────────────────────────────────────────
+  {
+    id: "bm25-1", topic: "rag", difficulty: "easy", gated: false, type: "mcq",
+    question: "What does BM25 add over classic TF-IDF that makes it better for long documents?",
+    options: [
+      "BM25 adds semantic understanding via contextual embeddings",
+      "BM25 saturates TF so that repeating a term 100 times isn't proportionally better than 10 times, and normalizes by document length",
+      "BM25 uses a neural reranker to boost relevant long docs",
+      "BM25 adds bigram matching that TF-IDF misses"
+    ],
+    correct: 1,
+    explanation: "BM25 improves TF-IDF on two axes: (1) TF saturation — the k1 parameter caps the contribution of repeated terms; a word appearing 100× gets a score close to one appearing 10×. In TF-IDF, frequency increases score linearly, which over-rewards repetitive long documents. (2) Document length normalization — the b parameter penalizes long documents proportionally, preventing length from masquerading as relevance.",
+    trap: "Saying BM25 'adds semantic understanding.' BM25 is purely lexical — it matches exact terms and their frequencies. Semantic understanding requires dense embeddings. The improvement over TF-IDF is purely statistical: saturation and length normalization. Conflating BM25 improvements with neural techniques reveals a gap in the fundamentals.",
+    readMore: { label: "Inverted Index From Scratch", tab: "groundtruth", postId: "inverted-index-from-scratch" }
+  },
+  {
+    id: "bm25-2", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
+    question: "In a hybrid search system (BM25 + dense retrieval), a product manager asks: 'Can we just use dense retrieval everywhere and drop BM25?' What is the strongest argument for keeping BM25?",
+    options: [
+      "BM25 is faster at query time — no GPU required",
+      "BM25 handles exact keyword matches (product codes, proper nouns, rare terms) that dense retrieval misses because they appear rarely in training data",
+      "BM25 has lower operational cost — no embedding model to maintain",
+      "BM25 produces interpretable scores — you can explain why a doc ranked where it did"
+    ],
+    correct: 1,
+    explanation: "Dense retrieval fails on out-of-vocabulary or rare terms because the embedding model has little or no signal for them. A product SKU like 'B07XJ8C8F5', a drug name like 'pembrolizumab', or a person's name rarely seen in training produces a generic embedding that retrieves by accident. BM25 finds exact matches deterministically. The production evidence: hybrid search (BM25 + dense) consistently outperforms dense-only on queries containing rare or exact-match terms, which are common in enterprise and e-commerce settings.",
+    trap: "Focusing on cost or interpretability. While both are real, neither is the strongest argument for production. The strongest argument is functional correctness: dense retrieval has a systematic failure mode on rare tokens, and BM25 does not. Teams that drop BM25 often rediscover this when the first customer searches for a product code and gets zero relevant results.",
+    readMore: { label: "Inverted Index From Scratch", tab: "groundtruth", postId: "inverted-index-from-scratch" }
+  },
+  {
+    id: "bm25-3", topic: "rag", difficulty: "hard", gated: true, type: "text",
+    question: "Describe how an inverted index is built and how BM25 scoring is applied at query time. What happens when a query contains a term not in the index?",
+    keywords: ["postings list", "tokenize", "IDF", "TF", "BM25", "OOV", "length normalization", "inverted"],
+    explanation: "Build: for each document, tokenize and normalize (lowercase, stemming). For each term, append (doc_id, term_frequency, position) to its postings list. Store IDF per term: IDF = log((N - df + 0.5) / (df + 0.5)) where N is corpus size and df is document frequency. At query time: tokenize the query, look up each term's postings list, compute BM25 score per document: sum over query terms of IDF × (TF × (k1+1)) / (TF + k1 × (1 - b + b × doc_len / avgdl)). Merge and rank. Unknown terms: if a query term has no postings list, it contributes zero to every document's score. This is the OOV failure mode — queries containing only novel terms retrieve nothing. The fix is synonyms, query expansion, or dense retrieval as a fallback.",
+    trap: "Describing BM25 as 'just TF-IDF with tuning parameters.' The structural difference is saturation (k1) and length normalization (b). Without explaining these, the answer is incomplete. Interviewers also expect you to address the OOV case — what happens when the query term is not in the index is a direct production failure mode that most answers omit.",
+    readMore: { label: "Inverted Index From Scratch", tab: "groundtruth", postId: "inverted-index-from-scratch" }
+  },
+
+  // ── DEPLOYMENT PATTERNS (4) ─────────────────────────────────────────────────
+  {
+    id: "deploy-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "In a canary deployment for an ML model, why must routing be user-consistent (same user always hits the same model) rather than request-random?",
+    options: [
+      "User-consistent routing is faster — fewer cache misses when the model is hot",
+      "Request-random causes both models to receive the same user's behavior, polluting the canary signal and creating inconsistent UX",
+      "Request-random increases infrastructure cost — two models must be warm simultaneously",
+      "User-consistent is easier to implement in nginx upstream configs"
+    ],
+    correct: 1,
+    explanation: "If a user hits Model A on request 1 and Model B on request 2, two problems arise: (1) the canary metrics are contaminated because each user's behavior is split across models — you cannot cleanly attribute a conversion or churn to either model; (2) the user experiences inconsistent behavior (different answers, different formatting, different product recommendations) which degrades UX independently of model quality. Hash on user_id to route consistently: same user always gets the same model for the entire canary period.",
+    trap: "Saying the reason is 'easier implementation.' The reason is statistical and UX: request-random creates interference between the control and canary groups, making A/B metrics uninterpretable, and creates a jarring UX when the same user gets different model outputs for the same query. The implementation complexity argument is real but secondary.",
+    readMore: { label: "Blue-Green, Canary, Shadow, Champion-Challenger", tab: "groundtruth", postId: "deployment-patterns-ml" }
+  },
+  {
+    id: "deploy-2", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "You want to validate a new model's prediction distribution on real production traffic without any risk to users. Which deployment pattern is correct?",
+    options: [
+      "Canary at 1% — only 1% of users are affected",
+      "Shadow mode — new model receives all requests, outputs are logged but discarded, users see only production model",
+      "Blue-green — spin up green, test it, then switch",
+      "Champion-challenger — serve challenger to 10% of users permanently"
+    ],
+    correct: 1,
+    explanation: "Shadow mode is the only pattern with zero user exposure. The new model runs alongside production, receives every request via an async fork, and its outputs are logged for comparison. Users exclusively see the production model. This enables collecting the full production input distribution before any user sees the new model's output — the right first step before a canary or blue-green deployment.",
+    trap: "Choosing canary at 1%. Canary still exposes real users to the new model — if the new model is broken, 1% of users see broken results. Shadow mode has zero user exposure: it is specifically designed for the 'validate first, expose never until ready' requirement. The difference matters in high-stakes domains (healthcare, finance, safety-critical systems).",
+    readMore: { label: "Blue-Green, Canary, Shadow, Champion-Challenger", tab: "groundtruth", postId: "deployment-patterns-ml" }
+  },
+  {
+    id: "deploy-3", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
+    question: "What is the primary advantage of blue-green deployment over canary for ML model releases?",
+    options: [
+      "Blue-green provides real user feedback during the rollout period",
+      "Blue-green enables instant rollback — one load balancer switch reverts all traffic in seconds",
+      "Blue-green costs less — only one environment needs to run at a time",
+      "Blue-green is better for gradual confidence building — you control the traffic percentage"
+    ],
+    correct: 1,
+    explanation: "Blue-green's killer feature is rollback speed. If the green (new) model causes an incident, flipping the load balancer back to blue takes seconds — no redeployment, no traffic ramp-down, no race condition. Canary rollback requires removing the canary slice, which has latency proportional to your infrastructure update speed. The tradeoff: blue-green requires running two full environments simultaneously (double infrastructure cost), and the new model gets no real user signal before the full flip.",
+    trap: "Saying blue-green 'provides gradual confidence.' Gradual confidence building is canary, not blue-green. Blue-green is all-or-nothing — you validate green in isolation, then flip everything at once. The advantage is rollback speed, not incremental exposure. Confusing these two patterns reveals a surface-level understanding of deployment strategy.",
+    readMore: { label: "Blue-Green, Canary, Shadow, Champion-Challenger", tab: "groundtruth", postId: "deployment-patterns-ml" }
+  },
+  {
+    id: "deploy-4", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
+    question: "Champion-Challenger differs from a standard A/B test primarily because:",
+    options: [
+      "Champion-Challenger uses statistical tests; A/B tests use business metrics",
+      "Champion-Challenger is a permanent traffic split used to continuously evaluate candidates before promotion; A/B tests are time-bounded experiments",
+      "Champion-Challenger requires more traffic — A/B tests work at lower sample sizes",
+      "A/B tests are for product features; Champion-Challenger is only for ML models"
+    ],
+    correct: 1,
+    explanation: "In a Champion-Challenger setup, the production model (champion) permanently serves the majority of traffic while challenger candidates receive a minority slice. The split is ongoing, not time-bounded — new challenger models can be inserted as candidates continuously. Contrast with a standard A/B test, which has a defined start and end with a specific hypothesis to test. Champion-Challenger is an always-on experimentation infrastructure, not a one-off experiment.",
+    trap: "Treating Champion-Challenger as just 'a longer A/B test.' The distinction is architectural: Champion-Challenger is a standing split designed for continuous model evaluation, not a time-bounded test for a specific hypothesis. The operational implication is different — you run it indefinitely with a rotation of challengers, not until statistical significance is reached.",
+    readMore: { label: "Blue-Green, Canary, Shadow, Champion-Challenger", tab: "groundtruth", postId: "deployment-patterns-ml" }
+  },
+
+  // ── DRIFT DETECTION (4) ─────────────────────────────────────────────────────
+  {
+    id: "drift-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "A fraud detection model's precision drops after a marketing campaign brings a new user cohort. Is this data drift, concept drift, or label drift?",
+    options: [
+      "Concept drift — the definition of fraud changed",
+      "Data drift — P(X) changed because the new cohort has different behavioral features than the training distribution",
+      "Label drift — the base rate of fraud changed with the new users",
+      "Model drift — the model itself changed during the campaign"
+    ],
+    correct: 1,
+    explanation: "Data drift (covariate shift): P(X) changes but P(Y|X) is unchanged. The new cohort has different behavioral patterns (session duration, device type, geographic distribution) than the training population — the input distribution shifted. The relationship between behavior and fraud probability is the same; the inputs themselves are different. Concept drift would mean fraud itself changed in nature (new fraud technique). Label drift would mean the overall fraud rate changed.",
+    trap: "Calling it concept drift because 'the campaign changed user behavior.' Concept drift means P(Y|X) changed — the same behavioral pattern now has a different fraud probability. Data drift means P(X) changed — new behavioral patterns appeared. The key diagnostic question: for the same behavioral features, does the fraud probability change? If yes: concept drift. If the features themselves are new: data drift.",
+    readMore: { label: "Drift Detection in Production ML", tab: "groundtruth", postId: "drift-detection-production" }
+  },
+  {
+    id: "drift-2", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
+    question: "A PSI (Population Stability Index) value of 0.22 on your model's primary input feature means:",
+    options: [
+      "Minor drift — acceptable, continue monitoring",
+      "Significant drift — the feature distribution has changed substantially, model retraining is likely needed",
+      "Catastrophic drift — immediately roll back the model",
+      "The feature is missing — PSI of 0.22 indicates null data"
+    ],
+    correct: 1,
+    explanation: "PSI thresholds: <0.1 = negligible drift (no action), 0.1–0.2 = moderate drift (investigate), >0.2 = significant drift (act). PSI of 0.22 exceeds the 0.2 threshold — the feature's distribution has shifted significantly from the baseline. This does not automatically mean roll back, but it does mean: investigate whether model performance has degraded, check if the new distribution is systematically different, and plan retraining on data reflecting the new distribution.",
+    trap: "Saying PSI > 0.2 means 'immediately roll back.' PSI measures input distribution shift, not model quality degradation — the two are correlated but not identical. The correct action is to investigate performance metrics, not automatically roll back. A model can be robust to moderate input drift if the shifted features are not highly predictive. The response to PSI > 0.2 is investigation + retraining plan, not immediate rollback.",
+    readMore: { label: "Drift Detection in Production ML", tab: "groundtruth", postId: "drift-detection-production" }
+  },
+  {
+    id: "drift-3", topic: "evaluation", difficulty: "hard", gated: true, type: "mcq",
+    question: "Your retrieval model uses sentence embeddings. You want to detect drift in the embedding space. Why is PSI insufficient here and what should you use instead?",
+    options: [
+      "PSI is insufficient because embedding models don't produce probability distributions",
+      "PSI works on univariate distributions. Embeddings are high-dimensional vectors — PSI on any single dimension ignores correlations. Use Maximum Mean Discrepancy (MMD) or centroid distance on the full vector.",
+      "PSI is insufficient for real-time monitoring — use KL divergence for lower latency",
+      "PSI requires ground truth labels — embeddings are unsupervised"
+    ],
+    correct: 1,
+    explanation: "PSI operates on a single scalar distribution. Embedding vectors are 768 or 1536 dimensional. Running PSI per dimension ignores inter-dimensional correlations (two embeddings can have identical per-dimension distributions but wildly different covariance structure). MMD (Maximum Mean Discrepancy) computes the distance between two multivariate distributions using a kernel function — it is the right tool for detecting shift in embedding spaces. Centroid distance (comparing mean embedding vectors across time periods) is a cheaper proxy that catches distributional mean shifts.",
+    trap: "Saying 'run PSI on each embedding dimension separately.' This is computationally feasible but statistically invalid — 768 independent PSI tests ignore the covariance structure of the embedding space and produce a flood of false positives or miss structured drift. High-dimensional distribution comparison requires multivariate methods. MMD is the standard for embedding drift detection.",
+    readMore: { label: "Drift Detection in Production ML", tab: "groundtruth", postId: "drift-detection-production" }
+  },
+  {
+    id: "drift-4", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
+    question: "Ground truth labels for your recommendation model arrive with a 14-day lag. What drift signal can you use as a leading indicator before accuracy degrades?",
+    options: [
+      "Nothing — you cannot monitor drift without ground truth labels",
+      "Input feature drift (PSI on behavioral features) and model score distribution drift — both are available immediately at serving time and degrade before accuracy falls",
+      "Wait 14 days, compute accuracy, then retrain if needed",
+      "Monitor CPU and memory — infrastructure anomalies predict model degradation"
+    ],
+    correct: 1,
+    explanation: "Input drift and score distribution drift are observable at serving time with zero label latency. Input drift (PSI on features) detects when the model is seeing input it wasn't trained on. Score distribution drift (mean, entropy of output probabilities shifting) detects when the model itself is behaving differently. Both are leading indicators that typically precede accuracy degradation by days. The 14-day label lag makes them essential — they alert you to potential problems 14 days before you could otherwise detect them.",
+    trap: "Saying 'monitor CPU and memory.' Infrastructure anomalies indicate serving health, not model quality degradation. The correct answer identifies the ML-specific signals: input distribution shift and output score distribution shift, both of which require no ground truth and are available at prediction time.",
+    readMore: { label: "Drift Detection in Production ML", tab: "groundtruth", postId: "drift-detection-production" }
+  },
+
+  // ── FEATURE STORES (3) ──────────────────────────────────────────────────────
+  {
+    id: "featstore-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "A data scientist computes rolling 30-day features in Python for training, but an engineer re-implements them in Java for the serving stack. Two months later, the model underperforms offline benchmarks. Most likely cause?",
+    options: [
+      "The Java implementation is slower, increasing latency which degrades quality",
+      "Training-serving skew — the Python and Java implementations handle edge cases (timezone, null values, window boundaries) differently, so the model sees different feature values at train vs. serve time",
+      "The model overfit to the training data and generalized poorly",
+      "Rolling 30-day features are too slow to compute at serving time"
+    ],
+    correct: 1,
+    explanation: "Training-serving skew is the canonical feature store problem. Even when two implementations nominally compute the 'same' feature, differences in timezone handling, null imputation, off-by-one errors in window boundaries, or rounding produce systematically different values. The model was trained on one distribution and served on another. Feature stores solve this by implementing features once and materializing them to both an offline store (training) and online store (serving) from the same computation graph.",
+    trap: "Blaming overfitting. Overfitting produces high train accuracy and low test accuracy — you'd see the gap in offline evaluation on a hold-out set. Training-serving skew produces good offline metrics but degraded production metrics, because the test set uses the same (Python) features as training. The diagnostic is comparing offline test metrics to production metrics: if offline is good and production is bad, suspect skew.",
+    readMore: { label: "Feature Stores: Solving Training-Serving Skew", tab: "groundtruth", postId: "feature-store-patterns" }
+  },
+  {
+    id: "featstore-2", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
+    question: "What does 'point-in-time correct join' mean in the context of training data generation, and what does it prevent?",
+    options: [
+      "It joins features from multiple tables at exactly the same row count, preventing misaligned joins",
+      "It retrieves the feature value that was actually available at the time of each training event (not the current value), preventing label leakage from future feature states",
+      "It caches join results to prevent redundant database queries during training",
+      "It validates that timestamps in the feature table match the event log timestamps exactly"
+    ],
+    correct: 1,
+    explanation: "Point-in-time correctness means: for a training event at timestamp T (e.g. a user churned on March 1), the join retrieves the feature value as it existed just before T — not the current value. Without this, you might join a user's rolling 30-day engagement as of today onto an event that happened in January: the model sees future information during training and learns spurious correlations. This is temporal leakage. Feature stores implement point-in-time joins natively, hiding the complexity from data scientists.",
+    trap: "Saying it 'prevents null values in joins.' Point-in-time correctness is specifically about temporal leakage — using feature values from after the label event during training. This is a subtle but severe form of data leakage that inflates offline metrics dramatically and produces models that look excellent in evaluation but fail in production.",
+    readMore: { label: "Feature Stores: Solving Training-Serving Skew", tab: "groundtruth", postId: "feature-store-patterns" }
+  },
+  {
+    id: "featstore-3", topic: "llmops", difficulty: "medium", gated: true, type: "text",
+    question: "Your team is building a churn prediction model with batch predictions (run nightly, no real-time serving). A junior engineer proposes building a Feast feature store. What is your assessment?",
+    keywords: ["batch", "nightly", "serving skew", "over-engineering", "single model", "latency", "when not to"],
+    explanation: "For a single model with batch predictions, a feature store is premature. Feature stores earn their operational complexity when: (a) multiple models share the same features, (b) you need sub-5ms online feature retrieval for real-time serving, or (c) you've already been burned by training-serving skew at scale. In a nightly batch prediction job, features are computed from the same code base that trained the model — skew is less likely. The right approach: compute features in a well-named SQL or Python script versioned in git, generate training and prediction data from the same script. Add a feature store when the second model needs the same features or when you need real-time serving.",
+    trap: "Saying 'we should always use a feature store for ML projects.' Feature stores are valuable infrastructure at scale but add operational overhead at small scale. A nightly batch job with one model doesn't need Feast — it needs well-organized, version-controlled feature computation code. Defaulting to infrastructure complexity without checking the scale requirements is a common junior mistake that interviewers specifically watch for.",
+    readMore: { label: "Feature Stores: Solving Training-Serving Skew", tab: "groundtruth", postId: "feature-store-patterns" }
+  },
+
+  // ── RETRAINING TRIGGERS (3) ─────────────────────────────────────────────────
+  {
+    id: "retrain-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
+    question: "Why is 'retrain every Monday at 2am' a poor default retraining strategy for most ML models?",
+    options: [
+      "Monday is a high-traffic day and retraining adds server load",
+      "Schedule-based retraining is blind to actual model quality — it retrains when it doesn't need to and may not retrain when it does (major data shift mid-week)",
+      "Weekly retraining is too infrequent — models should retrain daily",
+      "Weekend data is unrepresentative — training on it biases the model"
+    ],
+    correct: 1,
+    explanation: "Schedule-based retraining wastes compute when the model is still performing well and potentially misses urgent retraining needs — a major product change or traffic shift on Wednesday means the model runs degraded until next Monday. Trigger-based retraining (PSI > 0.2, accuracy below threshold, business event) retrains when needed. The schedule is a comfort blanket, not a signal. The right mental model: retraining has a cost; it should be incurred when performance data or distribution data warrants it, not on a calendar.",
+    trap: "Saying 'weekly is too infrequent.' The frequency is not the problem — the calendar basis is. A model might legitimately not need retraining for three months, or might need it twice in a week. Criticizing the cadence rather than the mechanism reveals a surface-level understanding of retraining strategy.",
+    readMore: { label: "When to Retrain", tab: "groundtruth", postId: "retraining-triggers-strategies" }
+  },
+  {
+    id: "retrain-2", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
+    question: "You implement a rolling 30-day retraining window to handle concept drift. What failure mode does this introduce that full-retraining avoids?",
+    options: [
+      "The model forgets rare but important patterns (seasonal events, rare classes) that appear in data older than 30 days but are legitimate test cases",
+      "Rolling windows overfit to recent data — the model performs better on old data than new data",
+      "Rolling windows require more compute — 30 days of data processes faster than full history",
+      "The model cannot be evaluated on historical test sets when trained on rolling windows"
+    ],
+    correct: 0,
+    explanation: "A 30-day rolling window discards all data older than 30 days. For patterns that appear less frequently — a seasonal spike, a rare fraud technique, a low-frequency product category — the model may have seen only a handful of examples in the current window. Full retraining uses all historical data, preserving coverage of rare but valid patterns. The tradeoff: rolling windows adapt faster to concept drift but forget rare patterns; full retraining preserves rare pattern coverage but adapts more slowly. The production solution is often a weighted window — recent data upweighted, not historical data discarded.",
+    trap: "Saying rolling windows 'overfit to recent data.' Overfitting is a function of model complexity relative to sample size, not recency bias. The failure mode of rolling windows is coverage loss — rare patterns that fall outside the window disappear from the training distribution. Interviewers test whether candidates understand the coverage vs. recency tradeoff, not just that 'recent data is better.'",
+    readMore: { label: "When to Retrain", tab: "groundtruth", postId: "retraining-triggers-strategies" }
+  },
+  {
+    id: "retrain-3", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
+    question: "When is warm-start retraining (initializing from previous model weights) preferred over full cold-start retraining?",
+    options: [
+      "Always — warm start always converges faster than cold start",
+      "When the data distribution shift is moderate: warm start leverages learned representations from the previous period while adapting to new data, converging faster than cold start",
+      "When you have less training data — warm start compensates for data scarcity",
+      "Only for neural networks — tree-based models always require cold start"
+    ],
+    correct: 1,
+    explanation: "Warm start is appropriate for moderate drift — the new data is similar enough to the previous period that old weights are a better initialization than random. Benefits: faster convergence (fewer epochs to plateau), lower compute cost per retraining cycle. Risk: if the distribution shift is large (new task, new domain, new label schema), old weights can anchor the model in an inappropriate local minimum — cold start provides a clean slate. The test: if your held-out eval shows warm start quality < cold start quality after the same compute budget, the shift is too large for warm start to help.",
+    trap: "Saying warm start is 'always better because it converges faster.' Warm start can hurt when drift is severe — old representations bias the model toward the previous distribution. The correct nuance: warm start is better for incremental updates, cold start is better for large distributional shifts. Interviewers watch for candidates who treat warm start as universally superior.",
+    readMore: { label: "When to Retrain", tab: "groundtruth", postId: "retraining-triggers-strategies" }
+  },
+
+  // ── CALIBRATION / ECE (4) ───────────────────────────────────────────────────
+  {
+    id: "calib-1", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
+    question: "A clinical risk model outputs confidence 0.85 for a positive prediction. The model is well-calibrated. What does this mean about the actual outcome?",
+    options: [
+      "The model is 85% accurate overall on the test set",
+      "Approximately 85% of patients the model scores at 0.85 have the positive outcome",
+      "The model is certain of this prediction — 85% is above the 0.5 threshold",
+      "The prediction will be correct 85% of the time regardless of score"
+    ],
+    correct: 1,
+    explanation: "Calibration means predicted probabilities match empirical outcome frequencies. A calibrated model scoring 0.85 means: in the group of all predictions scored 0.80–0.90, approximately 85% should have the positive outcome. This is distinct from overall accuracy (which averages across all predictions) or threshold behavior (0.85 > 0.5 says nothing about calibration). Calibration is essential in medical AI because clinicians use the probability value directly for treatment decisions, not just the binary threshold.",
+    trap: "Saying '0.85 confidence means 85% accuracy.' Overall accuracy is an aggregate across all score levels. Calibration is about whether the conditional probability matches: given score ~= 0.85, does empirical frequency ~= 0.85? A model can have 90% accuracy but be severely miscalibrated — always outputting 0.95 when the true probability is 0.70. The distinction matters enormously in risk-sensitive domains.",
+    readMore: { label: "Model Calibration and ECE", tab: "groundtruth", postId: "calibration-ece-from-scratch" }
+  },
+  {
+    id: "calib-2", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
+    question: "Temperature scaling applies temperature T > 1 to a neural network's logits before softmax. What effect does this have?",
+    options: [
+      "Increases confidence — sharpens the probability distribution toward the predicted class",
+      "Decreases confidence — softens the distribution, reducing overconfident predictions",
+      "Changes the predicted class — the argmax of the logits shifts after temperature scaling",
+      "Increases accuracy — temperature scaling is a form of model ensembling"
+    ],
+    correct: 1,
+    explanation: "Dividing logits by T > 1 before softmax brings the logits closer together, producing a softer probability distribution. The highest-probability class gets a lower score (e.g. 0.97 → 0.81) and lower-probability classes get proportionally higher scores. This reduces overconfidence without changing the predicted class (argmax is preserved). T is a single learnable scalar fit on a held-out calibration set. Guo et al. (2017) showed this simple operation often matches or outperforms Platt scaling and isotonic regression.",
+    trap: "Saying temperature scaling 'changes which class is predicted.' Temperature scaling is a monotonic transformation of the logits — it cannot change the argmax. The predicted class is identical before and after scaling; only the confidence (probability value) changes. This is why calibration is entirely separate from accuracy: calibration fixes confidence without touching predictions.",
+    readMore: { label: "Model Calibration and ECE", tab: "groundtruth", postId: "calibration-ece-from-scratch" }
+  },
+  {
+    id: "calib-3", topic: "evaluation", difficulty: "hard", gated: true, type: "mcq",
+    question: "Guo et al. (2017) found that modern deep neural networks are systematically overconfident compared to older models. What architectural factor most contributes to this?",
+    options: [
+      "Larger datasets — more data makes models overfit to confident predictions",
+      "Depth and batch normalization — deep networks with BN learn sharp decision boundaries that produce extreme logits",
+      "Adam optimizer — SGD-trained models are better calibrated",
+      "Weight decay — L2 regularization increases overconfidence"
+    ],
+    correct: 1,
+    explanation: "Guo et al. found that increasing network depth correlates with worsening calibration, and batch normalization plays a key role — it normalizes activations in a way that sharpens class separations during training, producing logits that map to near-certainty softmax outputs. The model learns to place inputs far from class boundaries, which is good for accuracy but produces extreme probabilities far from the empirical frequency. Weight decay (L2) actually improves calibration slightly. The paper is notable for showing that accuracy improvements over the last decade came with calibration regressions.",
+    trap: "Blaming the optimizer or dataset size. The Guo et al. finding is specifically about network depth and batch normalization — not optimizer choice or data volume. Saying 'larger datasets cause overconfidence' inverts the relationship: larger datasets generally improve calibration by providing more signal. The paper is a specific empirical finding about architectural choices, not a general data principle.",
+    readMore: { label: "Model Calibration and ECE", tab: "groundtruth", postId: "calibration-ece-from-scratch" }
+  },
+  {
+    id: "calib-4", topic: "evaluation", difficulty: "hard", gated: true, type: "text",
+    question: "You have trained a binary classifier and measured ECE = 0.14 on the training set. Your manager says 'great, calibration looks good.' What is wrong with this evaluation and what is the right procedure?",
+    keywords: ["held-out", "calibration set", "separate split", "overfit", "ECE", "leakage", "memorize", "training set"],
+    explanation: "Measuring ECE on the training set is meaningless for calibration. The model has already seen and partially memorized the training examples — its predicted probabilities for training examples are optimistically confident because the model has fit to them. This inflates ECE (makes calibration look better than it is). The correct procedure: reserve a dedicated calibration set — separate from both the training set and the test set. Fit calibration parameters (temperature T, Platt scaling coefficients) on the calibration set. Evaluate ECE on the test set. A three-way split is required: train / calibrate / evaluate. Using the test set to fit calibration parameters causes the same leakage problem in reverse.",
+    trap: "Saying 'calibrate on the validation set used for hyperparameter tuning.' The validation set is already used to select model checkpoints and hyperparameters — it has influenced the model indirectly, making it a biased calibration baseline. The right practice is a fresh calibration split the model has never seen, used exclusively for fitting the calibration transform. In practice many teams use a held-out 10–15% slice of labeled data for this purpose.",
+    readMore: { label: "Model Calibration and ECE", tab: "groundtruth", postId: "calibration-ece-from-scratch" }
+  },
+
+  // ── IAA / ANNOTATION (3) ────────────────────────────────────────────────────
+  {
+    id: "iaa-1", topic: "evaluation", difficulty: "easy", gated: false, type: "mcq",
+    question: "Two annotators label 100 items as positive/negative. They agree on 80 items. The dataset is 90% negative. Why is raw agreement of 80% misleading and what should you compute instead?",
+    options: [
+      "80% agreement is misleading because you need at least 90% to trust the labels",
+      "80% agreement is misleading because two annotators randomly assigning labels would agree 82% of the time by chance on a 90/10 split. Compute Cohen's Kappa to correct for chance agreement.",
+      "80% agreement is misleading because annotators tend to agree on easy cases and disagree on hard ones, biasing the metric",
+      "80% agreement is misleading because it doesn't account for partial credit in multi-label settings"
+    ],
+    correct: 1,
+    explanation: "On a 90% negative dataset, an annotator who always labels 'negative' would agree with a random annotator 81% of the time (0.9×0.9 + 0.1×0.1). Cohen's Kappa corrects for this: Kappa = (P_observed - P_expected) / (1 - P_expected). If both annotators independently achieve 80% agreement on a class-imbalanced dataset, Kappa may be near zero — indicating no better-than-chance agreement. Kappa between 0.6–0.8 is the standard bar for acceptable annotation quality.",
+    trap: "Saying '80% is misleading because you need 90%.' The threshold argument misses the point entirely. The issue is that high raw agreement is trivially achievable on imbalanced datasets without any genuine annotator agreement. Kappa normalizes for this. An interviewer hears 'needs to be higher' as missing the statistical point.",
+    readMore: { label: "Inter-Annotator Agreement", tab: "groundtruth", postId: "annotation-inter-annotator-agreement" }
+  },
+  {
+    id: "iaa-2", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
+    question: "After two rounds of guideline refinement, Cohen's Kappa for your text classification task is 0.38. What does this tell you and what is the recommended next step?",
+    options: [
+      "Kappa 0.38 is excellent — it exceeds the 0.25 acceptance bar for NLP tasks",
+      "Kappa 0.38 indicates only 'fair' agreement despite two iterations. This suggests the label schema itself may be too coarse or ambiguous for the task — consider restructuring labels or using soft labels rather than hard binary classification.",
+      "Kappa 0.38 is a data collection problem — increase the number of annotators to 5+ and the score will improve",
+      "Kappa 0.38 means the annotators are poorly trained — replace them and re-run"
+    ],
+    correct: 1,
+    explanation: "Kappa < 0.4 after two guideline iterations suggests the task itself is genuinely ambiguous — the label schema does not cleanly map to the phenomenon being measured. Options: (a) Decompose the classification into finer-grained subtasks each with clearer criteria; (b) Switch to ordinal or probabilistic labels (annotators assign probability distributions rather than hard labels); (c) Accept the ambiguity and train a model that outputs a soft label, explicitly acknowledging the task's inherent uncertainty. More annotators do not fix a broken label schema — they just produce more disagreement.",
+    trap: "Blaming annotator training. Kappa of 0.38 after two guideline iterations with trained annotators indicates a task-level problem, not a people problem. More training and more annotators add cost without improving agreement when the schema is the root cause. The senior diagnosis: 'Our guideline can't resolve the ambiguity because the phenomena we're labeling don't cleanly map to binary categories.'",
+    readMore: { label: "Inter-Annotator Agreement", tab: "groundtruth", postId: "annotation-inter-annotator-agreement" }
+  },
+  {
+    id: "iaa-3", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
+    question: "You have 4 annotators labeling relevance on a 1–5 ordinal scale, with some items skipped by some annotators. Which agreement metric should you use?",
+    options: [
+      "Cohen's Kappa — the standard for annotation tasks",
+      "Percent agreement — most interpretable for ordinal scales",
+      "Krippendorff's Alpha — handles multiple annotators, ordinal scales, and missing values in a single framework",
+      "Spearman correlation — measures rank agreement between two annotators"
+    ],
+    correct: 2,
+    explanation: "Cohen's Kappa requires exactly two annotators and nominal categories. Spearman handles two annotators and ordinality but not missing values. Percent agreement ignores chance and scale. Krippendorff's Alpha handles all three requirements: multiple annotators, ordinal level of measurement (distance between 1 and 2 is the same as between 4 and 5), and missing values (items not labeled by all annotators). It is the standard for NLP annotation studies with multiple annotators and non-binary scales.",
+    trap: "Choosing Cohen's Kappa because it's 'the standard for annotation.' Kappa is the standard for two-annotator binary tasks. For ordinal scales, Kappa treats disagreements between 1 and 2 the same as between 1 and 5 — it ignores the ordinal structure. Krippendorff's Alpha with ordinal metric penalizes distant disagreements more than adjacent ones, which is the correct behavior for relevance rating tasks.",
+    readMore: { label: "Inter-Annotator Agreement", tab: "groundtruth", postId: "annotation-inter-annotator-agreement" }
+  },
+
+  // ── EVAL FLYWHEEL / IPS (4) ─────────────────────────────────────────────────
+  {
+    id: "ips-1", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
+    question: "You collect click data from a search engine where rank 1 gets 10× more clicks than rank 5 on identical items. If you train a ranker directly on raw click counts as relevance labels, what systematic bias does the model learn?",
+    options: [
+      "Recency bias — the model favors recently clicked items",
+      "Position bias — the model learns to rank previously rank-1 items higher regardless of actual relevance, reinforcing the existing ranking",
+      "Popularity bias — the model favors globally popular items",
+      "Session bias — the model favors items clicked in the first session of the day"
+    ],
+    correct: 1,
+    explanation: "Position bias: users are more likely to click items in high positions regardless of their actual relevance. If rank-1 items receive 10× more clicks, raw click counts are a function of position probability × relevance. Training on raw clicks teaches the model that 'items that appear at rank 1 are relevant' — reinforcing the previous ranking and creating a feedback loop. The model learns the logging policy's biases rather than true relevance. IPS (Inverse Propensity Scoring) debiases clicks by dividing by the probability of examination at each rank.",
+    trap: "Calling this 'popularity bias.' Popularity bias is global item frequency. Position bias is specific to the rank assigned by the logging policy — the same item gets more clicks at rank 1 than rank 10 regardless of its global popularity. These are distinct biases with different mitigation strategies. Conflating them in an interview signals superficial familiarity with the literature.",
+    readMore: { label: "The Eval Flywheel", tab: "groundtruth", postId: "eval-flywheel-implicit-feedback" }
+  },
+  {
+    id: "ips-2", topic: "evaluation", difficulty: "hard", gated: true, type: "mcq",
+    question: "The IPS estimator reweights clicked items by 1/P(examined | rank). What problem does clipping the IPS weights at a maximum value (e.g. 10x) solve?",
+    options: [
+      "Clipping prevents the model from learning from rare clicks",
+      "Clipping reduces high variance from extreme weights — a click at rank 10 with P(examined)=0.01 would get weight 100, dominating the gradient update despite being a single observation",
+      "Clipping ensures the weight sum equals 1.0 for valid probability estimates",
+      "Clipping prevents overfitting to the propensity model's errors"
+    ],
+    correct: 1,
+    explanation: "Unclipped IPS weights can be enormous: if P(examined | rank 10) = 0.01, a click at rank 10 receives weight 100 — 100× the influence of a click at rank 1. A single such click can dominate hundreds of gradient updates, producing high variance estimates that are technically unbiased but practically unreliable. Clipping at 10x (or some threshold) introduces a small bias but drastically reduces variance, producing more reliable gradients. This is the bias-variance tradeoff in debiased learning: clipped IPS is slightly biased but far more stable than unclipped.",
+    trap: "Saying clipping 'prevents overfitting.' Clipping is a variance reduction technique, not a regularization technique. Overfitting is about model complexity relative to data. Clipping addresses the statistical instability of extreme importance weights — which are a property of the propensity model and data collection, not the model architecture.",
+    readMore: { label: "The Eval Flywheel", tab: "groundtruth", postId: "eval-flywheel-implicit-feedback" }
+  },
+  {
+    id: "ips-3", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
+    question: "For offline evaluation of a new ranking model using logged click data, what must you log at serving time to enable unbiased evaluation later?",
+    options: [
+      "The user's device type and session duration",
+      "The probability each item was shown (propensity scores) — without propensities, IPS reweighting cannot correct for the logging policy bias",
+      "The full model score for each candidate item, not just the ranked list",
+      "A random sample of items that were not shown"
+    ],
+    correct: 1,
+    explanation: "IPS-based offline evaluation requires knowing P(item shown | logging policy) for each item at each position. If you don't log propensities at serving time, you can only approximate them (e.g. power-law position model) — but the real propensity depends on your actual serving stack's filtering logic, which may differ substantially from a simple position model. Logging propensities at serving time is the production requirement. Without it, offline evaluation of new policies is necessarily approximate and may be systematically wrong.",
+    trap: "Saying you need 'full model scores for all candidates.' Model scores for shown items are useful for debugging, but for offline policy evaluation the critical missing piece is propensities. You cannot correctly reweight observed clicks to estimate what would have happened under a new policy without knowing how probable each observation was under the old policy.",
+    readMore: { label: "Counterfactual Offline Evaluation", tab: "groundtruth", postId: "counterfactual-offline-eval" }
+  },
+  {
+    id: "ips-4", topic: "evaluation", difficulty: "hard", gated: true, type: "text",
+    question: "Explain the Doubly Robust (DR) estimator for offline policy evaluation. What does 'doubly robust' mean and what is its practical advantage over pure IPS?",
+    keywords: ["reward model", "propensity", "IPS", "doubly robust", "bias", "variance", "two models", "correct"],
+    explanation: "The DR estimator combines a reward model (trained on logged data to predict click probability) with IPS reweighting. Formula: DR = E[reward_model(item) × new_policy(item)] + E[IPS_weight × (observed_reward - reward_model(item))]. 'Doubly robust' means the estimator is unbiased if EITHER the propensity model is correctly specified OR the reward model is correctly specified — you only need one of the two components to be right, not both. Practical advantage: pure IPS has high variance from extreme weights. The reward model provides a low-variance baseline; IPS corrects the baseline's bias. DR combines the variance reduction of the reward model with the bias correction of IPS, producing lower mean squared error than either alone.",
+    trap: "Saying 'doubly robust means it works with two models.' The 'double' refers to the double protection against misspecification — not just that two components exist. Many candidates can describe the formula but cannot explain why 'either model correct' suffices for unbiasedness. The interviewer is testing whether you understand the statistical property, not just the architecture.",
+    readMore: { label: "Counterfactual Offline Evaluation", tab: "groundtruth", postId: "counterfactual-offline-eval" }
+  },
+
+  // ── LLM-AS-JUDGE (4) ────────────────────────────────────────────────────────
+  {
+    id: "judge-1", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
+    question: "You run a pairwise LLM judge evaluation: 'Is Response A or Response B better?' The same judge consistently prefers whichever response appears first. How do you fix this?",
+    options: [
+      "Use a larger judge model — smaller models have position bias",
+      "Run each pair twice with positions swapped; only count a win if the same response wins both comparisons",
+      "Add 'ignore the order of responses' to the judge prompt",
+      "Use absolute scoring (1–5) instead of pairwise comparison"
+    ],
+    correct: 1,
+    explanation: "Position bias in pairwise LLM evaluation is well-documented. The standard mitigation is running each comparison twice with A/B and B/A orderings. A valid win requires the same response to win in both orderings. Ties (wins in different orderings) are counted as draws. This doubles evaluation cost but eliminates the position bias signal from the results. Prompt instructions alone ('ignore the order') do not reliably eliminate the bias — they reduce it but don't eliminate it.",
+    trap: "Saying 'use a larger model.' Position bias exists in models of all sizes — GPT-4 shows it, Claude shows it. Scaling the judge does not eliminate it. The structural fix is position randomization and double-counting, not model capability. This is one of the cases where careful experimental design matters more than model quality.",
+    readMore: { label: "LLM-as-Judge Calibration", tab: "groundtruth", postId: "llm-judge-calibration" }
+  },
+  {
+    id: "judge-2", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
+    question: "An LLM judge consistently rates longer responses higher even when shorter responses contain the same information more concisely. What bias is this and what is one structural mitigation?",
+    options: [
+      "Verbosity bias. Mitigation: instruct the judge to evaluate information density per word, or cap response length in the prompt before judging",
+      "Sycophancy bias. Mitigation: ask the judge to argue for the opposite position first",
+      "Anchoring bias. Mitigation: randomize the order responses are presented",
+      "Frequency bias. Mitigation: filter responses with high token counts before evaluation"
+    ],
+    correct: 0,
+    explanation: "Verbosity bias is the systematic preference of LLM judges for longer responses. Structural mitigations: (a) Length normalization in the prompt — 'evaluate the information content per unit length, not total information'; (b) Truncate or length-match responses before judging — present both responses at the same target length; (c) Add an explicit conciseness criterion with a rubric definition ('5 = necessary and sufficient information, no padding'). Verbosity bias is distinct from sycophancy (agreeing with the human/user preference) and from anchoring (being influenced by the first response seen).",
+    trap: "Calling it 'sycophancy.' Sycophancy is when the judge agrees with what appears to be the user's preference or the 'expected' answer. Verbosity bias is specifically about length — the judge is not agreeing with a human; it is systematically overvaluing text volume. The mitigation is different: sycophancy requires removing preference signals from the prompt; verbosity bias requires controlling for length.",
+    readMore: { label: "LLM-as-Judge Calibration", tab: "groundtruth", postId: "llm-judge-calibration" }
+  },
+  {
+    id: "judge-3", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
+    question: "You are evaluating GPT-4o outputs. Which judge setup best reduces self-preference bias?",
+    options: [
+      "Use GPT-4o as the judge — it understands its own outputs best",
+      "Use a model from a different family (e.g. Claude or Gemini) as the judge — cross-family judging reduces the tendency to prefer outputs stylistically similar to the judge's own training",
+      "Use a smaller model as the judge — self-preference is a capability artifact of large models",
+      "Use human annotators for all GPT-4o evaluations — LLMs cannot evaluate their own outputs"
+    ],
+    correct: 1,
+    explanation: "Self-preference bias: when an LLM judges its own outputs against another model's, it systematically prefers its own style, tone, and structural conventions — even when the content quality is equivalent. Cross-family judging (using Claude to judge GPT outputs, or Gemini to judge Claude outputs) reduces this because the judge has no stylistic familiarity with the evaluated model's training distribution. This is the most robust structural mitigation available without resorting to expensive human annotation.",
+    trap: "Saying 'use a smaller model — self-preference is a large-model artifact.' Self-preference bias has been observed across model scales. It is not primarily a capability artifact; it is a stylistic affinity artifact. A small GPT model judging large GPT outputs still shows self-preference relative to cross-family alternatives. Size reduction is not the fix; cross-family selection is.",
+    readMore: { label: "LLM-as-Judge Calibration", tab: "groundtruth", postId: "llm-judge-calibration" }
+  },
+  {
+    id: "judge-4", topic: "evaluation", difficulty: "hard", gated: true, type: "text",
+    question: "Before deploying an LLM judge at scale, describe how you would calibrate it and what acceptance threshold you would use.",
+    keywords: ["Cohen's Kappa", "human annotations", "calibration set", "pearson", "agreement", "0.6", "spearman", "200 items"],
+    explanation: "Procedure: (1) Collect 200 items manually rated by humans (or a trusted annotator with known quality). (2) Run the LLM judge on the same items using your production prompt. (3) Compute Cohen's Kappa (for categorical judgments) or Spearman correlation (for ordinal/continuous scores) between human and judge ratings. (4) Acceptance threshold: Kappa ≥ 0.6 ('substantial agreement') or Spearman ρ ≥ 0.7. If below threshold: refine the rubric, add output format constraints, change the judge model or prompt, and re-calibrate. Also compute mean absolute error to understand the magnitude of disagreements. A judge calibrated to Kappa 0.75 against humans is trustworthy for regression testing (detecting relative quality changes) but not necessarily for absolute quality claims.",
+    trap: "Saying 'run the judge on 20 examples and it looked reasonable.' Twenty examples is insufficient statistical power to detect systematic biases — position bias, verbosity bias, and self-preference bias may not appear in a small sample but dominate at scale. The calibration set must be large enough to compute stable statistics (minimum 100, ideally 200+) and must be representative of the production distribution, not curated to easy cases.",
+    readMore: { label: "LLM-as-Judge Calibration", tab: "groundtruth", postId: "llm-judge-calibration" }
+  },
+
+  // ── NDCG / MRR (3) ──────────────────────────────────────────────────────────
+  {
+    id: "rankmetric-1", topic: "evaluation", difficulty: "easy", gated: false, type: "mcq",
+    question: "For a question-answering system where each query has exactly one correct answer, which metric is most appropriate?",
+    options: [
+      "NDCG@10 — covers the full top-10 ranking",
+      "MRR@10 — measures how high the single correct answer ranks across queries",
+      "Precision@10 — measures how many of the top 10 are relevant",
+      "Recall@10 — measures what fraction of all relevant docs are in the top 10"
+    ],
+    correct: 1,
+    explanation: "MRR (Mean Reciprocal Rank) is designed for navigational / single-answer queries. It measures the reciprocal of the rank at which the first (and only) correct answer appears. If the correct answer appears at rank 2, MRR = 1/2. MRR@K averages this over all queries. NDCG is better suited when multiple relevant results with graded relevance exist. Precision@K is appropriate when all K results should be relevant (e.g. document retrieval for a research task). For 'find the one correct answer' tasks, MRR is the natural metric.",
+    trap: "Defaulting to NDCG@10 as 'the most comprehensive metric.' NDCG is the right metric for graded relevance and multiple relevant results. For a single-answer QA task, NDCG adds complexity (requires relevance grades) without capturing the key user concern: is the right answer high enough in the ranking? MRR captures this directly. Using NDCG for single-answer tasks is not wrong but is unnecessarily complex.",
+    readMore: { label: "NDCG and MRR From Scratch", tab: "groundtruth", postId: "ndcg-mrr-from-scratch" }
+  },
+  {
+    id: "rankmetric-2", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
+    question: "System A achieves NDCG@10 = 0.85. System B achieves NDCG@10 = 0.82 but with higher Precision@1. Which system is better, and how does this depend on the use case?",
+    options: [
+      "System A is better — higher NDCG always means better ranking quality",
+      "It depends: NDCG weights top positions heavily but averages over the full top-10. If users typically look only at the first result (high early precision use case), System B's higher P@1 may better reflect user satisfaction",
+      "System B is better — Precision@1 is always the most important metric",
+      "The systems are equivalent — NDCG@10 already captures Precision@1"
+    ],
+    correct: 1,
+    explanation: "NDCG@10 aggregates quality over the full ranked list, discounting lower positions. A system with slightly lower overall NDCG but higher P@1 may produce better user outcomes if users rarely scroll past the first result. The right metric depends on user behavior: if analytics show 70% of clicks go to position 1, then P@1 is the dominant signal and NDCG@10 is masking the performance gap. Metric selection should follow from click position distribution in your specific product, not from theoretical completeness.",
+    trap: "Saying 'higher NDCG always wins.' NDCG is a comprehensive ranking metric but it averages over positions. A system that does very well at positions 2–10 but poorly at position 1 can beat a superior-at-rank-1 system on aggregate NDCG. Metric choice must be grounded in where your users actually click, not in theoretical hierarchy of metrics.",
+    readMore: { label: "NDCG and MRR From Scratch", tab: "groundtruth", postId: "ndcg-mrr-from-scratch" }
+  },
+  {
+    id: "rankmetric-3", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
+    question: "Why does NDCG normalize by IDCG (Ideal DCG), and what does this enable that raw DCG does not?",
+    options: [
+      "IDCG normalization converts DCG to a probability, making it easier to interpret",
+      "IDCG normalization makes NDCG comparable across queries with different numbers of relevant documents — a query with 10 relevant docs and one with 2 are on the same 0–1 scale",
+      "IDCG normalization removes the position discount, making NDCG position-independent",
+      "IDCG normalization is a smoothing factor that prevents NDCG from being 0 when no relevant docs are retrieved"
+    ],
+    correct: 1,
+    explanation: "Raw DCG is not comparable across queries: a query with 10 highly-relevant docs at the top produces a much higher DCG than a query with 2 relevant docs, regardless of ranking quality. Dividing by IDCG (the DCG of the perfect ranking) puts both on a 0–1 scale. This makes it valid to average NDCG across a query set — you are averaging normalized quality, not absolute DCG magnitude. Without normalization, queries with more relevant documents dominate the average.",
+    trap: "Saying IDCG normalization 'converts to a probability.' NDCG ∈ [0,1] but is not a probability — it is a normalized ratio of actual to ideal gain. The key function of normalization is inter-query comparability, not probability interpretation. Precision@K is also in [0,1] and is not a probability. The interview point is about what normalization enables (aggregation across heterogeneous queries), not the numerical range.",
+    readMore: { label: "NDCG and MRR From Scratch", tab: "groundtruth", postId: "ndcg-mrr-from-scratch" }
+  },
+
+  // ── NLP FOUNDATIONS (4) ─────────────────────────────────────────────────────
+  {
+    id: "nlpfound-1", topic: "finetuning", difficulty: "medium", gated: false, type: "mcq",
+    question: "Word2Vec with negative sampling trains the embedding model to distinguish real context words from randomly sampled noise words. Why is negative sampling better than the original softmax over the full vocabulary?",
+    options: [
+      "Negative sampling produces higher-quality embeddings — full softmax misses rare words",
+      "Full softmax over the full vocabulary requires computing scores for every word at each step — O(|V|) cost. Negative sampling reduces this to O(k) by training on k noise words instead.",
+      "Negative sampling prevents overfitting — full softmax memorizes the training corpus",
+      "Full softmax cannot handle out-of-vocabulary words; negative sampling adds implicit smoothing"
+    ],
+    correct: 1,
+    explanation: "In the original skip-gram formulation, predicting the context word requires a softmax over all |V| vocabulary words — computing |V| dot products at every training step. For a vocabulary of 100K words, this is 100K operations per gradient update. Negative sampling replaces this with a binary classification task: is this (word, context) pair real or noise? Each update requires only k+1 dot products (k negatives + 1 positive). This makes training tractable on large corpora while producing comparable embedding quality.",
+    trap: "Saying negative sampling 'prevents overfitting.' The motivation is computational efficiency, not regularization. Full softmax and negative sampling converge to similar embedding quality — the difference is training cost. Framing this as a quality argument rather than an efficiency argument misidentifies the key insight.",
+    readMore: { label: "Word2Vec and Distributional Semantics", tab: "groundtruth", postId: "word2vec-distributional-semantics" }
+  },
+  {
+    id: "nlpfound-2", topic: "finetuning", difficulty: "medium", gated: true, type: "mcq",
+    question: "An RNN trained on long sequences produces near-zero gradients for the first few time steps. What is this problem called and how does the LSTM architecture address it?",
+    options: [
+      "Exploding gradients. LSTMs use gradient clipping to fix it.",
+      "Vanishing gradients. LSTMs use gates (input, forget, output) that allow gradients to flow through the cell state without passing through repeated tanh squashing.",
+      "Catastrophic forgetting. LSTMs address it by using a separate memory cell per time step.",
+      "Mode collapse. LSTMs use teacher forcing to stabilize gradient estimates."
+    ],
+    correct: 1,
+    explanation: "Vanishing gradients: in an RNN, the gradient of the loss at time T with respect to a hidden state at time t is a product of T-t Jacobian matrices — each multiplied by the tanh derivative (max 1, typically <1). Over long sequences this product approaches zero exponentially. LSTMs introduce a cell state that flows linearly through time, protected by the forget gate. Gradients through the cell state are not squashed by nonlinearities at each step, allowing the gradient to propagate to early time steps without exponential decay.",
+    trap: "Saying LSTMs use 'more layers' to fix vanishing gradients. Depth increases the number of nonlinear transformations, which worsens vanishing gradients. The LSTM fix is architectural: the cell state provides a linear, gradient-friendly path through time. More layers is the wrong axis; the gating mechanism is the key mechanism.",
+    readMore: { label: "RNN and LSTM Architecture", tab: "groundtruth", postId: "rnn-lstm-from-scratch" }
+  },
+  {
+    id: "nlpfound-3", topic: "finetuning", difficulty: "hard", gated: true, type: "mcq",
+    question: "Bahdanau attention (seq2seq) and transformer self-attention both compute attention scores between queries and keys. What is the fundamental architectural difference?",
+    options: [
+      "Bahdanau attention uses dot product; transformer attention uses additive scoring",
+      "Bahdanau attention is applied at each decoder step between the decoder state and all encoder states; transformer self-attention is applied at every layer between all positions in a sequence simultaneously",
+      "Transformer attention uses multi-head projections; Bahdanau attention uses a single head",
+      "Bahdanau attention has memory; transformer attention is stateless"
+    ],
+    correct: 1,
+    explanation: "Bahdanau attention: at each decoder step, one query (current decoder hidden state) attends over all encoder outputs to produce a context vector. It is sequential — one decoding step at a time, conditioned on the previous step. Transformer self-attention: every position attends to every other position simultaneously, enabling full parallelism across sequence positions. This is what makes transformers trainable at scale — no sequential dependency means all positions can be computed in parallel on a GPU. The architectural difference is sequential vs. parallel, not primarily the scoring function.",
+    trap: "Focusing on the scoring function (additive vs. dot product). While true (Bahdanau uses additive scoring, transformers use scaled dot-product), this is the less important difference. The fundamental architectural break is parallelism: Bahdanau attention is inherently sequential (each decoder step depends on the previous), while transformer attention computes all positions simultaneously. The parallelism is what enabled the scale that made modern LLMs possible.",
+    readMore: { label: "Seq2Seq and Bahdanau Attention", tab: "groundtruth", postId: "seq2seq-bahdanau-attention" }
+  },
+  {
+    id: "nlpfound-4", topic: "finetuning", difficulty: "medium", gated: false, type: "mcq",
+    question: "BPE (Byte-Pair Encoding) tokenization handles a word it has never seen (e.g. a new technical term) differently from character-level tokenization. How?",
+    options: [
+      "BPE returns [UNK] for unseen words; character tokenization always finds a representation",
+      "BPE decomposes the word into the longest known subword units (falling back to characters if needed); this produces a compact representation even for novel words, unlike word-level models that map to [UNK]",
+      "BPE uses the word's context to infer a token; character tokenization ignores context",
+      "BPE cannot handle unseen words — it requires the word to appear in training data"
+    ],
+    correct: 1,
+    explanation: "BPE builds a vocabulary of subword units by iteratively merging frequent character pairs. An unseen word is decomposed greedily into the longest matching subword sequences from the vocabulary, falling back to individual characters if no longer match exists. A word like 'pembrolizumab' might tokenize as ['pembro', 'li', 'zu', 'mab'] or similar subwords. This is fundamentally more robust than word-level models which map all unseen words to [UNK], losing all information. It's also more compact than character-level which tokenizes every character separately (inefficient for common morphemes).",
+    trap: "Saying BPE 'cannot handle unseen words.' BPE handles unseen words via subword decomposition — this is its core value proposition over word-level tokenization. Saying it maps to [UNK] is exactly backward. The [UNK] failure mode is word-level tokenization, not BPE.",
+    readMore: { label: "BPE Tokenization From Scratch", tab: "groundtruth", postId: "bpe-tokenization-from-scratch" }
+  },
+
+  // ── LLM INTERNALS (4) ───────────────────────────────────────────────────────
+  {
+    id: "internals-1", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
+    question: "Grouped Query Attention (GQA) with 8 KV heads vs Multi-Head Attention (MHA) with 32 heads: what is the memory saving factor for the KV cache?",
+    options: [
+      "2x — GQA halves the number of attention computations",
+      "4x — KV cache scales with n_kv_heads; 32/8 = 4x fewer KV matrices to store",
+      "32x — GQA eliminates all KV heads except one",
+      "No saving — GQA affects compute, not memory"
+    ],
+    correct: 1,
+    explanation: "KV cache memory scales directly with n_kv_heads: memory = 2 × n_layers × n_kv_heads × d_head × seq_len × bytes_per_element. With MHA: 32 KV heads. With GQA (8 groups): 8 KV heads. The ratio is 32/8 = 4x memory reduction in the KV cache. For a 70B model at 128K sequence length, this difference determines whether the model fits on 2 GPUs or requires 4. GQA is the architectural choice in Llama 3 and Mistral precisely for this serving cost reduction at long contexts.",
+    trap: "Saying 'GQA affects compute, not memory.' GQA reduces both: fewer KV heads means fewer matrices to store (memory) and fewer attention computations per forward pass (compute). But in production LLM serving, KV cache memory is often the binding constraint, making the memory benefit more significant than the compute benefit. The specific reduction factor (4x for 32→8 heads) is the expected precision in an interview context.",
+    readMore: { label: "Multi-Head, Grouped Query, and Multi-Query Attention", tab: "groundtruth", postId: "attention-variants-mha-gqa-mqa" }
+  },
+  {
+    id: "internals-2", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
+    question: "PagedAttention (used in vLLM) improves LLM serving throughput primarily by solving which problem?",
+    options: [
+      "Slow tokenization — paged memory allows batch tokenization of incoming requests",
+      "KV cache memory fragmentation — fixed contiguous allocation wastes GPU memory on over-provisioned sequence lengths, limiting batch size. Paged allocation uses variable-size blocks, dramatically increasing the number of concurrent sequences.",
+      "Model weight loading — paged memory allows weights to stream from CPU to GPU on demand",
+      "Attention computation — paged blocks enable parallel attention across non-contiguous memory regions"
+    ],
+    correct: 1,
+    explanation: "Without PagedAttention, each request pre-allocates a contiguous KV cache block for its maximum sequence length. A request with max_new_tokens=2048 reserves 2048 positions even if it only generates 300 tokens — wasting ~85% of its allocation. This fragmentation limits batch size to far fewer requests than the GPU memory could theoretically fit. PagedAttention uses non-contiguous paged blocks (like OS virtual memory), allocating KV cache memory on demand as tokens are generated. The result: near-zero internal fragmentation, 2–4x more concurrent requests, proportional throughput improvement.",
+    trap: "Saying PagedAttention speeds up the attention computation itself. The attention math is unchanged — PagedAttention is a memory management optimization. The speedup comes from fitting more requests into GPU memory simultaneously (higher batch utilization), not from faster per-token computation. Framing it as a compute optimization rather than a memory management innovation is the common miss.",
+    readMore: { label: "PagedAttention and Continuous Batching", tab: "groundtruth", postId: "paged-attention-kv-cache" }
+  },
+  {
+    id: "internals-3", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
+    question: "RoPE (Rotary Position Encoding) encodes position information differently from sinusoidal embeddings. What is the key practical advantage that makes RoPE the dominant choice in modern LLMs?",
+    options: [
+      "RoPE is faster to compute — no addition step required",
+      "RoPE encodes relative positions by rotating Q and K vectors, allowing attention scores to naturally depend on the distance between tokens. This enables better extrapolation to sequence lengths beyond the training context window.",
+      "RoPE uses learned parameters — sinusoidal embeddings are fixed",
+      "RoPE works on embeddings before the attention layer; sinusoidal only works after"
+    ],
+    correct: 1,
+    explanation: "Sinusoidal embeddings add absolute position vectors to token embeddings — the model must learn to decode the absolute position from the sum. RoPE applies a rotation to the Q and K vectors based on position, so the dot product Q·K naturally encodes the relative distance between positions (rotation angle difference). Two key advantages: (1) relative position awareness is built into the attention mechanism rather than baked into the embedding; (2) RoPE extrapolates more gracefully to longer sequences at inference time via interpolation tricks (e.g. YaRN, RoPE scaling), which is why LLM context windows have been extended from 4K to 1M+ tokens.",
+    trap: "Saying RoPE 'uses learned parameters.' RoPE frequencies are typically fixed (not learned), similar to sinusoidal. The advantage is not learnability — it is the relative position encoding property, which enables better length generalization. Conflating RoPE with ALiBi (which uses a learned bias) or other positional schemes reveals shallow familiarity with the options.",
+    readMore: { label: "Positional Encodings Compared", tab: "groundtruth", postId: "positional-encodings-compared" }
+  },
+  {
+    id: "internals-4", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
+    question: "Speculative decoding uses a small draft model to generate k tokens which the large model then verifies in parallel. Under what condition does it degrade to the same latency as standard decoding?",
+    options: [
+      "When the draft model is more than 10x smaller than the target model",
+      "When the draft model's acceptance rate is 0 — every proposed token is rejected and must be regenerated by the large model",
+      "When the sequence is short — speculative decoding only helps for sequences longer than 512 tokens",
+      "When KV cache is full — speculative decoding requires free memory for draft tokens"
+    ],
+    correct: 1,
+    explanation: "Speculative decoding's speedup comes from the draft model generating multiple tokens that the large model verifies in a single forward pass. If acceptance rate α → 0 (the large model rejects every draft token), the algorithm degenerates: generate k draft tokens, verify and reject all k, generate 1 token from the large model, repeat. This is strictly worse than standard autoregressive decoding because you've spent compute on k draft tokens AND one large-model forward pass to produce 1 accepted token instead of just the large-model pass. Acceptance rate is the critical parameter; values above ~0.7 give meaningful speedup.",
+    trap: "Saying speculative decoding degrades 'when the draft model is too small.' A small draft model may have low acceptance rate, but size is not the direct condition — acceptance rate is. A very small draft model on a domain it was trained on can achieve high acceptance rate. The degradation condition is acceptance rate, which depends on distribution alignment between draft and target, not draft model size alone.",
+    readMore: { label: "Speculative Decoding Explained", tab: "groundtruth", postId: "speculative-decoding-explained" }
+  },
+
+  // ── LoRA / KV CACHE (4) ─────────────────────────────────────────────────────
+  {
+    id: "lora-1", topic: "finetuning", difficulty: "medium", gated: false, type: "mcq",
+    question: "In LoRA fine-tuning, what is the effect of increasing the rank r from 4 to 64?",
+    options: [
+      "Rank has no effect on quality — only alpha matters for the LoRA update scale",
+      "Higher rank increases the expressiveness of the adaptation (more parameters in A and B matrices) at the cost of more memory and compute — useful for complex tasks but risks overfitting on small datasets",
+      "Higher rank reduces training stability — rank > 16 causes gradient explosion",
+      "Higher rank improves inference speed — larger A and B matrices optimize faster on GPU"
+    ],
+    correct: 1,
+    explanation: "LoRA decomposes the weight update ΔW = BA where B ∈ R^(d×r) and A ∈ R^(r×k). Rank r is the bottleneck dimension. Higher r means more parameters (d×r + r×k) per layer, higher expressiveness, better approximation of the full fine-tuning update — at the cost of more memory and compute. Low rank (r=4-8) works well for tasks that need minor behavioral adjustment (style, format). Higher rank (r=32-64) is needed for tasks that require substantial knowledge updates. Risk: high rank on a small dataset overfits quickly. Rule of thumb: start at r=16, increase if the task is complex or the dataset is large.",
+    trap: "Saying rank and alpha are interchangeable. Alpha is the scaling factor (LoRA update is scaled by alpha/r). Rank is the capacity of the low-rank approximation. They interact — increasing r while keeping alpha fixed changes the effective update magnitude — but they are not the same thing. Candidates who conflate rank and alpha reveal they haven't implemented LoRA directly.",
+    readMore: { label: "LoRA From Scratch", tab: "groundtruth", postId: "lora-from-scratch" }
+  },
+  {
+    id: "lora-2", topic: "finetuning", difficulty: "medium", gated: true, type: "mcq",
+    question: "After LoRA fine-tuning, when should you merge the LoRA weights (BA) back into the base model weights W?",
+    options: [
+      "Always merge before evaluating — unmerged LoRA models produce incorrect outputs",
+      "Merge before production serving to eliminate the adapter forward pass overhead, but keep unmerged for multi-adapter use cases or when you need to swap adapters at runtime",
+      "Never merge — merging causes catastrophic forgetting of the base model capabilities",
+      "Merge only when deploying to CPU — GPU inference handles adapters natively"
+    ],
+    correct: 1,
+    explanation: "Merged (W + BA): single weight matrix, no adapter overhead at inference, maximum throughput. Use when: serving a single fine-tuned variant at full throughput in production. Unmerged: base model + LoRA adapter loaded separately. Use when: (a) you need to swap between multiple fine-tuned adapters at runtime without reloading base weights, (b) you're still in experimentation and may need to update the adapter, or (c) you serve different user cohorts with different adapters from the same base. Merging does not cause catastrophic forgetting — LoRA merge is a mathematical operation (W_new = W + alpha/r × BA) that exactly represents the fine-tuned model.",
+    trap: "Saying 'merging causes catastrophic forgetting.' Catastrophic forgetting happens during gradient-based training when new task gradients overwrite previous task parameters. LoRA merge is a closed-form weight addition — no gradient, no forgetting. The merged model is mathematically equivalent to the unmerged model at inference time. Confusing weight merging with continued gradient training is a fundamental misconception.",
+    readMore: { label: "LoRA From Scratch", tab: "groundtruth", postId: "lora-from-scratch" }
+  },
+  {
+    id: "kvcache-1", topic: "serving", difficulty: "medium", gated: false, type: "mcq",
+    question: "The KV cache in transformer inference avoids recomputing which operation on each new token generation step?",
+    options: [
+      "Embedding lookup — avoids re-embedding the full input prompt",
+      "Key and Value projections for all previous tokens — without the cache, every new token would require recomputing K and V for the entire context",
+      "The softmax operation — softmax is precomputed and stored for each attention head",
+      "The feed-forward network pass — FFN outputs are cached to reduce compute"
+    ],
+    correct: 1,
+    explanation: "In autoregressive generation, each new token must attend to all previous tokens. Without a KV cache, generating token T+1 requires computing K and V projections for all T previous tokens plus the new one — O(T) compute per step, O(T²) total. The KV cache stores K and V tensors for all previous tokens. Each new token only computes its own K and V projections, then appends them to the cache. This reduces per-step compute from O(T) to O(1), enabling practical long-context generation. The tradeoff: KV cache memory grows as O(T) — the other side of the same constant.",
+    trap: "Saying the KV cache avoids recomputing embeddings. Embedding lookup is O(1) and not the bottleneck. The cached computation is the K and V projection for previous tokens — the linear transformations W_K × x and W_V × x for every past position. Embedding lookup is trivial; K/V projection across the full context is the expensive repeated operation.",
+    readMore: { label: "KV Cache From Scratch", tab: "groundtruth", postId: "kv-cache-from-scratch" }
+  },
+  {
+    id: "kvcache-2", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
+    question: "A 70B model with 80 layers, 8 KV heads, head dimension 128, serving at batch size 32 with max sequence length 8192 in bfloat16. Approximately how much GPU memory does the KV cache require?",
+    options: [
+      "~4 GB", "~20 GB", "~40 GB", "~160 GB"
+    ],
+    correct: 2,
+    explanation: "KV cache memory = 2 (K+V) × n_layers × n_kv_heads × d_head × seq_len × batch_size × bytes_per_element. = 2 × 80 × 8 × 128 × 8192 × 32 × 2 bytes. = 2 × 80 × 8 × 128 × 8192 × 32 × 2 ≈ 2 × 80 × 8 × 128 × 262,144 × 2 ≈ 2 × 80 × 8 × 128 × 524,288 bytes ≈ 43 billion bytes ≈ 43 GB ≈ 40 GB. This is roughly half the memory budget of an A100 (80GB) — before model weights (which for a 70B model in bfloat16 are ~140 GB). The KV cache is the reason you need tensor parallelism across multiple GPUs for 70B long-context serving.",
+    trap: "Underestimating by forgetting to multiply by batch size or by using seq_len for only the generated portion rather than the full context length. KV cache grows with both sequence length and batch size simultaneously — the two axes multiply, not add. This is why serving 70B models with long context at non-trivial batch sizes requires 4–8 GPUs even when the model weights fit on 2.",
+    readMore: { label: "KV Cache From Scratch", tab: "groundtruth", postId: "kv-cache-from-scratch" }
+  },
+
+
 ];
