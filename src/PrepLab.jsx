@@ -3423,6 +3423,289 @@ function InterviewIntelMode({ onExit }) {
   );
 }
 
+// ─── INTERVIEW SPRINT MODE ────────────────────────────────────────────────────
+
+const SPRINT_HORIZONS = [
+  {
+    id: "2h",
+    label: "2 Hours",
+    subtitle: "Last-minute survival",
+    color: "#ef4444",
+    border: "rgba(239,68,68,0.25)",
+    bg: "rgba(239,68,68,0.06)",
+    sections: [
+      {
+        title: "Say these numbers cold",
+        items: [
+          "HNSW: M=16, efConstruction=128, efSearch=64 — latency ~1ms, recall ~95%",
+          "Bi-encoder: ~60ms total (offline index). Cross-encoder: ~150ms per pair (online).",
+          "BERT base: 110M params, 12 layers, 12 heads, d_model=768",
+          "Chunking: 256–512 tokens overlap 10–15%. >1024 tokens → retrieval degrades.",
+          "Cosine similarity range: -1 to 1. Dot product requires normalized vectors for equivalence.",
+          "RAG latency budget: embed ~10ms, ANN ~1ms, rerank ~150ms, LLM ~500ms+",
+          "NDCG@10 and MRR@10 — know the formulas. MRR = avg(1/rank_of_first_relevant).",
+          "LLM-as-judge agreement with humans: ~70-80% on binary. Inter-annotator ~85%.",
+        ]
+      },
+      {
+        title: "The 5 questions they always ask",
+        items: [
+          "\"Why not just use a bigger context window?\" → latency, cost, lost-in-middle degradation. RAG keeps precision.",
+          "\"How do you evaluate a RAG system?\" → context precision, context recall, answer faithfulness, answer relevance (RAGAS).",
+          "\"Bi-encoder vs cross-encoder — when?\" → bi-encoder for recall at scale, cross-encoder for reranking top-k.",
+          "\"How do you handle hallucinations in production?\" → grounding checks, citation extraction, LLM-as-judge, human feedback loop.",
+          "\"Fine-tune or RAG?\" → RAG for dynamic knowledge, fine-tune for style/format/domain, prompt engineering first always.",
+        ]
+      },
+      {
+        title: "Traps that kill candidates",
+        items: [
+          "Saying cosine similarity is always better than dot product — dot product IS cosine when vectors are normalized.",
+          "Saying BERT's [CLS] token is the best sentence embedding — it's not. Mean pooling or SBERT beats it.",
+          "Claiming more chunks = better retrieval — precision collapses past a certain density.",
+          "Saying fine-tuning replaces RAG — they solve different problems. Neither replaces the other.",
+        ]
+      }
+    ]
+  },
+  {
+    id: "1d",
+    label: "1 Day",
+    subtitle: "High-signal review",
+    color: "#f59e0b",
+    border: "rgba(245,158,11,0.25)",
+    bg: "rgba(245,158,11,0.06)",
+    sections: [
+      {
+        title: "Cover these topics in order",
+        items: [
+          "RAG pipeline end-to-end: chunking → embedding → ANN index → retrieval → reranking → generation",
+          "Failure modes: missing context, ambiguous query, conflicting docs, hallucination, prompt injection",
+          "Evaluation: RAGAS metrics, LLM-as-judge design, offline vs online eval, what to measure in production",
+          "Agents: ReAct loop, tool design (idempotency, consequence levels), failure taxonomy (tool loop, cascade, context overflow)",
+          "Fine-tuning decision: when to SFT, LoRA vs full FT, RLHF/DPO for alignment, catastrophic forgetting",
+          "Production: latency budgets, drift detection (PSI, KS, MMD), canary vs blue-green deployment",
+        ]
+      },
+      {
+        title: "Questions most likely at your level",
+        items: [
+          "Walk me through how you'd build a production RAG system from scratch.",
+          "Your retrieval recall is 90% but answer quality is poor. Where do you look first?",
+          "How does HNSW work? What parameters matter and why?",
+          "Design an evaluation framework for a customer-facing LLM chatbot.",
+          "What breaks when you scale an agent from a demo to production traffic?",
+          "How do you detect when your model has drifted in production?",
+          "Your LLM-as-judge is inconsistent. How do you calibrate it?",
+          "When would you fine-tune instead of prompting? Walk me through the decision.",
+        ]
+      },
+      {
+        title: "System design — have an answer for",
+        items: [
+          "AI search system: query intent → hybrid retrieval → LLM reranking → freshness signals",
+          "RAG over 10M documents: two-stage (ANN recall + cross-encoder rerank), metadata pre-filter, caching layer",
+          "Multi-agent orchestration: task decomposition, state handoff, failure circuit breakers",
+          "Eval pipeline: automated RAGAS + LLM-as-judge + human spot-check, SRS for regression",
+        ]
+      }
+    ]
+  },
+  {
+    id: "3d",
+    label: "3 Days",
+    subtitle: "Structured depth",
+    color: "#6366f1",
+    border: "rgba(99,102,241,0.25)",
+    bg: "rgba(99,102,241,0.06)",
+    days: [
+      {
+        label: "Day 1 — Retrieval depth",
+        items: [
+          "Read: bi-encoder vs cross-encoder (GSL GT post), HNSW/IVF/PQ tradeoffs",
+          "Run: Bi-Encoder vs Cross-Encoder Systems module — configure both, observe latency",
+          "Run: Vector Similarity Explorer — understand cosine vs dot product visually",
+          "PrepLab: do 15 RAG + retrieval questions. Note every wrong answer.",
+          "Write out: the 2-stage retrieval architecture from memory. Timings included.",
+        ]
+      },
+      {
+        label: "Day 2 — Evaluation + Agents",
+        items: [
+          "Read: LLM-as-judge failure modes, RAGAS metrics explained, eval production gap",
+          "Run: Evals Lab + EvalsFrameworks module",
+          "Read: ReAct pattern, agent failure taxonomy",
+          "PrepLab: 15 eval + 10 agents questions",
+          "Practice: design an eval framework for a RAG system out loud, 5 min, no notes",
+        ]
+      },
+      {
+        label: "Day 3 — Production + Mock",
+        items: [
+          "Read: drift detection, deployment patterns, LLMOps production checklist",
+          "PrepLab: 10 LLMOps + 10 fine-tuning questions",
+          "Do 1 full scenario question (scenario-1 through scenario-3 in PrepLab)",
+          "Mock: answer 5 questions out loud with STAR framing. Record yourself if possible.",
+          "Review every question you got wrong across all 3 days. Pattern-match the traps.",
+        ]
+      }
+    ]
+  },
+  {
+    id: "1w",
+    label: "1 Week",
+    subtitle: "Full prep plan",
+    color: "#22c55e",
+    border: "rgba(34,197,94,0.25)",
+    bg: "rgba(34,197,94,0.06)",
+    days: [
+      {
+        label: "Day 1 — RAG foundations",
+        items: [
+          "Ground Truth series: RAG in Production (10 posts) — read all",
+          "Systems modules: RAG Lab all 6 scenarios",
+          "PrepLab: 20 retrieval questions",
+        ]
+      },
+      {
+        label: "Day 2 — NLP + Embeddings",
+        items: [
+          "GT series: NLP Practitioners (5 posts) — BERT, bi-encoder, sentence transformers, vector DBs, encoder-decoder",
+          "Systems: Bi-Encoder vs Cross-Encoder, BERT Pooling Lab, Vector Similarity Explorer",
+          "PrepLab: 15 embedding + NLP questions",
+        ]
+      },
+      {
+        label: "Day 3 — Evaluation",
+        items: [
+          "GT series: Evaluation & Testing (13 posts) — read 6 most important",
+          "Systems: Evals Lab, Eval Frameworks, AB Testing",
+          "PrepLab: 20 evaluation questions",
+        ]
+      },
+      {
+        label: "Day 4 — Agents",
+        items: [
+          "GT series: Agent Engineering (10 posts) — read all",
+          "Systems: Agent Architecture, Agent Context, LangGraph module",
+          "PrepLab: 15 agents questions + 1 scenario (tool poisoning)",
+        ]
+      },
+      {
+        label: "Day 5 — Production + LLMOps",
+        items: [
+          "GT series: LLMOps in Production (9 posts) — drift, deployment patterns, feature stores",
+          "Systems: LLM Observability, Serving Infra, Cost/Latency Lab",
+          "PrepLab: 15 LLMOps questions",
+        ]
+      },
+      {
+        label: "Day 6 — Fine-tuning + System Design",
+        items: [
+          "GT: fine-tuning fundamentals, LoRA from scratch, RLHF/DPO, catastrophic forgetting",
+          "PrepLab: 15 fine-tuning questions + 1 scenario (catastrophic forgetting)",
+          "Write out: the full fine-tune vs RAG vs prompt decision tree from memory",
+        ]
+      },
+      {
+        label: "Day 7 — Mock + Weak spots",
+        items: [
+          "PrepLab: Review Due mode — answer all spaced-repetition items due",
+          "Run: Interview Signal mode — study 5 experiences from companies you're targeting",
+          "Do 2 full scenarios (scenario-3: eval rubric, scenario-4: tool poisoning)",
+          "Mock: 60-min timed session, 10 questions, answer out loud, debrief",
+          "Final: use JD prep mode with your target role to get a personalized gap score",
+        ]
+      }
+    ]
+  }
+];
+
+function InterviewSprintMode({ onExit, onNavigateTo }) {
+  const [horizon, setHorizon] = useState("2h");
+  const h = SPRINT_HORIZONS.find(x => x.id === horizon);
+
+  return (
+    <div className="flex flex-col min-h-0 h-full">
+      {/* Header */}
+      <div className="shrink-0 px-6 pt-5 pb-4" style={{ borderBottom: "1px solid var(--border)" }}>
+        <div className="flex items-center justify-between mb-1">
+          <div>
+            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">INTERVIEW SPRINT</div>
+            <div className="text-lg font-bold text-zinc-100">Cheat Sheet by Time Horizon</div>
+          </div>
+          <button onClick={onExit} className="text-[11px] text-zinc-500 hover:text-zinc-300 px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors">← Back</button>
+        </div>
+        <p className="text-xs text-zinc-500 mt-1">Pick how much time you have. Get exactly what to do.</p>
+      </div>
+
+      {/* Horizon tabs */}
+      <div className="shrink-0 flex gap-2 px-6 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
+        {SPRINT_HORIZONS.map(hh => (
+          <button key={hh.id} onClick={() => setHorizon(hh.id)}
+            className="flex-1 py-2.5 rounded-xl text-center transition-all"
+            style={{
+              background: horizon === hh.id ? hh.bg : "transparent",
+              border: `1px solid ${horizon === hh.id ? hh.border : "var(--border)"}`,
+              color: horizon === hh.id ? hh.color : "#71717a"
+            }}>
+            <div className="text-sm font-bold">{hh.label}</div>
+            <div className="text-[9px] font-mono mt-0.5 opacity-80">{hh.subtitle}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        {/* sections-based (2h, 1d) */}
+        {h.sections && h.sections.map((sec, si) => (
+          <div key={si}>
+            <div className="text-[10px] font-mono uppercase tracking-widest mb-2.5" style={{ color: h.color }}>{sec.title}</div>
+            <div className="space-y-1.5">
+              {sec.items.map((item, ii) => (
+                <div key={ii} className="flex gap-2.5 p-3 rounded-lg" style={{ background: h.bg, border: `1px solid ${h.border}` }}>
+                  <span className="text-xs font-mono shrink-0 mt-0.5" style={{ color: h.color }}>{String(ii+1).padStart(2,"0")}</span>
+                  <span className="text-xs text-zinc-300 leading-relaxed">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* days-based (3d, 1w) */}
+        {h.days && h.days.map((day, di) => (
+          <div key={di} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${h.border}` }}>
+            <div className="px-4 py-2.5 text-xs font-bold" style={{ background: h.bg, color: h.color }}>{day.label}</div>
+            <div className="divide-y" style={{ divideColor: h.border }}>
+              {day.items.map((item, ii) => (
+                <div key={ii} className="flex gap-2.5 px-4 py-2.5">
+                  <span className="text-[10px] font-mono shrink-0 mt-0.5 text-zinc-600">{ii+1}.</span>
+                  <span className="text-xs text-zinc-400 leading-relaxed">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* Bottom CTA */}
+        <div className="pt-2 pb-6 flex gap-3">
+          <button
+            onClick={() => onNavigateTo && onNavigateTo({ tab: "groundtruth", postId: "interview-sprint-cheat-sheet" })}
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all hover:-translate-y-0.5"
+            style={{ background: "var(--gal-build-tint)", border: "1px solid var(--gal-build-border)", color: "var(--gal-build)" }}>
+            Read full GT post →
+          </button>
+          <button
+            onClick={() => onNavigateTo && onNavigateTo({ tab: "preplab", mode: "exam" })}
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all hover:-translate-y-0.5 bg-zinc-800 border border-zinc-700 text-zinc-300">
+            Start Exam Mode →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── ROOT COMPONENT ───────────────────────────────────────────────────────────
 
 function getRoleReadiness(history) {
@@ -3503,6 +3786,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
   const PREPLAB_SIDEBAR = [
     ...(dueQuestions.length > 0 ? [{ id: "review", label: "Review Due", tag: "SPACED", desc: `${dueQuestions.length} question${dueQuestions.length > 1 ? "s" : ""} scheduled for review today.` }] : []),
     { id: "exam",        label: "Judgment Exam",      tag: "EXAM",      desc: "Test yourself cold. Leave knowing where your reasoning breaks." },
+    { id: "sprint",      label: "Interview Sprint",   tag: "CHEATSHEET", desc: "2 hrs / 1 day / 3 days / 1 week — exactly what to do." },
     { id: "jdprep",      label: "Interview Strategy", tag: "STRATEGY",  desc: "JD → gap score → day-by-day plan." },
     { id: "companyprep", label: "Company Tracks",     tag: "ARCHETYPE", desc: "By company archetype" },
     { id: "intexp",      label: "Interview Signal",  tag: "INTEL",     desc: "40 real loop patterns — what's actually tested, by company." },
@@ -3556,6 +3840,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
         {mode === "review"      && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} reviewQuestions={dueQuestions} user={user} />}
         {mode === "exam"        && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} user={user} />}
         {mode === "trainer"     && <TrainerMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} initialGroup={trainerInitGroup} />}
+        {mode === "sprint"      && <InterviewSprintMode onExit={exitMode} onNavigateTo={onNavigateTo} />}
         {mode === "jdprep"      && <InterviewPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
         {mode === "companyprep" && <CompanyPrepMode onExit={exitMode} onNavigate={onNavigate} />}
         {mode === "defense"     && <DefenseDocMode onExit={exitMode} />}
