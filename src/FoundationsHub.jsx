@@ -10,16 +10,20 @@ const CONCEPTS = [
 ];
 
 const GT_POSTS = [
-  { id: "what-is-a-transformer",  title: "What Is a Transformer? Self-Attention Explained Without the Math", desc: "Why every LLM is built on the same core idea — and what attention actually computes, step by step.", readMin: 8, tag: "Architecture" },
-  { id: "decoding-sampling",      title: "Temperature, Top-P, Top-K: How LLMs Actually Choose the Next Word", desc: "Greedy, beam search, nucleus sampling — what each does, when randomness helps, why temperature 0 isn't always right.", readMin: 7, tag: "Inference" },
-  { id: "fine-tuning-vs-rag",     title: "Fine-Tuning vs. RAG vs. Prompt Engineering: When to Use What", desc: "The decision framework every AI engineer needs. Cost, latency, data requirements, and failure modes for each.", readMin: 10, tag: "Decision" },
-  { id: "prompting-token-economics", title: "Prompt Engineering & Token Economics", desc: "How prompt structure affects quality, why few-shot beats zero-shot in most cases, and how to calculate real inference cost.", readMin: 9, tag: "Prompting" },
+  { id: "what-is-a-transformer",    title: "What Is a Transformer? Self-Attention Explained Without the Math", desc: "Why every LLM is built on the same core idea — and what attention actually computes, step by step.", readMin: 8, tag: "Architecture" },
+  { id: "decoding-sampling",        title: "Temperature, Top-P, Top-K: How LLMs Actually Choose the Next Word", desc: "Greedy, beam search, nucleus sampling — what each does, when randomness helps, why temperature 0 isn't always right.", readMin: 7, tag: "Inference" },
+  { id: "fine-tuning-vs-rag",       title: "Fine-Tuning vs. RAG vs. Prompt Engineering: When to Use What", desc: "The decision framework every AI engineer needs. Cost, latency, data requirements, and failure modes for each.", readMin: 10, tag: "Decision" },
+  { id: "prompting-token-economics",title: "Prompt Engineering & Token Economics", desc: "How prompt structure affects quality, why few-shot beats zero-shot in most cases, and how to calculate real inference cost.", readMin: 9, tag: "Prompting" },
+  { id: "bert-internals-explained", title: "BERT Internals: MLM, WordPiece, [CLS] Token, and Why It Fails for Semantic Similarity", desc: "BERT's masked language modeling, WordPiece tokenization, the [CLS] pooling trap, and what SBERT does differently.", readMin: 10, tag: "NLP" },
+  { id: "encoder-decoder-architecture", title: "Encoder-Decoder Architecture: T5, BART, Cross-Attention, and When to Use It", desc: "T5's text-to-text unification, BART's denoising pretraining, cross-attention mechanics, and the practical decision vs. decoder-only.", readMin: 10, tag: "Architecture" },
 ];
 
 const PREPLAB_Qs = [
-  { id: "ft-2", difficulty: "Easy",   diffColor: "#22c55e", gated: true, question: "LoRA fine-tuning works by:" },
-  { id: "ft-3", difficulty: "Medium", diffColor: "#f59e0b", gated: true, question: "DPO (Direct Preference Optimization) differs from RLHF in that:" },
-  { id: "ft-1", difficulty: "Hard",   diffColor: "#ef4444", gated: true, question: "You fine-tune a model on 10,000 customer support examples. Benchmark accuracy improves but production CSAT drops. Most likely cause?" },
+  { id: "ft-2",     difficulty: "Easy",   diffColor: "#22c55e", gated: true,  question: "LoRA fine-tuning works by:" },
+  { id: "bert-1",   difficulty: "Medium", diffColor: "#f59e0b", gated: false, question: "A team extracts [CLS] token embeddings from vanilla BERT for semantic search. Results are poor. Root cause?" },
+  { id: "encdec-1", difficulty: "Medium", diffColor: "#f59e0b", gated: false, question: "Key architectural advantage of T5 (encoder-decoder) vs. decoder-only for structured seq2seq tasks?" },
+  { id: "ft-3",     difficulty: "Medium", diffColor: "#f59e0b", gated: true,  question: "DPO (Direct Preference Optimization) differs from RLHF in that:" },
+  { id: "ft-1",     difficulty: "Hard",   diffColor: "#ef4444", gated: true,  question: "You fine-tune a model on 10,000 customer support examples. Benchmark accuracy improves but production CSAT drops. Most likely cause?" },
 ];
 
 function getProgress() {

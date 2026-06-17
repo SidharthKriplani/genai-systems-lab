@@ -15007,6 +15007,590 @@ function AgentContextArchModule({ onNavigate }) {
 
 // ─── SYSTEMS MODULES ──────────────────────────────────────────────────────────
 
+
+
+// ─── BI-ENCODER VS CROSS-ENCODER ─────────────────────────────────────────────
+
+const BIENC_DOCS = [
+  { id: 0, text: "BERT fine-tuning requires labeled data and multiple epochs of training.", topic: "fine-tuning" },
+  { id: 1, text: "Vector databases use HNSW graphs for approximate nearest neighbor search.", topic: "retrieval" },
+  { id: 2, text: "Cross-encoders score query-document pairs jointly through full transformer attention.", topic: "retrieval" },
+  { id: 3, text: "Temperature scaling is the simplest post-hoc calibration method for neural networks.", topic: "evaluation" },
+  { id: 4, text: "In-batch negatives training assumes other items in the batch are negatives.", topic: "retrieval" },
+];
+const BIENC_SCORES = {
+  bi:    [0.31, 0.89, 0.95, 0.18, 0.82],
+  cross: [0.28, 0.83, 0.97, 0.11, 0.79],
+};
+
+export function BiEncoderVsCrossEncoder() {
+  const [mode, setMode] = useState("bi");
+  const [animStep, setAnimStep] = useState(-1);
+  const [running, setRunning] = useState(false);
+  const [ms, setMs] = useState(0);
+  const timerRef = useRef(null);
+  const stepRef = useRef(null);
+
+  function runAnimation() {
+    if (running) return;
+    setRunning(true);
+    setAnimStep(-1);
+    setMs(0);
+    const start = Date.now();
+
+    if (mode === "bi") {
+      // All bars appear simultaneously after ~60ms
+      timerRef.current = setInterval(() => setMs(Date.now() - start), 20);
+      setTimeout(() => {
+        setAnimStep(5); // show all at once
+        setRunning(false);
+        clearInterval(timerRef.current);
+      }, 120);
+    } else if (mode === "cross") {
+      // Bars appear one at a time, ~280ms each
+      timerRef.current = setInterval(() => setMs(Date.now() - start), 20);
+      let step = 0;
+      function nextStep() {
+        setAnimStep(step);
+        step++;
+        if (step < BIENC_DOCS.length) {
+          stepRef.current = setTimeout(nextStep, 280);
+        } else {
+          setRunning(false);
+          clearInterval(timerRef.current);
+        }
+      }
+      stepRef.current = setTimeout(nextStep, 280);
+    } else {
+      // Two-stage: bi-encoder fast (top-3), then cross-encoder on top-3
+      timerRef.current = setInterval(() => setMs(Date.now() - start), 20);
+      setTimeout(() => {
+        setAnimStep(10); // phase 1 done: show all bi-encoder scores
+        setTimeout(() => {
+          setAnimStep(13); // phase 2: rerank top-3
+          setRunning(false);
+          clearInterval(timerRef.current);
+        }, 350);
+      }, 120);
+    }
+  }
+
+  useEffect(() => {
+    return () => { clearInterval(timerRef.current); clearTimeout(stepRef.current); };
+  }, []);
+
+  function resetAnim() {
+    setAnimStep(-1); setMs(0); setRunning(false);
+    clearInterval(timerRef.current); clearTimeout(stepRef.current);
+  }
+
+  const MODES = [
+    { key: "bi",    label: "Bi-Encoder",    color: "#22c55e",  ms: "~60ms",   note: "Pre-computed doc vectors. Only query encoded online." },
+    { key: "cross", label: "Cross-Encoder", color: "#ef4444",  ms: "~1,400ms",note: "Every pair needs a full forward pass. Cannot pre-compute." },
+    { key: "two",   label: "Two-Stage",     color: "#06b6d4",  ms: "~480ms",  note: "Bi-encoder recalls top-K. Cross-encoder reranks. Production default." },
+  ];
+  const active = MODES.find(m => m.key === mode);
+
+  function barVisible(docIdx) {
+    if (animStep < 0) return false;
+    if (mode === "bi") return animStep >= 5;
+    if (mode === "cross") return docIdx <= animStep;
+    if (mode === "two") {
+      if (animStep >= 10) {
+        // phase 2: reranked top-3 are docs 0,2,4 (indices 2,4,1 by bi score)
+        const top3 = [2, 4, 1];
+        if (animStep >= 13) return top3.includes(docIdx) || animStep >= 10;
+        return animStep >= 10; // all bi scores shown first
+      }
+      return false;
+    }
+  }
+
+  function isReranked(docIdx) {
+    return mode === "two" && animStep >= 13 && [2, 4, 1].includes(docIdx);
+  }
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-xl font-black text-white mb-1">Bi-Encoder vs Cross-Encoder</h2>
+        <p className="text-sm text-zinc-400">The retrieval architecture decision that determines whether your system responds in 60ms or 1,400ms. Toggle modes, run the animation, and see why two-stage retrieval dominates production.</p>
+      </div>
+
+      <div className="rounded-lg p-3 space-y-1" style={{ background: "rgba(6,182,212,0.05)", border: "1px solid rgba(6,182,212,0.15)", borderLeft: "3px solid rgba(6,182,212,0.4)" }}>
+        <p className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wide">Core insight</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">A bi-encoder encodes query and document <em>separately</em> — document embeddings are pre-computed and indexed. At query time: encode query (~10ms) + ANN search (~50ms) = fast. A cross-encoder encodes them <em>together</em> — full bidirectional attention, no pre-computation possible. Every candidate needs its own forward pass. Production systems use both: bi-encoder for fast recall, cross-encoder to rerank the top-K.</p>
+      </div>
+
+      {/* Mode selector */}
+      <div className="flex flex-wrap gap-2">
+        {MODES.map(m => (
+          <button key={m.key} onClick={() => { resetAnim(); setMode(m.key); }}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            style={mode === m.key
+              ? { background: m.color + "20", border: `1px solid ${m.color}60`, color: m.color }
+              : { background: "var(--surface-2)", border: "1px solid var(--border)", color: "#71717a" }}>
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Info strip */}
+      <div className="flex items-center gap-4 rounded-xl px-4 py-3" style={{ background: "var(--surface-2)", border: `1px solid ${active.color}30` }}>
+        <div>
+          <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-0.5">Typical latency (10M docs)</div>
+          <div className="text-2xl font-black" style={{ color: active.color }}>{active.ms}</div>
+        </div>
+        <div className="border-l border-zinc-700 pl-4 text-xs text-zinc-400 leading-relaxed flex-1">{active.note}</div>
+      </div>
+
+      {/* Document scoring visualization */}
+      <div className="rounded-xl p-4 space-y-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Query: "How do retrieval architectures score documents?"</span>
+          {animStep >= 0 && <span className="text-[10px] font-mono" style={{ color: active.color }}>{ms}ms</span>}
+        </div>
+        {BIENC_DOCS.map((doc, i) => {
+          const score = BIENC_SCORES[mode === "two" ? "bi" : mode]?.[i] ?? BIENC_SCORES.bi[i];
+          const rerankedScore = BIENC_SCORES.cross[i];
+          const visible = barVisible(i);
+          const reranked = isReranked(i);
+          return (
+            <div key={doc.id} className="space-y-1">
+              <div className="flex items-start gap-2">
+                <span className={`text-[10px] font-mono w-4 shrink-0 mt-0.5 ${visible ? "text-zinc-400" : "text-zinc-700"}`}>D{i+1}</span>
+                <span className={`text-xs leading-snug flex-1 ${visible ? "text-zinc-300" : "text-zinc-600"}`}>{doc.text}</span>
+                {visible && (
+                  <span className="text-[11px] font-mono font-bold shrink-0" style={{ color: reranked ? MODES[1].color : active.color }}>
+                    {reranked ? rerankedScore.toFixed(2) : score.toFixed(2)}
+                  </span>
+                )}
+              </div>
+              <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden ml-6">
+                <div className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: visible ? `${(reranked ? rerankedScore : score) * 100}%` : "0%",
+                    background: reranked ? MODES[1].color : active.color,
+                  }} />
+              </div>
+              {mode === "two" && reranked && (
+                <div className="ml-6 text-[9px] font-mono text-zinc-500">cross-encoder score → {rerankedScore.toFixed(2)}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Run / Reset */}
+      <div className="flex gap-3">
+        <button onClick={runAnimation} disabled={running}
+          className="px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-40"
+          style={{ background: active.color + "20", border: `1px solid ${active.color}50`, color: active.color }}>
+          {running ? "Scoring..." : "Run scoring"}
+        </button>
+        <button onClick={resetAnim} className="px-4 py-2 rounded-lg text-xs font-bold transition-all text-zinc-400 hover:text-zinc-200"
+          style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+          Reset
+        </button>
+      </div>
+
+      {/* Architecture detail */}
+      {mode === "bi" && (
+        <div className="rounded-xl p-4 text-xs text-zinc-400 space-y-2" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+          <div className="font-bold text-zinc-200 text-sm">Why it's fast: offline pre-computation</div>
+          <div className="font-mono text-zinc-500 text-[11px] leading-relaxed">
+            {"// At index time (offline):"}
+            <br />{"doc_vecs = [encoder(doc) for doc in all_documents]  # done once"}
+            <br />{"ann_index.add(doc_vecs)                              # stored"}
+            <br /><br />{"// At query time (online — fast):"}
+            <br />{"query_vec = encoder(query)                           # ~10ms"}
+            <br />{"results = ann_index.search(query_vec, k=100)         # ~50ms"}
+          </div>
+          <p className="text-zinc-500">Document vectors never need to be recomputed per query. This is what makes bi-encoders scale to 100M+ documents.</p>
+        </div>
+      )}
+      {mode === "cross" && (
+        <div className="rounded-xl p-4 text-xs text-zinc-400 space-y-2" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)" }}>
+          <div className="font-bold text-red-400 text-sm">Why it's slow: no pre-computation possible</div>
+          <div className="font-mono text-zinc-500 text-[11px] leading-relaxed">
+            {"// Every (query, doc) pair needs its own forward pass:"}
+            <br />{"for doc in all_10_million_documents:"}
+            <br />{"    input = tokenize('[CLS]' + query + '[SEP]' + doc)"}
+            <br />{"    score = cross_encoder(input)  # ~1ms each"}
+            <br />{"# Total: 10M × 1ms = ~2.8 hours  ← not a production system"}
+          </div>
+          <p className="text-zinc-500">The document representation depends on the specific query — you can't cache it. Cross-encoders can only score small candidate sets, which is why they're always paired with a fast retriever.</p>
+        </div>
+      )}
+      {mode === "two" && (
+        <div className="rounded-xl p-4 text-xs space-y-2" style={{ background: "rgba(6,182,212,0.05)", border: "1px solid rgba(6,182,212,0.2)" }}>
+          <div className="font-bold text-cyan-400 text-sm">The production pattern: recall then precision</div>
+          <p className="text-zinc-400">Stage 1 (bi-encoder): retrieve top-100 candidates in ~60ms. Stage 2 (cross-encoder): rerank those 100 pairs in ~400ms. Total: ~460ms. Quality approaches full cross-encoder. Scales to any corpus size because stage 2 always sees only 100 pairs regardless of corpus size.</p>
+          <div className="mt-2 flex gap-4">
+            <div className="text-center">
+              <div className="text-lg font-black text-cyan-400">~60ms</div>
+              <div className="text-[10px] font-mono text-zinc-500">Stage 1 (ANN recall)</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-black" style={{ color: MODES[1].color }}>+420ms</div>
+              <div className="text-[10px] font-mono text-zinc-500">Stage 2 (rerank top-100)</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-black text-white">~480ms</div>
+              <div className="text-[10px] font-mono text-zinc-500">Total, any corpus size</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── BERT POOLING LAB ─────────────────────────────────────────────────────────
+
+const WORDPIECE_EXAMPLES = [
+  { text: "unbelievable", tokens: ["un", "##believe", "##able"] },
+  { text: "tokenization", tokens: ["token", "##ization"] },
+  { text: "PyTorch",      tokens: ["Py", "##Torch"] },
+  { text: "retrieval",    tokens: ["retrieval"] },
+  { text: "hallucination",tokens: ["hall", "##ucin", "##ation"] },
+  { text: "embeddings",   tokens: ["embed", "##ding", "##s"] },
+];
+
+const POOLING_PAIRS = [
+  {
+    a: "The model failed on out-of-distribution inputs.",
+    b: "The neural network performed poorly on new data types.",
+    cls_sim: 0.42,
+    mean_sim: 0.78,
+    sbert_sim: 0.91,
+    label: "High semantic overlap",
+  },
+  {
+    a: "How do I fine-tune a BERT model?",
+    b: "Steps to train a pre-trained transformer on custom data.",
+    cls_sim: 0.38,
+    mean_sim: 0.71,
+    sbert_sim: 0.88,
+    label: "Paraphrase",
+  },
+  {
+    a: "The bank by the river flooded.",
+    b: "The financial institution collapsed due to bad loans.",
+    cls_sim: 0.61,
+    mean_sim: 0.55,
+    sbert_sim: 0.18,
+    label: "Same word, different sense",
+  },
+];
+
+export function BertPoolingLab() {
+  const [wordIdx, setWordIdx] = useState(0);
+  const [pairIdx, setPairIdx] = useState(0);
+  const [showSbert, setShowSbert] = useState(false);
+
+  const word = WORDPIECE_EXAMPLES[wordIdx];
+  const pair = POOLING_PAIRS[pairIdx];
+
+  function SimBar({ label, value, color, note }) {
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold" style={{ color }}>{label}</span>
+          <span className="text-xs font-mono" style={{ color }}>{value.toFixed(2)}</span>
+        </div>
+        <div className="h-2 rounded-full bg-zinc-800">
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${value * 100}%`, background: color }} />
+        </div>
+        {note && <div className="text-[10px] text-zinc-500">{note}</div>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-xl font-black text-white mb-1">BERT Tokenization &amp; Pooling Lab</h2>
+        <p className="text-sm text-zinc-400">See how WordPiece tokenizes text, then compare CLS pooling vs mean pooling vs SBERT on real sentence pairs. The [CLS] trap is the #1 BERT misconception in interviews.</p>
+      </div>
+
+      {/* Section 1: WordPiece */}
+      <div className="rounded-xl p-4 space-y-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <div>
+          <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">WordPiece Tokenization</div>
+          <p className="text-xs text-zinc-400 mb-3">BERT decomposes rare and OOV words into known subword pieces. Continuation pieces are prefixed with ##. Pick a word to see the decomposition.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {WORDPIECE_EXAMPLES.map((ex, i) => (
+            <button key={i} onClick={() => setWordIdx(i)}
+              className="px-3 py-1 rounded-lg text-xs font-mono transition-all"
+              style={wordIdx === i
+                ? { background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)", color: "#a5b4fc" }
+                : { background: "var(--surface)", border: "1px solid var(--border)", color: "#71717a" }}>
+              {ex.text}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="text-sm font-mono text-zinc-400">"{word.text}"</span>
+          <span className="text-zinc-600">→</span>
+          {["[CLS]", ...word.tokens, "[SEP]"].map((tok, i) => (
+            <span key={i} className="px-2 py-0.5 rounded text-xs font-mono"
+              style={{
+                background: tok.startsWith("##") ? "rgba(245,158,11,0.12)" :
+                            (tok === "[CLS]" || tok === "[SEP]") ? "rgba(99,102,241,0.12)" : "rgba(34,197,94,0.12)",
+                border: `1px solid ${tok.startsWith("##") ? "rgba(245,158,11,0.3)" :
+                         (tok === "[CLS]" || tok === "[SEP]") ? "rgba(99,102,241,0.3)" : "rgba(34,197,94,0.3)"}`,
+                color: tok.startsWith("##") ? "#fbbf24" :
+                       (tok === "[CLS]" || tok === "[SEP]") ? "#a5b4fc" : "#86efac",
+              }}>
+              {tok}
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-4 text-[10px] font-mono">
+          <span style={{ color: "#a5b4fc" }}>[CLS]/[SEP] — special tokens</span>
+          <span style={{ color: "#86efac" }}>full subword piece</span>
+          <span style={{ color: "#fbbf24" }}>## continuation piece</span>
+        </div>
+      </div>
+
+      {/* Section 2: Pooling comparison */}
+      <div className="rounded-xl p-4 space-y-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <div>
+          <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Pooling Strategy Comparison</div>
+          <p className="text-xs text-zinc-400 mb-3">Same BERT model, same sentence pairs, different pooling. See why [CLS] pooling fails for semantic similarity — and what SBERT fixes.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {POOLING_PAIRS.map((p, i) => (
+            <button key={i} onClick={() => setPairIdx(i)}
+              className="px-3 py-1 rounded-lg text-[11px] font-bold transition-all"
+              style={pairIdx === i
+                ? { background: "rgba(6,182,212,0.12)", border: "1px solid rgba(6,182,212,0.35)", color: "#22d3ee" }
+                : { background: "var(--surface)", border: "1px solid var(--border)", color: "#71717a" }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <div className="rounded-lg p-3 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <div className="text-xs text-zinc-300 font-semibold">Sentence A:</div>
+          <div className="text-xs text-zinc-400 italic">"{pair.a}"</div>
+          <div className="text-xs text-zinc-300 font-semibold mt-2">Sentence B:</div>
+          <div className="text-xs text-zinc-400 italic">"{pair.b}"</div>
+        </div>
+        <div className="space-y-3">
+          <SimBar label="[CLS] pooling (vanilla BERT)" value={pair.cls_sim} color="#ef4444"
+            note="CLS token was not trained to be a sentence embedding. Scores cluster by length and surface features, not meaning." />
+          <SimBar label="Mean pooling (vanilla BERT)" value={pair.mean_sim} color="#f59e0b"
+            note="Averages all token representations. Better than CLS, but still not trained for semantic similarity." />
+          {showSbert && (
+            <SimBar label="Mean pooling (SBERT-trained)" value={pair.sbert_sim} color="#22c55e"
+              note="Same architecture as above, but trained with siamese network + NLI/MSE objectives. Embeddings are now semantically structured." />
+          )}
+        </div>
+        <button onClick={() => setShowSbert(s => !s)}
+          className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+          style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" }}>
+          {showSbert ? "Hide SBERT score" : "Reveal SBERT score"}
+        </button>
+        {pairIdx === 2 && (
+          <div className="text-xs text-zinc-400 rounded-lg p-3" style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)" }}>
+            <span className="font-bold text-red-400">Polysemy trap:</span> "bank" appears in both sentences. Mean pooling gives a moderately high score because the token "bank" has high overlap. SBERT correctly gives a low score because it captures the full contextual meaning — one sentence is about geography, one about finance.
+          </div>
+        )}
+      </div>
+
+      {/* Key takeaway */}
+      <div className="rounded-lg p-3" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.2)", borderLeft: "3px solid rgba(99,102,241,0.5)" }}>
+        <div className="text-[10px] font-mono text-indigo-400 uppercase tracking-widest mb-1">The interview answer</div>
+        <p className="text-xs text-zinc-400 leading-relaxed">If asked "can you use BERT for semantic search?" — the correct answer is: not vanilla BERT. CLS pooling produces poor embeddings for similarity. Mean pooling is slightly better. SBERT (Sentence-BERT) fine-tunes BERT with a siamese network using NLI data, producing embeddings where cosine similarity correlates with semantic relatedness. Always specify which pooling method and whether the model was trained for embeddings.</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── VECTOR SIMILARITY EXPLORER ───────────────────────────────────────────────
+
+// Pre-computed 2D t-SNE-like coordinates for sentence clusters (normalized -1 to 1)
+const VSIM_POINTS = [
+  // Cluster 1: retrieval / search
+  { id: 0,  x: 0.12,  y: 0.68,  text: "HNSW builds a navigable small world graph for ANN search." },
+  { id: 1,  x: 0.22,  y: 0.75,  text: "Vector databases store embeddings and support similarity queries." },
+  { id: 2,  x: 0.08,  y: 0.82,  text: "FAISS uses inverted file indexes for fast nearest neighbor lookup." },
+  { id: 3,  x: 0.28,  y: 0.60,  text: "BM25 ranks documents by term frequency and inverse document frequency." },
+  // Cluster 2: model training
+  { id: 4,  x: -0.65, y: 0.30,  text: "Fine-tuning updates all model weights on a domain-specific dataset." },
+  { id: 5,  x: -0.72, y: 0.20,  text: "LoRA adds low-rank adapter matrices and freezes the base model." },
+  { id: 6,  x: -0.58, y: 0.40,  text: "Catastrophic forgetting occurs when fine-tuning on new data erases old knowledge." },
+  // Cluster 3: evaluation
+  { id: 7,  x: -0.30, y: -0.55, text: "NDCG measures ranking quality with graded relevance scores." },
+  { id: 8,  x: -0.20, y: -0.65, text: "Calibration ensures predicted probabilities match actual frequencies." },
+  { id: 9,  x: -0.38, y: -0.48, text: "Inter-annotator agreement quantifies labeling consistency." },
+  // Cluster 4: agents
+  { id: 10, x: 0.55,  y: -0.40, text: "ReAct agents interleave reasoning steps with tool calls." },
+  { id: 11, x: 0.65,  y: -0.30, text: "LangGraph uses state machines to control multi-step agent workflows." },
+  { id: 12, x: 0.50,  y: -0.52, text: "Tool poisoning injects malicious instructions through tool results." },
+  // Cluster 5: LLM serving
+  { id: 13, x: 0.72,  y: 0.18,  text: "KV cache avoids recomputing key-value projections for prior tokens." },
+  { id: 14, x: 0.80,  y: 0.08,  text: "Speculative decoding uses a draft model to generate candidate tokens." },
+  { id: 15, x: 0.68,  y: 0.28,  text: "Quantization reduces model precision from FP32 to INT8 or INT4." },
+  // Outlier
+  { id: 16, x: -0.10, y: 0.05,  text: "The attention mechanism computes queries, keys, and values." },
+];
+
+// Pre-computed cosine similarities from id=0 (retrieval cluster anchor)
+const SIM_FROM = {
+  0: [1.00, 0.91, 0.88, 0.79, 0.18, 0.14, 0.17, 0.22, 0.20, 0.21, 0.15, 0.13, 0.12, 0.28, 0.25, 0.24, 0.45],
+  7: [0.22, 0.20, 0.21, 0.19, 0.18, 0.16, 0.17, 1.00, 0.89, 0.92, 0.15, 0.13, 0.12, 0.21, 0.19, 0.18, 0.38],
+  10:[0.15, 0.13, 0.12, 0.14, 0.16, 0.14, 0.18, 0.15, 0.13, 0.14, 1.00, 0.92, 0.87, 0.19, 0.17, 0.16, 0.40],
+  13:[0.28, 0.25, 0.24, 0.21, 0.19, 0.17, 0.16, 0.21, 0.19, 0.18, 0.19, 0.17, 0.16, 1.00, 0.93, 0.91, 0.35],
+  4: [0.18, 0.16, 0.17, 0.14, 1.00, 0.88, 0.85, 0.18, 0.16, 0.17, 0.16, 0.14, 0.15, 0.19, 0.17, 0.16, 0.38],
+};
+const DEFAULT_SIMS = [1.00,0.65,0.60,0.55,0.20,0.18,0.17,0.25,0.22,0.21,0.18,0.15,0.14,0.30,0.28,0.25,0.42];
+
+export function VectorSimilarityExplorer() {
+  const [selected, setSelected] = useState(null);
+  const [metric, setMetric] = useState("cosine");
+  const W = 480, H = 320, PAD = 32;
+
+  function toSVG(x, y) {
+    return {
+      cx: PAD + ((x + 1) / 2) * (W - 2 * PAD),
+      cy: PAD + ((1 - y) / 2) * (H - 2 * PAD),
+    };
+  }
+
+  const sims = selected !== null ? (SIM_FROM[selected] || DEFAULT_SIMS) : null;
+
+  function simColor(s) {
+    if (s === undefined) return "#3f3f46";
+    if (s > 0.85) return "#22c55e";
+    if (s > 0.65) return "#06b6d4";
+    if (s > 0.40) return "#f59e0b";
+    return "#3f3f46";
+  }
+
+  function simRadius(s) {
+    if (s === undefined) return 5;
+    return 5 + s * 10;
+  }
+
+  const topNeighbors = selected !== null && sims
+    ? VSIM_POINTS
+        .filter(p => p.id !== selected)
+        .map(p => ({ ...p, sim: sims[p.id] }))
+        .sort((a, b) => b.sim - a.sim)
+        .slice(0, 3)
+    : [];
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-xl font-black text-white mb-1">Vector Similarity Explorer</h2>
+        <p className="text-sm text-zinc-400">Click any sentence in the embedding space to see its nearest neighbors by cosine similarity. Clusters emerge from semantic meaning, not surface syntax.</p>
+      </div>
+
+      <div className="rounded-lg p-3" style={{ background: "rgba(6,182,212,0.05)", border: "1px solid rgba(6,182,212,0.15)", borderLeft: "3px solid rgba(6,182,212,0.4)" }}>
+        <p className="text-xs text-zinc-400 leading-relaxed"><span className="font-bold text-cyan-400">What this shows:</span> A 2D projection of sentence embeddings from a sentence transformer model. Real embeddings are 384–1024 dimensional — t-SNE projects them into 2D while preserving local cluster structure. Semantically similar sentences cluster together even without explicit labels. Click to see cosine similarity scores.</p>
+      </div>
+
+      {/* Metric toggle */}
+      <div className="flex gap-2">
+        {["cosine", "dot product"].map(m => (
+          <button key={m} onClick={() => setMetric(m)}
+            className="px-3 py-1 rounded-lg text-xs font-mono transition-all"
+            style={metric === m
+              ? { background: "rgba(6,182,212,0.12)", border: "1px solid rgba(6,182,212,0.35)", color: "#22d3ee" }
+              : { background: "var(--surface-2)", border: "1px solid var(--border)", color: "#71717a" }}>
+            {m}
+          </button>
+        ))}
+        <div className="text-[10px] font-mono text-zinc-500 flex items-center ml-2">
+          {metric === "cosine" ? "angle between vectors (normalized)" : "magnitude × cos(θ) — equivalent if L2-normalized"}
+        </div>
+      </div>
+
+      {/* SVG scatter plot */}
+      <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }}>
+          {/* Cluster labels */}
+          <text x="155" y="20" className="fill-zinc-600" style={{ fontSize: 9, fontFamily: "monospace" }}>RETRIEVAL</text>
+          <text x="20"  y="75" className="fill-zinc-600" style={{ fontSize: 9, fontFamily: "monospace" }}>TRAINING</text>
+          <text x="20"  y="240" className="fill-zinc-600" style={{ fontSize: 9, fontFamily: "monospace" }}>EVALUATION</text>
+          <text x="330" y="200" className="fill-zinc-600" style={{ fontSize: 9, fontFamily: "monospace" }}>AGENTS</text>
+          <text x="380" y="100" className="fill-zinc-600" style={{ fontSize: 9, fontFamily: "monospace" }}>SERVING</text>
+
+          {/* Connection lines to selected */}
+          {selected !== null && sims && VSIM_POINTS.map(p => {
+            if (p.id === selected) return null;
+            const s = sims[p.id];
+            if (!s || s < 0.5) return null;
+            const from = toSVG(VSIM_POINTS[selected].x, VSIM_POINTS[selected].y);
+            const to = toSVG(p.x, p.y);
+            return (
+              <line key={p.id}
+                x1={from.cx} y1={from.cy} x2={to.cx} y2={to.cy}
+                stroke={simColor(s)} strokeWidth={s > 0.85 ? 1.5 : 0.8} strokeOpacity={0.5} />
+            );
+          })}
+
+          {/* Points */}
+          {VSIM_POINTS.map(p => {
+            const { cx, cy } = toSVG(p.x, p.y);
+            const isSelected = p.id === selected;
+            const sim = sims ? sims[p.id] : undefined;
+            const r = isSelected ? 8 : simRadius(sim);
+            const col = isSelected ? "#06b6d4" : simColor(sim);
+            return (
+              <g key={p.id} onClick={() => setSelected(p.id === selected ? null : p.id)}
+                style={{ cursor: "pointer" }}>
+                <circle cx={cx} cy={cy} r={r + 4} fill="transparent" />
+                <circle cx={cx} cy={cy} r={r}
+                  fill={col} fillOpacity={isSelected ? 1 : 0.7}
+                  stroke={isSelected ? "#22d3ee" : col}
+                  strokeWidth={isSelected ? 2 : 0.5} />
+                {sim !== undefined && sim > 0.85 && !isSelected && (
+                  <text x={cx} y={cy - r - 3} textAnchor="middle" style={{ fontSize: 8, fill: "#22c55e", fontFamily: "monospace" }}>{sim.toFixed(2)}</text>
+                )}
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Selected sentence info */}
+      {selected !== null ? (
+        <div className="space-y-3">
+          <div className="rounded-xl p-4" style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.3)" }}>
+            <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest mb-1">Selected sentence</div>
+            <p className="text-sm text-white">"{VSIM_POINTS[selected].text}"</p>
+          </div>
+          {topNeighbors.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Top 3 nearest neighbors</div>
+              {topNeighbors.map(n => (
+                <div key={n.id} className="flex items-start gap-3 rounded-xl p-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                  <span className="text-sm font-mono font-black shrink-0" style={{ color: simColor(n.sim) }}>{n.sim.toFixed(2)}</span>
+                  <span className="text-xs text-zinc-300">"{n.text}"</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-xl p-4 text-center" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+          <p className="text-xs text-zinc-500">Click any point to see its nearest neighbors and similarity scores</p>
+        </div>
+      )}
+
+      <div className="rounded-lg p-3" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.2)", borderLeft: "3px solid rgba(99,102,241,0.5)" }}>
+        <p className="text-xs text-zinc-400 leading-relaxed"><span className="font-bold text-indigo-400">Cosine vs dot product:</span> Cosine similarity = dot_product / (|a| × |b|). After L2 normalization (which sentence-transformers apply by default), all vectors have magnitude 1, so cosine similarity = dot product. This matters practically: normalized embeddings let you use IndexFlatIP (inner product) in FAISS which is faster than computing cosines explicitly. Always normalize before indexing.</p>
+      </div>
+    </div>
+  );
+}
+
+
 export {
-  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BertPoolingLab, BiEncoderVsCrossEncoder, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev, VectorSimilarityExplorer
 };

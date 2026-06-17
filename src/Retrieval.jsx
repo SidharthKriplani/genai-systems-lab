@@ -68,6 +68,27 @@ const GT_POSTS = [
     readMin: 8,
     tag: "Architecture",
   },
+  {
+    id: "bi-encoder-vs-cross-encoder",
+    title: "Bi-Encoder vs Cross-Encoder: The Retrieval Architecture Decision That Determines Latency",
+    desc: "Bi-encoders pre-compute document vectors (fast, scalable). Cross-encoders score pairs jointly (accurate, slow). Why production retrieval is always two-stage.",
+    readMin: 11,
+    tag: "Architecture",
+  },
+  {
+    id: "sentence-transformers-production",
+    title: "Sentence Transformers in Production: SBERT, Model Selection, and Domain Adaptation",
+    desc: "Why SBERT exists (BERT [CLS] fails for similarity), mean pooling implementation, model selection table, and fine-tuning with MultipleNegativesRankingLoss.",
+    readMin: 10,
+    tag: "Embeddings",
+  },
+  {
+    id: "vector-databases-compared",
+    title: "Vector Databases Compared: Pinecone vs Weaviate vs Qdrant vs pgvector",
+    desc: "HNSW index mechanics, the metadata filtering problem, hybrid search support, and the decision framework. When pgvector is the right answer.",
+    readMin: 11,
+    tag: "Infrastructure",
+  },
 ];
 
 const PREPLAB_Qs = [
@@ -91,6 +112,34 @@ const PREPLAB_Qs = [
     diffColor: "#f59e0b",
     gated: true,
     question: "A RAG system has 94% recall but users report wrong answers 30% of the time. What is the most likely cause?",
+  },,
+  {
+    id: "bienc-1",
+    difficulty: "Easy",
+    diffColor: "#22c55e",
+    gated: false,
+    question: "Why can a bi-encoder scale to 100M documents while a cross-encoder cannot?",
+  },
+  {
+    id: "bienc-2",
+    difficulty: "Medium",
+    diffColor: "#f59e0b",
+    gated: false,
+    question: "Your two-stage retrieval (bi-encoder recall + cross-encoder rerank) has good precision but poor recall. Where is the bottleneck?",
+  },
+  {
+    id: "sbert-2",
+    difficulty: "Medium",
+    diffColor: "#f59e0b",
+    gated: false,
+    question: "After L2-normalizing sentence transformer embeddings, which similarity metric becomes equivalent to cosine similarity — and why does it matter for indexing?",
+  },
+  {
+    id: "vecdb-1",
+    difficulty: "Medium",
+    diffColor: "#f59e0b",
+    gated: false,
+    question: "Vector search returns great results for general queries but misses exact product SKU lookups. What is the architecture fix?",
   },
 ];
 

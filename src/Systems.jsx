@@ -7,7 +7,7 @@ import InferenceOptimizer from "./InferenceOptimizer";
 import MLCiCdLab from "./MLCiCd";
 
 import {
-  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, DecodingStrategiesLab, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BertPoolingLab, BiEncoderVsCrossEncoder, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, DecodingStrategiesLab, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev, VectorSimilarityExplorer
 } from "./systems/modules";
 
 const SYSTEMS_MODULES = [
@@ -35,6 +35,9 @@ const SYSTEMS_MODULES = [
   { id: "promptlab",    label: "Prompt Engineering Lab",  tag: "PROMPT",   group: "DESIGN",  component: PromptEngineeringLab },
   { id: "redteam",      label: "AI Red Teaming",          tag: "SECURITY", group: "OPS",     component: AIRedTeaming },
   { id: "decoding",     label: "Decoding Strategies Lab", tag: "SAMPLE",   group: "BUILD",   component: DecodingStrategiesLab },
+  { id: "biencoder",    label: "Bi-Encoder vs Cross-Encoder", tag: "RETRIEVAL", group: "RETRIEVAL", component: BiEncoderVsCrossEncoder },
+  { id: "bert-pooling", label: "BERT Pooling Lab",            tag: "NLP",      group: "RETRIEVAL", component: BertPoolingLab },
+  { id: "vecsim",       label: "Vector Similarity Explorer",  tag: "EMBED",    group: "RETRIEVAL", component: VectorSimilarityExplorer },
   { id: "txarch",       label: "Transformer Architecture",tag: "VISUAL",   group: "DESIGN",  component: TransformerArchitecture },
   { id: "structout",    label: "Structured Outputs",      tag: "SCHEMA",   group: "DESIGN",  component: StructuredOutputEngineering },
   { id: "synthdata",    label: "Synthetic Data",          tag: "DATA",     group: "DESIGN",  component: SyntheticDataGeneration },
@@ -128,6 +131,9 @@ const RELATED_GT = {
   "langgraph":        [{ id: "langgraph-reducers-hitl",       title: "LangGraph Reducers and HITL: State Machines for Agentic Workflows" }],
   "query-refinement": [{ id: "two-stage-retrieval-reranker",  title: "Two-Stage Retrieval: Why a Reranker Exists" }],
   "agent-ctx-arch":   [{ id: "agent-memory-architecture", title: "The Four Memory Problems Every Agent Has" }, { id: "claudemd-as-architecture", title: "The Agent Memory Layer" }],
+  "biencoder":        [{ id: "bi-encoder-vs-cross-encoder", title: "Bi-Encoder vs Cross-Encoder: Retrieval Architecture" }],
+  "bert-pooling":     [{ id: "bert-internals-explained", title: "BERT Tokenization & Pooling Lab" }],
+  "vecsim":           [{ id: "vector-databases-compared", title: "Vector Similarity Explorer" }],
 };
 
 // Modules with real logic-derived outcomes (not pre-scripted)

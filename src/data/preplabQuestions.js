@@ -4649,5 +4649,237 @@ export const PREP_QUESTIONS = [
     readMore: { label: "KV Cache From Scratch", tab: "groundtruth", postId: "kv-cache-from-scratch" }
   },
 
+,
+
+  // ─── NLP PRACTITIONERS (bert, bi-encoder, sbert, vecdb, enc-dec) ─────────────
+  {
+    id: "bert-1", topic: "finetuning", difficulty: "Medium", gated: false, type: "mcq",
+    question: "A team extracts [CLS] token embeddings from a vanilla BERT model and computes cosine similarity between sentence pairs for a semantic search system. Results are poor. What is the root cause?",
+    options: [
+      "BERT's [CLS] token was not trained to produce semantically meaningful sentence embeddings",
+      "Cosine similarity is the wrong metric for BERT embeddings — dot product should be used",
+      "BERT's maximum 512-token input is too short for semantic search",
+      "Vanilla BERT lacks a bidirectional attention mechanism"
+    ],
+    correct: 0,
+    keywords: ["CLS token", "sentence embeddings", "semantic similarity", "SBERT"],
+    explanation: "BERT's [CLS] token is trained as an aggregate sequence representation for classification fine-tuning, not for semantic similarity. Without task-specific fine-tuning (like SBERT's siamese network with NLI objectives), [CLS] embeddings cluster by surface features and sentence length, not semantic content. Reimers and Gurevych (2019) showed this produces near-random cosine similarity scores for semantic search.",
+    trap: "Overclaim: cosine similarity 'doesn't work' with BERT. Honest reframe: cosine similarity is fine — the problem is that vanilla [CLS] embeddings aren't trained to place semantically similar sentences close together in vector space.",
+    readMore: { postId: "bert-internals-explained", label: "BERT Internals" }
+  },
+  {
+    id: "bert-2", topic: "finetuning", difficulty: "Medium", gated: false, type: "mcq",
+    question: "BERT tokenizes 'unbelievable' as ['un', '##believe', '##able']. What tokenization algorithm produces this, and what does the ## prefix signify?",
+    options: [
+      "WordPiece; ## marks continuation pieces that cannot start a word",
+      "Byte Pair Encoding; ## marks tokens that appeared fewer than 5 times in training",
+      "SentencePiece; ## marks low-frequency subwords needing fallback to character level",
+      "Unigram LM; ## marks tokens where the next token is predicted independently"
+    ],
+    correct: 0,
+    keywords: ["WordPiece", "tokenization", "subword", "BERT", "continuation piece"],
+    explanation: "BERT uses WordPiece tokenization. Words are decomposed into subword pieces from a fixed vocabulary (30,000 tokens). The ## prefix marks continuation pieces — they cannot appear at the start of a word. This handles OOV words, rare words, and morphologically rich languages without a massive vocabulary or character-level fallback.",
+    trap: "Overclaim: WordPiece and BPE are essentially the same thing. Honest reframe: both are subword methods, but WordPiece maximizes likelihood of the training data given the vocabulary (greedy per character), while BPE iteratively merges the most frequent pair. BERT uses WordPiece; GPT-2/Llama use BPE.",
+    readMore: { postId: "bert-internals-explained", label: "BERT Internals" }
+  },
+  {
+    id: "bert-3", topic: "finetuning", difficulty: "Hard", gated: true, type: "mcq",
+    question: "During BERT pretraining, 15% of tokens are selected for the MLM objective. Of those selected, what happens to each token, and why isn't 100% replaced with [MASK]?",
+    options: [
+      "80% → [MASK], 10% → random token, 10% → unchanged; avoids model over-relying on [MASK] signal not present at fine-tuning",
+      "100% → [MASK]; the model learns [MASK] prediction which transfers to all downstream tasks",
+      "50% → [MASK], 50% → unchanged; balances reconstruction loss with language modeling loss",
+      "80% → [MASK], 20% → unchanged; random replacement is unnecessary with sufficient pretraining data"
+    ],
+    correct: 0,
+    keywords: ["MLM", "masked language modeling", "BERT pretraining", "MASK token"],
+    explanation: "BERT masks 80%, randomly replaces 10%, and leaves 10% unchanged. The key reason is a mismatch: [MASK] tokens appear during pretraining but not during fine-tuning. If 100% were masked, the model would learn to rely entirely on the [MASK] signal, degrading representation quality at fine-tuning time. The 10% random + 10% unchanged injects noise that forces the model to produce useful contextual representations for all tokens.",
+    trap: "Overclaim: the 80/10/10 ratio is a carefully optimized hyperparameter. Honest reframe: it's a reasonable heuristic from the original paper. RoBERTa showed that dynamic masking (different masks each epoch) matters more than the exact ratio.",
+    readMore: { postId: "bert-internals-explained", label: "BERT Internals" }
+  },
+
+  {
+    id: "bienc-1", topic: "rag", difficulty: "Easy", gated: false, type: "mcq",
+    question: "Why can a bi-encoder scale to 100 million documents while a cross-encoder cannot?",
+    options: [
+      "Bi-encoders pre-compute document embeddings offline; cross-encoders require a separate forward pass per (query, document) pair",
+      "Bi-encoders use a smaller model than cross-encoders, making them faster at inference",
+      "Bi-encoders use approximate nearest neighbor search; cross-encoders use exact search",
+      "Cross-encoders require GPU acceleration while bi-encoders run on CPU"
+    ],
+    correct: 0,
+    keywords: ["bi-encoder", "cross-encoder", "pre-computation", "scalability", "ANN"],
+    explanation: "The key property: bi-encoder document representations are independent of the query, so they can be computed once offline and indexed. At query time, only the query is encoded (~10ms) then ANN search finds neighbors (~50ms). Cross-encoders process query and document jointly — the document representation depends on the specific query — so no pre-computation is possible. Every candidate pair requires a full forward pass.",
+    trap: "Overclaim: cross-encoders are just slower, not fundamentally different. Honest reframe: the difference is architectural — joint vs. independent encoding creates fundamentally different scalability properties, not just a speed difference.",
+    readMore: { postId: "bi-encoder-vs-cross-encoder", label: "Bi-Encoder vs Cross-Encoder" }
+  },
+  {
+    id: "bienc-2", topic: "rag", difficulty: "Medium", gated: false, type: "mcq",
+    question: "Your two-stage retrieval system (bi-encoder recall → cross-encoder rerank) has good precision but poor recall. Users report missing relevant documents. Where is the bottleneck and how do you fix it?",
+    options: [
+      "The bi-encoder's recall@K is too low — increase K or improve the bi-encoder; the cross-encoder never sees documents not in top-K",
+      "The cross-encoder's reranking is poor — switch to a larger cross-encoder model",
+      "The ANN index has high recall but low precision — reduce efSearch parameter",
+      "The bi-encoder's embedding dimension is too small — increase to 1024 dimensions"
+    ],
+    correct: 0,
+    keywords: ["recall@K", "two-stage retrieval", "bi-encoder", "bottleneck", "reranking"],
+    explanation: "The quality ceiling for two-stage retrieval is bi-encoder recall@K. If a relevant document isn't in the top-K bi-encoder results, the cross-encoder never sees it and cannot recover it. Poor recall means the bi-encoder is filtering out relevant documents before reranking can help. Fix: increase K, improve bi-encoder with domain fine-tuning, or use hard negative mining to improve the bi-encoder's recall on difficult cases.",
+    trap: "Overclaim: improve the cross-encoder to improve recall. Honest reframe: the cross-encoder only reranks what the bi-encoder passes it. Recall is a stage-1 property; precision is a stage-2 property. They're independent failure modes.",
+    readMore: { postId: "bi-encoder-vs-cross-encoder", label: "Bi-Encoder vs Cross-Encoder" }
+  },
+  {
+    id: "bienc-3", topic: "rag", difficulty: "Hard", gated: true, type: "mcq",
+    question: "ColBERT introduces 'late interaction' between query and document. How does this differ from bi-encoder and cross-encoder, and what problem does it solve?",
+    options: [
+      "ColBERT pre-computes per-token document embeddings; interaction (MaxSim) happens at query time over token vectors, giving richer matching than cosine similarity but without per-pair forward passes",
+      "ColBERT trains query and document encoders jointly like a cross-encoder but uses ANN search like a bi-encoder",
+      "ColBERT uses a late-fusion approach: it combines BM25 keyword scores with bi-encoder semantic scores at serving time",
+      "ColBERT computes cross-attention only on the final layer instead of all layers, reducing latency by 8x"
+    ],
+    correct: 0,
+    keywords: ["ColBERT", "late interaction", "MaxSim", "token-level embeddings", "retrieval"],
+    explanation: "ColBERT pre-computes per-token embeddings for all documents (offline). At query time, it encodes the query into per-token embeddings, then scores each document by summing the maximum similarity between each query token and any document token (MaxSim operation). This preserves token-level matching (richer than single-vector cosine similarity) while keeping document representations pre-computed (unlike cross-encoders). It sits between bi-encoders (fast, single-vector) and cross-encoders (slow, full joint attention).",
+    trap: "Overclaim: ColBERT is strictly better than bi-encoder + cross-encoder two-stage retrieval. Honest reframe: ColBERT's storage cost is much higher (one vector per token vs. one vector per document) and its latency is between the two. It's a tradeoff, not a free improvement.",
+    readMore: { postId: "bi-encoder-vs-cross-encoder", label: "Bi-Encoder vs Cross-Encoder" }
+  },
+  {
+    id: "bienc-4", topic: "rag", difficulty: "Medium", gated: false, type: "mcq",
+    question: "What is the correct inference-time architecture of a cross-encoder, and why does it produce higher quality relevance scores than a bi-encoder?",
+    options: [
+      "Query and document are concatenated as a single input and processed jointly; full bidirectional attention lets every query token attend to every document token, capturing fine-grained interactions",
+      "Query and document are encoded separately then combined via a learned fusion layer with attention",
+      "A cross-encoder scores the query representation against a weighted average of document token representations",
+      "Cross-encoders use GPT-style causal attention, reading the query first then the document"
+    ],
+    correct: 0,
+    keywords: ["cross-encoder", "joint encoding", "bidirectional attention", "relevance"],
+    explanation: "A cross-encoder takes '[CLS] query [SEP] document [SEP]' as a single input. Every query token can attend to every document token through full transformer attention at every layer. This allows the model to capture interactions like polysemy resolution (same word, different meaning), negation, and entity matching that are invisible to bi-encoders where query and document are encoded in isolation.",
+    trap: "Overclaim: cross-encoders always outperform bi-encoders. Honest reframe: cross-encoders outperform bi-encoders on reranking when given the same candidates. But bi-encoders often cover more recall at scale because they can search larger candidate sets. The right comparison is the full pipeline quality, not component-level accuracy.",
+    readMore: { postId: "bi-encoder-vs-cross-encoder", label: "Bi-Encoder vs Cross-Encoder" }
+  },
+
+  {
+    id: "sbert-1", topic: "rag", difficulty: "Medium", gated: false, type: "mcq",
+    question: "What training architecture does Sentence-BERT (SBERT) use, and why does it produce better sentence embeddings than vanilla BERT mean pooling?",
+    options: [
+      "Siamese network with shared BERT weights trained on NLI labels; contrastive objectives push semantically similar sentences together and dissimilar ones apart",
+      "A single BERT model fine-tuned to minimize cosine distance between paraphrases in the training set",
+      "Two separate BERT models (one for English, one for other languages) trained to align multilingual sentence pairs",
+      "BERT with an additional contrastive pretraining objective added on top of MLM using Wikipedia anchor text"
+    ],
+    correct: 0,
+    keywords: ["SBERT", "siamese network", "NLI", "contrastive learning", "sentence embeddings"],
+    explanation: "SBERT uses a siamese network structure: two BERT instances with shared weights process sentence pairs. Mean-pooled outputs are compared with a similarity objective (NLI-style cross-entropy or triplet loss). This training explicitly optimizes for semantic similarity in embedding space — vanilla BERT mean pooling is never trained for this. The result: sentence vectors where cosine similarity correlates strongly with human-judged semantic relatedness.",
+    trap: "Overclaim: SBERT is a completely different model from BERT. Honest reframe: SBERT uses the same BERT architecture; the difference is the training objective and network structure. You're not changing the model, you're changing what it's optimized for.",
+    readMore: { postId: "sentence-transformers-production", label: "Sentence Transformers in Production" }
+  },
+  {
+    id: "sbert-2", topic: "rag", difficulty: "Medium", gated: false, type: "mcq",
+    question: "After generating sentence embeddings with a sentence transformer, you L2-normalize all vectors before storing them. What effect does this have on the choice of similarity metric?",
+    options: [
+      "Cosine similarity and dot product become equivalent; you can use the faster inner product ANN index (FAISS IndexFlatIP)",
+      "L2 normalization makes Euclidean distance equivalent to cosine similarity, so any metric works equally",
+      "Normalization removes magnitude information, making dot product unreliable — always use cosine similarity",
+      "Normalization has no effect on similarity scores, only on storage efficiency"
+    ],
+    correct: 0,
+    keywords: ["L2 normalization", "cosine similarity", "dot product", "FAISS", "ANN index"],
+    explanation: "Cosine similarity = dot_product(a, b) / (|a| × |b|). When vectors are L2-normalized, |a| = |b| = 1, so cosine similarity reduces to dot product. This matters practically: FAISS IndexFlatIP (inner product) is optimized and faster than computing cosines explicitly. Sentence-transformers normalizes by default. Always verify your index uses inner product after normalization — using L2 distance on normalized vectors gives the wrong ranking.",
+    trap: "Overclaim: normalization makes all metrics equivalent. Honest reframe: normalization makes cosine = dot product. L2 (Euclidean) distance on normalized vectors equals sqrt(2 - 2×cosine_sim), which preserves ranking but is not numerically equivalent.",
+    readMore: { postId: "sentence-transformers-production", label: "Sentence Transformers in Production" }
+  },
+  {
+    id: "sbert-3", topic: "rag", difficulty: "Hard", gated: true, type: "mcq",
+    question: "A team fine-tunes a sentence transformer for a legal document retrieval system using 5,000 (query, document) pairs from click logs. Which loss function should they use?",
+    options: [
+      "MultipleNegativesRankingLoss (MNR): treats other items in the batch as negatives, efficient with large batches",
+      "CosineSimilarityLoss: directly minimizes distance between positive pairs, simple and stable",
+      "TripletLoss with random negatives: trains on (anchor, positive, negative) triples sampled randomly",
+      "MSELoss on pre-computed similarity scores from a cross-encoder teacher model"
+    ],
+    correct: 0,
+    keywords: ["MultipleNegativesRankingLoss", "domain adaptation", "sentence transformers", "in-batch negatives"],
+    explanation: "MultipleNegativesRankingLoss (MNR) is the standard for fine-tuning on (query, positive) pairs. It treats every other item in the batch as a negative, making it efficient — a batch of 64 effectively gives 63 negatives per query with no extra annotation. CosineSimilarityLoss requires negative pairs (not available from click logs). Random triplet negatives are weak signal; MNR's in-batch negatives are naturally harder as batch size grows.",
+    trap: "Overclaim: MNR always outperforms other losses. Honest reframe: MNR works well when you only have positive pairs. If you have explicit hard negatives (documents that appear relevant but aren't), adding those to training with a harder loss improves results further. MNR is the efficient starting point, not the ceiling.",
+    readMore: { postId: "sentence-transformers-production", label: "Sentence Transformers in Production" }
+  },
+
+  {
+    id: "vecdb-1", topic: "rag", difficulty: "Medium", gated: false, type: "mcq",
+    question: "A vector search returns semantically similar results but misses documents that should match a specific product SKU (e.g., 'SKU-7821'). What is the root cause and correct architecture?",
+    options: [
+      "Semantic search (vector-only) fails on exact lookups; add hybrid search combining BM25/inverted index with vector search via Reciprocal Rank Fusion",
+      "The embedding model's vocabulary doesn't contain the SKU — switch to a larger model",
+      "Product IDs should be in the metadata filter, not the query text",
+      "ANN recall is too low — increase HNSW efSearch parameter"
+    ],
+    correct: 0,
+    keywords: ["hybrid search", "BM25", "exact match", "Reciprocal Rank Fusion", "vector search"],
+    explanation: "Semantic (dense) search excels at conceptual/paraphrase matching but fails on exact string lookups — product IDs, names, codes, rare terms. BM25/inverted indexes excel at exact matches. Production search combines both with Reciprocal Rank Fusion (RRF) or a learned linear combination. If your use case has any exact-match requirement (nearly all enterprise search does), hybrid search is not optional.",
+    trap: "Overclaim: a bigger embedding model will handle exact matches better. Honest reframe: no embedding model reliably places exact-match queries near exact-match documents unless those token sequences appear heavily in training data. BM25 handles this structurally, not by scale.",
+    readMore: { postId: "vector-databases-compared", label: "Vector Databases Compared" }
+  },
+  {
+    id: "vecdb-2", topic: "rag", difficulty: "Medium", gated: false, type: "mcq",
+    question: "Your production vector search returns great results for general queries but degrades significantly when users add filters (e.g., 'category=electronics AND in_stock=true'). What is happening?",
+    options: [
+      "Post-filtering reduces the effective candidate set; with selective filters, ANN top-K may return fewer than K matches, losing recall",
+      "Metadata filtering increases query latency by triggering a full index scan",
+      "The HNSW M parameter needs to be increased to support filtered queries",
+      "Filters should be applied before ANN search using separate keyword indexes"
+    ],
+    correct: 0,
+    keywords: ["metadata filtering", "post-filter", "pre-filter", "ANN recall", "vector search"],
+    explanation: "Standard ANN indexes search globally then filter results post-hoc. With a highly selective filter (e.g., only 1% of documents match), the global top-K may contain very few matching documents after filtering, degrading recall. Solutions: pre-filtering (segment the index by filter values and search within the segment), or use a vector DB like Qdrant/Weaviate with native payload indexes that integrate filtering into the search.",
+    trap: "Overclaim: pre-filtering always outperforms post-filtering. Honest reframe: pre-filtering has overhead (maintaining segment indexes, routing queries to the right segment). For low-selectivity filters (e.g., language=EN where 80% match), post-filtering is fine. Only pre-filter when filter selectivity is high.",
+    readMore: { postId: "vector-databases-compared", label: "Vector Databases Compared" }
+  },
+  {
+    id: "vecdb-3", topic: "rag", difficulty: "Hard", gated: true, type: "mcq",
+    question: "You're building a RAG system on 500,000 internal documents. Your team wants to use Pinecone. What is a valid reason to use pgvector instead?",
+    options: [
+      "You're already on Postgres; pgvector with HNSW keeps everything in one system, avoids a new managed service, and scales to 500k vectors easily",
+      "pgvector's HNSW implementation is faster than Pinecone's for corpora under 1 million vectors",
+      "Pinecone doesn't support HNSW — it uses IVF indexes which have lower recall",
+      "pgvector supports hybrid search natively while Pinecone requires a separate BM25 index"
+    ],
+    correct: 0,
+    keywords: ["pgvector", "Pinecone", "vector database selection", "HNSW", "Postgres"],
+    explanation: "For 500,000 documents, pgvector with HNSW index is fast, free, and keeps everything in one system — queries, metadata, vector search all in SQL. You avoid introducing a new managed service with its own ops overhead and billing. Pinecone is genuinely useful for fully-managed zero-ops scenarios, but under ~1M vectors the operational overhead often exceeds the benefit. The right question is not 'which vector DB is best?' but 'what infrastructure overhead is justified at this scale?'",
+    trap: "Overclaim: pgvector is always better than managed services for small corpora. Honest reframe: pgvector requires you to manage Postgres infrastructure, tune HNSW parameters, and handle backups. Pinecone handles all of this. The tradeoff is ops overhead vs. cost and control, not pure performance.",
+    readMore: { postId: "vector-databases-compared", label: "Vector Databases Compared" }
+  },
+
+  {
+    id: "encdec-1", topic: "finetuning", difficulty: "Medium", gated: false, type: "mcq",
+    question: "A team must choose between fine-tuning T5 (encoder-decoder) and Llama-3 (decoder-only) for a structured summarization task requiring specific output formats. What is the key architectural consideration?",
+    options: [
+      "T5's encoder-decoder structure explicitly separates input processing from output generation; the encoder produces a full bidirectional representation of the source that cross-attention uses throughout generation",
+      "T5 is smaller and faster to fine-tune; Llama-3 requires more GPU memory for fine-tuning on summarization tasks",
+      "Decoder-only models cannot perform seq2seq tasks; they only work for next-token prediction",
+      "T5 always outperforms decoder-only models on summarization because its pretraining objective includes denoising"
+    ],
+    correct: 0,
+    keywords: ["encoder-decoder", "T5", "decoder-only", "cross-attention", "seq2seq"],
+    explanation: "T5's cross-attention mechanism lets the decoder attend to the full encoder representation of the source at every generation step — the encoder has bidirectional access to the entire input. Decoder-only models process input and output as a single sequence; the output generation is conditioned on past tokens including the input prefix, but there's no separate encoding step. For structured transformation tasks with long inputs, encoder-decoder can be more sample-efficient. That said, at large scales (>10B params), decoder-only models often match encoder-decoder quality.",
+    trap: "Overclaim: T5 is better than decoder-only for summarization. Honest reframe: at large scale, decoder-only models (Llama, GPT-4) match or exceed T5 on most summarization benchmarks. T5's architectural advantage is most pronounced at smaller model sizes and when training data is limited.",
+    readMore: { postId: "encoder-decoder-architecture", label: "Encoder-Decoder Architecture" }
+  },
+  {
+    id: "encdec-2", topic: "finetuning", difficulty: "Hard", gated: true, type: "mcq",
+    question: "In a BART encoder-decoder, what does the cross-attention sublayer in the decoder attend to, and what does this enable that self-attention alone cannot provide?",
+    options: [
+      "Cross-attention queries come from the decoder state; keys and values come from the encoder output — enabling the decoder to focus on specific input positions while generating each output token",
+      "Cross-attention combines the encoder and decoder hidden states using learned weights, fusing source and target representations",
+      "Cross-attention is applied between layers of the decoder to prevent gradient vanishing during long sequence generation",
+      "Cross-attention attends to a cached version of the encoder output only during the first generation step, then switches to self-attention"
+    ],
+    correct: 0,
+    keywords: ["cross-attention", "BART", "encoder-decoder", "query key value", "generation"],
+    explanation: "In each decoder layer, cross-attention computes Q from the decoder's current hidden state, but K and V from the encoder output (fixed for all decoder steps). This gives the decoder dynamic access to any part of the source sequence at each generation step. For translation, cross-attention learns to align source and target tokens. For summarization, it learns to attend to salient source passages. Self-attention in the decoder only attends to previously generated output tokens — it cannot access the source without cross-attention.",
+    trap: "Overclaim: cross-attention gives the decoder perfect access to source information. Honest reframe: cross-attention quality depends on what the encoder learned to represent. A weak encoder produces poor K/V representations regardless of the cross-attention mechanism.",
+    readMore: { postId: "encoder-decoder-architecture", label: "Encoder-Decoder Architecture" }
+  },
 
 ];

@@ -840,6 +840,12 @@ const DIFF_COLORS = { Beginner: "text-emerald-400", Intermediate: "text-amber-40
 
 // ─── SERIES METADATA ──────────────────────────────────────────────────────────
 const SERIES_META = {
+  "nlp-practitioners": {
+    title: "NLP Practitioners",
+    desc: "BERT internals, bi-encoder vs cross-encoder, sentence transformers, vector databases, and encoder-decoder architecture — the practical NLP layer every AI engineer needs.",
+    color: "#06b6d4",
+    postIds: ["bert-internals-explained", "bi-encoder-vs-cross-encoder", "sentence-transformers-production", "vector-databases-compared", "encoder-decoder-architecture"],
+  },
   "rag-production": {
     title: "RAG in Production",
     desc: "From basic retrieval to production-grade pipelines — chunking, hybrid search, reranking, two-stage retrieval, Graph RAG, and every failure mode in between.",
