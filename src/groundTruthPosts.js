@@ -15930,7 +15930,6 @@ model = lgb.train(
     { t: "table", c: "Question|First clarification to ask|Why\nDesign a search system|What's the latency budget and what breaks if we miss it?|Determines sync vs async retrieval architecture\nDesign an LLM eval framework|What decisions will this eval drive?|Eval for deployment gate vs. research comparison are different systems\nDesign a fraud detection system|What's the cost asymmetry between false positives and false negatives?|Determines threshold strategy and model choice\nDesign a content moderation system|What's the volume and is real-time required?|Real-time at YouTube scale is a different system than async review\nDesign an AI feature for our app|What's the fallback if the model fails?|Reveals whether reliability or capability is the primary constraint" },
     { t: "refs", c: "Designing Data-Intensive Applications — Kleppmann (Ch. 1-2 for constraint framing)|ML Engineering — Andriy Burkov (system design chapters)|interviewing.io blog — Staff ML Engineer system design rubric" },
   ],
-,
 
   "research-engineer-interview": [
     { t: "h2", c: "The Research Engineer Interview: What It Actually Tests" },
@@ -16075,7 +16074,6 @@ model = lgb.train(
     { t: "p", c: "'We're building a voice assistant for tier-2 and tier-3 cities. 60% of users speak regional languages mixed with Hindi and English. What are the three hardest NLP problems, and how would you approach them?' Strong answer: (1) code-switching at the token level — multilingual tokenizer + language-ID per token, (2) transliteration normalization — phone-based mapping + frequency priors, (3) ASR accuracy for accented speech — fine-tune on region-specific audio data. Then say which of the three you'd tackle first and why (usually: ASR quality, because transcription errors compound downstream)." },
     { t: "refs", c: "Kakwani et al. - IndicNLPSuite (2020)|Khanuja et al. - GLUECoS: An Evaluation Benchmark for Code-Switched NLP (2020)|AI4Bharat project — indicnlp.ai4bharat.org" },
   ],
-,
 
   // ─── ENGINEERING LEADERSHIP SERIES ───────────────────────────────────────────
 
