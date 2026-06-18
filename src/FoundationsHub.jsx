@@ -1,6 +1,49 @@
 import { useState } from "react";
 import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
+import { TradeoffCard } from "./shared";
+
+const TRADEOFF = {
+  title: "When do you need to touch the model?",
+  options: [
+    {
+      name: "Prompt it",
+      tagline: "System prompt + few-shot examples.",
+      when: "The task is general, your examples fit in context, and you're prototyping. This is the right starting point for 90% of use cases.",
+      color: "#22c55e",
+      dims: [
+        { label: "Data needed",    value: 1 },
+        { label: "Compute cost",   value: 1 },
+        { label: "Deploy speed",   value: 3 },
+        { label: "Behaviour ctrl", value: 1 },
+      ],
+    },
+    {
+      name: "Fine-tune it",
+      tagline: "Supervised training on labelled examples.",
+      when: "You need consistent output format, domain-specific style, or to remove unwanted behaviours — not to inject new factual knowledge.",
+      color: "#a78bfa",
+      dims: [
+        { label: "Data needed",    value: 2 },
+        { label: "Compute cost",   value: 2 },
+        { label: "Deploy speed",   value: 2 },
+        { label: "Behaviour ctrl", value: 3 },
+      ],
+    },
+    {
+      name: "Pretrain it",
+      tagline: "Train from scratch on your corpus.",
+      when: "Existing models fundamentally lack your domain (e.g. novel language, proprietary code dialect). Requires massive data and budget. Rare.",
+      color: "#f59e0b",
+      dims: [
+        { label: "Data needed",    value: 3 },
+        { label: "Compute cost",   value: 3 },
+        { label: "Deploy speed",   value: 1 },
+        { label: "Behaviour ctrl", value: 3 },
+      ],
+    },
+  ],
+};
 
 const CONCEPTS = [
   { id: "tokenizer",      label: "Tokenizer",       fidelity: "✓ Faithful",  fidelityColor: "#22c55e", desc: "How text becomes tokens — BPE, vocabulary, and why tokenization shapes everything downstream.", gymId: "language-models" },
@@ -100,6 +143,12 @@ export default function FoundationsHub({ onNavigate, onNavigateTo }) {
             <span className="text-sm font-bold text-violet-400">Open Prompt Lab →</span>
           </button>
         </div>
+      </div>
+
+      {/* Tradeoff */}
+      <div>
+        <SectionLabel>When to use what</SectionLabel>
+        <TradeoffCard data={TRADEOFF} />
       </div>
 
       {/* Concepts */}

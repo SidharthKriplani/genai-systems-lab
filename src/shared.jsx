@@ -233,6 +233,68 @@ export function ModuleNotes({ moduleId }) {
 }
 
 /**
+ * TradeoffCard — interactive 3-option technique comparison.
+ * Shows dimension bars + "Best when" detail for the selected option.
+ * Used on hub pages between Lab section and Key Concepts.
+ *
+ * data shape:
+ * {
+ *   title: string,
+ *   options: [{
+ *     name: string, tagline: string, when: string, color: string,
+ *     dims: [{ label: string, value: 1|2|3 }]  // 4 dims
+ *   }]
+ * }
+ */
+export function TradeoffCard({ data }) {
+  const [active, setActive] = useState(0);
+  const opt = data.options[active];
+
+  return (
+    <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+      {/* Option tabs */}
+      <div className="grid grid-cols-3 gap-2">
+        {data.options.map((o, i) => (
+          <button key={i} onClick={() => setActive(i)}
+            className="p-3 rounded-xl text-left transition-all"
+            style={{
+              background: active === i ? o.color + "14" : "var(--surface)",
+              border: `${active === i ? 2 : 1}px solid ${active === i ? o.color : "var(--border)"}`,
+            }}>
+            <div className="text-xs font-black text-white leading-tight">{o.name}</div>
+            <div className="text-[9px] font-mono text-zinc-500 mt-0.5 leading-snug hidden sm:block">{o.tagline}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Tagline on mobile (shown below tabs since it's hidden in tab on small screens) */}
+      <p className="text-[10px] font-mono text-zinc-500 sm:hidden -mt-1">{opt.tagline}</p>
+
+      {/* Dimensions */}
+      <div className="grid grid-cols-2 gap-2">
+        {opt.dims.map((d, i) => (
+          <div key={i} className="rounded-lg px-3 py-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-1.5">{d.label}</div>
+            <div className="flex gap-1">
+              {[1, 2, 3].map(v => (
+                <div key={v} className="h-1.5 flex-1 rounded-full transition-all duration-200"
+                  style={{ background: v <= d.value ? opt.color : "#27272a" }} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Best when */}
+      <div className="rounded-xl px-4 py-3" style={{ background: opt.color + "0d", border: `1px solid ${opt.color}28` }}>
+        <p className="text-[9px] font-mono uppercase tracking-widest mb-1" style={{ color: opt.color }}>Best when</p>
+        <p className="text-xs text-zinc-300 leading-relaxed">{opt.when}</p>
+      </div>
+    </div>
+  );
+}
+
+/**
  * FidelityBadge — "✓ Scenario-accurate" or "~ Simulated" chip on module headers.
  * Moved from App.jsx + Systems.jsx to shared.jsx to eliminate duplication.
  * Usage: <FidelityBadge variant="accurate" /> | <FidelityBadge variant="simulated" />

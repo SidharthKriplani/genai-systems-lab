@@ -1,6 +1,49 @@
 import { useState } from "react";
 import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
+import { TradeoffCard } from "./shared";
+
+const TRADEOFF = {
+  title: "Which knowledge strategy fits your use case?",
+  options: [
+    {
+      name: "Prompting",
+      tagline: "Few-shot examples in context.",
+      when: "Knowledge is already in the model's training data, examples fit in the context window, and you need zero setup cost. Good for prototyping.",
+      color: "#22c55e",
+      dims: [
+        { label: "Setup cost",  value: 1 },
+        { label: "Freshness",   value: 1 },
+        { label: "Scale",       value: 1 },
+        { label: "Consistency", value: 3 },
+      ],
+    },
+    {
+      name: "RAG",
+      tagline: "Retrieve relevant docs at query time.",
+      when: "Knowledge base is large, changes frequently, or exact source attribution matters. Accept higher latency and retrieval failure modes.",
+      color: "#3b82f6",
+      dims: [
+        { label: "Setup cost",  value: 2 },
+        { label: "Freshness",   value: 3 },
+        { label: "Scale",       value: 3 },
+        { label: "Consistency", value: 2 },
+      ],
+    },
+    {
+      name: "Fine-tuning",
+      tagline: "Bake behaviour into model weights.",
+      when: "You need consistent tone, format, or domain style at scale — not new knowledge injection. Requires labelled data and a retraining cadence.",
+      color: "#f59e0b",
+      dims: [
+        { label: "Setup cost",  value: 3 },
+        { label: "Freshness",   value: 1 },
+        { label: "Scale",       value: 3 },
+        { label: "Consistency", value: 3 },
+      ],
+    },
+  ],
+};
 
 // ─── Static data — Retrieval challenge area ───────────────────────────────────
 
@@ -254,6 +297,12 @@ export default function RetrievalHub({ onNavigate, onNavigateTo }) {
             Open RAG Lab →
           </div>
         </button>
+      </div>
+
+      {/* ── 2b. Tradeoff ────────────────────────────────────────────────────── */}
+      <div>
+        <SectionLabel>When to use what</SectionLabel>
+        <TradeoffCard data={TRADEOFF} />
       </div>
 
       {/* ── 3. Key concepts ─────────────────────────────────────────────────── */}

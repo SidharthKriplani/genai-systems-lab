@@ -1,6 +1,49 @@
 import { useState } from "react";
 import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
+import { TradeoffCard } from "./shared";
+
+const TRADEOFF = {
+  title: "How do you cut latency and cost in production?",
+  options: [
+    {
+      name: "Prompt optimisation",
+      tagline: "Shrink input tokens. Compress context.",
+      when: "You have verbose prompts or long chat histories. Low risk, low effort — always the first lever to pull before any infrastructure change.",
+      color: "#22c55e",
+      dims: [
+        { label: "Latency gain",  value: 2 },
+        { label: "Cost saving",   value: 2 },
+        { label: "Impl effort",   value: 1 },
+        { label: "Quality risk",  value: 1 },
+      ],
+    },
+    {
+      name: "Semantic cache",
+      tagline: "Return stored response for similar queries.",
+      when: "Your workload has high query repetition (support, FAQ, search). Cache hit rate matters — measure it before committing to this path.",
+      color: "#3b82f6",
+      dims: [
+        { label: "Latency gain",  value: 3 },
+        { label: "Cost saving",   value: 3 },
+        { label: "Impl effort",   value: 2 },
+        { label: "Quality risk",  value: 1 },
+      ],
+    },
+    {
+      name: "Smaller model",
+      tagline: "Route to a cheaper model for simpler tasks.",
+      when: "You have a mix of simple and complex queries. Build a router. Simple tasks take a smaller model; hard tasks escalate. Requires careful eval.",
+      color: "#f59e0b",
+      dims: [
+        { label: "Latency gain",  value: 3 },
+        { label: "Cost saving",   value: 3 },
+        { label: "Impl effort",   value: 3 },
+        { label: "Quality risk",  value: 3 },
+      ],
+    },
+  ],
+};
 
 const CONCEPTS = [
   { id: "cost-latency-concepts", label: "Cost & Latency",  fidelity: "~ Simplified", fidelityColor: "#22c55e", desc: "TTFT, TBT, E2E latency — what each measures and the budget tradeoffs at inference time.", gymId: "production" },
@@ -96,6 +139,12 @@ export default function ProductionHub({ onNavigate, onNavigateTo }) {
           </div>
           <div className="mt-4 flex items-center gap-2 text-sm font-bold" style={{ color: COLOR }}>Open LLM Lab →</div>
         </button>
+      </div>
+
+      {/* Tradeoff */}
+      <div>
+        <SectionLabel>When to use what</SectionLabel>
+        <TradeoffCard data={TRADEOFF} />
       </div>
 
       {/* Concepts */}

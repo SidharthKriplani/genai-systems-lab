@@ -1,6 +1,49 @@
 import { useState } from "react";
 import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
+import { TradeoffCard } from "./shared";
+
+const TRADEOFF = {
+  title: "Which agent pattern fits your task?",
+  options: [
+    {
+      name: "Single Agent",
+      tagline: "One model. One loop. One tool set.",
+      when: "Task is well-defined, tools are fewer than 5, and success is easy to verify. Start here — add complexity only when this fails.",
+      color: "#22c55e",
+      dims: [
+        { label: "Reliability",    value: 3 },
+        { label: "Debug ease",     value: 3 },
+        { label: "Task scope",     value: 1 },
+        { label: "Infra overhead", value: 1 },
+      ],
+    },
+    {
+      name: "Multi-Agent",
+      tagline: "Parallel specialists. Shared state.",
+      when: "Subtasks are clearly separable and each benefits from a focused specialist (e.g. researcher + writer + critic running in parallel).",
+      color: "#f59e0b",
+      dims: [
+        { label: "Reliability",    value: 2 },
+        { label: "Debug ease",     value: 2 },
+        { label: "Task scope",     value: 2 },
+        { label: "Infra overhead", value: 2 },
+      ],
+    },
+    {
+      name: "Orchestrated",
+      tagline: "Planner delegates to worker agents.",
+      when: "Long-horizon tasks, more than 10 tools, or human-in-the-loop checkpoints are required. Accept higher failure rate by design.",
+      color: "#a78bfa",
+      dims: [
+        { label: "Reliability",    value: 1 },
+        { label: "Debug ease",     value: 1 },
+        { label: "Task scope",     value: 3 },
+        { label: "Infra overhead", value: 3 },
+      ],
+    },
+  ],
+};
 
 const CONCEPTS = [
   { id: "agent",       label: "Agent Loop",    fidelity: "~ Simplified", fidelityColor: "#a78bfa", desc: "The ReAct loop step by step — Thought → Action → Observation — and where each stage breaks.", gymId: "ai-agents" },
@@ -93,6 +136,12 @@ export default function AgentsHub({ onNavigate, onNavigateTo }) {
           </div>
           <div className="mt-4 flex items-center gap-2 text-sm font-bold" style={{ color: COLOR }}>Open Agent Lab →</div>
         </button>
+      </div>
+
+      {/* Tradeoff */}
+      <div>
+        <SectionLabel>When to use what</SectionLabel>
+        <TradeoffCard data={TRADEOFF} />
       </div>
 
       {/* Concepts */}

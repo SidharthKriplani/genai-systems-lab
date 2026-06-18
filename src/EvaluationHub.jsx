@@ -1,6 +1,49 @@
 import { useState } from "react";
 import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
+import { TradeoffCard } from "./shared";
+
+const TRADEOFF = {
+  title: "Which evaluation method fits your situation?",
+  options: [
+    {
+      name: "Automated",
+      tagline: "BLEU, ROUGE, exact match, F1.",
+      when: "You need fast, cheap regression testing in CI/CD and your task has a clear ground truth. Not suitable for open-ended generation quality.",
+      color: "#22c55e",
+      dims: [
+        { label: "Speed",         value: 3 },
+        { label: "Cost",          value: 3 },
+        { label: "Nuance",        value: 1 },
+        { label: "Ground truth",  value: 2 },
+      ],
+    },
+    {
+      name: "LLM-as-judge",
+      tagline: "Use a model to score model outputs.",
+      when: "Outputs are open-ended and you need scalable quality assessment. Calibrate the judge first — it has its own biases and prompt sensitivity.",
+      color: "#a78bfa",
+      dims: [
+        { label: "Speed",         value: 2 },
+        { label: "Cost",          value: 2 },
+        { label: "Nuance",        value: 3 },
+        { label: "Ground truth",  value: 2 },
+      ],
+    },
+    {
+      name: "Human eval",
+      tagline: "Annotators rate real outputs.",
+      when: "Building a gold-standard dataset, calibrating a judge model, or making a high-stakes quality decision that automation can't be trusted for.",
+      color: "#f59e0b",
+      dims: [
+        { label: "Speed",         value: 1 },
+        { label: "Cost",          value: 1 },
+        { label: "Nuance",        value: 3 },
+        { label: "Ground truth",  value: 3 },
+      ],
+    },
+  ],
+};
 
 const CONCEPTS = [
   { id: "llm-as-judge", label: "LLM as Judge", fidelity: "~ Simplified", fidelityColor: "#f59e0b", desc: "How to use an LLM to grade other LLM outputs — biases, calibration, and when not to trust it.", gymId: "evaluation" },
@@ -107,6 +150,12 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
           </div>
           <div className="mt-4 flex items-center gap-2 text-sm font-bold" style={{ color: "#f59e0b" }}>Open Eval Lab →</div>
         </button>
+      </div>
+
+      {/* Tradeoff */}
+      <div>
+        <SectionLabel>When to use what</SectionLabel>
+        <TradeoffCard data={TRADEOFF} />
       </div>
 
       {/* Concepts */}
