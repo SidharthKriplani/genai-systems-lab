@@ -2,7 +2,28 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 67 (June 2026) — Scale: 483 PrepLab questions, 301 GT index entries, 6 PrepLab modes (Browse All added), 12 GT series*
+*Last updated: sprint 68 (June 2026) — Scale: 488 PrepLab questions, 301 GT index entries, 6 PrepLab modes, 12 GT series, 6 challenge area landing pages*
+
+---
+
+## Sprint 68 — ✅ COMPLETE (`6f54650`)
+
+**Objective:** LinkedIn soft launch infra — shareable deep links per challenge area with correct social OG previews + 5 LangChain questions.
+
+1. ~~**6 static landing pages**~~ — `public/agents.html`, `retrieval.html`, `evaluation.html`, `production.html`, `foundations.html`, `preplab.html`. Each with area-specific og:title, og:description, colour, stats, CTA back into SPA.
+2. ~~**vercel.json updated**~~ — 6 new rewrites + catch-all regex updated to exclude new HTML files.
+3. ~~**index.html OG updated**~~ — "222+ posts" → "301 posts", "140+ modules" → accurate copy.
+4. ~~**5 LangChain/LangGraph PrepLab questions**~~ — `lchain-1` through `lchain-5`. LCEL vs LangGraph decision, loop failure root cause, buffer memory cost explosion, tool count latency, faithfulness evaluation.
+
+**UTM links for LinkedIn posts:**
+- Agents: `https://genai-systems-lab-ivory.vercel.app/agents?utm_source=linkedin&utm_campaign=agents`
+- Retrieval: `https://genai-systems-lab-ivory.vercel.app/retrieval?utm_source=linkedin&utm_campaign=retrieval`
+- Evaluation: `https://genai-systems-lab-ivory.vercel.app/evaluation?utm_source=linkedin&utm_campaign=eval`
+- Production: `https://genai-systems-lab-ivory.vercel.app/production?utm_source=linkedin&utm_campaign=prod`
+- Foundations: `https://genai-systems-lab-ivory.vercel.app/foundations?utm_source=linkedin&utm_campaign=foundations`
+- PrepLab: `https://genai-systems-lab-ivory.vercel.app/preplab?utm_source=linkedin&utm_campaign=preplab`
+
+**PostHog required:** Set `VITE_POSTHOG_KEY` in Vercel env vars to track UTM → sign-up funnel. Without it, analytics are blind.
 
 ---
 

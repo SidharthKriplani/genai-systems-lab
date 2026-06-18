@@ -21,7 +21,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 67, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 483 PrepLab questions, 301 GT index entries (12 new series, 3 interactive Systems modules), 6 PrepLab modes (+ Interview Sprint + Browse All).
+**Scale (post-sprint 68, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 488 PrepLab questions, 301 GT index entries (12 new series, 3 interactive Systems modules), 6 PrepLab modes (+ Interview Sprint + Browse All), 6 challenge area landing pages.
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
@@ -499,6 +499,15 @@ For full audit findings see AUDITS.md.
 **Sprint 67 polish (June 2026) — Mobile + sidebar UX:**
 - BrowseMode mobile layout fixed `e7fdb0a`: topic filter → horizontal scroll strip (no more wrap wall), difficulty filter → own dedicated row with label, padding `px-6` → `px-4 sm:px-6`, MCQ correct label shortened to `✓` to prevent overflow on narrow widths.
 - Sidebar challenge area descriptor line `83597fa`: each Challenge Area now shows a muted monospace hint below the lab link when expanded (e.g. `4 Concepts · 28 GT posts · 50q`). Communicates hub page contents without duplicating nav. `maxHeight` animation accounts for the extra line height.
+
+**Sprint 68 (June 2026) — LinkedIn soft launch infra:**
+- 6 challenge area landing pages `6f54650`: `public/agents.html`, `retrieval.html`, `evaluation.html`, `production.html`, `foundations.html`, `preplab.html`. Each has area-specific og:title/description/colour, stats (modules/posts/questions), and CTA back into SPA at the correct hub hash.
+- `vercel.json` updated: 6 new rewrites (`/agents` → `agents.html`, etc.) + catch-all regex updated to exclude all 6 new HTML files. Same pattern as existing `/start` → `start.html`.
+- `index.html` OG/meta updated: stale "222+ posts" → "301 posts", "140+ modules" → accurate copy with 483 PrepLab questions, 6 labs, 301 posts.
+- 5 LangChain/LangGraph PrepLab questions (`lchain-1` through `lchain-5`): LCEL vs LangGraph decision, AgentExecutor loop failure root cause, ConversationBufferMemory cost explosion, 8-tool latency fix via sub-agents, RAG faithfulness evaluation. Topic: agents.
+- **Scale post-sprint 68:** 488 PrepLab questions, 6 challenge area landing pages.
+- UTM strategy: use `?utm_source=linkedin&utm_campaign=<area>` on all shared links. PostHog captures automatically — requires `VITE_POSTHOG_KEY` Vercel env var.
+- User must push: `cd ~/Documents/GitHub/genai-systems-lab && git push origin main`
 
 **Sprints 37c–41** — see LINEAGE.md for detail. Key: GT state-aware reading mode, RAG Lab static corpus, 10 new PrepLab questions + sibling codebase analysis (39), shared components + streak heatmap + FeedbackBar + multi-select MCQ + CommonTrap expansion + AgentContextArch module (40), 7 new Concepts modules + 4 gyms activated + Prompt Lab (41).
 
