@@ -5870,4 +5870,46 @@ export const PREP_QUESTIONS = [
     readMore: { postId: "customer-facing-ai-demos", label: "Building AI demos that don't fail live" }
   },
 
+  // ─── LANGCHAIN / LANGGRAPH ─────────────────────────────────────────────────────
+  { id: "lchain-1", topic: "agents", difficulty: "medium", gated: false, type: "mcq",
+    question: "You're building an AI application. When should you use a LangGraph stateful graph rather than a plain LangChain LCEL chain?",
+    options: ["When you need to call more than one LLM in sequence", "When the workflow requires conditional branching, loops, or state that persists across steps", "When you want to add memory to a single-turn chatbot", "Whenever you're using tool calling"],
+    correct: 1,
+    explanation: "LCEL chains are for linear, stateless pipelines — input in, output out. LangGraph adds a state machine: conditional edges (if/else routing), cycles (retry loops, reflection), and persistent state across nodes. Use LangGraph when you need any of those; stick with LCEL when you don't, because it's simpler to debug.",
+    trap: "Sequential LLM calls don't need LangGraph — a plain chain handles them. LangGraph's value is graph topology (branches + cycles), not multi-step orchestration.",
+    readMore: null
+  },
+  { id: "lchain-2", topic: "agents", difficulty: "hard", gated: true, type: "mcq",
+    question: "A LangChain agent built with AgentExecutor runs in production for 2 weeks without issues, then starts looping — calling the same tool 20+ times before timing out. What is the most likely root cause?",
+    options: ["The LLM model was updated by the provider and changed its tool-calling behaviour", "The tool is returning a response the LLM was never trained to interpret as terminal, so it keeps retrying", "AgentExecutor hit its default max_iterations limit and started resetting", "A memory buffer overflow is corrupting the conversation history"],
+    correct: 1,
+    explanation: "Loop failures in LangChain agents almost always trace to tool output format mismatches — the tool returns something ambiguous or error-like, the LLM decides it hasn't completed the task, and retries. This is why production agents need both max_iterations guards AND explicit output schemas that include terminal states the LLM can recognise as done.",
+    trap: "Model updates (A) could cause this but are less common. AgentExecutor hitting max_iterations would stop, not loop. Memory corruption (D) would manifest as different errors.",
+    readMore: null
+  },
+  { id: "lchain-3", topic: "agents", difficulty: "medium", gated: false, type: "mcq",
+    question: "LangChain's ConversationBufferMemory is deployed in a customer support chatbot. After 3 months, average session costs have tripled. What is happening?",
+    options: ["LangChain is making more API calls per turn due to internal retries", "The buffer memory appends every turn to context, so long sessions send the entire conversation history on every call", "The LLM pricing increased and LangChain is not caching responses", "Embedding costs increased because conversation history is re-embedded each turn"],
+    correct: 1,
+    explanation: "ConversationBufferMemory is a growing string. Turn 1: 100 tokens sent. Turn 50: you are sending 5,000+ tokens of history on every call. In customer support with long sessions, this compounds into 10-20x cost growth. Production solutions: ConversationSummaryMemory (summarise old turns), window memory, or semantic memory that retrieves only relevant history.",
+    trap: "This is a memory architecture problem, not a pricing or caching problem. The fix is switching memory types, not optimising the LLM call.",
+    readMore: null
+  },
+  { id: "lchain-4", topic: "agents", difficulty: "hard", gated: true, type: "mcq",
+    question: "You have a LangChain agent with 8 tools. P99 latency is 6 seconds, and profiling shows 80% of that is spent in the LLM deciding which tool to call. What is the most effective fix?",
+    options: ["Switch to a faster LLM model with lower TTFT", "Reduce the number of tools by splitting the agent into specialised sub-agents, each with 2-3 tools", "Add tool descriptions that are more specific so the LLM selects faster", "Enable parallel tool calling so multiple tools execute simultaneously"],
+    correct: 1,
+    explanation: "LLM reasoning latency scales with tool count — more tools means more decision surface. The standard production pattern is a router agent that selects a specialised sub-agent (each with 2-3 highly relevant tools), rather than one generalist agent with 8 tools. This also improves reliability: specialised agents make fewer tool-selection errors.",
+    trap: "Parallel tool calling (D) helps when multiple tools need to run, but does not fix the selection latency. Better descriptions (C) help at the margin but do not solve the fundamental scaling problem.",
+    readMore: null
+  },
+  { id: "lchain-5", topic: "agents", difficulty: "medium", gated: false, type: "mcq",
+    question: "You're evaluating a LangChain RAG application before launch. Beyond checking whether answers are correct, what other dimension is most important to measure?",
+    options: ["Token efficiency — how many tokens the pipeline uses per query", "Faithfulness — whether the answer is grounded in the retrieved documents, not hallucinated", "Retrieval speed — whether the vector search returns in under 100ms", "Model confidence — whether the LLM's softmax probabilities are high for its answers"],
+    correct: 1,
+    explanation: "RAG-specific evaluation needs faithfulness: is the answer actually supported by the retrieved context, or did the LLM add facts from its parametric memory? A correct answer that is unfaithful to the retrieved documents is a hidden failure — it means retrieval is decorative, not functional. RAGAS and similar frameworks separate faithfulness from answer correctness.",
+    trap: "Option A (token efficiency) is a cost concern, not a quality metric. Model confidence (D) is a poor proxy for correctness in modern LLMs — they can be confidently wrong.",
+    readMore: null
+  },
+
 ];

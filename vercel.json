@@ -1,6 +1,12 @@
 {
   "rewrites": [
     { "source": "/start", "destination": "/start.html" },
-    { "source": "/((?!start\\.html|og-.*\\.png|robots\\.txt|sitemap\\.xml).*)", "destination": "/index.html" }
+    { "source": "/agents", "destination": "/agents.html" },
+    { "source": "/retrieval", "destination": "/retrieval.html" },
+    { "source": "/evaluation", "destination": "/evaluation.html" },
+    { "source": "/production", "destination": "/production.html" },
+    { "source": "/foundations", "destination": "/foundations.html" },
+    { "source": "/preplab", "destination": "/preplab.html" },
+    { "source": "/((?!start\\.html|agents\\.html|retrieval\\.html|evaluation\\.html|production\\.html|foundations\\.html|preplab\\.html|og-.*\\.png|robots\\.txt|sitemap\\.xml).*)", "destination": "/index.html" }
   ]
 }
