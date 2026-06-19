@@ -305,8 +305,9 @@ export default function LearningPaths({ onNavigateTo }) {
 
   return (
     <div className="flex h-full min-h-0">
-      {/* Sidebar */}
-      <div className="w-56 shrink-0 border-r border-zinc-800 overflow-y-auto py-3">
+      {/* Sidebar — full width on mobile (when no path selected), fixed width on desktop */}
+      <div className={`border-r border-zinc-800 overflow-y-auto py-3 shrink-0
+        ${activePath ? "hidden sm:block sm:w-56" : "block w-full sm:w-56"}`}>
         <div className="px-4 py-1 text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">PATHS</div>
         {PATHS.map(p => {
           const stepsComplete = allPathsDone[p.id] || 0;
@@ -339,12 +340,20 @@ export default function LearningPaths({ onNavigateTo }) {
         })}
       </div>
 
-      {/* Detail panel */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+      {/* Detail panel — hidden on mobile when no path selected */}
+      <div className={`flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6
+        ${activePath ? "block" : "hidden sm:block"}`}>
+        {/* Mobile back button */}
+        {activePath && (
+          <button onClick={() => setActivePath(null)}
+            className="sm:hidden flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors font-mono mb-2">
+            ← All Paths
+          </button>
+        )}
       {path && (
         <div className="rounded-xl overflow-hidden" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,1) 100%)", border: `1px solid ${path.color}25`, borderTop: `2px solid ${path.color}60` }}>
           {/* Path header */}
-          <div className="px-5 py-4 border-b border-zinc-800/60">
+          <div className="px-4 sm:px-5 py-4 border-b border-zinc-800/60">
             <div className="flex items-center gap-3">
               <span className="font-mono text-[11px] font-bold px-2 py-1 rounded"
                 style={{ background: `${path.color}18`, color: path.color, border: `1px solid ${path.color}40`, letterSpacing: "0.1em" }}>
@@ -366,7 +375,7 @@ export default function LearningPaths({ onNavigateTo }) {
               return (
                 <div
                   key={idx}
-                  className={`px-5 py-3.5 transition-colors ${
+                  className={`px-4 sm:px-5 py-3 sm:py-3.5 transition-colors ${
                     isDone ? "bg-zinc-900/20 opacity-70" : "hover:bg-zinc-800/30"
                   }`}
                 >
@@ -411,7 +420,7 @@ export default function LearningPaths({ onNavigateTo }) {
             })}
           </div>
 
-          <div className="px-5 py-3 border-t border-zinc-800 flex items-center justify-between">
+          <div className="px-4 sm:px-5 py-3 border-t border-zinc-800 flex items-center justify-between">
             <span className="text-xs text-zinc-500">{done.size}/{path.steps.length} complete</span>
             {done.size > 0 && (
               <button
