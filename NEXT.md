@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 72 (June 2026) — Scale: 543 PrepLab questions, 301 GT index entries, 6 PrepLab modes, 12 GT series, 6 challenge area landing pages*
+*Last updated: sprint 73 (June 2026) — Scale: 569 PrepLab questions, 305 GT index entries, 6 PrepLab modes, 13 GT series, 6 challenge area landing pages*
 
 ---
 
@@ -59,17 +59,40 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 73 — Next up
+## Sprint 73 — ✅ COMPLETE (`b72aaaa`, `ee7b242`)
 
-### P0 — Mastery Room commit
-- Files staged in sprint 60 (fsrs.js, studySeed.js, StudyRoom.jsx, App.jsx update) need `git commit` + push.
-- Supabase study tables SQL must be run first.
+**Objective:** Batch A — agent production gap fill (MCP, tool use, observability, testing).
 
-### P1 — Trap field quality pass (remaining clusters)
-- 4 clusters still have overclaim-format traps. Priority: rag-1–9, agents cluster, eval cluster. ~45 min per cluster.
+1. ~~**4 GT posts (agent-production series)**~~ — `mcp-explained`, `agent-tool-use-production`, `agent-observability`, `agent-testing-strategies`.
+2. ~~**26 PrepLab questions**~~ — mcp-1–6, toolprod-1–6, obs-1–6, agtest-1–8.
+3. ~~**AgentsHub +4 posts**~~ — all 4 Batch A posts surfaced on AgentsHub.
+4. ~~**ProductionHub +1**~~ — agent-observability added.
+5. ~~**EvaluationHub +1**~~ — agent-testing-strategies added.
+6. ~~**Sidebar "Agents in Production" link**~~ — added to GT sidebar series section.
 
-### P2 — Agent Lab synthesis gap
-- Top 5 Agent Lab modules have no PrepLab forward pointer. Identified in sprint 59.
+**New scale:** 569 PrepLab questions (543+26), 305 GT index entries (301+4), 13 GT series.
+
+---
+
+## Sprint 74 — Next up
+
+### P0 — Batch B: Backend/infra patterns for agents
+- 3 GT posts: API patterns for agent backends, distributed systems for agents (queues/idempotency/partial failure at infra level), container + K8s for AI workloads.
+- ~17 PrepLab questions framed through AI systems lens (not generic DevOps).
+- Target topics from 27-track gap: tracks 15-20.
+
+### P1 — Batch C: Security + governance
+- 2 GT posts: Security for agents (prompt injection depth, OWASP LLM Top 10, least privilege), governance/auditability (lineage, versioning, rollback, human approval gates).
+- ~11 PrepLab questions.
+
+### P2 — Senior AI Engineer full-stack learning path
+- New path in LearningPaths.jsx spanning all major tracks.
+- 27 steps mapping existing content + Batch A/B/C additions.
+
+### Backlog (unchanged)
+- Mastery Room commit (staged in sprint 60 — needs Supabase SQL run first).
+- Trap field quality pass (4 clusters: rag, agents, eval, llmops).
+- Agent Lab synthesis gap — top 5 modules need PrepLab forward pointer.
 
 ---
 

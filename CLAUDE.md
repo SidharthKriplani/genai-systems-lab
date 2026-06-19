@@ -521,6 +521,17 @@ For full audit findings see AUDITS.md.
 - **Scale post-sprint 72:** 543 PrepLab questions (unchanged — no new content). Path UX fully complete.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
+**Sprint 73 (June 2026) — Batch A: MCP + tool use + observability + testing:**
+- Gap analysis: 27-track senior AI engineer curriculum (Teradata JD) mapped against GSL. Critical gaps in MCP architecture, idempotency/retry patterns, agent observability, agent testing, backend infra, and security.
+- 4 GT posts — new series `agent-production` (cyan #06b6d4): `mcp-explained` (client-host-server model, tools/resources/prompts, security directionality), `agent-tool-use-production` (idempotency key design, read vs write retry, audit logs), `agent-observability` (trace anatomy, cost p95, TTFT, alert thresholds), `agent-testing-strategies` (why unit tests fail, mock-behavioral tests, trajectory evaluation, prompt injection red teaming).
+- 26 PrepLab questions: mcp-1–6, toolprod-1–6, obs-1–6, agtest-1–8. Mix of free (intermediate) and gated (hard). All with readMore linking to new GT posts.
+- Hub page updates: AgentsHub +4 posts (all Batch A), ProductionHub +agent-observability, EvaluationHub +agent-testing-strategies.
+- App.jsx sidebar: "Agents in Production" series link added to GT sidebar section.
+- Commits: `b72aaaa` (Batch A content), `ee7b242` (hub + sidebar). Brace diff = 0 on all files.
+- **Scale post-sprint 73:** 569 PrepLab questions (was 543), 305 GT index entries (was 301), 13 GT series (was 12).
+- Still open: Batch B (backend/infra), Batch C (security/governance), Senior AI Engineer full-stack path.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
 **Sprint 71 (June 2026) — Intermediate questions + react-pattern + readMore fixes:**
 - 8 intermediate Foundations questions (`found-int-1` through `found-int-8`): encoder vs decoder architecture choice, LoRA rank selection, multi-head vs single-head attention, perplexity as downstream proxy, catastrophic forgetting, fine-tune vs prompt decision signals, KV cache memory cost, MHA vs GQA architecture.
 - 4 intermediate RAG questions (`rag-int-1` through `rag-int-4`): hybrid search failure analysis decision, chunk size framework, reranker latency tradeoff, RAG vs fine-tuning decision.
