@@ -67,6 +67,7 @@ const GT_POSTS = [
   { id: "agent-backend-apis",           title: "Backend APIs for Agent Services: Async Endpoints, Streaming, and Webhooks", desc: "Why standard REST breaks for agents. 202 + polling vs SSE vs webhooks. Request deduplication. Readiness probes that check model availability.", readMin: 11, tag: "API design" },
   { id: "async-task-queues-agents",     title: "Async Task Queues for Long-Running Agent Jobs", desc: "Task state machine design. Exactly-once execution via idempotency keys. Fan-out with Celery chord. Dead letter queues.", readMin: 12, tag: "Infrastructure" },
   { id: "kubernetes-ai-workloads",      title: "Kubernetes for AI Workloads: GPU Scheduling, KEDA, and Disruption Budgets", desc: "Why HPA fails for LLMs. GPU resource requests. KEDA scaling on queue depth. PodDisruptionBudgets. Readiness vs liveness for model-serving pods.", readMin: 13, tag: "K8s" },
+  { id: "agent-governance",             title: "Governance and Auditability for Production AI Agents: Lineage, Versioning, Rollback, and Human Gates", desc: "Data lineage for agent actions, model version pinning, prompt versioning as code, rollback triggers, and HITL approval gate design.", readMin: 13, tag: "Governance" },
 ];
 
 const PREPLAB_Qs = [

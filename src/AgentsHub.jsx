@@ -61,6 +61,7 @@ const GT_POSTS = [
   { id: "agent-tool-use-production",  title: "Tool Use in Production Agents: Idempotency, Retries, and Audit Trails", desc: "Idempotency key design, read vs write retry strategy, tool schema requirements, and compliance audit logs.", readMin: 11, tag: "Production" },
   { id: "agent-observability",        title: "Observability for Agent Systems: Traces, Cost, and Alerts", desc: "Why logs alone fail for agents. Distributed trace anatomy, cost p95 vs mean, TTFT, and actionable alert thresholds.", readMin: 12, tag: "Production" },
   { id: "agent-testing-strategies",   title: "Testing Agentic Systems: From Unit Tests to Trajectory Evaluation", desc: "Why unit tests are insufficient. Mock-based behavioral tests, trajectory evaluation, LLM-as-judge, and red teaming prompt injection.", readMin: 12, tag: "Testing" },
+  { id: "agent-security",             title: "Security for AI Agents: Prompt Injection, OWASP LLM Top 10, and Least Privilege", desc: "Indirect vs direct injection, OWASP LLM01/07/08, least privilege tool design, input/output guardrails, and supply chain attacks.", readMin: 12, tag: "Security" },
 ];
 
 const PREPLAB_Qs = [
