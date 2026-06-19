@@ -34,7 +34,7 @@ const PATHS = [
   {
     id: "first-principles",
     title: "First Principles: NLP → Production",
-    emoji: "🧠",
+    abbr: "FP",
     color: "#8b5cf6",
     duration: "~4 hrs",
     audience: "Anyone new to GenAI · Career Switchers · PMs",
@@ -60,7 +60,7 @@ const PATHS = [
   {
     id: "rag-engineer",
     title: "Ship Your First RAG System",
-    emoji: "🔍",
+    abbr: "RAG",
     color: "#6366f1",
     duration: "~3 hrs",
     audience: "ML Engineers · Backend Engineers",
@@ -78,7 +78,7 @@ const PATHS = [
   {
     id: "llm-inference",
     title: "Understand LLM Inference",
-    emoji: "⚡",
+    abbr: "INF",
     color: "#3b82f6",
     duration: "~2.5 hrs",
     audience: "ML Engineers · Infra Engineers",
@@ -97,7 +97,7 @@ const PATHS = [
   {
     id: "ml-interview",
     title: "ML Engineer Interview Prep",
-    emoji: "🎯",
+    abbr: "INT",
     color: "#f59e0b",
     duration: "~4 hrs",
     audience: "Engineers preparing for ML / AI roles",
@@ -117,7 +117,7 @@ const PATHS = [
   {
     id: "agent-engineering",
     title: "Agent Engineering",
-    emoji: "🤖",
+    abbr: "AGT",
     color: "#22c55e",
     duration: "~2 hrs",
     audience: "Engineers building agentic systems",
@@ -135,7 +135,7 @@ const PATHS = [
   {
     id: "production-safety",
     title: "Production Safety & Reliability",
-    emoji: "🛡️",
+    abbr: "PSR",
     color: "#ef4444",
     duration: "~2.5 hrs",
     audience: "ML Engineers · Platform Engineers",
@@ -155,7 +155,7 @@ const PATHS = [
   {
     id: "de-to-ai-engineer",
     title: "Data Engineer → AI Engineer",
-    emoji: "📊",
+    abbr: "DE→",
     color: "#f59e0b",
     duration: "~3.5 hrs",
     audience: "Data Engineers · Analytics Engineers · DS transitioning to AI Eng",
@@ -176,7 +176,7 @@ const PATHS = [
   {
     id: "inference-deep-dive",
     title: "Inference Deep Dive",
-    emoji: "🔬",
+    abbr: "IDD",
     color: "#06b6d4",
     duration: "~3 hrs",
     audience: "ML Engineers · Infra Engineers",
@@ -196,10 +196,10 @@ const PATHS = [
 ];
 
 const TYPE_CONFIG = {
-  systems: { label: "Systems Module", color: "#6366f1", bg: "bg-indigo-950/50", border: "border-indigo-900/60", text: "text-indigo-300", icon: "⚙️" },
-  explore: { label: "Explore",        color: "#3b82f6", bg: "bg-blue-950/50",   border: "border-blue-900/60",   text: "text-blue-300",   icon: "🗺️" },
-  gt:      { label: "Ground Truth",   color: "#a78bfa", bg: "bg-violet-950/50", border: "border-violet-900/60", text: "text-violet-300", icon: "📖" },
-  preplab: { label: "Prep Lab",       color: "#22c55e", bg: "bg-emerald-950/50",border: "border-emerald-900/60",text: "text-emerald-300", icon: "🎓" },
+  systems: { label: "Systems Module", color: "#6366f1", bg: "bg-indigo-950/50", border: "border-indigo-900/60", text: "text-indigo-300" },
+  explore: { label: "Explore",        color: "#3b82f6", bg: "bg-blue-950/50",   border: "border-blue-900/60",   text: "text-blue-300"   },
+  gt:      { label: "Ground Truth",   color: "#a78bfa", bg: "bg-violet-950/50", border: "border-violet-900/60", text: "text-violet-300" },
+  preplab: { label: "Prep Lab",       color: "#22c55e", bg: "bg-emerald-950/50",border: "border-emerald-900/60",text: "text-emerald-300" },
 };
 
 function loadProgress() {
@@ -317,7 +317,10 @@ export default function LearningPaths({ onNavigateTo }) {
               } : {}}
               className={`w-full text-left px-4 py-3 transition-all ${isActive ? "text-white" : "text-zinc-400 hover:text-white hover:bg-zinc-900/60 border-l-2 border-transparent"}`}>
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-base leading-none">{p.emoji}</span>
+                <span className="shrink-0 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded leading-none"
+                  style={{ background: `${p.color}18`, color: p.color, border: `1px solid ${p.color}35`, letterSpacing: "0.08em" }}>
+                  {p.abbr}
+                </span>
                 <span className="text-xs font-semibold leading-snug truncate">{p.title}</span>
               </div>
               <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-1.5">
@@ -338,8 +341,11 @@ export default function LearningPaths({ onNavigateTo }) {
         <div className="rounded-xl overflow-hidden" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,1) 100%)", border: `1px solid ${path.color}25`, borderTop: `2px solid ${path.color}60` }}>
           {/* Path header */}
           <div className="px-5 py-4 border-b border-zinc-800/60">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{path.emoji}</span>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-[11px] font-bold px-2 py-1 rounded"
+                style={{ background: `${path.color}18`, color: path.color, border: `1px solid ${path.color}40`, letterSpacing: "0.1em" }}>
+                {path.abbr}
+              </span>
               <div>
                 <div className="font-bold text-white">{path.title}</div>
                 <div className="text-xs text-zinc-400 mt-0.5">{path.summary}</div>
@@ -377,7 +383,7 @@ export default function LearningPaths({ onNavigateTo }) {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${cfg.bg} ${cfg.border} border ${cfg.text}`}>
-                          {cfg.icon} {cfg.label}
+                          {cfg.label}
                         </span>
                         <span className={`font-semibold text-sm ${isDone ? "line-through text-zinc-500" : "text-white"}`}>
                           {step.label}
