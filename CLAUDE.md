@@ -273,16 +273,17 @@ Source log (18 entries, May 2026): agentic AI engineer roles +280% YoY, prompt m
 
 ## Known open issues
 
-**Still open:**
-- GT Series taxonomy — SERIES_META UI done in GroundTruth.jsx; zero posts in groundTruthIndex.js have `series` field. Need to tag all 226 posts.
-- 3 PrepLab surgical mods shipped (`e1b7b38`) — trap-first reveal, free-text invitation, behavioral debrief. UPGRADES.md status not yet updated.
-- 6 new PrepLab questions (Quantiphi Defense Pack cluster) — MCP, Bedrock AgentCore, multi-provider design, API failure handling, eval metric judgment, production prompt engineering.
-- Trap field quality pass — overclaim→honest-reframe format for 4 clusters (~45 min each).
-- Interview Signal Quantiphi entry — consulting archetype in INTERVIEW_EXPERIENCES.
-- Tab keyboard shortcuts — R/A/E/L/P/G/C single-key nav.
-- FidelityBadge dedup — still in App.jsx + Systems.jsx.
-- React.lazy() code splitting — systematic, DECISIONS.md-worthy scope.
-- `failures` module in Agent Lab — still a reference catalog.
+**Verified still open (June 2026):**
+- Trap field quality pass — overclaim→honest-reframe format for 4 clusters: rag, agents, eval, llmops (~45 min each). ~45 questions total.
+- Agent Lab synthesis gap — `AgentFailureModes` + top 4 modules have no PrepLab forward pointer. `WhatNextCard` not found in Agents.jsx.
+- React.lazy() code splitting — App.jsx uses 24 lazy() calls already but not all heavy views. Systematic pass is DECISIONS.md-worthy scope before doing.
+- Mastery Room — 4 files staged (sprint 60), awaiting Supabase SQL run (`supabase_study_tables.sql`) then `git commit` + push.
+
+**Already resolved (stale entries removed):**
+- GT Series taxonomy — 322 entries in groundTruthIndex.js have `series:` field. Done sprint 55 + sprints 61–76.
+- Quantiphi Defense Pack questions — quantiphi-1–6 confirmed in preplabQuestions.js. Done sprint 46.
+- Tab keyboard shortcuts — 12 keydown handlers confirmed in App.jsx. Done sprint 49.
+- FidelityBadge dedup — moved to shared.jsx sprint 46. Two remaining `FidelityBadge` references in App.jsx + Systems.jsx are the import/usage, not duplicated definitions.
 
 For full audit findings see AUDITS.md.
 
@@ -529,7 +530,7 @@ For full audit findings see AUDITS.md.
 - App.jsx sidebar: "Agents in Production" series link added to GT sidebar section.
 - Commits: `b72aaaa` (Batch A content), `ee7b242` (hub + sidebar). Brace diff = 0 on all files.
 - **Scale post-sprint 73:** 569 PrepLab questions (was 543), 305 GT index entries (was 301), 13 GT series (was 12).
-- Still open: Batch B (backend/infra), Batch C (security/governance), Senior AI Engineer full-stack path.
+- Batches B+C + Senior AI Engineer path all complete by sprint 76.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
 **Sprint 76 (June 2026) — Senior AI Engineer learning path:**
@@ -551,7 +552,7 @@ For full audit findings see AUDITS.md.
 - 17 PrepLab questions: apiback-1–6 (async endpoint design, SSE nginx buffering, deduplication, readiness probe scope, token rate limiting, 502 proxy timeout), taskqueue-1–6 (gateway timeout cause, visibility timeout recovery, idempotency key timing, DLQ purpose, chord vs group, result backend separation), k8sagent-1–5 (GPU no-overcommit, HPA fails for GPU-bound, KEDA use case, PDB purpose, readiness vs liveness distinction).
 - ProductionHub +3 posts. SERIES_META agent-production: 4→7 postIds. Commit `82a1aae`.
 - **Scale post-sprint 74:** 586 PrepLab questions (was 569), 308 GT index entries (was 305).
-- Still open: Batch C (security/governance), Senior AI Engineer full-stack path.
+- Batch C + Senior AI Engineer path complete by sprint 76.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
 **Sprint 71 (June 2026) — Intermediate questions + react-pattern + readMore fixes:**
