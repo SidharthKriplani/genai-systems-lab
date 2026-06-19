@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { signInWithGoogle } from "./supabase";
+import { track } from "./analytics";
 
 // Inline SVG icons — no lucide-react dependency needed
 const IconBuilding2 = ({ size = 24 }) => (
@@ -898,6 +899,7 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions, user = nu
     setQuestionTimes(t => ({ ...t, [questions[current].id]: Date.now() - questionStartTime.current }));
     questionStartTime.current = Date.now();
     if (current + 1 >= FREE_QUESTION_LIMIT && !isAccessGranted()) {
+      track("preplab_gate_hit", { question: current + 1, mode: "exam" });
       setShowGate(true);
       return;
     }
@@ -1480,7 +1482,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
   }
 
   function next() {
-    if (current >= questions.length - 1) { setDone(true); return; }
+    if (current >= questions.length - 1) { track("preplab_session_completed", { mode: "trainer", total: questions.length }); setDone(true); return; }
     if (current + 1 >= FREE_QUESTION_LIMIT && !isAccessGranted()) { setShowGate(true); return; }
     setCurrent(c => c + 1); setAnswer(""); setSubmitted(false); setIsCorrect(false);
   }
@@ -2699,12 +2701,12 @@ function CompanyPrepMode({ onExit, onNavigate }) {
 
     function selfGrade(correct) {
       setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
-      if (qIdx + 1 >= sessionQs.length) { setDone(true); return; }
+      if (qIdx + 1 >= sessionQs.length) { track("preplab_session_completed", { mode: "scenario" }); setDone(true); return; }
       setQIdx(i => i + 1); setAnswer(""); setRevealed(false);
     }
 
     function next() {
-      if (qIdx + 1 >= sessionQs.length) { setDone(true); return; }
+      if (qIdx + 1 >= sessionQs.length) { track("preplab_session_completed", { mode: "scenario" }); setDone(true); return; }
       setQIdx(i => i + 1); setAnswer(""); setRevealed(false);
     }
 
@@ -3938,6 +3940,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
   const [trainerInitGroup, setTrainerInitGroup] = useState("all");
 
   function selectMode(id) {
+    track("preplab_mode_changed", { mode: id });
     setMode(id);
     setMobileSidebarOpen(false);
   }

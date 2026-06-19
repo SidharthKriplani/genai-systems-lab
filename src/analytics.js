@@ -39,6 +39,15 @@ export function initAnalytics() {
             return safe;
           },
         });
+        // Manual $pageview — captures UTM params from LinkedIn / social links
+        setTimeout(() => {
+          window.posthog?.capture("$pageview", {
+            $current_url: window.location.href,
+            $host:        window.location.host,
+            $pathname:    window.location.pathname,
+            $search:      window.location.search,
+          });
+        }, 100);
       } catch { /* silent */ }
     };
     document.head.appendChild(s);
