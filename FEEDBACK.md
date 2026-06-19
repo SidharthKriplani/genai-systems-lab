@@ -40,7 +40,39 @@ Log format per entry:
 
 ## Feedback entries
 
-*(No entries yet — log first feedback session here)*
+---
+
+### Session 1 — June 2026
+Source: Real new user (PAL, beginner) — cross-applicable to GSL
+Context: Cold visitor, product-first session, no prior context
+Profile: Beginner, targeting product analytics interviews, no prep background
+
+RAW OBSERVATIONS
+─────────────────────────────────────
+"The home screen felt a bit overwhelming because I was seeing 222 items, so many rooms, guided paths, study plans, readiness charts, SQL progress, learning paths etc etc etc. Instead of immediately knowing what to do, mera first thought tha ki where do I actually start?"
+
+"The platform assumes beginners already know terms like RCA, Instrumentation vagera. A small one-line explanation or why this matters tooltip would make things much less intimidating."
+
+"Multiple recommendations at once like Start Metrics, Beginner Path, Guided Paths, Study Plan and Learning Paths — became a little confusing. As a beginner I'd rather have one clear recommendation saying this is where you should begin."
+
+"The progress system is nice, but it could feel more motivating with milestones like complete your first 5 cases, you're 15% interview ready, or an estimated completion time for a track."
+
+INTERPRETATION (GSL translation)
+─────────────────────────────────────
+This is a cold-start problem, not a content problem. GSL has the same shape: 6 labs, 57 Systems modules, 27 Concepts modules, 597 PrepLab questions, 310 GT posts, 2 learning paths, 6 challenge areas, readiness bars, guided paths. A cold visitor sees all of this and has no idea where to start.
+
+Three distinct sub-problems:
+1. Too many competing first steps (6 challenge area cards + PrepLab + GT + paths all visible at once)
+2. Jargon without anchoring (RAG, retrieval, hallucination, evals — none of these mean anything to someone arriving cold)
+3. Progress framing is a grid/bar, not a milestone — feels like a dashboard, not a journey
+
+ACTIONS
+─────────────────────────────────────
+[ ] 3-question onboarding modal at first visit (already in IDEAS.md P1) — escalate to P0 — status: OPEN
+[ ] Cold home view: show ONE recommended starting point after questionnaire, not 6 challenge areas — status: OPEN
+[ ] Jargon anchoring: add one-line "what this tests in interviews" tooltip to each challenge area and lab label — status: OPEN
+[ ] Milestone language in progress: "Complete your first scenario", "You're 20% ready for a RAG interview" vs. raw bars — status: OPEN
+[ ] Competing recommendations: audit cold home view for how many CTAs a new user sees simultaneously — status: OPEN
 
 ---
 
