@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 69 (June 2026) — Scale: 528 PrepLab questions, 301 GT index entries, 6 PrepLab modes, 12 GT series, 6 challenge area landing pages*
+*Last updated: sprint 70 (June 2026) — Scale: 528 PrepLab questions, 301 GT index entries, 6 PrepLab modes, 12 GT series, 6 challenge area landing pages*
 
 ---
 
@@ -21,22 +21,30 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 70 — Next up
+## Sprint 70 — ✅ COMPLETE (`11e8d3f`)
 
-**Objective:** Learning path + bidirectional linking.
+**Objective:** First Principles learning path + bidirectional PrepLab linking.
 
-### P0 — First Principles learning path
-- Add `Learning Path` as the top item under Ground Truth in the sidebar (above Agent Engineering) — routes to a dedicated GT view showing a curated sequence from NLP Origins → attention → transformers → embeddings → RAG → agents → evaluation → production.
-- The path should be a linear sequence with "Next →" navigation between posts, progress persisted in localStorage.
+1. ~~**First Principles Path**~~ — added to top of `PATHS` array in `LearningPaths.jsx`. 14 GT steps from ngrams-to-neural → react-pattern + PrepLab CTA. Violet `#8b5cf6` color theme.
+2. ~~**Sidebar entry**~~ — "First Principles Path" added as first subitem under Ground Truth in App.jsx. `note: "start here"`. Routes to `paths` tab.
+3. ~~**Bidirectional linking**~~ — `GT_QUESTION_MAP` built at module load from PREP_QUESTIONS readMore.postId fields. `LinkedQuestions` component shows per-step practice questions (expandable, difficulty chips, Try → button).
+4. ~~**Coverage verified**~~ — 12 of 14 GT steps have linked questions. `ngrams-to-neural` has 1 (found-beg-1). `react-pattern` has 0 (no questions link to it yet — future work).
 
-### P1 — Bidirectional `related[]` linking
-- Every new beginner/B-I question should link to its GT post via `readMore`.
-- Every GT post in the foundations path should link forward to PrepLab questions on that topic.
-- Audit existing `readMore` fields for broken postIds.
+---
 
-### P2 — `intermediate` difficulty questions (Foundations + RAG)
-- 8 intermediate questions: decision framing scenarios for senior-level candidates.
-- These require multi-sentence explanations and nuanced tradeoff analysis.
+## Sprint 71 — Next up
+
+### P0 — `intermediate` difficulty questions (Foundations + RAG)
+- 8–12 intermediate questions: decision framing, senior-level scenarios.
+- Foundations: when to pick BERT vs GPT vs T5, attention head pruning tradeoffs, perplexity vs downstream task evals, LoRA rank selection.
+- RAG: when hybrid search beats dense-only, chunk size vs context density tradeoff, reranker latency budget decisions.
+
+### P1 — `react-pattern` PrepLab gap
+- Zero questions currently link to `react-pattern` postId. Add 3–4 beginner + intermediate questions about ReAct, tool use, agent loops.
+
+### P2 — Mastery Room commit
+- Files staged in sprint 60 (fsrs.js, studySeed.js, StudyRoom.jsx, App.jsx update) need `git commit` + push.
+- Supabase study tables SQL must be run first.
 
 ---
 

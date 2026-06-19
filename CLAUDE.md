@@ -509,6 +509,15 @@ For full audit findings see AUDITS.md.
 - UTM strategy: use `?utm_source=linkedin&utm_campaign=<area>` on all shared links. PostHog captures automatically — requires `VITE_POSTHOG_KEY` Vercel env var.
 - User must push: `cd ~/Documents/GitHub/genai-systems-lab && git push origin main`
 
+**Sprint 70 (June 2026) — First Principles Path + bidirectional PrepLab linking:**
+- First Principles Path added to `LearningPaths.jsx` as the first path in the PATHS array. 14 GT steps: ngrams-to-neural → attention-from-scratch → mha-mqa-gqa-explained → bert-internals-explained → pretraining-data-decisions → context-window-guide → finetune-playbook → how-rag-works → vector-databases-compared → bi-encoder-vs-cross-encoder → two-stage-retrieval-reranker → llm-evaluation-guide → your-prompt-is-code → react-pattern. Plus PrepLab CTA. Violet `#8b5cf6` theme.
+- `GT_QUESTION_MAP` built at module load: filters all PREP_QUESTIONS for `readMore.postId`, groups by postId. O(1) lookup per step.
+- `LinkedQuestions` component: expandable per-step practice section for GT steps. Difficulty chips (DIFF_CHIP/DIFF_SHORT), shows up to 5 questions, "Try →" navigates to PrepLab. 12 of 14 path steps have linked questions.
+- App.jsx sidebar: `{ id: "paths", label: "First Principles Path", note: "start here" }` added as first subitem under Ground Truth group. Routes to `paths` tab.
+- Commit `11e8d3f`. Brace diff = 0 on both files.
+- **Scale post-sprint 70:** unchanged (528 PrepLab q, 301 GT entries) — no new content, only UX.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
 **Sprint 69 (June 2026) — Difficulty tier expansion + curriculum quality overhaul:**
 - GT sidebar cleaned `785c494`: removed 10 advanced series (Recommendation Sys, Research Taste, High-TC Targets, Research Engineer, Staff & Lead, Indic NLP, Engineering Leadership, Data Flywheel, LLMOps Production, NLP Practitioners). Kept 11 foundational series.
 - 5 new difficulty values: `beginner`, `beginner-intermediate`, `intermediate`, `staff`, `daunting`. New `type: "daunting"` question type with `answers: [{label, content, correct}]` + `synthesis_note`.
