@@ -1196,6 +1196,12 @@ const SERIES_META = {
     color: "#6366f1",
     postIds: ["ic-to-em-transition", "roadmap-ownership-ai-teams", "managing-ai-engineers", "ai-team-perf-calibration"],
   },
+  "agent-production": {
+    title: "Agents in Production",
+    desc: "MCP, tool use safety, observability, and testing for senior AI engineer interviews. The gaps most RAG/agent courses skip: idempotency, audit trails, trace design, trajectory evaluation, red teaming.",
+    color: "#06b6d4",
+    postIds: ["mcp-explained", "agent-tool-use-production", "agent-observability", "agent-testing-strategies"],
+  },
 };
 
 export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, onPostOpened, user = null, pathContext = null }) {
