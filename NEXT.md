@@ -2,7 +2,41 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 68 (June 2026) — Scale: 488 PrepLab questions, 301 GT index entries, 6 PrepLab modes, 12 GT series, 6 challenge area landing pages*
+*Last updated: sprint 69 (June 2026) — Scale: 528 PrepLab questions, 301 GT index entries, 6 PrepLab modes, 12 GT series, 6 challenge area landing pages*
+
+---
+
+## Sprint 69 — ✅ COMPLETE (`785c494`)
+
+**Objective:** Difficulty tier expansion + curriculum quality overhaul (beginner → daunting).
+
+1. ~~**GT sidebar cleanup**~~ — removed 10 advanced series from GT sidebar in App.jsx. Kept: Agent Engineering, RAG in Production, The Training Stack, LLMOps in Production, How I'd Build X, NLP Origins, Build From Scratch, LLM Internals, Retrieval Depth, Evaluation Depth, ML Foundations.
+2. ~~**Difficulty tier schema**~~ — 5 new difficulty values added: `beginner`, `beginner-intermediate`, `intermediate`, `staff`, `daunting`. New `type: "daunting"` with `answers: [{label, content, correct}]` + `synthesis_note`.
+3. ~~**DauntingQuestion UI**~~ — toggle-expandable answer panels in BrowseMode, multiple correct answers with overlap. Full `openAnswers` state, violet theme.
+4. ~~**`foundations` topic**~~ — added to `TOPIC_COLORS`, `TOPIC_LABELS`, and `engineering` focus in `drawQuestions`.
+5. ~~**BrowseMode filter chips**~~ — expanded from `[easy, medium, hard]` to all 8 difficulty values. `beginner-intermediate` displays as `B-I`.
+6. ~~**40 new questions**~~ — 8 beginner + 8 B-I Foundations, 8 beginner + 8 B-I RAG, 3 Staff Foundations, 2 Staff RAG, 2 Daunting.
+
+**New scale:** 528 PrepLab questions (was 488).
+
+---
+
+## Sprint 70 — Next up
+
+**Objective:** Learning path + bidirectional linking.
+
+### P0 — First Principles learning path
+- Add `Learning Path` as the top item under Ground Truth in the sidebar (above Agent Engineering) — routes to a dedicated GT view showing a curated sequence from NLP Origins → attention → transformers → embeddings → RAG → agents → evaluation → production.
+- The path should be a linear sequence with "Next →" navigation between posts, progress persisted in localStorage.
+
+### P1 — Bidirectional `related[]` linking
+- Every new beginner/B-I question should link to its GT post via `readMore`.
+- Every GT post in the foundations path should link forward to PrepLab questions on that topic.
+- Audit existing `readMore` fields for broken postIds.
+
+### P2 — `intermediate` difficulty questions (Foundations + RAG)
+- 8 intermediate questions: decision framing scenarios for senior-level candidates.
+- These require multi-sentence explanations and nuanced tradeoff analysis.
 
 ---
 

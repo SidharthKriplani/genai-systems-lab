@@ -509,6 +509,17 @@ For full audit findings see AUDITS.md.
 - UTM strategy: use `?utm_source=linkedin&utm_campaign=<area>` on all shared links. PostHog captures automatically — requires `VITE_POSTHOG_KEY` Vercel env var.
 - User must push: `cd ~/Documents/GitHub/genai-systems-lab && git push origin main`
 
+**Sprint 69 (June 2026) — Difficulty tier expansion + curriculum quality overhaul:**
+- GT sidebar cleaned `785c494`: removed 10 advanced series (Recommendation Sys, Research Taste, High-TC Targets, Research Engineer, Staff & Lead, Indic NLP, Engineering Leadership, Data Flywheel, LLMOps Production, NLP Practitioners). Kept 11 foundational series.
+- 5 new difficulty values: `beginner`, `beginner-intermediate`, `intermediate`, `staff`, `daunting`. New `type: "daunting"` question type with `answers: [{label, content, correct}]` + `synthesis_note`.
+- `foundations` topic added to `TOPIC_COLORS`, `TOPIC_LABELS`, and `engineering` focus pool in `drawQuestions`.
+- `DIFF_ACCENT` + `DIFF_CHIP` lookup maps replace if/else chains in `QuestionCard` for all 8 difficulty values.
+- BrowseMode: `openAnswers` state for per-answer toggle, difficulty filter expanded to 8 values (`B-I` label for beginner-intermediate), `diffColorMap` for all tiers, daunting answer panels with violet theme.
+- `drawQuestions` excludes `type === "daunting"` — browse-only, not exam pool.
+- 40 new questions: 8 beginner + 8 B-I Foundations (`found-beg-1–8`, `found-bi-1–8`), 8 beginner + 8 B-I RAG (`rag-beg-1–8`, `rag-bi-1–8`), 3 Staff Foundations (`found-staff-1–3`), 2 Staff RAG (`rag-staff-1–2`), 2 Daunting (`daunt-arch-1`, `daunt-rag-1`).
+- **Scale post-sprint 69:** 528 PrepLab questions, 301 GT index entries, 6 PrepLab modes.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
 **Sprints 37c–41** — see LINEAGE.md for detail. Key: GT state-aware reading mode, RAG Lab static corpus, 10 new PrepLab questions + sibling codebase analysis (39), shared components + streak heatmap + FeedbackBar + multi-select MCQ + CommonTrap expansion + AgentContextArch module (40), 7 new Concepts modules + 4 gyms activated + Prompt Lab (41).
 
 *Sprints 1–37: see docs/archive/HISTORY.md*
