@@ -5995,7 +5995,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "The context window is the total token budget for one inference call — it includes system prompt, user message, retrieved chunks, and the generated response. Tokens outside the window are invisible to the model. GPT-4 has a 128K token window; Claude 3.5 has 200K. Everything the model 'knows' about a conversation must fit here.",
     trap: "Conflating context window with model knowledge. The context window is what the model can see right now — not what it learned during training. A 1T parameter model with a 4K context window still cannot recall what you said 5 pages ago.",
-    readMore: { label: "Long Context Window Explained", tab: "groundtruth", postId: "long-context-window" }
+    readMore: { label: "The Context Window", tab: "groundtruth", postId: "context-window-guide" }
   },
   {
     id: "found-beg-7", topic: "foundations", difficulty: "beginner", gated: false, type: "mcq",
@@ -6095,7 +6095,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "In self-attention, each of the N tokens attends to every other token — N² attention score computations per layer. Double N → 4x attention cost. This quadratic scaling is why context windows were limited to 4K tokens for years. Techniques like Flash Attention and sliding window attention reduce the constant factor but the asymptotic scaling remains O(N²) for full attention.",
     trap: "Saying it scales linearly. The FFN layers scale O(N), but attention is O(N²). At 128K tokens, the attention cost for one forward pass is enormous — this is why long-context models are dramatically more expensive per token than short-context ones.",
-    readMore: { label: "Long Context Window Explained", tab: "groundtruth", postId: "long-context-window" }
+    readMore: { label: "The Context Window", tab: "groundtruth", postId: "context-window-guide" }
   },
   {
     id: "found-bi-6", topic: "foundations", difficulty: "beginner-intermediate", gated: false, type: "mcq",
@@ -6476,6 +6476,222 @@ export const PREP_QUESTIONS = [
       }
     ],
     synthesis_note: "Each failure mode lives at a different layer: retrieval (chunk not found), ranking (chunk buried), generation (chunk ignored), corpus (chunk is wrong). The fix for each is different. Conflating them leads to applying the wrong fix — e.g. adding a reranker when the actual problem is corpus quality. Running a 20-sample failure taxonomy before any intervention is the staff-level move."
+  },
+
+  // ── FOUNDATIONS — Intermediate (8) ────────────────────────────────────────
+  {
+    id: "found-int-1", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "You need to build a text classifier for support tickets. Should you start with an encoder-only model (BERT-style) or a decoder-only model (GPT-style)?",
+    options: [
+      "GPT-style — larger context window handles long tickets better",
+      "BERT-style — bidirectional context produces richer sentence representations for classification",
+      "The choice depends only on the number of ticket categories",
+      "Either works equally — just pick the model with more parameters"
+    ],
+    correct: 1,
+    explanation: "Classification requires understanding the full text before assigning a label. Encoder-only models (BERT, RoBERTa) read bidirectionally — every token attends to all other tokens simultaneously — producing richer CLS representations. Decoder-only models (GPT) are unidirectional by design; each token only sees prior context because they are optimized for generation. For classification, NER, and semantic similarity, encoder-only is the standard starting point. Decoder-only dominates when the task involves generating text.",
+    trap: "Picking the largest decoder model by default. Architecture matters more than scale for classification with limited labeled data. A fine-tuned BERT-base (110M params) routinely outperforms zero-shot GPT-4 on specific classification benchmarks — bidirectional context is structurally better for the task, not just a scale question.",
+    readMore: { label: "MHA vs MQA vs GQA", tab: "groundtruth", postId: "mha-mqa-gqa-explained" }
+  },
+  {
+    id: "found-int-2", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "You are fine-tuning a 7B LLM with LoRA for domain adaptation. How should you approach selecting the rank (r)?",
+    options: [
+      "Always use r=4 — higher ranks cause overfitting regardless of data size",
+      "Always use r=64 — more parameters always mean better adaptation",
+      "Start at r=8–16 for moderate domain shift; increase if validation quality plateaus; decrease if training loss diverges from validation loss",
+      "Rank does not matter — LoRA quality depends entirely on learning rate and epochs"
+    ],
+    correct: 2,
+    explanation: "LoRA rank r controls the capacity of the low-rank update matrices. r=4 is aggressively parameter-efficient — good for minimal task difference or very limited data. r=16 handles moderate domain shifts. r=64+ for complex tasks with large datasets. The practical protocol: start r=8–16, monitor train vs validation loss for divergence (overfitting signal), tune rank as a hyperparameter. For specialized vocabulary adaptation, r=16–32 is a common starting point. Lower rank + more data beats higher rank + less data.",
+    trap: "Treating rank as purely a memory constraint. Higher rank = more expressivity = can overfit with small datasets. A 1K-example dataset with r=64 will often overfit; the same dataset with r=8 may underfit. The rank-data-complexity triangle is the real decision, not VRAM alone.",
+    readMore: { label: "Fine-tuning Playbook", tab: "groundtruth", postId: "finetune-playbook" }
+  },
+  {
+    id: "found-int-3", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "A junior engineer asks why transformers use multi-head attention (8–32 heads) rather than single-head attention with one larger key/value dimension. What is the correct answer?",
+    options: [
+      "Multiple smaller matrices multiply faster than one large matrix — it is purely a speed optimization",
+      "Each head can specialize in attending to different relationship types simultaneously — syntactic, semantic, positional — producing richer combined representations",
+      "Multi-head uses less VRAM than a single large attention matrix of equivalent parameter count",
+      "Single-head attention cannot run in parallel across the sequence"
+    ],
+    correct: 1,
+    explanation: "Single-head attention with a large KV dimension forces all relationship types into one weighted average. Multi-head splits query/key/value projections into h subspaces — each head independently learns different patterns. Probing studies confirm heads specialize: some track syntactic agreement, others handle coreference, others capture positional proximity. Concatenating their outputs gives the model richer structure than any single attention pass. Total parameter count is similar — the gain is representational diversity, not raw capacity.",
+    trap: "Saying multi-head is just a speed trick. It has the same FLOPs as single-head at equal total dimension. This matters for architecture decisions: cutting heads to reduce compute costs expressivity, not just throughput. GPT-style models use 32+ heads precisely because diversity of attention patterns matters for generation quality.",
+    readMore: { label: "MHA vs MQA vs GQA", tab: "groundtruth", postId: "mha-mqa-gqa-explained" }
+  },
+  {
+    id: "found-int-4", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "Two LLM checkpoints, identical architecture, same training data: Model A perplexity 8.2, Model B perplexity 9.7. A stakeholder says Model A is clearly better for your customer-service chatbot. What should you push back on?",
+    options: [
+      "Perplexity should be recalculated on a GPU cluster to ensure measurement accuracy",
+      "Perplexity measures held-out language modeling quality — it does not predict helpfulness, instruction-following, or task performance on your specific application",
+      "Model B is better because higher perplexity means higher generation confidence",
+      "Perplexity is only meaningful for base models, not instruction-tuned checkpoints"
+    ],
+    correct: 1,
+    explanation: "Perplexity measures how well a model predicts the next token on a held-out corpus. It correlates weakly with downstream task quality — especially instruction-following, helpfulness, factual accuracy, and safety. Two checkpoints at identical perplexity can have dramatically different task performance after RLHF. For a customer-service chatbot, the correct eval is: human preference ratings, task completion rate, escalation rate, citation accuracy. Perplexity is a pretraining health check, not a deployment quality signal.",
+    trap: "Using perplexity as a general model quality ranking. This was reasonable before instruction tuning — it is now unreliable. A model fine-tuned to minimize perplexity on held-out data may follow instructions poorly or hallucinate more confidently. Downstream task evaluation is the only honest proxy for production quality.",
+    readMore: { label: "LLM Evaluation Guide", tab: "groundtruth", postId: "llm-evaluation-guide" }
+  },
+  {
+    id: "found-int-5", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "You fine-tune a general LLM on 5,000 domain-specific Q&A pairs. Validation loss drops cleanly. After deployment, users report degraded responses on basic general knowledge. What happened and what should you have done?",
+    options: [
+      "The model needs more epochs — validation loss is still too high",
+      "Catastrophic forgetting — fine-tuning on a narrow distribution overwrote general representations; mitigation is LoRA/PEFT or rehearsal data",
+      "The inference server is randomly dropping tokens from the context",
+      "The 5,000 examples were too simple — more complex examples would prevent this"
+    ],
+    correct: 1,
+    explanation: "Catastrophic forgetting occurs when fine-tuning pushes weights toward the new distribution without preserving old representations. SGD updates all weights, overwriting general knowledge with domain-specific patterns. Mitigations in order of preference: (1) LoRA/PEFT — modify only additive low-rank matrices, base weights untouched; (2) rehearsal — mix 5–10% general data into fine-tuning; (3) lower learning rate; (4) eval suite that includes out-of-distribution general benchmarks alongside fine-tuning validation.",
+    trap: "Assuming clean fine-tuning validation loss means the model is generally better. Validation on fine-tuning data tells you nothing about out-of-distribution degradation. The eval protocol must include a general benchmark (MMLU, HellaSwag) alongside the task-specific eval. Deploying without this check is how you get production regressions.",
+    readMore: { label: "Fine-tuning Playbook", tab: "groundtruth", postId: "finetune-playbook" }
+  },
+  {
+    id: "found-int-6", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "Your team achieves 72% accuracy on a structured extraction task using few-shot prompting. A colleague proposes fine-tuning. What signals justify moving to fine-tuning?",
+    options: [
+      "The team wants to — team buy-in is the primary signal",
+      "You have 500+ high-quality labeled examples, the task format is stable, and you need latency or cost reduction that shorter prompts provide",
+      "Fine-tuning always outperforms few-shot prompting above 70% accuracy",
+      "The model being used is larger than 13B parameters"
+    ],
+    correct: 1,
+    explanation: "Fine-tuning is worth the investment when: (1) 500+ labeled pairs minimum — fewer and you risk overfitting; (2) task format is stable — constant redesign makes the dataset stale fast; (3) concrete need for reduced prompt length, lower cost, or lower latency; (4) the accuracy ceiling from prompting is genuinely hit, not just from poor prompt design. At 72%, the first question is: did you exhaust prompt improvements? Well-constructed few-shot with chain-of-thought can push extraction to 82–88%+ before fine-tuning is warranted.",
+    trap: "Jumping to fine-tuning at 72% without first exhausting prompting. Fine-tuning takes real time and money to iterate on; you cannot quickly patch a bad training example the way you can edit a prompt. The correct order is: prompt engineering → better examples in prompt → fine-tuning if ceiling is confirmed.",
+    readMore: { label: "Fine-tuning Playbook", tab: "groundtruth", postId: "finetune-playbook" }
+  },
+  {
+    id: "found-int-7", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "An ML engineer proposes enabling KV cache for your production LLM API to cut latency on multi-turn conversations. What hidden cost must you account for in capacity planning?",
+    options: [
+      "KV cache slows down the first request in every conversation because it must be initialized",
+      "KV cache consumes GPU VRAM proportional to batch_size × sequence_length × layers × head_dim, growing with both session count and conversation length",
+      "KV cache is not compatible with quantized models under INT8",
+      "KV cache doubles the number of forward passes required per request"
+    ],
+    correct: 1,
+    explanation: "KV cache stores attention keys and values for processed tokens, avoiding recomputation on each new token — the primary latency win. The cost: VRAM scales with concurrent sessions × sequence length × layers × KV dimension. A 7B model may use 1–2 GB per 1K tokens of active KV state. With 1,000 concurrent conversations averaging 2K tokens each, that is 2–4 TB of KV state — the reason vLLM's paged attention, quantized KV, and session eviction policies exist. Capacity planning without this math will surprise you.",
+    trap: "Treating KV cache as compute savings with no memory downside. The compute saving is real, but the memory cost scales linearly with active sessions × conversation length — two axes that grow together in production. This is one of the primary drivers of LLM serving infrastructure complexity.",
+    readMore: { label: "The Context Window", tab: "groundtruth", postId: "context-window-guide" }
+  },
+  {
+    id: "found-int-8", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "Your team is designing a 13B LLM for low-latency serving. A researcher recommends GQA (Grouped Query Attention) over standard MHA. When is GQA the right call?",
+    options: [
+      "Only when the training dataset is under 100B tokens",
+      "When serving throughput and memory efficiency matter more than squeezing every point of benchmark accuracy",
+      "GQA is strictly superior to MHA — there is no tradeoff",
+      "When the model will be deployed on CPU-only hardware"
+    ],
+    correct: 1,
+    explanation: "Standard MHA: one K/V head per Q head — full capacity, large KV cache. MQA: single K/V head shared by all Q heads — tiny KV cache, small quality drop. GQA groups Q heads sharing K/V heads (e.g., 32 Q heads → 8 K/V groups) — 4–8x KV cache reduction with minor quality loss. Used in LLaMA 2 70B, Mistral 7B, Gemma. Decision rule: MHA for max benchmark accuracy at any cost; GQA for production serving with strict memory/latency SLAs; MQA only for highly constrained edge devices. Verify quality impact empirically before committing to architecture.",
+    trap: "Assuming GQA is a free lunch. At small group sizes (2 K/V heads for 32 Q heads), quality degradation is measurable. The empirical finding: GQA with ≥4 groups recovers most of MHA quality. The architecture choice locks in for the model's life — benchmark before committing.",
+    readMore: { label: "MHA vs MQA vs GQA", tab: "groundtruth", postId: "mha-mqa-gqa-explained" }
+  },
+
+  // ── RAG — Intermediate (4) ─────────────────────────────────────────────────
+  {
+    id: "rag-int-1", topic: "rag", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "Your RAG system uses dense vector search and achieves 78% recall@5 on internal evals. A data scientist proposes adding BM25 hybrid search. What signals tell you it is worth the added complexity?",
+    options: [
+      "Any recall below 80% guarantees BM25 will improve results",
+      "Your failure analysis shows users frequently querying with exact product codes, names, or rare technical terms that dense retrieval consistently misses",
+      "Adding BM25 always improves recall — there is no case where it hurts",
+      "BM25 is only useful when the vector database does not support HNSW indexing"
+    ],
+    correct: 1,
+    explanation: "Dense retrieval excels at semantic matching — different words, same meaning. BM25 excels at exact lexical matching — product SKUs, model numbers, person names, regulatory codes, rare jargon. The decision trigger: run a failure analysis of dense-only misses. Are the missed queries lexically exact but semantically distant from what you indexed? If yes, BM25 will reclaim them. If your users write mostly natural-language conceptual queries, dense retrieval may already cover 95%+ of cases and BM25 adds noise and operational complexity. The data drives the decision.",
+    trap: "Adding hybrid search as a default improvement without running a failure analysis first. BM25 introduces a second query pipeline, RRF merging logic, and a separate index to maintain. If your miss analysis does not show the exact-term pattern, you are paying complexity cost for marginal gain.",
+    readMore: { label: "How RAG Works", tab: "groundtruth", postId: "how-rag-works" }
+  },
+  {
+    id: "rag-int-2", topic: "rag", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "You are indexing 100-page technical manuals. One engineer proposes 256-token chunks; another proposes 512-token chunks. What is the correct decision framework?",
+    options: [
+      "Always use the largest chunk size the embedding model supports",
+      "256 tokens is always better — smaller chunks mean more precise retrieval",
+      "Match chunk size to the granularity of expected user queries; test both on a representative query sample and measure recall@5 before committing",
+      "Chunk size only matters for documents longer than 50 pages"
+    ],
+    correct: 2,
+    explanation: "Chunk size drives a precision-vs-context tradeoff. Small chunks (128–256 tokens): precise embedding, but the retrieved chunk may lack surrounding context for the LLM to answer. Large chunks (512–1024 tokens): more context, but the embedding becomes a blurry average over many topics — retrieval precision drops. For technical manuals: step-by-step procedure queries want mid-size chunks; specific parameter lookups want small chunks; 'explain how system X works' may need large chunks or parent-document retrieval. Protocol: sample 50 representative queries, test both, measure recall@5. The 30-minute test pays for itself.",
+    trap: "Committing to a chunk size based on intuition or a blog post rule-of-thumb. Optimal chunk size is corpus + query distribution specific — a news article corpus and a legal contract corpus require completely different chunk sizes. There is no universal default.",
+    readMore: { label: "Bi-Encoder vs Cross-Encoder", tab: "groundtruth", postId: "bi-encoder-vs-cross-encoder" }
+  },
+  {
+    id: "rag-int-3", topic: "rag", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "Your RAG pipeline has p99 latency of 400ms with bi-encoder retrieval. Adding a cross-encoder reranker is proposed. What should you evaluate before adding it?",
+    options: [
+      "Add it unconditionally — rerankers always improve quality with negligible latency impact",
+      "Measure the quality gap between current ordering and optimal reranked ordering; model the added latency (typically 100–300ms) against your SLA budget",
+      "Only add a reranker if the bi-encoder was pretrained before 2022",
+      "Rerankers only help when indexing more than 1 million documents"
+    ],
+    correct: 1,
+    explanation: "The reranker decision is a quality-vs-latency tradeoff. Cross-encoders score query-document pairs with full attention — more accurate than cosine similarity, but linear in candidate count. Reranking 50 candidates typically adds 100–300ms. If your SLA is 500ms p99 and retrieval + reranker = 500ms, there is nothing left for LLM generation. Diagnosis first: if recall is good (right chunk in top-50) but MRR is poor (right chunk at position 35), a reranker closes that gap. If recall is the problem (right chunk not in top-50), a reranker cannot help — fix retrieval first.",
+    trap: "Adding a reranker to fix a recall problem. Rerankers reorder candidates — they cannot retrieve documents that the bi-encoder missed. The critical diagnostic question: is the failure a recall failure (chunk not retrieved) or a ranking failure (chunk retrieved but buried)? The fix is completely different.",
+    readMore: { label: "Two-Stage Retrieval", tab: "groundtruth", postId: "two-stage-retrieval-reranker" }
+  },
+  {
+    id: "rag-int-4", topic: "rag", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "A product manager asks whether to use RAG or fine-tuning to make the LLM answer from the company's internal knowledge base. What conditions favor fine-tuning over RAG?",
+    options: [
+      "Always use RAG — it is always more flexible",
+      "Fine-tune when sub-50ms latency is required, the knowledge is stable and small enough to bake into weights, and retrieval latency is unacceptable",
+      "Fine-tune when the knowledge base exceeds 10,000 documents",
+      "Use fine-tuning only when the company cannot afford a vector database"
+    ],
+    correct: 1,
+    explanation: "RAG is right for large, dynamic, or access-controlled knowledge. Fine-tuning wins when: (1) latency is critical — retrieval adds 100–500ms that the SLA cannot absorb; (2) knowledge is stable — facts do not change frequently enough to make retraining impractical; (3) knowledge volume is small enough to bake into weights (hundreds to low thousands of facts, not millions); (4) the knowledge is deeply structural — the model needs to reason with it, not just retrieve it. Warning: fine-tuning for factual knowledge can cause confident hallucination when facts go stale. Hybrid approach (fine-tune for format/style + RAG for dynamic facts) is often the production answer.",
+    trap: "Framing this as a binary choice. In mature production systems, both are used: fine-tuning for tone, format, and task behavior; RAG for current factual knowledge. The real question is which layer each type of knowledge belongs in — that question is more useful than 'RAG or fine-tuning?'",
+    readMore: { label: "How RAG Works", tab: "groundtruth", postId: "how-rag-works" }
+  },
+
+  // ── ReAct Pattern (beginner → intermediate) ────────────────────────────────
+  {
+    id: "react-1", topic: "agents", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is the ReAct pattern for AI agents?",
+    options: [
+      "A React.js component library for building AI chatbot user interfaces",
+      "A prompting pattern that interleaves explicit reasoning steps (Thought) with tool actions (Action) and observations (Observation) in a loop before producing a final answer",
+      "A memory architecture that stores agent decisions in a key-value store for future retrieval",
+      "A reinforcement learning algorithm for training agents from human feedback"
+    ],
+    correct: 1,
+    explanation: "ReAct (Yao et al., 2022) structures agent execution as a Thought → Action → Observation loop. Thought: the model reasons explicitly about what to do next. Action: the model calls a tool (search, calculator, API, code interpreter). Observation: the tool result is appended to context. The loop repeats until the model has enough information to produce a final answer. By making reasoning explicit and grounded in real tool output, the model can catch and correct mistakes across steps rather than committing to a wrong answer in one pass.",
+    trap: "Thinking ReAct is just chain-of-thought with tool calls bolted on. The key is interleaving — each Observation updates the model's reasoning state before the next step. Chain-of-thought reasons entirely in the model's own head; ReAct grounds each step in external tool results. That grounding is what makes it useful for multi-step information retrieval.",
+    readMore: { label: "The ReAct Pattern", tab: "groundtruth", postId: "react-pattern" }
+  },
+  {
+    id: "react-2", topic: "agents", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "What reasoning failure does the explicit 'Thought' step in ReAct prevent that a pure tool-use loop cannot?",
+    options: [
+      "The model generating too many API calls and exceeding rate limits",
+      "The model continuing to act on assumptions invalidated by an earlier observation — Thought forces re-evaluation after each tool result",
+      "The model forgetting which tools are available across multiple turns",
+      "The model generating malformed JSON for tool call parameters"
+    ],
+    correct: 1,
+    explanation: "Without explicit reasoning, agents often commit to a plan upfront and execute mechanically regardless of what tools return. If step 2 returns unexpected data, a tool-only loop may proceed on the wrong interpretation. ReAct's Thought step forces the model to re-read its context and re-evaluate after each Observation: 'The search returned X, which contradicts my assumption — I should now look for Y instead.' This mid-task belief update prevents cascading errors from a single wrong assumption.",
+    trap: "Dismissing the Thought step as token waste. Ablation studies show that ReAct without Thought (pure Act-Observe loop) degrades significantly on multi-step tasks. The Thought step is where the model catches contradictions in the observation stream and adapts the plan — removing it collapses the agent into a rigid execution script.",
+    readMore: { label: "The ReAct Pattern", tab: "groundtruth", postId: "react-pattern" }
+  },
+  {
+    id: "react-3", topic: "agents", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "You are building an agent that converts natural-language questions into SQL queries, executes them, and returns results. A colleague recommends ReAct. When would a simpler single-tool-call pattern be better?",
+    options: [
+      "ReAct should always be used — it handles all cases the single-call pattern handles, plus more",
+      "When the task maps to one predictable tool call where no intermediate reasoning is needed to construct the query or interpret the result",
+      "When the database has more than 100 tables",
+      "When the agent runs on hardware without a GPU"
+    ],
+    correct: 1,
+    explanation: "ReAct's multi-step loop has real costs: 2–5x more LLM calls per task, higher token cost, longer latency, and more failure surfaces (the model can get confused or hallucinate Thoughts across long chains). For well-structured, deterministic tasks — natural language → SQL → execute → return — a direct pattern (one LLM call to generate SQL, one tool call to execute) is faster, cheaper, and equally correct. ReAct earns its overhead on tasks requiring multi-step tool use, adaptive search strategies, or where intermediate results change what to do next. Default to the simplest pattern that works.",
+    trap: "Applying ReAct uniformly because it handles complex cases. Complexity is a liability, not a feature. ReAct applied to a single-tool, single-step query introduces new failure modes — hallucinated Thoughts that steer the model away from a straightforward answer it would have produced directly. Engineering judgment: what is the minimum reasoning overhead to solve this task reliably?",
+    readMore: { label: "The ReAct Pattern", tab: "groundtruth", postId: "react-pattern" }
   },
 
 ];
