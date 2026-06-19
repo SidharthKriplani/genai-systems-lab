@@ -111,9 +111,32 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 77 — Next up
+## Sprint 77 — ✅ COMPLETE (competitive audit + MD sync)
 
-### Backlog
+**Objective:** Competitive intelligence research + log all findings to MD files.
+
+1. ~~**Competitive audit completed**~~ — full research on Dataford, Hello Interview, DataLemur, Exponent, Interview Query, DeepLearning.AI, fast.ai, HF, W&B, LangChain Academy, cheating tool cohort, distribution mechanics (NeetCode, ByteByteGo).
+2. ~~**COMPETITORS.md created**~~ — full competitive intelligence report. Tier 1/2/3 threat breakdown, market data, proven mechanics, GSL differentiators vs gaps, 90-day bridge plan.
+3. ~~**IDEAS.md updated**~~ — added "Distribution & Growth" section (P0 SSR, P0 LinkedIn cadence, P1 certificates, P1 onboarding capture, P1 Discord, P2 newsletter, P2 canonical artifact).
+4. ~~**DECISIONS.md §13 added**~~ — competitive positioning decisions: lane owned, four proven win mechanics, moat to defend, anti-patterns to avoid, pricing informed by research.
+5. ~~**Sidebar labels shortened**~~ — "1st Principles" / "Senior AIE" (committed previous session).
+
+---
+
+## Sprint 78 — Next up
+
+### P0 — Distribution (no features until this is started)
+
+- **SSR/pre-render GT posts:** `vite-ssg` or Node pre-render script. Each GT post at `/gt/[postId]` becomes a static HTML page with correct meta. Full spec in COMPETITORS.md §90-day-bridge-plan.
+- **LinkedIn cadence:** 3 posts/week, educational carousel format from GT posts. First post: "Why RAG systems fail in production (and how to fix them)." Draw from existing GT content.
+
+### P1 — Completion certificates
+- Shareable PNG for First Principles Path, Senior AIE Track, each lab completion. LinkedIn one-click share. Spec in IDEAS.md.
+
+### P1 — Onboarding capture
+- 3-question modal at first sign-in. "Interview scheduled?" routing. PostHog events. Spec in IDEAS.md.
+
+### Blocked
 - Mastery Room commit (staged in sprint 60 — needs Supabase SQL run first).
 - Trap field quality pass (4 clusters: rag, agents, eval, llmops).
 - Agent Lab synthesis gap — top 5 modules need PrepLab forward pointer.

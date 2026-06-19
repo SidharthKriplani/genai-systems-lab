@@ -666,3 +666,43 @@ Three-tier access model. Binding decisions:
 
 *Source: PM Product Audit, Audit 29, June 2026.*
 
+---
+
+## §13 — Competitive positioning (June 2026, sprint 77 competitive audit)
+
+**Full research report:** `COMPETITORS.md`. This section records binding product decisions from that research.
+
+**The lane GSL owns:** Deep, interactive, systems-level preparation for senior AI engineer interviews. Nobody owns this lane. Dataford is the closest competitor on breadth; Hello Interview is the closest on ICP. Neither has interactive failure-simulation at depth.
+
+**The four things that win in this category (proven, not claimed):**
+1. Free interactive core — in-browser execution or simulation (DataLemur SQL = GSL labs). Done.
+2. Certificate LinkedIn flywheel (Dataford's primary acquisition engine). Not yet built.
+3. SSR/indexed content for organic SEO (Dataford 30K pages). Not yet built.
+4. LinkedIn content cadence — educational carousels at 3–5 posts/week for 12+ months. Not started.
+
+**Competitive moat — do not give up these:**
+- The interactive config-and-fail mechanic. No competitor has this for AI systems. Hello Interview is the sleeper threat if they add it.
+- Curriculum depth (300+ GT posts, 597q PrepLab, 9-post agent-production series). This is the content advantage.
+- Free, no mandatory login. Lowest friction in category. Do not add a hard account wall without evidence it improves conversion.
+
+**Counter-positioning that costs nothing:**
+- Cheating tool cohort (Final Round AI, Cluely) is in legitimacy crisis as companies add proctoring. GSL's clean positioning: "earn it." Use this in copy on Plans page, cold home, PrepLab synthesis. No build required.
+
+**What to avoid (anti-patterns confirmed by research):**
+- Do not build YouTube content before a LinkedIn presence. Every successful case in this category built LinkedIn first.
+- Do not optimize for content volume without interactive pull (Interview Query disproves the strategy — 9,220+ company guides, 1:40 average session, negative growth).
+- Do not add Discord before the LinkedIn cadence exists. Discord retains; it does not acquire.
+- Do not add paid ads. Every major platform in this category grew organically.
+
+**Pricing decision (deferred to §0, but informed by research):**
+- $89/year is the validated price point (Dataford, 10K+ users). $79/month is the "worth it if I'm interviewing now" price (Exponent).
+- When paid tier launches: $9/month or $79/year. "Cheaper than 1 hour of coaching, more useful than 10."
+- University B2B is a second revenue channel to revisit at 1,000+ MAU.
+
+**Competitive monitoring cadence:**
+- Hello Interview: check quarterly for interactive feature additions (sleeper threat).
+- Dataford: check quarterly for AI engineering content depth push.
+- Teamblind: search "best resource ai engineer interview" quarterly — appearance there is the organic signal that matters.
+
+*Source: Multi-source competitive audit, June 2026. Full detail in COMPETITORS.md.*
+

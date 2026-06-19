@@ -21,7 +21,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 72, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 543 PrepLab questions, 301 GT index entries (12 new series, 3 interactive Systems modules), 6 PrepLab modes (+ Interview Sprint + Browse All), 6 challenge area landing pages.
+**Scale (post-sprint 77, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 597 PrepLab questions, 310 GT index entries (13 GT series, 3 interactive Systems modules), 6 PrepLab modes (+ Interview Sprint + Browse All), 6 challenge area landing pages, 2 learning paths.
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
@@ -531,6 +531,17 @@ For full audit findings see AUDITS.md.
 - Commits: `b72aaaa` (Batch A content), `ee7b242` (hub + sidebar). Brace diff = 0 on all files.
 - **Scale post-sprint 73:** 569 PrepLab questions (was 543), 305 GT index entries (was 301), 13 GT series (was 12).
 - Batches B+C + Senior AI Engineer path all complete by sprint 76.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
+**Sprint 77 (June 2026) — Competitive audit + MD sync:**
+- Full research on Dataford, Hello Interview, DataLemur, Exponent, Interview Query, DeepLearning.AI, fast.ai, HF courses, W&B, LangChain Academy, cheating tool cohort, distribution mechanics (NeetCode, ByteByteGo).
+- `COMPETITORS.md` created — full intel report: tier 1/2/3 competitors, market data (AI roles +41.8% YoY, 56% wage premium), proven mechanics, GSL differentiators vs gaps, 90-day bridge plan (SSR fix → LinkedIn cadence → certificates → onboarding capture).
+- `IDEAS.md` updated — "Distribution & Growth" section added: P0 SSR pre-render, P0 LinkedIn cadence, P1 completion certificates, P1 onboarding capture, P1 Discord, P2 newsletter, P2 canonical artifact.
+- `DECISIONS.md §13` added — competitive positioning: lane owned, four proven win mechanics, moat to defend, anti-patterns to avoid, pricing signal from research ($89/yr validated by Dataford).
+- **Critical finding:** GSL is a client-rendered SPA — 310 GT posts are invisible to Google. Dataford has 30,000+ indexed pages. SSR fix is the single highest-ROI change available before any new feature work.
+- **Critical finding:** Hello Interview is the sleeper threat — same ICP (senior AI engineer interviews), no interactivity (GSL's moat). Watch quarterly.
+- **No code commits this sprint** — pure MD sync.
+- **Scale unchanged:** 597 PrepLab questions, 310 GT index entries.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
 **Sprint 76 (June 2026) — Senior AI Engineer learning path:**

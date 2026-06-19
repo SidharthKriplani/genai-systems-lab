@@ -170,6 +170,118 @@ All three labs have 0 GitHub stars. One HN Show HN post. One LinkedIn thread exp
 
 ---
 
+## Distribution & Growth — Competitive audit findings (June 2026, sprint 77)
+
+All items below are grounded in what competitors with 10K+ users are actually doing. Full detail in COMPETITORS.md.
+
+---
+
+### P0: SSR pre-render for GT posts — fix Google blindness
+`Tier 1` `L effort` `Single highest-ROI change available`
+
+GSL is a client-rendered SPA. Googlebot cannot execute JavaScript reliably. 310 GT posts are invisible to search. Dataford has 30,000+ indexed pages. This is the root cause of zero organic acquisition.
+
+Fix: `vite-ssg` or a Node pre-render script per GT post route. Each GT post becomes a static HTML file with correct `<title>`, `<meta description>`, and rendered block content. No backend required.
+
+Target queries where GSL content exists and no dominant player owns the SERP:
+- "agent observability interview question"
+- "indirect prompt injection AI agent"
+- "MCP explained AI engineer"
+- "bi-encoder vs cross-encoder interview"
+- "LLM evaluation guide for engineers"
+- "RAG failure modes interview"
+
+Each GT post at `/gt/[postId]` becomes an indexable landing page. Link back to the SPA. This is Dataford's entire SEO engine — minus the Dagster automation, plus our actual depth.
+
+**Blocker:** Requires changing the Vite build config. Must test Vercel deployment with SSG output. Worth a dedicated sprint.
+
+---
+
+### P0: LinkedIn content cadence — build the distribution anchor
+`Tier 1` `M effort ongoing` `Foundation for everything else`
+
+No organic LinkedIn presence = no compounding discovery. Every competitor with >5K users has one.
+
+The NeetCode model: educational carousels, 3–5 posts/week, 1 concept per post. 30.6% engagement rate verified. 10K→104K LinkedIn followers in 12 months. ByteByteGo: same format, multi-platform → 26K newsletter subscribers in month 1.
+
+GSL has 310 GT posts. Every post is a carousel. Each post becomes: 6-slide carousel (concept → why it matters → common mistake → production reality → interview signal → "read more + practice at GSL"). Final slide: link to the GT post + PrepLab for that topic.
+
+**Do not build features instead of doing this.** Features compound with users. Without users, features are irrelevant.
+
+---
+
+### P1: Completion certificates — the Dataford flywheel
+`Tier 1` `S effort` `Proven acquisition mechanic`
+
+Dataford's primary acquisition channel is organic LinkedIn posts from users sharing their completion certificates. Every testimonial on their site is a LinkedIn share. Zero ad spend. Compounding discovery.
+
+Build: shareable PNG certificate for:
+- First Principles Path completion
+- Senior AIE Track completion
+- Each lab (RAG Lab, Agent Lab, etc.) — all 6 scenarios completed
+
+Certificate contains: user name (from Supabase profile), path/lab name, completion date, GSL URL. One-click LinkedIn share with pre-filled text: "Just completed [X] on GenAI Systems Lab. Tested my understanding of [Y failure modes / Z architecture patterns]."
+
+**Revenue unlock:** Every certificate post is an ad that the user writes and pays for with their own social capital. This is the distribution engine.
+
+---
+
+### P1: "Interview scheduled?" onboarding capture — conversion moment trigger
+`Tier 1` `S effort` `Converts the highest-intent users immediately`
+
+Conversion in interview prep is episodic — triggered by "interview scheduled," not gradual skill-building. Currently GSL has no way to know if a user has an interview in 2 weeks vs. "just browsing."
+
+3-question onboarding at first sign-in (modal, not a blocking wall):
+1. "Are you actively interviewing?" → Yes, within 30 days / Planning ahead / Just exploring
+2. "Which role are you targeting?" → Senior AI Eng / Staff / Applied Scientist / MLOps / FDE / Other
+3. "What's your biggest gap?" → RAG & retrieval / Agents & production / Evaluation / LLMOps / Foundations
+
+Routing:
+- "Yes, within 30 days" → Interview Sprint mode immediately → paywall is first thing they see
+- "Planning ahead" → First Principles Path
+- "Just exploring" → RAG Lab Scenario 1 (current default)
+
+PostHog event: `onboarding_completed`, properties: `{timeHorizon, targetRole, gapArea}`. This data is the segmentation layer for every future experiment.
+
+**Payoff:** The most valuable user in the product — someone interviewing at Anthropic in 2 weeks — currently sees the same experience as a curious lurker. Fix this.
+
+---
+
+### P1: Discord community — retention layer
+`Tier 2` `XS setup, M ongoing` `Proven retention, not acquisition`
+
+Open a Discord server. Channels: #retrieval-help, #agent-design, #interview-wins, #daily-question, #resources. Invite first 100 users manually from early sign-ups.
+
+"Interview wins" channel = social proof that travels. Every "got the offer" post is a recruiting tool. Ask users to share their preparation strategy. Screenshot and post on LinkedIn (with permission).
+
+**Honest caveat from research:** Discord retains — it does not acquire. Don't open Discord instead of LinkedIn. Open it after the LinkedIn cadence is established.
+
+---
+
+### P2: Newsletter — owned channel, not rented
+`Tier 2` `S setup, S ongoing`
+
+One issue/week. Format: "One AI engineering concept you'll be asked about in interviews." Draw from GT posts — each issue is 400 words summarizing one GT post with a PrepLab link.
+
+Distribution anchor: link to newsletter signup from every GT post completion, every lab synthesis card, every PrepLab session end.
+
+**Sequencing:** Build after LinkedIn cadence has ≥4 weeks of consistency. Newsletter without an audience to seed it is a ghost town.
+
+---
+
+### P2: "The 150 AI Engineering Questions" — canonical artifact
+`Tier 2` `M effort` `NeetCode 150 / Nick Singh book pattern`
+
+The artifact that travels: a structured PDF or public page listing the 150 most important PrepLab questions organized by topic + difficulty. NeetCode 150 (LeetCode), Nick Singh book (SQL) — both are discovery engines that predate the platform's scale.
+
+Format: 150 questions, 6 topic clusters (RAG 25q, Agents 25q, Evals 25q, LLMOps 25q, Foundations 25q, Systems Design 25q), difficulty labels, a one-line "why this matters" per question, and a link to the full platform.
+
+Post as: PDF on Gumroad (free), GitHub gist, LinkedIn carousel, Teamblind thread. The goal is for it to be bookmarked and referenced independently of the platform.
+
+**Gate:** Don't build until platform has ≥500 PrepLab questions (currently 597 — gate cleared).
+
+---
+
 ## 💰 Business Model — Decision Pending (May 2026)
 
 This is the single most consequential open decision. Everything below is affected by which path is chosen.
