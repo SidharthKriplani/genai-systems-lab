@@ -193,6 +193,30 @@ const PATHS = [
       { type: "preplab", id: null, topic: "inference", label: "PrepLab: Inference Questions", desc: "Hard inference engineering questions covering the full stack." },
     ],
   },
+  {
+    id: "senior-ai-engineer",
+    title: "Senior AI Engineer: Production Track",
+    abbr: "SAE",
+    color: "#06b6d4",
+    duration: "~5 hrs",
+    audience: "Mid-level Engineers · Backend Engineers · AI Engineers targeting senior roles",
+    summary: "The full production curriculum: MCP architecture, tool use, observability, testing, backend infra, K8s, security, and governance — every track a senior AI engineer JD asks about.",
+    steps: [
+      { type: "gt",      id: "mcp-explained",                label: "Model Context Protocol",             desc: "The standard for agent-tool integration. Client-host-server model, security directionality, enterprise adoption." },
+      { type: "gt",      id: "agent-tool-use-production",    label: "Tool Use in Production",             desc: "Idempotency key design, read vs write retry strategy, audit logs. What separates toy agents from production ones." },
+      { type: "systems", id: "agentarch",                    label: "Agent Architecture",                 desc: "Planner-executor-memory patterns. The canonical architecture to draw in any system design interview." },
+      { type: "gt",      id: "agent-observability",          label: "Agent Observability",                desc: "Trace anatomy, cost p95, TTFT alerts. The three signals that tell you if your agent is healthy." },
+      { type: "gt",      id: "agent-testing-strategies",     label: "Testing Agentic Systems",            desc: "Why unit tests fail for agents. Mock-behavioral tests, trajectory evaluation, red teaming." },
+      { type: "gt",      id: "agent-backend-apis",           label: "Backend APIs for Agents",            desc: "202 + polling, SSE, request deduplication. The async patterns that stop gateway timeouts from killing your agent." },
+      { type: "gt",      id: "async-task-queues-agents",     label: "Async Task Queues",                  desc: "Task state machine, exactly-once execution, DLQ design. The infrastructure behind long-running agent jobs." },
+      { type: "gt",      id: "kubernetes-ai-workloads",      label: "Kubernetes for AI Workloads",        desc: "GPU scheduling, KEDA vs HPA, PodDisruptionBudgets. Production K8s for LLM-serving pods." },
+      { type: "gt",      id: "agent-security",               label: "Security for AI Agents",             desc: "Indirect injection, OWASP LLM Top 10, least privilege tool design. The security mindset shift for agents." },
+      { type: "gt",      id: "agent-governance",             label: "Governance and Auditability",        desc: "Data lineage, model version pinning, prompt versioning as code, HITL approval gates." },
+      { type: "systems", id: "guardrails",                   label: "AI Guardrails",                      desc: "Input/output safety rails. Wire these around every agent before it touches production." },
+      { type: "gt",      id: "llmops-production-checklist",  label: "LLMOps Production Checklist",        desc: "The full checklist: observability, prompt versioning, cost tracking, rollback. Ship and maintain at scale." },
+      { type: "preplab", id: null, topic: "agents",          label: "PrepLab: Agents + Production",       desc: "MCP, tool use, observability, security, governance — all the senior-level production questions." },
+    ],
+  },
 ];
 
 const TYPE_CONFIG = {
