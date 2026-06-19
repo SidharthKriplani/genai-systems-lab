@@ -494,25 +494,34 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
 
         {/* Path context bar */}
         {pathContext && (
-          <div className="rounded-lg border mb-6 px-3 py-2.5 flex items-center gap-3 flex-wrap"
+          <div className="rounded-lg border mb-6 px-3 py-2.5 space-y-2"
             style={{ borderColor: pathContext.pathColor + "35", background: pathContext.pathColor + "0d" }}>
-            <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
-              style={{ color: pathContext.pathColor, background: pathContext.pathColor + "18", border: `1px solid ${pathContext.pathColor}35`, letterSpacing: "0.08em" }}>
-              {pathContext.pathAbbr}
-            </span>
-            <span className="text-[11px] font-medium shrink-0" style={{ color: pathContext.pathColor }}>
-              {pathContext.pathTitle}
-            </span>
-            <span className="text-[11px] text-zinc-500 font-mono shrink-0">
-              Step {pathContext.stepIdx + 1} of {pathContext.totalSteps}
-            </span>
-            <div className="flex items-center gap-2 ml-auto">
+            {/* Row 1: identity + path link */}
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
+                style={{ color: pathContext.pathColor, background: pathContext.pathColor + "18", border: `1px solid ${pathContext.pathColor}35`, letterSpacing: "0.08em" }}>
+                {pathContext.pathAbbr}
+              </span>
+              <span className="text-[11px] font-medium truncate" style={{ color: pathContext.pathColor }}>
+                {pathContext.pathTitle}
+              </span>
+              <span className="text-[10px] text-zinc-500 font-mono shrink-0 ml-1">
+                {pathContext.stepIdx + 1}/{pathContext.totalSteps}
+              </span>
+              <button onClick={() => onNavigateTo && onNavigateTo({ tab: "paths" })}
+                className="text-[10px] font-mono px-2 py-0.5 rounded transition-all ml-auto shrink-0"
+                style={{ color: pathContext.pathColor, border: `1px solid ${pathContext.pathColor}40`, background: pathContext.pathColor + "10" }}>
+                ↩ Path
+              </button>
+            </div>
+            {/* Row 2: prev/next + mark done */}
+            <div className="flex items-center gap-2">
               {pathContext.stepIdx > 0 && (() => {
                 const prev = pathContext.steps[pathContext.stepIdx - 1];
                 return prev?.type === "gt" ? (
                   <button
                     onClick={() => onNavigateTo && onNavigateTo({ tab: "groundtruth", postId: prev.id, pathContext: { ...pathContext, stepIdx: pathContext.stepIdx - 1 } })}
-                    className="text-[10px] text-zinc-400 hover:text-white transition-colors font-mono truncate max-w-[120px]"
+                    className="text-[10px] text-zinc-400 hover:text-white transition-colors font-mono truncate max-w-[100px]"
                     title={prev.label}>
                     ← {prev.label}
                   </button>
@@ -523,23 +532,18 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
                 return next?.type === "gt" ? (
                   <button
                     onClick={() => onNavigateTo && onNavigateTo({ tab: "groundtruth", postId: next.id, pathContext: { ...pathContext, stepIdx: pathContext.stepIdx + 1 } })}
-                    className="text-[10px] text-zinc-400 hover:text-white transition-colors font-mono truncate max-w-[120px]"
+                    className="text-[10px] text-zinc-400 hover:text-white transition-colors font-mono truncate max-w-[100px]"
                     title={next.label}>
                     {next.label} →
                   </button>
                 ) : null;
               })()}
               <button onClick={toggleStepDone}
-                className="text-[10px] font-mono px-2 py-1 rounded transition-all"
+                className="text-[10px] font-mono px-2 py-0.5 rounded transition-all ml-auto shrink-0"
                 style={stepDone
                   ? { color: "#22c55e", border: "1px solid #22c55e40", background: "#22c55e10" }
                   : { color: "#71717a", border: "1px solid #52525b", background: "transparent" }}>
                 {stepDone ? "✓ Done" : "Mark done"}
-              </button>
-              <button onClick={() => onNavigateTo && onNavigateTo({ tab: "paths" })}
-                className="text-[10px] font-mono px-2 py-1 rounded transition-all"
-                style={{ color: pathContext.pathColor, border: `1px solid ${pathContext.pathColor}40`, background: pathContext.pathColor + "10" }}>
-                ↩ Path
               </button>
             </div>
           </div>
