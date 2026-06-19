@@ -21,7 +21,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 68, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 488 PrepLab questions, 301 GT index entries (12 new series, 3 interactive Systems modules), 6 PrepLab modes (+ Interview Sprint + Browse All), 6 challenge area landing pages.
+**Scale (post-sprint 72, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 543 PrepLab questions, 301 GT index entries (12 new series, 3 interactive Systems modules), 6 PrepLab modes (+ Interview Sprint + Browse All), 6 challenge area landing pages.
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
@@ -508,6 +508,18 @@ For full audit findings see AUDITS.md.
 - **Scale post-sprint 68:** 488 PrepLab questions, 6 challenge area landing pages.
 - UTM strategy: use `?utm_source=linkedin&utm_campaign=<area>` on all shared links. PostHog captures automatically — requires `VITE_POSTHOG_KEY` Vercel env var.
 - User must push: `cd ~/Documents/GitHub/genai-systems-lab && git push origin main`
+
+**Sprint 72 (June 2026) — First Principles path UX (B1–B6) + emoji removal:**
+- B1: `goToStep(step, idx)` — added `idx` param. `pathContext` payload `{pathId, stepIdx, totalSteps, pathTitle, pathColor, pathAbbr, steps[]}` passed from LearningPaths → App.jsx (`gtPathContext` state) → GroundTruth.jsx → PostDetail prop.
+- B2: Path context bar in GT PostDetail — colored banner: abbr badge, path name, step N of M, prev/next GT step buttons, ↩ Path link.
+- B3: 3-mode reader — `readMode` state (`"skim"|"full"|"dense"`) replaces `simpleMode` bool. Skim: callouts+headings. Dense: skips intro prose (starts from first h2). Full: unchanged.
+- B4: Callout openers on all 14 First Principles path posts in `groundTruthPosts.js` — `{t:"callout",c:"..."}` as first block: prerequisite chain + plain-English outcome statement.
+- B5: Path-aware footer card at post end — progress bar (stepIdx/totalSteps), "Mark as complete" toggle, "Next: [label] →" navigates next GT step, "View path summary →" on last step.
+- B6: Mark done button in context bar — toggles `gsl-path-progress[pathId]` array in localStorage, green indicator.
+- Emoji removal: all 8 PATHS `emoji` field → `abbr` monospace badge; TYPE_CONFIG icons removed. Both sidebar and path header render styled `<span>` badges per path accent color.
+- Commit `d57d929`. Brace diff = 0 on all 4 files.
+- **Scale post-sprint 72:** 543 PrepLab questions (unchanged — no new content). Path UX fully complete.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
 **Sprint 71 (June 2026) — Intermediate questions + react-pattern + readMore fixes:**
 - 8 intermediate Foundations questions (`found-int-1` through `found-int-8`): encoder vs decoder architecture choice, LoRA rank selection, multi-head vs single-head attention, perplexity as downstream proxy, catastrophic forgetting, fine-tune vs prompt decision signals, KV cache memory cost, MHA vs GQA architecture.

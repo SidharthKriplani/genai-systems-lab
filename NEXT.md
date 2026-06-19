@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 71 (June 2026) — Scale: 543 PrepLab questions, 301 GT index entries, 6 PrepLab modes, 12 GT series, 6 challenge area landing pages*
+*Last updated: sprint 72 (June 2026) — Scale: 543 PrepLab questions, 301 GT index entries, 6 PrepLab modes, 12 GT series, 6 challenge area landing pages*
 
 ---
 
@@ -45,7 +45,21 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 72 — Next up
+## Sprint 72 — ✅ COMPLETE (`d57d929`)
+
+**Objective:** First Principles path UX — B1–B6 complete.
+
+1. ~~**B1 pathContext threading**~~ — `goToStep(step, idx)` passes full pathContext through App.jsx → GroundTruth.jsx → PostDetail.
+2. ~~**B2 Path context bar**~~ — colored banner in GT reader: abbr badge, path name, step N of M, prev/next GT step nav, ↩ Path.
+3. ~~**B3 3-mode reader**~~ — Skim / Read / Dense replacing old simpleMode boolean.
+4. ~~**B4 Callout openers**~~ — `{t:"callout"}` first block on all 14 First Principles path posts.
+5. ~~**B5 Path-aware footer**~~ — progress bar + "Next: [label] →" CTA + "View path summary →" on last step.
+6. ~~**B6 Mark done**~~ — toggles `gsl-path-progress[pathId]` localStorage, green indicator in both context bar and footer.
+7. ~~**Emoji removal**~~ — all 8 PATHS + TYPE_CONFIG replaced with monospace abbr badges.
+
+---
+
+## Sprint 73 — Next up
 
 ### P0 — Mastery Room commit
 - Files staged in sprint 60 (fsrs.js, studySeed.js, StudyRoom.jsx, App.jsx update) need `git commit` + push.
