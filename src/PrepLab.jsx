@@ -128,6 +128,7 @@ const TOPIC_COLORS = {
   multimodal: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
   reasoning: "bg-teal-500/20 text-teal-300 border-teal-500/30",
   serving: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+  foundations: "bg-sky-500/20 text-sky-300 border-sky-500/30",
 };
 
 const TOPIC_LABELS = {
@@ -136,6 +137,7 @@ const TOPIC_LABELS = {
   safety: "Safety", product: "Product", behavioral: "Behavioral",
   multimodal: "Multimodal", reasoning: "Reasoning Models",
   serving: "Serving & Inference",
+  foundations: "Foundations",
 };
 
 // Topic group tiles — aligned to challenge area names (R8 redesign)
@@ -314,13 +316,14 @@ function drawQuestions(count, focus, difficulty) {
   let pool = [...PREP_QUESTIONS];
   if (focus !== "all") {
     const topicMap = {
-      engineering: ["rag", "agents", "llmops", "finetuning", "evaluation", "safety"],
+      engineering: ["rag", "agents", "llmops", "finetuning", "evaluation", "safety", "foundations"],
       pm: ["product", "behavioral", "evaluation"],
       interview: ["behavioral", "product", "rag", "agents"]
     };
     pool = pool.filter(q => (topicMap[focus] || []).includes(q.topic));
   }
   if (difficulty === "hard") pool = pool.filter(q => q.difficulty === "hard");
+  pool = pool.filter(q => q.type !== "daunting"); // daunting questions are browse-only
   return shuffle(pool).slice(0, count);
 }
 
@@ -562,13 +565,25 @@ function MCQOptions({ options, selected, onSelect }) {
   );
 }
 
+const DIFF_ACCENT = {
+  beginner: "rgba(52,211,153,0.9)", "beginner-intermediate": "rgba(45,212,191,0.9)",
+  intermediate: "rgba(56,189,248,0.9)", easy: "rgba(59,130,246,0.9)",
+  medium: "rgba(245,158,11,0.85)", hard: "rgba(239,68,68,0.9)",
+  staff: "rgba(129,140,248,0.9)", daunting: "rgba(167,139,250,0.95)",
+};
+const DIFF_CHIP = {
+  beginner: "bg-emerald-950/50 text-emerald-400 border border-emerald-800/40",
+  "beginner-intermediate": "bg-teal-950/50 text-teal-400 border border-teal-800/40",
+  intermediate: "bg-sky-950/50 text-sky-400 border border-sky-800/40",
+  easy: "bg-blue-950/50 text-blue-400 border border-blue-800/40",
+  medium: "bg-amber-950/50 text-amber-400 border border-amber-800/40",
+  hard: "bg-red-950/50 text-red-400 border border-red-800/40",
+  staff: "bg-indigo-950/50 text-indigo-400 border border-indigo-800/40",
+  daunting: "bg-violet-950/50 text-violet-400 border border-violet-800/40",
+};
 function QuestionCard({ q, gaps = [] }) {
-  const diffAccent = q.difficulty === "hard" ? "rgba(239,68,68,0.9)" : q.difficulty === "easy" ? "rgba(59,130,246,0.9)" : "rgba(245,158,11,0.85)";
-  const diffChip = q.difficulty === "hard"
-    ? "bg-red-950/50 text-red-400 border border-red-800/40"
-    : q.difficulty === "easy"
-    ? "bg-blue-950/50 text-blue-400 border border-blue-800/40"
-    : "bg-amber-950/50 text-amber-400 border border-amber-800/40";
+  const diffAccent = DIFF_ACCENT[q.difficulty] || "rgba(245,158,11,0.85)";
+  const diffChip = DIFF_CHIP[q.difficulty] || "bg-amber-950/50 text-amber-400 border border-amber-800/40";
   return (
     <div
       style={{
@@ -3135,6 +3150,7 @@ function BrowseMode({ onExit }) {
   const [diff, setDiff] = useState("all");
   const [expanded, setExpanded] = useState({});
   const [reviewed, setReviewed] = useState({});
+  const [openAnswers, setOpenAnswers] = useState({}); // { [qId]: { [answerIdx]: bool } }
 
   const allTopics = Array.from(new Set(PREP_QUESTIONS.map(q => q.topic))).sort();
 
@@ -3184,10 +3200,10 @@ function BrowseMode({ onExit }) {
         {/* Difficulty filter — always its own row */}
         <div className="px-4 sm:px-6 pb-2.5 flex gap-1.5 items-center">
           <span className="text-[10px] font-mono text-zinc-600 mr-1">Difficulty:</span>
-          {["all", "easy", "medium", "hard"].map(d => (
+          {["all", "beginner", "beginner-intermediate", "intermediate", "easy", "medium", "hard", "staff", "daunting"].map(d => (
             <button key={d} onClick={() => setDiff(d)}
-              className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all capitalize ${diff === d ? "bg-zinc-600 text-white" : "bg-zinc-800/60 text-zinc-500 hover:text-zinc-300"}`}>
-              {d}
+              className={`shrink-0 px-2.5 py-1 rounded text-[11px] font-mono transition-all capitalize ${diff === d ? "bg-zinc-600 text-white" : "bg-zinc-800/60 text-zinc-500 hover:text-zinc-300"}`}>
+              {d === "beginner-intermediate" ? "B-I" : d}
             </button>
           ))}
         </div>
@@ -3201,9 +3217,17 @@ function BrowseMode({ onExit }) {
         {filtered.map((q, idx) => {
           const isOpen = !!expanded[q.id];
           const isDone = !!reviewed[q.id];
-          const diffColor = q.difficulty === "hard" ? "text-red-400 border-red-900/50 bg-red-950/20"
-            : q.difficulty === "medium" ? "text-amber-400 border-amber-900/50 bg-amber-950/20"
-            : "text-emerald-400 border-emerald-900/50 bg-emerald-950/20";
+          const diffColorMap = {
+            beginner: "text-emerald-400 border-emerald-900/50 bg-emerald-950/20",
+            "beginner-intermediate": "text-teal-400 border-teal-900/50 bg-teal-950/20",
+            intermediate: "text-sky-400 border-sky-900/50 bg-sky-950/20",
+            easy: "text-blue-400 border-blue-900/50 bg-blue-950/20",
+            medium: "text-amber-400 border-amber-900/50 bg-amber-950/20",
+            hard: "text-red-400 border-red-900/50 bg-red-950/20",
+            staff: "text-indigo-400 border-indigo-900/50 bg-indigo-950/20",
+            daunting: "text-violet-400 border-violet-900/50 bg-violet-950/20",
+          };
+          const diffColor = diffColorMap[q.difficulty] || "text-amber-400 border-amber-900/50 bg-amber-950/20";
 
           return (
             <div key={q.id} className={`rounded-xl border transition-all ${isDone ? "border-emerald-800/40 bg-emerald-950/10" : "border-zinc-800 bg-zinc-900/40"} ${isOpen ? "border-violet-700/60" : ""}`}>
@@ -3234,6 +3258,43 @@ function BrowseMode({ onExit }) {
                           {oi === q.correct && <span className="text-[10px] font-mono text-emerald-400 shrink-0 mt-0.5">✓</span>}
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Daunting — toggle-expandable answer panels, multiple correct */}
+                  {q.type === "daunting" && q.answers && (
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-1">Multiple valid answers — tap each to read</p>
+                      {q.answers.map((ans, ai) => {
+                        const isAnsOpen = !!(openAnswers[q.id]?.[ai]);
+                        return (
+                          <div key={ai} className={`rounded-lg border transition-all ${ans.correct ? "border-violet-700/40 bg-violet-950/10" : "border-zinc-700/60"}`}>
+                            <button
+                              onClick={() => setOpenAnswers(prev => ({ ...prev, [q.id]: { ...(prev[q.id] || {}), [ai]: !isAnsOpen } }))}
+                              className="w-full text-left px-3 py-2.5 flex items-start gap-2">
+                              <span className={`text-[11px] font-mono shrink-0 mt-0.5 ${ans.correct ? "text-violet-400" : "text-zinc-500"}`}>
+                                {ans.correct ? "✓" : "○"}
+                              </span>
+                              <span className="flex-1 text-sm text-zinc-200 leading-snug">{ans.label}</span>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                className={`text-zinc-500 shrink-0 mt-0.5 transition-transform ${isAnsOpen ? "rotate-180" : ""}`}>
+                                <polyline points="6 9 12 15 18 9"/>
+                              </svg>
+                            </button>
+                            {isAnsOpen && (
+                              <div className="px-3 pb-3 border-t border-zinc-800/60">
+                                <p className="text-sm text-zinc-300 leading-relaxed mt-2 whitespace-pre-line">{ans.content}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {q.synthesis_note && (
+                        <div className="rounded-lg bg-violet-950/20 border border-violet-800/30 px-3 py-2.5 mt-2">
+                          <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-1">Synthesis</p>
+                          <p className="text-sm text-violet-200/80 leading-relaxed">{q.synthesis_note}</p>
+                        </div>
+                      )}
                     </div>
                   )}
 

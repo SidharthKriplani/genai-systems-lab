@@ -5912,4 +5912,570 @@ export const PREP_QUESTIONS = [
     readMore: null
   },
 
+  // ── FOUNDATIONS — Beginner (8) ────────────────────────────────────────────
+  {
+    id: "found-beg-1", topic: "foundations", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is a word embedding?",
+    options: [
+      "A lookup table that assigns each word a unique integer ID",
+      "A dense vector representation of a word that encodes semantic meaning",
+      "A list of synonyms for each word in a vocabulary",
+      "A one-hot encoded binary array with one position set to 1"
+    ],
+    correct: 1,
+    explanation: "An embedding is a dense vector (e.g. 768 numbers) trained so that semantically similar words are close together in vector space. Unlike one-hot encoding, it is compact and encodes meaning — 'cat' and 'kitten' will be nearby; 'cat' and 'airplane' will be far apart. This geometric property is what makes downstream tasks like search and classification work.",
+    trap: "Confusing embeddings with one-hot encoding. One-hot is sparse (one 1, rest 0s), has no semantic structure, and scales with vocabulary size. Embeddings are dense, compact, and learned — the semantic structure is what makes them useful.",
+    readMore: { label: "NLP Origins — from n-grams to neural", tab: "groundtruth", postId: "ngrams-to-neural" }
+  },
+  {
+    id: "found-beg-2", topic: "foundations", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is tokenization in the context of LLMs?",
+    options: [
+      "Splitting text into sentences using punctuation rules",
+      "Converting text into a sequence of subword IDs using a learned vocabulary",
+      "Encrypting input text before it reaches the model",
+      "Scoring each word's importance before processing"
+    ],
+    correct: 1,
+    explanation: "Tokenization converts raw text into a sequence of tokens — subword units (e.g. 'playing' → ['play', '##ing']) that map to integer IDs. The vocabulary is learned from a large corpus (BPE, WordPiece, etc.). Tokens are the actual input the model sees — not words, not characters. A single word can become 2–3 tokens; a rare word might become 5+.",
+    trap: "Thinking tokens equal words. They don't. 'tokenization' (the word) might itself be 2–3 tokens. This matters in production — token budgets, cost per request, and context window limits all count tokens, not words.",
+    readMore: { label: "BERT Internals Explained", tab: "groundtruth", postId: "bert-internals-explained" }
+  },
+  {
+    id: "found-beg-3", topic: "foundations", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What problem does the attention mechanism solve in sequence modeling?",
+    options: [
+      "It speeds up training by batching multiple sequences together",
+      "It lets the model look at any position in the input when processing each token, not just recent ones",
+      "It reduces memory usage by compressing hidden states",
+      "It prevents overfitting by randomly dropping tokens during training"
+    ],
+    correct: 1,
+    explanation: "Before attention, RNNs processed tokens sequentially — information about early tokens had to be compressed into a fixed-size hidden state and passed forward. Long-range dependencies degraded badly. Attention lets every token directly attend to every other token, regardless of distance. No information bottleneck.",
+    trap: "Describing attention as just a speed improvement. The core value is direct access — any token can attend to any other token in one step, not through a chain of hidden states. That is why long-context tasks went from impossible to tractable.",
+    readMore: { label: "Attention from Scratch", tab: "groundtruth", postId: "attention-from-scratch" }
+  },
+  {
+    id: "found-beg-4", topic: "foundations", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is a transformer?",
+    options: [
+      "An RNN with an extra memory module attached",
+      "A model architecture built entirely on attention layers — no recurrence, no convolution",
+      "A method for converting images into text sequences",
+      "A compression algorithm for reducing model size"
+    ],
+    correct: 1,
+    explanation: "The Transformer (Vaswani et al., 2017) replaced recurrence entirely with stacked self-attention + feed-forward layers. Each layer has multi-head self-attention (tokens attend to each other) and a position-wise FFN. Because there is no sequential dependency, the whole sequence can be processed in parallel — key to scaling to 100B+ parameter models.",
+    trap: "Thinking transformers are just 'better RNNs'. They are architecturally different — no hidden state, no recurrence. Parallelism is structural, not just an optimization. This is what made modern LLMs feasible to train.",
+    readMore: { label: "MHA vs MQA vs GQA Explained", tab: "groundtruth", postId: "mha-mqa-gqa-explained" }
+  },
+  {
+    id: "found-beg-5", topic: "foundations", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is pretraining in the context of LLMs?",
+    options: [
+      "Running a model on a test set before fine-tuning to measure baseline accuracy",
+      "Training a model on a large general corpus with a self-supervised objective before any task-specific training",
+      "Loading model weights from a checkpoint saved during a previous training run",
+      "Training a smaller model to distill knowledge from a larger model"
+    ],
+    correct: 1,
+    explanation: "Pretraining uses a self-supervised objective (next-token prediction or masked LM) on massive corpora — no labels needed. The model learns general knowledge: grammar, world facts, code patterns, reasoning heuristics. This pretrained state is the foundation — fine-tuning or prompting then adapts it to specific tasks.",
+    trap: "Treating pretraining as just 'initial training'. The key is self-supervised + massive scale + general corpus. The model learns representations transferable to tasks it was never explicitly trained on — that emergent capability is what makes LLMs useful.",
+    readMore: { label: "Pretraining Data Decisions", tab: "groundtruth", postId: "pretraining-data-decisions" }
+  },
+  {
+    id: "found-beg-6", topic: "foundations", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is a context window in an LLM?",
+    options: [
+      "The number of layers in the model's attention stack",
+      "The maximum number of tokens the model can process in a single forward pass (input + output combined)",
+      "A sliding window that moves across a document to chunk it for retrieval",
+      "The number of examples shown to the model during few-shot prompting"
+    ],
+    correct: 1,
+    explanation: "The context window is the total token budget for one inference call — it includes system prompt, user message, retrieved chunks, and the generated response. Tokens outside the window are invisible to the model. GPT-4 has a 128K token window; Claude 3.5 has 200K. Everything the model 'knows' about a conversation must fit here.",
+    trap: "Conflating context window with model knowledge. The context window is what the model can see right now — not what it learned during training. A 1T parameter model with a 4K context window still cannot recall what you said 5 pages ago.",
+    readMore: { label: "Long Context Window Explained", tab: "groundtruth", postId: "long-context-window" }
+  },
+  {
+    id: "found-beg-7", topic: "foundations", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What does the temperature parameter control in LLM generation?",
+    options: [
+      "The maximum number of tokens the model can generate",
+      "How much the model's training was affected by rare examples",
+      "How random vs deterministic the model's token sampling is",
+      "The speed of inference on GPU"
+    ],
+    correct: 2,
+    explanation: "Temperature scales the raw logits before softmax. Temperature=0 makes the highest-probability token always selected (deterministic). Temperature=1 samples proportionally to model-assigned probabilities. Temperature>1 flattens the distribution — more random, more surprising, also more likely to be wrong. Temperature=0 for factual tasks; 0.7–1.0 for creative tasks.",
+    trap: "Thinking temperature=0 is always best. For factual Q&A or code, yes — determinism reduces hallucination. For creative tasks or diverse generation, temp 0.7–1.0 produces better outputs. The right setting depends on the task.",
+    readMore: null
+  },
+  {
+    id: "found-beg-8", topic: "foundations", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is a foundation model?",
+    options: [
+      "A model trained specifically for one task with a very large dataset",
+      "A large model pretrained on broad data that can be adapted to many downstream tasks",
+      "A model that cannot be fine-tuned and is used only through prompting",
+      "The first version of any model released before updates"
+    ],
+    correct: 1,
+    explanation: "Foundation models (Bommasani et al., Stanford, 2021) are pretrained at scale on diverse data and can be adapted to many tasks via fine-tuning, prompting, or retrieval. GPT-4, Gemini, Claude, LLaMA are all foundation models. The defining property: trained once, adapted many times, for tasks not specified at training time.",
+    trap: "Confusing foundation model with any large model. Scale matters but the key property is generalization — the model was not trained for your specific task yet transfers to it. This emerges from pretraining on sufficiently diverse, large corpora.",
+    readMore: { label: "Fine-tuning Playbook", tab: "groundtruth", postId: "finetune-playbook" }
+  },
+
+  // ── FOUNDATIONS — Beginner-Intermediate (8) ───────────────────────────────
+  {
+    id: "found-bi-1", topic: "foundations", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "The transformer replaced LSTMs for most NLP tasks. What specific failure of LSTMs does self-attention directly fix?",
+    options: [
+      "LSTMs were too slow to train because they required large GPU clusters",
+      "LSTMs compressed all past context into a fixed-size hidden state, causing information loss for long sequences",
+      "LSTMs could not handle batches of different-length sequences",
+      "LSTMs required labeled data and could not benefit from self-supervised pretraining"
+    ],
+    correct: 1,
+    explanation: "LSTMs process tokens sequentially and must encode all prior context into a fixed hidden state vector. For sequences of 500+ tokens, early tokens are practically gone — the hidden state bottleneck. Self-attention has no bottleneck: every token directly computes attention scores against every other token. Long-range dependency costs the same as short-range. That is the structural fix.",
+    trap: "Saying transformers were just faster or better at training. LSTMs also parallelize to some extent. The fundamental fix is architectural: direct token-to-token attention vs. a sequential hidden state bottleneck.",
+    readMore: { label: "Attention from Scratch", tab: "groundtruth", postId: "attention-from-scratch" }
+  },
+  {
+    id: "found-bi-2", topic: "foundations", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Transformers have no inherent sense of word order. What breaks if you remove positional encoding entirely?",
+    options: [
+      "The model runs 2x slower due to extra position computation",
+      "The model treats 'dog bites man' and 'man bites dog' as identical — word order becomes invisible",
+      "Multi-head attention cannot run in parallel without position information",
+      "Embeddings collapse to zero during training without position signals"
+    ],
+    correct: 1,
+    explanation: "Self-attention is a set operation — permutation-invariant by design. Without positional encoding, shuffling the token order produces the same hidden states. Positional encodings (sinusoidal fixed signals or learned embeddings per position) inject order information so the model can distinguish 'not good' from 'good not'. This is why system prompt position 0 and user instruction at position 500 affect output differently.",
+    trap: "Treating positional encoding as a performance optimization. It is correctness-critical. Without it, the model literally cannot tell word order — every permutation of tokens looks identical. For any task where order matters (almost all tasks), the model fails without it.",
+    readMore: { label: "Attention from Scratch", tab: "groundtruth", postId: "attention-from-scratch" }
+  },
+  {
+    id: "found-bi-3", topic: "foundations", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Why do LLMs use subword tokenizers (BPE, WordPiece) rather than word-level tokenization?",
+    options: [
+      "Subword tokenizers are 10x faster at inference time",
+      "Word-level tokenizers create an unmanageably large vocabulary and cannot handle unseen words",
+      "Subword tokenizers allow the model to handle multiple languages simultaneously",
+      "Word-level tokenizers require more labeled training data"
+    ],
+    correct: 1,
+    explanation: "Word-level tokenization fails on two counts: (1) vocabulary explosion — English alone has millions of word forms, making the embedding table huge; (2) OOV (out-of-vocabulary) — any unseen word, typo, or compound becomes unknown. BPE/WordPiece learns a vocabulary of 30K–50K subword units that covers any word through composition. 'ChatGPT' might tokenize as ['Chat', 'G', 'PT'] — never seen before, still handled.",
+    trap: "Claiming subword tokenizers are just a speed trick. The OOV problem is the real issue — word-level tokenizers break on any word not seen during training. Subword tokenization is how models handle new words, code, URLs, names, and multilingual text without a special unknown token.",
+    readMore: { label: "BERT Internals Explained", tab: "groundtruth", postId: "bert-internals-explained" }
+  },
+  {
+    id: "found-bi-4", topic: "foundations", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Why does pretraining on a large, diverse corpus generalize better to downstream tasks than training on task-specific data alone?",
+    options: [
+      "Larger datasets always produce higher accuracy regardless of content",
+      "The model learns general language and reasoning representations that transfer across tasks",
+      "Diverse data reduces GPU memory requirements during fine-tuning",
+      "Task-specific data is always lower quality than web-scraped data"
+    ],
+    correct: 1,
+    explanation: "Task-specific training teaches the model what answers look like for that task — it does not teach general reasoning, language structure, or world knowledge. Pretraining on diverse text forces the model to learn representations that explain millions of different sentences: grammar, named entities, causal relationships, code logic. These learned representations transfer — a model that learned to predict text about medicine, law, and physics has richer representations for any of those domains than one trained only on 10K labeled Q&A pairs.",
+    trap: "Treating this as purely a data volume question. Diversity and the self-supervised nature matter more than just scale. A model pretrained only on news articles will have blind spots on code, math, or conversation — even at 100B tokens. Breadth of pretraining distribution determines breadth of transfer.",
+    readMore: { label: "Pretraining Data Decisions", tab: "groundtruth", postId: "pretraining-data-decisions" }
+  },
+  {
+    id: "found-bi-5", topic: "foundations", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Why does doubling the context window length more than double the compute cost for a transformer?",
+    options: [
+      "Positional embeddings need to be recomputed for all positions",
+      "Self-attention computes pairwise scores between all tokens — cost scales quadratically with sequence length",
+      "The feed-forward layers double in size to handle longer inputs",
+      "Longer sequences require more gradient steps to converge during training"
+    ],
+    correct: 1,
+    explanation: "In self-attention, each of the N tokens attends to every other token — N² attention score computations per layer. Double N → 4x attention cost. This quadratic scaling is why context windows were limited to 4K tokens for years. Techniques like Flash Attention and sliding window attention reduce the constant factor but the asymptotic scaling remains O(N²) for full attention.",
+    trap: "Saying it scales linearly. The FFN layers scale O(N), but attention is O(N²). At 128K tokens, the attention cost for one forward pass is enormous — this is why long-context models are dramatically more expensive per token than short-context ones.",
+    readMore: { label: "Long Context Window Explained", tab: "groundtruth", postId: "long-context-window" }
+  },
+  {
+    id: "found-bi-6", topic: "foundations", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Why does increasing temperature in LLM generation tend to increase the rate of hallucination?",
+    options: [
+      "Higher temperature causes the model to process fewer context tokens",
+      "Higher temperature amplifies low-probability tokens, raising the chance of implausible continuations being selected",
+      "Higher temperature slows generation, causing the model to lose track of earlier context",
+      "Higher temperature bypasses the model's safety filters"
+    ],
+    correct: 1,
+    explanation: "Temperature scales logits before softmax. At temp=1, token probabilities reflect the model's trained distribution. At temp>1, the distribution flattens — low-probability tokens (including plausible-sounding but incorrect facts) get much higher weight. The model is more likely to pick a confident-sounding but wrong continuation. For factual tasks, temp=0 or 0.2 is standard.",
+    trap: "Blaming hallucination solely on temperature. Temperature amplifies existing tendencies — if the model has wrong beliefs from pretraining, it hallucinates at any temperature. Temperature primarily controls the variance of hallucination, not its existence. The root cause is always the model's parametric knowledge.",
+    readMore: null
+  },
+  {
+    id: "found-bi-7", topic: "foundations", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Why must you use the same embedding model for both query encoding and document indexing in a retrieval system?",
+    options: [
+      "Using different models wastes API credits even if results are acceptable",
+      "Different models produce embeddings in different vector spaces — cosine similarity between them is meaningless",
+      "The indexing model must match the query model to avoid integer overflow errors",
+      "Vector databases enforce a single-model constraint for schema consistency"
+    ],
+    correct: 1,
+    explanation: "Embedding models map text to points in a specific high-dimensional space. Similarity is only meaningful within that space. Two different models — even with identical dimensions — learn different geometries. Computing cosine similarity between a query embedded by model A and a document embedded by model B is like measuring distance with two different rulers. The number you get is meaningless.",
+    trap: "Thinking same dimension = compatible. Dimension is just the vector length — the actual geometry is model-specific. This is why changing the embedding model requires a full re-index of all documents. It is not a hot-swap upgrade.",
+    readMore: { label: "Vector Databases Compared", tab: "groundtruth", postId: "vector-databases-compared" }
+  },
+  {
+    id: "found-bi-8", topic: "foundations", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "A product team asks whether to fine-tune a model or use better prompts. What does fine-tuning enable that prompting structurally cannot?",
+    options: [
+      "Fine-tuning always produces higher accuracy — prompting is just a shortcut",
+      "Fine-tuning changes the model's weights, baking in behavior that persists at zero per-call token cost",
+      "Fine-tuning allows the model to access the internet during inference",
+      "Fine-tuning removes safety filters that prompting cannot bypass"
+    ],
+    correct: 1,
+    explanation: "Prompting burns context tokens to steer behavior and must be re-supplied every call. Fine-tuning modifies the model's weights directly, so the learned behavior is always active with zero inference overhead. Use cases: enforcing a specific output format reliably, adapting to domain vocabulary, style matching, reducing verbosity. Fine-tuning loses when: data is limited (<500 high-quality examples), the task is changing, or you need to iterate quickly.",
+    trap: "Thinking fine-tuning always beats prompting. It does not — prompting is better when the task is variable, you are iterating quickly, or you have fewer than a few hundred examples. Fine-tuning is harder, slower, and more expensive to iterate on. The actual answer: use prompting first, fine-tune only when you hit a real ceiling.",
+    readMore: { label: "Fine-tuning Playbook", tab: "groundtruth", postId: "finetune-playbook" }
+  },
+
+  // ── RAG — Beginner (8) ────────────────────────────────────────────────────
+  {
+    id: "rag-beg-1", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is Retrieval-Augmented Generation (RAG)?",
+    options: [
+      "A technique to train LLMs on domain-specific data by adding retrieval examples to the training set",
+      "A system that retrieves relevant documents at inference time and includes them in the LLM's context before generating",
+      "A method that generates multiple outputs and retrieves the best one",
+      "A database that stores LLM outputs for retrieval later"
+    ],
+    correct: 1,
+    explanation: "RAG (Lewis et al., 2020) separates retrieval from generation. At inference: (1) embed the user query, (2) search a vector store for similar document chunks, (3) inject those chunks into the LLM's context, (4) generate an answer grounded in the retrieved content. The model's weights are unchanged — it reads from the knowledge base each call. This is why RAG handles real-time knowledge and large corpora that cannot fit in context.",
+    trap: "Thinking RAG is a training technique. RAG is purely inference-time. The model's weights are unchanged — you are giving it relevant documents to read before answering. Fine-tuning teaches the model facts; RAG lends the model facts per query.",
+    readMore: { label: "How RAG Works", tab: "groundtruth", postId: "how-rag-works" }
+  },
+  {
+    id: "rag-beg-2", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is a vector database, and why does RAG use one instead of a traditional SQL database?",
+    options: [
+      "A vector database stores data as binary blobs; SQL cannot handle binary files",
+      "A vector database indexes high-dimensional embeddings and finds nearest neighbors by semantic similarity, which SQL cannot do",
+      "A vector database is a SQL database with an added JSON column for embeddings",
+      "Vector databases are faster at exact string matching than SQL full-text search"
+    ],
+    correct: 1,
+    explanation: "A vector database stores document chunks as embedding vectors and supports approximate nearest-neighbor (ANN) search — finding the N most semantically similar chunks to a query embedding, fast even at millions of documents. SQL 'WHERE text LIKE %keyword%' does exact string matching — it cannot find documents that are semantically related but use different words. Examples: Pinecone, Weaviate, Qdrant, Milvus, pgvector.",
+    trap: "Thinking vector DBs are just faster full-text search. They are different operations. SQL LIKE matches substrings literally. ANN retrieval finds semantically similar vectors — it can return a passage about 'car engine problems' for the query 'vehicle malfunction' with no keyword overlap.",
+    readMore: { label: "Vector Databases Compared", tab: "groundtruth", postId: "vector-databases-compared" }
+  },
+  {
+    id: "rag-beg-3", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is chunking in a RAG pipeline?",
+    options: [
+      "Splitting documents into smaller segments for embedding and indexing",
+      "Compressing embeddings to reduce storage size",
+      "Dividing the user query into multiple sub-questions for parallel retrieval",
+      "Batching multiple documents together to speed up indexing"
+    ],
+    correct: 0,
+    explanation: "Chunking splits long documents into smaller segments (e.g. 512 tokens) before embedding. You cannot embed a 100-page PDF as one vector and expect meaningful retrieval — a single embedding cannot capture every distinct concept across 100 pages. Chunking creates focused, retrievable units. Common strategies: fixed-size (simplest), sentence-aware (clean breaks), semantic (split where topic changes), hierarchical (chunk + parent document).",
+    trap: "Treating chunking as purely a technical constraint. It is a quality lever. Bad chunk boundaries (mid-sentence, mid-table, mid-code-block) lose context. Chunks too large: imprecise retrieval. Chunks too small: retrieved chunk lacks surrounding context the LLM needs. Getting chunking right is real engineering work.",
+    readMore: { label: "How RAG Works", tab: "groundtruth", postId: "how-rag-works" }
+  },
+  {
+    id: "rag-beg-4", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What does a retrieval-focused embedding model capture that a generation embedding model does not prioritize?",
+    options: [
+      "Retrieval embeddings capture the emotional tone of a sentence",
+      "Retrieval embeddings are trained to place similar-meaning text close in vector space for accurate matching",
+      "Retrieval embeddings encode token position information for re-ranking",
+      "Retrieval embeddings compress text to fewer dimensions for storage efficiency"
+    ],
+    correct: 1,
+    explanation: "Retrieval-focused embedding models (e.g. E5, BGE, GTE) are trained on query-document pairs using contrastive learning — semantically similar pairs are pushed together, dissimilar pairs are pushed apart. Generation models learn to predict tokens, not to measure similarity. Using a generation model for retrieval works but is suboptimal — retrieval-specific models are tuned for the precise recall task RAG needs.",
+    trap: "Assuming any embedding model works equally well for retrieval. Embedding quality is one of the highest-leverage levers in a RAG system. Two models with the same dimension can produce dramatically different retrieval quality. Benchmarks like MTEB/BEIR show real gaps. Swapping models often improves recall 10–20%.",
+    readMore: { label: "Bi-Encoder vs Cross-Encoder", tab: "groundtruth", postId: "bi-encoder-vs-cross-encoder" }
+  },
+  {
+    id: "rag-beg-5", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is hybrid search in a RAG pipeline?",
+    options: [
+      "Running the same query against two different LLMs and combining outputs",
+      "Combining dense vector search (semantic) with sparse keyword search (BM25) to improve retrieval coverage",
+      "Searching both a primary and backup vector database for redundancy",
+      "Using a model to generate multiple query variations and combining results"
+    ],
+    correct: 1,
+    explanation: "Hybrid search runs the query through both: (1) dense retrieval — embed the query, find semantically similar vectors; (2) sparse retrieval — keyword matching via BM25/TF-IDF. Results are merged using reciprocal rank fusion (RRF). Dense search finds semantic matches even without keyword overlap. Sparse search handles exact terms, product codes, names, and rare technical jargon better. Neither alone covers all cases.",
+    trap: "Thinking vector search alone is sufficient. Dense embeddings struggle on exact-match queries: 'GPT-4 token limit 2024' may not retrieve a document containing 'GPT-4: 128K context' because the model interprets it unexpectedly. BM25 handles exact terms reliably. The production default in serious RAG systems is hybrid.",
+    readMore: { label: "How RAG Works", tab: "groundtruth", postId: "how-rag-works" }
+  },
+  {
+    id: "rag-beg-6", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is a reranker in a RAG pipeline?",
+    options: [
+      "A second LLM that rewrites retrieved chunks before sending them to the main model",
+      "A model that scores query-document pairs for relevance and reorders top-k results by that score",
+      "A classifier that filters out off-topic documents from the vector database",
+      "A component that sorts retrieved chunks by publication date"
+    ],
+    correct: 1,
+    explanation: "After initial retrieval (bi-encoder finds top-k candidates by embedding similarity), a reranker (cross-encoder) scores each candidate-query pair using a fine-grained relevance model — it reads both together, not just compares vectors. This is expensive per pair but much more accurate. Common rerankers: Cohere Rerank, BGE-reranker, cross-encoder/ms-marco. The pattern: retrieve 50 → rerank to top 5 → pass to LLM.",
+    trap: "Skipping rerankers because recall looks good in offline eval. Bi-encoder recall and LLM answer quality are different axes. You can have 90% recall (right chunk in top 50) but terrible answer quality (wrong chunk at position 1). The reranker closes this gap by ensuring the right chunk is at the top.",
+    readMore: { label: "Bi-Encoder vs Cross-Encoder", tab: "groundtruth", postId: "bi-encoder-vs-cross-encoder" }
+  },
+  {
+    id: "rag-beg-7", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What does 'top-k' mean in the retrieval step of a RAG pipeline?",
+    options: [
+      "The K most recently added documents in the vector store",
+      "The K documents with the highest embedding similarity scores, returned to pass to the LLM",
+      "The K tokens in the query that have the highest TF-IDF weight",
+      "The K embedding models tested before selecting the best"
+    ],
+    correct: 1,
+    explanation: "Top-k retrieval returns the K most similar documents (by cosine or dot product) to the query embedding. k=5 means 5 chunks enter the LLM context. Tradeoff: k too small → miss relevant chunks (recall drops); k too large → context gets noisy (precision drops, generation cost rises). Typical production values: k=5–20 before reranking, k=3–5 after reranking.",
+    trap: "Assuming bigger k is always better. More chunks = more tokens = more cost and more noise. The LLM can get confused when 15 loosely-relevant chunks are in context — signal-to-noise drops. The reranker → reduced-k pattern exists precisely to balance recall and precision.",
+    readMore: { label: "RAG Evaluation Deep Dive", tab: "groundtruth", postId: "llm-evaluation-guide" }
+  },
+  {
+    id: "rag-beg-8", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
+    question: "What is the difference between a bi-encoder and a cross-encoder in retrieval?",
+    options: [
+      "Bi-encoders are larger models; cross-encoders are smaller and faster",
+      "Bi-encoders embed query and document independently; cross-encoders process them jointly for deeper relevance scoring",
+      "Bi-encoders are used for training; cross-encoders are used only at inference",
+      "Bi-encoders work on text; cross-encoders work on code or structured data"
+    ],
+    correct: 1,
+    explanation: "Bi-encoder: query → embedding, document → embedding, score = cosine similarity. Fast and scalable — precompute document embeddings. Cross-encoder: query + document → relevance score jointly (all attention layers see both). Much more accurate but must process every query-doc pair fresh — too slow for first-stage retrieval at scale. Typical pattern: bi-encoder for fast recall (top-100), cross-encoder reranker for precision (top-5).",
+    trap: "Treating them as interchangeable. You cannot use a cross-encoder for first-stage retrieval — scoring every query against millions of documents would be impossibly slow. And bi-encoder-only pipelines leave precision on the table. They are designed to complement each other.",
+    readMore: { label: "Bi-Encoder vs Cross-Encoder", tab: "groundtruth", postId: "bi-encoder-vs-cross-encoder" }
+  },
+
+  // ── RAG — Beginner-Intermediate (8) ──────────────────────────────────────
+  {
+    id: "rag-bi-1", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "A RAG pipeline uses fixed-size 512-token chunks. Users report incomplete answers for questions about multi-step processes. What is the most likely root cause?",
+    options: [
+      "The embedding model is too small to represent 512-token chunks accurately",
+      "Fixed-size chunking splits mid-process, separating steps that belong together — retrieved chunk lacks the full context",
+      "512 tokens is too large for the reranker to process efficiently",
+      "The vector database index needs to be rebuilt every time the document is updated"
+    ],
+    correct: 1,
+    explanation: "Fixed-size chunking ignores document structure — a 6-step process spanning 600 tokens gets split into two chunks, neither of which has the complete procedure. The retrieved chunk for 'step 3' does not include the prerequisite condition from step 1. Solutions: semantic chunking (split on topic shift, not size), sliding window with overlap, or hierarchical chunking (store full section as parent, retrieve by sub-chunk).",
+    trap: "Blaming the embedding model when chunk quality is the issue. Embedding models embed what they are given — a truncated, context-less chunk encodes incomplete information by design. The fix is almost always upstream: better chunking strategy.",
+    readMore: { label: "How RAG Works", tab: "groundtruth", postId: "how-rag-works" }
+  },
+  {
+    id: "rag-bi-2", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Your RAG system misses relevant documents when users use synonyms ('myocardial infarction' instead of 'heart attack'). BM25 fails here. Why does switching to pure vector search not always fix every retrieval gap?",
+    options: [
+      "Vector search cannot process medical terminology without a specialized model",
+      "Vector search handles semantics well, but fails on exact product codes, proper names, and rare technical strings — hybrid is needed to cover both",
+      "Vector search requires stop-word removal, which removes common medical terms",
+      "Vector search only works for documents shorter than 256 tokens"
+    ],
+    correct: 1,
+    explanation: "Dense embeddings handle semantic synonymy well — 'heart attack' and 'myocardial infarction' will be close in vector space for a medical model. But dense retrieval over-generalizes on exact strings: 'Error code XK-2291' or a specific drug name may retrieve poorly because the model treats rare tokens as noise. BM25 handles exact matches reliably; dense handles semantics. Hybrid search covers both failure modes.",
+    trap: "Treating vector search as a universal fix for keyword search. The failure modes are different, not overlapping. Dense fails on exact strings; sparse fails on semantics. Neither is universally better — hybrid is the production default.",
+    readMore: { label: "How RAG Works", tab: "groundtruth", postId: "how-rag-works" }
+  },
+  {
+    id: "rag-bi-3", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Why is embedding model selection more impactful in RAG than in most NLP classification tasks?",
+    options: [
+      "RAG embedding models must compress images as well as text, requiring larger capacity",
+      "In RAG, the embedding model is the retrieval gatekeeper — a missed chunk cannot be recovered downstream",
+      "Classification models ignore embeddings and use only raw tokens",
+      "RAG embedding models must run at 10x the speed of classification models for production viability"
+    ],
+    correct: 1,
+    explanation: "In classification, a weak embedding model hurts accuracy but the classifier head partially compensates. In RAG, the embedding model decides what the LLM ever sees. If the relevant document is not in top-k, no amount of better generation, reranking, or prompting can fix the answer — that failure is silent, and the model confidently answers from wrong chunks. Embedding model quality directly determines the ceiling of answer quality.",
+    trap: "Treating embedding model choice as a secondary optimization. It is the highest single leverage point in RAG. MTEB benchmarks show 20–30 point differences between models on retrieval tasks. Choosing the wrong model and then trying to fix quality with prompting is building on a broken foundation.",
+    readMore: { label: "Bi-Encoder vs Cross-Encoder", tab: "groundtruth", postId: "bi-encoder-vs-cross-encoder" }
+  },
+  {
+    id: "rag-bi-4", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Your RAG system already achieves 85% recall (right chunk in top-20). A teammate proposes adding a cross-encoder reranker. What problem does it solve that higher recall alone cannot?",
+    options: [
+      "A reranker will push recall above 90% by finding additional relevant chunks",
+      "Rerankers re-encode the full document to improve chunk quality",
+      "Recall measures presence in top-k; the LLM anchors on top positions — the reranker ensures the most relevant chunk is at position 1, not buried at position 15",
+      "Rerankers filter out documents that are too old to be relevant"
+    ],
+    correct: 2,
+    explanation: "Recall at k tells you the right chunk exists somewhere in the top-k set. But LLMs weight early context more heavily and perform worse when the key fact is buried deep in a long list. A cross-encoder reranker scores each candidate query-document pair with full cross-attention — far more accurate than bi-encoder similarity. It can elevate the most relevant chunk from position 15 to position 1, which changes generation quality even with identical recall.",
+    trap: "Confusing recall and precision as solved by the same mechanism. Higher recall = right chunk is in the set. Better reranking = right chunk is at the top. Both matter but they are different failure modes. Increasing top-k to push recall past 20 rarely helps generation quality; a reranker improves precision at any k.",
+    readMore: { label: "Bi-Encoder vs Cross-Encoder", tab: "groundtruth", postId: "bi-encoder-vs-cross-encoder" }
+  },
+  {
+    id: "rag-bi-5", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "RAG is often described as reducing hallucination. Why doesn't it eliminate hallucination entirely?",
+    options: [
+      "RAG does not reduce hallucination — it just adds more text for the model to misquote",
+      "The LLM can still hallucinate when retrieved context is incomplete, ambiguous, or when the model falls back on parametric knowledge instead of the retrieved chunk",
+      "Hallucination only occurs during fine-tuning, not inference",
+      "RAG would eliminate hallucination if the vector database had more documents"
+    ],
+    correct: 1,
+    explanation: "RAG reduces a specific type of hallucination: factual claims about topics absent from the model's training data. But LLMs can still: (1) misquote — correctly retrieve a document but quote it inaccurately; (2) confabulate from context — produce a plausible-sounding synthesis that does not match any retrieved chunk; (3) ignore context — fall back on parametric knowledge when retrieved content is ambiguous. RAG shifts the failure mode from 'model does not know' to 'model misreads what it was given'.",
+    trap: "Treating RAG as an anti-hallucination guarantee. It is a reliability improvement, not a solution. Production RAG systems still require: faithfulness evaluation (does the answer match the retrieved chunk?), citation checking, and factual consistency measurement.",
+    readMore: { label: "LLM Evaluation Guide", tab: "groundtruth", postId: "llm-evaluation-guide" }
+  },
+  {
+    id: "rag-bi-6", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Why is chunk overlap (repeating the last 50 tokens of one chunk at the start of the next) useful, and what does it cost?",
+    options: [
+      "Overlap prevents duplicate documents and costs nothing — it is a lossless improvement",
+      "Overlap preserves context across chunk boundaries, at the cost of increased index size and some retrieval redundancy",
+      "Overlap is only useful for code, not natural language documents",
+      "Overlap increases retrieval speed because smaller distinct chunks are faster to compare"
+    ],
+    correct: 1,
+    explanation: "Chunking without overlap severs context at boundaries. If a key fact straddles two chunks, neither standalone chunk has enough context. Overlap ensures the sentence or paragraph bridging a boundary appears in both adjacent chunks, so either retrieval hit has it. Cost: 10–20% more tokens stored per document; occasional retrieval of near-duplicate content. Worth it for documents with dense mid-paragraph facts.",
+    trap: "Treating overlap as uniformly good. For documents like tables, code, or structured lists, overlap at arbitrary byte positions introduces corrupt partial entries. Overlap is a tradeoff parameter — the default 10–20% is not always right.",
+    readMore: { label: "How RAG Works", tab: "groundtruth", postId: "how-rag-works" }
+  },
+  {
+    id: "rag-bi-7", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Your RAG system increases top-k from 5 to 20 to improve recall. Answer quality drops despite more relevant chunks being retrieved. What is the most likely cause?",
+    options: [
+      "The vector database runs slower with larger k, causing timeout errors",
+      "More chunks add more tokens, increasing cost and making the model's answers reflect the higher price",
+      "The additional 15 chunks add noise — marginally relevant or irrelevant content dilutes the key information and the LLM produces less precise answers",
+      "Top-k above 10 is unsupported by most embedding models"
+    ],
+    correct: 2,
+    explanation: "Increasing k improves recall (more chance the right chunk is included) but hurts LLM answer precision. At k=20, the context has 20 chunks — many are marginally relevant. The model averages over a noisier signal, producing hedged or imprecise responses. The correct pattern: high k for retrieval → cross-encoder reranker → low k (3–5 best chunks) → LLM. You get recall benefits without context poisoning.",
+    trap: "Thinking more retrieved context is always better. The retrieval goal is not to maximize k — it is to maximize signal at a small k. An answer generated from the 3 most relevant chunks is usually better than from 20 loosely-related ones.",
+    readMore: { label: "Two-Stage Retrieval Failure", tab: "groundtruth", postId: "two-stage-retrieval-failure" }
+  },
+  {
+    id: "rag-bi-8", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
+    question: "Your team upgrades the RAG system's embedding model from v1 to v2, which improved MTEB benchmarks by 15%. After deploy, retrieval quality is worse than before. What happened?",
+    options: [
+      "The v2 model was trained on different data and is biased toward newer documents",
+      "The document index was still encoded with v1 embeddings — v2 query embeddings search a v1 vector space, producing meaningless similarity scores",
+      "v2 embeddings have a different number of dimensions, causing a schema mismatch in the database",
+      "Embedding model updates require 48 hours to propagate through the vector database"
+    ],
+    correct: 1,
+    explanation: "Embedding models produce vectors in model-specific spaces. v1 and v2 learned different geometries even if they share architecture. After upgrading the query encoder to v2, queries produce vectors in the v2 space. But documents are still indexed with v1 vectors. Cosine similarity between a v2 query vector and a v1 document vector is not meaningful — you are measuring distance across two different spaces. Fix: re-index all documents with v2 before switching query encoding.",
+    trap: "Assuming embedding model upgrades are hot-swappable. They are not. They require a coordinated migration: re-index everything with the new model, then switch query encoding. At scale, this is a multi-day migration. Partial upgrades (index v1, query v2) are a subtle but catastrophic bug with no visible error signal.",
+    readMore: { label: "Vector Databases Compared", tab: "groundtruth", postId: "vector-databases-compared" }
+  },
+
+  // ── FOUNDATIONS — Staff (3) ───────────────────────────────────────────────
+  {
+    id: "found-staff-1", topic: "foundations", difficulty: "staff", gated: true, type: "text",
+    question: "A PM asks you to recommend whether to fine-tune a 7B model, upgrade to a 70B model via prompting, or build a RAG pipeline for a customer support system. How do you structure this decision?",
+    options: null,
+    correct: null,
+    keywords: ["task definition", "data availability", "latency", "cost", "knowledge currency", "failure mode"],
+    explanation: "A staff engineer does not pick an approach — they ask what the system needs to be good at. Decision tree: (1) Is the knowledge stable or changing? Changing frequently → RAG wins (update the index, not the model). (2) How much high-quality labeled data exists? Under 500 examples → do not fine-tune. (3) What are latency and cost constraints? 70B inference is 5–10x more expensive and slower than 7B. (4) What is the failure mode cost? Fine-tune fails silently with wrong outputs; RAG fails visibly when context is bad. Likely outcome for customer support: hybrid — RAG for product knowledge (changes weekly), fine-tuned small model for output format and tone (stable). Never answer this question with a single approach — that signals you have not thought through the constraints.",
+    trap: "Recommending RAG as the default modern answer. RAG is often right but not always. If the knowledge base is 500 docs that change annually and latency is critical, fine-tuning beats RAG. The correct answer is not a choice — it is a decision framework that reveals the conditions for each choice.",
+    staffLayer: "In practice I ask four questions before answering: (1) How often does the product knowledge change? (2) What is the p95 latency budget? (3) How many labeled support transcripts do you have? (4) Is citation or traceability required for compliance? Each answer closes off options. A staff engineer treats this as requirement discovery, not architecture preference."
+  },
+  {
+    id: "found-staff-2", topic: "foundations", difficulty: "staff", gated: true, type: "text",
+    question: "A PM wants to upgrade from GPT-3.5 to GPT-4 to fix 'quality issues'. How do you evaluate whether the upgrade is worth it, and what do you push back on?",
+    options: null,
+    correct: null,
+    keywords: ["eval set", "cost-latency tradeoff", "failure mode analysis", "root cause", "specific not general"],
+    explanation: "Push back on 'quality issues' — that is not a diagnosis. First: what specifically is failing? Hallucination, refusals, reasoning errors, tone, instruction-following? Each has different root causes and different fixes. A bigger model is only the right fix for reasoning or instruction-following failures — not for hallucination (RAG fixes that), not for tone (prompting or fine-tuning fixes that). Evaluation: run a blind A/B on 100 real failure cases. If GPT-4 fixes 80%+ of the failures at acceptable cost, upgrade is justified. If it fixes 30%, find the real root cause. Cost impact: GPT-4 is 10–30x more expensive per token than GPT-3.5 — quantify the monthly cost delta at current traffic. Decision rule: upgrade if (quality improvement × revenue impact) > (cost increase). Never upgrade a model blindly on subjective feel.",
+    trap: "Approving the upgrade because the PM says quality is bad. The staff move is to demand a specific failure taxonomy before touching the model. Most 'quality' complaints are fixable with prompt engineering or RAG at a fraction of the cost.",
+    staffLayer: "The way I frame this to a PM: 'I can get you a definitive answer in two days — I need a sample of 50 bad outputs and I will run them through both models blind. That tells us whether GPT-4 actually fixes what you are seeing, before we commit to a 20x cost increase.' This turns a vague complaint into a testable hypothesis."
+  },
+  {
+    id: "found-staff-3", topic: "foundations", difficulty: "staff", gated: true, type: "text",
+    question: "Your team is debating whether to use a 7B open-source model (self-hosted) vs. GPT-4o API for a new product feature. You are the deciding voice. How do you frame the decision?",
+    options: null,
+    correct: null,
+    keywords: ["data privacy", "latency SLO", "cost at scale", "capability gap", "operational overhead", "fine-tune path"],
+    explanation: "This is a build-vs-buy question framed as a model choice. The real axes: (1) Data privacy — does the feature process sensitive PII or proprietary data that cannot leave your infrastructure? If yes, self-hosted wins by default. (2) Capability gap — does the task require reasoning, coding, or instruction-following at a level where 7B genuinely underperforms? Benchmark on real task samples, not vibes. (3) Cost at scale — at 10M requests/month, GPT-4o API cost vs. GPU server cost + engineering time to maintain. Calculate both at your projected scale. (4) Latency SLO — self-hosted gives you predictable latency; API has tail latency under load. (5) Fine-tune path — if you will need to fine-tune in 6 months anyway, starting self-hosted is cheaper long-term. Decision: use API for iteration speed and unknown scale; migrate to self-hosted when you have cost data and a fine-tune roadmap.",
+    trap: "Defaulting to GPT-4o because it is easier. For features with sensitive data, volume > 5M requests/month, or a clear fine-tune roadmap, the self-hosted TCO is often lower despite higher upfront cost. The PM wants a fast answer; the staff engineer ensures the 12-month cost picture is visible before deciding.",
+    staffLayer: "I build a quick spreadsheet: API cost at P10/P50/P90 traffic scenarios vs. GPU lease + DevOps cost. For most teams the crossover is around 2–5M requests/month. Below that: API. Above that: self-hosted starts to pencil. I also factor in time-to-first-output — if the PM needs this in two weeks, self-hosted infra setup pushes that by 3–4 weeks. Speed has a real value."
+  },
+
+  // ── RAG — Staff (2) ───────────────────────────────────────────────────────
+  {
+    id: "rag-staff-1", topic: "rag", difficulty: "staff", gated: true, type: "text",
+    question: "You are architecting production RAG for a 10M-document enterprise knowledge base. Walk through the key architecture decisions and what changes at 100M documents.",
+    options: null,
+    correct: null,
+    keywords: ["ANN index", "metadata pre-filter", "incremental indexing", "embedding migration", "sharding", "recall SLO"],
+    explanation: "At 10M docs: (1) ANN index — HNSW for recall/latency balance; IVF-PQ for memory compression at 10M+ vectors. (2) Chunking at scale — batch GPU embedding jobs, not one-by-one API calls. (3) Incremental indexing — document updates trigger re-embedding only for changed chunks, not full reindex. (4) Metadata pre-filter — filter by department, date, or access level BEFORE vector search; ANN over a filtered 100K subset is faster and more precise than over full 10M then filter. (5) Embedding model migration plan — re-indexing 10M docs takes 12–48 hours on a GPU server; plan dual-write during migration. At 100M: distributed vector DB sharding (Milvus cluster, Weaviate distributed), query routing by shard, async re-indexing queues, and latency SLOs become hard engineering constraints. The 10K system runs on one Chroma instance — that does not scale and the architecture decision is made early.",
+    trap: "Designing the same system at 10K and 10M scale. The 10K system: single vector DB instance, sync embedding calls, full weekly reindex. That breaks at 10M. The 10M system needs ANN indexes, metadata pre-filters, async incremental indexing pipelines, embedding drift monitoring, and a migration strategy for model upgrades.",
+    staffLayer: "The scaling questions I ask first: What is the recall SLO? What is the p99 query latency target? How many writes per day? What is document update frequency? These determine whether you need IVF-PQ compression, how aggressive metadata pre-filtering should be, whether you need a separate reranking service, and whether you can afford a cross-encoder or need a fast bi-encoder-only pipeline."
+  },
+  {
+    id: "rag-staff-2", topic: "rag", difficulty: "staff", gated: true, type: "text",
+    question: "Your RAG system scores 85% faithfulness in offline eval but 60% accuracy in production. How do you diagnose and close this gap?",
+    options: null,
+    correct: null,
+    keywords: ["distribution shift", "query distribution", "eval-prod gap", "failure taxonomy", "live eval pipeline"],
+    explanation: "The eval-prod gap is almost always a distribution problem. (1) Failure taxonomy: sample 20 production failures and manually inspect retrieved chunks. Are they relevant? Is the answer in the chunk but the model missed it? Or is the chunk irrelevant? Each answer points to a different layer. (2) Query distribution: are production queries longer, more ambiguous, or more domain-specific than your offline eval set? Synthetic or simple eval queries do not represent production. (3) Corpus drift: has the document corpus changed since the eval set was built? Stale evals. (4) Latency pressure: at p99 load, are retrieval timeouts returning partial results? (5) Fix: build a live eval pipeline — log 100 random query-answer-chunk triplets per day and run RAGAS faithfulness + relevance on them. This is your real signal.",
+    trap: "Assuming offline evals predict production quality. They almost never do. The gap is usually: eval queries are simpler than production, the corpus drifted, or edge cases that appear at scale were absent from the eval set. Build live evaluation pipelines, not just offline ones.",
+    staffLayer: "My first step is always a failure mode taxonomy on 20 bad examples before writing any fix. The taxonomy tells you what to fix. 'The model answered faithfully but wrongly' = retrieval problem. 'The model ignored the retrieved chunk' = faithfulness or prompt problem. 'The retrieved chunk was vague' = chunking or corpus quality. Each requires a different intervention — applying the wrong fix wastes weeks."
+  },
+
+  // ── DAUNTING — Multi-answer toggle questions ──────────────────────────────
+  {
+    id: "daunt-arch-1", topic: "foundations", difficulty: "daunting", gated: true, type: "daunting",
+    question: "A PM asks: should the team fine-tune a 7B model, use a 70B model via prompting, or implement RAG for a customer-facing AI assistant? Make a full case for each option — and explain what conditions make each the right call.",
+    answers: [
+      {
+        label: "Fine-tune a 7B model",
+        correct: true,
+        content: "Fine-tuning wins when you have at least 500 high-quality labeled examples, the task is stable and well-defined, and latency or cost is a hard constraint. Fine-tuning bakes behavior into weights — no context overhead, consistent output format, fast inference. The model learns your domain vocabulary and tone without spending tokens per call.\n\nLoses when: data is sparse or unrepresentative (fine-tuned models memorize the distribution of training data, not general capability); when the task changes frequently (re-fine-tuning is slow and expensive); when you need to trace which knowledge produced an answer (fine-tuned knowledge is opaque).\n\nCommon trap: fine-tuning on a narrow dataset to make the model 'know' new facts. This rarely works — it produces a model that confidently says wrong things about slightly out-of-distribution inputs. Fine-tuning is for behavior, not fact injection."
+      },
+      {
+        label: "70B model via prompting",
+        correct: true,
+        content: "Large-model prompting wins when: (1) you are still discovering what the task actually is and need iteration speed; (2) your domain knowledge fits in a few thousand tokens (a policy doc, a system spec); (3) the model's general reasoning capability is the bottleneck, not domain knowledge.\n\nIt is the fastest path to production — no training loop, no embedding pipeline. You can A/B test system prompt variations in hours. Loses when: domain knowledge is large (millions of tokens), cost at scale is a constraint (70B inference is 5–10x more expensive per token than 7B), or latency is a hard SLO.\n\nCommon trap: assuming 'just use a bigger model' is always the correct answer. A 70B model with a bad prompt is worse than a well-prompted 7B model on domain-specific tasks. Model size is not a substitute for task framing."
+      },
+      {
+        label: "RAG",
+        correct: true,
+        content: "RAG wins when: (1) the knowledge base is too large for context (more than a few thousand tokens); (2) facts change frequently — product inventory, policy updates, pricing; (3) traceability or attribution is required (showing which document the answer came from — critical for legal, finance, compliance).\n\nRAG separates storage from reasoning — update the index without retraining the model. It is also auditable. Loses when: retrieval quality is hard to push above 80% for your query types; queries are about reasoning or creativity (nothing to retrieve); the corpus is low-quality (bad chunks produce worse answers than no RAG at all).\n\nCommon trap: assuming RAG eliminates hallucination. It does not — it shifts the failure mode from 'model does not know' to 'model misreads retrieved chunk'. You still need faithfulness evaluation."
+      },
+      {
+        label: "Combine two or more approaches",
+        correct: true,
+        content: "The real production answer is often a combination: a fine-tuned small model (tone, format, behavior) + RAG (domain facts). Or: prompting a large model for reasoning + RAG for context injection. These are not mutually exclusive.\n\nA staff engineer decomposes the problem: what sub-problem needs parametric knowledge (baked into weights)? What needs retrieved knowledge (up-to-date, large corpus, traceable)? What needs reasoning capability (model size)? Different sub-problems have different optimal solutions.\n\nThe mistake is treating this as a single architectural choice. Most production AI systems of moderate complexity combine at least two of these. The framing question is always: 'Which part of the answer comes from where?'"
+      }
+    ],
+    synthesis_note: "All four answers describe real production architectures. The question tests whether you can frame a choice as a conditional decision, not a preference. The answer an interviewer wants is: 'It depends on these conditions, here is how I would structure the decision.' Show the decision tree, not the destination."
+  },
+  {
+    id: "daunt-rag-1", topic: "rag", difficulty: "daunting", gated: true, type: "daunting",
+    question: "A RAG system returns wrong answers 25% of the time in production. You sample 20 bad cases. What distinct failure modes do you expect to find, what does each tell you, and what does each fix look like?",
+    answers: [
+      {
+        label: "Retrieval failure — relevant chunk not in top-k at all",
+        correct: true,
+        content: "The relevant document exists in the corpus but was not retrieved. Signs: manually searching the corpus finds the right chunk; the model's answer has nothing to do with the correct answer.\n\nCauses: embedding model too general for the domain; top-k too small; query-document semantic mismatch (the user writes 'heart attack', the doc says 'myocardial infarction' and the model does not map them close enough).\n\nFixes: better retrieval model (domain-specific fine-tuned bi-encoder); larger top-k; add BM25 or hybrid search to catch exact-match failures; query expansion or HyDE (generate a hypothetical answer, embed that instead of the raw query)."
+      },
+      {
+        label: "Ranking failure — right chunk present but buried at position 15",
+        correct: true,
+        content: "Recall is good (right chunk is in top-20) but it is buried. The LLM sees it but weights it low because it processes early context more strongly — the Lost-in-the-Middle phenomenon.\n\nCauses: no reranker, or a weak reranker that does not capture nuanced relevance.\n\nFixes: add a cross-encoder reranker; reduce k after reranking to force the most relevant chunks to dominate; experiment with placing key chunks at start or end of the context, not in the middle."
+      },
+      {
+        label: "Faithfulness failure — right chunk retrieved, wrong answer generated",
+        correct: true,
+        content: "The retrieved chunk contains the answer, but the model generates something that contradicts or ignores it. Signs: the right information is visible in the context, but the output does not match.\n\nCauses: model falling back on parametric knowledge when context conflicts with what it 'knows'; prompt not firmly instructing the model to ground in context; very long context where the relevant chunk is in the middle.\n\nFixes: stronger grounding instruction ('Answer based solely on the provided context. If the context does not contain the answer, say so.'); RAGAS faithfulness eval on a live sample; try a model with better instruction-following; shorten context with more precise chunk selection."
+      },
+      {
+        label: "Corpus quality failure — retrieved chunk is 'correct' but contains bad information",
+        correct: true,
+        content: "Retrieval is working — it returned the most relevant document — but that document is outdated, incorrect, or ambiguous. The model answers faithfully from bad source material.\n\nCauses: corpus has stale docs (product page from 2022 describes a deprecated feature); no quality filter on ingested content; low-quality pages outcompete high-quality ones for certain query types because of higher keyword density.\n\nFixes: corpus curation — remove or deprioritize outdated docs; document freshness metadata with time-weighted retrieval; quality scoring before indexing; human review of the documents that answer the most frequent query types."
+      }
+    ],
+    synthesis_note: "Each failure mode lives at a different layer: retrieval (chunk not found), ranking (chunk buried), generation (chunk ignored), corpus (chunk is wrong). The fix for each is different. Conflating them leads to applying the wrong fix — e.g. adding a reranker when the actual problem is corpus quality. Running a 20-sample failure taxonomy before any intervention is the staff-level move."
+  },
+
 ];
