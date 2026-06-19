@@ -1200,7 +1200,7 @@ const SERIES_META = {
     title: "Agents in Production",
     desc: "MCP, tool use safety, observability, and testing for senior AI engineer interviews. The gaps most RAG/agent courses skip: idempotency, audit trails, trace design, trajectory evaluation, red teaming.",
     color: "#06b6d4",
-    postIds: ["mcp-explained", "agent-tool-use-production", "agent-observability", "agent-testing-strategies"],
+    postIds: ["mcp-explained", "agent-tool-use-production", "agent-observability", "agent-testing-strategies", "agent-backend-apis", "async-task-queues-agents", "kubernetes-ai-workloads"],
   },
 };
 
