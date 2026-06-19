@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 74 (June 2026) — Scale: 586 PrepLab questions, 308 GT index entries, 6 PrepLab modes, 13 GT series, 6 challenge area landing pages*
+*Last updated: sprint 75 (June 2026) — Scale: 597 PrepLab questions, 310 GT index entries, 6 PrepLab modes, 13 GT series, 6 challenge area landing pages*
 
 ---
 
@@ -87,16 +87,25 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 75 — Next up
+## Sprint 75 — ✅ COMPLETE (`fb960b4`)
 
-### P0 — Batch C: Security + governance
-- 2 GT posts: Security for agents (prompt injection depth, OWASP LLM Top 10, least privilege architecture, input/output guardrails), governance/auditability (data lineage, model versioning, rollback patterns, human approval gates for high-risk actions).
-- ~11 PrepLab questions (sec-1–6, govern-1–5).
-- Covers 27-track curriculum tracks 21–23.
+**Objective:** Batch C — agent security + governance gap fill.
+
+1. ~~**2 GT posts (agent-production series)**~~ — `agent-security` (indirect/direct/tool-result injection, OWASP LLM01/07/08/02, least privilege classification, guardrails, supply chain), `agent-governance` (data lineage, model version pinning + stage promotion, prompt versioning as code, rollback triggers, HITL approval gates).
+2. ~~**11 PrepLab questions**~~ — sec-1–6, govern-1–5.
+3. ~~**Hub updates**~~ — AgentsHub +agent-security, ProductionHub +agent-governance.
+4. ~~**SERIES_META updated**~~ — agent-production postIds extended to 9. Batches A+B+C complete.
+
+**New scale:** 597 PrepLab questions (was 586), 310 GT index entries (was 308).
+
+---
+
+## Sprint 76 — Next up
 
 ### P1 — Senior AI Engineer full-stack learning path
 - New path in LearningPaths.jsx: "Senior AI Engineer: Full Stack".
-- ~20 steps mapping Batch A + B + C posts into a coherent progression.
+- ~18–20 steps spanning all 9 agent-production posts + key Foundations/RAG posts.
+- Covers the complete 27-track Teradata-style curriculum in a single guided sequence.
 
 ### Backlog (unchanged)
 - Mastery Room commit (staged in sprint 60 — needs Supabase SQL run first).
