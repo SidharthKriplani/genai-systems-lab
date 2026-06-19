@@ -532,6 +532,13 @@ For full audit findings see AUDITS.md.
 - Still open: Batch B (backend/infra), Batch C (security/governance), Senior AI Engineer full-stack path.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
+**Sprint 76 (June 2026) — Senior AI Engineer learning path:**
+- `senior-ai-engineer` path added to `LearningPaths.jsx`: 13 steps, cyan `#06b6d4`, ~5 hrs, audience: mid-level engineers targeting senior roles. Steps: mcp-explained → agent-tool-use-production → agentarch (Systems) → agent-observability → agent-testing-strategies → agent-backend-apis → async-task-queues-agents → kubernetes-ai-workloads → agent-security → agent-governance → guardrails (Systems) → llmops-production-checklist → PrepLab (agents topic). Covers all Batches A+B+C in a single guided sequence.
+- App.jsx sidebar: "Senior AI Engineer Track" added as second path subitem under Ground Truth. Note: "production".
+- Commit `0e5682e`. Brace diff = 0.
+- **Scale post-sprint 76:** 597 PrepLab questions (unchanged), 310 GT index entries (unchanged).
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
 **Sprint 75 (June 2026) — Batch C: Agent security + governance:**
 - 2 GT posts (extended agent-production series): `agent-security` (prompt injection taxonomy: direct/indirect/tool-result, OWASP LLM01/07/08/02, least privilege tool classification: read-only/write/destructive, input+output guardrails, supply chain attacks via MCP servers and retrieval corpus), `agent-governance` (data lineage: action lineage record + retrieval lineage + data access log, model version pinning + stage promotion, prompt versioning as code with semantic versions + review gates, rollback triggers: failure rate/quality score/error rate thresholds, HITL approval gates for irreversible actions).
 - 11 PrepLab questions: sec-1–6 (indirect injection class, least privilege tool design, OWASP LLM08 mitigation, supply chain attack via MCP server, output guardrail purpose, tool risk ranking), govern-1–5 (data lineage purpose, model version pinning, rollback trigger design, HITL approval gate design, prompt versioning as code).

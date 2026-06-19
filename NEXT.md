@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 75 (June 2026) — Scale: 597 PrepLab questions, 310 GT index entries, 6 PrepLab modes, 13 GT series, 6 challenge area landing pages*
+*Last updated: sprint 76 (June 2026) — Scale: 597 PrepLab questions, 310 GT index entries, 6 PrepLab modes, 13 GT series, 6 challenge area landing pages*
 
 ---
 
@@ -100,14 +100,20 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 76 — Next up
+## Sprint 76 — ✅ COMPLETE (`0e5682e`)
 
-### P1 — Senior AI Engineer full-stack learning path
-- New path in LearningPaths.jsx: "Senior AI Engineer: Full Stack".
-- ~18–20 steps spanning all 9 agent-production posts + key Foundations/RAG posts.
-- Covers the complete 27-track Teradata-style curriculum in a single guided sequence.
+**Objective:** Senior AI Engineer learning path.
 
-### Backlog (unchanged)
+1. ~~**Senior AI Engineer: Production Track path**~~ — 13 steps in LearningPaths.jsx. Cyan `#06b6d4`. Covers MCP, tool use, agent architecture, observability, testing, backend APIs, async queues, K8s, security, governance, guardrails, LLMOps. Full Batches A+B+C coverage.
+2. ~~**Sidebar entry**~~ — "Senior AI Engineer Track" added as second path subitem under Ground Truth in App.jsx. Note: "production".
+
+**Scale:** unchanged (597q/310GT — no new content).
+
+---
+
+## Sprint 77 — Next up
+
+### Backlog
 - Mastery Room commit (staged in sprint 60 — needs Supabase SQL run first).
 - Trap field quality pass (4 clusters: rag, agents, eval, llmops).
 - Agent Lab synthesis gap — top 5 modules need PrepLab forward pointer.
