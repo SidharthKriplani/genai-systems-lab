@@ -1603,6 +1603,7 @@ export default function App() {
   const [exploreModule, setExploreModule] = useState(null);
   const [agentsModule, setAgentsModule] = useState(null);
   const [gtPostId, setGtPostId] = useState(null);
+  const [gtPathContext, setGtPathContext] = useState(null);
   const [conceptsGym, setConceptsGym] = useState(null);
   const [preplabInitialMode, setPreplabInitialMode] = useState(null);
   const [visitedModules, setVisitedModules] = useState(() => {
@@ -1679,7 +1680,7 @@ export default function App() {
   }, []);
   const SHORTCUT_TABS = ["home","lab","agentlab","evallab","llmlab","preplab","career","aipm","groundtruth","systems","agents","explore","playground","concepts","flows","consult"];
 
-  function navigateTo({ tab, moduleId, postId, topic, diff, gymId }) {
+  function navigateTo({ tab, moduleId, postId, topic, diff, gymId, pathContext }) {
     if (moduleId) {
       if (tab === "systems" || tab === "evallab" || tab === "llmlab") setSystemsModule(moduleId);
       if (tab === "explore")  setExploreModule(moduleId);
@@ -1687,6 +1688,11 @@ export default function App() {
     }
     if (postId) setGtPostId(postId);
     if (gymId)  setConceptsGym(gymId);
+    if (tab === "groundtruth") {
+      setGtPathContext(pathContext || null);
+    } else {
+      setGtPathContext(null);
+    }
     navigate(tab);
   }
   useEffect(() => {
@@ -2398,7 +2404,7 @@ export default function App() {
           {topView === "preplab"    && <PrepLabApp onNavigate={navigate} onNavigateTo={navigateTo} initialMode={preplabInitialMode} onClearInitialMode={() => setPreplabInitialMode(null)} user={user} />}
           {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} />}
 
-          {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} user={user} />}
+          {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} user={user} pathContext={gtPathContext} />}
           {topView === "profile" && <ProfilePage onNavigate={navigateTo} user={user} onSignOut={() => setUser(null)} />}
           {topView === "plans"   && <PlansPage   onNavigate={navigate} user={user} />}
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}

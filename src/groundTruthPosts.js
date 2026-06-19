@@ -185,6 +185,7 @@ Which one gets chosen? Depends on your sampling strategy.` },
   // ─── 3. CONTEXT WINDOW ──────────────────────────────────────────────────────
 
   "context-window-guide": [
+    { t: "callout", c: "**No prerequisites — standalone read.** After this post you'll understand what the context window is, why it fills up, what gets silently dropped and in what order, and how production systems manage the tradeoff between context length and cost." },
     { t: "p", text: "The context window is the LLM's working memory. Everything the model knows about your conversation, your documents, your instructions — all of it is in there. When it runs out, something gets dropped. The model doesn't warn you." },
     { t: "p", text: "Understanding the context window is essential for building reliable RAG systems, agents, and chatbots. It's not just a limit to stay under — it's a resource to manage actively." },
 
@@ -254,6 +255,7 @@ Which one gets chosen? Depends on your sampling strategy.` },
   // ─── 4. HOW RAG WORKS ───────────────────────────────────────────────────────
 
   "how-rag-works": [
+    { t: "callout", c: "**No prerequisites — this is a great first post.** After this post you'll understand the full RAG pipeline: embed, store, retrieve, generate. More importantly, you'll know the three places it silently fails in production and why those failures are hard to catch." },
     { t: "p", text: "RAG — Retrieval-Augmented Generation — solves a fundamental problem: LLMs know a lot, but they don't know your data." },
     { t: "p", text: "A model trained in early 2024 doesn't know about your Q3 expense policy update, your internal engineering runbook, or your product's latest pricing. Fine-tuning to inject this knowledge is slow, expensive, and brittle. RAG is the practical alternative: retrieve the relevant information at query time and inject it into the prompt." },
     { t: "p", text: "It sounds simple. It is not. Every step in the pipeline can fail in ways that are hard to detect — and the model will still answer confidently." },
@@ -705,6 +707,7 @@ chunks = splitter.split_text(document)` },
   // ─── REACT AGENT PATTERN ────────────────────────────────────────────────────
 
   "react-pattern": [
+    { t: "callout", c: "**Prerequisite: any earlier step — you just need to know what an LLM is.** After this post you'll understand the ReAct pattern — how reasoning steps and tool calls interleave — and why it's the foundation of every tool-using agent you'll build." },
     { t: "p", text: "Before ReAct, LLM agents were brittle. You'd give the model tools and hope it called them correctly. The model had no way to express what it was trying to do before doing it, making debugging and course-correction impossible." },
     { t: "p", text: "ReAct (Reasoning + Acting) changed this by interleaving explicit thought steps with action steps. The model now writes what it's thinking before it calls a tool — and that thought is visible, traceable, and correctable." },
 
@@ -1115,6 +1118,7 @@ print(f"Cache write tokens: {usage.cache_creation_input_tokens}")` },
   // ─── VECTOR DATABASES ────────────────────────────────────────────────────────
 
   "vector-databases-compared": [
+    { t: "callout", c: "**Prerequisite: Step 8 (How RAG Works) — you need to know why you're storing vectors.** After this post you'll be able to choose between pgvector, Pinecone, Chroma, and Weaviate based on production constraints — latency, filtering, scale, cost — not marketing copy." },
     { t: "p", text: "Your choice of vector database will affect your retrieval latency, filtering capabilities, operational complexity, and cost — often more than your choice of embedding model. Here's how the major options compare on the dimensions that matter in production." },
 
     { t: "h2", text: "The main options" },
@@ -1152,6 +1156,7 @@ print(f"Cache write tokens: {usage.cache_creation_input_tokens}")` },
   // ─── LLM EVALUATION ──────────────────────────────────────────────────────────
 
   "llm-evaluation-guide": [
+    { t: "callout", c: "**Readable at any point in the path.** After this post you'll know how to measure whether your AI system is actually working: human evals, LLM-as-judge, automated metrics — and the conditions under which each one lies to you." },
     { t: "p", text: "You can't eyeball your way to production-ready LLM systems. Human review doesn't scale. You need automated evaluation pipelines that catch regressions before users do. This is the hardest part of LLMOps — and the most skipped." },
 
     { t: "h2", text: "Why LLM eval is hard" },
@@ -10501,6 +10506,7 @@ def slerp(w1, w2, t):
   ],
 
   "finetune-playbook": [
+    { t: "callout", c: "**Prerequisite: Step 5 (Pretraining Data) helps but not required.** After this post you'll know when fine-tuning is the right choice over prompting, what LoRA and PEFT actually do at a conceptual level, and how to decide if instruction-tuning your model is worth the cost." },
     { t: "p", text: "Fine-tuning is the most misused tool in the modern ML stack. Teams fine-tune when they should be prompting, prompt when they should be fine-tuning, and almost always skip the step that matters most: building an eval harness before they start." },
     { t: "h2", text: "When Fine-Tuning Actually Wins" },
     { t: "p", text: "Fine-tuning beats prompting when: the task requires consistent output format at high volume; the model needs domain vocabulary it wasn't trained on; latency constraints make long system prompts expensive; or you're doing classification/extraction where a 7B fine-tuned model outperforms GPT-4 at 10% of the cost." },
@@ -11304,6 +11310,7 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
   ],
 
   "your-prompt-is-code": [
+    { t: "callout", c: "**No hard prerequisites.** After this post you'll understand why treating prompts as informal text is the most common production mistake, and what it means to version, test, and own your prompts with the same discipline as production code." },
     { t: "h2", text: "The 11-day silent regression" },
     { t: "p", text: "An AI/ML engineer made a one-line change to a system prompt. A clarifying sentence was added — reasonable, innocuous. The change went to production. Quality dropped 23% on the primary task metric. Nobody noticed for 11 days. No alert fired. No test caught it. Users experienced degraded output for a week and a half before a manual review surfaced the problem." },
     { t: "p", text: "This is not an unusual story. It is the default story for teams that treat prompts as configuration rather than code. The only thing unusual about it is that the 23% drop was eventually measured. Most teams do not have the eval infrastructure to measure it at all." },
@@ -11744,6 +11751,7 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
 
 // ─── TWO-STAGE RETRIEVAL ──────────────────────────────────────────────────────
   "two-stage-retrieval-reranker": [
+    { t: "callout", c: "**Prerequisite: Step 10 (Bi-Encoder vs Cross-Encoder).** After this post you'll understand how to compose a production retrieval stack: recall at scale with a bi-encoder, then precision with a cross-encoder reranker — and where each stage fails." },
     { t: "p", text: "Vector search returns documents that are similar to your query — and similarity is not relevance. A bi-encoder embeds your query and every document independently, then ranks by cosine similarity. It is fast enough to search millions of documents in milliseconds. But because query and document never see each other during encoding, the model cannot detect relevance signals that only emerge when you read them together. A cross-encoder fixes this — but introduces a latency cost that rules it out as a first-stage retriever." },
     { t: "callout", text: "Vector search maximizes recall. A reranker maximizes precision. They solve different problems and fail in different ways. Two-stage retrieval is what happens when you need both." },
     { t: "h2", text: "Stage 1 — Bi-Encoder: Recall at Speed" },
@@ -12058,6 +12066,7 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
   ],
 
   "attention-from-scratch": [
+    { t: "callout", c: "**Prerequisite: Step 1 (NLP Origins).** After this post you'll be able to explain self-attention from first principles — Q, K, V, dot products, softmax — the mechanism at the heart of every LLM. No matrix algebra needed; the intuition comes first." },
     { t: "p", text: "Every explanation of attention eventually says the same thing: Query, Key, Value matrices, scaled dot-product, softmax, weighted sum. The words are correct. They do not actually explain what is happening or why the mechanism works. The only way to get that is to implement it yourself, watch the numbers, and trace what each line is doing to the representation." },
     { t: "p", text: "This post is 30 lines of NumPy. No PyTorch, no abstractions. Just the raw computation. If you run this in a Colab tonight and spend 20 minutes poking at the output, you will understand attention better than most people who have read the Transformer paper." },
 
@@ -12326,6 +12335,7 @@ print(prompt)
   ],
 
   "ngrams-to-neural": [
+    { t: "callout", c: "**Start here — no prerequisites needed.** After this post you'll understand why counting word sequences works for language, why it fails at scale, and what problem word vectors solved. This is the foundation all of modern NLP builds on." },
     { t: "p", text: "Before transformers, before neural networks, language models were built from counting. The n-gram era lasted thirty years and built every autocomplete, every spell-checker, every early speech recogniser. Understanding it is not nostalgia — it reveals exactly what problem neural language models solved, and why that solution was so disruptive." },
     { t: "p", text: "An n-gram language model estimates the probability of the next word given the previous n-1 words. For n=2 (bigram), you ask: given the word 'machine', what word comes next? For n=3 (trigram), you ask: given 'learning' followed by 'is', what word follows? You answer by counting: look through a training corpus, find every time the history appeared, count how often each continuation appeared, divide. That ratio is your probability estimate." },
 
@@ -13239,6 +13249,7 @@ for step in range(500):
   ],
 
   "mha-mqa-gqa-explained": [
+    { t: "callout", c: "**Prerequisite: Step 2 (Attention from Scratch).** After this post you'll understand why LLMs split attention across multiple heads, what MQA and GQA trade away for speed, and why this architectural choice directly determines inference cost and KV cache size." },
     { t: "p", text: "LLaMA-3, Mistral, Gemma, and every other modern open-weight model specifies a number of key-value heads that is different from — and smaller than — the number of query heads. This is Grouped Query Attention. Understanding why it exists requires understanding the memory arithmetic of the KV cache and exactly how Multi-Head Attention was changed to reduce it." },
     { t: "h2", text: "Multi-Head Attention: the baseline" },
     { t: "p", text: "In standard Multi-Head Attention (MHA), you have h heads. Each head has its own Q, K, V projection matrices. During generation, you cache the K and V tensors for every layer and every head. If you have 32 heads and 32 layers, you store 32×32 = 1,024 key and value tensors per sequence. Memory grows linearly with sequence length, number of layers, and number of heads." },
@@ -15007,6 +15018,7 @@ def serve_and_log(query: str, user_id: str, production_model) -> dict:
   // ─── NLP PRACTITIONERS ───────────────────────────────────────────────────────
 
   "bert-internals-explained": [
+    { t: "callout", c: "**Prerequisite: Steps 2–3 (Attention + MHA).** After this post you'll understand what makes BERT different from GPT, how masked language modelling pretrains an encoder, and why encoders are the right architecture for retrieval, classification, and embeddings." },
     { t: "h2", c: "What BERT Actually Does (And Why It Broke Everything)" },
     { t: "p", c: "BERT — Bidirectional Encoder Representations from Transformers — is the model that ended the era of task-specific architectures. Before BERT, an NLP engineer built a different model for NER, a different one for classification, a different one for QA. BERT showed you could pretrain one deep transformer encoder on massive unlabeled text, then fine-tune it on any task with a small labeled dataset and beat specialized architectures. That's the core insight. Everything else is implementation." },
     { t: "h2", c: "The Architecture: Encoder-Only" },
@@ -15033,6 +15045,7 @@ def serve_and_log(query: str, user_id: str, production_model) -> dict:
   ],
 
   "bi-encoder-vs-cross-encoder": [
+    { t: "callout", c: "**Prerequisite: Steps 8–9 (RAG + Vector DBs).** After this post you'll understand why fast retrieval and accurate ranking are fundamentally in tension, and why almost every production retrieval system uses both a bi-encoder and a cross-encoder." },
     { t: "h2", c: "The Retrieval Architecture Decision That Determines Latency" },
     { t: "p", c: "You have a query and 10 million documents. You need the most relevant ones, fast. The architecture you choose — bi-encoder, cross-encoder, or a combination — determines whether your system responds in 50ms or 5 seconds. This is the most important retrieval design decision, and the wrong choice at scale is not fixable with hardware." },
     { t: "h2", c: "Bi-Encoder Architecture" },
@@ -16064,6 +16077,7 @@ model = lgb.train(
   ],
 
   "pretraining-data-decisions": [
+    { t: "callout", c: "**Readable after any earlier step.** After this post you'll understand that model capability is decided before a single weight is trained — what goes into the corpus, why data quality beats data quantity, and how deduplication and filtering shape what the model knows." },
     { t: "p", c: "The pre-training data pipeline is where large language model capability is actually determined — before architecture, before scale. Research Engineers who understand these decisions can explain why GPT-4 and Llama 3 perform differently on the same benchmark even at the same parameter count." },
     { t: "h2", c: "Deduplication" },
     { t: "p", c: "Duplicate data inflates effective training tokens, causes memorization, and hurts generalization. Near-deduplication (not just exact matches) is essential: C4, The Pile, and RedPajama all contain substantial near-duplicate content that was only later identified." },

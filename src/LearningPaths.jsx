@@ -285,11 +285,15 @@ export default function LearningPaths({ onNavigateTo }) {
     });
   }
 
-  function goToStep(step) {
+  function goToStep(step, idx) {
     if (!onNavigateTo) return;
     if (step.type === "systems")  onNavigateTo({ tab: "systems",     moduleId: step.id });
     if (step.type === "explore")  onNavigateTo({ tab: "explore",     moduleId: step.id });
-    if (step.type === "gt")       onNavigateTo({ tab: "groundtruth", postId: step.id });
+    if (step.type === "gt")       onNavigateTo({ tab: "groundtruth", postId: step.id, pathContext: {
+      pathId: path.id, stepIdx: idx, totalSteps: path.steps.length,
+      pathTitle: path.title, pathColor: path.color, pathAbbr: path.abbr,
+      steps: path.steps,
+    }});
     if (step.type === "preplab")  onNavigateTo({ tab: "preplab",     topic: step.topic || null, diff: step.diff || null });
   }
 
@@ -395,7 +399,7 @@ export default function LearningPaths({ onNavigateTo }) {
                       )}
                     </div>
                     <button
-                      onClick={() => { goToStep(step); toggleStep(path.id, idx); }}
+                      onClick={() => { goToStep(step, idx); toggleStep(path.id, idx); }}
                       style={{ background: `linear-gradient(135deg, ${path.color}22 0%, ${path.color}10 100%)`, border: `1px solid ${path.color}40`, color: path.color }}
                       className="shrink-0 text-xs px-2.5 py-1 rounded-lg font-semibold transition-all hover:brightness-125 whitespace-nowrap"
                     >

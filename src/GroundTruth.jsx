@@ -358,7 +358,7 @@ function Block({ b: rawB, onNavigate, color, postSearch }) {
   }
 }
 
-function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, activeReactions, onReact }) {
+function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, activeReactions, onReact, pathContext = null }) {
   const content = POST_CONTENT[post.id];
   const color = CAT_COLORS[post.category] || "#6366f1";
   const catLabel = CATEGORIES.find(c => c.id === post.category)?.label || post.category;
@@ -366,8 +366,8 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
   const [linkCopied, setLinkCopied] = useState(false);
   const articleRef = useRef(null);
 
-  // Feature 1 — Simple Mode
-  const [simpleMode, setSimpleMode] = useState(false);
+  // Feature 1 — Read Mode: "skim" | "full" | "dense"
+  const [readMode, setReadMode] = useState("full");
 
   // Feature 2 — In-post search
   const [postSearch, setPostSearch] = useState("");
@@ -378,6 +378,28 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizRevealed, setQuizRevealed] = useState(false);
+
+  // B6 — Path step completion
+  const [stepDone, setStepDone] = useState(() => {
+    if (!pathContext) return false;
+    try {
+      const prog = JSON.parse(localStorage.getItem("gsl-path-progress") || "{}");
+      return !!(prog[pathContext.pathId] || []).includes(pathContext.stepIdx);
+    } catch { return false; }
+  });
+
+  function toggleStepDone() {
+    if (!pathContext) return;
+    try {
+      const prog = JSON.parse(localStorage.getItem("gsl-path-progress") || "{}");
+      const done = new Set(prog[pathContext.pathId] || []);
+      if (stepDone) { done.delete(pathContext.stepIdx); }
+      else { done.add(pathContext.stepIdx); }
+      prog[pathContext.pathId] = [...done];
+      localStorage.setItem("gsl-path-progress", JSON.stringify(prog));
+      setStepDone(!stepDone);
+    } catch {}
+  }
 
   const postUrl = `https://genai-systems-lab-ivory.vercel.app/#groundtruth/${post.id}`;
   const shareTitle = encodeURIComponent(`${post.title} — Ground Truth | GenAI Systems Lab`);
@@ -466,9 +488,62 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
 
         {/* Back */}
         <button onClick={onBack}
-          className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors font-mono mb-6 sm:mb-8">
+          className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors font-mono mb-4">
           ← Ground Truth
         </button>
+
+        {/* Path context bar */}
+        {pathContext && (
+          <div className="rounded-lg border mb-6 px-3 py-2.5 flex items-center gap-3 flex-wrap"
+            style={{ borderColor: pathContext.pathColor + "35", background: pathContext.pathColor + "0d" }}>
+            <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
+              style={{ color: pathContext.pathColor, background: pathContext.pathColor + "18", border: `1px solid ${pathContext.pathColor}35`, letterSpacing: "0.08em" }}>
+              {pathContext.pathAbbr}
+            </span>
+            <span className="text-[11px] font-medium shrink-0" style={{ color: pathContext.pathColor }}>
+              {pathContext.pathTitle}
+            </span>
+            <span className="text-[11px] text-zinc-500 font-mono shrink-0">
+              Step {pathContext.stepIdx + 1} of {pathContext.totalSteps}
+            </span>
+            <div className="flex items-center gap-2 ml-auto">
+              {pathContext.stepIdx > 0 && (() => {
+                const prev = pathContext.steps[pathContext.stepIdx - 1];
+                return prev?.type === "gt" ? (
+                  <button
+                    onClick={() => onNavigateTo && onNavigateTo({ tab: "groundtruth", postId: prev.id, pathContext: { ...pathContext, stepIdx: pathContext.stepIdx - 1 } })}
+                    className="text-[10px] text-zinc-400 hover:text-white transition-colors font-mono truncate max-w-[120px]"
+                    title={prev.label}>
+                    ← {prev.label}
+                  </button>
+                ) : null;
+              })()}
+              {pathContext.stepIdx < pathContext.totalSteps - 1 && (() => {
+                const next = pathContext.steps[pathContext.stepIdx + 1];
+                return next?.type === "gt" ? (
+                  <button
+                    onClick={() => onNavigateTo && onNavigateTo({ tab: "groundtruth", postId: next.id, pathContext: { ...pathContext, stepIdx: pathContext.stepIdx + 1 } })}
+                    className="text-[10px] text-zinc-400 hover:text-white transition-colors font-mono truncate max-w-[120px]"
+                    title={next.label}>
+                    {next.label} →
+                  </button>
+                ) : null;
+              })()}
+              <button onClick={toggleStepDone}
+                className="text-[10px] font-mono px-2 py-1 rounded transition-all"
+                style={stepDone
+                  ? { color: "#22c55e", border: "1px solid #22c55e40", background: "#22c55e10" }
+                  : { color: "#71717a", border: "1px solid #52525b", background: "transparent" }}>
+                {stepDone ? "✓ Done" : "Mark done"}
+              </button>
+              <button onClick={() => onNavigateTo && onNavigateTo({ tab: "paths" })}
+                className="text-[10px] font-mono px-2 py-1 rounded transition-all"
+                style={{ color: pathContext.pathColor, border: `1px solid ${pathContext.pathColor}40`, background: pathContext.pathColor + "10" }}>
+                ↩ Path
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div className="mb-6 sm:mb-8">
@@ -487,10 +562,18 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
                 className="text-xs px-2 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 outline-none focus:border-zinc-500 w-28 focus:w-40 transition-all"
               />
               {postSearch.length >= 2 && <span className="text-xs text-zinc-500">{matchCount} matches</span>}
-              {/* Feature 1 — Simple Mode toggle */}
-              <button onClick={() => setSimpleMode(s => !s)} className="text-xs px-2 py-2.5 rounded border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white transition-all">
-                {simpleMode ? "Full version" : "Simplify"}
-              </button>
+              {/* Feature 1 — Read Mode */}
+              <div className="flex items-center rounded border border-zinc-700 overflow-hidden text-[10px] font-mono">
+                {[["skim","Skim"],["full","Read"],["dense","Dense"]].map(([mode, label]) => (
+                  <button key={mode} onClick={() => setReadMode(mode)}
+                    className="px-2 py-1.5 transition-all"
+                    style={readMode === mode
+                      ? { background: "rgba(161,161,170,0.15)", color: "#e4e4e7" }
+                      : { color: "#71717a" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           {series && (
@@ -539,26 +622,38 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
                 </div>
               ) : null;
             })()}
-            {/* Feature 1 — Simple Mode banner */}
-            {simpleMode && (
-              <div className="rounded-xl bg-indigo-900/30 border border-indigo-700/50 p-4 mb-4">
-                <p className="text-sm text-indigo-300">✨ <strong>Simple mode</strong> — showing only the key ideas. Toggle off for the full technical post.</p>
+            {/* Feature 1 — Read Mode banner */}
+            {readMode !== "full" && (
+              <div className="rounded-xl border p-3 mb-4 flex items-center justify-between"
+                style={{ background: "rgba(39,39,42,0.5)", borderColor: "rgba(63,63,70,0.6)" }}>
+                <p className="text-[11px] font-mono text-zinc-400">
+                  {readMode === "skim"
+                    ? "Skim mode — key ideas and headings only."
+                    : "Dense mode — starting from the first heading."}
+                </p>
+                <button onClick={() => setReadMode("full")} className="text-[10px] font-mono text-zinc-500 hover:text-white transition-all ml-3">
+                  Full version →
+                </button>
               </div>
             )}
             {(() => {
-              const displayBlocks = simpleMode
-                ? content.filter(b => b.t === "p" || b.t === "callout").slice(0, 8)
-                : content;
+              let displayBlocks = content;
+              if (readMode === "skim") {
+                displayBlocks = content.map(normalizeBlock).filter(b => b.t === "callout" || b.t === "h2" || b.t === "h3");
+              } else if (readMode === "dense") {
+                const firstH2 = content.findIndex(b => normalizeBlock(b).t === "h2");
+                displayBlocks = firstH2 >= 0 ? content.slice(firstH2) : content;
+              }
               return (
                 <>
                   {displayBlocks.map((b, i) => (
                     <Block key={i} b={b} onNavigate={onNavigate} color={color} postSearch={postSearch} />
                   ))}
-                  {simpleMode && (
-                    <div className="rounded-xl border border-indigo-800/50 bg-indigo-950/20 p-4 text-center">
-                      <p className="text-sm text-indigo-300 mb-2">Want the full technical version?</p>
-                      <button onClick={() => setSimpleMode(false)} className="text-xs px-3 py-1.5 rounded border border-indigo-600 text-indigo-300 hover:bg-indigo-900/40 transition-all">
-                        Show full post
+                  {readMode === "skim" && (
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-center mt-4">
+                      <p className="text-xs text-zinc-400 mb-2">Ready for the full post?</p>
+                      <button onClick={() => setReadMode("full")} className="text-xs px-3 py-1.5 rounded border border-zinc-600 text-zinc-300 hover:bg-zinc-800 transition-all">
+                        Read full post
                       </button>
                     </div>
                   )}
@@ -779,6 +874,67 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
             </button>
           </div>
         </div>
+
+        {/* B5 — Path-aware footer */}
+        {pathContext && (() => {
+          const nextGtStep = pathContext.steps.slice(pathContext.stepIdx + 1).find(s => s.type === "gt");
+          const nextGtIdx = nextGtStep ? pathContext.steps.indexOf(nextGtStep) : -1;
+          const isLast = pathContext.stepIdx === pathContext.totalSteps - 1;
+          return (
+            <div className="mt-10 rounded-xl border px-5 py-5"
+              style={{ borderColor: pathContext.pathColor + "30", background: pathContext.pathColor + "08" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
+                  style={{ color: pathContext.pathColor, background: pathContext.pathColor + "18", border: `1px solid ${pathContext.pathColor}35`, letterSpacing: "0.08em" }}>
+                  {pathContext.pathAbbr}
+                </span>
+                <span className="text-[11px] font-medium" style={{ color: pathContext.pathColor }}>
+                  {pathContext.pathTitle}
+                </span>
+                <span className="text-[11px] text-zinc-500 font-mono ml-auto">
+                  {pathContext.stepIdx + 1} / {pathContext.totalSteps}
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="h-1 rounded-full bg-zinc-800 mb-4 overflow-hidden">
+                <div className="h-full rounded-full transition-all"
+                  style={{ width: `${((pathContext.stepIdx + 1) / pathContext.totalSteps) * 100}%`, background: pathContext.pathColor }} />
+              </div>
+
+              <div className="flex items-center gap-3 flex-wrap">
+                <button onClick={toggleStepDone}
+                  className="text-xs font-mono px-3 py-2 rounded-lg transition-all border"
+                  style={stepDone
+                    ? { color: "#22c55e", borderColor: "#22c55e40", background: "#22c55e10" }
+                    : { color: "#a1a1aa", borderColor: "#3f3f46", background: "transparent" }}>
+                  {stepDone ? "✓ Step complete" : "Mark as complete"}
+                </button>
+
+                {isLast ? (
+                  <button onClick={() => onNavigateTo && onNavigateTo({ tab: "paths" })}
+                    className="text-xs font-mono font-bold px-4 py-2 rounded-lg transition-all ml-auto"
+                    style={{ color: pathContext.pathColor, background: pathContext.pathColor + "18", border: `1px solid ${pathContext.pathColor}40` }}>
+                    View path summary →
+                  </button>
+                ) : nextGtStep ? (
+                  <button
+                    onClick={() => onNavigateTo && onNavigateTo({ tab: "groundtruth", postId: nextGtStep.id, pathContext: { ...pathContext, stepIdx: nextGtIdx } })}
+                    className="text-xs font-mono font-bold px-4 py-2 rounded-lg transition-all ml-auto"
+                    style={{ color: pathContext.pathColor, background: pathContext.pathColor + "18", border: `1px solid ${pathContext.pathColor}40` }}>
+                    Next: {nextGtStep.label} →
+                  </button>
+                ) : (
+                  <button onClick={() => onNavigateTo && onNavigateTo({ tab: "paths" })}
+                    className="text-xs font-mono font-bold px-4 py-2 rounded-lg transition-all ml-auto"
+                    style={{ color: pathContext.pathColor, background: pathContext.pathColor + "18", border: `1px solid ${pathContext.pathColor}40` }}>
+                    Continue path →
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
       </div>
     </div>
@@ -1038,7 +1194,7 @@ const SERIES_META = {
   },
 };
 
-export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, onPostOpened, user = null }) {
+export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, onPostOpened, user = null, pathContext = null }) {
   const [filter, setFilter] = useState("all");
   const [viewLens, setViewLens] = useState(null); // null | "revise" | "learn" | "next"
   const [openPost, setOpenPost] = useState(null);
@@ -1229,7 +1385,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
 
   // Early returns AFTER all hooks — Rules of Hooks requires hooks before any conditional return
   if (openPost) {
-    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onOpenPost={setOpenPost} onNavigate={onNavigate} onNavigateTo={onNavigateTo} activeReactions={reactions[openPost.id]} onReact={(id) => toggleReaction(openPost.id, id)} />;
+    return <PostDetail post={openPost} onBack={() => setOpenPost(null)} onOpenPost={setOpenPost} onNavigate={onNavigate} onNavigateTo={onNavigateTo} activeReactions={reactions[openPost.id]} onReact={(id) => toggleReaction(openPost.id, id)} pathContext={pathContext} />;
   }
 
   if (showGuestGate) {
