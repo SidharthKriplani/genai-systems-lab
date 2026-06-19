@@ -210,6 +210,7 @@ print(r.stdout); print(r.stderr)
 | `SKELETON.md` | Module specs for coming-soon Concepts gyms, GT series taxonomy | Before fleshing out any skeleton/placeholder |
 | `LINKEDIN.md` | Exposure map (GREEN/YELLOW/RED), 15 post ideas, backlink rules, posting sequence | Before any LinkedIn work or public linking decision |
 | `COMPETITORS.md` | Full competitive intelligence — Dataford, Hello Interview, DataLemur, Exponent, market data | Before any positioning or distribution decision |
+| `FEEDBACK.md` | User + tester feedback log — raw observations, interpretations, action status | After any tester session or when user feedback arrives |
 
 ### Archival — read only for historical context
 
