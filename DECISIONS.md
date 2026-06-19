@@ -706,3 +706,36 @@ Three-tier access model. Binding decisions:
 
 *Source: Multi-source competitive audit, June 2026. Full detail in COMPETITORS.md.*
 
+---
+
+## §14 — LinkedIn distribution rules (June 2026, sprint 78)
+
+**Full content plan:** `LINKEDIN.md`. This section records the binding rules.
+
+**Rule: content before product.**
+Lab material goes public immediately. Product backlinks wait until the linked path is ready for strangers.
+
+**Backlink only when a surface is:**
+- manually tested
+- clear within 30 seconds without explanation
+- stable, no broken UX
+- useful to a stranger
+- has a clear next step
+
+**Current surface classification (June 2026):**
+
+GREEN (safe to link): home page, `/agents` `/retrieval` `/evaluation` `/production` `/foundations` `/preplab` landing pages, RAG Lab Scenario 1 (once home page guest CTA fix is shipped — see §14 fix).
+
+YELLOW (screenshots/carousels only, no link): individual GT posts, PrepLab question cards, animated Systems modules, Learning Paths, Browse Mode.
+
+RED (no exposure): Mastery Room, Agent/Eval/Prompt/FM Labs (require sign-in), full sidebar nav screenshots, PrepLab behind 10q gate.
+
+**The one fix that unlocks RAG Lab as a link target:**
+Add "Try a free scenario →" button on cold home page hero that routes guests directly to RAG Lab Scenario 1. Update synthesis card guest CTA to name what sign-in unlocks. One commit. See NEXT.md.
+
+**Two pillars only (for now):** Judgment Challenges + India Insider. Other pillars deferred until these run weekly for 8 weeks.
+
+**No links on engagement posts.** Comments/saves are the goal. A link trains the algorithm this is a traffic post and kills reach.
+
+*Source: GSL exposure map + content plan, June 2026. Full detail in LINKEDIN.md.*
+

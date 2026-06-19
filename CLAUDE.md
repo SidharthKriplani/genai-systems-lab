@@ -208,6 +208,8 @@ print(r.stdout); print(r.stderr)
 | `PARKED.md` | Deferred items with explicit unblock conditions | Before touching anything parked |
 | `ROLLOUT.md` | Beta batch plan, launch checklist, tester briefs | Before inviting any tester |
 | `SKELETON.md` | Module specs for coming-soon Concepts gyms, GT series taxonomy | Before fleshing out any skeleton/placeholder |
+| `LINKEDIN.md` | Exposure map (GREEN/YELLOW/RED), 15 post ideas, backlink rules, posting sequence | Before any LinkedIn work or public linking decision |
+| `COMPETITORS.md` | Full competitive intelligence — Dataford, Hello Interview, DataLemur, Exponent, market data | Before any positioning or distribution decision |
 
 ### Archival — read only for historical context
 

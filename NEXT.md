@@ -125,16 +125,30 @@ Read this at session start. Do only this. Update before closing.
 
 ## Sprint 78 — Next up
 
-### P0 — Distribution (no features until this is started)
+### P0 — Home page guest CTA fix (unblocks all LinkedIn backlinks)
 
-- **SSR/pre-render GT posts:** `vite-ssg` or Node pre-render script. Each GT post at `/gt/[postId]` becomes a static HTML page with correct meta. Full spec in COMPETITORS.md §90-day-bridge-plan.
-- **LinkedIn cadence:** 3 posts/week, educational carousel format from GT posts. First post: "Why RAG systems fail in production (and how to fix them)." Draw from existing GT content.
+One commit. No new rooms, no redesign.
+
+1. Add "Try a free scenario →" secondary CTA button on cold home page hero. Routes guest directly to RAG Lab Scenario 1.
+2. Update RAG Lab Scenario 1 synthesis card guest copy: "Sign in to unlock 5 more failure modes and 51 practice questions" (currently just "Sign in to save").
+3. Mobile-test home page at 375px — fix any card/text overflow before linking publicly.
+
+**Why this is P0:** Every LinkedIn post that links to the product points to the home page. Until a guest can reach the lab mechanic in one click, that link underperforms. This fix makes RAG Lab Scenario 1 the actual landing experience.
+
+### P0 — LinkedIn cadence (start immediately, no product needed)
+
+- Week 1 posts (no link): "Do you even need RAG?" (JC-3), Swiggy/Meesho/PhonePe India Insider (II-1), "3 answers that get candidates rejected" (ED-3)
+- Full 15-post sequence and backlink rules: see LINKEDIN.md
+- Ship guest CTA fix before Week 2 goes out
+
+### P1 — SSR/pre-render GT posts
+`vite-ssg` or Node pre-render script. Each GT post at `/gt/[postId]` becomes a static HTML page with correct meta. Full spec in COMPETITORS.md § 90-day bridge plan. Blocked on LinkedIn cadence being established first (no point indexing content nobody is finding via social yet).
 
 ### P1 — Completion certificates
-- Shareable PNG for First Principles Path, Senior AIE Track, each lab completion. LinkedIn one-click share. Spec in IDEAS.md.
+Shareable PNG for First Principles Path, Senior AIE Track, each lab completion. LinkedIn one-click share. Spec in IDEAS.md.
 
 ### P1 — Onboarding capture
-- 3-question modal at first sign-in. "Interview scheduled?" routing. PostHog events. Spec in IDEAS.md.
+3-question modal at first sign-in. "Interview scheduled?" routing. PostHog events. Spec in IDEAS.md.
 
 ### Blocked
 - Mastery Room commit (staged in sprint 60 — needs Supabase SQL run first).
