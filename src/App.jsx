@@ -1917,6 +1917,7 @@ export default function App() {
     // Field notes — practitioner writing; series items open first post directly
     { label: null, color: "#a78bfa", items: [
       { id: "groundtruth", label: "Ground Truth", alwaysExpanded: true, subitems: [
+        { id: "paths",       label: "First Principles Path", note: "start here"                   },
         { id: "groundtruth", label: "Agent Engineering",    postId: "react-pattern"                },
         { id: "groundtruth", label: "RAG in Production",    postId: "how-rag-works"                },
         { id: "groundtruth", label: "The Training Stack",   postId: "finetune-playbook"            },

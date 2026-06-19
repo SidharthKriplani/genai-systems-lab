@@ -1,9 +1,62 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { PREP_QUESTIONS } from "./data/preplabQuestions";
+
+// ─── BIDIRECTIONAL LINK MAP ────────────────────────────────────────────────────
+// Built once at module load: GT postId → PrepLab questions that readMore it
+const GT_QUESTION_MAP = {};
+PREP_QUESTIONS.forEach(q => {
+  const pid = q.readMore?.postId;
+  if (pid) {
+    if (!GT_QUESTION_MAP[pid]) GT_QUESTION_MAP[pid] = [];
+    GT_QUESTION_MAP[pid].push(q);
+  }
+});
+
+const DIFF_CHIP = {
+  beginner:              "bg-emerald-950/60 text-emerald-400 border border-emerald-800/40",
+  "beginner-intermediate":"bg-teal-950/60 text-teal-400 border border-teal-800/40",
+  intermediate:          "bg-sky-950/60 text-sky-400 border border-sky-800/40",
+  easy:                  "bg-blue-950/60 text-blue-400 border border-blue-800/40",
+  medium:                "bg-amber-950/60 text-amber-400 border border-amber-800/40",
+  hard:                  "bg-red-950/60 text-red-400 border border-red-800/40",
+  staff:                 "bg-indigo-950/60 text-indigo-400 border border-indigo-800/40",
+  daunting:              "bg-violet-950/60 text-violet-400 border border-violet-800/40",
+};
+const DIFF_SHORT = {
+  beginner: "B", "beginner-intermediate": "B-I", intermediate: "I",
+  easy: "E", medium: "M", hard: "H", staff: "S", daunting: "D",
+};
 
 // ─── PATH DEFINITIONS ──────────────────────────────────────────────────────────
 // Each step: { type: "systems"|"explore"|"gt"|"preplab", id, label, desc }
 
 const PATHS = [
+  {
+    id: "first-principles",
+    title: "First Principles: NLP → Production",
+    emoji: "🧠",
+    color: "#8b5cf6",
+    duration: "~4 hrs",
+    audience: "Anyone new to GenAI · Career Switchers · PMs",
+    summary: "Build from zero to expert — language models, transformers, RAG, agents, evaluation, and production. Every step links to practice questions.",
+    steps: [
+      { type: "gt", id: "ngrams-to-neural",            label: "NLP Origins: N-grams → Word Vectors",      desc: "Why distributional semantics works. The foundation all neural NLP builds on." },
+      { type: "gt", id: "attention-from-scratch",       label: "Attention: From Dot Products Up",          desc: "Build self-attention from scratch. Understand Q, K, V — the mechanism at the heart of every LLM." },
+      { type: "gt", id: "mha-mqa-gqa-explained",        label: "Multi-Head, MQA, GQA Explained",           desc: "Why modern LLMs group attention heads, and what it costs to not do so at scale." },
+      { type: "gt", id: "bert-internals-explained",     label: "BERT Internals",                           desc: "Bidirectional encoders, masked LM pretraining, [CLS] pooling — what the encoder actually learned." },
+      { type: "gt", id: "pretraining-data-decisions",   label: "Pretraining Data Decisions",               desc: "What goes into an LLM's corpus and why data quality beats data quantity every time." },
+      { type: "gt", id: "context-window-guide",         label: "The Context Window",                       desc: "What fits, what gets dropped, overflow strategies. The constraint every production AI system works around." },
+      { type: "gt", id: "finetune-playbook",            label: "Fine-Tuning Playbook",                     desc: "When to fine-tune vs. prompt. LoRA, PEFT, instruction tuning — the full decision tree." },
+      { type: "gt", id: "how-rag-works",                label: "How RAG Works",                            desc: "Embed → store → retrieve → generate. The architecture that lets LLMs answer questions about your data." },
+      { type: "gt", id: "vector-databases-compared",    label: "Vector Databases Compared",                desc: "pgvector vs Pinecone vs Chroma vs Weaviate. What to choose and when the choice actually matters." },
+      { type: "gt", id: "bi-encoder-vs-cross-encoder",  label: "Bi-Encoder vs Cross-Encoder",              desc: "Speed vs accuracy in retrieval. Why you almost always need both stages in production." },
+      { type: "gt", id: "two-stage-retrieval-reranker", label: "Two-Stage Retrieval",                      desc: "Recall then precision: how bi-encoder + cross-encoder combine into a production retrieval stack." },
+      { type: "gt", id: "llm-evaluation-guide",         label: "LLM Evaluation Guide",                     desc: "How to measure whether your system works. Human evals, automated evals, LLM-as-judge." },
+      { type: "gt", id: "your-prompt-is-code",          label: "Your Prompt is Code",                      desc: "Prompts are production artifacts. Version them, test them, own them — and understand when they break." },
+      { type: "gt", id: "react-pattern",                label: "The ReAct Pattern",                        desc: "Reasoning + acting: the pattern behind every tool-using agent you'll build." },
+      { type: "preplab", id: null, topic: "foundations", label: "PrepLab: Foundations Questions",          desc: "Test your understanding with beginner through intermediate questions." },
+    ],
+  },
   {
     id: "rag-engineer",
     title: "Ship Your First RAG System",
@@ -157,6 +210,60 @@ function saveProgress(data) {
   try { localStorage.setItem("gsl-path-progress", JSON.stringify(data)); } catch {}
 }
 
+// ─── LINKED QUESTIONS COMPONENT ───────────────────────────────────────────────
+// Shows PrepLab questions that link back to a GT post (bidirectional link)
+function LinkedQuestions({ postId, color, onNavigateTo }) {
+  const [open, setOpen] = useState(false);
+  const qs = GT_QUESTION_MAP[postId] || [];
+  if (!qs.length) return null;
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 text-[10px] font-mono transition-colors hover:opacity-100"
+        style={{ color: open ? color : "#52525b" }}
+      >
+        <svg width="6" height="6" viewBox="0 0 6 6" fill="currentColor" style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 150ms" }}>
+          <path d="M1 1l4 2-4 2V1z"/>
+        </svg>
+        {qs.length} practice {qs.length === 1 ? "question" : "questions"}
+      </button>
+      {open && (
+        <div className="mt-1.5 space-y-1 pl-1">
+          {qs.slice(0, 5).map(q => (
+            <div key={q.id} className="flex items-start gap-2 px-2 py-1.5 rounded-lg"
+              style={{ background: "rgba(24,24,27,0.8)", borderLeft: `2px solid ${color}35` }}>
+              <span className={`shrink-0 text-[9px] font-bold px-1 py-0.5 rounded ${DIFF_CHIP[q.difficulty] || DIFF_CHIP.medium}`}>
+                {DIFF_SHORT[q.difficulty] || q.difficulty}
+              </span>
+              <span className="text-[11px] text-zinc-400 flex-1 leading-snug" style={{
+                display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden"
+              }}>
+                {q.question}
+              </span>
+              {onNavigateTo && (
+                <button
+                  onClick={() => onNavigateTo({ tab: "preplab" })}
+                  className="shrink-0 text-[10px] font-mono opacity-50 hover:opacity-100 transition-opacity whitespace-nowrap"
+                  style={{ color }}
+                >
+                  Try →
+                </button>
+              )}
+            </div>
+          ))}
+          {qs.length > 5 && (
+            <div className="text-[10px] font-mono pl-2" style={{ color: "#3f3f46" }}>
+              +{qs.length - 5} more in PrepLab
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LearningPaths({ onNavigateTo }) {
   const [activePath, setActivePath] = useState(PATHS[0].id);
   const [progress, setProgress] = useState(loadProgress);
@@ -245,44 +352,50 @@ export default function LearningPaths({ onNavigateTo }) {
             {path.steps.map((step, idx) => {
               const cfg = TYPE_CONFIG[step.type];
               const isDone = done.has(idx);
+              const hasLinked = step.type === "gt" && GT_QUESTION_MAP[step.id]?.length > 0;
               return (
                 <div
                   key={idx}
-                  className={`flex items-start gap-4 px-5 py-3.5 transition-colors ${
+                  className={`px-5 py-3.5 transition-colors ${
                     isDone ? "bg-zinc-900/20 opacity-70" : "hover:bg-zinc-800/30"
                   }`}
                 >
-                  <button
-                    onClick={() => toggleStep(path.id, idx)}
-                    className={`shrink-0 w-6 h-6 mt-0.5 rounded-full border text-xs font-bold flex items-center justify-center transition-all ${
-                      justCompleted === `${path.id}-${idx}` ? "animate-stepDone" : ""
-                    } ${
-                      isDone
-                        ? "bg-emerald-600 border-emerald-600 text-white"
-                        : "border-zinc-600 text-zinc-500 hover:border-zinc-400"
-                    }`}
-                    title={isDone ? "Mark incomplete" : "Mark complete"}
-                  >
-                    {isDone ? "✓" : idx + 1}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${cfg.bg} ${cfg.border} border ${cfg.text}`}>
-                        {cfg.icon} {cfg.label}
-                      </span>
-                      <span className={`font-semibold text-sm ${isDone ? "line-through text-zinc-500" : "text-white"}`}>
-                        {step.label}
-                      </span>
+                  <div className="flex items-start gap-4">
+                    <button
+                      onClick={() => toggleStep(path.id, idx)}
+                      className={`shrink-0 w-6 h-6 mt-0.5 rounded-full border text-xs font-bold flex items-center justify-center transition-all ${
+                        justCompleted === `${path.id}-${idx}` ? "animate-stepDone" : ""
+                      } ${
+                        isDone
+                          ? "bg-emerald-600 border-emerald-600 text-white"
+                          : "border-zinc-600 text-zinc-500 hover:border-zinc-400"
+                      }`}
+                      title={isDone ? "Mark incomplete" : "Mark complete"}
+                    >
+                      {isDone ? "✓" : idx + 1}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${cfg.bg} ${cfg.border} border ${cfg.text}`}>
+                          {cfg.icon} {cfg.label}
+                        </span>
+                        <span className={`font-semibold text-sm ${isDone ? "line-through text-zinc-500" : "text-white"}`}>
+                          {step.label}
+                        </span>
+                      </div>
+                      <div className="text-xs text-zinc-500 mt-0.5 leading-relaxed">{step.desc}</div>
+                      {hasLinked && (
+                        <LinkedQuestions postId={step.id} color={path.color} onNavigateTo={onNavigateTo} />
+                      )}
                     </div>
-                    <div className="text-xs text-zinc-500 mt-0.5 leading-relaxed">{step.desc}</div>
+                    <button
+                      onClick={() => { goToStep(step); toggleStep(path.id, idx); }}
+                      style={{ background: `linear-gradient(135deg, ${path.color}22 0%, ${path.color}10 100%)`, border: `1px solid ${path.color}40`, color: path.color }}
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-lg font-semibold transition-all hover:brightness-125 whitespace-nowrap"
+                    >
+                      Go →
+                    </button>
                   </div>
-                  <button
-                    onClick={() => { goToStep(step); toggleStep(path.id, idx); }}
-                    style={{ background: `linear-gradient(135deg, ${path.color}22 0%, ${path.color}10 100%)`, border: `1px solid ${path.color}40`, color: path.color }}
-                    className="shrink-0 text-xs px-2.5 py-1 rounded-lg font-semibold transition-all hover:brightness-125 whitespace-nowrap"
-                  >
-                    Go →
-                  </button>
                 </div>
               );
             })}
@@ -311,4 +424,3 @@ export default function LearningPaths({ onNavigateTo }) {
     </div>
   );
 }
-
