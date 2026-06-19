@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 70 (June 2026) — Scale: 528 PrepLab questions, 301 GT index entries, 6 PrepLab modes, 12 GT series, 6 challenge area landing pages*
+*Last updated: sprint 71 (June 2026) — Scale: 543 PrepLab questions, 301 GT index entries, 6 PrepLab modes, 12 GT series, 6 challenge area landing pages*
 
 ---
 
@@ -32,19 +32,30 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 71 — Next up
+## Sprint 71 — ✅ COMPLETE (`ff62da0`)
 
-### P0 — `intermediate` difficulty questions (Foundations + RAG)
-- 8–12 intermediate questions: decision framing, senior-level scenarios.
-- Foundations: when to pick BERT vs GPT vs T5, attention head pruning tradeoffs, perplexity vs downstream task evals, LoRA rank selection.
-- RAG: when hybrid search beats dense-only, chunk size vs context density tradeoff, reranker latency budget decisions.
+**Objective:** Complete the First Principles Path question coverage — intermediate tier + react-pattern gap.
 
-### P1 — `react-pattern` PrepLab gap
-- Zero questions currently link to `react-pattern` postId. Add 3–4 beginner + intermediate questions about ReAct, tool use, agent loops.
+1. ~~**8 intermediate Foundations questions**~~ — `found-int-1` through `found-int-8`. Encoder vs decoder, LoRA rank, multi-head attention, perplexity limits, catastrophic forgetting, fine-tune vs prompt decision, KV cache memory cost, MHA vs GQA architecture choice.
+2. ~~**4 intermediate RAG questions**~~ — `rag-int-1` through `rag-int-4`. Hybrid search failure analysis, chunk size framework, reranker latency tradeoff, RAG vs fine-tuning decision.
+3. ~~**3 react-pattern questions**~~ — `react-1` (beginner), `react-2` (B-I), `react-3` (intermediate). Closes the last empty step in First Principles Path.
+4. ~~**2 broken readMore postIds fixed**~~ — `found-beg-6` and `found-bi-5` had `postId: "long-context-window"` → corrected to `context-window-guide`.
 
-### P2 — Mastery Room commit
+**New scale:** 543 PrepLab questions (was 528).
+
+---
+
+## Sprint 72 — Next up
+
+### P0 — Mastery Room commit
 - Files staged in sprint 60 (fsrs.js, studySeed.js, StudyRoom.jsx, App.jsx update) need `git commit` + push.
 - Supabase study tables SQL must be run first.
+
+### P1 — Trap field quality pass (remaining clusters)
+- 4 clusters still have overclaim-format traps. Priority: rag-1–9, agents cluster, eval cluster. ~45 min per cluster.
+
+### P2 — Agent Lab synthesis gap
+- Top 5 Agent Lab modules have no PrepLab forward pointer. Identified in sprint 59.
 
 ---
 

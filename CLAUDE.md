@@ -509,6 +509,15 @@ For full audit findings see AUDITS.md.
 - UTM strategy: use `?utm_source=linkedin&utm_campaign=<area>` on all shared links. PostHog captures automatically — requires `VITE_POSTHOG_KEY` Vercel env var.
 - User must push: `cd ~/Documents/GitHub/genai-systems-lab && git push origin main`
 
+**Sprint 71 (June 2026) — Intermediate questions + react-pattern + readMore fixes:**
+- 8 intermediate Foundations questions (`found-int-1` through `found-int-8`): encoder vs decoder architecture choice, LoRA rank selection, multi-head vs single-head attention, perplexity as downstream proxy, catastrophic forgetting, fine-tune vs prompt decision signals, KV cache memory cost, MHA vs GQA architecture.
+- 4 intermediate RAG questions (`rag-int-1` through `rag-int-4`): hybrid search failure analysis decision, chunk size framework, reranker latency tradeoff, RAG vs fine-tuning decision.
+- 3 react-pattern questions (`react-1` beginner, `react-2` B-I, `react-3` intermediate): closes the last empty step in First Principles Path (was showing 0 linked questions).
+- 2 broken readMore postIds fixed: `found-beg-6` + `found-bi-5` had `postId: "long-context-window"` (non-existent) → corrected to `context-window-guide`.
+- Commit `ff62da0`. Brace diff = 0.
+- **Scale post-sprint 71:** 543 PrepLab questions (was 528). First Principles Path now fully linked: all 14 GT steps have practice questions.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
 **Sprint 70 (June 2026) — First Principles Path + bidirectional PrepLab linking:**
 - First Principles Path added to `LearningPaths.jsx` as the first path in the PATHS array. 14 GT steps: ngrams-to-neural → attention-from-scratch → mha-mqa-gqa-explained → bert-internals-explained → pretraining-data-decisions → context-window-guide → finetune-playbook → how-rag-works → vector-databases-compared → bi-encoder-vs-cross-encoder → two-stage-retrieval-reranker → llm-evaluation-guide → your-prompt-is-code → react-pattern. Plus PrepLab CTA. Violet `#8b5cf6` theme.
 - `GT_QUESTION_MAP` built at module load: filters all PREP_QUESTIONS for `readMore.postId`, groups by postId. O(1) lookup per step.
