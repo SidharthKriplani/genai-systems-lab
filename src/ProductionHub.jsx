@@ -64,6 +64,9 @@ const GT_POSTS = [
   { id: "retraining-triggers-strategies", title: "When to Retrain: Accuracy Triggers, Drift Triggers, and Continuous Training Pipelines", desc: "Why retraining on schedule is wrong. Accuracy-based and distribution-shift triggers, full retrain vs. warm start, Airflow DAG.", readMin: 10, tag: "MLOps" },
   { id: "ml-dockerization-patterns",   title: "ML Serving Containers: Docker, GPU, and Production-Grade FastAPI Patterns", desc: "Multi-stage Docker builds for ML, model weights as volume mounts, CUDA pinning, health/readiness probes, image size checklist.", readMin: 10, tag: "Infrastructure" },
   { id: "agent-observability",          title: "Observability for Agent Systems: Traces, Cost, and Alerts", desc: "Why logs alone fail for agents. Distributed trace anatomy, cost p95 vs mean, TTFT, and actionable alert thresholds.", readMin: 12, tag: "Agents" },
+  { id: "agent-backend-apis",           title: "Backend APIs for Agent Services: Async Endpoints, Streaming, and Webhooks", desc: "Why standard REST breaks for agents. 202 + polling vs SSE vs webhooks. Request deduplication. Readiness probes that check model availability.", readMin: 11, tag: "API design" },
+  { id: "async-task-queues-agents",     title: "Async Task Queues for Long-Running Agent Jobs", desc: "Task state machine design. Exactly-once execution via idempotency keys. Fan-out with Celery chord. Dead letter queues.", readMin: 12, tag: "Infrastructure" },
+  { id: "kubernetes-ai-workloads",      title: "Kubernetes for AI Workloads: GPU Scheduling, KEDA, and Disruption Budgets", desc: "Why HPA fails for LLMs. GPU resource requests. KEDA scaling on queue depth. PodDisruptionBudgets. Readiness vs liveness for model-serving pods.", readMin: 13, tag: "K8s" },
 ];
 
 const PREPLAB_Qs = [

@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 73 (June 2026) — Scale: 569 PrepLab questions, 305 GT index entries, 6 PrepLab modes, 13 GT series, 6 challenge area landing pages*
+*Last updated: sprint 74 (June 2026) — Scale: 586 PrepLab questions, 308 GT index entries, 6 PrepLab modes, 13 GT series, 6 challenge area landing pages*
 
 ---
 
@@ -74,20 +74,29 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 74 — Next up
+## Sprint 74 — ✅ COMPLETE (`82a1aae`)
 
-### P0 — Batch B: Backend/infra patterns for agents
-- 3 GT posts: API patterns for agent backends, distributed systems for agents (queues/idempotency/partial failure at infra level), container + K8s for AI workloads.
-- ~17 PrepLab questions framed through AI systems lens (not generic DevOps).
-- Target topics from 27-track gap: tracks 15-20.
+**Objective:** Batch B — agent backend infra gap fill (backend APIs, async task queues, K8s).
 
-### P1 — Batch C: Security + governance
-- 2 GT posts: Security for agents (prompt injection depth, OWASP LLM Top 10, least privilege), governance/auditability (lineage, versioning, rollback, human approval gates).
-- ~11 PrepLab questions.
+1. ~~**3 GT posts (agent-production series)**~~ — `agent-backend-apis` (async endpoints, SSE, request deduplication, readiness probes, rate limiting), `async-task-queues-agents` (task state machine, exactly-once execution, Celery chord fan-out, DLQ, result TTL), `kubernetes-ai-workloads` (GPU scheduling, model loading patterns, KEDA vs HPA, PDB, probe config).
+2. ~~**17 PrepLab questions**~~ — apiback-1–6, taskqueue-1–6, k8sagent-1–5.
+3. ~~**ProductionHub +3 posts**~~ — all 3 Batch B posts added.
+4. ~~**SERIES_META updated**~~ — agent-production postIds extended to 7.
 
-### P2 — Senior AI Engineer full-stack learning path
-- New path in LearningPaths.jsx spanning all major tracks.
-- 27 steps mapping existing content + Batch A/B/C additions.
+**New scale:** 586 PrepLab questions (was 569), 308 GT index entries (was 305).
+
+---
+
+## Sprint 75 — Next up
+
+### P0 — Batch C: Security + governance
+- 2 GT posts: Security for agents (prompt injection depth, OWASP LLM Top 10, least privilege architecture, input/output guardrails), governance/auditability (data lineage, model versioning, rollback patterns, human approval gates for high-risk actions).
+- ~11 PrepLab questions (sec-1–6, govern-1–5).
+- Covers 27-track curriculum tracks 21–23.
+
+### P1 — Senior AI Engineer full-stack learning path
+- New path in LearningPaths.jsx: "Senior AI Engineer: Full Stack".
+- ~20 steps mapping Batch A + B + C posts into a coherent progression.
 
 ### Backlog (unchanged)
 - Mastery Room commit (staged in sprint 60 — needs Supabase SQL run first).

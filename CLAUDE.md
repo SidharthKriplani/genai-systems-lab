@@ -532,6 +532,14 @@ For full audit findings see AUDITS.md.
 - Still open: Batch B (backend/infra), Batch C (security/governance), Senior AI Engineer full-stack path.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
+**Sprint 74 (June 2026) — Batch B: Agent backend infra:**
+- 3 GT posts (extended agent-production series): `agent-backend-apis` (202+polling vs SSE vs webhook, SSE nginx buffering fix, request deduplication, model-availability readiness probes, token-based rate limiting), `async-task-queues-agents` (task state machine PENDING→RUNNING→SUCCESS/FAILURE, visibility timeout recovery, exactly-once execution with distributed Redis lock, Celery chord for fan-out, DLQ design, result TTL), `kubernetes-ai-workloads` (GPU requests: nvidia.com/gpu limit==request, model loading: init container vs PVC vs registry pull, KEDA vs HPA: CPU wrong signal for LLM, PDB minAvailable guard, graceful termination PreStop hook, readiness vs liveness distinction for model-serving pods).
+- 17 PrepLab questions: apiback-1–6 (async endpoint design, SSE nginx buffering, deduplication, readiness probe scope, token rate limiting, 502 proxy timeout), taskqueue-1–6 (gateway timeout cause, visibility timeout recovery, idempotency key timing, DLQ purpose, chord vs group, result backend separation), k8sagent-1–5 (GPU no-overcommit, HPA fails for GPU-bound, KEDA use case, PDB purpose, readiness vs liveness distinction).
+- ProductionHub +3 posts. SERIES_META agent-production: 4→7 postIds. Commit `82a1aae`.
+- **Scale post-sprint 74:** 586 PrepLab questions (was 569), 308 GT index entries (was 305).
+- Still open: Batch C (security/governance), Senior AI Engineer full-stack path.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
 **Sprint 71 (June 2026) — Intermediate questions + react-pattern + readMore fixes:**
 - 8 intermediate Foundations questions (`found-int-1` through `found-int-8`): encoder vs decoder architecture choice, LoRA rank selection, multi-head vs single-head attention, perplexity as downstream proxy, catastrophic forgetting, fine-tune vs prompt decision signals, KV cache memory cost, MHA vs GQA architecture.
 - 4 intermediate RAG questions (`rag-int-1` through `rag-int-4`): hybrid search failure analysis decision, chunk size framework, reranker latency tradeoff, RAG vs fine-tuning decision.
