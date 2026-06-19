@@ -67,6 +67,7 @@ const GT_POSTS = [
   { id: "eval-flywheel-implicit-feedback", title: "The Eval Flywheel: From Implicit Feedback to Continuous Model Improvement", desc: "How clicks and dwell time become training signal. Position bias, IPS debiasing, and the loop connecting user behavior to retraining.", readMin: 11, tag: "Production" },
   { id: "llm-judge-calibration",        title: "LLM-as-Judge Calibration, Bias Modes, and When to Trust It", desc: "Position, verbosity, and self-consistency bias. A structured rubric, measuring judge-human agreement, the cross-family judging rule.", readMin: 10, tag: "Bias" },
   { id: "counterfactual-offline-eval",  title: "Counterfactual Offline Evaluation: IPS and Doubly Robust Estimators", desc: "The logging policy bias problem. IPS and the Doubly Robust estimator from scratch. When to log propensities at serving time.", readMin: 11, tag: "Offline eval" },
+  { id: "agent-testing-strategies",     title: "Testing Agentic Systems: From Unit Tests to Trajectory Evaluation", desc: "Why unit tests are insufficient. Mock-based behavioral tests, trajectory evaluation, LLM-as-judge calibration, and red teaming prompt injection.", readMin: 12, tag: "Agents" },
 ];
 
 const PREPLAB_Qs = [

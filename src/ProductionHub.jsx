@@ -63,6 +63,7 @@ const GT_POSTS = [
   { id: "model-registry-mlflow",       title: "Model Registry With MLflow: Versioning, Stage Transitions, and Audit Trails", desc: "What a model registry does that 'models folder in S3' doesn't. MLflow stage transitions, loading by stage alias in serving.", readMin: 10, tag: "Infrastructure" },
   { id: "retraining-triggers-strategies", title: "When to Retrain: Accuracy Triggers, Drift Triggers, and Continuous Training Pipelines", desc: "Why retraining on schedule is wrong. Accuracy-based and distribution-shift triggers, full retrain vs. warm start, Airflow DAG.", readMin: 10, tag: "MLOps" },
   { id: "ml-dockerization-patterns",   title: "ML Serving Containers: Docker, GPU, and Production-Grade FastAPI Patterns", desc: "Multi-stage Docker builds for ML, model weights as volume mounts, CUDA pinning, health/readiness probes, image size checklist.", readMin: 10, tag: "Infrastructure" },
+  { id: "agent-observability",          title: "Observability for Agent Systems: Traces, Cost, and Alerts", desc: "Why logs alone fail for agents. Distributed trace anatomy, cost p95 vs mean, TTFT, and actionable alert thresholds.", readMin: 12, tag: "Agents" },
 ];
 
 const PREPLAB_Qs = [

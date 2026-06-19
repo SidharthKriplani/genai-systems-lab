@@ -53,10 +53,14 @@ const CONCEPTS = [
 ];
 
 const GT_POSTS = [
-  { id: "agent-failure-modes",      title: "How AI Agents Fail in Production: A Full Taxonomy", desc: "Tool misuse, infinite loops, hallucinated tool calls, context bleed — with worked examples from the lab.", readMin: 11, tag: "Core" },
-  { id: "react-pattern",            title: "The ReAct Pattern: How LLM Agents Reason and Act", desc: "Thought → Action → Observation loops explained. How ReAct enables tool use and where it breaks.", readMin: 8,  tag: "Architecture" },
-  { id: "tool-use-design",          title: "Tool Use Design for AI Agents: Contracts, Consequences, and MCP", desc: "How to design tools an agent won't misuse. Consequence levels, idempotency, and the Model Context Protocol.", readMin: 9,  tag: "Design" },
-  { id: "tracing-agent-loops",      title: "Tracing Agent Loops: How to Debug Step-by-Step Execution", desc: "What a step trace reveals, how to spot loops, wrong tool calls, and hallucinated observations.", readMin: 8,  tag: "Debugging" },
+  { id: "agent-failure-modes",        title: "How AI Agents Fail in Production: A Full Taxonomy", desc: "Tool misuse, infinite loops, hallucinated tool calls, context bleed — with worked examples from the lab.", readMin: 11, tag: "Core" },
+  { id: "react-pattern",              title: "The ReAct Pattern: How LLM Agents Reason and Act", desc: "Thought → Action → Observation loops explained. How ReAct enables tool use and where it breaks.", readMin: 8,  tag: "Architecture" },
+  { id: "tool-use-design",            title: "Tool Use Design for AI Agents: Contracts, Consequences, and MCP", desc: "How to design tools an agent won't misuse. Consequence levels, idempotency, and the Model Context Protocol.", readMin: 9,  tag: "Design" },
+  { id: "tracing-agent-loops",        title: "Tracing Agent Loops: How to Debug Step-by-Step Execution", desc: "What a step trace reveals, how to spot loops, wrong tool calls, and hallucinated observations.", readMin: 8,  tag: "Debugging" },
+  { id: "mcp-explained",              title: "Model Context Protocol: The Standard for Agent Tool Integration", desc: "Client-host-server model, tools vs resources vs prompts, enterprise adoption case, and security architecture.", readMin: 10, tag: "MCP" },
+  { id: "agent-tool-use-production",  title: "Tool Use in Production Agents: Idempotency, Retries, and Audit Trails", desc: "Idempotency key design, read vs write retry strategy, tool schema requirements, and compliance audit logs.", readMin: 11, tag: "Production" },
+  { id: "agent-observability",        title: "Observability for Agent Systems: Traces, Cost, and Alerts", desc: "Why logs alone fail for agents. Distributed trace anatomy, cost p95 vs mean, TTFT, and actionable alert thresholds.", readMin: 12, tag: "Production" },
+  { id: "agent-testing-strategies",   title: "Testing Agentic Systems: From Unit Tests to Trajectory Evaluation", desc: "Why unit tests are insufficient. Mock-based behavioral tests, trajectory evaluation, LLM-as-judge, and red teaming prompt injection.", readMin: 12, tag: "Testing" },
 ];
 
 const PREPLAB_Qs = [

@@ -1935,6 +1935,7 @@ export default function App() {
         { id: "groundtruth", label: "Retrieval Depth",      postId: "ann-algorithms-deep-dive"     },
         { id: "groundtruth", label: "Evaluation Depth",     postId: "ndcg-mrr-from-scratch"        },
         { id: "groundtruth", label: "ML Foundations",       postId: "loss-functions-deep-dive"     },
+        { id: "groundtruth", label: "Agents in Production", postId: "mcp-explained"                },
       ]},
     ]},
     // Plans now in TRACK group at top of sidebar.
