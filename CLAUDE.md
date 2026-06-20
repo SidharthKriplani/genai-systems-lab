@@ -536,6 +536,16 @@ For full audit findings see AUDITS.md.
 - Batches B+C + Senior AI Engineer path all complete by sprint 76.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
+**Sprint 78 (June 2026) — Certificates, onboarding modal, agent synthesis, trap quality:**
+- `src/CertificateModal.jsx` created — canvas-based PNG certificate. Renders path name, user full name (from Supabase user_metadata, fallback to email prefix, fallback to "AI Engineer"), completion date, path accent color borders + gradient bar, abbr badge, GSL branding, step count. Download PNG via `canvas.toDataURL()` + anchor click. LinkedIn share via `share-offsite` deep link. Triggered from LearningPaths.jsx footer when `done.size === path.steps.length`.
+- `src/OnboardingModal.jsx` created — 3-question first-sign-in flow. (1) When is your interview? (2w/1m/3m/exploring). (2) Target role? (AIE/Applied Scientist/MLOps/AI PM). (3) Biggest gap? (retrieval/agents/evaluation/production/foundations). Auto-routes to challenge area hub after step 3. Saves `{ timeHorizon, role, gap, completedAt }` to `gsl-onboarding` localStorage. Triggered in App.jsx on SIGNED_IN only (not INITIAL_SESSION — no repeat for returning users). Progress dot strip + pill expansion animation. `hasCompletedOnboarding()` guard exported.
+- Agent Lab synthesis gap closed — `ForwardPointerCard` added to 6 core modules: `ReActPattern`, `ToolUseDesign`, `AgentMemory`, `MultiAgentPatterns`, `AgentFailureModes`, `PlanningPatterns`. Two stale `onNavigate("preplab")` calls fixed to `onNavigate({ tab: "preplab", topic: "agents" })`.
+- Trap quality pass (lchain cluster) — 4 trap fields (lchain-2 through lchain-5) rewritten from MCQ-letter-referencing to overclaim→honest-reframe format.
+- PostHog analytics wired (previous sub-session): UTM pageview capture in analytics.js; 4 tracking calls in PrepLab.jsx (`preplab_mode_changed`, `preplab_gate_hit`, `preplab_session_completed` ×2). Commit `74fdcd8`.
+- Commit `7b114e0`. Brace diff = 0 on all 6 files.
+- **Scale post-sprint 78:** 597 PrepLab questions, 310 GT index entries (no new content).
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
 **Sprint 77 (June 2026) — Competitive audit + MD sync:**
 - Full research on Dataford, Hello Interview, DataLemur, Exponent, Interview Query, DeepLearning.AI, fast.ai, HF courses, W&B, LangChain Academy, cheating tool cohort, distribution mechanics (NeetCode, ByteByteGo).
 - `COMPETITORS.md` created — full intel report: tier 1/2/3 competitors, market data (AI roles +41.8% YoY, 56% wage premium), proven mechanics, GSL differentiators vs gaps, 90-day bridge plan (SSR fix → LinkedIn cadence → certificates → onboarding capture).

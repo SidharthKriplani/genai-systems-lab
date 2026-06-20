@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 76 (June 2026) — Scale: 597 PrepLab questions, 310 GT index entries, 6 PrepLab modes, 13 GT series, 6 challenge area landing pages*
+*Last updated: sprint 78 (June 2026) — Scale: 597 PrepLab questions, 310 GT index entries, 6 PrepLab modes, 13 GT series, 6 challenge area landing pages*
 
 ---
 
@@ -123,7 +123,20 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 78 — Next up
+## Sprint 78 — ✅ COMPLETE (`7b114e0`)
+
+**Objective:** Certificates, onboarding modal, agent synthesis gap, trap quality pass.
+
+1. ~~**CertificateModal.jsx**~~ — canvas-based PNG certificate for path completion. Download PNG + LinkedIn share button. Appears in LearningPaths.jsx footer when `done.size === path.steps.length`. Renders path name, user name (from Supabase user object), date, abbr badge, GSL branding, accent-colored borders. `user` prop wired from App.jsx → LearningPathsApp.
+2. ~~**OnboardingModal.jsx**~~ — 3-question first-sign-in flow. Questions: time horizon (2w/1m/3m/exploring), target role (AIE/Applied Scientist/MLOps/AI PM), biggest gap (retrieval/agents/evaluation/production/foundations). Auto-routes to challenge area hub on completion. Saves to `gsl-onboarding` localStorage. Triggered in App.jsx SIGNED_IN event (only — not INITIAL_SESSION). Progress-dot indicator + pill animation. `hasCompletedOnboarding()` guard prevents repeat.
+3. ~~**Agent Lab synthesis gap**~~ — `ForwardPointerCard` from `./shared` added to 6 core Agent Lab modules: ReActPattern, ToolUseDesign, AgentMemory, MultiAgentPatterns, AgentFailureModes, PlanningPatterns. Each accepts `{ onNavigate }` prop (already passed by parent). Two broken `onNavigate("preplab")` calls fixed → `onNavigate({ tab: "preplab", topic: "agents" })`.
+4. ~~**Trap quality pass (lchain cluster)**~~ — 4 weak trap fields rewritten (lchain-2 through lchain-5) from MCQ-letter-referencing dismissals to overclaim→honest-reframe format naming the specific wrong assumption.
+
+**Scale:** 597 PrepLab questions, 310 GT index entries (no new content this sprint).
+
+---
+
+## Sprint 79 — Next up
 
 ### P0 — Home page guest CTA fix (unblocks all LinkedIn backlinks)
 
@@ -133,7 +146,7 @@ One commit. No new rooms, no redesign.
 2. Update RAG Lab Scenario 1 synthesis card guest copy: "Sign in to unlock 5 more failure modes and 51 practice questions" (currently just "Sign in to save").
 3. Mobile-test home page at 375px — fix any card/text overflow before linking publicly.
 
-**Why this is P0:** Every LinkedIn post that links to the product points to the home page. Until a guest can reach the lab mechanic in one click, that link underperforms. This fix makes RAG Lab Scenario 1 the actual landing experience.
+**Why this is P0:** Every LinkedIn post that links to the product points to the home page. Until a guest can reach the lab mechanic in one click, that link underperforms.
 
 ### P0 — LinkedIn cadence (start immediately, no product needed)
 
@@ -142,18 +155,10 @@ One commit. No new rooms, no redesign.
 - Ship guest CTA fix before Week 2 goes out
 
 ### P1 — SSR/pre-render GT posts
-`vite-ssg` or Node pre-render script. Each GT post at `/gt/[postId]` becomes a static HTML page with correct meta. Full spec in COMPETITORS.md § 90-day bridge plan. Blocked on LinkedIn cadence being established first (no point indexing content nobody is finding via social yet).
-
-### P1 — Completion certificates
-Shareable PNG for First Principles Path, Senior AIE Track, each lab completion. LinkedIn one-click share. Spec in IDEAS.md.
-
-### P1 — Onboarding capture
-3-question modal at first sign-in. "Interview scheduled?" routing. PostHog events. Spec in IDEAS.md.
+`vite-ssg` or Node pre-render script. Each GT post at `/gt/[postId]` becomes a static HTML page with correct meta. Full spec in COMPETITORS.md § 90-day bridge plan.
 
 ### Blocked
 - Mastery Room commit (staged in sprint 60 — needs Supabase SQL run first).
-- Trap field quality pass (4 clusters: rag, agents, eval, llmops).
-- Agent Lab synthesis gap — top 5 modules need PrepLab forward pointer.
 
 ---
 
