@@ -2,7 +2,7 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 78 (June 2026) — Scale: 597 PrepLab questions, 310 GT index entries, 6 PrepLab modes, 13 GT series, 6 challenge area landing pages*
+*Last updated: sprint 79 (June 2026) — Scale: 597 PrepLab questions, 310 GT index entries, 318 static GT pages (SSR), Google Search Console verified, 6 challenge area landing pages*
 
 ---
 
@@ -136,29 +136,47 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
-## Sprint 79 — Next up
+## Sprint 79 — ✅ COMPLETE (`208d76d`, `6512b94`, `ba27ef8`)
 
-### P0 — Home page guest CTA fix (unblocks all LinkedIn backlinks)
+### ~~P0 — Home page guest CTA fix~~ ✓ `208d76d`
+RAG Lab entry card added to cold home hero before PrepLab card. "No account needed" label. Routes to `#lab`. PrepLab card demoted to secondary. RAG Lab now safe to link from LinkedIn.
 
-One commit. No new rooms, no redesign.
+### ~~P1 — SSR pre-render GT posts~~ ✓ `6512b94`
+`scripts/prerender-gt.js` generates 318 static HTML pages at `public/gt/{id}.html`. `vercel.json` + `/gt/:id` rewrite. `package.json` build updated. `public/gt/` gitignored. `sitemap.xml` generated (7 static + 318 GT URLs).
 
-1. Add "Try a free scenario →" secondary CTA button on cold home page hero. Routes guest directly to RAG Lab Scenario 1.
-2. Update RAG Lab Scenario 1 synthesis card guest copy: "Sign in to unlock 5 more failure modes and 51 practice questions" (currently just "Sign in to save").
-3. Mobile-test home page at 375px — fix any card/text overflow before linking publicly.
+### ~~P1 — Google Search Console~~ ✓ `ba27ef8`
+HTML meta tag verification added to `index.html`. URL prefix property verified in Search Console.
 
-**Why this is P0:** Every LinkedIn post that links to the product points to the home page. Until a guest can reach the lab mechanic in one click, that link underperforms.
+**Pending (manual):**
+- [ ] `git push origin main` — user action required
+- [ ] Submit `sitemap.xml` in Search Console → Sitemaps tab after push + Vercel deploy
 
-### P0 — LinkedIn cadence (start immediately, no product needed)
-
-- Week 1 posts (no link): "Do you even need RAG?" (JC-3), Swiggy/Meesho/PhonePe India Insider (II-1), "3 answers that get candidates rejected" (ED-3)
-- Full 15-post sequence and backlink rules: see LINKEDIN.md
-- Ship guest CTA fix before Week 2 goes out
-
-### P1 — SSR/pre-render GT posts
-`vite-ssg` or Node pre-render script. Each GT post at `/gt/[postId]` becomes a static HTML page with correct meta. Full spec in COMPETITORS.md § 90-day bridge plan.
-
-### Blocked
+### Blocked (unchanged)
 - Mastery Room commit (staged in sprint 60 — needs Supabase SQL run first).
+
+---
+
+## Sprint 80 — Next up
+
+### P0 — LinkedIn launch (blocking: Jun 22 2026)
+- **Voice pass on Week 1 posts** — all 20 posts need stage 7 humanize pass before scheduling. Week 1 (Mon–Fri Jun 22–26) is the gate. Do this FIRST.
+- **Export carbon screenshots** — 4 code posts in Week 1 need carbon.now.sh images.
+- **Schedule Week 1** — 5 posts scheduled at 8am IST Mon–Fri. Use LinkedIn native scheduler.
+- RAG Lab first linkback: Week 3 Wed (RAG failures carousel), first comment only. Home page guest CTA is live — safe to link.
+
+### P1 — ECOSYSTEM_LEDGER.md maintenance
+Created this session at project root. Update STATE BOARD when GSL sprint state changes. All future cross-lab decisions go in DECISION LEDGER.
+
+### P1 — Unified chat workflow
+Session architecture locked: one chat, all folders mounted. No more per-lab separate sessions. Read ECOSYSTEM_LEDGER.md STATE BOARD at session start for cross-lab context.
+
+### P2 — Mastery Room unblock
+Run `supabase_study_tables.sql` in Supabase SQL Editor → commit 4 staged files → push. See MASTERY_ROOM.md for full state.
+
+### Backlog (do not touch until LinkedIn cadence runs for 4 weeks)
+- User flow audit (onboarding → RAG Lab → sign-in conversion)
+- PostHog: verify VITE_POSTHOG_KEY is set in Vercel
+- Agent/Eval Lab completion states (SystemsApp WhatNextCard)
 
 ---
 

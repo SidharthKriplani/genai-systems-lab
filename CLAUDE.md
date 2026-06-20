@@ -4,6 +4,18 @@ Read this first at the start of every session. Contains everything needed to wor
 
 ---
 
+## Session architecture (decided sprint 79)
+
+**One unified chat for all labs + LinkedIn.** No more separate sessions per project. Mount all relevant folders at session start. Spine files (CLAUDE.md, NEXT.md per project) are the persistence layer — the chat compacts, the files don't.
+
+**Cross-lab state:** read `ECOSYSTEM_LEDGER.md` at project root before any cross-lab decision. STATE BOARD tells you what every other lab is doing. Append entries; never rewrite existing ones.
+
+**Other lab CLAUDE.md locations:**
+- PAL / MSL: separate repos (not mounted unless working on them)
+- LinkedIn: `/Users/ASUS/Documents/Professional/LinkedIn/` — mount when doing distribution work
+
+---
+
 ## Working relationship
 
 Act as a product and engineering partner, not an assistant:
@@ -21,7 +33,7 @@ Act as a product and engineering partner, not an assistant:
 
 Core mechanic: configure real AI systems, watch them fail, understand why. Every module is interactive and takes under 20 minutes.
 
-**Scale (post-sprint 77, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 597 PrepLab questions, 310 GT index entries (13 GT series, 3 interactive Systems modules), 6 PrepLab modes (+ Interview Sprint + Browse All), 6 challenge area landing pages, 2 learning paths.
+**Scale (post-sprint 79, June 2026):** 6 labs, 57 Systems modules, 27 Concepts modules (7 active gyms), 597 PrepLab questions, 310 GT index entries (13 GT series, 3 interactive Systems modules), 6 PrepLab modes (+ Interview Sprint + Browse All), 6 challenge area landing pages, 2 learning paths. SSR pre-render active (318 static GT pages, sitemap.xml). Google Search Console verified.
 
 **Business model:** Freemium. Free: all Labs + GT + modules + PrepLab 10q/session. Gated (code `DAI2026`): full PrepLab, Company Tracks, Interview Prep Plan phase 4. See DECISIONS.md §0.
 
@@ -534,6 +546,17 @@ For full audit findings see AUDITS.md.
 - Commits: `b72aaaa` (Batch A content), `ee7b242` (hub + sidebar). Brace diff = 0 on all files.
 - **Scale post-sprint 73:** 569 PrepLab questions (was 543), 305 GT index entries (was 301), 13 GT series (was 12).
 - Batches B+C + Senior AI Engineer path all complete by sprint 76.
+- User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
+
+**Sprint 79 (June 2026) — Guest CTA, SSR pre-render, Search Console, session architecture:**
+- Guest CTA fix `208d76d`: RAG Lab entry card added to cold home hero BEFORE PrepLab card. "No account needed" label. "The Missing Answer" scenario 1 framing. Routes to `#lab`. PrepLab card demoted to secondary (lower border opacity). Unblocks all LinkedIn backlinks to RAG Lab.
+- SSR GT pre-render `6512b94`: `scripts/prerender-gt.js` — Node vm module reads groundTruthIndex.js + groundTruthPosts.js, generates 318 static HTML pages at `public/gt/{id}.html`. Each page: dark-styled, full content, SEO meta (title/desc/canonical/og/twitter), category badge, read time, CTA card back to SPA. `vercel.json` updated: `/gt/:id` → `/gt/:id.html` rewrite added before catch-all. `package.json` build script: `node scripts/prerender-gt.js && vite build`. `public/gt/` gitignored (regenerated at build time). `public/sitemap.xml` generated: 7 static URLs + 318 GT post URLs.
+- Search Console `ba27ef8`: `<meta name="google-site-verification" content="e0_UnHviXoDM5loLno25p2oTW8KNi0Jzs9qIifx3vkY" />` added to index.html. URL prefix property verified (HTML tag method — DNS method fails because Vercel owns vercel.app domain).
+- **Pending after push:** submit `sitemap.xml` in Search Console Sitemaps tab.
+- Session architecture decision: consolidate to ONE unified chat (GSL + LinkedIn + all labs). No more multi-chat. Spine files (CLAUDE.md, NEXT.md) remain the persistence layer because chat compacts. ECOSYSTEM_LEDGER.md created at project root as cross-lab async state file.
+- LinkedIn folder reviewed: 20 posts drafted (Weeks 1–4), 51 HTML cards built, Content Style Bible locked. **Voice pass still pending on all 20 posts** — blocking Mon Jun 22 launch. RAG failures carousel (Wk3 Wed) + semantic cache bug (Wk4 Mon) are first natural GSL linkback slots.
+- ECOSYSTEM_LEDGER.md created at project root — STATE BOARD + DECISION LEDGER + MESSAGE THREAD. Skip-rules at top. All labs + LinkedIn current state recorded.
+- **Scale post-sprint 79:** 597 PrepLab questions (unchanged), 310 GT index entries (unchanged), 318 static GT pages now indexed by Google.
 - User must push: `cd ~/Documents/Professional/GitHub/upskill\ platforms\ \(4\)/genai-systems-lab && git push origin main`
 
 **Sprint 78 (June 2026) — Certificates, onboarding modal, agent synthesis, trap quality:**

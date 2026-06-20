@@ -63,8 +63,13 @@ Generate `/rss.xml` at build time from `groundTruthIndex.js` metadata. 20–30 m
 
 ---
 
+### ECOSYSTEM_LEDGER.md — cross-lab async state file
+`Tier 1` `XS effort` `Coordination mechanism` `✅ Created sprint 79`
+
+Single file at project root. Three sections: STATE BOARD (current state per lab, ~50 lines, always read at session start), DECISION LEDGER (DEC-001… indexed decisions), MESSAGE THREAD (dated, addressed to specific labs). Skip-rules at top. Plain English + lab prefixes (GSL/LNK/PAL/MSL/CTL). Append-only. Replaces CROSS_LAB.md idea — more structured, handles async cross-session state. One unified chat (sprint 79 decision) + this file = no cross-lab context loss.
+
 ### CROSS_LAB.md — coordination file
-`Tier 1` `XS effort` `Coordination mechanism`
+`Tier 1` `XS effort` `Coordination mechanism` `Superseded by ECOSYSTEM_LEDGER`
 
 PAL maintains a `CROSS_LAB.md` that explicitly routes ideas between the three labs. GAL doesn't have this. When a pattern is validated in one lab, it should be documented in a shared format so it doesn't get rediscovered from scratch next session. Create `CROSS_LAB.md` in GAL root documenting: what GAL owns (AI systems, RAG, agents, evals, LLM production), what MSL owns (classical ML, DE, MLOps, model training), what PAL owns (product analytics, experimentation, PM). Include known patterns each lab has that the others can borrow. Refer to it when reading external content.
 

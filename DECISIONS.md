@@ -739,3 +739,28 @@ Add "Try a free scenario →" button on cold home page hero that routes guests d
 
 *Source: GSL exposure map + content plan, June 2026. Full detail in LINKEDIN.md.*
 
+---
+
+## §15 — Session architecture: one unified chat (June 2026, sprint 79)
+
+**Decision:** All lab work (GSL, PAL, MSL) + LinkedIn content work happens in a single unified chat session. No more per-lab separate sessions.
+
+**Rationale:**
+- Multi-chat context fragmentation is a real cost: every new session re-reads spines, re-discovers cross-lab state, misses decisions made in other sessions.
+- Chat compaction (summarization) happens regardless of how many chats exist — one chat doesn't add fragility, it removes duplication.
+- Cross-lab decisions (e.g. GSL linkback strategy depends on LinkedIn post performance) should happen in conversation, not by reconstructing state from files.
+
+**What this doesn't change:**
+- Spine files (CLAUDE.md, NEXT.md per project) remain the persistence layer. They survive compaction; the chat doesn't.
+- Each project's CLAUDE.md is still read at session start.
+- ECOSYSTEM_LEDGER.md is the cross-project state snapshot.
+
+**Implementation:**
+- Mount all relevant folders at session start: genai-systems-lab + LinkedIn + whichever other lab is active.
+- Read ECOSYSTEM_LEDGER.md STATE BOARD before any cross-lab decision.
+- One commit per project per batch. Brace diff check per file as before.
+
+**Anti-pattern to avoid:** building elaborate cross-session DSLs or compressed notation. Plain English + skip-able structure saves more tokens than any invented shorthand.
+
+*Decided June 2026, sprint 79. Source: session architecture discussion.*
+
