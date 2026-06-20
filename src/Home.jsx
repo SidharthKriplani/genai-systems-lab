@@ -707,11 +707,38 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                 </div>
               )}
 
-              {/* ── PrepLab taste — try without signing in ─────────────────── */}
+              {/* ── RAG Lab Scenario 1 — primary guest entry ──────────────── */}
               <div className="hero-anim-4 max-w-xl mx-auto w-full">
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest text-center mb-2.5">Or try a free question first</p>
+                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest text-center mb-2.5">No account needed</p>
                 <div className="rounded-2xl p-4 space-y-3 text-left"
-                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.35)" }}>
+                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(6,182,212,0.4)" }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">RAG Lab · Scenario 1 of 6</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded whitespace-nowrap"
+                      style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.25)", color: "var(--gal-build)" }}>
+                      ~15 min
+                    </span>
+                  </div>
+                  <p className="text-sm text-zinc-200 font-semibold leading-snug">
+                    The Missing Answer — why does a RAG system confidently return nothing?
+                  </p>
+                  <p className="text-[11px] text-zinc-500 leading-relaxed">
+                    Configure retrieval parameters, watch the system fail, diagnose the root cause. The failure mode that trips every senior AI engineer interview.
+                  </p>
+                  <button
+                    onClick={() => { track("hero_lab_cta", { scenario: 1 }); onNavigate("lab"); }}
+                    className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                    style={{ background: "rgba(6,182,212,0.12)", border: "1px solid rgba(6,182,212,0.3)", color: "var(--gal-build)" }}>
+                    Try a live failure simulation →
+                  </button>
+                </div>
+              </div>
+
+              {/* ── PrepLab taste — try without signing in ─────────────────── */}
+              <div className="max-w-xl mx-auto w-full">
+                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest text-center mb-2.5">Or try a practice question first</p>
+                <div className="rounded-2xl p-4 space-y-3 text-left"
+                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(34,197,94,0.25)" }}>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Senior AI engineer interviews · real question</span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-red-400">Hard</span>
@@ -721,8 +748,8 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                   </p>
                   <button onClick={() => { track("hero_preplab_cta", {}); onNavigate("preplab"); }}
                     className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
-                    style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", color: "#86efac" }}>
-                    Explore without signing in →
+                    style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)", color: "#86efac" }}>
+                    Try a question →
                   </button>
                 </div>
               </div>

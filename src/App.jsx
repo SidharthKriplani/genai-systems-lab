@@ -2722,8 +2722,8 @@ export default function App() {
                         {!user && scenario.scenario_id === "missing_answer" && (
                           <div className="mt-1 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3" style={{ background: "rgba(99,102,241,0.10)", border: "1px solid rgba(99,102,241,0.25)" }}>
                             <p className="text-xs text-zinc-300 leading-snug">
-                              <span className="font-bold text-white">5 more failure modes wait.</span>{" "}
-                              Sign in (free) to save your result and continue.
+                              <span className="font-bold text-white">5 more failure modes + 51 practice questions.</span>{" "}
+                              Sign in free to save your result and keep going.
                             </p>
                             <button
                               onClick={() => { track("guest_signin_cta_clicked", { source: "rag_scenario1_synthesis" }); navigate("profile"); }}
