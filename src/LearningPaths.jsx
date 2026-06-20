@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PREP_QUESTIONS } from "./data/preplabQuestions";
+import CertificateModal from "./CertificateModal";
 
 // ─── BIDIRECTIONAL LINK MAP ────────────────────────────────────────────────────
 // Built once at module load: GT postId → PrepLab questions that readMore it
@@ -288,10 +289,11 @@ function LinkedQuestions({ postId, color, onNavigateTo }) {
   );
 }
 
-export default function LearningPaths({ onNavigateTo }) {
+export default function LearningPaths({ onNavigateTo, user }) {
   const [activePath, setActivePath] = useState(PATHS[0].id);
   const [progress, setProgress] = useState(loadProgress);
   const [justCompleted, setJustCompleted] = useState(null);
+  const [showCert, setShowCert] = useState(false);
 
   function toggleStep(pathId, stepIdx) {
     setProgress(prev => {
@@ -444,25 +446,47 @@ export default function LearningPaths({ onNavigateTo }) {
             })}
           </div>
 
-          <div className="px-4 sm:px-5 py-3 border-t border-zinc-800 flex items-center justify-between">
+          <div className="px-4 sm:px-5 py-3 border-t border-zinc-800 flex items-center justify-between gap-3">
             <span className="text-xs text-zinc-500">{done.size}/{path.steps.length} complete</span>
-            {done.size > 0 && (
-              <button
-                onClick={() => {
-                  setProgress(prev => {
-                    const next = { ...prev, [path.id]: [] };
-                    saveProgress(next);
-                    return next;
-                  });
-                }}
-                className="text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors"
-              >
-                Reset path
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {done.size === path.steps.length && path.steps.length > 0 && (
+                <button
+                  onClick={() => setShowCert(true)}
+                  className="text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110"
+                  style={{ background: path.color, color: "#000" }}
+                >
+                  Get Certificate
+                </button>
+              )}
+              {done.size > 0 && (
+                <button
+                  onClick={() => {
+                    setProgress(prev => {
+                      const next = { ...prev, [path.id]: [] };
+                      saveProgress(next);
+                      return next;
+                    });
+                  }}
+                  className="text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors"
+                >
+                  Reset path
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
+
+      <CertificateModal
+        isOpen={showCert}
+        onClose={() => setShowCert(false)}
+        pathTitle={PATHS.find(p => p.id === activePath)?.title || "Learning Path"}
+        pathColor={PATHS.find(p => p.id === activePath)?.color || "#06b6d4"}
+        pathAbbr={PATHS.find(p => p.id === activePath)?.abbr || "GSL"}
+        user={user}
+        stepsCompleted={done.size}
+        totalSteps={PATHS.find(p => p.id === activePath)?.steps.length || 0}
+      />
       </div>
     </div>
   );

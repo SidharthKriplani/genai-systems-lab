@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import HowTo from "./HowTo";
+import { ForwardPointerCard } from "./shared";
 
 // ─── FIDELITY BADGE ───────────────────────────────────────────────────────────
 function FidelityBadge({ variant = "simulated" }) {
@@ -63,7 +64,7 @@ const REACT_STEPS = [
   },
 ];
 
-function ReActPattern() {
+function ReActPattern({ onNavigate }) {
   const [activeStep, setActiveStep] = useState(null);
   const TYPE_ICONS = { thought: "💭", action: "⚡", observation: "👁", final: "✓" };
   return (
@@ -107,6 +108,7 @@ function ReActPattern() {
         <div className="text-xs text-amber-400 font-bold uppercase mb-1">ReAct only works if</div>
         <p className="text-xs text-zinc-300 leading-relaxed">Tool schemas are precise. Tool outputs are reliably factual. The system has a max-step limit. Without these, the loop hallucinates tool calls, invents observations, or runs forever.</p>
       </div>
+      <ForwardPointerCard onNavigate={onNavigate} preplabTopic="agents" gtPostId="react-pattern" gtPostTitle="The ReAct Pattern" />
     </div>
   );
 }
@@ -180,7 +182,7 @@ const TOOL_PATTERNS = [
   },
 ];
 
-function ToolUseDesign() {
+function ToolUseDesign({ onNavigate }) {
   const [view, setView] = useState("schemas");
   const [selSchema, setSelSchema] = useState("bad");
   const [selPattern, setSelPattern] = useState("sequential");
@@ -366,6 +368,7 @@ function ToolUseDesign() {
           </div>
         </div>
       )}
+      <ForwardPointerCard onNavigate={onNavigate} preplabTopic="agents" gtPostId="tool-use-design" gtPostTitle="Tool Use Design for AI Agents" />
     </div>
   );
 }
@@ -407,7 +410,7 @@ const MEMORY_TYPES = [
   },
 ];
 
-function AgentMemory() {
+function AgentMemory({ onNavigate }) {
   const [sel, setSel] = useState("working");
   const mem = MEMORY_TYPES.find(m => m.id === sel);
   return (
@@ -456,6 +459,7 @@ function AgentMemory() {
           <p className="text-xs text-zinc-300 leading-relaxed">{mem.tradeoff}</p>
         </div>
       </div>
+      <ForwardPointerCard onNavigate={onNavigate} preplabTopic="agents" gtPostId="agent-memory-types" gtPostTitle="Agent Memory Types" />
     </div>
   );
 }
@@ -492,7 +496,7 @@ const MULTI_AGENT_PATTERNS = [
   },
 ];
 
-function MultiAgentPatterns() {
+function MultiAgentPatterns({ onNavigate }) {
   const [sel, setSel] = useState("orchestrator");
   const pattern = MULTI_AGENT_PATTERNS.find(p => p.id === sel);
   return (
@@ -541,6 +545,7 @@ function MultiAgentPatterns() {
           ))}
         </div>
       </div>
+      <ForwardPointerCard onNavigate={onNavigate} preplabTopic="agents" gtPostId="multi-agent-orchestration" gtPostTitle="Multi-Agent Orchestration" />
     </div>
   );
 }
@@ -585,7 +590,7 @@ const AGENT_FAILURES = [
   },
 ];
 
-function AgentFailureModes() {
+function AgentFailureModes({ onNavigate }) {
   const [sel, setSel] = useState("hallucinated_tools");
   const failure = AGENT_FAILURES.find(f => f.id === sel);
   const SEVER = {
@@ -637,6 +642,7 @@ function AgentFailureModes() {
           </div>
         </div>
       </div>
+      <ForwardPointerCard onNavigate={onNavigate} preplabTopic="agents" gtPostId="agent-failure-modes" gtPostTitle="How AI Agents Fail in Production" />
     </div>
   );
 }
@@ -673,7 +679,7 @@ const PLANNING_PATTERNS = [
   },
 ];
 
-function PlanningPatterns() {
+function PlanningPatterns({ onNavigate }) {
   const [sel, setSel] = useState("cot");
   const plan = PLANNING_PATTERNS.find(p => p.id === sel);
   return (
@@ -736,6 +742,7 @@ function PlanningPatterns() {
           <p className="text-xs text-zinc-300 leading-relaxed">{plan.when}</p>
         </div>
       </div>
+      <ForwardPointerCard onNavigate={onNavigate} preplabTopic="agents" gtPostId="planning-patterns" gtPostTitle="Planning Patterns for AI Agents" />
     </div>
   );
 }
@@ -1923,7 +1930,7 @@ function AgentLoopSimulator() {
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">You've traced the loop — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => onNavigate && onNavigate("preplab")} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">🧠 Test in Prep Lab</button>
+            <button onClick={() => onNavigate && onNavigate({ tab: "preplab", topic: "agents" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">🧠 Test in Prep Lab</button>
             <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-failure-modes" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">📖 How AI Agents Fail in Production</button>
           </div>
         </div>
@@ -3916,7 +3923,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
           <div className="flex items-center gap-2 pt-1 border-t border-zinc-800/60">
             <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Test your understanding →</span>
             <button
-              onClick={() => onNavigate && onNavigate("preplab")}
+              onClick={() => onNavigate && onNavigate({ tab: "preplab", topic: "agents" })}
               className="text-xs px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-300 hover:text-violet-300 font-medium transition-all">
               🧠 Prep Lab
             </button>

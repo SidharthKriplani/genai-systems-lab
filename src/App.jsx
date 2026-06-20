@@ -4,6 +4,7 @@ import { ALL_TABS, GROUP_COLORS } from "./config/nav";
 import { FidelityBadge } from "./shared";
 import GateOverlay from "./GateOverlay";
 import WarRoom from "./WarRoom";
+import OnboardingModal, { hasCompletedOnboarding } from "./OnboardingModal";
 import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
 import { POSTS as GT_POSTS } from "./groundTruthIndex"; // lightweight metadata — no content bodies
@@ -1477,6 +1478,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [topView, setTopView] = useState(getInitialView);
   const [warRoomOpen, setWarRoomOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return !localStorage.getItem("genai_welcomed"); } catch { return true; }
   });
@@ -1756,6 +1758,7 @@ export default function App() {
         }
         if (event === "SIGNED_IN") {
           track("auth_sign_in", { provider: u?.app_metadata?.provider || "unknown" });
+          if (!hasCompletedOnboarding()) setShowOnboarding(true);
         }
       } else if (event === "SIGNED_OUT") {
         setUser(null);
@@ -2404,7 +2407,7 @@ export default function App() {
           {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} onNavigate={(tab, postId) => { if (postId) setGtPostId(postId); navigate(tab); }} />}
           {topView === "career"     && <CareerApp />}
           {topView === "preplab"    && <PrepLabApp onNavigate={navigate} onNavigateTo={navigateTo} initialMode={preplabInitialMode} onClearInitialMode={() => setPreplabInitialMode(null)} user={user} />}
-          {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} />}
+          {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} user={user} />}
 
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} user={user} pathContext={gtPathContext} />}
           {topView === "profile" && <ProfilePage onNavigate={navigateTo} user={user} onSignOut={() => setUser(null)} />}
@@ -2866,6 +2869,14 @@ export default function App() {
             }}
           />
         </Suspense>
+      )}
+
+      {/* Onboarding — shown once after first sign-in */}
+      {showOnboarding && (
+        <OnboardingModal
+          onComplete={() => setShowOnboarding(false)}
+          onNavigate={navigateTo}
+        />
       )}
 
       {/* War Room — secret overlay, triggered by typing "business2026" in any BUILD tab */}

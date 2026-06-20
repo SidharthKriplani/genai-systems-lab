@@ -5884,7 +5884,7 @@ export const PREP_QUESTIONS = [
     options: ["The LLM model was updated by the provider and changed its tool-calling behaviour", "The tool is returning a response the LLM was never trained to interpret as terminal, so it keeps retrying", "AgentExecutor hit its default max_iterations limit and started resetting", "A memory buffer overflow is corrupting the conversation history"],
     correct: 1,
     explanation: "Loop failures in LangChain agents almost always trace to tool output format mismatches — the tool returns something ambiguous or error-like, the LLM decides it hasn't completed the task, and retries. This is why production agents need both max_iterations guards AND explicit output schemas that include terminal states the LLM can recognise as done.",
-    trap: "Model updates (A) could cause this but are less common. AgentExecutor hitting max_iterations would stop, not loop. Memory corruption (D) would manifest as different errors.",
+    trap: "The tempting diagnosis is an LLM provider update — but that would break immediately, not after 2 weeks. The real root cause is a tool output format the model has learned to treat as ambiguous: it never sees a clear terminal state, so it keeps retrying. Production agents need both a max_iterations guard AND explicit output schemas that include terminal states the model can recognise as done.",
     readMore: null
   },
   { id: "lchain-3", topic: "agents", difficulty: "medium", gated: false, type: "mcq",
@@ -5892,7 +5892,7 @@ export const PREP_QUESTIONS = [
     options: ["LangChain is making more API calls per turn due to internal retries", "The buffer memory appends every turn to context, so long sessions send the entire conversation history on every call", "The LLM pricing increased and LangChain is not caching responses", "Embedding costs increased because conversation history is re-embedded each turn"],
     correct: 1,
     explanation: "ConversationBufferMemory is a growing string. Turn 1: 100 tokens sent. Turn 50: you are sending 5,000+ tokens of history on every call. In customer support with long sessions, this compounds into 10-20x cost growth. Production solutions: ConversationSummaryMemory (summarise old turns), window memory, or semantic memory that retrieves only relevant history.",
-    trap: "This is a memory architecture problem, not a pricing or caching problem. The fix is switching memory types, not optimising the LLM call.",
+    trap: "Most candidates blame LLM price increases or missing caching. Neither explains a gradual 3× cost rise. ConversationBufferMemory is an unbounded string — turn 50 sends 50 turns of history on every API call. The fix is architectural: switch to SummaryMemory or window memory so context size stays bounded regardless of session length.",
     readMore: null
   },
   { id: "lchain-4", topic: "agents", difficulty: "hard", gated: true, type: "mcq",
@@ -5900,7 +5900,7 @@ export const PREP_QUESTIONS = [
     options: ["Switch to a faster LLM model with lower TTFT", "Reduce the number of tools by splitting the agent into specialised sub-agents, each with 2-3 tools", "Add tool descriptions that are more specific so the LLM selects faster", "Enable parallel tool calling so multiple tools execute simultaneously"],
     correct: 1,
     explanation: "LLM reasoning latency scales with tool count — more tools means more decision surface. The standard production pattern is a router agent that selects a specialised sub-agent (each with 2-3 highly relevant tools), rather than one generalist agent with 8 tools. This also improves reliability: specialised agents make fewer tool-selection errors.",
-    trap: "Parallel tool calling (D) helps when multiple tools need to run, but does not fix the selection latency. Better descriptions (C) help at the margin but do not solve the fundamental scaling problem.",
+    trap: "Many candidates reach for a faster model or more specific tool descriptions. Neither addresses the root cause: with 8 tools, 80% of latency is the LLM's tool-selection decision itself. Parallel calling helps when multiple tools run simultaneously — it does not reduce the time spent choosing which tool to call. The correct fix is architectural: split into specialised sub-agents with 2–3 tools each so no single agent faces the full 8-tool decision surface.",
     readMore: null
   },
   { id: "lchain-5", topic: "agents", difficulty: "medium", gated: false, type: "mcq",
@@ -5908,7 +5908,7 @@ export const PREP_QUESTIONS = [
     options: ["Token efficiency — how many tokens the pipeline uses per query", "Faithfulness — whether the answer is grounded in the retrieved documents, not hallucinated", "Retrieval speed — whether the vector search returns in under 100ms", "Model confidence — whether the LLM's softmax probabilities are high for its answers"],
     correct: 1,
     explanation: "RAG-specific evaluation needs faithfulness: is the answer actually supported by the retrieved context, or did the LLM add facts from its parametric memory? A correct answer that is unfaithful to the retrieved documents is a hidden failure — it means retrieval is decorative, not functional. RAGAS and similar frameworks separate faithfulness from answer correctness.",
-    trap: "Option A (token efficiency) is a cost concern, not a quality metric. Model confidence (D) is a poor proxy for correctness in modern LLMs — they can be confidently wrong.",
+    trap: "Many candidates stop at answer correctness. But a RAG system can score 90% correct and still fail in 30% of cases — if the LLM is answering from parametric memory rather than the retrieved documents, retrieval is decorative. Faithfulness is the dimension that distinguishes a working RAG pipeline from an expensive wrapper around a base LLM. Model confidence scores are not a substitute: LLMs can be confidently wrong and cannot self-report when they have ignored the context.",
     readMore: null
   },
 
