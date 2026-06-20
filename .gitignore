@@ -4,4 +4,5 @@ dist/
 *.local
 .env
 patch_*.py
-patch_*.py
+# Generated at build time — do not commit
+public/gt/
