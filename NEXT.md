@@ -2,7 +2,22 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 79 (June 2026) — Scale: 597 PrepLab questions, 310 GT index entries, 318 static GT pages (SSR), Google Search Console verified, 6 challenge area landing pages*
+*Last updated: sprint 80 (22 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
+
+> **CONTENT FREEZE IN EFFECT (shared doctrine — GSL `LINKEDIN.md` Rule 1 + MSL DEC-2026-06-21-A).** Distribution/content only. No new tabs, labs, scenarios, MCQs, or product features until distribution proves out. GT posts ARE the content-distribution surface, so they remain allowed; lab feature-building does not.
+
+---
+
+## Sprint 80 — ✅ COMPLETE (BUILD SESSION A — distribution/content only)
+
+**Objective:** Two LinkedIn / Ground-Truth posts for the growth pipeline — PixelRAG (embeddings-series finale) + Headroom (context-engineering / token-compression). Content only; no lab features (freeze respected).
+
+1. ~~**PixelRAG GT post**~~ — `pixelrag-visual-document-rag` added to `groundTruthPosts.js` + `groundTruthIndex.js` (series `nlp-origins`, the embeddings finale). Grounded in the 2025 paper (*Web Screenshots Beat Text for RAG*, Berkeley/Princeton/EPFL/Databricks): render→tile→Qwen3-VL-Embedding(LoRA)→FAISS→VLM-reads-pixels. Honest — frontier tool not a default; paper's own numbers (8.28M pages/30M screenshots, up to 18.1%, ~3× token cut) framed as the authors' reported results. LinkedIn visual = **reuse of the existing ep5 carousel** (`growth/linkedin/visuals/embeddings/ep5_pixelrag/`).
+2. ~~**Headroom GT post**~~ — `headroom-context-compression` added (series `llmops`). Honest third-party teardown: why raw tool outputs/RAG chunks burn tokens, type-aware compression (60–95% fewer tokens), reversible CCR, and **where it breaks** (lossy compression on precise data → silent wrong answers). Their benchmarks framed as vendor-reported.
+3. ~~**Tracker updated**~~ — Content Master Tracker rows #25 (PixelRAG caption + ep5 visual path) and #26 (Headroom, backlog/Idea row, caption + visual TBD). No dates assumed — both stay backlog/Idea.
+4. ~~**Build verified**~~ — `node --check` clean on both src files; `prerender-gt.js` regenerated 320 pages incl. both new static pages + sitemap. (vite/rollup step fails only in the Linux sandbox — missing `@rollup/rollup-linux-arm64-gnu`; not a code issue, builds on Mac.)
+
+**Open follow-up (post-approval):** Headroom LinkedIn visual not yet rendered (content-first gate). Proposed: a Glass-Box before/after annotation card (raw 65,694-token dump → 5,118, break-annotation on a dropped exact value). Render once approved, then set tracker #26 Visual File/Path.
 
 ---
 
