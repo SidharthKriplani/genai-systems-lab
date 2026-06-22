@@ -290,3 +290,15 @@ Finding: **GSL is a barbell** — over-supplied at both ends of the ladder (reca
 Proposed (NOT built): reorganize the 14 tabs into 4 frame-zones + a cross-cutting communication standard + wayfinding; rename the mis-named "Fluency" tab; build-order = relabel depth (free) → build the fluency bank first → thicken ownership scaffold → nest (don't grow) the already-deep judgment frame. The restructure is gated behind the content freeze + distribution keystone — target structure for a later overhaul, not this session's work.
 
 Prepared as a PROPOSED PUSH for Sidharth to review + push (per `BreakLabs/CLAUDE.md`) — not auto-pushed.
+
+---
+
+## Sprint 82 — Four-frame nav reframe spec + fluency-sliver definition (propose-only) (22 Jun 2026)
+
+**Spec, not a build.** Implements `docs/FOUR-FRAME-AUDIT.md` §5 for GSL: nav reorganized to the four frames, the mislabeled "Fluency" tab dissolved, and GSL's real fluency frame defined as a small to-build sliver. `App.jsx` untouched (propose-only — freeze + sandbox can't build-verify + push auto-deploys + spans interdependent nav structures).
+
+Deliverable: **`docs/NAV-REFRAME-SPEC.md`** — target frame IA (frames top-level; challenge areas demoted to a secondary "by domain" lens); the mechanical map of every nav structure (`NAV_GROUPS` ~1896 + mobile drawer, `VALID_VIEWS`, `GUEST_ALLOWED_TABS`, render switch, Fluency consumers); a placement table for all 29 routable surfaces (primary + secondary frame); the full 8-module Fluency dissolution + the ~5 consumer re-points; the fluency to-build spec; and a macOS build/QA/push checklist. Plus an addendum on `FOUR-FRAME-AUDIT.md` recording the resolution.
+
+Fluency frame, now defined (was "near-missing/undefined"): narrow, domain-specific — deterministic LLM-systems code in Pyodide (chunker, retrieval/rerank glue, structured-output parse+validate, agent tool-loop with stop condition, eval scorers incl. LLM-as-judge math, cosine), with **mocked model output as the failure injector** (malformed JSON, hallucinated tool call, dropped field, near-dup) — the watch-it-break thesis in the fluency frame. Mostly a secondary "now fix it in code" layer on existing judgment surfaces (RAG Lab, Spot-the-Flaw, Agents failure modes); a small pure-fluency set (glue/eval/parse); gradeable prompt forms only ("fix the broken prompt" + "prompt+parser contract"); general algorithms/Python/SQL delegated to PSL. Implementation/code-fix literacy, not algorithmic speed. Seeded by Prompt Engineering + Prompt Challenges (inherited from the dissolved tab); code sliver **spec'd, not built**.
+
+Naming divergence with MSL's audit (Foundations/Fluency/Ownership/Judgment vs KNOW/DO/BUILD/JUDGE) flagged to HQ — `HQ/LEDGER.md ⊥ pending HQ`. Prepared as a PROPOSED PUSH (docs only); not auto-pushed.

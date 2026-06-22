@@ -186,3 +186,15 @@ For most labs the A-phase is "build the floor." GSL is unusual — **its floor (
 - **This is an IA reframe of what exists** ✓ — only one real new build proposed (fluency); everything else is relabel/re-shelve. Propose-only; nothing built.
 
 _Sources: `HQ/COMPETENCE-MODEL.md`, `HQ/DECISIONS.md` (DEC-15), `HQ/MANIFESTO.md`, `growth/linkedin/docs/CONTENT-DEPTH-STANDARD.md`; GSL `README.md`, `src/App.jsx` (nav), `src/groundTruthIndex.js` (320 posts / 30 series), module files (`Concepts/Flows/Retrieval/Systems/Agents/Playground/Explore/Fluency/AIPM/Career/PrepLab.jsx`)._
+
+---
+
+## ADDENDUM — Sprint 82 (2026-06-22): fluency frame defined + nav reframe spec'd
+
+This audit's two open threads are now resolved into a build-ready spec (propose-only; nothing built):
+
+- **The "Fluency" tab is dissolved (decided).** Confirmed it is a *communication* lab, not code-fluency. Its 8 modules redistribute: Phrase Bank / Flashcards / Timed Drills / Mock Interview → **⊗ Communication** (cross-cutting ribbon); Company Cases + Readiness Check → **④ Judgment** (Readiness Check under ASSESS); Prompt Engineering + Prompt Challenges → **② Fluency** (seed). The fluency frame is therefore **not hollow** — it inherits real prompt-authoring surfaces.
+- **GSL's fluency frame is now defined as a narrow, domain-specific sliver** (was "near-missing / undefined"): deterministic LLM-systems code in Pyodide — chunker, retrieval/rerank glue, structured-output parse+validate, agent tool-loop with stop condition, eval scorers (exact-match / embedding-sim / LLM-as-judge math), cosine — with **mocked model output as the failure injector** (malformed JSON, hallucinated tool call, dropped field, near-dup). Mostly a **secondary "now fix it in code" layer** on existing judgment surfaces (RAG Lab, Spot-the-Flaw, Agents failure modes), a small pure-fluency set (glue/eval/parse), **gradeable prompt forms only** ("fix the broken prompt" + "prompt+parser contract"), and an explicit **delegation of general algorithms/Python/SQL → PSL**. Framed as implementation & code-fix literacy, not algorithmic speed. **Status: TO-BUILD** (seeded by prompt work; code sliver spec'd not built).
+- **Nav reframe is spec'd, not applied** — frames become top-level; challenge areas demote to a secondary "by domain" lens. App.jsx untouched (freeze + can't build-verify in sandbox + push auto-deploys).
+
+→ Full spec, placement table (all surfaces), exact mechanical edits, and the fluency sliver definition: **`docs/NAV-REFRAME-SPEC.md`**.

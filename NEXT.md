@@ -2,9 +2,24 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 81 (22 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
+*Last updated: sprint 82 (22 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
 
 > **CONTENT FREEZE IN EFFECT (shared doctrine — GSL `LINKEDIN.md` Rule 1 + MSL DEC-2026-06-21-A).** Distribution/content only. No new tabs, labs, scenarios, MCQs, or product features until distribution proves out. GT posts ARE the content-distribution surface, so they remain allowed; lab feature-building does not.
+
+---
+
+## Sprint 82 — ✅ COMPLETE (Four-frame nav reframe + fluency-sliver spec — PROPOSE-ONLY, no code)
+
+**Objective:** Reorganize GSL's nav so every surface maps to its primary frame; dissolve the mislabeled "Fluency" tab; define GSL's real fluency frame as a small to-build spec. Reorg/relabel existing content only — no new content, no code bank built (freeze respected).
+
+- Output: **`docs/NAV-REFRAME-SPEC.md`** (the deliverable — target frame IA, full placement table for all surfaces, the exact mechanical `App.jsx`/`Fluency.jsx` edits, build/QA/push checklist) + an addendum on `docs/FOUR-FRAME-AUDIT.md`.
+- **`App.jsx` NOT edited** (propose-only): the reframe can't be build-verified in the sandbox (Rollup ARM64), `git push` auto-deploys to Vercel, it spans several nav structures + ~5 consumer deep-links, and DEC-15 sequences the overhaul for later. On approval it's a mechanical post-approval commit (macOS build).
+- **"Fluency" tab dissolved (decided):** Phrase Bank / Flashcards / Timed Drills / Mock Interview → ⊗ Communication; Company Cases + Readiness Check → ④ Judgment (Readiness under ASSESS); Prompt Engineering + Prompt Challenges → ② Fluency (seed). Frame is **seeded, not hollow**.
+- **GSL fluency frame defined (narrow sliver, TO-BUILD):** deterministic LLM-systems code in Pyodide (chunker, retrieval/rerank glue, structured-output parse+validate, agent tool-loop w/ stop, eval scorers, cosine), **mock model output as the failure injector**, mostly a secondary "now fix it in code" layer on judgment surfaces, gradeable prompt forms only, **general code/algorithms/SQL delegated to PSL**. Framed as implementation/code-fix literacy, not algorithmic speed. **Spec'd, not built.**
+
+**Open follow-up (post-approval / when freeze lifts):** implement the `NAV_GROUPS` reframe + Fluency dissolution on macOS (per spec §6); then build the fluency code sliver (after PSL's general-code bank exists to delegate to).
+
+**Cross-lab:** frame-label naming (GSL "Foundations/Fluency/Ownership/Judgment" vs MSL "KNOW/DO/BUILD/JUDGE") is pending HQ — `HQ/LEDGER.md [2026-06-22] ⊥ pending HQ`. Spec uses placeholder labels.
 
 ---
 
