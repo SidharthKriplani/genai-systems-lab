@@ -2,9 +2,25 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 82 (22 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
+## ✅ DONE (sprint 83) — BreakLabs logo (D-19) IMPLEMENTED. See Sprint 83 below + `PENDING_APPROVALS.md`. Awaiting macOS build + approve-first push.
 
-> **CONTENT FREEZE IN EFFECT (shared doctrine — GSL `LINKEDIN.md` Rule 1 + MSL DEC-2026-06-21-A).** Distribution/content only. No new tabs, labs, scenarios, MCQs, or product features until distribution proves out. GT posts ARE the content-distribution surface, so they remain allowed; lab feature-building does not.
+*Last updated: sprint 83 (23 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
+
+> **CONTENT FREEZE IN EFFECT (shared doctrine — GSL `LINKEDIN.md` Rule 1 + MSL DEC-2026-06-21-A).** Distribution/content only. No new tabs, labs, scenarios, MCQs, or product features until distribution proves out. GT posts ARE the content-distribution surface, so they remain allowed; lab feature-building does not. _(Logo D-19 was an HQ-authorized override of this freeze for the brand task only.)_
+
+---
+
+## Sprint 83 — ✅ COMPLETE (BreakLabs logo / BrandMark, D-19 — code written, approve-first)
+
+**Objective:** Implement the BreakLabs co-brand lockup per `docs/BRANDMARK-ROLLOUT.md`. Descriptor `GenAI Systems`, accent cyan `#22D3EE`; wordmark + red seam `#FB5247` are the cross-lab constant. HQ-authorized freeze override for this brand task.
+
+- **`src/BrandMark.jsx`** (new) — canonical component (variants full/wordmark/monogram; seam red + wordmark constant; descriptor + accent per-lab). Single-quote house style.
+- **`src/index.css`** — added lockup tokens `--ink-hi / --ink-low / --rim / --font-mono` (IBM Plex Mono) to the dark `:root` + dark-ink overrides in the `[data-theme="light"]` block (so the wordmark stays legible on the cream theme). Descriptor passed as `var(--gal-build)` → cyan in dark, legible violet in light (avoids cyan-on-cream contrast fail).
+- **Slots wired (1–7):** (1) sidebar logo **and** mobile-drawer logo → stacked wordmark + cyan descriptor (replaced both old purple "G" boxes); (4) signed-out Home hero → large wordmark; (5) `GateOverlay` sign-in/paywall header → wordmark; (6) sidebar footer → monogram + "part of BreakLabs"; (7) Suspense loading splash → monogram. (2) **favicon** → new `public/favicon.svg` monogram + `<link rel=icon>` in `index.html` (none existed before). (3) **OG** → rebranded `public/og-image.png` (1200×630, lockup + tagline). Slot 8 (newsletter) out of scope.
+- **Archive (D-18):** old `public/og-image.png` → `_legacy/og-image.png` (no prior favicon existed).
+- **Verify:** all four edited JSX files parse clean (Babel); both old "G" logos gone; 6 `BrandMark` call-sites. **Native esbuild/Vite can't run in the sandbox (ARM64) — `npm run build` on macOS is the deploy gate.**
+
+**Open follow-up:** macOS `npm run build` + the QA checklist, then approve-first push (commands in `PENDING_APPROVALS.md`). When the GSL nav reframe (Sprint 82 spec) later runs, slot 1 rides that rebuild — keep one BrandMark source of truth.
 
 ---
 

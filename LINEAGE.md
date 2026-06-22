@@ -302,3 +302,20 @@ Deliverable: **`docs/NAV-REFRAME-SPEC.md`** — target frame IA (frames top-leve
 Fluency frame, now defined (was "near-missing/undefined"): narrow, domain-specific — deterministic LLM-systems code in Pyodide (chunker, retrieval/rerank glue, structured-output parse+validate, agent tool-loop with stop condition, eval scorers incl. LLM-as-judge math, cosine), with **mocked model output as the failure injector** (malformed JSON, hallucinated tool call, dropped field, near-dup) — the watch-it-break thesis in the fluency frame. Mostly a secondary "now fix it in code" layer on existing judgment surfaces (RAG Lab, Spot-the-Flaw, Agents failure modes); a small pure-fluency set (glue/eval/parse); gradeable prompt forms only ("fix the broken prompt" + "prompt+parser contract"); general algorithms/Python/SQL delegated to PSL. Implementation/code-fix literacy, not algorithmic speed. Seeded by Prompt Engineering + Prompt Challenges (inherited from the dissolved tab); code sliver **spec'd, not built**.
 
 Naming divergence with MSL's audit (Foundations/Fluency/Ownership/Judgment vs KNOW/DO/BUILD/JUDGE) flagged to HQ — `HQ/LEDGER.md ⊥ pending HQ`. Prepared as a PROPOSED PUSH (docs only); not auto-pushed.
+
+---
+
+## Sprint 83 — UI-inventory pass → HQ design registry (read-only) (22 Jun 2026)
+
+**Read-only. No UI changed.** Inventoried GSL's reusable UI components into `HQ/DESIGN-STANDARD.md` (per-lab section HQ merges). Flagged every component shared-vs-unique; nominated GSL's best-of-breed: (1) the **GT KNOW depth renderer** (`Block`/`PostDetail`/`CodeBlock` — 12-type data-driven schema, SSR-prerendered; confirms the master pick), (2) **`GateOverlay`** as the shared paywall/access-gate (single context-enum component), (3) **`FidelityBadge`** as a unique→propagate honesty-disclosure primitive. Provided GSL's inputs to the master tbd rows (search, progress/heatmap, JUDGE MCQ). Propose-only — HQ owns the best-of-breed ruling (D-13). No GSL code touched.
+
+---
+
+## Sprint 83 — BreakLabs logo / BrandMark (D-19) implemented (23 Jun 2026)
+
+**Code task (HQ-authorized freeze override for the brand only).** Implemented the BreakLabs co-brand lockup per `docs/BRANDMARK-ROLLOUT.md` — GSL's standalone pass (descriptor `GenAI Systems`, accent cyan `#22D3EE`; wordmark + red seam `#FB5247` constant across labs).
+
+- `src/BrandMark.jsx` (new) — canonical component, 3 variants (full/wordmark/monogram) + degrade rule; mirrors the PL reference implementation.
+- `src/index.css` — lockup tokens (`--ink-hi/--ink-low/--rim/--font-mono` = IBM Plex Mono) in dark `:root` + cream-theme dark-ink overrides; descriptor uses `var(--gal-build)` for theme-safe contrast.
+- Slots 1–7 wired: sidebar + mobile-drawer logos (both old purple "G" boxes replaced) → stacked wordmark + cyan descriptor; Home hero wordmark; GateOverlay sign-in/paywall wordmark; sidebar footer monogram + "part of BreakLabs"; loading-splash monogram. Favicon = new `public/favicon.svg` monogram + `<link rel=icon>` in `index.html`; OG = rebranded `public/og-image.png` (1200×630). Old OG archived → `_legacy/og-image.png` (D-18).
+- Verified: all edited JSX parse clean (Babel); native esbuild/Vite is macOS-only, so `npm run build` on the Mac is the deploy gate. Prepared approve-first; not pushed.
