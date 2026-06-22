@@ -276,3 +276,17 @@ Two Ground-Truth posts added as the content surface for the BreakLabs LinkedIn p
 Tracker (Content Master Tracker → Content Calendar): #25 PixelRAG caption + ep5 visual path filled (status Visual ready); #26 Headroom added as backlog/Idea (caption filled, visual TBD pending content-first render approval). No dates assigned — both remain backlog per instruction.
 
 Scale: GT index 318 → 320 entries; SSR pages 318 → 320. Build verified via `node --check` + `prerender-gt.js` (vite/rollup step is sandbox-only-broken, fine on macOS). Prepared as a PROPOSED PUSH for Sidharth to review and push — never auto-pushed.
+
+---
+
+## Sprint 81 — Four-Frame Reframe Audit (read-only / propose-only) (22 Jun 2026)
+
+**Audit, not a build.** Mapped GSL's existing surface to the Competence Model (`HQ/COMPETENCE-MODEL.md`, DEC-15) — the four-frame dependency ladder (recall+depth → fluency → ownership → judgment). No nav rebuilt, no content added, no code touched.
+
+Deliverable: **`docs/FOUR-FRAME-AUDIT.md`** — full surface inventory (14 tabs + Learning Paths + 320-post / 30-series GT corpus), per-item frame tags (primary + secondary), per-frame coverage table, gap report, a propose-only IA reframe, and a DEC-15-consistent build order.
+
+Finding: **GSL is a barbell** — over-supplied at both ends of the ladder (recall+depth: 320 GT + 15 interactive Concepts + 6 Flows; judgment: RAG Lab tiered-diagnose + 37 Systems decision-sims + 597-Q PrepLab + case studies) and hollow in the middle (**fluency near-missing** — no code-authoring problem bank; the "Fluency" tab is actually *communication*, which masks the gap) with **ownership scaffold-only** (Guided ProjectLabs + how-i-build blueprints; capture correctly left to Career OS). Headline: the fluency rung is broken — the lab tests judgment heavily but never trains the executing-fluency judgment is meant to stand on.
+
+Proposed (NOT built): reorganize the 14 tabs into 4 frame-zones + a cross-cutting communication standard + wayfinding; rename the mis-named "Fluency" tab; build-order = relabel depth (free) → build the fluency bank first → thicken ownership scaffold → nest (don't grow) the already-deep judgment frame. The restructure is gated behind the content freeze + distribution keystone — target structure for a later overhaul, not this session's work.
+
+Prepared as a PROPOSED PUSH for Sidharth to review + push (per `BreakLabs/CLAUDE.md`) — not auto-pushed.

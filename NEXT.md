@@ -2,9 +2,23 @@
 
 Read this at session start. Do only this. Update before closing.
 
-*Last updated: sprint 80 (22 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
+*Last updated: sprint 81 (22 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
 
 > **CONTENT FREEZE IN EFFECT (shared doctrine — GSL `LINKEDIN.md` Rule 1 + MSL DEC-2026-06-21-A).** Distribution/content only. No new tabs, labs, scenarios, MCQs, or product features until distribution proves out. GT posts ARE the content-distribution surface, so they remain allowed; lab feature-building does not.
+
+---
+
+## Sprint 81 — ✅ COMPLETE (Four-Frame Reframe Audit — read-only / propose-only)
+
+**Objective:** Audit GSL's existing surface against the Competence Model (`HQ/COMPETENCE-MODEL.md`, DEC-15) — map every tab/engine/content type to the four frames (recall+depth → fluency → ownership → judgment), find the thin frames, propose (not build) an IA reframe. **No nav rebuilt, no content added, no code touched.**
+
+- Output: **`docs/FOUR-FRAME-AUDIT.md`** (the deliverable — read it).
+- Verdict: **GSL is a barbell** — DEEP on recall+depth (320 GT + 15 Concepts + 6 Flows) AND DEEP on judgment (RAG Lab + 37 Systems + 597-Q PrepLab), with **fluency near-MISSING** (no code-authoring bank; the "Fluency" tab is mis-named — it's *communication*) and **ownership scaffold-only** (Guided ProjectLabs + how-i-build; capture is correctly Career OS's).
+- Headline gap: the fluency rung is broken — the lab *tests* judgment heavily but never *trains* the executing-fluency judgment is meant to stand on.
+- Proposed build order (per DEC-15): relabel depth (free) → **build the fluency problem bank first** → thicken ownership scaffold → nest (don't grow) judgment.
+- **Propose-only. The restructure is NOT built. Gated behind the content freeze + distribution keystone — this is the target structure for a future overhaul, not this session's work.**
+
+**Open follow-up (when the freeze lifts / overhaul is greenlit):** rename the "Fluency" tab out of the way; stand up a timed, correctness-checked GenAI code/prompt problem bank (the missing frame-2 surface).
 
 ---
 
