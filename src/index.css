@@ -198,6 +198,11 @@ html[data-theme="light"] {
   --border:         #dfd3c4;
   --border-subtle:  #ede5d8;
 
+  /* BrandMark lockup — dark inks for the cream light theme (D-19) */
+  --ink-hi:   #1c1410;
+  --ink-low:  #9e8e80;
+  --rim:      #dfd3c4;
+
   --gal-build:          #5b21b6;
   --gal-build-dark:     #4c1d95;
   --gal-build-tint:     rgba(91,33,182,0.07);
@@ -255,6 +260,12 @@ button:disabled:active {
 :root {
   --color-zinc-500: #a89880;   /* warm secondary text — dark mode */
   --color-zinc-600: #7a6e60;   /* warm muted text — dark mode */
+
+  /* ── BrandMark lockup tokens (D-19) — wordmark constant, theme-aware ──────── */
+  --ink-hi:   #F2F3F5;   /* wordmark near-white (dark theme) */
+  --ink-low:  #7a6e60;   /* the · separator — warm muted */
+  --rim:      #3d2e26;   /* monogram tile border = --border */
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
 
   /* ── GAL accent colors ───────────────────────────────────────────────────── */
   --gal-build:          #22D3EE;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase, signInWithGoogle, signInWithGitHub } from "./supabase";
+import { BrandMark } from "./BrandMark";
 import { track } from "./analytics";
 import { POSTS } from "./groundTruthIndex";
 import { getAllAreasReadiness } from "./readiness";
@@ -667,6 +668,11 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
             <div className="max-w-4xl mx-auto px-4 pt-20 pb-12 text-center space-y-8 relative">
 
               <div className="space-y-5">
+                {/* Brand lockup — signed-out hero (slot 4); descriptor stacked below the wordmark */}
+                <div className="hero-anim-0 flex flex-col items-center gap-1.5">
+                  <BrandMark variant="wordmark" size={34} />
+                  <span className="text-base font-mono tracking-wide leading-none" style={{ color: "var(--gal-build)" }}>GenAI Systems</span>
+                </div>
                 {/* Market signal */}
                 <div className="hero-anim-0 flex justify-center">
                   <span className="inline-flex items-center gap-2 text-[10px] font-mono px-3 py-1.5 rounded-full border"

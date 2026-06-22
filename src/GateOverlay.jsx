@@ -3,6 +3,7 @@
 //   user === null  → sign-in gate: value prop + Google/GitHub buttons
 //   user set, no code → upgrade gate: contextual copy + subscribe CTA + code input
 import { useState } from "react";
+import { BrandMark } from "./BrandMark";
 import { track } from "./analytics";
 import { validateCode, grantAccess } from "./utils/accessCode";
 import { signInWithGoogle, signInWithGitHub } from "./supabase";
@@ -148,6 +149,13 @@ export default function GateOverlay({ context = "free-account", user = null, com
 
   const inner = (
     <div className={compact ? "space-y-4" : "max-w-md w-full space-y-6"}>
+      {/* BreakLabs lockup at the pay/sign-in moment (slot 5); descriptor stacked below */}
+      {!compact && (
+        <div className="flex flex-col items-center gap-0.5">
+          <BrandMark variant="wordmark" size={22} />
+          <span className="text-[11px] font-mono tracking-wide leading-none" style={{ color: "var(--gal-build)" }}>GenAI Systems</span>
+        </div>
+      )}
       {/* Icon + heading */}
       <div className="text-center space-y-3">
         <div className="w-11 h-11 rounded-2xl flex items-center justify-center mx-auto"

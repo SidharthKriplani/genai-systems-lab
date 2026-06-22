@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "rea
 import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock } from "./analytics";
 import { ALL_TABS, GROUP_COLORS } from "./config/nav";
 import { FidelityBadge } from "./shared";
+import { BrandMark } from "./BrandMark";
 import GateOverlay from "./GateOverlay";
 import WarRoom from "./WarRoom";
 import OnboardingModal, { hasCompletedOnboarding } from "./OnboardingModal";
@@ -2121,16 +2122,12 @@ export default function App() {
       {/* ── LEFT SIDEBAR (desktop only) ─────────────────────────────── */}
       <aside className="hidden lg:flex flex-col w-48 shrink-0 sticky top-0 h-screen overflow-y-auto z-20"
         style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
-        {/* Logo */}
-        <button onClick={() => navigate(user ? "progress" : "home")} className="flex items-center gap-2.5 px-4 py-4 group">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0 transition-all group-hover:scale-105"
-            style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)", boxShadow: "0 2px 10px rgba(99,102,241,0.45)" }}>
-            G
-          </div>
-          <div>
-            <div className="text-sm font-bold tracking-wide text-white leading-none">GAL</div>
-            <div className="text-[9px] text-zinc-500 mt-0.5 font-mono">GenAI Systems Lab</div>
-          </div>
+        {/* Logo — BreakLabs lockup (D-19); stacked wordmark + descriptor to fit the narrow nav */}
+        <button onClick={() => navigate(user ? "progress" : "home")} className="flex flex-col items-start gap-0.5 px-4 py-4 group" aria-label="BreakLabs GenAI Systems — home">
+          <span className="transition-all group-hover:opacity-90">
+            <BrandMark variant="wordmark" size={16} />
+          </span>
+          <span className="text-[10px] font-mono tracking-wide leading-none" style={{ color: "var(--gal-build)" }}>GenAI Systems</span>
         </button>
         <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, var(--border-subtle), transparent)" }} />
         {/* Nav groups */}
@@ -2252,6 +2249,11 @@ export default function App() {
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="shrink-0"><path d="M5.5 1C3.015 1 1 2.791 1 5c0 .98.38 1.878 1.01 2.58L1.5 9.5l2.04-.98A4.8 4.8 0 005.5 9C7.985 9 10 7.209 10 5s-2.015-4-4.5-4z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/></svg>
             <span>Feedback</span>
           </button>
+          {/* Footer — part of BreakLabs (slot 6) */}
+          <div className="flex items-center gap-1.5 px-3 pt-1.5 text-[10px] font-mono text-zinc-600">
+            <BrandMark variant="monogram" size={13} />
+            <span>part of BreakLabs</span>
+          </div>
         </div>
       </aside>
 
@@ -2369,6 +2371,7 @@ export default function App() {
       <TabErrorBoundary>
         <Suspense fallback={
           <div className="flex-1 p-8 space-y-6 animate-pulse">
+            <div className="flex justify-center pb-2 opacity-60"><BrandMark variant="monogram" size={28} /></div>
             <div className="space-y-2">
               <div className="h-7 w-52 rounded-lg" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.15) 0%, rgba(39,39,42,0.4) 100%)" }} />
               <div className="h-3.5 w-72 rounded" style={{ background: "rgba(39,39,42,0.7)" }} />
@@ -2914,12 +2917,9 @@ export default function App() {
             style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
             {/* Header */}
             <div className="flex items-center justify-between px-4 pt-5 pb-3">
-              <button onClick={() => { navigate(user ? "progress" : "home"); setMobileDrawerOpen(false); }} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-                <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center text-sm font-black text-white shrink-0">G</div>
-                <div className="text-left">
-                  <div className="text-sm font-black text-white tracking-tight leading-none">GenAI Lab</div>
-                  <div className="text-[10px] text-zinc-400 mt-0.5">Production AI systems</div>
-                </div>
+              <button onClick={() => { navigate(user ? "progress" : "home"); setMobileDrawerOpen(false); }} className="flex flex-col items-start gap-0.5 hover:opacity-80 transition-opacity" aria-label="BreakLabs GenAI Systems — home">
+                <BrandMark variant="wordmark" size={17} />
+                <span className="text-[10px] font-mono tracking-wide leading-none" style={{ color: "var(--gal-build)" }}>GenAI Systems</span>
               </button>
               <button onClick={() => setMobileDrawerOpen(false)} className="p-1.5 text-zinc-400 hover:text-white transition-colors" aria-label="Close navigation">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
