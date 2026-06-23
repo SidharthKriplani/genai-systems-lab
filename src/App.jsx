@@ -116,6 +116,205 @@ const INTERVIEW_STORIES = {
   },
 };
 
+// ─── FOUR-FRAME SIDEBAR (HQ DESIGN-STANDARD: accordion nav) ───────────────────
+// Components hoisted to MODULE SCOPE (per the standard — defining them inside the
+// sidebar gives them new identities each render → React remounts → motion snaps).
+const GAL_ACCENT = "var(--gal-build)"; // cyan #22D3EE
+const SIBLING_LABS = {
+  pl:  "https://github.com/SidharthKriplani/programming-lab", // Programming Lab (no live URL yet)
+  pal: "https://experimentation-systems-lab.vercel.app",       // Product Analytics Lab
+};
+
+// Lucide-style frame icons (stroke). Accent when the frame is active.
+const FRAME_ICON_PATHS = {
+  "book-open": "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z",
+  terminal:    "M4 17l6-6-6-6M12 19h8",
+  hammer:      "M15 12l-8.5 8.5a2.12 2.12 0 1 1-3-3L12 9M17.64 15 22 10.64M20.91 11.7l-1.25-1.25a2.5 2.5 0 0 1-.73-1.77v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h.86a2.5 2.5 0 0 1 1.77.73z",
+  scale:       "M12 3v18M5 21h14M6.5 7 3 14h7zM17.5 7 14 14h7zM6.5 7l11-2",
+  clipboard:   "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z",
+};
+
+function FrameIcon({ name, size = 13, color = "currentColor", active = false }) {
+  const d = FRAME_ICON_PATHS[name];
+  if (!d) return null;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+      style={{ opacity: active ? 1 : 0.62, flexShrink: 0 }}>
+      <path d={d} />
+    </svg>
+  );
+}
+
+function SidebarChevron({ open }) {
+  return (
+    <svg width="9" height="9" viewBox="0 0 8 8" fill="none" aria-hidden="true"
+      style={{ flexShrink: 0, transform: open ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.30s cubic-bezier(0.33,1,0.68,1)" }}>
+      <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Measured-height collapse (HQ standard — animate real px height from scrollHeight,
+// NOT grid-template-rows 0fr→1fr which snaps). Snap to auto after opening.
+function SidebarCollapsible({ open, children }) {
+  const ref = useRef(null);
+  const [height, setHeight] = useState(open ? "auto" : "0px");
+  const mounted = useRef(false);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    if (!mounted.current) { mounted.current = true; return; } // no animation on first mount
+    let r1, r2;
+    const onEnd = (e) => {
+      if (e.target === el && e.propertyName === "height") {
+        if (open) setHeight("auto");
+        el.removeEventListener("transitionend", onEnd);
+      }
+    };
+    if (open) { setHeight(el.scrollHeight + "px"); el.addEventListener("transitionend", onEnd); }
+    else { setHeight(el.scrollHeight + "px"); r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => setHeight("0px")); }); }
+    return () => { el.removeEventListener("transitionend", onEnd); if (r1) cancelAnimationFrame(r1); if (r2) cancelAnimationFrame(r2); };
+  }, [open]);
+  return <div ref={ref} style={{ height, overflow: "hidden", transition: "height 0.30s cubic-bezier(0.33,1,0.68,1)", willChange: "height" }}>{children}</div>;
+}
+
+function SoonBadge() {
+  return (
+    <span className="text-[8px] font-mono font-bold uppercase shrink-0 ml-1.5 px-1.5 py-px rounded-full border"
+      style={{ color: "#71717a", borderColor: "var(--border)", letterSpacing: "0.08em" }}>SOON</span>
+  );
+}
+
+// One row: routable tab, sibling-lab link-out (↗), or a to-build placeholder (SOON).
+function SidebarRow({ item, active, onNavigate, onAfter }) {
+  if (item.href) {
+    return (
+      <a href={item.href} target="_blank" rel="noopener noreferrer" onClick={() => onAfter && onAfter()}
+        className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-all duration-150">
+        <span>{item.label}</span>
+        <span className="text-zinc-600 text-[11px] shrink-0 ml-1.5">↗</span>
+      </a>
+    );
+  }
+  if (item.soon) {
+    return (
+      <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-600 cursor-default select-none">
+        <span>{item.label}</span><SoonBadge />
+      </div>
+    );
+  }
+  return (
+    <button onClick={() => { onNavigate(item.id); if (onAfter) onAfter(); }} aria-current={active ? "page" : undefined}
+      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${active ? "" : "text-zinc-300 hover:bg-zinc-800/60 hover:text-white"}`}
+      style={active ? { background: `linear-gradient(90deg, ${GAL_ACCENT}14 0%, ${GAL_ACCENT}03 100%)`, boxShadow: `inset 3px 0 0 ${GAL_ACCENT}`, color: "#ffffff", fontWeight: 700 } : {}}>
+      <span>{item.label}</span>
+    </button>
+  );
+}
+
+// Mobile drawer nav — same four-frame structure, flat (no accordion) for the drawer.
+function MobileFrameNav({ topView, onNavigate, onClose }) {
+  function Row(it) {
+    if (it.href) return (
+      <a key={it.id} href={it.href} target="_blank" rel="noopener noreferrer" onClick={onClose}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-all">
+        <span>{it.label}</span><span className="text-zinc-600 text-[11px] ml-1.5">↗</span>
+      </a>
+    );
+    if (it.soon) return (
+      <div key={it.id} className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-zinc-600 select-none">
+        <span>{it.label}</span><SoonBadge />
+      </div>
+    );
+    const active = topView === it.id;
+    return (
+      <button key={it.id} onClick={() => { onNavigate(it.id); if (onClose) onClose(); }} aria-current={active ? "page" : undefined}
+        className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between mb-0.5 transition-all ${active ? "" : "text-zinc-300 hover:bg-zinc-800/60 hover:text-white"}`}
+        style={active ? { background: `linear-gradient(90deg, ${GAL_ACCENT}14 0%, ${GAL_ACCENT}03 100%)`, boxShadow: `inset 3px 0 0 ${GAL_ACCENT}`, color: "#ffffff", fontWeight: 700 } : {}}>
+        <span>{it.label}</span>
+      </button>
+    );
+  }
+  return (
+    <div className="space-y-3 px-1">
+      <div>{NAV_TRACK.map(Row)}</div>
+      {NAV_SECTIONS.map(sec => (
+        <div key={sec.key}>
+          <div className="flex items-center gap-2 px-3 pb-1">
+            <FrameIcon name={sec.icon} active color={GAL_ACCENT} />
+            <span className="text-[9.5px] font-bold uppercase" style={{ letterSpacing: "0.11em", color: GAL_ACCENT }}>{sec.label}</span>
+          </div>
+          {sec.items.map(Row)}
+        </div>
+      ))}
+      <div className="pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+        <div className="px-3 pb-1 text-[9px] font-mono uppercase tracking-widest text-zinc-600">By Domain</div>
+        {NAV_DOMAINS.map(Row)}
+      </div>
+    </div>
+  );
+}
+
+// TRACK cluster (flat, always visible).
+const NAV_TRACK = [
+  { id: "home", label: "Home" },
+  { id: "profile", label: "Profile" },
+  { id: "progress", label: "Progress" },
+  { id: "plans", label: "Plans" },
+];
+
+// The four frames + PREP & ASSESS (accordion). Domains nest under the frame, never as peers.
+const NAV_SECTIONS = [
+  { key: "know", label: "KNOW", icon: "book-open", items: [
+    { id: "concepts", label: "Concepts" },
+    { id: "flows", label: "Flows" },
+    { id: "explore", label: "Explore" },
+    { id: "groundtruth", label: "Ground Truth" },
+    { id: "paths", label: "Learning Paths" },
+    { id: "consult", label: "Ask" },
+  ]},
+  { key: "do", label: "DO", icon: "terminal", items: [
+    { id: "promptlab", label: "Prompt Lab" },
+    { id: "playground", label: "Playground" },
+    { id: "__soon_code", label: "Code Drills", soon: true },
+    { id: "__pl", label: "Python · DSA", href: SIBLING_LABS.pl },
+    { id: "__pal", label: "SQL", href: SIBLING_LABS.pal },
+  ]},
+  { key: "build", label: "BUILD", icon: "hammer", items: [
+    { id: "career", label: "Project Labs" },
+  ]},
+  { key: "judge", label: "JUDGE", icon: "scale", items: [
+    { id: "lab", label: "RAG Lab" },
+    { id: "agents", label: "Agents" },
+    { id: "systems", label: "Systems" },
+    { id: "evallab", label: "Eval Lab" },
+    { id: "llmlab", label: "LLM Lab" },
+    { id: "foundationlab", label: "FM Lab" },
+    { id: "aipm", label: "AI Product" },
+  ]},
+  { key: "prep", label: "PREP & ASSESS", icon: "clipboard", items: [
+    { id: "preplab", label: "PrepLab" },
+    { id: "fluency", label: "Interview Room" },
+  ]},
+];
+
+// Challenge-area hubs — secondary "by domain" lens (flat, not a frame).
+const NAV_DOMAINS = [
+  { id: "retrieval", label: "Retrieval" },
+  { id: "evaluation", label: "Evaluation" },
+  { id: "agentshub", label: "Agents" },
+  { id: "production", label: "Production" },
+  { id: "foundations", label: "Foundations" },
+];
+
+// tab id → frame key (active-tab auto-expand). Includes routable aliases not shown as rows.
+const TAB_FRAME = (() => {
+  const m = {};
+  for (const s of NAV_SECTIONS) for (const it of s.items) if (!it.href && !it.soon) m[it.id] = s.key;
+  m.agentlab = "judge"; m.agentshub = "judge"; m.evaluation = "judge"; m.retrieval = "know"; m.production = "judge"; m.foundations = "know";
+  return m;
+})();
+
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
 function Toggle({ value, onChange }) {
@@ -1581,6 +1780,9 @@ export default function App() {
   // Ground Truth uses forceOpen=true so it ignores this state.
   const [activeSection, setActiveSection] = useState(null);
   const toggleSection = (id) => setActiveSection(prev => prev === id ? null : id);
+  // Four-frame accordion — one open per level; opening a tab auto-expands its frame.
+  const [openFrame, setOpenFrame] = useState("know");
+  useEffect(() => { const f = TAB_FRAME[topView]; if (f) setOpenFrame(f); }, [topView]);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
@@ -2068,41 +2270,7 @@ export default function App() {
               <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Navigation</span>
               <button onClick={() => setMobileMenuOpen(false)} className="text-zinc-500 hover:text-white text-sm">✕</button>
             </div>
-            {NAV_GROUPS.map((group, gi) => {
-              const isCollapsed = group.label && collapsedGroups.has(group.label);
-              return (
-                <div key={gi} className="mb-2">
-                  {group.label && (
-                    <button onClick={() => toggleGroup(group.label)} className="w-full flex items-center gap-1.5 px-1 mb-1.5 hover:opacity-80 transition-opacity">
-                      <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: group.color }}>{group.label}</span>
-                      {isCollapsed && <span className="text-[9px] font-mono px-1 rounded" style={{ color: group.color, background: `${group.color}18` }}>{group.items.length}</span>}
-                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ color: group.color, transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 150ms" }}>
-                        <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                  )}
-                  <div style={{
-                    maxHeight: (group.label && isCollapsed) ? '0px' : `${group.items.length * 42}px`,
-                    overflow: 'hidden',
-                    opacity: (group.label && isCollapsed) ? 0 : 1,
-                    transition: 'max-height 220ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease',
-                  }}>
-                    {group.items.map((item) => (
-                      <button key={item.id} onClick={() => { navigate(item.id); setMobileMenuOpen(false); }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-between mb-0.5 transition-all ${
-                          topView === item.id ? "bg-violet-600 text-white"
-                          : item.id === "lab" ? "text-amber-500 hover:bg-amber-900/20 hover:text-amber-300 border border-amber-900/30"
-                          : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
-                        <span className="flex items-center gap-1.5">
-                          {item.label}{item.id === "lab" && topView !== "lab" && <span className="text-amber-600 text-[10px]">★</span>}
-                        </span>
-                        {visited.has(item.id) && topView !== item.id && item.id !== "lab" && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--gal-build)", opacity: 0.45 }} />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            <MobileFrameNav topView={topView} onNavigate={navigate} onClose={() => setMobileMenuOpen(false)} />
             <div className="mt-3 space-y-1.5">
               <button onClick={() => { setSearchOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-400 border border-zinc-700 rounded-lg hover:text-white hover:border-zinc-600 transition-all flex items-center justify-center gap-2">
                 <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
@@ -2132,108 +2300,40 @@ export default function App() {
         <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, var(--border-subtle), transparent)" }} />
         {/* Nav groups */}
         <nav className="flex-1 px-2 pb-4 space-y-0.5">
-          {NAV_GROUPS.map((group, gi) => {
-            const isCollapsed = group.label && collapsedGroups.has(group.label);
-            const itemCount = group.items.length;
+          {/* TRACK — flat, always visible */}
+          <div className="space-y-0.5 mb-2">
+            {NAV_TRACK.map(it => (
+              <SidebarRow key={it.id} item={it} active={topView === it.id} onNavigate={navigate} />
+            ))}
+          </div>
+          {/* The four frames + PREP & ASSESS — accordion, one open per level */}
+          {NAV_SECTIONS.map(sec => {
+            const open = openFrame === sec.key;
             return (
-              <div key={gi} className={gi > 0 ? "mt-3" : ""}>
-                {group.label && (
-                  <button
-                    onClick={() => toggleGroup(group.label)}
-                    className="w-full flex items-center gap-2 px-2 py-1 mb-1 hover:opacity-80 transition-opacity"
-                  >
-                    <div className="h-px flex-1 opacity-40" style={{ background: group.color }} />
-                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: group.color }}>{group.label}</span>
-                    {isCollapsed && (
-                      <span className="text-[9px] font-mono px-1 py-0.5 rounded" style={{ color: group.color, background: `${group.color}18` }}>{itemCount}</span>
-                    )}
-                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ color: group.color, flexShrink: 0, transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 150ms" }}>
-                      <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <div className="h-px flex-1 opacity-40" style={{ background: group.color }} />
-                  </button>
-                )}
-                <div style={{
-                  maxHeight: (group.label && isCollapsed) ? '0px' : '1200px',
-                  overflow: 'hidden',
-                  opacity: (group.label && isCollapsed) ? 0 : 1,
-                  transition: 'max-height 250ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease',
-                }}>
-                  {group.items.map(item => {
-                    const active = topView === item.id;
-                    const grpColor = group.color || "#6366f1";
-                    const hasSubitems = item.subitems && item.subitems.length > 0;
-                    const forceOpen   = item.alwaysExpanded;
-                    // Single-open accordion: section is open if forceOpen OR it is the activeSection
-                    const isExpanded  = forceOpen || activeSection === item.id;
-                    const activeColor = group.color || "var(--gal-build)";
-                    return (
-                      <div key={item.id}>
-                        {/* Nav item label — click navigates AND toggles open/close */}
-                        <button
-                          onClick={() => {
-                            navigate(item.id);
-                            if (hasSubitems && !forceOpen) toggleSection(item.id);
-                          }}
-                          aria-current={active ? "page" : undefined}
-                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${!active ? "hover:bg-zinc-800/60 hover:text-white text-zinc-300" : ""}`}
-                          style={active ? {
-                            background: `linear-gradient(90deg, ${activeColor}12 0%, ${activeColor}03 100%)`,
-                            boxShadow: `inset 2px 0 0 ${activeColor}`,
-                            color: "#ffffff",
-                          } : {}}>
-                          <span className={active ? "text-white font-bold" : ""}>{item.label}</span>
-                          <span className="flex items-center gap-1.5">
-                            {visited.has(item.id) && !active && (
-                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: activeColor, opacity: 0.4 }} />
-                            )}
-                            {hasSubitems && !forceOpen && (
-                              <svg width="8" height="8" viewBox="0 0 8 8" fill="none"
-                                style={{ color: active ? activeColor : "#71717a", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 150ms", flexShrink: 0 }}>
-                                <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                            )}
-                          </span>
-                        </button>
-                        {/* Sub-items */}
-                        {hasSubitems && (
-                          <div style={{ maxHeight: isExpanded ? `${item.subitems.length * 30 + (item.desc ? 22 : 0)}px` : '0px', overflow: 'hidden', transition: 'max-height 200ms cubic-bezier(0.4,0,0.2,1)' }}>
-                            <div className="ml-3 pl-2.5 mb-1 space-y-0" style={{ borderLeft: `1px solid ${activeColor}20` }}>
-                              {item.subitems.map((sub, si) => {
-                                const subIsActive = !forceOpen && topView === sub.id && !sub.postId;
-                                return (
-                                  <button key={si}
-                                    onClick={() => {
-                                      if (sub.postId) {
-                                        // GT series: navigate to groundtruth and open specific post
-                                        setGtPostId(sub.postId);
-                                        navigate("groundtruth");
-                                      } else {
-                                        navigate(sub.id);
-                                      }
-                                    }}
-                                    className={`w-full text-left px-2 py-[5px] rounded text-[11px] flex items-center justify-between transition-all duration-150 ${subIsActive ? "font-bold" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"}`}
-                                    style={subIsActive ? { color: activeColor, fontWeight: 700 } : {}}>
-                                    <span>{sub.label}</span>
-                                    {sub.note && (
-                                      <span className="text-[9px] font-mono shrink-0 ml-1.5" style={{ color: subIsActive ? activeColor : "#52525b" }}>{sub.note}</span>
-                                    )}
-                                  </button>
-                                );
-                              })}
-                              {item.desc && (
-                                <p className="px-2 pt-0.5 pb-1 text-[9px] font-mono leading-tight" style={{ color: "#3f3f46" }}>{item.desc}</p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+              <div key={sec.key} className="mb-0.5">
+                <button onClick={() => setOpenFrame(open ? null : sec.key)} aria-expanded={open}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-zinc-800/40 transition-all duration-150">
+                  <FrameIcon name={sec.icon} active={open} color={open ? GAL_ACCENT : "#a89880"} />
+                  <span className="flex-1 text-left text-[9.5px] font-bold uppercase" style={{ letterSpacing: "0.11em", color: open ? GAL_ACCENT : "#a89880" }}>{sec.label}</span>
+                  <span style={{ color: open ? GAL_ACCENT : "#71717a" }}><SidebarChevron open={open} /></span>
+                </button>
+                <SidebarCollapsible open={open}>
+                  <div className="pt-0.5 pb-1 space-y-0.5">
+                    {sec.items.map(it => (
+                      <SidebarRow key={it.id} item={it} active={topView === it.id} onNavigate={navigate} />
+                    ))}
+                  </div>
+                </SidebarCollapsible>
               </div>
             );
           })}
+          {/* BY DOMAIN — challenge-area hubs as a secondary lens (flat) */}
+          <div className="mt-3 pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+            <div className="px-3 pb-1 text-[9px] font-mono uppercase tracking-widest text-zinc-600">By Domain</div>
+            {NAV_DOMAINS.map(it => (
+              <SidebarRow key={it.id} item={it} active={topView === it.id} onNavigate={navigate} />
+            ))}
+          </div>
         </nav>
         {/* Bottom utilities */}
         <div className="px-2 pb-3 pt-2 space-y-1" style={{ borderTop: "1px solid var(--border-subtle)" }}>
@@ -2927,35 +3027,7 @@ export default function App() {
             </div>
             <div className="h-px mx-4 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
             {/* Nav sections */}
-            {NAV_GROUPS.map((grp, gi) => (
-              <div key={gi} className="px-3 mb-3">
-                {grp.label && <div className="text-[9px] font-bold uppercase tracking-widest px-2 py-1.5" style={{ color: (grp.color || "#6366f1") + "99" }}>{grp.label}</div>}
-                {grp.items.map(item => {
-                  const active = topView === item.id;
-                  const subActive = item.subitems?.some(s => s.id === topView);
-                  return (
-                    <div key={item.id}>
-                      <button onClick={() => { navigate(item.id); setMobileDrawerOpen(false); }}
-                        className="w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-all mb-0.5"
-                        style={(active || subActive)
-                          ? { background: (grp.color || "#6366f1") + "20", color: grp.color || "#6366f1", boxShadow: "inset 3px 0 0 " + (grp.color || "#6366f1") }
-                          : { color: "#d4d4d8" }}>
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{ background: (active || subActive) ? (grp.color || "#6366f1") : visited.has(item.id) ? "rgba(52,211,153,0.6)" : "transparent", border: (active || subActive || visited.has(item.id)) ? "none" : "1px solid #3f3f46" }} />
-                        {item.label}
-                      </button>
-                      {item.subitems?.map(sub => (
-                        <button key={sub.id} onClick={() => { navigate(sub.id); setMobileDrawerOpen(false); }}
-                          className="w-full text-left pl-8 pr-3 py-1.5 rounded-lg text-xs transition-all mb-0.5"
-                          style={topView === sub.id ? { color: grp.color || "#6366f1", fontWeight: 700 } : { color: "#71717a" }}>
-                          {sub.label}
-                        </button>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+            <MobileFrameNav topView={topView} onNavigate={navigate} onClose={() => setMobileDrawerOpen(false)} />
             <div className="h-px mx-4 my-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
             {/* Search shortcut */}
             <button onClick={() => { setSearchOpen(true); setMobileDrawerOpen(false); }}

@@ -319,3 +319,15 @@ Naming divergence with MSL's audit (Foundations/Fluency/Ownership/Judgment vs KN
 - `src/index.css` — lockup tokens (`--ink-hi/--ink-low/--rim/--font-mono` = IBM Plex Mono) in dark `:root` + cream-theme dark-ink overrides; descriptor uses `var(--gal-build)` for theme-safe contrast.
 - Slots 1–7 wired: sidebar + mobile-drawer logos (both old purple "G" boxes replaced) → stacked wordmark + cyan descriptor; Home hero wordmark; GateOverlay sign-in/paywall wordmark; sidebar footer monogram + "part of BreakLabs"; loading-splash monogram. Favicon = new `public/favicon.svg` monogram + `<link rel=icon>` in `index.html`; OG = rebranded `public/og-image.png` (1200×630). Old OG archived → `_legacy/og-image.png` (D-18).
 - Verified: all edited JSX parse clean (Babel); native esbuild/Vite is macOS-only, so `npm run build` on the Mac is the deploy gate. Prepared approve-first; not pushed.
+
+---
+
+## Sprint 84 — Four-frame accordion sidebar (HQ DESIGN-STANDARD) (23 Jun 2026)
+
+Implemented the HQ "THE SIDEBAR STANDARD — four-frame accordion nav" in GSL (`src/App.jsx`). Reorg/relabel of existing tabs under KNOW/DO/BUILD/JUDGE + PREP&ASSESS; cyan (`var(--gal-build)`) accent. HQ-authorized structural override of the freeze; no new content/tabs.
+
+Module-scope nav kit added (hoisted per the standard to avoid remount-snap): `FrameIcon` (book-open/terminal/hammer/scale/clipboard), `SidebarChevron`, **measured-height `SidebarCollapsible`** (animates real px height from scrollHeight, snaps to auto after open — NOT the grid 0fr→1fr trick the standard warns against), `SoonBadge`, `SidebarRow`, `MobileFrameNav`; plus `NAV_TRACK` / `NAV_SECTIONS` / `NAV_DOMAINS` / `TAB_FRAME`.
+
+Desktop sidebar: TRACK (flat) → four frames + PREP&ASSESS (accordion, one-open-per-level via `openFrame` + `useEffect(topView)` auto-expand) → BY DOMAIN (challenge-area hubs as a flat secondary lens). Active pill = `inset 3px` cyan bar; `aria-expanded` on frame toggles, `aria-current` on rows. DO rung carries a **SOON** "Code Drills" marker (the to-build fluency sliver, honestly inert) + **link-outs** (↗) to PL (Python·DSA) and PAL (SQL) per the delegation rule. Both mobile drawers re-keyed to the same frames via `MobileFrameNav`.
+
+Verified: all touched files Babel-parse clean; 0 `NAV_GROUPS.map` remaining; native esbuild/Vite is macOS-only so `npm run build` on the Mac is the gate. Old `NAV_GROUPS` data + `toggleGroup`/`activeSection` left as harmless dead code (cleanup later). Prepared approve-first; not pushed.

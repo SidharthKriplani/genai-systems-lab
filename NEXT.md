@@ -2,11 +2,25 @@
 
 Read this at session start. Do only this. Update before closing.
 
-## ✅ DONE (sprint 83) — BreakLabs logo (D-19) IMPLEMENTED. See Sprint 83 below + `PENDING_APPROVALS.md`. Awaiting macOS build + approve-first push.
+## ✅ DONE (sprint 84) — Four-frame accordion sidebar (HQ DESIGN-STANDARD) IMPLEMENTED. See Sprint 84 below + `PENDING_APPROVALS.md`. Awaiting macOS build + approve-first push. (Logo D-19 shipped at `f9d1a15`.)
 
-*Last updated: sprint 83 (23 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
+*Last updated: sprint 84 (23 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
 
-> **CONTENT FREEZE IN EFFECT (shared doctrine — GSL `LINKEDIN.md` Rule 1 + MSL DEC-2026-06-21-A).** Distribution/content only. No new tabs, labs, scenarios, MCQs, or product features until distribution proves out. GT posts ARE the content-distribution surface, so they remain allowed; lab feature-building does not. _(Logo D-19 was an HQ-authorized override of this freeze for the brand task only.)_
+> **CONTENT FREEZE IN EFFECT (shared doctrine — GSL `LINKEDIN.md` Rule 1 + MSL DEC-2026-06-21-A).** Distribution/content only. No new tabs, labs, scenarios, MCQs, or product features until distribution proves out. GT posts ARE the content-distribution surface, so they remain allowed; lab feature-building does not. _(Logo D-19 + the nav reframe were HQ-authorized overrides for those structural tasks only — reorg/relabel, no new content.)_
+
+---
+
+## Sprint 84 — ✅ COMPLETE (Four-frame accordion sidebar — HQ DESIGN-STANDARD; code written, approve-first)
+
+**Objective:** Implement the HQ "THE SIDEBAR STANDARD — four-frame accordion nav" in GSL. Reorg/relabel of existing tabs under KNOW/DO/BUILD/JUDGE + PREP&ASSESS; cyan accent. No new content/tabs.
+
+- **`src/App.jsx`** — module-scope nav kit (`FrameIcon` book-open/terminal/hammer/scale/clipboard, `SidebarChevron`, **measured-height `SidebarCollapsible`** per the standard — NOT grid 0fr→1fr, hoisted to avoid remount-snap, `SoonBadge`, `SidebarRow`, `MobileFrameNav`) + the four-frame data (`NAV_TRACK`, `NAV_SECTIONS`, `NAV_DOMAINS`, `TAB_FRAME`).
+- **Desktop sidebar** rebuilt: TRACK (flat) → KNOW/DO/BUILD/JUDGE/PREP&ASSESS accordions (one-open-per-level via `openFrame` + `useEffect(topView)`) → BY DOMAIN (flat secondary lens). Active pill = `inset 3px var(--gal-build)` + cyan; `aria-expanded`/`aria-current`. DO rung shows a **SOON** "Code Drills" placeholder (the to-build fluency sliver) + **link-outs** (↗) to PL (Python·DSA) and PAL (SQL). Search stays pinned bottom.
+- **Both mobile drawers** re-keyed to the same frames via `MobileFrameNav` (flat lists, consistent with desktop).
+- **Verify:** all touched files Babel-parse clean; 0 `NAV_GROUPS.map` left. Native esbuild/Vite is macOS-only → **`npm run build` on the Mac is the deploy gate.**
+- Dead-but-harmless leftovers (old in-component `NAV_GROUPS` data + `toggleGroup`/`activeSection`) left in place to minimize edit surface — flag for a later cleanup.
+
+**Open follow-up:** macOS build + QA (accordion one-open-per-level, smooth measured-height open/close, frame icons, active cyan pill, SOON + ↗ link-outs, mobile drawers), then approve-first push. Optional polish later: nest GT series as a KNOW sub-group; delete the dead `NAV_GROUPS`; swap PL link-out to its live Vercel URL once it deploys.
 
 ---
 
