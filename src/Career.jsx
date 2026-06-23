@@ -385,9 +385,11 @@ function TakeHomeChallenge() {
   const [evalChoices, setEvalChoices] = useState({ cases: new Set(), scoring: new Set() });
   const [revealed, setRevealed] = useState(false);
   const [scenarioText, setScenarioText] = useState("");
+  const [rubricHits, setRubricHits] = useState(new Set());
   const ch = TAKEHOME_CHALLENGES[cIdx];
 
-  function reset(i) { setCIdx(i); setRank([0,1,2]); setPromptIssues(new Set()); setEvalChoices({ cases: new Set(), scoring: new Set() }); setRevealed(false); setScenarioText(""); }
+  function reset(i) { setCIdx(i); setRank([0,1,2]); setPromptIssues(new Set()); setEvalChoices({ cases: new Set(), scoring: new Set() }); setRevealed(false); setScenarioText(""); setRubricHits(new Set()); }
+  function toggleRubric(i) { setRubricHits(prev => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; }); }
 
   function moveRankUp(i) { if (i === 0) return; setRank(r => { const n=[...r]; [n[i-1],n[i]]=[n[i],n[i-1]]; return n; }); }
   function moveRankDown(i) { if (i === rank.length-1) return; setRank(r => { const n=[...r]; [n[i],n[i+1]]=[n[i+1],n[i]]; return n; }); }
@@ -524,15 +526,32 @@ function TakeHomeChallenge() {
                 <p className="text-sm text-zinc-200 leading-relaxed">{ch.expertAnswer}</p>
               </div>
               <div className="bg-zinc-900 border border-violet-800/40 rounded-xl p-4">
-                <p className="text-xs text-violet-400 uppercase tracking-widest mb-3">Strong Answer Rubric</p>
-                <ul className="space-y-2">
-                  {ch.rubric.map((point, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-violet-400 shrink-0 mt-0.5">✓</span>
-                      <span className="text-xs text-zinc-300 leading-relaxed">{point}</span>
-                    </li>
-                  ))}
+                <p className="text-xs text-violet-400 uppercase tracking-widest mb-1">Score yourself against the rubric</p>
+                <p className="text-[11px] text-zinc-500 mb-3">Tick each point your answer genuinely covered. Be honest — this is your self-grade.</p>
+                <ul className="space-y-1.5">
+                  {ch.rubric.map((point, i) => {
+                    const hit = rubricHits.has(i);
+                    return (
+                      <li key={i}>
+                        <button onClick={() => toggleRubric(i)}
+                          className={`w-full text-left flex items-start gap-2 px-2 py-1.5 rounded-lg border transition-all ${hit ? "border-emerald-700/60 bg-emerald-950/25" : "border-zinc-800 hover:border-zinc-700"}`}>
+                          <span className={`shrink-0 mt-0.5 font-mono text-xs ${hit ? "text-emerald-400" : "text-zinc-600"}`}>{hit ? "✓" : "○"}</span>
+                          <span className="text-xs text-zinc-300 leading-relaxed">{point}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
+                {(() => {
+                  const pct = Math.round((rubricHits.size / ch.rubric.length) * 100);
+                  const tier = pct >= 85 ? ["Staff-level", "#22c55e"] : pct >= 60 ? ["Senior-ready", "var(--gal-build)"] : pct >= 35 ? ["Analyst-ready", "#f59e0b"] : ["Junior — keep going", "#fb7185"];
+                  return (
+                    <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center justify-between">
+                      <span className="text-xs text-zinc-400">{rubricHits.size}/{ch.rubric.length} covered · <span className="font-mono">{pct}%</span></span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ color: tier[1], border: `1px solid ${tier[1]}55` }}>{tier[0]}</span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}

@@ -345,3 +345,13 @@ End-of-session reconciliation. Everything from sprints 83–85 is committed, pus
 Deferred (logged in `NEXT.md`, none blocking): nest GT series under KNOW; delete dead `NAV_GROUPS`; PL Python link-out → live URL when known; dynamic-import auto-reload guard; FluencyApp module split into Communication + DO; build the DO "Code Drills" fluency sliver.
 
 Spine reconciled: `NEXT.md` flipped from "awaiting push" → "shipped & live"; `PENDING_APPROVALS.md` resolved entries moved to History; `HQ/LEDGER.md` closing entry added. Session closed.
+
+---
+
+## Sprint 86 — Exhaustive per-artifact frame categorization (23 Jun 2026)
+
+Ran a 5-agent parallel read-only audit categorizing every GSL artifact against KNOW/DO/BUILD/JUDGE with split% + mass (S/M/L/XL) + fill-state. Deliverable: **`docs/FRAME-CATEGORIZATION.md`** (definitions/litmus tests, per-surface tables, weighted Σ(mass×split) rollup, findings).
+
+Headline (weighted): **KNOW ~59% · JUDGE ~27% · DO ~8% (truly ~2-3%) · BUILD ~6%.** The barbell is now quantified. The DO rung is near-total absent — no surface makes you write/run code or a free prompt under a correctness check (closest: one Career "Fix the Prompt" sub-challenge). BUILD exists only as 4 un-graded free-text Career take-home rubric labs. Corrections found: Systems=60 (not 37), Explore=24 (not 14), Playground=8; no standalone "Guided ProjectLabs" or LangSmith module.
+
+Implication flagged for the Concepts-population decision: all 22 Coming-Soon stubs are ~70% KNOW, so filling them flat deepens the already-heavy end. Recommendation in the doc: build them but prioritize the 8 JUDGE-leaning stubs + add a "now do it" interactive beat so they balance the ladder rather than widen the gap. Concepts build paused for Sidharth's confirm given this new evidence.

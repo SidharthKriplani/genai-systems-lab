@@ -5605,7 +5605,221 @@ function FlashAttentionConcept() {
 // ─── MAIN CONCEPTS APP ────────────────────────────────────────────────────────
 
 // fidelity tiers: "faithful" (real math), "simplified" (correct pattern, simplified scale), "conceptual" (illustrative)
+
+// ─── STANDARD MODULE ENGINE (content-driven; for populated gyms) ──────────────
+// Renders a consistent module from a `spec` data object + a scored DECISION CHECK
+// (the JUDGE beat — every populated module makes you decide, not just read).
+function DecisionCheck({ check }) {
+  const [pick, setPick] = useState(null);
+  if (!check) return null;
+  const done = pick !== null;
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+      <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--gal-build)" }}>Decision check</p>
+      <p className="text-sm text-zinc-200 font-medium">{check.q}</p>
+      <div className="space-y-1.5">
+        {check.options.map((opt, i) => {
+          const isPick = pick === i;
+          const isRight = i === check.correct;
+          const show = done && (isPick || isRight);
+          return (
+            <button key={i} onClick={() => pick === null && setPick(i)} disabled={done}
+              className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-all ${
+                !done ? "border-zinc-800 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/50"
+                : show && isRight ? "border-emerald-700/60 bg-emerald-950/30 text-emerald-300"
+                : isPick ? "border-rose-700/60 bg-rose-950/30 text-rose-300"
+                : "border-zinc-800/60 text-zinc-600"}`}>
+              <span className="font-mono text-[10px] mr-2">{show && isRight ? "✓" : show && isPick ? "✗" : String.fromCharCode(65+i)}</span>{opt}
+            </button>
+          );
+        })}
+      </div>
+      {done && <p className="text-xs text-zinc-400 leading-relaxed border-t border-zinc-800 pt-2">{check.why}</p>}
+    </div>
+  );
+}
+
+function StandardModule({ spec, onNavigate }) {
+  if (!spec) return null;
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+      {spec.problem && (
+        <div className="rounded-xl border-l-2 px-4 py-3" style={{ borderColor: "var(--gal-build)", background: "var(--gal-build-tint, rgba(34,211,238,0.06))" }}>
+          <p className="text-[10px] font-mono uppercase tracking-widest mb-1" style={{ color: "var(--gal-build)" }}>Why it exists</p>
+          <p className="text-sm text-zinc-200 leading-relaxed">{spec.problem}</p>
+        </div>
+      )}
+      {(spec.sections || []).map((sec, i) => (
+        <div key={i} className="space-y-2">
+          <h3 className="text-base font-bold text-white">{sec.h}</h3>
+          {sec.body && <p className="text-[15px] text-zinc-300 leading-[1.75]">{sec.body}</p>}
+          {sec.bullets && (
+            <ul className="space-y-1.5 pl-1">
+              {sec.bullets.map((b, j) => (
+                <li key={j} className="flex items-start gap-2 text-[14px] text-zinc-300 leading-[1.7]">
+                  <span className="text-zinc-600 shrink-0 mt-1">—</span><span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+      {spec.decision && (
+        <div className="space-y-2">
+          <h3 className="text-base font-bold text-white">{spec.decision.title || "The decision"}</h3>
+          <div className="overflow-x-auto rounded-lg border border-zinc-800">
+            <table className="w-full text-xs">
+              <thead><tr className="border-b border-zinc-800 bg-zinc-900/60">
+                {spec.decision.headers.map((h, i) => <th key={i} className="px-3 py-2 text-left font-bold text-zinc-400 whitespace-nowrap">{h}</th>)}
+              </tr></thead>
+              <tbody>{spec.decision.rows.map((r, ri) => (
+                <tr key={ri} className="border-b border-zinc-800/50">{r.map((c, ci) => <td key={ci} className="px-3 py-2 text-zinc-400 leading-relaxed">{c}</td>)}</tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      <DecisionCheck check={spec.check} />
+      {spec.takeaways && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4">
+          <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">Takeaways</p>
+          <ul className="space-y-1.5">
+            {spec.takeaways.map((t, i) => <li key={i} className="flex items-start gap-2 text-sm text-zinc-300"><span style={{ color: "var(--gal-build)" }} className="shrink-0">▹</span><span>{t}</span></li>)}
+          </ul>
+        </div>
+      )}
+      {spec.refs && (
+        <div className="rounded-xl border border-zinc-800 overflow-hidden">
+          <div className="px-4 py-2 bg-zinc-900/80 border-b border-zinc-800"><p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">References</p></div>
+          <div className="divide-y divide-zinc-800/60">
+            {spec.refs.map((r, i) => (
+              <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs text-zinc-300 hover:text-white hover:bg-zinc-900/40 transition-colors">{r.label} <span className="text-zinc-500">↗</span></a>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Content specs for populated modules. Product specifics kept evergreen/conceptual.
+const MODULE_SPECS = {
+  "aws-bedrock-agentcore": {
+    problem: "Most teams don't want to host GPUs to run an LLM. AWS Bedrock is the managed door: one API, many foundation models, no servers — plus an agent runtime (AgentCore) for tool-using agents.",
+    sections: [
+      { h: "What Bedrock gives you", body: "A single serverless API that fronts multiple model families (Anthropic Claude, Meta Llama, Amazon Nova/Titan, Mistral, Cohere, and more). You pay per token; AWS runs the inference. Around it sit managed building blocks so you don't wire them yourself.", bullets: [
+        "Knowledge Bases — managed RAG (ingest → embed → vector store → retrieve).",
+        "Guardrails — input/output policy filters (PII, denied topics, prompt-injection heuristics).",
+        "AgentCore — a runtime for agents: tool/function calling, memory, and orchestration with managed session state.",
+      ]},
+      { h: "Where it fits", body: "Bedrock is the fastest path from zero to a grounded, guard-railed assistant inside an AWS shop — data stays in your account/region, and you skip model-serving ops entirely. The trade is less control over the serving stack and per-token pricing that can exceed self-hosting at very high, steady volume." },
+    ],
+    decision: { title: "Bedrock building blocks", headers: ["Block", "Replaces", "Watch out for"], rows: [
+      ["Bedrock API", "your model server", "per-token cost at scale"],
+      ["Knowledge Bases", "your RAG pipeline", "less control over chunking/reranking"],
+      ["Guardrails", "your safety layer", "heuristic, not a full defense"],
+      ["AgentCore", "your agent runtime", "newer; verify current limits"],
+    ]},
+    check: { q: "A regulated bank wants a policy-Q&A assistant, data must stay in-region, team has no ML-serving experience. First move?", options: ["Self-host Llama on EC2 GPUs", "Bedrock + Knowledge Bases + Guardrails", "Call a public model API directly", "Fine-tune a model before anything else"], correct: 1, why: "Managed Bedrock keeps data in-region, gives a grounded RAG path (Knowledge Bases) and a safety layer (Guardrails) with zero serving ops — exactly the constraints. Self-hosting adds ops risk the team can't carry yet; a public API may break data-residency; fine-tuning is premature before a RAG baseline." },
+    takeaways: ["Bedrock = managed multi-model API + RAG + guardrails + agent runtime.", "Best when you want speed, data-residency, and no serving ops.", "Re-evaluate vs self-hosting once volume is high and steady."],
+    refs: [{ label: "AWS Bedrock — documentation", url: "https://docs.aws.amazon.com/bedrock/" }],
+    fidelity: { tier: "conceptual", note: "Conceptual overview — verify current model list, AgentCore limits, and pricing against AWS docs." },
+  },
+  "vertex-ai-gemini": {
+    problem: "Vertex AI is Google Cloud's managed home for Gemini and other models — model garden, tuning, grounding, and an agent builder, all inside your GCP project.",
+    sections: [
+      { h: "The managed surface", body: "Vertex AI exposes Gemini (and open + third-party models via Model Garden) behind a managed API, with tuning (supervised + adapters), grounding to Google Search or your own data, batch + online prediction, and evaluation tooling.", bullets: [
+        "Grounding — attach answers to Search or your indexed data to cut hallucination.",
+        "Agent Builder / Agent Engine — managed runtime for tool-using agents.",
+        "Tuning — adapter/supervised tuning when prompt + RAG aren't enough.",
+      ]},
+      { h: "Why pick it", body: "If your data and identity already live in GCP, Vertex keeps everything in one trust boundary with IAM, and Gemini's long context + native multimodality are first-class. The cost/control trade is the same managed-API story as the other clouds." },
+    ],
+    decision: { title: "Vertex levers", headers: ["Lever", "Use when"], rows: [
+      ["Prompt + Gemini", "default — start here"],
+      ["Grounding", "answers must cite fresh/owned data"],
+      ["Tuning", "stable task, prompt+RAG plateaued"],
+      ["Agent Engine", "multi-step tool use, managed sessions"],
+    ]},
+    check: { q: "Gemini app hallucinates on company-specific facts. Cheapest correct fix first?", options: ["Fine-tune Gemini on company data", "Turn on grounding to your indexed data", "Raise temperature", "Switch clouds"], correct: 1, why: "Grounding (RAG) injects current, owned facts at query time and is far cheaper/faster than tuning — and tuning bakes facts into weights that go stale. Temperature doesn't fix missing knowledge." },
+    takeaways: ["Vertex = Gemini + Model Garden + grounding + tuning + agents, in GCP.", "Grounding before tuning for fact problems.", "Strongest when your stack is already GCP/IAM."],
+    refs: [{ label: "Google Vertex AI — documentation", url: "https://cloud.google.com/vertex-ai/docs" }],
+    fidelity: { tier: "conceptual", note: "Conceptual — verify current Gemini models, grounding sources, and Agent Engine naming against GCP docs." },
+  },
+  "azure-ai-foundry": {
+    problem: "Azure AI Foundry (the platform formerly surfaced as Azure AI Studio) is Microsoft's managed catalog + tooling for building with OpenAI and other models inside Azure.",
+    sections: [
+      { h: "What's in the box", body: "A model catalog (Azure OpenAI — GPT family — plus open and partner models), prompt orchestration (prompt flow), built-in evaluations, content safety, and deployment to managed endpoints, all under Azure identity and networking.", bullets: [
+        "Azure OpenAI — enterprise-governed access to GPT models with data-handling commitments.",
+        "Prompt flow — visual + code orchestration of prompts, tools, and evals.",
+        "Content Safety — managed moderation for inputs and outputs.",
+      ]},
+      { h: "Who reaches for it", body: "Enterprises standardized on Microsoft (Entra ID, Azure networking, compliance) that want governed GPT access without leaving their tenant. Same managed-vs-control trade as the other clouds." },
+    ],
+    decision: { title: "Foundry pieces", headers: ["Piece", "Job"], rows: [
+      ["Model catalog", "pick/deploy a model"],
+      ["Prompt flow", "orchestrate + evaluate"],
+      ["Content Safety", "moderation layer"],
+      ["Managed endpoint", "serve it, no infra"],
+    ]},
+    check: { q: "A Microsoft-shop enterprise needs governed GPT-4-class access with data staying in its tenant. Best fit?", options: ["Public OpenAI API with a credit card", "Azure AI Foundry / Azure OpenAI", "Self-host an open model", "Bedrock"], correct: 1, why: "Azure OpenAI via Foundry gives governed, in-tenant GPT access under Entra ID + Azure compliance — matching the data-residency and identity constraints of a Microsoft shop. The public API and other clouds don't fit the existing trust boundary; self-hosting an open model isn't GPT-4-class." },
+    takeaways: ["Foundry = governed Azure OpenAI + prompt flow + safety + endpoints.", "The default for Microsoft-standardized enterprises.", "Naming shifts — confirm current product labels."],
+    refs: [{ label: "Azure AI Foundry — documentation", url: "https://learn.microsoft.com/en-us/azure/ai-foundry/" }],
+    fidelity: { tier: "conceptual", note: "Conceptual — Microsoft renames these often; verify current Foundry/Studio naming and model list." },
+  },
+  "managed-vs-selfhosted": {
+    problem: "The recurring architecture fork: rent inference from a managed API (Bedrock/Vertex/Azure/OpenAI) or run open weights on your own GPUs. Getting this wrong costs money or months.",
+    sections: [
+      { h: "The five axes", body: "Decide on five things, not vibes:", bullets: [
+        "Cost shape — managed = per-token (linear with usage); self-host = fixed GPU + ops (flat once provisioned). They cross at high, steady volume.",
+        "Latency & control — self-host lets you tune batching/quantization/KV-cache and pin versions; managed hides the stack.",
+        "Data & residency — both can keep data in-region, but self-host gives full custody.",
+        "Capability — frontier closed models (GPT/Claude/Gemini) are managed-only; open weights are catching up but trail at the top.",
+        "Team — self-hosting is an ops commitment (serving, scaling, on-call) most early teams shouldn't take.",
+      ]},
+      { h: "The honest default", body: "Start managed. Move specific, high-volume, latency- or cost-critical workloads to self-hosted open models only once the per-token bill clearly exceeds the fully-loaded cost of running and operating GPUs — and you have the team to own it." },
+    ],
+    decision: { title: "Pick the lane", headers: ["Signal", "Managed", "Self-hosted"], rows: [
+      ["Volume", "low / spiky", "high / steady"],
+      ["Need frontier model", "yes", "no (open weights ok)"],
+      ["Ops maturity", "low", "high"],
+      ["Cost at scale", "grows linearly", "amortizes"],
+    ]},
+    check: { q: "A startup at 200k tokens/day, spiky, no infra team, needs Claude-quality output. Managed or self-hosted?", options: ["Self-host — cheaper per token", "Managed — fits volume, capability, team", "Self-host a 7B model to save money", "Build a GPU cluster first"], correct: 1, why: "Low/spiky volume + need for a frontier (closed) model + no ops team all point to managed. Self-hosting only wins at high steady volume with the team to run it; a 7B open model won't match Claude-quality for the task, and a GPU cluster is a premature, expensive ops burden." },
+    takeaways: ["Decide on cost-shape, control, data, capability, team — not preference.", "Managed is the right default; self-host is an earned optimization.", "The break-even is high, steady volume + ops maturity."],
+    refs: [{ label: "Anthropic — model deployment options", url: "https://docs.anthropic.com/" }],
+    fidelity: { tier: "conceptual", note: "Framework, not figures — run your own cost model (see the TCO module)." },
+  },
+  "enterprise-ai-cost-model": {
+    problem: "\"It's just an API call\" is how AI bills explode. A defensible TCO model is what separates a senior recommendation from a guess.",
+    sections: [
+      { h: "Cost = per-request × volume + fixed", body: "Build it bottom-up:", bullets: [
+        "Per-request tokens = system prompt + few-shot + retrieved context + history + output. The retrieved-context and history terms are the silent multipliers.",
+        "Per-request cost = (input tokens × input price) + (output tokens × output price). Output tokens usually cost several× input.",
+        "Monthly = per-request cost × requests/month, plus fixed costs (vector DB, embeddings, observability, eval runs, and — if self-hosted — GPUs + on-call).",
+      ]},
+      { h: "Where the money leaks", body: "Un-pruned RAG context, full chat history on every turn, no prompt caching, and over-powered models on easy queries. The biggest single lever is usually routing easy requests to a small/cheap model and caching repeated prefixes." },
+    ],
+    decision: { title: "Cost levers (biggest first)", headers: ["Lever", "Typical save"], rows: [
+      ["Model routing (cheap model for easy)", "40–70%"],
+      ["Prompt / prefix caching", "up to ~90% on cached part"],
+      ["Context compression / pruning", "60–95% of bloat"],
+      ["Right-size output (max_tokens, format)", "variable"],
+    ]},
+    check: { q: "Support bot: $4.20/session, 3000-token system prompt sent every turn, GPT-4-class on every query. Highest-leverage first cut?", options: ["Switch vector DB", "Cache the static prompt prefix + route easy intents to a small model", "Lower temperature", "Add more few-shot examples"], correct: 1, why: "The static 3000-token prefix re-sent every turn is pure waste — prefix caching kills most of it — and routing easy intents to a small model attacks the other big term (model price × volume). Vector DB and temperature don't move token cost; more few-shot makes it worse." },
+    takeaways: ["Model the request bottom-up: prompt+context+history+output, × volume, + fixed.", "Context and history are the silent token multipliers.", "Routing + caching + compression are the top three levers."],
+    refs: [{ label: "Anthropic — token costs & prompt caching", url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" }],
+    fidelity: { tier: "conceptual", note: "Framework + illustrative ranges — plug in current per-token prices for your models." },
+  },
+};
+
 const MODULES = [
+  // ── Cloud AI Services gym (populated) ──
+  { id: "aws-bedrock-agentcore", label: "AWS Bedrock + AgentCore", tag: "CLOUD", level: "intermediate", title: "AWS Bedrock + AgentCore", subtitle: "Managed multi-model API, RAG, guardrails, agent runtime.", fidelity: MODULE_SPECS["aws-bedrock-agentcore"].fidelity, spec: MODULE_SPECS["aws-bedrock-agentcore"], component: StandardModule },
+  { id: "vertex-ai-gemini", label: "Vertex AI + Gemini", tag: "CLOUD", level: "intermediate", title: "Vertex AI + Gemini", subtitle: "Gemini, grounding, tuning, agents — in GCP.", fidelity: MODULE_SPECS["vertex-ai-gemini"].fidelity, spec: MODULE_SPECS["vertex-ai-gemini"], component: StandardModule },
+  { id: "azure-ai-foundry", label: "Azure AI Foundry", tag: "CLOUD", level: "intermediate", title: "Azure AI Foundry", subtitle: "Governed Azure OpenAI + prompt flow + safety.", fidelity: MODULE_SPECS["azure-ai-foundry"].fidelity, spec: MODULE_SPECS["azure-ai-foundry"], component: StandardModule },
+  { id: "managed-vs-selfhosted", label: "Managed vs Self-Hosted", tag: "DECISION", level: "intermediate", title: "Managed vs Self-Hosted Inference", subtitle: "The five-axis fork: cost, control, data, capability, team.", fidelity: MODULE_SPECS["managed-vs-selfhosted"].fidelity, spec: MODULE_SPECS["managed-vs-selfhosted"], component: StandardModule },
+  { id: "enterprise-ai-cost-model", label: "Enterprise AI Cost Model", tag: "DECISION", level: "intermediate", title: "Enterprise AI TCO Modeling", subtitle: "Build the cost bottom-up; find the leaks.", fidelity: MODULE_SPECS["enterprise-ai-cost-model"].fidelity, spec: MODULE_SPECS["enterprise-ai-cost-model"], component: StandardModule },
   {
     id: "tokenizer",
     label: "Tokenizer",
@@ -7583,11 +7797,9 @@ const GYMS = [
     desc: "AWS Bedrock, Vertex AI, Azure AI Foundry — managed APIs, serverless inference, enterprise guardrails.",
     teaser: "5 modules: AWS Bedrock + AgentCore, Vertex AI + Gemini, Azure AI Foundry, managed vs self-hosted decision engine, enterprise TCO modeling.",
     color: "#f97316",
-    moduleIds: [],
-    modulesSkeleton: ["aws-bedrock-agentcore", "vertex-ai-gemini", "azure-ai-foundry", "managed-vs-selfhosted", "enterprise-ai-cost-model"],
+    moduleIds: ["aws-bedrock-agentcore", "vertex-ai-gemini", "azure-ai-foundry", "managed-vs-selfhosted", "enterprise-ai-cost-model"],
     labId: "systems",
     labLabel: "Systems Lab",
-    comingSoon: true,
   },
   {
     id: "vector-infrastructure",
@@ -8001,7 +8213,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
             <p className="text-sm text-zinc-400 mt-1">{mod.subtitle}</p>
           </div>
 
-          <Component onNavigate={onNavigate} />
+          <Component onNavigate={onNavigate} spec={mod.spec} />
           <ModuleNotes moduleId={active} />
         </div>
       </div>
