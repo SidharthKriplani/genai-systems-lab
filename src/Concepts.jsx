@@ -750,7 +750,7 @@ function TokenizerModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -1114,7 +1114,7 @@ function EmbeddingModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -1529,7 +1529,7 @@ function AttentionModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -1919,7 +1919,7 @@ function TransformerModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -2208,7 +2208,7 @@ function ChunkingModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -2656,7 +2656,7 @@ function RAGPipelineModule({ onNavigate }) {
 
       {/* Go deeper footer */}
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -2947,7 +2947,7 @@ function SamplingModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -3259,7 +3259,7 @@ function ContextWindowModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what’s next?</span>
@@ -3510,7 +3510,7 @@ function AgentModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -3763,7 +3763,7 @@ function GuardrailsModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -3986,7 +3986,7 @@ function EvalLoopModule() {
             const m = RAGAS_METRICS.find(x => x.id === selectedMetric);
             if (!m) return null;
             return (
-              <div className="rounded-xl p-4 space-y-3" style={{ border: `1px solid ${m.color}30`, borderTop: `2px solid ${m.color}`, background: `${m.color}08` }}>
+              <div className="rounded-xl p-4 space-y-3" style={{ border: `1px solid ${m.color}30`, borderTop: "1px solid var(--border)", background: `${m.color}08` }}>
                 <div className="text-sm font-bold text-white">{m.label}</div>
                 <div className="space-y-1">
                   <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500">Formula</div>
@@ -4367,7 +4367,7 @@ function DebugModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -4669,7 +4669,7 @@ function MultiAgentModule({ onNavigate }) {
       </div>
 
       {onNavigate && (
-        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
@@ -5642,7 +5642,7 @@ function DecisionCheck({ check }) {
           );
         })}
       </div>
-      {done && <p className="text-xs leading-relaxed pt-2" style={{ color: FX_BODY, borderTop: "1px solid rgba(255,255,255,0.07)" }}>{check.why}</p>}
+      {done && <p className="text-xs leading-relaxed pt-2" style={{ color: FX_BODY, borderTop: "1px solid var(--border)" }}>{check.why}</p>}
     </div>
   );
 }
@@ -5654,7 +5654,7 @@ function StandardModule({ spec, onNavigate }) {
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-5 relative">
       <div aria-hidden="true" style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 420, height: 150, background: "radial-gradient(60% 100% at 50% 0%, rgba(34,211,238,0.10), transparent 70%)", pointerEvents: "none" }} />
       {spec.problem && (
-        <div style={{ ...GLASS, padding: "14px 16px", borderLeft: "2px solid var(--gal-build)" }}>
+        <div style={{ ...GLASS, padding: "14px 16px" }}>
           <p className="text-[10px] font-mono uppercase mb-1" style={eyebrow}>Why it exists</p>
           <p className="text-sm leading-relaxed" style={{ color: FX_BODY }}>{spec.problem}</p>
         </div>
@@ -6389,7 +6389,7 @@ function SequentialParallelModule({ onNavigate }) {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
         <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">What you're building intuition for</div>
         <p className="text-sm text-zinc-300 leading-relaxed">RNNs read one token at a time. Each step waits for the previous. With 1,000-token sequences on a GPU with 10,000 cores, 9,999 of those cores are idle. Transformers read all tokens simultaneously — every core is busy. This is not a minor optimisation: it's the difference between "scales to millions of examples" and "scales to trillions." The architecture transition from RNN to Transformer is why the current wave of LLMs exists.</p>
       </div>
@@ -6655,7 +6655,7 @@ function LoRAModule({ onNavigate }) {
   return (
     <div className="space-y-5">
       {/* Beat 1 */}
-      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
         <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">What you're building intuition for</div>
         <p className="text-sm text-zinc-300 leading-relaxed">Full fine-tuning updates all billions of parameters — expensive, VRAM-heavy, and slow to iterate. LoRA freezes the original weights and trains two tiny matrices whose product approximates the weight change. For a 4096×4096 weight matrix, rank=16 drops trainable parameters from 16.7M to 131K — a 99% reduction with competitive quality. QLoRA extends this by quantising the frozen base to 4 bits (NF4), making 70B fine-tuning possible on a single GPU.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">This module makes the math concrete: adjust rank and model dimension, see the exact parameter reduction, and understand when LoRA is and isn't the right tool.</p>
@@ -7083,7 +7083,7 @@ function AgentToolDesignModule({ onNavigate }) {
   ];
   return (
     <div className="space-y-5">
-      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "2px solid rgba(245,158,11,0.45)" }}>
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "1px solid var(--border)" }}>
         <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">What you're building intuition for</div>
         <p className="text-sm text-zinc-300 leading-relaxed">Two of the most impactful design decisions in any agent are how many tools it can access and how well those tools are described. Tool count is a quality knob — above 7 tools, hallucination risk rises steeply because the model must route across a large action space with partial information. Schema quality determines whether the model calls the right tool with correct parameters at all.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Drag the tool count slider to see three metrics that change together. Then examine the good vs bad schema comparison.</p>
@@ -7195,7 +7195,7 @@ function CostLatencyConceptsModule({ onNavigate }) {
   const budgetColor = remaining < 1000 ? "#ef4444" : remaining < 4000 ? "#f59e0b" : "#22c55e";
   return (
     <div className="space-y-5">
-      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(139,92,246,0.2)", borderTop: "2px solid rgba(139,92,246,0.45)" }}>
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(139,92,246,0.2)", borderTop: "1px solid var(--border)" }}>
         <div className="text-[10px] font-mono font-black text-violet-400 uppercase tracking-widest">What you're building intuition for</div>
         <p className="text-sm text-zinc-300 leading-relaxed">The context window is not free space — it's a shared budget across system prompt, output reserve, retrieved context, and user content. Before you start stuffing chunks into a RAG call, you need to know how much space actually remains for content. Separately: latency has three distinct measures (TTFT, TBT, E2E) that each matter for different use cases. Optimising the wrong one wastes compute.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Use the sliders to see how system prompt size and output reserve consume the context budget. Then read the latency metric cards.</p>
@@ -7325,7 +7325,7 @@ function ObservabilityConceptsModule({ onNavigate }) {
   ];
   return (
     <div className="space-y-5">
-      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
         <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">What you're building intuition for</div>
         <p className="text-sm text-zinc-300 leading-relaxed">Standard application monitoring tells you if your service is up and fast. It cannot tell you if your model is correct. An LLM system can show zero errors, sub-100ms TTFT, and 100% uptime while silently degrading in output quality — because quality is not a network-layer signal. LLM observability adds a quality layer above the infrastructure layer that every production AI system needs.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Click each of the 4 pillars to see what to log. Then read the APM gaps tab to see exactly where Datadog and standard logging fall short.</p>
@@ -7425,7 +7425,7 @@ function FewShotModule({ onNavigate }) {
   ];
   return (
     <div className="space-y-5">
-      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(6,182,212,0.2)", borderTop: "2px solid rgba(6,182,212,0.45)" }}>
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(6,182,212,0.2)", borderTop: "1px solid var(--border)" }}>
         <div className="text-[10px] font-mono font-black text-cyan-400 uppercase tracking-widest">What you're building intuition for</div>
         <p className="text-sm text-zinc-300 leading-relaxed">Few-shot prompting works by showing the model the pattern you want it to follow. The model learns from the examples — including their formatting, structure, and level of detail. Inconsistent examples teach an inconsistent pattern. The four principles of example selection determine whether your few-shot prompt generalises to real traffic or only to the inputs you wrote when designing it.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Compare the consistent vs inconsistent example sets. Then expand each selection principle to see the concrete do and don't.</p>
@@ -7560,7 +7560,7 @@ function ChainOfThoughtModule({ onNavigate }) {
   ];
   return (
     <div className="space-y-5">
-      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(6,182,212,0.2)", borderTop: "2px solid rgba(6,182,212,0.45)" }}>
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(6,182,212,0.2)", borderTop: "1px solid var(--border)" }}>
         <div className="text-[10px] font-mono font-black text-cyan-400 uppercase tracking-widest">What you're building intuition for</div>
         <p className="text-sm text-zinc-300 leading-relaxed">Chain-of-thought prompting — "Let's think step by step" or explicit reasoning traces — reliably improves accuracy on multi-step reasoning tasks. It does not improve, and often hurts token efficiency on, simple factual queries. The cost is always paid; the gain varies by task type. Knowing which is which prevents you from adding CoT everywhere and inflating cost without improving quality.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Browse the task type grid to see where CoT helps and where it doesn't. Then toggle the zero-shot CoT examples to see the cost/benefit difference directly.</p>
@@ -7630,7 +7630,7 @@ function ChainOfThoughtModule({ onNavigate }) {
                   </div>
                 </div>
               </div>
-              <div className="px-4 py-2.5" style={{ background: "rgba(6,182,212,0.06)", borderTop: "1px solid rgba(6,182,212,0.15)" }}>
+              <div className="px-4 py-2.5" style={{ background: "rgba(6,182,212,0.06)", borderTop: "1px solid var(--border)" }}>
                 <p className="text-xs text-zinc-400 leading-relaxed"><span className="text-cyan-400 font-semibold">Insight: </span>{comp.insight}</p>
               </div>
             </div>
@@ -7679,7 +7679,7 @@ function ScalingLawsModule({ onNavigate }) {
   return (
     <div className="space-y-5">
       {/* Beat 1 — setup framing */}
-      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
         <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">What you're building intuition for</div>
         <p className="text-sm text-zinc-300 leading-relaxed">In 2022 DeepMind published the Chinchilla paper and overturned the "bigger is always better" rule. GPT-3 (175B parameters) was massively undertrained — it needed ~20× more tokens for its size. Chinchilla-70B, trained compute-optimally, outperformed it at 2.5× fewer parameters. This module makes the compute-optimal formula interactive and shows when to break the rule for inference efficiency.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The rule matters in production: the model you choose to deploy has an inference cost proportional to its parameter count, not its training quality. Getting this wrong means paying 10× more per API call than necessary.</p>
@@ -7746,7 +7746,7 @@ function ScalingLawsModule({ onNavigate }) {
       {tab === "tradeoff" && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.25)", borderTop: "2px solid rgba(99,102,241,0.5)" }}>
+            <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.25)", borderTop: "1px solid var(--border)" }}>
               <p className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">Training-optimal strategy</p>
               <p className="text-xs text-zinc-300 leading-relaxed">Minimise training compute to reach a given loss. Allocate FLOPs equally between parameters and tokens.</p>
               <div className="space-y-1.5 text-xs">
@@ -8365,7 +8365,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
               }`}
               style={isActive ? {
                 background: "linear-gradient(90deg, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.06) 100%)",
-                boxShadow: "inset 2px 0 0 #6366f1",
+                boxShadow: "inset 0 0 0 1px var(--border)",
               } : {}}
             >
               <span className="text-xs font-medium truncate">{m.label}</span>

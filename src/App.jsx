@@ -247,7 +247,7 @@ function MobileFrameNav({ topView, onNavigate, onClose }) {
           {sec.items.map(Row)}
         </div>
       ))}
-      <div className="pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+      <div className="pt-2" style={{ borderTop: "1px solid var(--border)" }}>
         <div className="px-3 pb-1 text-[9px] font-mono uppercase tracking-widest text-zinc-600">By Domain</div>
         {NAV_DOMAINS.map(Row)}
       </div>
@@ -1044,7 +1044,7 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
 
   function LaneCard({ color, label, right, children }) {
     return (
-      <div className="rounded-xl p-5 space-y-4" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: `2px solid ${color}60` }}>
+      <div className="rounded-xl p-5 space-y-4" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(63,63,70,0.6)", borderTop: "1px solid var(--border)" }}>
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color }}>{label}</span>
           {right}
@@ -1071,7 +1071,7 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
 
       {/* ── First-time user start-here banner ────────────────────────────────── */}
       {isFirstTime && (
-        <div className="rounded-2xl p-5 space-y-3" style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.08) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(34,211,238,0.25)", borderTop: "2px solid var(--gal-build)" }}>
+        <div className="rounded-2xl p-5 space-y-3" style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.08) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(34,211,238,0.25)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black font-mono uppercase tracking-widest" style={{ color: "var(--gal-build)" }}>Start here</span>
           </div>
@@ -2328,7 +2328,7 @@ export default function App() {
             );
           })}
           {/* BY DOMAIN — challenge-area hubs as a secondary lens (flat) */}
-          <div className="mt-3 pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+          <div className="mt-3 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
             <div className="px-3 pb-1 text-[9px] font-mono uppercase tracking-widest text-zinc-600">By Domain</div>
             {NAV_DOMAINS.map(it => (
               <SidebarRow key={it.id} item={it} active={topView === it.id} onNavigate={navigate} />
@@ -2336,7 +2336,7 @@ export default function App() {
           </div>
         </nav>
         {/* Bottom utilities */}
-        <div className="px-2 pb-3 pt-2 space-y-1" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+        <div className="px-2 pb-3 pt-2 space-y-1" style={{ borderTop: "1px solid var(--border)" }}>
           <button onClick={() => setSearchOpen(true)}
             className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-all duration-150"
             style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderColor: "var(--border)" }}>
@@ -2561,7 +2561,7 @@ export default function App() {
                   <button key={s.scenario_id} onClick={() => switchScenario(i)}
                     disabled={guestLocked}
                     className={`w-full text-left px-2 py-2.5 rounded-lg text-xs transition-all duration-150 ${guestLocked ? "opacity-40 cursor-not-allowed" : !active ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60" : "font-semibold"}`}
-                    style={active ? { background: "linear-gradient(90deg, rgba(139,92,246,0.22) 0%, rgba(139,92,246,0.06) 100%)", boxShadow: "inset 2px 0 0 #8b5cf6", color: "#ffffff" } : {}}>
+                    style={active ? { background: "var(--surface-2)", boxShadow: "inset 0 0 0 1px var(--border)", color: "#f3f4f6" } : {}}>
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
                         style={active ? { background: "rgba(139,92,246,0.3)", color: "#c4b5fd" } : { background: "rgba(39,39,42,0.8)", color: "#a1a1aa" }}>
@@ -2718,7 +2718,7 @@ export default function App() {
             </div>
 
             <div className="col-span-12 lg:col-span-5 space-y-4">
-              <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(24,24,27,0.9) 100%)", border: "1px solid rgba(59,130,246,0.18)", borderTop: "2px solid rgba(59,130,246,0.4)" }}>
+              <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(24,24,27,0.9) 100%)", border: "1px solid rgba(59,130,246,0.18)", borderTop: "1px solid var(--border)" }}>
                 <div className="text-[10px] font-mono font-bold text-blue-400 uppercase tracking-widest mb-2">User Query</div>
                 <p className="text-white font-semibold text-sm leading-snug">{scenario.user_query}</p>
               </div>
@@ -2794,7 +2794,7 @@ export default function App() {
                     const fwd = SCENARIO_FORWARD_POINTERS[scenario.scenario_id];
                     if (!fwd) return null;
                     return (
-                      <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.22)", borderTop: "2px solid rgba(99,102,241,0.5)" }}>
+                      <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.22)", borderTop: "1px solid var(--border)" }}>
                         <div className="flex items-center gap-2">
                           <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
                           <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
@@ -2873,13 +2873,13 @@ export default function App() {
                   })()}
 
                   {result.suggested_fix && (
-                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "2px solid rgba(245,158,11,0.5)" }}>
+                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "1px solid var(--border)" }}>
                       <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">Suggested Fix</div>
                       <p className="text-sm text-zinc-300 leading-relaxed">{result.suggested_fix}</p>
                     </div>
                   )}
 
-                  <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderTop: "2px solid rgba(139,92,246,0.55)", boxShadow: "0 4px 16px rgba(139,92,246,0.08)" }}>
+                  <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderTop: "1px solid var(--border)", boxShadow: "0 4px 16px rgba(139,92,246,0.08)" }}>
                     <div className="text-[10px] font-mono font-black text-violet-400 uppercase tracking-widest">System Design Lesson</div>
                     <p className="text-sm text-zinc-300 leading-relaxed">{result.system_design_lesson}</p>
                   </div>
@@ -2892,7 +2892,7 @@ export default function App() {
                   )}
 
                   {scenario.synthesis_close && (
-                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.3)", borderTop: "2px solid rgba(99,102,241,0.6)" }}>
+                    <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.3)", borderTop: "1px solid var(--border)" }}>
                       <div className="text-[10px] font-mono font-black text-indigo-400 uppercase tracking-widest">Scenario Principle</div>
                       <p className="text-sm text-zinc-200 leading-relaxed">{scenario.synthesis_close}</p>
                     </div>

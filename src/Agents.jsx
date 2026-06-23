@@ -1025,7 +1025,7 @@ function AgentDesignChallenge() {
             )}
           </div>
         )}
-        <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
@@ -1924,7 +1924,7 @@ function AgentLoopSimulator() {
             )}
           </div>
         )}
-        <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">You've traced the loop — what's next?</span>
@@ -3607,7 +3607,7 @@ function AgentConfigLab() {
         <p className="text-xs text-zinc-400 leading-relaxed">Agent configuration choices cause production failures that look like model failures: infinite tool loops (retryLimit too low + too many tools), context overflow (large token budget + long-running task + no memory), tool poisoning (many tools + external data sources + no memory isolation). The model is behaving correctly given its configuration — the configuration is wrong.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">This lab maps specific configuration combinations to specific failure modes. Configure the task type, context budget, tool count, retry limit, and memory type — run the simulation — see which failure fires and exactly why. The goal is to build the instinct to catch these configurations in design review, before they become production incidents.</p>
       </div>
-      <div style={{ background: "linear-gradient(160deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "2px solid rgba(245,158,11,0.5)" }} className="rounded-xl p-4">
+      <div style={{ background: "linear-gradient(160deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "1px solid var(--border)" }} className="rounded-xl p-4">
         <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Objective</p>
         <p className="text-sm text-zinc-300">Configure your agent architecture. Run the simulation. See which failure mode fires and exactly why — then get the fix.</p>
       </div>
@@ -3843,7 +3843,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
                     className={`w-full text-left px-2 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all duration-150 ${!active ? "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60" : "font-semibold"}`}
                     style={active ? {
                       background: `linear-gradient(90deg, ${grp.color}28 0%, ${grp.color}06 100%)`,
-                      boxShadow: `inset 2px 0 0 ${grp.color}`,
+                      boxShadow: "inset 0 0 0 1px var(--border)",
                       color: "#ffffff",
                     } : {}}>
                     {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
@@ -3868,7 +3868,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
         <div className="px-5 lg:px-10 py-8 space-y-7">
 
         {done.size === 0 && (
-          <div className="rounded-lg px-4 py-3 flex items-center justify-between gap-3" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(15,15,17,0.8) 100%)", border: "1px solid rgba(59,130,246,0.2)", borderTop: "2px solid rgba(59,130,246,0.4)" }}>
+          <div className="rounded-lg px-4 py-3 flex items-center justify-between gap-3" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(15,15,17,0.8) 100%)", border: "1px solid rgba(59,130,246,0.2)", borderTop: "1px solid var(--border)" }}>
             <div>
               <span className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: "#60a5fa" }}>New here?</span>
               <span className="text-sm text-zinc-300 ml-2">Start with <span className="font-bold text-white">ReAct Pattern</span> — the core agent loop every other module builds on.</span>
@@ -3901,7 +3901,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
           </div>
         )}
 
-        <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.45)" }}>
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center justify-between gap-3">
             <button
               onClick={() => toggleDone(activeModule)}

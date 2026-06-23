@@ -9541,7 +9541,7 @@ function ServingDecisionEngine() {
           <p className="text-sm text-emerald-400 font-medium">{result.recommendation}</p>
         </div>
       ) : (
-        <div style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "2px solid rgba(59,130,246,0.5)" }} className="rounded-xl p-5 space-y-4">
+        <div style={{ background: "linear-gradient(160deg, rgba(59,130,246,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(59,130,246,0.25)", borderTop: "1px solid var(--border)" }} className="rounded-xl p-5 space-y-4">
           <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Recommendation</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[["Framework", result.framework, "#3b82f6"],["Batching", result.batching.split("(")[0].trim(), "#8b5cf6"],["Quantization", result.quant, result.quant !== "None" ? "#f59e0b" : "#10b981"]].map(([label, value, color]) => (
@@ -11999,7 +11999,7 @@ function VectorDBEngineering({ onNavigate }) {
                   <span style={{ color: "#3b82f6", fontSize: 12 }}>{scenarioIdx === i ? "▲" : "▼"}</span>
                 </div>
                 {scenarioIdx === i && (
-                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #27272a" }}>
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                       <span style={{ color: "#a1a1aa", fontSize: 12 }}>RECOMMENDATION</span>
                       <span style={{ color: "#22c55e", fontWeight: 800, fontSize: 16 }}>{s.answer}</span>
@@ -12298,7 +12298,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
                   <span style={{ color: layer.color, fontSize: 12 }}>{stackExpanded === layer.id ? "▲" : "▼"}</span>
                 </div>
                 {stackExpanded === layer.id && (
-                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #3f3f46" }}>
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
                     <div style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>FEEDS INTO</div>
                     <div style={{ color: "#d4d4d8", fontSize: 13 }}>{layer.feeds}</div>
                   </div>
@@ -14372,7 +14372,7 @@ function GraphRAGModule() {
 
       {tab === "traversal" && (
         <div className="space-y-3">
-          <div className="rounded-xl p-3 space-y-1" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid var(--gal-build-border)" }}>
+          <div className="rounded-xl p-3 space-y-1" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "1px solid var(--border)" }}>
             <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">{cur.title}</div>
             <p className="text-xs text-zinc-300 leading-relaxed">{cur.desc}</p>
           </div>
@@ -14851,7 +14851,7 @@ function AgentContextArchModule({ onNavigate }) {
   return (
     <div className="space-y-5">
       {/* Beat 1 */}
-      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "2px solid rgba(245,158,11,0.45)" }}>
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderTop: "1px solid var(--border)" }}>
         <div className="text-[10px] font-mono font-black text-amber-400 uppercase tracking-widest">What you're building intuition for</div>
         <p className="text-sm text-zinc-300 leading-relaxed">Every agent has a context architecture — the set of decisions about where state lives, what the agent knows at startup, how skills are injected, and where guardrails run. Most agent failures aren't model failures: they're architecture failures. The agent ran out of context window, hit a tool that changed, received an injected instruction from a retrieved document, or got into a delegation deadlock. This module makes context architecture choices concrete.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Configure memory type, skill injection, delegation depth, and hooks — then run the simulation to see which failure modes your architecture triggers and what the production fix is.</p>

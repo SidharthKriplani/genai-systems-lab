@@ -589,7 +589,7 @@ function QuestionCard({ q, gaps = [] }) {
     <div
       style={{
         background: "linear-gradient(160deg, rgba(24,24,27,0.9) 0%, rgba(15,15,17,1) 100%)",
-        borderTop: "1px solid rgba(63,63,70,0.7)",
+        borderTop: "1px solid var(--border)",
         borderRight: "1px solid rgba(63,63,70,0.7)",
         borderBottom: "1px solid rgba(63,63,70,0.7)",
         borderLeft: `4px solid ${diffAccent}`,
@@ -615,7 +615,7 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
   // Text questions: always show self-assess UI — keyword matching can't reliably grade open answers
   if (q.type === "text") {
     return (
-      <div key={animKey} style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.1) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(99,102,241,0.3)", borderTop: "2px solid rgba(99,102,241,0.6)", boxShadow: "0 4px 20px rgba(99,102,241,0.08)" }} className="rounded-xl p-5 space-y-4">
+      <div key={animKey} style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.1) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(99,102,241,0.3)", borderTop: "1px solid var(--border)", boxShadow: "0 4px 20px rgba(99,102,241,0.08)" }} className="rounded-xl p-5 space-y-4">
         <div className="flex items-center gap-2">
           <span style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)", color: "#a5b4fc" }} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold">
             Open answer — self-assess
@@ -1106,7 +1106,7 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions, user = nu
           <div style={{
             background: `linear-gradient(160deg, ${badge.bg} 0%, rgba(9,9,11,0.97) 100%)`,
             border: `1px solid ${badge.border}`,
-            borderTop: `2px solid ${badge.top}`,
+            borderTop: "1px solid var(--border)",
           }} className="rounded-2xl p-5 sm:p-7">
             <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Final Score</p>
             <div className="flex flex-wrap items-baseline gap-3">
@@ -1134,7 +1134,7 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions, user = nu
             if (timed.length < 2) return null;
             const hardest = [...timed].sort((a, b) => (questionTimes[b.id] || 0) - (questionTimes[a.id] || 0)).slice(0, 3);
             return (
-              <div style={{ background: "var(--surface)", border: "1px solid rgba(180,83,9,0.3)", borderTop: "2px solid rgba(180,83,9,0.6)" }} className="rounded-xl p-5 sm:p-6 space-y-3">
+              <div style={{ background: "var(--surface)", border: "1px solid rgba(180,83,9,0.3)", borderTop: "1px solid var(--border)" }} className="rounded-xl p-5 sm:p-6 space-y-3">
                 <div>
                   <h3 className="font-semibold text-zinc-200 text-sm mb-0.5">You slowed down here</h3>
                   <p className="text-[11px] text-zinc-500 font-mono">Questions where you spent the most time — your real gaps, not just what you got wrong</p>
@@ -1229,7 +1229,7 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions, user = nu
 
           {/* Open answers — self-assess */}
           {r.textPending && r.textPending.length > 0 && (
-            <div style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(99,102,241,0.25)", borderTop: "2px solid rgba(99,102,241,0.5)" }} className="rounded-xl p-6 space-y-4">
+            <div style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(99,102,241,0.25)", borderTop: "1px solid var(--border)" }} className="rounded-xl p-6 space-y-4">
               <div>
                 <h3 className="font-semibold text-zinc-200 mb-1">Open Answers — Self-Assess ({r.textPending.length})</h3>
                 <p className="text-xs text-zinc-500">Review your answers against the model. Mark each one yourself — your score updates immediately.</p>

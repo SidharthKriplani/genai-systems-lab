@@ -811,7 +811,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
                     onClick={() => { track("related_post_clicked", { from: post.id, to: r.id }); onOpenPost(r); window.scrollTo(0, 0); }}
                     className="text-left rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 hover:border-zinc-600 hover:bg-zinc-900/60 transition-all relative overflow-hidden group">
                     <div className="absolute top-0 left-0 right-0 h-[2px]"
-                      style={{ background: `linear-gradient(90deg, ${rc}bb, transparent)` }} />
+                      style={{ background: `linear-gradient(90deg, transparent, transparent)` }} />
                     <div className="flex items-center gap-1.5 mb-2">
                       <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border"
                         style={{ color: rc, borderColor: rc + "44", background: rc + "15" }}>
@@ -979,34 +979,34 @@ const CATEGORIES = [
 ];
 
 const CAT_COLORS = {
-  foundations: "#9aa0a8",
-  rag:         "#8d939c",
-  agents:      "#80868f",
-  evaluation:  "#747a83",
-  llmops:      "#686e77",
-  production:  "#686e77",
-  safety:      "#5c626b",
-  sysdesign:   "#5c626b",
-  failures:    "#686e77",
-  product:     "#5c626b",
-  models:      "#9aa0a8",
-  industry:    "#5c626b",
-  career:      "#5c626b",
-  interview:   "#5c626b",
-  research:    "#9aa0a8",
-  finetuning:  "#686e77",
-  multimodal:        "#686e77",
-  strategy:          "#5c626b",
-  retrieval:         "#8d939c",
-  "reasoning-inference": "#9aa0a8",
-  "model-deep-dive": "#9aa0a8",
-  "how-i-build":     "#686e77",
-  "paper-to-production": "#686e77",
-  "data-flywheel":   "#686e77",
-  perspectives:      "#5c626b",
-  "training-stack":  "#686e77",
-  "mcp-protocol":    "#80868f",
-  frontier:          "#9aa0a8",
+  foundations: "#6f78a8",
+  rag:         "#4e93a0",
+  agents:      "#8678a8",
+  evaluation:  "#5a9b78",
+  llmops:      "#a89060",
+  production:  "#a89060",
+  safety:      "#7c828d",
+  sysdesign:   "#7c828d",
+  failures:    "#a89060",
+  product:     "#7c828d",
+  models:      "#6f78a8",
+  industry:    "#7c828d",
+  career:      "#7c828d",
+  interview:   "#7c828d",
+  research:    "#6f78a8",
+  finetuning:  "#a89060",
+  multimodal:        "#a89060",
+  strategy:          "#7c828d",
+  retrieval:         "#4e93a0",
+  "reasoning-inference": "#6f78a8",
+  "model-deep-dive": "#6f78a8",
+  "how-i-build":     "#a89060",
+  "paper-to-production": "#a89060",
+  "data-flywheel":   "#a89060",
+  perspectives:      "#7c828d",
+  "training-stack":  "#a89060",
+  "mcp-protocol":    "#8678a8",
+  frontier:          "#6f78a8",
 };
 
 
@@ -1025,181 +1025,181 @@ const SERIES_META = {
   "nlp-practitioners": {
     title: "NLP Practitioners",
     desc: "BERT internals, bi-encoder vs cross-encoder, sentence transformers, vector databases, and encoder-decoder architecture — the practical NLP layer every AI engineer needs.",
-    color: "#8d939c",
+    color: "#4e93a0",
     postIds: ["bert-internals-explained", "bi-encoder-vs-cross-encoder", "sentence-transformers-production", "vector-databases-compared", "encoder-decoder-architecture"],
   },
   "rag-production": {
     title: "RAG in Production",
     desc: "From basic retrieval to production-grade pipelines — chunking, hybrid search, reranking, two-stage retrieval, Graph RAG, and every failure mode in between.",
-    color: "#8d939c",
+    color: "#4e93a0",
     postIds: ["how-rag-works", "why-rag-lies", "graph-rag-multi-hop", "two-stage-retrieval-reranker", "hard-negatives-retrieval", "chunking-strategies", "hybrid-search", "reranking-explained", "rag-architectures", "vector-db-selection-guide"],
   },
   "agent-engineering": {
     title: "Agent Engineering",
     desc: "How to build agents that work in production — ReAct, memory patterns, LangGraph state machines, HITL, multi-agent systems, and the failure taxonomy.",
-    color: "#80868f",
+    color: "#8678a8",
     postIds: ["react-pattern", "agent-failure-modes", "agent-memory-architecture", "building-reliable-agents", "langgraph-reducers-hitl", "context-isolation-multiagent", "claudemd-as-architecture", "hooks-vs-llm-safety", "tool-use-design", "multi-agent-orchestration"],
   },
   "eval-testing": {
     title: "Evaluation & Testing",
     desc: "How to know if your LLM system is actually good — the eval crisis, LLM-as-judge, RAGAS, prompt regression testing, and A/B testing in production.",
-    color: "#747a83",
+    color: "#5a9b78",
     postIds: ["the-eval-crisis", "llm-evaluation-guide", "prompt-regression-testing", "ab-testing-ai-systems", "benchmark-vs-business", "hallucination-detection", "eval-pipeline-design", "ab-testing-llms"],
   },
   "llmops": {
     title: "LLMOps in Production",
     desc: "The full production checklist — observability, prompt CI/CD, model routing, inference optimisation, graceful degradation, and cost management.",
-    color: "#686e77",
+    color: "#a89060",
     postIds: ["your-prompt-is-code", "llmops-production-checklist", "graceful-degradation", "monitoring-that-predicts", "model-routing", "inference-optimisation", "llm-observability", "ml-cicd", "context-compaction"],
   },
   "case-studies": {
     title: "Production Case Studies",
     desc: "How Notion, Perplexity, Cursor, GitHub Copilot, and Spotify actually built their AI systems — architecture decisions and lessons learned.",
-    color: "#686e77",
+    color: "#a89060",
     postIds: ["case-notion-ai", "case-perplexity", "case-cursor", "case-github-copilot", "case-spotify-ai"],
   },
   "paper-to-production": {
     title: "Paper → Production",
     desc: "Five landmark AI papers and the engineering gap between what they proposed and what the industry actually ships. Attention, RLHF, RAG, LoRA, and Constitutional AI.",
-    color: "#686e77",
+    color: "#a89060",
     postIds: ["p2p-attention", "p2p-rlhf", "p2p-rag-paper", "p2p-lora", "p2p-constitutional-ai"],
   },
   "interview-ready": {
     title: "Interview Ready",
     desc: "How to answer the hardest AI system design and technical screen questions — RAG design, attention explanation, evaluation, agents, and cost reduction.",
-    color: "#5c626b",
+    color: "#7c828d",
     postIds: ["iv-design-rag", "iv-explain-attention", "iv-eval-system", "iv-agents-screen", "iv-cost-reduction"],
   },
   "reasoning-inference": {
     title: "Reasoning at Inference Time",
     desc: "What reasoning models actually do differently, how to control the thinking budget, when they're worth the cost, and production patterns for deploying them at scale.",
-    color: "#9aa0a8",
+    color: "#6f78a8",
     postIds: ["reason-what-changed", "reason-thinking-budget", "reason-when-to-use", "reason-econ", "reason-prod-patterns"],
   },
   "mcp-protocol": {
     title: "Model Context Protocol",
     desc: "Anthropic's open standard for connecting LLMs to tools and data. What MCP is, how to build a server, and when to use MCP vs. function calling.",
-    color: "#80868f",
+    color: "#8678a8",
     postIds: ["mcp-what-is", "mcp-build-server", "mcp-vs-functions"],
   },
   "model-deep-dive": {
     title: "Model Deep Dives",
     desc: "Under the hood of the frontier models — Claude, GPT-4o, Gemini, Grok, and Llama. Architecture, training philosophy, benchmark reality, and when each model is the right choice.",
-    color: "#9aa0a8",
+    color: "#6f78a8",
     postIds: ["model-claude", "model-gpt4o", "model-gemini", "model-grok", "model-llama"],
   },
   "production-mlops": {
     title: "Production ML Ops",
     desc: "DPO vs GRPO alignment, GPTQ/AWQ/GGUF quantization, AI governance, multimodal RAG on real documents, and an end-to-end fine-tuning case study.",
-    color: "#686e77",
+    color: "#a89060",
     postIds: ["ft-dpo-vs-grpo", "ft-quantization", "ft-governance", "ft-multimodal-rag", "ft-case-study"],
   },
   "perspectives": {
     title: "Perspectives",
     desc: "Annotated reading lists for the AI engineers and researchers shaping how the field thinks. Each entry: who they are, their core thesis, essential resources, and what to question.",
-    color: "#5c626b",
+    color: "#7c828d",
     postIds: ["persp-karpathy","persp-willison","persp-swyx","persp-hamel","persp-chollet","persp-lecun"],
   },
   "how-i-build": {
     title: "How I'd Build X",
     desc: "Opinionated, first-person walkthroughs of production AI systems — architecture decisions, failure modes, and the tradeoffs you actually face when building for real users.",
-    color: "#5c626b",
+    color: "#7c828d",
     postIds: ["build-ai-search","build-code-review-bot","build-customer-support-ai","build-voice-ai","build-document-intelligence","build-coding-assistant","how-id-build-recommendation-feed","how-id-build-fraud-detection","how-id-build-search-ranking-ecommerce"],
   },
   "data-flywheel": {
     title: "The Data Flywheel",
     desc: "How production AI systems improve from their own traffic — implicit feedback collection, reward modeling from logs, and the online evaluation loop that compounds over time.",
-    color: "#686e77",
+    color: "#a89060",
     postIds: ["flywheel-implicit-feedback", "flywheel-reward-modeling", "flywheel-online-eval"],
   },
   "training-stack": {
     title: "The Training Stack",
     desc: "From supervised fine-tuning to RLHF to distillation — how models are shaped after pretraining.",
-    color: "#5c626b",
+    color: "#7c828d",
     postIds: ["finetune-playbook", "rlhf-production", "dpo-vs-ppo", "knowledge-distillation"],
   },
   "llm-fundamentals": {
     title: "LLM Fundamentals",
     desc: "The mathematical and architectural foundations — why transformers won, how attention works, what entropy and loss actually measure, and the reversal curse.",
-    color: "#9aa0a8",
+    color: "#6f78a8",
     postIds: ["why-transformers-won", "how-surprised-is-the-model", "what-happens-during-pretraining", "the-reversal-curse", "what-is-a-transformer", "self-attention-deep-dive"],
   },
   "nlp-origins": {
     title: "NLP Origins",
     desc: "The arc from n-grams to neural language models: word2vec, RNNs, LSTMs, seq2seq, and Bahdanau attention. The history that makes transformers legible — not as a sudden invention but as the latest step in a thirty-year trajectory.",
-    color: "#9aa0a8",
+    color: "#6f78a8",
     postIds: ["ngrams-to-neural", "word2vec-from-scratch", "rnn-lstm-vanishing-gradient", "seq2seq-bahdanau-attention", "text-preprocessing-pipeline", "bert-vs-gpt-architecture"],
   },
   "build-from-scratch": {
     title: "Build From Scratch",
     desc: "Implement the core components of modern AI systems from first principles — attention, BM25, and a full RAG pipeline — in pure Python. No frameworks. Run everything in Colab tonight.",
-    color: "#9aa0a8",
+    color: "#6f78a8",
     postIds: ["attention-from-scratch", "bm25-from-scratch", "minimal-rag-50-lines", "bpe-tokenization-from-scratch", "training-loop-from-scratch", "lora-from-scratch", "kv-cache-from-scratch", "faiss-from-scratch", "contrastive-learning-from-scratch"],
   },
   "eval-depth": {
     title: "Evaluation Deep Dives",
     desc: "The metrics and methods behind trustworthy AI evaluation: ranking metrics (NDCG, MRR), calibration (ECE, temperature scaling), annotation quality (IAA, Kappa), implicit feedback flywheels, LLM-as-judge bias modes, and counterfactual offline evaluation.",
-    color: "#747a83",
+    color: "#5a9b78",
     postIds: ["ndcg-mrr-from-scratch", "calibration-ece-from-scratch", "annotation-inter-annotator-agreement", "eval-flywheel-implicit-feedback", "llm-judge-calibration", "counterfactual-offline-eval"],
   },
   "llmops-production": {
     title: "LLMOps & Production ML",
     desc: "The operational layer between training and serving: drift detection, deployment patterns, feature stores, model registries, retraining triggers, and containerization. What it takes to keep a model reliable in production.",
-    color: "#686e77",
+    color: "#a89060",
     postIds: ["drift-detection-production", "deployment-patterns-ml", "feature-store-patterns", "model-registry-mlflow", "retraining-triggers-strategies", "ml-dockerization-patterns"],
   },
   "retrieval-depth": {
     title: "Retrieval Depth",
     desc: "The algorithms behind production search: ANN index selection, Learning to Rank, query understanding, inverted index construction, and two-tower model training. What every retrieval engineer actually builds.",
-    color: "#8d939c",
+    color: "#4e93a0",
     postIds: ["ann-algorithms-deep-dive", "learning-to-rank-explained", "query-understanding-pipeline", "inverted-index-from-scratch", "two-tower-training-from-scratch"],
   },
   "llm-internals": {
     title: "LLM Internals",
     desc: "MHA/GQA memory math, PagedAttention, the FFN block, RoPE vs ALiBi, speculative decoding, and sampling strategies. The architecture decisions that determine cost, latency, and capability — made precise.",
-    color: "#9aa0a8",
+    color: "#6f78a8",
     postIds: ["mha-mqa-gqa-explained", "vllm-paged-attention-explained", "transformer-ffn-explained", "positional-encoding-variants", "speculative-decoding-explained", "sampling-strategies-deep-dive"],
   },
   "career-strategy": {
     title: "Career & Strategy",
     desc: "The market forces reshaping AI roles — the DS→AI engineer arc, Type A vs Type B engineers, the Forward Deployed Engineer, and the three-layer skill stack.",
-    color: "#5c626b",
+    color: "#7c828d",
     postIds: ["type-a-vs-type-b-engineers", "ds-to-ai-engineer", "forward-deployed-engineer", "three-layer-de-skill-stack", "ai-engineer-role", "breaking-into-ai"],
   },
   "recommendation-systems": {
     title: "Recommendation Systems",
     desc: "Two-tower retrieval, collaborative filtering, candidate generation vs ranking, cold start, and explore-exploit. The architecture behind YouTube, Spotify, and Flipkart — explained for AI engineers preparing for senior interviews.",
-    color: "#8d939c",
+    color: "#4e93a0",
     postIds: ["two-tower-reco-architecture", "collaborative-filtering-deep-dive", "candidate-generation-vs-ranking", "cold-start-problem", "explore-exploit-recommendations"],
   },
   "ml-foundations": {
     title: "ML Foundations (Bangalore Track)",
     desc: "Loss functions, optimizers, bias-variance, statistical testing, experimental design, and Bayesian reasoning — the theory that Bangalore senior AI engineer and Applied Scientist interviews actually test.",
-    color: "#9aa0a8",
+    color: "#6f78a8",
     postIds: ["loss-functions-deep-dive", "optimizers-explained", "bias-variance-in-production", "statistical-testing-ml", "experimental-design-ablations", "bayesian-reasoning-ml", "conformal-prediction-production", "probabilistic-graphical-models"],
   },
   "research-taste": {
     title: "Research Taste",
     desc: "How to read ML papers critically — spot under-tuned baselines, test set contamination, missing ablations, and compute opacity. How benchmarks get gamed. What Goodhart's Law means for MMLU and leaderboard SOTA. The skill that separates researchers from engineers at frontier labs.",
-    color: "#747a83",
+    color: "#5a9b78",
     postIds: ["reading-ml-papers-critically", "benchmark-overfitting-goodhart"],
   },
   "high-tc-targets": {
     title: "High-TC Targets",
     desc: "What Cohere, Anthropic, Mistral, Sarvam, Krutrim, and staff-level roles at Flipkart and Swiggy actually test — first-principles depth, research taste, production judgment. The no-spec system design framework, company-specific interview patterns, and what separates senior from staff candidates.",
-    color: "#686e77",
+    color: "#a89060",
     postIds: ["high-tc-ai-company-interviews", "ambiguous-system-design-framework", "research-engineer-interview", "staff-ai-engineer-week-one", "engineering-influence-without-authority", "fde-build-round-survival", "indic-nlp-challenges", "rlhf-from-scratch", "pretraining-data-decisions", "customer-facing-ai-demos", "ai-integration-debugging"],
   },
   "engineering-leadership": {
     title: "Engineering Leadership",
     desc: "The IC to EM transition, roadmap ownership, managing AI engineers, and perf calibration. What changes and what doesn't when you move from shipping models to shipping through people.",
-    color: "#9aa0a8",
+    color: "#6f78a8",
     postIds: ["ic-to-em-transition", "roadmap-ownership-ai-teams", "managing-ai-engineers", "ai-team-perf-calibration"],
   },
   "agent-production": {
     title: "Agents in Production",
     desc: "MCP, tool use safety, observability, and testing for senior AI engineer interviews. The gaps most RAG/agent courses skip: idempotency, audit trails, trace design, trajectory evaluation, red teaming.",
-    color: "#686e77",
+    color: "#a89060",
     postIds: ["mcp-explained", "agent-tool-use-production", "agent-observability", "agent-testing-strategies", "agent-backend-apis", "async-task-queues-agents", "kubernetes-ai-workloads", "agent-security", "agent-governance"],
   },
 };
@@ -1494,8 +1494,8 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                   <button key={sid}
                     onClick={() => { if (firstPost && POST_CONTENT[firstPost.id]) { openPostOrGate(firstPost); } }}
                     className="text-left rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-150 group relative overflow-hidden"
-                    style={{ background: `linear-gradient(160deg, ${s.color}0d 0%, rgba(15,15,17,0.97) 100%)`, border: `1px solid ${s.color}25`, borderTop: `2px solid ${s.color}55`, boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
-                    <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${s.color}aa, transparent)` }} />
+                    style={{ background: `linear-gradient(160deg, ${s.color}0d 0%, rgba(15,15,17,0.97) 100%)`, border: `1px solid ${s.color}25`, boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
+                    
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <span className="text-xs font-black text-white group-hover:opacity-90">{s.title}</span>
                       <span className="text-[10px] font-mono shrink-0 px-1.5 py-0.5 rounded" style={{ color: s.color, background: s.color + "18" }}>{writtenCount} posts</span>
@@ -1533,7 +1533,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                         openPostOrGate(post);
                       }}
                       className="text-left rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-150 relative overflow-hidden"
-                      style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(139,92,246,0.2)", borderTop: `2px solid ${color}88`, boxShadow: "0 4px 16px rgba(0,0,0,0.35)" }}>
+                      style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(139,92,246,0.2)", boxShadow: "0 4px 16px rgba(0,0,0,0.35)" }}>
                       <div className="text-[9px] font-mono font-bold uppercase tracking-widest mb-1.5" style={{ color }}>{post.readMin} min · {post.category}</div>
                       <p className="text-sm font-bold text-white leading-snug mb-1.5">{post.title}</p>
                       <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{post.desc}</p>
@@ -1562,7 +1562,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                   return (
                     <button key={p.id} onClick={() => { openPostOrGate(p); }}
                       className="shrink-0 text-left rounded-lg px-3 py-2 transition-all duration-150 hover:-translate-y-0.5 max-w-[200px]"
-                      style={{ background: `linear-gradient(135deg, ${color}12 0%, rgba(15,15,17,0.97) 100%)`, border: `1px solid ${color}28`, borderTop: `1px solid ${color}45` }}>
+                      style={{ background: `linear-gradient(135deg, ${color}12 0%, rgba(15,15,17,0.97) 100%)`, border: `1px solid ${color}28` }}>
                       <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color }}>{p.category}</div>
                       <div className="text-xs text-white leading-snug line-clamp-2">{p.title}</div>
                     </button>
@@ -1585,7 +1585,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                 className="shrink-0 px-3 py-2.5 rounded-lg text-xs font-bold transition-all duration-150"
                 style={filter === c.id ? {
                   background: "linear-gradient(90deg, rgba(139,92,246,0.28) 0%, rgba(139,92,246,0.10) 100%)",
-                  boxShadow: "inset 2px 0 0 #8b5cf6",
+                  boxShadow: "inset 0 0 0 1px var(--border)",
                   color: "#e9d5ff",
                   border: "1px solid rgba(139,92,246,0.25)",
                 } : {
@@ -1604,7 +1604,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
               className="shrink-0 px-3 py-2.5 rounded-lg text-xs font-bold transition-all duration-150"
               style={filter === "saved" ? {
                 background: "linear-gradient(90deg, rgba(245,158,11,0.28) 0%, rgba(245,158,11,0.10) 100%)",
-                boxShadow: "inset 2px 0 0 #f59e0b",
+                boxShadow: "inset 0 0 0 1px var(--border)",
                 color: "#fde68a",
                 border: "1px solid rgba(245,158,11,0.35)",
               } : {
@@ -1646,8 +1646,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                   padding: "16px",
                   background: hasContent ? "linear-gradient(160deg, rgba(39,39,42,0.6) 0%, rgba(15,15,17,0.95) 100%)" : "rgba(15,15,17,0.6)",
                   border: `1px solid ${hasContent ? "rgba(63,63,70,0.9)" : "rgba(39,39,42,0.8)"}`,
-                  borderTop: `2px solid ${color}${hasContent ? "55" : "22"}`,
-                  boxShadow: hasContent ? "0 2px 12px rgba(0,0,0,0.3)" : "none",
+                                    boxShadow: hasContent ? "0 2px 12px rgba(0,0,0,0.3)" : "none",
                 }}>
 
                 {/* Top accent line — hidden, replaced by borderTop above */}

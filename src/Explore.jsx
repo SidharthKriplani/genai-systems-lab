@@ -5223,7 +5223,7 @@ function ModelMergeExplorer() {
 
   return (
     <div className="space-y-5">
-      <div style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "2px solid rgba(99,102,241,0.5)" }} className="rounded-xl p-4">
+      <div style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }} className="rounded-xl p-4">
         <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">What this is</p>
         <p className="text-sm text-zinc-300">Model merging combines multiple fine-tuned checkpoints in weight space without any additional training. No GPU needed — pure arithmetic on tensors. The technique that powers most open-source model experiments.</p>
       </div>
@@ -5539,7 +5539,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
                       <button key={m.id} onClick={() => switchModule(m.id)}
                         style={active ? {
                           background: `linear-gradient(90deg, ${grpColor}22 0%, ${grpColor}08 100%)`,
-                          boxShadow: `inset 2px 0 0 ${grpColor}`,
+                          boxShadow: "inset 0 0 0 1px var(--border)",
                         } : {}}
                         className={`w-full text-left px-3 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${active ? "text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/60"}`}>
                         {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}

@@ -113,7 +113,7 @@ export default function FoundationsHub({ onNavigate, onNavigateTo }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button onClick={() => { track("foundations_hub_fm_lab", {}); onNavigate("foundationlab"); }}
             className="text-left rounded-2xl p-5 transition-all card-lift"
-            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: `2px solid ${COLOR}` }}>
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "1px solid var(--border)" }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-sm font-black text-white">Foundation Models Lab</span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)", color: COLOR }}>6 scenarios</span>
@@ -129,7 +129,7 @@ export default function FoundationsHub({ onNavigate, onNavigateTo }) {
 
           <button onClick={() => { track("foundations_hub_prompt_lab", {}); onNavigate("promptlab"); }}
             className="text-left rounded-2xl p-5 transition-all card-lift"
-            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid #8b5cf6" }}>
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "1px solid var(--border)" }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-sm font-black text-white">Prompt Lab</span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400">6 scenarios</span>

@@ -145,7 +145,7 @@ function HeroFailureDemo({ onNavigate }) {
   function pick(i) { setActive(i); setRevealed(false); }
   return (
     <div className="max-w-xl mx-auto w-full text-left rounded-2xl p-4 space-y-3 fade-up"
-      style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.97) 0%, rgba(15,15,17,0.99) 100%)", border: "1px solid rgba(63,63,70,0.7)", borderTop: `2px solid ${d.color}70`, boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px ${d.color}08 inset` }}>
+      style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.97) 0%, rgba(15,15,17,0.99) 100%)", border: "1px solid rgba(63,63,70,0.7)", borderTop: "1px solid var(--border)", boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px ${d.color}08 inset` }}>
       <div className="flex items-center gap-1.5 flex-wrap">
         {HERO_FAILURES.map((f, i) => (
           <button key={f.id} onClick={() => pick(i)}
@@ -375,7 +375,7 @@ function ChallengeAreaCards({ onNavigate }) {
           <button key={c.id}
             onClick={() => { track("challenge_card_clicked", { area: c.id }); onNavigate(c.id); }}
             className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp"
-            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: `2px solid ${c.color}70` }}>
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "1px solid var(--border)" }}>
             <span className="text-[10px] font-mono uppercase tracking-widest font-bold" style={{ color: c.color }}>{c.label}</span>
             <span className="text-sm font-bold text-white mt-1.5 mb-1 leading-snug">{c.tagline}</span>
             <span className="text-xs text-zinc-400 leading-relaxed flex-1">{c.body}</span>
@@ -392,7 +392,7 @@ function ChallengeAreaCards({ onNavigate }) {
           <button key={c.id}
             onClick={() => { track("challenge_card_clicked", { area: c.id }); onNavigate(c.id); }}
             className="flex flex-col items-start p-4 rounded-2xl text-left card-lift animate-cardSlideUp"
-            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: `2px solid ${c.color}70` }}>
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "1px solid var(--border)" }}>
             <span className="text-[10px] font-mono uppercase tracking-widest font-bold" style={{ color: c.color }}>{c.label}</span>
             <span className="text-sm font-bold text-white mt-1.5 mb-1 leading-snug">{c.tagline}</span>
             <span className="text-xs text-zinc-400 leading-relaxed flex-1 line-clamp-2">{c.body}</span>
@@ -454,13 +454,13 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
       <div>
         <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Today</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-xl p-5 space-y-2 animate-cardSlideUp" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(245,158,11,0.4)" }}>
+          <div className="rounded-xl p-5 space-y-2 animate-cardSlideUp" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "1px solid var(--border)" }}>
             <p className="text-[10px] font-mono text-amber-500 uppercase tracking-widest font-bold">Did you know · Today's tip</p>
             <p className="text-sm text-zinc-300 leading-relaxed">{tip}</p>
           </div>
           <button onClick={goPost}
             className="rounded-xl p-5 text-left transition-all flex flex-col gap-2 card-lift animate-cardSlideUp animate-delay-60"
-            style={{ animationFillMode: "both", background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid var(--gal-build-border)" }}>
+            style={{ animationFillMode: "both", background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "1px solid var(--border)" }}>
             <p className="text-[10px] font-mono text-violet-400 uppercase tracking-widest font-bold">Today's read · Ground Truth</p>
             <p className="text-sm font-bold text-white leading-snug">{featuredPost.title}</p>
             <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{featuredPost.desc}</p>
@@ -717,7 +717,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
               <div className="hero-anim-4 max-w-xl mx-auto w-full">
                 <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest text-center mb-2.5">No account needed</p>
                 <div className="rounded-2xl p-4 space-y-3 text-left"
-                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(6,182,212,0.4)" }}>
+                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "1px solid var(--border)" }}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">RAG Lab · Scenario 1 of 6</span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded whitespace-nowrap"

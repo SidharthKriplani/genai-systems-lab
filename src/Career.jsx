@@ -1050,7 +1050,7 @@ export default function CareerApp() {
           <h1 className="text-3xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.75) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Career Track</h1>
           <p className="text-sm text-zinc-400 max-w-sm leading-relaxed">Interview prep and career tools for engineers targeting AI-forward roles.</p>
         </div>
-        <div className="w-full rounded-xl p-5 text-left space-y-3" style={{ background: "linear-gradient(160deg, rgba(245,158,11,0.07) 0%, rgba(15,15,17,0.9) 100%)", border: "1px solid rgba(245,158,11,0.18)", borderTop: "2px solid rgba(245,158,11,0.4)" }}>
+        <div className="w-full rounded-xl p-5 text-left space-y-3" style={{ background: "linear-gradient(160deg, rgba(245,158,11,0.07) 0%, rgba(15,15,17,0.9) 100%)", border: "1px solid rgba(245,158,11,0.18)", borderTop: "1px solid var(--border)" }}>
           <p className="text-[10px] font-mono font-black text-zinc-500 uppercase tracking-widest">What you'll do</p>
           {[
             ["System Design Interviews", "Walk through AI system design prompts the way top companies actually run them — component selection, trade-offs, must-haves vs. nice-to-haves."],
@@ -1089,7 +1089,7 @@ export default function CareerApp() {
               const active = activeModule === id;
               return (
                 <button key={id} onClick={() => setActiveModule(id)}
-                  style={active ? { background: "linear-gradient(90deg, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.04) 100%)", boxShadow: "inset 2px 0 0 #f59e0b" } : {}}
+                  style={active ? { background: "var(--surface-2)", boxShadow: "inset 0 0 0 1px var(--border)" } : {}}
                   className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 ${active ? "" : "border-l-2 border-transparent hover:bg-zinc-900"}`}>
                   <span className={`text-xs font-semibold leading-snug ${active ? "text-white" : "text-zinc-300"}`}>{m.label}</span>
                   <span className={`text-[10px] font-mono ${active ? "text-amber-400" : "text-zinc-600"}`}>{m.tag}</span>

@@ -48,7 +48,7 @@ export function ProductionNoteChip({ note }) {
  */
 export function ForwardPointerCard({ preplabTopic, gtPostId, gtPostTitle, onNavigate }) {
   return (
-    <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(139,92,246,0.2)", borderTop: "2px solid rgba(139,92,246,0.45)" }}>
+    <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(139,92,246,0.2)", borderTop: "1px solid var(--border)" }}>
       <div className="flex items-center gap-2">
         <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
         <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">You've seen the failure. What's next?</span>

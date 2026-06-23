@@ -344,7 +344,7 @@ export default function LearningPaths({ onNavigateTo, user }) {
             <button key={p.id} onClick={() => setActivePath(p.id)}
               style={isActive ? {
                 background: `linear-gradient(90deg, ${p.color}22 0%, ${p.color}06 100%)`,
-                boxShadow: `inset 2px 0 0 ${p.color}`,
+                boxShadow: "inset 0 0 0 1px var(--border)",
               } : {}}
               className={`w-full text-left px-4 py-3 transition-all ${isActive ? "text-white" : "text-zinc-400 hover:text-white hover:bg-zinc-900/60 border-l-2 border-transparent"}`}>
               <div className="flex items-center gap-2 mb-1.5">
@@ -377,7 +377,7 @@ export default function LearningPaths({ onNavigateTo, user }) {
           </button>
         )}
       {path && (
-        <div className="rounded-xl overflow-hidden" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,1) 100%)", border: `1px solid ${path.color}25`, borderTop: `2px solid ${path.color}60` }}>
+        <div className="rounded-xl overflow-hidden" style={{ background: "linear-gradient(160deg, rgba(24,24,27,0.95) 0%, rgba(15,15,17,1) 100%)", border: `1px solid ${path.color}25`, borderTop: "1px solid var(--border)" }}>
           {/* Path header */}
           <div className="px-4 sm:px-5 py-4 border-b border-zinc-800/60">
             <div className="flex items-center gap-3">

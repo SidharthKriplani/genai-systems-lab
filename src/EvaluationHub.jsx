@@ -131,7 +131,7 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
         <SectionLabel>The Lab</SectionLabel>
         <button onClick={() => { track("eval_hub_lab", {}); onNavigate("evallab"); }}
           className="w-full text-left rounded-2xl p-6 transition-all card-lift"
-          style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid #f59e0b" }}>
+          style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
