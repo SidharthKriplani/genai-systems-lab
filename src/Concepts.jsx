@@ -5609,55 +5609,65 @@ function FlashAttentionConcept() {
 // ─── STANDARD MODULE ENGINE (content-driven; for populated gyms) ──────────────
 // Renders a consistent module from a `spec` data object + a scored DECISION CHECK
 // (the JUDGE beat — every populated module makes you decide, not just read).
+const GLASS = { background: "rgba(18,20,24,0.55)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 16, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" };
+const FX_SEAM = "#fb5247";
+const FX_FIX = "#19c37d";
+const FX_INK = "#eef1f5";
+const FX_BODY = "#c2c7cf";
+const FX_MUT = "#8a909b";
+
 function DecisionCheck({ check }) {
   const [pick, setPick] = useState(null);
   if (!check) return null;
   const done = pick !== null;
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
-      <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--gal-build)" }}>Decision check</p>
-      <p className="text-sm text-zinc-200 font-medium">{check.q}</p>
+    <div style={{ ...GLASS, padding: 16 }} className="space-y-3">
+      <p className="text-[10px] font-mono uppercase" style={{ color: "var(--gal-build)", letterSpacing: "0.18em" }}>&#9671; Decision check</p>
+      <p className="text-sm font-medium" style={{ color: FX_INK }}>{check.q}</p>
       <div className="space-y-1.5">
         {check.options.map((opt, i) => {
           const isPick = pick === i;
           const isRight = i === check.correct;
           const show = done && (isPick || isRight);
+          const st = !done
+            ? { borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)", color: FX_BODY }
+            : show && isRight ? { borderRadius: 10, border: "1px solid " + FX_FIX + "66", background: FX_FIX + "1f", color: FX_FIX }
+            : isPick ? { borderRadius: 10, border: "1px solid " + FX_SEAM + "66", background: FX_SEAM + "1f", color: FX_SEAM }
+            : { borderRadius: 10, border: "1px solid rgba(255,255,255,0.05)", color: FX_MUT, opacity: 0.55 };
           return (
-            <button key={i} onClick={() => pick === null && setPick(i)} disabled={done}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-all ${
-                !done ? "border-zinc-800 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/50"
-                : show && isRight ? "border-emerald-700/60 bg-emerald-950/30 text-emerald-300"
-                : isPick ? "border-rose-700/60 bg-rose-950/30 text-rose-300"
-                : "border-zinc-800/60 text-zinc-600"}`}>
-              <span className="font-mono text-[10px] mr-2">{show && isRight ? "✓" : show && isPick ? "✗" : String.fromCharCode(65+i)}</span>{opt}
+            <button key={i} onClick={() => pick === null && setPick(i)} disabled={done} style={st}
+              className={`w-full text-left px-3 py-2 text-sm transition-all ${!done ? "hover:bg-white/5" : ""}`}>
+              <span className="font-mono text-[10px] mr-2">{show && isRight ? "✓" : show && isPick ? "✗" : String.fromCharCode(65 + i)}</span>{opt}
             </button>
           );
         })}
       </div>
-      {done && <p className="text-xs text-zinc-400 leading-relaxed border-t border-zinc-800 pt-2">{check.why}</p>}
+      {done && <p className="text-xs leading-relaxed pt-2" style={{ color: FX_BODY, borderTop: "1px solid rgba(255,255,255,0.07)" }}>{check.why}</p>}
     </div>
   );
 }
 
 function StandardModule({ spec, onNavigate }) {
   if (!spec) return null;
+  const eyebrow = { color: "var(--gal-build)", letterSpacing: "0.18em" };
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+    <div className="max-w-3xl mx-auto px-6 py-8 space-y-5 relative">
+      <div aria-hidden="true" style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 420, height: 150, background: "radial-gradient(60% 100% at 50% 0%, rgba(34,211,238,0.10), transparent 70%)", pointerEvents: "none" }} />
       {spec.problem && (
-        <div className="rounded-xl border-l-2 px-4 py-3" style={{ borderColor: "var(--gal-build)", background: "var(--gal-build-tint, rgba(34,211,238,0.06))" }}>
-          <p className="text-[10px] font-mono uppercase tracking-widest mb-1" style={{ color: "var(--gal-build)" }}>Why it exists</p>
-          <p className="text-sm text-zinc-200 leading-relaxed">{spec.problem}</p>
+        <div style={{ ...GLASS, padding: "14px 16px", borderLeft: "2px solid var(--gal-build)" }}>
+          <p className="text-[10px] font-mono uppercase mb-1" style={eyebrow}>Why it exists</p>
+          <p className="text-sm leading-relaxed" style={{ color: FX_BODY }}>{spec.problem}</p>
         </div>
       )}
       {(spec.sections || []).map((sec, i) => (
-        <div key={i} className="space-y-2">
-          <h3 className="text-base font-bold text-white">{sec.h}</h3>
-          {sec.body && <p className="text-[15px] text-zinc-300 leading-[1.75]">{sec.body}</p>}
+        <div key={i} style={{ ...GLASS, padding: "16px 18px" }} className="space-y-2">
+          <h3 className="text-[15px] font-bold flex items-center gap-2" style={{ color: FX_INK }}><span style={{ width: 6, height: 6, borderRadius: 2, background: "var(--gal-build)", display: "inline-block" }} />{sec.h}</h3>
+          {sec.body && <p className="text-[15px] leading-[1.75]" style={{ color: FX_BODY }}>{sec.body}</p>}
           {sec.bullets && (
             <ul className="space-y-1.5 pl-1">
               {sec.bullets.map((b, j) => (
-                <li key={j} className="flex items-start gap-2 text-[14px] text-zinc-300 leading-[1.7]">
-                  <span className="text-zinc-600 shrink-0 mt-1">—</span><span>{b}</span>
+                <li key={j} className="flex items-start gap-2 text-[14px] leading-[1.7]" style={{ color: FX_BODY }}>
+                  <span className="shrink-0 mt-px font-mono text-[11px]" style={{ color: "var(--gal-build)", opacity: 0.7 }}>&#9656;</span><span>{b}</span>
                 </li>
               ))}
             </ul>
@@ -5665,15 +5675,15 @@ function StandardModule({ spec, onNavigate }) {
         </div>
       ))}
       {spec.decision && (
-        <div className="space-y-2">
-          <h3 className="text-base font-bold text-white">{spec.decision.title || "The decision"}</h3>
-          <div className="overflow-x-auto rounded-lg border border-zinc-800">
+        <div style={{ ...GLASS, padding: "14px 16px" }} className="space-y-2">
+          <p className="text-[10px] font-mono uppercase" style={eyebrow}>{spec.decision.title || "The decision"}</p>
+          <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
             <table className="w-full text-xs">
-              <thead><tr className="border-b border-zinc-800 bg-zinc-900/60">
-                {spec.decision.headers.map((h, i) => <th key={i} className="px-3 py-2 text-left font-bold text-zinc-400 whitespace-nowrap">{h}</th>)}
+              <thead><tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid var(--gal-build)" }}>
+                {spec.decision.headers.map((h, i) => <th key={i} className="px-3 py-2 text-left font-mono uppercase tracking-wider text-[10px]" style={{ color: FX_MUT }}>{h}</th>)}
               </tr></thead>
               <tbody>{spec.decision.rows.map((r, ri) => (
-                <tr key={ri} className="border-b border-zinc-800/50">{r.map((c, ci) => <td key={ci} className="px-3 py-2 text-zinc-400 leading-relaxed">{c}</td>)}</tr>
+                <tr key={ri} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{r.map((c, ci) => <td key={ci} className="px-3 py-2 leading-relaxed" style={{ color: ci === 0 ? "#dfe3e9" : "#9aa0a9" }}>{c}</td>)}</tr>
               ))}</tbody>
             </table>
           </div>
@@ -5681,19 +5691,19 @@ function StandardModule({ spec, onNavigate }) {
       )}
       <DecisionCheck check={spec.check} />
       {spec.takeaways && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">Takeaways</p>
+        <div style={{ ...GLASS, padding: 16 }}>
+          <p className="text-[10px] font-mono uppercase mb-2" style={{ color: FX_MUT, letterSpacing: "0.18em" }}>Takeaways</p>
           <ul className="space-y-1.5">
-            {spec.takeaways.map((t, i) => <li key={i} className="flex items-start gap-2 text-sm text-zinc-300"><span style={{ color: "var(--gal-build)" }} className="shrink-0">▹</span><span>{t}</span></li>)}
+            {spec.takeaways.map((t, i) => <li key={i} className="flex items-start gap-2 text-sm" style={{ color: FX_BODY }}><span className="shrink-0" style={{ color: "var(--gal-build)" }}>&#9657;</span><span>{t}</span></li>)}
           </ul>
         </div>
       )}
       {spec.refs && (
-        <div className="rounded-xl border border-zinc-800 overflow-hidden">
-          <div className="px-4 py-2 bg-zinc-900/80 border-b border-zinc-800"><p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">References</p></div>
-          <div className="divide-y divide-zinc-800/60">
+        <div style={{ ...GLASS, overflow: "hidden", padding: 0 }}>
+          <div className="px-4 py-2" style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}><p className="text-[10px] font-mono uppercase" style={{ color: FX_MUT, letterSpacing: "0.18em" }}>References</p></div>
+          <div>
             {spec.refs.map((r, i) => (
-              <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs text-zinc-300 hover:text-white hover:bg-zinc-900/40 transition-colors">{r.label} <span className="text-zinc-500">↗</span></a>
+              <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs transition-colors hover:bg-white/5" style={{ color: FX_BODY, borderTop: i ? "1px solid rgba(255,255,255,0.05)" : "none" }}>{r.label} <span style={{ color: "var(--gal-build)" }}>&#8599;</span></a>
             ))}
           </div>
         </div>
@@ -5704,6 +5714,211 @@ function StandardModule({ spec, onNavigate }) {
 
 // Content specs for populated modules. Product specifics kept evergreen/conceptual.
 const MODULE_SPECS = {
+
+  "vector-db-index-mechanics": {
+    problem: "At a few thousand vectors, brute-force search is fine. At millions you need an approximate nearest-neighbor (ANN) index — and the two dominant families, HNSW and IVF, make opposite trade-offs.",
+    sections: [
+      { h: "HNSW — a navigable graph", body: "Hierarchical Navigable Small World builds a multi-layer graph and greedily hops toward the query. Tunables: M (edges per node) and ef_search (candidate list size) — higher means better recall but more memory and latency. Fast, high-recall, memory-hungry — the default for most workloads.", bullets: ["Great recall at low latency.", "Memory grows with M and vector count.", "Cheap inserts; no global retrain."] },
+      { h: "IVF — inverted lists", body: "IVF clusters vectors into nlist buckets and probes the nprobe nearest at query time; recall rises with nprobe. Often paired with PQ (product quantization) to compress vectors. Smaller footprint, faster build — best for huge, memory-constrained corpora.", bullets: ["Lower memory, especially with PQ.", "Recall tuned by nprobe (probe more = slower, better).", "Needs training; less friendly to constant inserts."] },
+    ],
+    decision: { title: "HNSW vs IVF", headers: ["Pick", "When"], rows: [["HNSW", "high recall, latency-sensitive, fits in RAM"], ["IVF + PQ", "massive corpus, memory-bound, batch inserts"], ["Brute force", "< ~50k vectors, exact recall required"]] },
+    check: { q: "8M vectors, must fit one modest box, recall ~0.9 is fine, inserts are nightly batches. Index?", options: ["HNSW with high M", "Brute force", "IVF + PQ", "No index, scan"], correct: 2, why: "IVF+PQ compresses vectors to fit memory, handles a huge corpus with batch inserts, and nprobe tunes recall to ~0.9. HNSW with high M may not fit RAM at 8M; brute force is far too slow." },
+    takeaways: ["ANN trades a little recall for big speed/memory wins.", "HNSW = graph, high recall, RAM-hungry; IVF = buckets, compact, batch-friendly.", "Tune ef_search / nprobe to move the recall-latency dial."],
+    refs: [{ label: "FAISS — index types & guidance", url: "https://github.com/facebookresearch/faiss/wiki" }],
+    fidelity: { tier: "conceptual", note: "Mechanism-level; exact recall/latency depend on data + params — benchmark on yours." },
+  },
+  "pgvector-vs-managed": {
+    problem: "Once you need vector search, the build-vs-buy fork: bolt pgvector onto the Postgres you already run, or adopt a purpose-built vector DB (Pinecone, Weaviate, Qdrant, Milvus).",
+    sections: [
+      { h: "pgvector — vectors in Postgres", body: "An extension adding a vector column + HNSW/IVF indexes to Postgres. You keep one database, transactions, joins, and existing ops; it scales comfortably into the millions. The ceiling is when the vector workload competes with OLTP load, or you need billions plus advanced filtering.", bullets: ["One system: SQL + vectors + ACID + metadata joins.", "No new vendor or infra.", "Watch index build time + memory as it grows."] },
+      { h: "Dedicated vector DBs", body: "Purpose-built for ANN at scale: sharding, namespaces, fast metadata filtering, hybrid search, sometimes serverless. You add a system and a bill, but get scale and features pgvector lacks at the extreme.", bullets: ["Built for billions + high QPS.", "First-class filtering, hybrid, multi-tenancy.", "Another moving part to operate."] },
+    ],
+    decision: { title: "pgvector vs dedicated", headers: ["Choose", "When"], rows: [["pgvector", "already on Postgres, up to tens of millions, want one system"], ["Dedicated VDB", "billions of vectors, high QPS, heavy filtering / multi-tenant"]] },
+    check: { q: "A startup already runs Postgres, has 2M chunks, one product, modest QPS. Vector store?", options: ["Adopt Pinecone now", "Use pgvector", "Build a custom ANN service", "Stand up a Milvus cluster"], correct: 1, why: "pgvector keeps everything in the Postgres they already operate at 2M chunks and modest QPS — no new vendor, infra, or bill. A dedicated VDB is premature; build-your-own is wasted effort." },
+    takeaways: ["pgvector wins when you value one system and already run Postgres.", "Dedicated VDBs earn their cost at extreme scale / QPS / filtering.", "Don't add a vector DB before pgvector actually strains."],
+    refs: [{ label: "pgvector — GitHub", url: "https://github.com/pgvector/pgvector" }],
+    fidelity: { tier: "conceptual", note: "Conceptual decision framework — benchmark on your data + query mix." },
+  },
+  "hybrid-search-design": {
+    problem: "Pure vector search misses exact terms (product IDs, names, legal phrases); pure keyword search misses meaning. Hybrid search fuses both.",
+    sections: [
+      { h: "Dense + sparse, in parallel", body: "Run dense (embedding) and sparse (BM25/keyword) retrieval, then fuse the results. Dense catches paraphrase and semantics; sparse catches exact tokens and rare terms embeddings smear together. Most precision-sensitive production RAG is hybrid.", bullets: ["Dense for meaning, sparse for exact tokens.", "Fuse the two ranked lists.", "Optionally rerank the fused top-N with a cross-encoder."] },
+      { h: "Fusing with RRF", body: "Reciprocal Rank Fusion sums 1/(k+rank) per document across lists — robust, score-scale-agnostic, no weight tuning. Simpler and sturdier than blending raw scores (which need normalization).", bullets: ["RRF needs no score normalization.", "Tune k and candidate depth, not magic weights."] },
+    ],
+    decision: { title: "Add sparse / hybrid when", headers: ["Signal", "Hybrid?"], rows: [["Exact IDs/codes matter", "yes"], ["Rare domain terms", "yes"], ["Pure conceptual Q&A on clean prose", "often not needed"]] },
+    check: { q: "Legal RAG keeps missing clauses when users search exact terms like indemnification. Fix?", options: ["Increase top_k on dense search", "Add BM25 + RRF fusion (hybrid)", "Raise temperature", "Re-embed with a bigger model"], correct: 1, why: "Exact legal terms are precisely where dense embeddings blur and BM25 shines; hybrid + RRF recovers them. Bigger embeddings or more top_k don't fix the exact-term miss; temperature is unrelated." },
+    takeaways: ["Hybrid = dense (meaning) + sparse (exact), fused.", "RRF is the simple, robust fusion default.", "Reach for it whenever exact terms/IDs matter."],
+    refs: [{ label: "Reciprocal Rank Fusion (Cormack et al., 2009)", url: "https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf" }],
+    fidelity: { tier: "conceptual", note: "Conceptual — validate the fusion + rerank depth on your eval set." },
+  },
+  "metadata-filtering": {
+    problem: "Real RAG is not just nearest vectors — it is nearest vectors the user is allowed to see, from the right date/team/type. How you combine filtering with ANN decides correctness and recall.",
+    sections: [
+      { h: "Pre-filter vs post-filter", body: "Post-filter: run ANN, then drop disallowed hits — simple, but a selective filter can leave you with too few results (the top-k may all be filtered out). Pre-filter: restrict the candidate set to matching metadata before/within ANN — preserves recall but needs engine support. Access control belongs at query time, never post-hoc.", bullets: ["Post-filter can silently under-return.", "Pre-filter preserves recall but needs engine support.", "Filter for access control at query time, always."] },
+      { h: "The recall trap", body: "With a selective filter + post-filtering, your top-50 ANN hits might all be filtered away, leaving 2 — it looks like no good answer when there were plenty. Use native filtered-ANN, or over-fetch generously before filtering." },
+    ],
+    decision: { title: "Filtering choice", headers: ["Need", "Use"], rows: [["Selective filters + full recall", "native pre-filtered ANN"], ["Loose filters", "post-filter + over-fetch ok"], ["Access control", "always query-time filter"]] },
+    check: { q: "A B2B search returns too few results when users filter by team — top hits get dropped. Cause + fix?", options: ["Embeddings too small", "Post-filtering a selective filter; switch to pre-filtered ANN / over-fetch", "Temperature", "Needs a reranker"], correct: 1, why: "Post-filtering a selective metadata filter throws away the ANN top-k, under-returning. Pre-filtered (native) ANN or large over-fetch fixes recall. Embedding size, temperature, and rerankers don't address the filter interaction." },
+    takeaways: ["Filtering and ANN interact — pre vs post changes recall.", "Selective filter + post-filter = silent under-return.", "Enforce access control at query time, pre-filter."],
+    refs: [{ label: "Pinecone — metadata filtering", url: "https://docs.pinecone.io/guides/index-data/indexing-overview" }],
+    fidelity: { tier: "conceptual", note: "Conceptual — exact pre-filter support varies by engine." },
+  },
+  "vector-migration-patterns": {
+    problem: "Embeddings are tied to the model that made them. Change the embedding model and every stored vector is in a different space — your index is silently wrong until you re-embed.",
+    sections: [
+      { h: "Why you must re-embed", body: "Vectors from model A and model B are not comparable — cosine similarity across spaces is meaningless. Upgrading your embedding model means re-embedding the whole corpus and rebuilding the index. This is the migration nobody plans for." },
+      { h: "Doing it without downtime", body: "Dual-write / backfill: stand up a new index, re-embed in batches to backfill, dual-write new docs to both, then cut reads over once recall parity is verified; keep the old index until you trust the new one. Tag every vector with its embedding-model version so you never mix spaces.", bullets: ["Backfill in batches; dual-write during transition.", "Tag each vector with its embedding-model version.", "Verify recall parity before cutover; keep a rollback."] },
+    ],
+    decision: { title: "Migration triggers", headers: ["Trigger", "Action"], rows: [["New embedding model", "full re-embed + rebuild"], ["Same model, more data", "incremental upsert, no migration"], ["Dimension change", "new index, never mix"]] },
+    check: { q: "You swap embedding-v2 for v3 and write new docs with v3 into the existing v2 index. Result?", options: ["Better recall immediately", "Silent garbage — mixed spaces; must re-embed all + rebuild", "No effect", "Only new docs are wrong"], correct: 1, why: "v2 and v3 vectors live in different spaces and are not comparable; mixing corrupts similarity for everything. You must re-embed the whole corpus into a fresh index (dual-write/backfill) and cut over." },
+    takeaways: ["Changing embedding model = re-embed the whole corpus.", "Never mix vectors from two models in one index.", "Use dual-write + backfill + version tags for zero downtime."],
+    refs: [{ label: "Embeddings & retrieval best practices", url: "https://www.pinecone.io/learn/" }],
+    fidelity: { tier: "conceptual", note: "Conceptual migration pattern." },
+  },
+  "agent-tracing": {
+    problem: "A single LLM call you can log. A 14-step agent that calls tools, loops, and branches — logs alone are useless. You need a trace: the full tree of what happened.",
+    sections: [
+      { h: "Spans, not log lines", body: "A trace is a tree of spans — one per LLM call, tool call, retrieval, or sub-agent. Each span records inputs, outputs, latency, tokens, cost, and status. OpenTelemetry is the emerging standard that LangSmith / Arize / Phoenix / Helicone consume. The win: you see exactly which step hallucinated, looped, or blew the latency budget.", bullets: ["One span per LLM call / tool call / retrieval.", "Capture input, output, tokens, latency, cost, error.", "Parent-child links rebuild the agent's decision tree."] },
+      { h: "What to actually capture", body: "Prompt + response (sampled, PII-redacted), tool name + args + result, tokens + cost per span, and a trace-level outcome (success / failure / escalated). Enough to answer why did this run cost $4 and return the wrong answer, from the trace alone." },
+    ],
+    decision: { title: "Trace reveals", headers: ["Symptom", "What the trace shows"], rows: [["High latency", "which span is slow"], ["Wrong answer", "which retrieval/tool fed bad data"], ["Cost spike", "which step burned tokens / looped"]] },
+    check: { q: "An agent occasionally costs 5x normal and returns junk. Flat logs show nothing. First instrument?", options: ["Add more print statements", "Span-based tracing (tokens + tools per step)", "Increase the timeout", "Switch model"], correct: 1, why: "Per-span tracing exposes the runaway step — a tool loop or a giant retrieval — with its token/cost, which flat logs cannot show. Prints, timeouts, and model swaps are guesses without the trace." },
+    takeaways: ["Trace = tree of spans, not flat logs.", "Capture I/O, tokens, latency, cost, status per span.", "OpenTelemetry is the portable standard."],
+    refs: [{ label: "OpenTelemetry — GenAI semantic conventions", url: "https://opentelemetry.io/docs/specs/semconv/gen-ai/" }],
+    fidelity: { tier: "conceptual", note: "Conceptual — exact span schema varies by tool." },
+  },
+  "prompt-regression-signals": {
+    problem: "You tweak a prompt to fix one case and silently break ten others. Without a regression signal you ship the regression and hear about it from users.",
+    sections: [
+      { h: "Pin a baseline, diff against it", body: "Keep a golden set of representative inputs with known-good outputs (or rubric scores). Every prompt or model change runs against it before shipping; you diff scores, not vibes. A drop on the baseline blocks the change.", bullets: ["Golden set of 50-200 representative cases.", "Score with exact-match, rubric, or LLM-as-judge.", "Gate deploys on no-regression vs baseline."] },
+      { h: "Catch it in CI, not prod", body: "Wire the eval into CI: a prompt PR triggers the suite; if quality/faithfulness drops past a threshold, the PR fails. That converts hope-it's-fine into a gate." },
+    ],
+    decision: { title: "Run the baseline?", headers: ["Change", "Run?"], rows: [["Prompt edit", "always"], ["Model / version bump", "always"], ["Retrieval / config change", "always"]] },
+    check: { q: "You improve a system prompt; one demo looks better, so you ship. A week later support spikes. What was missing?", options: ["A bigger model", "A golden-set regression check before shipping", "Higher temperature", "More few-shot examples"], correct: 1, why: "A single good demo is not evidence — a golden-set baseline run would have caught the cases the new prompt broke before shipping. The other options don't detect regressions." },
+    takeaways: ["One good demo is not a signal — baselines are.", "Gate every prompt/model change on a golden set.", "Put the eval in CI so regressions can't ship."],
+    refs: [{ label: "Eval-driven LLM development (Hamel Husain)", url: "https://hamel.dev/blog/posts/evals/" }],
+    fidelity: { tier: "conceptual", note: "Conceptual practice." },
+  },
+  "quality-drift": {
+    problem: "Nothing in your code changed, but answers got worse. Provider model updates, corpus rot, and input shift cause drift — degradation with no deploy to blame.",
+    sections: [
+      { h: "Why behavior shifts with no deploy", body: "Floating model aliases update under you; your retrieval corpus gains stale or contradictory docs; user inputs shift distribution. Each silently moves quality. Pinning versions kills the first; monitoring catches the rest.", bullets: ["Pin exact model versions — never latest.", "Watch online quality signals, not just latency/cost.", "Re-run the baseline on a schedule, not only on deploys."] },
+      { h: "Signals that catch it", body: "Track proxy metrics continuously: groundedness/faithfulness on a sample, thumbs-down rate, refusal rate, answer-length distribution, retrieval-score distribution. A trend break with no deploy = drift; alert on it." },
+    ],
+    decision: { title: "Drift source → defense", headers: ["Source", "Defense"], rows: [["Provider model update", "pin versions"], ["Corpus rot", "freshness filter + dedup"], ["Input shift", "monitor + expand eval set"]] },
+    check: { q: "CSAT slid 10% over two weeks, no deploys, you use the alias gpt-4o. Likely cause + first move?", options: ["Random noise; ignore", "Provider updated the alias; pin an exact version + diff on the baseline", "Add caching", "Buy more GPUs"], correct: 1, why: "A floating alias can change behavior with no deploy on your side; pinning an exact version and re-running the baseline isolates whether the model moved. Caching and GPUs don't address a quality drift." },
+    takeaways: ["Drift = degradation with no deploy.", "Pin exact model versions to remove the biggest cause.", "Monitor groundedness / thumbs-down / refusal trends continuously."],
+    refs: [{ label: "LLM observability & drift", url: "https://arize.com/blog-course/llm-observability/" }],
+    fidelity: { tier: "conceptual", note: "Conceptual." },
+  },
+  "cost-attribution": {
+    problem: "Your AI bill is one big number. Until you can say which feature, customer, or step spent it, you can't optimize it or price it.",
+    sections: [
+      { h: "Tag every call", body: "Attach dimensions to each LLM/tool call — feature, customer/tenant, model, step — and record tokens + cost. Roll up by any dimension to see where the money goes. This is the input to routing, caching, and pricing decisions.", bullets: ["Tag: feature, tenant, model, step.", "Record input/output tokens + cost per call.", "Roll up to find the expensive 20%."] },
+      { h: "From attribution to action", body: "Attribution turns the bill is high into feature X on customer Y burns 60% via a 3000-token prompt re-sent every turn. That sentence is what justifies a routing/caching change — or a price." },
+    ],
+    decision: { title: "Question → tag by", headers: ["Question", "Attribute by"], rows: [["Which feature is expensive?", "feature"], ["Is a customer unprofitable?", "tenant"], ["Where to cache/route?", "step + model"]] },
+    check: { q: "Finance asks why AI COGS doubled. You only have a total. Build what first?", options: ["Switch to a cheaper model everywhere", "Per-call cost attribution (feature/tenant/model/step)", "Turn off the feature", "Renegotiate the contract"], correct: 1, why: "Without attribution you're guessing — a blanket model switch may gut quality where cost wasn't the problem. Tagging cost per feature/tenant/step shows exactly where to cut, then you act." },
+    takeaways: ["Attribute cost per feature/tenant/model/step.", "Attribution turns a scary total into a targeted fix.", "It's the prerequisite for routing, caching, and pricing."],
+    refs: [{ label: "LLM cost tracking patterns", url: "https://www.helicone.ai/" }],
+    fidelity: { tier: "conceptual", note: "Conceptual." },
+  },
+  "vision-language-arch": {
+    problem: "How does a model see an image and talk about it? VLMs bolt a vision encoder onto an LLM through a projector — and that seam explains both their power and their failure modes.",
+    sections: [
+      { h: "Encoder → projector → LLM", body: "An image encoder (often a ViT) turns the image into patch embeddings; a projection layer maps those into the LLM's token space; the LLM treats them as tokens alongside text. Training aligns the projector (and sometimes encoder/LLM) on image-text pairs. The image becomes, in effect, a few hundred extra tokens.", bullets: ["ViT splits the image into patches → patch embeddings.", "Projector aligns vision features to the text token space.", "The LLM reasons over image-tokens + text-tokens jointly."] },
+      { h: "Why resolution and tokens matter", body: "More patches (higher resolution) means more image-tokens — better detail but higher cost and context use. That is the lever behind the resolution/cost tradeoff." },
+    ],
+    decision: { title: "The pieces", headers: ["Part", "Job"], rows: [["Vision encoder (ViT)", "image → patch features"], ["Projector", "features → LLM token space"], ["LLM", "joint reasoning over both"]] },
+    check: { q: "Why can a VLM read a chart but miss tiny text inside it?", options: ["The LLM is too small", "Patchification at limited resolution loses fine detail", "Wrong temperature", "It has no encoder"], correct: 1, why: "The image is encoded as a fixed grid of patches at some resolution; text finer than patch granularity is blurred away before the LLM ever sees it. Raising resolution (more patches/tokens) recovers detail at higher cost." },
+    takeaways: ["VLM = vision encoder + projector + LLM over shared tokens.", "An image becomes a few hundred tokens.", "Resolution trades detail for tokens/cost."],
+    refs: [{ label: "CLIP / ViT (vision-language foundations)", url: "https://arxiv.org/abs/2103.00020" }],
+    fidelity: { tier: "conceptual", note: "Conceptual; architectures vary." },
+  },
+  "multimodal-rag": {
+    problem: "Half of enterprise knowledge is tables, charts, and scanned PDFs. Parse them to text and you destroy the layout that carried the meaning. Multimodal RAG retrieves the page as it looks.",
+    sections: [
+      { h: "Retrieve pixels, not parsed text", body: "Instead of OCR/parse → text chunks, embed each page as an image with a vision retriever (e.g. ColPali-style late interaction), retrieve pages by visual + text similarity, and feed the page image to a VLM to read the answer. No chunking, no layout loss.", bullets: ["Embed page images, not extracted text.", "Retrieve over images; read with a VLM.", "Wins on tables, charts, multi-column, forms."] },
+      { h: "When to use it vs text RAG", body: "Reach for it on layout-heavy / visual documents. Skip it for clean prose corpora (text RAG is cheaper/faster) and latency-critical paths (a VLM reading pixels is heavier)." },
+    ],
+    decision: { title: "Doc type → approach", headers: ["Doc type", "Approach"], rows: [["Tables / charts / forms / scans", "multimodal (page-as-image)"], ["Clean prose", "text RAG"], ["Latency-critical", "text RAG / hybrid"]] },
+    check: { q: "A finance assistant keeps citing the wrong cell from statement PDFs. Best fix?", options: ["Bigger text-embedding model", "Multimodal RAG (embed/read the page image)", "Higher top_k", "Lower temperature"], correct: 1, why: "Parsing statements to text drops the table structure that ties a number to its row/column — exactly the failure. Retrieving and reading the page as an image preserves layout. More top_k or bigger text embeddings still feed a mangled table." },
+    takeaways: ["Multimodal RAG embeds the page image — no parse, no layout loss.", "Best for tables/charts/forms; text RAG for clean prose.", "Trades VLM cost/latency for layout fidelity."],
+    refs: [{ label: "ColPali — visual document retrieval (2024)", url: "https://arxiv.org/abs/2407.01449" }],
+    fidelity: { tier: "conceptual", note: "Conceptual; frontier approach." },
+  },
+  "ocr-pipeline-design": {
+    problem: "OCR turns a document image into text — and is the silent failure point of most document AI. Knowing where it breaks (and when to skip it) is the senior call.",
+    sections: [
+      { h: "The classic pipeline", body: "Detect text regions → recognize characters → reconstruct reading order → analyze layout for tables/columns. Each stage adds error: skew, low contrast, handwriting, and especially multi-column/table reconstruction where reading order goes wrong.", bullets: ["Detection → recognition → reading-order → layout.", "Tables and multi-column are where order breaks.", "Bad reading-order = bad downstream answers."] },
+      { h: "OCR vs vision-native", body: "If a VLM can read the page directly (multimodal RAG), you may skip OCR entirely for Q&A. OCR still wins when you need editable/searchable text, exact bulk extraction, or cheap text indexing. Choose by the downstream need, not habit." },
+    ],
+    decision: { title: "Need → use", headers: ["Need", "Use"], rows: [["Q&A over visual docs", "VLM (skip OCR)"], ["Searchable / editable text", "OCR"], ["Bulk exact extraction", "OCR + validation"]] },
+    check: { q: "You only need to answer questions about scanned multi-column reports. Cheapest reliable path?", options: ["Heavy OCR + table reconstruction, then text RAG", "VLM reads the page image directly (multimodal)", "Manual transcription", "Lower temperature"], correct: 1, why: "For Q&A over visual, multi-column docs, a VLM reading the page sidesteps OCR's reading-order/table failures entirely. Full OCR + reconstruction is more pipeline and more failure surface than the task needs." },
+    takeaways: ["OCR = detect → recognize → reading-order → layout; each adds error.", "Tables / multi-column are the break point.", "For Q&A a VLM may let you skip OCR; OCR for searchable text/extraction."],
+    refs: [{ label: "Document question answering (overview)", url: "https://huggingface.co/docs/transformers/tasks/document_question_answering" }],
+    fidelity: { tier: "conceptual", note: "Conceptual." },
+  },
+  "resolution-token-cost": {
+    problem: "With VLMs, image resolution is a cost dial. Send higher-res and you pay more tokens; send too low and the model can't read it. The senior move is matching resolution to the task.",
+    sections: [
+      { h: "Resolution = tokens", body: "VLMs tile an image into patches; more resolution = more tiles = more image-tokens = more cost and context used. A full-page scan can cost as much as pages of text. Drop too low, though, and fine text/detail vanishes.", bullets: ["Higher res → more tiles → more tokens → more cost.", "Too low → unreadable fine detail.", "Find the minimum resolution that still answers the question."] },
+      { h: "Tuning it", body: "For what is the title a thumbnail suffices; for read the 8-pt footnote you need full res. Many APIs expose low/high detail modes — pick per query, and crop to the region of interest when you can." },
+    ],
+    decision: { title: "Task → resolution", headers: ["Task", "Resolution"], rows: [["Gist / layout", "low (cheap)"], ["Read fine text", "high"], ["Known region", "crop + high on the crop"]] },
+    check: { q: "Costs blow up sending full-res scans just to read a header. Cheapest fix that still works?", options: ["Always max resolution", "Low-detail mode / downscale (or crop to the header)", "Switch to text RAG", "Add more examples"], correct: 1, why: "Reading a header needs little detail — low-detail/downscaled (or a crop) gets the answer at a fraction of the tokens. Max resolution is the cause of the blowup; text RAG can't read an image." },
+    takeaways: ["Image resolution is a token-cost dial.", "Use the lowest resolution that still answers the question.", "Crop to the region of interest to cut tokens."],
+    refs: [{ label: "OpenAI vision — image detail & tokens", url: "https://platform.openai.com/docs/guides/vision" }],
+    fidelity: { tier: "conceptual", note: "Verify per-provider detail modes + token math against current docs." },
+  },
+  "alignment-techniques": {
+    problem: "A base LLM predicts likely text — not helpful, honest, or safe text. Alignment is how raw next-token prediction becomes a model that follows instructions and refuses harm.",
+    sections: [
+      { h: "The main families", body: "Pretraining gives capability; alignment shapes behavior:", bullets: ["SFT (supervised fine-tuning) — imitate curated good responses; the base layer of instruction-following.", "RLHF — train a reward model from human preference comparisons, then RL the policy toward it. Powerful but complex and unstable.", "DPO — optimize directly on preference pairs, skipping a separate reward model. Simpler, widely used.", "Constitutional AI / RLAIF — use an AI plus written principles to generate the preference signal, cutting human labeling."] },
+      { h: "When you touch which", body: "Most teams never run RLHF/DPO — they consume an aligned model and shape behavior with prompts + guardrails. You reach for preference tuning only with a stable task, real preference data, and a measurable gap prompting cannot close." },
+    ],
+    decision: { title: "Method → trade", headers: ["Method", "Trade"], rows: [["SFT", "simple; needs good demos"], ["RLHF", "strong; complex / unstable"], ["DPO", "simpler than RLHF; needs preference pairs"], ["RLAIF / CAI", "less human labeling; needs good principles"]] },
+    check: { q: "Your aligned API model is slightly too verbose for your product. First lever?", options: ["Run RLHF from scratch", "Prompt + output constraints (DPO only if it plateaus)", "Pretrain a new model", "Raise temperature"], correct: 1, why: "Verbosity is a behavior you can shape with prompt instructions/output constraints in minutes — preference tuning (DPO) is only worth it if prompting genuinely cannot close the gap. RLHF and pretraining are massively disproportionate." },
+    takeaways: ["Alignment = SFT → preference tuning (RLHF/DPO) → AI-feedback (RLAIF/CAI).", "Most teams consume alignment; shape behavior with prompts/guardrails.", "Tune only with a stable task, real preference data, and a measured gap."],
+    refs: [{ label: "InstructGPT / RLHF (Ouyang et al., 2022)", url: "https://arxiv.org/abs/2203.02155" }, { label: "DPO (Rafailov et al., 2023)", url: "https://arxiv.org/abs/2305.18290" }],
+    fidelity: { tier: "conceptual", note: "Conceptual overview of alignment methods." },
+  },
+  "red-teaming": {
+    problem: "You can't measure safety by hoping nothing goes wrong. Red-teaming is the structured practice of attacking your own system to find failures before users — or attackers — do.",
+    sections: [
+      { h: "Systematic, not vibes", body: "Cover categories deliberately: harmful content, prompt injection, data exfiltration, jailbreaks, bias, PII leakage, and tool-misuse for agents. For each, craft attacks, run them, record pass/fail, and track a coverage matrix over time — not a one-off we tried to break it.", bullets: ["Enumerate attack categories; don't freestyle.", "Include indirect injection via retrieved/tool content.", "Log every attack + outcome into a regression suite."] },
+      { h: "Automate and grow the set", body: "Seed with manual attacks, then automate replay and add new ones from real incidents. An LLM can generate attack variants, but verify outcomes with a calibrated judge or human — the judge itself can be gamed." },
+    ],
+    decision: { title: "Surface → attack class", headers: ["Surface", "Attack class"], rows: [["Chat input", "direct jailbreak, PII extraction"], ["Retrieved / tool content", "indirect injection, exfiltration"], ["Agent tools", "goal hijack, resource exhaustion"]] },
+    check: { q: "Your safety check is we tried some jailbreaks and they failed. Why insufficient?", options: ["It's fine if they failed", "No category coverage or regression suite — new attacks/regressions go uncaught", "Need a bigger model", "Need higher temperature"], correct: 1, why: "A one-off manual try has no coverage matrix and no regression suite, so new attack types and post-change regressions slip through. Structured, categorized, automated red-teaming is the bar — not model size or temperature." },
+    takeaways: ["Red-team by category, not by vibes.", "Include indirect injection via retrieved/tool content.", "Turn attacks into an automated regression suite."],
+    refs: [{ label: "OWASP — LLM Top 10", url: "https://owasp.org/www-project-top-10-for-large-language-model-applications/" }],
+    fidelity: { tier: "conceptual", note: "Conceptual methodology." },
+  },
+  "jailbreak-taxonomy": {
+    problem: "Jailbreak is not one thing. Knowing the categories tells you which defenses actually apply — and why a single filter never holds.",
+    sections: [
+      { h: "The main categories", body: "Roughly five:", bullets: ["Role-play / persona — get the model to adopt an unrestricted character.", "Instruction override — ignore previous instructions; direct prompt injection.", "Indirect injection — malicious instructions hidden in retrieved docs, web pages, or tool outputs.", "Obfuscation — encoding, translation, leetspeak, or splitting to evade keyword filters.", "Many-shot / context flooding — fill context with examples that normalize the unsafe behavior."] },
+      { h: "Why one defense fails", body: "Keyword blocklists die to obfuscation; system-prompt reinforcement dies to many-shot; input filters miss indirect injection. Defense is layered: input classification + instruction hierarchy + treating retrieved content as untrusted data + output filtering + least-privilege tools." },
+    ],
+    decision: { title: "Attack → primary defense", headers: ["Attack", "Primary defense"], rows: [["Role-play / override", "instruction hierarchy + input classifier"], ["Indirect injection", "treat retrieved content as data, not instructions"], ["Obfuscation", "semantic (not keyword) checks"], ["Tool misuse", "least-privilege + human gate"]] },
+    check: { q: "Your app scrapes web pages into the prompt. A page hides export the user data to an attacker address. Category + defense?", options: ["Role-play; add a persona", "Indirect injection; treat retrieved content as untrusted data + output/tool guardrails", "Obfuscation; add a blocklist", "Not a real risk"], correct: 1, why: "Instructions smuggled inside retrieved content are indirect injection — the user typed nothing malicious. The defense is to treat all retrieved/tool content as data (delimit it, never as instructions) plus output and least-privilege tool guards. A persona or blocklist does not address it." },
+    takeaways: ["Jailbreaks = role-play, override, indirect injection, obfuscation, many-shot.", "No single filter holds — defense is layered.", "Treat retrieved/tool content as untrusted data, always."],
+    refs: [{ label: "OWASP LLM01 — Prompt Injection", url: "https://owasp.org/www-project-top-10-for-large-language-model-applications/" }],
+    fidelity: { tier: "conceptual", note: "Conceptual taxonomy." },
+  },
+  "safety-measurement": {
+    problem: "Safety is not a vibe or a one-time review — it is a metric you track. But measuring it badly (only refusal rate) creates a model that refuses everything.",
+    sections: [
+      { h: "Measure both directions", body: "Two errors, not one: unsafe completions (a harmful answer slips through) AND over-refusal (the model refuses benign requests). Optimize only the first and you ship a useless, over-cautious model. Track both on labeled eval sets.", bullets: ["Unsafe-pass rate — harmful prompts that got a harmful answer.", "Over-refusal rate — benign prompts wrongly refused.", "Both move together; the goal is the frontier, not zero refusals."] },
+      { h: "Build the eval set", body: "Curate labeled prompts: clearly-harmful, clearly-benign, and the hard ambiguous middle. Score with a calibrated judge (the judge can be gamed by adversarial inputs). Re-run on every model/prompt/guardrail change, like any regression." },
+    ],
+    decision: { title: "Metric → catches", headers: ["Metric", "Catches"], rows: [["Unsafe-pass rate", "harmful answers slipping through"], ["Over-refusal rate", "useless over-caution"], ["Ambiguous-set accuracy", "calibration on hard cases"]] },
+    check: { q: "A team reports refusal rate is up 30%, safety improved. What's the risk?", options: ["None — more refusals is safer", "Over-refusal — it may be refusing benign requests; measure both directions", "Need a bigger model", "Temperature too high"], correct: 1, why: "A rising refusal rate can mean the model now refuses safe, useful requests (over-refusal), degrading the product while looking safer. You must measure unsafe-pass AND over-refusal together. Model size and temperature aren't the issue." },
+    takeaways: ["Measure unsafe-pass AND over-refusal — both directions.", "Over-optimizing refusal makes a useless model.", "Labeled eval sets + a calibrated judge, re-run on every change."],
+    refs: [{ label: "Over-refusal / safety eval (XSTest, 2023)", url: "https://arxiv.org/abs/2308.01263" }],
+    fidelity: { tier: "conceptual", note: "Conceptual." },
+  },
   "aws-bedrock-agentcore": {
     problem: "Most teams don't want to host GPUs to run an LLM. AWS Bedrock is the managed door: one API, many foundation models, no servers — plus an agent runtime (AgentCore) for tool-using agents.",
     sections: [
@@ -5814,6 +6029,24 @@ const MODULE_SPECS = {
 };
 
 const MODULES = [
+  // ── Vector / Observability / Multimodal / Safety gyms (populated) ──
+  { id: "vector-db-index-mechanics", label: "HNSW vs IVF", tag: "VECTOR", level: "advanced", title: "ANN Index Mechanics: HNSW vs IVF", subtitle: "Graph vs buckets — the recall/latency/memory dial.", fidelity: MODULE_SPECS["vector-db-index-mechanics"].fidelity, spec: MODULE_SPECS["vector-db-index-mechanics"], component: StandardModule },
+  { id: "pgvector-vs-managed", label: "pgvector vs Managed", tag: "DECISION", level: "intermediate", title: "pgvector vs a Dedicated Vector DB", subtitle: "Build-vs-buy for vector search.", fidelity: MODULE_SPECS["pgvector-vs-managed"].fidelity, spec: MODULE_SPECS["pgvector-vs-managed"], component: StandardModule },
+  { id: "hybrid-search-design", label: "Hybrid Search", tag: "VECTOR", level: "intermediate", title: "Hybrid Search: Dense + BM25 + RRF", subtitle: "Fuse meaning and exact terms.", fidelity: MODULE_SPECS["hybrid-search-design"].fidelity, spec: MODULE_SPECS["hybrid-search-design"], component: StandardModule },
+  { id: "metadata-filtering", label: "Metadata Filtering", tag: "VECTOR", level: "intermediate", title: "Metadata Filtering + ANN", subtitle: "Pre vs post filter, and the recall trap.", fidelity: MODULE_SPECS["metadata-filtering"].fidelity, spec: MODULE_SPECS["metadata-filtering"], component: StandardModule },
+  { id: "vector-migration-patterns", label: "Vector Migration", tag: "DECISION", level: "intermediate", title: "Vector Migration Patterns", subtitle: "Re-embed without downtime.", fidelity: MODULE_SPECS["vector-migration-patterns"].fidelity, spec: MODULE_SPECS["vector-migration-patterns"], component: StandardModule },
+  { id: "agent-tracing", label: "Agent Tracing", tag: "OPS", level: "intermediate", title: "Tracing Agent Loops", subtitle: "Spans, not logs.", fidelity: MODULE_SPECS["agent-tracing"].fidelity, spec: MODULE_SPECS["agent-tracing"], component: StandardModule },
+  { id: "prompt-regression-signals", label: "Prompt Regression", tag: "DECISION", level: "intermediate", title: "Prompt Regression Signals", subtitle: "Catch the break before you ship.", fidelity: MODULE_SPECS["prompt-regression-signals"].fidelity, spec: MODULE_SPECS["prompt-regression-signals"], component: StandardModule },
+  { id: "quality-drift", label: "Quality Drift", tag: "OPS", level: "intermediate", title: "Quality Drift in Production", subtitle: "Worse with no deploy.", fidelity: MODULE_SPECS["quality-drift"].fidelity, spec: MODULE_SPECS["quality-drift"], component: StandardModule },
+  { id: "cost-attribution", label: "Cost Attribution", tag: "OPS", level: "intermediate", title: "Cost Attribution by Feature", subtitle: "Turn the bill into a fix.", fidelity: MODULE_SPECS["cost-attribution"].fidelity, spec: MODULE_SPECS["cost-attribution"], component: StandardModule },
+  { id: "vision-language-arch", label: "VLM Architecture", tag: "MULTIMODAL", level: "advanced", title: "Vision-Language Model Architecture", subtitle: "Encoder, projector, LLM.", fidelity: MODULE_SPECS["vision-language-arch"].fidelity, spec: MODULE_SPECS["vision-language-arch"], component: StandardModule },
+  { id: "multimodal-rag", label: "Multimodal RAG", tag: "MULTIMODAL", level: "intermediate", title: "Multimodal RAG", subtitle: "Retrieve the page, not the parse.", fidelity: MODULE_SPECS["multimodal-rag"].fidelity, spec: MODULE_SPECS["multimodal-rag"], component: StandardModule },
+  { id: "ocr-pipeline-design", label: "OCR Pipelines", tag: "DECISION", level: "intermediate", title: "OCR Pipeline Design", subtitle: "Where it breaks, when to skip it.", fidelity: MODULE_SPECS["ocr-pipeline-design"].fidelity, spec: MODULE_SPECS["ocr-pipeline-design"], component: StandardModule },
+  { id: "resolution-token-cost", label: "Resolution vs Cost", tag: "DECISION", level: "intermediate", title: "Image Resolution vs Token Cost", subtitle: "The VLM cost dial.", fidelity: MODULE_SPECS["resolution-token-cost"].fidelity, spec: MODULE_SPECS["resolution-token-cost"], component: StandardModule },
+  { id: "alignment-techniques", label: "Alignment Techniques", tag: "SAFETY", level: "advanced", title: "Alignment: SFT, RLHF, DPO, RLAIF", subtitle: "How base models become helpful + safe.", fidelity: MODULE_SPECS["alignment-techniques"].fidelity, spec: MODULE_SPECS["alignment-techniques"], component: StandardModule },
+  { id: "red-teaming", label: "Red Teaming", tag: "SAFETY", level: "intermediate", title: "Red-Teaming LLM Systems", subtitle: "Attack your own system, by category.", fidelity: MODULE_SPECS["red-teaming"].fidelity, spec: MODULE_SPECS["red-teaming"], component: StandardModule },
+  { id: "jailbreak-taxonomy", label: "Jailbreak Taxonomy", tag: "SAFETY", level: "intermediate", title: "Jailbreak Taxonomy", subtitle: "Five categories, layered defense.", fidelity: MODULE_SPECS["jailbreak-taxonomy"].fidelity, spec: MODULE_SPECS["jailbreak-taxonomy"], component: StandardModule },
+  { id: "safety-measurement", label: "Safety Measurement", tag: "DECISION", level: "intermediate", title: "Measuring Safety", subtitle: "Both directions — or you over-refuse.", fidelity: MODULE_SPECS["safety-measurement"].fidelity, spec: MODULE_SPECS["safety-measurement"], component: StandardModule },
   // ── Cloud AI Services gym (populated) ──
   { id: "aws-bedrock-agentcore", label: "AWS Bedrock + AgentCore", tag: "CLOUD", level: "intermediate", title: "AWS Bedrock + AgentCore", subtitle: "Managed multi-model API, RAG, guardrails, agent runtime.", fidelity: MODULE_SPECS["aws-bedrock-agentcore"].fidelity, spec: MODULE_SPECS["aws-bedrock-agentcore"], component: StandardModule },
   { id: "vertex-ai-gemini", label: "Vertex AI + Gemini", tag: "CLOUD", level: "intermediate", title: "Vertex AI + Gemini", subtitle: "Gemini, grounding, tuning, agents — in GCP.", fidelity: MODULE_SPECS["vertex-ai-gemini"].fidelity, spec: MODULE_SPECS["vertex-ai-gemini"], component: StandardModule },
@@ -7807,11 +8040,9 @@ const GYMS = [
     desc: "pgvector, Pinecone, Weaviate, Qdrant — HNSW vs IVF, hybrid search, metadata filtering.",
     teaser: "5 modules: HNSW vs IVF index mechanics, pgvector vs managed services, hybrid search design, metadata filtering at scale, migration patterns.",
     color: "#0ea5e9",
-    moduleIds: [],
-    modulesSkeleton: ["vector-db-index-mechanics", "pgvector-vs-managed", "hybrid-search-design", "metadata-filtering", "vector-migration-patterns"],
+    moduleIds: ["vector-db-index-mechanics", "pgvector-vs-managed", "hybrid-search-design", "metadata-filtering", "vector-migration-patterns"],
     labId: "lab",
     labLabel: "RAG Lab",
-    comingSoon: true,
   },
   {
     id: "observability-tracing",
@@ -7819,11 +8050,9 @@ const GYMS = [
     desc: "LangSmith, Arize, Helicone — tracing agent loops, prompt regression detection, drift monitoring.",
     teaser: "4 modules: distributed tracing for agents, prompt regression detection, quality drift signals, cost attribution by feature.",
     color: "#a78bfa",
-    moduleIds: [],
-    modulesSkeleton: ["agent-tracing", "prompt-regression-signals", "quality-drift", "cost-attribution"],
+    moduleIds: ["agent-tracing", "prompt-regression-signals", "quality-drift", "cost-attribution"],
     labId: "systems",
     labLabel: "Systems Lab",
-    comingSoon: true,
   },
   {
     id: "multimodal",
@@ -7831,11 +8060,9 @@ const GYMS = [
     desc: "Vision-language models, image-text retrieval, OCR pipelines, and resolution tradeoffs.",
     teaser: "4 modules: vision-language architectures, multimodal RAG, OCR pipeline design, resolution vs token cost.",
     color: "#f43f5e",
-    moduleIds: [],
-    modulesSkeleton: ["vision-language-arch", "multimodal-rag", "ocr-pipeline-design", "resolution-token-cost"],
+    moduleIds: ["vision-language-arch", "multimodal-rag", "ocr-pipeline-design", "resolution-token-cost"],
     labId: "systems",
     labLabel: "Systems Lab",
-    comingSoon: true,
   },
   {
     id: "ai-safety-alignment",
@@ -7843,11 +8070,9 @@ const GYMS = [
     desc: "RLHF, constitutional AI, red-teaming, jailbreak categories, and safety-helpfulness tradeoffs.",
     teaser: "4 modules: alignment techniques overview, red-teaming methodology, jailbreak taxonomy, safety measurement.",
     color: "#ef4444",
-    moduleIds: [],
-    modulesSkeleton: ["alignment-techniques", "red-teaming", "jailbreak-taxonomy", "safety-measurement"],
+    moduleIds: ["alignment-techniques", "red-teaming", "jailbreak-taxonomy", "safety-measurement"],
     labId: "systems",
     labLabel: "Systems Lab",
-    comingSoon: true,
   },
 ];
 

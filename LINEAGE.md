@@ -355,3 +355,23 @@ Ran a 5-agent parallel read-only audit categorizing every GSL artifact against K
 Headline (weighted): **KNOW ~59% · JUDGE ~27% · DO ~8% (truly ~2-3%) · BUILD ~6%.** The barbell is now quantified. The DO rung is near-total absent — no surface makes you write/run code or a free prompt under a correctness check (closest: one Career "Fix the Prompt" sub-challenge). BUILD exists only as 4 un-graded free-text Career take-home rubric labs. Corrections found: Systems=60 (not 37), Explore=24 (not 14), Playground=8; no standalone "Guided ProjectLabs" or LangSmith module.
 
 Implication flagged for the Concepts-population decision: all 22 Coming-Soon stubs are ~70% KNOW, so filling them flat deepens the already-heavy end. Recommendation in the doc: build them but prioritize the 8 JUDGE-leaning stubs + add a "now do it" interactive beat so they balance the ladder rather than widen the gap. Concepts build paused for Sidharth's confirm given this new evidence.
+
+---
+
+## Sprint 88 — Concepts gym population complete: all 22 modules (23 Jun 2026)
+
+Filled the remaining 17 Coming-Soon Concept modules (after the 5 Cloud AI Services in sprint 87), via the shared `StandardModule` engine — so all 5 gyms are now live, 0 stubs:
+- **Vector Infrastructure (5):** HNSW-vs-IVF index mechanics, pgvector-vs-managed, hybrid search (BM25+RRF), metadata filtering (pre/post + recall trap), vector migration patterns.
+- **Observability & Tracing (4):** agent tracing (spans), prompt-regression signals, quality drift, cost attribution.
+- **Multimodal AI (4):** VLM architecture, multimodal RAG, OCR pipeline design, resolution-vs-token-cost.
+- **AI Safety & Alignment (4):** alignment techniques (SFT/RLHF/DPO/RLAIF), red-teaming, jailbreak taxonomy, safety measurement.
+
+Each module: problem → sections → decision table → **a scored Decision Check (the JUDGE beat)** → takeaways → references. Content kept evergreen/mechanism-level with `conceptual` fidelity notes (cloud/product specifics drift — flagged to verify). Wiring verified: every gym moduleId resolves to a MODULES entry + a MODULE_SPECS key; `modulesSkeleton`/`comingSoon` fully removed; Babel-clean. Note: this is the lighter content-driven format (not bespoke viz like Tokenizer) — per-module viz upgrades can come later. Approve-first; native Vite build on macOS is the gate.
+
+---
+
+## Sprint 89 — Frontier-glass UNIT TEST on Concepts StandardModule (23 Jun 2026)
+
+First live pilot of the GSL "frontier" visual language (the futuristic / Glass-Box-in-colour direction). Scoped deliberately to ONE isolated component — `StandardModule` + `DecisionCheck` in `Concepts.jsx` (the 22 populated gym modules) — so it's a contained unit test with zero risk to nav, other tabs, or existing bespoke modules.
+
+Treatment: cool-grey **glass panels** (`rgba(18,20,24,0.55)` + backdrop blur — semi-opaque dark glass that reads on any page bg, so it survives both the warm-dark default and the cream light theme), a subtle top cyan radial glow, cyan (`--gal-build`) used only as the "look here" signal (mono eyebrows, section dot, table header hairline), red (`#fb5247`) reserved strictly for the break (wrong answer), green (`#19c37d`) for the resolution. Mono micro-labels. Colour law per `BRAND.md` (void/grey ~95%, cyan signal, red only at failure). Babel-clean; 22 modules intact. Approve-first; macOS build is the gate. If the look lands, it becomes the seed token-set for a fuller GSL theme pass (HQ brief first).
