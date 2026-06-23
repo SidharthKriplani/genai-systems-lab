@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/prerender-gt.js && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:color": "node scripts/check-no-hex.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",

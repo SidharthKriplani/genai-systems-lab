@@ -297,6 +297,78 @@ button:disabled:active {
   --color-zinc-700: #3d2e26;
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   MONOCHROME INSTRUMENT — GSL (GAL) visual language          (added 2026-06-23)
+   One greyscale ramp + one cyan accent. Red = break, green = fix (semantic only).
+   A value-remap over Tailwind v4's --color-* vars. Dark-theme scoped, append-only,
+   FULLY REVERSIBLE — delete this block to restore the warm-brown LUNA base.
+   Placed BEFORE the mobile media query so the mobile contrast boost still wins.
+   Spec: HQ/DESIGN-STANDARD.md "THE MONOCHROME INSTRUMENT STANDARD".
+   ════════════════════════════════════════════════════════════════════════════ */
+html:not([data-theme="light"]) {
+  /* ── cold base ramp (overrides the warm-brown :root above) ───────────────── */
+  --bg:            #08080a;
+  --surface:       #0d0e11;
+  --surface-2:     #15171b;
+  --border:        #23262c;
+  --border-subtle: #15171b;
+  --rim:           #23262c;
+  --ink-low:       #6a6f78;
+
+  --color-zinc-950: #08080a;
+  --color-zinc-900: #0d0e11;
+  --color-zinc-800: #15171b;
+  --color-zinc-700: #23262c;
+  --color-zinc-600: #777c84;
+  --color-zinc-500: #9aa0a8;
+  --color-zinc-400: #a6abb4;
+  --color-zinc-300: #c4c8ce;
+  --color-zinc-200: #dfe2e6;
+  --color-zinc-100: #f3f4f6;
+
+  /* ── kill the rainbow: decorative palettes → the grey ramp ───────────────── */
+  --color-amber-50:var(--color-zinc-50);   --color-amber-100:var(--color-zinc-100); --color-amber-200:var(--color-zinc-200); --color-amber-300:var(--color-zinc-300); --color-amber-400:var(--color-zinc-400); --color-amber-500:var(--color-zinc-500); --color-amber-600:var(--color-zinc-600); --color-amber-700:var(--color-zinc-700); --color-amber-800:var(--color-zinc-800); --color-amber-900:var(--color-zinc-900); --color-amber-950:var(--color-zinc-950);
+  --color-indigo-50:var(--color-zinc-50);  --color-indigo-100:var(--color-zinc-100);--color-indigo-200:var(--color-zinc-200);--color-indigo-300:var(--color-zinc-300);--color-indigo-400:var(--color-zinc-400);--color-indigo-500:var(--color-zinc-500);--color-indigo-600:var(--color-zinc-600);--color-indigo-700:var(--color-zinc-700);--color-indigo-800:var(--color-zinc-800);--color-indigo-900:var(--color-zinc-900);--color-indigo-950:var(--color-zinc-950);
+  --color-blue-50:var(--color-zinc-50);    --color-blue-100:var(--color-zinc-100);  --color-blue-200:var(--color-zinc-200);  --color-blue-300:var(--color-zinc-300);  --color-blue-400:var(--color-zinc-400);  --color-blue-500:var(--color-zinc-500);  --color-blue-600:var(--color-zinc-600);  --color-blue-700:var(--color-zinc-700);  --color-blue-800:var(--color-zinc-800);  --color-blue-900:var(--color-zinc-900);  --color-blue-950:var(--color-zinc-950);
+  --color-sky-50:var(--color-zinc-50);     --color-sky-100:var(--color-zinc-100);   --color-sky-200:var(--color-zinc-200);   --color-sky-300:var(--color-zinc-300);   --color-sky-400:var(--color-zinc-400);   --color-sky-500:var(--color-zinc-500);   --color-sky-600:var(--color-zinc-600);   --color-sky-700:var(--color-zinc-700);   --color-sky-800:var(--color-zinc-800);   --color-sky-900:var(--color-zinc-900);   --color-sky-950:var(--color-zinc-950);
+  --color-orange-50:var(--color-zinc-50);  --color-orange-100:var(--color-zinc-100);--color-orange-200:var(--color-zinc-200);--color-orange-300:var(--color-zinc-300);--color-orange-400:var(--color-zinc-400);--color-orange-500:var(--color-zinc-500);--color-orange-600:var(--color-zinc-600);--color-orange-700:var(--color-zinc-700);--color-orange-800:var(--color-zinc-800);--color-orange-900:var(--color-zinc-900);--color-orange-950:var(--color-zinc-950);
+  --color-rose-50:var(--color-zinc-50);    --color-rose-100:var(--color-zinc-100);  --color-rose-200:var(--color-zinc-200);  --color-rose-300:var(--color-zinc-300);  --color-rose-400:var(--color-zinc-400);  --color-rose-500:var(--color-zinc-500);  --color-rose-600:var(--color-zinc-600);  --color-rose-700:var(--color-zinc-700);  --color-rose-800:var(--color-zinc-800);  --color-rose-900:var(--color-zinc-900);  --color-rose-950:var(--color-zinc-950);
+  --color-pink-50:var(--color-zinc-50);    --color-pink-100:var(--color-zinc-100);  --color-pink-200:var(--color-zinc-200);  --color-pink-300:var(--color-zinc-300);  --color-pink-400:var(--color-zinc-400);  --color-pink-500:var(--color-zinc-500);  --color-pink-600:var(--color-zinc-600);  --color-pink-700:var(--color-zinc-700);  --color-pink-800:var(--color-zinc-800);  --color-pink-900:var(--color-zinc-900);  --color-pink-950:var(--color-zinc-950);
+  --color-teal-50:var(--color-zinc-50);    --color-teal-100:var(--color-zinc-100);  --color-teal-200:var(--color-zinc-200);  --color-teal-300:var(--color-zinc-300);  --color-teal-400:var(--color-zinc-400);  --color-teal-500:var(--color-zinc-500);  --color-teal-600:var(--color-zinc-600);  --color-teal-700:var(--color-zinc-700);  --color-teal-800:var(--color-zinc-800);  --color-teal-900:var(--color-zinc-900);  --color-teal-950:var(--color-zinc-950);
+  --color-purple-50:var(--color-zinc-50);  --color-purple-100:var(--color-zinc-100);--color-purple-200:var(--color-zinc-200);--color-purple-300:var(--color-zinc-300);--color-purple-400:var(--color-zinc-400);--color-purple-500:var(--color-zinc-500);--color-purple-600:var(--color-zinc-600);--color-purple-700:var(--color-zinc-700);--color-purple-800:var(--color-zinc-800);--color-purple-900:var(--color-zinc-900);--color-purple-950:var(--color-zinc-950);
+  --color-fuchsia-50:var(--color-zinc-50); --color-fuchsia-100:var(--color-zinc-100);--color-fuchsia-200:var(--color-zinc-200);--color-fuchsia-300:var(--color-zinc-300);--color-fuchsia-400:var(--color-zinc-400);--color-fuchsia-500:var(--color-zinc-500);--color-fuchsia-600:var(--color-zinc-600);--color-fuchsia-700:var(--color-zinc-700);--color-fuchsia-800:var(--color-zinc-800);--color-fuchsia-900:var(--color-zinc-900);--color-fuchsia-950:var(--color-zinc-950);
+
+  /* ── semantic: red = BREAK (faint, not neon) ─────────────────────────────── */
+  --color-red-300:#fca5a0; --color-red-400:#fb5247; --color-red-500:#f23b30; --color-red-600:#d8352b;
+  --color-red-700:#6e2620; --color-red-800:#4a1814; --color-red-900:#321110; --color-red-950:#210b0a;
+
+  /* ── semantic: emerald + green = FIX (faint) ─────────────────────────────── */
+  --color-emerald-300:#5fe0a8; --color-emerald-400:#19c37d; --color-emerald-500:#14a86a; --color-emerald-600:#0f8f59;
+  --color-emerald-700:#1c4a39; --color-emerald-800:#143528; --color-emerald-900:#0f261d; --color-emerald-950:#0a1b14;
+  --color-green-300:#5fe0a8; --color-green-400:#19c37d; --color-green-500:#14a86a; --color-green-600:#0f8f59;
+  --color-green-700:#1c4a39; --color-green-800:#143528; --color-green-900:#0f261d; --color-green-950:#0a1b14;
+
+  /* ── frame tokens → grey (only --gal-build stays cyan) ───────────────────── */
+  --gal-knowledge: #a6abb4;
+  --gal-prove:     #a6abb4;
+  --gal-navigate:  #a6abb4;
+
+  /* ── role aliases — for tokenising inline-hex stragglers + future code ───── */
+  --accent:        var(--gal-build);
+  --accent-bg:     var(--surface-2);
+  --signal-break:  var(--color-red-400);
+  --signal-fix:    var(--color-emerald-400);
+}
+
+/* dial the cyan glow neon → faint signal (overrides the LUNA glow rules above) */
+html:not([data-theme="light"])[data-palette="luna"] .text-violet-400,
+html:not([data-theme="light"])[data-palette="luna"] .text-violet-300 {
+  text-shadow: 0 0 7px rgba(34, 211, 238, 0.20);
+}
+html:not([data-theme="light"])[data-palette="luna"] .border-violet-500 {
+  box-shadow: 0 0 6px rgba(34, 211, 238, 0.12);
+}
+
 /* ── Mobile contrast boost — low-brightness readability ────────────────────
    On low-brightness phone screens the above global fix is still insufficient.
    This additional override shifts all text stops one further level brighter
