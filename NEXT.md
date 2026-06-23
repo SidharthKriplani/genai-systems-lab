@@ -2,9 +2,20 @@
 
 Read this at session start. Do only this. Update before closing.
 
-## ✅ DONE (sprint 84) — Four-frame accordion sidebar (HQ DESIGN-STANDARD) IMPLEMENTED. See Sprint 84 below + `PENDING_APPROVALS.md`. Awaiting macOS build + approve-first push. (Logo D-19 shipped at `f9d1a15`.)
+## ✅ SHIPPED & LIVE (sprints 83–85) — logo + four-frame nav + SQL link fix all built, pushed, deployed.
+- Logo / BrandMark (D-19): `f9d1a15` ✅ live.
+- Four-frame accordion sidebar (HQ DESIGN-STANDARD, KNOW/DO/BUILD/JUDGE + PREP&ASSESS + BY DOMAIN): `e34aa48` ✅ live.
+- DO→SQL link-out → PAL SQL Lab (`/#/sql-lab`): `0d23529` ✅ live. `origin/main` == HEAD (0 ahead/0 behind).
 
-*Last updated: sprint 84 (23 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
+**Next session — deferred polish (none blocking; pick any):**
+1. Nest the Ground Truth series as a KNOW sub-group (recursive accordion / one-open-per-sub).
+2. Delete the dead in-component `NAV_GROUPS` + `toggleGroup`/`activeSection` (left as harmless dead code).
+3. PL (Programming Lab) DO→Python link-out still points at the GitHub repo — swap to its live Vercel URL once known.
+4. Add a dynamic-import error guard (auto-reload once) so users don't hit "Failed to fetch dynamically imported module" across deploys.
+5. Fluency-tab dissolution into ⊗ Communication + ② DO (per `docs/NAV-REFRAME-SPEC.md` §4) — the nav row is relabeled "Interview Room", but the FluencyApp module split is not done.
+6. Build the fluency code sliver (the DO "Code Drills" SOON marker) — gated behind distribution keystone + PSL's general-code bank.
+
+*Last updated: sprint 85 (23 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
 
 > **CONTENT FREEZE IN EFFECT (shared doctrine — GSL `LINKEDIN.md` Rule 1 + MSL DEC-2026-06-21-A).** Distribution/content only. No new tabs, labs, scenarios, MCQs, or product features until distribution proves out. GT posts ARE the content-distribution surface, so they remain allowed; lab feature-building does not. _(Logo D-19 + the nav reframe were HQ-authorized overrides for those structural tasks only — reorg/relabel, no new content.)_
 

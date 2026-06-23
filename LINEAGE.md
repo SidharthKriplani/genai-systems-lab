@@ -331,3 +331,17 @@ Module-scope nav kit added (hoisted per the standard to avoid remount-snap): `Fr
 Desktop sidebar: TRACK (flat) → four frames + PREP&ASSESS (accordion, one-open-per-level via `openFrame` + `useEffect(topView)` auto-expand) → BY DOMAIN (challenge-area hubs as a flat secondary lens). Active pill = `inset 3px` cyan bar; `aria-expanded` on frame toggles, `aria-current` on rows. DO rung carries a **SOON** "Code Drills" marker (the to-build fluency sliver, honestly inert) + **link-outs** (↗) to PL (Python·DSA) and PAL (SQL) per the delegation rule. Both mobile drawers re-keyed to the same frames via `MobileFrameNav`.
 
 Verified: all touched files Babel-parse clean; 0 `NAV_GROUPS.map` remaining; native esbuild/Vite is macOS-only so `npm run build` on the Mac is the gate. Old `NAV_GROUPS` data + `toggleGroup`/`activeSection` left as harmless dead code (cleanup later). Prepared approve-first; not pushed.
+
+---
+
+## Sprint 85 — Session close: logo + nav + SQL fix all SHIPPED (23 Jun 2026)
+
+End-of-session reconciliation. Everything from sprints 83–85 is committed, pushed, and live on Vercel (`origin/main` == HEAD, 0 ahead/0 behind):
+
+- **Logo / BrandMark (D-19)** — `f9d1a15`. break⌇labs · GenAI Systems lockup (cyan), 7 slots + favicon + rebranded OG; old OG archived to `_legacy/`. Descriptor stacked below the wordmark everywhere (per Sidharth).
+- **Four-frame accordion sidebar** (HQ DESIGN-STANDARD) — `e34aa48`. KNOW/DO/BUILD/JUDGE + PREP&ASSESS accordions (measured-height, one-open-per-level, cyan active pill, frame icons) + BY DOMAIN flat lens; desktop + both mobile drawers; SOON marker (fluency sliver) + ↗ link-outs. Old `NAV_GROUPS` render fully removed (data left as dead code).
+- **DO→SQL link-out fix** — `0d23529`. Corrected to the real PAL SQL Lab (`https://product-analytics-lab.vercel.app/#/sql-lab`); earlier mis-pointed at `experimentation-systems-lab.vercel.app`.
+
+Deferred (logged in `NEXT.md`, none blocking): nest GT series under KNOW; delete dead `NAV_GROUPS`; PL Python link-out → live URL when known; dynamic-import auto-reload guard; FluencyApp module split into Communication + DO; build the DO "Code Drills" fluency sliver.
+
+Spine reconciled: `NEXT.md` flipped from "awaiting push" → "shipped & live"; `PENDING_APPROVALS.md` resolved entries moved to History; `HQ/LEDGER.md` closing entry added. Session closed.
