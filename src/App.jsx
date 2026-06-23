@@ -206,7 +206,7 @@ function SidebarRow({ item, active, onNavigate, onAfter }) {
   return (
     <button onClick={() => { onNavigate(item.id); if (onAfter) onAfter(); }} aria-current={active ? "page" : undefined}
       className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${active ? "" : "text-zinc-300 hover:bg-zinc-800/60 hover:text-white"}`}
-      style={active ? { background: `linear-gradient(90deg, ${GAL_ACCENT}14 0%, ${GAL_ACCENT}03 100%)`, boxShadow: `inset 3px 0 0 ${GAL_ACCENT}`, color: "#ffffff", fontWeight: 700 } : {}}>
+      style={active ? { background: "var(--surface-2)", boxShadow: "inset 0 0 0 1px var(--border)", color: "#f3f4f6", fontWeight: 600 } : {}}>
       <span>{item.label}</span>
     </button>
   );
@@ -230,7 +230,7 @@ function MobileFrameNav({ topView, onNavigate, onClose }) {
     return (
       <button key={it.id} onClick={() => { onNavigate(it.id); if (onClose) onClose(); }} aria-current={active ? "page" : undefined}
         className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between mb-0.5 transition-all ${active ? "" : "text-zinc-300 hover:bg-zinc-800/60 hover:text-white"}`}
-        style={active ? { background: `linear-gradient(90deg, ${GAL_ACCENT}14 0%, ${GAL_ACCENT}03 100%)`, boxShadow: `inset 3px 0 0 ${GAL_ACCENT}`, color: "#ffffff", fontWeight: 700 } : {}}>
+        style={active ? { background: "var(--surface-2)", boxShadow: "inset 0 0 0 1px var(--border)", color: "#f3f4f6", fontWeight: 600 } : {}}>
         <span>{it.label}</span>
       </button>
     );
