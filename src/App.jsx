@@ -122,7 +122,7 @@ const INTERVIEW_STORIES = {
 const GAL_ACCENT = "var(--gal-build)"; // cyan #22D3EE
 const SIBLING_LABS = {
   pl:  "https://github.com/SidharthKriplani/programming-lab", // Programming Lab (no live URL yet)
-  pal: "https://product-analytics-lab.vercel.app/#/sql-lab/sql-e01", // PAL SQL Lab (deep link)
+  pal: "https://product-analytics-lab.vercel.app/#/sql-lab", // PAL SQL Lab
 };
 
 // Lucide-style frame icons (stroke). Accent when the frame is active.
