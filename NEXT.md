@@ -2,6 +2,12 @@
 
 Read this at session start. Do only this. Update before closing.
 
+## 🎨 SPRINT 90 (23–24 Jun) — Monochrome "instrument" theme
+GSL got its per-lab visual identity: a greyscale instrument with one cyan accent (red=break / green=fix, semantic only). Spec locked in `HQ/DESIGN-STANDARD.md` ("THE MONOCHROME INSTRUMENT STANDARD").
+- **Theme = one file.** `src/index.css` MONOCHROME INSTRUMENT block remaps Tailwind v4 `--color-*` → cold grey ramp + kill-rainbow + faint break/fix. Appended, dark-scoped, **reversible** (delete block → warm base returns). ✅ built on Mac + pushed + live.
+- **Colour guard.** `scripts/check-no-hex.mjs` (+ `npm run check:color`) reports raw hex outside the token file (~1,860 stragglers = Layer C). ✅ live.
+- **De-rainbow + rails.** GT cards → muted per-area hues; nav active = value-based (no cyan rail); **all decorative rails killed app-wide** (6 left + 66 top → hairlines; semantic green/red kept). ✅ first two pushed+live; ⏳ **the app-wide rail-kill + GT muted-hue pass (19 files) is OPEN in `PENDING_APPROVALS.md` — awaiting Mac build+push.**
+
 ## ✅ SHIPPED & LIVE (sprints 83–85) — logo + four-frame nav + SQL link fix all built, pushed, deployed.
 - Logo / BrandMark (D-19): `f9d1a15` ✅ live.
 - Four-frame accordion sidebar (HQ DESIGN-STANDARD, KNOW/DO/BUILD/JUDGE + PREP&ASSESS + BY DOMAIN): `e34aa48` ✅ live.
@@ -14,8 +20,10 @@ Read this at session start. Do only this. Update before closing.
 4. Add a dynamic-import error guard (auto-reload once) so users don't hit "Failed to fetch dynamically imported module" across deploys.
 5. Fluency-tab dissolution into ⊗ Communication + ② DO (per `docs/NAV-REFRAME-SPEC.md` §4) — the nav row is relabeled "Interview Room", but the FluencyApp module split is not done.
 6. Build the fluency code sliver (the DO "Code Drills" SOON marker) — gated behind distribution keystone + PSL's general-code bank.
+7. **Layer-C viz tokenisation (the last colour slice):** the in-module visualization SVG hexes (attention/chunking/embedding/heatmap strokes) + the `CAT_COLORS`/`SERIES_META` string-concat colours still live as hex — monochrome-compliant values but not `var()` tokens. Tokenise → then flip the guard to `--strict`. `npm run check:color` for the inventory.
+8. **3D embeddings instrument:** replace the 2D PCA scatter in the Word-Embeddings concept module with a rotatable 3D vector space (viz redesign, separate from theming).
 
-*Last updated: sprint 85 (23 Jun 2026) — Scale: 597 PrepLab questions, **320 GT index entries, 320 static GT pages (SSR)**, Google Search Console verified, 6 challenge area landing pages*
+*Last updated: sprint 90 (24 Jun 2026) — monochrome instrument theme: index.css remap + colour guard + app-wide rail-kill + GT muted hues; one OPEN push in `PENDING_APPROVALS.md`. Scale unchanged: 597 PrepLab questions, **320 GT index entries / 320 static GT pages (SSR)**, 6 challenge-area landing pages.*
 
 > **CONTENT FREEZE IN EFFECT (shared doctrine — GSL `LINKEDIN.md` Rule 1 + MSL DEC-2026-06-21-A).** Distribution/content only. No new tabs, labs, scenarios, MCQs, or product features until distribution proves out. GT posts ARE the content-distribution surface, so they remain allowed; lab feature-building does not. _(Logo D-19 + the nav reframe were HQ-authorized overrides for those structural tasks only — reorg/relabel, no new content.)_
 

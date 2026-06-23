@@ -6,6 +6,22 @@ Prioritized backlog of ideas not yet built. Organized by effort and impact. Upda
 
 ---
 
+## Monochrome theme follow-ups (sprint 90, Jun 2026)
+
+*Parked while shipping the monochrome instrument theme. Both are scoped; neither blocks.*
+
+### Layer-C colour tokenisation → guard `--strict`
+`Tier 1` `M effort` `Closes the theme system`
+
+The `index.css` remap recolours everything that uses a Tailwind class, but ~1,860 raw hex literals live in inline `style={{}}` / viz SVG strokes (attention, chunking, embedding, heatmap visuals) + the `CAT_COLORS`/`SERIES_META` string-concat colours — these bypass the token layer. Tokenise them to `var(--…)` (or the role aliases `--accent`/`--signal-break`/`--signal-fix`), then flip `scripts/check-no-hex.mjs` to `--strict` (fail build/pre-commit) so colour can never re-scatter. `npm run check:color` for the live inventory. After this, a re-theme (any lab) is provably a one-file edit.
+
+### 3D embeddings instrument
+`Tier 2` `L effort` `Centrepiece upgrade`
+
+Replace the 2D PCA scatter in the Word-Embeddings concept module with a rotatable **3D vector space** — same teaching goal (meaning = distance; clusters by position + label, cyan = inspected word + neighbours), but a manipulable 3D field. Viz redesign, independent of theming. Keep it teaching-first (no decorative spin), per the "centrepiece must teach" rule.
+
+---
+
 ## Cross-lab intelligence — deep read of MSL + PAL source + IDEAS.md (June 2026, sprint 47)
 
 *Second pass — reading CLAUDE.md, IDEAS.md, CROSS_LAB.md directly, not just READMEs.*
