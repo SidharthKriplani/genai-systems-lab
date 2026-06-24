@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { track } from "./analytics";
 import { ModuleNotes, GradientPanel } from "./shared";
 import { GRADIENT_CONTENT } from "./data/gradientContent";
+import { EmbeddingExplorer, AttentionViz3D, LatencyPlanner } from "./Explore";  // borrowed from de-listed Explore (Wave 3)
 
 // ─── TOKENIZER DATA ───────────────────────────────────────────────────────────
 
@@ -6074,6 +6075,9 @@ const MODULES = [
     fidelity: { tier: "conceptual", note: "Conceptual 2D projection — precomputed coordinates, not live model embeddings" },
     component: EmbeddingModule,
   },
+  { id: "embeddings-3d", label: "3D Embedding Space", tag: "VISUAL", level: "beginner", title: "3D Embedding Space", subtitle: "Rotate a 3D semantic space — meaning as geometry you can spin.", fidelity: { tier: "conceptual", note: "Illustrative 3D projection of precomputed points." }, component: EmbeddingExplorer },
+  { id: "attention-3d", label: "3D Attention Heads", tag: "VISUAL", level: "advanced", title: "3D Attention Heads", subtitle: "Eight attention heads as 3D weight surfaces — see what each head attends to.", fidelity: { tier: "simplified", note: "Illustrative head weights on a toy sentence." }, component: AttentionViz3D },
+  { id: "latency-planner", label: "Latency Planner", tag: "BUDGET", level: "intermediate", title: "Latency Budget Planner", subtitle: "Allocate a latency budget across the pipeline; meet your SLA.", fidelity: { tier: "conceptual", note: "Planning tool — illustrative stage timings." }, component: LatencyPlanner },
   {
     id: "attention",
     label: "Attention",
@@ -7966,7 +7970,7 @@ const GYMS = [
     label: "Language Models",
     desc: "How LLMs actually work — from tokenization through sampling. The foundation before you touch any lab.",
     color: "#6366f1",
-    moduleIds: ["tokenizer", "attention", "transformer", "seq-parallel", "flashattn", "sampling", "nextoken", "tempgame", "training-signal"],
+    moduleIds: ["tokenizer", "attention", "attention-3d", "transformer", "seq-parallel", "flashattn", "sampling", "nextoken", "tempgame", "training-signal"],
     labId: "llmlab",
     labLabel: "LLM Lab",
   },
@@ -7975,7 +7979,7 @@ const GYMS = [
     label: "Retrieval",
     desc: "Embeddings, chunking, the RAG pipeline end-to-end, and context budgets.",
     color: "#3b82f6",
-    moduleIds: ["embeddings", "chunking", "rag-pipeline", "context"],
+    moduleIds: ["embeddings", "embeddings-3d", "chunking", "rag-pipeline", "context"],
     labId: "lab",
     labLabel: "RAG Lab",
   },
@@ -8002,7 +8006,7 @@ const GYMS = [
     label: "Production Systems",
     desc: "Cost, latency, observability — the engineering tradeoffs behind serving LLMs at scale.",
     color: "#8b5cf6",
-    moduleIds: ["cost-latency-concepts", "observability-concepts"],
+    moduleIds: ["cost-latency-concepts", "latency-planner", "observability-concepts"],
     labId: "systems",
     labLabel: "Systems Lab",
   },

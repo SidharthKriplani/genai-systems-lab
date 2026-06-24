@@ -93,7 +93,7 @@ const EMB_QUERIES = [
 
 const CX = 250, CY = 250;
 
-function EmbeddingExplorer({ onNavigate }) {
+export function EmbeddingExplorer({ onNavigate }) {
   const [activeQuery, setActiveQuery] = useState(null);
   const [animKey, setAnimKey] = useState(0);
 
@@ -601,7 +601,7 @@ const SLA_PRESETS = {
   "Background job (30s SLA)": 30000,
 };
 
-function LatencyPlanner() {
+export function LatencyPlanner() {
   const [stages, setStages] = useState(PIPELINE_STAGES.map(s => ({ ...s, ms: s.defaultMs })));
   const [sla, setSla] = useState(3000);
   const [customSla, setCustomSla] = useState("");
@@ -1771,7 +1771,7 @@ const ATTN_HEADS = [
     w:Array.from({length:6},()=>Array(6).fill(1/6)) },
 ];
 
-function AttentionViz3D() {
+export function AttentionViz3D() {
   const canvasRef = useRef(null);
   const rotRef = useRef({ x: 0.45, y: -0.55, dragging: false, lx: 0, ly: 0 });
   const selRef = useRef(null);
