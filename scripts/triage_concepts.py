@@ -91,7 +91,7 @@ def triage(args):
         elif cov == "skeleton": flags.append("gradient-skeleton")
         # NOTE: D1/D2/D3/D5 + the D8 judgment call require Stage B (LM Studio).
         if args.llm:
-            flags += llm_flags(mid, r, src)
+            flags += llm_flags(module_text(mid, r, src, gtext), cov)
         verdict = "ok" if not flags else "review"
         rows.append({"id": mid, "room": gym, "level": r["level"],
                      "fidelity": r["fidelity"] or "-", "gradient": cov or "none",
@@ -117,28 +117,62 @@ def triage(args):
     print(f"\nFull ledger: {os.path.relpath(OUT_CSV, ROOT)}. "
           f"'review' = look; 'ok' = not a clearance (gate dims only — run --llm for D1/D2/D3/D5). You adjudicate.")
 
-def llm_flags(mid, reg, src):
-    """Stage B — LM Studio judge for D1/D2/D3/D5 + D8 rung. Off in this sandbox."""
+def readable(src):
+    """Pull human-readable teaching copy out of a JSX component (not code/classNames)."""
+    out, seen = [], set()
+    for t in re.findall(r">([^<>{}]+)<", src):          # JSX text nodes
+        t = t.strip()
+        if len(t) >= 20 and " " in t and t not in seen:
+            seen.add(t); out.append(t)
+    for q in re.findall(r'"([^"]{25,})"', src):          # prose-like string literals
+        if " " in q and q not in seen and not re.search(
+            r"(text-|bg-|border-|flex|px-|py-|rounded|grid|gap-|font-|var\(|https?:|className|w-\d|h-\d)", q):
+            seen.add(q); out.append(q)
+    return out[:60]
+
+def gradient_text(mid, gtext):
+    """The module's PhD-depth (Gradient) content as plain text, if built; else its skeleton outline."""
+    m = re.search(r'(?:"' + re.escape(mid) + r'"|' + re.escape(mid) + r')\s*:\s*\[(.*?)\n  \]', gtext, re.S)
+    if m: return " ".join(re.findall(r'c:\s*"([^"]+)"', m.group(1)))
+    m = re.search(r'(?:"' + re.escape(mid) + r'"|' + re.escape(mid) + r')\s*:\s*\{[^}]*outline:\s*\[(.*?)\]', gtext, re.S)
+    return " ".join(re.findall(r'"([^"]+)"', m.group(1))) if m else ""
+
+def module_text(mid, reg, src, gtext):
+    """What the judge actually grades: level + visible prose + the depth layer."""
+    parts = ["Level: " + reg.get("level", "?")]
+    parts += readable(src)
+    g = gradient_text(mid, gtext)
+    if g: parts.append("DEPTH (Gradient) LAYER: " + g)
+    return "\n".join(parts)
+
+def llm_flags(text, cov):
+    """Stage B — LM Studio judge for D1/D2/D3/D5 + D8 rung. Judges teaching content, not code."""
     try:
         import requests
     except ImportError:
         return ["llm-unavailable"]
     url = os.environ.get("LMSTUDIO_URL", "http://localhost:1234/v1/chat/completions")
     model = os.environ.get("LMSTUDIO_MODEL", "qwen/qwen3-14b")  # LM Studio API Model Identifier
-    rubric = ("Score this learning module 0-2 on: intuition(why,not just what), "
-              "example(concrete/failure demo), accuracy, depth-fit(matches level), "
-              "competency(recall=1, transfer/mastery=2). Return JSON "
-              '{"flags":["no-intuition"|"no-example"|"inaccurate"|"depth-mismatch"|"low-competency"]}. '
-              "Length is not quality. Be terse.")
+    depth_note = ("This module HAS a built PhD-depth layer (shown below), so do NOT flag depth-mismatch/"
+                  "low-competency for lacking advanced depth — grade the content as written."
+                  if cov == "built" else "This module has no depth layer yet.")
+    rubric = ("You grade a learning module's TEACHING CONTENT (prose + derivations), not code. Score 0-2 each: "
+              "intuition(explains why, not just what), example(a concrete case or failure demo), accuracy, "
+              "depth-fit(matches its stated level), competency(builds real skill: recall=1, transfer/mastery=2). "
+              + depth_note + ' Return ONLY JSON {"flags":[...]} drawn from '
+              '"no-intuition","no-example","inaccurate","depth-mismatch","low-competency". No other text.')
+    if os.environ.get("NO_THINK"): rubric += " /no_think"
     try:
         resp = requests.post(url, json={"model": model, "temperature": 0,
-            "messages": [{"role":"system","content":rubric},
-                         {"role":"user","content":src[:4000]}]}, timeout=60)
+            "messages": [{"role": "system", "content": rubric},
+                         {"role": "user", "content": text[:6000]}]}, timeout=120)
         txt = resp.json()["choices"][0]["message"]["content"]
         txt = re.sub(r"<think>.*?</think>", "", txt, flags=re.S)  # Qwen3 thinking-mode guard
         m = re.search(r'\{[^{}]*"flags"[^{}]*\}', txt, re.S)       # grab the JSON object holding flags
         return json.loads(m.group(0)).get("flags", []) if m else ["llm-parse-fail"]
-    except Exception as e:
+    except requests.exceptions.Timeout:
+        return ["llm-timeout"]
+    except Exception:
         return ["llm-error"]
 
 if __name__ == "__main__":
