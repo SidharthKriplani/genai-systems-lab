@@ -7261,6 +7261,13 @@ response = client.messages.create(
     ]},
     { t: "p", text: "The write premium is paid once per cache entry per TTL window. After that, every read is 10x cheaper than standard input. Break-even: if the same cached block is read just 2 times in the same TTL window, you have already saved money versus not caching." },
 
+    { t: "h2", text: "What to cache" },
+    { t: "list", items: [
+      "System prompts — anything that's the same across all users and requests is a perfect cache candidate",
+      "Few-shot examples — if your prompt includes 10 examples that never change, cache them",
+      "Tool definitions — function schemas sent on every call can be expensive and are perfectly static",
+      "RAG context — if users frequently ask about the same documents, cache the document content",
+    ]},
     { t: "h2", text: "Prompt structure for maximum cache hits" },
     { t: "p", text: "Caching works on prefixes — identical leading tokens. To maximise cache hits, structure your prompts with the most static content first and the most dynamic content last:" },
     { t: "list", items: [
