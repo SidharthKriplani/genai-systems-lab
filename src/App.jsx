@@ -267,8 +267,9 @@ const NAV_TRACK = [
 const NAV_SECTIONS = [
   { key: "know", label: "KNOW", icon: "book-open", items: [
     { id: "concepts", label: "Concepts" },
-    { id: "flows", label: "Flows" },
-    { id: "explore", label: "Explore" },
+    // de-listed 2026-06-24 (overlap pass, Wave 1) — reachable by hash; dissolving into Concepts. Re-add to restore.
+    // { id: "flows", label: "Flows" },
+    // { id: "explore", label: "Explore" },
     { id: "groundtruth", label: "Ground Truth" },
     { id: "paths", label: "Learning Paths" },
     { id: "consult", label: "Ask" },
@@ -284,12 +285,13 @@ const NAV_SECTIONS = [
     { id: "career", label: "Project Labs" },
   ]},
   { key: "judge", label: "JUDGE", icon: "scale", items: [
-    { id: "lab", label: "RAG Lab" },
+    // de-listed 2026-06-24 (overlap pass, Wave 1) — reach the labs THROUGH their challenge-area hub; routes/hashes intact. Re-add to restore.
+    // { id: "lab", label: "RAG Lab" },
     { id: "agents", label: "Agents" },
     { id: "systems", label: "Systems" },
-    { id: "evallab", label: "Eval Lab" },
-    { id: "llmlab", label: "LLM Lab" },
-    { id: "foundationlab", label: "FM Lab" },
+    // { id: "evallab", label: "Eval Lab" },
+    // { id: "llmlab", label: "LLM Lab" },
+    // { id: "foundationlab", label: "FM Lab" },
     { id: "aipm", label: "AI Product" },
   ]},
   { key: "prep", label: "PREP & ASSESS", icon: "clipboard", items: [
@@ -312,6 +314,8 @@ const TAB_FRAME = (() => {
   const m = {};
   for (const s of NAV_SECTIONS) for (const it of s.items) if (!it.href && !it.soon) m[it.id] = s.key;
   m.agentlab = "judge"; m.agentshub = "judge"; m.evaluation = "judge"; m.retrieval = "know"; m.production = "judge"; m.foundations = "know";
+  // de-listed-but-routable (Wave 1): keep frame mapping so hash-reached tabs still auto-expand the right frame.
+  m.lab = "judge"; m.evallab = "judge"; m.llmlab = "judge"; m.foundationlab = "judge"; m.flows = "know"; m.explore = "know";
   return m;
 })();
 
