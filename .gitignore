@@ -6,3 +6,7 @@ dist/
 patch_*.py
 # Generated at build time — do not commit
 public/gt/
+
+# repo hygiene (overlap-pass cleanup)
+*.bak
+__pycache__/

@@ -272,7 +272,8 @@ const NAV_SECTIONS = [
     // { id: "explore", label: "Explore" },
     { id: "groundtruth", label: "Ground Truth" },
     { id: "paths", label: "Learning Paths" },
-    { id: "consult", label: "Ask" },
+    // de-listed 2026-06-24 (overlap pass) — "Ask" is keyword search; redundant with the global Search. Reachable by hash. Re-add to restore.
+    // { id: "consult", label: "Ask" },
   ]},
   { key: "do", label: "DO", icon: "terminal", items: [
     { id: "promptlab", label: "Prompt Lab" },
@@ -315,7 +316,7 @@ const TAB_FRAME = (() => {
   for (const s of NAV_SECTIONS) for (const it of s.items) if (!it.href && !it.soon) m[it.id] = s.key;
   m.agentlab = "judge"; m.agentshub = "judge"; m.evaluation = "judge"; m.retrieval = "know"; m.production = "judge"; m.foundations = "know";
   // de-listed-but-routable (Wave 1): keep frame mapping so hash-reached tabs still auto-expand the right frame.
-  m.lab = "judge"; m.evallab = "judge"; m.llmlab = "judge"; m.foundationlab = "judge"; m.flows = "know"; m.explore = "know";
+  m.lab = "judge"; m.evallab = "judge"; m.llmlab = "judge"; m.foundationlab = "judge"; m.flows = "know"; m.explore = "know"; m.consult = "know";
   return m;
 })();
 
