@@ -11905,6 +11905,32 @@ def mine_bm25_hard_negatives(queries, positives, corpus, top_k=20):
       "Calibration: does the model's confidence still correlate with accuracy? After fine-tuning, logprob calibration often degrades — the model becomes overconfident on in-distribution inputs and underconfident on everything else. Run calibration checks on both splits.",
     ]},
 
+    { t: "h2", text: "The three evaluation layers" },
+    { t: "h3", text: "Layer 1: Automated task metrics" },
+    { t: "p", text: "Define the specific outputs your model needs to produce and write deterministic tests or classifiers against them. Examples:" },
+    { t: "list", items: [
+      "Format compliance: does the output match the required JSON schema? Parsed correctly? Required fields present?",
+      "Classification accuracy: on a labelled test set, what fraction does the model classify correctly?",
+      "Extraction precision/recall: for entity extraction tasks, what fraction of entities are correctly identified?",
+      "Code correctness: for code generation, do the outputs pass a test suite?",
+    ]},
+    { t: "h3", text: "Layer 2: LLM-as-judge evaluation" },
+    { t: "p", text: "For open-ended generation tasks, use a strong model (GPT-4, Claude) as an evaluator. Provide the prompt, the fine-tuned model's response, and a rubric. Have the judge score on dimensions like accuracy, helpfulness, format, and tone. This doesn't replace human evaluation but scales to thousands of examples efficiently." },
+    { t: "code", lang: "text", label: "LLM-as-judge prompt template", text: `You are evaluating a response to a customer support query.
+
+Query: {query}
+Response: {response}
+
+Score on each dimension (1-5):
+- Accuracy: Does the response correctly address the query?
+- Helpfulness: Does the response give actionable information?
+- Format: Does the response follow the expected format?
+- Tone: Is the tone appropriate for customer support?
+
+Return a JSON object with scores and brief justifications.` },
+    { t: "h3", text: "Layer 3: Human evaluation on a representative sample" },
+    { t: "p", text: "For high-stakes deployments, nothing replaces human evaluation on a representative sample of production inputs. Target 100–200 examples, covering the full distribution of your production traffic including edge cases. Have evaluators rate side-by-side: baseline model vs. fine-tuned model, blind to which is which." },
+
     { t: "h2", text: "Catastrophic forgetting: detecting it before users do" },
     { t: "p", text: "Catastrophic forgetting is the most common hidden cost of fine-tuning and the least often measured. It occurs when updating the model's weights for the target task overwrites knowledge from pretraining. The effect is usually gradual and task-specific — not a sudden collapse in capability but a quiet degradation in the domains that are least represented in fine-tuning data." },
     { t: "p", text: "Full fine-tuning is most susceptible; LoRA and QLoRA fine-tuning with appropriate rank settings substantially reduce forgetting by limiting the number of weight updates. But even LoRA can cause forgetting if the learning rate is too high or the training runs too long." },
