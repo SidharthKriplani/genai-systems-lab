@@ -148,17 +148,6 @@ export const PREP_QUESTIONS = [
 
   // ── AGENTS (12) ───────────────────────────────────────────────────────────
   {
-    id: "agents-1", topic: "agents", difficulty: "medium", gated: true, type: "mcq",
-    question: "Your agent calls the same tool 3 times with identical inputs in one turn. This indicates:",
-    options: ["Tool is slow so the agent is retrying", "Missing state management — agent forgot it already called it", "Intentional verification pattern", "Context window pressure causing truncation"],
-    correct: 1, keywords: [],
-    explanation: "Without explicit state tracking or tool result caching, agents operating over long contexts can forget they already executed a tool call. This is a trajectory efficiency failure and a cost issue.",
-  trap: "Saying the agent \'has a reasoning error\' or \'is confused.\' The architectural root cause is missing state tracking — the agent literally forgot it already called the tool because there is no deduplification layer.",
-  source: "OpenAI applied AI interview, Round 1",
-    staffLayer: "The senior framing is: repeated identical tool calls means the tool result isn't satisfying the model's goal representation, not that the tool is broken. Three root causes I check in order: (1) output format mismatch — the tool returns valid data but in a structure the model doesn't recognize as 'done'; (2) context loss — in long-running agents the tool result gets lost before the next reasoning step; (3) goal framing — the prompt's success criterion is underspecified. My first fix in production is always deduplication at the tool executor level — hash tool+args and return the cached result on repeat calls. This stops the spiral while I diagnose the root cause.",
-    readMore: { label: "Agent Architecture Patterns", tab: "agents" }
-  },
-  {
     id: "agents-2", topic: "agents", difficulty: "hard", gated: true, type: "text",
     question: "An agent trajectory efficiency score is 0.43. Explain what this means and two architectural changes to improve it.",
     options: null, correct: null,
@@ -528,16 +517,6 @@ export const PREP_QUESTIONS = [
   readMore: { label: "Fine-Tuning Best Practices", tab: "concepts" }
   },
   {
-    id: "ft-2", topic: "finetuning", difficulty: "easy", gated: true, type: "mcq",
-    question: "LoRA fine-tuning works by:",
-    options: ["Updating all model weights with a low learning rate", "Injecting low-rank decomposition matrices alongside frozen original weights — only adapters are trained", "Distilling knowledge from a larger model", "Pruning unused attention heads"],
-    correct: 1, keywords: [],
-    explanation: "LoRA freezes original weights and trains two small matrices (A and B) whose product is added to frozen weight updates. Dramatic reduction in trainable parameters (typically 0.1-1% of original) with competitive quality.",
-  trap: "Saying \'LoRA uses less data\' or \'LoRA is faster because it skips layers.\' LoRA freezes original weights and trains two matrices (A and B) whose product approximates the weight delta. Not knowing the matrix decomposition mechanism is the weak answer.",
-  source: "Meta AI fine-tuning team interview",
-    readMore: { label: "Parameter-Efficient Fine-Tuning", tab: "concepts" }
-  },
-  {
     id: "ft-3", topic: "finetuning", difficulty: "medium", gated: true, type: "mcq",
     question: "DPO (Direct Preference Optimization) differs from RLHF in that:",
     options: ["DPO uses a separate reward model trained first", "DPO reformulates the RL objective into a supervised loss directly on preference pairs — no explicit reward model needed", "DPO is only for small models", "They are mathematically equivalent"],
@@ -570,15 +549,6 @@ export const PREP_QUESTIONS = [
   },
 
   // ── SAFETY (5) ────────────────────────────────────────────────────────────
-  {
-    id: "safety-1", topic: "safety", difficulty: "hard", gated: true, type: "mcq",
-    question: "Indirect prompt injection differs from direct prompt injection because:",
-    options: ["Indirect is less dangerous", "The malicious instructions arrive via external data sources (tool outputs, retrieved documents) not from the user directly", "Direct injection exploits fine-tuning", "They are the same attack"],
-    correct: 1, keywords: [],
-    explanation: "Direct injection: user writes 'ignore system prompt.' Indirect: attacker embeds instructions in a webpage or document that the agent retrieves — the LLM executes attacker instructions while the user is unaware.",
-        staffLayer: "The senior framing is: indirect injection is the attack that kills production agents, and it's architecturally different from direct injection. Direct injection is a user input problem — solve it with input validation and jailbreak detection. Indirect injection is a trust boundary problem — the agent retrieves external content and that content is treated as trusted. The defense is architectural: treat all tool outputs as untrusted user input, apply the same validation logic you apply to user messages, and never let retrieved content modify agent behavior or permissions. In production I'd add a post-retrieval filter that strips instruction-pattern content from tool outputs before they reach the model — this is the 'defense in depth' layer that jailbreak classifiers alone can't provide.",
-  readMore: { label: "LLM Security", tab: "agents" }
-  },
   {
     id: "safety-2", topic: "safety", difficulty: "easy", gated: true, type: "mcq",
     question: "Constitutional AI (CAI) improves model safety by:",
@@ -939,24 +909,8 @@ export const PREP_QUESTIONS = [
     trap: "Saying \'1M context eliminates the need for RAG.\' The trap misses latency cost (1M prefill takes seconds), dollar cost, and the Lost in the Middle problem — relevant chunks buried in the middle of 1M tokens get missed.",
     readMore: { label: "Context Window Engineering →", tab: "systems" }
   },
-  {
-    id: "ctx-q2", topic: "rag", difficulty: "easy", type: "mcq",
-    question: "The 'lost in the middle' problem means:",
-    options: ["Documents in the middle of a retrieval list are never returned", "LLMs pay less attention to content positioned in the middle of a long context — information there is systematically underweighted", "Context windows corrupt text in the center", "Chunking cuts sentences in half"],
-    correct: 1, keywords: [],
-    explanation: "Liu et al. (2023) showed recall drops from ~92% at context start/end to ~42–51% for content positioned in the middle. Fix: put most critical content at start or end, use reranking to place high-relevance chunks at position 1 or last, use map-reduce for long corpora.",
-    readMore: { label: "Context Window Engineering →", tab: "systems" }
-  },
 
   // ── DEPLOYMENT + SYNTHETIC DATA (llmops + finetuning) (5) ────────────────
-  {
-    id: "dep-q1", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
-    question: "Continuous batching improves LLM serving throughput by:",
-    options: ["Running inference in parallel on multiple GPUs", "Allowing new requests to join mid-generation — no request waits for a full batch to complete", "Pre-caching all KV states", "Reducing model size"],
-    correct: 1, keywords: [],
-    explanation: "Traditional static batching waits for all batch members to finish. Continuous batching (used in vLLM, TGI) adds new requests at the token level when GPU has capacity — achieving 10–20× better throughput than no batching, with near-optimal latency for interactive workloads.",
-    readMore: { label: "Deployment Architecture →", tab: "systems" }
-  },
   {
     id: "dep-q2", topic: "llmops", difficulty: "medium", type: "mcq",
     question: "When does self-hosting Llama 3.1 70B become more cost-effective than OpenAI API?",
