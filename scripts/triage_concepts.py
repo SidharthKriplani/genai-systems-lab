@@ -11,7 +11,7 @@ Usage:
   python3 scripts/triage_concepts.py --room language-models --limit 5
   python3 scripts/triage_concepts.py --llm           # add LM Studio judgment dims
 """
-import re, os, csv, json, argparse, sys
+import re, os, csv, json, argparse, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONCEPTS = os.path.join(ROOT, "src", "Concepts.jsx")
@@ -74,31 +74,37 @@ def triage(args):
     bodies = component_bodies(ctext)
     grad = parse_gradient(gtext)
 
+    targets = [m for m in ids if not (args.room and mod2gym[m] != args.room)]
+    if args.limit: targets = targets[:args.limit]   # only do the work we'll show
+    N = len(targets); t0 = time.time()
+    if args.llm:
+        print(f"[concepts] judging {N} modules with {os.environ.get('LMSTUDIO_MODEL','qwen/qwen3-14b')}"
+              f"{' (no-think)' if os.environ.get('NO_THINK') else ' (thinking — slow; set NO_THINK=1)'} — live:\n", flush=True)
     rows = []
-    for mid in ids:
-        gym = mod2gym[mid]
-        if args.room and gym != args.room: continue
-        r = reg[mid]
+    for i, mid in enumerate(targets, 1):
+        gym = mod2gym[mid]; r = reg[mid]
         flags = []
-        # D4 fidelity-honesty (structural): badge present?
-        if not r["fidelity"]: flags.append("no-fidelity")
-        # D6 synthesis: forward pointer in the component body?
+        if not r["fidelity"]: flags.append("no-fidelity")            # D4
         src = bodies.get(r["component"] or "", "")
-        if not any(mk in src for mk in FWD_MARKERS): flags.append("no-forward")
-        # D8 competency (structural proxy): depth/Gradient layer present?
-        cov = grad.get(mid)
+        if not any(mk in src for mk in FWD_MARKERS): flags.append("no-forward")  # D6
+        cov = grad.get(mid)                                          # D8 structural proxy
         if cov is None:   flags.append("gradient-missing")
         elif cov == "skeleton": flags.append("gradient-skeleton")
-        # NOTE: D1/D2/D3/D5 + the D8 judgment call require Stage B (LM Studio).
-        if args.llm:
+        if args.llm:                                                 # Stage B: D1/D2/D3/D5
+            print(f"  [{i:>2}/{N}] {mid:<24} judging…", end="\r", flush=True)
+            ts = time.time()
             flags += llm_flags(module_text(mid, r, src, gtext), cov)
+            dt = time.time() - ts
         verdict = "ok" if not flags else "review"
+        if args.llm:
+            print(f"  [{i:>2}/{N}] {verdict:<6} {mid:<24} {(','.join(flags) or '-'):<46} {dt:5.1f}s", flush=True)
         rows.append({"id": mid, "room": gym, "level": r["level"],
                      "fidelity": r["fidelity"] or "-", "gradient": cov or "none",
                      "flags": ",".join(flags) or "-", "verdict": verdict})
+    if args.llm:
+        print(f"\n[done] {N} modules in {time.time()-t0:.0f}s", flush=True)
 
     rows.sort(key=lambda x: (x["verdict"] == "ok", len(x["flags"].split(",")) if x["flags"] != "-" else 0), reverse=True)
-    if args.limit: rows = rows[:args.limit]
 
     with open(OUT_CSV, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["id","room","level","fidelity","gradient","flags","verdict"])
