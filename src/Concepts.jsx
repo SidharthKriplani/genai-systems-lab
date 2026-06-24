@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { track } from "./analytics";
 import { ModuleNotes, GradientPanel } from "./shared";
 import { GRADIENT_CONTENT } from "./data/gradientContent";
-import { EmbeddingExplorer, AttentionViz3D, LatencyPlanner } from "./Explore";  // borrowed from de-listed Explore (Wave 3)
+import { EmbeddingExplorer, AttentionViz3D, LatencyPlanner, DiffusionViz3D, CosineSimilarityExplorer } from "./Explore";  // borrowed from de-listed Explore (Wave 3 — all viz preserved)
 
 // ─── TOKENIZER DATA ───────────────────────────────────────────────────────────
 
@@ -6078,6 +6078,8 @@ const MODULES = [
   { id: "embeddings-3d", label: "3D Embedding Space", tag: "VISUAL", level: "beginner", title: "3D Embedding Space", subtitle: "Rotate a 3D semantic space — meaning as geometry you can spin.", fidelity: { tier: "conceptual", note: "Illustrative 3D projection of precomputed points." }, component: EmbeddingExplorer },
   { id: "attention-3d", label: "3D Attention Heads", tag: "VISUAL", level: "advanced", title: "3D Attention Heads", subtitle: "Eight attention heads as 3D weight surfaces — see what each head attends to.", fidelity: { tier: "simplified", note: "Illustrative head weights on a toy sentence." }, component: AttentionViz3D },
   { id: "latency-planner", label: "Latency Planner", tag: "BUDGET", level: "intermediate", title: "Latency Budget Planner", subtitle: "Allocate a latency budget across the pipeline; meet your SLA.", fidelity: { tier: "conceptual", note: "Planning tool — illustrative stage timings." }, component: LatencyPlanner },
+  { id: "cosine-sim", label: "Cosine Similarity", tag: "VISUAL", level: "beginner", title: "Cosine Similarity", subtitle: "Drag vectors and watch the angle become the similarity score.", fidelity: { tier: "faithful", note: "Real cosine math on 2D vectors." }, component: CosineSimilarityExplorer },
+  { id: "diffusion-3d", label: "3D Diffusion", tag: "VISUAL", level: "intermediate", title: "3D Diffusion", subtitle: "Watch noise resolve into structure across denoising steps in 3D.", fidelity: { tier: "conceptual", note: "Illustrative 3D denoising visualization." }, component: DiffusionViz3D },
   {
     id: "attention",
     label: "Attention",
@@ -7979,7 +7981,7 @@ const GYMS = [
     label: "Retrieval",
     desc: "Embeddings, chunking, the RAG pipeline end-to-end, and context budgets.",
     color: "#3b82f6",
-    moduleIds: ["embeddings", "embeddings-3d", "chunking", "rag-pipeline", "context"],
+    moduleIds: ["embeddings", "embeddings-3d", "cosine-sim", "chunking", "rag-pipeline", "context"],
     labId: "lab",
     labLabel: "RAG Lab",
   },
@@ -8015,7 +8017,7 @@ const GYMS = [
     label: "Foundation Models",
     desc: "Training objectives, scaling laws, fine-tuning with LoRA/QLoRA — how foundation models are built.",
     color: "#ec4899",
-    moduleIds: ["training-signal", "scaling-laws", "lora"],
+    moduleIds: ["training-signal", "scaling-laws", "lora", "diffusion-3d"],
     labId: "llmlab",
     labLabel: "LLM Lab",
   },

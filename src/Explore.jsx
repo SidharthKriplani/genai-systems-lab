@@ -1933,7 +1933,7 @@ function makeDiffParticles() {
   });
 }
 
-function DiffusionViz3D() {
+export function DiffusionViz3D() {
   const canvasRef = useRef(null);
   const stRef = useRef({ t:1, animating:false, dir:-1, rotX:0.3, rotY:0.4, dragging:false, lx:0, ly:0, pts:makeDiffParticles() });
 
@@ -4103,7 +4103,7 @@ function ContextWindowEngineering() {
 
 // ─── COSINE SIMILARITY EXPLORER ──────────────────────────────────────────────
 
-function CosineSimilarityExplorer() {
+export function CosineSimilarityExplorer() {
   const CX = 150, CY = 150, MAX_R = 118;
   const clamp = (v) => {
     const len = Math.sqrt(v.x * v.x + v.y * v.y);
