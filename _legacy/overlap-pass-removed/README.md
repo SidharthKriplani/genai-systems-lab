@@ -31,13 +31,18 @@ cat _legacy/overlap-pass-removed/<file>.removed.txt
 git show pre-overlap-baseline:src/systems/modules.jsx
 ```
 
-## Borrow/merge re-audit — status
+## Borrow/merge re-audit — COMPLETE
 
-A second pass is checking each removed item against what it was claimed to duplicate, to confirm no *unique* content was lost (and to borrow/merge anything that was). Known items to verify:
-- **vector-databases-compared (old):** had a RAG Lab CTA + prerequisite callout the kept version lacks → candidate to borrow into the live post.
-- **fine-tuning-evaluation (old):** had a "three evaluation layers" framework; kept version focuses on hidden-cost/forgetting → check for unique value.
-- **PromptCaching:** confirm its Savings/How-It-Works weren't a distinct implementation vs PromptCachingLab.
-- **MultimodalArchitectures:** confirm its content is covered by MultimodalAI's Architecture tab.
-- **16 staffLayer notes:** confirm each is duplicated on its rightful question (restore any that are unique).
+Every removed item was diffed against its kept counterpart. Verdicts:
 
-Findings + any restores are tracked in the commit history of this audit.
+| Item | Verdict | Action |
+|---|---|---|
+| **MultimodalArchitectures** | had unique content (CLIP/LLaVA/native taxonomy) — wrongly cut as "orphan" | **RESTORED** as a "Model Types" tab in MultimodalAI (`9bd5c7b`) |
+| **vector-databases-compared (old)** | had a unique RAG Lab CTA + prerequisite callout | **RESTORED** into the live post (`678f29b`) |
+| **fine-tuning-evaluation (old)** | had a unique "three evaluation layers" framework + LLM-judge template | **MERGED** into the live post (`a9643a9`) |
+| **PromptCaching** | **genuine duplicate** — its Savings calc == the Lab's Cost Calculator (same function, different framing) | **stays archived** — the cut was correct |
+| **16 (+2) staffLayer notes** | unique writing, but fuzzy orphans never cleanly tied to a question | **preserved** in `senior-framings.md` (NOT bulk-matched into the 591-question bank — too error-prone; redistribute deliberately, one at a time) |
+
+**Net:** of 5 audited removals, 3 had unique content (all borrowed back), 1 was a true duplicate (correctly cut), 1 is preserved as reference. Nothing of value was lost from the live app.
+
+See `senior-framings.md` for the 18 recovered staff framings.
