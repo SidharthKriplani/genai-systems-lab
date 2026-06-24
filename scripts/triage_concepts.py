@@ -124,7 +124,7 @@ def llm_flags(mid, reg, src):
     except ImportError:
         return ["llm-unavailable"]
     url = os.environ.get("LMSTUDIO_URL", "http://localhost:1234/v1/chat/completions")
-    model = os.environ.get("LMSTUDIO_MODEL", "qwen2.5-7b-instruct")
+    model = os.environ.get("LMSTUDIO_MODEL", "qwen3-14b")
     rubric = ("Score this learning module 0-2 on: intuition(why,not just what), "
               "example(concrete/failure demo), accuracy, depth-fit(matches level), "
               "competency(recall=1, transfer/mastery=2). Return JSON "
@@ -135,9 +135,11 @@ def llm_flags(mid, reg, src):
             "messages": [{"role":"system","content":rubric},
                          {"role":"user","content":src[:4000]}]}, timeout=60)
         txt = resp.json()["choices"][0]["message"]["content"]
-        return json.loads(re.search(r"\{.*\}", txt, re.S).group(0)).get("flags", [])
+        txt = re.sub(r"<think>.*?</think>", "", txt, flags=re.S)  # Qwen3 thinking-mode guard
+        m = re.search(r'\{[^{}]*"flags"[^{}]*\}', txt, re.S)       # grab the JSON object holding flags
+        return json.loads(m.group(0)).get("flags", []) if m else ["llm-parse-fail"]
     except Exception as e:
-        return [f"llm-error"]
+        return ["llm-error"]
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
