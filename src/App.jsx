@@ -16,6 +16,7 @@ import { supabase, signInWithGoogle, signInWithGitHub, signOut, onAuthChange, ge
 const GroundTruth    = lazy(() => import("./GroundTruth"));
 const QADashboard    = lazy(() => import("./QADashboard"));
 const ConceptsApp    = lazy(() => import("./Concepts"));
+const StartHereApp   = lazy(() => import("./StartHere"));
 const SystemsApp     = lazy(() => import("./Systems"));
 const FluencyApp     = lazy(() => import("./Fluency"));
 const FlowsApp       = lazy(() => import("./Flows"));
@@ -266,6 +267,7 @@ const NAV_TRACK = [
 // The four frames + PREP & ASSESS (accordion). Domains nest under the frame, never as peers.
 const NAV_SECTIONS = [
   { key: "know", label: "KNOW", icon: "book-open", items: [
+    { id: "starthere", label: "Start Here" },
     { id: "concepts", label: "Concepts" },
     // de-listed 2026-06-24 (overlap pass, Wave 1) — reachable by hash; dissolving into Concepts. Re-add to restore.
     // { id: "flows", label: "Flows" },
@@ -1592,7 +1594,7 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations"];
+const VALID_VIEWS = ["home","starthere","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
@@ -2531,6 +2533,7 @@ export default function App() {
           {topView === "production" && <ProductionHub  onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "foundations"&& <FoundationsHub onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "study"      && <StudyRoom user={user} onNavigate={navigate} />}
+          {topView === "starthere"  && <StartHereApp onNavigate={navigate} />}
         </Suspense>
       </TabErrorBoundary>
       </main>
