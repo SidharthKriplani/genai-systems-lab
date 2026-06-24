@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { track } from "./analytics";
-import { ModuleNotes } from "./shared";
+import { ModuleNotes, GradientPanel } from "./shared";
+import { GRADIENT_CONTENT } from "./data/gradientContent";
 
 // ─── TOKENIZER DATA ───────────────────────────────────────────────────────────
 
@@ -8439,6 +8440,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
           </div>
 
           <Component onNavigate={onNavigate} spec={mod.spec} />
+          <GradientPanel blocks={GRADIENT_CONTENT[active]} onNavigate={onNavigate} />
           <ModuleNotes moduleId={active} />
         </div>
       </div>

@@ -5,6 +5,7 @@
 import { useState } from "react";
 import React from "react";
 import { track } from "./analytics";
+import { isAccessGranted } from "./utils/accessCode";
 
 /**
  * CommonTrapCallout
@@ -311,5 +312,166 @@ export function FidelityBadge({ variant = "simulated" }) {
     <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700/50 bg-zinc-900/30 text-zinc-500 shrink-0">
       ~ Simulated
     </span>
+  );
+}
+
+/**
+ * GradientBlock — renders one depth-3 block inside a GradientPanel.
+ * Block types: h | p | math | list | key | refs
+ * Monochrome instrument theme: grey ramp + single cyan accent (var(--gal-build)).
+ */
+function GradientBlock({ b }) {
+  switch (b.t) {
+    case "h":
+      return <h4 className="text-[13px] font-bold text-zinc-100 mt-4 mb-1 tracking-wide">{b.c}</h4>;
+    case "p":
+      return <p className="text-[13.5px] text-zinc-300 leading-[1.75] mb-2">{b.c}</p>;
+    case "math":
+      return (
+        <div
+          className="my-2 px-4 py-2.5 rounded-lg font-mono text-[12.5px] text-center overflow-x-auto"
+          style={{ background: "var(--gal-build-tint)", border: "1px solid var(--gal-build-border)", color: "var(--gal-build)" }}
+        >
+          {b.c}
+        </div>
+      );
+    case "list":
+      return (
+        <ul className="space-y-1 mb-2 pl-1">
+          {(b.c || []).map((x, i) => (
+            <li key={i} className="text-[13px] text-zinc-300 leading-relaxed flex gap-2">
+              <span className="shrink-0" style={{ color: "var(--gal-build)" }}>·</span>
+              <span>{x}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    case "key":
+      return (
+        <div className="my-2.5 px-4 py-2.5 rounded-lg" style={{ background: "var(--surface-2)", borderLeft: "2px solid var(--gal-build)" }}>
+          <p className="text-[13px] text-zinc-200 leading-relaxed">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: "var(--gal-build)" }}>Why it must be so · </span>
+            {b.c}
+          </p>
+        </div>
+      );
+    case "refs":
+      return (
+        <div className="mt-3 pt-2.5" style={{ borderTop: "1px solid var(--border)" }}>
+          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1.5">Canonical sources</p>
+          <ul className="space-y-1">
+            {(b.c || []).map((r, i) => (
+              <li key={i} className="text-[11.5px] text-zinc-400 leading-snug">→ {r}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+/**
+ * GradientPanel — the depth-3 / PhD layer for a Concepts module.
+ * Soft-locked behind full access. Collapsed by default for unlocked users;
+ * shows a table-of-contents teaser + upgrade CTA for locked users.
+ * Usage: <GradientPanel blocks={GRADIENT_CONTENT[moduleId]} onNavigate={onNavigate} />
+ */
+export function GradientPanel({ blocks, onNavigate }) {
+  const [open, setOpen] = useState(false);
+  if (!blocks) return null;
+  const unlocked = isAccessGranted();
+
+  // ── Skeleton / roadmap state: blocks is { soon: true, outline: [...] } ──
+  // Muted grey (not the live cyan) — signals "planned, not yet built".
+  if (!Array.isArray(blocks)) {
+    const outline = blocks.outline || [];
+    return (
+      <div className="mt-8 rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--surface)" }}>
+        <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+          <span className="text-lg text-zinc-500 font-bold leading-none">∇</span>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[12px] font-black text-zinc-300 tracking-wide">GRADIENT</span>
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-900/50 text-zinc-400">DEPTH 3 · ROADMAP</span>
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-0.5">PhD-depth derivations for this module are planned. Outline below.</p>
+          </div>
+          <span className="text-zinc-600 text-xs shrink-0">{open ? "▲" : "▼"}</span>
+        </button>
+        {open && (
+          <div className="px-4 pb-4 pt-1" style={{ borderTop: "1px solid var(--border)" }}>
+            <ul className="space-y-1 mb-2">
+              {outline.map((h, i) => (
+                <li key={i} className="text-[12.5px] text-zinc-400 flex gap-2">
+                  <span className="text-zinc-600 shrink-0">∇</span>
+                  <span>{h}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[11px] text-zinc-600 italic">Being written — tracked in GRADIENT_BUILD.md.</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (blocks.length === 0) return null;
+  const headings = blocks.filter((b) => b.t === "h").map((b) => b.c);
+
+  return (
+    <div
+      className="mt-8 rounded-xl overflow-hidden"
+      style={{ border: "1px solid var(--gal-build-border)", background: "linear-gradient(135deg, var(--gal-build-tint) 0%, transparent 60%)" }}
+    >
+      <button
+        onClick={() => { if (unlocked) setOpen((o) => !o); }}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left"
+        style={{ cursor: unlocked ? "pointer" : "default" }}
+      >
+        <span className="text-lg font-bold leading-none" style={{ color: "var(--gal-build)" }}>∇</span>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[12px] font-black text-zinc-100 tracking-wide">GRADIENT</span>
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border" style={{ color: "var(--gal-build)", borderColor: "var(--gal-build-border)", background: "var(--gal-build-tint)" }}>DEPTH 3 · PhD</span>
+            {unlocked && open && (
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border" style={{ color: "var(--gal-build)", borderColor: "var(--gal-build-border)", background: "var(--gal-build-tint)" }}>✓ Faithful</span>
+            )}
+            {!unlocked && (
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-900/50 text-zinc-500">GATED</span>
+            )}
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-0.5">The derivation, the objective, the complexity bound — the same concept at research depth.</p>
+        </div>
+        {unlocked && <span className="text-zinc-500 text-xs shrink-0">{open ? "▲" : "▼"}</span>}
+      </button>
+
+      {unlocked && open && (
+        <div className="px-4 pb-4 pt-1" style={{ borderTop: "1px solid var(--gal-build-border)" }}>
+          {blocks.map((b, i) => <GradientBlock key={i} b={b} />)}
+        </div>
+      )}
+
+      {!unlocked && (
+        <div className="px-4 pb-4 pt-1" style={{ borderTop: "1px solid var(--gal-build-border)" }}>
+          <p className="text-[12px] text-zinc-400 mb-2.5">Inside this Gradient layer:</p>
+          <ul className="space-y-1 mb-3">
+            {headings.map((h, i) => (
+              <li key={i} className="text-[12.5px] text-zinc-300 flex gap-2">
+                <span className="shrink-0" style={{ color: "var(--gal-build)" }}>∇</span>
+                <span>{h}</span>
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={() => onNavigate && onNavigate({ tab: "plans" })}
+            className="text-[12px] font-semibold px-3.5 py-2 rounded-lg transition-all"
+            style={{ background: "var(--gal-build)", color: "var(--bg)" }}
+          >
+            Unlock full access →
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
