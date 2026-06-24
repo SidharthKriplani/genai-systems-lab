@@ -713,6 +713,33 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                 </div>
               )}
 
+              {/* ── Start Here — gentlest entry for true beginners ─────────── */}
+              <div className="hero-anim-4 max-w-xl mx-auto w-full">
+                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest text-center mb-2.5">Brand new to AI?</p>
+                <div className="rounded-2xl p-4 space-y-3 text-left"
+                  style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderTop: "2px solid rgba(6,182,212,0.35)" }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Start Here · 5 lessons</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded whitespace-nowrap"
+                      style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.25)", color: "var(--gal-build)" }}>
+                      ~10 min
+                    </span>
+                  </div>
+                  <p className="text-sm text-zinc-200 font-semibold leading-snug">
+                    The 5-minute mental model of an LLM — tokens, embeddings, and how it predicts the next word.
+                  </p>
+                  <p className="text-[11px] text-zinc-500 leading-relaxed">
+                    No jargon, no setup. Read two lines, poke a live widget, answer one question — five times. Everything else here builds on this.
+                  </p>
+                  <button
+                    onClick={() => { track("hero_starthere_cta", {}); onNavigate("starthere"); }}
+                    className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                    style={{ background: "rgba(6,182,212,0.12)", border: "1px solid rgba(6,182,212,0.3)", color: "var(--gal-build)" }}>
+                    Build the mental model →
+                  </button>
+                </div>
+              </div>
+
               {/* ── RAG Lab Scenario 1 — primary guest entry ──────────────── */}
               <div className="hero-anim-4 max-w-xl mx-auto w-full">
                 <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest text-center mb-2.5">No account needed</p>
