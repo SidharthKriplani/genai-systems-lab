@@ -6,6 +6,17 @@ Prioritized backlog of ideas not yet built. Organized by effort and impact. Upda
 
 ---
 
+## 🎯 Product-design backlog — from HQ D-24 / `PRODUCT-DESIGN.md` (added 2026-06-24)
+
+_GSL already runs **Supabase auth + GateOverlay** — so GSL is the **reference implementation** for the unified BreakLabs identity (D-24; full spec `HQ/IDENTITY-CAPTURE-SPEC.md`). Least new infra of any lab. Solve one by one._
+
+- **[Tier 1] Capture at investment, not only behind the gate.** Add the optional, benefit-framed "save your streak/progress" moment *after the first short streak + Aha* (not just at the existing `GateOverlay`). Email-first, no hard wall on value. Feed the same Supabase user that becomes the cross-lab account.
+- **[Tier 2] Aha "first break" cold-start.** One curated opener (a RAG failure — stale doc / top_k=1 / injection) in <60 sec, not the hub browse. Speed to the first reveal.
+- **[Tier 2] Hooked retention loop.** Streak + varied reveal + daily return-trigger (newsletter). Wire to the 5-domain progress/readiness surface.
+- **[Tier 3] Usability gate (Nielsen 10 + Norman).** Discoverability across 6 labs + the domain lens; visibility-of-status; JTBD copy ("survive the hardest follow-up," not "practice").
+
+---
+
 ## Monochrome theme follow-ups (sprint 90, Jun 2026)
 
 *Parked while shipping the monochrome instrument theme. Both are scoped; neither blocks.*
