@@ -7,7 +7,7 @@ import InferenceOptimizer from "./InferenceOptimizer";
 import MLCiCdLab from "./MLCiCd";
 
 import {
-  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BertPoolingLab, BiEncoderVsCrossEncoder, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, DecodingStrategiesLab, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev, VectorSimilarityExplorer
+  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BertPoolingLab, BiEncoderVsCrossEncoder, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, DecodingStrategiesLab, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev, VectorSimilarityExplorer
 } from "./systems/modules";
 
 const SYSTEMS_MODULES = [
@@ -54,9 +54,7 @@ const SYSTEMS_MODULES = [
   { id: "quantization", label: "Quantization Engineering", tag: "QUANT", group: "OPS", component: QuantizationEngineering },
   { id: "serving", label: "Serving Infrastructure", tag: "INFRA", group: "OPS", component: ServingInfra },  { id: "finetuning", label: "Fine-Tuning Workflows", tag: "TRAIN", group: "BUILD", component: FineTuningWorkflows },
   { id: "rlhf", label: "RLHF / DPO / PPO", tag: "ALIGN", group: "BUILD", component: RLHFAlignment },
-  { id: "grpo", label: "GRPO / Agent RL", tag: "ALIGN", group: "BUILD", component: GRPOAgentRL },
-  { id: "multimodal2", label: "Multimodal Systems", tag: "VISION", group: "DESIGN", component: MultimodalSystems },
-  { id: "agentarch", label: "Agent Architecture", tag: "AGENT", group: "BUILD", component: AgentArchitecture },
+  { id: "grpo", label: "GRPO / Agent RL", tag: "ALIGN", group: "BUILD", component: GRPOAgentRL },  { id: "agentarch", label: "Agent Architecture", tag: "AGENT", group: "BUILD", component: AgentArchitecture },
   { id: "agentmemory", label: "Agent Memory Architecture", tag: "MEMORY", group: "BUILD", component: AgentMemoryArchitecture },
   { id: "longctx", label: "Long Context Patterns", tag: "CONTEXT", group: "BUILD", component: LongContextPatterns },
   { id: "evalmetrics", label: "Eval Metrics", tag: "METRIC", group: "DESIGN", component: EvalMetrics },
@@ -101,9 +99,7 @@ const RELATED_GT = {
   streaming:    [{ id: "cost-latency-tradeoffs", title: "Cost vs Latency Trade-offs" }],
   rlhf:         [{ id: "rlhf-dpo-explained", title: "RLHF & DPO Explained" }, { id: "rlhf-production", title: "RLHF in Production" }, { id: "rlhf-from-scratch", title: "RLHF From Scratch" }],
   grpo:         [{ id: "rlhf-dpo-explained", title: "RLHF and DPO Explained" }, { id: "dpo-vs-ppo", title: "DPO vs PPO" }, { id: "rlhf-from-scratch", title: "RLHF From Scratch" }],
-  multimodal:   [{ id: "multimodal-llms-architecture", title: "Multimodal LLMs Architecture" }],
-  multimodal2:  [{ id: "multimodal-in-production", title: "Multimodal in Production" }],
-  agentarch:    [{ id: "react-reasoning-acting", title: "ReAct: Reasoning + Acting" }, { id: "building-reliable-agents", title: "Building Reliable Agents" }],
+  multimodal:   [{ id: "multimodal-llms-architecture", title: "Multimodal LLMs Architecture" }],  agentarch:    [{ id: "react-reasoning-acting", title: "ReAct: Reasoning + Acting" }, { id: "building-reliable-agents", title: "Building Reliable Agents" }],
   flashattn:    [{ id: "self-attention-deep-dive", title: "Self-Attention Deep-Dive" }, { id: "flash-attention", title: "Flash Attention (Paper)" }],
   quantization: [{ id: "ft-quantization", title: "Quantization Deep-Dive" }],
   serving:      [{ id: "inference-optimisation", title: "Inference Optimisation" }],  finetuning:   [{ id: "finetune-playbook", title: "Fine-Tuning Playbook" }, { id: "full-vs-peft-vs-prompting", title: "Full FT vs PEFT vs Prompting" }, { id: "lora-in-practice", title: "LoRA in Practice" }],

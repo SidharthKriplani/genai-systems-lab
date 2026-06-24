@@ -1551,9 +1551,9 @@ function VoiceAIFlow({ onNavigate }) {
             className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
             📖 How I'd Build Voice AI
           </button>
-          <button onClick={() => onNavigate({ tab: "systems", moduleId: "multimodal2" })}
+          <button onClick={() => onNavigate({ tab: "systems", moduleId: "multimodal" })}
             className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
-            ⚙️ Multimodal Systems
+            ⚙️ Multimodal AI
           </button>
         </div>
       )}

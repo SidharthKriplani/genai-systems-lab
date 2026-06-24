@@ -5438,6 +5438,7 @@ function MultimodalAI() {
     { id: "models", label: "Model Landscape" },
     { id: "mmrag", label: "Multimodal RAG" },
     { id: "failures", label: "Failure Modes" },
+    { id: "fusion", label: "Fusion Patterns" },
   ];
   return (
     <div className="space-y-4">
@@ -5578,6 +5579,7 @@ function MultimodalAI() {
           ))}
         </div>
       )}
+      {tab === "fusion" && <MultimodalFusionPatterns />}
     </div>
   );
 }
@@ -10010,28 +10012,6 @@ function MultimodalFusionPatterns() {
         <span className="font-bold">For production:</span> LLaVA-style projector is simplest and most widely supported.
         <span className="font-bold ml-2">For frontier quality:</span> interleaved tokens with full cross-modal attention.
       </div>
-    </div>
-  );
-}
-
-function MultimodalSystems() {
-  const [tab, setTab] = useState(0);
-  const tabs = ["Architectures", "Fusion Patterns"];
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
-        <p className="text-sm text-zinc-300 leading-relaxed">CLIP, LLaVA, and native multimodal architectures differ in how they fuse visual and textual representations — and the fusion pattern determines what tasks the system can handle and where it will fail. Early fusion, late fusion, and cross-attention fusion have distinct tradeoffs in training cost, modality alignment quality, and production latency.</p>
-      </div>
-      <div className="flex gap-2 flex-wrap">
-        {tabs.map((t, i) => (
-          <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1 rounded text-sm font-medium ${tab === i ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
-            {t}
-          </button>
-        ))}
-      </div>
-      {tab === 0 && <MultimodalArchitectures />}
-      {tab === 1 && <MultimodalFusionPatterns />}
     </div>
   );
 }
@@ -15475,5 +15455,5 @@ export function VectorSimilarityExplorer() {
 
 
 export {
-  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
+  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VectorDBEngineering, VibeCodingAndAgenticDev
 };
