@@ -15005,6 +15005,7 @@ def serve_and_log(query: str, user_id: str, production_model) -> dict:
   ],
 
   "vector-databases-compared": [
+    { t: "callout", c: "**Prerequisite: Step 8 (How RAG Works) — you need to know why you're storing vectors.** After this post you'll be able to choose between pgvector, Pinecone, Chroma, and Weaviate based on production constraints — latency, filtering, scale, cost — not marketing copy." },
     { t: "h2", c: "Vector Databases Are Not the Same Product" },
     { t: "p", c: "Pinecone, Weaviate, Qdrant, pgvector, Milvus, Chroma — these are all 'vector databases' but they make fundamentally different tradeoffs. Choosing the wrong one for your use case costs you months of migration work. The decision comes down to: managed vs. self-hosted, pure vector vs. hybrid, scale, and whether your retrieval is standalone or needs to join relational data." },
     { t: "h2", c: "What Every Vector Database Actually Does" },
@@ -15023,6 +15024,7 @@ def serve_and_log(query: str, user_id: str, production_model) -> dict:
     { t: "h2", c: "When NOT to Use a Dedicated Vector Database" },
     { t: "p", c: "Under 1 million vectors: pgvector with an HNSW index is fast, free, and keeps everything in one system. You don't need Pinecone for 50,000 documents. Under 100,000 vectors: FAISS in memory is often the right answer — no infrastructure, full control. The 'we need a vector database' impulse often precedes the 'we need to build something that actually works' step." },
     { t: "callout", c: "Start with pgvector if you're already on Postgres. Start with Qdrant if you need performance and control. Start with Pinecone if you need zero ops. Don't start with Milvus or Weaviate unless your scale requires it or hybrid search is a hard requirement from day one." },
+    { t: "lab", tab: "lab", label: "Compare retrieval strategies in RAG Lab →", desc: "See how vector database configuration choices affect retrieval quality on real queries." },
     { t: "refs", c: ["Malkov and Yashunin — Efficient and robust approximate nearest neighbor search using HNSW (2018)", "Qdrant Documentation — Filtered search and payload indexing", "Weaviate Documentation — Hybrid search", "pgvector GitHub — Open-source vector similarity search for Postgres"] }
   ],
 
