@@ -5439,6 +5439,7 @@ function MultimodalAI() {
     { id: "mmrag", label: "Multimodal RAG" },
     { id: "failures", label: "Failure Modes" },
     { id: "fusion", label: "Fusion Patterns" },
+    { id: "archtypes", label: "Model Types" },
   ];
   return (
     <div className="space-y-4">
@@ -5580,6 +5581,7 @@ function MultimodalAI() {
         </div>
       )}
       {tab === "fusion" && <MultimodalFusionPatterns />}
+      {tab === "archtypes" && <MultimodalArchitectures />}
     </div>
   );
 }
@@ -9917,6 +9919,59 @@ function RLHFAlignment() {
 }
 
 // ─── MULTIMODAL SYSTEMS ───────────────────────────────────────────────────────
+function MultimodalArchitectures() {
+  const [expanded, setExpanded] = useState(null);
+  const archs = [
+    {
+      name: "CLIP",
+      tag: "Dual Encoder",
+      summary: "Contrastive pretraining aligns image + text embeddings in shared space.",
+      detail: "Two separate encoders (ViT for images, Transformer for text) trained contrastively on 400M image-text pairs. Images and captions with similar meaning are pulled together in embedding space. No decoder — embeddings used for zero-shot classification and retrieval.",
+      use: "Best for: image retrieval, zero-shot classification, embedding similarity",
+      color: "border-blue-400 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/10",
+    },
+    {
+      name: "LLaVA / LLaVA-style",
+      tag: "Projector Architecture",
+      summary: "CLIP ViT → MLP projector → LLM. Trained on visual instruction data.",
+      detail: "Vision encoder (frozen CLIP ViT-L) extracts image features. A small MLP projector maps visual tokens into the LLM's embedding space. The LLM (LLaMA, Mistral, etc.) is then fine-tuned end-to-end on visual instruction data. Simple, effective, widely adopted by open-source community.",
+      use: "Best for: visual QA, image captioning, document understanding, production open-source deployment",
+      color: "border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/10",
+    },
+    {
+      name: "GPT-4V / Gemini Style",
+      tag: "Native Multimodal",
+      summary: "Image tokens interleaved with text tokens in a unified transformer.",
+      detail: "Images processed into discrete tokens (VQ-VAE or continuous embeddings) and interleaved directly with text tokens. Full self-attention across both modalities — or cross-attention layers (Flamingo). Trained from scratch on massive multimodal corpora. Most expressive but most compute-intensive approach.",
+      use: "Best for: complex reasoning over images + text, OCR-heavy tasks, frontier model quality",
+      color: "border-violet-400 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/10",
+    },
+  ];
+  return (
+    <div className="space-y-3">
+      {archs.map((a, i) => (
+        <div key={i} className={`border-l-4 ${a.color} rounded-r-xl overflow-hidden`}>
+          <button className="w-full px-4 py-3 flex items-center justify-between text-left"
+            onClick={() => setExpanded(expanded === i ? null : i)}>
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-sm text-zinc-100">{a.name}</span>
+              <span className="text-xs bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded text-zinc-500">{a.tag}</span>
+            </div>
+            <span className="text-zinc-500 text-sm">{expanded === i ? "▲" : "▼"}</span>
+          </button>
+          <div className="px-4 pb-1 text-xs text-zinc-400">{a.summary}</div>
+          {expanded === i && (
+            <div className="px-4 pb-4 space-y-2 mt-2">
+              <p className="text-sm text-zinc-300">{a.detail}</p>
+              <p className="text-xs font-medium text-indigo-400">{a.use}</p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function MultimodalFusionPatterns() {
   const patterns = [
     {
