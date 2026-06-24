@@ -124,7 +124,7 @@ def llm_flags(mid, reg, src):
     except ImportError:
         return ["llm-unavailable"]
     url = os.environ.get("LMSTUDIO_URL", "http://localhost:1234/v1/chat/completions")
-    model = os.environ.get("LMSTUDIO_MODEL", "qwen3-14b")
+    model = os.environ.get("LMSTUDIO_MODEL", "qwen/qwen3-14b")  # LM Studio API Model Identifier
     rubric = ("Score this learning module 0-2 on: intuition(why,not just what), "
               "example(concrete/failure demo), accuracy, depth-fit(matches level), "
               "competency(recall=1, transfer/mastery=2). Return JSON "
