@@ -1,0 +1,103 @@
+diff --git a/src/data/preplabQuestions.js b/src/data/preplabQuestions.js
+index d1a87b1..a780c1a 100644
+--- a/src/data/preplabQuestions.js
++++ b/src/data/preplabQuestions.js
+@@ -147,17 +147,6 @@ export const PREP_QUESTIONS = [
+   },
+ 
+   // ── AGENTS (12) ───────────────────────────────────────────────────────────
+-  {
+-    id: "agents-1", topic: "agents", difficulty: "medium", gated: true, type: "mcq",
+-    question: "Your agent calls the same tool 3 times with identical inputs in one turn. This indicates:",
+-    options: ["Tool is slow so the agent is retrying", "Missing state management — agent forgot it already called it", "Intentional verification pattern", "Context window pressure causing truncation"],
+-    correct: 1, keywords: [],
+-    explanation: "Without explicit state tracking or tool result caching, agents operating over long contexts can forget they already executed a tool call. This is a trajectory efficiency failure and a cost issue.",
+-  trap: "Saying the agent \'has a reasoning error\' or \'is confused.\' The architectural root cause is missing state tracking — the agent literally forgot it already called the tool because there is no deduplification layer.",
+-  source: "OpenAI applied AI interview, Round 1",
+-    staffLayer: "The senior framing is: repeated identical tool calls means the tool result isn't satisfying the model's goal representation, not that the tool is broken. Three root causes I check in order: (1) output format mismatch — the tool returns valid data but in a structure the model doesn't recognize as 'done'; (2) context loss — in long-running agents the tool result gets lost before the next reasoning step; (3) goal framing — the prompt's success criterion is underspecified. My first fix in production is always deduplication at the tool executor level — hash tool+args and return the cached result on repeat calls. This stops the spiral while I diagnose the root cause.",
+-    readMore: { label: "Agent Architecture Patterns", tab: "agents" }
+-  },
+   {
+     id: "agents-2", topic: "agents", difficulty: "hard", gated: true, type: "text",
+     question: "An agent trajectory efficiency score is 0.43. Explain what this means and two architectural changes to improve it.",
+@@ -527,16 +516,6 @@ export const PREP_QUESTIONS = [
+         staffLayer: "The senior framing is: benchmark overfitting happens when your training data is too similar to your eval set in format and style, not in task difficulty. A model fine-tuned on curated support tickets learns the format of well-written support resolutions — it scores well on similarly-formatted evals and fails on real user queries that are messily stated, multi-intent, or domain-shifted. The diagnostic: run your fine-tuned model on a random sample of real production queries alongside the curated eval. If production performance is significantly lower, you have a distribution mismatch problem. The fix is always training data curation — sample from the real production distribution, not from a cleaned/curated subset.",
+   readMore: { label: "Fine-Tuning Best Practices", tab: "concepts" }
+   },
+-  {
+-    id: "ft-2", topic: "finetuning", difficulty: "easy", gated: true, type: "mcq",
+-    question: "LoRA fine-tuning works by:",
+-    options: ["Updating all model weights with a low learning rate", "Injecting low-rank decomposition matrices alongside frozen original weights — only adapters are trained", "Distilling knowledge from a larger model", "Pruning unused attention heads"],
+-    correct: 1, keywords: [],
+-    explanation: "LoRA freezes original weights and trains two small matrices (A and B) whose product is added to frozen weight updates. Dramatic reduction in trainable parameters (typically 0.1-1% of original) with competitive quality.",
+-  trap: "Saying \'LoRA uses less data\' or \'LoRA is faster because it skips layers.\' LoRA freezes original weights and trains two matrices (A and B) whose product approximates the weight delta. Not knowing the matrix decomposition mechanism is the weak answer.",
+-  source: "Meta AI fine-tuning team interview",
+-    readMore: { label: "Parameter-Efficient Fine-Tuning", tab: "concepts" }
+-  },
+   {
+     id: "ft-3", topic: "finetuning", difficulty: "medium", gated: true, type: "mcq",
+     question: "DPO (Direct Preference Optimization) differs from RLHF in that:",
+@@ -570,15 +549,6 @@ export const PREP_QUESTIONS = [
+   },
+ 
+   // ── SAFETY (5) ────────────────────────────────────────────────────────────
+-  {
+-    id: "safety-1", topic: "safety", difficulty: "hard", gated: true, type: "mcq",
+-    question: "Indirect prompt injection differs from direct prompt injection because:",
+-    options: ["Indirect is less dangerous", "The malicious instructions arrive via external data sources (tool outputs, retrieved documents) not from the user directly", "Direct injection exploits fine-tuning", "They are the same attack"],
+-    correct: 1, keywords: [],
+-    explanation: "Direct injection: user writes 'ignore system prompt.' Indirect: attacker embeds instructions in a webpage or document that the agent retrieves — the LLM executes attacker instructions while the user is unaware.",
+-        staffLayer: "The senior framing is: indirect injection is the attack that kills production agents, and it's architecturally different from direct injection. Direct injection is a user input problem — solve it with input validation and jailbreak detection. Indirect injection is a trust boundary problem — the agent retrieves external content and that content is treated as trusted. The defense is architectural: treat all tool outputs as untrusted user input, apply the same validation logic you apply to user messages, and never let retrieved content modify agent behavior or permissions. In production I'd add a post-retrieval filter that strips instruction-pattern content from tool outputs before they reach the model — this is the 'defense in depth' layer that jailbreak classifiers alone can't provide.",
+-  readMore: { label: "LLM Security", tab: "agents" }
+-  },
+   {
+     id: "safety-2", topic: "safety", difficulty: "easy", gated: true, type: "mcq",
+     question: "Constitutional AI (CAI) improves model safety by:",
+@@ -939,24 +909,8 @@ export const PREP_QUESTIONS = [
+     trap: "Saying \'1M context eliminates the need for RAG.\' The trap misses latency cost (1M prefill takes seconds), dollar cost, and the Lost in the Middle problem — relevant chunks buried in the middle of 1M tokens get missed.",
+     readMore: { label: "Context Window Engineering →", tab: "systems" }
+   },
+-  {
+-    id: "ctx-q2", topic: "rag", difficulty: "easy", type: "mcq",
+-    question: "The 'lost in the middle' problem means:",
+-    options: ["Documents in the middle of a retrieval list are never returned", "LLMs pay less attention to content positioned in the middle of a long context — information there is systematically underweighted", "Context windows corrupt text in the center", "Chunking cuts sentences in half"],
+-    correct: 1, keywords: [],
+-    explanation: "Liu et al. (2023) showed recall drops from ~92% at context start/end to ~42–51% for content positioned in the middle. Fix: put most critical content at start or end, use reranking to place high-relevance chunks at position 1 or last, use map-reduce for long corpora.",
+-    readMore: { label: "Context Window Engineering →", tab: "systems" }
+-  },
+ 
+   // ── DEPLOYMENT + SYNTHETIC DATA (llmops + finetuning) (5) ────────────────
+-  {
+-    id: "dep-q1", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
+-    question: "Continuous batching improves LLM serving throughput by:",
+-    options: ["Running inference in parallel on multiple GPUs", "Allowing new requests to join mid-generation — no request waits for a full batch to complete", "Pre-caching all KV states", "Reducing model size"],
+-    correct: 1, keywords: [],
+-    explanation: "Traditional static batching waits for all batch members to finish. Continuous batching (used in vLLM, TGI) adds new requests at the token level when GPU has capacity — achieving 10–20× better throughput than no batching, with near-optimal latency for interactive workloads.",
+-    readMore: { label: "Deployment Architecture →", tab: "systems" }
+-  },
+   {
+     id: "dep-q2", topic: "llmops", difficulty: "medium", type: "mcq",
+     question: "When does self-hosting Llama 3.1 70B become more cost-effective than OpenAI API?",
+@@ -3424,22 +3378,6 @@ export const PREP_QUESTIONS = [
+     ],
+     rootCause: "A factually incorrect document was ingested into the corpus without validation. RAG systems have no way to distinguish authoritative from incorrect retrieved content — the model treats whatever is retrieved as ground truth. The failure mode is upstream (ingestion), not downstream (generation).",
+     trap: "Increasing top_k to dilute the bad document. This is the most common first instinct — 'more context will average it out.' It doesn't. The bad document still ranks first and the model still defers to it. The correct mental model: retrieval is a selection problem, not an averaging problem.",
+-    staffLayer: "A staff engineer frames reranker latency as a latency budget allocation problem, not a yes/no decision. The question is where 800ms lands in the user experience for this specific product. For medical Q&A where precision is safety-critical, 800ms is cheap. For real-time customer support where TTFT is the UX metric, 800ms may be the entire budget. The interview signal: define your latency SLO first, then work backwards to which retrieval architecture fits within it. Saying 'async reranking with timeout fallback to bi-encoder scores' shows you understand both the trade-off and the production failure mode.",
+-    staffLayer: "The staff framing on medical Q&A: precision requirements are derived from consequence, not preference. A wrong answer in medical Q&A has qualitatively different consequences than a wrong answer in a shopping assistant. Before answering the architecture question, state your acceptable false negative and false positive rates, then derive which retrieval tier achieves those rates within your latency budget. 'We need 99th-percentile precision over 95th-percentile latency' changes the answer completely. The cross-encoder question is 'can we afford the latency?' — but the medical consequence question must come first.",
+-    staffLayer: "The staff insight: most production legal retrieval failures are not architecture failures — they are query classification failures. Statute references are keyword-exact queries where BM25 dominates. Conceptual arguments are semantic queries where dense retrieval dominates. A routing layer in front of retrieval (semantic router or simple query classifier) that identifies query type before selecting search modality often provides more value than hybrid fusion alone. Staff engineers decompose the query space before choosing a retrieval architecture, not after.",
+-    staffLayer: "The staff framing: context window size is not the constraint — attention distribution is. Filling 128K with documents doesn't mean the model attends uniformly to all of them. 'Lost in the middle' is a documented failure pattern where models attend strongly to the beginning and end of context and weakly to the middle. The interview signal: treat context as a ranked list, not a container. Most relevant content goes first and last, not anywhere. RAG's job is to select what enters the window and in what order — not simply to avoid using the window at all.",
+-    staffLayer: "Senior engineers treat observability as a product decision, not a technical checklist. Before listing signals, identify the failure modes that cost the most: bad answers that ship to users, latency regressions that hurt conversion, cost spikes that blow budget. The observability stack exists to catch those specific failures first. The staff framing: 'Here are my three highest-cost failure modes, and here is the signal that fires before each one becomes user-visible.' Alert thresholds come from percentile analysis of baseline data — not arbitrary numbers. Listing every possible metric without prioritisation is the junior answer.",
+-    staffLayer: "Staff engineers use KV cache math to make serving architecture decisions. At 128K × 70B GQA, the KV cache dominates memory — which is why you tensor-parallel across GPUs for memory capacity, not for compute. This is also why the choice between MHA and GQA is an architecture decision with direct serving cost implications at scale. GQA at 8 heads is roughly 8× smaller KV cache than MHA — that difference determines whether a 70B model fits on 2 GPUs or requires 4. Framing the calculation as a serving architecture constraint, not a math exercise, is the senior signal.",
+-    staffLayer: "The staff framing: continuous batching is not an optimisation — it is the baseline assumption for any serious LLM serving setup. The more interesting question is why static batching ever seemed reasonable: it is a port of classical ML serving patterns that do not account for the fundamental difference between LLMs (variable output length with sequential dependency) and standard neural networks (fixed output shape). Explaining the architectural reason behind the pattern — not just the latency improvement — is what separates a practitioner from someone who memorised the definition.",
+-    staffLayer: "Tensor parallelism is a memory solution that looks like a compute solution. You use it when a single GPU does not have enough HBM to hold the model weights and activations — not primarily to go faster. Pipeline parallelism is where you pay the most explicit latency cost. The staff framing when asked about multi-GPU serving: 'tensor parallelism for memory capacity, pipeline parallelism for throughput at the cost of bubble overhead, expert parallelism for MoE models.' Each addresses a different bottleneck. Treating them as interchangeable 'ways to go faster' is the common miss.",
+-    staffLayer: "The staff framing on multi-agent design is authority boundaries, not capabilities. Before designing agents, answer: which decisions can be made autonomously, which require human approval, and which should never be made by the system at all? Most candidates describe agents by capability. Staff engineers describe agents by trust boundary and escalation chain. In a customer support system, the refund decision authority boundary is more important to design than the NLP pipeline. Get the authority boundaries wrong and every capability decision is downstream of a broken assumption.",
+-    staffLayer: "The staff framing: most agent memory discussions conflate two problems — what to store and when to store it. The harder problem is the second one. You can architect memory tiers (working, episodic, semantic) without solving the decision layer at all. The decision layer is hard because it requires the agent to evaluate its own context — a form of metacognition that current LLMs do poorly under cost constraints. Staff engineers acknowledge this as an unsolved engineering problem and propose practical mitigations: time-based decay, explicit memory write triggers, periodic summarisation checkpoints. Claiming a clean solution is the overclaim signal.",
+-    staffLayer: "The staff framing: prompt store vs. hardcoded strings is an engineering discipline question, not a feature question. Hardcoded prompts are implicitly treated as infrastructure — changed with a code deploy. Prompt stores treat prompts as configuration — changed without a code deploy. Both are valid at different scales. The wrong answer is not having a conscious position. The interview signal: 'What is our current deployment frequency for prompt changes? Does our current approach match that cadence?' If your prompt changes 3× per week but your deployment cycle is 2 weeks, you need a prompt store. The architecture follows the change frequency, not the other way around.",
+-    staffLayer: "The staff framing: a similarity threshold is not a security dial — it is a precision/recall dial. Setting the threshold to 1.0 to fix the data leakage gives you a deterministic cache with zero semantic benefit. The real fix is namespace isolation: tenant A's cache entries are never candidates for tenant B's lookups, regardless of similarity. Security in multi-tenant systems is achieved through isolation architecture, not metric thresholds. This is a systems design principle that generalises: whenever a performance optimisation introduces cross-tenant data access, the fix is isolation, not tightening the optimisation parameter.",
+-    staffLayer: "The staff framing for system design: constraint-first, not architecture-first. Ten thousand tickets per day is 7 per minute. That load profile changes the architecture completely — you do not need streaming inference, continuous batching at scale, or a multi-GPU deployment. Start by sizing the load, choose the simplest architecture with 10× headroom, and explicitly call out what you would add as load grows. Interviewers give more credit to candidates who resist over-engineering than to those who demonstrate knowledge of complex patterns without load context. The instinct to reach for Kubernetes before computing RPM is the most common senior interview failure mode.",
+-    staffLayer: "The staff framing for structured extraction from unstructured documents: treat it as a classification and extraction pipeline, not a generation task. LLMs generate — they are probabilistic. Extraction for insurance claims must be deterministic and auditable. The right architecture uses the LLM for ambiguous or free-text fields (where flexibility is an asset) and deterministic parsers for structured fields (where it is a liability). Staff engineers distinguish between tasks where LLM flexibility creates value and tasks where it creates audit risk. Hybrid pipelines — LLM for understanding, rules for output validation — are the production-grade answer for regulated domains.",
+-    staffLayer: "The staff framing: context architecture for a long-running legal agent is a cache design problem. You have a fixed-size window, a large working set, and queries that depend on history — the same constraints as an LRU cache. The design principles follow: what is accessed frequently (current document excerpt), what has long TTL (prior findings), and what can be lazily loaded on demand (corpus). Decompose context by access pattern — read-once (task description), frequently accessed (active working set), persistent (accumulated findings) — then allocate context budget accordingly. The architecture follows from access patterns, not from a feature list.",
+-    staffLayer: "The staff framing: a persistent context file that describes external tool interfaces is versioned configuration, not documentation. When the API changes and the context file does not, you get a version mismatch — the agent equivalent of a stale schema. The production fix is treating the context file as an artifact with a schema: every entry describing an external dependency references a version, and the agent startup sequence validates that context file tool descriptions match current tool schemas before the first inference call. This is boring infrastructure. It is also what makes the difference between agents that are reliable for months versus agents that degrade silently after the first upstream change.",
+   },
+ 
+   {

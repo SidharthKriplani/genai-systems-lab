@@ -1,0 +1,104 @@
+diff --git a/src/groundTruthPosts.js b/src/groundTruthPosts.js
+index a87271b..dfe412b 100644
+--- a/src/groundTruthPosts.js
++++ b/src/groundTruthPosts.js
+@@ -1117,42 +1117,6 @@ print(f"Cache write tokens: {usage.cache_creation_input_tokens}")` },
+ 
+   // ─── VECTOR DATABASES ────────────────────────────────────────────────────────
+ 
+-  "vector-databases-compared": [
+-    { t: "callout", c: "**Prerequisite: Step 8 (How RAG Works) — you need to know why you're storing vectors.** After this post you'll be able to choose between pgvector, Pinecone, Chroma, and Weaviate based on production constraints — latency, filtering, scale, cost — not marketing copy." },
+-    { t: "p", text: "Your choice of vector database will affect your retrieval latency, filtering capabilities, operational complexity, and cost — often more than your choice of embedding model. Here's how the major options compare on the dimensions that matter in production." },
+-
+-    { t: "h2", text: "The main options" },
+-    { t: "table", headers: ["Database", "Type", "Best for", "Managed?"], rows: [
+-      ["Pinecone",   "Dedicated vector DB",  "Production RAG, easy ops",    "Yes — fully managed"],
+-      ["Weaviate",   "Dedicated vector DB",  "Hybrid search, multi-tenancy","Both (cloud + self-hosted)"],
+-      ["Qdrant",     "Dedicated vector DB",  "High performance, filtering", "Both"],
+-      ["Chroma",     "Embedded vector DB",   "Dev/prototyping, local",      "Self-hosted only"],
+-      ["pgvector",   "Postgres extension",   "Existing Postgres stack",     "Via managed Postgres"],
+-      ["Milvus",     "Distributed vector DB","Billion-scale datasets",      "Both (Zilliz cloud)"],
+-    ]},
+-
+-    { t: "h2", text: "Pinecone" },
+-    { t: "p", text: "Fully managed, serverless-first, zero infrastructure to manage. Best developer experience. Latency is consistently excellent (5–20ms p99 on most workloads). The main downside: no self-hosted option and pricing at scale can surprise you." },
+-
+-    { t: "h2", text: "pgvector (Postgres)" },
+-    { t: "p", text: "If your application already runs on Postgres, pgvector is the lowest-friction choice. You get ACID transactions, your existing auth/backup/monitoring stack, and joins with your relational data for free. Performance degrades at very large scales (>10M vectors) without tuning, but for most products it's more than adequate." },
+-    { t: "callout", v: "tip", text: "For early-stage products and internal tools, always try pgvector first. It's available on every managed Postgres provider (RDS, Supabase, Neon) and eliminates an entire infrastructure dependency. Only graduate to a dedicated vector DB if you hit a concrete performance or scale problem." },
+-
+-    { t: "h2", text: "Qdrant" },
+-    { t: "p", text: "Written in Rust — consistently the best raw performance benchmark numbers. Excellent filtering support (filter before ANN, not after), which matters enormously when you have complex metadata conditions. Strong open-source community and Qdrant Cloud if you want managed." },
+-
+-    { t: "h2", text: "Metadata filtering: the underrated decision factor" },
+-    { t: "p", text: "Pure vector similarity is rarely enough. You almost always need to filter by user_id, document_type, date range, or permission level. How a vector DB handles filtered search dramatically affects both latency and precision — some filter post-retrieval (lossy), others filter pre-retrieval (correct but slower), and the best ones (Qdrant, Weaviate, Pinecone) support efficient pre-filter + ANN." },
+-
+-    { t: "lab", tab: "lab", label: "Compare retrieval strategies in RAG Lab →", desc: "See how vector database configuration choices affect retrieval quality on real queries." },
+-    { t: "refs", items: [
+-      { label: "ANN Benchmarks — ann-benchmarks.com (latency/recall tradeoffs)", url: "https://ann-benchmarks.com" },
+-      { label: "Approximate Nearest Neighbor Oh Yeah (ANNOY) — Spotify Engineering", url: "https://github.com/spotify/annoy" },
+-      { label: "pgvector: Open-source vector similarity search for Postgres", url: "https://github.com/pgvector/pgvector" },
+-    ]},
+-
+-  ],
+-
+   // ─── LLM EVALUATION ──────────────────────────────────────────────────────────
+ 
+   "llm-evaluation-guide": [
+@@ -6232,56 +6196,6 @@ trainer.train()` },
+     ]},
+   ],
+ 
+-  "fine-tuning-evaluation": [
+-    { t: "p", text: "You've trained a fine-tuned model. Now comes the question that most teams answer wrong: is it actually better? The wrong answer: look at training loss, see it went down, conclude the model improved. Training loss going down means the model learned to predict your training data better. It says almost nothing about whether it performs better on your actual production task." },
+-    { t: "p", text: "Evaluating fine-tuned models requires a purpose-built evaluation framework. This post explains what to measure, how to measure it, and how to catch the most common failure modes that a good eval catches before they reach users." },
+-    { t: "h2", text: "Why perplexity is the wrong metric" },
+-    { t: "p", text: "Perplexity measures how well the model predicts the tokens in your evaluation set. It's a training metric. A model can achieve low perplexity on your eval set by memorising surface patterns without actually solving the task correctly. It also doesn't translate to downstream task performance in any reliable way." },
+-    { t: "callout", v: "warning", text: "Never use perplexity or cross-entropy loss as your primary evaluation metric for a fine-tuned model. These are training signals, not quality signals. Build task-specific evals." },
+-    { t: "h2", text: "The three evaluation layers" },
+-    { t: "h3", text: "Layer 1: Automated task metrics" },
+-    { t: "p", text: "Define the specific outputs your model needs to produce and write deterministic tests or classifiers against them. Examples:" },
+-    { t: "list", items: [
+-      "Format compliance: does the output match the required JSON schema? Parsed correctly? Required fields present?",
+-      "Classification accuracy: on a labelled test set, what fraction does the model classify correctly?",
+-      "Extraction precision/recall: for entity extraction tasks, what fraction of entities are correctly identified?",
+-      "Code correctness: for code generation, do the outputs pass a test suite?",
+-    ]},
+-    { t: "h3", text: "Layer 2: LLM-as-judge evaluation" },
+-    { t: "p", text: "For open-ended generation tasks, use a strong model (GPT-4, Claude) as an evaluator. Provide the prompt, the fine-tuned model's response, and a rubric. Have the judge score on dimensions like accuracy, helpfulness, format, and tone. This doesn't replace human evaluation but scales to thousands of examples efficiently." },
+-    { t: "code", lang: "text", label: "LLM-as-judge prompt template", text: `You are evaluating a response to a customer support query.
+-
+-Query: {query}
+-Response: {response}
+-
+-Score on each dimension (1-5):
+-- Accuracy: Does the response correctly address the query?
+-- Helpfulness: Does the response give actionable information?
+-- Format: Does the response follow the expected format?
+-- Tone: Is the tone appropriate for customer support?
+-
+-Return a JSON object with scores and brief justifications.` },
+-    { t: "h3", text: "Layer 3: Human evaluation on a representative sample" },
+-    { t: "p", text: "For high-stakes deployments, nothing replaces human evaluation on a representative sample of production inputs. Target 100–200 examples, covering the full distribution of your production traffic including edge cases. Have evaluators rate side-by-side: baseline model vs. fine-tuned model, blind to which is which." },
+-    { t: "h2", text: "Regression testing: what you must not break" },
+-    { t: "p", text: "Every fine-tuned model must be tested for capability regression. Fine-tuning on a narrow domain often degrades performance on general tasks. Build a regression test suite covering:" },
+-    { t: "list", items: [
+-      "General instruction following: does the model still respond correctly to basic instructions outside your fine-tuning domain?",
+-      "Safety: does the model still decline harmful requests appropriately?",
+-      "Format on unseen instructions: does format consistency hold on prompts not in the training set?",
+-      "Benchmark subset: run a representative sample of MMLU or similar to catch broad capability regression",
+-    ]},
+-    { t: "callout", v: "key", text: "A fine-tuned model that improves your target metric by 15% but regresses on general instruction following by 30% is a net negative. Regression testing is not optional." },
+-    { t: "h2", text: "The evaluation release gate" },
+-    { t: "p", text: "Define explicit pass/fail criteria before training. For example: win rate vs. baseline ≥60%, format compliance ≥95%, capability regression <5% on benchmark subset, safety test pass rate ≥99%. If the fine-tuned model doesn't clear every gate, it doesn't ship." },
+-    { t: "lab", tab: "systems", label: "Build evaluation pipelines in the Systems lab →", desc: "Design eval frameworks that catch fine-tuning regressions before they reach production." },
+-    { t: "references", items: [
+-      { label: "HELM: Holistic Evaluation of Language Models — Stanford CRFM", url: "https://crfm.stanford.edu/helm/" },
+-      { label: "MT-Bench and Chatbot Arena: Judging LLM-as-a-Judge — Zheng et al. (2023)", url: "https://arxiv.org/abs/2306.05685" },
+-      { label: "Beyond the Imitation Game: Quantifying and Extrapolating Language Model Capabilities", url: "https://arxiv.org/abs/2206.04615" },
+-    ]},
+-  ],
+-
+   "catastrophic-forgetting": [
+     { t: "p", text: "You fine-tune a model on 5,000 customer support examples. It becomes excellent at answering support queries in your specific format. Then you notice something: it's gotten worse at general reasoning, struggles with questions outside the support domain, and sometimes ignores instructions that it handled correctly before fine-tuning." },
+     { t: "p", text: "This is catastrophic forgetting — the tendency of neural networks to lose previously learned capabilities when trained on new tasks. It's not a bug in your fine-tuning pipeline. It's a fundamental property of gradient descent on sequential tasks. Understanding it prevents the most common fine-tuning regression failures." },

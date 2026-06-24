@@ -1,0 +1,13 @@
+  ABTestingForAI, ABTestingLab, AgentContextArchModule, AgentMemoryArchitecture, AIDeploymentArchitecture, AIGuardrailsEngineering, AIRedTeaming, AISystemDesignCanvas, AgentArchitecture, AISafetyEngineering, BertPoolingLab, BiEncoderVsCrossEncoder, BuildThis, ConstrainedGeneration, ContextCompaction, ContextWindowEngineering, CostLatencyLab, DebugTraces, DecodingStrategiesLab, EvalFrameworksLab, EvalMetrics, EvalsLab, FineTuningLab, FineTuningWorkflows, FlashAttention, GraphRAGModule, GRPOAgentRL, IncidentRoom, KVCacheEngineering, LangGraphModule, LLMObservability, LangSmithTracingLab, LongContextPatterns, MCPDecisionFramework, MoEArchitecture, ModelMerging, ModelStrategyLab, MultimodalAI, MultimodalSystems, PromptCaching, PromptCachingLab, PromptChangeMgmt, PromptEngineeringLab, PromptInjectionDefense, QuantizationEngineering, QueryRefinementLab, VectorDBEngineering, RLHFAlignment, ReasoningModelsLab, ServingInfra, ShouldUseAI, SpeculativeDecoding, StreamingPatterns, StructuredOutputEngineering, SyntheticDataGeneration, TransformerArchitecture, TrapsLab, VibeCodingAndAgenticDev, VectorSimilarityExplorer
+  { id: "serving", label: "Serving Infrastructure", tag: "INFRA", group: "OPS", component: ServingInfra },
+  { id: "promptcaching", label: "Cache Architecture & Warmup", tag: "ARCH", group: "OPS", component: PromptCaching },
+  { id: "finetuning", label: "Fine-Tuning Workflows", tag: "TRAIN", group: "BUILD", component: FineTuningWorkflows },
+  { id: "grpo", label: "GRPO / Agent RL", tag: "ALIGN", group: "BUILD", component: GRPOAgentRL },
+  { id: "multimodal2", label: "Multimodal Systems", tag: "VISION", group: "DESIGN", component: MultimodalSystems },
+  { id: "agentarch", label: "Agent Architecture", tag: "AGENT", group: "BUILD", component: AgentArchitecture },
+  multimodal:   [{ id: "multimodal-llms-architecture", title: "Multimodal LLMs Architecture" }],
+  multimodal2:  [{ id: "multimodal-in-production", title: "Multimodal in Production" }],
+  agentarch:    [{ id: "react-reasoning-acting", title: "ReAct: Reasoning + Acting" }, { id: "building-reliable-agents", title: "Building Reliable Agents" }],
+  serving:      [{ id: "inference-optimisation", title: "Inference Optimisation" }],
+  promptcaching:[{ id: "prompt-caching-guide", title: "Prompt Caching Guide" }],
+  finetuning:   [{ id: "finetune-playbook", title: "Fine-Tuning Playbook" }, { id: "full-vs-peft-vs-prompting", title: "Full FT vs PEFT vs Prompting" }, { id: "lora-in-practice", title: "LoRA in Practice" }],
