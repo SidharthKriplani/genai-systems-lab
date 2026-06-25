@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Icon } from "./Icon.jsx";
 import HowTo from "./HowTo";
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
@@ -333,8 +334,8 @@ function ChunkingLab() {
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 grid grid-cols-2 gap-4">
         <div>
-          <p className="text-xs text-green-400 mb-1">✓ {s.pros}</p>
-          <p className="text-xs text-red-400">✗ {s.cons}</p>
+          <p className="text-xs text-green-400 mb-1"><Icon name="check" size={11} /> {s.pros}</p>
+          <p className="text-xs text-red-400"><Icon name="x" size={11} /> {s.cons}</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-zinc-500">Retrieval Score (simulated)</p>
@@ -547,7 +548,7 @@ function SpotHallucination() {
               className={`w-full text-left px-4 py-3 rounded-xl border text-sm leading-relaxed transition-all ${cls}`}>
               {o.text}
               {revealed && o.hallucination && (
-                <div className="mt-2 text-xs text-red-400 font-mono">✗ Fabricated: "{o.fakePart}"</div>
+                <div className="mt-2 text-xs text-red-400 font-mono flex items-center gap-1"><Icon name="x" size={12} /> Fabricated: "{o.fakePart}"</div>
               )}
             </button>
           );

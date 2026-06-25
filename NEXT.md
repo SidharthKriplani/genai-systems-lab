@@ -2,6 +2,32 @@
 
 Read this at session start. Do only this. Update before closing.
 
+---
+
+## 🧭 NEXT IMMEDIATE BUILD — IA Rebuild (topic × layer grid)  ⏸ PAUSED 25 Jun
+
+**The initiative:** kill the verb-axis nav fragmentation; re-home every surface into a **topic × layer grid** — 5 columns (Retrieval · Evaluation · Agents · Production · Foundations) × rows (**Learn / DO / BUILD / LIVE**). Rule: *"nothing deleted, just placed."* Full map + provenance: **`GSL-PLACEMENT-MAP.md`** (repo root).
+
+> ⚠️ **FREEZE CONFLICT — read before resuming.** This is structural product work (a new "Start Here" surface + a nav rewire), which sits against the CONTENT FREEZE doctrine below. Phase 1 was user-directed and already shipped; treat P2–P4 as needing the same HQ-style override before building. Flagging, not deciding.
+
+**Decisions locked (user, 24–25 Jun):**
+- **Prompts → EXTRAS** (parked, not deleted). **Safety → EXTRAS** (parked).
+- KNOW row relabels to **"Learn"**. "Foundations" naming nit (grid column vs the FM topic) parked.
+- Concepts (atoms) + Learning Paths (threads) + GT (library) = one **Learn** surface; GT library to sit behind an **"open the whole universe?"** toggle.
+- 4 historically-deleted files recovered → `_legacy/recovered/` (StartHere / Library / Labs + Blog tombstone). Restore-or-leave parked. **Nothing deleted by this work** — set-diff verified; `pre-overlap-baseline` tag + `_legacy/` archive are the undo.
+
+**Phase status:**
+- ✅ **P1 — Beginner ramp. BUILT + DEPLOYED + LIVE.** `src/StartHere.jsx` (new) — 5 in-place micro-lessons (token → embedding → cosine → next-token → context), monochrome, localStorage progress, SQLBolt read→poke→check loop (no tab-jumping). Wired additively into `App.jsx` (lazy import, `VALID_VIEWS`, route, KNOW nav item "Start Here"). Home cold-hero **front-door card** added (`src/Home.jsx`, `hero_starthere_cta`, above the RAG Lab card). All changes esbuild-clean, brace=0, **zero deletions**.
+- ⏭️ **P2 — GT "open the whole universe?" toggle (NEXT UP).** `GroundTruth.jsx` already has `SERIES_META` + an "All posts" / "Show all posts →" mechanism (~lines 1545–1628; **312 posts**). Reframe: curated/series view as the calm default, full library behind an inviting reveal. Enhances existing — moderate care (file is 1,751 lines).
+- ⏭️ **P3 — Learn Library rebuild.** `src/utils/contentAudit.js` `MODULE_CATALOG` is **STALE** (95 entries; ~15 concepts vs today's 116 + 57 systems). Must **regenerate the catalog** from live registries (Concepts `GYMS`, `SYSTEMS_MODULES`, Agents, GT) FIRST, then revive `_legacy/recovered/Library.jsx` (filter pills + grouped cards + collapsible "more"). Bigger.
+- ⏭️ **P4 — Topic-grid rewire (the big one, LAST).** Implement the placement map: 5 columns × Learn/DO + global **BUILD** (project skeletons) / **LIVE** (Interview Room + negotiation sim+cards) / **EXTRAS** (Prompts, Safety, salary calc, AIPM, enterprise, multimodal). Slow, careful, only after P2+P3 are live.
+
+**Recovered assets to mine:** `_legacy/recovered/Library.jsx` (ancestor of the Learn library + the universe-toggle pattern), `Labs.jsx`, `StartHere.jsx` (already mined for P1). `contentAudit.js` intact but stale.
+
+**Build doctrine for this initiative:** additive-first; nothing moved/deleted until a phase is approved; every change gets esbuild + brace=0 + `git status` no-deletions check; user builds on Mac (`npm run build`) and pushes. Recovery point: tag `pre-overlap-baseline`.
+
+---
+
 ## 🎨 SPRINT 90 (23–24 Jun) — Monochrome "instrument" theme
 GSL got its per-lab visual identity: a greyscale instrument with one cyan accent (red=break / green=fix, semantic only). Spec locked in `HQ/DESIGN-STANDARD.md` ("THE MONOCHROME INSTRUMENT STANDARD").
 - **Theme = one file.** `src/index.css` MONOCHROME INSTRUMENT block remaps Tailwind v4 `--color-*` → cold grey ramp + kill-rainbow + faint break/fix. Appended, dark-scoped, **reversible** (delete block → warm base returns). ✅ built on Mac + pushed + live.

@@ -4,6 +4,7 @@ import { BrandMark } from "./BrandMark";
 import { track } from "./analytics";
 import { POSTS } from "./groundTruthIndex";
 import { getAllAreasReadiness } from "./readiness";
+import { Icon } from "./Icon.jsx";
 
 // ─── CountUp ──────────────────────────────────────────────────────────────────
 function CountUp({ target, duration = 1200, suffix = "" }) {
@@ -829,7 +830,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
         style={{ boxShadow: "0 -8px 32px var(--gal-build-tint)" }}>
         <a href="https://tally.so/r/mYoQkl" target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-zinc-700 text-zinc-400 hover:border-cyan-700 hover:text-cyan-400 transition-all">
-          <span>★</span> Share feedback
+          <span><Icon name="star-filled" size={14} /></span> Share feedback
         </a>
         <p className="text-[11px] text-zinc-600">
           Also by the same team:{" "}

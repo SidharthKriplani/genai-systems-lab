@@ -6,6 +6,7 @@ import { useState } from "react";
 import React from "react";
 import { track } from "./analytics";
 import { isAccessGranted } from "./utils/accessCode";
+import { Icon } from './Icon.jsx';
 
 /**
  * CommonTrapCallout
@@ -33,7 +34,7 @@ export function ProductionNoteChip({ note }) {
   if (!note) return null;
   return (
     <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800">
-      <span className="text-zinc-600 text-xs shrink-0 mt-0.5">⚙</span>
+      <span className="text-zinc-600 text-xs shrink-0 mt-0.5"><Icon name='wrench' size={12} /></span>
       <p className="text-xs text-zinc-500 leading-relaxed">
         <span className="text-zinc-400 font-semibold">In production: </span>{note}
       </p>
@@ -51,7 +52,7 @@ export function ForwardPointerCard({ preplabTopic, gtPostId, gtPostTitle, onNavi
   return (
     <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(139,92,246,0.2)", borderTop: "1px solid var(--border)" }}>
       <div className="flex items-center gap-2">
-        <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+        <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name='check' size={12} /></span>
         <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">You've seen the failure. What's next?</span>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -114,7 +115,7 @@ export function WhatNextCard({ preplabTopic, gtPostId, gtPostTitle, onNavigate, 
             style={bookmarked
               ? { background: "rgba(245,158,11,0.1)", borderColor: "rgba(245,158,11,0.3)", color: "#fbbf24" }
               : { background: "rgba(39,39,42,0.6)", borderColor: "rgba(63,63,70,0.6)", color: "#71717a" }}>
-            {bookmarked ? "★ Saved" : "☆ Save"}
+            {bookmarked ? <><Icon name='star-filled' size={14} /> Saved</> : <><Icon name='star' size={14} /> Save</>}
           </button>
         )}
       </div>
@@ -304,7 +305,7 @@ export function FidelityBadge({ variant = "simulated" }) {
   if (variant === "accurate") {
     return (
       <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-emerald-700/60 bg-emerald-950/40 text-emerald-400 shrink-0">
-        ✓ Scenario-accurate
+        <Icon name='check' size={12} /> Scenario-accurate
       </span>
     );
   }
@@ -435,7 +436,7 @@ export function GradientPanel({ blocks, onNavigate }) {
             <span className="text-[12px] font-black text-zinc-100 tracking-wide">GRADIENT</span>
             <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border" style={{ color: "var(--gal-build)", borderColor: "var(--gal-build-border)", background: "var(--gal-build-tint)" }}>DEPTH 3 · PhD</span>
             {unlocked && open && (
-              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border" style={{ color: "var(--gal-build)", borderColor: "var(--gal-build-border)", background: "var(--gal-build-tint)" }}>✓ Faithful</span>
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border" style={{ color: "var(--gal-build)", borderColor: "var(--gal-build-border)", background: "var(--gal-build-tint)" }}><Icon name='check' size={12} /> Faithful</span>
             )}
             {!unlocked && (
               <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-900/50 text-zinc-500">GATED</span>

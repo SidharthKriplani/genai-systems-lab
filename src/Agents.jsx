@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Icon } from './Icon.jsx';
 import HowTo from "./HowTo";
 import { ForwardPointerCard } from "./shared";
 
@@ -7,7 +8,7 @@ function FidelityBadge({ variant = "simulated" }) {
   if (variant === "accurate") {
     return (
       <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border border-emerald-700/60 bg-emerald-950/40 text-emerald-400 shrink-0">
-        ✓ Scenario-accurate
+        <Icon name="check" size={12} /> Scenario-accurate
       </span>
     );
   }
@@ -279,19 +280,19 @@ function ToolUseDesign({ onNavigate }) {
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 space-y-2">
               <div className="text-xs font-bold text-zinc-400 uppercase">Raw Function Calling</div>
               <ul className="space-y-1.5 text-xs text-zinc-400">
-                <li className="flex gap-2"><span className="text-red-400 shrink-0">✗</span>Tool schemas hardcoded per app</li>
-                <li className="flex gap-2"><span className="text-red-400 shrink-0">✗</span>No standard for auth or transport</li>
-                <li className="flex gap-2"><span className="text-red-400 shrink-0">✗</span>Each tool integration is custom glue code</li>
-                <li className="flex gap-2"><span className="text-red-400 shrink-0">✗</span>Context/resources passed manually in prompt</li>
+                <li className="flex gap-2"><span className="text-red-400 shrink-0"><Icon name="x" size={14} /></span>Tool schemas hardcoded per app</li>
+                <li className="flex gap-2"><span className="text-red-400 shrink-0"><Icon name="x" size={14} /></span>No standard for auth or transport</li>
+                <li className="flex gap-2"><span className="text-red-400 shrink-0"><Icon name="x" size={14} /></span>Each tool integration is custom glue code</li>
+                <li className="flex gap-2"><span className="text-red-400 shrink-0"><Icon name="x" size={14} /></span>Context/resources passed manually in prompt</li>
               </ul>
             </div>
             <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/20 p-4 space-y-2">
               <div className="text-xs font-bold text-emerald-400 uppercase">MCP</div>
               <ul className="space-y-1.5 text-xs text-zinc-300">
-                <li className="flex gap-2"><span className="text-emerald-400 shrink-0">✓</span>Standard schema discovery at runtime</li>
-                <li className="flex gap-2"><span className="text-emerald-400 shrink-0">✓</span>Transport-agnostic (stdio, HTTP/SSE)</li>
-                <li className="flex gap-2"><span className="text-emerald-400 shrink-0">✓</span>Server exposes tools, prompts, resources</li>
-                <li className="flex gap-2"><span className="text-emerald-400 shrink-0">✓</span>Reusable across any MCP-compatible client</li>
+                <li className="flex gap-2"><span className="text-emerald-400 shrink-0"><Icon name="check" size={14} /></span>Standard schema discovery at runtime</li>
+                <li className="flex gap-2"><span className="text-emerald-400 shrink-0"><Icon name="check" size={14} /></span>Transport-agnostic (stdio, HTTP/SSE)</li>
+                <li className="flex gap-2"><span className="text-emerald-400 shrink-0"><Icon name="check" size={14} /></span>Server exposes tools, prompts, resources</li>
+                <li className="flex gap-2"><span className="text-emerald-400 shrink-0"><Icon name="check" size={14} /></span>Reusable across any MCP-compatible client</li>
               </ul>
             </div>
           </div>
@@ -377,7 +378,7 @@ function ToolUseDesign({ onNavigate }) {
 
 const MEMORY_TYPES = [
   {
-    id: "working", name: "Working Memory", color: "#6366f1", icon: "📋", analogy: "RAM / context window",
+    id: "working", name: "Working Memory", color: "#6366f1", icon: "clipboard", analogy: "RAM / context window",
     desc: "Everything the agent can 'see' right now: system prompt, conversation history, tool outputs, instructions. This IS the agent's mind for the current task.",
     capacity: "Limited — 4k to 200k tokens depending on model",
     persistence: "None — cleared between sessions",
@@ -385,7 +386,7 @@ const MEMORY_TYPES = [
     tradeoff: "Token limits force prioritization. What you include directly determines what the agent can reason about. The most expensive mistake is putting the wrong things in context.",
   },
   {
-    id: "episodic", name: "Episodic Memory", color: "#3b82f6", icon: "📖", analogy: "Conversation history",
+    id: "episodic", name: "Episodic Memory", color: "#3b82f6", icon: "book-open", analogy: "Conversation history",
     desc: "Record of past interactions. Enables the agent to maintain continuity across turns and reference what happened earlier.",
     capacity: "Unbounded storage, but only a window fits in context",
     persistence: "Across turns in a session (or longer with external storage)",
@@ -393,7 +394,7 @@ const MEMORY_TYPES = [
     tradeoff: "Full history rarely fits in context. You need a summary strategy: keep recent N turns verbatim, summarize older ones. What you forget matters.",
   },
   {
-    id: "semantic", name: "Semantic Memory", color: "#22c55e", icon: "🗄", analogy: "Knowledge base / RAG",
+    id: "semantic", name: "Semantic Memory", color: "#22c55e", icon: "archive", analogy: "Knowledge base / RAG",
     desc: "Factual knowledge retrieved on demand. The agent retrieves what it needs when it needs it — it doesn't carry everything in context.",
     capacity: "Unlimited — stored externally in vector DB or KB",
     persistence: "Permanent until updated",
@@ -401,7 +402,7 @@ const MEMORY_TYPES = [
     tradeoff: "Retrieval precision matters — bad retrieval = wrong context. Vector DB quality, chunk size, and reranking all affect what ends up in working memory.",
   },
   {
-    id: "procedural", name: "Procedural Memory", color: "#f59e0b", icon: "⚙️", analogy: "Skills in weights (fine-tuning)",
+    id: "procedural", name: "Procedural Memory", color: "#f59e0b", icon: "wrench", analogy: "Skills in weights (fine-tuning)",
     desc: "How to do things — encoded in the model's weights through training or fine-tuning. Not retrieved at runtime; always present.",
     capacity: "Fixed at training time",
     persistence: "Until the model is retrained",
@@ -433,13 +434,13 @@ function AgentMemory({ onNavigate }) {
           <button key={m.id} onClick={() => setSel(m.id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${sel === m.id ? "text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
             style={sel === m.id ? { backgroundColor: m.color } : {}}>
-            {m.icon} {m.name}
+            <Icon name={m.icon} size={14} /> {m.name}
           </button>
         ))}
       </div>
       <div className="rounded-xl border bg-zinc-900/60 p-5 space-y-4" style={{ borderColor: mem.color+"55" }}>
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{mem.icon}</span>
+          <span className="flex items-center"><Icon name={mem.icon} size={16} /></span>
           <div>
             <div className="text-base font-black text-white">{mem.name}</div>
             <div className="text-xs font-mono mt-0.5" style={{ color: mem.color }}>Analogy: {mem.analogy}</div>
@@ -721,7 +722,7 @@ function PlanningPatterns({ onNavigate }) {
             <div className="space-y-1">
               {plan.strengths.map((s, i) => (
                 <div key={i} className="flex gap-2 text-xs text-zinc-300 bg-emerald-950/20 border border-emerald-900/30 rounded-lg px-3 py-2">
-                  <span className="text-emerald-400 shrink-0">✓</span>{s}
+                  <span className="text-emerald-400 shrink-0"><Icon name="check" size={14} /></span>{s}
                 </div>
               ))}
             </div>
@@ -731,7 +732,7 @@ function PlanningPatterns({ onNavigate }) {
             <div className="space-y-1">
               {plan.weaknesses.map((w, i) => (
                 <div key={i} className="flex gap-2 text-xs text-zinc-300 bg-red-950/20 border border-red-900/30 rounded-lg px-3 py-2">
-                  <span className="text-red-400 shrink-0">✗</span>{w}
+                  <span className="text-red-400 shrink-0"><Icon name="x" size={14} /></span>{w}
                 </div>
               ))}
             </div>
@@ -1028,7 +1029,7 @@ function AgentDesignChallenge() {
         <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+              <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={10} /></span>
               <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">{challenge.title} — design scored</span>
             </div>
             <p className="text-xs text-zinc-500 leading-relaxed pl-7">
@@ -1036,8 +1037,8 @@ function AgentDesignChallenge() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => onNavigate && onNavigate({ tab: "preplab", topic: "agents" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">🧠 Drill agent design questions</button>
-            <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-system-design" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">📖 Designing an Agent System</button>
+            <button onClick={() => onNavigate && onNavigate({ tab: "preplab", topic: "agents" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all"><Icon name="brain" size={14} /> Drill agent design questions</button>
+            <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-system-design" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all"><Icon name="book-open" size={14} /> Designing an Agent System</button>
           </div>
         </div>
       </div>
@@ -1926,12 +1927,12 @@ function AgentLoopSimulator() {
         )}
         <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={10} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">You've traced the loop — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => onNavigate && onNavigate({ tab: "preplab", topic: "agents" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">🧠 Test in Prep Lab</button>
-            <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-failure-modes" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all">📖 How AI Agents Fail in Production</button>
+            <button onClick={() => onNavigate && onNavigate({ tab: "preplab", topic: "agents" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all"><Icon name="brain" size={14} /> Test in Prep Lab</button>
+            <button onClick={() => onNavigate && onNavigate({ tab: "groundtruth", postId: "agent-failure-modes" })} className="text-xs px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-200 hover:text-violet-300 font-medium transition-all"><Icon name="book-open" size={14} /> How AI Agents Fail in Production</button>
           </div>
         </div>
         {(() => {
@@ -2229,7 +2230,7 @@ function FrameworkLandscape() {
                   <div className="space-y-1">
                     {fw.strengths.map((s, i) => (
                       <div key={i} className="flex items-start gap-1.5 text-xs text-zinc-300">
-                        <span className="text-emerald-500 shrink-0 mt-0.5">✓</span>{s}
+                        <span className="text-emerald-500 shrink-0 mt-0.5"><Icon name="check" size={14} /></span>{s}
                       </div>
                     ))}
                   </div>
@@ -2239,7 +2240,7 @@ function FrameworkLandscape() {
                   <div className="space-y-1">
                     {fw.weaknesses.map((w, i) => (
                       <div key={i} className="flex items-start gap-1.5 text-xs text-zinc-300">
-                        <span className="text-red-500 shrink-0 mt-0.5">✗</span>{w}
+                        <span className="text-red-500 shrink-0 mt-0.5"><Icon name="x" size={14} /></span>{w}
                       </div>
                     ))}
                   </div>
@@ -2289,7 +2290,7 @@ function FrameworkLandscape() {
                     <td className="py-2 pr-4 text-zinc-200 font-semibold">{row.name}</td>
                     <td className="py-2 px-2 text-center text-zinc-400">{row.type}</td>
                     <td className="py-2 px-2 text-center text-zinc-400">{row.best}</td>
-                    <td className="py-2 px-2 text-center">{row.agnostic === "✓" ? <span className="text-emerald-400">✓</span> : <span className="text-red-400">✗</span>}</td>
+                    <td className="py-2 px-2 text-center">{row.agnostic === "✓" ? <span className="text-emerald-400"><Icon name="check" size={14} /></span> : <span className="text-red-400"><Icon name="x" size={14} /></span>}</td>
                     <td className="py-2 pl-2 text-center text-amber-400 font-mono text-[10px]">{row.maturity}</td>
                   </tr>
                 ))}
@@ -2463,8 +2464,8 @@ function LLMMemoryArchitecture() {
                     <div className="bg-zinc-950 rounded-lg p-3">
                       <pre className="font-mono text-xs text-green-400 whitespace-pre-wrap leading-relaxed">{m.code}</pre>
                     </div>
-                    <p className="text-[11px] text-emerald-400">✓ Use when: {m.when}</p>
-                    <p className="text-[11px] text-amber-400">⚠ Pitfall: {m.pitfall}</p>
+                    <p className="text-[11px] text-emerald-400"><Icon name="check" size={11} /> Use when: {m.when}</p>
+                    <p className="text-[11px] text-amber-400"><Icon name="alert-triangle" size={11} /> Pitfall: {m.pitfall}</p>
                   </div>
                 )}
               </div>
@@ -2536,7 +2537,7 @@ function LLMMemoryArchitecture() {
               <div className="bg-zinc-950 rounded-lg p-3">
                 <pre className="font-mono text-xs text-green-400 whitespace-pre-wrap leading-relaxed">{wizardResult.code}</pre>
               </div>
-              <button onClick={() => setWizardAnswers({})} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">↺ Reset wizard</button>
+              <button onClick={() => setWizardAnswers({})} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"><Icon name="rotate-ccw" size={14} /> Reset wizard</button>
             </div>
           )}
         </div>
@@ -2547,7 +2548,7 @@ function LLMMemoryArchitecture() {
 
 // ─── MCP DEEP DIVE ────────────────────────────────────────────────────────────
 const MCP_PRIMITIVES = [
-  { id: "tools",     label: "Tools",     color: "#6366f1", icon: "🔧",
+  { id: "tools",     label: "Tools",     color: "#6366f1", icon: "wrench",
     what: "Functions the server exposes that the LLM can call. Identical to function calling — but defined in the MCP server, not in the client application.",
     example: "get_weather(city: str) → WeatherData\nsearch_files(query: str, path: str) → list[File]\ncreate_issue(title: str, body: str, labels: list) → Issue",
     when: "Anything the agent needs to DO: search, write, compute, call APIs." },
@@ -2555,7 +2556,7 @@ const MCP_PRIMITIVES = [
     what: "Data sources the LLM can READ. Files, database rows, API responses — exposed as URI-addressed resources. Read-only by convention.",
     example: "file:///home/user/project/README.md\ndb://customers/id/12345\ngithub://repos/anthropics/mcp/issues/42",
     when: "Context injection: let the model read a file, a database record, or a remote resource without a tool call round-trip." },
-  { id: "prompts",   label: "Prompts",   color: "#06b6d4", icon: "💬",
+  { id: "prompts",   label: "Prompts",   color: "#06b6d4", icon: "message-circle",
     what: "Reusable prompt templates with parameters. The server defines prompt workflows; the host (Claude Desktop, IDE) surfaces them as slash commands or menu items.",
     example: '/summarize_pr(pr_url: str)\n/explain_error(stack_trace: str)\n/generate_tests(file_path: str, coverage_target: int)',
     when: "Repeatable workflows where the prompt structure is known but the parameters vary per invocation." },
@@ -2664,7 +2665,7 @@ function MCPDeepDive() {
                 className="rounded-xl border p-4 cursor-pointer transition-all"
                 style={{ borderColor: selectedPrim===p.id ? p.color : "#3f3f46", backgroundColor: selectedPrim===p.id ? p.color+"0d" : "transparent" }}>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">{p.icon}</span>
+                  <span className="flex items-center">{["wrench","message-circle"].includes(p.icon) ? <Icon name={p.icon} size={16} /> : <span className="text-xl">{p.icon}</span>}</span>
                   <span className="font-bold text-white">{p.label}</span>
                 </div>
                 <p className="text-xs text-zinc-400 leading-relaxed">{p.what}</p>
@@ -2673,7 +2674,7 @@ function MCPDeepDive() {
                     <div className="bg-zinc-950 rounded-lg p-3">
                       <pre className="font-mono text-xs text-green-400 whitespace-pre-wrap">{p.example}</pre>
                     </div>
-                    <p className="text-[11px] text-emerald-400">✓ Use when: {p.when}</p>
+                    <p className="text-[11px] text-emerald-400"><Icon name="check" size={11} /> Use when: {p.when}</p>
                   </div>
                 )}
               </div>
@@ -2928,9 +2929,9 @@ const CU_ACTION_SPACE = [
 
 const CU_GROUNDING_STEPS = [
   { step: 1, label: "Observe", desc: "Take a screenshot of the current screen state", icon: "📸", detail: "Model receives the full screenshot as a vision input. Bounding boxes or coordinates can be pre-computed with a grounding model (OmniParser, SoM) or computed directly by the LLM." },
-  { step: 2, label: "Ground", desc: "Identify target UI elements and their coordinates", icon: "🎯", detail: "The model must map from 'click the Submit button' to pixel coordinates (x=840, y=612). This is the hardest step — UI layouts vary, elements move, and OCR fails on icon-only buttons." },
-  { step: 3, label: "Act", desc: "Execute the action via computer control API", icon: "⚡", detail: "Anthropic's API returns a structured action dict: {type: 'mouse_click', coordinate: [840, 612]}. The agent executor translates this to OS-level input events via PyAutoGUI, Playwright, or the OS accessibility API." },
-  { step: 4, label: "Verify", desc: "Confirm action had expected effect before next step", icon: "✅", detail: "Take a new screenshot, compare state. Did the button click open a modal? Did the text appear in the field? Failure to verify causes cascading errors — the agent proceeds as if the action worked." },
+  { step: 2, label: "Ground", desc: "Identify target UI elements and their coordinates", icon: "target", detail: "The model must map from 'click the Submit button' to pixel coordinates (x=840, y=612). This is the hardest step — UI layouts vary, elements move, and OCR fails on icon-only buttons." },
+  { step: 3, label: "Act", desc: "Execute the action via computer control API", icon: "zap", detail: "Anthropic's API returns a structured action dict: {type: 'mouse_click', coordinate: [840, 612]}. The agent executor translates this to OS-level input events via PyAutoGUI, Playwright, or the OS accessibility API." },
+  { step: 4, label: "Verify", desc: "Confirm action had expected effect before next step", icon: "check-circle", detail: "Take a new screenshot, compare state. Did the button click open a modal? Did the text appear in the field? Failure to verify causes cascading errors — the agent proceeds as if the action worked." },
 ];
 
 const CU_FAILURE_MODES = [
@@ -3008,7 +3009,7 @@ function ComputerUseAgents() {
             {CU_GROUNDING_STEPS.map((s, i) => (
               <div key={i} className="flex gap-4 mb-0">
                 <div className="flex flex-col items-center">
-                  <div className="w-9 h-9 rounded-full bg-zinc-800 border-2 border-blue-500/50 flex items-center justify-center text-lg shrink-0">{s.icon}</div>
+                  <div className="w-9 h-9 rounded-full bg-zinc-800 border-2 border-blue-500/50 flex items-center justify-center text-lg shrink-0">{["target","zap","check-circle"].includes(s.icon) ? <Icon name={s.icon} size={16} /> : s.icon}</div>
                   {i < CU_GROUNDING_STEPS.length - 1 && <div className="w-0.5 h-8 bg-zinc-700 mt-1" />}
                 </div>
                 <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4 mb-3 flex-1">
@@ -3722,7 +3723,7 @@ function AgentConfigLab() {
               </div>
               {failure.productionNote && (
                 <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800">
-                  <span className="text-zinc-600 text-xs shrink-0 mt-0.5">⚙</span>
+                  <span className="text-zinc-600 shrink-0 mt-0.5"><Icon name="wrench" size={12} /></span>
                   <p className="text-xs text-zinc-500 leading-relaxed"><span className="text-zinc-400 font-semibold">In production: </span>{failure.productionNote}</p>
                 </div>
               )}
@@ -3846,7 +3847,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
                       boxShadow: "inset 0 0 0 1px var(--border)",
                       color: "#ffffff",
                     } : {}}>
-                    {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
+                    {done.has(m.id) ? <span className="text-green-400 shrink-0"><Icon name="check" size={10} /></span> : <span className="w-3 shrink-0" />}
                     <span className="truncate">{m.label}</span>
                   </button>
                 );
@@ -3925,7 +3926,7 @@ export default function AgentsApp({ initialModule, onModuleVisit, onNavigate }) 
             <button
               onClick={() => onNavigate && onNavigate({ tab: "preplab", topic: "agents" })}
               className="text-xs px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-300 hover:text-violet-300 font-medium transition-all">
-              🧠 Prep Lab
+              <Icon name="brain" size={14} /> Prep Lab
             </button>
           </div>
         </div>

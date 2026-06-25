@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { Icon } from '../Icon.jsx';
 import HowTo from "../HowTo";
 
 
@@ -406,11 +407,11 @@ function EvalsLab() {
               <div className="rounded bg-zinc-950 border border-zinc-800 p-3 text-xs font-mono text-zinc-400">{ec.example}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="rounded bg-red-950/30 border border-red-900/40 p-3">
-                  <div className="text-xs text-red-400 font-bold mb-1">❌ Weak eval language</div>
+                  <div className="text-xs text-red-400 font-bold mb-1 flex items-center gap-1"><Icon name="x-circle" size={14} /> Weak eval language</div>
                   <div className="text-xs text-zinc-300">"{ec.weakPhrase}"</div>
                 </div>
                 <div className="rounded bg-emerald-950/30 border border-emerald-900/40 p-3">
-                  <div className="text-xs text-emerald-400 font-bold mb-1">✓ Strong eval language</div>
+                  <div className="text-xs text-emerald-400 font-bold mb-1 flex items-center gap-1"><Icon name="check" size={14} /> Strong eval language</div>
                   <div className="text-xs text-zinc-300">"{ec.strongPhrase}"</div>
                 </div>
               </div>
@@ -1673,7 +1674,7 @@ function IncidentRoom() {
         {/* Symptom + context always visible */}
         <div className="space-y-3">
           <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-4">
-            <div className="text-xs font-bold text-red-400 mb-2">🚨 Symptom report</div>
+            <div className="text-xs font-bold text-red-400 mb-2 flex items-center gap-1"><Icon name="siren" size={14} /> Symptom report</div>
             <p className="text-sm text-zinc-200 leading-relaxed">{inc.symptom}</p>
           </div>
           <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-4">
@@ -2813,12 +2814,12 @@ function FineTuningLab() {
             </div>
             {!sim.feasible && (
               <div className="rounded-lg bg-red-950 border border-red-800 p-3 text-xs text-red-300">
-                ⚠ VRAM exceeds 320GB — requires a multi-node cluster. Consider QLoRA or a smaller base model.
+                <span className="flex items-center gap-1"><Icon name="alert-triangle" size={14} /> VRAM exceeds 320GB — requires a multi-node cluster. Consider QLoRA or a smaller base model.</span>
               </div>
             )}
             {sim.overfitRisk === "high" && (
               <div className="rounded-lg bg-amber-950 border border-amber-800 p-3 text-xs text-amber-300">
-                ⚠ High overfitting risk: data-to-trainable-parameter ratio is very low. Add more data, reduce LoRA rank, or reduce epochs.
+                <span className="flex items-center gap-1"><Icon name="alert-triangle" size={14} /> High overfitting risk: data-to-trainable-parameter ratio is very low. Add more data, reduce LoRA rank, or reduce epochs.</span>
               </div>
             )}
           </div>
@@ -3446,7 +3447,7 @@ function CacheCostCalculator() {
       </div>
       {sysTokens < model.minTokens && (
         <div className="rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-xs text-amber-300">
-          ⚠ {model.name} requires ≥ {model.minTokens.toLocaleString()} tokens to cache. Your prompt is too short — caching won't activate.
+          <span className="flex items-center gap-1"><Icon name="alert-triangle" size={14} /> {model.name} requires ≥ {model.minTokens.toLocaleString()} tokens to cache. Your prompt is too short — caching won't activate.</span>
         </div>
       )}
       <div className="grid grid-cols-3 gap-3 text-center">
@@ -3491,7 +3492,7 @@ function CachePatterns() {
           <p className="text-xs font-mono text-zinc-400 leading-relaxed italic">{p.example}</p>
         </div>
         <div className="flex items-start gap-2 bg-violet-950/30 border border-violet-800/40 rounded-lg p-3">
-          <span className="text-violet-400 text-xs shrink-0">💡</span>
+          <Icon name="lightbulb" size={12} />
           <p className="text-xs text-zinc-300 leading-relaxed">{p.tip}</p>
         </div>
         <div className="space-y-1">
@@ -3790,7 +3791,7 @@ const COMPACTION_STRATEGIES = [
     id: "summary",
     name: "Hierarchical Summary",
     color: "#3b82f6",
-    icon: "📋",
+    icon: "clipboard",
     desc: "Older turns are summarized by LLM call. Summary replaces full history in context. New turns appended verbatim.",
     when: "Long multi-turn conversations (support agents, research assistants) where early context matters but full verbatim isn't needed.",
     tradeoff: "Summary quality depends on summarizer model quality. Adds latency + cost for the summarization call. Can lose nuance.",
@@ -3803,7 +3804,7 @@ const COMPACTION_STRATEGIES = [
     id: "pinned",
     name: "Pinned + Dynamic",
     color: "#22c55e",
-    icon: "📌",
+    icon: "pin",
     desc: "Critical context (system prompt, key facts, user preferences) is pinned and never evicted. Dynamic context (conversation history) is managed by rolling window or summary.",
     when: "Agents with important persistent state — user profile, active task spec, constraints that must never be forgotten.",
     tradeoff: "Pinned context uses budget permanently. Easy to pin too much. Requires explicit design decision about what is 'critical'.",
@@ -3816,7 +3817,7 @@ const COMPACTION_STRATEGIES = [
     id: "rag",
     name: "Memory RAG",
     color: "#f59e0b",
-    icon: "🗄",
+    icon: "archive",
     desc: "Long history is stored externally in a vector DB. Relevant prior turns are retrieved and injected at query time — just like document RAG but for conversation history.",
     when: "Long-running agents (days/weeks), user-specific personalization, any system where relevant history > what fits in context.",
     tradeoff: "Requires a vector DB + embedding pipeline for conversation history. Retrieval precision matters — wrong memories injected = confusion. More infrastructure.",
@@ -3895,7 +3896,7 @@ function ContextCompaction() {
           <button key={s.id} onClick={() => setSel(s.id)}
             className={`rounded-xl border p-3 text-left transition-all ${sel === s.id ? "" : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"}`}
             style={sel === s.id ? { borderColor: s.color, background: s.color + "0f" } : {}}>
-            <div className="text-lg mb-1">{s.icon}</div>
+            <div className="text-lg mb-1"><Icon name={s.icon} size={16} /></div>
             <div className="text-xs font-bold text-white leading-tight">{s.name}</div>
             <div className="text-[10px] font-mono mt-1" style={{ color: COMPLEXITY_COLORS[s.complexity] }}>{s.complexity}</div>
           </button>
@@ -3905,7 +3906,7 @@ function ContextCompaction() {
       {/* Strategy detail */}
       <div className="rounded-xl border p-5 space-y-4" style={{ borderColor: strategy.color + "44", background: strategy.color + "08" }}>
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xl">{strategy.icon}</span>
+          <span className="text-xl"><Icon name={strategy.icon} size={16} /></span>
           <span className="text-base font-black text-white">{strategy.name}</span>
           <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded" style={{ color: COMPLEXITY_COLORS[strategy.complexity], background: COMPLEXITY_COLORS[strategy.complexity] + "22" }}>
             {strategy.complexity} COMPLEXITY
@@ -4185,8 +4186,8 @@ function DebugTraces() {
                     </p>
                   )}
                 </div>
-                {submitted && opt.correct && <span className="text-emerald-400 text-sm shrink-0">✓</span>}
-                {submitted && opt.id === selected && !opt.correct && <span className="text-red-400 text-sm shrink-0">✗</span>}
+                {submitted && opt.correct && <Icon name="check" size={14} className="text-emerald-400 shrink-0" />}
+                {submitted && opt.id === selected && !opt.correct && <Icon name="x" size={14} className="text-red-400 shrink-0" />}
               </div>
             </button>
           );
@@ -4242,7 +4243,7 @@ function DebugTraces() {
 // ─── AI SYSTEM DESIGN CANVAS ──────────────────────────────────────────────────
 const PROBLEM_TYPES = [
   {
-    id: "qa", label: "Q&A / Doc Search", icon: "🔍",
+    id: "qa", label: "Q&A / Doc Search", icon: "search",
     desc: "Answer queries from a corpus",
     failureModes: ["Stale retrieval (top_k too low)", "Context overflow (chunks too large)", "Groundedness failure (model ignores retrieved context)", "Query-document embedding mismatch"],
     model: "Mid-tier: Claude Haiku / GPT-4o-mini",
@@ -4275,7 +4276,7 @@ const PROBLEM_TYPES = [
     highStakes: "Maintain a human review queue for confidence < threshold. Never auto-act on low-confidence predictions.",
   },
   {
-    id: "extraction", label: "Structured Extraction", icon: "📋",
+    id: "extraction", label: "Structured Extraction", icon: "clipboard",
     desc: "Pull entities, fields, schemas from unstructured text",
     failureModes: ["Missing optional fields (model skips them)", "Type coercion errors (dates, numbers)", "Nested schema failures", "Hallucinated values for absent fields"],
     model: "Mid-tier + JSON mode: GPT-4o-mini / Claude Haiku",
@@ -4286,7 +4287,7 @@ const PROBLEM_TYPES = [
     highStakes: "Build a schema validator as final step. Fail fast rather than persist a bad extraction to downstream systems.",
   },
   {
-    id: "agent", label: "Agentic Task Completion", icon: "🤖",
+    id: "agent", label: "Agentic Task Completion", icon: "bot",
     desc: "Multi-step task with tool use — APIs, code, browsing",
     failureModes: ["Infinite loop (no exit condition)", "Tool hallucination (wrong args)", "Context overflow over long runs", "State corruption across turns"],
     model: "Frontier: Claude Sonnet/Opus / GPT-4o",
@@ -4297,7 +4298,7 @@ const PROBLEM_TYPES = [
     highStakes: "Never give irreversible tool access (delete, send, purchase) without an explicit human confirmation step in the loop.",
   },
   {
-    id: "conversation", label: "Multi-turn Conversation", icon: "💬",
+    id: "conversation", label: "Multi-turn Conversation", icon: "message-circle",
     desc: "Ongoing dialogue with memory across turns",
     failureModes: ["Context window overflow (history too long)", "Persona drift over long conversations", "User intent misread after topic switch", "Memory retrieval failure"],
     model: "Mid-tier: Claude Haiku / GPT-4o-mini + compaction",
@@ -4341,7 +4342,7 @@ function AISystemDesignCanvas() {
           {PROBLEM_TYPES.map(pt => (
             <button key={pt.id} onClick={() => setSelectedId(pt.id)}
               className={`text-left rounded-xl border px-3 py-2.5 transition-all ${selectedId === pt.id ? "border-violet-500 bg-violet-950/30" : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"}`}>
-              <div className="text-base mb-0.5">{pt.icon}</div>
+              <div className="text-base mb-0.5"><Icon name={pt.icon} size={14} /></div>
               <div className="text-xs font-bold text-white leading-tight">{pt.label}</div>
               <div className="text-[10px] text-zinc-500 mt-0.5 leading-tight">{pt.desc}</div>
             </button>
@@ -4372,7 +4373,7 @@ function AISystemDesignCanvas() {
           <div className="space-y-1">
             {p.failureModes.map((fm, i) => (
               <div key={i} className="flex items-start gap-2 text-xs text-zinc-300">
-                <span className="text-red-500 mt-0.5 shrink-0">✗</span>{fm}
+                <Icon name="x" size={14} className="text-red-500 mt-0.5 shrink-0" />{fm}
               </div>
             ))}
           </div>
@@ -4407,7 +4408,7 @@ function AISystemDesignCanvas() {
 
         {highStakes && (
           <div className="rounded-xl border border-red-600/50 bg-red-950/20 p-4">
-            <div className="text-[10px] font-bold text-red-300 uppercase tracking-wide mb-1">⚠️ High-Stakes Requirements</div>
+            <div className="text-[10px] font-bold text-red-300 uppercase tracking-wide mb-1 flex items-center gap-1"><Icon name="alert-triangle" size={12} /> High-Stakes Requirements</div>
             <p className="text-xs text-zinc-300 leading-relaxed">{p.highStakes}</p>
           </div>
         )}
@@ -4923,13 +4924,13 @@ function LangSmithTracingLab() {
 // ─── REASONING MODELS LAB ─────────────────────────────────────────────────────
 const REASONING_TASKS = [
   { id: "math",    label: "Complex Math",        icon: "🧮", base: 52, reasoning: 94, cost: 18, desc: "Multi-step algebra, calculus, combinatorics. Base models often get intermediate steps right but propagate errors. Reasoning models backtrack.", winner: "reasoning" },
-  { id: "code",    label: "Complex Code Debug",  icon: "🐛", base: 61, reasoning: 89, cost: 12, desc: "Debugging across multiple files, understanding subtle race conditions. Base models pattern-match; reasoning models trace execution.", winner: "reasoning" },
-  { id: "logic",   label: "Multi-hop Logic",     icon: "🧩", base: 44, reasoning: 91, cost: 20, desc: "Constraints across multiple variables. Base models lose track of earlier conclusions. Reasoning models maintain a working memory of deductions.", winner: "reasoning" },
-  { id: "rag_qa",  label: "RAG Q&A",             icon: "📄", base: 84, reasoning: 86, cost: 15, desc: "Factual retrieval from context. Base models are nearly as good — the retrieved context does most of the work. Reasoning adds latency with marginal benefit.", winner: "base" },
-  { id: "chat",    label: "Conversational Chat",  icon: "💬", base: 88, reasoning: 87, cost: 25, desc: "Casual conversation, customer support. Base models are better here — faster, cheaper, more natural. Reasoning models can over-think simple responses.", winner: "base" },
-  { id: "summary", label: "Summarization",        icon: "📝", base: 82, reasoning: 83, cost: 14, desc: "Condensing long documents. Base models are comparable — summarization is a pattern-recognition task, not a reasoning task.", winner: "base" },
-  { id: "planning","label": "Agentic Planning",   icon: "🗺️", base: 55, reasoning: 92, cost: 22, desc: "Decomposing complex multi-step tasks, handling ambiguity in the goal. Reasoning models produce dramatically better plans with fewer dead ends.", winner: "reasoning" },
-  { id: "science", label: "Scientific Analysis",  icon: "🔬", base: 48, reasoning: 87, cost: 19, desc: "Analyzing experimental results, identifying confounds, generating hypotheses. Reasoning models apply systematic scientific reasoning; base models pattern-match from training data.", winner: "reasoning" },
+  { id: "code",    label: "Complex Code Debug",  icon: "bug", base: 61, reasoning: 89, cost: 12, desc: "Debugging across multiple files, understanding subtle race conditions. Base models pattern-match; reasoning models trace execution.", winner: "reasoning" },
+  { id: "logic",   label: "Multi-hop Logic",     icon: "puzzle", base: 44, reasoning: 91, cost: 20, desc: "Constraints across multiple variables. Base models lose track of earlier conclusions. Reasoning models maintain a working memory of deductions.", winner: "reasoning" },
+  { id: "rag_qa",  label: "RAG Q&A",             icon: "file-text", base: 84, reasoning: 86, cost: 15, desc: "Factual retrieval from context. Base models are nearly as good — the retrieved context does most of the work. Reasoning adds latency with marginal benefit.", winner: "base" },
+  { id: "chat",    label: "Conversational Chat",  icon: "message-circle", base: 88, reasoning: 87, cost: 25, desc: "Casual conversation, customer support. Base models are better here — faster, cheaper, more natural. Reasoning models can over-think simple responses.", winner: "base" },
+  { id: "summary", label: "Summarization",        icon: "pen-line", base: 82, reasoning: 83, cost: 14, desc: "Condensing long documents. Base models are comparable — summarization is a pattern-recognition task, not a reasoning task.", winner: "base" },
+  { id: "planning","label": "Agentic Planning",   icon: "map", base: 55, reasoning: 92, cost: 22, desc: "Decomposing complex multi-step tasks, handling ambiguity in the goal. Reasoning models produce dramatically better plans with fewer dead ends.", winner: "reasoning" },
+  { id: "science", label: "Scientific Analysis",  icon: "flask", base: 48, reasoning: 87, cost: 19, desc: "Analyzing experimental results, identifying confounds, generating hypotheses. Reasoning models apply systematic scientific reasoning; base models pattern-match from training data.", winner: "reasoning" },
 ];
 
 const THINKING_LEVELS = [
@@ -5048,7 +5049,7 @@ function ReasoningModelsLab() {
             {REASONING_TASKS.map(t => (
               <button key={t.id} onClick={() => setSelectedTask(t.id)}
                 className={`p-2 rounded-lg border text-xs text-left transition-all ${selectedTask===t.id ? "border-violet-500 bg-violet-900/20" : "border-zinc-800 hover:border-zinc-600"}`}>
-                <div className="text-base mb-1">{t.icon}</div>
+                <div className="text-base mb-1"><Icon name={t.icon} size={14} /></div>
                 <p className="text-white font-medium text-[11px]">{t.label}</p>
                 <p className={`text-[10px] font-mono font-bold ${t.winner==="reasoning" ? "text-violet-400" : "text-zinc-400"}`}>{t.winner==="reasoning" ? "→ Reasoning wins" : "→ Base is fine"}</p>
               </button>
@@ -5056,7 +5057,7 @@ function ReasoningModelsLab() {
           </div>
           {task && (
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
-              <p className="text-white font-bold">{task.icon} {task.label}</p>
+              <p className="text-white font-bold flex items-center gap-1"><Icon name={task.icon} size={14} /> {task.label}</p>
               <p className="text-sm text-zinc-400 leading-relaxed">{task.desc}</p>
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -5692,7 +5693,7 @@ function ContextWindowEngineering() {
               { tactic: "Use map-reduce for synthesis", detail: "For large corpora: process each chunk independently (map), then synthesize results (reduce). Avoids long middle entirely." },
             ].map((m, i) => (
               <div key={i} className="flex gap-3">
-                <span className="text-emerald-400 text-sm mt-0.5 shrink-0">✓</span>
+                <Icon name="check" size={14} className="text-emerald-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-zinc-200">{m.tactic}</p>
                   <p className="text-xs text-zinc-500 mt-0.5">{m.detail}</p>
@@ -7277,13 +7278,13 @@ const KV_CONCEPTS = [
   { title: "What gets cached", icon: "📦",
     desc: "The K (key) and V (value) matrices from attention layers for prefix tokens. If your system prompt is 10k tokens, those 10k tokens' KV computations are cached and reused on every call.",
     detail: "KV cache stores computed attention keys and values for the prompt prefix. On subsequent requests with the same prefix, the model skips recomputing those layers. Memory cost: 2 × n_layers × n_heads × head_dim × seq_len × precision_bytes." },
-  { title: "Automatic prefix caching", icon: "⚡",
+  { title: "Automatic prefix caching", icon: "zap",
     desc: "vLLM and SGLang detect shared prefixes automatically using hash-based block matching. No code changes needed — just send requests with the same prefix.",
     detail: "Implemented via block-level KV sharing. Each block of tokens (e.g. 16 tokens) is hashed. Matching hash = cache hit. Radix attention (SGLang) extends this to tree-structured prefix matching for multi-turn." },
   { title: "Explicit cache markers", icon: "🏷️",
     desc: "Anthropic's cache_control, OpenAI's prompt caching, and Gemini's implicit caching let you mark specific breakpoints. Everything before the marker is cached.",
     detail: 'Anthropic: add {"type":"text","text":"...","cache_control":{"type":"ephemeral"}} to mark cache boundary. OpenAI: prefix caching on by default for prompts >1024 tokens. Gemini: implicit on prompts >32k tokens. DeepSeek: explicit via API flag.' },
-  { title: "API support matrix", icon: "📊",
+  { title: "API support matrix", icon: "bar-chart",
     desc: "All major managed APIs now ship some form of KV caching. Prices and minimums vary.",
     detail: "Anthropic: 90% cost reduction on cached tokens, min 1024 tokens, 5min TTL. OpenAI: 50% reduction, min 1024 tokens, automatic. Gemini: 75% reduction, min 32k tokens, explicit. DeepSeek: 75% reduction, min 64 tokens, explicit. vLLM/SGLang: free (self-hosted), automatic." },
 ];
@@ -7296,7 +7297,7 @@ function KVHowItWorks() {
       {KV_CONCEPTS.map((c, i) => (
         <div key={i} className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
           <button onClick={() => setOpen(open === i ? null : i)} className="w-full flex items-center gap-3 p-4 text-left hover:bg-zinc-800/50 transition-colors">
-            <span className="text-xl">{c.icon}</span>
+            <span className="text-xl"><Icon name={c.icon} size={16} /></span>
             <span className="text-sm font-bold text-white flex-1">{c.title}</span>
             <span className="text-zinc-500 text-xs">{open === i ? "▲" : "▼"}</span>
           </button>
@@ -7998,7 +7999,7 @@ function MoEProductionModels() {
           {[
             {
               title: "Memory Layout",
-              icon: "🗄",
+              icon: "archive",
               body: "Expert weights must fit in GPU memory. For large MoE models, expert parallelism splits experts across GPUs. Each GPU holds a subset of experts — routing decisions determine which GPU handles each token.",
             },
             {
@@ -8008,12 +8009,12 @@ function MoEProductionModels() {
             },
             {
               title: "EPLB (vLLM v0.8+)",
-              icon: "⚖",
+              icon: "scale",
               body: "Expert-Level Load Balancing: vLLM dynamically replicates hot experts and redistributes routing across replicas. This is the production solution to load imbalance — no need to retrain with auxiliary loss.",
             },
           ].map(card => (
             <div key={card.title} className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
-              <div className="text-xl mb-2">{card.icon}</div>
+              <div className="text-xl mb-2"><Icon name={card.icon} size={16} /></div>
               <div className="text-xs font-bold text-white mb-2">{card.title}</div>
               <p className="text-xs text-zinc-400 leading-relaxed">{card.body}</p>
             </div>
@@ -8086,7 +8087,7 @@ function MoEFailureModes() {
         <div className="space-y-2">
           {healthMetrics.map(m => (
             <div key={m.label} className="flex items-start gap-3">
-              <span className="text-emerald-400 mt-0.5 text-sm">✓</span>
+              <Icon name="check" size={14} className="text-emerald-400 mt-0.5 shrink-0" />
               <div>
                 <span className="text-xs font-bold text-zinc-200">{m.label}</span>
                 <span className="text-xs text-zinc-400"> — target: {m.target}</span>
@@ -8279,7 +8280,7 @@ function MoEExpertSimulator() {
 
           {!isCollapsed && !isImbalanced && (
             <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.3)" }} className="rounded-lg p-3 flex items-center gap-3">
-              <span className="text-emerald-400 text-sm font-black">✓</span>
+              <Icon name="check" size={14} className="text-emerald-400 font-black shrink-0" />
               <p className="text-xs text-zinc-300">Load is well-balanced — imbalance ratio {imbalanceRatio.toFixed(1)}×, max load {(maxLoad * 100).toFixed(1)}%. This configuration avoids routing collapse. Try smaller batches or higher top-K ratio to stress-test it.</p>
             </div>
           )}
@@ -9017,7 +9018,7 @@ function ConstrainedHowItWorks() {
           <ul className="space-y-1">
             {["Model may add prose between fields", "Wrong types (string where int expected)", "Missing required fields", "Validation errors → retry loops"].map((item, i) => (
               <li key={i} className="text-[10px] text-zinc-400 flex items-start gap-1.5">
-                <span className="text-red-500 mt-0.5 shrink-0">✗</span>{item}
+                <Icon name="x" size={10} className="text-red-500 mt-0.5 shrink-0" />{item}
               </li>
             ))}
           </ul>
@@ -9027,7 +9028,7 @@ function ConstrainedHowItWorks() {
           <ul className="space-y-1">
             {["100% schema adherence guaranteed", "Zero validation errors", "No retry loops needed", "Invalid outputs structurally impossible"].map((item, i) => (
               <li key={i} className="text-[10px] text-zinc-400 flex items-start gap-1.5">
-                <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>{item}
+                <Icon name="check" size={10} className="text-emerald-500 mt-0.5 shrink-0" />{item}
               </li>
             ))}
           </ul>
@@ -9637,14 +9638,14 @@ function ServingFailures() {
                 <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5">Fix</p>
                 {s.fix.map((f, i) => (
                   <div key={i} className="flex items-start gap-2 text-xs text-emerald-400 mb-1">
-                    <span className="shrink-0 mt-0.5">✓</span>
+                    <Icon name="check" size={14} className="text-emerald-400 shrink-0 mt-0.5" />
                     <span>{f}</span>
                   </div>
                 ))}
               </div>
               {s.productionNote && (
                 <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800">
-                  <span className="text-zinc-600 text-xs shrink-0 mt-0.5">⚙</span>
+                  <Icon name="wrench" size={12} className="text-zinc-600 shrink-0 mt-0.5" />
                   <p className="text-xs text-zinc-500 leading-relaxed"><span className="text-zinc-400 font-semibold">In production: </span>{s.productionNote}</p>
                 </div>
               )}
@@ -10163,11 +10164,11 @@ function AgentToolDesign() {
         <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 space-y-1">
           <div className="font-bold text-zinc-300">Good tool design</div>
           <ul className="text-zinc-500 space-y-1">
-            <li>✓ Narrow scope — one thing only</li>
-            <li>✓ Idempotent or confirm before write</li>
-            <li>✓ Returns structured errors, not exceptions</li>
-            <li>✓ Has timeout + max retries</li>
-            <li>✓ Strict JSON schema for arguments</li>
+            <li><Icon name="check" size={11} /> Narrow scope — one thing only</li>
+            <li><Icon name="check" size={11} /> Idempotent or confirm before write</li>
+            <li><Icon name="check" size={11} /> Returns structured errors, not exceptions</li>
+            <li><Icon name="check" size={11} /> Has timeout + max retries</li>
+            <li><Icon name="check" size={11} /> Strict JSON schema for arguments</li>
           </ul>
         </div>
         <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-3 space-y-1">
@@ -10820,7 +10821,7 @@ function GRPOAgentRL() {
             <div className="space-y-1">
               {["Needs separate critic (value) network", "Value network must match policy size", "2x compute + memory overhead", "Complex 4-model setup: policy, ref, RM, critic", "Harder to scale to 70B+"].map(t => (
                 <div key={t} className="flex gap-1.5 items-start">
-                  <span className="text-red-500 text-[10px] mt-0.5">✕</span>
+                  <Icon name="x" size={10} className="text-red-500 mt-0.5 shrink-0" />
                   <span className="text-[10px] text-zinc-400">{t}</span>
                 </div>
               ))}
@@ -10831,7 +10832,7 @@ function GRPOAgentRL() {
             <div className="space-y-1">
               {["No critic network — group mean is baseline", "Only policy + reference model needed", "~50% memory reduction vs PPO", "Rule-based or LLM reward — no RM training", "Scales to 671B (DeepSeek-V3)"].map(t => (
                 <div key={t} className="flex gap-1.5 items-start">
-                  <span className="text-emerald-400 text-[10px] mt-0.5">✓</span>
+                  <Icon name="check" size={10} className="text-emerald-400 mt-0.5 shrink-0" />
                   <span className="text-[10px] text-zinc-400">{t}</span>
                 </div>
               ))}
@@ -11771,7 +11772,7 @@ function VectorDBEngineering({ onNavigate }) {
                     <div style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 700, marginBottom: 10 }}>{label}</div>
                     {items.map((item, i) => (
                       <div key={i} style={{ color: "#d4d4d8", fontSize: 12, marginBottom: 6, display: "flex", gap: 6 }}>
-                        <span style={{ color: "#3b82f6" }}>✓</span>{item}
+                        <Icon name="check" size={14} style={{ color: "#3b82f6" }} />{item}
                       </div>
                     ))}
                   </div>
@@ -11913,7 +11914,7 @@ const MEMORY_TYPES = [
     label: "Short-Term",
     subtitle: "Context Window",
     color: "#6366f1",
-    icon: "⚡",
+    icon: "zap",
     storage: "In-process (context window)",
     retrieval: "Always available — no retrieval needed",
     latency: "0ms",
@@ -11929,7 +11930,7 @@ const MEMORY_TYPES = [
     label: "Long-Term",
     subtitle: "Vector Retrieval",
     color: "#3b82f6",
-    icon: "🔍",
+    icon: "search",
     storage: "Vector DB (Chroma, Qdrant, Pinecone, pgvector)",
     retrieval: "Semantic similarity search at query time",
     latency: "5–50ms",
@@ -11945,7 +11946,7 @@ const MEMORY_TYPES = [
     label: "Episodic",
     subtitle: "Interaction Log",
     color: "#22c55e",
-    icon: "📋",
+    icon: "clipboard",
     storage: "Postgres / relational DB with timestamp index",
     retrieval: "Structured query by time, user, outcome — NOT vector search",
     latency: "1–5ms",
@@ -12062,7 +12063,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
                 border: `2px solid ${selected === m.id ? m.color : "transparent"}`,
                 borderRadius: 10, padding: "14px 16px", cursor: "pointer",
               }}>
-                <div style={{ fontSize: 24, marginBottom: 6 }}>{m.icon}</div>
+                <div style={{ fontSize: 24, marginBottom: 6 }}><Icon name={m.icon} size={16} /></div>
                 <div style={{ color: m.color, fontWeight: 700, fontSize: 14 }}>{m.label}</div>
                 <div style={{ color: "#a1a1aa", fontSize: 12 }}>{m.subtitle}</div>
               </div>
@@ -12072,7 +12073,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
           {selectedType && (
             <div style={{ background: "#18181b", border: `1px solid ${selectedType.color}40`, borderRadius: 10, padding: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <span style={{ fontSize: 20 }}>{selectedType.icon}</span>
+                <span style={{ fontSize: 20 }}><Icon name={selectedType.icon} size={16} /></span>
                 <span style={{ color: selectedType.color, fontSize: 16, fontWeight: 800 }}>{selectedType.label} Memory</span>
                 <span style={{ color: "#a1a1aa", fontSize: 13 }}>— {selectedType.subtitle}</span>
               </div>
@@ -12212,7 +12213,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
                 "User provides context that will affect future sessions",
               ].map((item, i) => (
                 <div key={i} style={{ color: "#d4d4d8", fontSize: 13, marginBottom: 8, display: "flex", gap: 8 }}>
-                  <span style={{ color: "#22c55e" }}>✓</span>{item}
+                  <Icon name="check" size={14} style={{ color: "#22c55e" }} />{item}
                 </div>
               ))}
             </div>
@@ -12225,7 +12226,7 @@ function AgentMemoryArchitecture({ onNavigate }) {
                 "Interaction was a one-off with no future relevance",
               ].map((item, i) => (
                 <div key={i} style={{ color: "#d4d4d8", fontSize: 13, marginBottom: 8, display: "flex", gap: 8 }}>
-                  <span style={{ color: "#ef4444" }}>✗</span>{item}
+                  <Icon name="x" size={14} style={{ color: "#ef4444" }} />{item}
                 </div>
               ))}
             </div>
@@ -12934,7 +12935,7 @@ function QueryRefinementLab({ onNavigate }) {
                     <span className="text-zinc-600 w-4 shrink-0">#{rank+1}</span>
                     <span className={`flex-1 leading-tight ${doc.relevant ? "text-zinc-200" : "text-zinc-500"}`}>{doc.title}</span>
                     <span className="text-blue-400 font-mono shrink-0">{doc.score.toFixed(2)}</span>
-                    {doc.relevant && <span className="text-emerald-400 shrink-0">✓</span>}
+                    {doc.relevant && <Icon name="check" size={14} className="text-emerald-400 shrink-0" />}
                   </div>
                 ))}
               </div>
@@ -12958,7 +12959,7 @@ function QueryRefinementLab({ onNavigate }) {
                       {moved < 0 && <span className="text-emerald-400 text-[10px] font-mono shrink-0">↑{Math.abs(moved)}</span>}
                       {moved > 0 && <span className="text-red-400 text-[10px] font-mono shrink-0">↓{moved}</span>}
                       {moved === 0 && <span className="text-zinc-600 text-[10px] shrink-0">—</span>}
-                      {doc.relevant && <span className="text-emerald-400 shrink-0">✓</span>}
+                      {doc.relevant && <Icon name="check" size={14} className="text-emerald-400 shrink-0" />}
                     </div>
                   );
                 })}
@@ -13615,7 +13616,7 @@ ${filledCriteria.map((c, i) => `  "criterion_${i+1}_score": <score>,
                       className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-2.5 py-1.5 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
                     />
                     {criteriaList.length > 1 && (
-                      <button onClick={() => removeCriteria(i)} className="text-zinc-500 hover:text-red-400 text-xs">✕</button>
+                      <button onClick={() => removeCriteria(i)} className="text-zinc-500 hover:text-red-400"><Icon name="x" size={14} /></button>
                     )}
                   </div>
                 ))}
@@ -14809,14 +14810,14 @@ function AgentContextArchModule({ onNavigate }) {
                 </div>
               ) : triggered.map(f => (
                 <div key={f.id} className="rounded-xl p-4 space-y-3" style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.3)" }}>
-                  <p className="text-sm font-bold text-red-400">⚠ {f.title}</p>
+                  <p className="text-sm font-bold text-red-400"><Icon name="alert-triangle" size={13} /> {f.title}</p>
                   <p className="text-xs text-zinc-300 leading-relaxed">{f.why}</p>
                   <div className="rounded-lg p-3" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
                     <p className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider mb-1">Fix</p>
                     <p className="text-xs text-zinc-300">{f.fix}</p>
                   </div>
                   <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800">
-                    <span className="text-zinc-600 text-xs shrink-0 mt-0.5">⚙</span>
+                    <Icon name="wrench" size={12} className="text-zinc-600 shrink-0 mt-0.5" />
                     <p className="text-xs text-zinc-500"><span className="text-zinc-400 font-semibold">In production: </span>{f.productionNote}</p>
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Icon } from './Icon.jsx';
 
 // ── Start Here — the gentlest on-ramp. Read a little, poke a widget, answer one check, next.
 //    In-place loop (no tab-jumping). Monochrome theme. localStorage progress.
@@ -329,7 +330,7 @@ export default function StartHere({ onNavigate }) {
           /* completion */
           <div className="rounded-2xl border p-7 text-center" style={{ borderColor: "var(--gal-build-border)", background: "var(--gal-build-tint)" }}>
             <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center text-xl font-black"
-              style={{ background: "var(--gal-build-tint)", color: "var(--gal-build)", border: "1px solid var(--gal-build-border)" }}>✓</div>
+              style={{ background: "var(--gal-build-tint)", color: "var(--gal-build)", border: "1px solid var(--gal-build-border)" }}><Icon name="check" size={16} /></div>
             <h2 className="text-lg font-black text-white mb-2">You've got the mental model.</h2>
             <p className="text-sm text-zinc-400 leading-relaxed mb-6 max-w-md mx-auto">
               Tokens → embeddings → similarity → next-token → context window. That's the spine the whole field hangs off. Now go watch it break in a real system.
@@ -346,7 +347,7 @@ export default function StartHere({ onNavigate }) {
               </button>
             </div>
             <button onClick={() => setI(0)} className="mt-6 text-[11px] font-mono text-zinc-600 hover:text-zinc-400 transition-colors">
-              ↺ run it again
+              <Icon name="rotate-ccw" size={12} /> run it again
             </button>
           </div>
         )}

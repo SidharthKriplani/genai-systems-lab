@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Icon } from "./Icon.jsx";
 
 // ─── ANIMATION STYLES ─────────────────────────────────────────────────────────
 const CSS = `
@@ -229,7 +230,7 @@ function RAGFlowDiagram({ onNavigate }) {
             )}
             {step >= 0 && (
               <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-semibold transition-all">
-                ↺ Reset
+                <Icon name="rotate-ccw" size={12} /> Reset
               </button>
             )}
             {playing && <div className="text-xs font-mono text-zinc-500 flow-pulse">processing…</div>}
@@ -356,18 +357,18 @@ function ContextWindowDiagram({ onNavigate }) {
             </div>
             <div className="flex gap-4 mt-3 text-xs">
               <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-indigo-600" /><span className="text-zinc-400">Active tokens</span></div>
-              {lostInMiddle && <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-amber-800" /><span className="text-amber-400">Lost in middle ⚠</span></div>}
+              {lostInMiddle && <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-amber-800" /><span className="text-amber-400 flex items-center gap-1">Lost in middle <Icon name="alert-triangle" size={12} /></span></div>}
               {overflow && <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-red-600" /><span className="text-red-400">Overflow</span></div>}
             </div>
           </div>
           {lostInMiddle && (
             <div className="rounded bg-amber-950/40 border border-amber-800/50 px-3 py-2 text-xs text-amber-300 flow-fadein">
-              ⚠ <span className="font-semibold">Lost in the middle:</span> Models attend strongly to beginning and end of context. Information in the middle zone has lower recall — even though it's technically "in context."
+              <Icon name="alert-triangle" size={14} /> <span className="font-semibold">Lost in the middle:</span> Models attend strongly to beginning and end of context. Information in the middle zone has lower recall — even though it's technically "in context."
             </div>
           )}
           {overflow && (
             <div className="rounded bg-red-950/40 border border-red-800/50 px-3 py-2 text-xs text-red-300 flow-fadein">
-              ⚠ <span className="font-semibold">Context overflow:</span> Earliest tokens being truncated. A system prompt or important early context could be silently dropped.
+              <Icon name="alert-triangle" size={14} /> <span className="font-semibold">Context overflow:</span> Earliest tokens being truncated. A system prompt or important early context could be silently dropped.
             </div>
           )}
         </div>
@@ -548,18 +549,18 @@ function AgentLoopDiagram({ onNavigate }) {
             <button onClick={() => setPlaying(true)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold transition-all">▶ Resume</button>
           )}
           {(subStep >= 0) && (
-            <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold transition-all">↺ Reset</button>
+            <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold transition-all"><Icon name="rotate-ccw" size={12} /> Reset</button>
           )}
         </div>
 
         {finished && (
           <div className="rounded-lg bg-emerald-950/40 border border-emerald-800 p-3 text-xs text-emerald-300 flow-fadein block-flash">
-            ✓ <span className="font-bold">Task complete</span> — 3 iterations, ${cost.toFixed(4)} total cost. Tool calls: 3. Output: draft email sent.
+            <Icon name="check" size={14} /> <span className="font-bold">Task complete</span> — 3 iterations, ${cost.toFixed(4)} total cost. Tool calls: 3. Output: draft email sent.
           </div>
         )}
         {failed && (
           <div className="rounded-lg bg-red-950/40 border border-red-800 p-3 text-xs text-red-300 flow-fadein block-flash space-y-1">
-            <div className="font-bold">⚠ BUDGET EXCEEDED — agent terminated after {MAX_ITER + 1} iterations</div>
+            <div className="font-bold"><Icon name="alert-triangle" size={14} /> BUDGET EXCEEDED — agent terminated after {MAX_ITER + 1} iterations</div>
             <div className="text-zinc-400">Same tool called {MAX_ITER + 1}× with slightly different queries. No definitive answer found. ${cost.toFixed(4)} consumed. No output returned.</div>
             <div className="text-zinc-500 mt-1">Prevention: hard iteration cap (max 8), detect repeated tool calls, terminate with best-effort answer when confidence plateaus.</div>
           </div>
@@ -709,7 +710,7 @@ function GuardrailDiagram({ onNavigate }) {
         {/* Controls */}
         <div className="flex items-center gap-2">
           {step === -1 && <button onClick={start} className="px-4 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">▶ Send request</button>}
-          {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold">↺ Reset</button>}
+          {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold"><Icon name="rotate-ccw" size={12} /> Reset</button>}
         </div>
 
         {/* Result */}
@@ -798,7 +799,7 @@ function TransformerBlockDiagram({ onNavigate }) {
           {step === -1 && <button onClick={start} className="px-4 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">▶ Run forward pass</button>}
           {playing && <button onClick={() => setPlaying(false)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">⏸ Pause</button>}
           {!playing && step > 0 && step < TRANSFORMER_STAGES.length - 1 && <button onClick={() => setPlaying(true)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">▶ Resume</button>}
-          {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold">↺ Reset</button>}
+          {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold"><Icon name="rotate-ccw" size={12} /> Reset</button>}
         </div>
 
         {step === TRANSFORMER_STAGES.length - 1 && (
@@ -1022,7 +1023,7 @@ function RAGArchitecturesDiagram({ onNavigate }) {
           {step === -1 && <button onClick={start} className="px-4 py-1.5 rounded text-white text-xs font-bold" style={{ background: arch.color }}>▶ Run pipeline</button>}
           {playing  && <button onClick={() => setPlaying(false)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">⏸ Pause</button>}
           {!playing && step > 0 && step < maxSteps - 1 && <button onClick={() => setPlaying(true)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">▶ Resume</button>}
-          {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold">↺ Reset</button>}
+          {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold"><Icon name="rotate-ccw" size={12} /> Reset</button>}
         </div>
       </div>
 
@@ -1203,7 +1204,7 @@ function ProductionRAGFlow({ onNavigate }) {
         {step === -1 && <button onClick={start} className="px-4 py-1.5 rounded text-white text-xs font-bold bg-violet-600 hover:bg-violet-500 transition-all">▶ Run pipeline</button>}
         {playing && <button onClick={() => { setPlaying(false); clearInterval(intervalRef.current); }} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">⏸ Pause</button>}
         {!playing && step > 0 && step < stages.length - 1 && <button onClick={() => setPlaying(true)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">▶ Resume</button>}
-        {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold">↺ Reset</button>}
+        {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold"><Icon name="rotate-ccw" size={12} /> Reset</button>}
       </div>
 
       {/* Architecture callouts */}
@@ -1240,7 +1241,7 @@ function ProductionRAGFlow({ onNavigate }) {
 
 // ─── GRAPHRAG FLOW ────────────────────────────────────────────────────────────
 const GRAPHRAG_STAGES = [
-  { id: "ingest",   label: "Document Ingestion",  color: "#6366f1", icon: "📄",
+  { id: "ingest",   label: "Document Ingestion",  color: "#6366f1", icon: "file-text",
     flat: "Chunk → embed → store in vector DB",
     graph: "Chunk → embed → extract entities + relationships with LLM",
     detail: "GraphRAG adds an LLM extraction pass over every chunk: 'Extract all named entities and their relationships.' This produces structured (entity, relation, entity) triples — e.g. (OpenAI, founded_by, Sam Altman).",
@@ -1250,17 +1251,17 @@ const GRAPHRAG_STAGES = [
     graph: "Entity deduplication → graph DB (Neo4j / NetworkX) — nodes = entities, edges = relationships",
     detail: "Deduplicate entities across chunks (GPT-4: 'Microsoft Corp' = 'Microsoft' = 'MSFT'). Build a directed graph where nodes are entities and edges carry relationship labels and source chunk references.",
     cost: "Graph build is O(n²) for entity deduplication. Index partitioning (communities) reduces this." },
-  { id: "query",    label: "Query Understanding", color: "#06b6d4", icon: "🔍",
+  { id: "query",    label: "Query Understanding", color: "#06b6d4", icon: "search",
     flat: "Embed query → cosine similarity search",
     graph: "Extract query entities → identify relevant graph subgraph → traverse relationships",
     detail: "For 'What companies did Sam Altman found before OpenAI?': extract entity=Sam Altman, relationship=founded_by, filter=before 2015. Graph traversal is exact — no similarity approximation.",
     cost: "Query entity extraction adds ~100ms + one LLM call. Worth it for complex multi-hop questions." },
-  { id: "retrieve", label: "Retrieval", color: "#22c55e", icon: "📊",
+  { id: "retrieve", label: "Retrieval", color: "#22c55e", icon: "bar-chart",
     flat: "Top-k chunks by embedding similarity",
     graph: "Graph traversal → relevant subgraph → summarize community + retrieve supporting chunks",
     detail: "GraphRAG uses two modes: local (specific entity traversal) and global (community summaries across the whole corpus). Global mode pre-summarizes graph communities offline — enabling corpus-level synthesis that flat RAG can't do.",
     cost: "Global mode requires pre-computing community summaries — expensive offline but fast at query time." },
-  { id: "generate", label: "Generation", color: "#f59e0b", icon: "✨",
+  { id: "generate", label: "Generation", color: "#f59e0b", icon: "sparkle",
     flat: "LLM(system + retrieved chunks + query)",
     graph: "LLM(system + graph subgraph summary + supporting chunks + query)",
     detail: "The LLM receives structured context: entity relationships + supporting text. For multi-hop queries ('Who are OpenAI's competitors that were founded by ex-Google employees?'), the graph gives the LLM the connection — flat RAG requires the LLM to infer it.",
@@ -1301,7 +1302,7 @@ function GraphRAGFlow({ onNavigate }) {
               <button key={st.id} onClick={() => setStage(i)}
                 className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all"
                 style={{ backgroundColor: stage===i ? st.color+"33" : "transparent", borderColor: stage===i ? st.color : "#3f3f46", color: stage===i ? st.color : "#71717a" }}>
-                {st.icon} {st.label}
+                <Icon name={st.icon} size={12} /> {st.label}
               </button>
             ))}
           </div>
@@ -1329,7 +1330,7 @@ function GraphRAGFlow({ onNavigate }) {
                   <div className="flex flex-col items-center gap-1">
                     <div className="px-3 py-1.5 rounded-lg text-xs font-mono text-center transition-all"
                       style={{ backgroundColor: i===stage ? st.color+"33" : "#1c1c1e", borderWidth:1, borderStyle:"solid", borderColor: i===stage ? st.color : "#3f3f46", color: i===stage ? st.color : "#71717a", minWidth:"90px" }}>
-                      {st.icon} {st.label.split(" ")[0]}
+                      <Icon name={st.icon} size={12} /> {st.label.split(" ")[0]}
                     </div>
                   </div>
                   {i < GRAPHRAG_STAGES.length-1 && <span className="text-zinc-600 text-lg">→</span>}
@@ -1384,7 +1385,7 @@ const VOICE_STAGES = [
     prod: "For real-time: use streaming STT (Deepgram Nova-2, AssemblyAI, or WhisperLive). Don't wait for VAD end-of-speech to start transcribing — send audio chunks in real-time and stream partial transcripts. Final transcript arrives 200–400ms after speech ends.",
     failure: "Accent mismatch, domain vocabulary (medical terms, product names). Fine-tune Whisper on domain data or use a specialized STT provider. Word error rate is your primary metric — benchmark on real user audio.",
     streaming: true },
-  { id: "llm",    label: "LLM Inference",     color: "#22c55e", icon: "🧠", latency: "500–2000ms (TTFT)",
+  { id: "llm",    label: "LLM Inference",     color: "#22c55e", icon: "brain", latency: "500–2000ms (TTFT)",
     what: "The core reasoning step. The transcript + conversation history + system prompt → LLM → token stream.",
     prod: "Stream the response — don't wait for full completion before starting TTS. Target TTFT (time to first token) < 300ms. Use prompt caching for the system prompt. For voice: use smaller/faster models (GPT-4o-mini, Claude Haiku) — voice users don't read long responses.",
     failure: "Long responses are death for voice UX — users can't pause a voice response the way they can scroll text. Constrain: 'Respond in 2–3 sentences unless the user explicitly asks for detail.'",
@@ -1429,7 +1430,7 @@ function VoiceAIFlow({ onNavigate }) {
                   <button onClick={() => setActiveStage(activeStage===s.id ? null : s.id)}
                     className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all"
                     style={{ backgroundColor: activeStage===s.id ? s.color+"22" : "#18181b", borderColor: activeStage===s.id ? s.color : "#3f3f46" }}>
-                    <span className="text-xl">{s.icon}</span>
+                    <Icon name={s.icon} size={20} />
                     <span className="text-[10px] font-mono whitespace-nowrap" style={{ color: activeStage===s.id ? s.color : "#a1a1aa" }}>{s.label}</span>
                     <span className="text-[9px] text-zinc-600">{s.latency}</span>
                   </button>
@@ -1449,7 +1450,7 @@ function VoiceAIFlow({ onNavigate }) {
             return (
               <div className="rounded-xl border p-4 space-y-3" style={{ borderColor: s.color+"60", backgroundColor: s.color+"0d" }}>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{s.icon}</span>
+                  <Icon name={s.icon} size={20} />
                   <div>
                     <p className="text-white font-bold">{s.label}</p>
                     <p className="text-xs font-mono" style={{ color: s.color }}>Latency: {s.latency}</p>
@@ -1490,7 +1491,7 @@ function VoiceAIFlow({ onNavigate }) {
               return (
                 <div key={s.id} className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">{s.icon} {s.label}</span>
+                    <span className="text-xs text-zinc-400 flex items-center gap-1"><Icon name={s.icon} size={12} /> {s.label}</span>
                     <span className="text-xs font-mono text-zinc-500">{s.latency}</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-zinc-800">
@@ -1549,11 +1550,11 @@ function VoiceAIFlow({ onNavigate }) {
         <div className="mt-6 pt-4 border-t border-zinc-800/60 flex flex-wrap gap-2">
           <button onClick={() => onNavigate({ tab: "groundtruth", postId: "build-voice-ai" })}
             className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
-            📖 How I'd Build Voice AI
+            <Icon name="book-open" size={14} /> How I'd Build Voice AI
           </button>
           <button onClick={() => onNavigate({ tab: "systems", moduleId: "multimodal" })}
             className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
-            ⚙️ Multimodal AI
+            <Icon name="wrench" size={14} /> Multimodal AI
           </button>
         </div>
       )}
@@ -1578,7 +1579,7 @@ const FT_STAGES = [
     id: "synth",
     label: "Synthetic Augmentation",
     color: "#8b5cf6",
-    icon: "🤖",
+    icon: "bot",
     what: "Use an LLM (GPT-4o, Claude) to generate instruction-response pairs from the raw corpus. Apply self-instruct, persona-driven generation, or Evol-Instruct.",
     prod: "LLM-as-judge filtering: score all generated pairs, keep score > 0.75. Typically retains 50–70%.",
     failure: "Without filtering, LLM hallucinations in synthetic data become ground truth during training.",
@@ -1588,7 +1589,7 @@ const FT_STAGES = [
     id: "sft",
     label: "Supervised Fine-Tuning (SFT)",
     color: "#06b6d4",
-    icon: "🎓",
+    icon: "graduation-cap",
     what: "Train on instruction-response pairs. Model learns to follow the task format and domain knowledge. Use LoRA or QLoRA for parameter efficiency.",
     prod: "Typical hyperparams: 2–5 epochs, lr 2e-4, cosine schedule. Monitor train loss; stop before it plateaus (overfit risk).",
     failure: "Catastrophic forgetting: fine-tuning on a narrow domain can degrade general capabilities. Use small learning rates and brief training.",
@@ -1598,7 +1599,7 @@ const FT_STAGES = [
     id: "dpo",
     label: "Preference Alignment (DPO/RLHF)",
     color: "#f59e0b",
-    icon: "⚖️",
+    icon: "scale",
     what: "Collect preference pairs: (prompt, chosen response, rejected response). DPO trains directly on pairs — no reward model needed. RLHF uses PPO with a reward model.",
     prod: "DPO is simpler than RLHF: no separate reward model, stable training, preferred for most production pipelines. RLHF when reward signal is complex.",
     failure: "Bad preference labels flip the optimization direction. Label quality is the critical bottleneck — mislabeled pairs directly degrade alignment.",
@@ -1608,7 +1609,7 @@ const FT_STAGES = [
     id: "eval",
     label: "Evaluation",
     color: "#10b981",
-    icon: "📊",
+    icon: "bar-chart",
     what: "Run held-out eval set. Measure: task-specific metrics (ROUGE, accuracy, pass@k for code), LLM-as-judge for quality, safety evals (refusal rate, hallucination rate).",
     prod: "Always compare against base model AND previous fine-tuned version. Regression on general benchmarks is a red flag.",
     failure: "Eval on training distribution — model looks great but fails on real user inputs. Held-out set must reflect production distribution.",
@@ -1618,7 +1619,7 @@ const FT_STAGES = [
     id: "push",
     label: "Merge & Deploy",
     color: "#ef4444",
-    icon: "🚀",
+    icon: "rocket",
     what: "Merge LoRA adapters into base model weights. Quantize if needed (GPTQ/AWQ for 4-bit). Deploy via vLLM or TGI. Shadow-test against production traffic before full rollout.",
     prod: "10% traffic shadow test for 48 hours. Monitor: TTFT, output quality scores, error rate. Canary rollout before 100% traffic.",
     failure: "Skipping shadow testing. A fine-tuned model that looks great offline can behave unexpectedly on the long tail of production inputs.",
@@ -1661,7 +1662,7 @@ function FineTuningPipelineFlow({ onNavigate }) {
                 <div className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0"
                     style={{ background: stage.color + "22", border: `1.5px solid ${stage.color}55` }}>
-                    {stage.icon}
+                    <Icon name={stage.icon} size={14} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -1758,15 +1759,15 @@ function FineTuningPipelineFlow({ onNavigate }) {
         <div className="mt-6 pt-4 border-t border-zinc-800/60 flex flex-wrap gap-2">
           <button onClick={() => onNavigate({ tab: "groundtruth", postId: "finetune-playbook" })}
             className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
-            📖 Fine-Tuning Playbook
+            <Icon name="book-open" size={14} /> Fine-Tuning Playbook
           </button>
           <button onClick={() => onNavigate({ tab: "systems", moduleId: "finetuning" })}
             className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
-            ⚙️ Fine-Tuning Workflows
+            <Icon name="wrench" size={14} /> Fine-Tuning Workflows
           </button>
           <button onClick={() => onNavigate({ tab: "systems", moduleId: "rlhf" })}
             className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors">
-            ⚙️ RLHF / DPO / PPO
+            <Icon name="wrench" size={14} /> RLHF / DPO / PPO
           </button>
         </div>
       )}
@@ -2092,7 +2093,7 @@ function InferenceStackFlow({ onNavigate }) {
         {step === -1 && <button onClick={start} className="px-4 py-1.5 rounded text-white text-xs font-bold bg-blue-600 hover:bg-blue-500 transition-all">▶ Run inference</button>}
         {playing && <button onClick={() => { setPlaying(false); clearInterval(intervalRef.current); }} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">⏸ Pause</button>}
         {!playing && step > 0 && step < INFERENCE_STAGES.length - 1 && <button onClick={() => setPlaying(true)} className="px-4 py-1.5 rounded bg-zinc-700 text-white text-xs font-bold">▶ Resume</button>}
-        {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold">↺ Reset</button>}
+        {step >= 0 && <button onClick={reset} className="px-3 py-1.5 rounded bg-zinc-800 text-zinc-400 text-xs font-semibold"><Icon name="rotate-ccw" size={12} /> Reset</button>}
       </div>
 
       {/* Speculative decoding callout */}
@@ -2203,8 +2204,8 @@ function EvalPipelineFlow({ onNavigate }) {
         <div className="mt-3 flex items-center gap-4">
           <div className="flex-1 h-px border-t border-dashed border-green-800/40" />
           <div className="flex gap-3">
-            <div className="px-3 py-1 rounded-lg border border-green-700/40 bg-green-950/20 text-[10px] font-mono text-green-400">✓ PASS → deploy</div>
-            <div className="px-3 py-1 rounded-lg border border-red-700/40 bg-red-950/20 text-[10px] font-mono text-red-400">✗ BLOCK → retrain</div>
+            <div className="px-3 py-1 rounded-lg border border-green-700/40 bg-green-950/20 text-[10px] font-mono text-green-400 flex items-center gap-1"><Icon name="check" size={12} /> PASS → deploy</div>
+            <div className="px-3 py-1 rounded-lg border border-red-700/40 bg-red-950/20 text-[10px] font-mono text-red-400 flex items-center gap-1"><Icon name="x" size={12} /> BLOCK → retrain</div>
           </div>
           <div className="flex-1 h-px border-t border-dashed border-red-800/40" />
         </div>
@@ -2290,22 +2291,22 @@ function EvalPipelineFlow({ onNavigate }) {
 
 // ─── AGENT MEMORY ARCHITECTURE FLOW ──────────────────────────────────────────
 const MEMORY_TYPES = [
-  { id: "working",   label: "Working Memory",   sublabel: "active context window",  color: "#22c55e", icon: "⚡",
+  { id: "working",   label: "Working Memory",   sublabel: "active context window",  color: "#22c55e", icon: "zap",
     desc: "The LLM's context window — everything the model can 'see' right now in a single forward pass.",
     detail: "Working memory is bounded by the context window (4K–200K tokens). Everything not in the context window is invisible to the model. This is the ONLY memory type that every LLM-based agent has by default.",
     prod: "Manage context carefully: prioritize recent messages, tool outputs, and task-relevant state. Use summarization to compress older turns. Monitor token usage per turn to avoid context overflow mid-task.",
     failure: "Context overflow mid-task: the agent silently loses earlier tool results, user instructions, or task state. Always track token count and trigger summarization before hitting the limit." },
-  { id: "episodic",  label: "Episodic Memory",  sublabel: "conversation history",   color: "#16a34a", icon: "📖",
+  { id: "episodic",  label: "Episodic Memory",  sublabel: "conversation history",   color: "#16a34a", icon: "book-open",
     desc: "Past conversation turns and sessions, stored outside the context window and retrieved as needed.",
     detail: "Episodic memory stores conversation history beyond what fits in the context window. Implemented as a vector store (Pinecone, Chroma, pgvector) with semantic retrieval — fetch the most relevant past turns for the current query.",
     prod: "Chunk conversation history by turn or by semantic segment. Embed each chunk. On new user message, retrieve top-k most semantically similar past turns and inject into context. Include session metadata (date, user, task type) for filtering.",
     failure: "Retrieval staleness: old preferences override new ones if retrieval doesn't account for recency. Blend semantic similarity with recency score. Re-rank retrieved memories by relevance × recency." },
-  { id: "semantic",  label: "Semantic Memory",  sublabel: "knowledge base / RAG",   color: "#15803d", icon: "🧠",
+  { id: "semantic",  label: "Semantic Memory",  sublabel: "knowledge base / RAG",   color: "#15803d", icon: "brain",
     desc: "Long-term factual knowledge — domain docs, product info, policies — retrieved via RAG.",
     detail: "Semantic memory is the agent's knowledge base: documentation, policies, product catalogs, research papers. Implemented as a RAG pipeline with a vector index over chunked documents.",
     prod: "Index freshness is critical: semantic memory goes stale as the world changes. Build an incremental ingestion pipeline with change detection. Use metadata filters (date, source, category) to bound retrieval scope.",
     failure: "Knowledge staleness is invisible to the model — it answers confidently from stale facts. Add document timestamps to retrieval context. Include 'as of [date]' in retrieved chunks." },
-  { id: "tool",      label: "Tool Memory",      sublabel: "function schemas",       color: "#166534", icon: "🔧",
+  { id: "tool",      label: "Tool Memory",      sublabel: "function schemas",       color: "#166534", icon: "wrench",
     desc: "The schemas and capabilities of available tools — what the agent can do and how to call them.",
     detail: "Tool memory is the set of function schemas the agent can call: web search, code execution, API calls, database queries, file operations. Stored as JSON schemas in the system prompt or in a tool registry.",
     prod: "For large tool libraries (50+ tools), don't inject all schemas into every prompt — use a tool selector: embed all tool descriptions, retrieve top-k relevant tools per turn based on the user query.",
@@ -2364,7 +2365,7 @@ function AgentMemoryFlow({ onNavigate }) {
           {MEMORY_TYPES.map((m, i) => (
             <div key={m.id} className={`flex flex-col items-center gap-1 rounded-xl border p-2 transition-all text-center`}
               style={{ borderColor: genStep >= i + 2 ? m.color + "80" : "#27272a", background: genStep >= i + 2 ? m.color + "0d" : "transparent" }}>
-              <span className="text-base">{m.icon}</span>
+              <Icon name={m.icon} size={14} />
               <span className="text-[9px] font-mono font-bold" style={{ color: genStep >= i + 2 ? m.color : "#52525b" }}>{m.label}</span>
               {genStep >= i + 2 && <span className="text-[8px] font-mono text-zinc-600 block-flash">{m.sublabel}</span>}
             </div>
@@ -2386,7 +2387,7 @@ function AgentMemoryFlow({ onNavigate }) {
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
                 style={{ background: m.color + "22", border: `1.5px solid ${m.color}55` }}>
-                {m.icon}
+                <Icon name={m.icon} size={14} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">

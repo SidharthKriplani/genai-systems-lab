@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Icon } from './Icon.jsx';
 
 // ─── STEP DATA ───────────────────────────────────────────────────────────────
 const STEPS = [
@@ -687,7 +688,7 @@ export default function TransformerWalkthrough() {
             {playing
               ? <>⏸ <span className="hidden sm:inline">pause</span></>
               : step >= STEPS.length - 1
-                ? <>↺ <span className="hidden sm:inline">replay</span></>
+                ? <><Icon name="rotate-ccw" size={14} /> <span className="hidden sm:inline">replay</span></>
                 : <>▶ <span className="hidden sm:inline">play</span></>
             }
           </button>

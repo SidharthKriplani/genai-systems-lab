@@ -11,6 +11,7 @@ import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
 import { POSTS as GT_POSTS } from "./groundTruthIndex"; // lightweight metadata — no content bodies
 import { getAllAreasReadiness, AREA_CONFIG } from "./readiness";
 import { supabase, signInWithGoogle, signInWithGitHub, signOut, onAuthChange, getUser, pullProgress, pushProgress, pushKey } from "./supabase";
+import { Icon } from './Icon.jsx';
 
 // Heavy tab components — lazy-loaded on first visit to keep initial bundle small
 const GroundTruth    = lazy(() => import("./GroundTruth"));
@@ -648,7 +649,7 @@ function CorpusPanel({ scenario }) {
         <div className="space-y-1.5 pt-1 border-t border-zinc-800">
           {sources.map(s => (
             <div key={s.source} className="flex items-start gap-2 text-[10px] font-mono">
-              <span className="text-zinc-500 shrink-0">📄</span>
+              <span className="text-zinc-500 shrink-0"><Icon name="file-text" size={14} /></span>
               <div>
                 <span className="text-zinc-300">{s.source}</span>
                 <span className="text-zinc-500 ml-1.5">{s.date}</span>
@@ -671,7 +672,7 @@ class TabErrorBoundary extends React.Component {
     if (this.state.hasError) return (
       <div className="flex-1 flex items-center justify-center p-12 text-center">
         <div className="space-y-3">
-          <div className="text-2xl">⚠️</div>
+          <div className="text-2xl"><Icon name="alert-triangle" size={24} /></div>
           <p className="text-white font-bold text-sm">Something went wrong loading this tab</p>
           <p className="text-zinc-500 text-xs font-mono">{this.state.error?.message}</p>
           <button onClick={() => this.setState({ hasError: false, error: null })}
@@ -1248,7 +1249,7 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
               ) : (
                 <div className="text-xs font-bold py-2 px-3 rounded-lg text-center"
                   style={{ background: path.color + "15", border: `1px solid ${path.color}30`, color: path.color }}>
-                  Path complete ✓
+                  Path complete <Icon name="check" size={14} />
                 </div>
               )}
             </div>
@@ -1385,7 +1386,7 @@ function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookma
               return (
                 <div key={id} className="flex items-center justify-between gap-3">
                   <button onClick={() => onNavigate("groundtruth")} className="text-xs text-zinc-300 hover:text-white text-left truncate">{post.title}</button>
-                  <button onClick={() => toggleBookmark(id)} className="text-zinc-500 hover:text-red-400 text-xs shrink-0">✕</button>
+                  <button onClick={() => toggleBookmark(id)} className="text-zinc-500 hover:text-red-400 text-xs shrink-0"><Icon name="x" size={14} /></button>
                 </div>
               );
             })}
@@ -1538,8 +1539,8 @@ function FeedbackFallbackModal({ onClose }) {
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose} role="presentation">
       <div className="rounded-2xl p-6 max-w-sm w-full space-y-4" role="dialog" aria-modal="true" aria-label="Give Feedback" style={{ background: "var(--surface)", border: "1px solid var(--border)" }} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <span className="text-sm font-bold text-white">💬 Give Feedback</span>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close feedback">✕</button>
+          <span className="text-sm font-bold text-white"><Icon name="message-circle" size={14} /> Give Feedback</span>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close feedback"><Icon name="x" size={14} /></button>
         </div>
         <p className="text-sm text-zinc-400 leading-relaxed">
           Found a bug, have a suggestion, or want to say what's useful? Reach the builder directly:
@@ -2182,8 +2183,8 @@ export default function App() {
         <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center pt-10 px-4 overflow-y-auto" onClick={() => setLeaderboardOpen(false)}>
           <div className="rounded-2xl w-full max-w-2xl mb-10" role="dialog" aria-modal="true" aria-label="Challenge Log" style={{ background: "var(--surface)", border: "1px solid var(--border)" }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 pt-5 pb-3" style={{ borderBottom: "1px solid var(--border)" }}>
-              <span className="text-sm font-black text-white">📋 Challenge Log</span>
-              <button onClick={() => setLeaderboardOpen(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close challenge log">✕ Close</button>
+              <span className="text-sm font-black text-white"><Icon name="clipboard" size={14} /> Challenge Log</span>
+              <button onClick={() => setLeaderboardOpen(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close challenge log"><Icon name="x" size={14} /> Close</button>
             </div>
             <div className="p-5">
               <LeaderboardView leaderboard={leaderboard} onClear={clearLeaderboard} onRetry={(tab) => { navigate(tab); setLeaderboardOpen(false); }} />
@@ -2196,7 +2197,7 @@ export default function App() {
           <div className="rounded-2xl p-6 max-w-sm w-full space-y-4" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" style={{ background: "var(--surface)", border: "1px solid var(--border)" }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-white">Keyboard Shortcuts</span>
-              <button onClick={() => setShowShortcuts(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close shortcuts">✕ Close</button>
+              <button onClick={() => setShowShortcuts(false)} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close shortcuts"><Icon name="x" size={14} /> Close</button>
             </div>
             <div className="space-y-2">
               <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest pb-1">Tab shortcuts</div>
@@ -2236,7 +2237,7 @@ export default function App() {
           <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 max-w-md w-full space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-white">🆕 What's New</span>
-              <button onClick={dismissWhatsNew} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all">✕ Close</button>
+              <button onClick={dismissWhatsNew} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all"><Icon name="x" size={14} /> Close</button>
             </div>
             <div className="space-y-3">
               {[
@@ -2263,7 +2264,7 @@ export default function App() {
               ))}
             </div>
             <button onClick={dismissWhatsNew} className="w-full py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all">
-              Got it ✓
+              Got it <Icon name="check" size={14} />
             </button>
           </div>
         </div>
@@ -2275,7 +2276,7 @@ export default function App() {
           <div className="absolute right-0 top-0 bottom-0 w-64 bg-zinc-900 border-l border-zinc-800 p-4 overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Navigation</span>
-              <button onClick={() => setMobileMenuOpen(false)} className="text-zinc-500 hover:text-white text-sm">✕</button>
+              <button onClick={() => setMobileMenuOpen(false)} className="text-zinc-500 hover:text-white text-sm"><Icon name="x" size={14} /></button>
             </div>
             <MobileFrameNav topView={topView} onNavigate={navigate} onClose={() => setMobileMenuOpen(false)} />
             <div className="mt-3 space-y-1.5">
@@ -2284,11 +2285,11 @@ export default function App() {
                 Search modules
               </button>
               <button onClick={() => { setLeaderboardOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-white transition-all">
-                📋 Challenge Log
+                <Icon name="clipboard" size={14} /> Challenge Log
               </button>
               <button onClick={() => { openFeedback("mobile_drawer"); setMobileMenuOpen(false); }}
                 className="w-full py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-violet-400 hover:border-violet-800 transition-all flex items-center justify-center gap-1.5">
-                💬 Give Feedback
+                <Icon name="message-circle" size={14} /> Give Feedback
               </button>
             </div>
           </div>
@@ -2431,7 +2432,7 @@ export default function App() {
                       onClick={() => navigate("study")}
                       title="Mastery Room"
                       className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-all ${topView === "study" ? "border-emerald-600 text-emerald-400 bg-emerald-950" : "border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300"}`}>
-                      🧠
+                      <Icon name="brain" size={14} />
                     </button>
                   )}
                   {/* Avatar/name → Profile */}
@@ -2576,7 +2577,7 @@ export default function App() {
                         {s.tag}
                       </span>
                       <span className="text-zinc-500 text-[9px]">#{i + 1}</span>
-                      {guestLocked && <span className="text-[9px] text-zinc-600">🔒</span>}
+                      {guestLocked && <Icon name="lock" size={9} />}
                     </div>
                     <div className="leading-snug">{s.title}</div>
                   </button>
@@ -2607,7 +2608,7 @@ export default function App() {
                       : { background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.4)", color: "#a1a1aa" }}>
                     <span className="font-mono mr-1" style={{ color: active ? "#8b5cf6" : "#3f3f46" }}>#{i + 1}</span>
                     {s.title}
-                    {mobileGuestLocked && <span className="ml-1">🔒</span>}
+                    {mobileGuestLocked && <Icon name="lock" size={12} />}
                   </button>
                 );
               })}
@@ -2619,7 +2620,7 @@ export default function App() {
                     <span className="font-black" style={{ color: "#a5b4fc" }}>New here?</span> Pick a scenario · adjust the 4 controls · hit <span className="font-bold text-white">Evaluate</span> · read the failure diagnosis. Each scenario = one production failure mode.
                   </p>
                   <button onClick={dismissLabHint} className="text-[10px] font-bold transition-all shrink-0 px-2.5 py-1 rounded-lg"
-                    style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", color: "#818cf8" }}>Got it ✕</button>
+                    style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", color: "#818cf8" }}><Icon name="x" size={14} /> Got it</button>
                 </div>
               </div>
             )}
@@ -2705,12 +2706,12 @@ export default function App() {
                 </div>
                 {isRecommended && (
                   <div className="text-xs text-emerald-400 bg-emerald-950 border border-emerald-800 rounded p-2">
-                    ✓ Recommended config for this scenario
+                    <Icon name="check" size={14} /> Recommended config for this scenario
                   </div>
                 )}
                 {hasFallback && (
                   <div className="text-xs text-amber-400 bg-amber-950 border border-amber-800 rounded p-2">
-                    ⚠ {lookup.fallback_note}
+                    <Icon name="alert-triangle" size={14} /> {lookup.fallback_note}
                   </div>
                 )}
                 <button
@@ -2804,7 +2805,7 @@ export default function App() {
                     return (
                       <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.22)", borderTop: "1px solid var(--border)" }}>
                         <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+                          <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
                           <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
                             You reproduced: <span style={{ color: "var(--gal-build)" }}>{scenario.failure_mode_taught}</span>
                           </span>
@@ -2813,7 +2814,7 @@ export default function App() {
                           <button
                             onClick={() => { track("module_forward_pointer_clicked", { type: "preplab", scenario: scenario.scenario_id, topic: fwd.topic }); navigateTo({ tab: "preplab", topic: fwd.topic }); }}
                             className="flex items-start gap-3 p-3 rounded-lg border border-zinc-700 hover:border-violet-500 bg-zinc-900/60 hover:bg-zinc-800/60 transition-all text-left group">
-                            <span className="text-lg shrink-0">🧠</span>
+                            <span className="text-lg shrink-0"><Icon name="brain" size={18} /></span>
                             <div>
                               <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Drill this failure mode</div>
                               <div className="text-[10px] text-zinc-500 mt-0.5">PrepLab · {fwd.topic} questions</div>
@@ -2822,7 +2823,7 @@ export default function App() {
                           <button
                             onClick={() => { track("module_forward_pointer_clicked", { type: "groundtruth", scenario: scenario.scenario_id, postId: fwd.postId }); navigateTo({ tab: "groundtruth", postId: fwd.postId }); }}
                             className="flex items-start gap-3 p-3 rounded-lg border border-zinc-700 hover:border-violet-500 bg-zinc-900/60 hover:bg-zinc-800/60 transition-all text-left group">
-                            <span className="text-lg shrink-0">📖</span>
+                            <span className="text-lg shrink-0"><Icon name="book-open" size={18} /></span>
                             <div>
                               <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Read the production breakdown</div>
                               <div className="text-[10px] text-zinc-500 mt-0.5 leading-snug">{fwd.postTitle}</div>
@@ -2894,7 +2895,7 @@ export default function App() {
 
                   {scenario.productionNote && (
                     <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800">
-                      <span className="text-zinc-600 text-xs shrink-0 mt-0.5">⚙</span>
+                      <span className="text-zinc-600 text-xs shrink-0 mt-0.5"><Icon name="wrench" size={12} /></span>
                       <p className="text-xs text-zinc-500 leading-relaxed"><span className="text-zinc-400 font-semibold">In production: </span>{scenario.productionNote}</p>
                     </div>
                   )}

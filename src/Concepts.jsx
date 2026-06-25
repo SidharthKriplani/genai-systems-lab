@@ -3,6 +3,7 @@ import { track } from "./analytics";
 import { ModuleNotes, GradientPanel } from "./shared";
 import { GRADIENT_CONTENT } from "./data/gradientContent";
 import { EmbeddingExplorer, AttentionViz3D, LatencyPlanner, DiffusionViz3D, CosineSimilarityExplorer } from "./Explore";  // borrowed from de-listed Explore (Wave 3 — all viz preserved)
+import { Icon } from './Icon.jsx';
 
 // ─── TOKENIZER DATA ───────────────────────────────────────────────────────────
 
@@ -754,7 +755,7 @@ function TokenizerModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -997,7 +998,7 @@ function EmbeddingModule({ onNavigate }) {
             <p className="text-xs text-zinc-400 leading-relaxed">
               Each word is a high-dimensional vector (e.g. 1536 dims in text-embedding-3-small). These 2D positions come from PCA — collapsing 1536 dims to 2 while preserving distances. Proximity = semantic similarity.
             </p>
-            <p className="text-xs text-amber-600/80 mt-1">⚠ Coordinates are hand-authored to illustrate clustering — not computed by a real embedding model.</p>
+            <p className="text-xs text-amber-600/80 mt-1"><Icon name="alert-triangle" size={11} /> Coordinates are hand-authored to illustrate clustering — not computed by a real embedding model.</p>
           </div>
         </div>
       </div>
@@ -1118,17 +1119,17 @@ function EmbeddingModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "embeddings-explained" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 Embeddings Explained
+              <Icon name="book-open" size={14} /> Embeddings Explained
             </button>
             <button onClick={() => onNavigate({ tab: "explore", moduleId: "embmodels" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              🔬 Embedding Model Explorer
+              <Icon name="flask" size={14} /> Embedding Model Explorer
             </button>
           </div>
         </div>
@@ -1533,7 +1534,7 @@ function AttentionModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1923,17 +1924,17 @@ function TransformerModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "what-is-a-transformer" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 What Is a Transformer?
+              <Icon name="book-open" size={14} /> What Is a Transformer?
             </button>
             <button onClick={() => onNavigate({ tab: "systems", moduleId: "txarch" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              ⚙️ Transformer Architecture
+              <Icon name="wrench" size={14} /> Transformer Architecture
             </button>
           </div>
         </div>
@@ -2212,17 +2213,17 @@ function ChunkingModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "chunking-strategies" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 Chunking Strategies
+              <Icon name="book-open" size={14} /> Chunking Strategies
             </button>
             <button onClick={() => onNavigate({ tab: "lab" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              🧪 RAG Lab
+              <Icon name="flask" size={14} /> RAG Lab
             </button>
           </div>
         </div>
@@ -2460,7 +2461,7 @@ function RAGPipelineModule({ onNavigate }) {
                 </div>
                 {chunk.id === 3 && visibleChunks >= 3 && (
                   <div className="mt-2 text-[10px] text-amber-400 border border-amber-800/50 bg-amber-950/20 rounded px-2 py-1">
-                    ⚠ Borderline (0.72) — included but lower confidence. Score threshold is typically 0.70.
+                    <Icon name="alert-triangle" size={14} /> Borderline (0.72) — included but lower confidence. Score threshold is typically 0.70.
                   </div>
                 )}
               </div>
@@ -2534,8 +2535,8 @@ function RAGPipelineModule({ onNavigate }) {
                 Every claim maps to a retrieved chunk. No hallucination possible beyond the context window — the model cannot invent a policy that wasn't in the top-3 results.
               </p>
               <div className="mt-2 flex gap-3 text-[10px] font-mono">
-                <span className="text-emerald-400">✓ Chunk 1 used (14-day rule)</span>
-                <span className="text-emerald-400">✓ Chunk 2 used (annual prorate)</span>
+                <span className="text-emerald-400"><Icon name="check" size={12} /> Chunk 1 used (14-day rule)</span>
+                <span className="text-emerald-400"><Icon name="check" size={12} /> Chunk 2 used (annual prorate)</span>
                 <span className="text-zinc-500">~ Chunk 3 used (enterprise caveat)</span>
               </div>
             </div>
@@ -2555,7 +2556,7 @@ function RAGPipelineModule({ onNavigate }) {
             onClick={handleReset}
             className="w-full py-2 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-bold transition-all active:scale-95"
           >
-            ↺ Reset
+            <Icon name="rotate-ccw" size={12} /> Reset
           </button>
         </div>
       )}
@@ -2660,7 +2661,7 @@ function RAGPipelineModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -2668,19 +2669,19 @@ function RAGPipelineModule({ onNavigate }) {
               onClick={() => onNavigate({ tab: "groundtruth", postId: "how-rag-works" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium"
             >
-              📖 How RAG Works
+              <Icon name="book-open" size={14} /> How RAG Works
             </button>
             <button
               onClick={() => onNavigate({ tab: "systems", postId: "evals" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium"
             >
-              🔬 Evals Lab
+              <Icon name="flask" size={14} /> Evals Lab
             </button>
             <button
               onClick={() => onNavigate({ tab: "lab" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium"
             >
-              🧪 RAG Lab
+              <Icon name="flask" size={14} /> RAG Lab
             </button>
           </div>
         </div>
@@ -2951,13 +2952,13 @@ function SamplingModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "decoding-sampling" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 Decoding &amp; Sampling
+              <Icon name="book-open" size={14} /> Decoding &amp; Sampling
             </button>
           </div>
         </div>
@@ -3102,12 +3103,12 @@ function ContextWindowModule({ onNavigate }) {
                 </div>
                 {isDanger && (
                   <div className="rounded-lg border border-red-700 bg-red-950/30 p-2 text-xs text-red-300 font-mono">
-                    ⚠ OVERFLOW — {(totalTokens - model.max).toLocaleString()} tokens over limit. Model will truncate oldest history.
+                    <Icon name="alert-triangle" size={14} /> OVERFLOW — {(totalTokens - model.max).toLocaleString()} tokens over limit. Model will truncate oldest history.
                   </div>
                 )}
                 {isWarning && !isDanger && (
                   <div className="rounded-lg border border-amber-700 bg-amber-950/30 p-2 text-xs text-amber-300 font-mono">
-                    ⚠ {(pctUsed * 100).toFixed(0)}% full — little room for a long response. Reduce history or chunks.
+                    <Icon name="alert-triangle" size={14} /> {(pctUsed * 100).toFixed(0)}% full — little room for a long response. Reduce history or chunks.
                   </div>
                 )}
                 <div className="flex flex-wrap gap-3">
@@ -3263,17 +3264,17 @@ function ContextWindowModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what’s next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "context-window-guide" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 Context Window Guide
+              <Icon name="book-open" size={14} /> Context Window Guide
             </button>
             <button onClick={() => onNavigate({ tab: "systems", moduleId: "ctxwindow" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              ⚙️ Context Window Engineering
+              <Icon name="wrench" size={14} /> Context Window Engineering
             </button>
           </div>
         </div>
@@ -3286,10 +3287,10 @@ function ContextWindowModule({ onNavigate }) {
 // ─── AGENT REACT LOOP MODULE ──────────────────────────────────────────────────
 
 const TOOL_STYLE = {
-  search:     { bg: "bg-blue-900/60 border-blue-700",    text: "text-blue-300",    icon: "🔍" },
+  search:     { bg: "bg-blue-900/60 border-blue-700",    text: "text-blue-300",    icon: "search" },
   calculator: { bg: "bg-emerald-900/60 border-emerald-700", text: "text-emerald-300", icon: "🧮" },
-  fetch_url:  { bg: "bg-amber-900/60 border-amber-700",  text: "text-amber-300",   icon: "🌐" },
-  finish:     { bg: "bg-violet-900/60 border-violet-700",text: "text-violet-300",  icon: "✓" },
+  fetch_url:  { bg: "bg-amber-900/60 border-amber-700",  text: "text-amber-300",   icon: "globe" },
+  finish:     { bg: "bg-violet-900/60 border-violet-700",text: "text-violet-300",  icon: "check" },
 };
 
 const STEP_STYLE = {
@@ -3419,7 +3420,7 @@ function AgentModule({ onNavigate }) {
           <div className="flex flex-wrap gap-2">
             {scenario.tools.map(t => {
               const ts = TOOL_STYLE[t];
-              return <span key={t} className={`px-2 py-1 rounded border text-xs font-mono ${ts.bg} ${ts.text}`}>{ts.icon} {t}</span>;
+              return <span key={t} className={`px-2 py-1 rounded border text-xs font-mono ${ts.bg} ${ts.text}`}><Icon name={ts.icon} size={14} /> {t}</span>;
             })}
           </div>
         </div>
@@ -3434,7 +3435,7 @@ function AgentModule({ onNavigate }) {
             </button>
             <button onClick={resetPlay}
               className="px-3 py-2 rounded-lg text-xs font-bold bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition-all">
-              ↺
+              <Icon name="rotate-ccw" size={14} />
             </button>
           </div>
           <label className={`flex items-center gap-2 cursor-pointer p-2 rounded-lg border transition-all ${injectFail ? "border-red-700 bg-red-950/20" : "border-zinc-700"}`}>
@@ -3514,17 +3515,17 @@ function AgentModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "building-reliable-agents" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 Building Reliable Agents
+              <Icon name="book-open" size={14} /> Building Reliable Agents
             </button>
             <button onClick={() => onNavigate({ tab: "agents" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              🤖 Agents Tab
+              <Icon name="bot" size={14} /> Agents Tab
             </button>
           </div>
         </div>
@@ -3537,11 +3538,11 @@ function AgentModule({ onNavigate }) {
 
 const GUARD_DEFS = {
   injection_detector:    { label: "Injection Detector",   icon: "💉", desc: "Detects attempts to override system instructions via user input" },
-  jailbreak_detector:    { label: "Jailbreak Detector",   icon: "🔓", desc: "Detects roleplay / persona hijack attempts (DAN, etc.)" },
+  jailbreak_detector:    { label: "Jailbreak Detector",   icon: "unlock", desc: "Detects roleplay / persona hijack attempts (DAN, etc.)" },
   pii_detector:          { label: "PII Detector",         icon: "🪪", desc: "Detects personal identifiable information in the input" },
   toxicity_classifier:   { label: "Toxicity Filter",      icon: "☣", desc: "Flags harmful, violent, or abusive content" },
-  topic_filter:          { label: "Topic Filter",         icon: "🎯", desc: "Blocks out-of-scope queries for this specific assistant" },
-  pii_leak_detector:     { label: "PII Leak Detector",    icon: "🚨", desc: "Catches PII that appears in the model's output" },
+  topic_filter:          { label: "Topic Filter",         icon: "target", desc: "Blocks out-of-scope queries for this specific assistant" },
+  pii_leak_detector:     { label: "PII Leak Detector",    icon: "siren", desc: "Catches PII that appears in the model's output" },
   hallucination_checker: { label: "Hallucination Check",  icon: "👻", desc: "Flags claims not grounded in retrieved context" },
 };
 
@@ -3627,10 +3628,10 @@ function GuardrailsModule({ onNavigate }) {
 
   const STAGES = [
     { id: "input",        label: "User Input",    icon: "👤" },
-    { id: "input_guard",  label: "Input Classifier",  icon: "🛡" },
-    { id: "llm",          label: "LLM",           icon: "🧠" },
-    { id: "output_guard", label: "Output Validator", icon: "🛡" },
-    { id: "response",     label: "Response",      icon: "💬" },
+    { id: "input_guard",  label: "Input Classifier",  icon: "shield" },
+    { id: "llm",          label: "LLM",           icon: "brain" },
+    { id: "output_guard", label: "Output Validator", icon: "shield" },
+    { id: "response",     label: "Response",      icon: "message-circle" },
   ];
 
   const stageStatus = {
@@ -3680,7 +3681,7 @@ function GuardrailsModule({ onNavigate }) {
             return (
               <div key={stage.id} className="flex items-center gap-1">
                 <div className={`rounded-lg border px-3 py-2 text-center min-w-[5.5rem] ${statusStyle[st]}`}>
-                  <div className="text-base">{stage.icon}</div>
+                  <div className="text-base"><Icon name={stage.icon} size={16} /></div>
                   <div className="text-xs font-mono font-bold">{stage.label}</div>
                   <div className="text-xs opacity-60 capitalize">{st}</div>
                 </div>
@@ -3702,7 +3703,7 @@ function GuardrailsModule({ onNavigate }) {
             <div key={i} className={`rounded-lg border p-3 text-xs space-y-2 ${isInput ? "border-red-800 bg-red-950/10" : "border-amber-800 bg-amber-950/10"}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span>{gd?.icon}</span>
+                  <Icon name={gd?.icon} size={14} />
                   <span className={`font-mono font-bold ${isInput ? "text-red-300" : "text-amber-300"}`}>{fire.phase} Guard · {gd?.label}</span>
                 </div>
                 <span className={`font-mono font-bold ${isInput ? "text-red-400" : "text-amber-400"}`}>{(fire.conf * 100).toFixed(0)}% confidence</span>
@@ -3767,17 +3768,17 @@ function GuardrailsModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "guardrails-for-llms" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 Guardrails for LLMs
+              <Icon name="book-open" size={14} /> Guardrails for LLMs
             </button>
             <button onClick={() => onNavigate({ tab: "systems", moduleId: "guardrails" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              ⚙️ Guardrails Deep-Dive
+              <Icon name="wrench" size={14} /> Guardrails Deep-Dive
             </button>
           </div>
         </div>
@@ -4371,17 +4372,17 @@ function DebugModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "lab" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              🧪 RAG Lab
+              <Icon name="flask" size={14} /> RAG Lab
             </button>
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "how-rag-works" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 How RAG Works
+              <Icon name="book-open" size={14} /> How RAG Works
             </button>
           </div>
         </div>
@@ -4531,7 +4532,7 @@ function MultiAgentModule({ onNavigate }) {
                 <div className="text-xs font-bold text-emerald-400 mb-2">Strengths</div>
                 {pattern.strengths.map((s, i) => (
                   <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1">
-                    <span className="text-emerald-500 flex-shrink-0">✓</span>{s}
+                    <span className="text-emerald-500 flex-shrink-0"><Icon name="check" size={14} /></span>{s}
                   </div>
                 ))}
               </div>
@@ -4539,7 +4540,7 @@ function MultiAgentModule({ onNavigate }) {
                 <div className="text-xs font-bold text-red-400 mb-2">Failure modes</div>
                 {pattern.failureModes.map((f, i) => (
                   <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1">
-                    <span className="text-red-400 flex-shrink-0">✗</span>{f}
+                    <span className="text-red-400 flex-shrink-0"><Icon name="x" size={14} /></span>{f}
                   </div>
                 ))}
               </div>
@@ -4673,17 +4674,17 @@ function MultiAgentModule({ onNavigate }) {
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center">✓</span>
+            <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Module complete — what's next?</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => onNavigate({ tab: "groundtruth", postId: "multi-agent-orchestration" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              📖 Multi-Agent Orchestration
+              <Icon name="book-open" size={14} /> Multi-Agent Orchestration
             </button>
             <button onClick={() => onNavigate({ tab: "agents" })}
               className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-violet-600 transition-all font-medium">
-              🤖 Agents Tab
+              <Icon name="bot" size={14} /> Agents Tab
             </button>
           </div>
         </div>
@@ -7759,7 +7760,7 @@ function ScalingLawsModule({ onNavigate }) {
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-start gap-2 text-indigo-300"><span className="shrink-0">→</span><span>Best loss per training FLOP</span></div>
                 <div className="flex items-start gap-2 text-indigo-300"><span className="shrink-0">→</span><span>Correct when: training budget is the constraint</span></div>
-                <div className="flex items-start gap-2 text-red-400"><span className="shrink-0">✗</span><span>Not optimal if you serve millions of requests</span></div>
+                <div className="flex items-start gap-2 text-red-400"><span className="shrink-0"><Icon name="x" size={14} /></span><span>Not optimal if you serve millions of requests</span></div>
               </div>
               <p className="text-[10px] font-mono text-zinc-500">Used by: academic research, one-off fine-tunes</p>
             </div>
@@ -8221,7 +8222,7 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
         )}
         {completedCount === modules.length && modules.length > 0 && (
           <div className="flex items-center gap-2 text-xs text-emerald-400">
-            <span>✓</span>
+            <span><Icon name="check" size={14} /></span>
             <span>All modules done — head to the lab to apply them.</span>
           </div>
         )}
@@ -8377,7 +8378,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
             >
               <span className="text-xs font-medium truncate">{m.label}</span>
               <div className="flex items-center gap-1 shrink-0">
-                {done && <span className="text-[9px] text-emerald-500 font-bold">✓</span>}
+                {done && <span className="text-[9px] text-emerald-500 font-bold"><Icon name="check" size={9} /></span>}
                 <span className={`text-[9px] font-mono ${
                   m.level === "beginner" ? "text-emerald-500" :
                   m.level === "intermediate" ? "text-amber-500" : "text-red-500"
@@ -8428,7 +8429,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
               {mod.fidelity && <span className="text-[10px] text-zinc-500 hidden md:block">{mod.fidelity.note}</span>}
               <div className="ml-auto flex items-center gap-2">
                 {mastery.has(active)
-                  ? <span className="text-[9px] font-mono px-2 py-0.5 rounded border bg-emerald-950/30 border-emerald-800/40 text-emerald-400">✓ Completed</span>
+                  ? <span className="text-[9px] font-mono px-2 py-0.5 rounded border bg-emerald-950/30 border-emerald-800/40 text-emerald-400"><Icon name="check" size={9} /> Completed</span>
                   : <button onClick={() => markComplete(active)}
                       className="text-[9px] font-mono px-2 py-0.5 rounded border bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-emerald-950/30 hover:border-emerald-800/40 hover:text-emerald-400 transition-colors">
                       Mark complete

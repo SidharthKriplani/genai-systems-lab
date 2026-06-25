@@ -1,6 +1,7 @@
 import { useState } from "react";
 import HowTo from "./HowTo";
 import SalaryCalculator from "./SalaryCalculator";
+import { Icon } from "./Icon.jsx";
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
@@ -349,7 +350,7 @@ function SystemDesignInterview() {
           <div key={c.id} onClick={() => toggle(c.id)}
             className={`flex items-start gap-3 px-3 py-2.5 rounded-xl border cursor-pointer transition-all ${checked.has(c.id) ? "border-indigo-600 bg-indigo-900/10" : "border-zinc-700 bg-zinc-900 hover:border-zinc-500"}`}>
             <div className={`w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center transition-all ${checked.has(c.id) ? "bg-indigo-600 border-indigo-600" : "border-zinc-600"}`}>
-              {checked.has(c.id) && <span className="text-white text-xs leading-none">✓</span>}
+              {checked.has(c.id) && <span className="text-white text-xs leading-none"><Icon name="check" size={12} /></span>}
             </div>
             <div className="flex-1">
               <p className="text-sm text-zinc-200">{c.label}</p>
@@ -1045,7 +1046,7 @@ export default function CareerApp() {
     <div className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245,158,11,0.1) 0%, transparent 70%)" }} />
       <div className="max-w-lg w-full flex flex-col items-center text-center gap-6 fade-up">
-        <div style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(217,119,6,0.08) 100%)", border: "1px solid rgba(245,158,11,0.3)", boxShadow: "0 0 24px rgba(245,158,11,0.12)" }} className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl">🚀</div>
+        <div style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(217,119,6,0.08) 100%)", border: "1px solid rgba(245,158,11,0.3)", boxShadow: "0 0 24px rgba(245,158,11,0.12)" }} className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"><Icon name="rocket" size={32} /></div>
         <div className="space-y-2">
           <h1 className="text-3xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.75) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Career Track</h1>
           <p className="text-sm text-zinc-400 max-w-sm leading-relaxed">Interview prep and career tools for engineers targeting AI-forward roles.</p>

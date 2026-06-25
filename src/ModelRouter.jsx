@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import HowTo from "./HowTo";
+import { Icon } from './Icon.jsx';
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const QUERIES = [
@@ -111,7 +112,7 @@ function RouterConfig() {
             className={`flex-1 rounded-xl border p-3 cursor-pointer transition-all ${tog.state ? "border-violet-700 bg-violet-950/20" : "border-zinc-800 bg-zinc-900"}`}>
             <div className="flex items-center gap-2 mb-1">
               <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${tog.state ? "border-violet-500 bg-violet-500" : "border-zinc-600"}`}>
-                {tog.state && <span className="text-white font-bold leading-none" style={{ fontSize: 9 }}>✓</span>}
+                {tog.state && <span className="text-white font-bold leading-none"><Icon name="check" size={9} /></span>}
               </div>
               <span className="text-xs font-bold text-white">{tog.label}</span>
             </div>

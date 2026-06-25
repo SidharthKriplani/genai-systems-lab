@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from './Icon.jsx';
 
 export default function HowTo({ objective, steps }) {
   const [open, setOpen] = useState(false);
@@ -6,7 +7,7 @@ export default function HowTo({ objective, steps }) {
     <div className="bg-violet-950/20 border border-violet-800/30 rounded-xl p-4 space-y-2">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-violet-400 uppercase tracking-widest mb-0.5">🎯 Learning Objective</p>
+          <p className="text-xs text-violet-400 uppercase tracking-widest mb-0.5"><Icon name="target" size={14} /> Learning Objective</p>
           <p className="text-sm text-zinc-200">{objective}</p>
         </div>
         <button onClick={() => setOpen(o => !o)}

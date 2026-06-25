@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import HowTo from "./HowTo";
+import { Icon } from "./Icon.jsx";
 
 // ─── EMBEDDING SPACE EXPLORER 3D ─────────────────────────────────────────────
 
@@ -691,7 +692,7 @@ export function LatencyPlanner() {
             <div className="flex items-center gap-3 mb-2">
               <button onClick={() => toggleSkip(s.id)}
                 className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-all ${!skipped.has(s.id) ? "bg-green-600 border-green-600" : "border-zinc-600"}`}>
-                {!skipped.has(s.id) && <span className="text-white text-xs leading-none">✓</span>}
+                {!skipped.has(s.id) && <Icon name="check" size={12} />}
               </button>
               <div className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: s.color }} />
               <span className="text-sm text-white flex-1">{s.label}</span>
@@ -963,8 +964,8 @@ function ModelCardReader() {
                 <div className="flex items-start gap-2">
                   <span className="text-xs font-bold text-zinc-400 shrink-0 w-36">{field}</span>
                   <span className="text-xs text-zinc-300 flex-1">{value}</span>
-                  {revealed && isRed && <span className="text-xs text-red-400 shrink-0">⚠ flag</span>}
-                  {revealed && !isRed && card.greenFlags.find(g => g.field === field) && <span className="text-xs text-green-400 shrink-0">✓ good</span>}
+                  {revealed && isRed && <span className="text-xs text-red-400 shrink-0"><Icon name="alert-triangle" size={12} /> flag</span>}
+                  {revealed && !isRed && card.greenFlags.find(g => g.field === field) && <span className="text-xs text-green-400 shrink-0"><Icon name="check" size={12} /> good</span>}
                   {!revealed && picked && <span className="text-xs text-amber-400 shrink-0">flagged</span>}
                 </div>
                 {revealed && isRed && (
@@ -1316,7 +1317,7 @@ function StructuredApproaches() {
             <div className="text-xs text-emerald-400 uppercase mb-2">Pros</div>
             {appr.pros.map((p, i) => (
               <div key={i} className="flex gap-2 text-xs bg-emerald-950/20 border border-emerald-900/30 rounded-lg px-3 py-2 mb-1">
-                <span className="text-emerald-400 shrink-0">✓</span><span className="text-zinc-300">{p}</span>
+                <Icon name="check" size={14} /><span className="text-zinc-300">{p}</span>
               </div>
             ))}
           </div>
@@ -1324,7 +1325,7 @@ function StructuredApproaches() {
             <div className="text-xs text-red-400 uppercase mb-2">Cons</div>
             {appr.cons.map((c, i) => (
               <div key={i} className="flex gap-2 text-xs bg-red-950/20 border border-red-900/30 rounded-lg px-3 py-2 mb-1">
-                <span className="text-red-400 shrink-0">✗</span><span className="text-zinc-300">{c}</span>
+                <Icon name="x" size={14} /><span className="text-zinc-300">{c}</span>
               </div>
             ))}
           </div>
@@ -1681,7 +1682,7 @@ function AttackSimulation() {
         </button>
         <button onClick={() => setPhase("defense")}
           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${phase === "defense" ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-          🛡 With defense applied
+          <Icon name="shield" size={14} /> With defense applied
         </button>
       </div>
       <div className="space-y-2">
@@ -2051,7 +2052,7 @@ export function DiffusionViz3D() {
         <button onClick={() => {
           const s=stRef.current; s.t=1; s.animating=false; s.pts=makeDiffParticles();
         }} className="px-4 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-sm font-bold transition-all">
-          ↺ Reset
+          <Icon name="rotate-ccw" size={12} /> Reset
         </button>
       </div>
       <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3">
@@ -2255,7 +2256,7 @@ function LLMMatrixExplorer() {
                 <td className="py-2 pr-4 text-zinc-500 text-[11px]">Open Source</td>
                 {visibleModels.map(m => (
                   <td key={m.id} className="py-2 px-2 text-center text-[11px]">
-                    {m.openSource ? <span className="text-emerald-400 font-bold">✓</span> : <span className="text-zinc-500">✗</span>}
+                    {m.openSource ? <Icon name="check" size={14} /> : <Icon name="x" size={14} />}
                   </td>
                 ))}
               </tr>
@@ -3007,7 +3008,7 @@ function LLMOpsComparison() {
                     onClick={() => setExpandedTool(null)}
                     className="text-zinc-500 hover:text-zinc-300 text-lg leading-none flex-shrink-0"
                   >
-                    ✕
+                    <Icon name="x" size={14} />
                   </button>
                 </div>
 
@@ -3356,17 +3357,17 @@ function EmbedModelTable() {
               </td>
               <td className={`px-3 py-2.5 text-right font-mono ${m.costPer1MTokens === lowestCost ? "text-emerald-400 font-semibold" : "text-zinc-300"}`}>
                 {m.costPer1MTokens === 0 ? "free" : `$${m.costPer1MTokens.toFixed(2)}`}
-                {m.costPer1MTokens === lowestCost && m.costPer1MTokens === 0 && <span className="ml-1 text-[10px] text-emerald-500">★</span>}
+                {m.costPer1MTokens === lowestCost && m.costPer1MTokens === 0 && <Icon name="star-filled" size={11} />}
               </td>
               <td className={`px-3 py-2.5 text-right font-mono ${m.latencyMs === fastestLatency ? "text-blue-400 font-semibold" : "text-zinc-300"}`}>
                 {m.latencyMs}ms
-                {m.latencyMs === fastestLatency && <span className="ml-1 text-[10px] text-blue-500">⚡</span>}
+                {m.latencyMs === fastestLatency && <Icon name="zap" size={11} />}
               </td>
               <td className="px-3 py-2.5 text-right font-mono text-zinc-400">{m.maxTokens.toLocaleString()}</td>
               <td className="px-3 py-2.5 text-right font-mono text-zinc-400">{m.dims.toLocaleString()}</td>
               <td className="px-3 py-2.5 text-center">
                 {m.matryoshka
-                  ? <span className="text-violet-400 text-[11px] font-bold">✓</span>
+                  ? <Icon name="check" size={11} />
                   : <span className="text-zinc-500 text-[11px]">—</span>}
               </td>
             </tr>
@@ -3378,7 +3379,7 @@ function EmbedModelTable() {
         <span><span className="text-emerald-400 font-bold">■</span> Voyage AI</span>
         <span><span className="text-blue-400 font-bold">■</span> Cohere</span>
         <span><span className="text-amber-400 font-bold">■</span> OSS (self-hosted)</span>
-        <span className="ml-auto"><span className="text-green-400">▲</span> top MTEB &nbsp; <span className="text-emerald-400">★</span> lowest cost &nbsp; <span className="text-blue-400">⚡</span> fastest</span>
+        <span className="ml-auto"><span className="text-green-400">▲</span> top MTEB &nbsp; <span className="text-emerald-400">★</span> lowest cost &nbsp; <Icon name="zap" size={11} /> fastest</span>
       </div>
     </div>
   );
@@ -4452,11 +4453,11 @@ function ModelArchitectureComparison() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-xl bg-zinc-900 border border-green-900/30 p-3">
                   <div className="text-[10px] font-mono text-green-500 uppercase tracking-widest mb-2">Use for</div>
-                  {model.useCases.map((u,i) => <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1"><span className="text-green-500">✓</span>{u}</div>)}
+                  {model.useCases.map((u,i) => <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1"><Icon name="check" size={14} />{u}</div>)}
                 </div>
                 <div className="rounded-xl bg-zinc-900 border border-red-900/30 p-3">
                   <div className="text-[10px] font-mono text-red-400 uppercase tracking-widest mb-2">Not for</div>
-                  {model.notFor.map((u,i) => <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1"><span className="text-red-400">✗</span>{u}</div>)}
+                  {model.notFor.map((u,i) => <div key={i} className="text-xs text-zinc-300 flex gap-2 mb-1"><Icon name="x" size={14} />{u}</div>)}
                 </div>
               </div>
 
@@ -5508,7 +5509,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-700 transition-colors"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-400 text-[10px]">✕</button>
+            <button onClick={() => setSearch("")} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-400 text-[10px]"><Icon name="x" size={14} /></button>
           )}
         </div>
 
@@ -5518,7 +5519,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
               {EXPLORE_MODULES.filter(m => m.label.toLowerCase().includes(search.toLowerCase()) || m.tag.toLowerCase().includes(search.toLowerCase())).map(m => (
                 <button key={m.id} onClick={() => switchModule(m.id)}
                   className={`w-full text-left px-2 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${activeModule === m.id ? "bg-zinc-800 text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"}`}>
-                  {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
+                  {done.has(m.id) ? <Icon name="check" size={10} /> : <span className="w-3 shrink-0" />}
                   <span className="truncate">{m.label}</span>
                 </button>
               ))}
@@ -5542,7 +5543,7 @@ export default function ExploreApp({ initialModule, onModuleVisit, onNavigate })
                           boxShadow: "inset 0 0 0 1px var(--border)",
                         } : {}}
                         className={`w-full text-left px-3 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${active ? "text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/60"}`}>
-                        {done.has(m.id) ? <span className="text-green-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
+                        {done.has(m.id) ? <Icon name="check" size={10} /> : <span className="w-3 shrink-0" />}
                         <span className="truncate">{m.label}</span>
                       </button>
                     );

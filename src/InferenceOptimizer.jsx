@@ -1,5 +1,6 @@
 import { useState } from "react";
 import HowTo from "./HowTo";
+import { Icon } from './Icon.jsx';
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 // Llama 3.1 7B on A10G (24GB VRAM) — realistic numbers
@@ -47,7 +48,7 @@ function QuantizationLab() {
                   <span className="text-base font-bold font-mono" style={{ color: q.color }}>{q.label}</span>
                   <span className="text-xs font-mono text-zinc-600">{q.bits}-bit</span>
                   {q.id === "fp16" && <span className="text-xs text-violet-400 font-mono">default</span>}
-                  {q.id === "int8" && <span className="text-xs text-emerald-400 font-mono">★ recommended</span>}
+                  {q.id === "int8" && <span className="text-xs text-emerald-400 font-mono"><Icon name="star-filled" size={11} /> recommended</span>}
                 </div>
                 <div className="flex gap-5 shrink-0 text-right">
                   <div>
@@ -223,7 +224,7 @@ function KVCacheExplainer() {
           </span>
         </div>
         {kvMB > 20 * 1024 && (
-          <p className="text-xs text-red-400">⚠ At this context length, KV cache alone exceeds 20GB — requires multi-GPU or offloading.</p>
+          <p className="text-xs text-red-400"><Icon name="alert-triangle" size={12} /> At this context length, KV cache alone exceeds 20GB — requires multi-GPU or offloading.</p>
         )}
       </div>
 

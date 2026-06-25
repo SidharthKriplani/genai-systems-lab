@@ -3,6 +3,7 @@ import { useState } from "react";
 import { track } from "./analytics";
 import { supabase, signInWithGoogle, signInWithGitHub, signOut, pushProgress, pullProgress } from "./supabase";
 import { POSTS } from "./groundTruthIndex";
+import { Icon } from "./Icon.jsx";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function initials(name, email) {
@@ -35,11 +36,11 @@ function StatPill({ label, value, color }) {
 
 // ── Achievements ──────────────────────────────────────────────────────────────
 const ACHIEVEMENTS = [
-  { id: "first_q",   label: "First Answer",    icon: "★", check: (d) => d.total >= 1 },
-  { id: "ten_q",     label: "10 Questions",    icon: "⚡", check: (d) => d.total >= 10 },
+  { id: "first_q",   label: "First Answer",    icon: "star-filled", check: (d) => d.total >= 1 },
+  { id: "ten_q",     label: "10 Questions",    icon: "zap", check: (d) => d.total >= 10 },
   { id: "fifty_q",   label: "50 Questions",    icon: "◈", check: (d) => d.total >= 50 },
   { id: "accurate",  label: "Sharp Eye",       icon: "◎", check: (d) => d.accuracy >= 70 && d.total >= 10 },
-  { id: "first_lab", label: "Lab Certified",   icon: "✦", check: (d) => d.ragPassed >= 1 },
+  { id: "first_lab", label: "Lab Certified",   icon: "sparkle", check: (d) => d.ragPassed >= 1 },
   { id: "all_rag",   label: "RAG Master",      icon: "▲", check: (d) => d.ragPassed >= 6 },
   { id: "concepts5", label: "Concept Builder", icon: "→", check: (d) => d.mastered >= 5 },
   { id: "streak3",   label: "Consistent",      icon: "↑", check: (d) => d.streak >= 3 },
@@ -54,7 +55,7 @@ function Badge({ label, icon, earned }) {
       style={earned
         ? { background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.35)", color: "#c4b5fd" }
         : { background: "var(--surface-2)", border: "1px solid var(--border)", color: "#3f3f46" }}>
-      <span>{icon}</span>
+      {["star-filled","zap","sparkle"].includes(icon) ? <Icon name={icon} size={14} /> : <span>{icon}</span>}
       <span>{label}</span>
     </div>
   );
@@ -339,7 +340,7 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
                   {p.title}
                 </button>
                 <button onClick={() => removeBookmark(p.id)}
-                  className="text-zinc-600 hover:text-red-400 text-xs shrink-0 transition-colors">✕</button>
+                  className="text-zinc-600 hover:text-red-400 text-xs shrink-0 transition-colors"><Icon name="x" size={14} /></button>
               </div>
             ))}
           </div>

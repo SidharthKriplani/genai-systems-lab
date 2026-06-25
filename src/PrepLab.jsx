@@ -27,6 +27,8 @@ import { isAccessGranted, grantAccess, validateCode, FREE_QUESTION_LIMIT } from 
 import { RESULTS_FREE_LIMIT } from "./config/gating";
 import { PREP_QUESTIONS } from "./data/preplabQuestions";
 import { CommonTrapCallout, FeedbackBar } from "./shared";
+import { Icon } from "./Icon.jsx";
+import { CompanyLogo } from "./CompanyLogo.jsx";
 
 // ─── GATE MODAL ───────────────────────────────────────────────────────────────
 function GateModal({ onUnlock, onClose }) {
@@ -678,14 +680,14 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
             style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}
             className="py-3 text-red-300 rounded-xl text-sm font-semibold hover:brightness-110 transition-all"
           >
-            ✗ Missed it
+            <Icon name="x" size={14} /> Missed it
           </button>
           <button
             onClick={() => { onSelfGrade && onSelfGrade(true); onNext(); }}
             style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }}
             className="py-3 text-emerald-300 rounded-xl text-sm font-semibold hover:brightness-110 transition-all"
           >
-            ✓ Got it
+            <Icon name="check" size={14} /> Got it
           </button>
         </div>
       </div>
@@ -719,7 +721,7 @@ function RevealCard({ isCorrect, q, onNext, nextLabel, onNavigate, onNavigateTo,
           <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-1">Correct answer{q.type === "multi" ? "s" : ""}</p>
           {q.type === "multi"
             ? <div className="space-y-1">{(Array.isArray(q.correct) ? q.correct : [q.correct]).map(i => (
-                <p key={i} className="text-sm text-emerald-300 font-medium">✓ {q.options[i]}</p>
+                <p key={i} className="text-sm text-emerald-300 font-medium"><Icon name="check" size={12} /> {q.options[i]}</p>
               ))}</div>
             : <p className="text-sm text-emerald-300 font-medium">{q.options[q.correct]}</p>
           }
@@ -1260,13 +1262,13 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions, user = nu
                       onClick={() => setTextOverrides(o => ({ ...o, [q.id]: false }))}
                       style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}
                       className="py-2 text-red-300 rounded-lg text-sm font-medium hover:brightness-110 transition-all">
-                      ✗ Missed it
+                      <Icon name="x" size={14} /> Missed it
                     </button>
                     <button
                       onClick={() => setTextOverrides(o => ({ ...o, [q.id]: true }))}
                       style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }}
                       className="py-2 text-emerald-300 rounded-lg text-sm font-medium hover:brightness-110 transition-all">
-                      ✓ Got it
+                      <Icon name="check" size={14} /> Got it
                     </button>
                   </div>
                 </div>
@@ -1284,7 +1286,7 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions, user = nu
                     <TopicChip topic={q.topic} />
                     <p className="text-zinc-200 text-sm flex-1">{q.question}</p>
                   </div>
-                  <p className="text-emerald-400 text-sm">✓ {q.options[q.correct]}</p>
+                  <p className="text-emerald-400 text-sm"><Icon name="check" size={12} /> {q.options[q.correct]}</p>
                   <p className="text-zinc-400 text-sm border-t border-zinc-800 pt-2">{q.explanation}</p>
                 </div>
               ))}
@@ -1614,7 +1616,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                 onClick={() => setWeakOnly(w => !w)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${weakOnly ? "bg-red-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
               >
-                <span>⚡</span>
+                <span><Icon name="zap" size={14} /></span>
                 Weak spots ({Object.values(history).filter(h => h.wrong > 0).length})
               </button>
               {weakOnly && (
@@ -1676,7 +1678,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                               className="flex items-start gap-2.5 px-3 py-2 rounded-lg">
                               <span className={`text-[10px] font-mono font-bold shrink-0 mt-0.5 ${i === bq.correct ? "text-emerald-400" : "text-zinc-500"}`}>{String.fromCharCode(65 + i)}</span>
                               <span className={`text-sm flex-1 ${i === bq.correct ? "text-emerald-300 font-medium" : "text-zinc-400"}`}>{opt}</span>
-                              {i === bq.correct && <span className="text-emerald-500 text-xs shrink-0">✓</span>}
+                              {i === bq.correct && <Icon name="check" size={12} />}
                             </div>
                           ))}
                         </div>
@@ -1718,7 +1720,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                   <QuestionCard q={q} />
                   {history[q.id]?.wrong > 0 && (
                     <span className="absolute top-2 right-2 text-[10px] text-red-400 font-semibold">
-                      ✗ {history[q.id].wrong}× wrong
+                      <Icon name="x" size={14} /> {history[q.id].wrong}× wrong
                     </span>
                   )}
                 </div>
@@ -2010,7 +2012,7 @@ function InterviewPrepMode({ onExit, onNavigate, onNavigateTo }) {
           <div className="rounded-xl p-4 mb-2" style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)" }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-violet-400">Previous plan active — Phase {savedPlan.phase}/4</span>
-              <button onClick={() => setShowResume(false)} className="text-zinc-600 hover:text-zinc-400 text-xs">✕</button>
+              <button onClick={() => setShowResume(false)} className="text-zinc-600 hover:text-zinc-400 text-xs"><Icon name="x" size={14} /></button>
             </div>
             {savedPlan.company && <p className="text-xs text-zinc-400 mb-1">Company: <span className="text-zinc-200 font-semibold">{savedPlan.company}</span></p>}
             {savedPlan.jdSnippet && <p className="text-xs text-zinc-600 truncate mb-3">"{savedPlan.jdSnippet}..."</p>}
@@ -2347,21 +2349,7 @@ const TOPIC_WEIGHT_LABELS = {
   safety: "Safety", mlops: "MLOps", multimodal: "Multimodal",
 };
 
-// Simple Icons slugs for companies with known CDN entries
-const COMPANY_ICONS = {
-  "Google DeepMind": "google",
-  "Meta AI":         "meta",
-  "Amazon AI":       "amazon",
-  "Apple ML":        "apple",
-  "Anthropic":       "anthropic",
-  "OpenAI":          "openai",
-  "Perplexity":      "perplexity",
-  "Flipkart":        "flipkart",
-  "Razorpay":        "razorpay",
-  "Accenture AI":    "accenture",
-  "Deloitte AI":     "deloitte",
-  "IBM watsonx":     "ibm",
-};
+
 
 const ARCHETYPE_ICONS = {
   bigtech:    <IconBuilding2 size={26} />,
@@ -2370,34 +2358,12 @@ const ARCHETYPE_ICONS = {
   enterprise: <IconLandmark  size={26} />,
 };
 
-function CompanyLogo({ name, size = 13 }) {
-  const slug = COMPANY_ICONS[name];
-  if (slug) {
-    return (
-      <img
-        src={`https://cdn.simpleicons.org/${slug}/ffffff`}
-        alt=""
-        width={size}
-        height={size}
-        className="inline-block shrink-0"
-        style={{ opacity: 0.75, verticalAlign: "middle" }}
-      />
-    );
-  }
-  return (
-    <span
-      className="inline-flex items-center justify-center rounded-full shrink-0 font-bold text-white"
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.55), background: "rgba(255,255,255,0.18)", lineHeight: 1 }}
-    >
-      {name[0]}
-    </span>
-  );
-}
+
 
 const COMPANY_ARCHETYPES = [
   {
     id: "bigtech",
-    icon: "🏢",
+    icon: "building-2",
     label: "Big Tech AI",
     companies: ["Google DeepMind", "Meta AI", "Amazon AWS AI", "Microsoft Copilot"],
     color: "indigo",
@@ -2417,7 +2383,7 @@ const COMPANY_ARCHETYPES = [
   },
   {
     id: "ainative",
-    icon: "🚀",
+    icon: "rocket",
     label: "AI-Native Labs",
     companies: ["Anthropic", "OpenAI", "Perplexity", "Cursor"],
     color: "emerald",
@@ -2535,7 +2501,7 @@ function CompanyPrepMode({ onExit, onNavigate }) {
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {arc.companies.map(c => (
                     <span key={c} className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-${arc.color}-900/40 text-${arc.color}-300 border border-${arc.color}-500/20`}>
-                      <CompanyLogo name={c} size={12} />
+                      <CompanyLogo company={c} size={12} />
                       {c}
                     </span>
                   ))}
@@ -2575,7 +2541,7 @@ function CompanyPrepMode({ onExit, onNavigate }) {
               <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-2">Must-Know Topics</h3>
               <ul className="space-y-1">
                 {archetype.mustKnow.map(k => (
-                  <li key={k} className="flex items-start gap-2 text-sm text-zinc-300"><span className="text-green-400 mt-0.5">✓</span>{k}</li>
+                  <li key={k} className="flex items-start gap-2 text-sm text-zinc-300"><Icon name="check" size={14} />{k}</li>
                 ))}
               </ul>
             </div>
@@ -2801,11 +2767,11 @@ function CompanyPrepMode({ onExit, onNavigate }) {
                   <div className="flex gap-2">
                     <button onClick={() => selfGrade(true)}
                       className="flex-1 py-2 rounded-xl bg-emerald-900/40 border border-emerald-700 text-emerald-300 text-sm font-semibold hover:bg-emerald-900/60 transition-colors">
-                      ✓ Got it
+                      <Icon name="check" size={14} /> Got it
                     </button>
                     <button onClick={() => selfGrade(false)}
                       className="flex-1 py-2 rounded-xl bg-red-900/40 border border-red-700 text-red-300 text-sm font-semibold hover:bg-red-900/60 transition-colors">
-                      ✗ Missed it
+                      <Icon name="x" size={14} /> Missed it
                     </button>
                   </div>
                 </div>
@@ -2942,7 +2908,7 @@ function DefenseDocMode({ onExit }) {
             ← Back
           </button>
           <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2">🛡 Defense Doc</h2>
+            <h2 className="text-2xl font-bold flex items-center gap-2"><Icon name="shield" size={20} /> Defense Doc</h2>
             <p className="text-zinc-400 text-sm">Interview War Room Brief</p>
           </div>
         </div>
@@ -2978,7 +2944,7 @@ function DefenseDocMode({ onExit }) {
               className="rounded-2xl p-4 border flex items-center gap-4"
               style={{ borderColor: result.top.color + "60", backgroundColor: result.top.color + "10" }}
             >
-              <div className="text-3xl">🎯</div>
+              <div className="text-3xl"><Icon name="target" size={32} /></div>
               <div>
                 <p className="text-xs text-zinc-400 uppercase tracking-wider mb-0.5">Primary Domain Detected</p>
                 <p className="font-bold text-lg" style={{ color: result.top.color }}>{result.top.label}</p>
@@ -3113,7 +3079,7 @@ function DefenseDocMode({ onExit }) {
                   <ul className="divide-y divide-zinc-800">
                     {result.gotchas.map((g, i) => (
                       <li key={i} className="flex items-start gap-3 px-5 py-3.5">
-                        <span className="text-amber-400 text-sm flex-shrink-0 mt-0.5">⚠</span>
+                        <Icon name="alert-triangle" size={14} />
                         <span className="text-sm text-zinc-200 leading-relaxed">{g}</span>
                       </li>
                     ))}
@@ -3257,7 +3223,7 @@ function BrowseMode({ onExit }) {
                         <div key={oi} className={`px-3 py-2 rounded-lg text-sm flex items-start gap-2 ${oi === q.correct ? "bg-emerald-950/40 border border-emerald-800/50 text-emerald-300" : "bg-zinc-800/40 text-zinc-400"}`}>
                           <span className="font-mono text-[11px] shrink-0 mt-0.5">{String.fromCharCode(65 + oi)}.</span>
                           <span className="flex-1 leading-snug">{opt}</span>
-                          {oi === q.correct && <span className="text-[10px] font-mono text-emerald-400 shrink-0 mt-0.5">✓</span>}
+                          {oi === q.correct && <Icon name="check" size={10} />}
                         </div>
                       ))}
                     </div>
@@ -3336,27 +3302,27 @@ function BrowseMode({ onExit }) {
 
 const MODE_CARDS = [
   {
-    id: "exam", icon: "⏱", title: "Judgment Exam", subtitle: "Timed · No hints",
+    id: "exam", icon: "timer", title: "Judgment Exam", subtitle: "Timed · No hints",
     description: "Timed 15–60 min exam with configurable focus and difficulty. All scores hidden until the end. Per-challenge-area breakdown shows exactly where your judgment breaks.",
     border: "border-indigo-500/40 hover:border-indigo-400", badge: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30"
   },
   {
-    id: "trainer", icon: "🎯", title: "Trainer", subtitle: "Immediate Feedback",
+    id: "trainer", icon: "target", title: "Trainer", subtitle: "Immediate Feedback",
     description: "Answer questions one by one with instant color-coded reveal, explanation, and reading links. Tracks weak topics and recommends what to study next.",
     border: "border-emerald-500/40 hover:border-emerald-400", badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
   },
   {
-    id: "jdprep", icon: "📋", title: "JD + Resume Prep", subtitle: "Targeted Session", gated: true,
+    id: "jdprep", icon: "clipboard", title: "JD + Resume Prep", subtitle: "Targeted Session", gated: true,
     description: "Paste a job description to detect skill requirements. Optionally paste your resume for gap analysis. Get a 20-question drill weighted to your gaps.",
     border: "border-violet-500/40 hover:border-violet-400", badge: "bg-violet-500/20 text-violet-300 border-violet-500/30"
   },
   {
-    id: "companyprep", icon: "🏢", title: "Company Prep Tracks", subtitle: "Archetype Targeting",
+    id: "companyprep", icon: "building-2", title: "Company Prep Tracks", subtitle: "Archetype Targeting",
     description: "4 company archetypes: Big Tech AI, AI-native startups, Indian tech, Enterprise AI. Weighted question sets + company-specific system design challenges.",
     border: "border-amber-500/40 hover:border-amber-400", badge: "bg-amber-500/20 text-amber-300 border-amber-500/30"
   },
   {
-    id: "defense", icon: "🛡", title: "Defense Doc", subtitle: "Interview War Room",
+    id: "defense", icon: "shield", title: "Defense Doc", subtitle: "Interview War Room",
     description: "Paste a job description. Get your personalized pre-interview brief: topic priorities, system design cheat sheet, must-know concepts, STAR story starters, and questions to ask.",
     border: "border-rose-500/40 hover:border-rose-400", badge: "bg-rose-500/20 text-rose-300 border-rose-500/30"
   }

@@ -1,3 +1,4 @@
+import { Icon } from "./Icon.jsx";
 import { useState, useEffect, useMemo, useRef } from "react";
 import HowTo from "./HowTo";
 import { FeedbackBar, FidelityBadge } from "./shared";
@@ -227,7 +228,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
               className="w-full rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none transition-colors" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-400 text-[10px]">✕</button>
+              <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-400 text-[10px]"><Icon name="x" size={14} /></button>
             )}
           </div>
         </div>
@@ -273,7 +274,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
                       className={`w-full text-left px-2 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all duration-150 ${active ? "text-white font-semibold" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50"}`}
                       style={active ? { background: "linear-gradient(90deg, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.04) 100%)", boxShadow: "inset 0 0 0 1px var(--border)" } : {}}
                     >
-                      {done.has(m.id) ? <span className="text-emerald-400 text-[10px] shrink-0">✓</span> : <span className="w-3 shrink-0" />}
+                      {done.has(m.id) ? <span className="text-emerald-400 text-[10px] shrink-0"><Icon name="check" size={10} /></span> : <span className="w-3 shrink-0" />}
                       <span className="truncate">{m.label}</span>
                     </button>
                   );
@@ -360,7 +361,7 @@ export default function SystemsApp({ initialModule, onModuleVisit, onNavigate, a
             <button
               onClick={() => onNavigate && onNavigate({ tab: "preplab", mode: "trainer", topic: MODULE_PREPLAB_TOPIC[activeModule] || "evals" })}
               className="text-xs px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-violet-600 text-zinc-300 hover:text-violet-300 font-medium transition-all">
-              🧠 Prep Lab
+              <Icon name="brain" size={14} /> Prep Lab
             </button>
           </div>
           <FeedbackBar page={`systems/${activeModule}`} contentType="module" />

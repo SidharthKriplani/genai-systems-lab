@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { isPreviewUnlocked, isFeedbackReady } from "./analytics";
 import { MODULE_CATALOG, LEARNING_PATHS, LS_KEYS, LOCKED_TABS, FREE_TABS } from "./utils/contentAudit";
+import { Icon } from "./Icon.jsx";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
@@ -189,9 +190,9 @@ export default function QADashboard({ onNavigate, onOpenModule }) {
             <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-500 border border-amber-800/40 uppercase tracking-wide">internal</span>
           </div>
           <div className="flex items-center gap-3 text-[11px] font-mono">
-            <span className="text-emerald-500">{passCount}✓</span>
-            <span className="text-amber-500">{warnCount}⚠</span>
-            <span className="text-red-500">{failCount}✗</span>
+            <span className="text-emerald-500">{passCount}<Icon name="check" size={12} /></span>
+            <span className="text-amber-500">{warnCount}<Icon name="alert-triangle" size={12} /></span>
+            <span className="text-red-500">{failCount}<Icon name="x" size={12} /></span>
             <span className="text-zinc-700">·</span>
             <span className="text-zinc-500">{clDone}/{LAUNCH_CHECKLIST.length} launch</span>
           </div>
@@ -369,8 +370,8 @@ export default function QADashboard({ onNavigate, onOpenModule }) {
                       </td>
                       <td className="py-1.5 px-2 text-zinc-500 whitespace-nowrap max-w-[110px] truncate">{m.audience}</td>
                       <td className="py-1.5 px-2 font-mono text-zinc-600 whitespace-nowrap text-[10px]">{m.fidelity || "—"}</td>
-                      <td className="py-1.5 px-2 text-center">{m.hasChallenge ? <span className="text-emerald-500 text-sm">✓</span> : <span className="text-zinc-800">—</span>}</td>
-                      <td className="py-1.5 px-2 text-center">{m.hasReflection ? <span className="text-violet-400 text-sm">✓</span> : <span className="text-zinc-800">—</span>}</td>
+                      <td className="py-1.5 px-2 text-center">{m.hasChallenge ? <span className="text-emerald-500 text-sm"><Icon name="check" size={14} /></span> : <span className="text-zinc-800">—</span>}</td>
+                      <td className="py-1.5 px-2 text-center">{m.hasReflection ? <span className="text-violet-400 text-sm"><Icon name="check" size={14} /></span> : <span className="text-zinc-800">—</span>}</td>
                       <td className="py-1.5 px-2">
                         <button onClick={() => openModule(m.tab, m.moduleId)}
                           className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white font-mono text-[10px] transition-all whitespace-nowrap"
@@ -404,9 +405,9 @@ export default function QADashboard({ onNavigate, onOpenModule }) {
                     <h3 className="text-sm font-black text-white">{path.title}</h3>
                   </div>
                   <div className="flex gap-2 text-[10px] font-mono">
-                    {hasLocked  && <span className="bg-amber-950/60 text-amber-500 border border-amber-800/40 px-1.5 py-0.5 rounded">⚠ locked step</span>}
-                    {hasBroken  && <span className="bg-red-950/60 text-red-500 border border-red-800/40 px-1.5 py-0.5 rounded">✗ broken ID</span>}
-                    {!hasLocked && !hasBroken && <span className="bg-emerald-950/60 text-emerald-500 border border-emerald-800/40 px-1.5 py-0.5 rounded">✓ all free</span>}
+                    {hasLocked  && <span className="bg-amber-950/60 text-amber-500 border border-amber-800/40 px-1.5 py-0.5 rounded"><Icon name="alert-triangle" size={12} /> locked step</span>}
+                    {hasBroken  && <span className="bg-red-950/60 text-red-500 border border-red-800/40 px-1.5 py-0.5 rounded"><Icon name="x" size={12} /> broken ID</span>}
+                    {!hasLocked && !hasBroken && <span className="bg-emerald-950/60 text-emerald-500 border border-emerald-800/40 px-1.5 py-0.5 rounded"><Icon name="check" size={12} /> all free</span>}
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -418,9 +419,9 @@ export default function QADashboard({ onNavigate, onOpenModule }) {
                         <span className="text-[10px] font-mono font-bold text-zinc-600 w-4 shrink-0">{i + 1}</span>
                         <span className="flex-1 text-xs font-bold text-white">{step.label}</span>
                         <span className="text-[10px] font-mono text-zinc-600">{step.tab}</span>
-                        {locked  && <span className="text-[10px] text-amber-500 font-mono">🔒 locked</span>}
-                        {!exists && <span className="text-[10px] text-red-500 font-mono">✗ broken</span>}
-                        {!locked && exists && <span className="text-[10px] text-emerald-500 font-mono">✓</span>}
+                        {locked  && <span className="text-[10px] text-amber-500 font-mono"><Icon name="lock" size={12} /> locked</span>}
+                        {!exists && <span className="text-[10px] text-red-500 font-mono"><Icon name="x" size={12} /> broken</span>}
+                        {!locked && exists && <span className="text-[10px] text-emerald-500 font-mono"><Icon name="check" size={12} /></span>}
                       </div>
                     );
                   })}
@@ -547,7 +548,7 @@ export default function QADashboard({ onNavigate, onOpenModule }) {
                   try { navigator.clipboard.writeText(JSON.stringify(out, null, 2)); } catch {}
                 }}
                 className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all">
-                📋 Copy to clipboard
+                <Icon name="clipboard" size={14} /> Copy to clipboard
               </button>
             </div>
           </div>
@@ -569,7 +570,7 @@ export default function QADashboard({ onNavigate, onOpenModule }) {
                 className={`flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all ${checklist[item.id] ? "border-emerald-800/60 bg-emerald-950/20" : "border-zinc-800 bg-zinc-900/30 hover:border-zinc-700"}`}>
                 <input type="checkbox" checked={!!checklist[item.id]} onChange={() => toggleCheck(item.id)} className="hidden" />
                 <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${checklist[item.id] ? "bg-emerald-500 border-emerald-500" : "border-zinc-600"}`}>
-                  {checklist[item.id] && <span className="text-white text-[10px] font-bold">✓</span>}
+                  {checklist[item.id] && <span className="text-white text-[10px] font-bold"><Icon name="check" size={10} /></span>}
                 </div>
                 <span className={`text-sm ${checklist[item.id] ? "text-emerald-300 line-through decoration-emerald-700" : "text-white"}`}>{item.label}</span>
               </label>
@@ -605,7 +606,7 @@ export default function QADashboard({ onNavigate, onOpenModule }) {
                         <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-900/30 transition-all">
                           <button onClick={() => setExpandedModule(isExp ? null : k)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
                             <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${done === REVIEW_CRITERIA.length ? "bg-emerald-500 border-emerald-500" : "border-zinc-700"}`}>
-                              {done === REVIEW_CRITERIA.length && <span className="text-white text-[9px]">✓</span>}
+                              {done === REVIEW_CRITERIA.length && <span className="text-white text-[9px]"><Icon name="check" size={9} /></span>}
                             </div>
                             <span className="text-xs font-bold text-white flex-1 truncate">{m.title}</span>
                             <span className="text-[10px] font-mono text-zinc-600 shrink-0">{done}/{REVIEW_CRITERIA.length}</span>
@@ -624,7 +625,7 @@ export default function QADashboard({ onNavigate, onOpenModule }) {
                                 className={`flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer transition-all ${r[c.id] ? "bg-emerald-950/20" : "hover:bg-zinc-900/50"}`}>
                                 <input type="checkbox" checked={!!r[c.id]} onChange={() => toggleReview(k, c.id)} className="hidden" />
                                 <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${r[c.id] ? "bg-emerald-500 border-emerald-500" : "border-zinc-600"}`}>
-                                  {r[c.id] && <span className="text-white text-[8px] font-bold">✓</span>}
+                                  {r[c.id] && <span className="text-white text-[8px] font-bold"><Icon name="check" size={8} /></span>}
                                 </div>
                                 <span className={`text-[11px] ${r[c.id] ? "text-emerald-400" : "text-zinc-400"}`}>{c.label}</span>
                               </label>

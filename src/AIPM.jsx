@@ -1,5 +1,6 @@
 import { useState } from "react";
 import HowTo from "./HowTo";
+import { Icon } from "./Icon.jsx";
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
@@ -457,11 +458,11 @@ function StakeholderExplainer() {
           <div>Real incidents rarely have a clean root cause in the first hour. The frameworks above show the <em>final</em> message — but the harder skill is communicating under uncertainty.</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
             <div className="rounded-lg bg-zinc-800/60 border border-zinc-700 p-2.5">
-              <div className="text-red-400 font-semibold text-[11px] mb-1">❌ Don't say</div>
+              <div className="text-red-400 font-semibold text-[11px] mb-1"><Icon name="x-circle" size={14} /> Don't say</div>
               <div className="text-zinc-400 text-[11px]">"We have a bug and we're looking into it." — No timeline, no scope, no accountability. Creates anxiety.</div>
             </div>
             <div className="rounded-lg bg-zinc-800/60 border border-zinc-700 p-2.5">
-              <div className="text-emerald-400 font-semibold text-[11px] mb-1">✓ Say instead</div>
+              <div className="text-emerald-400 font-semibold text-[11px] mb-1"><Icon name="check" size={14} /> Say instead</div>
               <div className="text-zinc-400 text-[11px]">"We identified an issue affecting [X users / Y% of queries]. We're investigating and will have an update in [N hours]. No data has been lost." — Scope + timeline + reassurance.</div>
             </div>
           </div>
@@ -551,7 +552,7 @@ function LaunchChecklist() {
                 <div className="flex items-start gap-3">
                   <button onClick={() => toggle(item.id)}
                     className={`w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center transition-all ${checked.has(item.id) ? "bg-green-600 border-green-600" : "border-zinc-600 hover:border-zinc-400"}`}>
-                    {checked.has(item.id) && <span className="text-white text-xs leading-none">✓</span>}
+                    {checked.has(item.id) && <span className="text-white text-xs leading-none"><Icon name="check" size={12} /></span>}
                   </button>
                   <p onClick={() => toggle(item.id)}
                     className={`text-xs flex-1 cursor-pointer transition-all ${checked.has(item.id) ? "text-zinc-600 line-through" : "text-zinc-300"}`}>{item.label}</p>
@@ -738,7 +739,7 @@ export default function AIPMApp() {
     <div className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 70%)" }} />
       <div className="max-w-lg w-full flex flex-col items-center text-center gap-6 fade-up">
-        <div style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(16,185,129,0.08) 100%)", border: "1px solid rgba(34,197,94,0.3)", boxShadow: "0 0 24px rgba(34,197,94,0.15)" }} className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl">📋</div>
+        <div style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(16,185,129,0.08) 100%)", border: "1px solid rgba(34,197,94,0.3)", boxShadow: "0 0 24px rgba(34,197,94,0.15)" }} className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"><Icon name="clipboard" size={32} /></div>
         <div className="space-y-2">
           <h1 className="text-3xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.75) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>AI Product Track</h1>
           <p className="text-sm text-zinc-400 max-w-sm leading-relaxed">Make better AI product decisions — the way senior PMs think about LLM features, PRDs, and tradeoffs.</p>

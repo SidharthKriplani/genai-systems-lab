@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import HowTo from "./HowTo";
+import { Icon } from './Icon.jsx';
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const USD_TO_INR = 84;
@@ -48,7 +49,7 @@ const LANG_SENTENCES = [SAMPLE_SENTENCE.en, SAMPLE_SENTENCE.hinglish, SAMPLE_SEN
 const OPTIMIZATIONS = [
   {
     id: "cache",
-    icon: "🗄️",
+    icon: 'archive',
     label: "Semantic Cache",
     desc: "Cache query embeddings + responses (Redis / Faiss). 40% cache hit rate is realistic for support bots with repetitive queries.",
     queryMultiplier: 0.60,   // 40% of queries served from cache
@@ -82,7 +83,7 @@ const OPTIMIZATIONS = [
   },
   {
     id: "quantize",
-    icon: "⚡",
+    icon: 'zap',
     label: "INT8 Quantization",
     desc: "Quantize self-hosted model weights. ~35% infra cost reduction. Applies conceptually here as a cost multiplier on API cost.",
     queryMultiplier: 1.0,
@@ -173,7 +174,7 @@ function ScaleCalculator() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-bold text-white">{c.label}</span>
                   <span className="text-xs px-1.5 py-0.5 rounded font-mono bg-zinc-800 text-zinc-500">{c.badge}</span>
-                  {meetsTarget && <span className="text-xs text-emerald-400 font-mono">✓ ₹0.001 target</span>}
+                  {meetsTarget && <span className="text-xs text-emerald-400 font-mono"><Icon name="check" size={12} /> ₹0.001 target</span>}
                 </div>
                 <div className="flex items-center gap-6 shrink-0">
                   <div className="text-right">
@@ -210,7 +211,7 @@ function ScaleCalculator() {
           </p>
           {sel.inr >= CR && (
             <div className="flex items-center gap-2 pt-2 border-t border-zinc-800">
-              <span className="text-xs font-mono text-red-400">⚠ Annual cost: {fmtInr(sel.inr * 12)} — requires board-level budget approval at most Indian startups.</span>
+              <span className="text-xs font-mono text-red-400"><Icon name="alert-triangle" size={12} /> Annual cost: {fmtInr(sel.inr * 12)} — requires board-level budget approval at most Indian startups.</span>
             </div>
           )}
         </div>
@@ -425,11 +426,11 @@ function FrugalStack() {
               className={`rounded-xl border p-4 cursor-pointer transition-all ${on ? "border-emerald-700 bg-emerald-950/20" : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"}`}>
               <div className="flex items-start gap-3">
                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${on ? "border-emerald-500 bg-emerald-500" : "border-zinc-600"}`}>
-                  {on && <span className="text-xs text-white font-bold leading-none">✓</span>}
+                  {on && <span className="text-xs text-white font-bold leading-none"><Icon name="check" size={12} /></span>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-sm">{opt.icon}</span>
+                    <Icon name={opt.icon} size={14} />
                     <span className="text-sm font-bold text-white">{opt.label}</span>
                     {opt.opsInr > 0 && <span className="text-xs text-zinc-600 font-mono">+{fmtInr(opt.opsInr)}/mo ops</span>}
                     <span className={`ml-auto text-xs font-mono ${opt.latencyGood ? "text-emerald-400" : "text-amber-400"}`}>{opt.latency}</span>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Icon } from "./Icon.jsx";
 
 // ─── PHRASE BANK DATA ─────────────────────────────────────────────────────────
 
@@ -390,7 +391,7 @@ function PhraseBank() {
 
         {/* Weak */}
         <div className="rounded-lg bg-red-950/30 border border-red-900/40 p-4">
-          <div className="text-xs font-bold text-red-400 mb-2">❌ Weak</div>
+          <div className="text-xs font-bold text-red-400 mb-2"><Icon name="x-circle" size={14} /> Weak</div>
           <p className="text-sm text-zinc-300">"{phrase.weak}"</p>
         </div>
 
@@ -405,7 +406,7 @@ function PhraseBank() {
         ) : (
           <div className="space-y-3">
             <div className="rounded-lg bg-emerald-950/30 border border-emerald-800 p-4">
-              <div className="text-xs font-bold text-emerald-400 mb-2">✓ Strong</div>
+              <div className="text-xs font-bold text-emerald-400 mb-2"><Icon name="check" size={14} /> Strong</div>
               <p className="text-sm text-zinc-200 leading-relaxed">"{phrase.strong}"</p>
             </div>
             <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-3">
@@ -616,10 +617,10 @@ function TimedDrills() {
                 <div className="text-xs text-zinc-500 font-semibold">How many key points did you hit?</div>
                 <div className="flex gap-3">
                   <button onClick={() => scoreThis(true)} className="flex-1 py-2 rounded-lg bg-emerald-900/40 border border-emerald-700 text-emerald-300 text-xs font-bold hover:bg-emerald-900/70 transition-all">
-                    ✓ Got most of them
+                    <Icon name="check" size={14} /> Got most of them
                   </button>
                   <button onClick={() => scoreThis(false)} className="flex-1 py-2 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-bold hover:bg-red-900/50 transition-all">
-                    ✗ Missed key points
+                    <Icon name="x" size={14} /> Missed key points
                   </button>
                 </div>
               </div>
@@ -1084,7 +1085,7 @@ function PromptEngLab() {
 
         {/* Bad prompt */}
         <div className="space-y-2">
-          <div className="text-xs font-bold text-red-400">❌ Bad prompt</div>
+          <div className="text-xs font-bold text-red-400"><Icon name="x-circle" size={14} /> Bad prompt</div>
           <pre className="rounded bg-zinc-950 border border-zinc-800 p-3 text-xs text-zinc-300 font-mono whitespace-pre-wrap overflow-x-auto leading-relaxed">{ex.bad}</pre>
           <div className="rounded bg-red-950/30 border border-red-900/40 p-3 text-xs text-zinc-300 leading-relaxed">
             <span className="text-red-400 font-bold">Problem: </span>{ex.badIssue}
@@ -1098,7 +1099,7 @@ function PromptEngLab() {
           </button>
         ) : (
           <div className="space-y-3">
-            <div className="text-xs font-bold text-emerald-400">✓ Better prompt</div>
+            <div className="text-xs font-bold text-emerald-400"><Icon name="check" size={14} /> Better prompt</div>
             <pre className="rounded bg-zinc-950 border border-zinc-800 p-3 text-xs text-zinc-300 font-mono whitespace-pre-wrap overflow-x-auto leading-relaxed">{ex.good}</pre>
             <div className="rounded bg-emerald-950/30 border border-emerald-800 p-3 text-xs text-zinc-300 leading-relaxed">
               <span className="text-emerald-400 font-bold">Why it works: </span>{ex.improvement}
@@ -1589,7 +1590,7 @@ function MockInterview() {
             <p className="text-xs text-amber-400 uppercase tracking-widest">Review Recommended</p>
             {weakTopics.map(t => (
               <div key={t} className="flex items-start gap-2">
-                <span className="text-amber-500 shrink-0 mt-0.5">⚡</span>
+                <span className="text-amber-500 shrink-0 mt-0.5"><Icon name="zap" size={14} /></span>
                 <p className="text-sm text-zinc-300">{TOPIC_REVIEWS[t] || `Review ${t} in the relevant module.`}</p>
               </div>
             ))}
@@ -1699,7 +1700,7 @@ function FlashcardMode() {
 
       {deck.length === 0 ? (
         <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-8 text-center space-y-2">
-          <div className="text-2xl">🎉</div>
+          <div className="text-2xl"><Icon name="party" size={24} /></div>
           <div className="text-sm font-semibold text-white">No unknowns — you've learned them all!</div>
           <div className="text-xs text-zinc-500">Toggle "All cards" to review everything, or switch categories.</div>
         </div>
@@ -1729,10 +1730,10 @@ function FlashcardMode() {
       {flipped && (
         <div className="flex gap-3">
           <button onClick={() => markKnown(false)} className="flex-1 py-2.5 rounded-lg bg-red-900/40 border border-red-800 text-red-300 text-sm font-bold hover:bg-red-900/60 transition-all">
-            ✗ Need to review
+            <Icon name="x" size={14} /> Need to review
           </button>
           <button onClick={() => markKnown(true)} className="flex-1 py-2.5 rounded-lg bg-emerald-900/40 border border-emerald-800 text-emerald-300 text-sm font-bold hover:bg-emerald-900/60 transition-all">
-            ✓ Got it
+            <Icon name="check" size={14} /> Got it
           </button>
         </div>
       )}
@@ -1882,7 +1883,7 @@ function PromptChallengeMode() {
         </div>
 
         <div className="space-y-1">
-          <div className="text-xs font-bold text-red-400">❌ Broken prompt</div>
+          <div className="text-xs font-bold text-red-400"><Icon name="x-circle" size={14} /> Broken prompt</div>
           <pre className="rounded bg-zinc-950 border border-red-900/30 p-3 text-xs text-zinc-300 font-mono whitespace-pre-wrap leading-relaxed overflow-x-auto">{ch.brokenPrompt}</pre>
           <div className="rounded bg-red-950/30 border border-red-900/40 p-2 text-xs text-zinc-300 leading-relaxed">
             <span className="text-red-400 font-bold">Why it fails: </span>{ch.issue}
@@ -2088,7 +2089,7 @@ function ReadinessAssessment() {
     <div className="space-y-6">
       <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 p-7 text-center space-y-4">
         <div className="w-14 h-14 mx-auto rounded-2xl bg-red-900/30 border border-red-800/60 flex items-center justify-center text-3xl">
-          🎯
+          <Icon name="target" size={24} />
         </div>
         <div className="space-y-1">
           <h2 className="text-2xl font-black text-white tracking-tight">AI Systems Readiness Assessment</h2>

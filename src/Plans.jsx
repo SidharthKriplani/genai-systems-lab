@@ -3,6 +3,7 @@ import { useState } from "react";
 import { track } from "./analytics";
 import { validateCode, grantAccess, isAccessGranted } from "./utils/accessCode";
 import { signInWithGoogle, signInWithGitHub } from "./supabase";
+import { Icon } from './Icon.jsx';
 
 // ─── Feature comparison table ─────────────────────────────────────────────────
 const FEATURES = [
@@ -24,7 +25,7 @@ const FEATURES = [
 
 // ─── Cell renderer ────────────────────────────────────────────────────────────
 function Cell({ value, color }) {
-  if (value === true)  return <span className="text-emerald-400 text-base">✓</span>;
+  if (value === true)  return <span className="text-emerald-400 text-base"><Icon name="check" size={16} /></span>;
   if (value === false) return <span className="text-zinc-700 text-sm font-mono">—</span>;
   // string value
   return <span className="text-xs font-semibold" style={{ color: color || "#a1a1aa" }}>{value}</span>;
@@ -110,7 +111,7 @@ export default function PlansPage({ onNavigate, user = null }) {
           {user ? (
             <div className="w-full py-2.5 rounded-xl text-xs font-bold text-center text-emerald-400"
               style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)" }}>
-              ✓ You're signed in
+              <Icon name="check" size={14} /> You're signed in
             </div>
           ) : (
             <div className="space-y-2">
@@ -150,7 +151,7 @@ export default function PlansPage({ onNavigate, user = null }) {
           {unlocked ? (
             <div className="w-full py-2.5 rounded-xl text-xs font-bold text-center"
               style={{ background: "rgba(34,211,238,0.08)", border: "1px solid rgba(34,211,238,0.25)", color: "var(--gal-build)" }}>
-              ✓ Full access active
+              <Icon name="check" size={14} /> Full access active
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-2">

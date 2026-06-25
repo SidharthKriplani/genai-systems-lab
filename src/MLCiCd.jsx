@@ -1,5 +1,6 @@
 import { useState } from "react";
 import HowTo from "./HowTo";
+import { Icon } from './Icon.jsx';
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const STAGES = [
@@ -179,7 +180,7 @@ function DeployPipeline() {
                 <div key={i} onClick={() => toggleGate(stageIdx, i)}
                   className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${gatesDone[k] ? "bg-emerald-950/30" : "hover:bg-zinc-800/40"}`}>
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${gatesDone[k] ? "border-emerald-500 bg-emerald-500" : "border-zinc-600"}`}>
-                    {gatesDone[k] && <span className="text-white font-bold leading-none" style={{ fontSize: 10 }}>✓</span>}
+                    {gatesDone[k] && <span className="text-white font-bold leading-none"><Icon name="check" size={10} /></span>}
                   </div>
                   <span className="text-sm text-zinc-300">{g}</span>
                 </div>
@@ -234,7 +235,7 @@ function RollbackSimulator() {
 
       {/* Alert card */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
-        <div className="text-xs font-mono text-red-400 uppercase">⚠ Alert: {sc.metric} Anomaly — Canary 5%</div>
+        <div className="text-xs font-mono text-red-400 uppercase"><Icon name="alert-triangle" size={12} /> Alert: {sc.metric} Anomaly — Canary 5%</div>
         <div className="grid grid-cols-3 gap-4 text-center">
           {[
             { label: "Baseline",  value: `${sc.baseline}${sc.unit}`, color: "text-emerald-400" },
@@ -271,18 +272,18 @@ function RollbackSimulator() {
           <div className="flex gap-3">
             <button onClick={() => setVerdict("rollback")}
               className="flex-1 py-3 bg-red-950/40 border border-red-800 hover:bg-red-900/50 text-red-400 font-bold text-sm rounded-xl transition-all">
-              🚨 Rollback
+              <Icon name="siren" size={14} /> Rollback
             </button>
             <button onClick={() => setVerdict("continue")}
               className="flex-1 py-3 bg-emerald-950/40 border border-emerald-800 hover:bg-emerald-900/50 text-emerald-400 font-bold text-sm rounded-xl transition-all">
-              ✓ Continue Canary
+              <Icon name="check" size={14} /> Continue Canary
             </button>
           </div>
         </div>
       ) : (
         <div className={`rounded-xl border p-4 space-y-3 ${verdict === sc.verdict ? "border-emerald-700 bg-emerald-950/20" : "border-red-700 bg-red-950/20"}`}>
           <div className="flex items-center gap-2">
-            <span className="text-base">{verdict === sc.verdict ? "✅" : "❌"}</span>
+            <span className="text-base">{verdict === sc.verdict ? <Icon name="check-circle" size={16} color="var(--green, #4ade80)" /> : <Icon name="x-circle" size={16} color="var(--red, #f43f5e)" />}</span>
             <span className="font-bold text-white">
               {verdict === sc.verdict ? "Correct." : `Wrong — the right call was to ${sc.verdict}.`}
             </span>
@@ -332,7 +333,7 @@ function PreDeployChecklist() {
           <div className="h-full rounded-full transition-all duration-300"
             style={{ width: `${pct}%`, background: ready ? "#10b981" : pct > 60 ? "#f59e0b" : "#6366f1" }} />
         </div>
-        {ready && <p className="text-xs text-emerald-400 mt-2 font-bold">✓ All gates cleared — deployment approved for Shadow Mode.</p>}
+        {ready && <p className="text-xs text-emerald-400 mt-2 font-bold"><Icon name="check" size={14} /> All gates cleared — deployment approved for Shadow Mode.</p>}
       </div>
 
       {/* Categories */}
@@ -355,7 +356,7 @@ function PreDeployChecklist() {
                   <div key={ii} onClick={() => toggle(ci, ii)}
                     className={`flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${checked[k] ? "bg-emerald-950/20" : "hover:bg-zinc-800/50"}`}>
                     <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${checked[k] ? "border-emerald-500 bg-emerald-500" : "border-zinc-600"}`}>
-                      {checked[k] && <span className="text-white font-bold leading-none" style={{ fontSize: 9 }}>✓</span>}
+                      {checked[k] && <span className="text-white font-bold leading-none"><Icon name="check" size={9} /></span>}
                     </div>
                     <span className="text-sm text-zinc-300 leading-relaxed">{item}</span>
                   </div>

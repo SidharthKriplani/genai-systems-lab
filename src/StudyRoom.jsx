@@ -4,6 +4,7 @@
 // NEVER renders content to non-owner users
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Icon } from './Icon.jsx';
 import { supabase } from "./supabase";
 import { scheduleCard, addDays, today } from "./utils/fsrs";
 import { SEED_CARDS } from "./studySeed";
@@ -146,7 +147,7 @@ export default function StudyRoom({ user, onNavigate }) {
   if (!user || user.email !== OWNER_EMAIL) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-zinc-500 px-6">
-        <div className="text-4xl">🔒</div>
+        <div className="text-4xl"><Icon name="lock" size={40} /></div>
         <p className="text-sm font-mono">Private study area — sign in to access</p>
         {!user && (
           <button
@@ -271,7 +272,7 @@ function StudyRoomInner({ user, onNavigate }) {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1">
-            <span className="text-2xl">🧠</span>
+            <Icon name="brain" size={24} />
             <h1 className="text-xl font-bold text-zinc-100 tracking-tight">Mastery Room</h1>
             <span className="text-[10px] font-mono text-zinc-600 border border-zinc-700 rounded px-1.5 py-0.5 ml-auto">private</span>
           </div>

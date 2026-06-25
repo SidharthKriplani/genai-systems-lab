@@ -6,6 +6,7 @@ import TransformerWalkthrough from "./TransformerWalkthrough";
 import SalaryCalculator from "./SalaryCalculator";
 import { FeedbackBar } from "./shared";
 import GateOverlay from "./GateOverlay";
+import { Icon } from "./Icon.jsx";
 
 // Every post maps to at least one interactive module on the platform.
 // "labLink" is where the reader goes to test what they just read.
@@ -29,10 +30,10 @@ function countMatches(blocks, term) {
 }
 
 const REACTIONS = [
-  { id: "helped", emoji: "🎯", label: "Saved me in an interview" },
+  { id: "helped", emoji: "🎯", iconName: "target", label: "Saved me in an interview" },
   { id: "mindblown", emoji: "🤯", label: "Mind = blown" },
   { id: "confusing", emoji: "🤔", label: "Confusing" },
-  { id: "bookmark", emoji: "🔖", label: "Worth revisiting" },
+  { id: "bookmark", emoji: "🔖", iconName: "bookmark", label: "Worth revisiting" },
 ];
 
 function generateQuiz(blocks) {
@@ -602,7 +603,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
               }}
               className="text-[11px] px-3 py-1.5 rounded-full border border-violet-700/50 bg-violet-950/20 hover:border-violet-500/70 hover:bg-violet-950/40 text-violet-400 hover:text-violet-300 transition-all font-mono"
             >
-              ✦ Test yourself on this post →
+              <Icon name="sparkle" size={12} /> Test yourself on this post →
             </button>
           )}
         </div>
@@ -673,7 +674,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
                   return (
                     <button key={r.id} onClick={() => onReact(r.id)}
                       className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs border transition-all ${active ? "border-violet-500 bg-violet-900/30 text-violet-300" : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-600"}`}>
-                      <span>{r.emoji}</span>{r.label}
+                      {r.iconName ? <Icon name={r.iconName} size={16} /> : <span>{r.emoji}</span>}{r.label}
                     </button>
                   );
                 })}
@@ -700,7 +701,7 @@ function PostDetail({ post, onBack, onOpenPost, onNavigate, onNavigateTo, active
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Quick Quiz</p>
-                  <button onClick={() => setQuizActive(false)} className="text-xs text-zinc-500 hover:text-zinc-400 transition-colors">✕ Close</button>
+                  <button onClick={() => setQuizActive(false)} className="text-xs text-zinc-500 hover:text-zinc-400 transition-colors"><Icon name="x" size={14} /> Close</button>
                 </div>
                 {quizQuestions.length === 0 ? (
                   <p className="text-xs text-zinc-500">Not enough structured content to generate questions for this post.</p>
@@ -1612,7 +1613,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                 color: "#a1a1aa",
                 border: "1px solid rgba(63,63,70,0.6)",
               }}>
-              🔖 Saved
+              <Icon name="bookmark" size={14} /> Saved
               <span className="ml-1.5 text-[9px] opacity-50">{bookmarkIds.size}</span>
             </button>
           )}
@@ -1693,7 +1694,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                         onClick={e => toggleRead(post.id, e)}
                         title="Mark as unread"
                         className="text-[9px] font-mono text-emerald-500 bg-emerald-950/30 border border-emerald-800/40 rounded px-1.5 py-0.5 hover:bg-emerald-950/60 transition-all">
-                        ✓ Read
+                        <Icon name="check" size={14} /> Read
                       </button>
                     )}
                     {!readIds.has(post.id) && hasContent && (
@@ -1709,7 +1710,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                     <button onClick={(e) => toggleBookmark(post.id, e)}
                       title={bookmarkIds.has(post.id) ? "Remove bookmark" : "Bookmark"}
                       className={`text-[11px] transition-all ${bookmarkIds.has(post.id) ? "text-amber-400" : "text-zinc-600 hover:text-zinc-400"}`}>
-                      {bookmarkIds.has(post.id) ? "🔖" : "🔖"}
+                      <Icon name="bookmark" size={13} />
                     </button>
                     <button onClick={(e) => markHelpful(post.id, e)}
                       className={`text-[10px] flex items-center gap-1 transition-all ${helpfulCounts[post.id] ? "text-emerald-400" : "text-zinc-500 hover:text-zinc-400"}`}>
