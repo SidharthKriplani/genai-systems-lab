@@ -378,6 +378,15 @@ Treatment: cool-grey **glass panels** (`rgba(18,20,24,0.55)` + backdrop blur —
 
 ---
 
+## Sprint 91 — Icon system migration: monochrome Instrument standard (25 Jun 2026)
+
+HQ design standard applied to GSL: all emoji/glyph characters in JSX replaced with monochrome `<Icon>` components. Full HQ canonical `Icon.jsx` (84 icons + GLYPH_TO_ICON map) deployed to `src/`. Two new files added: `src/CompanyLogo.jsx` (Google `s2/favicons` service + letter-badge fallback; inline rgba styles for GSL's Tailwind base) and `src/companyDomains.js` (319-entry canonical company→domain resolver, shared from HQ). Local `CompanyLogo` in `PrepLab.jsx` (which used SimpleIcons + a `name` prop) replaced with canonical HQ import (`company` prop API). 26 source files swept by agent; targeted post-sweep fixes applied to `Agents.jsx`, `systems/modules.jsx`, `Playground.jsx`, `PrepLab.jsx`, `Concepts.jsx`, `MLCiCd.jsx`, `GroundTruth.jsx` (bookmark bug fixed — both branches of `{bookmarkIds.has(post.id) ? "🔖" : "🔖"}` were identical). Remaining emoji are legitimate leaves: string ternaries, dynamic icon lookups (TYPE_ICONS, A2A_CONCEPTS `{c.icon}`), icons not in GLYPH_TO_ICON map (🏆, 🎲, ✍️, 🪪, 🔔, 🔌 etc.), content/data strings in groundTruthPosts.js/ragScenarios.js, Python code in JS strings, canvas `fillText()` calls, and data arrays used for programmatic colour detection (`v.startsWith("✓")`). No version bump — design/infra, not content.
+
+**Files changed (29 total):** `src/Icon.jsx` (new, 84-icon HQ canonical), `src/CompanyLogo.jsx` (new), `src/companyDomains.js` (new), `src/systems/modules.jsx`, `src/Concepts.jsx`, `src/App.jsx`, `src/Agents.jsx`, `src/Flows.jsx`, `src/QADashboard.jsx`, `src/PrepLab.jsx`, `src/Explore.jsx`, `src/shared.jsx`, `src/Fluency.jsx`, `src/Systems.jsx`, `src/Retrieval.jsx`, `src/GroundTruth.jsx`, `src/Career.jsx`, `src/AIPM.jsx`, `src/HowTo.jsx`, `src/Plans.jsx`, `src/StartHere.jsx`, `src/MLCiCd.jsx`, `src/ModelRouter.jsx`, `src/IndiaScale.jsx`, `src/InferenceOptimizer.jsx`, `src/Playground.jsx`, `src/Profile.jsx`, `src/StudyRoom.jsx`, `src/TransformerWalkthrough.jsx`  
+**Scale unchanged:** 320 GT posts, 597 PrepLab questions. Commit pending (approve-first).
+
+---
+
 ## Sprint 90 — Monochrome "instrument" theme: full visual identity (23–24 Jun 2026)
 
 The colour-glass pilot (sprint 89) was rejected live as "comical / a kid with crayons" — too many vibrant hues and gradients. The pivot, after several mockups, landed on a strict **monochrome instrument** language: one cold greyscale ramp carries ~98% of every surface; **cyan `#22D3EE` is the only accent** (<2% of pixels — active/inspected, signal); **red `#fb5247` = break, green `#19c37d` = fix, semantic-only events**, faint not neon. Depth via value + elevation, never hue. Locked in `HQ/DESIGN-STANDARD.md` ("THE MONOCHROME INSTRUMENT STANDARD").

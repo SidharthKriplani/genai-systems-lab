@@ -4,6 +4,12 @@ Read this at session start. Do only this. Update before closing.
 
 ---
 
+## ✅ DONE (25 Jun 2026) — Icon system migration (Sprint 91)
+
+Full HQ canonical `Icon.jsx` (84 icons) deployed to `src/`; `CompanyLogo.jsx` + `companyDomains.js` added. 26 source files swept; local `CompanyLogo` in `PrepLab.jsx` replaced with HQ import. Targeted post-sweep fixes in 7 files. Commit prepared (approve-first). **No content changes; freeze and IA rebuild pause unchanged.**
+
+---
+
 ## 🧭 NEXT IMMEDIATE BUILD — IA Rebuild (topic × layer grid)  ⏸ PAUSED 25 Jun
 
 **The initiative:** kill the verb-axis nav fragmentation; re-home every surface into a **topic × layer grid** — 5 columns (Retrieval · Evaluation · Agents · Production · Foundations) × rows (**Learn / DO / BUILD / LIVE**). Rule: *"nothing deleted, just placed."* Full map + provenance: **`GSL-PLACEMENT-MAP.md`** (repo root).
