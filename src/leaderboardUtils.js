@@ -26,7 +26,7 @@ const SCENARIO_PASS_SCORE   = 5;  // per passed RAG Lab scenario
 
 // Build a lookup: questionId → difficulty score (for O(1) access)
 const Q_SCORE_MAP = Object.fromEntries(
-  PREP_QUESTIONS.map(q => [q.id, DIFF_SCORE[q.difficulty] ?? 3])
+  PREP_QUESTIONS.filter(Boolean).map(q => [q.id, DIFF_SCORE[q.difficulty] ?? 3])
 );
 
 // ─── SCORE COMPUTATION ────────────────────────────────────────────────────────
