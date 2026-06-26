@@ -1605,39 +1605,19 @@ export default function App() {
 
   // R1 — challenge-layer nav (Sprint 49). Sprint 60: TRACK group added (Profile + Progress + Plans).
   const NAV_GROUPS = [
-    // TRACK — identity + progress layer (top of sidebar, PAL pattern)
+    // TRACK — identity + progress (utilities, not a learning pillar)
     { label: "TRACK", color: "#8b5cf6", items: [
       { id: "profile",  label: "Profile" },
       { id: "progress", label: "Progress" },
       { id: "plans",    label: "Plans & Access" },
     ]},
-    // CHALLENGE AREAS — click area name → hub page. Sub-item → specific lab.
-    { label: "CHALLENGE AREAS", color: "var(--gal-build)", items: [
-      { id: "retrieval",  label: "Retrieval",  desc: "4 Concepts · 19 GT posts · 51q", subitems: [
-        { id: "lab",          label: "RAG Lab",    note: "6 scenarios" },
-      ]},
-      { id: "evaluation", label: "Evaluation", desc: "4 Concepts · 13 GT posts · 40q", subitems: [
-        { id: "evallab",      label: "Eval Lab",   note: "15 modules"  },
-      ]},
-      { id: "agentshub",  label: "Agents",     desc: "4 Concepts · 28 GT posts · 50q", subitems: [
-        { id: "agentlab",     label: "Agent Lab",  note: "16 modules"  },
-      ]},
-      { id: "production", label: "Production", desc: "5 Concepts · 44 GT posts · 50q", subitems: [
-        { id: "llmlab",       label: "LLM Lab",    note: "9 modules"   },
-      ]},
-      { id: "foundations", label: "Foundations", desc: "5 Concepts · 81 GT posts · 80q", subitems: [
-        { id: "foundationlab", label: "FM Lab",    note: "6 scenarios" },
-        { id: "promptlab",     label: "Prompt Lab",note: "6 scenarios" },
-      ]},
+    // KNOW — recall: structured concept modules, PAL runner
+    { label: "KNOW", color: "#6366f1", items: [
+      { id: "concepts", label: "Foundations" },
     ]},
-    // Judgment practice
-    { label: null, color: "#6366f1", items: [
-      { id: "preplab", label: "PrepLab" },
-    ]},
-    // Field notes — practitioner writing; series items open first post directly
-    { label: null, color: "#a78bfa", items: [
+    // LEARN — depth: long-form practitioner writing
+    { label: "LEARN", color: "#a78bfa", items: [
       { id: "groundtruth", label: "Ground Truth", alwaysExpanded: true, subitems: [
-        // sprint 92: paths subitems removed (Learning Paths tab dissolved; goal-flows deferred)
         { id: "groundtruth", label: "Agent Engineering",    postId: "react-pattern"                },
         { id: "groundtruth", label: "RAG in Production",    postId: "how-rag-works"                },
         { id: "groundtruth", label: "The Training Stack",   postId: "finetune-playbook"            },
@@ -1652,7 +1632,34 @@ export default function App() {
         { id: "groundtruth", label: "Agents in Production", postId: "mcp-explained"                },
       ]},
     ]},
-    // Plans now in TRACK group at top of sidebar.
+    // BUILD — fluency: PrepLab drills + hands-on challenge hubs with labs
+    { label: "BUILD", color: "var(--gal-build)", items: [
+      { id: "preplab",    label: "PrepLab" },
+      { id: "retrieval",  label: "Retrieval",        desc: "RAG · retrieval · context", subitems: [
+        { id: "lab",          label: "RAG Lab",        note: "6 scenarios" },
+      ]},
+      { id: "evaluation", label: "Evaluation",       desc: "Evals · metrics · LLM-judge", subitems: [
+        { id: "evallab",      label: "Eval Lab",       note: "15 modules"  },
+      ]},
+      { id: "agentshub",  label: "Agents",           desc: "Tool use · orchestration", subitems: [
+        { id: "agentlab",     label: "Agent Lab",      note: "16 modules"  },
+      ]},
+      { id: "production", label: "Production",       desc: "Serving · LLMOps · cost", subitems: [
+        { id: "llmlab",       label: "LLM Lab",        note: "9 modules"   },
+      ]},
+      { id: "foundations", label: "Foundation Models", desc: "Training · fine-tuning · prompting", subitems: [
+        { id: "foundationlab", label: "FM Lab",         note: "6 scenarios" },
+        { id: "promptlab",     label: "Prompt Lab",     note: "6 scenarios" },
+      ]},
+    ]},
+    // JUDGE — judgment: systems tradeoff modules
+    { label: "JUDGE", color: "#f59e0b", items: [
+      { id: "systems", label: "Systems" },
+    ]},
+    // EXTRAS — utilities
+    { label: "EXTRAS", color: "#52525b", items: [
+      { id: "leaderboard", label: "Leaderboard" },
+    ]},
   ];
 
   return (

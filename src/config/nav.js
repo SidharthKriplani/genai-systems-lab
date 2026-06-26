@@ -10,7 +10,7 @@ export const ALL_TABS = [
   // TRACK — identity + progress layer (top of nav, PAL-style)
   { id: "profile",     label: "Profile",     group: "TRACK",      audience: "Your identity + saved items" },
   { id: "plans",       label: "Plans",       group: "TRACK",      audience: "Structured learning tracks" },
-  { id: "leaderboard", label: "Leaderboard", group: "TRACK",      audience: "Global rankings by score" },
+  { id: "leaderboard", label: "Leaderboard", group: "EXTRAS",     audience: "Global rankings by score" },
   // Primary nav — challenge areas
   { id: "retrieval",   label: "Retrieval",   group: "CHALLENGES", audience: "RAG · context · hallucination" },
   { id: "evaluation",  label: "Evaluation",  group: "CHALLENGES", audience: "Testing · monitoring · evals" },
@@ -53,19 +53,25 @@ export const NAV_GROUPS = [
     { id: "profile",     label: "Profile" },
     { id: "plans",       label: "Plans" },
     { id: "progress",    label: "Progress" },
-    { id: "leaderboard", label: "Leaderboard" },
   ]},
-  { label: "CHALLENGES", color: "var(--gal-build)", items: [
+  { label: "KNOW", color: "#6366f1", items: [
+    { id: "concepts",    label: "Foundations" },
+  ]},
+  { label: "LEARN", color: "#a78bfa", items: [
+    { id: "groundtruth", label: "Ground Truth" },
+  ]},
+  { label: "BUILD", color: "var(--gal-build)", items: [
+    { id: "preplab",     label: "PrepLab" },
     { id: "retrieval",   label: "Retrieval" },
     { id: "evaluation",  label: "Evaluation" },
     { id: "agentshub",   label: "Agents" },
     { id: "production",  label: "Production" },
-    { id: "foundations", label: "Foundations" },
+    { id: "foundations", label: "Foundation Models" },
   ]},
-  { label: "PRACTICE", color: "#6366f1", items: [
-    { id: "preplab",     label: "PrepLab" },
+  { label: "JUDGE", color: "#f59e0b", items: [
+    { id: "systems",     label: "Systems" },
   ]},
-  { label: "LEARN", color: "#a78bfa", items: [
-    { id: "groundtruth", label: "Ground Truth" },
+  { label: "EXTRAS", color: "#52525b", items: [
+    { id: "leaderboard", label: "Leaderboard" },
   ]},
 ];
