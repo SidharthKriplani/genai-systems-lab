@@ -12,6 +12,8 @@ import { POSTS as GT_POSTS } from "./groundTruthIndex"; // lightweight metadata 
 import { getAllAreasReadiness, AREA_CONFIG } from "./readiness";
 import { supabase, signInWithGoogle, signInWithGitHub, signOut, onAuthChange, getUser, pullProgress, pushProgress, pushKey } from "./supabase";
 import { upsertLeaderboardRow } from "./leaderboardUtils";
+import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
+import { RAG_CORPUS } from "./ragCorpus";
 import { Icon } from './Icon.jsx';
 
 // Heavy tab components — lazy-loaded on first visit to keep initial bundle small
@@ -42,9 +44,6 @@ const PlansPage              = lazy(() => import("./Plans"));
 const StudyRoom              = lazy(() => import("./StudyRoom"));
 const GlobalLeaderboard      = lazy(() => import("./Leaderboard"));
 const ProgressPage           = lazy(() => import("./Progress"));
-
-import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
-import { RAG_CORPUS } from "./ragCorpus";
 
 function pct(v) { return (v * 100).toFixed(0) + "%"; }
 
