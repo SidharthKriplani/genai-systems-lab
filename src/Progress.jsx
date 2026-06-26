@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { Icon } from "./Icon.jsx";
-import { GT_POSTS } from "./groundTruthIndex";
+import { POSTS as GT_POSTS } from "./groundTruthIndex";
 import { getAllAreasReadiness } from "./readiness";
 import { supabase, signInWithGoogle } from "./supabase";
 import { ALL_SCENARIOS, SCORE_TIERS } from "./ragScenarios";
