@@ -90,6 +90,28 @@
   </style>
   </head>
   <body>
+    <!-- Global error trap — catches module load failures BEFORE React starts.
+         Remove once blank-page root cause is identified. (sprint 92e) -->
+    <script>
+      window.__gslError = null;
+      window.onerror = function(msg, src, line, col, err) {
+        window.__gslError = { msg, src, line, col, stack: err && err.stack };
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;inset:0;background:#09090b;color:#f4f4f5;padding:2rem;font-family:monospace;z-index:99999;overflow:auto';
+        d.innerHTML = '<div style="max-width:560px"><div style="font-size:11px;letter-spacing:.1em;color:#71717a;text-transform:uppercase;margin-bottom:12px">GenAI Systems Lab — JS Error (sprint 92e trap)</div><div style="font-size:15px;font-weight:700;color:#f87171;margin-bottom:8px">' + String(msg) + '</div><pre style="font-size:11px;color:#a1a1aa;white-space:pre-wrap;word-break:break-all;background:#18181b;padding:1rem;border-radius:8px;border:1px solid #27272a">' + String(src + ':' + line + ':' + col + '\n\n' + (err && err.stack || '')) + '</pre><button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;background:#3f3f46;border:1px solid #52525b;border-radius:8px;color:#e4e4e7;cursor:pointer;font-size:13px">Reload</button></div>';
+        document.body.appendChild(d);
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        var reason = e.reason;
+        var msg = reason && (reason.message || String(reason));
+        var stack = reason && reason.stack || '';
+        window.__gslError = { msg, stack };
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;inset:0;background:#09090b;color:#f4f4f5;padding:2rem;font-family:monospace;z-index:99999;overflow:auto';
+        d.innerHTML = '<div style="max-width:560px"><div style="font-size:11px;letter-spacing:.1em;color:#71717a;text-transform:uppercase;margin-bottom:12px">GenAI Systems Lab — Unhandled Rejection (sprint 92e trap)</div><div style="font-size:15px;font-weight:700;color:#f87171;margin-bottom:8px">' + String(msg) + '</div><pre style="font-size:11px;color:#a1a1aa;white-space:pre-wrap;word-break:break-all;background:#18181b;padding:1rem;border-radius:8px;border:1px solid #27272a">' + stack + '</pre><button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;background:#3f3f46;border:1px solid #52525b;border-radius:8px;color:#e4e4e7;cursor:pointer;font-size:13px">Reload</button></div>';
+        document.body.appendChild(d);
+      });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
