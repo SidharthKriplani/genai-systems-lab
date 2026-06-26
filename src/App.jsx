@@ -313,7 +313,6 @@ const NAV_DOMAINS = [
   { id: "evaluation", label: "Evaluation" },
   { id: "agentshub", label: "Agents" },
   { id: "production", label: "Production" },
-  { id: "foundations", label: "Foundations" },
 ];
 
 // tab id → frame key (active-tab auto-expand). Includes routable aliases not shown as rows.
