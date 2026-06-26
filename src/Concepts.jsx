@@ -6033,6 +6033,21 @@ const MODULE_SPECS = {
   },
 };
 
+// ── Stub component for modules not yet built ─────────────────────────────────
+function StubModule({ spec, title, subtitle }) {
+  const t = (spec && spec.title) || title || "Coming Soon";
+  const s = (spec && spec.subtitle) || subtitle || "Content in progress.";
+  return (
+    <div className="flex-1 flex items-center justify-center p-12 text-center">
+      <div className="max-w-xs">
+        <div className="text-[10px] font-mono text-zinc-700 uppercase tracking-widest mb-3">Content in progress</div>
+        <div className="text-zinc-300 text-sm font-semibold mb-2">{t}</div>
+        <div className="text-zinc-600 text-xs leading-relaxed">{s}</div>
+      </div>
+    </div>
+  );
+}
+
 const MODULES = [
   // ── Vector / Observability / Multimodal / Safety gyms (populated) ──
   { id: "vector-db-index-mechanics", label: "HNSW vs IVF", tag: "VECTOR", level: "advanced", title: "ANN Index Mechanics: HNSW vs IVF", subtitle: "Graph vs buckets — the recall/latency/memory dial.", fidelity: MODULE_SPECS["vector-db-index-mechanics"].fidelity, spec: MODULE_SPECS["vector-db-index-mechanics"], component: StandardModule },
@@ -6333,6 +6348,26 @@ const MODULES = [
     fidelity: { tier: "conceptual", note: "Task benefit patterns are based on published CoT research" },
     component: ChainOfThoughtModule,
   },
+  // ── Stub modules (skeleton only — content in progress) ──────────────────────
+  // Language Models
+  { id: "positional-encoding", label: "Positional Encoding", tag: "LAYER", level: "intermediate", title: "Positional Encoding", subtitle: "How transformers know where tokens are without recurrence.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  { id: "kv-cache", label: "KV Cache", tag: "MEMORY", level: "intermediate", title: "KV Cache: Inference Memory Optimization", subtitle: "Why the transformer doesn't recompute past tokens on every step.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  // Retrieval
+  { id: "reranking", label: "Reranking", tag: "RETRIEVAL", level: "intermediate", title: "Reranking: Cross-Encoder Precision", subtitle: "Why bi-encoder retrieval needs a second pass — and when to skip it.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  // AI Agents
+  { id: "agent-memory", label: "Agent Memory", tag: "AGENTS", level: "intermediate", title: "Agent Memory Architecture", subtitle: "Short-term context vs. long-term storage vs. semantic retrieval.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  { id: "agent-planning", label: "Agent Planning", tag: "AGENTS", level: "intermediate", title: "Agent Planning & Task Decomposition", subtitle: "How agents break goals into sub-tasks — and where it falls apart.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  // Evaluation
+  { id: "rag-eval", label: "RAG Eval", tag: "EVAL", level: "intermediate", title: "Evaluating RAG Pipelines: RAGAS & Beyond", subtitle: "Context recall, answer faithfulness, and the metrics that catch retrieval bugs.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  // Foundation Models
+  { id: "rlhf", label: "RLHF / DPO", tag: "TRAINING", level: "advanced", title: "RLHF and DPO: Aligning Model Behavior", subtitle: "How human preference data turns a capable model into a helpful one.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  { id: "instruction-tuning", label: "Instruction Tuning", tag: "TRAINING", level: "intermediate", title: "Instruction Tuning: Teaching Models to Follow", subtitle: "SFT on curated instruction-response pairs — what changes and what doesn't.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  { id: "model-families", label: "Model Families", tag: "DECISION", level: "beginner", title: "Model Families & When to Use Which", subtitle: "GPT-4 vs Gemini vs Claude vs open-source — the capability, cost, and data-privacy fork.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  // Prompt Engineering
+  { id: "zero-shot", label: "Zero-Shot", tag: "PROMPTING", level: "beginner", title: "Zero-Shot Prompting: What Works and Why", subtitle: "Why some zero-shot prompts succeed where few-shot fails — and vice versa.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  { id: "system-prompts", label: "System Prompts", tag: "PROMPTING", level: "intermediate", title: "System Prompt Engineering", subtitle: "Persona, constraints, format — what goes in the system turn and why.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  { id: "structured-outputs", label: "Structured Outputs", tag: "PROMPTING", level: "intermediate", title: "Structured Output Design", subtitle: "JSON mode, function calling, and grammar-constrained generation — tradeoffs by use case.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  { id: "prompt-security", label: "Prompt Security", tag: "SAFETY", level: "intermediate", title: "Prompt Injection & Defense Patterns", subtitle: "How injection attacks work and the layered defenses that catch them.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
 ];
 
 const LEVEL_STYLE = {
@@ -7969,116 +8004,91 @@ const MODULE_META = {
 };
 
 const GYMS = [
-  // ── ACTIVE ──────────────────────────────────────────────────────────────────
   {
     id: "language-models",
     label: "Language Models",
-    desc: "How LLMs actually work — from tokenization through sampling. The foundation before you touch any lab.",
+    desc: "Tokenization, attention, positional encoding, KV cache, sampling, and the training signal. The foundation before you touch any lab.",
     color: "#6366f1",
-    moduleIds: ["tokenizer", "attention", "attention-3d", "transformer", "seq-parallel", "flashattn", "sampling", "nextoken", "tempgame", "training-signal"],
+    moduleIds: ["tokenizer", "attention", "transformer", "positional-encoding", "kv-cache", "seq-parallel", "sampling", "nextoken", "tempgame", "training-signal"],
     labId: "llmlab",
     labLabel: "LLM Lab",
   },
   {
     id: "retrieval",
     label: "Retrieval",
-    desc: "Embeddings, chunking, the RAG pipeline end-to-end, and context budgets.",
+    desc: "Embeddings, chunking strategies, the RAG pipeline end-to-end, context budgets, and reranking.",
     color: "#3b82f6",
-    moduleIds: ["embeddings", "embeddings-3d", "cosine-sim", "chunking", "rag-pipeline", "context"],
+    moduleIds: ["embeddings", "chunking", "rag-pipeline", "context", "reranking"],
     labId: "lab",
     labLabel: "RAG Lab",
   },
   {
     id: "ai-agents",
     label: "AI Agents",
-    desc: "The ReAct loop, tool design, multi-agent coordination, and the safety layer every agent system needs.",
+    desc: "The ReAct loop, tool design, memory architecture, planning, multi-agent coordination, and the safety layer every agent needs.",
     color: "#f59e0b",
-    moduleIds: ["agent", "agent-tools", "multiagent", "guardrails"],
+    moduleIds: ["agent", "agent-tools", "agent-memory", "agent-planning", "multiagent", "guardrails", "agent-tracing"],
     labId: "agentlab",
     labLabel: "Agent Lab",
   },
   {
     id: "evaluation",
     label: "Evaluation",
-    desc: "LLM-as-judge design, eval suite construction, RAGAS metrics, and debugging failing evals.",
+    desc: "LLM-as-judge design, eval suite construction, RAG-specific metrics, and debugging failing evals.",
     color: "#22c55e",
-    moduleIds: ["eval-loop", "debug", "llm-as-judge", "eval-design"],
+    moduleIds: ["eval-loop", "debug", "llm-as-judge", "eval-design", "rag-eval"],
     labId: "evallab",
     labLabel: "Eval Lab",
   },
   {
     id: "production",
     label: "Production Systems",
-    desc: "Cost, latency, observability — the engineering tradeoffs behind serving LLMs at scale.",
+    desc: "Cost, latency, observability, Flash Attention, prompt regression, quality drift, and the managed vs self-hosted decision.",
     color: "#8b5cf6",
-    moduleIds: ["cost-latency-concepts", "latency-planner", "observability-concepts"],
+    moduleIds: ["cost-latency-concepts", "latency-planner", "observability-concepts", "flashattn", "prompt-regression-signals", "quality-drift", "cost-attribution", "managed-vs-selfhosted", "enterprise-ai-cost-model"],
     labId: "systems",
     labLabel: "Systems Lab",
   },
   {
     id: "foundation-models",
     label: "Foundation Models",
-    desc: "Training objectives, scaling laws, fine-tuning with LoRA/QLoRA — how foundation models are built.",
+    desc: "Scaling laws, LoRA fine-tuning, RLHF/DPO alignment, instruction tuning, and model family selection.",
     color: "#ec4899",
-    moduleIds: ["training-signal", "scaling-laws", "lora", "diffusion-3d"],
+    moduleIds: ["scaling-laws", "lora", "rlhf", "instruction-tuning", "model-families"],
     labId: "llmlab",
     labLabel: "LLM Lab",
   },
   {
     id: "prompt-engineering",
     label: "Prompt Engineering",
-    desc: "Few-shot design, chain-of-thought strategies, and treating prompts as engineering artifacts.",
+    desc: "Zero-shot, few-shot, chain-of-thought, system prompt design, structured outputs, and injection defense.",
     color: "#06b6d4",
-    moduleIds: ["few-shot", "chain-of-thought"],
+    moduleIds: ["zero-shot", "few-shot", "chain-of-thought", "system-prompts", "structured-outputs", "prompt-security"],
     labId: "playground",
     labLabel: "Playground",
-  },
-  // ── COMING SOON ─────────────────────────────────────────────────────────────
-  {
-    id: "cloud-ai-services",
-    label: "Cloud AI Services",
-    desc: "AWS Bedrock, Vertex AI, Azure AI Foundry — managed APIs, serverless inference, enterprise guardrails.",
-    teaser: "5 modules: AWS Bedrock + AgentCore, Vertex AI + Gemini, Azure AI Foundry, managed vs self-hosted decision engine, enterprise TCO modeling.",
-    color: "#f97316",
-    moduleIds: ["aws-bedrock-agentcore", "vertex-ai-gemini", "azure-ai-foundry", "managed-vs-selfhosted", "enterprise-ai-cost-model"],
-    labId: "systems",
-    labLabel: "Systems Lab",
   },
   {
     id: "vector-infrastructure",
     label: "Vector Infrastructure",
-    desc: "pgvector, Pinecone, Weaviate, Qdrant — HNSW vs IVF, hybrid search, metadata filtering.",
-    teaser: "5 modules: HNSW vs IVF index mechanics, pgvector vs managed services, hybrid search design, metadata filtering at scale, migration patterns.",
+    desc: "HNSW vs IVF index mechanics, hybrid dense+BM25 search, and metadata filtering at scale.",
     color: "#0ea5e9",
-    moduleIds: ["vector-db-index-mechanics", "pgvector-vs-managed", "hybrid-search-design", "metadata-filtering", "vector-migration-patterns"],
+    moduleIds: ["vector-db-index-mechanics", "hybrid-search-design", "metadata-filtering"],
     labId: "lab",
     labLabel: "RAG Lab",
   },
   {
-    id: "observability-tracing",
-    label: "Observability & Tracing",
-    desc: "LangSmith, Arize, Helicone — tracing agent loops, prompt regression detection, drift monitoring.",
-    teaser: "4 modules: distributed tracing for agents, prompt regression detection, quality drift signals, cost attribution by feature.",
-    color: "#a78bfa",
-    moduleIds: ["agent-tracing", "prompt-regression-signals", "quality-drift", "cost-attribution"],
-    labId: "systems",
-    labLabel: "Systems Lab",
-  },
-  {
     id: "multimodal",
     label: "Multimodal AI",
-    desc: "Vision-language models, image-text retrieval, OCR pipelines, and resolution tradeoffs.",
-    teaser: "4 modules: vision-language architectures, multimodal RAG, OCR pipeline design, resolution vs token cost.",
+    desc: "Vision-language model architecture, multimodal RAG, and resolution vs token cost tradeoffs.",
     color: "#f43f5e",
-    moduleIds: ["vision-language-arch", "multimodal-rag", "ocr-pipeline-design", "resolution-token-cost"],
+    moduleIds: ["vision-language-arch", "multimodal-rag", "resolution-token-cost"],
     labId: "systems",
     labLabel: "Systems Lab",
   },
   {
     id: "ai-safety-alignment",
     label: "AI Safety & Alignment",
-    desc: "RLHF, constitutional AI, red-teaming, jailbreak categories, and safety-helpfulness tradeoffs.",
-    teaser: "4 modules: alignment techniques overview, red-teaming methodology, jailbreak taxonomy, safety measurement.",
+    desc: "RLHF/DPO/constitutional AI, red-teaming methodology, jailbreak taxonomy, and safety measurement.",
     color: "#ef4444",
     moduleIds: ["alignment-techniques", "red-teaming", "jailbreak-taxonomy", "safety-measurement"],
     labId: "systems",
@@ -8095,7 +8105,7 @@ function GymSelectorView({ mastery, onEnterGym }) {
         <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-1">GenAI Systems Lab — KNOW</p>
         <h2 className="text-2xl font-bold text-white">Foundations</h2>
         <p className="text-sm text-zinc-400 mt-2 max-w-2xl leading-relaxed">
-          Seven tracks covering how GenAI systems actually work — from tokenization through production. Complete modules in order or jump to what you need. Each track connects to a lab for hands-on practice.
+          Ten tracks covering how GenAI systems actually work — from tokenization through safety. Complete modules in order or jump to what you need. Each track connects to a lab for hands-on practice.
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -8386,6 +8396,24 @@ const SYSTEMS_DEEP_REF = {
     { id: "canvas",             label: "System Design Canvas",      tag: "CANVAS" },
     { id: "prompt-change-mgmt", label: "Prompt Change Management",  tag: "LLMOPS" },
     { id: "redteam",            label: "AI Red Teaming",            tag: "SECURITY"},
+  ],
+  "vector-infrastructure": [
+    { id: "vectordb",           label: "Vector DB Engineering",         tag: "INFRA"     },
+    { id: "vecsim",             label: "Vector Similarity Explorer",    tag: "EMBED"     },
+    { id: "biencoder",          label: "Bi-Encoder vs Cross-Encoder",   tag: "RETRIEVAL" },
+    { id: "query-refinement",   label: "Query Refinement Lab",          tag: "RETRIEVAL" },
+    { id: "graph-rag",          label: "Graph RAG",                     tag: "RETRIEVAL" },
+  ],
+  "multimodal": [
+    { id: "multimodal",         label: "Multimodal AI Systems",         tag: "VISION"    },
+    { id: "visionlab",          label: "Vision-Language Lab",           tag: "VLM"       },
+  ],
+  "ai-safety-alignment": [
+    { id: "redteam",            label: "AI Red Teaming",                tag: "SECURITY"  },
+    { id: "ai-safety-eng",      label: "AI Safety Engineering",         tag: "SAFETY"    },
+    { id: "guardrails",         label: "AI Guardrails",                 tag: "GUARD"     },
+    { id: "trapslab",           label: "Traps Lab",                     tag: "TRAP"      },
+    { id: "rlhf",               label: "RLHF / DPO / PPO",              tag: "ALIGN"     },
   ],
 };
 
