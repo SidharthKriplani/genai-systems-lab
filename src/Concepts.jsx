@@ -4,6 +4,8 @@ import { ModuleNotes, GradientPanel } from "./shared";
 import { GRADIENT_CONTENT } from "./data/gradientContent";
 import { EmbeddingExplorer, AttentionViz3D, LatencyPlanner, DiffusionViz3D, CosineSimilarityExplorer } from "./Explore";  // borrowed from de-listed Explore (Wave 3 — all viz preserved)
 import { Icon } from './Icon.jsx';
+import FoundationsRunner from "./FoundationsRunner";
+import { RUNNER_DATA } from "./data/foundationsRunnerData";
 
 // ─── TOKENIZER DATA ───────────────────────────────────────────────────────────
 
@@ -8447,50 +8449,91 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
   const Component = mod.component;
   const currentGym = GYMS.find(g => g.moduleIds.includes(active));
   const sidebarIds = currentGym ? currentGym.moduleIds : MODULES.map(m => m.id);
+  const runnerData = RUNNER_DATA[active];
 
+  // ── Shared sidebar (used in both runner and standard view) ──
+  const SidebarContent = (
+    <div className="w-52 shrink-0 overflow-y-auto py-4 hidden sm:block" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
+      <div className="px-3 mb-3">
+        <button
+          onClick={() => currentGym ? setActive(null) : setActiveGym(null)}
+          className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 flex items-center gap-1 transition-colors"
+        >
+          ← {currentGym ? currentGym.label : "Foundations"}
+        </button>
+      </div>
+      {sidebarIds.map(id => {
+        const m = MODULES.find(x => x.id === id);
+        if (!m) return null;
+        const isActive = active === id;
+        const done = mastery.has(id);
+        return (
+          <button
+            key={id}
+            onClick={() => openModule(id)}
+            className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 transition-all duration-150 ${
+              isActive ? "font-semibold text-white" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60"
+            }`}
+            style={isActive ? {
+              background: "linear-gradient(90deg, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.06) 100%)",
+              boxShadow: "inset 0 0 0 1px var(--border)",
+            } : {}}
+          >
+            <span className="text-xs font-medium truncate">{m.label}</span>
+            <div className="flex items-center gap-1 shrink-0">
+              {done && <span className="text-[9px] text-emerald-500 font-bold"><Icon name="check" size={9} /></span>}
+              <span className={`text-[9px] font-mono ${
+                m.level === "beginner" ? "text-emerald-500" :
+                m.level === "intermediate" ? "text-amber-500" : "text-red-500"
+              }`}>
+                {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
+              </span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  // ── Runner path (when runner data exists for this module) ──
+  if (runnerData) {
+    return (
+      <div className="flex flex-col sm:flex-row h-full min-h-0">
+        {SidebarContent}
+        {/* Mobile horizontal nav */}
+        <div className="sm:hidden w-full overflow-x-auto border-b border-zinc-800 flex gap-1 px-3 py-2 shrink-0" style={{ position: "sticky", top: 0, zIndex: 10, background: "rgb(9,9,11)" }}>
+          {sidebarIds.map(id => {
+            const m = MODULES.find(x => x.id === id);
+            if (!m) return null;
+            return (
+              <button key={id} onClick={() => openModule(id)}
+                className={`shrink-0 px-3 py-2.5 rounded text-xs font-medium transition-colors ${active === id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400"}`}>
+                {m.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <FoundationsRunner
+            moduleId={active}
+            module={mod}
+            runnerData={runnerData}
+            Component={Component}
+            spec={mod.spec}
+            onNavigate={onNavigate}
+            mastery={mastery}
+            markComplete={markComplete}
+            onBack={() => setActive(null)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Standard path (no runner data) ──
   return (
     <div className="flex flex-col sm:flex-row h-full min-h-0">
-      {/* ── Left sidebar ── */}
-      <div className="w-52 shrink-0 overflow-y-auto py-4 hidden sm:block" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
-        <div className="px-3 mb-3">
-          <button
-            onClick={() => currentGym ? setActive(null) : setActiveGym(null)}
-            className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 flex items-center gap-1 transition-colors"
-          >
-            ← {currentGym ? currentGym.label : "Foundations"}
-          </button>
-        </div>
-        {sidebarIds.map(id => {
-          const m = MODULES.find(x => x.id === id);
-          if (!m) return null;
-          const isActive = active === id;
-          const done = mastery.has(id);
-          return (
-            <button
-              key={id}
-              onClick={() => openModule(id)}
-              className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 transition-all duration-150 ${
-                isActive ? "font-semibold text-white" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60"
-              }`}
-              style={isActive ? {
-                background: "linear-gradient(90deg, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0.06) 100%)",
-                boxShadow: "inset 0 0 0 1px var(--border)",
-              } : {}}
-            >
-              <span className="text-xs font-medium truncate">{m.label}</span>
-              <div className="flex items-center gap-1 shrink-0">
-                {done && <span className="text-[9px] text-emerald-500 font-bold"><Icon name="check" size={9} /></span>}
-                <span className={`text-[9px] font-mono ${
-                  m.level === "beginner" ? "text-emerald-500" :
-                  m.level === "intermediate" ? "text-amber-500" : "text-red-500"
-                }`}>
-                  {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
-                </span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      {SidebarContent}
 
       {/* ── Mobile: horizontal scroll nav ── */}
       <div className="sm:hidden w-full overflow-x-auto border-b border-zinc-800 flex gap-1 px-3 py-2 shrink-0" style={{ position: "sticky", top: 0, zIndex: 10, background: "rgb(9,9,11)" }}>
