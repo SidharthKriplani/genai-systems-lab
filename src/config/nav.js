@@ -10,6 +10,7 @@ export const ALL_TABS = [
   // TRACK — identity + progress layer (top of nav, PAL-style)
   { id: "profile",     label: "Profile",     group: "TRACK",      audience: "Your identity + saved items" },
   { id: "plans",       label: "Plans",       group: "TRACK",      audience: "Structured learning tracks" },
+  { id: "leaderboard", label: "Leaderboard", group: "TRACK",      audience: "Global rankings by score" },
   // Primary nav — challenge areas
   { id: "retrieval",   label: "Retrieval",   group: "CHALLENGES", audience: "RAG · context · hallucination" },
   { id: "evaluation",  label: "Evaluation",  group: "CHALLENGES", audience: "Testing · monitoring · evals" },
@@ -26,7 +27,7 @@ export const ALL_TABS = [
   { id: "llmlab",      label: "LLM Lab",        group: "LEGACY", audience: "Engineers" },
   { id: "promptlab",   label: "Prompt Lab",     group: "LEGACY", audience: "Engineers" },
   { id: "foundationlab", label: "Foundation Models Lab", group: "LEGACY", audience: "Engineers" },
-  { id: "concepts",    label: "Concepts",       group: "LEGACY", audience: "All levels" },
+  { id: "concepts",    label: "Foundations",    group: "KNOW",   audience: "All levels — 7 tracks (was Concepts tab)" },
   { id: "career",      label: "Career",         group: "LEGACY", audience: "Job seekers" },
   { id: "aipm",        label: "AI Product",     group: "LEGACY", audience: "Product managers" },
   { id: "flows",       label: "Diagrams",       group: "LEGACY", audience: "All levels" },
@@ -52,6 +53,7 @@ export const NAV_GROUPS = [
     { id: "profile",     label: "Profile" },
     { id: "plans",       label: "Plans" },
     { id: "progress",    label: "Progress" },
+    { id: "leaderboard", label: "Leaderboard" },
   ]},
   { label: "CHALLENGES", color: "var(--gal-build)", items: [
     { id: "retrieval",   label: "Retrieval" },

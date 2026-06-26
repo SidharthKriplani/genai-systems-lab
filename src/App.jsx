@@ -11,6 +11,7 @@ import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
 import { POSTS as GT_POSTS } from "./groundTruthIndex"; // lightweight metadata — no content bodies
 import { getAllAreasReadiness, AREA_CONFIG } from "./readiness";
 import { supabase, signInWithGoogle, signInWithGitHub, signOut, onAuthChange, getUser, pullProgress, pushProgress, pushKey } from "./supabase";
+import { upsertLeaderboardRow } from "./leaderboardUtils";
 import { Icon } from './Icon.jsx';
 
 // Heavy tab components — lazy-loaded on first visit to keep initial bundle small
@@ -39,6 +40,7 @@ const FoundationsHub         = lazy(() => import("./FoundationsHub"));
 const ProfilePage            = lazy(() => import("./Profile"));
 const PlansPage              = lazy(() => import("./Plans"));
 const StudyRoom              = lazy(() => import("./StudyRoom"));
+const GlobalLeaderboard      = lazy(() => import("./Leaderboard"));
 
 import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
 import { RAG_CORPUS } from "./ragCorpus";
@@ -268,14 +270,14 @@ const NAV_TRACK = [
 // The four frames + PREP & ASSESS (accordion). Domains nest under the frame, never as peers.
 const NAV_SECTIONS = [
   { key: "know", label: "KNOW", icon: "book-open", items: [
-    { id: "starthere", label: "Start Here" },
-    { id: "concepts", label: "Concepts" },
-    // de-listed 2026-06-24 (overlap pass, Wave 1) — reachable by hash; dissolving into Concepts. Re-add to restore.
+    { id: "concepts", label: "Foundations" },  // was "Concepts" — renamed sprint 92; gyms = tracks
+    { id: "groundtruth", label: "Ground Truth" },
+    // de-listed sprint 92 (KNOW cleanup): starthere → absorbed into LM Foundations track; paths → dissolved (goal flows deferred)
+    // { id: "starthere", label: "Start Here" },
+    // { id: "paths", label: "Learning Paths" },
+    // de-listed 2026-06-24 (overlap pass, Wave 1) — reachable by hash. Re-add to restore.
     // { id: "flows", label: "Flows" },
     // { id: "explore", label: "Explore" },
-    { id: "groundtruth", label: "Ground Truth" },
-    { id: "paths", label: "Learning Paths" },
-    // de-listed 2026-06-24 (overlap pass) — "Ask" is keyword search; redundant with the global Search. Reachable by hash. Re-add to restore.
     // { id: "consult", label: "Ask" },
   ]},
   { key: "do", label: "DO", icon: "terminal", items: [
@@ -292,7 +294,8 @@ const NAV_SECTIONS = [
     // de-listed 2026-06-24 (overlap pass, Wave 1) — reach the labs THROUGH their challenge-area hub; routes/hashes intact. Re-add to restore.
     // { id: "lab", label: "RAG Lab" },
     { id: "agents", label: "Agents" },
-    { id: "systems", label: "Systems" },
+    // de-listed sprint 92 — Systems modules now accessible as deep-reference within Foundations tracks; #systems hash still works.
+    // { id: "systems", label: "Systems" },
     // { id: "evallab", label: "Eval Lab" },
     // { id: "llmlab", label: "LLM Lab" },
     // { id: "foundationlab", label: "FM Lab" },
@@ -320,8 +323,13 @@ const TAB_FRAME = (() => {
   m.agentlab = "judge"; m.agentshub = "judge"; m.evaluation = "judge"; m.retrieval = "know"; m.production = "judge"; m.foundations = "know";
   // de-listed-but-routable (Wave 1): keep frame mapping so hash-reached tabs still auto-expand the right frame.
   m.lab = "judge"; m.evallab = "judge"; m.llmlab = "judge"; m.foundationlab = "judge"; m.flows = "know"; m.explore = "know"; m.consult = "know";
+  // sprint 92: dissolved tabs still map to know frame for graceful redirect.
+  m.starthere = "know"; m.paths = "know"; m.systems = "judge";
   return m;
 })();
+
+// Sprint 92: dead routes that redirect to Foundations (KNOW). #systems kept alive — still used as deep-reference target.
+const HASH_REDIRECTS = { starthere: "concepts", paths: "concepts" };
 
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
@@ -1595,7 +1603,7 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","starthere","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations"];
+const VALID_VIEWS = ["home","starthere","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
@@ -1605,6 +1613,7 @@ const GUEST_ALLOWED_TABS = new Set([
   "groundtruth", // free but limited to 3 pinned posts (enforced in GroundTruth.jsx)
   "preplab",     // free but limited to 1 demo question (enforced in PrepLab.jsx)
   "lab",         // RAG Lab Scenario 1 free for guests — per-scenario gate in RAG Lab render (DECISIONS.md §12)
+  "leaderboard", // global board is always public-readable
 ]);
 
 // ─── RAG LAB — scenario forward pointers ──────────────────────────────────────
@@ -1621,6 +1630,10 @@ const SCENARIO_FORWARD_POINTERS = {
 function getInitialView() {
   try {
     const hash = window.location.hash.replace('#', '').toLowerCase();
+    if (HASH_REDIRECTS[hash]) {
+      window.location.replace("#" + HASH_REDIRECTS[hash]);
+      return HASH_REDIRECTS[hash];
+    }
     if (VALID_VIEWS.includes(hash)) return hash;
     const params = new URLSearchParams(window.location.search);
     if (params.get("qa") === "1") return "qa";
@@ -1970,6 +1983,7 @@ export default function App() {
         if (event === "SIGNED_IN") {
           track("auth_sign_in", { provider: u?.app_metadata?.provider || "unknown" });
           if (!hasCompletedOnboarding()) setShowOnboarding(true);
+          if (u) upsertLeaderboardRow(u); // push score to global board on sign-in
         }
       } else if (event === "SIGNED_OUT") {
         setUser(null);
@@ -1987,6 +2001,7 @@ export default function App() {
   useEffect(() => {
     const handler = () => {
       const h = window.location.hash.replace('#', '').toLowerCase();
+      if (HASH_REDIRECTS[h]) { window.location.replace("#" + HASH_REDIRECTS[h]); setTopView(HASH_REDIRECTS[h]); return; }
       if (VALID_VIEWS.includes(h)) setTopView(h);
       else if (!h) setTopView("home");
     };
@@ -2137,8 +2152,7 @@ export default function App() {
     // Field notes — practitioner writing; series items open first post directly
     { label: null, color: "#a78bfa", items: [
       { id: "groundtruth", label: "Ground Truth", alwaysExpanded: true, subitems: [
-        { id: "paths",       label: "1st Principles",                note: "start here"             },
-        { id: "paths",       label: "Senior AIE",                    note: "production"             },
+        // sprint 92: paths subitems removed (Learning Paths tab dissolved; goal-flows deferred)
         { id: "groundtruth", label: "Agent Engineering",    postId: "react-pattern"                },
         { id: "groundtruth", label: "RAG in Production",    postId: "how-rag-works"                },
         { id: "groundtruth", label: "The Training Stack",   postId: "finetune-playbook"            },
@@ -2524,6 +2538,7 @@ export default function App() {
           {topView === "profile" && <ProfilePage onNavigate={navigateTo} user={user} onSignOut={() => setUser(null)} />}
           {topView === "plans"   && <PlansPage   onNavigate={navigate} user={user} />}
           {topView === "progress"    && <ProgressView visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}
+          {topView === "leaderboard" && <GlobalLeaderboard user={user} />}
             </>
           )}
 

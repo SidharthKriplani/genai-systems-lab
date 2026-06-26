@@ -8090,9 +8090,10 @@ function GymSelectorView({ mastery, onEnterGym }) {
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-white">Concepts</h2>
+        <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-1">GenAI Systems Lab — KNOW</p>
+        <h2 className="text-2xl font-bold text-white">Foundations</h2>
         <p className="text-sm text-zinc-400 mt-2 max-w-2xl leading-relaxed">
-          Before the labs, build the conceptual foundation. Each training room covers one domain — interactive modules with guided text, visualisations, and exercises. Pick a room to start, or dive into any module directly from inside.
+          Seven tracks covering how GenAI systems actually work — from tokenization through production. Complete modules in order or jump to what you need. Each track connects to a lab for hands-on practice.
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -8184,7 +8185,7 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
       <div>
         <button onClick={onBack} className="text-xs text-zinc-500 hover:text-zinc-300 mb-4 flex items-center gap-1 transition-colors">
-          ← All training rooms
+          ← Foundations
         </button>
         <div className="flex items-center gap-3 mb-2 flex-wrap">
           <h2 className="text-xl font-bold text-white">{gym.label}</h2>
@@ -8269,6 +8270,28 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
         })}
       </div>
 
+      {/* ── Systems deep reference ── */}
+      {SYSTEMS_DEEP_REF[gymId] && SYSTEMS_DEEP_REF[gymId].length > 0 && (
+        <div className="space-y-3">
+          <div>
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Deep reference</p>
+            <p className="text-xs text-zinc-600 mt-0.5">Advanced modules — jump in when you're ready to go further.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {SYSTEMS_DEEP_REF[gymId].map(m => (
+              <button
+                key={m.id}
+                onClick={() => onNavigate({ tab: "systems", moduleId: m.id })}
+                className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-900/30 px-3 py-2.5 text-left hover:border-zinc-600 transition-all group"
+              >
+                <span className="text-xs text-zinc-400 group-hover:text-zinc-200 transition-colors truncate">{m.label}</span>
+                <span className="text-[9px] font-mono text-zinc-600 shrink-0">{m.tag}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 flex items-center justify-between">
         <div>
           <p className="text-xs text-zinc-500 mb-0.5">Ready to apply these concepts?</p>
@@ -8286,7 +8309,85 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
   );
 }
 
-// ─── CONCEPTS APP ─────────────────────────────────────────────────────────────
+// ─── SYSTEMS DEEP REFERENCE MAP ──────────────────────────────────────────────
+// Maps each Foundations track (gym id) → relevant Systems module metadata.
+// No component imports — label data only. Clicking navigates to #systems with initialModule.
+const SYSTEMS_DEEP_REF = {
+  "language-models": [
+    { id: "txarch",       label: "Transformer Architecture",  tag: "VISUAL"  },
+    { id: "kvcache",      label: "KV Cache Engineering",      tag: "CACHE"   },
+    { id: "flashattn",    label: "Flash Attention",           tag: "ATTN"    },
+    { id: "decoding",     label: "Decoding Strategies Lab",   tag: "SAMPLE"  },
+    { id: "specdecoding", label: "Speculative Decoding",      tag: "SPEED"   },
+    { id: "streaming",    label: "Streaming Patterns",        tag: "STREAM"  },
+    { id: "moe",          label: "MoE Architecture",          tag: "MOE"     },
+    { id: "reasoning",    label: "Reasoning Models Lab",      tag: "REASON"  },
+    { id: "ctxwindow",    label: "Context Window Eng.",       tag: "CTX"     },
+    { id: "constrained",  label: "Constrained Generation",    tag: "SCHEMA"  },
+  ],
+  "retrieval": [
+    { id: "biencoder",        label: "Bi-Encoder vs Cross-Encoder",   tag: "RETRIEVAL" },
+    { id: "bert-pooling",     label: "BERT Pooling Lab",              tag: "NLP"       },
+    { id: "vecsim",           label: "Vector Similarity Explorer",    tag: "EMBED"     },
+    { id: "vectordb",         label: "Vector DB Engineering",         tag: "INFRA"     },
+    { id: "query-refinement", label: "Query Refinement Lab",          tag: "RETRIEVAL" },
+    { id: "graph-rag",        label: "Graph RAG",                     tag: "RETRIEVAL" },
+    { id: "compaction",       label: "Context Compaction",            tag: "CONTEXT"   },
+  ],
+  "ai-agents": [
+    { id: "agentarch",        label: "Agent Architecture",            tag: "AGENT"    },
+    { id: "agentmemory",      label: "Agent Memory Architecture",     tag: "MEMORY"   },
+    { id: "agent-ctx-arch",   label: "Agent Context Architecture",    tag: "AGENTS"   },
+    { id: "langgraph",        label: "LangGraph + HITL",              tag: "AGENTS"   },
+    { id: "guardrails",       label: "AI Guardrails",                 tag: "GUARD"    },
+    { id: "mcp",              label: "MCP vs API vs Function Calling", tag: "PROTOCOL"},
+    { id: "redteam",          label: "AI Red Teaming",                tag: "SECURITY" },
+    { id: "ai-safety-eng",    label: "AI Safety Engineering",         tag: "SAFETY"   },
+    { id: "trapslab",         label: "Traps Lab",                     tag: "TRAP"     },
+    { id: "vibecoding",       label: "Vibe Coding & Agentic Dev",     tag: "DEV"      },
+  ],
+  "evaluation": [
+    { id: "evals",       label: "Evals Lab",         tag: "DESIGN"   },
+    { id: "evalfw",      label: "Eval Frameworks",   tag: "FRAMEWORK"},
+    { id: "evalmetrics", label: "Eval Metrics",      tag: "METRIC"   },
+    { id: "abtesting",   label: "A/B Testing",       tag: "SHIP"     },
+    { id: "debug_traces",label: "Debug This",        tag: "DIAGNOSE" },
+    { id: "shouldai",    label: "Should You Use AI?",tag: "JUDGE"    },
+  ],
+  "production": [
+    { id: "costlatency",  label: "Cost/Latency",          tag: "COST"    },
+    { id: "inference",    label: "Inference Optimizer",   tag: "SERVING" },
+    { id: "caching",      label: "Prompt Caching",        tag: "CACHE"   },
+    { id: "router",       label: "Model Router",          tag: "ROUTE"   },
+    { id: "serving",      label: "Serving Infrastructure",tag: "INFRA"   },
+    { id: "observability",label: "Observability",         tag: "OPS"     },
+    { id: "incidents",    label: "Incident Room",         tag: "DIAGNOSE"},
+    { id: "mlcicd",       label: "ML CI/CD",              tag: "DEPLOY"  },
+    { id: "langsmith",    label: "LangSmith Lab",         tag: "OBSERVE" },
+    { id: "quantization", label: "Quantization Engineering", tag: "QUANT"},
+  ],
+  "foundation-models": [
+    { id: "finetune",     label: "Fine-Tuning Lab",       tag: "TRAIN"  },
+    { id: "finetuning",   label: "Fine-Tuning Workflows", tag: "TRAIN"  },
+    { id: "rlhf",         label: "RLHF / DPO / PPO",      tag: "ALIGN"  },
+    { id: "grpo",         label: "GRPO / Agent RL",       tag: "ALIGN"  },
+    { id: "modelmerging", label: "Model Merging",         tag: "MERGE"  },
+    { id: "moe",          label: "MoE Architecture",      tag: "MOE"    },
+    { id: "multimodal",   label: "Multimodal AI",         tag: "VISION" },
+    { id: "synthdata",    label: "Synthetic Data",        tag: "DATA"   },
+    { id: "strategy",     label: "Model Strategy",        tag: "DECISION"},
+  ],
+  "prompt-engineering": [
+    { id: "promptlab",          label: "Prompt Engineering Lab",    tag: "PROMPT" },
+    { id: "structout",          label: "Structured Outputs",        tag: "SCHEMA" },
+    { id: "constrained",        label: "Constrained Generation",    tag: "SCHEMA" },
+    { id: "canvas",             label: "System Design Canvas",      tag: "CANVAS" },
+    { id: "prompt-change-mgmt", label: "Prompt Change Management",  tag: "LLMOPS" },
+    { id: "redteam",            label: "AI Red Teaming",            tag: "SECURITY"},
+  ],
+};
+
+// ─── FOUNDATIONS APP ──────────────────────────────────────────────────────────
 
 export default function ConceptsApp({ onNavigate, initialGym }) {
   const [active, setActive] = useState(null);
@@ -8356,7 +8457,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
             onClick={() => currentGym ? setActive(null) : setActiveGym(null)}
             className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 flex items-center gap-1 transition-colors"
           >
-            ← {currentGym ? currentGym.label : "All rooms"}
+            ← {currentGym ? currentGym.label : "Foundations"}
           </button>
         </div>
         {sidebarIds.map(id => {
@@ -8438,7 +8539,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
                 <button
                   onClick={() => setActive(null)}
                   className="hidden sm:block text-[9px] font-mono text-violet-400 hover:text-violet-300 border border-violet-800/40 rounded px-1.5 py-0.5 transition-colors">
-                  All rooms
+                  Foundations
                 </button>
               </div>
             </div>
