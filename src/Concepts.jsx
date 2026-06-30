@@ -8249,6 +8249,8 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
         {modules.map((m, i) => {
           const done = mastery.has(m.id);
           const meta = MODULE_META[m.id] || {};
+          const rData = RUNNER_DATA[m.id];
+          const estMins = meta.mins || (rData?.depthTier === "deep" ? 12 : rData?.depthTier === "light" ? 5 : rData ? 8 : null);
           return (
             <div
               key={m.id}
@@ -8272,11 +8274,16 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
                   }`}>
                     {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
                   </span>
+                  {RUNNER_DATA[m.id]?.interviewWeight === "high" && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-600 bg-zinc-800 text-zinc-300">
+                      HIGH
+                    </span>
+                  )}
                 </div>
                 {meta.insight && <p className="text-xs text-zinc-500 leading-relaxed">{meta.insight}</p>}
               </div>
               <div className="shrink-0 flex flex-col items-end gap-1">
-                {meta.mins && <span className="text-[10px] text-zinc-600">~{meta.mins} min</span>}
+                {estMins && <span className="text-[10px] text-zinc-600">~{estMins} min</span>}
                 <span className={`text-xs font-semibold ${done ? "text-zinc-500" : "text-violet-400"}`}>
                   {done ? "Revisit" : "Start →"}
                 </span>
@@ -8439,6 +8446,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
             mastery={mastery}
             markComplete={markComplete}
             onBack={() => setActive(null)}
+            gymLabel={currentGym?.label}
           />
         </div>
       </div>

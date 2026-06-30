@@ -1,52 +1,90 @@
-// src/FoundationsRunner.jsx — PAL-pattern 5-step Foundations runner (sprint 92c)
-// Steps: 1 Scenario  2 Explanation  3 Interactive  4 Quick Check  5 Takeaway
+// src/FoundationsRunner.jsx — Progressive scroll model (sprint 93o)
+// Replaces 5-tab pagination with progressive section reveal.
+// Design rules: (1) no inline hex — all CSS vars or tailwind; (2) all unlocked
+// sections stay visible (no full-page swap); (3) MCQ auto-unlocks Takeaway;
+// (4) jump nav scrolls to any unlocked section.
 
-import { useState, useEffect } from "react";
-
-const STEPS = [
-  { id: 1, label: "Scenario",    tag: "CONTEXT" },
-  { id: 2, label: "Explanation", tag: "CONCEPT" },
-  { id: 3, label: "Interactive", tag: "EXPLORE" },
-  { id: 4, label: "Quick Check", tag: "VERIFY" },
-  { id: 5, label: "Takeaway",    tag: "APPLY" },
-];
+import { useState, useEffect, useRef, Fragment } from "react";
 
 const STORAGE_KEY = id => `gsl-runner-progress-${id}`;
 
 export default function FoundationsRunner({
   moduleId,
-  module,          // { title, subtitle, tag, fidelity }
-  runnerData,      // { scenario, explanation: string[], mcq: { question, options, correct, explanation }, takeaway }
-  Component,       // the interactive widget component
-  spec,            // passed through to Component
-  onNavigate,      // passed through to Component
-  mastery,         // Set of completed module IDs
-  markComplete,    // () => void — call when step 5 is finished
-  onBack,          // () => void — go back to gym room
+  module,
+  runnerData,
+  Component,
+  spec,
+  onNavigate,
+  mastery,
+  markComplete,
+  onBack,
+  gymLabel,
 }) {
   const alreadyDone = mastery?.has(moduleId);
+  const hasInteractive = !!Component;
 
-  const [step, setStep] = useState(() => {
+  // highest unlocked section (1–5). Same localStorage key as old `step` — backward-compat.
+  const [highest, setHighest] = useState(() => {
     if (alreadyDone) return 5;
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY(moduleId)) || "{}");
       return Math.min(saved.step || 1, 5);
     } catch { return 1; }
   });
+
   const [mcqSelected, setMcqSelected] = useState(null);
   const [mcqSubmitted, setMcqSubmitted] = useState(false);
 
-  // Persist step progress
+  const sectionRefs = useRef({});
+
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY(moduleId), JSON.stringify({ step })); } catch {}
-  }, [step, moduleId]);
+    try { localStorage.setItem(STORAGE_KEY(moduleId), JSON.stringify({ step: highest })); } catch {}
+  }, [highest, moduleId]);
 
   const { scenario, explanation, mcq, takeaway } = runnerData;
   const isCorrect = mcqSelected === mcq.correct;
 
+  // Ordered section list — section 3 omitted if no interactive widget
+  const sections = hasInteractive
+    ? [
+        { id: 1, label: "Scenario" },
+        { id: 2, label: "Explanation" },
+        { id: 3, label: "Explore" },
+        { id: 4, label: "Check" },
+        { id: 5, label: "Takeaway" },
+      ]
+    : [
+        { id: 1, label: "Scenario" },
+        { id: 2, label: "Explanation" },
+        { id: 4, label: "Check" },
+        { id: 5, label: "Takeaway" },
+      ];
+
+  function unlock(nextId) {
+    setHighest(prev => {
+      if (nextId > prev) {
+        setTimeout(() => {
+          sectionRefs.current[nextId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 60);
+        return nextId;
+      }
+      return prev;
+    });
+  }
+
+  function jumpTo(id) {
+    sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function nextSectionId(currentId) {
+    const idx = sections.findIndex(s => s.id === currentId);
+    return idx < sections.length - 1 ? sections[idx + 1].id : null;
+  }
+
   function handleMcqSubmit() {
     if (mcqSelected === null) return;
     setMcqSubmitted(true);
+    unlock(5);
   }
 
   function handleComplete() {
@@ -54,190 +92,228 @@ export default function FoundationsRunner({
     try { localStorage.setItem(STORAGE_KEY(moduleId), JSON.stringify({ step: 5, completed: true })); } catch {}
   }
 
-  function canAdvance() {
-    if (step === 4) return mcqSubmitted;
-    return true;
-  }
-
   return (
     <div className="max-w-3xl mx-auto px-6 py-8">
 
-      {/* ── Module header (always visible) ── */}
+      {/* ── Location header ──────────────────────────────────────────────── */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <button
+          onClick={onBack}
+          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-3 inline-flex items-center gap-1"
+        >
+          ← {gymLabel || "Foundations"}
+        </button>
+        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
           {module?.tag && (
-            <span className="text-[10px] font-mono px-2 py-0.5 bg-violet-900/50 text-violet-400 rounded border border-violet-800">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-700 bg-zinc-800/60 text-zinc-400">
               {module.tag}
             </span>
           )}
-          <button
-            onClick={onBack}
-            className="ml-auto text-[9px] font-mono text-violet-400 hover:text-violet-300 border border-violet-800/40 rounded px-1.5 py-0.5 transition-colors hidden sm:block">
-            ← Foundations
-          </button>
-        </div>
-        <h2 className="text-xl font-bold" style={{ background: "linear-gradient(90deg, #ffffff 0%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-          {module?.title}
-        </h2>
-        {module?.subtitle && <p className="text-sm text-zinc-400 mt-1">{module.subtitle}</p>}
-      </div>
-
-      {/* ── Step progress bar ── */}
-      <div className="flex items-center gap-1 mb-8">
-        {STEPS.map((s, i) => {
-          const done = s.id < step || alreadyDone;
-          const active = s.id === step && !alreadyDone;
-          return (
-            <button
-              key={s.id}
-              onClick={() => { if (s.id <= step || alreadyDone) setStep(s.id); }}
-              className="flex-1 flex flex-col items-center gap-1 group"
-              disabled={s.id > step && !alreadyDone}
-            >
-              <div className={`w-full h-1 rounded-full transition-all duration-300 ${
-                done ? "bg-violet-500" : active ? "bg-violet-600" : "bg-zinc-800"
-              }`} />
-              <span className={`text-[9px] font-mono uppercase tracking-wider transition-colors ${
-                active ? "text-violet-300" : done ? "text-zinc-400" : "text-zinc-700"
-              }`}>
-                {s.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Step content ── */}
-      <div className="space-y-5">
-
-        {/* Step 1: Scenario */}
-        {step === 1 && (
-          <div className="rounded-xl p-6 space-y-4"
-            style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.05) 100%)", border: "1px solid rgba(99,102,241,0.2)" }}>
-            <div>
-              <span className="text-[10px] font-mono font-black uppercase tracking-widest text-violet-400">Production Scenario</span>
-            </div>
-            <p className="text-sm text-zinc-200 leading-relaxed font-medium">{scenario}</p>
-          </div>
-        )}
-
-        {/* Step 2: Explanation */}
-        {step === 2 && (
-          <div className="space-y-4">
-            <span className="text-[10px] font-mono font-black uppercase tracking-widest text-violet-400">Concept Explanation</span>
-            {explanation.map((para, i) => (
-              <p key={i} className="text-sm text-zinc-200 leading-relaxed">{para}</p>
-            ))}
-          </div>
-        )}
-
-        {/* Step 3: Interactive */}
-        {step === 3 && (
-          <div>
-            <div className="mb-4">
-              <span className="text-[10px] font-mono font-black uppercase tracking-widest text-violet-400">Interactive Exploration</span>
-              <p className="text-xs text-zinc-500 mt-1">Explore the concept hands-on. Come back to continue when ready.</p>
-            </div>
-            {Component && <Component onNavigate={onNavigate} spec={spec} />}
-          </div>
-        )}
-
-        {/* Step 4: MCQ */}
-        {step === 4 && (
-          <div className="space-y-4">
-            <span className="text-[10px] font-mono font-black uppercase tracking-widest text-violet-400">Quick Check</span>
-            <p className="text-sm font-semibold text-zinc-100 leading-relaxed">{mcq.question}</p>
-            <div className="space-y-2">
-              {mcq.options.map((opt, i) => {
-                const isSelected = mcqSelected === i;
-                const isRight = mcq.correct === i;
-                let style = "text-zinc-400 border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 hover:text-zinc-300";
-                if (mcqSubmitted) {
-                  if (isRight) style = "text-emerald-300 border-emerald-700/60 bg-emerald-950/30";
-                  else if (isSelected && !isRight) style = "text-red-300 border-red-700/60 bg-red-950/30";
-                  else style = "text-zinc-600 border-zinc-800 bg-zinc-900/30";
-                } else if (isSelected) {
-                  style = "text-violet-300 border-violet-600 bg-violet-950/30";
-                }
-                return (
-                  <button
-                    key={i}
-                    onClick={() => { if (!mcqSubmitted) setMcqSelected(i); }}
-                    disabled={mcqSubmitted}
-                    className={`w-full text-left text-sm px-4 py-3 rounded-lg border transition-all ${style}`}
-                  >
-                    <span className="font-mono text-[11px] mr-2 opacity-60">{String.fromCharCode(65 + i)}.</span>
-                    {opt}
-                    {mcqSubmitted && isRight && <span className="ml-2 text-emerald-500 font-bold">✓</span>}
-                    {mcqSubmitted && isSelected && !isRight && <span className="ml-2 text-red-500">✗</span>}
-                  </button>
-                );
-              })}
-            </div>
-            {mcqSubmitted && (
-              <div className={`rounded-lg px-4 py-3 text-sm leading-relaxed ${isCorrect ? "bg-emerald-950/30 border border-emerald-800/40 text-emerald-300" : "bg-zinc-900 border border-zinc-800 text-zinc-300"}`}>
-                <span className="font-bold mr-1">{isCorrect ? "Correct." : "Not quite."}</span>
-                {mcq.explanation}
-              </div>
-            )}
-            {!mcqSubmitted && (
-              <button
-                onClick={handleMcqSubmit}
-                disabled={mcqSelected === null}
-                className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: mcqSelected !== null ? "rgba(99,102,241,0.2)" : "", border: "1px solid rgba(99,102,241,0.4)", color: "#a5b4fc" }}>
-                Check answer
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Step 5: Takeaway */}
-        {step === 5 && (
-          <div className="space-y-5">
-            <div className="rounded-xl p-6 space-y-3"
-              style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(99,102,241,0.05) 100%)", border: "1px solid rgba(34,197,94,0.2)" }}>
-              <span className="text-[10px] font-mono font-black uppercase tracking-widest text-emerald-400">Key Takeaway</span>
-              <p className="text-sm text-zinc-200 leading-relaxed font-medium">{takeaway}</p>
-            </div>
-            {!alreadyDone && (
-              <button
-                onClick={handleComplete}
-                className="w-full py-3 rounded-xl text-sm font-black transition-all hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)", color: "#fff" }}>
-                Mark Complete ✓
-              </button>
-            )}
-            {alreadyDone && (
-              <div className="text-center py-2">
-                <span className="text-sm font-semibold text-emerald-400">✓ Completed</span>
-              </div>
-            )}
-          </div>
-        )}
-
-      </div>
-
-      {/* ── Navigation ── */}
-      {!alreadyDone && (
-        <div className="flex items-center justify-between mt-8 pt-5 border-t border-zinc-800/60">
-          <button
-            onClick={() => step > 1 ? setStep(s => s - 1) : onBack?.()}
-            className="text-sm font-semibold text-zinc-500 hover:text-zinc-300 transition-colors">
-            ← {step > 1 ? STEPS[step - 2].label : "Back"}
-          </button>
-          {step < 5 && (
-            <button
-              onClick={() => canAdvance() && setStep(s => s + 1)}
-              disabled={!canAdvance()}
-              className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: canAdvance() ? "rgba(99,102,241,0.2)" : "", border: "1px solid rgba(99,102,241,0.4)", color: "#a5b4fc" }}>
-              {STEPS[step].label} →
-            </button>
+          {alreadyDone && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-800/50 bg-emerald-950/20 text-emerald-400">
+              ✓ Complete
+            </span>
           )}
         </div>
-      )}
+        <h2 className="text-xl font-bold text-white leading-tight">{module?.title}</h2>
+        {module?.subtitle && (
+          <p className="text-sm text-zinc-400 mt-1 leading-relaxed">{module.subtitle}</p>
+        )}
+      </div>
 
+      {/* ── Jump nav ─────────────────────────────────────────────────────── */}
+      <nav className="flex items-center mb-10" aria-label="Module sections">
+        {sections.map((s, i) => {
+          const unlocked = s.id <= highest || alreadyDone;
+          const done     = s.id < highest || alreadyDone;
+          const current  = s.id === highest && !alreadyDone;
+          return (
+            <Fragment key={s.id}>
+              <button
+                onClick={() => unlocked && jumpTo(s.id)}
+                disabled={!unlocked}
+                className="flex flex-col items-center gap-1 group"
+              >
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all ${
+                  done    ? "border-violet-500 bg-violet-900/30 text-violet-300" :
+                  current ? "border-violet-600 bg-violet-900/20 text-violet-400 ring-2 ring-violet-950" :
+                            "border-zinc-800 text-zinc-700"
+                }`}>
+                  {done ? "✓" : i + 1}
+                </div>
+                <span className={`text-[10px] font-mono transition-colors ${
+                  current ? "text-violet-400" : unlocked ? "text-zinc-500" : "text-zinc-700"
+                }`}>{s.label}</span>
+              </button>
+              {i < sections.length - 1 && (
+                <div className={`flex-1 h-px mb-3.5 mx-1 transition-colors ${
+                  done ? "bg-violet-800/40" : "bg-zinc-800"
+                }`} />
+              )}
+            </Fragment>
+          );
+        })}
+      </nav>
+
+      {/* ── Progressive sections ──────────────────────────────────────────── */}
+      <div className="space-y-12">
+
+        {/* Section 1 — Scenario */}
+        {highest >= 1 && (
+          <section ref={el => sectionRefs.current[1] = el} className="scroll-mt-6">
+            <SectionRule label="Production Scenario" />
+            <div className="mt-4 rounded-xl p-5 border border-zinc-800 bg-zinc-900/50">
+              <p className="text-sm text-zinc-200 leading-relaxed font-medium">{scenario}</p>
+            </div>
+            {!alreadyDone && highest === 1 && nextSectionId(1) && (
+              <div className="mt-5">
+                <ContinueBtn onClick={() => unlock(nextSectionId(1))} label="Read the explanation" />
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Section 2 — Explanation */}
+        {highest >= 2 && (
+          <section ref={el => sectionRefs.current[2] = el} className="scroll-mt-6">
+            <SectionRule label="Explanation" />
+            <div className="mt-4 space-y-4">
+              {explanation.map((para, i) => (
+                <p key={i} className="text-sm text-zinc-200 leading-relaxed">{para}</p>
+              ))}
+            </div>
+            {!alreadyDone && highest === 2 && nextSectionId(2) && (
+              <div className="mt-5">
+                <ContinueBtn
+                  onClick={() => unlock(nextSectionId(2))}
+                  label={hasInteractive ? "Explore it hands-on" : "Test your understanding"}
+                />
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Section 3 — Interactive (skipped if no Component) */}
+        {hasInteractive && highest >= 3 && (
+          <section ref={el => sectionRefs.current[3] = el} className="scroll-mt-6">
+            <SectionRule label="Hands-On" />
+            <p className="text-xs text-zinc-500 mt-1 mb-4">
+              Explore the concept interactively. Come back when ready.
+            </p>
+            <Component onNavigate={onNavigate} spec={spec} />
+            {!alreadyDone && highest === 3 && nextSectionId(3) && (
+              <div className="mt-5">
+                <ContinueBtn onClick={() => unlock(nextSectionId(3))} label="Test your understanding" />
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Section 4 — MCQ */}
+        {highest >= 4 && (
+          <section ref={el => sectionRefs.current[4] = el} className="scroll-mt-6">
+            <SectionRule label="Quick Check" />
+            <div className="mt-4 space-y-3">
+              <p className="text-sm font-semibold text-zinc-100 leading-relaxed">{mcq.question}</p>
+              <div className="space-y-2">
+                {mcq.options.map((opt, i) => {
+                  const sel   = mcqSelected === i;
+                  const right = mcq.correct === i;
+                  let cls = "text-zinc-400 border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 hover:text-zinc-300";
+                  if (mcqSubmitted) {
+                    if (right) cls = "text-emerald-300 border-emerald-800/50 bg-emerald-950/20";
+                    else if (sel) cls = "text-red-300 border-red-800/50 bg-red-950/20 animate-wrongShake";
+                    else cls = "text-zinc-600 border-zinc-800 bg-zinc-900/30 opacity-50";
+                  } else if (sel) {
+                    cls = "text-violet-300 border-violet-600 bg-violet-950/30";
+                  }
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => { if (!mcqSubmitted) setMcqSelected(i); }}
+                      disabled={mcqSubmitted}
+                      className={`w-full text-left text-sm px-4 py-3 rounded-lg border transition-all ${cls}`}
+                    >
+                      <span className="font-mono text-[11px] mr-2 opacity-60">
+                        {String.fromCharCode(65 + i)}.
+                      </span>
+                      {opt}
+                      {mcqSubmitted && right && <span className="ml-2 text-emerald-400 font-bold">✓</span>}
+                      {mcqSubmitted && sel && !right && <span className="ml-2 text-red-400">✗</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {mcqSubmitted ? (
+                <div className={`rounded-lg px-4 py-3 text-sm leading-relaxed border ${
+                  isCorrect
+                    ? "bg-emerald-950/20 border-emerald-800/40 text-emerald-300"
+                    : "bg-zinc-900/50 border-zinc-800 text-zinc-300"
+                }`}>
+                  <span className="font-bold mr-1">{isCorrect ? "Correct." : "Not quite."}</span>
+                  {mcq.explanation}
+                </div>
+              ) : (
+                <button
+                  onClick={handleMcqSubmit}
+                  disabled={mcqSelected === null}
+                  className="px-5 py-2.5 rounded-lg text-sm font-bold border border-violet-800/50 text-violet-400 hover:border-violet-600 hover:text-violet-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  Check answer
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Section 5 — Takeaway */}
+        {highest >= 5 && (
+          <section ref={el => sectionRefs.current[5] = el} className="scroll-mt-6">
+            <SectionRule label="Takeaway" />
+            <div className="mt-4 rounded-xl p-5 border border-emerald-900/30 bg-emerald-950/10">
+              <p className="text-sm text-zinc-200 leading-relaxed font-medium">{takeaway}</p>
+            </div>
+            <div className="mt-5">
+              {alreadyDone ? (
+                <p className="text-sm text-emerald-400 font-semibold">✓ Completed</p>
+              ) : (
+                <button
+                  onClick={handleComplete}
+                  className="w-full py-3 rounded-xl text-sm font-black bg-emerald-700 hover:bg-emerald-600 text-white transition-all"
+                >
+                  Mark Complete ✓
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+
+      </div>
     </div>
+  );
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+
+function SectionRule({ label }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 shrink-0">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-zinc-800" />
+    </div>
+  );
+}
+
+function ContinueBtn({ onClick, label }) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-5 py-2.5 rounded-lg text-sm font-bold border border-violet-800/50 text-violet-400 hover:border-violet-600 hover:text-violet-300 transition-all"
+    >
+      {label} →
+    </button>
   );
 }
