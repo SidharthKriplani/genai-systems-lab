@@ -1391,7 +1391,7 @@ export default function App() {
   }, []);
   const SHORTCUT_TABS = ["home","lab","agentlab","evallab","llmlab","preplab","career","aipm","groundtruth","systems","agents","explore","playground","concepts","flows","consult"];
 
-  function navigateTo({ tab, moduleId, postId, topic, diff, gymId, pathContext }) {
+  function navigateTo({ tab, moduleId, postId, topic, mode, diff, gymId, pathContext }) {
     if (moduleId) {
       if (tab === "systems" || tab === "evallab" || tab === "llmlab") setSystemsModule(moduleId);
       if (tab === "explore")  setExploreModule(moduleId);
@@ -1403,6 +1403,11 @@ export default function App() {
       setGtPathContext(pathContext || null);
     } else {
       setGtPathContext(null);
+    }
+    // Route to PrepLab trainer mode when a topic or explicit mode is provided
+    if (tab === "preplab") {
+      if (mode) setPreplabInitialMode(mode);
+      else if (topic) setPreplabInitialMode("trainer");
     }
     navigate(tab);
   }
@@ -2177,6 +2182,7 @@ export default function App() {
             </div>
           )}
 
+
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-12 lg:col-span-3 space-y-4">
               <div className="rounded-xl p-4 space-y-4" style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.07) 0%, rgba(24,24,27,0.95) 100%)", border: "1px solid rgba(139,92,246,0.18)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
@@ -2305,56 +2311,7 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* ── Forward pointer — what to do next (promoted above detail blocks) ── */}
-                  {(() => {
-                    const fwd = SCENARIO_FORWARD_POINTERS[scenario.scenario_id];
-                    if (!fwd) return null;
-                    return (
-                      <div className="rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.22)", borderTop: "1px solid var(--border)" }}>
-                        <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 text-[10px] font-black flex items-center justify-center"><Icon name="check" size={14} /></span>
-                          <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
-                            You reproduced: <span style={{ color: "var(--gal-build)" }}>{scenario.failure_mode_taught}</span>
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <button
-                            onClick={() => { track("module_forward_pointer_clicked", { type: "preplab", scenario: scenario.scenario_id, topic: fwd.topic }); navigateTo({ tab: "preplab", topic: fwd.topic }); }}
-                            className="flex items-start gap-3 p-3 rounded-lg border border-zinc-700 hover:border-violet-500 bg-zinc-900/60 hover:bg-zinc-800/60 transition-all text-left group">
-                            <span className="text-lg shrink-0"><Icon name="brain" size={18} /></span>
-                            <div>
-                              <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Drill this failure mode</div>
-                              <div className="text-[10px] text-zinc-500 mt-0.5">PrepLab · {fwd.topic} questions</div>
-                            </div>
-                          </button>
-                          <button
-                            onClick={() => { track("module_forward_pointer_clicked", { type: "groundtruth", scenario: scenario.scenario_id, postId: fwd.postId }); navigateTo({ tab: "groundtruth", postId: fwd.postId }); }}
-                            className="flex items-start gap-3 p-3 rounded-lg border border-zinc-700 hover:border-violet-500 bg-zinc-900/60 hover:bg-zinc-800/60 transition-all text-left group">
-                            <span className="text-lg shrink-0"><Icon name="book-open" size={18} /></span>
-                            <div>
-                              <div className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">Read the production breakdown</div>
-                              <div className="text-[10px] text-zinc-500 mt-0.5 leading-snug">{fwd.postTitle}</div>
-                            </div>
-                          </button>
-                        </div>
-                        {/* Guest sign-in CTA — shown after Scenario 1 completion */}
-                        {!user && scenario.scenario_id === "missing_answer" && (
-                          <div className="mt-1 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3" style={{ background: "rgba(99,102,241,0.10)", border: "1px solid rgba(99,102,241,0.25)" }}>
-                            <p className="text-xs text-zinc-300 leading-snug">
-                              <span className="font-bold text-white">5 more failure modes + 51 practice questions.</span>{" "}
-                              Sign in free to save your result and keep going.
-                            </p>
-                            <button
-                              onClick={() => { track("guest_signin_cta_clicked", { source: "rag_scenario1_synthesis" }); navigate("profile"); }}
-                              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-black transition-all"
-                              style={{ background: "linear-gradient(135deg, var(--gal-build) 0%, #6366f1 100%)", color: "#fff" }}>
-                              Sign in →
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
+                  {/* Forward pointer moved to full-width banner above the grid — see "Scenario complete banner" */}
 
                   {(() => {
                     const corpusDocs = RAG_CORPUS[scenario.scenario_id];
@@ -2451,6 +2408,59 @@ export default function App() {
               )}
             </div>
           </div>
+
+          {/* ── Scenario complete banner — full width, below results where user's eye lands ── */}
+          {result && evaluated && (() => {
+            const fwd = SCENARIO_FORWARD_POINTERS[scenario.scenario_id];
+            if (!fwd) return null;
+            return (
+              <div className="mt-6 rounded-xl p-5 space-y-4" style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.10) 0%, rgba(99,102,241,0.08) 100%)", border: "2px solid rgba(34,197,94,0.4)", boxShadow: "0 4px 24px rgba(34,197,94,0.10)" }}>
+                <div className="flex items-center gap-3">
+                  <span className="w-7 h-7 rounded-full bg-emerald-600/25 border border-emerald-500/60 text-emerald-400 flex items-center justify-center shrink-0"><Icon name="check" size={16} /></span>
+                  <div>
+                    <div className="text-sm font-black text-white">Scenario complete — {scenario.failure_mode_taught}</div>
+                    <div className="text-[11px] text-zinc-400 mt-0.5">You reproduced the failure. Now lock in the pattern.</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    onClick={() => { track("module_forward_pointer_clicked", { type: "preplab", scenario: scenario.scenario_id, topic: fwd.topic }); navigateTo({ tab: "preplab", topic: fwd.topic }); }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all hover:brightness-110"
+                    style={{ background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.45)", color: "#c4b5fd" }}>
+                    <Icon name="brain" size={18} />
+                    <div className="text-left">
+                      <div>Test your understanding →</div>
+                      <div className="text-[10px] font-normal text-violet-400/70 mt-0.5">PrepLab · {fwd.topic} questions</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => { track("module_forward_pointer_clicked", { type: "groundtruth", scenario: scenario.scenario_id, postId: fwd.postId }); navigateTo({ tab: "groundtruth", postId: fwd.postId }); }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all hover:brightness-110"
+                    style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.35)", color: "#93c5fd" }}>
+                    <Icon name="book-open" size={18} />
+                    <div className="text-left">
+                      <div>Read production breakdown →</div>
+                      <div className="text-[10px] font-normal text-blue-400/70 mt-0.5 leading-snug">{fwd.postTitle}</div>
+                    </div>
+                  </button>
+                </div>
+                {!user && scenario.scenario_id === "missing_answer" && (
+                  <div className="rounded-lg px-4 py-3 flex items-center justify-between gap-3" style={{ background: "rgba(99,102,241,0.10)", border: "1px solid rgba(99,102,241,0.25)" }}>
+                    <p className="text-xs text-zinc-300 leading-snug">
+                      <span className="font-bold text-white">5 more failure modes + 500+ practice questions.</span>{" "}
+                      Sign in free to save your result and keep going.
+                    </p>
+                    <button
+                      onClick={() => { track("guest_signin_cta_clicked", { source: "rag_scenario1_synthesis" }); navigate("profile"); }}
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-black transition-all"
+                      style={{ background: "linear-gradient(135deg, var(--gal-build) 0%, #6366f1 100%)", color: "#fff" }}>
+                      Sign in →
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
             </div>
             ) : (
               <div className="max-w-4xl mx-auto px-6 py-8">
