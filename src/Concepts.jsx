@@ -8441,7 +8441,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
             moduleId={active}
             module={mod}
             runnerData={runnerData}
-            Component={Component}
+            Component={Component === StubModule ? null : Component}
             spec={mod.spec}
             onNavigate={onNavigate}
             mastery={mastery}
