@@ -32,7 +32,7 @@ const AgentsApp      = lazy(() => import("./Agents"));
 const ConsultationApp = lazy(() => import("./Consultation"));
 const PrepLabApp      = lazy(() => import("./PrepLab"));
 const LearningPathsApp = lazy(() => import("./LearningPaths"));
-const PromptLabApp          = lazy(() => import("./PromptLab"));
+// PromptLab retired — redirects to Playground via HASH_REDIRECTS
 const FoundationModelsLabApp = lazy(() => import("./FoundationModelsLab"));
 const RetrievalHub           = lazy(() => import("./Retrieval"));
 const EvaluationHub          = lazy(() => import("./EvaluationHub"));
@@ -281,7 +281,6 @@ const NAV_SECTIONS = [
     // { id: "consult", label: "Ask" },
   ]},
   { key: "do", label: "DO", icon: "terminal", items: [
-    { id: "promptlab", label: "Prompt Lab" },
     { id: "playground", label: "Playground" },
     { id: "__soon_code", label: "Code Drills", soon: true },
     { id: "__pl", label: "Python · DSA", href: SIBLING_LABS.pl },
@@ -328,7 +327,7 @@ const TAB_FRAME = (() => {
 })();
 
 // Sprint 92: dead routes that redirect to Foundations (KNOW). #systems kept alive — still used as deep-reference target.
-const HASH_REDIRECTS = { starthere: "concepts", paths: "concepts" };
+const HASH_REDIRECTS = { starthere: "concepts", paths: "concepts", promptlab: "playground" };
 
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
@@ -1654,7 +1653,6 @@ export default function App() {
       ]},
       { id: "foundations", label: "Foundation Models", desc: "Training · fine-tuning · prompting", subitems: [
         { id: "foundationlab", label: "FM Lab",         note: "6 scenarios" },
-        { id: "promptlab",     label: "Prompt Lab",     note: "6 scenarios" },
       ]},
     ]},
     // JUDGE — judgment: systems tradeoff modules
@@ -2019,7 +2017,7 @@ export default function App() {
           {topView === "agentlab"   && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "evallab"    && <SystemsApp allowedModules={EVAL_LAB_MODULES} labTitle="Eval Lab" labSubtitle="Evaluation, observability & ops strategy" suggestedStart="evals" suggestedLabel="Evals Lab" suggestedNote="knowing how to measure is the skill every other module depends on" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "llmlab"     && <SystemsApp allowedModules={LLM_LAB_MODULES} labTitle="LLM Lab" labSubtitle="Architecture, training & inference systems" suggestedStart="decoding" suggestedLabel="Decoding Strategies Lab" suggestedNote="the interactive where you actually see what temperature and top-p do to token distributions" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
-          {topView === "promptlab"     && <PromptLabApp onNavigate={navigate} />}
+          {/* promptlab redirects to playground via HASH_REDIRECTS */}
           {topView === "foundationlab" && <FoundationModelsLabApp onNavigate={navigate} />}
 
           {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
