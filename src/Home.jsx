@@ -684,12 +684,12 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                 </div>
 
                 <h1 className="hero-anim-1 text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.05]">
-                  The only place that trains{" "}
-                  <span style={{ background: "linear-gradient(90deg, var(--gal-build) 0%, var(--gal-build-dark) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>production AI judgment.</span>
+                  Knowing AI isn't enough.{" "}
+                  <span style={{ background: "linear-gradient(90deg, var(--gal-build) 0%, var(--gal-build-dark) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>The market pays for engineers who ship it.</span>
                 </h1>
 
                 <p className="hero-anim-2 text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
-                  Not what AI systems are — what happens when they <span className="text-zinc-300 font-medium">fail in production</span>, how to diagnose it, and what to do. Configure real failure modes. Break things. Understand why. Build the judgment that gets you hired.
+                  Interactive failure simulations, <span className="text-zinc-300 font-medium">500+ production-calibrated interview questions</span>, and the diagnostic frameworks senior AI engineers use when systems break in prod. Not tutorials — pattern recognition.
                 </p>
               </div>
 
@@ -709,7 +709,7 @@ export default function HomePage({ onNavigate, onNavigateTo, visited = new Set()
                     Sign in with GitHub
                   </button>
                   <div className="flex items-center gap-3 text-[10px] font-mono text-zinc-600">
-                    <span>319 questions</span><span>·</span><span>6 labs</span><span>·</span><span>226 GT posts</span>
+                    <span>500+ interview questions</span><span>·</span><span>6 failure simulations</span><span>·</span><span>Open now</span>
                   </div>
                 </div>
               )}

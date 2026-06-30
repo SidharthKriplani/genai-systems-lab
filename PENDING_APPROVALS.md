@@ -469,6 +469,18 @@ _Only the lab md spine (`NEXT` / `PENDING_APPROVALS` / `LINEAGE` / `IDEAS`) has 
 
 ## ✅ History (approved / actioned)
 
+- **Foundations explanations Batch 6 — 21 MEDIUM interviewWeight modules (sprint 93m, 1 Jul)** — Rewrote explanation arrays for: eval-design, rag-eval, observability-concepts, prompt-regression-signals, quality-drift, cost-attribution, managed-vs-selfhosted (expanded to 4 paras, DEEP tier satisfied), enterprise-ai-cost-model, zero-shot, model-families, metadata-filtering, vision-language-arch, multimodal-rag, resolution-token-cost, red-teaming, jailbreak-taxonomy, safety-measurement. Plus 4 completed in same sprint: tempgame, positional-encoding, multiagent, agent-tracing. Every module opens with a cross-module handoff naming what the previous concept left unsolved. All 52 Foundations modules now rewritten with causal chain discipline. Pushed + live.
+
+- **Foundations explanations Batch 5 — 12 DEEP/STANDARD modules (sprint 93l, 30 Jun)** — Rewrote explanation arrays for: training-signal (5 paras), kv-cache (4 paras, added MQA/GQA), agent-tools, guardrails, eval-loop, debug, llm-as-judge, cost-latency-concepts, latency-planner, rlhf (5 paras, added reward hacking paragraph), hybrid-search-design, alignment-techniques (4 paras, added Constitutional AI). Pushed + live.
+
+- **Foundations explanations Batch 4 — 4 HIGH interviewWeight modules (sprint 93k, 30 Jun)** — Rewrote explanation arrays for: attention-3d, seq-parallel, flashattn, reranking. Pushed + live.
+
+- **Foundations explanations Batch 3 — 4 HIGH interviewWeight modules (sprint 93j, 30 Jun)** — Rewrote explanation arrays for: context, chain-of-thought, vector-db-index-mechanics, agent. Pushed + live.
+
+- **Foundations explanations Batch 2 — 6 HIGH interviewWeight modules (sprint 93i, 30 Jun)** — Rewrote explanation arrays for: sampling, nextoken, chunking, rag-pipeline, lora, few-shot. Pushed + live.
+
+- **Foundations explanations Batch 1 + gaps + CONTENT-STANDARD.md (sprint 93h, 30 Jun)** — Rewrote explanation arrays for: tokenizer, embeddings, attention, transformer, scaling-laws (5 HIGH modules). Fixed 5 post-audit gaps (character-level failure reason, static/contextual conflation, layer norm, LSTM/√d_k, Chinchilla 6× factor). Created CONTENT-STANDARD.md codifying 6 causal chain rules, depth tier paragraph counts, and batch history table. Pushed + live.
+
 - **App-wide rail kill + GT muted hues (sprint 90, 24 Jun)** — 6 left `inset Npx 0 0` rails + 66 decorative top `borderTop` accent bars → neutral hairlines across 18 files (semantic green/red pass-fail accents kept); GT series cards → muted per-area hues. 19 `.jsx`, esbuild-verified. Committed `5b5ba38`; pushed + live.
 
 - **Monochrome instrument theme — base remap + colour guard (sprint 90, 23–24 Jun)** — `src/index.css` MONOCHROME INSTRUMENT block (cold grey ramp overriding warm-brown base; decorative palettes amber/indigo/blue/orange/sky/rose/pink/teal/purple → zinc; red→break, emerald/green→fix faint; frame tokens grey; cyan the lone accent) + `scripts/check-no-hex.mjs` colour guard + `package.json` `check:color`. One appended, reversible block recolours the whole app. Built on Mac + pushed + live (verified in-app). HQ standard locked in `DESIGN-STANDARD.md` ("THE MONOCHROME INSTRUMENT STANDARD").

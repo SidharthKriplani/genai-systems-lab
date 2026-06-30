@@ -8013,7 +8013,7 @@ const GYMS = [
     label: "Language Models",
     desc: "Tokenization, attention, positional encoding, KV cache, sampling, and the training signal. The foundation before you touch any lab.",
     color: "#6366f1",
-    moduleIds: ["tokenizer", "attention", "transformer", "positional-encoding", "nextoken", "training-signal", "hallucination", "sampling", "tempgame", "kv-cache", "seq-parallel"],
+    moduleIds: ["seq-parallel", "tokenizer", "attention", "positional-encoding", "transformer", "training-signal", "nextoken", "sampling", "tempgame", "hallucination", "kv-cache"],
     labId: "llmlab",
     labLabel: "LLM Lab",
   },

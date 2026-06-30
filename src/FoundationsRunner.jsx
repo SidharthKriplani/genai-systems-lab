@@ -193,9 +193,22 @@ export default function FoundationsRunner({
           <section ref={el => sectionRefs.current[2] = el} className="scroll-mt-6">
             <SectionRule label="Explanation" />
             <div className="mt-4 space-y-4">
-              {explanation.map((para, i) => (
-                <p key={i} className="text-sm text-zinc-200 leading-relaxed">{para}</p>
-              ))}
+              {explanation.map((item, i) => {
+                if (typeof item === "string") {
+                  return <p key={i} className="text-sm text-zinc-200 leading-relaxed">{item}</p>;
+                }
+                if (item?.type === "illustration") {
+                  return (
+                    <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 mt-2">
+                      {item.label && (
+                        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">{item.label}</p>
+                      )}
+                      <pre className="text-xs font-mono text-zinc-300 leading-relaxed overflow-x-auto whitespace-pre">{item.content}</pre>
+                    </div>
+                  );
+                }
+                return null;
+              })}
             </div>
             {!alreadyDone && highest === 2 && nextSectionId(2) && (
               <div className="mt-5">
