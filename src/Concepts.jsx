@@ -6205,52 +6205,92 @@ function RerankingModule() {
   const [reranked, setReranked] = useState(false);
   const query = "How do transformers handle long-range dependencies?";
 
-  const biEncoderResults = [
-    { id: 0, text: "Transformers use self-attention across all positions simultaneously.", recall: 0.91 },
-    { id: 1, text: "RNNs process tokens sequentially, limiting long-range gradient flow.", recall: 0.87 },
-    { id: 2, text: "Attention weights are computed via dot-product of queries and keys.", recall: 0.85 },
-    { id: 3, text: "Layer normalization stabilizes training in deep networks.", recall: 0.79 },
-    { id: 4, text: "Positional encodings allow the model to distinguish token order.", recall: 0.76 },
+  // bi-encoder order (by embedding similarity score)
+  const docs = [
+    { id: 0, text: "Transformers use self-attention across all token positions simultaneously.", biScore: 0.91, ceScore: 0.94 },
+    { id: 1, text: "RNNs process tokens sequentially, limiting long-range gradient flow.", biScore: 0.87, ceScore: 0.63 },
+    { id: 2, text: "Attention weights are computed via dot-product of queries and keys.", biScore: 0.85, ceScore: 0.89 },
+    { id: 3, text: "Layer normalization stabilizes training in very deep networks.", biScore: 0.79, ceScore: 0.22 },
+    { id: 4, text: "Positional encodings allow the model to distinguish token order.", biScore: 0.76, ceScore: 0.71 },
   ];
 
-  const crossEncoderOrder = [0, 2, 4, 1, 3];
-  const crossScores = [0.94, 0.89, 0.71, 0.63, 0.22];
+  // cross-encoder re-ranks by ceScore
+  const ranked = reranked
+    ? [...docs].sort((a, b) => b.ceScore - a.ceScore)
+    : docs;
 
-  const displayList = reranked
-    ? crossEncoderOrder.map((origIdx, rank) => ({ ...biEncoderResults[origIdx], ceScore: crossScores[rank], rank }))
-    : biEncoderResults.map((r, i) => ({ ...r, rank: i }));
+  // original bi-encoder rank for each doc
+  const biRankOf = Object.fromEntries(docs.map((d, i) => [d.id, i]));
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-3">
-        <div className="text-[10px] font-mono text-zinc-600 mb-1">Query</div>
-        <div className="text-xs text-zinc-300 font-medium">{query}</div>
+    <div className="space-y-5">
+      {/* Query */}
+      <div className="rounded-lg border border-zinc-700 bg-zinc-900/80 px-4 py-3">
+        <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-1">Query</div>
+        <div className="text-sm text-zinc-200 font-medium">{query}</div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className={`text-[10px] font-mono uppercase tracking-widest ${!reranked ? "text-violet-400" : "text-zinc-600"}`}>
-          Bi-encoder (fast)
+      {/* Stage label + button */}
+      <div className="flex items-center gap-4">
+        <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+          Stage: <span className={reranked ? "text-emerald-400" : "text-violet-400"}>
+            {reranked ? "Cross-encoder reranked" : "Bi-encoder retrieval"}
+          </span>
         </div>
-        <button onClick={() => setReranked(!reranked)}
-          className="flex-1 py-1.5 rounded border border-violet-700 text-xs font-mono text-violet-300 hover:bg-violet-900/20 transition-all">
-          {reranked ? "Reset to bi-encoder" : "Run cross-encoder rerank"}
+        <button
+          onClick={() => setReranked(r => !r)}
+          className={`ml-auto px-4 py-2 rounded-lg text-xs font-bold border transition-all ${
+            reranked
+              ? "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+              : "border-violet-600 bg-violet-900/30 text-violet-300 hover:bg-violet-900/50"
+          }`}
+        >
+          {reranked ? "← Reset to bi-encoder" : "Run cross-encoder rerank →"}
         </button>
-        <div className={`text-[10px] font-mono uppercase tracking-widest ${reranked ? "text-emerald-400" : "text-zinc-600"}`}>
-          Cross-encoder (precise)
-        </div>
       </div>
 
+      {/* Results list */}
       <div className="space-y-2">
-        {displayList.map((r, displayRank) => {
-          const moved = reranked && crossEncoderOrder[displayRank] !== displayRank;
+        {ranked.map((doc, displayRank) => {
+          const biRank = biRankOf[doc.id];
+          const rankChange = biRank - displayRank; // positive = moved up
           return (
-            <div key={r.id} className={`flex items-start gap-3 p-3 rounded-lg border transition-all duration-500 ${moved ? "border-emerald-700/50 bg-emerald-950/10" : "border-zinc-800 bg-zinc-900/50"}`}>
-              <span className="text-sm font-mono text-zinc-500 w-5 text-center">{displayRank + 1}</span>
-              <div className="flex-1 text-xs text-zinc-300">{r.text}</div>
-              <div className="text-right shrink-0">
-                <div className="text-[10px] font-mono text-zinc-600">{reranked ? "CE" : "recall"}</div>
-                <div className={`text-xs font-mono font-bold ${reranked ? "text-emerald-400" : "text-violet-400"}`}>
-                  {reranked ? r.ceScore.toFixed(2) : r.recall.toFixed(2)}
+            <div
+              key={doc.id}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all ${
+                reranked && rankChange > 0
+                  ? "border-emerald-700/60 bg-emerald-950/20"
+                  : reranked && rankChange < 0
+                  ? "border-red-900/40 bg-red-950/10"
+                  : "border-zinc-800 bg-zinc-900/50"
+              }`}
+            >
+              {/* Rank number */}
+              <span className="text-sm font-mono text-zinc-500 w-5 shrink-0 text-center">
+                {displayRank + 1}
+              </span>
+
+              {/* Movement arrow */}
+              <span className="text-xs w-5 shrink-0 text-center">
+                {reranked && rankChange > 0 && <span className="text-emerald-400 font-bold">↑{rankChange}</span>}
+                {reranked && rankChange < 0 && <span className="text-red-400">↓{Math.abs(rankChange)}</span>}
+                {(!reranked || rankChange === 0) && <span className="text-zinc-700">—</span>}
+              </span>
+
+              {/* Text */}
+              <div className="flex-1 text-xs text-zinc-300 leading-relaxed">{doc.text}</div>
+
+              {/* Score */}
+              <div className="shrink-0 text-right">
+                <div className="text-[9px] font-mono text-zinc-600 uppercase">
+                  {reranked ? "CE score" : "BI score"}
+                </div>
+                <div className={`text-xs font-mono font-bold ${
+                  reranked && rankChange > 0 ? "text-emerald-400" :
+                  reranked && rankChange < 0 ? "text-red-400" :
+                  "text-violet-400"
+                }`}>
+                  {(reranked ? doc.ceScore : doc.biScore).toFixed(2)}
                 </div>
               </div>
             </div>
@@ -6258,14 +6298,14 @@ function RerankingModule() {
         })}
       </div>
 
-      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
-        <p className="text-xs text-zinc-300">
-          <span className="font-bold text-amber-400">Key insight: </span>
-          Bi-encoder retrieves widely and fast — each doc is embedded independently. Cross-encoder
-          re-scores by seeing query+doc together, so it catches nuanced relevance the bi-encoder missed.
-          Use reranking when precision matters more than throughput.
-        </p>
-      </div>
+      {reranked && (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-xs text-zinc-400 leading-relaxed">
+          Doc #2 (attention dot-product) jumped ↑1 and doc #4 (positional encodings) jumped ↑2 because the
+          cross-encoder sees query+doc together — it catches that "dot-product of Q and K" is the mechanism
+          behind long-range dependencies. The bi-encoder missed this because embeddings are computed
+          independently without the query in scope.
+        </div>
+      )}
     </div>
   );
 }
