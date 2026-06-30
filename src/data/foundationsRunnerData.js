@@ -44,17 +44,41 @@ export const RUNNER_DATA = {
       "The scaled scores pass through softmax to produce a probability distribution over all positions. The model takes a weighted sum of all value vectors V using these probabilities as weights: positions with high attention weight contribute heavily to the output vector, irrelevant positions contribute near zero. A token representing 'agreed' will load content from 'surgeon' because their query-key dot product is high; the filler words between them contribute near nothing. The output — one new vector per position — routes information from wherever each position chose to attend, with no sequential compression in the path.",
       "The cost is quadratic: n queries × n keys = n² attention pairs per layer. A 4K-token sequence has ~16 million pairs per layer; a 16K-token sequence has 256 million. Memory scales the same way — the full n×n attention matrix must be materialized. This is why long-context serving is expensive and why 100K+ context windows required algorithmic changes (Flash Attention), not just bigger hardware. The 'attention sink' diagnosis in this scenario follows directly from these mechanics: token position 0 is always visible to all subsequent positions during training, making it a reliable target for attention mass that doesn't belong to any semantic target — concentration there rather than on mid-document content produces the extraction failures you're seeing.",
     ],
-    mcq: {
-      question: "Why does full self-attention scale quadratically with sequence length?",
-      options: [
-        "The embedding dimension doubles at each attention layer as sequence length increases",
-        "Each token must compute attention scores against every other token, producing n² attention pairs for n tokens",
-        "Tokenization time increases quadratically with longer input sequences",
-        "Each attention layer must store a separate positional encoding matrix for every sequence position, and storing these matrices for n positions requires O(n²) memory",
-      ],
-      correct: 1,
-      explanation: "Self-attention computes a query for each of n tokens against keys from all n tokens: n × n = n² attention pairs per layer. For a 32K-token sequence, that's over 1 billion attention pairs. Option B is the correct answer. Option A is false — embedding dimension is a fixed architectural hyperparameter; it doesn't change with sequence length. Option C is wrong — tokenization runs once before attention and is linear in input length; self-attention, not tokenization, is the quadratic step. Option D represents a reasonable-sounding but incorrect explanation: positional encoding does not grow with sequence length in a per-layer matrix sense. RoPE and other position schemes add a fixed-size encoding to each token's Q and K vectors — the position encoding cost is O(n × d), not O(n²). The quadratic cost comes from the attention score matrix itself (each of n queries dot-producted against all n keys), not from positional bookkeeping.",
-    },
+    mcqs: [
+      {
+        question: "Why does full self-attention scale quadratically with sequence length?",
+        options: [
+          "The embedding dimension doubles at each attention layer as sequence length increases",
+          "Each token must compute attention scores against every other token, producing n² attention pairs for n tokens",
+          "Tokenization time increases quadratically with longer input sequences",
+          "Each attention layer must store a separate positional encoding matrix for every sequence position, requiring O(n²) memory",
+        ],
+        correct: 1,
+        explanation: "Self-attention computes a query for each of n tokens against keys from all n tokens: n × n = n² attention pairs per layer. Option B is correct. Option A is false — embedding dimension is a fixed architectural hyperparameter that doesn't change with sequence length. Option C is wrong — tokenization runs once before attention and is linear in input length. Option D is incorrect — positional encoding (e.g. RoPE) adds a fixed-size encoding to each token's Q and K vectors, costing O(n × d), not O(n²). The quadratic cost comes from the attention score matrix itself.",
+      },
+      {
+        question: "In self-attention, what determines how much the representation of 'agreed' attends to 'surgeon' in 'The surgeon who treated the patient agreed'?",
+        options: [
+          "The token distance between them — self-attention always weighs nearby tokens more heavily",
+          "The magnitude of the value vector produced by 'surgeon' — larger value vectors receive more attention weight",
+          "The dot product between the query vector of 'agreed' and the key vector of 'surgeon' — a high dot product produces a high softmax weight",
+          "The position encoding difference between the two tokens — RoPE scales attention weight by relative distance",
+        ],
+        correct: 2,
+        explanation: "The query (Q) vector of the attending token and the key (K) vector of the candidate token are dot-producted to produce a relevance score. High Q·K = high score = high softmax weight = 'agreed' loads heavily from 'surgeon'. Option C is correct. Option A is wrong — self-attention has no built-in distance bias; a token at position 1 can attend equally to position 50 if the Q·K score is high. Option B is wrong — the value vector determines what information is contributed if attended to, not how much attention is paid; attention weight comes from Q·K, not V magnitude. Option D is a common misconception — RoPE modifies the Q and K vectors to encode relative position, but the final attention weight still depends on the resulting Q·K dot product, not directly on the position offset.",
+      },
+      {
+        question: "Why are raw attention scores divided by √d_k before the softmax in scaled dot-product attention?",
+        options: [
+          "To normalize the attention weights so they sum to exactly 1 across all positions",
+          "To reduce the quadratic memory cost of computing the full attention matrix",
+          "To prevent dot products from growing large at high key dimensions, which would push softmax into near-zero gradient regions and stall training",
+          "To ensure that tokens with larger value vectors don't dominate the weighted sum output",
+        ],
+        correct: 2,
+        explanation: "The dot product Q·K has variance proportional to d_k. At high d_k, scores spread into large positive and negative values; softmax then concentrates almost all probability mass on the single largest score, producing near-zero gradients for every other position. Training stalls — the model can't learn to attend to more than one thing. Dividing by √d_k rescales scores to unit variance, keeping softmax in a region with meaningful gradients across multiple positions. Option C is correct. Option A is a misconception — softmax always produces a distribution that sums to 1 regardless of √d_k scaling; the scaling changes the sharpness of that distribution, not whether it sums to 1. Option B is wrong — √d_k scaling has zero effect on memory cost; memory is determined by the n×n attention matrix, which is the same size whether or not you scale the scores. Option D is wrong — the value vector magnitude doesn't affect attention weights; weights come from softmax(Q·K/√d_k), and V is only used in the final weighted sum after weights are determined.",
+      },
+    ],
     takeaway: "Attention enables context-aware representations by letting every token attend to every other — but quadratic cost is why long-context models are expensive, and why attention sinks cause mid-document quality degradation that isn't about model intelligence.",
   },
 

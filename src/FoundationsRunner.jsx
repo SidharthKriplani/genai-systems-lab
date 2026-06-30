@@ -1,8 +1,6 @@
-// src/FoundationsRunner.jsx — Progressive scroll model (sprint 93o)
-// Replaces 5-tab pagination with progressive section reveal.
-// Design rules: (1) no inline hex — all CSS vars or tailwind; (2) all unlocked
-// sections stay visible (no full-page swap); (3) MCQ auto-unlocks Takeaway;
-// (4) jump nav scrolls to any unlocked section.
+// src/FoundationsRunner.jsx — Progressive scroll + multi-MCQ (sprint 93p)
+// Schema: runnerData.mcqs (array) preferred; runnerData.mcq (object) supported for compat.
+// Takeaway unlocks when ALL questions are submitted.
 
 import { useState, useEffect, useRef, Fragment } from "react";
 
@@ -23,7 +21,13 @@ export default function FoundationsRunner({
   const alreadyDone = mastery?.has(moduleId);
   const hasInteractive = !!Component;
 
-  // highest unlocked section (1–5). Same localStorage key as old `step` — backward-compat.
+  // Normalize to array — support both old mcq and new mcqs
+  const mcqList = runnerData.mcqs
+    ? runnerData.mcqs
+    : runnerData.mcq
+      ? [runnerData.mcq]
+      : [];
+
   const [highest, setHighest] = useState(() => {
     if (alreadyDone) return 5;
     try {
@@ -32,19 +36,26 @@ export default function FoundationsRunner({
     } catch { return 1; }
   });
 
-  const [mcqSelected, setMcqSelected] = useState(null);
-  const [mcqSubmitted, setMcqSubmitted] = useState(false);
+  // Per-question answer state
+  const [answers, setAnswers]     = useState(() => Array(mcqList.length).fill(null));
+  const [submitted, setSubmitted] = useState(() => Array(mcqList.length).fill(false));
 
   const sectionRefs = useRef({});
 
+  // Persist step
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY(moduleId), JSON.stringify({ step: highest })); } catch {}
   }, [highest, moduleId]);
 
-  const { scenario, explanation, mcq, takeaway } = runnerData;
-  const isCorrect = mcqSelected === mcq.correct;
+  // Unlock takeaway when all MCQs submitted
+  useEffect(() => {
+    if (mcqList.length > 0 && submitted.every(Boolean)) {
+      unlock(5);
+    }
+  }, [submitted]);
 
-  // Ordered section list — section 3 omitted if no interactive widget
+  const { scenario, explanation, takeaway } = runnerData;
+
   const sections = hasInteractive
     ? [
         { id: 1, label: "Scenario" },
@@ -81,10 +92,14 @@ export default function FoundationsRunner({
     return idx < sections.length - 1 ? sections[idx + 1].id : null;
   }
 
-  function handleMcqSubmit() {
-    if (mcqSelected === null) return;
-    setMcqSubmitted(true);
-    unlock(5);
+  function selectAnswer(qi, i) {
+    if (submitted[qi]) return;
+    setAnswers(prev => { const a = [...prev]; a[qi] = i; return a; });
+  }
+
+  function submitAnswer(qi) {
+    if (answers[qi] === null) return;
+    setSubmitted(prev => { const s = [...prev]; s[qi] = true; return s; });
   }
 
   function handleComplete() {
@@ -158,7 +173,7 @@ export default function FoundationsRunner({
       {/* ── Progressive sections ──────────────────────────────────────────── */}
       <div className="space-y-12">
 
-        {/* Section 1 — Scenario */}
+        {/* 1 — Scenario */}
         {highest >= 1 && (
           <section ref={el => sectionRefs.current[1] = el} className="scroll-mt-6">
             <SectionRule label="Production Scenario" />
@@ -173,7 +188,7 @@ export default function FoundationsRunner({
           </section>
         )}
 
-        {/* Section 2 — Explanation */}
+        {/* 2 — Explanation */}
         {highest >= 2 && (
           <section ref={el => sectionRefs.current[2] = el} className="scroll-mt-6">
             <SectionRule label="Explanation" />
@@ -193,7 +208,7 @@ export default function FoundationsRunner({
           </section>
         )}
 
-        {/* Section 3 — Interactive (skipped if no Component) */}
+        {/* 3 — Interactive (skipped if no Component) */}
         {hasInteractive && highest >= 3 && (
           <section ref={el => sectionRefs.current[3] = el} className="scroll-mt-6">
             <SectionRule label="Hands-On" />
@@ -209,65 +224,28 @@ export default function FoundationsRunner({
           </section>
         )}
 
-        {/* Section 4 — MCQ */}
+        {/* 4 — MCQ (multi-question) */}
         {highest >= 4 && (
           <section ref={el => sectionRefs.current[4] = el} className="scroll-mt-6">
-            <SectionRule label="Quick Check" />
-            <div className="mt-4 space-y-3">
-              <p className="text-sm font-semibold text-zinc-100 leading-relaxed">{mcq.question}</p>
-              <div className="space-y-2">
-                {mcq.options.map((opt, i) => {
-                  const sel   = mcqSelected === i;
-                  const right = mcq.correct === i;
-                  let cls = "text-zinc-400 border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 hover:text-zinc-300";
-                  if (mcqSubmitted) {
-                    if (right) cls = "text-emerald-300 border-emerald-800/50 bg-emerald-950/20";
-                    else if (sel) cls = "text-red-300 border-red-800/50 bg-red-950/20 animate-wrongShake";
-                    else cls = "text-zinc-600 border-zinc-800 bg-zinc-900/30 opacity-50";
-                  } else if (sel) {
-                    cls = "text-violet-300 border-violet-600 bg-violet-950/30";
-                  }
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => { if (!mcqSubmitted) setMcqSelected(i); }}
-                      disabled={mcqSubmitted}
-                      className={`w-full text-left text-sm px-4 py-3 rounded-lg border transition-all ${cls}`}
-                    >
-                      <span className="font-mono text-[11px] mr-2 opacity-60">
-                        {String.fromCharCode(65 + i)}.
-                      </span>
-                      {opt}
-                      {mcqSubmitted && right && <span className="ml-2 text-emerald-400 font-bold">✓</span>}
-                      {mcqSubmitted && sel && !right && <span className="ml-2 text-red-400">✗</span>}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {mcqSubmitted ? (
-                <div className={`rounded-lg px-4 py-3 text-sm leading-relaxed border ${
-                  isCorrect
-                    ? "bg-emerald-950/20 border-emerald-800/40 text-emerald-300"
-                    : "bg-zinc-900/50 border-zinc-800 text-zinc-300"
-                }`}>
-                  <span className="font-bold mr-1">{isCorrect ? "Correct." : "Not quite."}</span>
-                  {mcq.explanation}
-                </div>
-              ) : (
-                <button
-                  onClick={handleMcqSubmit}
-                  disabled={mcqSelected === null}
-                  className="px-5 py-2.5 rounded-lg text-sm font-bold border border-violet-800/50 text-violet-400 hover:border-violet-600 hover:text-violet-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                >
-                  Check answer
-                </button>
-              )}
+            <SectionRule label={`Quick Check${mcqList.length > 1 ? ` · ${mcqList.length} questions` : ""}`} />
+            <div className="mt-4 space-y-8">
+              {mcqList.map((q, qi) => (
+                <QuestionBlock
+                  key={qi}
+                  qi={qi}
+                  total={mcqList.length}
+                  q={q}
+                  selected={answers[qi]}
+                  isSubmitted={submitted[qi]}
+                  onSelect={i => selectAnswer(qi, i)}
+                  onSubmit={() => submitAnswer(qi)}
+                />
+              ))}
             </div>
           </section>
         )}
 
-        {/* Section 5 — Takeaway */}
+        {/* 5 — Takeaway */}
         {highest >= 5 && (
           <section ref={el => sectionRefs.current[5] = el} className="scroll-mt-6">
             <SectionRule label="Takeaway" />
@@ -294,7 +272,71 @@ export default function FoundationsRunner({
   );
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
+// ── QuestionBlock ──────────────────────────────────────────────────────────────
+
+function QuestionBlock({ qi, total, q, selected, isSubmitted, onSelect, onSubmit }) {
+  const isCorrect = selected === q.correct;
+  return (
+    <div className="space-y-3">
+      {total > 1 && (
+        <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+          Question {qi + 1} of {total}
+        </p>
+      )}
+      <p className="text-sm font-semibold text-zinc-100 leading-relaxed">{q.question}</p>
+      <div className="space-y-2">
+        {q.options.map((opt, i) => {
+          const sel   = selected === i;
+          const right = q.correct === i;
+          let cls = "text-zinc-400 border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 hover:text-zinc-300";
+          if (isSubmitted) {
+            if (right) cls = "text-emerald-300 border-emerald-800/50 bg-emerald-950/20";
+            else if (sel) cls = "text-red-300 border-red-800/50 bg-red-950/20 animate-wrongShake";
+            else cls = "text-zinc-600 border-zinc-800 bg-zinc-900/30 opacity-50";
+          } else if (sel) {
+            cls = "text-violet-300 border-violet-600 bg-violet-950/30";
+          }
+          return (
+            <button
+              key={i}
+              onClick={() => onSelect(i)}
+              disabled={isSubmitted}
+              className={`w-full text-left text-sm px-4 py-3 rounded-lg border transition-all ${cls}`}
+            >
+              <span className="font-mono text-[11px] mr-2 opacity-60">
+                {String.fromCharCode(65 + i)}.
+              </span>
+              {opt}
+              {isSubmitted && right && <span className="ml-2 text-emerald-400 font-bold">✓</span>}
+              {isSubmitted && sel && !right && <span className="ml-2 text-red-400">✗</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {isSubmitted ? (
+        <div className={`rounded-lg px-4 py-3 text-sm leading-relaxed border ${
+          isCorrect
+            ? "bg-emerald-950/20 border-emerald-800/40 text-emerald-300"
+            : "bg-zinc-900/50 border-zinc-800 text-zinc-300"
+        }`}>
+          <span className="font-bold mr-1">{isCorrect ? "Correct." : "Not quite."}</span>
+          {q.explanation}
+        </div>
+      ) : (
+        <button
+          onClick={onSubmit}
+          disabled={selected === null}
+          className="px-5 py-2.5 rounded-lg text-sm font-bold border border-violet-800/50 text-violet-400 hover:border-violet-600 hover:text-violet-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        >
+          Check answer
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Shared primitives ──────────────────────────────────────────────────────────
 
 function SectionRule({ label }) {
   return (

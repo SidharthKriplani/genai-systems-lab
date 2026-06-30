@@ -8437,6 +8437,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
         </div>
         <div className="flex-1 overflow-y-auto">
           <FoundationsRunner
+            key={active}
             moduleId={active}
             module={mod}
             runnerData={runnerData}
