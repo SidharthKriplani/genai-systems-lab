@@ -6350,7 +6350,7 @@ const MODULES = [
   },
   // ── Stub modules (skeleton only — content in progress) ──────────────────────
   // Language Models
-  { id: "positional-encoding", label: "Positional Encoding", tag: "LAYER", level: "intermediate", title: "Positional Encoding", subtitle: "How transformers know where tokens are without recurrence.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
+  { id: "positional-encoding", label: "Positional Encoding", tag: "LAYER", level: "intermediate", title: "Positional Encoding", subtitle: "How transformers know where tokens are without recurrence.", fidelity: { tier: "simplified", note: "Sinusoidal encoding + RoPE rotation — illustrative d_model=16." }, component: PositionalEncodingModule },
   { id: "kv-cache", label: "KV Cache", tag: "MEMORY", level: "intermediate", title: "KV Cache: Inference Memory Optimization", subtitle: "Why the transformer doesn't recompute past tokens on every step.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
   // Retrieval
   { id: "reranking", label: "Reranking", tag: "RETRIEVAL", level: "intermediate", title: "Reranking: Cross-Encoder Precision", subtitle: "Why bi-encoder retrieval needs a second pass — and when to skip it.", fidelity: { tier: "stub", note: "Content in progress." }, component: StubModule },
@@ -6426,6 +6426,207 @@ const ARCH_LIMITS = [
   { name: "LSTM",        limit: "Fixes vanishing gradients via gates. Still sequential — parallelism problem unchanged. Better quality, same speed ceiling.", problem: "sequential" },
   { name: "Transformer", limit: "Parallel attention across all tokens simultaneously. Scales to 128K+ contexts. Enables billion-parameter training. The architecture that unlocked GPT-4.", problem: "none" },
 ];
+
+// ── Positional Encoding Module ────────────────────────────────────────────────
+
+function PositionalEncodingModule() {
+  const TOKENS = ["the", "cat", "sat", "on", "the", "mat"];
+  const D_DIMS = 16;
+  const [selectedPos, setSelectedPos] = useState(null);
+  const [mode, setMode] = useState("sinusoidal");
+
+  function getSinEncoding(pos) {
+    return Array.from({ length: D_DIMS }, (_, d) => {
+      const i = Math.floor(d / 2);
+      const angle = pos / Math.pow(10000, (2 * i) / D_DIMS);
+      return d % 2 === 0 ? Math.sin(angle) : Math.cos(angle);
+    });
+  }
+
+  function getRoPEAngle(pos, dim_i) {
+    return pos / Math.pow(10000, (2 * dim_i) / D_DIMS);
+  }
+
+  function valToColor(v) {
+    const norm = (v + 1) / 2;
+    const r = Math.round(20 + norm * 20);
+    const g = Math.round(20 + norm * 160);
+    const b = Math.round(80 + norm * 120);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  const encodings = TOKENS.map((_, pos) => getSinEncoding(pos));
+
+  return (
+    <div className="space-y-5">
+      {/* Mode tabs */}
+      <div className="flex gap-2">
+        {[["sinusoidal", "Sinusoidal (original)"], ["rope", "RoPE (modern)"]].map(([m, label]) => (
+          <button key={m} onClick={() => setMode(m)}
+            className={`px-3 py-1.5 rounded text-xs font-mono uppercase tracking-wide border transition-all ${
+              mode === m
+                ? "border-violet-600 text-violet-300 bg-violet-900/20"
+                : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
+            }`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {mode === "sinusoidal" && (
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Click any token to inspect its position encoding vector.</p>
+
+          {/* Token selector */}
+          <div className="flex gap-2">
+            {TOKENS.map((tok, pos) => (
+              <button key={pos}
+                onClick={() => setSelectedPos(selectedPos === pos ? null : pos)}
+                className={`flex-1 flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
+                  selectedPos === pos
+                    ? "border-violet-500 bg-violet-900/20"
+                    : "border-zinc-700 bg-zinc-900/50 hover:border-zinc-600"
+                }`}>
+                <span className="text-xs text-zinc-300 font-mono">{tok}</span>
+                <span className="text-[9px] text-zinc-600">pos {pos}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Heatmap */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-3">
+              Encoding matrix (token × dimension) — color = sin/cos value
+            </p>
+            <div className="space-y-1">
+              {encodings.map((enc, pos) => (
+                <div key={pos}
+                  className={`flex items-center gap-0.5 rounded transition-all ${
+                    selectedPos === pos ? "ring-1 ring-violet-500 ring-offset-1 ring-offset-zinc-950" : ""
+                  }`}>
+                  <span className="text-[9px] font-mono text-zinc-600 w-10 text-right pr-2 shrink-0">
+                    {TOKENS[pos]}
+                  </span>
+                  {enc.map((v, d) => (
+                    <div key={d}
+                      style={{
+                        width: 16, height: 16, flexShrink: 0, borderRadius: 2,
+                        background: valToColor(v),
+                      }}
+                      title={`pos=${pos} dim=${d}: ${v.toFixed(3)}`}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <div style={{
+                width: 64, height: 6, borderRadius: 2,
+                background: "linear-gradient(to right, rgb(20,20,80), rgb(20,100,140), rgb(40,180,200))"
+              }} />
+              <span className="text-[9px] text-zinc-600 font-mono">−1 → +1</span>
+            </div>
+          </div>
+
+          {/* Dimension breakdown for selected token */}
+          {selectedPos !== null && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">
+                "{TOKENS[selectedPos]}" at position {selectedPos} — first 8 dimensions
+              </p>
+              <div className="grid grid-cols-4 gap-3">
+                {encodings[selectedPos].slice(0, 8).map((v, d) => (
+                  <div key={d} className="text-center">
+                    <div className="text-[9px] font-mono text-zinc-600 mb-0.5">
+                      {d % 2 === 0 ? `sin(i=${Math.floor(d / 2)})` : `cos(i=${Math.floor(d / 2)})`}
+                    </div>
+                    <div className="text-xs font-mono text-zinc-300">{v.toFixed(3)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+            <p className="text-xs text-zinc-300">
+              <span className="font-bold text-amber-400">The extrapolation failure: </span>
+              Every position uses the same formula — no learned parameters. A model trained to 4K tokens
+              encounters position 128K at inference; those sin/cos values correspond to a region of
+              embedding space the weights have never seen. Attention scores at those distances degrade.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {mode === "rope" && (
+        <div className="space-y-4">
+          {/* Rotation angle grid */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-3">
+              RoPE rotation angle θ per (position × dimension pair)
+            </p>
+            <div className="space-y-1.5">
+              {[0, 1, 2, 3, 16, 64, 128].map(pos => (
+                <div key={pos} className="flex items-center gap-2">
+                  <span className="text-[9px] font-mono text-zinc-500 w-14 text-right shrink-0">
+                    pos {pos}
+                  </span>
+                  {[0, 1, 2, 3, 4, 5, 6, 7].map(i => {
+                    const angle = getRoPEAngle(pos, i);
+                    return (
+                      <div key={i}
+                        style={{
+                          width: 22, height: 22, flexShrink: 0, borderRadius: 3,
+                          background: valToColor(Math.sin(angle)),
+                        }}
+                        title={`θ_${i}(pos=${pos}) = ${angle.toFixed(3)} rad`}
+                      />
+                    );
+                  })}
+                  <span className="text-[9px] font-mono text-zinc-600">
+                    θ₀={getRoPEAngle(pos, 0).toFixed(3)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Relative distance invariance proof */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 space-y-3">
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+              Key property: Δθ depends only on distance, not absolute position
+            </p>
+            {[[3, 5], [47, 49], [1000, 1002]].map(([a, b]) => {
+              const delta0 = getRoPEAngle(b, 0) - getRoPEAngle(a, 0);
+              const delta1 = getRoPEAngle(b, 1) - getRoPEAngle(a, 1);
+              return (
+                <div key={`${a}-${b}`} className="flex items-center gap-3 flex-wrap text-xs font-mono">
+                  <span className="text-zinc-400">pos {a} → {b}  (dist=2)</span>
+                  <span className="text-violet-400">Δθ₀={delta0.toFixed(4)}</span>
+                  <span className="text-violet-300">Δθ₁={delta1.toFixed(4)}</span>
+                </div>
+              );
+            })}
+            <p className="text-xs text-zinc-400 mt-1">
+              Same Δθ at positions 3→5 and 1000→1002. The Q·K dot product encodes <em>relative</em> distance —
+              not "where in the sequence" but "how far apart."
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+            <p className="text-xs text-zinc-300">
+              <span className="font-bold text-amber-400">Still fails at 128K: </span>
+              Rotation frequencies are calibrated to the training window. At position 128K in a 4K-trained
+              model, θ values land far outside the trained distribution —  attention scores become
+              unreliable. YaRN/LongRoPE rescale the base frequency so 128K positions map back into
+              the trained rotation range.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SequentialParallelModule({ onNavigate }) {
   const [step, setStep] = useState(0);
