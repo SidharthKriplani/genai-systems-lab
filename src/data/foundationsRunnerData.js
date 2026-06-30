@@ -13,11 +13,12 @@ export const RUNNER_DATA = {
   // ── Language Models track ────────────────────────────────────────────────────
 
   "tokenizer": {
+    depthTier: "light",
+    interviewWeight: "high",
     scenario: "You're debugging a RAG pipeline where long financial documents are being silently truncated. The model keeps missing key clauses near the end of 15-page contracts, producing hallucinated summaries. Your first debugging step is to understand exactly how many tokens your documents consume — and why the number is higher than you expected.",
     explanation: [
-      "Tokenization is how raw text becomes the discrete units a language model actually processes. Modern LLMs use Byte Pair Encoding (BPE): a vocabulary-building algorithm that iteratively merges the most frequent character pairs until a target vocabulary size is reached. The result is a vocabulary of subword units, not whole words — so common words like 'the' might be a single token, while rare words like 'collateralized' split into several.",
-      "The critical production implication is that token count ≠ word count. English prose averages roughly 0.65–0.75 tokens per word. But code, numbers, and technical content tokenize much less efficiently: a single UUID might be 3–5 tokens; a 10-digit number often tokenizes to 4+ tokens; JSON structure characters (braces, quotes, colons) each consume tokens. A 'four-thousand token context window' may hold far fewer meaningful units of information than you expect.",
-      "Different content types have very different token densities. A 1,000-word English article might be ~750 tokens; the same information as a JSON object might be 1,200+ tokens. This is why measuring tokenization for your specific content — not just word count — is essential when engineering context windows, chunking strategies, and prompt templates.",
+      "A neural network cannot process characters directly — it needs numbers. The naive fix is an integer ID per character, but character-level encoding has two problems: sequences become extremely long (every letter is its own token), and the model has to burn capacity learning morphology — spelling patterns, prefixes, suffixes — instead of meaning. The next naive fix is an integer ID per word — one token per dictionary entry — but English has hundreds of thousands of word forms, 'tokenizing' and 'tokenized' would be unrelated entries, and any word outside the vocabulary is simply unknown (OOV). Vocabulary size explodes and generalization collapses on novel word forms.",
+      "Byte Pair Encoding (BPE) resolves both problems by building a vocabulary from subword units. It starts with individual characters and iteratively merges the most frequent adjacent pair — 'e','r' → 'er'; then 'er' with whatever character follows it most often — until a target vocabulary size is reached. Common words like 'the' compress to a single token; rare words like 'collateralized' split into 'collateral' + 'ized' or similar subunits — both in-vocabulary, both meaningful. The direct consequence is that token count ≠ word count. Standard English averages 0.65–0.75 tokens per word, but financial documents, code, and JSON structure all tokenize far less efficiently: a single UUID can be 4–6 tokens, a 10-digit number can be 5+ tokens. This is exactly why the 15-page contracts in this scenario consume more context than expected — you measured word count, not tokens.",
     ],
     mcq: {
       question: "A 500-word English document typically tokenizes to approximately how many tokens?",
@@ -34,28 +35,32 @@ export const RUNNER_DATA = {
   },
 
   "attention": {
+    depthTier: "deep",
+    interviewWeight: "high",
     scenario: "Your team is debugging why a model produces poor extraction quality for key details near the middle of 10K-token documents. A researcher suggests the model may be exhibiting 'attention sink' — where attention mass concentrates on the first and last few tokens. You need to understand the attention mechanism well enough to evaluate whether this diagnosis is plausible and what to do about it.",
     explanation: [
-      "Attention is the mechanism that lets every token in a sequence 'look at' every other token to determine relevance. Each token is projected into three vectors: a query Q (what am I looking for?), a key K (what do I offer?), and a value V (what I'll contribute if selected) — each is a list of d_k numbers learned during training. For each position, the model computes a score by comparing its query against the key from every other position: `score = Q · K^T / sqrt(d_k)` — the dot product of query and key, divided by the square root of the key dimension (d_k) to prevent very large values that would push softmax (a function that converts a list of numbers into a probability distribution summing to 1 — high values become high probabilities) into near-zero gradient regions.",
-      "Those scaled scores are passed through softmax to produce attention weights — a probability distribution over all positions. The model then computes a weighted sum of value vectors using these weights: positions the query found relevant contribute more to the output, positions it found irrelevant contribute less. This attended representation — one output vector per input position — is what gets passed to the next layer.",
-      "Self-attention runs in parallel for every position simultaneously. This is what makes Transformers fundamentally more parallelizable than RNNs, which process tokens sequentially. The parallelism is why Transformers scaled: you can throw hardware at the problem. The limitation is that full self-attention scales quadratically with sequence length (O(n²) compute and memory). A 4,096-token sequence has ~16 million attention pairs per layer.",
-      "'Attention sink' is a real phenomenon: models trained on causal language modeling often concentrate disproportionate attention mass on the first few tokens (typically token position 0), regardless of their semantic content. This is because the first token is always visible to all subsequent positions, making it a reliable 'sink' for attention mass that doesn't belong to any specific semantic target. Long-document quality issues in the middle of the context are often a combination of this effect and the model's training data distribution (shorter documents being overrepresented).",
+      "Text has long-range dependencies: 'The surgeon who treated the patient agreed with the recommendation.' To connect 'agreed' to its subject 'surgeon' across nine intervening tokens, a model needs to retrieve relevant content from an arbitrary distance. Recurrent Neural Networks (RNNs) handle this by threading a fixed-size hidden state through positions sequentially — but early-position information gets compressed alongside every subsequent position. By token 11, the signal from position 1 is mixed with positions 2–10 and degrades. LSTMs improved this with selective gating, but didn't solve it — even with gating, backpropagation still has to travel through thousands of time steps to reach a long-range dependency, and the gradient degrades across that distance regardless of the gating mechanism. The failure mode is structural: any mechanism that requires gradient flow through a sequential chain loses signal at scale.",
+      "Attention abandons sequential compression entirely. Every token simultaneously asks: 'what from the rest of the sequence do I need?' Each token produces three vectors from learned projections: a query Q (what am I looking for?), a key K (what do I expose to others?), and a value V (what I contribute if selected). For token i, the model computes a relevance score against every other position j by taking the dot product of Qi and Kj. Raw dot products have variance that grows with d_k (the key dimension) — at large d_k, scores spread into extreme values, softmax saturates on the largest score, and the remaining tokens receive vanishingly small gradients. Training stalls. Dividing by √d_k keeps scores in a stable range. This scaling is not elegance — it's a practical fix for a gradient problem that appears specifically at larger model dimensions.",
+      "The scaled scores pass through softmax to produce a probability distribution over all positions. The model takes a weighted sum of all value vectors V using these probabilities as weights: positions with high attention weight contribute heavily to the output vector, irrelevant positions contribute near zero. A token representing 'agreed' will load content from 'surgeon' because their query-key dot product is high; the filler words between them contribute near nothing. The output — one new vector per position — routes information from wherever each position chose to attend, with no sequential compression in the path.",
+      "The cost is quadratic: n queries × n keys = n² attention pairs per layer. A 4K-token sequence has ~16 million pairs per layer; a 16K-token sequence has 256 million. Memory scales the same way — the full n×n attention matrix must be materialized. This is why long-context serving is expensive and why 100K+ context windows required algorithmic changes (Flash Attention), not just bigger hardware. The 'attention sink' diagnosis in this scenario follows directly from these mechanics: token position 0 is always visible to all subsequent positions during training, making it a reliable target for attention mass that doesn't belong to any semantic target — concentration there rather than on mid-document content produces the extraction failures you're seeing.",
     ],
     mcq: {
       question: "Why does full self-attention scale quadratically with sequence length?",
       options: [
-        "Each token must compute attention scores against every other token, producing n² attention pairs for n tokens",
         "The embedding dimension doubles at each attention layer as sequence length increases",
+        "Each token must compute attention scores against every other token, producing n² attention pairs for n tokens",
         "Tokenization time increases quadratically with longer input sequences",
         "Each attention layer must store a separate positional encoding matrix for every sequence position, and storing these matrices for n positions requires O(n²) memory",
       ],
-      correct: 0,
-      explanation: "Self-attention computes a query for each of n tokens against keys from all n tokens: n × n = n² attention pairs per layer. For a 32K-token sequence, that's over 1 billion attention pairs. Option B is false — embedding dimension is a fixed architectural hyperparameter; it doesn't change with sequence length. Option C is wrong — tokenization runs once before attention and is linear in input length; self-attention, not tokenization, is the quadratic step. Option D represents a reasonable-sounding but incorrect explanation: positional encoding does not grow with sequence length in a per-layer matrix sense. RoPE and other position schemes add a fixed-size encoding to each token's Q and K vectors — the position encoding cost is O(n × d), not O(n²). The quadratic cost comes from the attention score matrix itself (each of n queries dot-producted against all n keys), not from positional bookkeeping.",
+      correct: 1,
+      explanation: "Self-attention computes a query for each of n tokens against keys from all n tokens: n × n = n² attention pairs per layer. For a 32K-token sequence, that's over 1 billion attention pairs. Option B is the correct answer. Option A is false — embedding dimension is a fixed architectural hyperparameter; it doesn't change with sequence length. Option C is wrong — tokenization runs once before attention and is linear in input length; self-attention, not tokenization, is the quadratic step. Option D represents a reasonable-sounding but incorrect explanation: positional encoding does not grow with sequence length in a per-layer matrix sense. RoPE and other position schemes add a fixed-size encoding to each token's Q and K vectors — the position encoding cost is O(n × d), not O(n²). The quadratic cost comes from the attention score matrix itself (each of n queries dot-producted against all n keys), not from positional bookkeeping.",
     },
     takeaway: "Attention enables context-aware representations by letting every token attend to every other — but quadratic cost is why long-context models are expensive, and why attention sinks cause mid-document quality degradation that isn't about model intelligence.",
   },
 
   "attention-3d": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "You're presenting multi-head attention to a product team reviewing model interpretability reports. The report references 'attention head 4 in layer 12 attending strongly to entity coreference.' Your team needs an intuition for what this means — without the math — to decide whether the finding is significant enough to act on.",
     explanation: [
       "Multi-head attention runs multiple independent attention computations in parallel on the same input, each with different learned linear projections of the queries, keys, and values. These projections are what the 'head' means: each head projects the input into a different subspace of the embedding dimension, then runs self-attention there. The individual head outputs are concatenated and projected back to the full dimension.",
@@ -65,40 +70,44 @@ export const RUNNER_DATA = {
     mcq: {
       question: "What is the primary reason for using multiple attention heads rather than one large attention head of the same total dimension?",
       options: [
-        "Multiple heads can simultaneously capture different types of relationships (syntactic, semantic, positional) in parallel subspaces",
         "Multiple smaller heads are computationally cheaper than one large head of equivalent total dimension",
         "Using h heads of dimension d/h each provides h times more parameters than one head of dimension d, giving the model greater capacity",
+        "Multiple heads can simultaneously capture different types of relationships (syntactic, semantic, positional) in parallel subspaces",
         "Multiple heads prevent gradient vanishing in the attention layers of very deep networks",
       ],
-      correct: 0,
-      explanation: "The total computation is roughly the same regardless of head count for a fixed total dimension. The benefit is representational: each head learns different projection matrices, specializing in different relationship types. One large head can only learn one projection — the multi-head structure allows the model to simultaneously capture multiple types of long-range dependencies. Option B is false — splitting into multiple heads does not reduce computational cost; the total parameter count and FLOPs are approximately equal for a fixed total embedding dimension, so 'computationally cheaper' is not the reason. Option C is the subtler misconception: h heads of dimension d/h each does NOT provide h times more parameters than one head of dimension d. The total projection parameters for h heads are h × (d × d/h) = d², exactly the same as one head of dimension d. More heads means different projections, not more parameters — the representational advantage comes from diversity of subspaces, not from increased parameter count. Option D is false — gradient vanishing in deep networks is addressed by residual connections (skip connections), not by multiple attention heads; head count is about representational diversity, not gradient flow.",
+      correct: 2,
+      explanation: "The total computation is roughly the same regardless of head count for a fixed total dimension. The benefit is representational: each head learns different projection matrices, specializing in different relationship types. One large head can only learn one projection — the multi-head structure allows the model to simultaneously capture multiple types of long-range dependencies. Option C is the correct answer. Option A is false — splitting into multiple heads does not reduce computational cost; the total parameter count and FLOPs are approximately equal for a fixed total embedding dimension, so 'computationally cheaper' is not the reason. Option B is the subtler misconception: h heads of dimension d/h each does NOT provide h times more parameters than one head of dimension d. The total projection parameters for h heads are h × (d × d/h) = d², exactly the same as one head of dimension d. More heads means different projections, not more parameters — the representational advantage comes from diversity of subspaces, not from increased parameter count. Option D is false — gradient vanishing in deep networks is addressed by residual connections (skip connections), not by multiple attention heads; head count is about representational diversity, not gradient flow.",
     },
     takeaway: "Multi-head attention's value isn't computational — it's representational. Each head specializes in a different type of relationship, which is why Transformer models generalize across tasks and why individual heads appear interpretable in attribution studies.",
   },
 
   "transformer": {
+    depthTier: "deep",
+    interviewWeight: "high",
     scenario: "An engineer on your team proposes 'just add more layers' to improve a model's reasoning quality on complex multi-step questions. You need to probe whether they understand the actual tradeoffs of depth vs. width, and articulate what makes a Transformer block trainable at scale — because their proposal has no compute budget attached.",
     explanation: [
-      "The Transformer block repeats a two-part structure: (1) multi-head self-attention → add & layer-norm, and (2) feed-forward network (FFN) → add & layer-norm. The FFN is typically 4× the hidden dimension and applies two linear transformations with a nonlinearity between them — this is where most of the model's 'memory' lives in terms of parameter count. Depth (more layers) increases the model's capacity to compose representations; width (larger hidden dimension) increases expressiveness at each layer.",
-      "Residual connections (the 'add' in add & layer-norm) are non-negotiable for training deep networks. Without them, gradients in the backward pass would vanish before reaching early layers, making deep networks untrainable. With residual connections, the gradient highway runs directly from the loss to early layers — each block learns a residual correction to the identity, not the full transformation. This insight, from ResNets (Residual Networks — the 2015 architecture that proved skip connections enable training of very deep models), is what made very deep Transformer training feasible.",
-      "In production, model size is measured in parameters (weights), which directly determines inference cost and memory footprint. Depth adds inference latency sequentially (layers can't be parallelized — each layer depends on the previous). Width can be partially parallelized across the hidden dimension. This is why scaling laws (Chinchilla — a 2022 study that identified the optimal parameter-to-training-token ratio for a given compute budget) emerged: the optimal depth-width-data tradeoff isn't 'more layers always wins' — it's a specific ratio given a compute budget.",
-      "The Chinchilla compute formula is `C_optimal ≈ 6 × N × D` where N = model parameters and D = training tokens; the 6× factor accounts for forward and backward passes across all parameters and tokens. The practical consequence: a 70B model needs roughly 1.4 trillion tokens to be compute-optimally trained — proposing 'just add more layers' without specifying a training token budget and total FLOP allocation is not a complete proposal.",
+      "Attention gives every token selective access to every other token — but each attention output is still a linear combination of value vectors. Stacking attention layers compounds this: composing linear functions collapses to a single linear transformation regardless of depth. The model also has no notion of order: attention is a set operation that produces the same output whether token A precedes or follows token B. Two structural gaps remain after attention alone — no nonlinearity per position, no positional awareness — and neither can be fixed by adding more attention layers.",
+      "The Feed-Forward Network (FFN) resolves the nonlinearity gap. After each attention sublayer, an FFN applies a learned nonlinear transformation independently to each position: two linear layers with a ReLU or GeLU activation between them, at 4× the hidden dimension. This is where most of the model's parametric knowledge concentrates — factual associations in trained models are predominantly stored in FFN weights. Position is handled separately via positional encoding added to each token's representation before the block stack. Modern models use Rotary Positional Embedding (RoPE), which encodes relative position directly in the attention computation and generalizes to sequences longer than those seen during training.",
+      "The third structural requirement is depth, and depth creates a training problem. Backpropagation multiplies gradients through every layer from output to input. Without shortcut paths, gradients at early layers approach zero before the optimizer can use them — the network is too deep to train. Residual connections fix this: output = input + block(input). Each block now learns a correction to the identity path rather than a complete transformation, creating a direct gradient highway from the loss to every layer. Layer normalization, applied after each residual addition, handles a second problem residuals alone don't solve: as blocks stack, activation magnitudes drift — later layers receive inputs at wildly different scales, destabilizing training. Layer norm re-centers and rescales activations after each sublayer, keeping the signal stable regardless of depth. The 'add & layer-norm' in every Transformer block — attention sublayer, then FFN sublayer, each with residual + layer norm — is both gradient highway and activation stabilizer together.",
+      "The final choice is causal masking. Encoders use bidirectional attention — every token attends to every other — producing the richest possible per-position representation. This makes encoders ideal for classification, retrieval, and embedding, where you need to understand text, not generate it. Decoders apply a causal mask that prevents each token from attending to future positions, because at generation time those tokens don't exist yet. This mask forces the model to predict each next token from left context only, which is exactly what autoregressive generation requires. In production: embedding models for RAG use encoder attention; generation models use decoder attention. Using a generation model's internal representations for retrieval produces poor results because the causal mask distorts the vector geometry — an asymmetry the 'add more layers' proposal ignores entirely.",
     ],
     mcq: {
       question: "What is the primary purpose of residual connections (skip connections) in a Transformer?",
       options: [
-        "They create a gradient highway through the network, preventing gradient vanishing and enabling training of many layers",
         "They compress the hidden dimension at each layer to reduce overall memory usage",
         "They prevent different attention heads from attending to the same token positions",
         "They allow the model to bypass layers that haven't converged yet during training, adaptively skipping unstable blocks until their weights stabilize",
+        "They create a gradient highway through the network, preventing gradient vanishing and enabling training of many layers",
       ],
-      correct: 0,
-      explanation: "Residual connections add the input of each block to its output — each block learns a residual correction, not a complete transformation. This creates a direct gradient path from the loss to every layer, preventing the vanishing gradient problem that makes very deep networks untrainable without them. Option B is false — residual connections add the input back, not compress the dimension; a dimension reduction would be a bottleneck, not a skip connection. Option C is false — residual connections operate on representations, not on which positions attention heads can see. Option D describes a plausible-sounding mechanism — 'adaptive layer skipping' — that doesn't exist in standard Transformers. Residual connections do allow a block to output near-zero correction (the identity path still carries signal), but they do not selectively bypass or skip blocks based on training convergence state. Every block always contributes to the forward pass; the skip path just ensures the gradient can reach early layers directly.",
+      correct: 3,
+      explanation: "Residual connections add the input of each block to its output — each block learns a residual correction, not a complete transformation. This creates a direct gradient path from the loss to every layer, preventing the vanishing gradient problem that makes very deep networks untrainable without them. Option D is the correct answer. Option A is false — residual connections add the input back, not compress the dimension; a dimension reduction would be a bottleneck, not a skip connection. Option B is false — residual connections operate on representations, not on which positions attention heads can see. Option C describes a plausible-sounding mechanism — 'adaptive layer skipping' — that doesn't exist in standard Transformers. Residual connections do allow a block to output near-zero correction (the identity path still carries signal), but they do not selectively bypass or skip blocks based on training convergence state. Every block always contributes to the forward pass; the skip path just ensures the gradient can reach early layers directly.",
     },
     takeaway: "Depth isn't free: each Transformer layer adds sequential latency, memory, and training compute. Residual connections make depth trainable. In production, model depth directly determines cost-per-token — 'add more layers' needs a compute budget attached to be a real proposal.",
   },
 
   "seq-parallel": {
+    depthTier: "deep",
+    interviewWeight: "medium",
     scenario: "Your team is fine-tuning a model on 32K-token legal documents. Training crashes with OOM on your 8×A100 cluster even with gradient checkpointing enabled. A training engineer proposes sequence parallelism. You need to understand what it actually does — and whether it solves your specific problem or just adds infrastructure complexity.",
     explanation: [
       "Sequence parallelism splits the sequence dimension of the input across multiple devices, allowing the model to process longer contexts than any single device's memory allows. Where tensor parallelism (splitting the model's weight matrices across devices so each device holds a shard of the weights) splits the model's weight matrices across devices, sequence parallelism splits the token sequence itself. Each device holds a contiguous slice of the token sequence and processes the attention computation for its slice.",
@@ -120,6 +129,8 @@ export const RUNNER_DATA = {
   },
 
   "flashattn": {
+    depthTier: "deep",
+    interviewWeight: "medium",
     scenario: "A cost proposal on your desk says: switch the inference stack from standard attention to Flash Attention 2 to cut memory usage by 5–10× for 16K context windows, with zero accuracy loss. The number sounds too good — you want to understand exactly why this is possible without changing the math, before approving the migration.",
     explanation: [
       "Flash Attention is an IO-aware implementation of exact self-attention that achieves dramatic memory and speed improvements by restructuring how the computation reads and writes GPU memory. Standard attention materializes the full N×N attention matrix (query×key scores) in HBM (High Bandwidth Memory — the large but slow GPU memory where the full attention matrix would normally live; typically 40–80GB on a modern A100/H100) before softmaxing and multiplying by values. For a 16K-token sequence in float16 (16-bit floating point — half the memory of standard 32-bit floats, used in most modern inference), that's a 16K×16K matrix ≈ 512MB per layer — just for the attention scores. Standard attention writes this full N×N attention matrix to HBM; for a 4K-token sequence that's 16 million floats written and read back once per layer. FlashAttention instead operates in SRAM (Static RAM — tiny but fast on-chip memory, typically 20MB vs HBM's 80GB, but roughly 10× faster to access), never materialising the full attention matrix: it computes attention in tiles small enough to fit in SRAM, reducing HBM reads/writes by roughly 5–10× at long sequence lengths.",
@@ -129,18 +140,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "Why does Flash Attention reduce memory usage without changing the mathematical output of attention?",
       options: [
-        "It computes attention in tiles using fast on-chip SRAM, never materializing the full N×N attention matrix in HBM — using the online softmax trick to maintain correctness",
         "It approximates attention by dropping low-weight attention scores below a learned threshold",
+        "It computes attention in tiles using fast on-chip SRAM, never materializing the full N×N attention matrix in HBM — using the online softmax trick to maintain correctness",
         "It quantizes the attention weights to 4-bit precision during the forward pass and dequantizes before the output",
         "It reuses the attention weight matrix from the previous layer instead of recomputing it from scratch",
       ],
-      correct: 0,
-      explanation: "Flash Attention is not an approximation. The online softmax algorithm computes the exact softmax-normalized output by iterating over tiles and maintaining running row-max and row-sum statistics — producing bit-identical results to standard attention. The memory saving comes from never writing the full N×N matrix to HBM. Option B is wrong — Flash Attention does not drop or threshold any attention scores; it computes the exact same weighted sum as standard attention, just in a memory-efficient order using tiled SRAM computation. Option C is wrong — Flash Attention does not quantize attention weights; it operates in the same numeric precision as standard attention, and the algorithm's correctness guarantee requires full-precision arithmetic throughout. Option D is wrong — Flash Attention recomputes attention from scratch in each tile using the stored Q/K/V matrices; it does not reuse attention weights from a previous layer.",
+      correct: 1,
+      explanation: "Flash Attention is not an approximation. The online softmax algorithm computes the exact softmax-normalized output by iterating over tiles and maintaining running row-max and row-sum statistics — producing bit-identical results to standard attention. The memory saving comes from never writing the full N×N matrix to HBM. Option B is the correct answer. Option A is wrong — Flash Attention does not drop or threshold any attention scores; it computes the exact same weighted sum as standard attention, just in a memory-efficient order using tiled SRAM computation. Option C is wrong — Flash Attention does not quantize attention weights; it operates in the same numeric precision as standard attention, and the algorithm's correctness guarantee requires full-precision arithmetic throughout. Option D is wrong — Flash Attention recomputes attention from scratch in each tile using the stored Q/K/V matrices; it does not reuse attention weights from a previous layer.",
     },
     takeaway: "Flash Attention is not an approximation — it's the same math computed more efficiently. The entire 4× speedup and 10× memory reduction comes from restructuring memory access patterns (tiled SRAM computation vs. full HBM materialization). Understanding this is what separates 'just use FA2' from knowing why it's safe.",
   },
 
   "sampling": {
+    depthTier: "light",
+    interviewWeight: "high",
     scenario: "A product designer asks why the chatbot sometimes gives very different answers to the same question. You explain temperature. They follow up: 'So setting temperature to 0 always gives the best, most accurate answer, right?' You need to correct this misconception precisely — because they're about to set it as the default for all users.",
     explanation: [
       "Sampling strategy controls how a model converts its output probability distribution over the vocabulary into actual tokens. After the forward pass, the model outputs logits (raw unnormalized scores — one per vocabulary token, before any softmax probability transformation). Temperature scaling divides these logits before the softmax: low temperature (→0) sharpens the distribution, making the highest-probability token dominate; high temperature (→1+) flattens it, making lower-probability tokens more likely to be selected.",
@@ -150,18 +163,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A developer sets temperature=0 to 'get the most accurate answers.' What is the key limitation of this approach?",
       options: [
-        "Greedy decoding maximizes per-token probability but can miss globally better answers that require lower-probability intermediate tokens — particularly for multi-step reasoning",
         "Temperature=0 is significantly more computationally expensive than higher temperature sampling",
         "Temperature=0 causes the model to repeat the same token indefinitely in a degenerate loop",
+        "Greedy decoding maximizes per-token probability but can miss globally better answers that require lower-probability intermediate tokens — particularly for multi-step reasoning",
         "Temperature=0 only works correctly when combined with top-k sampling; used alone it produces incoherent output",
       ],
-      correct: 0,
-      explanation: "Temperature=0 (greedy decoding) is deterministic and maximizes per-step likelihood — but 'most likely next token at every step' ≠ 'highest quality complete response.' Chain-of-thought reasoning often requires committing to a lower-probability intermediate token that unlocks a better final answer — greedy decoding precludes this. Option B is wrong — inference cost is determined by model size and sequence length, not temperature; temperature=0 has identical compute cost to any other setting. Option C describes a real but rare edge case (repetition degeneration when the model is uncertain), not the primary limitation. Option D is false — temperature=0 is valid on its own; top-k is a separate, independently combinable parameter.",
+      correct: 2,
+      explanation: "Temperature=0 (greedy decoding) is deterministic and maximizes per-step likelihood — but 'most likely next token at every step' ≠ 'highest quality complete response.' Chain-of-thought reasoning often requires committing to a lower-probability intermediate token that unlocks a better final answer — greedy decoding precludes this. Option C is the correct answer. Option A is wrong — inference cost is determined by model size and sequence length, not temperature; temperature=0 has identical compute cost to any other setting. Option B describes a real but rare edge case (repetition degeneration when the model is uncertain), not the primary limitation. Option D is false — temperature=0 is valid on its own; top-k is a separate, independently combinable parameter.",
     },
     takeaway: "Temperature=0 is not 'most accurate' — it's 'most deterministic.' For consistency-critical tasks (structured extraction, SQL, code), low temperature is right. For reasoning, generation, and anything requiring exploration, slightly elevated temperature (0.2–0.7) often outperforms pure greedy. Document your temperature rationale — undocumented temperature changes silently break production behavior.",
   },
 
   "nextoken": {
+    depthTier: "light",
+    interviewWeight: "high",
     scenario: "A PM asks why your fine-tuned model 'forgot' general knowledge after domain adaptation on a 5,000-document legal corpus. The model now answers legal questions well but makes basic factual errors it didn't make before fine-tuning. You need to explain this at a mechanism level — and what you'd do differently next time.",
     explanation: [
       "Language models are trained with a single objective: predict the next token given all preceding tokens. This is called the causal language modeling objective (CLM). Every capability the model has — factual recall, reasoning, coding, instruction-following — emerged from this single signal applied across trillions of tokens of text. Pre-training builds broad world knowledge and language understanding because the next token at every position in every document encodes information about the world.",
@@ -171,18 +186,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "Why does full fine-tuning on a small domain corpus cause the model to 'forget' pre-trained general knowledge?",
       options: [
-        "Gradient updates for domain-specific token prediction overwrite the weight values that encoded general knowledge — the optimizer has no mechanism to preserve prior learning",
         "The model runs out of context window space to 'store' general knowledge once domain content is added",
         "Domain fine-tuning selectively disables the attention heads that handled general-knowledge queries",
         "The learning rate during fine-tuning is automatically set higher than during pre-training, erasing prior gradients",
+        "Gradient updates for domain-specific token prediction overwrite the weight values that encoded general knowledge — the optimizer has no mechanism to preserve prior learning",
       ],
-      correct: 0,
-      explanation: "The optimizer minimizes loss on the fine-tuning corpus and updates weights accordingly, regardless of what those weights encoded during pre-training. There's no loss term for 'preserve general knowledge' — that information simply gets overwritten if the same weights are useful for domain prediction. Option B is wrong — the model has no 'context window' for storing knowledge; knowledge lives in the weights. Option C is false — fine-tuning doesn't selectively disable attention heads; it updates weight matrices across the full model. Option D is wrong — fine-tuning typically uses a LOWER learning rate than pre-training, not a higher one; even so, lower LR reduces but does not eliminate catastrophic forgetting.",
+      correct: 3,
+      explanation: "The optimizer minimizes loss on the fine-tuning corpus and updates weights accordingly, regardless of what those weights encoded during pre-training. There's no loss term for 'preserve general knowledge' — that information simply gets overwritten if the same weights are useful for domain prediction. Option D is the correct answer. Option A is wrong — the model has no 'context window' for storing knowledge; knowledge lives in the weights. Option B is false — fine-tuning doesn't selectively disable attention heads; it updates weight matrices across the full model. Option C is wrong — fine-tuning typically uses a LOWER learning rate than pre-training, not a higher one; even so, lower LR reduces but does not eliminate catastrophic forgetting.",
     },
     takeaway: "Next-token prediction is both the source of LLM capability and the root of fine-tuning fragility. Full fine-tuning overwrites pre-trained knowledge. The production answer is almost always LoRA or another PEFT method — fine-tune the delta, not the base model.",
   },
 
   "tempgame": {
+    depthTier: "light",
+    interviewWeight: "medium",
     scenario: "Your team is calibrating a customer-facing summarization model for a healthcare company. The accuracy team insists on temperature=0 for clinical consistency; the UX team says responses feel robotic and repetitive to patients. You need to resolve this disagreement with a principled decision — and explain why there's no single universally correct temperature setting.",
     explanation: [
       "Temperature tuning is a calibration problem, not an optimization problem with a single correct answer. The appropriate temperature depends entirely on what the task needs to optimize for. Consistency-critical tasks — where the same question should always produce the same answer, and where accuracy matters more than variety — benefit from low temperature (0.0–0.3). This includes structured output extraction, SQL generation, classification tasks, and any factual lookup. Creative, generative, and open-ended tasks — where diversity, naturalness, and avoiding repetition matter — benefit from higher temperature (0.7–1.0).",
@@ -203,6 +220,8 @@ export const RUNNER_DATA = {
   },
 
   "training-signal": {
+    depthTier: "deep",
+    interviewWeight: "high",
     scenario: "A customer reports that your model gives highly confident wrong answers on niche financial regulatory questions — specific edge cases that appear in maybe two or three documents in any corpus. A colleague says 'the model doesn't know what it doesn't know.' You need to explain the mechanism of hallucination precisely enough to design a mitigation strategy — not just describe the symptom.",
     explanation: [
       "Language models are trained to predict the next token — not to assess whether they know the answer. The training signal is entirely derived from statistical patterns in text: which tokens typically follow which preceding sequences. When the model encounters a question about a niche regulatory detail that appeared rarely in training data, it doesn't output 'I don't know' because that phrase appeared after such questions far less often than confident-sounding answers did in the training corpus.",
@@ -212,13 +231,13 @@ export const RUNNER_DATA = {
     mcq: {
       question: "Why do LLMs produce confident-sounding answers even when they lack reliable knowledge about a niche topic?",
       options: [
-        "The pre-training objective rewards accurate next-token prediction — and confident-sounding text was the dominant pattern in training data, so confident output was reinforced throughout training",
         "LLMs are explicitly programmed to avoid expressing uncertainty to prevent user frustration",
+        "The pre-training objective rewards accurate next-token prediction — and confident-sounding text was the dominant pattern in training data, so confident output was reinforced throughout training",
         "Uncertainty expression requires more compute than the model allocates for low-frequency topics",
         "The softmax output layer always forces the probability distribution to appear highly peaked, producing apparent confidence regardless of actual knowledge",
       ],
-      correct: 0,
-      explanation: "Next-token prediction has no 'know vs. don't know' signal — it just optimizes for token-level prediction accuracy on the training corpus. Confident, fluent text was overrepresented in pre-training data; uncertainty hedges were rare. Option B is false — models aren't explicitly programmed to avoid uncertainty; the behavior emerges statistically from training data patterns. Option C is false — compute allocation doesn't distinguish between frequent and infrequent topics; every token prediction gets the same forward pass. Option D is false — the softmax output creates a peaked distribution that reflects the model's learned statistical prior, not a hardcoded confidence flag.",
+      correct: 1,
+      explanation: "Next-token prediction has no 'know vs. don't know' signal — it just optimizes for token-level prediction accuracy on the training corpus. Confident, fluent text was overrepresented in pre-training data; uncertainty hedges were rare. Option B is the correct answer. Option A is false — models aren't explicitly programmed to avoid uncertainty; the behavior emerges statistically from training data patterns. Option C is false — compute allocation doesn't distinguish between frequent and infrequent topics; every token prediction gets the same forward pass. Option D is false — the softmax output creates a peaked distribution that reflects the model's learned statistical prior, not a hardcoded confidence flag.",
     },
     takeaway: "Hallucination is not a failure mode to patch — it's the natural output of a next-token predictor trained on human text. Confident prose is what the internet contains; the model learned to produce it. Calibrated uncertainty requires explicit alignment training (RLHF, retrieval grounding). Until then: treat model confidence as a signal, not a guarantee — especially on low-frequency knowledge.",
   },
@@ -226,6 +245,8 @@ export const RUNNER_DATA = {
   // ── Language Models — high-priority stubs ────────────────────────────────────
 
   "positional-encoding": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "Your team is evaluating whether to fine-tune a base model for processing very long legal documents — up to 128K tokens. The base model was pre-trained with a 4K token context window. A colleague says 'just use RoPE, it extrapolates automatically.' You need to understand how positional encoding works well enough to evaluate whether that claim is true.",
     explanation: [
       "Language models process tokens as an unordered set — without positional information, the model has no way to distinguish 'the cat sat on the mat' from 'the mat sat on the cat.' Positional encoding injects position information into each token's embedding so the model can reason about sequence order. Early Transformers used fixed sinusoidal encodings added to token embeddings. Modern models use learned or relative positional schemes built directly into the attention mechanism.",
@@ -235,18 +256,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A model pre-trained with 4K token RoPE context is tested at 32K tokens without any context extension technique. What most likely happens?",
       options: [
-        "Attention quality degrades — positions beyond the training range produce rotation angles the model has never encountered, causing attention scores to become unreliable at long distances",
         "The model performs identically — RoPE is designed to extrapolate to any sequence length automatically",
         "The model crashes with an out-of-bounds error — RoPE cannot process position indices above the training maximum",
+        "Attention quality degrades — positions beyond the training range produce rotation angles the model has never encountered, causing attention scores to become unreliable at long distances",
         "Performance improves slightly — longer context gives the model more information to attend to",
       ],
-      correct: 0,
-      explanation: "RoPE rotation frequencies are calibrated to the training context length. Beyond that range, the rotation angles correspond to values never seen during training, and the model's attention patterns become unreliable. Option B is false and is the exact misconception this module is designed to correct — RoPE does not extrapolate automatically. Option C is false — no hard error occurs; the model silently degrades instead of crashing. Option D is also false — beyond the training context, extra tokens produce unreliable attention patterns that add noise, not useful signal.",
+      correct: 2,
+      explanation: "RoPE rotation frequencies are calibrated to the training context length. Beyond that range, the rotation angles correspond to values never seen during training, and the model's attention patterns become unreliable. Option C is the correct answer. Option A is false and is the exact misconception this module is designed to correct — RoPE does not extrapolate automatically. Option B is false — no hard error occurs; the model silently degrades instead of crashing. Option D is also false — beyond the training context, extra tokens produce unreliable attention patterns that add noise, not useful signal.",
     },
     takeaway: "RoPE encodes relative position via rotation angles in attention — it doesn't add position to the embedding, it bakes it into Q-K dot products. But it doesn't extrapolate beyond training context length without explicit rescaling. Always apply a context extension technique and evaluate perplexity at target length before deploying a model beyond its training window.",
   },
 
   "kv-cache": {
+    depthTier: "deep",
+    interviewWeight: "high",
     scenario: "Your inference team reports that adding one more user to a shared inference server reduces throughput for all existing users, not just the new one. Memory usage per request is also growing proportionally with conversation length. An engineer says the KV cache is the culprit. You need to understand the mechanism well enough to confirm the diagnosis and propose a fix.",
     explanation: [
       "During autoregressive generation, each new token is produced by running the full attention mechanism over all previous tokens. Without caching, generating token N requires recomputing keys and values for all N-1 previous tokens at every layer — redoing identical computations from prior steps. The KV cache stores the key and value tensors from previous attention computations so they can be reused when generating subsequent tokens. Token N only needs to compute one new Q, K, V (for itself) and attend over the cached K, V tensors from all prior positions.",
@@ -256,13 +279,13 @@ export const RUNNER_DATA = {
     mcq: {
       question: "Why does KV cache memory grow proportionally with conversation length rather than staying constant?",
       options: [
-        "The cache stores key and value tensors for every token in the conversation — each new token adds another entry to the cache across all layers and heads, making total memory linear in sequence length",
         "KV cache is recomputed from scratch at each generation step, so longer inputs require more compute memory temporarily",
         "The vocabulary embedding table grows larger as more unique tokens appear in the conversation",
         "KV cache stores the full attention weight matrix, which is O(n²) in sequence length",
+        "The cache stores key and value tensors for every token in the conversation — each new token adds another entry to the cache across all layers and heads, making total memory linear in sequence length",
       ],
-      correct: 0,
-      explanation: "The KV cache persists the K and V tensors for every position processed so far — it's a running record, not a fixed-size buffer. Each new token adds one more entry across every layer and every head. Option B is wrong — that describes the state WITHOUT a KV cache; the cache exists precisely to avoid recomputation. Option C is wrong — the vocabulary embedding table is a fixed model weight matrix, not a per-conversation structure. Option D is wrong — the cache stores only K and V tensors (not the attention weight matrix), so memory is O(n), not O(n²). That linear growth is what causes the per-user memory expansion that compresses throughput for concurrent users.",
+      correct: 3,
+      explanation: "The KV cache persists the K and V tensors for every position processed so far — it's a running record, not a fixed-size buffer. Each new token adds one more entry across every layer and every head. Option D is the correct answer. Option A is wrong — that describes the state WITHOUT a KV cache; the cache exists precisely to avoid recomputation. Option B is wrong — the vocabulary embedding table is a fixed model weight matrix, not a per-conversation structure. Option C is wrong — the cache stores only K and V tensors (not the attention weight matrix), so memory is O(n), not O(n²). That linear growth is what causes the per-user memory expansion that compresses throughput for concurrent users.",
     },
     takeaway: "KV cache trades recomputation for memory: each cached token costs ~2.6MB across layers in a 70B model. It's usually the binding memory constraint on concurrent request capacity. Understanding KV cache size is prerequisite to any inference capacity planning — without it, memory estimates are off by an order of magnitude.",
   },
@@ -270,11 +293,13 @@ export const RUNNER_DATA = {
   // ── Retrieval track ─────────────────────────────────────────────────────────
 
   "embeddings": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A medical Q&A RAG pipeline built on OpenAI ada-002 embeddings is returning irrelevant results for clinical queries. A search for 'myocardial infarction treatment protocols' surfaces general cardiology overviews instead of the specific ICU protocols that exist in the index. The same protocol is correctly returned when you query with the exact section heading. You suspect domain mismatch between the embedding model and the medical corpus.",
     explanation: [
-      "Embeddings are dense vector representations of text. An encoder model (typically a transformer trained with contrastive objectives) maps text into a high-dimensional space where semantically similar passages land near each other. The training signal comes from positive pairs — texts that should be similar — and negative pairs — texts that should not. The result: cosine similarity between two vectors reflects how semantically related the texts are, not whether they share exact keywords.",
-      "The production-critical implication is that embedding quality is dataset-dependent. OpenAI ada-002 was trained on general web text and performs well on everyday prose. It has never seen 'myocardial infarction' paired with 'heart attack' in a medical-context training signal — so its representation of those two phrases may be less aligned than expected. Clinical, legal, and code-heavy corpora all exhibit this: embedding models trained on general data miss domain-specific synonym relationships.",
-      "Every chunk in the index and every query must use the same embedding model at the same version. Upgrading the model requires re-embedding the entire index — if you upgrade the query encoder without re-embedding, you're comparing vectors from different spaces, and similarity scores become meaningless. For domain-specific retrieval, evaluate embedding quality on a representative sample of real queries and documents before selecting a model — not just benchmarks measured on general-domain text.",
+      "BPE gave the model integer IDs for subwords — but an integer carries no semantic signal. Token 4,731 is 'myocardial'; token 4,732 is 'infarction'. Their arithmetic distance is meaningless. The next step is one-hot encoding: a vector of zeros with a 1 at position 4,731. This eliminates the false ordinal relationship but creates a new problem: every token is equidistant from every other. 'Heart attack' and 'myocardial infarction' are as far apart in one-hot space as 'heart attack' and 'quarterly earnings' — the model has no signal about which concepts are related.",
+      "The solution comes from a linguistic observation: words that appear in similar contexts have similar meanings. 'Myocardial infarction' co-occurs with 'treatment protocols', 'ICU', 'troponin'. 'Heart attack' co-occurs with the same contexts. A model trained to predict surrounding context is forced to place both phrases in similar regions of the vector space. Dense vectors (128–1536 floating-point numbers per token) replace sparse one-hot representations, and geometry now carries semantic information: cosine similarity between vectors measures meaning overlap, not token ID proximity. This is the distributional hypothesis turned into a training objective.",
+      "ada-002 is a contextual encoder — unlike static models (where 'bank' gets the same vector in 'river bank' and 'bank account'), ada-002 produces a different vector for the same token depending on its surrounding context. Polysemy is solved. But contextual and static models share a deeper constraint: the geometry they encode reflects their training distribution. 'Myocardial infarction' and 'heart attack' are synonymous in clinical use, but ada-002 was trained on general web text where they may not co-occur frequently enough in shared contexts to land close together in the vector space. The semantic bridge the retriever needs doesn't exist in the vectors. Clinical search fails not because embeddings are broken — they work exactly as designed — but because the domain distribution of the encoder doesn't match the domain distribution of the query corpus.",
     ],
     mcq: {
       question: "What does cosine similarity between two embedding vectors measure?",
@@ -291,6 +316,8 @@ export const RUNNER_DATA = {
   },
 
   "chunking": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A customer support RAG system is failing on multi-part questions. A user asks 'How do I integrate the API and what happens if authentication fails?' The answer to part one is in a 256-token fixed chunk; the answer to part two is in the immediately adjacent chunk. The retriever returns only one, and the response is half complete. Changing the chunk size has not solved the problem.",
     explanation: [
       "Chunking determines the unit of text that gets embedded and retrieved. Fixed-size chunks (e.g., 256 tokens) are the most common starting point because they're simple and predictable, but they break semantic units at arbitrary boundaries. A three-sentence explanation gets split into two chunks that each require the other to make sense. The retriever returns the highest-similarity chunk — and the necessary context is in an adjacent chunk that wasn't retrieved.",
@@ -300,18 +327,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A retriever finds the correct chunk for the first half of a user's question but misses the second half, which is in the adjacent chunk. The most direct architectural fix is:",
       options: [
-        "Parent-child chunking: retrieve at the small-chunk level for precision, then return the full parent section to the generation model for complete context",
         "Reduce chunk size to 64 tokens so more chunks fit in the context window simultaneously",
+        "Parent-child chunking: retrieve at the small-chunk level for precision, then return the full parent section to the generation model for complete context",
         "Increase temperature so the model infers the missing half of the answer from context",
         "Pre-process queries to extract only the first question and discard subsequent parts",
       ],
-      correct: 0,
-      explanation: "Parent-child chunking separates the retrieval precision problem (small chunks find the right location) from the context completeness problem (the generation model needs more than a snippet). Option B (reduce to 64 tokens) makes completeness worse — smaller chunks mean each retrieved chunk has even less context. Option C (increase temperature) affects text generation style, not what content is retrieved; temperature has no bearing on which chunks the retriever returns. Option D (discard subsequent questions) treats the symptom by removing the requirement instead of solving the actual retrieval gap.",
+      correct: 1,
+      explanation: "Parent-child chunking separates the retrieval precision problem (small chunks find the right location) from the context completeness problem (the generation model needs more than a snippet). Option B is the correct answer. Option A (reduce to 64 tokens) makes completeness worse — smaller chunks mean each retrieved chunk has even less context. Option C (increase temperature) affects text generation style, not what content is retrieved; temperature has no bearing on which chunks the retriever returns. Option D (discard subsequent questions) treats the symptom by removing the requirement instead of solving the actual retrieval gap.",
     },
     takeaway: "Chunk boundaries are the most underestimated RAG failure point. Your chunking strategy should match the natural information unit of your content — FAQ pairs, documentation sections, or code functions — not an arbitrary token window. When overlap isn't enough, parent-child chunking separates retrieval precision from generation context completeness.",
   },
 
   "rag-pipeline": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A legal research tool indexes thousands of case documents. Users report two distinct problems: (1) relevant cases exist in the index but aren't returned for conceptual queries like 'cases where force majeure was applied'; (2) the model cites specific cases that don't exist in the database at all. You need to attribute each failure type to the correct pipeline stage before you can fix either.",
     explanation: [
       "A RAG pipeline has three stages that can fail independently. Retrieval determines which chunks come back. Augmentation determines how those chunks are structured and presented in the model's context. Generation determines what the model produces given that context. These stages have different failure signatures: retrieval failures mean the right information never entered the context window; generation failures mean the model produced incorrect output despite having the right information.",
@@ -321,18 +350,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A legal RAG tool retrieves relevant documents but the response cites a case that doesn't exist in the index. Which pipeline stage failed?",
       options: [
-        "Generation — the model completed a citation pattern from pre-training memory rather than grounding it in the retrieved context",
         "Retrieval — the vector index returned documents from outside the database boundary",
         "Chunking — the case identifier was split across chunk boundaries and corrupted",
+        "Generation — the model completed a citation pattern from pre-training memory rather than grounding it in the retrieved context",
         "Embedding — the model mapped case names to incorrect vector positions during indexing",
       ],
-      correct: 0,
-      explanation: "Hallucinated citations are a generation failure — the retriever worked correctly but the generation model completed citation patterns from pre-training memory rather than grounding them in retrieved content. Option B (vector index returning outside-boundary documents) describes a retrieval failure producing wrong documents, not a fabricated citation. Option C (case identifier split across chunks) would corrupt or truncate an existing citation, not generate a non-existent one. Option D (embedding maps names incorrectly during indexing) would cause retrieval failures returning wrong cases — a different symptom from a plausible-looking but invented citation.",
+      correct: 2,
+      explanation: "Hallucinated citations are a generation failure — the retriever worked correctly but the generation model completed citation patterns from pre-training memory rather than grounding them in retrieved content. Option C is the correct answer. Option A (vector index returning outside-boundary documents) describes a retrieval failure producing wrong documents, not a fabricated citation. Option B (case identifier split across chunks) would corrupt or truncate an existing citation, not generate a non-existent one. Option D (embedding maps names incorrectly during indexing) would cause retrieval failures returning wrong cases — a different symptom from a plausible-looking but invented citation.",
     },
     takeaway: "RAG failures are stage-specific. Hallucinated citations = generation failure (model completing patterns, not grounding in retrieved content). Wrong or missing retrievals = retrieval failure (embedding or index quality). Mixing these into a single end-to-end score hides which stage to fix. Eval retrieval recall@k and answer faithfulness separately.",
   },
 
   "context": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A document summarization pipeline was extended from 8K to 32K tokens to handle full annual reports. In testing, the 32K model performs worse on multi-section synthesis questions than the 8K model did on shorter documents — even though all relevant information is technically in context. A researcher attributes this to the 'lost in the middle' effect. You need to understand the mechanism to design around it.",
     explanation: [
       "Context window length and context quality are not the same thing. LLMs are trained on text where key information typically appears near the beginning (journalism, executive summaries) or near the end (conclusions, results). Attention patterns trained on this distribution produce uneven coverage across long contexts: information placed in the middle consistently receives lower attention weight than content at either end. This is documented empirically — extraction accuracy for information placed at 20–80% of context depth is measurably worse than for information at the first or last 20%.",
@@ -342,18 +373,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "An annual report has a key figure at the document's middle. Compared to placing it at the start, retrieval accuracy for this figure in a 32K-context window is:",
       options: [
-        "Lower — the 'lost in the middle' effect means models consistently perform worse at extracting information placed in the middle of long contexts, regardless of whether the information is technically present",
         "Higher — longer context windows allocate more attention capacity to middle positions",
         "Identical — Transformer attention is uniform across all token positions",
         "Variable — it depends only on the top-p sampling parameter used at generation",
+        "Lower — the 'lost in the middle' effect means models consistently perform worse at extracting information placed in the middle of long contexts, regardless of whether the information is technically present",
       ],
-      correct: 0,
-      explanation: "The 'lost in the middle' effect is empirically documented: extraction accuracy drops for information placed in the middle 60% of long contexts. Option B is false — longer context windows extend the middle 'at risk' region; they don't redistribute attention capacity to compensate for positional bias. Option C is wrong — Transformer attention explicitly produces uneven weights via softmax; true uniform attention would require equal-weight averaging, which defeats the purpose of the attention mechanism. Option D is wrong — sampling temperature affects text generation style, not what the model extracts from its context window during reading.",
+      correct: 3,
+      explanation: "The 'lost in the middle' effect is empirically documented: extraction accuracy drops for information placed in the middle 60% of long contexts. Option D is the correct answer. Option A is false — longer context windows extend the middle 'at risk' region; they don't redistribute attention capacity to compensate for positional bias. Option B is wrong — Transformer attention explicitly produces uneven weights via softmax; true uniform attention would require equal-weight averaging, which defeats the purpose of the attention mechanism. Option C is wrong — sampling temperature affects text generation style, not what the model extracts from its context window during reading.",
     },
     takeaway: "Long context ≠ good context. Position within the context window materially affects extraction quality. For long-document synthesis, use map-reduce instead of stuffing everything into one context, place your most critical content at the beginning or end, and always test extraction accuracy specifically at middle-document positions.",
   },
 
   "reranking": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "Your RAG pipeline retrieves the top-10 chunks by embedding similarity. Precision at rank 1 is 52% — the most relevant chunk is first just over half the time. A colleague proposes adding a reranker. Before approving the latency increase, you want to understand exactly what a reranker does that the embedding retriever can't.",
     explanation: [
       "Retrieval with embedding similarity is a fast, approximate relevance signal. The embedding model compresses an entire document chunk into a single dense vector — semantic meaning is preserved, but fine-grained relevance to a specific query is lost in the compression. Two chunks with the same embedding similarity score can be very different in actual relevance: one answers the query directly, the other mentions the same topic in passing. The first-stage retriever is optimized for recall (get the right chunk in the top-10), not precision (make the right chunk rank first).",
@@ -377,6 +410,8 @@ export const RUNNER_DATA = {
   // ── AI Agents track ──────────────────────────────────────────────────────────
 
   "agent": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A customer service agent is built to handle refund requests end-to-end: look up orders, check the return policy, and process refunds up to $50. In testing, it approves a $50 refund for an order that's clearly outside the return window — and the reasoning trace says the order 'appears to be within the eligible period.' The tool output clearly shows an expired return date. You need to understand the agent loop to find exactly where it failed.",
     explanation: [
       "An LLM agent is a loop: the model receives a task plus a set of tool descriptions, generates a reasoning step and an action (tool call or response), executes the tool, receives the result, and repeats until it can produce a final answer. This is the ReAct pattern — Reasoning and Acting interleaved. Each iteration adds the tool result to the model's context window, and the next reasoning step is conditioned on everything accumulated so far.",
@@ -386,18 +421,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "An agent correctly retrieves order data but then approves a refund it shouldn't. The tool output shows an expired return date, but the reasoning trace says 'order appears eligible.' What failed?",
       options: [
-        "The reasoning step between tool calls — the model received correct structured data but generated an incorrect interpretation of it in its chain-of-thought, then acted on the incorrect interpretation",
         "The embedding model — vector similarity returned the wrong order record from the database",
+        "The reasoning step between tool calls — the model received correct structured data but generated an incorrect interpretation of it in its chain-of-thought, then acted on the incorrect interpretation",
         "Temperature=0 caused the agent to always select its most likely action (approval) regardless of tool output",
         "System prompts are excluded from the agent's context window during tool call steps",
       ],
-      correct: 0,
-      explanation: "The model's reasoning trace is a token prediction, not a reliable summary of what the tool returned. The model can produce incorrect intermediate reasoning even when correct data is present in its context — especially when reasoning about unstructured policy text. This is why structured, typed tool outputs are preferable: boolean eligibility fields are harder to misinterpret than natural language policy documents. Option B is wrong — the scenario explicitly states the agent 'correctly retrieves order data,' so the embedding model and database retrieval are not at fault; the failure happens after correct data is in context. Option C is wrong — temperature=0 makes the model deterministic but does not override what the reasoning trace says; greedy decoding still produces the most likely token conditioned on the context, which can be an incorrect interpretation. Option D is false — system prompts are part of the agent's context window throughout all tool call steps; they are not excluded.",
+      correct: 1,
+      explanation: "The model's reasoning trace is a token prediction, not a reliable summary of what the tool returned. The model can produce incorrect intermediate reasoning even when correct data is present in its context — especially when reasoning about unstructured policy text. This is why structured, typed tool outputs are preferable: boolean eligibility fields are harder to misinterpret than natural language policy documents. Option B is the correct answer. Option A is wrong — the scenario explicitly states the agent 'correctly retrieves order data,' so the embedding model and database retrieval are not at fault; the failure happens after correct data is in context. Option C is wrong — temperature=0 makes the model deterministic but does not override what the reasoning trace says; greedy decoding still produces the most likely token conditioned on the context, which can be an incorrect interpretation. Option D is false — system prompts are part of the agent's context window throughout all tool call steps; they are not excluded.",
     },
     takeaway: "Agent loops fail differently than single-turn models. The reasoning trace is not a reliable report of tool output — it's a token prediction that can contradict the tool data in the same context. Design tool outputs to be typed and structured, not free-text, to minimize the surface area for intermediate reasoning errors.",
   },
 
   "agent-tools": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A support agent has 15 tool definitions: CRM lookup, order status, email send, refund processor, Slack notify, calendar create, document search, Jira ticket, user profile, billing history, support history, knowledge base search, policy lookup, contract lookup, SLA check. In production the agent frequently calls the wrong tool or invokes tools in the wrong order — attempting to send an email before verifying the user exists.",
     explanation: [
       "Tool definitions are part of the model's input — they consume tokens and are the only information the agent uses to decide which tool applies at each step. When 15 tools are available, the model must reason about which one to call from name and description alone. Ambiguous or overlapping descriptions cause confusion: 'document search,' 'knowledge base search,' and 'policy lookup' all sound similar to a model that hasn't been trained on your specific taxonomy.",
@@ -407,18 +444,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "An agent with 15 tool definitions frequently calls the wrong tool for similar tasks. The most direct fix is:",
       options: [
-        "Reduce the tool set to only the tools needed for the current task, and rewrite tool descriptions to be precise and maximally distinct from each other",
         "Increase the model's context window so all 15 tool schemas fit without potential truncation",
         "Move tool selection into the system prompt as a decision tree, specifying which tool to call for each user intent category explicitly",
+        "Reduce the tool set to only the tools needed for the current task, and rewrite tool descriptions to be precise and maximally distinct from each other",
         "Set temperature=0 so the agent always picks its highest-confidence tool without sampling variance",
       ],
-      correct: 0,
-      explanation: "Tool selection errors come from ambiguous descriptions and irrelevant options, not context window limits or temperature. Reducing the tool set removes noise, and precise descriptions give the model unambiguous selection criteria. Option B is wrong — at 15 tools, the total schema tokens are unlikely to cause truncation in a modern context window; the problem is semantic confusion between similar-sounding tools, not context overflow. Option C sounds like a reasonable engineering fix — intent classification trees are a real pattern — but a static decision tree in the system prompt just moves the ambiguity problem: you still have to enumerate every possible user intent and map it correctly, the tree becomes a maintenance burden as intents grow, and the model must interpret free-form user messages against the tree's categories. Fixing the tool descriptions directly is more scalable because the model's semantic understanding does the classification rather than pattern-matching against a hardcoded list. Option D is wrong — temperature=0 selects the highest-probability token, but if the tool descriptions are ambiguous, the highest-probability token is still the wrong tool; determinism does not fix underlying tool description quality.",
+      correct: 2,
+      explanation: "Tool selection errors come from ambiguous descriptions and irrelevant options, not context window limits or temperature. Reducing the tool set removes noise, and precise descriptions give the model unambiguous selection criteria. Option C is the correct answer. Option A is wrong — at 15 tools, the total schema tokens are unlikely to cause truncation in a modern context window; the problem is semantic confusion between similar-sounding tools, not context overflow. Option B sounds like a reasonable engineering fix — intent classification trees are a real pattern — but a static decision tree in the system prompt just moves the ambiguity problem: you still have to enumerate every possible user intent and map it correctly, the tree becomes a maintenance burden as intents grow, and the model must interpret free-form user messages against the tree's categories. Fixing the tool descriptions directly is more scalable because the model's semantic understanding does the classification rather than pattern-matching against a hardcoded list. Option D is wrong — temperature=0 selects the highest-probability token, but if the tool descriptions are ambiguous, the highest-probability token is still the wrong tool; determinism does not fix underlying tool description quality.",
     },
     takeaway: "Tool design is as important as prompt design. Ambiguous names, overlapping descriptions, and irrelevant tools produce confused agents. Give the agent the minimum set of tools needed for the current task, name them with verbs and precise objects, and use structural orchestration (not model reasoning) to enforce prerequisite ordering for irreversible actions.",
   },
 
   "multiagent": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "A compliance review pipeline needs to: extract key terms from 100-page contracts (Step 1), check each term against a regulatory database (Step 2), and produce a risk summary (Step 3). The team is deciding between a single LLM with all tools vs. a multi-agent system. Step 2 can run in parallel for each extracted term. Step 3's report is missing compliance flags that Step 2 identified.",
     explanation: [
       "Multi-agent systems decompose complex tasks across specialized agents, each handling one step of a pipeline with different requirements. The compliance case has a natural decomposition: Step 1 needs a long-context model that handles 100-page inputs; Step 2 is a fast, cheap classification call that can run in parallel for each extracted term; Step 3 needs a reasoning model that synthesizes across all results. A single model handling all three uses the most expensive model at every step and processes all steps sequentially.",
@@ -428,18 +467,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A 3-agent compliance pipeline's Step 3 (risk report) omits flags raised by Step 2 (regulatory check). The most likely root cause is:",
       options: [
-        "Step 2 returned findings as unstructured text summaries that Step 3 partially missed — structured schemas with explicit fields for each flag would prevent this information loss at handoff",
         "Step 2 and Step 3 are using different model providers whose output formats are incompatible",
         "Step 3 ran before Step 2 completed due to incorrect async orchestration",
         "Multi-agent systems don't support output passing between agents using different context window sizes",
+        "Step 2 returned findings as unstructured text summaries that Step 3 partially missed — structured schemas with explicit fields for each flag would prevent this information loss at handoff",
       ],
-      correct: 0,
-      explanation: "Multi-agent handoff failures are almost always information loss at the boundary between agents. When natural language summaries are passed between agents, nuanced findings get dropped in summarization. A structured schema with explicit boolean fields (`requires_review: true`, `regulation_id: 'GDPR-Art-17'`) is unambiguous and complete — there's no risk of the aggregation model missing a flag that was clearly marked in the upstream output. Option B is wrong — model provider incompatibility is a real integration concern but not the typical cause of missing flags; the failure mode described is information loss in unstructured text handoffs, which occurs regardless of provider. Option C is wrong — the scenario describes Step 3 producing a report that omits flags Step 2 raised, implying Step 2 completed before Step 3 ran; an async ordering bug would cause Step 3 to receive no Step 2 output at all, not a partial one. Option D is false — multi-agent frameworks do support output passing between agents with different context window sizes; context window size mismatch is not a real architectural constraint on inter-agent communication.",
+      correct: 3,
+      explanation: "Multi-agent handoff failures are almost always information loss at the boundary between agents. When natural language summaries are passed between agents, nuanced findings get dropped in summarization. A structured schema with explicit boolean fields (`requires_review: true`, `regulation_id: 'GDPR-Art-17'`) is unambiguous and complete — there's no risk of the aggregation model missing a flag that was clearly marked in the upstream output. Option D is the correct answer. Option A is wrong — model provider incompatibility is a real integration concern but not the typical cause of missing flags; the failure mode described is information loss in unstructured text handoffs, which occurs regardless of provider. Option B is wrong — the scenario describes Step 3 producing a report that omits flags Step 2 raised, implying Step 2 completed before Step 3 ran; an async ordering bug would cause Step 3 to receive no Step 2 output at all, not a partial one. Option C is false — multi-agent frameworks do support output passing between agents with different context window sizes; context window size mismatch is not a real architectural constraint on inter-agent communication.",
     },
     takeaway: "Multi-agent systems scale via specialization and parallelism, but context doesn't flow automatically between agents. Every inter-agent handoff requires an explicit, structured output schema — natural language summaries lose information. Design inter-agent contracts (typed schemas with required fields) as carefully as you design tool interfaces.",
   },
 
   "guardrails": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "An HR chatbot deployed for employee benefits questions is being used to draft termination letters and advise on specific disciplinary cases. The system prompt says 'only answer HR policy questions.' Legal flags it as a liability. You need to implement guardrails without breaking legitimate HR information queries. The system prompt restriction is clearly not working.",
     explanation: [
       "Guardrails are constraints applied to agent inputs or outputs to prevent the system from producing out-of-scope, harmful, or policy-violating content. There are two placement options: input guardrails classify or sanitize requests before they reach the main LLM; output guardrails check model responses before returning them to the user. A system prompt instruction is neither — it's a soft constraint that asks the model to regulate itself, which is the least reliable form of restriction.",
@@ -461,6 +502,8 @@ export const RUNNER_DATA = {
   },
 
   "agent-tracing": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "A refund agent is producing incorrect refund amounts in roughly 1 in 200 production requests. You can reproduce the failure in roughly 1 in 10 deliberate tests once you understand the pattern — but you don't know the pattern yet. Your logs contain only the input query and the final output. You have no visibility into which tool calls were made, what they returned, or what intermediate reasoning the agent produced.",
     explanation: [
       "Agent tracing captures the complete execution record of every agent run: each tool call (name, parameters passed, raw output returned, latency), each LLM inference step (model, temperature, token counts, full context sent, full output generated), and the intermediate reasoning steps. Without traces, debugging a multi-step agent is guesswork: you know the wrong input-output pair but have no visibility into which of 8 intermediate steps diverged. Finding 1-in-200 failures from input-output logs alone is infeasible.",
@@ -470,13 +513,13 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A refund agent incorrectly processes 1 in 200 requests. With only input + final output logged, what makes the failure hard to debug?",
       options: [
-        "Without traces of intermediate tool calls and reasoning steps, there is no way to determine which step produced the wrong value — reproducing the failure requires blind manual testing across all plausible failure points",
         "1-in-200 failure rates are too rare to reproduce in a test environment under any conditions",
+        "Without traces of intermediate tool calls and reasoning steps, there is no way to determine which step produced the wrong value — reproducing the failure requires blind manual testing across all plausible failure points",
         "Input-output logs are sufficient — the failure cause is always visible in the output token distribution",
         "Adding traces would require replacing the agent framework, which is a larger project than fixing the bug",
       ],
-      correct: 0,
-      explanation: "Multi-step agent failures are not diagnosable from input-output pairs alone. The failure could originate in any of 8+ intermediate steps. Without traces, every debugging attempt is a guess about which step to examine. With a complete trace, you have the exact tool parameters, raw outputs, and reasoning at each step — the failure source is visible directly rather than inferred from the final wrong answer. Option B is wrong — a 1-in-200 failure rate is absolutely reproducible with deliberate test design once you understand the triggering pattern; the problem is not rarity but lack of visibility into which step diverges. Option C is wrong — the output token distribution tells you what text the model generated but not which intermediate tool call returned a wrong value; the failure source is upstream of the final output and invisible from it. Option D is wrong — adding traces typically requires adding OpenTelemetry-compatible instrumentation to the existing agent framework (usually a few hours of work), not a full framework replacement; the cost of instrumentation is always lower than the cost of undiagnosable production failures.",
+      correct: 1,
+      explanation: "Multi-step agent failures are not diagnosable from input-output pairs alone. The failure could originate in any of 8+ intermediate steps. Without traces, every debugging attempt is a guess about which step to examine. With a complete trace, you have the exact tool parameters, raw outputs, and reasoning at each step — the failure source is visible directly rather than inferred from the final wrong answer. Option B is the correct answer. Option A is wrong — a 1-in-200 failure rate is absolutely reproducible with deliberate test design once you understand the triggering pattern; the problem is not rarity but lack of visibility into which step diverges. Option C is wrong — the output token distribution tells you what text the model generated but not which intermediate tool call returned a wrong value; the failure source is upstream of the final output and invisible from it. Option D is wrong — adding traces typically requires adding OpenTelemetry-compatible instrumentation to the existing agent framework (usually a few hours of work), not a full framework replacement; the cost of instrumentation is always lower than the cost of undiagnosable production failures.",
     },
     takeaway: "An agent you can't trace is an agent you can't debug. Invest in tracing before a production incident — capturing every tool call, every LLM context, and every reasoning step. The fixed cost of instrumentation is always less than the variable cost of debugging a multi-step failure from input-output logs alone.",
   },
@@ -484,6 +527,8 @@ export const RUNNER_DATA = {
   // ── Evaluation track ─────────────────────────────────────────────────────────
 
   "eval-loop": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "Your team shipped a new RAG retrieval model and says evals are passing. The evals turn out to be 12 questions written last year, graded by the same LLM that generates answers, with no comparison to a baseline. When you push back, the engineer says the results are still useful. You need to explain specifically what these evals cannot tell you — and what a minimum viable eval loop requires.",
     explanation: [
       "An eval loop is the feedback cycle between system changes and quality measurement. For it to be useful, it needs four properties: a fixed evaluation dataset that doesn't change when the system changes; an automated scorer that produces quantitative metrics (not qualitative opinions); a baseline to compare against (the previous version or a known reference); and a pass/fail threshold that triggers human review when crossed. An eval missing any of these can confirm that the system generates output — but cannot tell you whether it is improving or degrading.",
@@ -493,18 +538,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A team uses GPT-4 to both generate and evaluate answers. What is the primary validity problem with this setup?",
       options: [
-        "Same-family models share stylistic preferences — the judge is systematically biased toward outputs that match its own generation style, inflating quality scores for GPT-4 outputs vs. what independent human raters would assign",
         "GPT-4 cannot produce numerical scores, making quantitative comparison impossible",
         "Running inference twice (generate + evaluate) is prohibitively expensive for production eval pipelines",
+        "Same-family models share stylistic preferences — the judge is systematically biased toward outputs that match its own generation style, inflating quality scores for GPT-4 outputs vs. what independent human raters would assign",
         "LLM judges can only evaluate factual accuracy, not relevance or completeness",
       ],
-      correct: 0,
-      explanation: "Same-family bias is documented: models evaluate outputs similar to their own generation more favorably than independent human raters do. This inflates scores for the exact model being evaluated and makes the eval unreliable for comparing model versions. Independent judges (different model family or human raters calibrated against a rubric) are necessary for meaningful quality measurement. Option B is wrong — GPT-4 absolutely produces numerical scores and that is the standard use-case for LLM-as-judge; inability to score is not the issue. Option C is wrong — running two inference calls (generate then evaluate) does cost more than one, but for most teams this is not prohibitively expensive; the validity problem, not the cost, is why same-model judging is problematic. Option D is false — LLM judges can be prompted to evaluate relevance, completeness, coherence, and other dimensions beyond factual accuracy; restricting the assessment to factual accuracy is a prompt design choice, not an architectural limitation.",
+      correct: 2,
+      explanation: "Same-family bias is documented: models evaluate outputs similar to their own generation more favorably than independent human raters do. This inflates scores for the exact model being evaluated and makes the eval unreliable for comparing model versions. Independent judges (different model family or human raters calibrated against a rubric) are necessary for meaningful quality measurement. Option C is the correct answer. Option A is wrong — GPT-4 absolutely produces numerical scores and that is the standard use-case for LLM-as-judge; inability to score is not the issue. Option B is wrong — running two inference calls (generate then evaluate) does cost more than one, but for most teams this is not prohibitively expensive; the validity problem, not the cost, is why same-model judging is problematic. Option D is false — LLM judges can be prompted to evaluate relevance, completeness, coherence, and other dimensions beyond factual accuracy; restricting the assessment to factual accuracy is a prompt design choice, not an architectural limitation.",
     },
     takeaway: "An eval loop is only as good as its independence, stability, and comparison baseline. Same-model judge = biased score. Fixed dataset + version control + explicit baseline = minimum viable eval loop. Every model change should have an answer to: 'compared to what, and by how much?'",
   },
 
   "debug": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A medical literature RAG pipeline produces answers that miss crucial detail from correctly retrieved documents. The retrieved chunks are right — the relevant paragraphs are clearly present — but the model's answers are incomplete or generic. The team has spent two weeks changing prompts without systematic progress. You need to structure a debugging approach.",
     explanation: [
       "Systematic RAG debugging starts by isolating which stage contains the failure. Three stages, three tests: (1) Retrieval — run retrieval recall@k: what percentage of the time does the relevant chunk appear in the top-3 or top-5 results? If this is low, fix retrieval before touching the prompt. (2) Augmentation — log the exact prompt sent to the LLM, including all retrieved content, every time. Verify the relevant chunk is actually in the context window and not truncated. (3) Generation — run an oracle test: manually construct a prompt with the confirmed correct chunk and ask the same question. If the model answers correctly with the perfect chunk, the failure is in context construction (wrong chunk selected, truncation, ordering). If the oracle prompt also fails, the failure is in how the model uses context.",
@@ -514,18 +561,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A RAG pipeline retrieves the correct medical document but still produces incomplete answers. The most diagnostic next step is:",
       options: [
-        "Oracle test: manually construct a prompt with the confirmed correct chunk and ask the same question — if the model answers correctly, the failure is in context construction; if it fails, the failure is in generation",
         "Switch embedding models — incomplete answers always indicate a retrieval quality problem",
         "Increase temperature to make the model explore more of the retrieved content",
         "Index additional documents — the missing detail may exist in documents not yet in the corpus",
+        "Oracle test: manually construct a prompt with the confirmed correct chunk and ask the same question — if the model answers correctly, the failure is in context construction; if it fails, the failure is in generation",
       ],
-      correct: 0,
-      explanation: "The oracle test separates retrieval failures from generation failures with a single experiment. If the model answers correctly with a manually provided perfect chunk, the problem is in what chunks are actually reaching the model (construction, truncation, ordering). If it still fails with the perfect chunk, the problem is in how the model uses context when it's present. This distinction determines the entire repair strategy. Option B is wrong — the scenario explicitly states that retrieved chunks are correct and relevant, so switching embedding models addresses a retrieval problem that doesn't exist here; changing retrieval cannot fix a failure that happens after correct retrieval. Option C is wrong — temperature affects text generation style and diversity, not which information the model extracts from its context; increasing temperature would make the output more varied but not more complete, and could introduce new hallucinations. Option D is wrong — the scenario says the correctly retrieved documents contain the relevant detail that's being missed; adding more documents to the index does not fix a failure in how the model uses the context it already has.",
+      correct: 3,
+      explanation: "The oracle test separates retrieval failures from generation failures with a single experiment. If the model answers correctly with a manually provided perfect chunk, the problem is in what chunks are actually reaching the model (construction, truncation, ordering). If it still fails with the perfect chunk, the problem is in how the model uses context when it's present. This distinction determines the entire repair strategy. Option D is the correct answer. Option A is wrong — the scenario explicitly states that retrieved chunks are correct and relevant, so switching embedding models addresses a retrieval problem that doesn't exist here; changing retrieval cannot fix a failure that happens after correct retrieval. Option B is wrong — temperature affects text generation style and diversity, not which information the model extracts from its context; increasing temperature would make the output more varied but not more complete, and could introduce new hallucinations. Option C is wrong — the scenario says the correctly retrieved documents contain the relevant detail that's being missed; adding more documents to the index does not fix a failure in how the model uses the context it already has.",
     },
     takeaway: "Debug RAG by stage isolation, not parameter tuning. The oracle prompt test (inject the perfect context manually) is the single most efficient diagnostic in RAG debugging — it separates a retrieval problem from a generation problem in one experiment. Change one variable at a time; log every test; stop when you can point to the specific cause.",
   },
 
   "llm-as-judge": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "Evaluating a new answer quality model takes 3 days of human annotation per version. A researcher proposes switching to GPT-4 as the judge, which would increase throughput 100×. Before approving, you want to understand the specific failure modes of LLM-as-judge — when it's reliable enough to replace human annotation and when it isn't.",
     explanation: [
       "LLM-as-judge uses a capable model to evaluate another model's outputs against a rubric or reference. It correlates well with human judgments for well-defined, rubric-aligned tasks: factual accuracy given a specified context, code correctness against a test suite, structured output format compliance. The judge's reliability degrades for tasks requiring domain expertise the judge model lacks, for subjective dimensions where human preference is the actual target, and for evaluating outputs from models within the same family as the judge.",
@@ -547,6 +596,8 @@ export const RUNNER_DATA = {
   },
 
   "eval-design": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "You're the first ML engineer at a startup building a contract analysis product. There are no evals. The CEO asks 'is it good enough to ship?' before you've defined what 'good enough' means. You have two weeks and no labeled data. You need to design an eval suite that produces a defensible ship/no-ship answer.",
     explanation: [
       "Eval design starts with two lists: what the system must do, and what it must never do. For contract analysis: must-do might be 'extract all defined terms with their definitions,' 'identify risk clauses by category,' 'flag missing standard provisions.' Must-never might be 'omit a high-risk clause,' 'attribute a clause to the wrong party,' 'silently truncate a long contract.' These two lists define your test case structure: positive cases that verify the must-do behaviors, and negative cases that verify the must-never behaviors. The must-never list is almost always more important for a legal tool.",
@@ -556,18 +607,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A contract analysis eval shows 85% overall accuracy. The CEO says 'ship it.' What critical information does this number fail to provide?",
       options: [
-        "Per-category performance — 85% overall can mask 50% recall on high-risk clauses while showing 99% on common boilerplate, which is the wrong tradeoff for a legal tool",
         "85% accuracy is always insufficient; the threshold for any production system is 99%",
+        "Per-category performance — 85% overall can mask 50% recall on high-risk clauses while showing 99% on common boilerplate, which is the wrong tradeoff for a legal tool",
         "Accuracy metrics don't apply to extraction tasks — contract analysis cannot be evaluated quantitatively",
         "Overall accuracy is only valid if the eval set was peer-reviewed by the legal industry",
       ],
-      correct: 0,
-      explanation: "Aggregate metrics hide per-category failures. A system that correctly handles standard boilerplate (80% of clauses) but misses high-risk clauses (the 20% that matter) can achieve 85% overall accuracy while being genuinely dangerous to ship. For legal tools, the correct question is recall on must-never categories, not overall accuracy. A ship decision based solely on overall accuracy is a liability. Option B is wrong — there is no universal 99% threshold for production systems; acceptable accuracy depends on the failure cost per category, and even 99% overall accuracy can be insufficient if the 1% failures are all in high-risk clause detection. Option C is wrong — contract analysis can absolutely be evaluated quantitatively using precision, recall, and F1 per category; claiming quantitative evaluation is impossible is a misconception that lets teams avoid the hard measurement work. Option D is false — peer review by the legal industry is a useful validation step but has no bearing on whether overall accuracy is the right primary metric; the metric selection problem is independent of who validates the eval set.",
+      correct: 1,
+      explanation: "Aggregate metrics hide per-category failures. A system that correctly handles standard boilerplate (80% of clauses) but misses high-risk clauses (the 20% that matter) can achieve 85% overall accuracy while being genuinely dangerous to ship. For legal tools, the correct question is recall on must-never categories, not overall accuracy. A ship decision based solely on overall accuracy is a liability. Option B is the correct answer. Option A is wrong — there is no universal 99% threshold for production systems; acceptable accuracy depends on the failure cost per category, and even 99% overall accuracy can be insufficient if the 1% failures are all in high-risk clause detection. Option C is wrong — contract analysis can absolutely be evaluated quantitatively using precision, recall, and F1 per category; claiming quantitative evaluation is impossible is a misconception that lets teams avoid the hard measurement work. Option D is false — peer review by the legal industry is a useful validation step but has no bearing on whether overall accuracy is the right primary metric; the metric selection problem is independent of who validates the eval set.",
     },
     takeaway: "Design evals around your worst-case failure mode, not your average case. For high-stakes extraction, recall on the must-never categories is the load-bearing metric. Define the minimum acceptable recall threshold before building the eval — the eval should answer a specific question ('does it meet the bar?'), not produce a number you interpret after the fact.",
   },
 
   "rag-eval": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "Your RAG pipeline for a customer support tool has been running for a month. The team reports it's 'working well' based on internal impressions. Before presenting to leadership, you want to replace impressions with numbers. You have no existing eval infrastructure. You need to build a minimal RAG-specific eval suite from scratch in one week.",
     explanation: [
       "RAG evaluation requires measuring three distinct things that a single end-to-end accuracy score collapses together. Retrieval quality: given a question, did the right chunk appear in the top-k results? Measure retrieval recall@k — what percentage of the time is the answer-containing chunk in the top-3 results? This tells you whether your retrieval is the bottleneck. Context faithfulness: does the generated answer make claims that are grounded in the retrieved context, or does it introduce information from model memory? Measure the percentage of factual claims in the answer that can be traced to a retrieved chunk. Answer correctness: is the final answer actually correct? Measure against a ground-truth answer set.",
@@ -577,13 +630,13 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A RAG system achieves 78% end-to-end answer accuracy. What does this tell you about where to improve the system?",
       options: [
-        "Nothing diagnostic — end-to-end accuracy conflates retrieval failures, faithfulness failures, and generation failures; you need retrieval recall@k and context faithfulness measured separately to know which stage to fix",
         "The retrieval stage is working well since over three-quarters of answers are correct",
         "The generation model needs to be upgraded since it's failing 22% of the time",
+        "Nothing diagnostic — end-to-end accuracy conflates retrieval failures, faithfulness failures, and generation failures; you need retrieval recall@k and context faithfulness measured separately to know which stage to fix",
         "78% is above the industry standard for RAG systems and no improvement is needed",
       ],
-      correct: 0,
-      explanation: "End-to-end accuracy is the least actionable metric in a RAG system because it doesn't tell you whether the failure came from retrieval, augmentation, or generation. 78% accuracy could mean 100% retrieval recall with 78% generation accuracy, or 78% retrieval recall with 100% generation accuracy — completely different fixes. Decomposed stage metrics (retrieval recall@k, faithfulness rate) are the only way to point the improvement effort at the right stage. Option B is wrong — a 78% end-to-end answer accuracy says nothing specific about retrieval stage health; retrieval could be perfect (100% recall@3) while generation failures drive the 22% miss rate, or retrieval could be the bottleneck with generation performing perfectly on whatever it receives. Option C is wrong — the generation model may be performing perfectly on the chunks it receives; the 22% failure rate could be entirely a retrieval problem, making a model upgrade the wrong fix. Option D is false — 78% is not a universal industry standard and no such benchmark threshold exists; whether it's acceptable depends entirely on the task, user impact, and cost of failure.",
+      correct: 2,
+      explanation: "End-to-end accuracy is the least actionable metric in a RAG system because it doesn't tell you whether the failure came from retrieval, augmentation, or generation. 78% accuracy could mean 100% retrieval recall with 78% generation accuracy, or 78% retrieval recall with 100% generation accuracy — completely different fixes. Decomposed stage metrics (retrieval recall@k, faithfulness rate) are the only way to point the improvement effort at the right stage. Option C is the correct answer. Option A is wrong — a 78% end-to-end answer accuracy says nothing specific about retrieval stage health; retrieval could be perfect (100% recall@3) while generation failures drive the 22% miss rate, or retrieval could be the bottleneck with generation performing perfectly on whatever it receives. Option B is wrong — the generation model may be performing perfectly on the chunks it receives; the 22% failure rate could be entirely a retrieval problem, making a model upgrade the wrong fix. Option D is false — 78% is not a universal industry standard and no such benchmark threshold exists; whether it's acceptable depends entirely on the task, user impact, and cost of failure.",
     },
     takeaway: "RAG evaluation must be decomposed by stage: retrieval recall@k, context faithfulness, and answer correctness are three separate metrics that diagnose three separate failure modes. End-to-end accuracy alone tells you the system is imperfect — it doesn't tell you where to fix it. Build the 50-question ground-truth set once; it pays dividends across every future model iteration.",
   },
@@ -591,6 +644,8 @@ export const RUNNER_DATA = {
   // ── Production Systems track ──────────────────────────────────────────────────
 
   "cost-latency-concepts": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A startup's inference bill jumped from $8K to $34K in 30 days after a product change. Request volume increased 20%, average output length stayed the same, but average input tokens per request grew from 800 to 3,200. You need to attribute the cost increase to the right variable before you can propose a fix — and explain why a 4× input growth caused a 4× bill increase, not a proportionally smaller one.",
     explanation: [
       "LLM inference cost has two components: input tokens and output tokens, billed separately at different rates. Input tokens are almost always cheaper per token (typically 3–5× cheaper than output tokens), but they dominate total cost when prompts are large and output length is short. For the scenario: input tokens quadrupled (800→3,200) while output stayed constant at ~150 tokens. At $2.50/1M for input and $10/1M for output, the old cost per request was: 800×$2.50/1M + 150×$10/1M = $0.002 + $0.0015 = $0.0035. The new cost: 3,200×$2.50/1M + 150×$10/1M = $0.008 + $0.0015 = $0.0095 — a 2.7× increase per request, compounded by the 20% volume growth.",
@@ -600,18 +655,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A request costs $0.008 in input tokens and $0.0015 in output tokens. Cutting output length by 50% would reduce total cost by approximately:",
       options: [
-        "~16% — output tokens represent $0.0015 of a $0.0095 total; halving them saves $0.00075, roughly 8% of total cost",
         "50% — output is exactly half of total cost in all LLM pricing models",
         "Nothing — output tokens are billed separately and don't affect the input-side total",
         "~40% — output tokens are always priced higher than input tokens so they dominate cost reduction",
+        "~16% — output tokens represent $0.0015 of a $0.0095 total; halving them saves $0.00075, roughly 8% of total cost",
       ],
-      correct: 0,
-      explanation: "In this cost breakdown, input tokens ($0.008) dominate over output tokens ($0.0015). Halving output saves $0.00075 on a $0.0095 total — roughly 8%, not 50%. The common misconception is that because output tokens have a higher per-token rate, they always dominate total cost. They do when output is long relative to input, but in prompt-heavy applications with short outputs, input tokens drive the bill. Option B is wrong — it assumes output tokens are 'exactly half of total cost,' which is only true in a specific token-count and pricing scenario; in this example, the math shows output is $0.0015 of a $0.0095 total, nowhere near half. Option C is wrong — output tokens are billed alongside input tokens and do contribute to total cost; halving them saves a real dollar amount, just a small one relative to the input-dominated total. Option D is wrong — whether output or input tokens dominate depends on the ratio of prompt length to output length and the specific pricing model; in long-prompt, short-output applications like RAG, input dominates even though output costs more per token.",
+      correct: 3,
+      explanation: "In this cost breakdown, input tokens ($0.008) dominate over output tokens ($0.0015). Halving output saves $0.00075 on a $0.0095 total — roughly 8%, not 50%. The common misconception is that because output tokens have a higher per-token rate, they always dominate total cost. They do when output is long relative to input, but in prompt-heavy applications with short outputs, input tokens drive the bill. Option D is the correct answer. Option A is wrong — it assumes output tokens are 'exactly half of total cost,' which is only true in a specific token-count and pricing scenario; in this example, the math shows output is $0.0015 of a $0.0095 total, nowhere near half. Option B is wrong — output tokens are billed alongside input tokens and do contribute to total cost; halving them saves a real dollar amount, just a small one relative to the input-dominated total. Option C is wrong — whether output or input tokens dominate depends on the ratio of prompt length to output length and the specific pricing model; in long-prompt, short-output applications like RAG, input dominates even though output costs more per token.",
     },
     takeaway: "Prompt inflation is the most common source of surprise cost increases. Audit what changed in your prompt template before reaching for model downgrades. Input tokens dominate total cost in short-output, long-prompt applications — even though they're cheaper per token. Prompt caching for stable prefixes (system prompts, few-shot examples) is the fastest high-ROI cost reduction.",
   },
 
   "latency-planner": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A document Q&A tool must respond in under 3 seconds per interaction. Current measured latency: p50=2.8s, p95=5.4s, p99=8.2s. Retrieval takes ~300ms. The LLM call accounts for the rest. Target is p95 ≤ 3s. You need to understand which levers are available and what each actually moves before tuning anything.",
     explanation: [
       "LLM response latency has three components: TTFT (time-to-first-token, proportional to input length and queuing), generation time (output tokens × TPOT, where TPOT is roughly constant per token at a given model size on given hardware), and network overhead (round-trip to the provider plus streaming buffer delay). At p95=5.4s with 300ms retrieval, the LLM portion is ~5.1s. That's consistent with a large model generating 250–350 output tokens on shared inference infrastructure with occasional queuing delays.",
@@ -633,6 +690,8 @@ export const RUNNER_DATA = {
   },
 
   "observability-concepts": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "A RAG pipeline for B2B analytics has been running for 3 months. The customer success team reports answer quality 'seems worse' over the past 2 weeks, but no code was deployed. Error rate is flat at 0.1%. Request volume is stable. You need to design a minimal observability stack that would have detected this regression automatically — and explain why error rate is the wrong primary metric for LLM systems.",
     explanation: [
       "LLM system observability is fundamentally different from traditional API observability. Error rate stays near zero while quality degrades because the model successfully generates a response — it's just a worse one. The metrics that matter: retrieval quality signals (are the right chunks coming back? — track average retrieval score distribution, percentage of queries where the retrieved chunk contains a keyword from the query), answer quality proxies (answer length distribution, citation completeness rate, response format compliance), and downstream behavior signals (user thumbs-up/down rate, follow-up question rate, session abandonment rate).",
@@ -642,18 +701,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A RAG pipeline's error rate stays flat at 0.1% while answer quality degrades. Which metric would most reliably detect this regression automatically?",
       options: [
-        "Retrieval score distribution shift — a change in the mean or variance of embedding similarity scores for retrieved chunks is a direct signal that retrieval quality changed, even when the system generates responses without errors",
         "Total token count per request — more tokens always corresponds to better answer quality",
+        "Retrieval score distribution shift — a change in the mean or variance of embedding similarity scores for retrieved chunks is a direct signal that retrieval quality changed, even when the system generates responses without errors",
         "API response latency — quality degradation consistently increases response generation time",
         "System prompt token count — drift in system prompt length is the primary indicator of quality regression",
       ],
-      correct: 0,
-      explanation: "Retrieval score distributions change when the quality of what's being retrieved changes — even if the system never errors. A drop in mean similarity score or a shift toward lower-scoring retrievals indicates that queries are matching chunks less well, which directly predicts lower answer quality. Error rate measures failures, not quality. Option B is wrong — total token count per request has no meaningful correlation with answer quality; longer inputs do not produce more accurate or complete answers, and in fact longer prompts can degrade quality through lost-in-the-middle effects. Option C is wrong — quality degradation does not consistently increase response latency; generation time is driven by output length and model size, not answer quality, and a model producing confidently wrong answers takes the same time as one producing correct answers. Option D is wrong — system prompt token count is fixed or nearly fixed across requests and is not a per-request signal; drift in system prompt length would reflect a code change, not an operational quality regression.",
+      correct: 1,
+      explanation: "Retrieval score distributions change when the quality of what's being retrieved changes — even if the system never errors. A drop in mean similarity score or a shift toward lower-scoring retrievals indicates that queries are matching chunks less well, which directly predicts lower answer quality. Error rate measures failures, not quality. Option B is the correct answer. Option A is wrong — total token count per request has no meaningful correlation with answer quality; longer inputs do not produce more accurate or complete answers, and in fact longer prompts can degrade quality through lost-in-the-middle effects. Option C is wrong — quality degradation does not consistently increase response latency; generation time is driven by output length and model size, not answer quality, and a model producing confidently wrong answers takes the same time as one producing correct answers. Option D is wrong — system prompt token count is fixed or nearly fixed across requests and is not a per-request signal; drift in system prompt length would reflect a code change, not an operational quality regression.",
     },
     takeaway: "LLM systems degrade silently — error rate won't tell you. Log retrieval scores, answer length distributions, model version headers, and sample responses for lightweight quality scoring. These signals catch regressions in hours. Silence from error monitoring is not evidence that quality is healthy.",
   },
 
   "prompt-regression-signals": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "Your team updated a production prompt template — added 3 few-shot examples and tightened output format instructions. Manual testing on 10 queries looked good. After deploy, customer support tickets increased 30% over 3 days. You need to determine whether the prompt change caused the regression and design a detection system that catches this before tickets accumulate.",
     explanation: [
       "Prompt regression signals are metrics that change reliably when prompt quality degrades. The fastest signals: (1) Output format compliance rate — if the prompt specifies JSON output, what percentage of responses parse as valid JSON? A format change that confuses the model shows up as parse errors on the first non-compliant response, not after 3 days. (2) Downstream parse error rate — if code downstream of the LLM tries to extract specific fields, parse failures appear in application logs immediately. (3) Answer length distribution — over-constrained prompts produce shorter, less complete answers; over-reliance on few-shot examples can cause verbose, example-mirroring responses. (4) Refusal rate — prompt changes that confuse the model about its task increase unhelpful 'I can't help with that' responses.",
@@ -663,18 +724,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "Which metric provides the earliest automated signal for prompt regression in production?",
       options: [
-        "Output format compliance rate — detectable on the first non-compliant response, before any user feedback accumulates",
         "Net Promoter Score — statistically significant NPS changes indicate quality regression within days",
         "Model temperature — temperature automatically shifts when prompt quality degrades",
+        "Output format compliance rate — detectable on the first non-compliant response, before any user feedback accumulates",
         "Output token count — longer outputs always indicate better prompt quality",
       ],
-      correct: 0,
-      explanation: "Output format compliance fires immediately when a prompt change causes the model to generate non-conforming structure — it doesn't require user feedback to accumulate. NPS takes days or weeks to register and is affected by many factors beyond prompt quality. Option B is wrong — NPS is a lagging indicator that aggregates user sentiment over long timeframes and is confounded by unrelated factors (pricing, competition, product features); it cannot reliably attribute a specific 3-point score drop to a prompt change that happened this week. Option C is wrong — temperature is a parameter set at inference time, not a variable the model adjusts in response to prompt quality; temperature does not 'automatically shift' when the prompt changes. Option D is wrong — output length has no reliable directional correlation with quality; verbose responses can be low-quality padding and concise responses can be high-quality; length is weakly correlated in both directions depending on the task.",
+      correct: 2,
+      explanation: "Output format compliance fires immediately when a prompt change causes the model to generate non-conforming structure — it doesn't require user feedback to accumulate. NPS takes days or weeks to register and is affected by many factors beyond prompt quality. Option C is the correct answer. Option A is wrong — NPS is a lagging indicator that aggregates user sentiment over long timeframes and is confounded by unrelated factors (pricing, competition, product features); it cannot reliably attribute a specific 3-point score drop to a prompt change that happened this week. Option B is wrong — temperature is a parameter set at inference time, not a variable the model adjusts in response to prompt quality; temperature does not 'automatically shift' when the prompt changes. Option D is wrong — output length has no reliable directional correlation with quality; verbose responses can be low-quality padding and concise responses can be high-quality; length is weakly correlated in both directions depending on the task.",
     },
     takeaway: "Detect prompt regressions before users do. Output format compliance and downstream parse error rate fire on the first bad response. A/B test every prompt change — 5% traffic for 1 hour is enough to detect format failures before full rollout. Make prompt rollback a one-click operation; it's always faster than debugging a regression from support tickets.",
   },
 
   "quality-drift": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "An enterprise AI writing assistant has been in production for 6 months with no major code or model deployments. Average quality ratings dropped from 4.2 to 3.6 over the past 8 weeks. The team says nothing changed. You need to explain what 'nothing changed' actually means in an LLM system and identify the likely root cause.",
     explanation: [
       "LLM system quality can degrade without any code changes because the system has external dependencies that change independently. The four most common silent sources: (1) Silent model version update — inference providers update model weights behind stable API endpoint names. 'GPT-4-turbo' today is not the same checkpoint as 6 months ago; providers update for safety, capability, and efficiency improvements without changing the endpoint name or announcing the change in application logs. (2) Knowledge base staleness — indexed documents go out of date; if users are asking about features or policies that changed after the last index rebuild, retrievals return stale information that produces wrong answers. (3) User distribution shift — new user cohorts with different query types have entered the system. (4) Third-party dependency changes — an embedding API or reranker changed behavior silently.",
@@ -684,18 +747,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "An LLM system's quality dropped 15% over 8 weeks with no code deployments. The most common root cause in practice is:",
       options: [
-        "Silent model version update by the API provider — inference endpoints may serve updated model weights under the same API name without explicit change notifications",
         "Network latency increases that degrade token generation quality at the hardware level",
         "Browser cache causing old API responses to be served to users instead of fresh ones",
         "Ambient temperature changes in the data center affecting GPU computation",
+        "Silent model version update by the API provider — inference endpoints may serve updated model weights under the same API name without explicit change notifications",
       ],
-      correct: 0,
-      explanation: "Silent model updates are the most common source of unexplained quality changes in managed API deployments. Providers release updated model versions for safety, efficiency, and capability improvements, and these changes may affect output style, refusal rates, verbosity, or factual grounding in ways that affect quality ratings. Option B is wrong — network latency affects response speed, not the semantic quality of the text generated; a slower network produces the same answer more slowly, not a worse one. Option C is wrong — API responses are served over HTTPS with no-cache headers in standard client implementations; browser cache does not intercept server-side API calls, and even if it did, it would serve stale but previously correct responses, not degraded ones. Option D is wrong — GPU computation is performed inside temperature-controlled data centers with no material impact on model output from ambient temperature variation; this is not a real failure mode for software systems.",
+      correct: 3,
+      explanation: "Silent model updates are the most common source of unexplained quality changes in managed API deployments. Providers release updated model versions for safety, efficiency, and capability improvements, and these changes may affect output style, refusal rates, verbosity, or factual grounding in ways that affect quality ratings. Option D is the correct answer. Option A is wrong — network latency affects response speed, not the semantic quality of the text generated; a slower network produces the same answer more slowly, not a worse one. Option B is wrong — API responses are served over HTTPS with no-cache headers in standard client implementations; browser cache does not intercept server-side API calls, and even if it did, it would serve stale but previously correct responses, not degraded ones. Option C is wrong — GPU computation is performed inside temperature-controlled data centers with no material impact on model output from ambient temperature variation; this is not a real failure mode for software systems.",
     },
     takeaway: "'Nothing changed' never means nothing changed in an LLM system. Pin model versions, monitor index freshness, and run weekly regression evals on a fixed golden set. These three instruments catch the four most common sources of silent quality drift before they accumulate 8 weeks of user impact.",
   },
 
   "cost-attribution": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "Your company's monthly inference bill is $180K. The CFO asks for a cost breakdown by product team and use case. All requests go through one API key. You have no attribution. The CFO gives you 2 weeks to produce a defensible breakdown before budget season.",
     explanation: [
       "LLM cost attribution requires tagging every inference request with metadata at the time of the call — it cannot be reconstructed retroactively from billing logs. The minimum metadata set: team (which product or engineering team owns this request), use_case (summarization, extraction, chat, eval), environment (production vs. staging vs. eval runs), user_tier (free vs. paid if cost is user-cohort-driven). Most LLM providers (OpenAI, Anthropic, Google) expose user or metadata fields in the API request that appear in billing exports. Instrument this today; the data is available in the next billing cycle.",
@@ -717,6 +782,8 @@ export const RUNNER_DATA = {
   },
 
   "managed-vs-selfhosted": {
+    depthTier: "deep",
+    interviewWeight: "medium",
     scenario: "Your team at 50M tokens/month is evaluating whether to self-host Llama 3 70B on 2×A100 80GB GPUs vs. using a managed API. The infrastructure engineer says self-hosting will be way cheaper. You want to build the actual cost model before deciding.",
     explanation: [
       "Managed API pricing is straightforward: per-token billing with no infrastructure overhead. For a GPT-4-class model at approximately $5/1M input + $15/1M output tokens, and a typical 70/30 input/output split: 35M input tokens × $5/1M + 15M output tokens × $15/1M = $175 + $225 = $400/month. This includes high availability, no ops overhead, and model updates. You pay a premium for operational simplicity and reliability.",
@@ -726,18 +793,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A team at 50M tokens/month considers self-hosting to reduce costs. The cost comparison should include:",
       options: [
-        "Total cost of ownership — compute at actual utilization (often < 5% at 50M tokens/month), plus ops engineering overhead and reliability costs — compared against managed API pricing",
         "Only raw compute cost per token, since operational overhead is the same for all infrastructure choices",
+        "Total cost of ownership — compute at actual utilization (often < 5% at 50M tokens/month), plus ops engineering overhead and reliability costs — compared against managed API pricing",
         "The number of model parameters, since larger models are always more expensive to self-host",
         "The managed API cost per token vs. the self-hosted cost per token at theoretical peak throughput (100% GPU utilization), since that measures the true per-token cost ceiling",
       ],
-      correct: 0,
-      explanation: "At 50M tokens/month, GPU utilization on self-hosted infrastructure is under 5% — meaning you're paying for idle capacity. The compute cost alone may exceed the managed API bill, and ops engineering overhead compounds this. The 'cheaper' intuition for self-hosting only holds at high sustained utilization (40%+), which typically requires 300-500M+ tokens/month. Option B is wrong — raw compute cost per token excludes the most significant components of self-hosted cost (idle capacity when utilization is low, ops engineering time, reliability infrastructure); operational overhead is not the same across all infrastructure choices and must be included. Option C is wrong — number of parameters is relevant to hardware sizing but not directly to the cost comparison decision; you need actual token throughput, hardware cost, and utilization rate, not a parameter count heuristic. Option D describes a common mistake: using theoretical peak throughput (100% utilization) as the baseline. At 100% utilization, self-hosting is genuinely cheaper per token than managed APIs — this is why the intuition 'self-hosting is cheaper' exists and is technically correct in that one scenario. But 100% utilization requires sustained high traffic, which at 50M tokens/month means less than 5% actual utilization — the comparison should be made at actual utilization, not theoretical peak, because you pay for idle GPU time regardless of whether requests are arriving.",
+      correct: 1,
+      explanation: "At 50M tokens/month, GPU utilization on self-hosted infrastructure is under 5% — meaning you're paying for idle capacity. The compute cost alone may exceed the managed API bill, and ops engineering overhead compounds this. The 'cheaper' intuition for self-hosting only holds at high sustained utilization (40%+), which typically requires 300-500M+ tokens/month. Option B is the correct answer. Option A is wrong — raw compute cost per token excludes the most significant components of self-hosted cost (idle capacity when utilization is low, ops engineering time, reliability infrastructure); operational overhead is not the same across all infrastructure choices and must be included. Option C is wrong — number of parameters is relevant to hardware sizing but not directly to the cost comparison decision; you need actual token throughput, hardware cost, and utilization rate, not a parameter count heuristic. Option D describes a common mistake: using theoretical peak throughput (100% utilization) as the baseline. At 100% utilization, self-hosting is genuinely cheaper per token than managed APIs — this is why the intuition 'self-hosting is cheaper' exists and is technically correct in that one scenario. But 100% utilization requires sustained high traffic, which at 50M tokens/month means less than 5% actual utilization — the comparison should be made at actual utilization, not theoretical peak, because you pay for idle GPU time regardless of whether requests are arriving.",
     },
     takeaway: "Self-hosting is not cheaper until utilization is high. At 50M tokens/month, GPU utilization is ~3% — you pay for idle compute. Add ops overhead and the managed API almost always wins on total cost. Build the actual math: compute at your utilization rate + ops salary equivalent vs. managed API bill. Revisit when monthly token volume exceeds 300–500M.",
   },
 
   "enterprise-ai-cost-model": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "You're presenting the business case for expanding an AI writing assistant from 100 pilot users to 10,000 enterprise users. Finance wants a cost-per-user model. Legal wants a cost cap. Engineering measured token usage in the pilot but needs to extrapolate with appropriate uncertainty. The naive approach — multiply pilot cost by 100× — is being challenged.",
     explanation: [
       "Enterprise AI cost models require three components: usage assumptions (tokens per user per day, session frequency, input/output split), model costs (per-token pricing at expected volume, including any enterprise discounts), and infrastructure overhead (API gateway, logging, monitoring, caching layer). The naive 100× multiplier ignores the user distribution problem: enterprise user populations are heterogeneous. A realistic distribution: 15% heavy users (3–4× average token volume, power users who rely on the tool for most of their work), 65% average users, 20% light users (sporadic use, 0.2× average). The heavy-user tail is the most common source of enterprise AI budget overruns.",
@@ -747,13 +816,13 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A team extrapolates pilot AI costs to enterprise scale by multiplying pilot cost by the user ratio (100→10,000 = 100×). The key flaw is:",
       options: [
-        "The heavy-user tail — 10–20% of enterprise users consume 3–4× average token volume, making the 100× multiplier an underestimate for that cohort and causing budget overruns at scale",
         "Token prices decrease at higher volumes, so the 100× multiplier consistently overestimates cost at scale",
         "Pilot users are always unrepresentative because they're motivated early adopters who use the product far less than average users will",
+        "The heavy-user tail — 10–20% of enterprise users consume 3–4× average token volume, making the 100× multiplier an underestimate for that cohort and causing budget overruns at scale",
         "The 100× multiplier only applies to output tokens; input tokens must be calculated independently",
       ],
-      correct: 0,
-      explanation: "The heavy-user tail is systematically underestimated by average-based extrapolation. In a 100-person pilot, the distribution of usage extremes may not have stabilized. At 10,000 users, the heaviest 10% (1,000 users at 3-4× average) drive a disproportionate share of total cost that the pilot average didn't reveal. The 100× multiplier on the pilot average omits this concentration effect. Option B is wrong — volume discounts do exist at very high token volumes, but they reduce cost per token modestly (10–20%), not enough to invalidate a 100× multiplier; and the question is about the flaw in the linear extrapolation method, not about whether discounts exist. Option C is wrong — pilot users being motivated early adopters is a real concern but typically makes them heavier users than average, not lighter; if anything, a pilot heavy-user bias would make the 100× multiplier an overestimate, not an underestimate, which is the opposite of the identified flaw. Option D is wrong — input and output tokens must always be calculated using their respective per-token rates, but the 100× multiplier applies to total cost, not separately to input and output; this is not a separate calculation requirement that makes the multiplier flawed.",
+      correct: 2,
+      explanation: "The heavy-user tail is systematically underestimated by average-based extrapolation. In a 100-person pilot, the distribution of usage extremes may not have stabilized. At 10,000 users, the heaviest 10% (1,000 users at 3-4× average) drive a disproportionate share of total cost that the pilot average didn't reveal. The 100× multiplier on the pilot average omits this concentration effect. Option C is the correct answer. Option A is wrong — volume discounts do exist at very high token volumes, but they reduce cost per token modestly (10–20%), not enough to invalidate a 100× multiplier; and the question is about the flaw in the linear extrapolation method, not about whether discounts exist. Option B is wrong — pilot users being motivated early adopters is a real concern but typically makes them heavier users than average, not lighter; if anything, a pilot heavy-user bias would make the 100× multiplier an overestimate, not an underestimate, which is the opposite of the identified flaw. Option D is wrong — input and output tokens must always be calculated using their respective per-token rates, but the 100× multiplier applies to total cost, not separately to input and output; this is not a separate calculation requirement that makes the multiplier flawed.",
     },
     takeaway: "Enterprise AI cost modeling requires a user distribution assumption, not a single average. The heavy-user tail (10–20% of users driving 50–60% of costs) is the most common source of budget overruns. Present Finance a p50 scenario and a p95 ceiling with an explicit enforcement mechanism — model downgrade thresholds and per-user daily budgets — not a point estimate.",
   },
@@ -761,6 +830,8 @@ export const RUNNER_DATA = {
   // ── Prompt Engineering — high-priority stub ───────────────────────────────────
 
   "zero-shot": {
+    depthTier: "light",
+    interviewWeight: "medium",
     scenario: "A new team member asks why the team bothers writing detailed prompt instructions when 'you can just ask the model what you want.' They run a zero-shot test on your classification task and get 71% accuracy vs. your current 89%. You need to explain what zero-shot prompting is, when it's sufficient, and specifically why it fell short here — without dismissing it as a technique.",
     explanation: [
       "Zero-shot prompting is asking the model to perform a task using only a natural language instruction, with no examples. 'Classify this customer email as billing, technical, or account.' The model applies knowledge from pre-training to interpret the task and produce output. Zero-shot works well when the task closely matches patterns the model saw extensively in pre-training: sentiment classification, factual Q&A, summarization, and common text transformations. It requires zero annotation effort and no example curation.",
@@ -769,13 +840,13 @@ export const RUNNER_DATA = {
     mcq: {
       question: "Zero-shot prompting achieves 71% accuracy on a 12-category classification task. The most likely source of the remaining 29% errors is:",
       options: [
-        "Boundary cases where two categories both apply — zero-shot has no examples showing which category takes priority under your specific business rules, so the model resolves ambiguity using pre-training priors that don't match your taxonomy",
         "Zero-shot works well only for tasks the model encountered in RLHF feedback data; tasks learned purely from pre-training require at least one example to activate the relevant capability",
         "Zero-shot reliability improves consistently with longer, more detailed task descriptions because the model has more signal to condition on",
         "The model ignores the instruction and generates random category labels",
+        "Boundary cases where two categories both apply — zero-shot has no examples showing which category takes priority under your specific business rules, so the model resolves ambiguity using pre-training priors that don't match your taxonomy",
       ],
-      correct: 0,
-      explanation: "Zero-shot provides category names and a general instruction. It doesn't specify disambiguation rules for boundary cases. Errors concentrate at the boundary — emails that partially fit two categories, edge cases with unusual phrasing, or situations where your business rule differs from the model's pre-training prior. Few-shot examples fix exactly this by showing the model how you resolve the cases it gets wrong. Option B is a plausible-sounding but false claim: zero-shot capability emerges from pre-training scale, not from RLHF feedback data specifically. A model can classify sentiment, answer factual questions, and perform many tasks zero-shot entirely from pre-training — RLHF shapes how the model responds (helpfully, safely) not which tasks it can perform. Option C sounds reasonable — more information seems like it should help — but empirically, very long zero-shot task descriptions with extensive caveats and edge-case prose often hurt performance. The model attends across all the instructions and the performance degrades when the specification is more verbose than precise. The real fix for boundary cases is examples, not longer descriptions. Option D is wrong — LLMs do not generate random labels; they generate probabilistically conditioned outputs that, while imperfect, systematically reflect their understanding of the category names and the input text.",
+      correct: 3,
+      explanation: "Zero-shot provides category names and a general instruction. It doesn't specify disambiguation rules for boundary cases. Errors concentrate at the boundary — emails that partially fit two categories, edge cases with unusual phrasing, or situations where your business rule differs from the model's pre-training prior. Few-shot examples fix exactly this by showing the model how you resolve the cases it gets wrong. Option D is the correct answer. Option A is a plausible-sounding but false claim: zero-shot capability emerges from pre-training scale, not from RLHF feedback data specifically. A model can classify sentiment, answer factual questions, and perform many tasks zero-shot entirely from pre-training — RLHF shapes how the model responds (helpfully, safely) not which tasks it can perform. Option B sounds reasonable — more information seems like it should help — but empirically, very long zero-shot task descriptions with extensive caveats and edge-case prose often hurt performance. The model attends across all the instructions and the performance degrades when the specification is more verbose than precise. The real fix for boundary cases is examples, not longer descriptions. Option C is wrong — LLMs do not generate random labels; they generate probabilistically conditioned outputs that, while imperfect, systematically reflect their understanding of the category names and the input text.",
     },
     takeaway: "Zero-shot is the correct starting point for any new task — it costs nothing and reveals where your task is ambiguous. When it falls short, the failures tell you exactly what few-shot examples to write. Don't skip zero-shot to go straight to few-shot; the zero-shot failures are your example curation guide.",
   },
@@ -783,6 +854,8 @@ export const RUNNER_DATA = {
   // ── Foundation Models track ───────────────────────────────────────────────────
 
   "model-families": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "Your company is evaluating LLMs for three different use cases: a real-time customer chat widget, a nightly batch document summarization job, and an internal coding assistant for engineers. A stakeholder suggests 'just use GPT-4 for everything.' You need to explain why model family selection matters and recommend the right model tier for each use case.",
     explanation: [
       "Model families are groups of models sharing the same architecture and training approach but differing in size and capability. Every major provider offers a spectrum: frontier models (GPT-4o, Claude Opus, Gemini Ultra) are the largest and most capable but highest latency and cost; mid-tier models (GPT-4o-mini, Claude Sonnet, Gemini Flash) balance capability and efficiency; small/fast models (GPT-3.5-turbo, Claude Haiku, Gemini Flash Lite) are optimized for speed and cost at some quality tradeoff. Open-source families (Llama 3, Mistral, Qwen) offer self-hosted options across the same size spectrum.",
@@ -804,6 +877,8 @@ export const RUNNER_DATA = {
   },
 
   "rlhf": {
+    depthTier: "deep",
+    interviewWeight: "high",
     scenario: "You're explaining why the base GPT-3 model couldn't be released as a product but InstructGPT (GPT-3 fine-tuned with RLHF) could. A PM asks: 'if the base model already knows everything, why does it need RLHF? Can't you just prompt it to be helpful?' You need to explain what RLHF actually changes — at the behavior level — that prompting cannot.",
     explanation: [
       "A base language model is trained to predict the next token across all text on the internet — including harmful content, arguments, manipulative rhetoric, and factually wrong statements. It's a completion engine, not an assistant. When prompted 'how do I help my users?', it might complete the text in any direction the training distribution supports: product advice, manipulation tactics, or random internet content. The model has no objective to be helpful — it has an objective to be statistically typical of human text.",
@@ -813,40 +888,44 @@ export const RUNNER_DATA = {
     mcq: {
       question: "Why can't a detailed system prompt fully replace RLHF alignment for safety?",
       options: [
-        "System prompts are context-level instructions that compete with other inputs and can be overridden by adversarial prompting or long conversations; RLHF modifies model weights so safe behavior is the default regardless of context",
         "System prompts are limited to 1,000 tokens, which is too short to specify all safety requirements",
+        "System prompts are context-level instructions that compete with other inputs and can be overridden by adversarial prompting or long conversations; RLHF modifies model weights so safe behavior is the default regardless of context",
         "RLHF uses a larger dataset than any system prompt can provide",
         "System prompts only affect the first response; RLHF affects all responses in a conversation",
       ],
-      correct: 0,
-      explanation: "The distinction is context vs. weights. A system prompt is text the model processes alongside user input — it influences but doesn't constrain generation. RLHF modifies the model's parameters so that safe, helpful responses have higher probability under any context. A base model with a safety system prompt and an RLHF-aligned model without one produce very different behavior under adversarial conditions — because the prompt can be overwhelmed, but weights cannot be overridden from context. Option B is wrong — system prompts are not limited to 1,000 tokens; modern context windows support system prompts of 10,000+ tokens, and detailed safety specifications can be written in a few hundred tokens anyway; token length is not the practical constraint on system prompt safety coverage. Option C is wrong — RLHF uses a specialized dataset of human preference pairs, not a larger version of a general pre-training dataset; the distinction is the type of training signal (human preferences on response quality) not the volume of data relative to a system prompt. Option D is wrong — system prompts do not only affect the first response; they persist throughout the conversation context, but they can be overwhelmed by accumulated user turns and adversarial framing in later turns — which is the actual limitation, not a first-turn-only restriction.",
+      correct: 1,
+      explanation: "The distinction is context vs. weights. A system prompt is text the model processes alongside user input — it influences but doesn't constrain generation. RLHF modifies the model's parameters so that safe, helpful responses have higher probability under any context. A base model with a safety system prompt and an RLHF-aligned model without one produce very different behavior under adversarial conditions — because the prompt can be overwhelmed, but weights cannot be overridden from context. Option B is the correct answer. Option A is wrong — system prompts are not limited to 1,000 tokens; modern context windows support system prompts of 10,000+ tokens, and detailed safety specifications can be written in a few hundred tokens anyway; token length is not the practical constraint on system prompt safety coverage. Option C is wrong — RLHF uses a specialized dataset of human preference pairs, not a larger version of a general pre-training dataset; the distinction is the type of training signal (human preferences on response quality) not the volume of data relative to a system prompt. Option D is wrong — system prompts do not only affect the first response; they persist throughout the conversation context, but they can be overwhelmed by accumulated user turns and adversarial framing in later turns — which is the actual limitation, not a first-turn-only restriction.",
     },
     takeaway: "RLHF shifts the model's optimization target from 'statistically typical text' to 'helpful, harmless responses' by training on human preference data. This is a weight-level change, not a prompting technique. It's why base models need careful prompting to be safe and RLHF'd models are safe by default. Prompting adds guidance on top; RLHF changes the underlying behavior.",
   },
 
   "scaling-laws": {
+    depthTier: "deep",
+    interviewWeight: "high",
     scenario: "Your team has a fixed compute budget for training a domain-specific model. A researcher argues the 70B parameter model will always outperform a 7B model. You have 1.5T tokens of domain training data available. You need to evaluate this claim using scaling law principles before committing the compute budget.",
     explanation: [
-      "Scaling laws describe empirical relationships between model size (N parameters), training dataset size (D tokens), training compute (C FLOPs — floating-point operations, a standard measure of how much computation was used), and resulting model loss. The Chinchilla scaling laws (Hoffmann et al., 2022) established that for a fixed compute budget, the optimal allocation follows approximately: `optimal_tokens ≈ 20 × parameters`. If your model has 7 billion parameters, the compute-optimal training set is roughly 140 billion tokens. A 70B model trained compute-optimally needs roughly 1.4T tokens; a 7B model optimally needs 140B tokens. Both models achieve similar loss when trained compute-optimally, despite the 10× parameter difference.",
-      "The underlying compute budget relationship is `C ≈ 6 × N × D` where C = total FLOPs (floating-point operations — a measure of compute), N = number of parameters, D = number of training tokens; the 6× factor accounts for the forward pass, backward pass, and optimizer step across all parameters and tokens. In plain terms: given a fixed compute budget, Chinchilla says split it evenly between making the model bigger and training it longer — the pre-2022 intuition of 'train on 300B tokens regardless of model size' was leaving performance on the table.",
-      "Applied to the scenario: 1.5T tokens available, fixed compute budget. By Chinchilla, 1.5T tokens is near compute-optimal for a ~75B parameter model. The 70B model at 1.5T tokens is close to optimal. The 7B model at 1.5T tokens is heavily over-trained (it only needs 140B tokens compute-optimally, and is receiving 10× more data than Chinchilla suggests). Surprisingly, a deliberately over-trained smaller model often matches or outperforms an under-trained larger model at inference time — because the smaller model absorbed more signal per parameter. This insight underlies Llama 2 and Llama 3: Meta deliberately over-trained smaller models for better inference economics.",
-      "Inference-time implications: a 7B model serving millions of daily requests is far cheaper and faster than a 70B model. At 50M tokens/day, the latency difference (7B can generate 5–10× more tokens per second on the same hardware) and cost difference (roughly 5–10× lower compute cost per token) are significant. Scaling laws predict pre-training loss — they don't directly predict downstream task performance on domain-specific benchmarks, which requires evaluation. But the parameter-to-token ratio is a strong prior for compute budget allocation decisions before running the full training run.",
+      "Before scaling laws, compute allocation was intuition. Teams trained large models because large models performed better — but there was no principled way to predict by how much, or whether a given budget was better spent on more parameters or more training data. Kaplan et al. (2020) provided the first empirical map: loss follows a power law in both model size N and dataset size D independently. Each 10× increase in parameters or tokens reduces loss by a predictable amount. Useful signal — but it left the joint allocation question unanswered. The field interpreted the Kaplan results as: given a compute budget, maximize parameters. GPT-3 (175B parameters, ~300B training tokens) followed this logic.",
+      "Hoffmann et al. (2022) — the Chinchilla paper — ran controlled compute-matched experiments and found the GPT-3 generation of models was systematically undertrained. The problem: Kaplan's training runs varied model size while holding training tokens roughly constant at 300B. This confounded the parameter-vs-token question. Chinchilla varied both. The result: at typical training scales, compute-optimal training requires approximately 20 training tokens per parameter — this is the approximation that holds across most practical model sizes, though the precise Chinchilla finding is a frontier curve where the optimal ratio shifts slightly at extreme compute budgets. A 7B model needs ~140B tokens; a 70B model needs ~1.4T tokens. Below that ratio, you're paying for parameters you haven't trained sufficiently. The underlying compute relationship is `C ≈ 6 × N × D` where the 6× factor accounts for the forward pass, backward pass, and optimizer step across all parameters and tokens — fixed compute budget should be split roughly evenly between scaling parameters and scaling tokens, not concentrated in parameters alone.",
+      "Applied to the scenario: 1.5T tokens, fixed compute budget. By Chinchilla, 1.5T tokens is compute-optimal for a ~75B parameter model — the 70B model is close to optimal. The 7B model at 1.5T tokens is receiving 10× more data than Chinchilla prescribes. Counterintuitively, a deliberately over-trained smaller model often matches or outperforms an under-trained larger model at the same total FLOPs — the smaller model absorbed more signal per parameter. This is the logic behind Llama 2 and Llama 3: Meta over-trained smaller models past compute-optimal to get better inference performance per dollar at deployment. The researcher's claim that 70B 'always outperforms' 7B is wrong — it depends entirely on the training token budget.",
+      "Scaling laws predict pre-training loss, not downstream task performance on domain-specific benchmarks — that requires evaluation. But the parameter-to-token ratio is the right prior for compute budget allocation before committing to a full training run. The inference-time implication is the piece the claim misses entirely: a 70B model is 5–10× more expensive per inference token than a 7B model on the same hardware. If a 7B model can reach equivalent loss by training on more tokens, every future query is cheaper permanently. The question is not 'which parameter count wins at training?' — it's 'what compute-optimal size maximizes quality-per-inference-dollar given this token budget?'",
     ],
     mcq: {
       question: "The Chinchilla scaling laws suggest that for a fixed compute budget, model quality is maximized when:",
       options: [
-        "Model parameters and training tokens are balanced at roughly 1 parameter per 20 training tokens — under-training large models underperforms an equivalently-compute-budget smaller model trained on proportionally more data",
         "Maximizing model size always yields better results, regardless of training token count",
         "Training data should always be at least 1,000× the number of model parameters",
+        "Model parameters and training tokens are balanced at roughly 1 parameter per 20 training tokens — under-training large models underperforms an equivalently-compute-budget smaller model trained on proportionally more data",
         "Model quality scales linearly with parameter count and is independent of training data volume",
       ],
-      correct: 0,
-      explanation: "Chinchilla's key finding was that prior large models (GPT-3, Gopher) were significantly under-trained relative to their size — too many parameters, too few tokens. At a fixed compute budget, the optimal strategy is to scale parameters and tokens proportionally at roughly 1:20. A smaller model trained on 10× more data often outperforms a larger model trained on 1× the data at the same total FLOPs (floating-point operations — a standard measure of training or inference compute). Option B is wrong — it states the exact misconception Chinchilla refuted: maximizing model size regardless of training token count leads to under-trained large models that are outperformed by proportionally trained smaller ones at the same compute budget. Option C is wrong — Chinchilla's ratio is approximately 20 training tokens per parameter, not 1,000; a 1,000:1 ratio would massively over-train smaller models and is not what the scaling laws prescribe. Option D is wrong — model quality does not scale linearly with parameter count alone; training data volume is an equally important factor, and at a fixed compute budget the joint parameter-token relationship determines loss, not parameter count independently.",
+      correct: 2,
+      explanation: "Chinchilla's key finding was that prior large models (GPT-3, Gopher) were significantly under-trained relative to their size — too many parameters, too few tokens. At a fixed compute budget, the optimal strategy is to scale parameters and tokens proportionally at roughly 1:20. A smaller model trained on 10× more data often outperforms a larger model trained on 1× the data at the same total FLOPs (floating-point operations — a standard measure of training or inference compute). Option C is the correct answer. Option A is wrong — it states the exact misconception Chinchilla refuted: maximizing model size regardless of training token count leads to under-trained large models that are outperformed by proportionally trained smaller ones at the same compute budget. Option B is wrong — Chinchilla's ratio is approximately 20 training tokens per parameter, not 1,000; a 1,000:1 ratio would massively over-train smaller models and is not what the scaling laws prescribe. Option D is wrong — model quality does not scale linearly with parameter count alone; training data volume is an equally important factor, and at a fixed compute budget the joint parameter-token relationship determines loss, not parameter count independently.",
     },
     takeaway: "Bigger models trained on insufficient data underperform smaller models trained proportionally. Chinchilla compute-optimal training: ~20 tokens per parameter. For inference-constrained deployments, deliberately over-training a smaller model often achieves better quality-per-inference-dollar than under-training a larger one at the same compute budget.",
   },
 
   "lora": {
+    depthTier: "deep",
+    interviewWeight: "high",
     scenario: "A team needs 10 domain-specific fine-tuned versions of a 70B model (legal, medical, finance, retail, HR, etc.) for different enterprise clients. Full fine-tuning produces 10 separate 140GB checkpoints — 1.4TB of storage and 10× the inference infrastructure. A researcher proposes LoRA. You need to evaluate whether this is operationally viable and understand the quality tradeoff.",
     explanation: [
       "LoRA (Low-Rank Adaptation) fine-tunes a model by inserting small trainable matrices into specific weight layers while keeping the original model weights frozen. To understand how it works, start with the symbols: ΔW is the weight change we want to add to the frozen base weight matrix; m and n are the original weight matrix dimensions (m rows × n columns — for a 70B model a typical attention layer has m=4096, n=4096); r is the rank — a small integer like 4 or 8 that controls how many 'directions' the update uses. LoRA introduces the update as `ΔW = A × B` where A has shape m×r and B has shape r×n, with r much smaller than both m and n.",
@@ -857,13 +936,13 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A team fine-tunes 10 domain models from a 70B base using LoRA (rank=16). The primary operational advantage over 10 full fine-tuned checkpoints is:",
       options: [
-        "One base model checkpoint is deployed, with per-domain LoRA adapters (hundreds of MB each) swapped at inference time — providing 10 specialized models at the storage and infrastructure cost of one",
         "LoRA training is 100× faster than full fine-tuning regardless of model size or dataset",
         "LoRA automatically selects optimal rank per domain, eliminating hyperparameter search",
         "LoRA adapters are model-agnostic and transfer directly between different base architectures",
+        "One base model checkpoint is deployed, with per-domain LoRA adapters (hundreds of MB each) swapped at inference time — providing 10 specialized models at the storage and infrastructure cost of one",
       ],
-      correct: 0,
-      explanation: "The core LoRA operational benefit is adapter-only storage and a single serving stack. 10 full checkpoints at 140GB each require 10× the storage, 10× the deployment infrastructure, and separate update pipelines. With LoRA, the base model is loaded once and adapters swap on demand. Option B is wrong — LoRA training is faster than full fine-tuning, but the speedup ratio varies significantly with rank, dataset size, and which layers are adapted; '100× faster regardless of model size' is an overstatement that confuses the memory efficiency benefit (fewer trainable parameters) with a guaranteed time speedup that depends on hardware and dataset characteristics. Option C is wrong — LoRA does not automatically select optimal rank; rank is a hyperparameter that must be tuned per domain, typically by evaluating model quality at r=8, r=16, r=32, and r=64; no automatic rank selection is built into the LoRA framework. Option D is wrong — LoRA adapters are architecture-specific and not transferable between different base model architectures; an adapter trained for Llama 3's attention projection matrices cannot be applied to Mistral or GPT-2 with different hidden dimensions and layer structures.",
+      correct: 3,
+      explanation: "The core LoRA operational benefit is adapter-only storage and a single serving stack. 10 full checkpoints at 140GB each require 10× the storage, 10× the deployment infrastructure, and separate update pipelines. With LoRA, the base model is loaded once and adapters swap on demand. Option D is the correct answer. Option A is wrong — LoRA training is faster than full fine-tuning, but the speedup ratio varies significantly with rank, dataset size, and which layers are adapted; '100× faster regardless of model size' is an overstatement that confuses the memory efficiency benefit (fewer trainable parameters) with a guaranteed time speedup that depends on hardware and dataset characteristics. Option B is wrong — LoRA does not automatically select optimal rank; rank is a hyperparameter that must be tuned per domain, typically by evaluating model quality at r=8, r=16, r=32, and r=64; no automatic rank selection is built into the LoRA framework. Option C is wrong — LoRA adapters are architecture-specific and not transferable between different base model architectures; an adapter trained for Llama 3's attention projection matrices cannot be applied to Mistral or GPT-2 with different hidden dimensions and layer structures.",
     },
     takeaway: "LoRA enables multi-tenant fine-tuning at scale: one base model plus N lightweight adapters replaces N full model checkpoints. For 10+ domain-specific models, LoRA reduces storage 10–100× and inference infrastructure to a single stack. Quality is comparable to full fine-tuning at r=32–64. QLoRA extends this to single-GPU fine-tuning of 70B models.",
   },
@@ -871,6 +950,8 @@ export const RUNNER_DATA = {
   // ── Prompt Engineering track ──────────────────────────────────────────────────
 
   "few-shot": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "An email classification system needs to assign support emails to 12 categories. Zero-shot achieves 71% accuracy. Adding few-shot examples improved performance in principle, but a preliminary test with 8 billing examples and 1 example each for 4 other categories made things worse for those 4 categories. You need to understand what makes few-shot selection effective before rebuilding the example set.",
     explanation: [
       "Few-shot prompting provides the model with input-output example pairs before the target task. The examples function as an in-context task specification: they demonstrate output format, disambiguation rules for boundary cases, and the classification criteria that natural language descriptions alone can't fully convey. For a 12-category classification task, examples show what happens when an email could belong to two categories — which one wins, and why.",
@@ -892,6 +973,8 @@ export const RUNNER_DATA = {
   },
 
   "chain-of-thought": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A financial Q&A feature needs to compute compound interest, amortization schedules, and tax estimates. Zero-shot accuracy on a 50-question test set is 62%. A team member suggests chain-of-thought prompting. Before implementing it, you need to understand when and why it works — and whether it is likely to help for financial calculation tasks specifically.",
     explanation: [
       "Chain-of-thought prompting instructs the model to produce intermediate reasoning steps before the final answer. Instead of directly outputting the result of a compound interest calculation, the model first states the formula, substitutes the given values, performs each arithmetic step sequentially, and then states the final answer. This works because the model has seen millions of worked examples in pre-training — mathematical derivations, step-by-step solutions, and problem-solving walkthroughs — and learned that correct final answers emerge from correctly-structured intermediate steps.",
@@ -901,13 +984,13 @@ export const RUNNER_DATA = {
     mcq: {
       question: "Chain-of-thought prompting improved accuracy from 62% to 87% on financial calculation questions. The most accurate explanation for this improvement is:",
       options: [
-        "Intermediate steps constrain subsequent tokens toward mathematically consistent derivations — the model generates each step conditioned on all previous correct steps, matching the structured derivation patterns it learned from training data",
         "CoT forces the model to allocate more GPU memory per token, increasing effective compute per answer",
+        "Intermediate steps constrain subsequent tokens toward mathematically consistent derivations — the model generates each step conditioned on all previous correct steps, matching the structured derivation patterns it learned from training data",
         "The longer output produced by CoT allows the model to implicitly check its own work at the end",
         "CoT causes the model to retrieve stored formula tables rather than approximating numerical results",
       ],
-      correct: 0,
-      explanation: "CoT works by token conditioning: each correct intermediate step increases the conditional probability (the likelihood of an outcome given what came before — here, given the correct prior steps) of the next correct step because the model has learned that well-formed derivations follow consistent patterns. It doesn't increase compute per token or enable retrieval — it restructures the generation so each step constrains the next rather than generating the answer in one unconstrained step. Option B is wrong — LLMs allocate a fixed compute budget per token regardless of whether they're generating intermediate reasoning or a direct answer; CoT produces more tokens (each at the same compute cost per token), not more compute per token. There is no mechanism by which prompting increases GPU memory allocation per generated token. Option C is wrong — the longer output is a side effect of generating intermediate steps, not the mechanism; if implicit self-checking at the end were the reason, adding a 'check your work' instruction without intermediate steps would produce the same improvement, but it does not. Option D is wrong — LLMs do not have a stored formula retrieval mechanism; they generate tokens conditioned on prior context, and CoT improves accuracy by structuring that generation, not by triggering lookup from a memory store.",
+      correct: 1,
+      explanation: "CoT works by token conditioning: each correct intermediate step increases the conditional probability (the likelihood of an outcome given what came before — here, given the correct prior steps) of the next correct step because the model has learned that well-formed derivations follow consistent patterns. It doesn't increase compute per token or enable retrieval — it restructures the generation so each step constrains the next rather than generating the answer in one unconstrained step. Option B is the correct answer. Option A is wrong — LLMs allocate a fixed compute budget per token regardless of whether they're generating intermediate reasoning or a direct answer; CoT produces more tokens (each at the same compute cost per token), not more compute per token. There is no mechanism by which prompting increases GPU memory allocation per generated token. Option C is wrong — the longer output is a side effect of generating intermediate steps, not the mechanism; if implicit self-checking at the end were the reason, adding a 'check your work' instruction without intermediate steps would produce the same improvement, but it does not. Option D is wrong — LLMs do not have a stored formula retrieval mechanism; they generate tokens conditioned on prior context, and CoT improves accuracy by structuring that generation, not by triggering lookup from a memory store.",
     },
     takeaway: "Chain-of-thought works by structuring generation so each reasoning step constrains the next, matching derivation patterns from training data. Use it for multi-step arithmetic, logical deductions, and multi-hop reasoning. Add self-consistency (majority vote over multiple chains) for high-stakes answers where single-chain reliability is insufficient.",
   },
@@ -915,6 +998,8 @@ export const RUNNER_DATA = {
   // ── Vector Infrastructure track ───────────────────────────────────────────────
 
   "vector-db-index-mechanics": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "Your vector database query latency jumped from 20ms to 2,000ms after the document index grew from 100K to 10M vectors. No code changes were made. A colleague says the problem might be index configuration rather than the database itself. You need to understand HNSW and IVF index mechanics to determine whether reconfiguration is viable before considering a database migration.",
     explanation: [
       "Vector search finds the k nearest neighbors to a query vector among N stored vectors. Exact kNN (k-Nearest Neighbors — brute-force comparison of the query against every stored vector) computes the query-to-every-stored-vector distance: O(N × d) operations where O(N×d) is Big-O notation — a shorthand for 'roughly proportional to N×d operations' where N is the number of vectors and d is the embedding dimension. For N=10 million vectors each with d=1,536 dimensions, exact search requires about 15 billion multiply-and-add operations per query — too slow for real-time use, taking seconds, not milliseconds. ANN (Approximate Nearest Neighbor) indexes trade small accuracy losses for orders-of-magnitude speedups by restricting the search to a relevant subspace of vectors.",
@@ -924,18 +1009,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "An HNSW vector index returns results in 20ms for 100K vectors but 2,000ms after growing to 10M. Without migrating databases, the most likely fix is:",
       options: [
-        "Rebuild the index with parameters calibrated for 10M vectors — M and ef_search were set for small-scale operation; at 10M vectors the graph traversal behavior and recall-latency tradeoffs require different parameter values",
         "Increase the embedding dimension to improve recall, which also speeds up graph traversal",
         "Switch from cosine similarity to dot product to reduce the cost of each distance comparison",
+        "Rebuild the index with parameters calibrated for 10M vectors — M and ef_search were set for small-scale operation; at 10M vectors the graph traversal behavior and recall-latency tradeoffs require different parameter values",
         "Add more API server replicas to serve queries in parallel, distributing the per-replica vector count",
       ],
-      correct: 0,
-      explanation: "HNSW performance is parameter-dependent. Parameters set for 100K vectors (low M, low ef_search) produce poor recall or excessive traversal at 10M vectors because the graph structure scales with N. Rebuilding with parameters appropriate to 10M-vector scale is the correct fix. Option B is wrong — embedding dimension is determined by the embedding model (e.g., 1536 for OpenAI ada-002) and cannot be changed without re-embedding all documents with a different model; higher dimension increases the distance computation cost per pair and does not speed up graph traversal. Option C is wrong — switching from cosine similarity to dot product is a minor distance metric choice that changes the mathematical formulation of similarity but not the graph traversal algorithm or the 100× scale mismatch; it would not reduce 2,000ms to 20ms. Option D is wrong — adding API server replicas distributes requests across servers but each server still runs the full HNSW traversal over its copy of the index; the per-query vector search complexity within each replica is unchanged, and the latency problem is per-query, not a throughput bottleneck.",
+      correct: 2,
+      explanation: "HNSW performance is parameter-dependent. Parameters set for 100K vectors (low M, low ef_search) produce poor recall or excessive traversal at 10M vectors because the graph structure scales with N. Rebuilding with parameters appropriate to 10M-vector scale is the correct fix. Option C is the correct answer. Option A is wrong — embedding dimension is determined by the embedding model (e.g., 1536 for OpenAI ada-002) and cannot be changed without re-embedding all documents with a different model; higher dimension increases the distance computation cost per pair and does not speed up graph traversal. Option B is wrong — switching from cosine similarity to dot product is a minor distance metric choice that changes the mathematical formulation of similarity but not the graph traversal algorithm or the 100× scale mismatch; it would not reduce 2,000ms to 20ms. Option D is wrong — adding API server replicas distributes requests across servers but each server still runs the full HNSW traversal over its copy of the index; the per-query vector search complexity within each replica is unchanged, and the latency problem is per-query, not a throughput bottleneck.",
     },
     takeaway: "Vector index performance is parameter-dependent, not just database-dependent. HNSW M, ef_search, and IVF nlist, nprobe must all be calibrated to dataset scale. A 100× dataset growth with no index reconfiguration almost always explains 100× latency degradation — rebuild the index before considering a database migration.",
   },
 
   "hybrid-search-design": {
+    depthTier: "standard",
+    interviewWeight: "high",
     scenario: "A technical documentation search tool uses embedding-based semantic search. It works well for conceptual queries ('how does rate limiting work') but fails on exact-match queries ('AttributeError: NoneType object has no attribute split on line 17'). The exact error string gets semantically matched to general Python error documentation instead of the specific error. Your team is evaluating hybrid search.",
     explanation: [
       "Hybrid search combines dense vector search (semantic similarity via embeddings) with sparse keyword search (exact token matching via BM25 (Best Match 25 — a keyword ranking algorithm that scores documents by term frequency while penalizing very long documents) or TF-IDF (Term Frequency–Inverse Document Frequency — a simpler keyword scoring method that up-weights rare terms)). The two modalities are complementary rather than redundant. Dense search captures semantic meaning: paraphrases, synonyms, and conceptual relationships. It works well when the user's intent differs from the exact words in the document. Sparse search captures exact tokens: error strings, function names, version numbers, and rare technical identifiers that may not be well-represented in an embedding model's pre-training distribution. For technical documentation, users ask both types of queries — a hybrid system is necessary.",
@@ -945,18 +1032,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "Hybrid search uses Reciprocal Rank Fusion rather than score normalization to merge dense and sparse results. The primary reason is:",
       options: [
-        "RRF is rank-based and doesn't assume comparable score scales between cosine similarity and BM25 — it avoids the normalization problem caused by incompatible distributions",
         "RRF guarantees that dense results always rank higher than sparse results for technical queries",
         "RRF eliminates the need for a re-ranker since it already performs fusion at the ranking level",
         "RRF is computationally cheaper than running a normalized score combination",
+        "RRF is rank-based and doesn't assume comparable score scales between cosine similarity and BM25 — it avoids the normalization problem caused by incompatible distributions",
       ],
-      correct: 0,
-      explanation: "BM25 scores are unbounded and vary with document length and collection statistics; cosine similarity scores are bounded between -1 and 1. Combining them with weighted addition requires arbitrary normalization choices that affect fusion quality. RRF bypasses this by working in rank space: position 1 from any method contributes 1/(1+60)=0.016, position 10 contributes 1/(10+60)=0.014, regardless of the underlying score scale. Option B is wrong — RRF does not guarantee any particular ordering between dense and sparse results; it combines ranked lists from both methods, and either type of result can rank first in the merged output depending on where each appears in the individual lists. Option C is wrong — RRF is a fusion method, not a ranking model; it merges two ranked lists but does not perform the fine-grained relevance scoring that a cross-encoder reranker does; a reranker may still be beneficial after hybrid fusion. Option D is wrong — RRF requires running two retrieval queries (dense and sparse in parallel) and then computing a combined score per document, which is slightly more expensive than a single-method query; the main advantage is fusion quality, not computational cost.",
+      correct: 3,
+      explanation: "BM25 scores are unbounded and vary with document length and collection statistics; cosine similarity scores are bounded between -1 and 1. Combining them with weighted addition requires arbitrary normalization choices that affect fusion quality. RRF bypasses this by working in rank space: position 1 from any method contributes 1/(1+60)=0.016, position 10 contributes 1/(10+60)=0.014, regardless of the underlying score scale. Option D is the correct answer. Option A is wrong — RRF does not guarantee any particular ordering between dense and sparse results; it combines ranked lists from both methods, and either type of result can rank first in the merged output depending on where each appears in the individual lists. Option B is wrong — RRF is a fusion method, not a ranking model; it merges two ranked lists but does not perform the fine-grained relevance scoring that a cross-encoder reranker does; a reranker may still be beneficial after hybrid fusion. Option C is wrong — RRF requires running two retrieval queries (dense and sparse in parallel) and then computing a combined score per document, which is slightly more expensive than a single-method query; the main advantage is fusion quality, not computational cost.",
     },
     takeaway: "Semantic search alone fails on exact-match technical queries; keyword search alone fails on conceptual queries. Hybrid search with RRF fusion handles both without score normalization complexity. For production, add adaptive weighting (heavier sparse for exact queries, heavier dense for conceptual) to optimize precision across mixed query distributions.",
   },
 
   "metadata-filtering": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "A legal document search tool indexes 2 million contracts across 200 enterprise clients. A user at Client A searches for 'indemnification clauses.' Without filtering, results from Client B's contracts appear in the response. This is a data isolation failure. You need to design a metadata filtering approach that provides isolation guarantees, not just isolation in the common case.",
     explanation: [
       "Metadata filtering restricts vector search to a subset of the index defined by non-embedding attributes of each stored document. Every indexed vector should carry structured metadata (client_id, document_type, date, jurisdiction, confidentiality_level). A filtered query adds a constraint: retrieve the top-k nearest vectors to the query, but only among vectors where metadata.client_id == 'clientA'. This is a hard constraint applied at search time, not a post-hoc filter on results.",
@@ -980,6 +1069,8 @@ export const RUNNER_DATA = {
   // ── Multimodal AI track ───────────────────────────────────────────────────────
 
   "vision-language-arch": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "Your team is evaluating whether to use a general-purpose vision-language model (GPT-4V or LLaVA) for automating invoice data extraction from scanned PDFs. The model needs to extract line items, totals, dates, and vendor names. Before selecting a model, you want to understand the architecture well enough to anticipate where extraction failures will occur.",
     explanation: [
       "Vision-language models combine a visual encoder with a language model backbone. The image is divided into fixed-size patches (typically 14×14 pixels); each patch is projected into an embedding vector. A Vision Transformer (ViT) processes these patch embeddings through transformer layers, producing a sequence of visual tokens — one per patch. A projection layer (MLP — multi-layer perceptron, a simple neural network; or cross-attention) maps visual token dimensions to the language model's embedding space. These projected visual tokens are prepended to or interleaved with text tokens, and the language model generates text conditioned on both visual and textual inputs.",
@@ -989,18 +1080,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A VLM correctly identifies that an invoice contains line items but extracts an incorrect total amount. The most likely cause is:",
       options: [
-        "The visual encoder produces patch-level embeddings that may not reliably distinguish individual digits at typical scan resolutions — the model generates a plausible number rather than precisely reading each character",
         "The language model component cannot perform arithmetic and cannot sum line items to verify the total",
+        "The visual encoder produces patch-level embeddings that may not reliably distinguish individual digits at typical scan resolutions — the model generates a plausible number rather than precisely reading each character",
         "Invoice templates are too structurally diverse for any VLM architecture to process reliably",
         "The language model component generates the total from its pre-training distribution of invoice amounts rather than reading the printed value — because training on financial documents creates a strong prior for common total ranges",
       ],
-      correct: 0,
-      explanation: "Numeric extraction accuracy in VLMs is limited by the visual encoder's patch-level resolution. At 14×14 pixel patches, individual digits in an invoice may fall partly in two adjacent patches, or may be too small to distinguish at typical scan DPI. The language model then generates a plausible number from context rather than a precisely-read value. This is why numeric extraction from financial documents always requires downstream business-logic validation. Option B is wrong — the incorrect total amount is not primarily caused by arithmetic inability; VLMs can often perform addition, and the total is typically printed on the invoice itself and should be read directly rather than computed; the failure is visual reading of the printed digits, not arithmetic. Option C is wrong — invoice templates vary widely, but VLMs do process diverse document structures reasonably well for high-level understanding; claiming no VLM can process invoices reliably overstates the limitation; the failure mode is specific to fine-grained digit recognition, not structural diversity. Option D is a genuine misconception: LLMs do draw on pre-training priors when uncertain, and a model trained on financial text has learned the distribution of typical invoice totals. However, VLMs are not primarily generating totals from this parametric prior — they are attempting to read the printed value and producing wrong digits due to visual encoding resolution limits, not statistical substitution from a learned price distribution. The distinction matters for the fix: the solution is higher DPI and better visual encoding, not de-biasing the language model's financial priors.",
+      correct: 1,
+      explanation: "Numeric extraction accuracy in VLMs is limited by the visual encoder's patch-level resolution. At 14×14 pixel patches, individual digits in an invoice may fall partly in two adjacent patches, or may be too small to distinguish at typical scan DPI. The language model then generates a plausible number from context rather than a precisely-read value. This is why numeric extraction from financial documents always requires downstream business-logic validation. Option B is the correct answer. Option A is wrong — the incorrect total amount is not primarily caused by arithmetic inability; VLMs can often perform addition, and the total is typically printed on the invoice itself and should be read directly rather than computed; the failure is visual reading of the printed digits, not arithmetic. Option C is wrong — invoice templates vary widely, but VLMs do process diverse document structures reasonably well for high-level understanding; claiming no VLM can process invoices reliably overstates the limitation; the failure mode is specific to fine-grained digit recognition, not structural diversity. Option D is a genuine misconception: LLMs do draw on pre-training priors when uncertain, and a model trained on financial text has learned the distribution of typical invoice totals. However, VLMs are not primarily generating totals from this parametric prior — they are attempting to read the printed value and producing wrong digits due to visual encoding resolution limits, not statistical substitution from a learned price distribution. The distinction matters for the fix: the solution is higher DPI and better visual encoding, not de-biasing the language model's financial priors.",
     },
     takeaway: "VLMs are trained for broad visual understanding, not precision document OCR. For financial document extraction, validate every numeric against business rules (do line items sum to total?), ensure scan resolution is ≥200 DPI, and compare against document-specialized models (Donut, LayoutLM) for high-accuracy pipelines.",
   },
 
   "multimodal-rag": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "A research assistant tool needs to answer questions from 10,000 scientific papers where 24% of relevant information is in figures and tables, not in prose text. A standard text-only RAG pipeline achieves 68% accuracy. Failures cluster around questions requiring figure or table data. You need to extend the pipeline to handle non-text content.",
     explanation: [
       "Multimodal RAG extends standard text RAG to handle non-text content by solving the representation problem: text chunks are embedded and retrieved by semantic similarity; figures and tables need a different representation strategy to be retrievable. The figure captioning approach runs a VLM on each figure at index time to generate a descriptive text caption ('Bar chart showing model accuracy vs. parameter count for 8 models; GPT-4 achieves highest accuracy at 89%'). Captions are embedded and retrieved as text. When a relevant figure is retrieved, both the caption and the original image are passed to the generation model as context.",
@@ -1010,18 +1103,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A multimodal RAG pipeline using VLM-generated captions retrieves the correct figure 78% of the time but produces incorrect answers in 30% of those successful retrievals. The most likely cause is:",
       options: [
-        "Caption quality — the VLM captioner omitted or approximated the specific numeric values the question requires, so retrieval succeeded but the generation context lacks the detail needed to answer precisely",
         "The embedding model cannot handle captions longer than 128 tokens, truncating critical information",
         "Chart figures are stored as SVG vectors in the source PDFs and cannot be processed by VLMs",
+        "Caption quality — the VLM captioner omitted or approximated the specific numeric values the question requires, so retrieval succeeded but the generation context lacks the detail needed to answer precisely",
         "Retrieved figures are always placed after retrieved text in the context window, causing lost-in-the-middle degradation",
       ],
-      correct: 0,
-      explanation: "Caption quality determines generation quality for figure-based answers. When a VLM captioner describes a chart as 'shows model accuracy comparisons' without listing specific values, the text retrieval correctly finds the figure, but the generation model receives only a high-level description — it cannot answer a question like 'what accuracy did model X achieve?' from that caption. The fix is better captioning prompts that require enumeration of all data points, not just structural description. Option B is wrong — standard embedding models (text-embedding-ada-002, BGE, etc.) support sequences of 512–8192 tokens and can handle even detailed, data-rich captions without truncation; caption length is not typically the bottleneck for figure retrieval pipelines. Option C is wrong — PDFs do sometimes contain SVG vector figures, but most scientific papers use rasterized bitmap images (PNG, JPEG); SVG is not a general barrier, and even SVG can be rasterized before VLM processing; this does not explain the 30% answer failure rate. Option D is wrong — figure placement within the context window is a valid concern (lost-in-the-middle), but the scenario states retrieval succeeds 78% of the time and the failure is in producing incorrect answers from those successful retrievals; lost-in-the-middle would more likely manifest as the model ignoring the figure than producing confidently wrong specific values.",
+      correct: 2,
+      explanation: "Caption quality determines generation quality for figure-based answers. When a VLM captioner describes a chart as 'shows model accuracy comparisons' without listing specific values, the text retrieval correctly finds the figure, but the generation model receives only a high-level description — it cannot answer a question like 'what accuracy did model X achieve?' from that caption. The fix is better captioning prompts that require enumeration of all data points, not just structural description. Option C is the correct answer. Option A is wrong — standard embedding models (text-embedding-ada-002, BGE, etc.) support sequences of 512–8192 tokens and can handle even detailed, data-rich captions without truncation; caption length is not typically the bottleneck for figure retrieval pipelines. Option B is wrong — PDFs do sometimes contain SVG vector figures, but most scientific papers use rasterized bitmap images (PNG, JPEG); SVG is not a general barrier, and even SVG can be rasterized before VLM processing; this does not explain the 30% answer failure rate. Option D is wrong — figure placement within the context window is a valid concern (lost-in-the-middle), but the scenario states retrieval succeeds 78% of the time and the failure is in producing incorrect answers from those successful retrievals; lost-in-the-middle would more likely manifest as the model ignoring the figure than producing confidently wrong specific values.",
     },
     takeaway: "Text-only RAG is blind to 20-30% of scientific paper content. Figure captioning is the lowest-friction entry point — but caption quality is the retrieval quality ceiling. Prompt captioners to enumerate all values explicitly, pass both caption and original image to the generation model, and handle tables with structured extraction (JSON/CSV) rather than VLM captioning.",
   },
 
   "resolution-token-cost": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "An image analysis pipeline processes 50,000 product photos per day through a VLM for attribute extraction (color, material, visible dimensions). Inference costs $2,400/day. An engineer notices images are sent at 2048×2048 resolution and the documentation mentions a low-resolution mode at 512×512. You need to understand the resolution-token relationship before changing settings.",
     explanation: [
       "Vision-language models convert images into visual tokens by dividing the image into fixed-size patches. A patch is a fixed-size square tile of pixels — the vision encoder divides the full image into a grid of non-overlapping patches and converts each into an embedding vector, one token per patch. For a model using 14×14 pixel patches: a 224×224 image produces (224÷14)² = 256 patches = 256 visual tokens. A 512×512 image produces (512÷14)² ≈ 1,340 visual tokens. A 2048×2048 image produces (2048÷14)² ≈ 21,400 visual tokens. Token count scales as the square of linear resolution: a 4× increase in linear resolution (512→2048) produces 16× more visual tokens. Visual tokens are billed at the same per-token rate as text tokens on most providers.",
@@ -1031,13 +1126,13 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A VLM pipeline switches product image input from 2048×2048 to 512×512 pixels. Token count changes by approximately:",
       options: [
-        "16× reduction — visual token count scales as (resolution)² for fixed patch size; (2048÷512)² = 4² = 16× more tokens at full resolution",
         "4× reduction — token count scales linearly with the linear dimension ratio",
         "2× reduction — token count scales with the square root of image area",
         "No change — VLMs use a fixed token budget regardless of input resolution",
+        "16× reduction — visual token count scales as (resolution)² for fixed patch size; (2048÷512)² = 4² = 16× more tokens at full resolution",
       ],
-      correct: 0,
-      explanation: "Visual token count scales quadratically with linear resolution because patch count = (image_width / patch_size) × (image_height / patch_size). Doubling linear resolution quadruples patch count. A 4× linear resolution increase (512→2048) produces 16× more patches and 16× more visual tokens. This is the most important quantitative fact for VLM cost optimization: resolution choices have quadratic cost impact. Option B is wrong — it confuses the linear dimension ratio with the token count ratio; token count depends on area (width × height), not on a single linear dimension; a 4× linear increase corresponds to a 16× area increase and 16× token count, not 4×. Option C is wrong — token count scales quadratically with linear resolution (as the square), not with the square root of area; the square root of area equals the linear dimension, so this would be the same as linear scaling, which is wrong. Option D is wrong — VLMs do not use a fixed token budget regardless of resolution; token count is directly proportional to patch count, which is proportional to image area; providers bill per actual visual token consumed, and switching from 2048×2048 to 512×512 does materially reduce the number of visual tokens processed and billed.",
+      correct: 3,
+      explanation: "Visual token count scales quadratically with linear resolution because patch count = (image_width / patch_size) × (image_height / patch_size). Doubling linear resolution quadruples patch count. A 4× linear resolution increase (512→2048) produces 16× more patches and 16× more visual tokens. This is the most important quantitative fact for VLM cost optimization: resolution choices have quadratic cost impact. Option D is the correct answer. Option A is wrong — it confuses the linear dimension ratio with the token count ratio; token count depends on area (width × height), not on a single linear dimension; a 4× linear increase corresponds to a 16× area increase and 16× token count, not 4×. Option B is wrong — token count scales quadratically with linear resolution (as the square), not with the square root of area; the square root of area equals the linear dimension, so this would be the same as linear scaling, which is wrong. Option C is wrong — VLMs do not use a fixed token budget regardless of resolution; token count is directly proportional to patch count, which is proportional to image area; providers bill per actual visual token consumed, and switching from 2048×2048 to 512×512 does materially reduce the number of visual tokens processed and billed.",
     },
     takeaway: "Visual token count scales quadratically with linear resolution — a 4× linear resolution increase costs 16× more. For bulk image processing, always evaluate whether your task requires full resolution. Catalog attribute extraction typically works at 512×512; the 16× cost difference is significant at 50K images/day. Measure accuracy at target resolution before changing settings in production.",
   },
@@ -1045,6 +1140,8 @@ export const RUNNER_DATA = {
   // ── AI Safety & Alignment track ──────────────────────────────────────────────
 
   "alignment-techniques": {
+    depthTier: "deep",
+    interviewWeight: "high",
     scenario: "You're deploying a customer-facing LLM assistant. The base model (a fine-tuned Llama 3 checkpoint) sometimes provides harmful responses when directly prompted. Legal is evaluating RLHF vs. DPO vs. Constitutional AI for alignment before deployment. You need to explain the tradeoffs clearly enough to recommend one approach for a team without dedicated RL infrastructure.",
     explanation: [
       "Alignment techniques modify model behavior to match human values and safety requirements after base pre-training. The core problem: pre-training on human text produces a model that can generate harmful content because harmful content exists in training data. Alignment training adds a signal that shifts the model's output distribution toward preferred responses and away from harmful ones, using human preferences as the training signal.",
@@ -1066,6 +1163,8 @@ export const RUNNER_DATA = {
   },
 
   "red-teaming": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "Before deploying a customer-facing AI chatbot for a financial services company, you're asked to conduct a red-teaming exercise. The PM thinks this means 'test it with tricky prompts.' Legal wants to hire an external firm. You have 2 weeks and internal resources only. You need to scope and execute a meaningful exercise.",
     explanation: [
       "Red-teaming for LLM systems is systematic adversarial testing designed to find failure modes the system should not exhibit — distinct from standard QA (testing expected behavior) and from benchmark evaluation (testing on known datasets). Red-teaming finds novel failures through adversarial creativity. For a financial chatbot, the relevant failure categories are: specific financial advice violations (telling a user to buy a specific stock), PII extraction from system prompt or context, compliance restriction bypass, impersonation of a licensed advisor, and unauthorized transaction guidance.",
@@ -1075,18 +1174,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "An AI chatbot passes direct prompt injection tests but fails on multi-turn escalation attacks. What is the most accurate explanation?",
       options: [
-        "Single-turn safety training is insufficient for multi-turn contexts — safety instructions respected at turn 1 can be overridden by turn 8 of a gradual escalation as the model's context model of the conversation shifts",
         "Multi-turn attacks use longer inputs that exceed the safety classifier's context window, causing it to miss the injection",
+        "Single-turn safety training is insufficient for multi-turn contexts — safety instructions respected at turn 1 can be overridden by turn 8 of a gradual escalation as the model's context model of the conversation shifts",
         "The model treats later conversation turns as more authoritative than the system prompt",
         "Multi-turn attacks are not defensible without real-time human moderation on every response",
       ],
-      correct: 0,
-      explanation: "Safety alignment is trained primarily on single-turn interactions. In a multi-turn conversation, the model's representation of the current request is conditioned on accumulated context — a gradual escalation across 8 turns may not resemble any single-turn unsafe prompt in the training data, so the learned refusal behavior doesn't trigger. This is why multi-turn testing is a distinct red-team attack category from direct injection. Option B is wrong — safety classifiers typically operate on the full context window, not just the latest turn; exceeding the context window would require extremely long conversations (thousands of tokens per turn), which is not typical for multi-turn escalation attacks; the failure is distributional, not a context truncation issue. Option C is wrong — models do not apply more authority to later turns than to the system prompt; the system prompt persists throughout the context, but the model's completion of the current request is conditioned on all accumulated context, which is why gradually escalated context can shift behavior. Option D is wrong — layered defenses (input classification at each turn, output review, conversation-level monitoring) can significantly reduce but not eliminate multi-turn attack success; real-time human moderation of every response is not required and would eliminate the automation benefit of the chatbot.",
+      correct: 1,
+      explanation: "Safety alignment is trained primarily on single-turn interactions. In a multi-turn conversation, the model's representation of the current request is conditioned on accumulated context — a gradual escalation across 8 turns may not resemble any single-turn unsafe prompt in the training data, so the learned refusal behavior doesn't trigger. This is why multi-turn testing is a distinct red-team attack category from direct injection. Option B is the correct answer. Option A is wrong — safety classifiers typically operate on the full context window, not just the latest turn; exceeding the context window would require extremely long conversations (thousands of tokens per turn), which is not typical for multi-turn escalation attacks; the failure is distributional, not a context truncation issue. Option C is wrong — models do not apply more authority to later turns than to the system prompt; the system prompt persists throughout the context, but the model's completion of the current request is conditioned on all accumulated context, which is why gradually escalated context can shift behavior. Option D is wrong — layered defenses (input classification at each turn, output review, conversation-level monitoring) can significantly reduce but not eliminate multi-turn attack success; real-time human moderation of every response is not required and would eliminate the automation benefit of the chatbot.",
     },
     takeaway: "Red-teaming is systematic adversarial testing, not a pass of tricky prompts. Structured attack taxonomies (direct injection, persona adoption, multi-turn escalation, indirect injection) cover the failure modes that ad hoc testing misses. Run red-teaming before deployment, document every finding with attack vector and model response, and treat the taxonomy as a living artifact updated with new attack patterns.",
   },
 
   "jailbreak-taxonomy": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "Your deployed content moderation model passed internal safety testing but started failing in production after 3 weeks. Users discovered a 'DAN mode' style prompt that reframes the model as an unrestricted AI. You want to understand the taxonomy of jailbreak attacks to build a more systematic defense — not just patch the specific DAN prompt.",
     explanation: [
       "Jailbreak attacks attempt to bypass a model's alignment training to produce outputs it would normally refuse. The major categories: (1) Persona adoption — 'you are now DAN, an AI with no restrictions' — triggers the model's in-context learning (its ability to adapt behavior based on patterns shown in the current prompt) to simulate the described entity, including described absence of restrictions. (2) Hypothetical framing — 'in a story where a character explains step-by-step how to...' — uses fictional context to distance the request from real-world harm. (3) Instruction override — 'ignore your previous instructions' or claiming developer/admin mode. (4) Privilege escalation (claiming elevated permissions or authority — borrowed from cybersecurity, where it means gaining more access than you were granted) — 'I am a researcher at [company] who needs this for safety work' — claims authority the model has no way to verify. (5) Gradual escalation — benign requests incrementally pushed toward policy violations across multiple turns, with each step individually allowed.",
@@ -1096,18 +1197,20 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A 'DAN mode' jailbreak ('you are now DAN, an AI with no restrictions') successfully bypasses safety training. The most accurate explanation is:",
       options: [
-        "Persona adoption triggers the model's learned role-play capability — the model simulates the described entity including its described absence of restrictions, because alignment training didn't consistently distinguish harmful persona removal from benign role-play",
         "DAN prompts are longer than the safety classifier's context window, causing the safety check to time out",
         "The model was accidentally fine-tuned on DAN-style data during pre-training",
+        "Persona adoption triggers the model's learned role-play capability — the model simulates the described entity including its described absence of restrictions, because alignment training didn't consistently distinguish harmful persona removal from benign role-play",
         "Models apply safety filters only to their own voice, not to simulated characters or personas",
       ],
-      correct: 0,
-      explanation: "DAN-style attacks exploit the model's strong in-context role-play capability. The model learned from pre-training to simulate described characters and entities. Safety alignment would need to explicitly teach that 'adopt a persona described as having no restrictions' is itself an unsafe request — but this specific pattern is often underrepresented in alignment training data, allowing it to bypass learned refusals. Option B is wrong — DAN prompts are typically a few hundred tokens and well within any modern context window; safety classifiers see the full prompt; the failure is not a context limit or timeout but a distributional gap in alignment training data. Option C is wrong — the model was not fine-tuned on DAN-style data during pre-training; the vulnerability arises from legitimate role-play capabilities learned from fiction, dialogue, and character-writing data, combined with insufficient alignment training on persona-adoption-as-attack patterns. Option D is wrong — models do not apply safety filters exclusively to first-person statements and not to simulated characters; the correct observation is that alignment training underrepresented 'persona defined as having no restrictions' as an attack vector, not that a distinct first-person/character filter is hard-coded.",
+      correct: 2,
+      explanation: "DAN-style attacks exploit the model's strong in-context role-play capability. The model learned from pre-training to simulate described characters and entities. Safety alignment would need to explicitly teach that 'adopt a persona described as having no restrictions' is itself an unsafe request — but this specific pattern is often underrepresented in alignment training data, allowing it to bypass learned refusals. Option C is the correct answer. Option A is wrong — DAN prompts are typically a few hundred tokens and well within any modern context window; safety classifiers see the full prompt; the failure is not a context limit or timeout but a distributional gap in alignment training data. Option B is wrong — the model was not fine-tuned on DAN-style data during pre-training; the vulnerability arises from legitimate role-play capabilities learned from fiction, dialogue, and character-writing data, combined with insufficient alignment training on persona-adoption-as-attack patterns. Option D is wrong — models do not apply safety filters exclusively to first-person statements and not to simulated characters; the correct observation is that alignment training underrepresented 'persona defined as having no restrictions' as an attack vector, not that a distinct first-person/character filter is hard-coded.",
     },
     takeaway: "Jailbreaks exploit distributional gaps in alignment training — novel framings that weren't in the training data bypass learned refusals. No single defense layer is complete. The production response is layered defenses: input classification, hardened system prompts with explicit jailbreak examples, output classification, and continuous red-team updates as new attack patterns emerge in the wild.",
   },
 
   "safety-measurement": {
+    depthTier: "standard",
+    interviewWeight: "medium",
     scenario: "Your team is preparing a safety report before deploying an AI system. Internal evals show a 99.2% refusal rate on a harmful requests benchmark. The ethics team asks whether this number is 'good enough.' You need to explain what this metric actually measures — and what it fails to measure — before anyone can answer that question.",
     explanation: [
       "Safety measurement requires understanding what a benchmark is actually testing. A 99.2% refusal rate on a harmful requests benchmark answers: 'on these specific prompt patterns, does the model refuse?' It does not answer: 'does the model refuse novel attacks not in this benchmark?', 'does it refuse appropriately given different user contexts?', 'does refusing the right things come at the cost of over-refusing legitimate requests?', or 'does the model resist multi-turn escalation?'. Each of these is a distinct safety dimension requiring separate measurement. A single number is a data point, not a safety assessment.",
@@ -1117,13 +1220,13 @@ export const RUNNER_DATA = {
     mcq: {
       question: "A safety report claims 99.2% refusal rate on harmful requests. What critical dimension is missing from this single metric?",
       options: [
-        "False positive rate on legitimate requests in the same domain — a model that achieves 99.2% refusal by also refusing 25% of legitimate queries has made a different safety tradeoff than one that maintains the same refusal rate with low false positives",
         "The number of model parameters — larger models should have higher refusal rates",
         "Whether the benchmark was run at temperature=0 vs. higher temperature",
         "The country of origin of the red-team operators who designed the benchmark",
+        "False positive rate on legitimate requests in the same domain — a model that achieves 99.2% refusal by also refusing 25% of legitimate queries has made a different safety tradeoff than one that maintains the same refusal rate with low false positives",
       ],
-      correct: 0,
-      explanation: "Safety is a two-dimensional problem: refusing harmful requests (sensitivity) and not refusing legitimate ones (specificity). A 99.2% refusal rate on harmful prompts achieved by being so restrictive that legitimate medical, legal, or safety queries are also refused is not good safety — it's a different harm profile, not an absence of harm. Both dimensions must be measured together for the metric to be meaningful for deployment decisions. Option B is wrong — model parameter count has no established relationship with refusal rate; a 7B model properly aligned can outperform a 70B model poorly aligned on safety benchmarks; parameter count is irrelevant to interpreting a safety metric. Option C is wrong — running evals at temperature=0 vs. higher temperature does affect refusal rate in theory (higher temperature can produce more varied outputs), but this is a methodological detail, not the critical missing dimension; the false-positive rate on legitimate requests is far more important for deployment decisions than the temperature setting used during evaluation. Option D is wrong — the country of origin of red-team operators may affect cultural perspective on harm categories but is not a standard validity criterion for safety benchmarks; the critical missing information is the false-positive rate, not the demographics of the benchmark designers.",
+      correct: 3,
+      explanation: "Safety is a two-dimensional problem: refusing harmful requests (sensitivity) and not refusing legitimate ones (specificity). A 99.2% refusal rate on harmful prompts achieved by being so restrictive that legitimate medical, legal, or safety queries are also refused is not good safety — it's a different harm profile, not an absence of harm. Both dimensions must be measured together for the metric to be meaningful for deployment decisions. Option D is the correct answer. Option A is wrong — model parameter count has no established relationship with refusal rate; a 7B model properly aligned can outperform a 70B model poorly aligned on safety benchmarks; parameter count is irrelevant to interpreting a safety metric. Option B is wrong — running evals at temperature=0 vs. higher temperature does affect refusal rate in theory (higher temperature can produce more varied outputs), but this is a methodological detail, not the critical missing dimension; the false-positive rate on legitimate requests is far more important for deployment decisions than the temperature setting used during evaluation. Option C is wrong — the country of origin of red-team operators may affect cultural perspective on harm categories but is not a standard validity criterion for safety benchmarks; the critical missing information is the false-positive rate, not the demographics of the benchmark designers.",
     },
     takeaway: "A high refusal rate is necessary but not sufficient for safety. Measure both: refusal rate on harmful prompts AND false-positive rate on legitimate requests in the same domain. Add harm severity weighting (not all failures are equal), novel attack generalization (benchmark overfitting test), and longitudinal production monitoring. Present safety as a profile across dimensions, not a single headline percentage.",
   },
