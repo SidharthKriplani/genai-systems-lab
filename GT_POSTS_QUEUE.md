@@ -15,16 +15,16 @@ _Logged sprint 93q. Same pedagogical standard as Foundations modules — same 7 
 
 | # | Concept | Status | Source module |
 |---|---------|--------|---------------|
-| 1 | Attention: why Q and K had to exist | pending | attention |
-| 2 | Why softmax and not just normalize | pending | attention |
-| 3 | KV cache: why adding one user slows everyone | pending | kv-cache |
-| 4 | Why temperature=0 is not "most accurate" | pending | sampling |
-| 5 | Why fine-tuning destroys what pretraining built | pending | nextoken |
-| 6 | What hallucination actually is (not a bug) | pending | hallucination |
-| 7 | Why RAG fails in the middle of documents | pending | context |
-| 8 | LoRA: one base model, N adapters | pending | lora |
-| 9 | Chinchilla: bigger is not always better | pending | scaling-laws |
-| 10 | Why chunk boundaries kill RAG quality | pending | chunking |
+| 1 | Attention: why Q and K had to exist | done    | attention |
+| 2 | Why softmax and not just normalize | done    | attention |
+| 3 | KV cache: why adding one user slows everyone | done    | kv-cache |
+| 4 | Why temperature=0 is not "most accurate" | done    | sampling |
+| 5 | Why fine-tuning destroys what pretraining built | done    | nextoken |
+| 6 | What hallucination actually is (not a bug) | done    | hallucination |
+| 7 | Why RAG fails in the middle of documents | done    | context |
+| 8 | LoRA: one base model, N adapters | done    | lora |
+| 9 | Chinchilla: bigger is not always better | done    | scaling-laws |
+| 10 | Why chunk boundaries kill RAG quality | done    | chunking |
 
 ## Process
 
