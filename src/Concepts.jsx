@@ -7290,48 +7290,139 @@ function PromptSecurityModule() {
 
 // ── VectorIndexModule ────────────────────────────────────────────────────────
 function VectorIndexModule() {
-  const [count, setCount] = useState(100000);
   const [algo, setAlgo] = useState("HNSW");
-  const algos = {
-    HNSW:  { recall: 98, latency: 2,  memory: 60,  note: "Graph-based. High recall, high memory, great latency." },
-    IVF:   { recall: 92, latency: 5,  memory: 25,  note: "Bucket-based. Less memory, recall drops at boundaries." },
-    "BM25+PQ": { recall: 78, latency: 8, memory: 12, note: "Sparse+quantized. Lowest memory, exact-match friendly." },
-  };
-  const a = algos[algo];
-  const scale = Math.log10(count) / 7;
-  const latencyScaled = +(a.latency * (1 + scale * 2)).toFixed(1);
-  const memGB = +((count / 1e6) * a.memory).toFixed(1);
+  const [hnswM, setHnswM] = useState(16);
+  const [efSearch, setEfSearch] = useState(64);
+  const [ivfNlist, setIvfNlist] = useState(64);
+  const [ivfNprobe, setIvfNprobe] = useState(8);
+  const [traceOpen, setTraceOpen] = useState(false);
+
+  // Deterministic stats — no Math.random()
+  let recall, latencyMs, memMB, visited;
+  if (algo === "HNSW") {
+    recall = Math.min(99, Math.round(60 + hnswM * 1.1 + efSearch * 0.18));
+    latencyMs = Math.max(0.5, 20 - hnswM * 0.15 - efSearch * 0.05).toFixed(1);
+    memMB = hnswM * 10 + 40;
+    visited = Math.round(efSearch * 2.2 + hnswM * 3);
+  } else if (algo === "IVF") {
+    const np = Math.min(ivfNprobe, ivfNlist);
+    recall = Math.min(97, Math.round(45 + Math.log2(Math.max(2, ivfNlist)) * 6 + np * 3.5));
+    latencyMs = Math.max(0.8, 15 - np * 0.3).toFixed(1);
+    memMB = Math.round(ivfNlist * 0.8 + 20);
+    visited = Math.round((100000 / ivfNlist) * np);
+  } else {
+    recall = 100; latencyMs = "182"; memMB = 38; visited = 100000;
+  }
+
+  const trace = algo === "HNSW"
+    ? [
+        `[L3] greedy descent from entry node`,
+        `[L2] navigate toward query region (M=${hnswM} edges/node)`,
+        `[L1] beam expand: ${Math.round(efSearch * 1.6)} candidates queued`,
+        `[L0] fine scan: ${visited.toLocaleString()} nodes visited`,
+        `↳ top-10 by distance — recall@10 ≈ ${recall}%`,
+      ]
+    : algo === "IVF"
+    ? [
+        `[quantizer] nearest centroid for query vector`,
+        `[probe] searching ${Math.min(ivfNprobe, ivfNlist)} of ${ivfNlist} clusters`,
+        `[scan] ${visited.toLocaleString()} vectors checked`,
+        `↳ top-10 by distance — recall@10 ≈ ${recall}%`,
+        `↳ ${(100000 - visited).toLocaleString()} vectors skipped (other clusters)`,
+      ]
+    : [
+        `[flat scan] no index — check all 100,000 vectors`,
+        `[distance] compute cosine similarity to each`,
+        `[sort] full sort of 100,000 scores`,
+        `↳ recall@10 = 100% (exact, by definition)`,
+      ];
+
+  const statRows = [
+    { label: "Recall @10", val: `${recall}%`, pct: recall, highGood: true },
+    { label: "Latency (ms/query)", val: `${latencyMs}ms`, pct: Math.min(100, Math.round((parseFloat(latencyMs) / 25) * 100)), highGood: false },
+    { label: "Memory / 100K vecs", val: `${memMB}MB`, pct: Math.min(100, Math.round((memMB / 210) * 100)), highGood: false },
+  ];
 
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        {Object.keys(algos).map(k => (
+        {["HNSW", "IVF", "Flat"].map(k => (
           <button key={k} onClick={() => setAlgo(k)}
             className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${algo === k ? "border-violet-600 text-violet-300 bg-violet-900/20" : "border-zinc-700 text-zinc-500 hover:border-zinc-600"}`}>{k}</button>
         ))}
       </div>
-      <div className="space-y-1">
-        <div className="flex justify-between text-[10px] font-mono text-zinc-500">
-          <span>Vector count</span><span>{count.toLocaleString()}</span>
-        </div>
-        <input type="range" min={10000} max={10000000} step={10000} value={count} onChange={e => setCount(+e.target.value)} className="w-full accent-violet-500" />
-        <div className="flex justify-between text-[10px] text-zinc-600"><span>10K</span><span>10M</span></div>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Recall @10", val: `${a.recall}%`, color: a.recall > 94 ? "text-emerald-400" : a.recall > 85 ? "text-amber-400" : "text-red-400" },
-          { label: "Latency (ms)", val: `${latencyScaled}ms`, color: latencyScaled < 5 ? "text-emerald-400" : latencyScaled < 12 ? "text-amber-400" : "text-red-400" },
-          { label: "Memory (GB)", val: `${memGB}GB`, color: memGB < 5 ? "text-emerald-400" : memGB < 20 ? "text-amber-400" : "text-red-400" },
-        ].map(({ label, val, color }) => (
-          <div key={label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center">
-            <div className={`text-lg font-mono font-bold ${color}`}>{val}</div>
-            <div className="text-[10px] text-zinc-600 mt-1">{label}</div>
+
+      {algo === "HNSW" && (
+        <div className="grid grid-cols-2 gap-3 rounded-lg border border-zinc-800 bg-zinc-900/30 p-3">
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] font-mono text-zinc-500"><span>M (edges / node)</span><span className="text-violet-300">{hnswM}</span></div>
+            <input type="range" min={4} max={64} step={4} value={hnswM} onChange={e => setHnswM(+e.target.value)} className="w-full accent-violet-500" />
+            <div className="flex justify-between text-[9px] text-zinc-600"><span>4 low-mem</span><span>64 high-recall</span></div>
           </div>
-        ))}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] font-mono text-zinc-500"><span>efSearch (beam width)</span><span className="text-violet-300">{efSearch}</span></div>
+            <input type="range" min={10} max={200} step={10} value={efSearch} onChange={e => setEfSearch(+e.target.value)} className="w-full accent-violet-500" />
+            <div className="flex justify-between text-[9px] text-zinc-600"><span>10 fast</span><span>200 accurate</span></div>
+          </div>
+          <div className="col-span-2 text-[10px] text-zinc-500 font-mono">Graph-based ANN. M sets index quality at build time; efSearch controls recall at query time. Tune both.</div>
+        </div>
+      )}
+
+      {algo === "IVF" && (
+        <div className="grid grid-cols-2 gap-3 rounded-lg border border-zinc-800 bg-zinc-900/30 p-3">
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] font-mono text-zinc-500"><span>nlist (clusters)</span><span className="text-violet-300">{ivfNlist}</span></div>
+            <input type="range" min={8} max={512} step={8} value={ivfNlist} onChange={e => setIvfNlist(+e.target.value)} className="w-full accent-violet-500" />
+            <div className="flex justify-between text-[9px] text-zinc-600"><span>8</span><span>512</span></div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] font-mono text-zinc-500"><span>nprobe (clusters checked)</span><span className="text-violet-300">{Math.min(ivfNprobe, ivfNlist)}</span></div>
+            <input type="range" min={1} max={Math.min(ivfNlist, 32)} step={1} value={Math.min(ivfNprobe, ivfNlist)} onChange={e => setIvfNprobe(+e.target.value)} className="w-full accent-violet-500" />
+            <div className="flex justify-between text-[9px] text-zinc-600"><span>1 fast</span><span>32 accurate</span></div>
+          </div>
+          <div className="col-span-2 text-[10px] text-zinc-500 font-mono">Inverted file. Vectors clustered at build; query searches only nprobe clusters. Recall drops at cluster boundaries.</div>
+        </div>
+      )}
+
+      {algo === "Flat" && (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-3 text-[10px] font-mono text-zinc-500">No parameters — brute-force exact nearest neighbor. Perfect recall baseline. Scales as O(n) per query: fine at 10K vectors, unacceptable at 10M.</div>
+      )}
+
+      <div className="space-y-2.5">
+        {statRows.map(({ label, val, pct, highGood }) => {
+          const isGood = highGood ? pct >= 90 : pct <= 30;
+          const isBad = highGood ? pct < 75 : pct >= 70;
+          const barColor = isGood ? "bg-emerald-500" : isBad ? "bg-red-500" : "bg-amber-500";
+          const valColor = isGood ? "text-emerald-400" : isBad ? "text-red-400" : "text-amber-400";
+          return (
+            <div key={label} className="space-y-1">
+              <div className="flex justify-between text-[10px] font-mono">
+                <span className="text-zinc-500">{label}</span>
+                <span className={valColor + " font-bold"}>{val}</span>
+              </div>
+              <div className="h-2.5 rounded-full bg-zinc-800 overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          );
+        })}
       </div>
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-3 text-xs text-zinc-400">{a.note}</div>
+
+      <button onClick={() => setTraceOpen(!traceOpen)}
+        className="w-full rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5 text-left flex justify-between text-[10px] font-mono text-zinc-500 hover:border-zinc-700 transition-all">
+        <span>Search trace ({algo})</span><span>{traceOpen ? "▲" : "▼"}</span>
+      </button>
+      {traceOpen && (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3 space-y-1.5">
+          {trace.map((line, i) => (
+            <div key={i} className={`text-[10px] font-mono ${line.startsWith("↳") ? "text-violet-400" : "text-zinc-400"}`}>{line}</div>
+          ))}
+          <div className="text-[10px] font-mono text-zinc-600 border-t border-zinc-800 pt-1.5 mt-1">vectors scanned: {visited.toLocaleString()} / 100,000 ({Math.round(visited / 1000)}%)</div>
+        </div>
+      )}
+
       <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
-        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>HNSW wins on recall+latency but eats RAM. At 10M vectors it costs ~600GB — plan your node size before choosing the index.</p>
+        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>HNSW dominates on recall+latency at the cost of RAM — at 10M vectors with M=32 you need ~3GB just for the index graph. IVF saves memory but recall drops when query vectors land near cluster boundaries. Flat is your correctness baseline, not a production choice above 100K vectors. Tune M and efSearch together: M sets quality at build, efSearch sets recall at query time.</p>
       </div>
     </div>
   );
@@ -7604,65 +7695,170 @@ function ResolutionCostModule() {
 
 // ── AlignmentTechniquesModule ────────────────────────────────────────────────
 function AlignmentTechniquesModule() {
-  const [tab, setTab] = useState("SFT");
-  const tabs = {
-    SFT: {
-      label: "Supervised Fine-Tuning",
-      format: "prompt → completion pairs (human-written)",
-      before: "Tell me how to make explosives.\n→ [base model] Sure! First you need ammonium nitrate...",
-      after: "Tell me how to make explosives.\n→ [SFT] I'm not able to help with that.",
-      mechanism: "Directly trains the model to imitate safe, helpful demonstrations. Fast and cheap. The ceiling is your demonstration quality.",
-    },
-    RLHF: {
-      label: "Reinforcement Learning from Human Feedback",
-      format: "preference pairs (A vs B) → reward model → PPO",
-      before: "Explain quantum entanglement.\n→ [base] Entanglement is a phenomenon involving quantum states...",
-      after: "Explain quantum entanglement.\n→ [RLHF] Two particles share a quantum state — measuring one instantly determines the other's, no matter the distance.",
-      mechanism: "Humans rank outputs → train a reward model → use PPO to maximize reward. Captures subtle quality signals SFT can't express.",
-    },
-    DPO: {
-      label: "Direct Preference Optimization",
-      format: "preference pairs (chosen, rejected) — no reward model",
-      before: "Write a persuasive essay on X.\n→ [base] Here are some points about X...",
-      after: "Write a persuasive essay on X.\n→ [DPO] X transforms society by... [well-structured, persuasive]",
-      mechanism: "Reformulates RLHF as a classification loss directly on the LLM. Simpler than PPO, no reward model required, similar results.",
-    },
-    RLAIF: {
-      label: "RL from AI Feedback",
-      format: "AI-generated preference labels (no human labelers)",
-      before: "Summarize this article.\n→ [base] The article discusses various topics...",
-      after: "Summarize this article.\n→ [RLAIF] The authors argue X, support it with Y, and conclude Z.",
-      mechanism: "Replace human labelers with a stronger LLM (constitutional AI). Scales without human bottleneck. Risk: inherits teacher model biases.",
-    },
+  const [tech, setTech] = useState("RLHF");
+  const [votes, setVotes] = useState([]);
+  const [sftIdx, setSftIdx] = useState(0);
+  const [demoShown, setDemoShown] = useState(false);
+
+  const pairs = [
+    { prompt: "Explain why the sky is blue.", a: "Rayleigh scattering — shorter blue wavelengths scatter more in the atmosphere than red.", b: "The sky is blue because of the way light interacts with air molecules.", },
+    { prompt: "Summarize: 'The experiment ran for 3 hours and produced 12kg of output.'", a: "The 3-hour experiment yielded 12 kg of output.", b: "It ran for some time and produced stuff.", },
+    { prompt: "How do I reverse a list in Python?", a: "Use list.reverse() for in-place reversal, or list[::-1] to get a new reversed list.", b: "You can reverse it by looking up the Python docs.", },
+  ];
+
+  const currentPair = pairs[Math.min(votes.length, pairs.length - 1)];
+  const allVoted = votes.length >= pairs.length;
+  const rmScores = { a: [0.91, 0.88, 0.94], b: [0.42, 0.31, 0.28] };
+
+  const sftData = [
+    { prompt: "What is 2+2?", bad: "Hmm, mathematics involves numbers and operations, let me think about this...", demo: "2 + 2 = 4." },
+    { prompt: "Write a haiku about autumn.", bad: "A haiku is a short Japanese poem form. Here is some text about autumn leaves.", demo: "Crimson leaves descend\nRiver carries them away\nSilence fills the air" },
+  ];
+
+  const dpoExample = {
+    prompt: "How do I focus better?",
+    chosen: "Try the Pomodoro technique: 25 min focused work, 5 min break. Remove your phone from your desk. Single-task — close all unrelated tabs.",
+    rejected: "Focus is very important for productivity. You should try to concentrate more on your tasks and maybe take some breaks when needed. Many people have trouble with this.",
+    why: "Chosen is specific, actionable, and information-dense. Rejected is generic filler — same word count, near-zero information.",
   };
-  const t = tabs[tab];
 
   return (
     <div className="space-y-4">
       <div className="flex gap-1 flex-wrap">
-        {Object.keys(tabs).map(k => (
-          <button key={k} onClick={() => setTab(k)}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${tab === k ? "border-violet-600 text-violet-300 bg-violet-900/20" : "border-zinc-700 text-zinc-500 hover:border-zinc-600"}`}>{k}</button>
+        {["SFT", "RLHF", "DPO", "RLAIF"].map(k => (
+          <button key={k} onClick={() => { setTech(k); setVotes([]); setDemoShown(false); }}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${tech === k ? "border-violet-600 text-violet-300 bg-violet-900/20" : "border-zinc-700 text-zinc-500 hover:border-zinc-600"}`}>{k}</button>
         ))}
       </div>
-      <div className="text-xs font-bold text-zinc-300">{t.label}</div>
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-3">
-        <div className="text-[10px] font-mono text-zinc-600 mb-1">Data format</div>
-        <div className="text-[10px] text-violet-300 font-mono">{t.format}</div>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-red-900/40 bg-red-950/10 p-3">
-          <div className="text-[10px] font-mono text-red-400 mb-2">Base model</div>
-          <div className="text-[10px] text-zinc-400 font-mono whitespace-pre-wrap leading-relaxed">{t.before}</div>
+
+      {tech === "RLHF" && (
+        <div className="space-y-3">
+          <div className="text-[10px] font-mono text-zinc-500">You are the human labeler. Click the better response — this preference trains the reward model.</div>
+          {!allVoted ? (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5">
+                <div className="text-[10px] font-mono text-zinc-500 mb-1">Prompt ({votes.length + 1}/{pairs.length})</div>
+                <div className="text-xs text-zinc-300 font-mono">{currentPair.prompt}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {["a", "b"].map(side => (
+                  <button key={side} onClick={() => setVotes([...votes, { q: votes.length, winner: side }])}
+                    className="rounded-lg border border-zinc-700 bg-zinc-900/30 p-3 text-left hover:border-violet-600 hover:bg-violet-950/10 transition-all group">
+                    <div className="text-[9px] font-mono text-zinc-600 mb-1 group-hover:text-violet-400">Response {side.toUpperCase()} — click if better</div>
+                    <div className="text-[10px] text-zinc-400">{currentPair[side]}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="text-[10px] font-mono text-emerald-400">{pairs.length} preference labels collected → reward model trained.</div>
+              <div className="space-y-1.5">
+                {pairs.map((p, i) => (
+                  <div key={i} className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5 grid grid-cols-3 gap-2 text-[10px] font-mono items-center">
+                    <div className="col-span-1 text-zinc-500 truncate">{p.prompt.slice(0, 28)}…</div>
+                    <div className="text-center space-x-2">
+                      <span className="text-emerald-400">A:{rmScores.a[i]}</span>
+                      <span className="text-red-400">B:{rmScores.b[i]}</span>
+                    </div>
+                    <div className="text-right text-violet-400">chose {votes[i]?.winner?.toUpperCase()}</div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setVotes([])} className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400">↺ Reset labels</button>
+            </div>
+          )}
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5 text-[10px] font-mono text-zinc-500">
+            Data: <span className="text-violet-300">{`{prompt, chosen, rejected}`}</span> → reward model → PPO maximizes reward
+          </div>
         </div>
-        <div className="rounded-lg border border-emerald-800/40 bg-emerald-950/10 p-3">
-          <div className="text-[10px] font-mono text-emerald-400 mb-2">After {tab}</div>
-          <div className="text-[10px] text-zinc-400 font-mono whitespace-pre-wrap leading-relaxed">{t.after}</div>
+      )}
+
+      {tech === "SFT" && (
+        <div className="space-y-3">
+          <div className="text-[10px] font-mono text-zinc-500">You write the correct demonstration. The model learns to imitate your completions via cross-entropy loss.</div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-3 space-y-2">
+            <div className="text-[10px] font-mono text-zinc-500">Prompt</div>
+            <div className="text-xs text-zinc-300 font-mono">{sftData[sftIdx].prompt}</div>
+            <div className="rounded border border-red-900/40 bg-red-950/10 p-2">
+              <div className="text-[9px] font-mono text-red-400 mb-1">Base model output (before SFT)</div>
+              <div className="text-[10px] text-zinc-500 font-mono">{sftData[sftIdx].bad}</div>
+            </div>
+            {demoShown ? (
+              <div className="rounded border border-emerald-800/40 bg-emerald-950/10 p-2">
+                <div className="text-[9px] font-mono text-emerald-400 mb-1">Human demonstration → added to training set</div>
+                <div className="text-[10px] text-zinc-300 font-mono">{sftData[sftIdx].demo}</div>
+              </div>
+            ) : (
+              <button onClick={() => setDemoShown(true)}
+                className="w-full rounded border border-zinc-700 p-2 text-[10px] font-mono text-zinc-500 hover:border-violet-600 hover:text-violet-300 transition-all">
+                + Write the correct completion
+              </button>
+            )}
+          </div>
+          {demoShown && (
+            <button onClick={() => { setSftIdx((sftIdx + 1) % sftData.length); setDemoShown(false); }}
+              className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400">→ Next example</button>
+          )}
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5 text-[10px] font-mono text-zinc-500">
+            Data: <span className="text-violet-300">{`{prompt, completion}`}</span> → cross-entropy loss on completion tokens only. Ceiling = demonstration quality.
+          </div>
         </div>
-      </div>
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-3">
-        <div className="text-[10px] font-mono text-zinc-600 mb-1">Mechanism</div>
-        <div className="text-xs text-zinc-400">{t.mechanism}</div>
+      )}
+
+      {tech === "DPO" && (
+        <div className="space-y-3">
+          <div className="text-[10px] font-mono text-zinc-500">DPO reformulates RLHF as a classification loss on the policy itself — no separate reward model needed.</div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5">
+            <div className="text-[10px] font-mono text-zinc-500 mb-1">Prompt</div>
+            <div className="text-xs text-zinc-300 font-mono">{dpoExample.prompt}</div>
+          </div>
+          <div className="rounded-lg border border-emerald-800/40 bg-emerald-950/10 p-3">
+            <div className="text-[9px] font-mono text-emerald-400 mb-1">y_w (chosen)</div>
+            <div className="text-[10px] text-zinc-300 font-mono">{dpoExample.chosen}</div>
+          </div>
+          <div className="rounded-lg border border-red-900/40 bg-red-950/10 p-3">
+            <div className="text-[9px] font-mono text-red-400 mb-1">y_l (rejected)</div>
+            <div className="text-[10px] text-zinc-500 font-mono">{dpoExample.rejected}</div>
+          </div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5 space-y-1">
+            <div className="text-[10px] font-mono text-zinc-500">Why chosen wins</div>
+            <div className="text-[10px] text-zinc-400">{dpoExample.why}</div>
+          </div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5 text-[10px] font-mono text-zinc-500">
+            Loss: <span className="text-violet-300">-log σ(β · log π(y_w|x)/π_ref - β · log π(y_l|x)/π_ref)</span>. Same signal as RLHF, no reward model.
+          </div>
+        </div>
+      )}
+
+      {tech === "RLAIF" && (
+        <div className="space-y-3">
+          <div className="text-[10px] font-mono text-zinc-500">Replace human labelers with a stronger LLM. Constitutional AI generates preference labels at scale.</div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-3 space-y-3">
+            {[
+              { from: "Human labeler", to: "Stronger LLM (e.g. Claude-Opus)", change: "Speed: 10 pairs/hr → 10,000+ pairs/hr" },
+              { from: "Subjective preferences", to: "Constitutional principles + LLM scoring", change: "Labels derived from explicit rules, not intuition" },
+              { from: "Human cost bottleneck", to: "Compute bottleneck (GPU hours)", change: "Scales with model capacity, not headcount" },
+            ].map((row, i) => (
+              <div key={i} className="grid grid-cols-5 gap-1 text-[10px] font-mono items-start">
+                <div className="col-span-2 text-red-400/80">{row.from}</div>
+                <div className="text-violet-400 text-center">→</div>
+                <div className="col-span-2 text-emerald-400">{row.to}</div>
+                <div className="col-span-5 text-zinc-600 text-[9px] mt-0.5">{row.change}</div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-lg border border-amber-900/30 bg-amber-950/10 p-2.5 text-[10px] text-zinc-400">
+            <span className="text-amber-400 font-bold">Risk: </span>RLAIF inherits teacher model biases and blind spots. If the teacher hallucinates or has value drift, those propagate into the student's reward signal.
+          </div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5 text-[10px] font-mono text-zinc-500">
+            Data: <span className="text-violet-300">{`{prompt, response_a, response_b, ai_preference}`}</span> → same RLHF/DPO pipeline, AI-generated labels
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>All four techniques share the same signal (preference between outputs) but differ in how they use it. SFT needs demonstrations. RLHF trains a reward model first, then PPO. DPO skips the reward model entirely. RLAIF removes human labelers. The right choice depends on label cost, training stability, and whether you need a reusable reward model.</p>
       </div>
     </div>
   );
@@ -7768,45 +7964,107 @@ function JailbreakTaxonomyModule() {
 
 // ── SafetyMeasurementModule ──────────────────────────────────────────────────
 function SafetyMeasurementModule() {
-  const [refusal, setRefusal] = useState(50);
-  const harmRate = Math.max(0, Math.round(80 - refusal * 1.4));
-  const overRefuseRate = Math.max(0, Math.round((refusal - 40) * 1.5));
-  const zone = refusal >= 30 && refusal <= 60 ? "good" : refusal < 30 ? "dangerous" : "over-refusing";
-  const zoneColor = { good: "text-emerald-400", dangerous: "text-red-400", "over-refusing": "text-amber-400" };
-  const zoneLabel = { good: "Good zone — balanced", dangerous: "Dangerous — harm leaks through", "over-refusing": "Over-refusing — hurts utility" };
+  const [threshold, setThreshold] = useState(50);
+  const [hoveredModel, setHoveredModel] = useState(null);
+
+  const myHarm = Math.max(0, Math.round(95 - threshold * 0.92));
+  const myOverRefuse = Math.max(0, Math.round((threshold - 35) * 1.35));
+
+  const namedModels = [
+    { id: "unaligned", label: "Unaligned base", harm: 80, over: 5, color: "#ef4444" },
+    { id: "overtrained", label: "Over-refused", harm: 4, over: 85, color: "#f59e0b" },
+    { id: "sota", label: "SOTA aligned", harm: 9, over: 12, color: "#10b981" },
+    { id: "early", label: "Early RLHF", harm: 30, over: 38, color: "#8b5cf6" },
+  ];
+
+  const zone = myHarm <= 15 && myOverRefuse <= 25 ? "target"
+    : myHarm > 40 ? "dangerous"
+    : myOverRefuse > 50 ? "over-refusing"
+    : "suboptimal";
+
+  const zoneInfo = {
+    target: { label: "Target zone — low harm, low over-refusal", cls: "border-emerald-700/50 bg-emerald-950/10 text-emerald-400", eg: "Bioweapon requests → refused. Lock-picking in locksmith context → answered." },
+    dangerous: { label: "Dangerous — harm rate too high", cls: "border-red-700/50 bg-red-950/10 text-red-400", eg: "Harmful requests pass through. Utility is high but safety is unacceptable." },
+    "over-refusing": { label: "Over-refusing — blocking benign requests", cls: "border-amber-700/50 bg-amber-950/10 text-amber-400", eg: "Chemistry homework refused. Cooking with alcohol refused. Utility is destroyed." },
+    suboptimal: { label: "Suboptimal — needs calibration", cls: "border-zinc-700 bg-zinc-900/30 text-zinc-400", eg: "Some leakage in both directions — not yet calibrated to the target zone." },
+  };
+
+  const W = 200, H = 160;
+  const xS = v => (v / 100) * W;
+  const yS = v => H - (v / 100) * H;
 
   return (
     <div className="space-y-4">
       <div className="space-y-1">
         <div className="flex justify-between text-[10px] font-mono text-zinc-500">
-          <span>Refusal rate (aggressiveness)</span><span>{refusal}%</span>
+          <span>Refusal threshold</span><span className="text-violet-300">{threshold}%</span>
         </div>
-        <input type="range" min={0} max={100} value={refusal} onChange={e => setRefusal(+e.target.value)} className="w-full accent-violet-500" />
-        <div className="flex justify-between text-[10px] text-zinc-600"><span>Never refuses</span><span>Refuses everything</span></div>
+        <input type="range" min={0} max={100} value={threshold} onChange={e => setThreshold(+e.target.value)} className="w-full accent-violet-500" />
+        <div className="flex justify-between text-[9px] text-zinc-600"><span>Never refuses (0%)</span><span>Refuses everything (100%)</span></div>
       </div>
-      <div className={`rounded-lg border p-3 text-center ${zone === "good" ? "border-emerald-800/50 bg-emerald-950/10" : zone === "dangerous" ? "border-red-800/50 bg-red-950/10" : "border-amber-800/50 bg-amber-950/10"}`}>
-        <div className={`text-sm font-mono font-bold ${zoneColor[zone]}`}>{zoneLabel[zone]}</div>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center">
-          <div className={`text-2xl font-mono font-bold ${harmRate > 20 ? "text-red-400" : harmRate > 5 ? "text-amber-400" : "text-emerald-400"}`}>{harmRate}%</div>
-          <div className="text-[10px] text-zinc-600 mt-1">Harm rate (harmful outputs)</div>
+
+      {/* 2D scatter chart */}
+      <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+        <div className="text-[10px] font-mono text-zinc-600 mb-2">Safety space — click named models to highlight</div>
+        <div className="flex gap-2 items-start">
+          <div className="text-[8px] text-zinc-600 font-mono writing-vertical" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", minWidth: 14 }}>Harm rate ↑</div>
+          <div className="flex-1">
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 155 }}>
+              {/* Target zone bottom-left */}
+              <rect x={0} y={yS(25)} width={xS(25)} height={H - yS(25)} fill="rgba(16,185,129,0.07)" stroke="rgba(16,185,129,0.25)" strokeWidth={0.5} />
+              <text x={2} y={yS(27)} fontSize={5.5} fill="rgba(16,185,129,0.5)">Target</text>
+              {/* Grid */}
+              {[25, 50, 75].map(v => (
+                <g key={v}>
+                  <line x1={xS(v)} y1={0} x2={xS(v)} y2={H} stroke="#27272a" strokeWidth={0.4} strokeDasharray="2,3" />
+                  <line x1={0} y1={yS(v)} x2={W} y2={yS(v)} stroke="#27272a" strokeWidth={0.4} strokeDasharray="2,3" />
+                  <text x={xS(v) - 1} y={H - 1} fontSize={5} fill="#52525b">{v}</text>
+                  <text x={1} y={yS(v) + 1} fontSize={5} fill="#52525b">{v}</text>
+                </g>
+              ))}
+              {/* Axes */}
+              <line x1={0} y1={H} x2={W} y2={H} stroke="#3f3f46" strokeWidth={0.5} />
+              <line x1={0} y1={0} x2={0} y2={H} stroke="#3f3f46" strokeWidth={0.5} />
+              {/* Named model dots */}
+              {namedModels.map(m => (
+                <g key={m.id} onClick={() => setHoveredModel(hoveredModel === m.id ? null : m.id)} style={{ cursor: "pointer" }}>
+                  <circle cx={xS(m.over)} cy={yS(m.harm)} r={5} fill={m.color} opacity={hoveredModel && hoveredModel !== m.id ? 0.25 : 0.8} />
+                  {hoveredModel === m.id && (
+                    <text x={xS(m.over) + 6} y={yS(m.harm) + 3} fontSize={6} fill="#e4e4e7">{m.label}</text>
+                  )}
+                  {!hoveredModel && (
+                    <text x={xS(m.over) + 6} y={yS(m.harm) + 3} fontSize={5.5} fill="#71717a">{m.label}</text>
+                  )}
+                </g>
+              ))}
+              {/* My model dot */}
+              <circle cx={xS(Math.min(100, myOverRefuse))} cy={yS(Math.min(100, myHarm))} r={6} fill="#a78bfa" opacity={0.9} />
+              <circle cx={xS(Math.min(100, myOverRefuse))} cy={yS(Math.min(100, myHarm))} r={9} fill="none" stroke="#a78bfa" strokeWidth={0.8} opacity={0.4} />
+              <text x={xS(Math.min(100, myOverRefuse)) + 7} y={yS(Math.min(100, myHarm)) + 3} fontSize={5.5} fill="#a78bfa">Your model</text>
+              <text x={W / 2} y={H + 10} fontSize={6} fill="#52525b" textAnchor="middle">Over-refusal rate →</text>
+            </svg>
+          </div>
         </div>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center">
-          <div className={`text-2xl font-mono font-bold ${overRefuseRate > 20 ? "text-amber-400" : "text-emerald-400"}`}>{overRefuseRate}%</div>
-          <div className="text-[10px] text-zinc-600 mt-1">Over-refusal (benign blocked)</div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2.5 text-center">
+          <div className={`text-xl font-mono font-bold ${myHarm > 30 ? "text-red-400" : myHarm > 15 ? "text-amber-400" : "text-emerald-400"}`}>{myHarm}%</div>
+          <div className="text-[10px] text-zinc-600 mt-0.5">Harm rate</div>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2.5 text-center">
+          <div className={`text-xl font-mono font-bold ${myOverRefuse > 40 ? "text-amber-400" : myOverRefuse > 20 ? "text-amber-400" : "text-emerald-400"}`}>{Math.max(0, myOverRefuse)}%</div>
+          <div className="text-[10px] text-zinc-600 mt-0.5">Over-refusal rate</div>
         </div>
       </div>
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-3">
-        <div className="text-[10px] font-mono text-zinc-600 mb-2">Two-axis space</div>
-        <div className="grid grid-cols-2 gap-2 text-[10px]">
-          {[["High harm, Low refusal", "Dangerous (bottom-left)", "red"], ["Low harm, Low refusal", "Ideal (top-left)", "emerald"], ["High harm, High refusal", "Broken (bottom-right)", "amber"], ["Low harm, High refusal", "Over-refusing (top-right)", "amber"]].map(([q, label, c]) => (
-            <div key={q} className={`rounded p-1.5 border border-${c}-900/40 bg-${c}-950/10 text-${c}-400`}><div>{label}</div></div>
-          ))}
-        </div>
+
+      <div className={`rounded-lg border p-3 ${zoneInfo[zone].cls}`}>
+        <div className="text-xs font-mono font-bold mb-1">{zoneInfo[zone].label}</div>
+        <div className="text-[10px] text-zinc-400">{zoneInfo[zone].eg}</div>
       </div>
+
       <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
-        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>Safety is two-dimensional. A model that refuses everything scores 0% harm but 100% over-refusal — it fails users. The target is the narrow zone: low harm AND low over-refusal.</p>
+        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>Safety is two-dimensional. A model that refuses everything scores 0% harm but 100% over-refusal — it fails users just as badly as an unsafe model. The target is bottom-left: low harm AND low over-refusal. You can't get there with threshold tuning alone — you need training on well-calibrated preference data.</p>
       </div>
     </div>
   );
@@ -7814,53 +8072,98 @@ function SafetyMeasurementModule() {
 
 // ── AgentTracingModule ───────────────────────────────────────────────────────
 function AgentTracingModule() {
-  const [open, setOpen] = useState(null);
-  const spans = [
-    { id: 0, type: "llm", label: "LLM call", depth: 0, latency: "340ms", tokens: "512 in / 128 out", detail: "Model: gpt-4o\nPrompt: 'Search for recent AI safety papers'\nOutput: tool_call: search_papers({query: 'AI safety 2024'})" },
-    { id: 1, type: "tool", label: "tool: search_papers", depth: 1, latency: "820ms", tokens: null, detail: "Tool: search_papers\nInput: {query: 'AI safety 2024'}\nOutput: [{title: 'Constitutional AI', ...}, {title: 'RLHF survey', ...}]" },
-    { id: 2, type: "llm", label: "LLM call", depth: 0, latency: "280ms", tokens: "1024 in / 256 out", detail: "Model: gpt-4o\nPrompt: [results] + 'Summarize the top 2 papers'\nOutput: 'Constitutional AI (Anthropic, 2022) introduces...'" },
-    { id: 3, type: "tool", label: "tool: write_report", depth: 1, latency: "45ms", tokens: null, detail: "Tool: write_report\nInput: {content: 'Constitutional AI...', format: 'markdown'}\nOutput: {file: 'report.md', bytes: 1842}" },
+  const [mode, setMode] = useState("healthy");
+  const [openSpan, setOpenSpan] = useState(null);
+
+  const healthySpans = [
+    { id: 0, type: "llm", label: "LLM call", depth: 0, start: 0, dur: 340, tokens: "512 in / 128 out", detail: "Model: gpt-4o\nTask: plan search strategy\nOutput: tool_call search_papers({query: 'AI safety 2024'})" },
+    { id: 1, type: "tool", label: "tool: search_papers", depth: 1, start: 340, dur: 820, tokens: null, detail: "Input: {query: 'AI safety 2024'}\nReturned: 8 papers\nLatency: 820ms (external API)" },
+    { id: 2, type: "llm", label: "LLM call", depth: 0, start: 1160, dur: 280, tokens: "1,024 in / 256 out", detail: "Model: gpt-4o\nContext: 8 papers injected\nOutput: structured summary (256 tokens)" },
+    { id: 3, type: "tool", label: "tool: write_report", depth: 1, start: 1440, dur: 45, tokens: null, detail: "Input: {content: '...', format: 'markdown'}\nOutput: report.md (1,842 bytes)\nLatency: 45ms (local)" },
   ];
-  const typeColor = { llm: "border-violet-700/60 text-violet-300", tool: "border-blue-700/60 text-blue-300" };
+
+  const brokenSpans = [
+    { id: 0, type: "llm", label: "LLM call", depth: 0, start: 0, dur: 340, tokens: "512 in / 128 out", detail: "Model: gpt-4o\nTask: plan search strategy\nOutput: tool_call search_papers({query: 'AI safety 2024'})" },
+    { id: 1, type: "tool", label: "tool: search_papers", depth: 1, start: 340, dur: 30000, tokens: null, error: "TimeoutError: search_papers exceeded 30,000ms. No results returned.", detail: "Input: {query: 'AI safety 2024'}\nError: upstream API unreachable\nHTTP status: 504 Gateway Timeout" },
+    { id: 2, type: "llm", label: "LLM call", depth: 0, start: 30340, dur: 295, tokens: "256 in / 89 out", detail: "Model: gpt-4o\nContext: tool returned empty (no results)\nOutput: 'I was unable to find papers. Please try again later.'" },
+  ];
+
+  const spans = mode === "healthy" ? healthySpans : brokenSpans;
+  const totalDur = spans[spans.length - 1].start + spans[spans.length - 1].dur;
+  const llmTime = spans.filter(s => s.type === "llm").reduce((a, s) => a + s.dur, 0);
+  const toolTime = spans.filter(s => s.type === "tool").reduce((a, s) => a + s.dur, 0);
+  const errors = spans.filter(s => s.error).length;
+
+  const fmtDur = ms => ms >= 1000 ? (ms / 1000).toFixed(1) + "s" : ms + "ms";
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-zinc-500">Click a span to expand its details. Child spans are indented under parent LLM calls.</p>
-      <div className="space-y-1.5">
-        {spans.map(s => (
-          <div key={s.id} style={{ marginLeft: s.depth * 24 }}>
-            <div className={`rounded-lg border transition-all ${open === s.id ? typeColor[s.type] + " bg-zinc-900/50" : "border-zinc-800 bg-zinc-900/30 hover:border-zinc-700"}`}>
-              <button className="w-full text-left p-2.5 flex items-center gap-3" onClick={() => setOpen(open === s.id ? null : s.id)}>
-                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${typeColor[s.type]}`}>{s.type.toUpperCase()}</span>
-                <span className="text-xs font-mono text-zinc-300 flex-1">{s.label}</span>
-                <span className="text-[10px] font-mono text-zinc-600">{s.latency}</span>
-                {s.tokens && <span className="text-[10px] font-mono text-violet-500">{s.tokens}</span>}
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        {[["healthy", "✓ Healthy trace", "border-emerald-600 text-emerald-300 bg-emerald-900/20"], ["broken", "✗ Broken trace", "border-red-600 text-red-300 bg-red-900/20"]].map(([m, label, active]) => (
+          <button key={m} onClick={() => { setMode(m); setOpenSpan(null); }}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${mode === m ? active : "border-zinc-700 text-zinc-500 hover:border-zinc-600"}`}>{label}</button>
+        ))}
+      </div>
+
+      {/* Gantt chart */}
+      <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3 space-y-2.5">
+        <div className="text-[10px] font-mono text-zinc-600">Execution timeline — click span to expand</div>
+        {spans.map(s => {
+          const leftPct = (s.start / totalDur) * 100;
+          const widthPct = Math.max(0.5, (s.dur / totalDur) * 100);
+          const isErr = !!s.error;
+          const barBg = isErr ? "bg-red-500/60" : s.type === "llm" ? "bg-violet-500/60" : "bg-blue-500/60";
+          const tagCls = isErr ? "border-red-700/50 text-red-300" : s.type === "llm" ? "border-violet-700/50 text-violet-300" : "border-blue-700/50 text-blue-300";
+          return (
+            <div key={s.id} style={{ marginLeft: s.depth * 16 }}>
+              <button className="w-full text-left space-y-1" onClick={() => setOpenSpan(openSpan === s.id ? null : s.id)}>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[9px] font-mono px-1 py-0.5 rounded border ${tagCls}`}>{isErr ? "ERR" : s.type.toUpperCase()}</span>
+                  <span className={`text-[10px] font-mono flex-1 ${isErr ? "text-red-300" : "text-zinc-400"}`}>{s.label}</span>
+                  <span className="text-[9px] font-mono text-zinc-600">{fmtDur(s.dur)}</span>
+                  {s.tokens && <span className="text-[9px] font-mono text-violet-500">{s.tokens}</span>}
+                </div>
+                <div className="relative h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className={`absolute h-full rounded-full ${barBg} transition-all duration-500`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
+                </div>
               </button>
-              {open === s.id && (
-                <div className="px-3 pb-3">
-                  <pre className="text-[10px] font-mono text-zinc-400 whitespace-pre-wrap leading-relaxed bg-zinc-950 rounded p-2">{s.detail}</pre>
+              {openSpan === s.id && (
+                <div className="mt-1 ml-2 rounded border border-zinc-800 bg-zinc-900/50 p-2 space-y-1">
+                  {isErr && <div className="text-[10px] font-mono text-red-400">{s.error}</div>}
+                  <pre className="text-[9px] font-mono text-zinc-500 whitespace-pre-wrap leading-relaxed">{s.detail}</pre>
                 </div>
               )}
             </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-4 gap-2 text-center">
+        {[
+          { label: "Total", val: fmtDur(totalDur), color: "text-zinc-300" },
+          { label: "LLM time", val: fmtDur(llmTime), color: "text-violet-400" },
+          { label: "Tool time", val: fmtDur(toolTime), color: "text-blue-400" },
+          { label: "Errors", val: String(errors), color: errors > 0 ? "text-red-400" : "text-emerald-400" },
+        ].map(({ label, val, color }) => (
+          <div key={label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+            <div className={`text-sm font-mono font-bold ${color}`}>{val}</div>
+            <div className="text-[9px] text-zinc-600 mt-0.5">{label}</div>
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
-          <div className="text-lg font-mono font-bold text-violet-300">{spans.reduce((a, s) => a + parseInt(s.latency), 0)}ms</div>
-          <div className="text-[10px] text-zinc-600">Total latency</div>
+
+      {mode === "broken" && (
+        <div className="rounded-lg border border-red-800/40 bg-red-950/10 p-3 space-y-1">
+          <div className="text-[10px] font-mono text-red-400 font-bold">What this trace reveals</div>
+          <div className="text-[10px] text-zinc-400">• search_papers timed out after 30s — agent waited the full timeout before recovering</div>
+          <div className="text-[10px] text-zinc-400">• No retry logic — one tool failure aborted the entire research task</div>
+          <div className="text-[10px] text-zinc-400">• LLM received empty context → returned a plausible-sounding failure message</div>
+          <div className="text-[10px] text-zinc-400">• Without tracing: you see "please try again later." With tracing: you see the exact span, latency, and HTTP status.</div>
         </div>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
-          <div className="text-lg font-mono font-bold text-blue-300">2</div>
-          <div className="text-[10px] text-zinc-600">Tool calls</div>
-        </div>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
-          <div className="text-lg font-mono font-bold text-violet-300">1920</div>
-          <div className="text-[10px] text-zinc-600">Total tokens</div>
-        </div>
-      </div>
+      )}
+
       <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
-        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>Logs show what happened. Traces show why it was slow and where it failed. Parent-child span structure makes multi-step agent loops debuggable at the call level, not just the log line level.</p>
+        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>Logs tell you what happened. Traces tell you why it was slow and where it failed. The Gantt structure makes the bottleneck visible — tool calls usually dominate wall time, not LLM inference. In the broken trace: 30s of the 30.6s total was one timed-out tool call. Logs would just show a failure; tracing shows exactly which span blew the budget.</p>
       </div>
     </div>
   );
@@ -8028,50 +8331,105 @@ function CostAttributionModule() {
 
 // ── ManagedVsSelfHostedModule ────────────────────────────────────────────────
 function ManagedVsSelfHostedModule() {
-  const [scenario, setScenario] = useState("startup");
-  const scenarios = {
-    startup: { managed: [90, 40, 50, 85, 20], self: [30, 90, 80, 60, 80], winner: "managed", reason: "Startups lack ML infra expertise. Managed APIs deliver capability fast with no ops burden." },
-    mid: { managed: [65, 60, 65, 80, 45], self: [55, 75, 75, 65, 65], winner: "depends", reason: "Mid-size: managed for frontier models, self-hosted for high-volume classification and PII-sensitive routes." },
-    enterprise: { managed: [45, 75, 70, 85, 60], self: [70, 85, 90, 70, 75], winner: "self", reason: "At scale, self-hosted wins on cost and data residency. Team can absorb the ops burden." },
-  };
-  const axes = ["Cost efficiency", "Control", "Data privacy", "Capability", "Ops simplicity"];
-  const sc = scenarios[scenario];
-  const maxVal = 100;
+  const [mlEngineers, setMlEngineers] = useState(2);
+  const [reqPerDay, setReqPerDay] = useState(10000);
+  const [sensitivity, setSensitivity] = useState(2);  // 1-5
+  const [latencySLA, setLatencySLA] = useState(200);  // ms
+
+  // Score managed (M) and self-hosted (S) on 5 dimensions 0-100, all deterministic
+  const engBoost = Math.min(40, mlEngineers * 2.5);
+  const scaleBoost = Math.min(45, Math.max(0, Math.round(Math.log10(Math.max(100, reqPerDay)) * 11 - 22)));
+  const privBoost = (sensitivity - 1) * 20;
+  const latBoost = Math.max(0, Math.round((300 - latencySLA) / 7));
+
+  const axes = [
+    { label: "Cost efficiency",
+      m: Math.max(12, Math.round(88 - scaleBoost * 0.85)),
+      s: Math.min(95, Math.round(18 + scaleBoost * 1.6 + engBoost * 0.5)),
+      note: "Self-hosted wins at scale; managed wins below ~50K req/day" },
+    { label: "Ops simplicity",
+      m: 90,
+      s: Math.max(10, Math.round(72 - engBoost * 1.8)),
+      note: "Managed: zero infra ops. Self-hosted: you own deployment, updates, on-call." },
+    { label: "Data privacy",
+      m: Math.max(22, Math.round(68 - privBoost * 0.85)),
+      s: Math.min(98, Math.round(42 + privBoost * 1.7)),
+      note: "Self-hosted keeps data on your infra. Managed sends data to provider." },
+    { label: "Latency control",
+      m: Math.max(30, Math.round(78 - latBoost * 0.9)),
+      s: Math.min(96, Math.round(35 + latBoost * 1.5 + engBoost * 0.7)),
+      note: "Self-hosted: co-locate with your app, control hardware. Managed: shared infra." },
+    { label: "Model capability",
+      m: 92,
+      s: Math.max(30, Math.round(40 + engBoost * 1.4)),
+      note: "Managed APIs offer frontier models. Self-hosted limited to open-source you can serve." },
+  ];
+
+  const mTotal = Math.round(axes.reduce((a, x) => a + x.m, 0) / axes.length);
+  const sTotal = Math.round(axes.reduce((a, x) => a + x.s, 0) / axes.length);
+  const winner = mTotal >= sTotal ? "managed" : "self-hosted";
+  const margin = Math.abs(mTotal - sTotal);
+
+  const reasons = [];
+  if (reqPerDay < 20000) reasons.push("low volume → managed wins on cost");
+  if (reqPerDay > 200000) reasons.push("high volume → self-hosted wins on cost");
+  if (sensitivity >= 4) reasons.push("high data sensitivity → self-hosted required");
+  if (mlEngineers < 3) reasons.push("small ML team → can't absorb self-hosted ops");
+  if (mlEngineers >= 8) reasons.push("large ML team → self-hosted ops is feasible");
+  if (latencySLA < 100) reasons.push("strict latency SLA → self-hosted co-location");
+  const verdictReason = reasons.length ? reasons.join("; ") : "balanced profile — start managed, migrate high-volume routes later";
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        {[["startup", "Startup"], ["mid", "Mid-size"], ["enterprise", "Enterprise"]].map(([k, label]) => (
-          <button key={k} onClick={() => setScenario(k)}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${scenario === k ? "border-violet-600 text-violet-300 bg-violet-900/20" : "border-zinc-700 text-zinc-500 hover:border-zinc-600"}`}>{label}</button>
-        ))}
-      </div>
-      <div className="space-y-2">
-        {axes.map((axis, i) => (
-          <div key={axis} className="space-y-0.5">
-            <div className="text-[10px] font-mono text-zinc-500">{axis}</div>
-            <div className="flex gap-2 items-center">
-              <div className="flex-1 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full bg-violet-500/70 rounded-full transition-all" style={{ width: `${sc.managed[i]}%` }} />
-              </div>
-              <span className="text-[9px] font-mono text-violet-400 w-8">M:{sc.managed[i]}</span>
-            </div>
-            <div className="flex gap-2 items-center">
-              <div className="flex-1 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500/70 rounded-full transition-all" style={{ width: `${sc.self[i]}%` }} />
-              </div>
-              <span className="text-[9px] font-mono text-emerald-400 w-8">S:{sc.self[i]}</span>
-            </div>
+      <div className="grid grid-cols-2 gap-3 rounded-lg border border-zinc-800 bg-zinc-900/30 p-3">
+        {[
+          { label: `ML engineers: ${mlEngineers}`, min: 0, max: 20, step: 1, val: mlEngineers, set: setMlEngineers },
+          { label: `Req/day: ${reqPerDay.toLocaleString()}`, min: 1000, max: 1000000, step: 1000, val: reqPerDay, set: setReqPerDay },
+          { label: `Data sensitivity: ${["", "Low", "Low-med", "Medium", "High", "Regulated"][sensitivity]}`, min: 1, max: 5, step: 1, val: sensitivity, set: setSensitivity },
+          { label: `Latency SLA: ${latencySLA}ms`, min: 50, max: 500, step: 10, val: latencySLA, set: setLatencySLA },
+        ].map(({ label, min, max, step, val, set }) => (
+          <div key={label} className="space-y-1">
+            <div className="text-[10px] font-mono text-zinc-500">{label}</div>
+            <input type="range" min={min} max={max} step={step} value={val} onChange={e => set(+e.target.value)} className="w-full accent-violet-500" />
           </div>
         ))}
       </div>
-      <div className="flex gap-3 text-[10px] font-mono">
-        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-violet-500/70 inline-block" />Managed</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-emerald-500/70 inline-block" />Self-hosted</span>
+
+      <div className="flex gap-4 text-[10px] font-mono">
+        <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded inline-block bg-violet-500/70" />Managed API ({mTotal})</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded inline-block bg-emerald-500/70" />Self-hosted ({sTotal})</span>
       </div>
-      <div className={`rounded-lg border p-3 ${sc.winner === "managed" ? "border-violet-700/50 bg-violet-950/10" : sc.winner === "self" ? "border-emerald-700/50 bg-emerald-950/10" : "border-amber-700/50 bg-amber-950/10"}`}>
-        <div className="text-[10px] font-mono text-zinc-500 mb-1">Verdict for {scenario}</div>
-        <div className="text-xs text-zinc-300">{sc.reason}</div>
+
+      <div className="space-y-3">
+        {axes.map(ax => (
+          <div key={ax.label} className="space-y-1">
+            <div className="text-[10px] font-mono text-zinc-500">{ax.label}</div>
+            <div className="flex gap-2 items-center">
+              <div className="flex-1 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-violet-500/70 transition-all duration-500" style={{ width: `${ax.m}%` }} />
+              </div>
+              <span className="text-[9px] font-mono text-violet-400 w-6 text-right">{Math.round(ax.m)}</span>
+            </div>
+            <div className="flex gap-2 items-center">
+              <div className="flex-1 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-emerald-500/70 transition-all duration-500" style={{ width: `${ax.s}%` }} />
+              </div>
+              <span className="text-[9px] font-mono text-emerald-400 w-6 text-right">{Math.round(ax.s)}</span>
+            </div>
+            <div className="text-[9px] text-zinc-600">{ax.note}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className={`rounded-lg border p-3 ${winner === "managed" ? "border-violet-700/50 bg-violet-950/10" : "border-emerald-700/50 bg-emerald-950/10"}`}>
+        <div className={`text-xs font-mono font-bold mb-1 ${winner === "managed" ? "text-violet-300" : "text-emerald-300"}`}>
+          {margin < 8 ? "≈ " : "→ "}{winner.charAt(0).toUpperCase() + winner.slice(1)} ({margin < 8 ? "marginal" : "clear"} winner — {mTotal} vs {sTotal})
+        </div>
+        <div className="text-[10px] text-zinc-400">{verdictReason}</div>
+      </div>
+
+      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>Start managed — almost always. The ops burden of self-hosting (deployment, scaling, hardware, on-call) requires a dedicated ML platform team. Once you hit ~500K req/day or face regulatory data residency requirements, run the numbers: the cost crossover usually happens around $50K/month on managed APIs. Most mature companies run hybrid: managed for frontier models, self-hosted for high-volume classification and PII-sensitive routes.</p>
       </div>
     </div>
   );
@@ -8134,29 +8492,269 @@ function EnterpriseAICostModule() {
   );
 }
 
+// ── PgvectorVsManagedModule ──────────────────────────────────────────────────
+function PgvectorVsManagedModule() {
+  const [hasPostgres, setHasPostgres] = useState(true);
+  const [vecCount, setVecCount] = useState(500000);
+  const [needJoins, setNeedJoins] = useState(true);
+  const [teamSize, setTeamSize] = useState(3);
+
+  const scaleScore = vecCount > 50000000 ? 3 : vecCount > 5000000 ? 2 : 1;
+  const pgvectorScore =
+    (hasPostgres ? 35 : 0) + (needJoins ? 25 : 0) + (scaleScore === 1 ? 20 : 0) + (teamSize < 5 ? 20 : 0);
+  const dedicatedScore =
+    (!hasPostgres ? 20 : 0) + (!needJoins ? 15 : 0) + (scaleScore >= 2 ? 30 : 10) + (teamSize >= 5 ? 20 : 5);
+  const total = pgvectorScore + dedicatedScore;
+  const pgPct = Math.round((pgvectorScore / total) * 100);
+  const winner = pgPct >= 55 ? "pgvector" : pgPct <= 45 ? "dedicated" : "toss-up";
+
+  const axes = [
+    { label: "Setup cost", pg: hasPostgres ? 95 : 30, ded: 55, note: "pgvector = ALTER EXTENSION; dedicated = new infra + SDK" },
+    { label: "Scale ceiling", pg: scaleScore === 1 ? 80 : scaleScore === 2 ? 45 : 20, ded: scaleScore === 1 ? 60 : 90, note: "pgvector tops out around 50M vecs; dedicated scales to billions" },
+    { label: "SQL JOIN support", pg: needJoins ? 95 : 50, ded: 15, note: "pgvector: JOIN vectors with your relational tables natively" },
+    { label: "ANN performance", pg: 70, ded: 90, note: "Dedicated DBs are tuned entirely for ANN — HNSW at scale beats pgvector" },
+    { label: "Ops simplicity", pg: hasPostgres ? 85 : 50, ded: 60, note: "Dedicated DB = new monitoring, backups, failover to learn" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 rounded-lg border border-zinc-800 bg-zinc-900/30 p-3">
+        <div className="space-y-1">
+          <div className="text-[10px] font-mono text-zinc-500">Already run Postgres?</div>
+          <div className="flex gap-2">
+            {[true, false].map(v => (
+              <button key={String(v)} onClick={() => setHasPostgres(v)}
+                className={`px-3 py-1 rounded border text-[10px] font-mono transition-all ${hasPostgres === v ? "border-violet-600 text-violet-300 bg-violet-900/20" : "border-zinc-700 text-zinc-500"}`}>{v ? "Yes" : "No"}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1">
+          <div className="text-[10px] font-mono text-zinc-500">Need SQL JOINs with vectors?</div>
+          <div className="flex gap-2">
+            {[true, false].map(v => (
+              <button key={String(v)} onClick={() => setNeedJoins(v)}
+                className={`px-3 py-1 rounded border text-[10px] font-mono transition-all ${needJoins === v ? "border-violet-600 text-violet-300 bg-violet-900/20" : "border-zinc-700 text-zinc-500"}`}>{v ? "Yes" : "No"}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1">
+          <div className="text-[10px] font-mono text-zinc-500">Vectors: {vecCount >= 1000000 ? (vecCount/1000000).toFixed(1)+"M" : (vecCount/1000)+"K"}</div>
+          <input type="range" min={100000} max={100000000} step={100000} value={vecCount} onChange={e => setVecCount(+e.target.value)} className="w-full accent-violet-500" />
+          <div className="flex justify-between text-[9px] text-zinc-600"><span>100K</span><span>100M</span></div>
+        </div>
+        <div className="space-y-1">
+          <div className="text-[10px] font-mono text-zinc-500">ML/Eng team size: {teamSize}</div>
+          <input type="range" min={1} max={20} step={1} value={teamSize} onChange={e => setTeamSize(+e.target.value)} className="w-full accent-violet-500" />
+          <div className="flex justify-between text-[9px] text-zinc-600"><span>1</span><span>20</span></div>
+        </div>
+      </div>
+
+      <div className="flex gap-4 text-[10px] font-mono">
+        <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded inline-block bg-violet-500/70" />pgvector ({pgvectorScore})</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded inline-block bg-blue-500/70" />Dedicated DB ({dedicatedScore})</span>
+      </div>
+
+      <div className="space-y-2.5">
+        {axes.map(ax => (
+          <div key={ax.label} className="space-y-1">
+            <div className="text-[10px] font-mono text-zinc-500">{ax.label}</div>
+            <div className="flex gap-2 items-center">
+              <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full bg-violet-500/70 rounded-full transition-all duration-500" style={{ width: `${ax.pg}%` }} />
+              </div>
+              <span className="text-[9px] font-mono text-violet-400 w-5 text-right">{ax.pg}</span>
+            </div>
+            <div className="flex gap-2 items-center">
+              <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500/70 rounded-full transition-all duration-500" style={{ width: `${ax.ded}%` }} />
+              </div>
+              <span className="text-[9px] font-mono text-blue-400 w-5 text-right">{ax.ded}</span>
+            </div>
+            <div className="text-[9px] text-zinc-600">{ax.note}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className={`rounded-lg border p-3 ${winner === "pgvector" ? "border-violet-700/50 bg-violet-950/10" : winner === "dedicated" ? "border-blue-700/50 bg-blue-950/10" : "border-amber-700/50 bg-amber-950/10"}`}>
+        <div className={`text-xs font-mono font-bold ${winner === "pgvector" ? "text-violet-300" : winner === "dedicated" ? "text-blue-300" : "text-amber-300"}`}>
+          {winner === "toss-up" ? "≈ Toss-up — start with pgvector, migrate if you hit limits" : `→ ${winner === "pgvector" ? "pgvector" : "Dedicated vector DB"}`}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>Start with pgvector if you already run Postgres and need SQL JOINs — the JOIN superpower (filter by user_id, tag, date before computing vectors) is something dedicated DBs can't match. Migrate when you exceed ~10M vectors or when ANN latency becomes the bottleneck. Running both is also valid: pgvector for relational-heavy queries, dedicated for pure ANN at scale.</p>
+      </div>
+    </div>
+  );
+}
+
+// ── VectorMigrationModule ────────────────────────────────────────────────────
+function VectorMigrationModule() {
+  const [phase, setPhase] = useState(0);
+  const phases = [
+    { label: "Phase 0: Old index only", btnCls: "border-zinc-600 text-zinc-300 bg-zinc-800/40", labelCls: "text-zinc-400", cardCls: "border-zinc-700 bg-zinc-900/30", desc: "All docs embedded with model-v1. Reads and writes go to a single index. No migration in progress.", oldIdx: 100, newIdx: 0, reads: "old" },
+    { label: "Phase 1: Dual-write", btnCls: "border-blue-600 text-blue-300 bg-blue-900/20", labelCls: "text-blue-400", cardCls: "border-blue-800/40 bg-blue-950/10", desc: "New docs write to both old (model-v1) and new (model-v2) indexes. Old docs are not yet re-embedded. Reads still go to old index.", oldIdx: 100, newIdx: 10, reads: "old" },
+    { label: "Phase 2: Backfill", btnCls: "border-violet-600 text-violet-300 bg-violet-900/20", labelCls: "text-violet-400", cardCls: "border-violet-800/40 bg-violet-950/10", desc: "Background job re-embeds old docs into the new index. New docs still dual-write. Reads still go to old index — no user impact during backfill.", oldIdx: 100, newIdx: 75, reads: "old" },
+    { label: "Phase 3: Cutover", btnCls: "border-emerald-600 text-emerald-300 bg-emerald-900/20", labelCls: "text-emerald-400", cardCls: "border-emerald-800/40 bg-emerald-950/10", desc: "Backfill complete. Reads switch to new index. Old index stays warm for rollback. New docs write to new index only.", oldIdx: 100, newIdx: 100, reads: "new" },
+    { label: "Phase 4: Decommission", btnCls: "border-emerald-600 text-emerald-300 bg-emerald-900/20", labelCls: "text-emerald-400", cardCls: "border-emerald-800/40 bg-emerald-950/10", desc: "Rollback window passed. Old index deleted. Old embedding model decommissioned. Migration complete.", oldIdx: 0, newIdx: 100, reads: "new" },
+  ];
+  const p = phases[phase];
+
+  return (
+    <div className="space-y-4">
+      <div className="text-[10px] font-mono text-zinc-500">Embedding model change = all stored vectors are in the wrong space. Step through the migration pattern.</div>
+      <div className="flex flex-wrap gap-1">
+        {phases.map((ph, i) => (
+          <button key={i} onClick={() => setPhase(i)}
+            className={`px-2 py-1 rounded border text-[10px] font-mono transition-all ${phase === i ? ph.btnCls : "border-zinc-700 text-zinc-500 hover:border-zinc-600"}`}>Phase {i}</button>
+        ))}
+      </div>
+
+      <div className={`rounded-lg border p-3 ${p.cardCls}`}>
+        <div className={`text-xs font-mono font-bold mb-2 ${p.labelCls}`}>{p.label}</div>
+        <div className="text-[10px] text-zinc-400">{p.desc}</div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { label: "Old index (model-v1)", pct: p.oldIdx, color: "bg-zinc-500/60", active: p.reads === "old" },
+          { label: "New index (model-v2)", pct: p.newIdx, color: "bg-violet-500/60", active: p.reads === "new" },
+        ].map(({ label, pct, color, active }) => (
+          <div key={label} className={`rounded-lg border p-3 ${active ? "border-violet-600/50 bg-violet-950/10" : "border-zinc-800 bg-zinc-900/30"}`}>
+            <div className={`text-[10px] font-mono mb-2 ${active ? "text-violet-300" : "text-zinc-500"}`}>{label} {active ? "← reads" : ""}</div>
+            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden mb-1">
+              <div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width: `${pct}%` }} />
+            </div>
+            <div className="text-[9px] font-mono text-zinc-600">{pct}% populated</div>
+          </div>
+        ))}
+      </div>
+
+      {phase === 1 && (
+        <div className="rounded-lg border border-amber-800/40 bg-amber-950/10 p-2.5 text-[10px] text-zinc-400">
+          ⚠ During dual-write: new docs are queryable in the new index but old docs are not. Recall drops until backfill completes.
+        </div>
+      )}
+      {phase === 2 && (
+        <div className="rounded-lg border border-violet-800/40 bg-violet-950/10 p-2.5 text-[10px] text-zinc-400">
+          Backfill is the expensive step — re-embedding 1M docs at 500 docs/sec takes ~33 minutes. Run off-peak and monitor progress.
+        </div>
+      )}
+
+      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>Never do a stop-the-world re-embed. The dual-write → backfill → cutover pattern keeps your old index live throughout. The risky moment is cutover — keep the old index warm for a rollback window (24-72h) before decommissioning. Budget the backfill time: 10M docs at 500/sec = ~5.5 hours.</p>
+      </div>
+    </div>
+  );
+}
+
+// ── OcrPipelineModule ────────────────────────────────────────────────────────
+function OcrPipelineModule() {
+  const [tier, setTier] = useState("traditional");
+  const [docType, setDocType] = useState("simple");
+
+  const docTypes = { simple: "Typed text, single-column, no tables", complex: "Multi-column + tables + figures", scanned: "Scanned handwriting or degraded scan", form: "Structured form (checkboxes, fields)" };
+
+  const tierData = {
+    traditional: {
+      label: "Traditional OCR (Tesseract, AWS Textract)",
+      cost: "$0.001–0.01/page",
+      latency: "0.1–0.5s/page",
+      accuracy: { simple: 97, complex: 68, scanned: 45, form: 75 },
+      failures: ["Multi-column layout confusion", "Table structure not preserved", "Handwriting / poor scan quality", "Merged cells, rotated text"],
+    },
+    vlm: {
+      label: "Vision LLM (GPT-4V, Claude Vision)",
+      cost: "$0.05–0.30/page",
+      latency: "2–10s/page",
+      accuracy: { simple: 98, complex: 93, scanned: 82, form: 91 },
+      failures: ["Hallucinated text (rare but real)", "High cost at scale", "Rate limits at throughput", "No structured output without prompting"],
+    },
+    hybrid: {
+      label: "Hybrid (Traditional → Vision LLM fallback)",
+      cost: "$0.005–0.08/page (blended)",
+      latency: "0.1–10s/page (depends on routing)",
+      accuracy: { simple: 97, complex: 91, scanned: 80, form: 90 },
+      failures: ["Routing classifier adds latency", "Need to label training data for classifier", "Two systems to maintain"],
+    },
+  };
+
+  const t = tierData[tier];
+  const acc = t.accuracy[docType];
+  const accColor = acc >= 90 ? "text-emerald-400" : acc >= 70 ? "text-amber-400" : "text-red-400";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {Object.keys(tierData).map(k => (
+          <button key={k} onClick={() => setTier(k)}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${tier === k ? "border-violet-600 text-violet-300 bg-violet-900/20" : "border-zinc-700 text-zinc-500 hover:border-zinc-600"}`}>{tierData[k].label.split(" (")[0]}</button>
+        ))}
+      </div>
+
+      <div className="space-y-1">
+        <div className="text-[10px] font-mono text-zinc-500">Document type</div>
+        <div className="grid grid-cols-2 gap-1">
+          {Object.entries(docTypes).map(([k, desc]) => (
+            <button key={k} onClick={() => setDocType(k)}
+              className={`rounded border p-2 text-left transition-all ${docType === k ? "border-violet-600 bg-violet-900/20" : "border-zinc-800 bg-zinc-900/30 hover:border-zinc-700"}`}>
+              <div className={`text-[10px] font-mono font-bold ${docType === k ? "text-violet-300" : "text-zinc-500"}`}>{k}</div>
+              <div className="text-[9px] text-zinc-600 mt-0.5">{desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2.5">
+          <div className={`text-xl font-mono font-bold ${accColor}`}>{acc}%</div>
+          <div className="text-[9px] text-zinc-600 mt-0.5">Accuracy ({docType})</div>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2.5">
+          <div className="text-sm font-mono font-bold text-zinc-300">{t.cost}</div>
+          <div className="text-[9px] text-zinc-600 mt-0.5">Cost</div>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2.5">
+          <div className="text-sm font-mono font-bold text-zinc-300">{t.latency}</div>
+          <div className="text-[9px] text-zinc-600 mt-0.5">Latency</div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-3 space-y-1.5">
+        <div className="text-[10px] font-mono text-zinc-500 mb-1">Failure modes</div>
+        {t.failures.map((f, i) => (
+          <div key={i} className="flex gap-2 text-[10px] text-zinc-400">
+            <span className="text-red-400 flex-shrink-0">✗</span><span>{f}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>OCR is the silent failure point of document AI — bad parses cause downstream hallucinations with no error signal. Traditional OCR is cheap and fast but collapses on complex layouts. Vision LLMs handle anything but cost 10-100x more. The hybrid approach routes simple docs through traditional OCR and falls back to vision LLM only when a confidence threshold is not met — best of both at ~5-10x traditional cost.</p>
+      </div>
+    </div>
+  );
+}
+
 const MODULES = [
   // ── Vector / Observability / Multimodal / Safety gyms (populated) ──
   { id: "vector-db-index-mechanics", label: "HNSW vs IVF", tag: "VECTOR", level: "advanced", title: "ANN Index Mechanics: HNSW vs IVF", subtitle: "Graph vs buckets — the recall/latency/memory dial.", fidelity: MODULE_SPECS["vector-db-index-mechanics"].fidelity, spec: MODULE_SPECS["vector-db-index-mechanics"], component: VectorIndexModule },
-  { id: "pgvector-vs-managed", label: "pgvector vs Managed", tag: "DECISION", level: "intermediate", title: "pgvector vs a Dedicated Vector DB", subtitle: "Build-vs-buy for vector search.", fidelity: MODULE_SPECS["pgvector-vs-managed"].fidelity, spec: MODULE_SPECS["pgvector-vs-managed"], component: StandardModule },
+  { id: "pgvector-vs-managed", label: "pgvector vs Managed", tag: "DECISION", level: "intermediate", title: "pgvector vs a Dedicated Vector DB", subtitle: "Build-vs-buy for vector search.", fidelity: MODULE_SPECS["pgvector-vs-managed"].fidelity, spec: MODULE_SPECS["pgvector-vs-managed"], component: PgvectorVsManagedModule },
   { id: "hybrid-search-design", label: "Hybrid Search", tag: "VECTOR", level: "intermediate", title: "Hybrid Search: Dense + BM25 + RRF", subtitle: "Fuse meaning and exact terms.", fidelity: MODULE_SPECS["hybrid-search-design"].fidelity, spec: MODULE_SPECS["hybrid-search-design"], component: HybridSearchModule },
   { id: "metadata-filtering", label: "Metadata Filtering", tag: "VECTOR", level: "intermediate", title: "Metadata Filtering + ANN", subtitle: "Pre vs post filter, and the recall trap.", fidelity: MODULE_SPECS["metadata-filtering"].fidelity, spec: MODULE_SPECS["metadata-filtering"], component: MetadataFilteringModule },
-  { id: "vector-migration-patterns", label: "Vector Migration", tag: "DECISION", level: "intermediate", title: "Vector Migration Patterns", subtitle: "Re-embed without downtime.", fidelity: MODULE_SPECS["vector-migration-patterns"].fidelity, spec: MODULE_SPECS["vector-migration-patterns"], component: StandardModule },
+  { id: "vector-migration-patterns", label: "Vector Migration", tag: "DECISION", level: "intermediate", title: "Vector Migration Patterns", subtitle: "Re-embed without downtime.", fidelity: MODULE_SPECS["vector-migration-patterns"].fidelity, spec: MODULE_SPECS["vector-migration-patterns"], component: VectorMigrationModule },
   { id: "agent-tracing", label: "Agent Tracing", tag: "OPS", level: "intermediate", title: "Tracing Agent Loops", subtitle: "Spans, not logs.", fidelity: MODULE_SPECS["agent-tracing"].fidelity, spec: MODULE_SPECS["agent-tracing"], component: AgentTracingModule },
   { id: "prompt-regression-signals", label: "Prompt Regression", tag: "DECISION", level: "intermediate", title: "Prompt Regression Signals", subtitle: "Catch the break before you ship.", fidelity: MODULE_SPECS["prompt-regression-signals"].fidelity, spec: MODULE_SPECS["prompt-regression-signals"], component: PromptRegressionModule },
   { id: "quality-drift", label: "Quality Drift", tag: "OPS", level: "intermediate", title: "Quality Drift in Production", subtitle: "Worse with no deploy.", fidelity: MODULE_SPECS["quality-drift"].fidelity, spec: MODULE_SPECS["quality-drift"], component: QualityDriftModule },
   { id: "cost-attribution", label: "Cost Attribution", tag: "OPS", level: "intermediate", title: "Cost Attribution by Feature", subtitle: "Turn the bill into a fix.", fidelity: MODULE_SPECS["cost-attribution"].fidelity, spec: MODULE_SPECS["cost-attribution"], component: CostAttributionModule },
   { id: "vision-language-arch", label: "VLM Architecture", tag: "MULTIMODAL", level: "advanced", title: "Vision-Language Model Architecture", subtitle: "Encoder, projector, LLM.", fidelity: MODULE_SPECS["vision-language-arch"].fidelity, spec: MODULE_SPECS["vision-language-arch"], component: VisionLanguageModule },
   { id: "multimodal-rag", label: "Multimodal RAG", tag: "MULTIMODAL", level: "intermediate", title: "Multimodal RAG", subtitle: "Retrieve the page, not the parse.", fidelity: MODULE_SPECS["multimodal-rag"].fidelity, spec: MODULE_SPECS["multimodal-rag"], component: MultimodalRAGModule },
-  { id: "ocr-pipeline-design", label: "OCR Pipelines", tag: "DECISION", level: "intermediate", title: "OCR Pipeline Design", subtitle: "Where it breaks, when to skip it.", fidelity: MODULE_SPECS["ocr-pipeline-design"].fidelity, spec: MODULE_SPECS["ocr-pipeline-design"], component: StandardModule },
+  { id: "ocr-pipeline-design", label: "OCR Pipelines", tag: "DECISION", level: "intermediate", title: "OCR Pipeline Design", subtitle: "Where it breaks, when to skip it.", fidelity: MODULE_SPECS["ocr-pipeline-design"].fidelity, spec: MODULE_SPECS["ocr-pipeline-design"], component: OcrPipelineModule },
   { id: "resolution-token-cost", label: "Resolution vs Cost", tag: "DECISION", level: "intermediate", title: "Image Resolution vs Token Cost", subtitle: "The VLM cost dial.", fidelity: MODULE_SPECS["resolution-token-cost"].fidelity, spec: MODULE_SPECS["resolution-token-cost"], component: ResolutionCostModule },
   { id: "alignment-techniques", label: "Alignment Techniques", tag: "SAFETY", level: "advanced", title: "Alignment: SFT, RLHF, DPO, RLAIF", subtitle: "How base models become helpful + safe.", fidelity: MODULE_SPECS["alignment-techniques"].fidelity, spec: MODULE_SPECS["alignment-techniques"], component: AlignmentTechniquesModule },
   { id: "red-teaming", label: "Red Teaming", tag: "SAFETY", level: "intermediate", title: "Red-Teaming LLM Systems", subtitle: "Attack your own system, by category.", fidelity: MODULE_SPECS["red-teaming"].fidelity, spec: MODULE_SPECS["red-teaming"], component: RedTeamingModule },
   { id: "jailbreak-taxonomy", label: "Jailbreak Taxonomy", tag: "SAFETY", level: "intermediate", title: "Jailbreak Taxonomy", subtitle: "Five categories, layered defense.", fidelity: MODULE_SPECS["jailbreak-taxonomy"].fidelity, spec: MODULE_SPECS["jailbreak-taxonomy"], component: JailbreakTaxonomyModule },
   { id: "safety-measurement", label: "Safety Measurement", tag: "DECISION", level: "intermediate", title: "Measuring Safety", subtitle: "Both directions — or you over-refuse.", fidelity: MODULE_SPECS["safety-measurement"].fidelity, spec: MODULE_SPECS["safety-measurement"], component: SafetyMeasurementModule },
-  // ── Cloud AI Services gym (populated) ──
-  { id: "aws-bedrock-agentcore", label: "AWS Bedrock + AgentCore", tag: "CLOUD", level: "intermediate", title: "AWS Bedrock + AgentCore", subtitle: "Managed multi-model API, RAG, guardrails, agent runtime.", fidelity: MODULE_SPECS["aws-bedrock-agentcore"].fidelity, spec: MODULE_SPECS["aws-bedrock-agentcore"], component: StandardModule },
-  { id: "vertex-ai-gemini", label: "Vertex AI + Gemini", tag: "CLOUD", level: "intermediate", title: "Vertex AI + Gemini", subtitle: "Gemini, grounding, tuning, agents — in GCP.", fidelity: MODULE_SPECS["vertex-ai-gemini"].fidelity, spec: MODULE_SPECS["vertex-ai-gemini"], component: StandardModule },
-  { id: "azure-ai-foundry", label: "Azure AI Foundry", tag: "CLOUD", level: "intermediate", title: "Azure AI Foundry", subtitle: "Governed Azure OpenAI + prompt flow + safety.", fidelity: MODULE_SPECS["azure-ai-foundry"].fidelity, spec: MODULE_SPECS["azure-ai-foundry"], component: StandardModule },
   { id: "managed-vs-selfhosted", label: "Managed vs Self-Hosted", tag: "DECISION", level: "intermediate", title: "Managed vs Self-Hosted Inference", subtitle: "The five-axis fork: cost, control, data, capability, team.", fidelity: MODULE_SPECS["managed-vs-selfhosted"].fidelity, spec: MODULE_SPECS["managed-vs-selfhosted"], component: ManagedVsSelfHostedModule },
   { id: "enterprise-ai-cost-model", label: "Enterprise AI Cost Model", tag: "DECISION", level: "intermediate", title: "Enterprise AI TCO Modeling", subtitle: "Build the cost bottom-up; find the leaks.", fidelity: MODULE_SPECS["enterprise-ai-cost-model"].fidelity, spec: MODULE_SPECS["enterprise-ai-cost-model"], component: EnterpriseAICostModule },
   {
@@ -10361,18 +10959,18 @@ const GYMS = [
   {
     id: "vector-infrastructure",
     label: "Vector Infrastructure",
-    desc: "HNSW vs IVF index mechanics, hybrid dense+BM25 search, and metadata filtering at scale.",
+    desc: "HNSW vs IVF index mechanics, hybrid dense+BM25 search, metadata filtering, pgvector vs dedicated DB, and migration patterns.",
     color: "#0ea5e9",
-    moduleIds: ["vector-db-index-mechanics", "hybrid-search-design", "metadata-filtering"],
+    moduleIds: ["vector-db-index-mechanics", "hybrid-search-design", "metadata-filtering", "pgvector-vs-managed", "vector-migration-patterns"],
     labId: "lab",
     labLabel: "RAG Lab",
   },
   {
     id: "multimodal",
     label: "Multimodal AI",
-    desc: "Vision-language model architecture, multimodal RAG, and resolution vs token cost tradeoffs.",
+    desc: "Vision-language model architecture, multimodal RAG, resolution vs token cost, and OCR pipeline design.",
     color: "#f43f5e",
-    moduleIds: ["vision-language-arch", "multimodal-rag", "resolution-token-cost"],
+    moduleIds: ["vision-language-arch", "multimodal-rag", "resolution-token-cost", "ocr-pipeline-design"],
     labId: "systems",
     labLabel: "Systems Lab",
   },

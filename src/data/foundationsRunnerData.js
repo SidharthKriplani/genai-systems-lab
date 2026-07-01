@@ -3057,4 +3057,127 @@ For a 70B model across all attention layers:
     takeaway: "Attention dilution — not truncation — is the primary memory failure in long conversations. Early turns receive lower attention weight when buried deep in context. The fix: structured state that extracts and maintains critical facts at position 1 on every turn, plus turn summarization to compress history without losing semantic content. For cross-session memory, external key-value store for identity/preferences and semantic RAG for large-scale knowledge retrieval.",
   },
 
+  "pgvector-vs-managed": {
+    scenario: "Your backend team already runs Postgres in production. A new feature needs vector similarity search across 2M documents — each document owned by a specific user. The options on the table: install pgvector on the existing Postgres cluster, or adopt a dedicated vector DB (Pinecone, Qdrant). You need a recommendation with reasoning.",
+    explanation: "pgvector extends Postgres with a vector column type and HNSW/IVF index. Because it's inside Postgres, you can filter by user_id, tag, or any relational column before computing nearest neighbors — a JOIN the dedicated DBs can't match natively. Dedicated vector DBs (Pinecone, Qdrant, Weaviate, Milvus) are purpose-built for ANN: they maintain the index in-memory, shard it horizontally, and hit lower latency at high vector counts. The crossover: pgvector handles up to ~10M vectors well; beyond that, query latency climbs and horizontal scaling requires Postgres sharding, which is complex. The JOIN advantage reverses above the scaling limit — at 100M vectors you don't want your vector search bottlenecking your relational DB. Most teams should start with pgvector — 'ALTER TABLE ADD COLUMN embedding vector(1536)' deploys in minutes — and migrate when they hit the ceiling. The migration is straightforward: dual-write to both during transition, run a backfill, then cut over reads.",
+    mcqs: [
+      {
+        question: "A team needs to search only across documents owned by the requesting user before returning nearest neighbors. Why does pgvector have a structural advantage over a dedicated vector DB for this use case?",
+        options: [
+          "pgvector uses a more accurate HNSW implementation than dedicated DBs",
+          "pgvector runs the ANN search in a single SQL query, enabling a WHERE user_id = $1 pre-filter before the vector index is queried — a native relational operation",
+          "Dedicated vector DBs do not support metadata filtering of any kind",
+          "pgvector caches user-specific vectors in memory automatically",
+        ],
+        correct: 1,
+        explanation: "pgvector sits inside Postgres, so you can write SELECT ... ORDER BY embedding <-> $1 WHERE user_id = $2 LIMIT 10 — a JOIN with your relational data in a single query. Dedicated vector DBs require metadata filtering through their own APIs, which is possible but adds a round-trip or forces a payload-side filter after ANN. Option B is correct. Option A is wrong because HNSW quality depends on configuration, not the product. Option C is wrong because dedicated DBs do support metadata filtering — the issue is that it's not a SQL JOIN. Option D is wrong because pgvector has no automatic per-user caching.",
+      },
+      {
+        question: "At approximately what vector count does pgvector typically start to lose its performance edge over dedicated vector DBs, and why?",
+        options: [
+          "1M vectors — pgvector cannot build an HNSW index above 1M entries",
+          "500K vectors — dedicated DBs use a fundamentally different distance metric",
+          "10M vectors — beyond this, pgvector query latency climbs as the index grows and horizontal scaling requires complex Postgres sharding",
+          "100K vectors — pgvector stores vectors in-row, causing page bloat above this threshold",
+        ],
+        correct: 2,
+        explanation: "pgvector's HNSW index works well up to roughly 10M vectors. Beyond that, the graph grows, query latency increases, and scaling out requires partitioning Postgres — a non-trivial ops burden. Dedicated vector DBs are designed to shard the HNSW index horizontally across nodes, maintaining low latency at hundreds of millions of vectors. Option C is correct. Option A is wrong because pgvector can build indexes well above 1M. Option B is wrong because both use the same distance metrics (cosine, L2, dot product). Option D is wrong — page bloat is not the primary scaling concern.",
+      },
+      {
+        question: "A team argues that pgvector is 'free' and Pinecone costs money, so pgvector always wins on cost. What is the main cost the argument misses?",
+        options: [
+          "pgvector requires a separate licensing fee above 1M vectors",
+          "The compute, memory, and storage of the Postgres instance that must now serve both relational workloads and a large HNSW vector index — contention can force a larger instance tier or a dedicated replica",
+          "pgvector charges per query after 10M queries per month",
+          "Dedicated vector DBs are always cheaper because they are serverless",
+        ],
+        correct: 1,
+        explanation: "pgvector is a Postgres extension — it runs on the same instance as your relational data. A large HNSW index consumes significant RAM (HNSW graph is memory-resident) and query CPU. Running both on one instance creates resource contention, often forcing you to either provision a much larger instance or spin up a read replica dedicated to vector search. That instance cost is the hidden cost of 'free.' Option B is correct. Options A and C are false — pgvector has no per-query fees. Option D is wrong — dedicated vector DBs are not inherently cheaper, especially at moderate scale.",
+      },
+    ],
+    takeaway: "Default to pgvector when you already run Postgres and need relational JOINs with your vectors. The JOIN superpower — WHERE user_id = $1 in the same query — is something dedicated DBs cannot replicate natively. Migrate when you exceed ~10M vectors or when ANN latency becomes the bottleneck. Dedicated vector DBs win at massive scale and pure ANN performance. Many production systems run hybrid: pgvector for small-to-mid workloads with JOIN requirements, dedicated DB for high-scale pure vector routes.",
+  },
+
+  "vector-migration-patterns": {
+    scenario: "Your team just released a new embedding model (model-v2) that improves RAG recall by 18%. You have 5M documents stored in your production vector index, all embedded with model-v1. A naive re-embed would take your search offline for hours. You need a migration plan that keeps search live.",
+    explanation: "The core problem: embeddings are tied to the model that produced them. Two vectors from different models live in incompletely different geometric spaces — the cosine distance between a model-v1 embedding of doc A and a model-v2 embedding of a query is meaningless. Every stored vector becomes silently wrong the moment you switch models, with no error thrown. The safe migration pattern is: dual-write → backfill → cutover → decommission. Dual-write: all new incoming documents write to both the old index (model-v1 embeddings) and the new index (model-v2 embeddings). Reads still serve from the old index — no user impact. Backfill: a background job re-embeds every existing document and writes it into the new index. This is the expensive step: 5M docs at 500 docs/sec takes ~2.8 hours. Run off-peak, monitor progress. During backfill the new index is partially populated — don't query it for production reads yet, or recall will be low for old documents. Cutover: once backfill completes (100% populated), atomically switch reads to the new index. Keep the old index warm for 24-72 hours as rollback insurance. Decommission: delete the old index and model after the rollback window passes.",
+    mcqs: [
+      {
+        question: "After switching to a new embedding model, why are all previously stored vectors 'in the wrong space' even though the individual documents haven't changed?",
+        options: [
+          "The new model uses a different vector dimension, so the dot product operation fails at runtime",
+          "Different embedding models learn different geometric representations — the same document maps to a different point in vector space depending on which model produced it, making cross-model distance comparisons meaningless",
+          "The old vectors decay in quality over time regardless of the model change",
+          "Vector databases automatically invalidate stored embeddings when a new model is deployed",
+        ],
+        correct: 1,
+        explanation: "Each embedding model defines its own continuous vector space — directions and distances that encode semantic relationships differ between models. A model-v1 embedding of 'apple' and a model-v2 query for 'fruit' may have a high cosine distance even though they are semantically similar, because the models carve up the space differently. There is no mathematical relationship between them that allows cross-model comparison. Option B is correct. Option A is wrong because dimension mismatches would throw an explicit error, not silent wrong results. Option C is wrong — vector representations don't decay. Option D is wrong — vector DBs have no mechanism to invalidate embeddings on model change.",
+      },
+      {
+        question: "During the dual-write phase of a vector migration, why is it unsafe to query the new index for production reads even though new documents are being written to it?",
+        options: [
+          "The new index is locked during dual-write and will reject read queries",
+          "New documents are only being written to the old index during dual-write; the new index is empty",
+          "The new index contains only recently indexed documents — old documents haven't been backfilled yet — so queries return incomplete results with low recall for the bulk of the corpus",
+          "Dual-write creates a write conflict that corrupts query results",
+        ],
+        correct: 2,
+        explanation: "During dual-write, new incoming documents go to both indexes, but the millions of pre-existing documents are not yet in the new index (that happens during backfill). If you query the new index, you only search across the small fraction of recently indexed documents — the old corpus is invisible, producing catastrophically low recall. Production reads must stay on the old index until backfill is complete and the new index has 100% coverage. Option C is correct. Option A is wrong because the index accepts reads normally. Option B is wrong because new documents are going to both indexes. Option D is wrong because dual-write doesn't create read corruption.",
+      },
+      {
+        question: "After cutover to the new index, why do teams keep the old index warm for 24-72 hours rather than deleting it immediately?",
+        options: [
+          "Regulatory requirements mandate maintaining a backup index at all times",
+          "The old index is still serving reads during the rollback window — reads haven't fully switched to the new index yet",
+          "Immediate deletion triggers a re-index scan that can corrupt the new index",
+          "As insurance for rollback: if the new index has a defect (low recall, data corruption, misconfiguration), you can atomically switch reads back to the old index without re-running the hours-long backfill",
+        ],
+        correct: 3,
+        explanation: "Backfill takes hours for large corpora. If you delete the old index at cutover and then discover a problem with the new index — a re-embedding bug, wrong model config, data gap — you have no rollback path without re-running the entire backfill. Keeping the old index warm for 24-72 hours gives you a switch-back option at near-zero cost (Postgres or a dedicated DB keeps the index in memory regardless). After the rollback window, delete it. Option D is correct. Option A is wrong because the requirement is operational, not regulatory. Option B is wrong because reads have already switched to the new index at cutover. Option C is false — deletion of the old index has no effect on the new index.",
+      },
+    ],
+    takeaway: "Never do a stop-the-world re-embed. The dual-write → backfill → cutover pattern keeps search fully live throughout: users read from the old index until the new one is 100% populated, then you flip reads atomically. Budget the backfill time before committing: 10M documents at 500 docs/sec is 5.5 hours — plan for off-peak execution. Keep the old index warm for 24-72h after cutover as rollback insurance. The critical insight: cross-model vector distances are meaningless — you cannot mix model-v1 and model-v2 vectors in the same index.",
+  },
+
+  "ocr-pipeline-design": {
+    scenario: "You built a document Q&A system that ingests PDFs. Users report that answers are wrong or hallucinated on ~20% of queries. After digging in, the LLM is not the problem — the OCR layer is silently producing garbled text on complex layouts. Your PDFs include clean typed reports, scanned handwritten forms, and multi-column financial statements.",
+    explanation: "OCR is the silent failure point of document AI. A wrong parse produces wrong context — and the LLM will confidently hallucinate answers from garbled text with no error signal. Three tiers: Traditional OCR (Tesseract, AWS Textract, Google Document AI): fast ($0.001-0.01/page), handles clean text well, collapses on complex multi-column layouts, tables, rotated text, and degraded scans. Accuracy on complex layouts can fall below 50%. Vision LLM (GPT-4V, Claude Vision, Gemini): treats the document page as an image, handles any layout including handwriting and rotated text. Accuracy on complex docs: 85-95%. Cost: $0.05-0.30/page — 10-100x more expensive. Hallucination risk: rare but non-zero (vision LLMs can fabricate content not in the image). Hybrid approach: run traditional OCR on every page; if confidence score is below threshold (e.g., Textract's block confidence), route the page to a vision LLM. This routes simple pages (the majority) through the cheap path and only spends on vision LLM for pages that need it. Blended cost: roughly 5-15x traditional, depending on your document mix. When to skip OCR entirely: if the PDF contains selectable text (not a scan), extract it directly from the PDF layer — no OCR needed, 100% accuracy, near-zero cost.",
+    mcqs: [
+      {
+        question: "OCR produces garbled text on a multi-column financial statement. The LLM downstream confidently provides wrong answers. Why does this happen without any explicit error signal?",
+        options: [
+          "The LLM detects garbled input and generates a random response as a fallback",
+          "OCR errors are caught at the vector embedding stage and flagged in the metadata",
+          "The LLM receives malformed text as if it were correct — it has no mechanism to distinguish good OCR from bad OCR and generates confident-sounding completions from whatever context it receives",
+          "The LLM's temperature setting causes it to hallucinate when token probabilities are low",
+        ],
+        correct: 2,
+        explanation: "The LLM has no visibility into how the text was produced. It receives a chunk of text (however garbled), treats it as ground truth, and generates a response that is internally consistent with the garbled input. If OCR reads 'reveue 2,3M' instead of 'revenue $2.3M', the LLM may answer revenue questions based on the corrupted parse without signaling any uncertainty. Option C is correct. Option A is wrong — the LLM does not have a 'fallback mode' for bad input. Option B is wrong — embedding quality is affected by garbled text, but there is no flagging mechanism in the pipeline. Option D is wrong — temperature controls output randomness, not hallucination from bad context.",
+      },
+      {
+        question: "In the hybrid OCR approach, what signal is used to route a page from traditional OCR to a vision LLM?",
+        options: [
+          "The file size of the PDF page — large pages are routed to vision LLMs",
+          "The confidence score output by the traditional OCR engine — pages below a threshold (e.g., Textract's block confidence < 80%) are routed to the vision LLM",
+          "The number of words on the page — sparse pages go to vision LLMs",
+          "The LLM flags pages it finds confusing and routes them back for vision LLM re-processing",
+        ],
+        correct: 1,
+        explanation: "OCR engines like AWS Textract output per-block confidence scores (0-100%) alongside the recognized text. Pages or blocks with low confidence are likely complex layouts, low-quality scans, or handwriting where traditional OCR is unreliable. Routing these to a vision LLM is the hybrid decision boundary. This requires no extra classification step — the signal is built into the OCR output. Option B is correct. Option A is wrong because file size is unrelated to layout complexity. Option C is wrong because word count doesn't capture layout complexity. Option D is wrong because LLMs don't have a mechanism to flag their own context as bad and route for re-processing.",
+      },
+      {
+        question: "Your PDFs are generated programmatically and contain selectable text (not scans). What is the optimal approach, and why?",
+        options: [
+          "Use a vision LLM — programmatic PDFs have vector graphics that require visual understanding",
+          "Use traditional OCR — it handles clean typed text at near-100% accuracy",
+          "Extract text directly from the PDF layer without OCR — programmatic PDFs embed the text, so extraction is exact, free, and requires no inference",
+          "Run both traditional OCR and direct extraction, then take the longer output",
+        ],
+        correct: 2,
+        explanation: "Programmatic PDFs (generated by code, Word exports, etc.) embed the actual text characters in the file — they're not images. PDF libraries (PyMuPDF, pdfplumber) can extract this text directly: no OCR model required, 100% character accuracy, microsecond latency per page, zero API cost. OCR is designed for images of text. Running it on a programmatic PDF is wasteful and introduces unnecessary error. The first diagnostic in any document pipeline should be: is this a scan or a programmatic PDF? If programmatic, skip OCR entirely. Option C is correct. Option A is wrong because vision models add cost and latency for zero accuracy gain on programmatic text. Option B is wrong for the same reason — OCR is unnecessary. Option D is wrong — running both is redundant and the comparison logic adds no value.",
+      },
+    ],
+    takeaway: "OCR is the silent failure point of document AI — bad parses produce confident LLM hallucinations with no error signal. The diagnostic first step: is this a scan (needs OCR) or a programmatic PDF (extract text directly, 100% accurate, free)? For scanned documents, use hybrid: traditional OCR for simple pages (cheap, fast), vision LLM only for pages below the confidence threshold (complex layouts, handwriting, degraded scans). Budget for vision LLM fallback at roughly 5-15x traditional cost depending on document complexity mix.",
+  },
+
 };
