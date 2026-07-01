@@ -1388,7 +1388,7 @@ because long-prompt applications have 10-50× more input tokens than output toke
           "50% — output is exactly half of total cost in all LLM pricing models",
           "Nothing — output tokens are billed separately and don't affect the input-side total",
           "~40% — output tokens are always priced higher than input tokens so they dominate cost reduction",
-          "~16% — output tokens represent $0.0015 of a $0.0095 total; halving them saves $0.00075, roughly 8% of total cost",
+          "~8% — output tokens represent $0.0015 of a $0.0095 total; halving them saves $0.00075, roughly 8% of total cost",
         ],
         correct: 3,
         explanation: "In this cost breakdown, input tokens ($0.008) dominate over output tokens ($0.0015). Halving output saves $0.00075 on a $0.0095 total — roughly 8%, not 50%. The common misconception is that because output tokens have a higher per-token rate, they always dominate total cost. They do when output is long relative to input, but in prompt-heavy applications with short outputs, input tokens drive the bill. Option D is the correct answer. Option A is wrong — it assumes output tokens are 'exactly half of total cost,' which is only true in a specific token-count and pricing scenario; in this example, the math shows output is $0.0015 of a $0.0095 total, nowhere near half. Option B is wrong — output tokens are billed alongside input tokens and do contribute to total cost; halving them saves a real dollar amount, just a small one relative to the input-dominated total. Option C is wrong — whether output or input tokens dominate depends on the ratio of prompt length to output length and the specific pricing model; in long-prompt, short-output applications like RAG, input dominates even though output costs more per token.",
@@ -2393,7 +2393,7 @@ For a 70B model across all attention layers:
 
 4× linear resolution increase → 16× token count
 (area scales as linear² → token count scales as area)` },
-      "For the 50K/day pipeline: at 2048×2048 (≈21K visual tokens/image), the pipeline generates approximately 1.05B visual tokens/day. At $5/1M input tokens: consistent with the $2,400/day figure. Switching to 512×512 (≈1,340 visual tokens): ~67M visual tokens/day ≈ $335/day. Potential savings: ~$2,000/day, or ~$60,000/month — before evaluating whether quality is maintained.",
+      "For the 50K/day pipeline: at 2048×2048 (≈21K visual tokens/image), the pipeline generates approximately 1.05B visual tokens/day — producing the $2,400/day cost at the provider's blended vision-token rate. Switching to 512×512 (≈1,340 visual tokens): ~67M visual tokens/day, or roughly 16× fewer tokens — reducing the bill to approximately $150/day at the same rate. (The exact dollar figures vary by provider pricing; the key insight is the 16× ratio.) Potential savings: ~$2,250/day, or ~$67,000/month — before evaluating whether quality is maintained.",
       "For product attribute extraction (color, material, visible dimensions): most attributes are clearly visible at 512×512. High resolution provides value when reading fine print, examining surface texture at pixel level, or detecting subtle defects — not typically required for catalog attribute extraction. Test approach: process 1,000 images at both resolutions, compare extraction accuracy against a ground-truth annotation set. If quality is equivalent, the business case is straightforward. If quality degrades for a subset, use adaptive resolution: classify images as 'complex' (high-res) or 'standard' (low-res) with a cheap binary classifier.",
     ],
     mcqs: [
@@ -2414,10 +2414,10 @@ For a 70B model across all attention layers:
           "About a 4x reduction (~$600/day), because cost scales with the linear dimension ratio 2048/512 = 4",
           "No meaningful change, because providers bill per image rather than per visual token",
           "About a 2x reduction, because halving resolution twice reduces tokens by the square root of the area ratio",
-          "Roughly from ~$2,400/day to ~$335/day (about $2,000/day saved), because visual token count scales with image area, so the 4x linear drop is a ~16x token drop",
+          "Roughly from ~$2,400/day to ~$150/day (about $2,250/day saved), because visual token count scales with image area, so the 4x linear drop is a ~16x token drop",
         ],
         correct: 3,
-        explanation: "The module computes ~$2,400/day at 2048x2048 (~21K tokens/image, ~1.05B tokens/day) versus ~$335/day at 512x512 (~1,340 tokens/image, ~67M tokens/day), saving ~$2,000/day, because token count scales with area so a 4x linear reduction is a ~16x token reduction. Option D is correct. Option A is wrong because cost scales with area, not the linear ratio; a 4x linear drop is ~16x fewer tokens, not 4x. Option B is wrong because the module states providers bill per actual visual token consumed, so resolution materially changes cost. Option C is wrong because token count scales as the square of linear resolution, giving ~16x, not a 2x or square-root-of-area relationship (the square root of area is the linear dimension itself).",
+        explanation: "The module computes ~$2,400/day at 2048x2048 (~21K tokens/image, ~1.05B tokens/day) versus ~$150/day at 512x512 (~1,340 tokens/image, ~67M tokens/day), saving ~$2,250/day, because token count scales with area so a 4x linear reduction is a ~16x token reduction (and a ~16x cost reduction). Option D is correct. Option A is wrong because cost scales with area, not the linear ratio; a 4x linear drop is ~16x fewer tokens, not 4x. Option B is wrong because the module states providers bill per actual visual token consumed, so resolution materially changes cost. Option C is wrong because token count scales as the square of linear resolution, giving ~16x, not a 2x or square-root-of-area relationship (the square root of area is the linear dimension itself).",
       },
       {
         question: "The module says that if quality degrades for only a subset of images at 512x512, the recommended production approach is adaptive resolution. What does that entail?",

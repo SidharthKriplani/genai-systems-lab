@@ -2208,6 +2208,558 @@ function FailureSimulator() {
   );
 }
 
+// ─── KV CACHE VISUALIZER ─────────────────────────────────────────────────────
+
+function KVCacheViz() {
+  const TOKENS = ["The","transformer","model","processes","tokens","in","parallel","efficiently"];
+  const [step, setStep] = useState(0);
+  const [mode, setMode] = useState("cache"); // "cache" | "nocache"
+  const [running, setRunning] = useState(false);
+  const [flashed, setFlashed] = useState([]);
+
+  const totalFlops = { cache: 0, nocache: 0 };
+  for (let i = 1; i <= step; i++) { totalFlops.cache += 1; totalFlops.nocache += i; }
+
+  useEffect(() => {
+    if (!running) return;
+    if (step >= TOKENS.length - 1) { setRunning(false); return; }
+    const t = setTimeout(() => {
+      const next = step + 1;
+      setStep(next);
+      if (mode === "nocache") {
+        setFlashed(Array.from({ length: next }, (_, i) => i));
+        setTimeout(() => setFlashed([]), 500);
+      } else {
+        setFlashed([next]);
+        setTimeout(() => setFlashed([]), 400);
+      }
+    }, 900);
+    return () => clearTimeout(t);
+  }, [running, step, mode]);
+
+  function reset() { setStep(0); setRunning(false); setFlashed([]); }
+  function handleGenerate() { if (step >= TOKENS.length - 1) { reset(); return; } setRunning(r => !r); }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Without KV cache, every new token must recompute attention over all previous tokens (O(n²) work). With KV cache, past key/value pairs are stored — only the new token's attention is computed (O(n) work).</p>
+      </div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <button onClick={() => { reset(); setMode("nocache"); }}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${mode === "nocache" ? "bg-red-900/40 border-red-500 text-red-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+          No Cache
+        </button>
+        <button onClick={() => { reset(); setMode("cache"); }}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${mode === "cache" ? "bg-emerald-900/40 border-emerald-500 text-emerald-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+          With Cache
+        </button>
+        <button onClick={handleGenerate}
+          className="px-4 py-2 rounded-lg text-sm font-semibold bg-violet-700 hover:bg-violet-600 text-white transition-all">
+          {running ? "Pause" : step >= TOKENS.length - 1 ? "Reset" : step === 0 ? "Generate ▶" : "Resume ▶"}
+        </button>
+        <button onClick={() => {
+          if (step >= TOKENS.length - 1) return;
+          const next = step + 1;
+          setStep(next);
+          if (mode === "nocache") { setFlashed(Array.from({ length: next }, (_, i) => i)); setTimeout(() => setFlashed([]), 500); }
+          else { setFlashed([next]); setTimeout(() => setFlashed([]), 400); }
+        }} className="px-4 py-2 rounded-lg text-sm font-semibold border border-zinc-700 text-zinc-400 hover:border-zinc-500 transition-all">
+          Next →
+        </button>
+      </div>
+
+      {/* Token row */}
+      <div className="flex flex-wrap gap-2">
+        {TOKENS.slice(0, step + 1).map((tok, i) => {
+          const isFlashed = flashed.includes(i);
+          const isNew = i === step && step > 0;
+          let bg = "bg-zinc-800 text-zinc-300";
+          if (isFlashed && mode === "nocache") bg = "bg-red-800 text-red-100";
+          else if (isFlashed && mode === "cache") bg = "bg-emerald-800 text-emerald-100";
+          return (
+            <span key={i} className={`px-3 py-1.5 rounded-lg text-sm font-mono font-bold transition-all duration-200 ${bg} ${isNew ? "ring-2 ring-blue-400" : ""}`}>{tok}</span>
+          );
+        })}
+      </div>
+
+      {/* KV store (cache mode only) */}
+      {mode === "cache" && step > 0 && (
+        <div className="rounded-xl border border-emerald-900/50 bg-emerald-950/20 p-4 space-y-2">
+          <p className="text-[10px] font-mono text-emerald-400 tracking-widest uppercase font-semibold">KV Store ({step} pairs cached)</p>
+          <div className="flex flex-wrap gap-2">
+            {TOKENS.slice(0, step).map((tok, i) => (
+              <span key={i} className="px-2 py-1 rounded bg-emerald-900/40 text-emerald-300 text-xs font-mono">K/V[{i}]: {tok}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Flops counter */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className={`rounded-xl border p-4 ${mode === "nocache" ? "border-red-800 bg-red-950/20" : "border-zinc-800 bg-zinc-900/30"}`}>
+          <p className="text-[10px] font-mono text-zinc-500 tracking-widest uppercase mb-1">No Cache FLOPs</p>
+          <p className="text-2xl font-black text-red-400">{totalFlops.nocache}</p>
+          <p className="text-xs text-zinc-500 mt-1">1+2+3+…+n (quadratic)</p>
+        </div>
+        <div className={`rounded-xl border p-4 ${mode === "cache" ? "border-emerald-800 bg-emerald-950/20" : "border-zinc-800 bg-zinc-900/30"}`}>
+          <p className="text-[10px] font-mono text-zinc-500 tracking-widest uppercase mb-1">With Cache FLOPs</p>
+          <p className="text-2xl font-black text-emerald-400">{totalFlops.cache}</p>
+          <p className="text-xs text-zinc-500 mt-1">1 per step (linear)</p>
+        </div>
+      </div>
+      {step >= TOKENS.length - 1 && (
+        <div className="rounded-xl border border-blue-800 bg-blue-950/20 p-4 text-sm text-blue-300 text-center font-semibold">
+          {mode === "nocache" ? `No cache used ${totalFlops.nocache} FLOPs — ${totalFlops.nocache}× more than cache!` : `Cache used only ${totalFlops.cache} FLOPs vs ${totalFlops.nocache} without cache.`}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── TEMPERATURE LAB ──────────────────────────────────────────────────────────
+
+function TemperatureLab() {
+  const TOKENS = ["model","AI","system","network","algorithm","neural","learning","prediction"];
+  const LOGITS = [4.2, 3.8, 2.9, 2.1, 1.8, 1.5, 1.2, 0.8];
+  const COLORS = ["#8b5cf6","#6366f1","#3b82f6","#06b6d4","#10b981","#f59e0b","#ef4444","#ec4899"];
+  const [temp, setTemp] = useState(1.0);
+
+  function softmax(logits, t) {
+    const scaled = logits.map(l => l / t);
+    const maxVal = Math.max(...scaled);
+    const exps = scaled.map(l => Math.exp(l - maxVal));
+    const sum = exps.reduce((a, b) => a + b, 0);
+    return exps.map(e => e / sum);
+  }
+
+  const probs = softmax(LOGITS, temp);
+  const maxIdx = probs.indexOf(Math.max(...probs));
+  const sampledIdx = temp < 0.5 ? maxIdx : Math.floor(temp * 2) % 8;
+
+  let zone = { label: "Greedy zone", color: "text-blue-400", desc: "Model picks highest-probability token almost every time." };
+  if (temp >= 0.5 && temp <= 1.2) zone = { label: "Balanced", color: "text-emerald-400", desc: "Natural distribution — creative but coherent." };
+  if (temp > 1.2) zone = { label: "Creative / risky", color: "text-amber-400", desc: "Flatter distribution — more surprising, less predictable." };
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Temperature scales raw logits before softmax. Low temperature sharpens the distribution (deterministic). High temperature flattens it (creative/random).</p>
+      </div>
+
+      {/* Slider */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-mono text-zinc-400">Temperature</span>
+          <span className="text-lg font-black text-white font-mono">{temp.toFixed(1)}</span>
+        </div>
+        <input type="range" min="0.1" max="2.0" step="0.1" value={temp}
+          onChange={e => setTemp(parseFloat(e.target.value))}
+          className="w-full accent-violet-500" />
+        <div className="flex justify-between text-[10px] text-zinc-600 font-mono">
+          <span>0.1 (deterministic)</span><span>2.0 (uniform)</span>
+        </div>
+      </div>
+
+      {/* Zone badge */}
+      <div className="flex items-center gap-3">
+        <span className={`text-xs font-mono font-bold tracking-widest ${zone.color}`}>{zone.label}</span>
+        <span className="text-xs text-zinc-500">{zone.desc}</span>
+      </div>
+
+      {/* Probability bars */}
+      <div className="space-y-2">
+        {TOKENS.map((tok, i) => (
+          <div key={tok} className="flex items-center gap-3">
+            <span className={`w-20 text-xs font-mono text-right shrink-0 ${i === sampledIdx ? "text-white font-bold" : "text-zinc-400"}`}>{tok}</span>
+            <div className="flex-1 h-6 bg-zinc-800 rounded overflow-hidden relative">
+              <div className="h-full rounded transition-all duration-300"
+                style={{ width: `${(probs[i] * 100).toFixed(1)}%`, background: COLORS[i], opacity: i === sampledIdx ? 1 : 0.55 }} />
+            </div>
+            <span className="w-14 text-xs font-mono text-zinc-400 text-right shrink-0">{(probs[i] * 100).toFixed(1)}%</span>
+            {i === sampledIdx && <span className="text-xs font-bold text-yellow-400 shrink-0">← sampled</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── EMBEDDINGS SPACE ─────────────────────────────────────────────────────────
+
+function EmbeddingsSim() {
+  const POINTS = [
+    {word:"transformer",x:80,y:90,cluster:"ml"},
+    {word:"attention",x:100,y:70,cluster:"ml"},
+    {word:"embedding",x:95,y:110,cluster:"ml"},
+    {word:"encoder",x:120,y:85,cluster:"ml"},
+    {word:"decoder",x:110,y:75,cluster:"ml"},
+    {word:"cat",x:300,y:80,cluster:"animal"},
+    {word:"dog",x:320,y:100,cluster:"animal"},
+    {word:"bird",x:310,y:65,cluster:"animal"},
+    {word:"fish",x:290,y:95,cluster:"animal"},
+    {word:"horse",x:335,y:110,cluster:"animal"},
+    {word:"king",x:200,y:300,cluster:"royalty"},
+    {word:"queen",x:220,y:310,cluster:"royalty"},
+    {word:"prince",x:190,y:285,cluster:"royalty"},
+    {word:"crown",x:215,y:295,cluster:"royalty"},
+    {word:"throne",x:205,y:320,cluster:"royalty"},
+    {word:"pizza",x:300,y:320,cluster:"food"},
+    {word:"pasta",x:320,y:300,cluster:"food"},
+    {word:"bread",x:290,y:310,cluster:"food"},
+    {word:"cheese",x:310,y:330,cluster:"food"},
+    {word:"tomato",x:325,y:315,cluster:"food"},
+  ];
+  const NEIGHBORS = {
+    transformer:["attention","encoder","decoder"],
+    attention:["transformer","embedding","encoder"],
+    embedding:["attention","encoder","transformer"],
+    encoder:["decoder","transformer","attention"],
+    decoder:["encoder","transformer","attention"],
+    cat:["dog","bird","fish"],dog:["cat","horse","bird"],
+    bird:["cat","dog","fish"],fish:["cat","dog","bird"],
+    horse:["dog","cat","bird"],
+    king:["queen","prince","crown"],queen:["king","crown","throne"],
+    prince:["king","crown","queen"],crown:["king","queen","prince"],
+    throne:["king","queen","crown"],
+    pizza:["pasta","cheese","tomato"],pasta:["pizza","bread","cheese"],
+    bread:["pasta","cheese","tomato"],cheese:["pizza","pasta","bread"],
+    tomato:["pizza","pasta","cheese"],
+  };
+  const CLUSTER_COLORS = { ml:"#8b5cf6", animal:"#3b82f6", royalty:"#f59e0b", food:"#10b981" };
+  const CLUSTER_LABELS = { ml:"ML/AI", animal:"Animals", royalty:"Royalty", food:"Food" };
+
+  const [selected, setSelected] = useState(null);
+  const [queenHighlight, setQueenHighlight] = useState(false);
+
+  const selPoint = POINTS.find(p => p.word === selected);
+  const neighborWords = selected ? NEIGHBORS[selected] : [];
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Semantically similar words cluster together in embedding space. Vector arithmetic works: <span className="font-mono text-violet-400">king − man + woman ≈ queen</span>. Click any word to see its nearest neighbors.</p>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3">
+        {Object.entries(CLUSTER_LABELS).map(([k,v]) => (
+          <span key={k} className="flex items-center gap-1.5 text-xs text-zinc-400">
+            <span className="w-3 h-3 rounded-full inline-block" style={{background: CLUSTER_COLORS[k]}} />{v}
+          </span>
+        ))}
+      </div>
+
+      {/* SVG Plot */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+        <svg viewBox="0 0 420 400" className="w-full" style={{maxHeight:"380px"}}>
+          {/* Neighbor lines */}
+          {selPoint && neighborWords.map(nw => {
+            const np = POINTS.find(p => p.word === nw);
+            if (!np) return null;
+            return <line key={nw} x1={selPoint.x} y1={selPoint.y} x2={np.x} y2={np.y}
+              stroke="#6366f1" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.7" />;
+          })}
+          {/* queen highlight line (vector math) */}
+          {queenHighlight && selPoint && selPoint.word === "king" && (
+            <line x1={selPoint.x} y1={selPoint.y} x2={220} y2={310}
+              stroke="#f59e0b" strokeWidth="2" strokeDasharray="6 3" opacity="0.9" />
+          )}
+          {/* Points */}
+          {POINTS.map(p => {
+            const isSel = p.word === selected;
+            const isNeighbor = neighborWords.includes(p.word);
+            const isQueenHL = queenHighlight && p.word === "queen";
+            const r = isSel ? 9 : isNeighbor ? 7 : 5;
+            return (
+              <g key={p.word} style={{cursor:"pointer"}} onClick={() => { setSelected(p.word === selected ? null : p.word); setQueenHighlight(false); }}>
+                <circle cx={p.x} cy={p.y} r={r+3} fill="transparent" />
+                <circle cx={p.x} cy={p.y} r={r} fill={CLUSTER_COLORS[p.cluster]}
+                  opacity={isSel ? 1 : isNeighbor ? 0.9 : 0.55}
+                  stroke={isSel ? "#fff" : isNeighbor ? "#fff" : "none"} strokeWidth={isSel ? 2 : 1} />
+                {isQueenHL && <text x={p.x} y={p.y-14} textAnchor="middle" fontSize="12" fill="#f59e0b">★</text>}
+                <text x={p.x} y={p.y + r + 10} textAnchor="middle" fontSize="9" fill={isSel ? "#fff" : "#a1a1aa"}
+                  fontWeight={isSel ? "bold" : "normal"}>{p.word}</text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Vector Math */}
+      {selected === "king" && (
+        <div className="rounded-xl border border-amber-800/50 bg-amber-950/20 p-4 space-y-3">
+          <p className="text-xs font-mono text-amber-400 uppercase tracking-widest font-semibold">Vector Arithmetic</p>
+          <p className="text-sm text-zinc-200 font-mono">king − man + woman = <span className="text-amber-400 font-bold">queen</span></p>
+          <button onClick={() => setQueenHighlight(q => !q)}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-700/40 border border-amber-600 text-amber-200 hover:bg-amber-700/60 transition-all">
+            {queenHighlight ? "Hide on plot" : "Highlight queen on plot ★"}
+          </button>
+        </div>
+      )}
+      {selected && selected !== "king" && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+          <p className="text-xs text-zinc-500">Nearest neighbors of <span className="text-white font-mono font-bold">{selected}</span>: {neighborWords.join(", ")}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ATTENTION VISUALIZER ─────────────────────────────────────────────────────
+
+function AttentionViz() {
+  const TOKENS = ["The","cat","sat","on","the","mat","because","it","tired"];
+  const HEADS = {
+    Syntactic: {
+      desc: "Syntactic head: subject-verb-object arcs dominate. 'cat' → 'sat', 'sat' → 'mat'.",
+      weights: [
+        [0.6,0.3,0.05,0.02,0.01,0.01,0.0,0.0,0.01],
+        [0.1,0.5,0.3,0.05,0.02,0.01,0.01,0.0,0.01],
+        [0.05,0.3,0.5,0.1,0.01,0.02,0.01,0.01,0.0],
+        [0.02,0.05,0.1,0.6,0.15,0.05,0.02,0.01,0.0],
+        [0.1,0.02,0.05,0.1,0.5,0.2,0.02,0.01,0.0],
+        [0.02,0.05,0.3,0.05,0.1,0.4,0.05,0.01,0.02],
+        [0.05,0.05,0.1,0.1,0.05,0.1,0.5,0.03,0.02],
+        [0.02,0.4,0.1,0.05,0.02,0.05,0.1,0.2,0.06],
+        [0.02,0.1,0.1,0.05,0.02,0.05,0.1,0.5,0.06],
+      ]
+    },
+    Coreference: {
+      desc: "Coreference head: pronoun resolution. 'it' strongly attends to 'cat' — the referent.",
+      weights: [
+        [0.7,0.1,0.05,0.05,0.05,0.02,0.01,0.01,0.01],
+        [0.1,0.6,0.1,0.05,0.05,0.05,0.02,0.02,0.01],
+        [0.1,0.15,0.5,0.1,0.05,0.05,0.03,0.01,0.01],
+        [0.1,0.1,0.1,0.5,0.1,0.05,0.03,0.01,0.01],
+        [0.1,0.1,0.05,0.1,0.55,0.05,0.02,0.02,0.01],
+        [0.05,0.1,0.2,0.05,0.05,0.5,0.02,0.01,0.02],
+        [0.05,0.1,0.1,0.05,0.05,0.1,0.5,0.02,0.03],
+        [0.01,0.75,0.05,0.02,0.02,0.05,0.05,0.04,0.01],
+        [0.01,0.1,0.05,0.02,0.02,0.05,0.1,0.6,0.05],
+      ]
+    },
+    Positional: {
+      desc: "Positional head: diagonal pattern — each token primarily attends to its immediate neighbors.",
+      weights: [
+        [0.7,0.25,0.03,0.01,0.0,0.0,0.0,0.0,0.01],
+        [0.25,0.5,0.2,0.03,0.01,0.0,0.0,0.0,0.01],
+        [0.03,0.2,0.5,0.2,0.03,0.02,0.01,0.0,0.01],
+        [0.01,0.03,0.2,0.5,0.2,0.03,0.02,0.0,0.01],
+        [0.0,0.01,0.03,0.2,0.5,0.2,0.03,0.02,0.01],
+        [0.0,0.0,0.02,0.03,0.2,0.5,0.2,0.03,0.02],
+        [0.0,0.0,0.01,0.02,0.03,0.2,0.5,0.2,0.04],
+        [0.0,0.0,0.0,0.01,0.02,0.03,0.2,0.6,0.14],
+        [0.0,0.0,0.01,0.01,0.01,0.02,0.04,0.14,0.77],
+      ]
+    },
+    Semantic: {
+      desc: "Semantic head: 'mat' and 'sat' show high mutual attention — location-action pairing.",
+      weights: [
+        [0.4,0.15,0.1,0.1,0.1,0.1,0.02,0.01,0.02],
+        [0.1,0.4,0.2,0.05,0.05,0.1,0.05,0.03,0.02],
+        [0.05,0.15,0.4,0.05,0.05,0.25,0.02,0.01,0.02],
+        [0.05,0.05,0.05,0.5,0.2,0.1,0.02,0.01,0.02],
+        [0.05,0.05,0.05,0.15,0.5,0.15,0.02,0.01,0.02],
+        [0.05,0.1,0.3,0.05,0.1,0.35,0.02,0.01,0.02],
+        [0.05,0.05,0.05,0.05,0.05,0.05,0.6,0.05,0.05],
+        [0.03,0.15,0.1,0.05,0.05,0.1,0.1,0.37,0.05],
+        [0.03,0.1,0.1,0.05,0.05,0.1,0.1,0.05,0.42],
+      ]
+    }
+  };
+
+  const [head, setHead] = useState("Syntactic");
+  const [selRow, setSelRow] = useState(null);
+  const weights = HEADS[head].weights;
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">Different attention heads specialize in different relationship types. Click a head preset and a query token (row) to explore what each token attends to.</p>
+      </div>
+      <p className="text-xs font-mono text-zinc-500">Sentence: <span className="text-zinc-300">"{TOKENS.join(" ")}"</span></p>
+
+      {/* Head tabs */}
+      <div className="flex flex-wrap gap-2">
+        {Object.keys(HEADS).map(h => (
+          <button key={h} onClick={() => { setHead(h); setSelRow(null); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${head === h ? "bg-violet-900/50 border-violet-500 text-violet-200" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>{h}</button>
+        ))}
+      </div>
+
+      {/* Heatmap */}
+      <div className="overflow-x-auto">
+        <table className="border-collapse text-[9px] font-mono">
+          <thead>
+            <tr>
+              <td className="w-14" />
+              {TOKENS.map(t => <th key={t} className="px-1 py-1 text-zinc-500 font-normal text-center" style={{writingMode:"vertical-lr",transform:"rotate(180deg)",maxWidth:"20px"}}>{t}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {TOKENS.map((rowTok, ri) => (
+              <tr key={ri} className={`cursor-pointer ${selRow === ri ? "bg-zinc-800/50" : "hover:bg-zinc-900/50"}`}
+                onClick={() => setSelRow(selRow === ri ? null : ri)}>
+                <td className={`pr-2 py-0.5 text-right text-[9px] ${selRow === ri ? "text-white font-bold" : "text-zinc-500"}`}>{rowTok}</td>
+                {weights[ri].map((w, ci) => {
+                  const alpha = Math.round(w * 255).toString(16).padStart(2,"0");
+                  const highlight = selRow === ri;
+                  return (
+                    <td key={ci} className="w-7 h-7 transition-all"
+                      style={{background: highlight ? `rgba(139,92,246,${w.toFixed(2)})` : `rgba(99,102,241,${w.toFixed(2)})`,
+                              border: "1px solid rgba(255,255,255,0.04)"}}>
+                      {highlight && <span className="block text-center text-[8px] leading-7 text-white font-bold" style={{opacity: w > 0.2 ? 1 : 0.4}}>{(w*100).toFixed(0)}</span>}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+        <p className="text-xs text-zinc-400 italic">{HEADS[head].desc}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── AGENT LOOP SIMULATOR ────────────────────────────────────────────────────
+
+function AgentLoopSim() {
+  const NORMAL_STEPS = [
+    { type:"REASON", label:"Reason", color:"text-violet-300", bg:"bg-violet-900/40 border-violet-700",
+      content:"I need to search for NYC→London flights for next Friday. I'll use the flight search tool." },
+    { type:"ACT", label:"Tool Call", color:"text-blue-300", bg:"bg-blue-900/40 border-blue-700",
+      content:null, code:`search_flights(\n  origin="JFK",\n  dest="LHR",\n  date="2026-07-08"\n)` },
+    { type:"OBSERVE", label:"Observe", color:"text-emerald-300", bg:"bg-emerald-900/40 border-emerald-700",
+      content:null, table:[{airline:"British Airways",price:"£620"},{airline:"Virgin Atlantic",price:"£790"},{airline:"Delta",price:"£850"}] },
+    { type:"REASON", label:"Reason", color:"text-violet-300", bg:"bg-violet-900/40 border-violet-700",
+      content:"Two flights under $800. British Airways at £620 is cheapest. I need today's GBP→USD rate before booking." },
+    { type:"ACT", label:"Tool Call", color:"text-blue-300", bg:"bg-blue-900/40 border-blue-700",
+      content:null, code:`get_exchange_rate(\n  from="GBP",\n  to="USD"\n)\n// → 1.27\n// £620 × 1.27 = $787.40 — under $800. Proceed.` },
+    { type:"ACT", label:"Tool Call", color:"text-blue-300", bg:"bg-blue-900/40 border-blue-700",
+      content:null, code:`book_flight(\n  flight_id="BA447",\n  passenger="...",\n  card="..."\n)\n// → Booking confirmed. PNR: BA-4829` },
+    { type:"COMPLETE", label:"Done", color:"text-emerald-300", bg:"bg-emerald-900/40 border-emerald-700",
+      content:null, summary:{ pnr:"BA-4829", flight:"BA447 JFK→LHR", date:"2026-07-08", cost:"£620 ($787.40)", status:"Confirmed" } },
+  ];
+  const FAILURE_INJECT = { type:"OBSERVE", label:"Observe", color:"text-red-300", bg:"bg-red-900/40 border-red-700",
+    content:"API Error: rate limit exceeded — flight search returned no results." };
+  const RETRY_STEP = { type:"REASON", label:"Reason", color:"text-violet-300", bg:"bg-violet-900/40 border-violet-700",
+    content:"Tool failed with rate limit. I'll wait briefly and retry the flight search." };
+
+  const [stepIdx, setStepIdx] = useState(0);
+  const [failureInjected, setFailureInjected] = useState(false);
+  const [steps, setSteps] = useState(NORMAL_STEPS);
+
+  function injectFailure() {
+    if (failureInjected || stepIdx !== 2) return;
+    const newSteps = [
+      ...NORMAL_STEPS.slice(0, 2),
+      FAILURE_INJECT,
+      RETRY_STEP,
+      ...NORMAL_STEPS.slice(1),
+    ];
+    setSteps(newSteps);
+    setFailureInjected(true);
+  }
+
+  function reset() { setSteps(NORMAL_STEPS); setStepIdx(0); setFailureInjected(false); }
+
+  const current = steps[stepIdx];
+  const total = steps.length;
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">The ReAct loop — <span className="text-violet-400 font-semibold">Reason</span>, <span className="text-blue-400 font-semibold">Act</span>, <span className="text-emerald-400 font-semibold">Observe</span> — iterates through tool calls to reach a goal. Agents handle failures by reasoning about the error and retrying.</p>
+      </div>
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/50 p-3 text-sm text-zinc-300">
+        <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mr-2">Goal:</span>
+        Find the cheapest NYC→London flight next Friday and book if under $800
+      </div>
+
+      {/* Progress bar */}
+      <div className="space-y-1">
+        <div className="flex justify-between text-[10px] font-mono text-zinc-500">
+          <span>Step {stepIdx + 1} / {total}</span>
+          <span>{Math.round(((stepIdx + 1) / total) * 100)}%</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+          <div className="h-full rounded-full bg-violet-500 transition-all duration-500"
+            style={{ width: `${((stepIdx + 1) / total) * 100}%` }} />
+        </div>
+      </div>
+
+      {/* Current step card */}
+      <div className={`rounded-xl border p-4 space-y-3 transition-all ${current.bg}`}>
+        <div className="flex items-center justify-between">
+          <span className={`text-[10px] font-mono font-bold tracking-widest uppercase ${current.color}`}>{current.type} — {current.label}</span>
+          <span className="text-[10px] font-mono text-zinc-600">{stepIdx + 1}/{total}</span>
+        </div>
+        {current.content && <p className="text-sm text-zinc-200 leading-relaxed">{current.content}</p>}
+        {current.code && (
+          <pre className="bg-zinc-950 rounded-lg p-3 text-xs font-mono text-blue-200 overflow-x-auto">{current.code}</pre>
+        )}
+        {current.table && (
+          <table className="w-full text-xs">
+            <thead><tr>{["Airline","Price"].map(h => <th key={h} className="text-left text-zinc-500 font-mono pb-1">{h}</th>)}</tr></thead>
+            <tbody>{current.table.map((r,i) => (
+              <tr key={i} className={i===0?"text-emerald-300 font-semibold":"text-zinc-400"}>
+                <td className="py-0.5">{r.airline}</td><td>{r.price} {i===0?"✓ cheapest":i===2?"✗ over budget":""}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        )}
+        {current.summary && (
+          <div className="space-y-2">
+            {Object.entries(current.summary).map(([k,v]) => (
+              <div key={k} className="flex justify-between text-xs">
+                <span className="text-zinc-500 font-mono uppercase">{k}</span>
+                <span className="text-emerald-300 font-semibold">{v}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* History (collapsed prior steps) */}
+      {stepIdx > 0 && (
+        <div className="space-y-1">
+          <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Prior steps</p>
+          <div className="flex flex-wrap gap-1.5">
+            {steps.slice(0, stepIdx).map((s, i) => (
+              <span key={i} className={`text-[9px] font-mono px-2 py-0.5 rounded border ${s.color} border-current opacity-60`}>{s.type}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Controls */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {stepIdx < total - 1 && (
+          <button onClick={() => setStepIdx(i => i + 1)}
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-violet-700 hover:bg-violet-600 text-white transition-all">
+            Next Step →
+          </button>
+        )}
+        {stepIdx === 2 && !failureInjected && (
+          <button onClick={injectFailure}
+            className="px-4 py-2 rounded-lg text-sm font-semibold border border-red-700 text-red-400 hover:bg-red-900/30 transition-all">
+            Inject Failure
+          </button>
+        )}
+        <button onClick={reset}
+          className="px-4 py-2 rounded-lg text-sm font-semibold border border-zinc-700 text-zinc-400 hover:border-zinc-500 transition-all">
+          Reset
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── PLAYGROUND APP ───────────────────────────────────────────────────────────
 
 const PLAYGROUND_MODULES = [
@@ -2238,12 +2790,21 @@ const PLAYGROUND_MODULES = [
   { id: "failure_sim", label: "Failure Simulations",      tag: "SIMULATE", component: FailureSimulator,
     objective: "Six prompt failure modes that actually happen in production. Pick a configuration, evaluate it, and see exactly why it works or breaks.",
     howTo: ["Pick one of the 6 failure scenarios", "Read the production context — understand the stakes", "Select a configuration (A, B, or C)", "Evaluate it and read the root cause + system design lesson"] },
-  // ── Skeleton modules (coming soon) ──────────────────────────────────────────
-  { id: "kv-cache-viz",    label: "KV Cache",              tag: "MEMORY",  skeleton: true },
-  { id: "temp-lab",        label: "Temperature Lab",       tag: "SAMPLE",  skeleton: true },
-  { id: "embeddings-sim",  label: "Embeddings Space",      tag: "EMBED",   skeleton: true },
-  { id: "attn-viz",        label: "Attention Visualizer",  tag: "ATTN",    skeleton: true },
-  { id: "agent-loop",      label: "Agent Loop Sim",        tag: "AGENT",   skeleton: true },
+  { id: "kv-cache-viz",   label: "KV Cache",             tag: "MEMORY", component: KVCacheViz,
+    objective: "Understand why KV cache cuts transformer inference cost from O(n²) to O(n) — watch flop counts diverge in real time.",
+    howTo: ["Toggle No Cache / With Cache mode", "Hit Generate to step through token-by-token autoregressive generation", "Watch the red recompute flashes (no cache) vs green single-token compute (with cache)", "Compare the FLOP counters — the gap grows quadratically"] },
+  { id: "temp-lab",       label: "Temperature Lab",      tag: "SAMPLE", component: TemperatureLab,
+    objective: "Build intuition for how temperature reshapes the output distribution — from near-deterministic to near-uniform.",
+    howTo: ["Drag the temperature slider from 0.1 to 2.0", "Watch the probability bars animate in real time", "At <0.5 you're in greedy zone — 'model' dominates", "At >1.2 the distribution flattens — more creative, more risk"] },
+  { id: "embeddings-sim", label: "Embeddings Space",     tag: "EMBED",  component: EmbeddingsSim,
+    objective: "See how semantic similarity maps to geometric proximity — and how vector arithmetic unlocks analogical reasoning.",
+    howTo: ["Click any word to highlight its 3 nearest neighbors", "Notice how clusters form by semantic category", "Click 'king' to unlock the vector math demo", "Hit 'Highlight queen' to see king − man + woman on the plot"] },
+  { id: "attn-viz",       label: "Attention Visualizer", tag: "ATTN",   component: AttentionViz,
+    objective: "See how different attention heads specialize — syntactic, coreference, positional, and semantic patterns all emerge.",
+    howTo: ["Switch between the 4 head presets (tabs)", "Click any query token (row) to highlight that row's attention weights", "Coreference: watch 'it' attend strongly to 'cat'", "Positional: the diagonal pattern shows neighbor-focusing"] },
+  { id: "agent-loop",     label: "Agent Loop Sim",       tag: "AGENT",  component: AgentLoopSim,
+    objective: "Step through a full ReAct agent loop — Reason, Act, Observe — including tool calls, error handling, and retry.",
+    howTo: ["Hit 'Next Step →' to advance through the loop", "At step 3, hit 'Inject Failure' to simulate an API error", "Watch the agent reason about the failure and add a retry step", "Notice how the loop self-corrects — this is the core of agentic reliability"] },
 ];
 
 const PLAYGROUND_GROUPS = [
@@ -2254,7 +2815,11 @@ const PLAYGROUND_GROUPS = [
   { label: "LIBRARY",     ids: ["prompt_lib"] },
   { label: "STREAM",      ids: ["streaming"] },
   { label: "SIMULATE",    ids: ["failure_sim"] },
-  { label: "COMING SOON", ids: ["kv-cache-viz", "temp-lab", "embeddings-sim", "attn-viz", "agent-loop"] },
+  { label: "MEMORY",      ids: ["kv-cache-viz"] },
+  { label: "SAMPLE",      ids: ["temp-lab"] },
+  { label: "EMBED",       ids: ["embeddings-sim"] },
+  { label: "ATTN",        ids: ["attn-viz"] },
+  { label: "AGENT",       ids: ["agent-loop"] },
 ];
 
 export default function PlaygroundApp() {
