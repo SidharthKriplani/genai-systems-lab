@@ -11800,10 +11800,9 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
         const isActive = active === id;
         const done = mastery.has(id);
         return (
-          <button
+          <div
             key={id}
-            onClick={() => openModule(id)}
-            className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 transition-all duration-150 ${
+            className={`w-full flex items-center gap-1 transition-all duration-150 ${
               isActive ? "font-semibold text-white" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60"
             }`}
             style={isActive ? {
@@ -11811,17 +11810,27 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
               boxShadow: "inset 0 0 0 1px var(--border)",
             } : {}}
           >
-            <span className="text-xs font-medium truncate">{m.label}</span>
-            <div className="flex items-center gap-1 shrink-0">
-              {done && <span className="text-[9px] text-emerald-500 font-bold"><Icon name="check" size={9} /></span>}
-              <span className={`text-[9px] font-mono ${
-                m.level === "beginner" ? "text-emerald-500" :
-                m.level === "intermediate" ? "text-amber-500" : "text-red-500"
-              }`}>
-                {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
-              </span>
-            </div>
-          </button>
+            <button
+              onClick={() => openModule(id)}
+              className="flex-1 text-left px-3 py-2 flex items-center gap-2 min-w-0"
+              style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", font: "inherit" }}
+            >
+              <span className="text-xs font-medium truncate flex-1">{m.label}</span>
+              <div className="flex items-center gap-1 shrink-0">
+                {done && <span className="text-[9px] text-emerald-500 font-bold"><Icon name="check" size={9} /></span>}
+                <span className={`text-[9px] font-mono ${
+                  m.level === "beginner" ? "text-emerald-500" :
+                  m.level === "intermediate" ? "text-amber-500" : "text-red-500"
+                }`}>
+                  {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
+                </span>
+              </div>
+            </button>
+            <span onClick={e => e.stopPropagation()} className="pr-1.5 shrink-0">
+              <AddTrackBtn itemType="concept" itemId={m.id} label={m.title}
+                itemMeta={{ level: m.level, tag: m.tag }} />
+            </span>
+          </div>
         );
       })}
     </div>
