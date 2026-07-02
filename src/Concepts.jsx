@@ -11623,6 +11623,29 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
         <p className="text-sm text-zinc-400 leading-relaxed">{gym.desc}</p>
       </div>
 
+      {/* ── Phase 0.3 pilot: forward to the canonical Agent Lab (richer surface). ──
+           Thin modules below are kept for deep-link backward-compat; this banner points
+           users to the deeper interactive home. */}
+      {gym.id === "ai-agents" && (
+        <div className="rounded-xl p-4 flex items-start gap-3"
+          style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.35)", borderLeft: "3px solid rgba(245,158,11,0.75)" }}>
+          <span className="text-amber-400 mt-0.5 shrink-0"><Icon name="alert-triangle" size={16} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm text-zinc-200 leading-relaxed">
+              Agents has a deeper, interactive home — the <span className="font-bold text-white">Agent Lab</span>{" "}
+              (16 modules, simulators, MCP/A2A, failure modes). The concepts below are a quick primer.
+            </p>
+            <button
+              onClick={() => onNavigate("agentlab")}
+              className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:opacity-80"
+              style={{ color: "#f59e0b", borderColor: "rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.06)" }}
+            >
+              Open the Agent Lab →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Progress bar + next module CTA ── */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
         <div className="flex items-center justify-between text-xs">
@@ -11735,6 +11758,31 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
   useEffect(() => {
     if (initialGym) setActiveGym(initialGym);
   }, [initialGym]);
+
+  // Phase 0.3 pilot — one-time, additive migration of legacy Concepts agent mastery ids
+  // to their Agent Lab equivalents so progress isn't lost when agent education moves to
+  // the canonical Agent Lab. Only adds mapped ids that are already present; never removes.
+  // Guarded by a version flag so it runs at most once.
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("gsl-agents-migrated-v1")) return;
+      const AGENT_ID_MAP = { "agent": "react", "agent-tools": "tools", "agent-memory": "memory", "guardrails": "reliability" };
+      const raw = JSON.parse(localStorage.getItem(MASTERY_KEY) || "[]");
+      if (Array.isArray(raw)) {
+        const set = new Set(raw);
+        let changed = false;
+        for (const [oldId, newId] of Object.entries(AGENT_ID_MAP)) {
+          if (set.has(oldId) && !set.has(newId)) { set.add(newId); changed = true; }
+        }
+        if (changed) {
+          const merged = [...set];
+          localStorage.setItem(MASTERY_KEY, JSON.stringify(merged));
+          setMastery(new Set(merged));
+        }
+      }
+      localStorage.setItem("gsl-agents-migrated-v1", "1");
+    } catch {}
+  }, []);
 
   function openModule(id) {
     setActive(id);

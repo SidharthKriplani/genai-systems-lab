@@ -93,7 +93,9 @@ export default function AgentsHub({ onNavigate, onNavigateTo }) {
   const COLOR = "#a78bfa";
 
   function goGT(postId) { track("agents_hub_gt", { postId }); if (onNavigateTo) onNavigateTo({ tab: "groundtruth", postId }); else onNavigate("groundtruth"); }
-  function goConcepts(gymId) { track("agents_hub_concepts", { gymId }); if (onNavigateTo) onNavigateTo({ tab: "concepts", gymId }); else onNavigate("concepts"); }
+  // Phase 0.3 pilot: agent education is canonically the Agent Lab (richer surface). Send the
+  // "Concepts" challenge-hub CTAs to the Agent Lab instead of the thin Concepts ai-agents gym.
+  function goConcepts(gymId) { track("agents_hub_concepts", { gymId, target: "agentlab" }); onNavigate("agentlab"); }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-14">
@@ -153,7 +155,7 @@ export default function AgentsHub({ onNavigate, onNavigateTo }) {
       <div>
         <div className="flex items-center justify-between mb-4">
           <SectionLabel>Key Concepts</SectionLabel>
-          <button onClick={() => goConcepts("ai-agents")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">All Concepts →</button>
+          <button onClick={() => goConcepts("ai-agents")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">Open Agent Lab →</button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {CONCEPTS.map(c => (
@@ -165,7 +167,7 @@ export default function AgentsHub({ onNavigate, onNavigateTo }) {
                 <span className="text-[9px] font-mono shrink-0 px-1.5 py-0.5 rounded" style={{ color: c.fidelityColor, background: c.fidelityColor + "15", border: `1px solid ${c.fidelityColor}30` }}>{c.fidelity}</span>
               </div>
               <p className="text-xs text-zinc-400 leading-relaxed">{c.desc}</p>
-              <span className="mt-2 text-[11px] font-bold text-violet-400 block">Open in Concepts →</span>
+              <span className="mt-2 text-[11px] font-bold text-violet-400 block">Open in Agent Lab →</span>
             </button>
           ))}
         </div>

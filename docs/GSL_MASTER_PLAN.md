@@ -249,3 +249,28 @@ others import — no three copies of attention/embeddings/latency.
 - **THEN** the content-quality causal-chain uplift (Rev 2.A) and the conversion/BUILD-coding work.
 
 _This consolidation is the real "usable and reliable" work. Owner confirms the CUT list before archiving._
+
+## Phase 0.3 pilot — Agents (executed 2026-07-03)
+Pilot of the 0.3 consolidation, scoped to the Agents surface. An overlap audit confirmed the
+**Agent Lab is the richer surface** (16 modules + 3 simulators + 11 unique topics: MCP/A2A, failure
+modes, etc.) vs the thin Concepts "AI Agents" gym (4 MCQ-ish modules). Decision: **canonical home =
+Agent Lab**; the Concepts agent gym now **forwards** to it.
+
+**What shipped (low-risk, nothing deleted):**
+- `AgentsHub.jsx` — the "Agents" challenge-hub CTAs (`goConcepts`) now navigate to the Agent Lab
+  (`onNavigate("agentlab")`) instead of the Concepts `ai-agents` gym. Card labels updated to
+  "Open in Agent Lab →".
+- `Concepts.jsx` — the `ai-agents` gym room renders a prominent amber **forward banner** above the
+  module list pointing to the Agent Lab (16 modules, simulators, MCP/A2A, failure modes). The thin
+  modules are **kept below** for deep-link backward-compat.
+- One-time additive localStorage migration (`gsl-agents-migrated-v1` flag, try/catch) maps legacy
+  Concepts agent mastery ids to Agent Lab equivalents inside `gsl-concepts-mastery`
+  (`agent→react`, `agent-tools→tools`, `agent-memory→memory`, `guardrails→reliability`) — additive
+  only, never removes.
+
+**Preserved:** all routes/hashes (`#agentlab`, `#agents`, `#concepts` ai-agents gym), every
+localStorage key, and all existing thin-module content (deep-links still resolve).
+
+**Pattern for the rest of 0.3:** *richer surface wins, duplicate forwards* — pick the deeper
+interactive home as canonical, leave the thin duplicate in place but forward users to the canonical
+home; migrate progress additively; never delete (deep-links stay live).
