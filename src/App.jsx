@@ -44,6 +44,7 @@ const PlansPage              = lazy(() => import("./Plans"));
 const StudyRoom              = lazy(() => import("./StudyRoom"));
 const GlobalLeaderboard      = lazy(() => import("./Leaderboard"));
 const ProgressPage           = lazy(() => import("./Progress"));
+const MyTracksPage           = lazy(() => import("./MyTracks"));
 
 function pct(v) { return (v * 100).toFixed(0) + "%"; }
 
@@ -265,6 +266,7 @@ const NAV_TRACK = [
   { id: "profile", label: "Profile" },
   { id: "progress", label: "Progress" },
   { id: "plans", label: "Plans" },
+  { id: "my-tracks", label: "My Tracks" },
 ];
 
 // The four frames + PREP & ASSESS (accordion). Domains nest under the frame, never as peers.
@@ -1087,7 +1089,7 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","starthere","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard"];
+const VALID_VIEWS = ["home","starthere","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
@@ -1518,6 +1520,7 @@ export default function App() {
       aipm: "AI Product — GenAI Systems Lab",
       career: "Career — GenAI Systems Lab",
       preplab: "Prep Lab — GenAI Systems Lab",
+      "my-tracks": "My Tracks — GenAI Systems Lab",
       groundtruth: "Ground Truth — GenAI Systems Lab",
       progress: "Your Progress — GenAI Systems Lab",
       qa: "QA Dashboard — GenAI Systems Lab",
@@ -2032,6 +2035,11 @@ export default function App() {
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} user={user} pathContext={gtPathContext} />}
           {topView === "profile" && <ProfilePage onNavigate={navigateTo} user={user} onSignOut={() => setUser(null)} />}
           {topView === "plans"   && <PlansPage   onNavigate={navigate} user={user} />}
+          {topView === "my-tracks" && (
+            <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
+              <MyTracksPage onNavigate={navigate} />
+            </Suspense>
+          )}
           {topView === "progress"    && <ProgressPage visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}
           {topView === "leaderboard" && <GlobalLeaderboard user={user} />}
             </>

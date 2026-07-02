@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { signInWithGoogle } from "./supabase";
 import { track } from "./analytics";
+import { AddToTrackPopover } from "./AddToTrackPopover.jsx";
+import { getTracksForQuestion } from "./utils/tracks.js";
 
 // Inline SVG icons — no lucide-react dependency needed
 const IconBuilding2 = ({ size = 24 }) => (
@@ -587,6 +589,9 @@ const DIFF_CHIP = {
 function QuestionCard({ q, gaps = [] }) {
   const diffAccent = DIFF_ACCENT[q.difficulty] || "rgba(245,158,11,0.85)";
   const diffChip = DIFF_CHIP[q.difficulty] || "bg-amber-950/50 text-amber-400 border border-amber-800/40";
+  const [trackPopoverOpen, setTrackPopoverOpen] = useState(false);
+  const trackBtnRef = useRef(null);
+  const inTracks = getTracksForQuestion(q.id);
   return (
     <div
       style={{
@@ -607,6 +612,33 @@ function QuestionCard({ q, gaps = [] }) {
         {gaps.includes(q.topic) && (
           <span className="text-xs bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full">Gap</span>
         )}
+        <div style={{ marginLeft: "auto", position: "relative", flexShrink: 0 }}>
+          <button
+            ref={trackBtnRef}
+            onClick={() => setTrackPopoverOpen(o => !o)}
+            title="Add to Track"
+            style={{
+              width: 22, height: 22, borderRadius: 4, border: "1px solid rgba(63,63,70,0.7)",
+              background: inTracks.length > 0 ? "#7c3aed" : "rgba(24,24,27,0.8)",
+              color: inTracks.length > 0 ? "#fff" : "#71717a",
+              cursor: "pointer", fontSize: "0.8rem",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0, transition: "background 0.15s",
+            }}
+          >
+            {inTracks.length > 0 ? "✓" : "+"}
+          </button>
+          {trackPopoverOpen && (
+            <AddToTrackPopover
+              questionId={q.id}
+              title={q.question.length > 80 ? q.question.slice(0, 80) + "…" : q.question}
+              topic={q.topic}
+              difficulty={q.difficulty}
+              onClose={() => setTrackPopoverOpen(false)}
+              anchorRef={trackBtnRef}
+            />
+          )}
+        </div>
       </div>
       <p className="text-zinc-100 text-[15px] leading-[1.75] font-medium">{q.question}</p>
     </div>

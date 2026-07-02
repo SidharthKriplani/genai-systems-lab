@@ -1,0 +1,317 @@
+import React, { useState, useEffect, useRef } from "react";
+import {
+  getTracks, createTrack, renameTrack, deleteTrack,
+  addNote, removeItem, reorderItems,
+} from "./utils/tracks.js";
+
+const TOPIC_LABELS = {
+  rag: "RAG", agents: "Agents", finetuning: "Fine-Tuning",
+  evaluation: "Evaluation", llmops: "LLMOps",
+  safety: "Safety", product: "Product", behavioral: "Behavioral",
+  multimodal: "Multimodal", reasoning: "Reasoning",
+  serving: "Serving", foundations: "Foundations",
+};
+
+const DIFF_STYLES = {
+  easy:   "bg-emerald-950/50 text-emerald-400 border border-emerald-800/40",
+  medium: "bg-amber-950/50 text-amber-400 border border-amber-800/40",
+  hard:   "bg-red-950/50 text-red-400 border border-red-800/40",
+};
+
+function TopicBadge({ topic }) {
+  if (!topic) return null;
+  return (
+    <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded"
+      style={{ background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>
+      {TOPIC_LABELS[topic] || topic}
+    </span>
+  );
+}
+
+function DiffBadge({ difficulty }) {
+  if (!difficulty) return null;
+  const cls = DIFF_STYLES[difficulty] || DIFF_STYLES.medium;
+  return (
+    <span className={`text-[10px] font-mono font-black uppercase tracking-widest px-2 py-0.5 rounded ${cls}`}>
+      {difficulty}
+    </span>
+  );
+}
+
+function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete }) {
+  const [hoverId, setHoverId] = useState(null);
+  const [newName, setNewName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (creating && inputRef.current) inputRef.current.focus();
+  }, [creating]);
+
+  function handleCreate(e) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    onCreate(newName.trim());
+    setNewName("");
+    setCreating(false);
+  }
+
+  return (
+    <div className="flex flex-col shrink-0 overflow-y-auto"
+      style={{ width: 240, borderRight: "1px solid rgba(63,63,70,0.5)", padding: "1rem 0.5rem", background: "rgba(9,9,11,0.6)" }}>
+      <div className="flex items-center justify-between px-2 mb-3">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">My Tracks</span>
+        <button onClick={() => setCreating(true)} title="New track"
+          style={{ background: "none", border: "none", cursor: "pointer", color: "#8b5cf6", fontSize: "1.1rem", lineHeight: 1, padding: "0 0.2rem" }}>+</button>
+      </div>
+
+      {creating && (
+        <form onSubmit={handleCreate} className="flex gap-1.5 px-2 mb-2">
+          <input
+            ref={inputRef}
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            placeholder="Track name…"
+            className="flex-1 text-xs px-2 py-1.5 rounded-lg outline-none"
+            style={{ background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.7)", color: "#f4f4f5" }}
+            onKeyDown={e => { if (e.key === "Escape") { setCreating(false); setNewName(""); } }}
+          />
+          <button type="submit" disabled={!newName.trim()}
+            className="px-2 py-1.5 text-xs font-semibold rounded-lg text-white transition-opacity"
+            style={{ background: "#7c3aed", opacity: newName.trim() ? 1 : 0.4 }}>Add</button>
+        </form>
+      )}
+
+      {tracks.length === 0 && !creating && (
+        <p className="text-xs text-zinc-600 px-2 leading-relaxed">
+          No tracks yet. Hit + to create one, then add PrepLab questions with the + button.
+        </p>
+      )}
+
+      {tracks.map(t => (
+        <div
+          key={t.id}
+          onClick={() => onSelect(t.id)}
+          onMouseEnter={() => setHoverId(t.id)}
+          onMouseLeave={() => setHoverId(null)}
+          className="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer mb-0.5 transition-all"
+          style={{
+            background: t.id === selectedId ? "rgba(124,58,237,0.15)" : hoverId === t.id ? "rgba(39,39,42,0.5)" : "transparent",
+            border: `1px solid ${t.id === selectedId ? "rgba(139,92,246,0.5)" : "transparent"}`,
+          }}
+        >
+          <div className="min-w-0">
+            <div className="text-sm font-semibold truncate"
+              style={{ color: t.id === selectedId ? "#e4d4fc" : "#d4d4d8" }}>
+              {t.name}
+            </div>
+            <div className="text-[11px] text-zinc-600 mt-0.5">
+              {t.items.length} item{t.items.length !== 1 ? "s" : ""}
+            </div>
+          </div>
+          {hoverId === t.id && (
+            <button
+              onClick={e => { e.stopPropagation(); onDelete(t.id); }}
+              className="text-zinc-600 hover:text-red-400 text-xs ml-2 shrink-0 transition-colors"
+              style={{ background: "none", border: "none", cursor: "pointer" }}
+            >✕</button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onReorderItems }) {
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState(track.name);
+  const [noteText, setNoteText] = useState("");
+  const [dragFrom, setDragFrom] = useState(null);
+  const nameInputRef = useRef(null);
+
+  useEffect(() => {
+    setDraftName(track.name);
+    setEditingName(false);
+  }, [track.id, track.name]);
+
+  useEffect(() => {
+    if (editingName && nameInputRef.current) nameInputRef.current.focus();
+  }, [editingName]);
+
+  function submitName(e) {
+    if (e) e.preventDefault();
+    const n = draftName.trim();
+    if (n && n !== track.name) onRename(n);
+    setEditingName(false);
+  }
+
+  function handleAddNote(e) {
+    e.preventDefault();
+    if (!noteText.trim()) return;
+    onAddNote(noteText.trim());
+    setNoteText("");
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto" style={{ padding: "1.5rem 2rem", minWidth: 0 }}>
+      {/* Track title */}
+      <div className="flex items-center gap-2 mb-6">
+        {editingName ? (
+          <form onSubmit={submitName} className="flex items-center gap-2">
+            <input
+              ref={nameInputRef}
+              value={draftName}
+              onChange={e => setDraftName(e.target.value)}
+              onBlur={() => submitName()}
+              onKeyDown={e => { if (e.key === "Escape") { setDraftName(track.name); setEditingName(false); } }}
+              className="text-xl font-bold rounded-lg px-2 py-0.5 outline-none"
+              style={{ color: "#f4f4f5", background: "rgba(39,39,42,0.8)", border: "1px solid #7c3aed" }}
+            />
+            <button type="submit"
+              className="px-3 py-1 text-xs font-semibold rounded-lg text-white"
+              style={{ background: "#7c3aed" }}>Save</button>
+          </form>
+        ) : (
+          <>
+            <h2 className="text-xl font-bold text-white m-0">{track.name}</h2>
+            <button onClick={() => setEditingName(true)} title="Rename"
+              className="text-zinc-600 hover:text-zinc-400 text-sm transition-colors"
+              style={{ background: "none", border: "none", cursor: "pointer" }}>✎</button>
+          </>
+        )}
+        <span className="ml-auto text-xs text-zinc-600">
+          {track.items.length} item{track.items.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {/* Items */}
+      {track.items.length === 0 ? (
+        <p className="text-zinc-500 text-sm leading-relaxed">
+          Empty track. Open PrepLab and click the + on any question to add it here.
+        </p>
+      ) : (
+        <div className="space-y-2 mb-6">
+          {track.items.map((item, idx) => (
+            <div
+              key={idx}
+              draggable
+              onDragStart={() => setDragFrom(idx)}
+              onDragOver={e => e.preventDefault()}
+              onDrop={() => { if (dragFrom !== null && dragFrom !== idx) { onReorderItems(dragFrom, idx); setDragFrom(null); } }}
+              onDragEnd={() => setDragFrom(null)}
+              className="flex items-start gap-2 rounded-xl p-4 transition-all"
+              style={{
+                background: dragFrom === idx ? "rgba(124,58,237,0.15)" : "rgba(24,24,27,0.9)",
+                border: `1px solid ${dragFrom === idx ? "rgba(139,92,246,0.5)" : "rgba(63,63,70,0.6)"}`,
+                cursor: "grab",
+              }}
+            >
+              <span className="text-zinc-700 text-xs mt-0.5 shrink-0 select-none">⠿</span>
+
+              {item.type === "preplab" ? (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                      <TopicBadge topic={item.topic} />
+                      <DiffBadge difficulty={item.difficulty} />
+                    </div>
+                    <p className="text-sm text-zinc-200 leading-snug font-medium">{item.title}</p>
+                  </div>
+                  <button
+                    onClick={() => onNavigate("preplab")}
+                    title="Open PrepLab"
+                    className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                    style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                  >Open →</button>
+                </>
+              ) : (
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Note</div>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{item.content}</p>
+                </div>
+              )}
+
+              <button
+                onClick={() => onRemoveItem(idx)}
+                title="Remove"
+                className="text-zinc-700 hover:text-red-400 text-xs transition-colors shrink-0"
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "0 0.1rem" }}
+              >✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add note */}
+      <form onSubmit={handleAddNote} className="flex gap-2 items-start">
+        <textarea
+          value={noteText}
+          onChange={e => setNoteText(e.target.value)}
+          placeholder="Add a note to this track…"
+          rows={2}
+          className="flex-1 text-sm rounded-xl px-3 py-2 resize-none outline-none leading-relaxed"
+          style={{
+            background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.6)",
+            color: "#d4d4d8", fontFamily: "inherit",
+          }}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (noteText.trim()) { onAddNote(noteText.trim()); setNoteText(""); } } }}
+        />
+        <button
+          type="submit"
+          disabled={!noteText.trim()}
+          className="px-4 py-2 text-sm font-semibold rounded-xl text-white shrink-0 transition-opacity"
+          style={{ background: "#7c3aed", opacity: noteText.trim() ? 1 : 0.4 }}
+        >Add Note</button>
+      </form>
+    </div>
+  );
+}
+
+export default function MyTracks({ onNavigate }) {
+  const [tracks, setTracks] = useState(() => getTracks());
+  const [selectedId, setSelectedId] = useState(null);
+
+  useEffect(() => {
+    const h = () => setTracks(getTracks());
+    window.addEventListener("gsl_tracks", h);
+    return () => window.removeEventListener("gsl_tracks", h);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedId && tracks.length > 0) setSelectedId(tracks[0].id);
+  }, [tracks, selectedId]);
+
+  function refresh() { setTracks(getTracks()); }
+
+  const selectedTrack = tracks.find(t => t.id === selectedId) || null;
+
+  return (
+    <div className="flex bg-zinc-950 text-zinc-100" style={{ height: "calc(100vh - 48px)", overflow: "hidden", fontFamily: "inherit" }}>
+      <TrackList
+        tracks={tracks}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        onCreate={name => { const t = createTrack(name); refresh(); setSelectedId(t.id); }}
+        onDelete={id => { deleteTrack(id); refresh(); if (selectedId === id) setSelectedId(null); }}
+      />
+
+      <div className="flex-1 overflow-hidden" style={{ background: "rgba(9,9,11,0.4)" }}>
+        {selectedTrack ? (
+          <TrackDetail
+            key={selectedTrack.id}
+            track={selectedTrack}
+            onNavigate={onNavigate}
+            onRename={name => { renameTrack(selectedTrack.id, name); refresh(); }}
+            onAddNote={content => { addNote(selectedTrack.id, content); refresh(); }}
+            onRemoveItem={idx => { removeItem(selectedTrack.id, idx); refresh(); }}
+            onReorderItems={(from, to) => { reorderItems(selectedTrack.id, from, to); refresh(); }}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
+            {tracks.length === 0 ? "Create a track to get started." : "Select a track."}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
