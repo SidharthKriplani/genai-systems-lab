@@ -329,7 +329,7 @@ const TAB_FRAME = (() => {
 })();
 
 // Sprint 92: dead routes that redirect to Foundations (KNOW). #systems kept alive — still used as deep-reference target.
-const HASH_REDIRECTS = { starthere: "concepts", paths: "concepts", promptlab: "playground" };
+const HASH_REDIRECTS = { paths: "concepts", promptlab: "playground" };
 
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
@@ -1614,9 +1614,10 @@ export default function App() {
   const NAV_GROUPS = [
     // TRACK — identity + progress (utilities, not a learning pillar)
     { label: "TRACK", color: "#8b5cf6", items: [
-      { id: "profile",  label: "Profile" },
-      { id: "progress", label: "Progress" },
-      { id: "plans",    label: "Plans & Access" },
+      { id: "profile",    label: "Profile" },
+      { id: "starthere",  label: "Start Here" },
+      { id: "progress",   label: "Progress" },
+      { id: "plans",      label: "Plans & Access" },
     ]},
     // KNOW — recall: structured concept modules, PAL runner
     { label: "KNOW", color: "#6366f1", items: [
