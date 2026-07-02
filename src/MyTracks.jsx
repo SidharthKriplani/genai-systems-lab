@@ -344,7 +344,7 @@ export default function MyTracks({ onNavigate }) {
         onDelete={id => { deleteTrack(id); refresh(); if (selectedId === id) setSelectedId(null); }}
       />
 
-      <div className="flex-1 overflow-hidden" style={{ background: "rgba(9,9,11,0.4)" }}>
+      <div className="flex-1 overflow-hidden flex flex-col" style={{ background: "rgba(9,9,11,0.4)" }}>
         {selectedTrack ? (
           <TrackDetail
             key={selectedTrack.id}
