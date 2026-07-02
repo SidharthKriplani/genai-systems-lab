@@ -46,32 +46,7 @@ export const GROUP_COLORS = {
   LEGACY:     "#3f3f46",
 };
 
-// Nav group structure — source of truth.
-// Local NAV_GROUPS const in App.jsx mirrors this shape.
-export const NAV_GROUPS = [
-  { label: "TRACK", color: "#8b5cf6", items: [
-    { id: "profile",     label: "Profile" },
-    { id: "plans",       label: "Plans" },
-    { id: "progress",    label: "Progress" },
-  ]},
-  { label: "KNOW", color: "#6366f1", items: [
-    { id: "concepts",    label: "Foundations" },
-  ]},
-  { label: "LEARN", color: "#a78bfa", items: [
-    { id: "groundtruth", label: "Ground Truth" },
-  ]},
-  { label: "BUILD", color: "var(--gal-build)", items: [
-    { id: "preplab",     label: "PrepLab" },
-    { id: "retrieval",   label: "Retrieval" },
-    { id: "evaluation",  label: "Evaluation" },
-    { id: "agentshub",   label: "Agents" },
-    { id: "production",  label: "Production" },
-    { id: "foundations", label: "Foundation Models" },
-  ]},
-  { label: "JUDGE", color: "#f59e0b", items: [
-    { id: "systems",     label: "Systems" },
-  ]},
-  { label: "EXTRAS", color: "#52525b", items: [
-    { id: "leaderboard", label: "Leaderboard" },
-  ]},
-];
+// NOTE (2026-07-03 consolidation): the old `NAV_GROUPS` export lived here but was
+// DEAD — App.jsx defines its own live `NAV_SECTIONS`/`NAV_DOMAINS` and imports only
+// ALL_TABS + GROUP_COLORS from this file. Removed to end the two-nav-systems confusion.
+// The live nav is in App.jsx.

@@ -291,7 +291,7 @@ const NAV_SECTIONS = [
   { key: "judge", label: "JUDGE", icon: "scale", items: [
     // de-listed 2026-06-24 (overlap pass, Wave 1) — reach the labs THROUGH their challenge-area hub; routes/hashes intact. Re-add to restore.
     // { id: "lab", label: "RAG Lab" },
-    { id: "agents", label: "Agents" },
+    { id: "agents", label: "Agent Lab" },
     // de-listed sprint 92 — Systems modules now accessible as deep-reference within Foundations tracks; #systems hash still works.
     // { id: "systems", label: "Systems" },
     // { id: "evallab", label: "Eval Lab" },
