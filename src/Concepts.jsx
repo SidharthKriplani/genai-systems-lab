@@ -6,6 +6,7 @@ import { EmbeddingExplorer, AttentionViz3D, LatencyPlanner, DiffusionViz3D, Cosi
 import { Icon } from './Icon.jsx';
 import FoundationsRunner from "./FoundationsRunner";
 import { RUNNER_DATA } from "./data/foundationsRunnerData";
+import { AddTrackBtn } from "./AddToTrackPopover";
 
 // ─── TOKENIZER DATA ───────────────────────────────────────────────────────────
 
@@ -11357,14 +11358,20 @@ function GymPanel({ mastery, onOpen, onClose, onNavigate }) {
                             </button>
                           )}
                         </div>
-                        <button onClick={() => onOpen(m.id)}
-                          className={`shrink-0 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                            done
-                              ? "border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600"
-                              : "border-violet-700/50 text-violet-400 hover:bg-violet-900/20"
-                          }`}>
-                          {done ? "Revisit" : "Start →"}
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span onClick={e => e.stopPropagation()}>
+                            <AddTrackBtn itemType="concept" itemId={m.id} label={m.title}
+                              itemMeta={{ level: m.level, tag: m.tag }} />
+                          </span>
+                          <button onClick={() => onOpen(m.id)}
+                            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                              done
+                                ? "border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600"
+                                : "border-violet-700/50 text-violet-400 hover:bg-violet-900/20"
+                            }`}>
+                            {done ? "Revisit" : "Start →"}
+                          </button>
+                        </div>
                       </div>
                     );
                   })}

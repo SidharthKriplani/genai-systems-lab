@@ -241,6 +241,7 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
                       }}>
                         {item.type === "gt_post" ? "GT Post"
                           : item.type === "hub_q" ? "Foundations Q"
+                          : item.type === "concept" ? "Concept"
                           : item.type}
                       </span>
                       {item.meta?.difficulty && (
@@ -267,6 +268,14 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
                       className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
                       style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
                     >Answer →</button>
+                  )}
+                  {item.type === "concept" && (
+                    <button
+                      onClick={() => onNavigate("concepts")}
+                      title="Open Concepts"
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                      style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >Study →</button>
                   )}
                 </>
               )}
