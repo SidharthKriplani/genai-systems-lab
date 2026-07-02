@@ -84,7 +84,7 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete }) {
 
       {tracks.length === 0 && !creating && (
         <p className="text-xs text-zinc-600 px-2 leading-relaxed">
-          No tracks yet. Hit + to create one, then add PrepLab questions with the + button.
+          No tracks yet. Hit + to create one, then add content using the + buttons across the app.
         </p>
       )}
 
@@ -187,7 +187,7 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
       {/* Items */}
       {track.items.length === 0 ? (
         <p className="text-zinc-500 text-sm leading-relaxed">
-          Empty track. Open PrepLab and click the + on any question to add it here.
+          Empty track. Click the + on any PrepLab question, Ground Truth post, or Foundations question to add it here.
         </p>
       ) : (
         <div className="space-y-2 mb-6">
@@ -224,11 +224,51 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
                     style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
                   >Open →</button>
                 </>
-              ) : (
+              ) : item.type === "note" ? (
                 <div className="flex-1 min-w-0">
                   <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Note</div>
                   <p className="text-sm text-zinc-400 leading-relaxed">{item.content}</p>
                 </div>
+              ) : (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                      <span style={{
+                        fontSize: "0.62rem", fontWeight: 700, color: "#a78bfa",
+                        background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)",
+                        borderRadius: "4px", padding: "0.05rem 0.35rem",
+                        textTransform: "uppercase", letterSpacing: "0.04em",
+                      }}>
+                        {item.type === "gt_post" ? "GT Post"
+                          : item.type === "hub_q" ? "Foundations Q"
+                          : item.type}
+                      </span>
+                      {item.meta?.difficulty && (
+                        <DiffBadge difficulty={item.meta.difficulty.toLowerCase()} />
+                      )}
+                      {item.meta?.category && (
+                        <span className="text-[10px] font-mono text-zinc-500">{item.meta.category}</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-zinc-200 leading-snug font-medium">{item.label}</p>
+                  </div>
+                  {item.type === "gt_post" && (
+                    <button
+                      onClick={() => onNavigate("groundtruth")}
+                      title="Open Ground Truth"
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                      style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >Read →</button>
+                  )}
+                  {item.type === "hub_q" && (
+                    <button
+                      onClick={() => onNavigate("preplab")}
+                      title="Open PrepLab"
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                      style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >Answer →</button>
+                  )}
+                </>
               )}
 
               <button

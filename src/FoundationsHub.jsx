@@ -2,6 +2,7 @@ import { useState } from "react";
 import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
 import { TradeoffCard } from "./shared";
+import { AddTrackBtn } from "./AddToTrackPopover";
 
 const TRADEOFF = {
   title: "When do you need to touch the model?",
@@ -210,7 +211,10 @@ export default function FoundationsHub({ onNavigate, onNavigateTo }) {
                 {q.gated && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-500">Access code</span>}
               </div>
               <p className="text-sm text-zinc-200 leading-snug mb-3">{q.question}</p>
-              <button onClick={() => { track("foundations_hub_q", { id: q.id }); onNavigate("preplab"); }} className="text-[11px] font-bold hover:opacity-80" style={{ color: COLOR }}>Answer in PrepLab →</button>
+              <div className="flex items-center justify-between">
+                <button onClick={() => { track("foundations_hub_q", { id: q.id }); onNavigate("preplab"); }} className="text-[11px] font-bold hover:opacity-80" style={{ color: COLOR }}>Answer in PrepLab →</button>
+                <AddTrackBtn itemType="hub_q" itemId={q.id} label={q.question.slice(0, 80)} itemMeta={{ difficulty: q.difficulty }} />
+              </div>
             </div>
           ))}
         </div>

@@ -79,3 +79,21 @@ export function getTracksForQuestion(questionId) {
     .filter(t => t.items.some(i => i.type === 'preplab' && i.questionId === questionId))
     .map(t => t.id)
 }
+
+// Generic item — { type, itemId, label, meta, addedAt }
+export function addItem(trackId, type, itemId, label, meta = {}) {
+  const tracks = getTracks()
+  save(tracks.map(t => {
+    if (t.id !== trackId) return t
+    const already = t.items.some(i => i.type === type && i.itemId === String(itemId))
+    if (already) return t
+    return { ...t, items: [...t.items, { type, itemId: String(itemId), label, meta, addedAt: Date.now() }] }
+  }))
+}
+
+// Returns array of track IDs containing this generic item
+export function getTracksForItem(type, itemId) {
+  return getTracks()
+    .filter(t => t.items.some(i => i.type === type && i.itemId === String(itemId)))
+    .map(t => t.id)
+}

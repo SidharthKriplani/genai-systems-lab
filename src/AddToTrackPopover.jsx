@@ -1,23 +1,50 @@
 import { useState, useEffect, useRef } from "react";
-import { getTracks, createTrack, addQuestion, getTracksForQuestion } from "./utils/tracks.js";
+import { createPortal } from "react-dom";
+import {
+  getTracks, createTrack,
+  addQuestion, getTracksForQuestion,
+  addItem, getTracksForItem,
+} from "./utils/tracks.js";
 
 /**
- * Popover for adding a PrepLab question to a track.
- * Props: questionId, title, topic, difficulty, onClose, anchorRef
+ * Popover for adding content to a track.
+ *
+ * Preplab mode (existing):  pass questionId, title, topic, difficulty
+ * Generic mode (new):       pass itemType, itemId, label, itemMeta
+ *
+ * fixedPos: { top, right } — uses position:fixed (portal mode)
+ * Without fixedPos: position:absolute relative to nearest positioned ancestor.
  */
-export function AddToTrackPopover({ questionId, title, topic, difficulty, onClose, anchorRef }) {
+export function AddToTrackPopover({
+  // preplab props
+  questionId, title, topic, difficulty,
+  // generic props
+  itemType, itemId, label, itemMeta,
+  // shared
+  onClose, anchorRef, fixedPos,
+}) {
+  const isGeneric = !!itemType;
+
   const [tracks, setTracks]     = useState(() => getTracks());
-  const [inTracks, setInTracks] = useState(() => getTracksForQuestion(questionId));
+  const [inTracks, setInTracks] = useState(() =>
+    isGeneric
+      ? getTracksForItem(itemType, itemId)
+      : getTracksForQuestion(questionId)
+  );
   const [newName, setNewName]   = useState("");
   const [creating, setCreating] = useState(false);
   const popoverRef = useRef(null);
   const inputRef   = useRef(null);
 
+  const posStyle = fixedPos
+    ? { position: "fixed", top: fixedPos.top, right: fixedPos.right, marginTop: 0 }
+    : { position: "absolute", top: "100%", right: 0, marginTop: "6px" };
+
   useEffect(() => {
     function handle(e) {
       if (
         popoverRef.current && !popoverRef.current.contains(e.target) &&
-        anchorRef?.current && !anchorRef.current.contains(e.target)
+        (!anchorRef?.current || !anchorRef.current.contains(e.target))
       ) onClose();
     }
     document.addEventListener("mousedown", handle);
@@ -30,11 +57,21 @@ export function AddToTrackPopover({ questionId, title, topic, difficulty, onClos
 
   function refresh() {
     setTracks(getTracks());
-    setInTracks(getTracksForQuestion(questionId));
+    setInTracks(
+      isGeneric
+        ? getTracksForItem(itemType, itemId)
+        : getTracksForQuestion(questionId)
+    );
   }
 
   function handleToggle(trackId) {
-    if (!inTracks.includes(trackId)) addQuestion(trackId, questionId, title, topic, difficulty);
+    if (!inTracks.includes(trackId)) {
+      if (isGeneric) {
+        addItem(trackId, itemType, itemId, label || "", itemMeta || {});
+      } else {
+        addQuestion(trackId, questionId, title, topic, difficulty);
+      }
+    }
     refresh();
   }
 
@@ -42,7 +79,11 @@ export function AddToTrackPopover({ questionId, title, topic, difficulty, onClos
     e.preventDefault();
     if (!newName.trim()) return;
     const t = createTrack(newName.trim());
-    addQuestion(t.id, questionId, title, topic, difficulty);
+    if (isGeneric) {
+      addItem(t.id, itemType, itemId, label || "", itemMeta || {});
+    } else {
+      addQuestion(t.id, questionId, title, topic, difficulty);
+    }
     setNewName("");
     setCreating(false);
     refresh();
@@ -52,10 +93,16 @@ export function AddToTrackPopover({ questionId, title, topic, difficulty, onClos
     <div
       ref={popoverRef}
       style={{
-        position: "absolute", zIndex: 9999, top: "100%", right: 0, marginTop: "6px",
-        background: "rgba(24,24,27,0.98)", border: "1px solid rgba(63,63,70,0.7)",
-        borderRadius: "10px", boxShadow: "0 8px 24px rgba(0,0,0,0.40)",
-        minWidth: "220px", maxWidth: "270px", padding: "0.6rem 0", fontSize: "0.82rem",
+        ...posStyle,
+        zIndex: 9999,
+        background: "rgba(24,24,27,0.98)",
+        border: "1px solid rgba(63,63,70,0.7)",
+        borderRadius: "10px",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.40)",
+        minWidth: "220px",
+        maxWidth: "270px",
+        padding: "0.6rem 0",
+        fontSize: "0.82rem",
         backdropFilter: "blur(12px)",
       }}
       onClick={e => e.stopPropagation()}
@@ -140,5 +187,59 @@ export function AddToTrackPopover({ questionId, title, topic, difficulty, onClos
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Self-contained + button that opens a portal-based AddToTrackPopover.
+ * Escapes overflow:hidden containers via createPortal + getBoundingClientRect.
+ * Use for any content type (GroundTruth posts, Foundations questions, etc.)
+ */
+export function AddTrackBtn({ itemType, itemId, label, itemMeta = {} }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+
+  function toggle(e) {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    }
+    setOpen(o => !o);
+  }
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={toggle}
+        title="Add to track"
+        style={{
+          background: "none",
+          border: "1px solid rgba(63,63,70,0.7)",
+          borderRadius: "5px",
+          cursor: "pointer",
+          padding: "2px 7px",
+          fontSize: "13px",
+          color: "#a78bfa",
+          flexShrink: 0,
+          lineHeight: 1,
+          fontWeight: 700,
+        }}
+      >+</button>
+      {open && createPortal(
+        <AddToTrackPopover
+          itemType={itemType}
+          itemId={itemId}
+          label={label}
+          itemMeta={itemMeta}
+          onClose={() => setOpen(false)}
+          anchorRef={btnRef}
+          fixedPos={pos}
+        />,
+        document.body
+      )}
+    </>
   );
 }

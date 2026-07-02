@@ -7,6 +7,7 @@ import SalaryCalculator from "./SalaryCalculator";
 import { FeedbackBar } from "./shared";
 import GateOverlay from "./GateOverlay";
 import { Icon } from "./Icon.jsx";
+import { AddTrackBtn } from "./AddToTrackPopover";
 
 // Every post maps to at least one interactive module on the platform.
 // "labLink" is where the reader goes to test what they just read.
@@ -1528,17 +1529,20 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                 {pinned.map(post => {
                   const color = CAT_COLORS[post.category] || "#6366f1";
                   return (
-                    <button key={post.id}
+                    <div key={post.id}
                       onClick={() => {
                         track("ground_truth_pinned_clicked", { post: post.id });
                         openPostOrGate(post);
                       }}
-                      className="text-left rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-150 relative overflow-hidden"
+                      className="rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-150 relative overflow-visible cursor-pointer"
                       style={{ background: "linear-gradient(160deg, rgba(139,92,246,0.10) 0%, rgba(15,15,17,0.95) 100%)", border: "1px solid rgba(139,92,246,0.2)", boxShadow: "0 4px 16px rgba(0,0,0,0.35)" }}>
-                      <div className="text-[9px] font-mono font-bold uppercase tracking-widest mb-1.5" style={{ color }}>{post.readMin} min · {post.category}</div>
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="text-[9px] font-mono font-bold uppercase tracking-widest" style={{ color }}>{post.readMin} min · {post.category}</div>
+                        <AddTrackBtn itemType="gt_post" itemId={post.id} label={post.title} itemMeta={{ category: post.category, readMin: post.readMin }} />
+                      </div>
                       <p className="text-sm font-bold text-white leading-snug mb-1.5">{post.title}</p>
                       <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{post.desc}</p>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -1707,6 +1711,7 @@ export default function GroundTruth({ onNavigate, onNavigateTo, initialPostId, o
                     )}
                   </div>
                   <div className="flex items-center gap-2">
+                    <AddTrackBtn itemType="gt_post" itemId={post.id} label={post.title} itemMeta={{ category: post.category, readMin: post.readMin }} />
                     <button onClick={(e) => toggleBookmark(post.id, e)}
                       title={bookmarkIds.has(post.id) ? "Remove bookmark" : "Bookmark"}
                       className={`text-[11px] transition-all ${bookmarkIds.has(post.id) ? "text-amber-400" : "text-zinc-600 hover:text-zinc-400"}`}>
