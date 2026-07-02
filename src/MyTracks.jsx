@@ -111,7 +111,7 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete }) {
           </div>
           {hoverId === t.id && (
             <button
-              onClick={e => { e.stopPropagation(); onDelete(t.id); }}
+              onClick={e => { e.stopPropagation(); if (window.confirm('Delete this track? This cannot be undone.')) onDelete(t.id); }}
               className="text-zinc-600 hover:text-red-400 text-xs ml-2 shrink-0 transition-colors"
               style={{ background: "none", border: "none", cursor: "pointer" }}
             >✕</button>
@@ -281,7 +281,10 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
               )}
 
               <button
-                onClick={() => onRemoveItem(idx)}
+                onClick={() => {
+                  if (item.type === "note" && !window.confirm('Delete this note? This cannot be undone.')) return;
+                  onRemoveItem(idx);
+                }}
                 title="Remove"
                 className="text-zinc-700 hover:text-red-400 text-xs transition-colors shrink-0"
                 style={{ background: "none", border: "none", cursor: "pointer", padding: "0 0.1rem" }}
