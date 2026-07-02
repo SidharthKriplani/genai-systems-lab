@@ -224,8 +224,12 @@ export default function RetrievalHub({ onNavigate, onNavigateTo }) {
     else onNavigate("groundtruth");
   }
 
+  // Phase 0.3 — Retrieval: canonical education home is the Concepts "Retrieval" gym (richer surface:
+  // 5 structured modules — embeddings → chunking → rag-pipeline → context → reranking — each with
+  // MCQ teaching + a dedicated interactive). The RAG Lab (below) is the complementary failure-mode
+  // simulator, not a duplicate — so the hub points learning CTAs cleanly at Concepts, no forwarding.
   function goConcepts(gymId) {
-    track("retrieval_hub_concepts_click", { gymId });
+    track("retrieval_hub_concepts_click", { gymId, target: "concepts" });
     if (onNavigateTo) onNavigateTo({ tab: "concepts", gymId });
     else onNavigate("concepts");
   }

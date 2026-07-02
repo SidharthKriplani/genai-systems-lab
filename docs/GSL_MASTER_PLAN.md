@@ -274,3 +274,222 @@ localStorage key, and all existing thin-module content (deep-links still resolve
 **Pattern for the rest of 0.3:** *richer surface wins, duplicate forwards* — pick the deeper
 interactive home as canonical, leave the thin duplicate in place but forward users to the canonical
 home; migrate progress additively; never delete (deep-links stay live).
+
+## Phase 0.3 — Retrieval (executed 2026-07-03)
+Applied the 0.3 pattern to the Retrieval surface. **The structure differs from Agents**, and the
+audit outcome flips accordingly.
+
+**Audit.** Two surfaces:
+- **Concepts "Retrieval" gym** (`gym.id === "retrieval"`, `labId: "lab"`) — a **5-module structured
+  curriculum**: `embeddings → chunking → rag-pipeline → context → reranking`. Each module pairs deep
+  MCQ teaching (scenario + causal-chain prose that links each module to the next + graded questions +
+  takeaway, in `foundationsRunnerData.js`) with a dedicated interactive in `Concepts.jsx` (embedding-
+  space hover viz, chunking-with-live-retrieval simulator, LITM/context-position visualizer,
+  bi-encoder vs cross-encoder reranking toggle). Broad conceptual coverage.
+- **RAG Lab** (App.jsx view `lab`, scenarios in `ragScenarios.js`) — a **single-pattern failure
+  simulator**: 6 diagnose-the-failure scenarios (missing answer, ambiguous query, conflicting docs,
+  multi-hop, three-hop chain, prompt injection), one configure-4-controls-and-evaluate interaction +
+  Challenge Mode. Excellent but narrower (one interaction pattern × 6 scenarios).
+- The **Retrieval hub** is a separate aggregator: `Retrieval.jsx` (`RetrievalHub`, nav id `retrieval`)
+  points at both — its "The Lab" CTA → RAG Lab (`onNavigate("lab")`), its Concepts CTAs →
+  `onNavigateTo({ tab: "concepts", gymId: "retrieval" })`. So here **hub ≠ lab** (unlike Agents,
+  where AgentsHub fronted a single richer Agent Lab).
+
+**Decision: canonical retrieval-education home = the Concepts "Retrieval" gym** (richer/broader for
+learning). This is the **opposite** of Agents: there the Lab dwarfed a thin 4-module gym; here the
+Concepts gym is the broad 5-module curriculum and the RAG Lab is a focused, complementary simulator —
+not a thin duplicate to forward away. Per the 0.3 rule "if Concepts is canonical, skip the banner,"
+Retrieval takes the *no-forward* branch.
+
+**What shipped (low-risk, nothing deleted):**
+- `Retrieval.jsx` — added a Phase 0.3 marker comment on `goConcepts`; learning CTAs already route
+  cleanly to the Concepts retrieval gym (kept as-is). Added `target: "concepts"` to the analytics
+  payload. The RAG Lab CTA is left pointing at the RAG Lab (complementary surface, not forwarded).
+- `Concepts.jsx` — **no forward banner** for the `retrieval` gym (Concepts is canonical). Added a
+  NOTE next to the `ai-agents` banner documenting the deliberate asymmetry so future 0.3 passes
+  don't mistakenly add one.
+
+**Migration: skipped (noted).** No old→new module-id remap exists for retrieval — the Concepts
+retrieval ids (`embeddings, chunking, rag-pipeline, context, reranking`) are already the canonical
+ids and are unchanged. Unlike Agents (`agent→react`, etc.), there is nothing to migrate, so no
+`gsl-retrieval-migrated-v1` flag was added. All `gsl-concepts-mastery` retrieval progress already
+lives under the canonical ids.
+
+**Preserved:** all routes/hashes (`#retrieval`, `#lab`, `#concepts` retrieval gym), every
+localStorage key, and all existing content (RAG Lab + all 5 Concepts modules + their deep-links).
+
+**Deferred (separate lighter pass):** de-duplicating the triplicated interactive widgets that exist
+in **Concepts + Playground + Explore** (embedding-space viz, chunking simulator, reranking toggle).
+The 0.3 rule (concept module owns the canonical viz; Playground hosts the experiment/lab version) is
+recorded above but not yet enforced for retrieval — that dedupe is out of scope here and Playground
+was intentionally not touched.
+
+## Phase 0.3 — Evaluation (executed 2026-07-03)
+Applied the 0.3 pattern to the Evaluation surface. **This case mirrors Agents** (Lab is canonical),
+the opposite of Retrieval (Concepts was canonical) — decided on merit.
+
+**Audit.** Three surfaces:
+- **Concepts "Evaluation" gym** (`gym.id === "evaluation"`, `labId: "evallab"`) — **5 modules**:
+  `eval-loop, eval-design, debug, llm-as-judge, rag-eval`. eval-loop/eval-design/debug/llm-as-judge
+  have real teaching components; `rag-eval` is still a conceptual stub. RAG-flavoured and narrower.
+- **Eval Lab** (App.jsx view `evallab` → `SystemsApp` with `EVAL_LAB_MODULES`, 15+ ids) — the **richer
+  surface**: dedicated interactive React lab components — `EvalsLab`, `EvalFrameworksLab`, `EvalMetrics`,
+  `ShouldUseAI`, `ModelStrategyLab`, `AISystemDesignCanvas`, `IncidentRoom`, `LLMObservability`,
+  `ABTestingLab`, `MLCiCdLab`, `DebugTraces`, `LangSmithTracingLab`, `TrapsLab`, `PromptChangeMgmt`,
+  `ModelRouter`. Covers judge design, RAGAS metrics, calibration drift, observability, A/B testing,
+  ML CI/CD, incident diagnosis, trace debugging — far broader and more interactive than the gym.
+- **Evaluation hub** (`EvaluationHub.jsx`, nav id `evaluation`) — a **pure aggregator** (no unique
+  learning modules): a "The Lab" CTA → Eval Lab, Concepts CTAs, GroundTruth links, PrepLab links,
+  tradeoff card, progress tiles. Like AgentsHub, the hub fronts the single richer Eval Lab.
+
+**Decision: canonical evaluation-education home = the Eval Lab** (richer/broader/more interactive).
+Same shape as Agents: the Lab dwarfs a thinner Concepts gym, so the Concepts eval gym **forwards** to
+the Eval Lab. (Contrast Retrieval, where the Concepts gym was the broad curriculum and stayed canonical.)
+
+**What shipped (low-risk, nothing deleted):**
+- `EvaluationHub.jsx` — the "Concepts" challenge-hub CTAs (`goConcepts`) now navigate to the Eval Lab
+  (`onNavigate("evallab")`) instead of the Concepts `evaluation` gym; analytics gains `target: "evallab"`.
+  Card labels updated to "Open Eval Lab →" / "Open in Eval Lab →".
+- `Concepts.jsx` — the `evaluation` gym room renders a prominent amber **forward banner** above the
+  module list pointing to the Eval Lab (15 modules, LLM-judge, RAGAS metrics, calibration, observability,
+  A/B testing, incident room, debug traces). The thin modules are **kept below** for deep-link
+  backward-compat. Documented the Agents-vs-Retrieval-vs-Evaluation asymmetry in the banner comment.
+
+**Migration: skipped (noted).** No clean old→new module-id remap exists. The Concepts eval ids
+(`eval-loop, eval-design, debug, llm-as-judge, rag-eval`) do not correspond 1:1 to Eval Lab ids
+(`evals, evalfw, evalmetrics, ...`) — different granularity and topic split (the gym is RAG-eval-centric;
+the Lab is broad eval ops). Unlike Agents (`agent→react`, etc.) there is nothing safe to remap, so **no**
+`gsl-eval-migrated-v1` flag was added. All `gsl-concepts-mastery` eval progress stays under its existing
+ids; the forward banner is additive and non-destructive.
+
+**Preserved:** all routes/hashes (`#evaluation`, `#evallab`, `#concepts` evaluation gym), every
+localStorage key, and all existing content (Eval Lab + all 5 Concepts eval modules + their deep-links).
+
+**Deferred (separate lighter pass):** the triplicated-widget dedupe (Concepts + Playground + Explore)
+noted under Retrieval also applies to eval-adjacent widgets — out of scope here. Playground eval-ish
+labs (Spot the Hallucination, Bias Detector) were noted but intentionally **not** touched, nor were
+PrepLab or the nav frames.
+
+---
+
+## Phase 0.3 — Production (executed 2026-07-03)
+
+**Surfaces audited:**
+- **Concepts "Production" gym** (`gym.id === "production"`, `labId: "systems"`) — **9 modules**:
+  `cost-latency-concepts, flashattn, latency-planner, observability-concepts, prompt-regression-signals,
+  quality-drift, cost-attribution, managed-vs-selfhosted, enterprise-ai-cost-model`. MCQ + light
+  interactives (latency-planner is a conceptual planning tool). A quick primer.
+- **LLM Lab** (App.jsx view `llmlab` → `SystemsApp` with `LLM_LAB_MODULES`) — the **richer surface**:
+  9 dedicated interactive React lab components — `DecodingStrategiesLab` (decoding), `KVCacheEngineering`
+  (kvcache), `SpeculativeDecoding` (specdecoding), `QuantizationEngineering` (quantization), `ServingInfra`
+  (serving), `ReasoningModelsLab` (reasoning), `MoEArchitecture` (moe), `InferenceOptimizer` (inference),
+  `StreamingPatterns` (streaming). `serving`, `decoding`, and `inference` are logic-accurate (real
+  derived outcomes, per `MODULE_FIDELITY` in Systems.jsx) — true simulators/decision engines, not
+  reference cards.
+- **Production hub** (`ProductionHub.jsx`, nav id `production`) — a **pure aggregator** (no unique
+  learning modules): a "The Lab" CTA that already pointed at the LLM Lab (`onNavigate("llmlab")`),
+  Concepts CTAs, GroundTruth links, PrepLab links, a cost/latency tradeoff card, progress tiles.
+  Like AgentsHub/EvaluationHub, the hub fronts the single richer Lab.
+- **Archived/production-flavoured surfaces** `InferenceOptimizer`/`ModelRouter`/`MLCiCd` — these live
+  as components inside `Systems.jsx`/`systems/modules.jsx` and are already wired into the labs
+  (`InferenceOptimizer` = the `inference` module in the LLM Lab; `ModelRouter`/`MLCiCd` = `router`/`mlcicd`
+  in the Eval Lab). Not standalone duplicate surfaces — no action needed. Not edited (Systems.jsx content
+  is out of scope per the constraint).
+- **Playground** production-ish labs (Streaming Token Lab, KV Cache, Temperature Lab) — noted, **not
+  touched** (Playground out of scope).
+
+**Decision: canonical production-education home = the LLM Lab** (richer/more interactive — 9 dedicated
+interactive lab components, 3 logic-accurate — vs the thinner MCQ-first Concepts production gym). Same
+shape as Agents (→ Agent Lab) and Evaluation (→ Eval Lab): the Lab dwarfs the Concepts gym, so the
+Concepts production gym **forwards** to the LLM Lab. (Contrast Retrieval, where the Concepts gym was the
+broad curriculum and stayed canonical with no banner.)
+
+**What shipped (low-risk, nothing deleted):**
+- `ProductionHub.jsx` — the "Key Concepts" CTAs (`goConcepts`) now navigate to the LLM Lab
+  (`onNavigate("llmlab")`) instead of the Concepts `production` gym; analytics gains `target: "llmlab"`.
+  Card labels updated to "Open LLM Lab →" / "Open in LLM Lab →". The "The Lab" CTA already routed to
+  the LLM Lab (unchanged).
+- `Concepts.jsx` — the `production` gym room (`gym.id === "production"`) renders a prominent amber
+  **forward banner** above the module list pointing to the LLM Lab (9 modules: serving infra, KV cache,
+  speculative decoding, quantisation, streaming, inference optimisation). The thin modules are **kept
+  below** for deep-link backward-compat. Documented the Agents-vs-Retrieval-vs-Evaluation-vs-Production
+  asymmetry in the banner comment.
+
+**Migration: skipped (noted).** No clean old→new module-id remap exists. The Concepts production ids
+(`cost-latency-concepts, observability-concepts, ...`) do not correspond 1:1 to LLM Lab ids
+(`serving, inference, kvcache, quantization, ...`) — different granularity and topic split (the gym is
+cost/observability/decision-centric; the Lab is serving/inference-engine-centric). Unlike Agents, there
+is nothing safe to remap, so **no** `gsl-production-migrated-v1` flag was added. All `gsl-concepts-mastery`
+production progress stays under its existing ids; the forward banner is additive and non-destructive.
+(The existing Concepts deep-link crosslinks `cost-latency-concepts` → LLM Lab and `observability-concepts`
+→ Systems already route outward — untouched.)
+
+**Preserved:** all routes/hashes (`#production`, `#llmlab`, `#concepts` production gym), every
+localStorage key (`gsl-concepts-mastery`, `gsl-systems-done`, `gsl-preplab-history`), and all existing
+content (LLM Lab + all 9 Concepts production modules + their deep-links).
+
+**Deferred (doc-only):** the triplicated-widget dedupe (Concepts + Playground + Explore) noted under
+Retrieval/Evaluation also applies to production-adjacent widgets (Streaming Token Lab, KV Cache,
+Temperature Lab appear in both the LLM Lab and Playground) — out of scope here. Playground, PrepLab, the
+nav frames, and Systems.jsx content were intentionally **not** touched.
+
+## Phase 0.3 — Foundation Models (executed 2026-07-03)
+Applied the 0.3 pattern to the Foundation-Models surface — the **last** domain of the Phase-0.3
+consolidation. Decided on merit. The structure matches **Retrieval** (Concepts is canonical), **not**
+Agents/Eval/Production (where the Lab was canonical).
+
+**Audited surfaces (precise ids — not to be confused with the KNOW `concepts` nav item, which is the
+whole Concepts app, or the `language-models` gym):**
+- **Concepts "Foundation Models" gym** (`gym.id === "foundation-models"`, `#concepts` FM gym) — **7
+  genuinely-interactive teaching modules**: `pretraining, instruction-tuning, model-families,
+  scaling-laws, rlhf, lora, finetuning-vs-rag`. Each is a dedicated interactive React component
+  (PretrainingModule / RLHFModule / InstructionTuningModule / FinetuningVsRAGModule / ModelFamiliesModule
+  / LoRAModule / ScalingLawsModule) with MCQ + real interactivity (~105 interactivity signals:
+  useState/onClick/inputs across the set). Covers training, alignment (RLHF/DPO), scaling laws, LoRA
+  mechanics, model-family selection, and the fine-tuning-vs-RAG decision framework. This is the
+  teaching curriculum.
+- **Foundation Models Lab** (`FoundationModelsLab.jsx`, route/hash `#foundationlab`, 452 lines) — a
+  **6-scenario config→outcome failure-mode simulator**: LoRA rank collapse, LR/catastrophic forgetting,
+  eval contamination, data volume, objective mismatch, base-model mismatch. Only ~9 interactivity
+  signals — a static-lookup simulator (pick a config → read a pre-written outcome with metrics/rootCause/
+  fix/synthesisClose), no sliders/derived math/canvas. Rich *content*, but complementary to — not a
+  superset of — the Concepts curriculum.
+- **Foundations hub** (`FoundationsHub.jsx`, nav id `foundations`, `#foundations`) — a **pure
+  aggregator** (no unique curriculum): surfaces both labs (FM Lab + Prompt Lab), a training-decision
+  tradeoff card, 4 concept cards (all routing into Concepts), GT posts, and PrepLab questions.
+
+**Decision: canonical foundation-models-education home = the Concepts "Foundation Models" gym.** The
+Concepts gym is the broad, genuinely-interactive curriculum (7 modules); the FM Lab is a *complementary
+failure-mode simulator*, not a thin duplicate — exactly the Retrieval situation (Concepts canonical, RAG
+Lab complementary), and the opposite of Agents/Eval/Production (where the Lab dwarfed the gym and the gym
+forwarded). Therefore Foundation Models takes the **no-forward** branch: **both surfaces stay, no banner.**
+
+**What shipped (low-risk, nothing deleted):**
+- `Concepts.jsx` — added a Phase 0.3 documentary NOTE in `GymRoomView` (next to the Retrieval note)
+  recording that the `foundation-models` gym intentionally gets **NO** forward banner and why. No banner
+  code added for this gym — the gym renders as-is with its 7 modules. (Note: the gym's existing
+  `labId: "llmlab"` field is a pre-existing "apply-in-the-lab" pointer and was left untouched — it is
+  not a forward banner.)
+- `FoundationsHub.jsx` — added a Phase 0.3 marker comment on `goConcepts`; the hub's learn CTAs
+  ("Key Concepts → All Concepts", and every concept card) already route cleanly to the canonical Concepts
+  `foundation-models` gym via `goConcepts("foundation-models")`. The FM Lab stays surfaced as the
+  complementary simulator card (unchanged). No CTA re-pointing was needed — unlike ProductionHub, where
+  `goConcepts` had to be redirected to the Lab.
+
+**Migration: skipped (noted).** No old→new module-id remap exists — nothing was renamed or moved; the
+7 Concepts FM module ids are unchanged and the FM Lab keeps its own scenario ids. No
+`gsl-foundations-migrated-v1` flag was added (there is nothing to migrate). All `gsl-concepts-mastery`
+foundation-models progress stays under its existing ids.
+
+**Preserved:** all routes/hashes (`#foundations`, `#foundationlab`, `#concepts` FM gym), every
+localStorage key (`gsl-concepts-mastery`, `gsl-preplab-history`), the KNOW `concepts` nav item and the
+`language-models` gym (untouched), and all existing content (FM Lab + all 7 Concepts FM modules).
+
+**Deferred (doc-only):** the triplicated-widget dedupe noted under Retrieval/Evaluation/Production also
+touches FM-adjacent widgets — out of scope here. Playground, PrepLab, and the nav frames were
+intentionally **not** touched.
+
+---
+
+**Phase 0.3 complete — 5 domains consolidated (Agents/Eval/Production → their Labs (forward banner);
+Retrieval/Foundations → Concepts canonical (complementary Lab, no banner), per per-domain merit audit).**

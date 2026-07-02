@@ -102,7 +102,10 @@ export default function ProductionHub({ onNavigate, onNavigateTo }) {
   const COLOR = "#22c55e";
 
   function goGT(postId) { track("prod_hub_gt", { postId }); if (onNavigateTo) onNavigateTo({ tab: "groundtruth", postId }); else onNavigate("groundtruth"); }
-  function goConcepts(gymId) { track("prod_hub_concepts", { gymId }); if (onNavigateTo) onNavigateTo({ tab: "concepts", gymId }); else onNavigate("concepts"); }
+  // Phase 0.3 (Production): the LLM Lab is the canonical production-education home (richer/more
+  // interactive than the thin Concepts production gym). Like AgentsHub/EvaluationHub, the hub's
+  // learn CTAs point at the canonical Lab rather than the Concepts gym they used to open.
+  function goConcepts(gymId) { track("prod_hub_concepts", { gymId, target: "llmlab" }); onNavigate("llmlab"); }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-14">
@@ -156,7 +159,7 @@ export default function ProductionHub({ onNavigate, onNavigateTo }) {
       <div>
         <div className="flex items-center justify-between mb-4">
           <SectionLabel>Key Concepts</SectionLabel>
-          <button onClick={() => goConcepts("production")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">All Concepts →</button>
+          <button onClick={() => goConcepts("production")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">Open LLM Lab →</button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {CONCEPTS.map(c => (
@@ -168,7 +171,7 @@ export default function ProductionHub({ onNavigate, onNavigateTo }) {
                 <span className="text-[9px] font-mono shrink-0 px-1.5 py-0.5 rounded" style={{ color: c.fidelityColor, background: c.fidelityColor + "15", border: `1px solid ${c.fidelityColor}30` }}>{c.fidelity}</span>
               </div>
               <p className="text-xs text-zinc-400 leading-relaxed">{c.desc}</p>
-              <span className="mt-2 text-[11px] font-bold text-violet-400 block">Open in Concepts →</span>
+              <span className="mt-2 text-[11px] font-bold text-violet-400 block">Open in LLM Lab →</span>
             </button>
           ))}
         </div>

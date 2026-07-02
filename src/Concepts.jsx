@@ -11625,7 +11625,42 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
 
       {/* ── Phase 0.3 pilot: forward to the canonical Agent Lab (richer surface). ──
            Thin modules below are kept for deep-link backward-compat; this banner points
-           users to the deeper interactive home. */}
+           users to the deeper interactive home.
+           NOTE (Phase 0.3 — Retrieval): the "retrieval" gym intentionally gets NO forward banner.
+           Concepts IS the canonical retrieval-education home (5 structured modules: embeddings →
+           chunking → rag-pipeline → context → reranking, each MCQ + interactive). The RAG Lab is a
+           complementary failure-mode simulator, not a thin duplicate — so no forwarding here.
+           NOTE (Phase 0.3 — Foundation Models, executed 2026-07-03): the "foundation-models" gym also
+           gets NO forward banner (decided on merit, Retrieval-style — NOT Agents/Eval/Production).
+           Concepts IS the canonical foundation-models teaching home: 7 genuinely-interactive modules
+           (pretraining, instruction-tuning, model-families, scaling-laws, rlhf/dpo, lora,
+           finetuning-vs-rag). The Foundation Models Lab (#foundationlab, 6 config→outcome scenarios:
+           LoRA rank collapse, LR/catastrophic forgetting, eval contamination, data volume, objective
+           mismatch, base-model mismatch) is a COMPLEMENTARY failure-mode simulator, not a thin
+           duplicate — so both surfaces stay and no forwarding here.
+           NOTE (Phase 0.3 — Evaluation): the "evaluation" gym DOES forward (like Agents). The Eval
+           Lab is the richer surface (15 interactive lab modules: EvalsLab, EvalFrameworks, EvalMetrics,
+           LLM-judge/calibration, Observability, A/B testing, ML CI/CD, Incident Room, Debug Traces,
+           LangSmith, Traps Lab, ...) vs the thinner 5-module Concepts eval gym. */}
+      {gym.id === "evaluation" && (
+        <div className="rounded-xl p-4 flex items-start gap-3"
+          style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.35)", borderLeft: "3px solid rgba(245,158,11,0.75)" }}>
+          <span className="text-amber-400 mt-0.5 shrink-0"><Icon name="alert-triangle" size={16} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm text-zinc-200 leading-relaxed">
+              Evaluation has a deeper, interactive home — the <span className="font-bold text-white">Eval Lab</span>{" "}
+              (15 modules: LLM-as-judge, RAGAS metrics, calibration, observability, A/B testing, incident room, debug traces). The concepts below are a quick primer.
+            </p>
+            <button
+              onClick={() => onNavigate("evallab")}
+              className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:opacity-80"
+              style={{ color: "#f59e0b", borderColor: "rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.06)" }}
+            >
+              Open the Eval Lab →
+            </button>
+          </div>
+        </div>
+      )}
       {gym.id === "ai-agents" && (
         <div className="rounded-xl p-4 flex items-start gap-3"
           style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.35)", borderLeft: "3px solid rgba(245,158,11,0.75)" }}>
@@ -11641,6 +11676,32 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
               style={{ color: "#f59e0b", borderColor: "rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.06)" }}
             >
               Open the Agent Lab →
+            </button>
+          </div>
+        </div>
+      )}
+      {/* NOTE (Phase 0.3 — Production): the "production" gym DOES forward (like Agents + Evaluation).
+          The LLM Lab is the richer surface — 9 dedicated interactive lab components (ServingInfra,
+          InferenceOptimizer, KVCacheEngineering, SpeculativeDecoding, QuantizationEngineering,
+          StreamingPatterns, DecodingStrategiesLab, MoEArchitecture, ReasoningModelsLab); serving/
+          decoding/inference are logic-accurate (real derived outcomes) — vs the thinner 9-module
+          Concepts production gym (MCQ + light interactives). The thin modules stay below for
+          deep-link backward-compat. */}
+      {gym.id === "production" && (
+        <div className="rounded-xl p-4 flex items-start gap-3"
+          style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.35)", borderLeft: "3px solid rgba(245,158,11,0.75)" }}>
+          <span className="text-amber-400 mt-0.5 shrink-0"><Icon name="alert-triangle" size={16} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm text-zinc-200 leading-relaxed">
+              Production has a deeper, interactive home — the <span className="font-bold text-white">LLM Lab</span>{" "}
+              (9 modules: serving infrastructure, KV cache, speculative decoding, quantisation, streaming, inference optimisation). The concepts below are a quick primer.
+            </p>
+            <button
+              onClick={() => onNavigate("llmlab")}
+              className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:opacity-80"
+              style={{ color: "#f59e0b", borderColor: "rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.06)" }}
+            >
+              Open the LLM Lab →
             </button>
           </div>
         </div>

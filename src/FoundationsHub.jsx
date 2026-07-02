@@ -91,6 +91,12 @@ export default function FoundationsHub({ onNavigate, onNavigateTo }) {
   const COLOR = "#3b82f6";
 
   function goGT(postId) { track("foundations_hub_gt", { postId }); if (onNavigateTo) onNavigateTo({ tab: "groundtruth", postId }); else onNavigate("groundtruth"); }
+  // Phase 0.3 (Foundation Models — executed 2026-07-03): decided on MERIT like Retrieval, NOT like
+  // Agents/Eval/Production. The Concepts "foundation-models" gym is the canonical teaching home —
+  // 7 genuinely-interactive modules (pretraining, instruction-tuning, model-families, scaling-laws,
+  // rlhf/dpo, lora, finetuning-vs-rag). The Foundation Models Lab is a COMPLEMENTARY failure-mode
+  // simulator (6 config→outcome scenarios), not a thin duplicate — so both surfaces stay, no forward
+  // banner in the gym. This hub's learn CTAs therefore point at the canonical Concepts gym (below).
   function goConcepts(gymId) { track("foundations_hub_concepts", { gymId }); if (onNavigateTo) onNavigateTo({ tab: "concepts", gymId }); else onNavigate("concepts"); }
 
   return (

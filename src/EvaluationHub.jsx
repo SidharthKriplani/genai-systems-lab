@@ -103,7 +103,10 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
   const [readiness] = useState(() => getAreaReadiness("evaluation"));
 
   function goGT(postId) { track("eval_hub_gt", { postId }); if (onNavigateTo) onNavigateTo({ tab: "groundtruth", postId }); else onNavigate("groundtruth"); }
-  function goConcepts(gymId) { track("eval_hub_concepts", { gymId }); if (onNavigateTo) onNavigateTo({ tab: "concepts", gymId }); else onNavigate("concepts"); }
+  // Phase 0.3 — Evaluation: eval education is canonically the Eval Lab (richer surface: 15
+  // interactive lab modules). Send the hub's "Concepts" CTAs to the Eval Lab instead of the
+  // thinner Concepts "evaluation" gym (mirrors the Agents pilot).
+  function goConcepts(gymId) { track("eval_hub_concepts", { gymId, target: "evallab" }); onNavigate("evallab"); }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-14">
@@ -163,7 +166,7 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
       <div>
         <div className="flex items-center justify-between mb-4">
           <SectionLabel>Key Concepts</SectionLabel>
-          <button onClick={() => goConcepts("evaluation")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">All Concepts →</button>
+          <button onClick={() => goConcepts("evaluation")} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">Open Eval Lab →</button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {CONCEPTS.map(c => (
@@ -175,7 +178,7 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
                 <span className="text-[9px] font-mono shrink-0 px-1.5 py-0.5 rounded" style={{ color: c.fidelityColor, background: c.fidelityColor + "15", border: `1px solid ${c.fidelityColor}30` }}>{c.fidelity}</span>
               </div>
               <p className="text-xs text-zinc-400 leading-relaxed">{c.desc}</p>
-              <span className="mt-2 text-[11px] font-bold text-violet-400 block">Open in Concepts →</span>
+              <span className="mt-2 text-[11px] font-bold text-violet-400 block">Open in Eval Lab →</span>
             </button>
           ))}
         </div>
