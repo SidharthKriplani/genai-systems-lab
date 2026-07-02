@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { POSTS } from "./groundTruthIndex";
+import { POSTS } from "../groundTruthIndex";
 
 // ─── KNOWLEDGE BASE ────────────────────────────────────────────────────────────
 

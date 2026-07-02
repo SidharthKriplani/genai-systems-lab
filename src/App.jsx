@@ -4,7 +4,6 @@ import { ALL_TABS, GROUP_COLORS } from "./config/nav";
 import { FidelityBadge } from "./shared";
 import { BrandMark } from "./BrandMark";
 import GateOverlay from "./GateOverlay";
-import WarRoom from "./WarRoom";
 import OnboardingModal, { hasCompletedOnboarding } from "./OnboardingModal";
 import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
@@ -29,7 +28,6 @@ const PlaygroundApp  = lazy(() => import("./Playground"));
 const CareerApp      = lazy(() => import("./Career"));
 const ExploreApp     = lazy(() => import("./Explore"));
 const AgentsApp      = lazy(() => import("./Agents"));
-const ConsultationApp = lazy(() => import("./Consultation"));
 const PrepLabApp      = lazy(() => import("./PrepLab"));
 const LearningPathsApp = lazy(() => import("./LearningPaths"));
 // PromptLab retired — redirects to Playground via HASH_REDIRECTS
@@ -280,7 +278,6 @@ const NAV_SECTIONS = [
     // de-listed 2026-06-24 (overlap pass, Wave 1) — reachable by hash. Re-add to restore.
     // { id: "flows", label: "Flows" },
     // { id: "explore", label: "Explore" },
-    // { id: "consult", label: "Ask" },
   ]},
   { key: "do", label: "DO", icon: "terminal", items: [
     { id: "playground", label: "Playground" },
@@ -322,14 +319,14 @@ const TAB_FRAME = (() => {
   for (const s of NAV_SECTIONS) for (const it of s.items) if (!it.href && !it.soon) m[it.id] = s.key;
   m.agentlab = "judge"; m.agentshub = "judge"; m.evaluation = "judge"; m.retrieval = "know"; m.production = "judge"; m.foundations = "know";
   // de-listed-but-routable (Wave 1): keep frame mapping so hash-reached tabs still auto-expand the right frame.
-  m.lab = "judge"; m.evallab = "judge"; m.llmlab = "judge"; m.foundationlab = "judge"; m.flows = "know"; m.explore = "know"; m.consult = "know";
+  m.lab = "judge"; m.evallab = "judge"; m.llmlab = "judge"; m.foundationlab = "judge"; m.flows = "know"; m.explore = "know";
   // sprint 92: dissolved tabs still map to know frame for graceful redirect.
   m.starthere = "know"; m.paths = "know"; m.systems = "judge";
   return m;
 })();
 
 // Sprint 92: dead routes that redirect to Foundations (KNOW). #systems kept alive — still used as deep-reference target.
-const HASH_REDIRECTS = { paths: "concepts", promptlab: "playground" };
+const HASH_REDIRECTS = { paths: "concepts", promptlab: "playground", consult: "home", warroom: "home" };
 
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
@@ -1089,7 +1086,7 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","starthere","concepts","flows","consult","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks"];
+const VALID_VIEWS = ["home","starthere","concepts","flows","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
@@ -1184,46 +1181,10 @@ function WelcomeModal({ onSelect }) {
 export default function App() {
   const [user, setUser] = useState(null);
   const [topView, setTopView] = useState(getInitialView);
-  const [warRoomOpen, setWarRoomOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return !localStorage.getItem("genai_welcomed"); } catch { return true; }
   });
-
-  // Secret key sequence: type "business2026" while in any BUILD-group tab
-  // Refs pattern: listener registered once, reads current topView via ref — no stale closure
-  const topViewRef = useRef(topView);
-  useEffect(() => { topViewRef.current = topView; }, [topView]);
-  const warRoomOpenRef = useRef(false);
-  const seqBuf = useRef("");
-  useEffect(() => {
-    const BUILD_TABS = new Set(["lab", "agentlab", "evallab", "llmlab", "agents", "playground", "explore", "systems"]);
-    const SEQ = "business2026";
-    function onKeyDown(e) {
-      if (warRoomOpenRef.current) return;
-      if (!BUILD_TABS.has(topViewRef.current)) { seqBuf.current = ""; return; }
-      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
-      const candidate = seqBuf.current + e.key;
-      if (SEQ.startsWith(candidate)) {
-        // Key continues the sequence — absorb it to prevent shortcut conflicts
-        if (candidate.length > 1) {
-          e.stopImmediatePropagation();
-          e.preventDefault();
-        }
-        seqBuf.current = candidate;
-        if (seqBuf.current === SEQ) {
-          warRoomOpenRef.current = true;
-          setWarRoomOpen(true);
-          seqBuf.current = "";
-        }
-      } else {
-        // Mistype — reset, but keep key if it starts a fresh attempt
-        seqBuf.current = SEQ.startsWith(e.key) ? e.key : "";
-      }
-    }
-    window.addEventListener("keydown", onKeyDown, { capture: true });
-    return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function dismissWelcome(goal) {
     try { localStorage.setItem("genai_welcomed", "true"); } catch {}
@@ -1390,7 +1351,7 @@ export default function App() {
       localStorage.setItem("genai_streak", JSON.stringify({ count, lastVisit: today }));
     } catch {}
   }, []);
-  const SHORTCUT_TABS = ["home","lab","agentlab","evallab","llmlab","preplab","career","aipm","groundtruth","systems","agents","explore","playground","concepts","flows","consult"];
+  const SHORTCUT_TABS = ["home","lab","agentlab","evallab","llmlab","preplab","career","aipm","groundtruth","systems","agents","explore","playground","concepts","flows"];
 
   function navigateTo({ tab, moduleId, postId, topic, mode, diff, gymId, pathContext }) {
     if (moduleId) {
@@ -1505,7 +1466,6 @@ export default function App() {
       home: "GenAI Systems Lab",
       concepts: "Concepts — GenAI Systems Lab",
       flows: "Flows — GenAI Systems Lab",
-      consult: "Search — GenAI Systems Lab",
       lab: "RAG Lab — GenAI Systems Lab",
       agents: "Agents Lab — GenAI Systems Lab",
       agentlab: "Agent Lab — GenAI Systems Lab",
@@ -2016,7 +1976,6 @@ export default function App() {
             <>
           {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} initialGym={conceptsGym} />}
           {topView === "flows"      && <FlowsApp onNavigate={navigateTo} />}
-          {topView === "consult"    && <ConsultationApp onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "agentlab"   && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "evallab"    && <SystemsApp allowedModules={EVAL_LAB_MODULES} labTitle="Eval Lab" labSubtitle="Evaluation, observability & ops strategy" suggestedStart="evals" suggestedLabel="Evals Lab" suggestedNote="knowing how to measure is the skill every other module depends on" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
@@ -2514,9 +2473,6 @@ export default function App() {
           onNavigate={navigateTo}
         />
       )}
-
-      {/* War Room — secret overlay, triggered by typing "business2026" in any BUILD tab */}
-      {warRoomOpen && <WarRoom onClose={() => { warRoomOpenRef.current = false; setWarRoomOpen(false); }} />}
 
       {/* QA corner link — fixed bottom-left, subtle but findable */}
       {topView !== "qa" && (

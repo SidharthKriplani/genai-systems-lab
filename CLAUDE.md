@@ -641,3 +641,86 @@ For full audit findings see AUDITS.md.
 **Sprints 37c–41** — see LINEAGE.md for detail. Key: GT state-aware reading mode, RAG Lab static corpus, 10 new PrepLab questions + sibling codebase analysis (39), shared components + streak heatmap + FeedbackBar + multi-select MCQ + CommonTrap expansion + AgentContextArch module (40), 7 new Concepts modules + 4 gyms activated + Prompt Lab (41).
 
 *Sprints 1–37: see docs/archive/HISTORY.md*
+
+---
+
+## Concepts.jsx — 5 rebuilt modules (PUSH PENDING, as of 2026-07-01)
+
+File: `src/Concepts.jsx`
+Modules rebuilt to 3x patience standard: AgentPlanning, InstructionTuning, FinetuningVsRAG, SystemPrompts, StructuredOutputs.
+
+Push command (run on Mac):
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/Concepts.jsx && \
+git commit -m "Rebuild 5 thin interactive modules: AgentPlanning, InstructionTuning, FinetuningVsRAG, SystemPrompts, StructuredOutputs — 3x patience standard" && \
+git push origin main
+```
+
+---
+
+## foundationsRunnerData.js — S-tier gap fixes needed (as of 2026-07-01)
+
+File: `src/data/foundationsRunnerData.js` — NOT edited yet.
+Target: all 14 S-tier modules to 9.5/10. Gaps confirmed per module:
+
+**`llm-as-judge` (5→9.5):** pairwise vs pointwise, self-enhancement bias, mechanistic WHY for position bias, rubric design, G-eval/MT-bench reference, calibration mechanism. Add 1 MCQ: pairwise vs pointwise.
+
+**`sampling` (6→9.5):** repetition penalty (mechanism: multiply repeated token logits by 1/penalty before softmax), beam search (what + WHY not for LLMs — memory scales with beam width × seq len), min-p, length penalty, causal derivation of top-k failure. Add 1 MCQ: repetition penalty.
+
+**`instruction-tuning` (6→9.5):** show actual training pair format (Alpaca/ChatML/Llama3 template), chat templates WHY (models trained on specific delimiters fail without them), data quality > quantity axis, multi-turn failure mode. Add 1 MCQ: data format/chat template.
+
+**`finetuning-vs-rag` (7→9.5):** both-together pattern, update frequency as decision axis, inference overhead axis (RAG adds latency, SFT adds zero), "neither" case (prompting sufficient).
+
+**`rag-pipeline` (7→9.5):** query rewriting (WHY raw queries fail — vocabulary mismatch), context precision/recall as eval metrics, iterative/agentic retrieval, full pipeline causal chain (query → rewrite → retrieve → rerank → generate → cite).
+
+**`embeddings` (7→9.5):** L2 normalization → cosine equivalence, MTEB benchmark, ColBERT/late interaction (token-level vs sentence-level), Matryoshka embeddings, dim tradeoff (larger = better recall, higher storage/compute).
+
+**`transformer` (8→9.5):** pre-LN vs post-LN (WHY pre-LN trains more stably), encoder-decoder arch (when vs decoder-only), WHY FFN is 4× hidden dim.
+
+**`rlhf` (8→9.5):** KL penalty mechanism (WHY — prevents reward hacking/model collapse), DPO (log-ratio of preferred/rejected, no separate reward model), alignment tax.
+
+**`kv-cache` (8→9.5):** prefix caching (system prompt cached once, shared across requests), sink tokens causal explanation (WHY first tokens get high attention — positional anchor), 1M context impossibility math (2 × layers × heads × head_dim × bytes × seq_len).
+
+**`lora` (8→9.5):** adapter merging (W = W0 + BA merged at inference → zero overhead — most-tested LoRA fact), alpha/r scaling (effective LR = alpha/r × optimizer LR), layer selection reasoning (attention projection layers targeted).
+
+**`scaling-laws` (8→9.5):** emergent abilities (discontinuous capabilities at scale thresholds), data quality scaling (Phi-2/Mistral: smaller models beating larger via better data).
+
+**`chain-of-thought` (8→9.5):** when CoT hurts (simple arithmetic, reasoning as distraction), CoT faithfulness problem (stated reasoning ≠ actual computation), Tree-of-Thought.
+
+**`hallucination` (8→9.5):** intrinsic vs extrinsic taxonomy (intrinsic = contradicts source, extrinsic = not verifiable), lost-in-the-middle effect.
+
+**`attention` (9→9.5):** multi-head mechanism WHY (different heads attend to different relationship types), how outputs combined (concatenate → linear projection), cross-attention (Q from decoder, K/V from encoder).
+
+---
+
+## GSL tier reference — all 63 module IDs
+
+**S-tier (14) — every LLM interview:**
+attention, transformer, kv-cache, lora, rlhf, sampling, instruction-tuning, finetuning-vs-rag, rag-pipeline, embeddings, hallucination, chain-of-thought, scaling-laws, llm-as-judge
+
+**A-tier (15) — senior/staff interviews:**
+tokenizer, agent-planning, structured-outputs, system-prompts, context, chunking, reranking, vector-db-index-mechanics, eval-loop, eval-design, prompt-security, alignment-techniques, agent-tools, pretraining, multiagent
+
+**B-tier (34) — specialized/nice-to-know:**
+seq-parallel, positional-encoding, training-signal, nextoken, tempgame,
+agent, guardrails, agent-tracing, agent-memory,
+debug, rag-eval,
+cost-latency-concepts, flashattn, latency-planner, observability-concepts, prompt-regression-signals, quality-drift, cost-attribution, managed-vs-selfhosted, enterprise-ai-cost-model,
+model-families, zero-shot, few-shot,
+hybrid-search-design, metadata-filtering, pgvector-vs-managed, vector-migration-patterns,
+vision-language-arch, multimodal-rag, resolution-token-cost, ocr-pipeline-design,
+red-teaming, jailbreak-taxonomy, safety-measurement
+
+**Gym → module mapping:**
+- Language Models: seq-parallel, tokenizer, attention, positional-encoding, transformer, training-signal, nextoken, sampling, tempgame, hallucination, kv-cache
+- Retrieval: embeddings, chunking, rag-pipeline, context, reranking
+- AI Agents: agent, agent-tools, guardrails, agent-tracing, agent-memory, agent-planning, multiagent
+- Evaluation: eval-loop, eval-design, debug, llm-as-judge, rag-eval
+- Production Systems: cost-latency-concepts, flashattn, latency-planner, observability-concepts, prompt-regression-signals, quality-drift, cost-attribution, managed-vs-selfhosted, enterprise-ai-cost-model
+- Foundation Models: pretraining, instruction-tuning, model-families, scaling-laws, rlhf, lora, finetuning-vs-rag
+- Prompt Engineering: zero-shot, few-shot, chain-of-thought, system-prompts, structured-outputs, prompt-security
+- Vector Infrastructure: vector-db-index-mechanics, hybrid-search-design, metadata-filtering, pgvector-vs-managed, vector-migration-patterns
+- Multimodal AI: vision-language-arch, multimodal-rag, resolution-token-cost, ocr-pipeline-design
+- AI Safety & Alignment: alignment-techniques, red-teaming, jailbreak-taxonomy, safety-measurement
