@@ -226,10 +226,14 @@ Concepts, cut the tools) · `MLCiCd` (DevOps) · `SalaryCalculator` + Career ›
 tools may be intentional differentiators — confirm before archiving.
 
 ## Reconcile the assessment layer → ONE
-`readiness.js` stays the engine. PrepLab becomes the single assessment home (Exam · Trainer/spaced-rep ·
-Sprint · Company · JD-gap · Browse · Review). Fluency's Readiness Check → a lightweight "quick
-diagnostic" entry to the PrepLab exam (or absorbed). StudyRoom + QADashboard retired into PrepLab.
-Add the MSL Review-room spaced-rep + capped-breadth readiness + "work next".
+`readiness.js` stays the engine. PrepLab is the single assessment home (Exam · Trainer/spaced-rep ·
+Sprint · Company · JD-gap · Browse · Review). Add the MSL Review-room spaced-rep + capped-breadth
+readiness + "work next" (additive, Phase 2).
+**CORRECTION (Phase 0.2 investigation, 2026-07-03):** StudyRoom + QADashboard are NOT user-facing
+clutter — StudyRoom is the OWNER's private, email-gated spaced-rep room (keep); QADashboard is a
+hidden internal QA/beta console (keep). Do NOT retire them. Fluency's Readiness Check (20-Q quick
+self-test) and PrepLab's Exam (full timed) are two valid distinct tools — keep both, just label the
+relationship (PrepLab = the assessment; Fluency check = quick diagnostic). No cuts in 0.2.
 
 ## Pick the canonical interactive home per widget
 Rule: **the concept module owns the canonical viz**; Playground hosts the *experiment/lab* version.
