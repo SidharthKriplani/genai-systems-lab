@@ -171,9 +171,13 @@ export default function SpeakMode() {
       recognition.lang = "en-US";
 
       recognition.onresult = (event) => {
+        // Start at event.resultIndex so only NEW results are processed. With
+        // continuous=true, event.results accumulates the whole session; looping
+        // from 0 would re-append every finalized result on every event (runaway
+        // duplication). resultIndex points at the first result changed this event.
         let interim = "";
         let finalText = "";
-        for (let i = 0; i < event.results.length; i++) {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
           if (result.isFinal) {
             finalText += result[0].transcript + " ";
