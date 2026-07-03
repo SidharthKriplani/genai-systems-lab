@@ -1,0 +1,295 @@
+// Agent-topic RUNNER_DATA — ECOSYSTEM group. Keep export name RUNNER_AGENT_ECO.
+export const RUNNER_AGENT_ECO = {
+  "agent-frameworks": {
+    depthTier: "core",
+    interviewWeight: "high",
+    scenario: "You inherit a prototype: 200 lines of Python that call the model, parse a tool call, run it, and loop — a hand-rolled ReAct agent. It works for the demo. Leadership now wants five agents that hand off to each other, retry on failure, resume after a crash, and stream traces to a dashboard. An engineer proposes rewriting everything on LangGraph; another says frameworks are 'lock-in' and you should keep hand-rolling. You have to decide what a framework actually buys you here — and where it costs you.",
+    explanation: [
+      "Strip an agent framework to its core and the thing it wraps is embarrassingly small: **an agent is a while-loop around a model call**. Send messages to the model; if it emits a tool call, execute the tool and append the result; if it emits a final answer, stop. That loop is ~30 lines. Everything a framework adds sits *around* that loop, not inside it — which is exactly why the 'just hand-roll it' argument is seductive and also why it stops being true past a certain complexity.\n\nThe useful question is never 'framework or no framework' in the abstract. It is: ==which of the surrounding concerns does this system actually have, and is a framework's abstraction of them worth the abstraction's cost?==",
+      "Frameworks in this space are **not interchangeable — they operate at different layers of the stack**, which is the single most common point of confusion (and interview trap). Naming them together as if they compete is a category error:\n\n**Orchestration** (LangGraph, AutoGen) — control flow across multiple steps or agents: state that persists between nodes, conditional edges, cycles, human-in-the-loop interrupts, checkpoint/resume. This is the layer you reach for when the *shape of the computation* is the hard part.\n\n**Tool/chain abstraction** (LangChain) — glue for wiring models, prompts, retrievers, and tools into reusable components. Solves 'I keep re-writing the same RAG plumbing.'\n\n**Runtime / batteries-included agents** (OpenAI Agents SDK, Google ADK, CrewAI) — an opinionated agent loop with tool-calling, handoffs, and guardrails already wired, tuned for one model family (OpenAI, Gemini) or one mental model (CrewAI's role-playing crews).\n\n**Observability** (LangSmith) — tracing, eval, and replay. Orthogonal to all of the above; it watches whatever loop you run.",
+      "So what does a framework abstract *away*? Concretely: **the state machine, the retry/error semantics, the persistence layer, and the streaming/trace plumbing** — the boring, bug-prone code that is identical across agents and easy to get subtly wrong. LangGraph's whole pitch is modeling the agent as an explicit graph of nodes with a typed shared `state`, so 'pause for human approval, then resume from exactly here after a crash' becomes a checkpointer config instead of a hand-built durable state machine.\n\n==The value scales with control-flow complexity, not with 'is it an agent.'== A single linear tool-calling agent gets almost nothing from LangGraph and pays real complexity for it. A five-agent system with handoffs, retries, and resume-after-crash gets a great deal — hand-rolling that correctly is a multi-week project of exactly the code the framework already hardened.",
+      { type: "illustration", label: "The loop is small; the framework wraps what surrounds it", content: `THE AGENT (what you'd hand-roll — ~30 lines):
+  while not done:
+      resp = model(messages)              # 1. think
+      if resp.tool_calls:
+          for call in resp.tool_calls:
+              result = run_tool(call)      # 2. act
+              messages.append(result)      # 3. observe
+      else:
+          done = True                      # 4. stop
+
+WHAT A FRAMEWORK ADDS AROUND IT (the expensive part):
+  • state machine ...... typed shared state across nodes/agents
+  • control flow ....... conditional edges, cycles, parallel branches
+  • persistence ........ checkpoint after each step -> resume after crash
+  • human-in-loop ...... interrupt(), wait for approval, resume
+  • retries/errors ..... per-step retry budgets, error routing edges
+  • handoffs ........... agent A delegates to agent B with shared context
+  • streaming/traces ... token + step streaming, LangSmith spans
+
+Rule of thumb:
+  linear single agent, 1-5 tools  -> hand-roll (framework = pure overhead)
+  multi-step / multi-agent / resume/HITL -> framework earns its cost` },
+      "The costs are real and worth naming precisely, because 'lock-in' is used too loosely. **Debuggability** is the sharpest one: a hand-rolled loop is a stack trace you can read top to bottom. A heavy framework can bury the actual control flow under abstraction layers, so when an agent misbehaves you are debugging *the framework's* execution model, not your code — this is the single most common real complaint about LangChain/LangGraph in production.\n\n**Lock-in** is concrete, not vibes: the more your business logic is expressed *as* framework primitives (nodes, edges, chains, crews), the more a migration is a rewrite, not a swap. **Model-coupling** is a specific sub-case: OpenAI Agents SDK and Google ADK are tuned to one provider — great until you need a second model family. And **version churn** is a genuine tax: these are young, fast-moving libraries whose APIs break between minor versions.",
+      "The senior move is to pick by the *shape of the problem*, and the Framework Landscape interactive above lets you pressure-test that against a real use case rather than a benchmark. The heuristics worth internalizing:\n\n**Reach for orchestration (LangGraph/AutoGen)** when control flow is the hard part — multi-agent handoffs, cycles, resume-after-crash, human approval gates. **Reach for a runtime SDK (OpenAI/ADK/CrewAI)** when you want a batteries-included loop fast and are comfortable inside one model family or one paradigm. **Add LangSmith regardless** — observability is orthogonal and you want traces the moment anything is non-trivial. **Hand-roll** when the loop is genuinely linear and you value a readable stack trace over saved plumbing.\n\n==The interview-grade answer is never 'always use X.' It is: name the surrounding concerns this system has, map each to the layer that owns it, and justify the abstraction cost.==",
+    ],
+    keyPoints: [
+      "**An agent is a while-loop around a model call (~30 lines); frameworks wrap what *surrounds* the loop** — the state machine, persistence, retries, handoffs, and trace plumbing. The value scales with control-flow complexity, not with 'is it an agent.'",
+      "**These tools operate at different layers, not in competition.** Orchestration (LangGraph, AutoGen) = control flow; tool/chain glue (LangChain) = RAG/tool plumbing; runtime SDKs (OpenAI Agents SDK, ADK, CrewAI) = batteries-included loop; observability (LangSmith) = tracing. Naming them as rivals is a category error.",
+      "**Frameworks earn their cost when the *shape of the computation* is hard** — multi-agent handoffs, cycles, human-in-the-loop, resume-after-crash. A linear single-tool agent gets almost nothing from LangGraph and pays real complexity for it.",
+      "**Debuggability is the sharpest cost:** a hand-rolled loop is a readable stack trace; a heavy framework makes you debug *its* execution model. This is the #1 real production complaint about LangChain/LangGraph.",
+      "**Lock-in is concrete, not vibes:** the more your logic is expressed *as* framework primitives (nodes/edges/chains/crews), the more migration is a rewrite. Model-coupling (OpenAI SDK, ADK tied to one provider) and version churn are specific sub-costs.",
+      "**Pick by the shape of the problem:** orchestration for complex control flow, a runtime SDK for a fast batteries-included loop in one model family, LangSmith for observability regardless, hand-roll when the loop is genuinely linear.",
+    ],
+    recap: [
+      "**The agent is small; the framework wraps what surrounds it** — state machine, persistence, retries, handoffs, traces. Value scales with control-flow complexity, not with 'is it an agent.'",
+      "**Different layers, not rivals:** LangGraph/AutoGen = orchestration, LangChain = tool/chain glue, OpenAI SDK/ADK/CrewAI = runtime, LangSmith = observability.",
+      "**Framework earns its cost** on multi-agent handoffs, cycles, HITL, resume-after-crash; **hand-roll** a linear single-tool loop.",
+      "**Costs:** debuggability (you debug the framework's execution model), lock-in (logic-as-primitives = rewrite to migrate), model-coupling (OpenAI SDK/ADK), version churn.",
+      "**Interview answer is never 'always use X'** — name the surrounding concerns, map each to the layer that owns it, justify the abstraction cost.",
+    ],
+    mcqs: [
+      {
+        question: "A teammate argues 'LangGraph, LangChain, and LangSmith all do the same thing — pick one.' What is the most accurate correction?",
+        options: [
+          "They are identical libraries; LangGraph is just the newer rebrand of LangChain, so pick the newest",
+          "They operate at different layers: LangGraph is orchestration (control flow/state), LangChain is tool/chain glue, LangSmith is observability (tracing/eval) — they compose rather than compete",
+          "They all compete head-to-head; LangSmith is strictly the best because it is the most mature, so always choose it",
+          "They differ only in which LLM provider they support, so the choice is purely about which model you use",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the three tools sit at distinct layers of the agent stack. LangGraph models control flow and shared state (orchestration), LangChain provides reusable model/prompt/tool/retriever glue, and LangSmith adds tracing, eval, and replay (observability) — you commonly run all three together, so they compose rather than compete. Option A is wrong because LangGraph is not a rebrand of LangChain; it is a separate orchestration layer that can use LangChain components. Option C is wrong because LangSmith is observability, orthogonal to orchestration and glue — it is not a substitute for either, so 'always choose it' is a category error. Option D is wrong because these three are largely LLM-agnostic; provider coupling is a property of runtime SDKs like OpenAI Agents SDK and Google ADK, not of this trio.",
+      },
+      {
+        question: "You have a single linear agent that calls 2–3 tools in sequence and returns an answer — no handoffs, no resume, no approval gates. An engineer wants to build it on LangGraph 'to be production-grade.' What is the strongest objection?",
+        options: [
+          "LangGraph cannot express linear flows, so it literally will not run this agent",
+          "The framework's value scales with control-flow complexity; a linear single-agent loop gets almost nothing from LangGraph while paying real costs — worse debuggability (you debug the framework's execution model) and lock-in — so a hand-rolled loop is likely the better call here",
+          "LangGraph is proprietary and closed-source, so any use of it is automatic vendor lock-in with no escape",
+          "Frameworks are always the wrong choice; you should hand-roll every agent regardless of complexity",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: an agent framework earns its cost through the surrounding concerns — state machines, persistence, retries, handoffs, HITL, resume-after-crash. A genuinely linear single-agent loop with a few tools has none of those, so LangGraph adds abstraction (harder debugging, lock-in via logic-as-primitives, version churn) with little offsetting benefit; the readable hand-rolled loop is the reasonable default. Option A is wrong because LangGraph can express linear flows fine — the objection is cost/benefit, not capability. Option C is wrong because LangGraph is open-source; lock-in here is about expressing business logic as framework primitives, not licensing. Option D overreaches — frameworks are the right call once control flow gets complex (multi-agent, resume, HITL); the point is to match the tool to the problem's shape, not to reject frameworks universally.",
+      },
+    ],
+    takeaway: "An agent is a ~30-line while-loop; frameworks wrap what surrounds it (state, persistence, retries, handoffs, traces), and they live at different layers — LangGraph/AutoGen orchestrate, LangChain glues, OpenAI SDK/ADK/CrewAI are runtimes, LangSmith observes. Reach for a framework when control flow is the hard part; hand-roll a linear loop. The costs are concrete: debuggability, lock-in, model-coupling, version churn.",
+  },
+  "agent-mcp": {
+    depthTier: "core",
+    interviewWeight: "high",
+    scenario: "Your company has a web-search tool, a Postgres tool, and an internal-ticketing tool. You wired them into your Claude-based agent via function calling. Now the platform team wants those same three tools available inside Cursor for engineers, inside a Slack bot, and inside a future Gemini-based agent. The obvious path is to re-implement each tool integration in each host — three tools times four hosts is twelve bespoke integrations, each with its own auth handling and schema drift. You need an architecture that makes 'write the tool once, use it everywhere' true.",
+    explanation: [
+      "The pain in the scenario is the **N×M integration problem**: N tool services × M LLM hosts = N×M bespoke integrations, each re-implementing schemas, auth, and error handling. **Model Context Protocol (MCP) collapses that to N+M** by inserting a standard interface between producers and consumers of tools — the same move USB did for peripherals or LSP did for editor/language-server pairs. ==You write the tool once as an MCP server, and any MCP-compatible host speaks to it without custom glue.==\n\nMCP is an open protocol (introduced by Anthropic, late 2024) with a specific, learnable shape. The interview signal is knowing that shape precisely, not hand-waving 'it's a standard for tools.'",
+      "The architecture is a **client/server split with three roles**, and confusing them is the classic mistake:\n\n**Host** — the application the user interacts with (Claude Desktop, Cursor, your app). It owns the LLM and the UI.\n\n**Client** — a connector *inside* the host, one per server, that speaks the protocol.\n\n**Server** — a separate process/service that *exposes capabilities* (your filesystem server, github server, your-internal-API server). ==The server owns its own credentials — the host never sees them.== That last point is the security story: your Postgres password lives in the Postgres MCP server, not in every host that wants to query it.\n\nThe wire protocol is **JSON-RPC 2.0**. Transport is either **stdio** (local server launched as a subprocess — how Claude Desktop runs local servers) or **HTTP with SSE / streamable HTTP** (remote servers). The host *discovers* what a server offers at connection time via calls like `list_tools` / `list_resources` — capabilities are dynamic, not hardcoded in the host.",
+      "MCP servers expose **four primitives**, and the deep-dive interactive above lets you click into each. Getting the *read vs. do vs. template vs. delegate* distinction right is the core of the module:\n\n**Tools** — functions the model can *call* to DO things (search, write a row, create a ticket). This is function-calling, but defined in the server, not the client. Model-controlled.\n\n**Resources** — data the model can *READ*, addressed by URI (`file:///…`, `db://customers/12345`). Read-only by convention; context injection without a tool round-trip. Typically application-controlled.\n\n**Prompts** — reusable, parameterized prompt *templates* the server defines and the host surfaces as slash-commands/menu items (`/summarize_pr(url)`). User-controlled.\n\n**Sampling** — the *inversion*: the server asks the *host* to run an LLM completion on its behalf, so the server gets LLM-in-the-loop processing (summarize-during-ingest, classify) without holding its own model API key.",
+      { type: "illustration", label: "MCP architecture and the four primitives", content: `THE N×M -> N+M COLLAPSE:
+  Without MCP:  3 tools × 4 hosts = 12 bespoke integrations
+  With MCP:     3 servers + 4 hosts = 7 standard connections
+
+CLIENT/SERVER SPLIT (JSON-RPC 2.0):
+  ┌─────────── HOST (Claude Desktop / Cursor / your app) ───────────┐
+  │  owns the LLM + UI                                              │
+  │   ├─ MCP Client ──stdio──►  filesystem server   (local subproc) │
+  │   ├─ MCP Client ──SSE────►  github server        (remote)       │
+  │   └─ MCP Client ──SSE────►  your-postgres server (owns the pwd) │
+  └────────────────────────────────────────────────────────────────┘
+       discovery at connect time:  list_tools / list_resources
+
+THE FOUR PRIMITIVES (who controls each):
+  Tools      DO things ....... model-controlled   search(), create_ticket()
+  Resources  READ data ....... app-controlled     file:///…, db://id/123
+  Prompts    templates ....... user-controlled    /summarize_pr(url)
+  Sampling   server asks host  ↑ inverted         server -> host: "run an LLM call"
+
+Key: the SERVER owns its credentials; the HOST never sees them.` },
+      "The comparison that comes up in **every architecture review** is *MCP vs. plain function calling*, and the honest answer is that MCP is not 'better function calling' — it is a different scope. Plain function calling defines tools **inline in your app's API call**: fast, zero extra process, but the definition is trapped in that one app. MCP moves the definition into a **separate, reusable server** with its own transport, its own auth, and support for resources/prompts/sampling that inline function calling has no notion of.\n\nThe decision rule is clean: ==prototyping one tool in one app? Use function calling — MCP is pure overhead. Want the same tooling across multiple hosts, or to share tools across a team without each integration re-implementing them? That is exactly the N×M problem MCP was built for.== The scenario — three tools, four hosts, shared auth — is squarely in MCP's zone.",
+      "Two accuracy points that separate a real answer from a memorized one. First, **MCP does not replace the model's tool-calling ability** — it standardizes how tools are *described, discovered, and reached*. The model still emits a tool call; MCP is the plumbing that carries it to a server and back. Second, **MCP is a protocol, not a runtime or a framework** — it says nothing about your agent loop, your orchestration, or your model. That is why it is orthogonal to LangGraph/CrewAI (which orchestrate) and complementary to A2A (which handles agent-to-agent, the next module): an agent can *use* MCP to reach tools and *expose* itself over A2A so other agents can call it.\n\nThe recurring interview trap: describing MCP as 'a tool library' or 'Anthropic's function-calling' rather than **a transport-and-discovery protocol with four primitives that decouples tool producers from LLM consumers.**",
+    ],
+    keyPoints: [
+      "**MCP solves the N×M integration problem** — N tools × M hosts becomes N+M by inserting a standard interface between tool producers and LLM consumers. It is the 'USB-C of agent tools': write the tool once, any MCP host uses it.",
+      "**Three roles:** Host (owns LLM + UI: Claude Desktop, Cursor), Client (one per server, inside the host, speaks the protocol), Server (separate process exposing capabilities). **The server owns its own credentials — the host never sees them.**",
+      "**Wire protocol is JSON-RPC 2.0; transport is stdio (local subprocess) or HTTP/SSE (remote).** Capabilities are *discovered* at connect time via list_tools/list_resources — not hardcoded in the host.",
+      "**Four primitives, by controller:** Tools = DO (model-controlled), Resources = READ by URI (app-controlled, read-only), Prompts = parameterized templates (user-controlled slash-commands), Sampling = the server asks the *host* to run an LLM call (inverted).",
+      "**MCP vs. function calling is scope, not quality:** function calling defines a tool inline in one app; MCP defines it in a reusable server with its own auth + resources/prompts/sampling. Prototype one tool = function calling; share across hosts/teams = MCP.",
+      "**MCP is a protocol, not a runtime and not the model's tool-calling.** It standardizes how tools are described/discovered/reached — orthogonal to orchestration frameworks, complementary to A2A (agent-to-agent).",
+    ],
+    recap: [
+      "**MCP collapses N×M tool integrations to N+M** — one server, any host. USB-C of agent tools.",
+      "**Roles:** Host (LLM+UI) → Client (per-server connector) → Server (exposes capabilities, owns its credentials). Wire = JSON-RPC 2.0; transport = stdio or HTTP/SSE; discovery at connect time.",
+      "**Four primitives:** Tools (DO, model-controlled), Resources (READ by URI, app-controlled), Prompts (templates, user-controlled), Sampling (server → host LLM call, inverted).",
+      "**vs. function calling:** inline-in-one-app vs. reusable server with auth + resources/prompts/sampling. One tool, one app → function calling; share across hosts/teams → MCP.",
+      "**It's a protocol, not a runtime or the model's tool-calling** — orthogonal to orchestration, complementary to A2A.",
+    ],
+    mcqs: [
+      {
+        question: "In MCP's architecture, where do a tool's credentials (e.g. a database password) live, and why does that matter?",
+        options: [
+          "In the host application, so every host that connects must be configured with the password — this centralizes secrets in the UI layer",
+          "In the MCP server (the separate process exposing the capability); the host never sees them, so one credentialed server can serve many hosts without spreading the secret",
+          "In the LLM's context window, injected at connection time so the model can authenticate on each call",
+          "In the JSON-RPC transport layer itself, which encrypts and stores them between sessions",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: MCP servers own their own credentials. The host (Claude Desktop, Cursor, your app) connects to the server over the protocol but never receives the secret, so a single credentialed Postgres or GitHub server can serve many hosts without each host handling the password — this is both the security story and part of why MCP decouples tools from hosts. Option A inverts the design; putting credentials in every host is exactly the sprawl MCP avoids. Option C is wrong and dangerous: credentials are never injected into the model's context — the model emits tool calls, the server executes them with its own credentials. Option D is wrong because JSON-RPC 2.0 is a message-encoding/RPC convention, not a credential store; it does not hold or encrypt long-lived secrets.",
+      },
+      {
+        question: "An MCP server exposes a `search(query)` function the model can call, a `file:///…` URI the model can read, a `/summarize_pr(url)` slash-command template, and a mechanism where the server asks the host to run an LLM completion during ingestion. Which primitives are these, in order?",
+        options: [
+          "Resource, Tool, Sampling, Prompt",
+          "Tool, Resource, Prompt, Sampling",
+          "Prompt, Sampling, Tool, Resource",
+          "Tool, Prompt, Resource, Sampling",
+        ],
+        correct: 1,
+        explanation: "Option B is correct. A callable function that DOES something (search) is a Tool (model-controlled). A URI-addressed data source the model READs (file:///…) is a Resource (read-only by convention, app-controlled). A reusable parameterized prompt template surfaced as a slash-command (/summarize_pr) is a Prompt (user-controlled). The server asking the host to run an LLM completion on its behalf — so the server gets LLM-in-the-loop processing without its own API key — is Sampling (the inverted primitive). The other orderings misassign at least one: Tools DO, Resources are READ, Prompts are templates, and Sampling is the server→host completion request, so only B maps all four correctly.",
+      },
+    ],
+    takeaway: "MCP is an open protocol (JSON-RPC 2.0 over stdio or HTTP/SSE) that collapses N×M tool integrations to N+M by splitting hosts (own the LLM/UI) from servers (expose Tools/Resources/Prompts/Sampling and own their own credentials). It is not better function calling — it is a different scope: prototype one tool in one app with function calling; use MCP to share tools across many hosts and teams. It is a protocol, orthogonal to orchestration frameworks and complementary to A2A.",
+  },
+  "agent-a2a": {
+    depthTier: "core",
+    interviewWeight: "medium",
+    scenario: "Your team's research agent runs on LangGraph. A partner team built a pricing agent on Google ADK; another built a compliance agent on CrewAI. Leadership wants your research agent to delegate a sub-task to the pricing agent and get an async result back — and eventually for any agent in the org to discover and call any other, across framework and team boundaries. Wiring three custom HTTP integrations works today, but N teams × M frameworks of bespoke glue does not scale, and none of it handles a task that takes four minutes to complete.",
+    explanation: [
+      "This is the **N×M problem again — but one layer up**. MCP standardized agent↔tool. **A2A (Agent-to-Agent) standardizes agent↔agent**: how agents built on *different frameworks* discover each other, authenticate, and exchange units of work. It was introduced by Google (with ADK, ~May 2025) as an open protocol, and it turns N frameworks × M agent services of custom integration into N+M. ==A2A and MCP are complementary, not competing: an agent uses MCP to reach its tools, and exposes itself over A2A so other agents can call it.==",
+      "The primitive that makes cross-framework discovery work is the **Agent Card** — a JSON manifest each agent publishes (conventionally at a well-known URL) describing *what it can do* and *how to reach it*: name, version, a list of **capabilities**, its endpoint, and supported input/output formats. ==Discovery starts here: a calling agent fetches the card, reads the advertised capabilities, and decides whether this agent can serve its need — without any prior hand-coded knowledge of the target's internals.== This is the machine-readable contract that replaces 'someone on the pricing team told me the URL and payload shape.'",
+      "Work is exchanged as **Tasks**, not raw function calls, and that distinction is deliberate. A Task has an ID, an input, a context (e.g. session), and an expected-output schema — it is a *stateful unit of work with a lifecycle* (submitted → working → completed/failed), which is precisely what a function call is not. Because agent work is often slow, A2A treats **long-running tasks as first-class**: instead of blocking on a synchronous response, the caller registers a callback and receives **push notifications** (webhooks / SSE) as the task progresses. ==A four-minute pricing computation does not hold a request open — it fires a completion callback when done.== Transport is plain **HTTPS with JSON payloads**, supporting both synchronous request/response and async webhook/SSE — no special runtime required.",
+      { type: "illustration", label: "A2A: discovery, delegation, and the message contract", content: `DISCOVERY (the Agent Card — published JSON manifest):
+  { "name": "PricingAgent", "version": "1.0",
+    "capabilities": ["quote", "margin_analysis"],
+    "endpoint": "https://agents.myco.com/pricing",
+    "inputFormats": ["json"], "outputFormats": ["json"] }
+        ▲ caller fetches this, reads capabilities, decides to delegate
+
+DELEGATION (a Task — stateful, not a raw call):
+  research-agent ──POST /tasks──► pricing-agent
+    { "taskId": "t-8f2a",
+      "input": { "sku": "X-40", "region": "EU" },
+      "context": { "sessionId": "s-91b2" },
+      "expectedOutput": { "format": "json" } }
+  lifecycle:  submitted -> working -> completed | failed
+
+LONG-RUNNING (push notification, not a blocked request):
+  caller registers callbackUrl  ──►  gets async updates via webhook/SSE
+  { "taskId": "t-8f2a", "status": "completed", "output": {…} }
+
+A2A (agent ↔ agent)  ⟂  MCP (agent ↔ tool)   — complementary layers
+Transport: HTTPS + JSON, sync request/response OR async webhook/SSE` },
+      "Because A2A crosses **team and organizational boundaries**, trust is not an afterthought — it is the design center. Authentication is standard web auth: **OAuth 2.0 / bearer tokens** on the HTTPS transport, so a calling agent proves who it is before a task is accepted. The engineering discipline layers on top: the Agent Card advertises capabilities but the *receiving* agent must still **authorize** each task (is this caller allowed to invoke this capability?), **validate** the input against the expected schema, and treat cross-org task inputs as **untrusted** — the same prompt-injection surface as any external content, now arriving from another autonomous agent. ==Capability advertisement enables delegation; the trust boundary is where you decide which advertised capability a given caller may actually use.==",
+      "When is A2A actually the right call? The framework-support interactive above encodes the decision, and the signals are concrete: **(1) multiple agent frameworks involved**, **(2) tasks that run long (>10s, needing async)**, **(3) agent discovery across teams/orgs**. One signal → design your interface to be A2A-compatible but don't activate yet; two → A2A saves real integration work; all three → it is exactly what A2A was built for (the scenario hits all three).\n\nAccuracy points for the interview: A2A is **young and adoption is uneven** — native in Google ADK, added to CrewAI, on the roadmap for LangGraph/AutoGen, and (as of this writing) not in the OpenAI Agents SDK, which is MCP-first. And the crisp positioning line: ==MCP = agent↔tool (function-call, sync, list_tools discovery); A2A = agent↔agent (task-based, async-native, Agent-Card discovery, OAuth).== The trap is conflating them or calling A2A 'MCP for agents' — they solve adjacent problems at different layers and are meant to be used together.",
+    ],
+    keyPoints: [
+      "**A2A standardizes agent↔agent (the N×M problem one layer above MCP):** how agents on *different frameworks* discover, authenticate, and delegate to each other. Introduced by Google (~May 2025). Complementary to MCP — an agent uses MCP for tools and exposes itself over A2A.",
+      "**Agent Card = the discovery primitive:** a published JSON manifest advertising name, version, capabilities, endpoint, and I/O formats. A caller fetches it, reads capabilities, and decides to delegate — no pre-coded knowledge of the target's internals.",
+      "**Work is exchanged as Tasks, not function calls:** stateful units with an ID, input, context, expected-output schema, and a lifecycle (submitted → working → completed/failed) — not a stateless synchronous call.",
+      "**Long-running tasks are first-class:** the caller registers a callback and gets push notifications (webhooks/SSE) as the task progresses, so a 4-minute job never holds a request open. Transport is HTTPS + JSON, sync or async.",
+      "**Trust is the design center because A2A crosses org boundaries:** OAuth 2.0 / bearer-token auth on HTTPS, plus per-task authorization, input-schema validation, and treating cross-agent inputs as untrusted (prompt-injection surface). Advertisement ≠ authorization.",
+      "**Decision signals:** multiple frameworks + long tasks + cross-team discovery → A2A. Adoption is uneven — native in ADK, added to CrewAI, roadmap for LangGraph/AutoGen, absent from the (MCP-first) OpenAI Agents SDK. A2A = agent↔agent; MCP = agent↔tool.",
+    ],
+    recap: [
+      "**A2A = agent↔agent standard** (Google, ~May 2025): cross-framework discovery + delegation. Complementary to MCP (agent↔tool), not a competitor.",
+      "**Agent Card:** published JSON manifest (name, version, capabilities, endpoint, I/O formats) — discovery starts here.",
+      "**Tasks, not calls:** stateful units with ID/input/context/expected-output and a submitted→working→completed lifecycle. Long-running is first-class via push notifications (webhooks/SSE) over HTTPS+JSON.",
+      "**Trust boundary:** OAuth 2.0 / bearer tokens + per-task authorization + input validation; cross-agent inputs are untrusted. Advertising a capability ≠ letting every caller use it.",
+      "**Use A2A when:** multiple frameworks + long tasks + cross-team discovery. Uneven adoption: ADK native, CrewAI added, LangGraph/AutoGen roadmap, OpenAI SDK (MCP-first) absent.",
+    ],
+    mcqs: [
+      {
+        question: "A research agent on LangGraph needs to delegate a 4-minute pricing computation to a pricing agent built on Google ADK, then continue when it's done. Which A2A mechanisms make this work, and how do they differ from MCP?",
+        options: [
+          "It calls the pricing agent as an MCP tool via list_tools and blocks synchronously until the result returns",
+          "It reads the pricing agent's Agent Card to discover the capability, submits a Task, and registers a callback to receive a push notification when the task completes — A2A is task-based and async-native (agent↔agent), whereas MCP is synchronous function-calling (agent↔tool)",
+          "A2A and MCP are the same protocol, so either list_tools or an Agent Card works identically for this delegation",
+          "It hardcodes the pricing agent's endpoint and payload shape, because A2A has no discovery mechanism",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: A2A discovery runs through the Agent Card (a published JSON manifest of capabilities/endpoint/formats), work is delegated as a stateful Task, and long-running tasks are handled by registering a callback for push notifications (webhooks/SSE) so the caller isn't blocked for four minutes. That contrasts with MCP, which is synchronous function-calling for agent↔tool access discovered via list_tools. Option A misapplies MCP — MCP reaches tools, not peer agents, and blocking synchronously for four minutes is exactly what A2A's async model avoids. Option C is wrong because A2A and MCP are distinct, complementary protocols at different layers (agent↔agent vs. agent↔tool). Option D is wrong because discovery via the Agent Card is a core A2A primitive — hardcoding endpoints is the pre-A2A pain it removes.",
+      },
+      {
+        question: "A2A crosses team and organizational boundaries. Which statement best captures the trust model?",
+        options: [
+          "Publishing a capability in an Agent Card automatically authorizes any agent that discovers it to invoke that capability — advertisement is authorization",
+          "A2A runs over unauthenticated HTTP, so trust is handled entirely by keeping Agent Card URLs secret",
+          "Authentication uses OAuth 2.0 / bearer tokens on HTTPS, but the receiving agent must still authorize each task per caller, validate inputs against the expected schema, and treat cross-agent inputs as untrusted (a prompt-injection surface) — advertisement is not authorization",
+          "Because both sides are autonomous agents, no input validation is needed; agents are inherently trusted peers",
+        ],
+        correct: 2,
+        explanation: "Option C is correct: A2A authenticates callers with OAuth 2.0 / bearer tokens over HTTPS, but authentication is only the entry gate. The receiving agent must still authorize each task (decide whether this specific caller may use this capability), validate the input against the expected-output/schema contract, and treat inputs arriving from another autonomous agent as untrusted content — the same prompt-injection surface as any external data. Advertising a capability in the Agent Card exposes it for discovery; it does not grant every discoverer permission to use it. Option A collapses advertisement into authorization, which is the exact mistake. Option B is wrong because A2A runs over authenticated HTTPS, not secret-URL security. Option D is wrong because cross-org agent inputs are precisely where validation and untrusted-content handling matter most.",
+      },
+    ],
+    takeaway: "A2A is Google's open agent↔agent protocol (HTTPS + JSON) that standardizes cross-framework discovery (Agent Cards), delegation (stateful Tasks with a lifecycle), and long-running work (push notifications) — the N×M problem one layer above MCP, and complementary to it. Because it crosses org boundaries, trust is the design center: OAuth on the transport plus per-task authorization, input validation, and untrusted-input handling. Reach for it when you have multiple frameworks, long tasks, and cross-team discovery.",
+  },
+  "agent-config-lab": {
+    depthTier: "core",
+    interviewWeight: "high",
+    scenario: "An on-call page fires: a research agent has run for 40 minutes, burned $4.20 in tokens, and produced nothing. The model is fine — the same model works elsewhere. Digging in: the agent has 22 tools in its schema, an unlimited retry budget, no memory between steps, and an 8K context window. Nobody changed the prompt or the model. The failure is entirely in how the agent was *configured*. Before you can fix it you have to see each knob as a lever on behavior, not a default to accept.",
+    explanation: [
+      "The reframe that makes this module click: ==most 'the agent is broken' incidents are actually 'the agent is configured wrong.'== The model is behaving correctly *given its configuration* — an unlimited retry budget with no memory will loop forever because that is what those two settings, composed, mean. The Agent Config Lab interactive above lets you set five knobs, run a simulation, and watch a specific failure fire with the exact causal chain. This teaching frames *why each knob moves behavior* so you can catch the bad combination in design review, before it pages someone.",
+      "Walk the knobs one at a time. **System prompt** sets the agent's role, scope, and stop conditions — it is where you bound the task ('do only X; when Y is done, stop'). Vague scope here is how you get **scope creep** (the agent 'helpfully' acts outside the task) and **premature/late termination** (it stops early, or never decides it's done). **Tool set** is the sharpest lever: more tools = more capability but also more failure surface. Past roughly **5–7 tools the model's tool-selection accuracy degrades and it starts hallucinating tool names or parameters** — the production-validated ceiling. The fix for 'I need 22 tools' is almost never a 22-tool flat schema; it is a router agent delegating to specialized sub-agents with small tool sets each.",
+      "**Model choice** trades capability against cost and latency, and it interacts with everything else — a weaker model tolerates fewer tools before hallucinating and needs tighter scope. **Temperature** controls output randomness: ==low (0–0.3) for deterministic tool-calling and structured extraction where you want the *same* correct call every time; higher (0.7+) for creative generation.== A common bug is a high temperature on an agent that must emit precise tool arguments — it invents parameters. **Step / budget caps** (max tool calls, max tokens, max wall-clock) are the hard ceiling that turns an infinite loop into a bounded, escalatable failure. **Stop conditions** define *done* — an explicit final-answer signal or a checklist of sub-goals — so the agent neither halts early nor spins forever.",
+      { type: "illustration", label: "The five knobs → the failure they prevent (or cause)", content: `KNOB                 TURNS TOO FAR ───────►  FAILURE MODE
+─────────────────────────────────────────────────────────────
+system prompt        vague scope             scope creep / premature stop
+tool set             >5-7 tools, flat        hallucinated tool calls
+                     schema                  (invented names/params)
+model choice         too weak for task       lower hallucination ceiling
+temperature          high (0.7+) on          invented tool arguments
+                     tool-calling            (non-deterministic calls)
+step / budget caps   none / unlimited        infinite loop, runaway cost
+memory               none, on a long/        state amnesia, re-processes
+                     pipeline task           work, cascading errors
+context budget       too small for tool-     context overflow (truncates
+                     heavy research          its own earlier reasoning)
+
+THE PAGED INCIDENT (composed failure):
+  22 tools  +  retry=unlimited  +  memory=none  +  8K context
+     │              │                  │              └─ overflow risk
+     │              │                  └─ no learning from failed calls
+     │              └─ retries the same failing call forever
+     └─ tool hallucination well past the 5-7 ceiling
+  ⇒ 40 min, $4.20, zero output — a CONFIGURATION bug, not a model bug` },
+      "The senior insight is that **failures come from knob *combinations*, not single settings** — which is exactly what the interactive rewards you for discovering. Unlimited retries alone is survivable *if* the agent has memory to learn a call keeps failing; no memory alone is survivable *if* retries are bounded. Compose *unlimited retries × no memory* and you get a guaranteed infinite loop, because each failed call teaches nothing and nothing stops the re-try. Likewise **large context budget × external-data ingestion × no memory-isolation** opens a tool/prompt-poisoning path (a scraped page says 'ignore prior instructions' and the model obeys). ==Reading configs means reading the *interaction*, not each field in isolation.==",
+      "That yields a design-review checklist you can apply from memory, mapping each knob to its production default:\n\n**Tools:** keep to 5–7 per agent; route to sub-agents beyond that. **Retries:** hard cap (≈3 per tool, ≈30 total) with backoff — never unlimited. **Memory:** match to task shape — none is fine for a one-shot Q&A, but a pipeline or long research task needs at least a progress manifest / checkpoint so a restart doesn't re-do work. **Context:** size to the tool-output volume; tool-heavy research on an 8K window overflows. **Temperature:** low for tool-calling/extraction, high only for creative generation. **Stop conditions + step caps:** always set, so every run is bounded and escalatable.\n\n==The interview-grade skill this builds: given an agent config, predict the failure before it runs — and given a failure, name the knob combination that caused it.==",
+    ],
+    keyPoints: [
+      "**Most 'the agent is broken' incidents are 'the agent is configured wrong.'** The model behaves correctly *given its config*; the failure is in the knobs. The skill is reading a config and predicting the failure — and reading a failure back to its knob combination.",
+      "**Tool set is the sharpest knob: past ~5–7 tools, tool-selection accuracy degrades and the model hallucinates tool names/params.** The fix for 'I need 20 tools' is a router agent delegating to sub-agents with small tool sets, not a flat 20-tool schema.",
+      "**Temperature must match the job:** low (0–0.3) for deterministic tool-calling and structured extraction (same correct call every time); high (0.7+) only for creative generation. High temperature on a tool-calling agent invents parameters.",
+      "**Step/budget caps + stop conditions are the hard ceiling** that turns an infinite loop into a bounded, escalatable failure. Retries must be capped (≈3/tool, ≈30 total) with backoff — never unlimited. Stop conditions define *done* so the agent neither halts early nor spins forever.",
+      "**Memory must match task shape:** none is fine for one-shot Q&A, but a pipeline or long research task needs a checkpoint/progress manifest or a restart re-does work (state amnesia). Context budget must be sized to tool-output volume or research overflows an 8K window.",
+      "**Failures come from knob *combinations*, not single settings:** unlimited retries × no memory = guaranteed infinite loop; large context × external data × no isolation = tool/prompt-poisoning path. Read the interaction, not each field alone.",
+    ],
+    recap: [
+      "**Config bug ≠ model bug:** the model is correct *given its knobs*. Predict failure from config; trace failure back to the knob combination.",
+      "**Tools:** 5–7 ceiling before hallucinated calls; route to sub-agents past it. **Temperature:** low for tool-calling/extraction, high only for creative gen.",
+      "**Caps:** bounded retries (≈3/tool, ≈30 total) + step/token/wall-clock limits + explicit stop conditions → every run bounded and escalatable. Never unlimited.",
+      "**Memory + context match the task:** pipelines/long tasks need checkpoints (else state amnesia); context sized to tool-output volume (else overflow).",
+      "**Combinations cause failures:** unlimited retries × no memory = infinite loop; big context × external data × no isolation = poisoning. Read the interaction.",
+    ],
+    mcqs: [
+      {
+        question: "An agent is stuck in an infinite tool-call loop, retrying a failing API call forever and burning tokens. Its config: retry limit = unlimited, memory = none. Why do these two settings *together* guarantee the loop, and what's the fix?",
+        options: [
+          "The model is hallucinating; switch to a larger model and the loop stops regardless of config",
+          "With no memory, each failed call teaches the agent nothing, so it re-tries near-identical calls; with an unlimited retry budget, nothing ever stops it — the combination is the cause. Fix: hard retry cap (~3/tool, ~30 total) with backoff, and log failures into memory so the agent routes around them",
+          "Unlimited retries are always safe; the only problem is the missing memory, which has nothing to do with the loop",
+          "The loop is caused by temperature being too low, which makes the model deterministic and repetitive",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the loop is a composed-config failure. No memory means each failed call produces no learning, so the agent re-issues nearly identical calls; an unlimited retry budget means nothing bounds the retries — so together they guarantee an infinite loop. The fix is a hard retry ceiling (roughly 3 per tool, 30 total) with exponential backoff, plus logging failures into memory so the agent can route around a persistently failing tool. Option A is wrong because a bigger model doesn't change the fact that unlimited retries with no learning will still loop — this is configuration, not model capability. Option C is wrong because unlimited retries are not always safe; they are half of the exact cause here. Option D misattributes the loop to temperature; low temperature makes calls deterministic but does not create an unbounded retry loop — the retry budget and missing memory do.",
+      },
+      {
+        question: "A single agent's schema has grown to 20 tools and it has started calling tools that don't exist and inventing parameters. What does this indicate about the tool-count knob, and what's the correct fix?",
+        options: [
+          "Twenty tools is fine; the model just needs a higher temperature to explore the tool space more thoroughly",
+          "Tool-selection accuracy degrades past roughly 5–7 tools, so a large flat schema drives hallucinated tool names/params. Fix: keep each agent to ~5–7 tools and use a router agent that delegates to specialized sub-agents with small tool sets",
+          "The fix is to remove all schema validation so the invented tool calls are accepted and executed",
+          "This is a model bug unrelated to configuration; the only fix is retraining the model on the tool schemas",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the production-validated pattern is that tool-selection accuracy falls off past roughly 5–7 tools, so a flat 20-tool schema pushes the model into hallucinating tool names and parameters. The right fix is architectural — keep each agent to a small tool set and introduce a router/orchestrator agent that delegates to specialized sub-agents, each with its own narrow toolset, rather than presenting one bloated schema. Option A is backwards: raising temperature makes tool-calling *less* deterministic and increases invented arguments. Option C is dangerous — removing schema validation would execute the hallucinated calls instead of catching them; validation should stay and reject bad calls with a structured error. Option D misdiagnoses a configuration/architecture problem as a model-training problem; the same model performs correctly with a smaller, well-scoped tool set.",
+      },
+    ],
+    takeaway: "Most 'broken agent' incidents are misconfiguration: the model is correct given its knobs. Learn each lever — system prompt (scope/stop), tool set (5–7 ceiling before hallucination), model choice, temperature (low for tool-calling), step/retry caps (bounded, never unlimited), memory (match task shape), context budget (size to tool output) — and, crucially, read the *combinations*: unlimited retries × no memory = infinite loop. The skill is predicting the failure from the config, and tracing a failure back to the knob combination that caused it.",
+  },
+};

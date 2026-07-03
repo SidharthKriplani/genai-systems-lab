@@ -20,6 +20,12 @@ import { RUNNER_CODE_GEN } from "./tracks/code-generation";
 import { RUNNER_INFERENCE_OPT } from "./tracks/inference-optimization";
 import { RUNNER_MODEL_CUSTOM } from "./tracks/model-customization";
 
+// ── Agent topic: teaching template for the 16 Agent-Lab modules (./agents/*.js) ──
+import { RUNNER_AGENT_CORE } from "./agents/agent-core";
+import { RUNNER_AGENT_SCALE } from "./agents/agent-scale";
+import { RUNNER_AGENT_SIM } from "./agents/agent-sim";
+import { RUNNER_AGENT_ECO } from "./agents/agent-eco";
+
 export const RUNNER_DATA = {
 
   // ── New foundations modules (authored in ./foundations/*.js) ─────────────────
@@ -34,6 +40,12 @@ export const RUNNER_DATA = {
   ...RUNNER_CODE_GEN,
   ...RUNNER_INFERENCE_OPT,
   ...RUNNER_MODEL_CUSTOM,
+
+  // ── Agent topic (Agent-Lab modules, uniform teaching template) ───────────────
+  ...RUNNER_AGENT_CORE,
+  ...RUNNER_AGENT_SCALE,
+  ...RUNNER_AGENT_SIM,
+  ...RUNNER_AGENT_ECO,
 
   // ── Language Models track ────────────────────────────────────────────────────
 

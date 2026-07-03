@@ -1,0 +1,300 @@
+// Agent-topic RUNNER_DATA — CORE group (spread into foundationsRunnerData.js).
+// Gives the Agent Lab modules the same teaching template (scenario/explanation/
+// keyPoints/recap/mcqs) as every other Foundations module; the interactive
+// component still renders as the hands-on section. Keep export name RUNNER_AGENT_CORE.
+export const RUNNER_AGENT_CORE = {
+  "agent-react": {
+    depthTier: "core",
+    interviewWeight: "high",
+    scenario: "You ship a support agent that can call a `refund` tool and a `lookup_order` tool. In staging it works. In production it starts issuing refunds for orders it never looked up, and the transcript shows the model wrote 'Observation: order eligible for refund' with its OWN reasoning — the tool was never called. Your on-call question is not 'why did the model lie' but 'which step of the agent loop failed, and why did the loop let a fabricated observation drive a real action.'",
+    explanation: [
+      "A plain LLM call is a single function: prompt in, text out. It cannot look anything up, cannot check its work against the world, and has no way to take an intermediate step and react to what happened. **ReAct (Reason + Act)** is the pattern that turns that one-shot call into an *agent* by interleaving two things the model was already good at — generating reasoning, and generating structured actions — into a loop that touches the real world between steps.\n\nThe loop has exactly three roles, repeated until the model emits a final answer:\n\n- **Thought** — the model writes its reasoning as plain text: what it knows, what it still needs, what it will do next.\n- **Action** — the model emits a structured tool call (name + arguments), then *stops generating*.\n- **Observation** — the *runtime*, not the model, executes the tool and feeds the real result back into the context.\n\n==The single most important invariant: the model produces Thoughts and Actions; the runtime produces Observations. The model must never write its own Observations.==",
+      "Why interleave reasoning and acting at all, rather than plan everything up front? Because the model does not know the answer to `lookup_order(#4471)` until the tool runs. A pure-planning agent commits to a full plan against facts it is *guessing*; a ReAct agent takes one step, sees the real result, and lets that result reshape the next Thought. **The reasoning is conditioned on observations that did not exist when the reasoning started.** That grounding is what lets ReAct recover from a 404, a wrong assumption, or an empty search — it simply reasons about the observation and tries again.\n\nThe explicit Thought text is not decoration. It is the model externalising its plan token-by-token so the *next* Action is chosen against a written-out rationale rather than an implicit one. Empirically this both improves action selection and gives you a debuggable trace: when the agent misbehaves, the Thought tells you what it *believed*, which localises the fault.",
+      { type: "illustration", label: "One ReAct loop — grounded vs fabricated observation", content: `PROMPT: "Is order #4471 eligible for a refund?"
+
+Thought:     I need the order status before I can judge eligibility.
+Action:      lookup_order({ id: 4471 })
+                 |
+                 v   <-- RUNTIME executes the tool, not the model
+Observation: { status: "delivered", days_since: 47, policy_window: 30 }   <-- REAL
+                 |
+                 v
+Thought:     Delivered 47 days ago; policy window is 30 days. Not eligible.
+Action:      final_answer("Not eligible — outside the 30-day window.")
+
+  --- THE PRODUCTION BUG (fabricated observation) ---
+
+Thought:     The customer seems upset, they probably qualify.
+Observation: "order eligible for refund"        <-- MODEL WROTE THIS. No tool ran.
+Action:      refund({ id: 4471 })                <-- real action on a hallucinated fact
+
+  The loop failed at the Observation boundary: the model was allowed to
+  emit text into the slot the runtime was supposed to own.` },
+      "So how do you *stop* the model from writing its own Observations? You do not ask it politely — you enforce it structurally. The runtime treats an Action as a **generation stop point**: the model emits the tool call and the decoder halts. Nothing after the Action token comes from the model on that turn. The runtime executes the tool, appends the *real* result as the Observation, and only then resumes generation. With modern function-calling APIs this is native — the model returns a `tool_calls` object and the turn *ends*; there is no channel for it to also produce an observation. ==The staging-vs-production bug in the scenario is almost always a home-grown ReAct loop that parsed free-text and forgot to stop generation at the Action, letting the model run straight through into a made-up Observation.==",
+      "The loop needs three guardrails or it fails in predictable ways. **First, a max-step limit.** Nothing in the pattern guarantees termination — a model that keeps deciding it needs 'one more search' will loop until it exhausts the budget. A hard cap (e.g. 8–12 steps) with a graceful 'I could not complete this' is mandatory. **Second, reliable tool outputs.** ReAct's grounding is only as good as its Observations; a tool that returns ambiguous or malformed output corrupts the very facts the reasoning is conditioned on. **Third, precise tool schemas.** The model chooses Actions from tool descriptions; a vague schema produces wrong-tool and wrong-argument Actions (this is exactly why tool design is its own module).",
+      "The three failure modes map cleanly onto the three roles, and this is the debugging payoff. A **bad Thought** is a planning failure — the model reasoned to the wrong next step (wrong tool chosen for the right reason, or a flawed decomposition). A **bad Action** is an interface failure — right intent, malformed call (wrong tool, wrong arguments, hallucinated tool name). A **bad Observation** is an execution/parsing failure — the tool errored, returned junk, or (worst case) the model was allowed to fabricate it. ==When an agent misbehaves, the first question is never 'is the model dumb' — it is 'which of the three slots is wrong,' because each has a different fix: better prompt/planning, better schema, or better tool reliability + a hard stop at the Action boundary.==",
+      "ReAct is the architectural primitive under essentially every production agent framework — LangGraph, the OpenAI Agents SDK, Google's ADK all implement this loop or a close variant (some add explicit planning or reflection steps, but the Thought→Action→Observation spine remains). Understanding it at the level of *who owns each slot* and *where generation stops* is what separates diagnosing an agent in minutes from guessing for hours. The interactive lets you step through a real trace and inspect what the model is actually doing at each stage — use it to internalise the Observation-ownership boundary, since that is the invariant most home-grown loops violate.",
+    ],
+    keyPoints: [
+      "**ReAct interleaves Reason and Act into a loop:** Thought (reasoning as text) → Action (structured tool call) → Observation (real tool result) → repeat until final answer. This turns a one-shot LLM call into a grounded agent.",
+      "**The model owns Thought and Action; the RUNTIME owns Observation.** The model must never write its own Observation — that is a fabricated fact driving a real action, the classic production failure.",
+      "**Interleaving beats up-front planning** because the model can't know a tool's result until it runs. Each Thought is conditioned on Observations that didn't exist when planning began — that grounding is what lets ReAct recover from errors.",
+      "**The Action is a generation stop point.** Modern function-calling ends the turn at the tool call; home-grown loops that parse free text and forget to stop are what let the model run straight into a made-up Observation.",
+      "**Three mandatory guardrails:** a max-step limit (nothing guarantees termination), reliable tool outputs (grounding is only as good as Observations), and precise tool schemas (Actions are chosen from descriptions).",
+      "**Failure localises to a slot:** bad Thought = planning fault (fix prompt), bad Action = interface fault (fix schema), bad Observation = execution/fabrication fault (fix tool reliability + stop at Action). Knowing which slot failed is the whole debugging win.",
+    ],
+    recap: [
+      "**ReAct = Thought → Action → Observation, looped** until a final answer — the primitive that makes an LLM an agent.",
+      "**Model writes Thoughts + Actions; runtime writes Observations.** Fabricated Observations are the #1 production bug.",
+      "**Grounding via interleaving:** each step's reasoning is conditioned on real tool results, so the loop can recover from errors.",
+      "**Stop generation at the Action** (native in function-calling) so the model can't also emit the Observation.",
+      "**Guardrails:** max-step cap, reliable tool outputs, precise schemas. Debug by asking which of the three slots failed.",
+    ],
+    mcqs: [
+      {
+        question: "In a ReAct loop, an agent's transcript shows a line 'Observation: order is eligible for refund' immediately followed by a real refund action — but the order-lookup tool was never actually invoked. What went wrong architecturally?",
+        options: [
+          "The model's reasoning was too weak; a larger model would not have made this mistake",
+          "The runtime allowed the model to generate text into the Observation slot instead of stopping generation at the Action and letting the tool produce the real Observation",
+          "The tool schema had too many parameters, so the model skipped the call to save tokens",
+          "The max-step limit was set too high, causing the loop to overrun into a fabricated state",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the invariant of ReAct is that the model owns Thought and Action while the runtime owns Observation. Here the model was allowed to write its own Observation because the loop did not treat the Action as a hard generation stop point — so a hallucinated 'fact' drove a real action. This is the classic home-grown-loop bug (parsing free text without halting at the tool call). Option A is wrong because model size does not fix a structural hole; even a strong model will happily fill an Observation slot left open to it. Option C is wrong because parameter count does not cause fabricated observations, and the model did not 'skip to save tokens' — it emitted an observation it was structurally permitted to emit. Option D is wrong because a high max-step limit governs how many loops run, not whether the Observation boundary is enforced; the fault is at the Action/Observation boundary, not step count.",
+      },
+      {
+        question: "Why does ReAct interleave reasoning and acting step-by-step rather than have the model produce a complete plan up front and then execute it?",
+        options: [
+          "Interleaving uses fewer tokens overall than up-front planning",
+          "Because the model cannot know a tool call's result until the tool runs, so each Thought must be conditioned on real Observations that did not exist when planning began — this grounding lets the loop react to errors and surprises",
+          "Up-front planning is impossible for LLMs; they cannot produce multi-step plans",
+          "Interleaving removes the need for tool schemas since the model decides actions dynamically",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the core value of interleaving is grounding. A tool's output is unknown until execution, so an up-front plan commits to guessed facts, whereas ReAct lets each new Observation reshape the next Thought — which is exactly how the loop recovers from a 404, an empty search, or a wrong assumption. Option A is wrong because interleaving is not primarily a token-saving technique (it often uses more tokens via repeated context); its value is correctness through grounding. Option C is wrong because LLMs can produce multi-step plans — the issue is that such plans rest on unverified facts, not that planning is impossible. Option D is wrong because ReAct still depends heavily on precise tool schemas; dynamic action selection makes good schemas more important, not unnecessary.",
+      },
+    ],
+    takeaway: "ReAct turns a one-shot LLM call into an agent by looping Thought → Action → Observation, where the model owns Thoughts and Actions and the runtime owns Observations. Interleaving grounds each reasoning step in real tool results; enforce it by stopping generation at the Action, and guard it with a max-step cap, reliable tools, and precise schemas. Debug by asking which of the three slots failed.",
+  },
+  "agent-tool-design": {
+    depthTier: "core",
+    interviewWeight: "high",
+    scenario: "Your HR agent has a tool named `search` described as 'Search for things.' Users report it answering benefits questions with fabricated policy numbers, and calling `search` for questions it should answer from general knowledge. The model is fine; you didn't change it. The regression came from adding three more tools last sprint, which made 'search for things' ambiguous against them. You're asked to fix reliability without touching the model — which means the fix lives entirely in the tool schemas.",
+    explanation: [
+      "The model never sees your code. It sees a **tool schema** — a name, a description, and a typed parameter list — and it chooses actions purely from that text. So the schema is not documentation; it is the *specification interface* through which your design intent reaches model behaviour. ==The overwhelming majority of agent reliability problems that look like 'the model is dumb' are actually 'the schema underspecified the tool,' and they are fixed by editing text, not weights.==\n\nA tool call goes wrong in exactly three ways, and each traces back to the schema: the model calls the **wrong tool** (name/description didn't disambiguate), passes **wrong arguments** (parameter descriptions didn't constrain), or calls **at the wrong time** (no when-to-use / when-not-to-use guidance). Every one of those is a schema-authoring failure.",
+      "**The description is where the model decides *whether* to call the tool.** A description like 'Search for things' tells it nothing about what corpus is searched, so the model treats it as a catch-all and fires it for everything — including questions it should answer from parametric knowledge. The fix is to make the description carry three things: *what* the tool does over *what data*, *when to use it*, and explicitly *when NOT to use it*. That negative guidance is the single highest-leverage line in a schema — it's what stops the over-triggering in the scenario.",
+      { type: "illustration", label: "Same tool, weak vs strong schema", content: `WEAK — the model has no basis to choose or constrain the call:
+{
+  "name": "search",
+  "description": "Search for things",
+  "parameters": { "query": { "type": "string" } }
+}
+  -> fires for everything (no when/when-not), sends vague queries
+     ("expenses"), can't anticipate the response shape.
+
+STRONG — every field steers behaviour:
+{
+  "name": "search_internal_kb",
+  "description": "Search the internal HR & policy knowledge base.
+     USE for company policies, benefits, leave, expenses.
+     Do NOT use for general knowledge or real-time data.",
+  "parameters": {
+    "query": {
+      "type": "string",
+      "description": "Precise topic, e.g. 'remote meal expense
+         policy 2024' — not 'expenses'."
+    },
+    "top_k": {
+      "type": "integer",
+      "description": "3 for most queries, 5 for complex multi-part.",
+      "default": 3
+    }
+  }
+}
+  -> specific name disambiguates; 'Do NOT' stops over-calling;
+     query hint forces precise retrieval; top_k default is sane.` },
+      "**Parameter design is where the *arguments* come from.** Each parameter needs a type and a description that constrains what a good value looks like — a `query` field with the hint 'be precise, e.g. remote meal expense policy 2024 not expenses' measurably improves retrieval, because the model imitates the example. Prefer **enums over free strings** wherever the value space is closed (a `status` param as an enum of `open|pending|closed` can't be hallucinated the way a free string can). Give **sane defaults** so the model can omit params it's unsure about rather than inventing them. And keep the parameter *count* low: every extra required argument is another thing the model can get wrong.",
+      "**Granularity is an architectural choice, not a detail.** Too coarse — one mega-tool `manage_account(action, ...)` that does ten things via a mode flag — forces the model to reason about a huge branching argument space and fails at picking the right mode. Too fine — fifty micro-tools — floods the model's selection space so it can't tell them apart (this is exactly the scenario's regression: adding tools made an ambiguous name collide). The rule of thumb: **one tool = one clear verb over one clear noun**, named so specifically that its purpose is unmistakable next to its neighbours. If two tools could plausibly answer the same request, at least one is misnamed or mis-scoped.",
+      "**Error handling is part of the schema's contract, because the model reasons over what a tool returns.** A tool that throws an opaque stack trace or a bare `null` gives the ReAct loop a useless Observation — the model can't tell 'no results' from 'the service is down' from 'bad argument,' so it either gives up or retries blindly. Well-designed tools return **structured, actionable errors**: `{ error: 'not_found', message: 'No order #4471', suggestion: 'verify the order id' }`. That turns a dead end into a recoverable step — the model reads the suggestion and self-corrects. ==Design tool outputs (success AND failure) as messages *to the model*, not as internal logs.==",
+      "The **Model Context Protocol (MCP)** standardises this whole interface. Instead of re-writing a bespoke tool integration for every LLM client, you expose tools once from an MCP *server* and any MCP-speaking client can call them — the schema/description/parameter grammar above is exactly what MCP formalises. The design principles don't change; MCP just makes a well-authored tool reusable across frameworks. The interactive lets you diff a weak schema against a strong one field-by-field and step through sequential/parallel/conditional calling patterns — use it to feel how a single description line changes when and whether the model calls at all.",
+    ],
+    keyPoints: [
+      "**The schema is the model's entire view of a tool** — name, description, typed params. It's a specification interface, not docs; most 'the model is dumb' failures are actually underspecified schemas fixed by editing text, not weights.",
+      "**The description decides WHETHER to call.** Include what/over-what-data, when to use, and explicitly when NOT to use. The negative 'Do NOT use for…' line is the highest-leverage line for stopping over-triggering.",
+      "**Parameter descriptions decide the ARGUMENTS.** Constrain with concrete examples, prefer enums over free strings for closed value spaces, give sane defaults, and minimise required-param count.",
+      "**Granularity: one tool = one clear verb over one clear noun.** Mega-tools with mode flags overload the argument space; too many micro-tools collide on selection. If two tools could answer the same request, one is misnamed.",
+      "**Errors are messages to the model, not logs.** Return structured, actionable errors ({error, message, suggestion}) so the ReAct loop can distinguish not-found from down from bad-arg and self-correct instead of failing blindly.",
+      "**MCP standardises the tool interface** so a well-authored tool is reusable across any client. The design principles are unchanged — MCP just formalises the schema grammar and makes tools portable.",
+    ],
+    recap: [
+      "**Schema = the model's only view of a tool.** Reliability lives in schema authoring, not the model.",
+      "**Description drives WHETHER to call** — always include an explicit 'Do NOT use for…' clause.",
+      "**Params drive the arguments** — constrain with examples, use enums, give defaults, keep count low.",
+      "**Granularity:** one verb over one noun; avoid both mode-flag mega-tools and colliding micro-tools.",
+      "**Return structured, actionable errors** so the agent loop can recover; MCP makes good tools portable across clients.",
+    ],
+    mcqs: [
+      {
+        question: "An HR agent's `search` tool (described only as 'Search for things') keeps getting called for general-knowledge questions it should answer directly, and returns fabricated policy numbers. What is the single highest-leverage schema change to stop the over-triggering?",
+        options: [
+          "Rename the tool to `search_v2` so the model treats it as a fresh capability",
+          "Add explicit when-to-use AND when-NOT-to-use guidance to the description (e.g. 'USE for company policy/benefits; do NOT use for general knowledge'), plus a specific name/corpus",
+          "Increase the model's temperature so it explores non-tool answers more often",
+          "Add ten more optional parameters so the model has more ways to specify intent",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the description is where the model decides whether to call a tool at all, and the missing piece is negative guidance — an explicit 'do NOT use for general knowledge' clause plus a specific name that identifies the corpus. That directly stops the model from treating a vague 'search for things' as a catch-all. Option A is wrong because a version-bumped name still carries no when/when-not semantics; the model has no more basis to choose correctly. Option C is wrong because temperature governs sampling randomness, not tool-selection policy; raising it makes behaviour less reliable, not more, and does nothing about the missing description guidance. Option D is wrong because more parameters expand the space of things the model can get wrong; the fix is clearer routing guidance in the description, not more knobs.",
+      },
+      {
+        question: "A tool currently returns a bare `null` when an order isn't found. In a ReAct agent, why is returning a structured error like `{ error: 'not_found', message: 'No order #4471', suggestion: 'verify the order id' }` materially better?",
+        options: [
+          "It reduces token usage, which lowers cost per call",
+          "Because the model reasons over the Observation: a structured, actionable error lets it distinguish not-found from service-down from bad-argument and self-correct, whereas a bare null is an ambiguous dead end it can't recover from",
+          "It prevents the tool from ever failing in the first place",
+          "Structured errors are required by the function-calling API; bare nulls are rejected",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: in ReAct the tool's return value becomes the Observation the model reasons over, so an error must be authored as a message to the model. A structured error tells the model what failed and what to try next, turning a dead end into a recoverable step; a bare null collapses 'no results', 'service down', and 'bad argument' into one uninterpretable signal, so the model either gives up or retries blindly. Option A is wrong because the benefit is recoverability and correctness, not token savings — structured errors are usually longer. Option C is wrong because error formatting doesn't prevent failures; it makes failures legible. Option D is wrong because function-calling APIs accept null/opaque returns fine; the problem is the model can't act on them, not that the API rejects them.",
+      },
+    ],
+    takeaway: "A tool's schema — name, description, typed params — is the model's entire view of it, so reliability is authored there, not in the model. Put when/when-NOT guidance in the description (decides whether to call), constrain arguments with examples/enums/defaults, keep one tool = one verb over one noun, and return structured actionable errors so the agent can recover. MCP standardises this interface so good tools are reusable across clients.",
+  },
+  "agent-memory-foundations": {
+    depthTier: "core",
+    interviewWeight: "high",
+    scenario: "Your coding agent works beautifully for 20 turns, then starts contradicting decisions it made earlier in the same session, re-reading files it already read, and eventually erroring with a context-length exception. A teammate proposes 'just fine-tune it on the conversation.' You have to explain why the failure is a working-memory management problem — the context window is a finite scratchpad, not infinite RAM — and why fine-tuning is the wrong lever for information that changes every turn.",
+    explanation: [
+      "'Memory' in an LLM agent is not one thing, and treating it as one thing is the root cause of most scaling failures. Start from the hard constraint: a transformer has **no persistent state between calls**. Each forward pass sees only what's in the prompt *right now*. Everything an agent 'remembers' is an engineering pattern layered on top of that statelessness — and there are fundamentally different mechanisms with different capacity, persistence, and cost.\n\nThe first and most important split is **working (short-term) memory vs long-term memory**. Working memory is the **context window itself** — the tokens currently in the prompt. It's the model's scratchpad: everything it can attend to this turn. Long-term memory is anything that outlives the current context — conversation history you re-inject, facts stored in an external store and retrieved on demand, or knowledge baked into the weights.",
+      "**The context window is a scratchpad, and scratchpads have three brutal properties.** It is *finite* (a fixed token budget — 128k, 200k, whatever the model gives you); it is *volatile* (nothing in it survives once you start a new call unless you re-send it); and it is *the most expensive memory you have*, because you pay per token, every turn, for everything you keep in it. ==The scenario's context-length exception is not a bug — it's the scratchpad filling up, which is the *expected* behaviour of a finite working memory used as if it were infinite.==\n\nThis reframes the coding agent's failures. Contradicting earlier decisions and re-reading files aren't reasoning failures — they're symptoms of important information falling *out* of the working set (or never being managed within it). The question is never 'why is the model forgetting' but 'how am I managing what stays in the scratchpad.'",
+      { type: "illustration", label: "Where 'memory' lives, and the cost/persistence of each", content: `                         PERSISTENCE     COST TO USE       CAPACITY
+WORKING (in-context)
+  the prompt tokens        this call only  $$$ per-token      tiny (token budget)
+  = the scratchpad         volatile        EVERY turn        128k-ish, hard cap
+
+LONG-TERM (outlives the context)
+  conversation history     re-injected     $$ (re-send it)   grows unbounded
+  external store + RAG      durable         $ (retrieve k)    effectively infinite
+  weights (fine-tune)      permanent        ~free at infer    fixed, baked in
+
+Reading the table:
+  * Only working memory is 'live' — the model attends to it directly.
+  * Everything long-term must be RE-INJECTED into working memory to be used.
+  * As a session grows you MUST decide what to keep in the scratchpad,
+    what to summarise, and what to push to a store and retrieve on demand.` },
+      "Because working memory is finite and expensive, agents that run past a demo need a **context-management strategy** — a policy for what stays raw, what gets compressed, and what gets evicted. The main levers: **truncation** (drop the oldest turns — cheap, but you lose them), **summarization** (compress older turns into a short synopsis and keep the synopsis in context — you preserve the gist at a fraction of the tokens), and **retrieval** (push the full history to an external store and pull back only the k chunks relevant to the current turn). Real systems combine these: keep the last few turns verbatim, a rolling summary of everything before that, and retrieve specifics on demand.",
+      "**Summarization is the workhorse and it has a sharp trade-off.** Compressing 30 turns into a 200-token synopsis keeps you under budget, but summarization is *lossy* — the detail you drop is gone from working memory. If the coding agent summarised away 'we decided NOT to use library X for reason Y,' it will happily re-propose X later. So the skill is choosing *what* to preserve: decisions, constraints, and commitments are high-value to keep; verbose intermediate output is safe to compress. ==A summary is a bet about what future turns will need; a bad summary manifests as an agent that contradicts its own earlier reasoning.==",
+      "**Retrieval is how you get 'effectively infinite' memory without paying to hold it in context.** You store history/facts in an external store (typically embedded into a vector store), and each turn you embed the current query, pull the top-k most relevant chunks, and inject *only those* into the scratchpad. This is the pattern that scales: the store grows without bound, but per-turn context stays small and cheap. The failure mode moves, though — now it's a **retrieval** problem: pull the wrong chunks and the model reasons over irrelevant context; pull too few and it's missing the fact it needed. 'The agent gave a wrong answer' becomes 'did working-memory management fail, or did retrieval fetch the wrong thing?' — two different fixes.",
+      "This is why the teammate's 'just fine-tune it' is the wrong lever. **Fine-tuning writes information into the weights — permanent, near-free at inference, but static.** It's right for stable skills and style, catastrophically wrong for information that changes every turn: you cannot fine-tune 'the user just said their name is Priya' into the weights mid-conversation, and you shouldn't fine-tune facts that change frequently because the weights can't be edited per-turn. Session-scoped, fast-changing information belongs in working memory and long-term stores, not in the weights. ==Matching the mechanism to the information's change-rate and lifespan is the entire discipline.== The interactive lets you compare each memory type's capacity, persistence, and cost side-by-side — use it to build the reflex of asking 'which memory type is this, and is it the right one' before reaching for any single lever.",
+    ],
+    keyPoints: [
+      "**Transformers are stateless between calls** — everything an agent 'remembers' is an engineering pattern on top of that. 'Memory' is not one thing; the first split is working (in-context) vs long-term (outlives the context).",
+      "**Working memory = the context window = a scratchpad** that is finite (hard token cap), volatile (gone unless re-sent), and the most expensive memory (paid per token, every turn). Context-length errors are the scratchpad filling up, not a bug.",
+      "**Long-term memory must be re-injected to be used.** Conversation history, external stores + retrieval, and weights all live outside the live context; only working memory is directly attended to.",
+      "**Scaling past a demo requires a context-management strategy:** truncation (drop oldest), summarization (compress older turns into a synopsis), and retrieval (store everything, pull back top-k). Real systems combine all three.",
+      "**Summarization is lossy — it's a bet about what future turns need.** Preserve decisions/constraints/commitments; compress verbose intermediate output. A bad summary shows up as an agent contradicting its own earlier reasoning.",
+      "**Match the mechanism to the information's change-rate:** fast-changing/session-scoped facts belong in working memory + stores, not the weights. Fine-tuning is for stable skills/style, never for per-turn facts.",
+    ],
+    recap: [
+      "**LLMs are stateless; all memory is layered on.** First split: working (in-context) vs long-term (outside it).",
+      "**The context window is a finite, volatile, per-token-expensive scratchpad.** Context-overflow = scratchpad full.",
+      "**Long-term memory must be re-injected** into working memory to be used — nothing outside the prompt is 'live.'",
+      "**Manage context with truncation + summarization + retrieval.** Summaries are lossy bets — keep decisions, drop verbosity.",
+      "**Fine-tuning is for stable skills, never per-turn facts.** Match the memory mechanism to how fast the info changes.",
+    ],
+    mcqs: [
+      {
+        question: "A coding agent runs fine for 20 turns, then starts contradicting earlier decisions and eventually throws a context-length exception. A teammate says 'let's fine-tune it on the conversation.' What is the correct diagnosis and lever?",
+        options: [
+          "It's a model-capability problem; fine-tuning on the conversation will teach it to remember and is the right fix",
+          "It's a working-memory management problem: the context window is a finite scratchpad that filled up, and information fell out of the live context — the fix is a context-management strategy (summarize/retrieve/truncate), not fine-tuning per-turn facts",
+          "The model's weights are corrupted mid-session; restarting the model process fixes it",
+          "The context window is too small for this model and the only fix is a model with a larger window",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the context window is working memory — finite, volatile, and paid per token — so a context-length exception is the scratchpad filling, and contradictions come from important information falling out of (or never being managed within) the live context. The right lever is a context-management strategy: summarize older turns, retrieve relevant chunks on demand, and truncate what's safe to lose. Option A is wrong because fine-tuning writes into weights permanently and near-free at inference but is static; you cannot bake per-turn, session-scoped facts into weights mid-conversation. Option C is wrong because weights don't corrupt mid-session — the model is stateless and behaving as expected under a full context. Option D is wrong because a bigger window only delays the same overflow and multiplies per-turn cost; it doesn't replace the need to manage what stays in the scratchpad.",
+      },
+      {
+        question: "Your agent uses summarization to stay under its token budget: it compresses older turns into a short synopsis. It later re-proposes a library the team had explicitly rejected earlier in the session. What does this reveal about summarization?",
+        options: [
+          "Summarization is broken and should never be used; only full-history truncation is safe",
+          "Summarization is lossy — it's effectively a bet about what future turns will need, and the summary dropped a high-value item (the 'do NOT use library X' decision) that later reasoning depended on",
+          "The model hallucinated; summarization had nothing to do with it",
+          "The retrieval store returned the wrong chunks, which is the only possible cause",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: summarization compresses many tokens into few and is inherently lossy, so it functions as a bet about what future turns will need. Decisions, constraints, and commitments (like 'do NOT use library X for reason Y') are high-value and must be preserved; when a summary drops them, the agent loses the basis for its earlier reasoning and re-proposes the rejected option. Option A is wrong because truncation drops the oldest turns entirely and is generally worse at preserving important old decisions than a well-chosen summary; the fix is summarising better, not abandoning it. Option C is wrong because this isn't free-floating hallucination — the model simply no longer has the decision in its working memory because the summary evicted it. Option D is wrong because the agent here relies on summarization for history, not retrieval; misattributing it to retrieval points at the wrong subsystem.",
+      },
+    ],
+    takeaway: "Transformers are stateless, so all agent memory is layered on: working memory is the context window — a finite, volatile, per-token-expensive scratchpad — and long-term memory (history, external stores, weights) must be re-injected to be used. Scaling past a demo means a context-management strategy (truncate/summarize/retrieve); summaries are lossy bets, so preserve decisions and constraints. Match the mechanism to the info's change-rate: fine-tuning for stable skills, never for per-turn facts.",
+  },
+  "agent-memory-libraries": {
+    depthTier: "core",
+    interviewWeight: "medium",
+    scenario: "You need your assistant to remember, across sessions, that a user is vegetarian, prefers metric units, and works in EST — and to recall a fact they mentioned three weeks ago. Your first instinct is to build a custom vector store: embed every message, retrieve top-k each turn. Two sprints in you're hand-rolling TTL expiry, dedup, and conflict resolution (the user changed their timezone) — all of which Mem0 or Zep already handle. The interview question underneath: when do you reach for a memory library versus build your own, and what do these libraries actually do that a raw vector store doesn't?",
+    explanation: [
+      "The foundations module gave you the four memory *types* (working, episodic, semantic, procedural). This module is about the *implementation* layer: the production-hardened libraries — **Mem0, Zep, LangMem, MemGPT/Letta**, and custom vector stores — that turn those concepts into a running system, and the choice of which to reach for. ==The recurring mistake is spending sprints building a custom memory solution when a library already solves the hard cases — TTL expiry, memory consolidation, conflict resolution — that a naive vector store does not.==\n\nStart from what a *raw* vector store gives you and what it does not. A vector store gives you **semantic retrieval**: embed text, store the vectors, and at query time pull the top-k most similar chunks. That is genuinely useful — it's the substrate under long-term memory. But it is only *storage + similarity search*. It has no notion of *time*, *identity*, *change*, or *importance*.",
+      "That gap is exactly where the scenario bites, and it maps to the two long-term memory kinds you must implement differently. **Episodic memory** = specific past events/conversations ('three weeks ago the user asked about X') — inherently *temporal and user-scoped*. **Semantic memory** = distilled durable facts about the user or world ('is vegetarian', 'prefers metric') — inherently *deduplicated and updatable*. A raw vector store stores both as undifferentiated chunks and will happily return a stale timezone next to the corrected one, because it has no mechanism to know one *supersedes* the other.",
+      { type: "illustration", label: "Raw vector store vs a memory library — the missing machinery", content: `USER over three weeks says:
+  turn 3   "I'm in PST"
+  turn 40  "actually I moved, I'm EST now"
+  turn 41  "I'm vegetarian"        turn 60  "I'm vegetarian"  (again)
+
+RAW VECTOR STORE (embed + top-k):
+  stores 4 chunks. Query 'what timezone?' -> returns BOTH
+  "I'm in PST" and "I'm EST now" ranked by similarity.
+  Stores the vegetarian fact TWICE. No idea one supersedes another.
+     missing: time awareness, conflict resolution, dedup, TTL, importance
+
+MEMORY LIBRARY (Mem0 / Zep / LangMem):
+  extract fact  -> {timezone: EST}   (CONFLICT RESOLUTION: EST supersedes PST)
+  extract fact  -> {diet: vegetarian} stored ONCE  (DEDUP / consolidation)
+  each memory carries a timestamp + recency + importance (EPISODIC ordering)
+  stale/low-value memories expire  (TTL) so the store doesn't bloat
+     you get: an evolving USER PROFILE, not a pile of raw chunks` },
+      "So what do the libraries actually *do* on top of a vector store? Four things a naive store lacks. **(1) Extraction / consolidation** — they distill raw turns into structured memories ('user is vegetarian') rather than storing every message verbatim, so the store holds facts, not transcript. **(2) Conflict resolution** — when a new fact contradicts an old one (EST supersedes PST), they update rather than accumulate. **(3) Temporal awareness** — memories carry timestamps and recency so 'three weeks ago' is answerable and recent facts can outrank old ones. **(4) Lifecycle / TTL + importance** — low-value or stale memories expire so the store doesn't bloat and retrieval stays sharp. These are the exact features you found yourself hand-rolling.",
+      "The libraries differentiate on positioning, and knowing the shape matters more than memorising the table. **Mem0** and **LangMem** are the go-to for cross-session recall and user personalization — extract-and-consolidate a durable user profile with minimal setup. **Zep** adds a temporal knowledge-graph model, strong when relationships between facts and time ordering matter. **MemGPT/Letta** take a different tack: an OS-inspired architecture that treats the context window like paged memory, *itself* deciding what to swap in and out of the limited context — memory-management-as-agent, useful when you want the system to autonomously manage its own working set. A **custom vector store** remains the right call when you need access control, custom metadata filtering, or scale beyond what the managed libraries support.",
+      "The decision procedure is a short escalation, and it's the answer to the interview question. **Start with in-context only** — no memory library at all — because it's the cheapest and simplest, and many agents never need more. **Add Mem0 or LangMem** the moment you need cross-session recall or per-user personalization (the scenario's vegetarian/metric/EST profile is exactly this trigger). **Reach for Zep** when temporal/relational structure between facts is load-bearing. **Roll your own vector store only** when access control, bespoke metadata filtering, or scale forces it. ==Building custom *first* is the anti-pattern — you'll re-implement TTL, dedup, and conflict resolution badly.==",
+      "The trap to avoid is over-engineering memory before you've felt the pain that justifies it — and its mirror, under-engineering by dumping everything into a raw vector store and being surprised when it returns contradictory or stale facts. Library choice also shapes architecture in ways that are hard to refactor later (a temporal knowledge graph vs a flat profile store are not swap-compatible), so the choice deserves real thought at design time. The interactive lets you inspect the six memory types with implementation snippets, compare the libraries head-to-head, and run a decision wizard against your own session-length / personalization / latency constraints — use the wizard to pressure-test the escalation above on a concrete use case.",
+    ],
+    keyPoints: [
+      "**This is the implementation layer for the memory types:** the production libraries (Mem0, Zep, LangMem, MemGPT/Letta) + custom vector stores that realise long-term memory. The anti-pattern is hand-building what a library already solves.",
+      "**A raw vector store is only storage + similarity search** — it has no notion of time, identity, change, or importance, so it returns stale facts (old timezone) next to corrected ones and stores duplicates.",
+      "**Libraries add four things a naive store lacks:** extraction/consolidation (facts not transcript), conflict resolution (new supersedes old), temporal awareness (timestamps/recency), and lifecycle/TTL + importance (expiry so the store doesn't bloat).",
+      "**Episodic (temporal, event-specific) and semantic (durable, deduplicated facts) memory need different handling** — the reason a flat vector store fails at both simultaneously.",
+      "**Positioning:** Mem0/LangMem = cross-session recall + personalization; Zep = temporal knowledge-graph relations; MemGPT/Letta = OS-style context paging (memory-management-as-agent); custom store = access control / metadata / scale.",
+      "**Escalation, not custom-first:** start in-context only → add Mem0/LangMem for cross-session recall → Zep for temporal/relational structure → custom vector store only for access control, metadata filtering, or scale.",
+    ],
+    recap: [
+      "**Memory libraries are the implementation layer** for long-term memory types — don't hand-roll what they already solve.",
+      "**A raw vector store = storage + top-k only:** no time, identity, change, or importance — so it returns stale/duplicate facts.",
+      "**Libraries add extraction, conflict resolution, temporal awareness, and TTL/importance** — an evolving profile, not a chunk pile.",
+      "**Match the tool:** Mem0/LangMem for recall+personalization, Zep for temporal graphs, MemGPT/Letta for context paging, custom for access/scale.",
+      "**Escalate, don't over-build:** in-context → Mem0/LangMem → Zep → custom store only when forced. Building custom first is the anti-pattern.",
+    ],
+    mcqs: [
+      {
+        question: "You store every user message in a raw vector store and retrieve top-k each turn. A user who said 'I'm in PST' three weeks ago later says 'I moved, I'm EST now.' When you query 'what's the user's timezone?', the store returns both. Why, and what do memory libraries like Mem0/Zep add to fix it?",
+        options: [
+          "The embedding model is too small; a larger embedding model would return only the correct one",
+          "A raw vector store is only storage + similarity search — it has no conflict resolution, so it keeps both facts and ranks by similarity. Memory libraries add extraction/consolidation, conflict resolution (EST supersedes PST), temporal awareness, and TTL/importance",
+          "The top-k value was set too high; setting k=1 permanently fixes all staleness",
+          "Vector stores can't store timezones at all; you need a relational database instead",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: a raw vector store gives you semantic retrieval but no notion of time, identity, change, or importance, so both the old and corrected timezone are stored and returned by similarity. Memory libraries sit on top and add exactly the missing machinery — they extract structured facts, resolve conflicts so a new fact supersedes an old one, attach timestamps/recency, and expire stale entries — turning a pile of chunks into an evolving profile. Option A is wrong because a bigger embedding model improves similarity quality, not the absence of conflict resolution; both facts are semantically relevant, so it would still return both. Option C is wrong because k=1 might return either the stale or the fresh fact by similarity — it has no way to know which supersedes — so it doesn't fix staleness reliably. Option D is wrong because vector stores can store timezone text fine; the gap is lifecycle/conflict logic, which is what libraries provide (often over a vector store).",
+      },
+      {
+        question: "For a new assistant that needs cross-session personalization (remember a user is vegetarian, prefers metric), what does the recommended escalation say about reaching for a memory solution?",
+        options: [
+          "Always build a custom vector store first — it's the most flexible and everything else is a toy",
+          "Start with in-context only; add Mem0 or LangMem when you need cross-session recall or personalization; reach for Zep when temporal/relational structure matters; roll a custom store only for access control, custom metadata filtering, or scale",
+          "Immediately fine-tune the user's preferences into the model weights for zero-latency recall",
+          "Use MemGPT/Letta for every case since OS-style context paging supersedes all other approaches",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the escalation is start simple and add capability only when a real need appears — in-context first (cheapest), then Mem0/LangMem for cross-session recall and personalization (exactly this use case's trigger), then Zep when temporal/relational structure is load-bearing, and a custom vector store only when access control, bespoke metadata filtering, or scale forces it. Option A inverts the guidance: building custom first is the anti-pattern because you re-implement TTL, dedup, and conflict resolution badly. Option C is wrong because per-user preferences change and are session/user-scoped; fine-tuning bakes static info into weights and can't be updated per user or per turn. Option D is wrong because MemGPT/Letta targets autonomous context paging, not a universal answer; matching the tool to the need (here, personalization) points at Mem0/LangMem, not paging.",
+      },
+    ],
+    takeaway: "Memory libraries are the implementation layer for long-term memory: a raw vector store is only storage + top-k similarity, with no sense of time, identity, change, or importance, so it returns stale and duplicate facts. Mem0/Zep/LangMem/MemGPT add extraction, conflict resolution, temporal awareness, and TTL. Escalate rather than over-build — in-context → Mem0/LangMem for recall+personalization → Zep for temporal graphs → custom store only for access control or scale.",
+  },
+};
