@@ -1,118 +1,407 @@
-// GSL premium-niche track — Inference Optimization & Serving / On-device LLMs (SKELETON, 2026-07-03)
+// GSL premium-niche track — Inference Optimization & Serving / On-device LLMs.
 // RUNNER_DATA fragment. Spread into src/data/foundationsRunnerData.js via ...RUNNER_INFERENCE_OPT.
-// Distinct from the existing "production" gym (cost/latency/observability) and "foundation-models"
-// gym (conceptual quantization): this track is the SERVING-INTERNALS niche — vLLM/TensorRT,
-// batching, and edge/on-device inference. SKELETON HONESTY: spec + "🚧 In development" marker. No MCQs yet.
+// Distinct from the existing "production" gym (cost/latency/observability) and the foundations
+// quantization/kv-cache/speculative modules (conceptual): this track is the SERVING-INTERNALS niche —
+// prefill/decode mechanics, continuous batching, PagedAttention, kernel/parallelism stacks, on-device.
 // Keep the export name RUNNER_INFERENCE_OPT. Additive only.
-
-const DEV = "🚧 In development — outline below. This module is a specced scaffold, not finished teaching content yet. The scenario and numbered outline show exactly what it will cover once authored.";
 
 export const RUNNER_INFERENCE_OPT = {
   "infra-prefill-decode": {
     depthTier: "deep",
     interviewWeight: "high",
-    scenario: DEV + " Your LLM serving bill is exploding and latency is inconsistent. Before optimizing anything, you need to explain how autoregressive inference actually runs — the prefill vs decode split — because it dictates every optimization that follows.",
+    scenario: "Your team ships a 13B chat model on a single A100. The p50 time-to-first-token is a snappy 180ms, but users complain the model 'types slowly' — each subsequent token takes ~40ms, so a 400-token answer takes 16 seconds to stream out. A well-meaning engineer proposes buying a faster GPU with more FLOPS. You pull up the profiler and see the GPU is at 90% compute utilization during the first 180ms and then drops to **8% compute utilization** for the rest of the request while memory bandwidth pegs at 95%. You need to explain why more FLOPS won't fix the slow streaming — and why the two numbers users feel (first-token delay, per-token delay) come from two physically different bottlenecks.",
     explanation: [
-      "WHAT THIS MODULE WILL TEACH (spec):",
-      "1. Two distinct phases: PREFILL (process the whole prompt in parallel — compute-bound) and DECODE (generate one token at a time — memory-bandwidth-bound). They have opposite bottlenecks.",
-      "2. Time-to-first-token (TTFT, dominated by prefill) vs inter-token latency / TPOT (dominated by decode) — the two numbers every serving SLA is written in.",
-      "3. Why decode is memory-bound: each token reloads the whole model + KV cache from HBM; arithmetic intensity is low, so you're waiting on memory, not FLOPs.",
-      "4. The KV cache as the central object: what it stores, how it grows with sequence length, and why it's the #1 memory constraint in serving.",
-      "5. How this framing drives everything downstream: batching, PagedAttention, quantization, and speculative decoding all attack prefill or decode specifically.",
-      { type: "illustration", label: "Planned prefill vs decode contrast (to be built)", content:
-`Phase     Parallelism        Bottleneck        Governs
-Prefill   whole prompt       compute (FLOPs)   TTFT
-Decode    1 token at a time  memory bandwidth  inter-token latency
-  -> optimize the RIGHT phase: batching helps decode throughput;
-     prefill chunking / caching helps TTFT.` },
-      "6. Interview canon: 'explain prefill vs decode', 'why is decode memory-bound', 'what is TTFT vs TPOT', 'what limits serving throughput'.",
+      "LLM inference is **not one workload — it is two**, and they have opposite bottlenecks. Every request runs a **prefill** phase followed by a **decode** phase, and almost every serving optimization you'll ever discuss attacks one or the other specifically.\n\n**Prefill** processes the entire prompt at once. All the prompt tokens are already known, so the model runs them through every layer in **one big parallel forward pass** — a batched matmul over the whole sequence. This produces the first output token and, crucially, fills the KV cache for every prompt position. ==Prefill is compute-bound: you have a large matrix multiply and the tensor cores are the bottleneck.==\n\n**Decode** then generates the rest of the answer **one token at a time**. Token N cannot be computed until token N-1 exists, because N-1 is part of the input that produces N. So decode is *sequential by construction* — one full forward pass through every layer to produce exactly one token, then repeat.",
+      "The reason decode feels slow is **arithmetic intensity** — the ratio of FLOPs performed to bytes moved from memory.\n\nIn a single-stream decode step you process **one** token. To do that, the GPU must stream the *entire* weight matrix of every layer from HBM into the compute units — the same ~26GB of fp16 weights for a 13B model — and do a tiny amount of math with it (one token's worth of matmuls). You move gigabytes to do megaflops. ==The tensor cores sit idle waiting on memory; you are memory-bandwidth-bound, not compute-bound.==\n\nPrefill is the opposite. Processing a 512-token prompt reuses each streamed weight across 512 positions, so the arithmetic-to-bytes ratio is high and the tensor cores stay busy. That is exactly the 90%-compute / 8%-compute split the profiler showed: **prefill saturates FLOPs, decode saturates memory bandwidth.**",
+      { type: "illustration", label: "Why one profiler shows two totally different bottlenecks", content: `13B model, fp16 weights ≈ 26 GB. A100: ~312 TFLOP/s (bf16), ~2.0 TB/s HBM.
+
+PREFILL (512-token prompt, one pass):
+  streams 26 GB weights ONCE, reuses across 512 positions
+  FLOPs ≈ 2 × 13e9 × 512  ≈ 1.3e13   → ~43 ms of pure compute
+  bytes ≈ 26 GB           → ~13 ms of pure memory
+  compute time > memory time  ⇒ COMPUTE-BOUND  (tensor cores ~90% busy)
+  → governs TIME-TO-FIRST-TOKEN (TTFT)
+
+DECODE (1 token per step):
+  streams 26 GB weights to produce ONE token
+  FLOPs ≈ 2 × 13e9 × 1    ≈ 2.6e10   → ~0.08 ms of pure compute
+  bytes ≈ 26 GB           → ~13 ms of pure memory
+  memory time >> compute time  ⇒ MEMORY-BANDWIDTH-BOUND  (cores ~8% busy)
+  → governs INTER-TOKEN LATENCY / TPOT
+
+Same weights, same GPU — the phase decides the bottleneck.` },
+      "This split is why the two latency numbers in every serving SLA are physically distinct.\n\n**TTFT (time-to-first-token)** is dominated by prefill: how long until the user sees anything. It scales with *prompt length* (more prompt tokens = bigger prefill matmul) and is a **compute** problem.\n\n**TPOT (time-per-output-token)**, also called inter-token latency, is dominated by decode: how fast tokens stream after the first. It is roughly constant per token, set by how long it takes to stream the weights once, and is a **memory-bandwidth** problem. ==A 400-token answer's total latency ≈ TTFT + 400 × TPOT== — so long generations live or die on TPOT.\n\nIn the scenario, the 180ms first-token was fine (prefill, compute-fast) but 40ms/token × 400 = 16s of streaming (decode, memory-slow). A GPU with more FLOPS barely touches decode, because decode wasn't waiting on FLOPS.",
+      "The **KV cache** is the object that ties both phases together and drives most of the memory story.\n\nDuring prefill, attention for each token needs the keys and values of every *earlier* token. Rather than recompute them every decode step, the model **caches** the keys and values for all past positions — that's the KV cache. Each new decoded token reads the whole KV cache (to attend over history) and appends its own K and V. ==So decode streams weights *plus* a KV cache that grows one entry per token, per layer, per attention head.==\n\nKV-cache size ≈ `2 × layers × hidden_dim × seq_len × batch × bytes`. It grows **linearly with sequence length and concurrency**, and at long contexts it can rival or exceed the weights in HBM. This is why the KV cache is the #1 memory constraint in serving — and why it becomes part of the per-step memory traffic that makes decode bandwidth-bound.",
+      "The payoff of this framing is that it **tells you which optimization to reach for.** Every serving technique targets prefill or decode specifically:\n\n**Decode is memory-bound with idle compute** → so you have spare FLOPs to spend. That's the door for (a) **continuous batching** — process many requests' decode steps together so one weight-stream serves N tokens, amortizing the bandwidth cost; and (b) **speculative decoding** — let a small draft model propose several tokens so the big model verifies them in one memory-bound pass (covered in the foundations Speculative Decoding module).\n\n**Prefill is compute-bound and scales with prompt length** → so you attack it with **prompt/prefix caching** (reuse KV for shared system prompts), **chunked prefill** (break a long prompt into pieces so it doesn't monopolize the GPU), and better attention kernels (FlashAttention).\n\n==If you can't name whether a technique helps prefill or decode, you don't understand it yet.== That is the entire value of this mental model: it converts a vague 'make inference faster' into a targeted decision about a specific bottleneck.",
     ],
-    takeaway: "SKELETON: LLM inference splits into compute-bound prefill (sets TTFT) and memory-bandwidth-bound decode (sets inter-token latency). Knowing which phase you're optimizing is the foundation of all serving work. Full content + interactive coming.",
+    keyPoints: [
+      "**Inference is two workloads with opposite bottlenecks.** Prefill processes the whole prompt in one parallel pass (compute-bound, sets TTFT). Decode generates one token at a time, sequentially (memory-bandwidth-bound, sets inter-token latency).",
+      "**Decode is memory-bound because of low arithmetic intensity.** Each step streams the entire weight matrix from HBM to produce a single token — gigabytes moved, megaflops done — so tensor cores idle while memory bandwidth pegs. More FLOPS barely helps.",
+      "**The two SLA numbers are physically distinct.** TTFT scales with prompt length and is a compute problem; TPOT is roughly constant per token and is a bandwidth problem. Total latency ≈ TTFT + (tokens × TPOT), so long answers are dominated by TPOT.",
+      "**The KV cache is the memory linchpin.** It caches past keys/values so attention isn't recomputed each step, grows linearly with sequence length and concurrency, and adds to the per-step memory traffic — often rivaling the weights at long context.",
+      "**The framing dictates the fix.** Decode's idle compute is what makes continuous batching and speculative decoding work; prefill's compute cost is what prefix caching and chunked prefill attack. Name the phase before you name the optimization.",
+    ],
+    recap: [
+      "**Two phases, opposite bottlenecks:** prefill = whole prompt in parallel, compute-bound, sets TTFT; decode = one token at a time, memory-bandwidth-bound, sets inter-token latency (TPOT).",
+      "**Decode is slow because arithmetic intensity is low:** stream ~all the weights from HBM to emit one token. You're waiting on memory, not FLOPs — so faster-FLOPS GPUs don't fix slow streaming.",
+      "**SLA math:** total ≈ TTFT + tokens × TPOT. TTFT scales with prompt length (compute); TPOT is near-constant per token (bandwidth). Long generations live on TPOT.",
+      "**KV cache** caches past keys/values to avoid recompute; grows linearly with seq_len × concurrency; can exceed weight memory at long context and drives decode's per-step traffic.",
+      "**Optimizations target a specific phase:** continuous batching + speculative decoding exploit decode's idle compute; prefix caching + chunked prefill + FlashAttention attack prefill's compute cost. Always know which phase you're optimizing.",
+    ],
+    mcqs: [
+      {
+        question: "A 13B model streams tokens slowly (40ms/token) even though the profiler shows the GPU at only 8% compute utilization during generation, with HBM bandwidth at 95%. An engineer wants to buy a GPU with 2× the FLOPS. Why won't that meaningfully speed up the streaming?",
+        options: [
+          "The model is too large to fit, so it's swapping to CPU; a faster GPU won't help until it fits in VRAM",
+          "Single-stream decode is memory-bandwidth-bound — each step streams the entire weight matrix from HBM to produce one token, so the tensor cores idle waiting on memory. Doubling FLOPS speeds up a resource that was never the bottleneck; you'd need more memory bandwidth (or to batch/amortize the weight stream)",
+          "The 40ms is network latency between the client and the server, unrelated to the GPU",
+          "Token generation is CPU-bound because sampling runs on the host, so GPU FLOPS are irrelevant",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: decode has low arithmetic intensity — it moves ~all the model weights from HBM to compute a single token, doing a tiny amount of math. The 8%-compute / 95%-bandwidth profile is the textbook signature of a memory-bandwidth bottleneck, so adding FLOPS speeds up an idle resource. The real levers are higher HBM bandwidth or amortizing the weight stream across many tokens via continuous batching (or verifying multiple tokens per pass via speculative decoding). Option A is a distractor — the profiler shows the model running on-GPU at high bandwidth, not swapping. Option C is wrong — a consistent 40ms per token that tracks GPU HBM saturation is on-device decode cost, not network. Option D is wrong — the forward passes and matmuls run on the GPU; sampling a token from logits is negligible host work, not the bottleneck.",
+      },
+      {
+        question: "A serving team reports two different latency numbers: TTFT is 180ms and TPOT is 40ms/token. A product manager asks why they can't just report 'one latency number.' What is the most accurate explanation of why these are physically distinct?",
+        options: [
+          "They're the same measurement rounded differently; reporting both is redundant",
+          "TTFT is dominated by prefill (a compute-bound parallel pass over the whole prompt, so it scales with prompt length), while TPOT is dominated by decode (a memory-bandwidth-bound sequential step, roughly constant per token). They come from two phases with different bottlenecks, so total latency ≈ TTFT + tokens × TPOT",
+          "TTFT measures server-side latency and TPOT measures client-side rendering latency",
+          "TTFT is higher because the first token requires a database lookup; subsequent tokens are cached",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: prefill and decode are separate phases with different bottlenecks. TTFT reflects prefill — a compute-bound batched matmul over the entire prompt, so it grows with prompt length. TPOT reflects decode — a memory-bandwidth-bound step that streams the weights to emit one token, roughly constant regardless of how many tokens came before. Because a response is TTFT once plus TPOT per generated token, the two numbers capture genuinely different physics and both matter for the SLA. Option A is wrong — they measure different things (first-token delay vs steady-state streaming rate). Option C invents a client/server split that isn't the distinction. Option D invents a database/cache story; the first-token cost is prefill compute, not a lookup.",
+      },
+      {
+        question: "Given that single-stream decode leaves the GPU's compute mostly idle (memory-bound), which optimization directly exploits that idle compute to raise throughput, and why?",
+        options: [
+          "Upgrading to a GPU with more tensor cores, because decode needs more FLOPS",
+          "Continuous batching — because the same weight-stream from HBM can serve many requests' decode steps at once, the spare compute is used to process N tokens per weight load instead of 1, amortizing the memory-bandwidth cost across the batch",
+          "Increasing the sampling temperature so tokens are generated in fewer steps",
+          "Disabling the KV cache so each step moves less data from memory",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: decode is memory-bound with idle tensor cores, which means there is spare compute per step. Continuous batching fills it by processing many requests' decode steps together — one stream of weights from HBM now produces a token for every request in the batch, so the expensive memory traffic is amortized across N tokens instead of paying it per single token. That's the core throughput unlock. Option A adds FLOPS to a resource that was already idle. Option C is nonsense — temperature changes sampling randomness, not the number of sequential decode steps. Option D is backwards — disabling the KV cache forces recomputing all past keys/values every step, massively increasing compute and memory work, not reducing it.",
+      },
+    ],
+    takeaway: "LLM inference is two workloads: prefill processes the whole prompt in one compute-bound pass (sets TTFT, scales with prompt length), and decode generates tokens one at a time in a memory-bandwidth-bound loop (sets TPOT, roughly constant per token). Decode streams ~all the weights from HBM to emit a single token, so it's bandwidth-bound with idle compute — which is exactly why more FLOPS doesn't fix slow streaming, and why continuous batching and speculative decoding exist to fill that idle compute. Name the phase before you name the optimization.",
   },
 
   "infra-batching-throughput": {
     depthTier: "deep",
     interviewWeight: "high",
-    scenario: DEV + " Your GPU sits at 15% utilization but requests still queue. You're serving one request at a time. You need continuous batching to raise throughput without wrecking per-request latency — explain how it works and its tradeoffs.",
+    scenario: "You self-host a 7B model behind an API. Traffic is bursty and requests have wildly different output lengths — some users ask a yes/no question (5 tokens out), others ask for a full essay (800 tokens out). Your first implementation serves one request at a time: throughput is a dismal 40 tokens/sec aggregate and the GPU sits at 12% utilization, yet requests still queue and p99 latency is terrible. Your second attempt batches 8 requests together statically, and now a user's 5-token answer takes 20 seconds because it's stuck waiting for a 800-token essay in the same batch. The interviewer asks: what batching strategy actually fixes both problems, and what does it cost you?",
     explanation: [
-      "WHAT THIS MODULE WILL TEACH (spec):",
-      "1. Why single-request serving wastes the GPU: the model is loaded once but processes one sequence — huge idle memory bandwidth.",
-      "2. Static batching and its flaw: fast requests wait for the slowest in the batch to finish (head-of-line blocking).",
-      "3. Continuous / in-flight batching (the vLLM/TGI default): tokens from many requests are batched per decode step; finished sequences drop out and new ones join mid-flight — the key throughput unlock.",
-      "4. The throughput-vs-latency dial: bigger batches raise throughput but can hurt tail latency; how to tune for an SLA.",
-      "5. Chunked prefill + priority scheduling: interleaving prefill and decode so a long prompt doesn't stall everyone.",
-      { type: "illustration", label: "Planned static vs continuous batching (to be built)", content:
-`Static batching:     [A A A A][B B  . . ]   B's slot idles until batch ends
-Continuous batching: step t: A B C D
-                     step t+1: A _ C D E   (B finished, E joined mid-flight)
-  -> GPU stays saturated; requests join/leave every decode step.` },
-      "6. Interview canon: 'what is continuous batching', 'why does it beat static', 'how do you trade throughput for latency', 'how does vLLM schedule requests'.",
+      "Start from the throughput problem the previous module set up: **single-stream decode is memory-bandwidth-bound with idle compute.** Serving one request at a time streams the entire weight matrix from HBM to produce a single token — you pay the full memory cost for one token of output. The tensor cores are ~90% idle. ==That idle compute is free throughput you're throwing away.==\n\nThe fix is to make one weight-stream do more work: process **many requests' decode steps in the same forward pass.** If 8 requests each want their next token, you can compute all 8 next-tokens by streaming the weights *once* and doing 8× the (cheap) matmul work — turning a memory-bound step that produced 1 token into one that produces 8. Throughput rises roughly linearly with batch size until you re-saturate compute or run out of KV-cache memory.",
+      "The naive way to batch is **static batching**: collect N requests, run them together from start to finish, return all N when done. It captures some of the win but has a fatal flaw for LLMs — **variable output length.**\n\nUnlike a fixed-size image classifier, LLM requests finish at different, *unknown-in-advance* times: one hits its stop token after 5 decode steps, another runs 800. In static batching the whole batch marches lockstep until the **slowest** member finishes. ==Every request that finished early keeps occupying its slot — burning GPU cycles on padding and holding KV-cache memory — until the longest generation in the batch completes.== That's classic head-of-line blocking, and it's exactly why the scenario's 5-token answer took 20 seconds behind an essay.\n\nStatic batching also can't admit new requests mid-flight: a request that arrives one step after the batch launches waits for the entire batch to drain.",
+      { type: "illustration", label: "Static vs continuous batching over decode steps", content: `Four requests. A wants 2 tokens, B wants 5, C wants 3, D wants 2.
+(each cell = one decode step for that slot; · = wasted/padded slot)
+
+STATIC BATCHING (lockstep, batch finishes when slowest B finishes):
+  step:   1  2  3  4  5
+  A:      A  A  ·  ·  ·     A done at step 2, then idles 3 steps
+  B:      B  B  B  B  B
+  C:      C  C  C  ·  ·     C done at step 3, then idles 2 steps
+  D:      D  D  ·  ·  ·     D done at step 2, then idles 3 steps
+  → 8 useful tokens, 20 slot-steps used ⇒ 60% wasted. A/D wait for B.
+
+CONTINUOUS (IN-FLIGHT) BATCHING (finished slots freed, new work admitted):
+  step:   1  2  3  4  5
+  A:      A  A  E  E  E     A finished → E (new request) admitted mid-flight
+  B:      B  B  B  B  B
+  C:      C  C  C  F  F     C finished → F admitted
+  D:      D  D  E' F' ...   D finished → slot reused immediately
+  → no request waits on B; GPU stays saturated; slots never idle.` },
+      "**Continuous (in-flight) batching** is the fix, and it's the default in vLLM and TGI. The batch is managed at the granularity of a **single decode step**, not a whole request.\n\nEach step, the scheduler assembles the set of currently-active sequences and runs one decode step for all of them together. When a sequence emits its stop token, it **drops out immediately** and its slot (and KV memory) is freed. When a new request arrives, it can **join the running batch** on the very next step — the batch composition changes continuously. ==No request waits for another to finish; the GPU never idles on padding.== This is the single biggest throughput lever in modern LLM serving, often 5–20× over naive single-stream, precisely because it converts decode's idle compute into useful work while eliminating head-of-line blocking.",
+      "Continuous batching creates a scheduling wrinkle: **prefill and decode compete for the GPU.** A newly-admitted request must first run its (compute-heavy) prefill before it can join the (memory-bound) decode loop. If a user submits a 4,000-token prompt, its prefill is a big matmul that, run monolithically, **stalls every in-flight decode** for hundreds of milliseconds — spiking everyone's inter-token latency.\n\n**Chunked prefill** solves this: split the long prompt's prefill into fixed-size chunks and interleave those chunks with ongoing decode steps, so a long prompt makes steady progress without monopolizing the GPU. Combined with **priority scheduling** (e.g. favor decode to protect streaming smoothness, or cap the prefill budget per step), this keeps TTFT for new requests and TPOT for existing ones both bounded. ==Continuous batching without chunked prefill still lets one giant prompt wreck tail latency.==",
+      "The whole thing is a **throughput-versus-latency dial**, and staff-level judgment is knowing where to set it. Bigger effective batches raise throughput (more tokens/sec, lower cost per token) but push up **tail latency**: more sequences per step means each step does more work and takes longer, so per-token latency creeps up, and admission delays grow when the batch is full.\n\nThe tuning knobs are **max batch size / max num sequences**, **max tokens per step** (the prefill+decode budget), and how aggressively you admit new work versus protect in-flight requests. ==For an interactive chat SLA you cap batch size to protect p99 TPOT; for an offline bulk-generation job you crank batch size to the KV-memory limit and don't care about tail latency.== And the ceiling on batch size is almost always **KV-cache memory**, not compute — which is exactly the constraint the next module (PagedAttention) is built to relax.",
     ],
-    takeaway: "SKELETON: Continuous (in-flight) batching packs many requests into each decode step and swaps sequences in/out mid-flight — the core throughput unlock in vLLM/TGI — traded against tail latency. Full content + interactive coming.",
+    keyPoints: [
+      "**Batching turns decode's idle compute into throughput.** One HBM weight-stream can produce next-tokens for many requests at once, so a memory-bound step that made 1 token now makes N — throughput rises ~linearly with batch size until compute re-saturates or KV memory runs out.",
+      "**Static batching suffers head-of-line blocking.** LLM outputs finish at different, unknown times; a static batch marches lockstep until the slowest member ends, so early finishers idle in padded slots and new requests can't join mid-batch.",
+      "**Continuous (in-flight) batching schedules per decode step.** Finished sequences drop out and free their KV memory instantly; new requests join the running batch on the next step. This is the core 5–20× throughput unlock in vLLM/TGI, with no request waiting on another.",
+      "**Chunked prefill protects tail latency.** A long prompt's prefill is compute-heavy and can stall all in-flight decode; splitting it into chunks and interleaving with decode keeps both TTFT (new) and TPOT (existing) bounded. Priority scheduling tunes the balance.",
+      "**It's a throughput-vs-latency dial capped by KV memory.** Bigger batches mean lower cost/token but higher tail latency; you cap batch size for interactive SLAs and max it for offline jobs. The batch-size ceiling is usually KV-cache memory, not compute.",
+    ],
+    recap: [
+      "**Single-stream decode wastes the GPU** (memory-bound, idle compute). Batching makes one weight-stream serve N requests' next-tokens, raising throughput ~linearly with batch size.",
+      "**Static batching = head-of-line blocking:** variable, unknown output lengths mean the batch runs until the slowest member finishes; early finishers idle and no one can join mid-flight.",
+      "**Continuous / in-flight batching** manages the batch per decode step: finished sequences drop out and free KV memory immediately, new requests join next step. The default in vLLM/TGI; ~5–20× over naive.",
+      "**Chunked prefill + priority scheduling** stop a long prompt's compute-heavy prefill from stalling in-flight decode, keeping TTFT and TPOT bounded.",
+      "**Throughput-vs-latency dial capped by KV memory:** bigger batch = lower cost/token but worse tail latency. Cap for interactive SLAs, max for offline. KV-cache memory (not compute) is the usual ceiling — which PagedAttention exists to relax.",
+    ],
+    mcqs: [
+      {
+        question: "A team static-batches 8 requests of very different output lengths. A user's 5-token answer takes 20 seconds because it's stuck behind an 800-token generation in the same batch. What is the fundamental cause, and what fixes it?",
+        options: [
+          "The GPU is too slow; the fix is a faster GPU so the 800-token generation finishes sooner",
+          "Static batching runs all requests lockstep until the slowest one finishes (head-of-line blocking from variable, unknown output lengths). Continuous/in-flight batching fixes it by scheduling per decode step — finished sequences drop out immediately and new ones join mid-flight, so no request waits on another",
+          "The 5-token request was assigned a lower thread priority; raising its OS priority fixes it",
+          "The batch size of 8 is too small; increasing it to 64 would let the short request finish first",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: LLM requests finish at different, unpredictable times, and a static batch advances in lockstep until its slowest member (the 800-token essay) completes — so the 5-token answer is done in 5 steps but can't be returned or freed for ~795 more steps. That's head-of-line blocking. Continuous batching manages the batch at single-decode-step granularity: a finished sequence exits immediately (freeing its slot and KV memory) and new requests join the running batch on the next step, so short requests aren't hostage to long ones. Option A misdiagnoses — a faster GPU shortens the essay slightly but the short request still waits for it. Option C invents OS thread priorities; the coupling is the batching structure, not scheduler priority. Option D makes it worse — a bigger static batch means more chances of an even-longer member to wait behind.",
+      },
+      {
+        question: "In a continuously-batched vLLM server, a user submits a 4,000-token prompt and suddenly every other in-flight request's inter-token latency spikes for a few hundred milliseconds. What's happening, and what's the standard mitigation?",
+        options: [
+          "The long prompt overflowed the context window and corrupted other requests; the fix is a hard prompt-length limit",
+          "The new request's prefill is a large compute-bound matmul; run monolithically it monopolizes the GPU for one long step and stalls all in-flight decode. Chunked prefill splits that prefill into fixed-size chunks interleaved with ongoing decode steps, so the long prompt makes steady progress without freezing everyone",
+          "The KV cache ran out and evicted other requests, which had to restart from scratch",
+          "The GPU thermally throttled from the extra load; the fix is better cooling",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: a newly admitted request must run its prefill before it can join the decode loop, and prefill is compute-heavy and scales with prompt length. A 4,000-token prefill run as one monolithic step occupies the GPU long enough that every in-flight decode step is delayed — hence the synchronized latency spike. Chunked prefill breaks the prompt's prefill into fixed-size pieces and interleaves them with decode steps, bounding how long any single step blocks decode and keeping both TTFT (for the new request) and TPOT (for existing ones) in check. Option A invents context-window corruption; long prompts don't corrupt other requests. Option C describes a different failure (KV pressure) and vLLM preempts/recomputes rather than silently corrupting; the described symptom is specifically the prefill stall. Option D is a generic distractor unrelated to the batching mechanics.",
+      },
+      {
+        question: "An engineer running continuous batching wants to raise throughput and keeps increasing the max batch size. Throughput climbs, then plateaus and OOM errors appear — well before compute utilization maxes out. What is the binding constraint, and what's the correct framing?",
+        options: [
+          "The batch size hit the CPU core count; add CPUs to raise it further",
+          "KV-cache memory is the ceiling: each concurrent sequence needs KV storage that grows with its length, so the number of sequences you can batch is limited by HBM left over after weights — not by compute. This is exactly the constraint PagedAttention is designed to relax by eliminating KV fragmentation",
+          "Throughput is limited by network bandwidth to the clients; batching can't help beyond a point",
+          "The model's parameter count caps the batch size; you'd need a smaller model to batch more",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: in continuous batching each active sequence holds a KV cache proportional to its sequence length, and all those caches must coexist in HBM alongside the weights. So the practical batch-size ceiling is KV-cache memory, which is why OOM appears before compute saturates. Recognizing that memory (not FLOPs) is the binding constraint is the setup for PagedAttention, which packs KV memory efficiently to fit more concurrent sequences per GPU. Option A confuses GPU batching with CPU parallelism. Option C invents a network bottleneck unrelated to on-GPU batch capacity. Option D is wrong — the weights are a fixed cost; what scales with batch size (and causes the OOM) is the per-sequence KV cache, not the parameter count.",
+      },
+    ],
+    takeaway: "Batching converts decode's idle compute into throughput by making one HBM weight-stream serve many requests' next-tokens at once. Static batching wastes most of that gain to head-of-line blocking because LLM outputs finish at different, unknown times. Continuous (in-flight) batching — the vLLM/TGI default — schedules per decode step so finished sequences exit and free KV memory immediately while new requests join mid-flight, delivering the core 5–20× throughput unlock; chunked prefill keeps a long prompt from stalling everyone. It's a throughput-vs-latency dial whose ceiling is almost always KV-cache memory, not compute — which is exactly what PagedAttention exists to relax.",
   },
 
   "infra-paged-attention-kv": {
     depthTier: "deep",
     interviewWeight: "high",
-    scenario: DEV + " You can only fit a handful of concurrent requests before OOM, even though average sequences are short. The KV cache is fragmenting your GPU memory. Explain PagedAttention and how it fixes KV-cache waste.",
+    scenario: "Your continuously-batched server should, by the memory math, fit ~40 concurrent 2K-context requests on an 80GB A100 after weights. In practice it OOMs at ~14 concurrent requests, and nvidia-smi shows 30GB of VRAM 'used' but your active KV caches only account for ~12GB. Average sequences are short, yet you're leaving most of the card unusable. The interviewer wants you to explain where the memory is going and how PagedAttention recovers it — with the memory arithmetic, not hand-waving.",
     explanation: [
-      "WHAT THIS MODULE WILL TEACH (spec):",
-      "1. The KV-cache memory problem: pre-allocating for max sequence length wastes memory (internal fragmentation); dynamic growth fragments it (external fragmentation).",
-      "2. PagedAttention: treat KV cache like OS virtual memory — non-contiguous fixed-size blocks (pages) with a block table, so memory is allocated on demand and near-zero waste.",
-      "3. The payoff: far more concurrent sequences per GPU → higher throughput; plus prefix/block sharing (copy-on-write) for common prompts and beam search.",
-      "4. KV-cache quantization (int8/fp8) and eviction as complementary levers when memory is still tight.",
-      "5. How this connects to batching: PagedAttention is WHAT MAKES continuous batching memory-efficient at scale.",
-      { type: "illustration", label: "Planned KV paging illustration (to be built)", content:
-`Naive: [req A reserves MAX seq len]......(mostly empty, wasted)
-Paged: KV split into fixed blocks; a block table maps logical->physical
-       shared prefix blocks reused across requests (copy-on-write)
-  -> allocate only what's used; pack many more requests per GPU.` },
-      "6. Interview canon: 'what is PagedAttention', 'why does KV cache waste memory', 'how do you serve more concurrent requests', 'how does prefix sharing work'.",
+      "The previous module ended on the real ceiling: **KV-cache memory, not compute, caps how many requests you can batch.** So the game is fitting more KV caches in HBM. The problem is that the *naive* way of storing the KV cache wastes most of the memory you paid for.\n\nFirst, the arithmetic. Per token, the KV cache stores a key and a value in **every layer, for every attention head** (or KV head under grouped-query attention). ==KV bytes ≈ `2 (K and V) × layers × kv_heads × head_dim × bytes_per_elem`, per token.== For a 13B-class model at fp16 that's on the order of ~0.5–1 MB per token; multiply by sequence length and by the number of concurrent requests and the KV cache quickly becomes the dominant consumer of VRAM — which is why storing it efficiently is the whole ballgame.",
+      "Naive serving stores each request's KV cache in **one contiguous block of memory sized to the maximum possible sequence length.** That creates two classic memory-management pathologies at once.\n\n**Internal fragmentation (the big one):** you reserve, say, 2,048 tokens of KV space up front, but the request only generates 100 tokens — so ~95% of that reservation sits allocated-but-empty for the request's whole lifetime. You can't lend it to another request because it's earmarked. ==Every request pre-pays for its worst case, so the card fills with reserved-but-unused KV space.==\n\n**External fragmentation:** requests of different lengths come and go, leaving oddly-sized gaps between live contiguous blocks. A new request needs a contiguous run big enough for its max length; even if the *total* free memory is plenty, no single gap is large enough, so allocation fails. That's the scenario: 30GB 'used', 12GB actually holding KV, and OOM at 14 requests — the rest is fragmentation waste.",
+      "**PagedAttention** (the idea vLLM is built on) fixes this by borrowing the oldest trick in operating systems: **virtual memory and paging.**\n\nInstead of one contiguous per-request block, the KV cache is split into small **fixed-size blocks** (e.g. 16 tokens' worth of KV each). A request's logical sequence of tokens is mapped to a set of physical blocks through a **block table** — exactly like an OS page table mapping virtual pages to physical frames. ==The physical blocks a request uses need not be contiguous; they're allocated from a shared pool on demand, one block at a time as the sequence grows.==\n\nThe attention kernel is made 'paged-aware': it gathers the K/V it needs by following the block table rather than assuming a flat contiguous array. The result: you allocate KV memory in small increments only as tokens are actually produced, so internal fragmentation drops to at most one partially-filled block per sequence (a few percent), and external fragmentation vanishes because every block is the same size and interchangeable.",
+      { type: "illustration", label: "Contiguous max-length reservation vs paged blocks", content: `NAIVE CONTIGUOUS (reserve max_len = 2048 per request):
+  req A: [■■■■□□□□□□□□□□□□□□□□□□□□□□]  used 100 / reserved 2048  → ~95% wasted
+  req B: [■■■■■■□□□□□□□□□□□□□□□□□□□□]  used 300 / reserved 2048  → ~85% wasted
+  free memory is fragmented into gaps too small for a new 2048-block reservation
+  → OOM long before the card is actually full.
+
+PAGEDATTENTION (fixed 16-token blocks + per-request block table):
+  block pool (physical):  [b0][b1][b2][b3][b4][b5][b6][b7] ... (shared)
+  req A block table → [b0, b3]          (2 blocks = up to 32 tokens, grows on demand)
+  req B block table → [b1, b2, b5, b7]  (blocks need NOT be contiguous)
+  → allocate a block only when a sequence fills the previous one;
+    waste ≤ one partial block per request (a few %), no external fragmentation.
+
+Shared prefix (copy-on-write): system prompt lives in blocks [b0,b1];
+  many requests' block tables point at [b0,b1] → stored ONCE, not per request.` },
+      "The payoff is **large and directly measured in concurrency.** Cutting KV waste from ~60–80% down to a few percent lets you pack **several times more concurrent sequences** onto the same GPU — the original vLLM paper reports up to ~2–4× higher throughput than prior systems at the same latency, essentially all of it from reclaimed KV memory feeding a bigger continuous batch. ==PagedAttention is *what makes continuous batching memory-efficient at scale* — the two are complementary: batching wants more sequences, paging lets the memory hold them.==\n\nPaging also unlocks **sharing.** Because blocks are addressable and reference-countable, multiple requests can point their block tables at the **same physical blocks** for a shared prefix — a common system prompt, a few-shot preamble, or the branches of a beam search / parallel samples. The shared blocks are stored **once** and use **copy-on-write**: the moment one request needs to diverge (write a different token), it gets its own copy of just that block. For a workload where every request carries the same 500-token system prompt, prefix sharing alone can save enormous KV memory.",
+      "PagedAttention is one lever on the KV budget; production systems stack it with two others when memory is *still* tight.\n\n**KV-cache quantization** (int8 or FP8 KV) halves or quarters KV bytes per token — orthogonal to weight quantization, and covered in the foundations Quantization module. Paged blocks make this clean: you just store lower-precision K/V in each block.\n\n**KV eviction / windowing** drops or offloads KV for tokens unlikely to matter — e.g. sliding-window attention keeps only the last W tokens' KV, and 'H2O'-style heavy-hitter policies keep the tokens attention actually attends to. And under memory pressure, a scheduler can **preempt** a running request: page its KV out to CPU (or recompute it later) to make room, then swap it back — the serving analog of OS page-out. ==The unifying idea is that once the KV cache is paged, it becomes a managed resource you can quantize, share, evict, and swap — instead of a rigid contiguous reservation you can only over-provision.==",
     ],
-    takeaway: "SKELETON: PagedAttention manages the KV cache in non-contiguous fixed-size blocks (OS-style paging), eliminating fragmentation, enabling prefix sharing, and packing many more requests per GPU. Full content + interactive coming.",
+    keyPoints: [
+      "**KV bytes per token ≈ 2 × layers × kv_heads × head_dim × bytes**, accumulated over sequence length and concurrency. It's the dominant VRAM consumer in serving, so how you *store* it determines how many requests fit — not just how big it is.",
+      "**Naive contiguous storage wastes most KV memory.** Reserving max-sequence-length per request causes internal fragmentation (short requests hold huge empty reservations) and external fragmentation (variable-length requests leave gaps too small to reuse) — you OOM with the card half-empty.",
+      "**PagedAttention applies OS paging to the KV cache.** Fixed-size blocks + a per-request block table map logical tokens to non-contiguous physical blocks allocated on demand, cutting waste to ≤ one partial block per sequence and eliminating external fragmentation.",
+      "**Paging is what makes continuous batching scale.** Reclaimed KV memory feeds a larger batch, yielding ~2–4× throughput at the same latency in vLLM — the two techniques are complementary, not alternatives.",
+      "**Addressable blocks enable prefix sharing (copy-on-write).** A shared system prompt, few-shot preamble, or beam/parallel-sample branch is stored once; a request copies only the block it diverges on — huge savings when every request carries the same prefix.",
+      "**Paging turns KV into a managed resource.** Once blocked, KV can also be quantized (int8/FP8 KV), windowed/evicted (sliding-window, heavy-hitter), or preempted/swapped to CPU under pressure — layered levers on the same memory budget.",
+    ],
+    recap: [
+      "**KV cache is the serving memory ceiling:** bytes/token ≈ 2 × layers × kv_heads × head_dim × bytes, × seq_len × concurrency. Efficient storage decides concurrency.",
+      "**Naive contiguous max-length reservation fragments memory:** internal (short requests hold empty reservations) + external (gaps too small to reuse) → OOM while the card looks half-used.",
+      "**PagedAttention = OS-style paging for KV:** fixed-size blocks + block table map logical→physical, non-contiguous, allocated on demand. Waste ≤ one partial block/request; no external fragmentation.",
+      "**Complements continuous batching:** reclaimed KV memory → bigger batch → ~2–4× throughput at equal latency in vLLM. Batching wants sequences; paging holds them.",
+      "**Prefix sharing via copy-on-write:** shared system prompt / few-shot / beam branches stored once, copied only on divergence — big savings for common prefixes.",
+      "**KV becomes a managed resource:** stack KV quantization (int8/FP8), windowing/eviction, and CPU swap/preemption on top of paging when memory is still tight.",
+    ],
+    mcqs: [
+      {
+        question: "A continuously-batched server OOMs at ~14 concurrent short requests even though active KV caches only account for ~12GB of an 80GB card and nvidia-smi shows ~30GB 'used'. What is the primary cause under naive contiguous KV storage?",
+        options: [
+          "The model weights secretly grew at runtime and consumed the missing memory",
+          "Fragmentation: naive storage reserves a contiguous max-sequence-length KV block per request, so short requests hold large empty reservations (internal fragmentation) and variable-length requests leave gaps too small to reuse (external fragmentation) — most of the 'used' memory is reserved-but-empty, so you OOM with the card effectively half-wasted",
+          "A memory leak in the sampling loop is accumulating tensors each step",
+          "The KV cache for 14 requests genuinely needs 30GB; the memory math was simply wrong",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: naive serving gives each request one contiguous block sized to the maximum possible sequence length. A short request that generates 100 tokens still holds a 2,048-token reservation — internal fragmentation — and the come-and-go of variable-length requests leaves gaps too small for the next contiguous reservation — external fragmentation. So VRAM shows large 'used' while actual live KV is small, and allocation fails early. That gap between 12GB live and 30GB used IS the fragmentation. Option A is impossible — weights are a fixed allocation. Option C invents a leak; the symptom (used ≫ live KV, OOM at low concurrency) is the fragmentation signature, not monotonic growth. Option D contradicts the stated numbers — live KV is 12GB, so 30GB used is waste, not genuine need.",
+      },
+      {
+        question: "How does PagedAttention eliminate the KV-cache fragmentation problem, in one precise sentence of mechanism?",
+        options: [
+          "It compresses the KV cache with gzip so it takes less space",
+          "It splits the KV cache into small fixed-size blocks mapped by a per-request block table (like OS virtual-memory paging), so physical blocks are allocated on demand and need not be contiguous — cutting internal waste to at most one partial block per sequence and eliminating external fragmentation because all blocks are interchangeable",
+          "It moves the entire KV cache to CPU RAM, which is larger, and streams it back each step",
+          "It caps every request to a short fixed context length so no request can fragment memory",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: PagedAttention borrows OS paging. The KV cache becomes fixed-size blocks (e.g. 16 tokens each); a per-request block table maps the logical token sequence to physical blocks drawn from a shared pool, allocated one block at a time as the sequence grows. Because blocks are non-contiguous and uniform, internal waste is bounded to the single partially-filled last block per request, and external fragmentation disappears (any free block fits any request). Option A confuses paging with generic compression — the win is allocation structure, not byte-level compression. Option C describes CPU offload/swap, a separate lever; PagedAttention keeps KV on the GPU in paged blocks. Option D 'fixes' fragmentation by crippling functionality, which is not the mechanism and defeats the point.",
+      },
+      {
+        question: "A serving workload sends thousands of requests that all share the same 500-token system prompt but then diverge. Which PagedAttention capability directly reduces KV memory here, and how does it stay correct when requests diverge?",
+        options: [
+          "Nothing — each request must store its own full copy of the system prompt's KV cache",
+          "Prefix sharing with copy-on-write: because KV blocks are addressable and reference-counted, many requests' block tables point at the same physical blocks holding the shared prompt, so it's stored once; when a request writes a token that diverges, it gets a private copy of just that one block, preserving correctness",
+          "KV quantization automatically deduplicates identical prompts across requests",
+          "Continuous batching merges the requests into a single sequence, so the prompt is naturally stored once",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: paged blocks are addressable and reference-countable, so multiple requests can share the physical blocks that hold a common prefix (the 500-token system prompt) — stored a single time instead of per request. Correctness on divergence is handled by copy-on-write: the first time a request needs to write into a shared block (its generation diverges), it copies just that block and updates its own block table, leaving other requests' view intact. Option A is the pre-paging status quo that this fixes. Option C conflates two orthogonal levers — quantization lowers precision per element but doesn't share identical prefixes across requests. Option D is wrong — continuous batching runs sequences together per step but does not merge distinct requests into one shared-storage sequence; prefix sharing is the mechanism that dedupes the prompt.",
+      },
+    ],
+    takeaway: "KV-cache memory, not compute, caps serving concurrency — and naive contiguous, max-length KV storage wastes most of it to internal and external fragmentation, so you OOM with the card half-empty. PagedAttention applies OS-style paging: fixed-size KV blocks mapped by a per-request block table, allocated on demand and non-contiguous, cutting waste to ≤ one partial block per sequence. That reclaimed memory feeds a larger continuous batch (~2–4× throughput at equal latency in vLLM), and addressable blocks enable copy-on-write prefix sharing for common system prompts and beam branches. Once paged, the KV cache becomes a managed resource you can also quantize, window/evict, and swap to CPU under pressure.",
   },
 
   "infra-serving-stacks": {
     depthTier: "deep",
     interviewWeight: "high",
-    scenario: DEV + " You must self-host a Llama-class model at production scale. Do you use vLLM, TensorRT-LLM, or Triton? The interviewer wants you to defend a serving stack on throughput, latency, hardware, and operational cost.",
+    scenario: "You must self-host a Llama-3 70B model in production behind a strict SLA: p99 TTFT under 400ms, p99 inter-token latency under 50ms, at 500 concurrent users. It won't fit on one 80GB GPU at fp16 (140GB of weights). The interviewer hands you a whiteboard: choose and defend a serving stack — vLLM, TensorRT-LLM, or Triton — and explain exactly how you'll split a 70B model across GPUs, which kernels matter, and where the latency actually comes from. 'Just use vLLM' is not a sufficient answer; they want the mechanics.",
     explanation: [
-      "WHAT THIS MODULE WILL TEACH (spec):",
-      "1. The serving-stack landscape: vLLM (PagedAttention + continuous batching, easy), TensorRT-LLM (NVIDIA-optimized kernels, lowest latency, more work), Triton Inference Server (multi-model serving/orchestration), SGLang, TGI.",
-      "2. Kernel-level optimizations: FlashAttention, fused kernels, CUDA graphs, and why TensorRT squeezes latency the others can't.",
-      "3. Parallelism for big models: tensor parallelism (split within a layer) vs pipeline parallelism (split across layers) vs expert parallelism (MoE), and when each is needed.",
-      "4. Precision: fp16/bf16 vs fp8 vs int4 weight-only, and the accuracy/throughput tradeoff at serving time.",
-      "5. The build-vs-buy decision axis: managed API vs self-hosted stack — cost at scale, data control, and team capability (links to the existing Production track).",
-      { type: "illustration", label: "Planned serving-stack comparison (to be built)", content:
-`Stack           Strength                     Cost to operate
-vLLM            throughput, easy setup       low
-TensorRT-LLM    lowest latency (NVIDIA)      high (build/tune)
-Triton          multi-model orchestration    medium
-  -> pick on: latency SLA, hardware, model size (parallelism), team.` },
-      "6. Interview canon: 'vLLM vs TensorRT-LLM', 'tensor vs pipeline parallelism', 'how do you serve a 70B model', 'when self-host vs API'.",
+      "First, the model doesn't fit on one card, so the foundational decision is **parallelism** — *how* you split a 70B model across GPUs. There are three axes and they compose.\n\n**Tensor parallelism (TP):** split each layer's weight matrices *across* GPUs — every GPU holds a slice of every layer and they collaborate on each matmul. This is the go-to for fitting a model that's too big for one card and for cutting latency, because all GPUs work on the *same* token simultaneously. The cost: an **all-reduce communication** across GPUs on every layer, so TP wants fast interconnect (NVLink) and usually stays within one node (TP=8 across 8 GPUs). ==TP reduces latency but is communication-heavy — it lives inside a node.==\n\n**Pipeline parallelism (PP):** split the model's *layers* across GPUs — GPU0 holds layers 1–20, GPU1 holds 21–40, etc. A token flows through the pipeline stage by stage. Communication is cheap (just hand off activations between stages), so PP scales *across* nodes — but naively it creates a 'pipeline bubble' (idle stages) unless you keep many microbatches in flight. ==PP scales across nodes cheaply but adds pipeline latency.==",
+      "**Expert parallelism (EP)** is the third axis, for **Mixture-of-Experts** models (covered conceptually in the foundations MoE module): distribute the experts across GPUs, and route each token to its selected experts, which may live on other GPUs — an all-to-all communication. It's how you serve a model with a huge total parameter count but a small *active* count per token.\n\nThe practical recipe for a 70B dense model: ==use **tensor parallelism within a node** (TP=8 on 8×A100) to fit it and get low latency; add **pipeline parallelism across nodes** only when the model or context is too big for a single node's aggregate memory.== For the scenario, one 8×A100 node with TP=8 (or TP=4 on 4×H100) comfortably holds a 70B model at fp16/fp8 with room for KV cache, and the tight inter-token SLA favors TP's same-token parallelism over PP's cross-stage handoffs.",
+      { type: "illustration", label: "Tensor vs pipeline vs expert parallelism", content: `A 70B model, 80 layers, split across GPUs three different ways:
+
+TENSOR PARALLELISM (TP=4): split each layer's matrices across 4 GPUs
+  layer L weights  →  [G0 slice][G1 slice][G2 slice][G3 slice]
+  all 4 GPUs work the SAME token together; all-reduce EVERY layer
+  → best for latency + fitting big models; needs NVLink; stays in-node.
+
+PIPELINE PARALLELISM (PP=4): split the 80 LAYERS across 4 GPUs
+  G0: layers 1-20 → G1: 21-40 → G2: 41-60 → G3: 61-80
+  token flows stage→stage; cheap comms → scales ACROSS nodes
+  → risk: pipeline 'bubble' (idle stages) without enough microbatches.
+
+EXPERT PARALLELISM (EP): for MoE — spread experts across GPUs
+  token routed to its top-k experts (may be on other GPUs); all-to-all comm
+  → serves huge total params with small ACTIVE params per token.
+
+Real 70B recipe: TP within a node (fit + latency), PP across nodes only if needed.` },
+      "With the model placed, the **stack choice** is really a choice about *kernels and operational cost.* All three stacks do continuous batching and PagedAttention-style KV management now; they differ in how hard they push the GPU and how much work they demand of you.\n\n**vLLM:** the pragmatic default. It originated PagedAttention, has excellent continuous batching, wide model coverage, and is easy to stand up. Throughput is excellent; latency is very good but not absolute-best. ==Low operational cost — you're serving in an afternoon.==\n\n**TensorRT-LLM:** NVIDIA's stack that **compiles** the model into a fused, hardware-specific engine ahead of time. It squeezes the lowest latency of the three by aggressively fusing kernels, using CUDA graphs, and exploiting FP8 on Hopper — but you pay for it: you build an engine per model/precision/GPU/batch-shape, tuning is finicky, and iteration is slow. ==Highest performance, highest operational cost.==\n\n**Triton Inference Server:** not primarily an LLM kernel engine but an **orchestration layer** — it serves many models (often *with* a TensorRT-LLM or vLLM backend), handles dynamic batching, versioning, multi-model routing, and ensembles. ==You reach for Triton when you're running a fleet of models, not tuning one.==",
+      "The kernel-level tricks are *why* TensorRT-LLM can win on latency, and they're worth naming because they apply everywhere.\n\n**FlashAttention** is the biggest one and it's an **IO-awareness** result, not a math change. Standard attention materializes the full N×N attention-score matrix in HBM — for long sequences that's huge memory traffic, and attention is memory-bound. FlashAttention computes attention in **tiles that stay in fast on-chip SRAM**, never writing the giant score matrix to HBM (it uses an online-softmax trick to accumulate without storing all scores). ==Same output, far fewer HBM reads/writes → big speedup and much lower memory, especially at long context.==\n\n**Kernel fusion** merges many small ops (e.g. a matmul + bias + activation, or the whole attention block) into one GPU kernel, so intermediate results stay in registers/SRAM instead of round-tripping through HBM — again attacking memory traffic, the real bottleneck. **CUDA graphs** capture a whole repeated decode step as one launchable graph, eliminating per-op CPU launch overhead that otherwise dominates when each op is tiny (which it is in decode). All three exist because decode is memory-and-launch-bound, so cutting HBM traffic and launch overhead is where the latency lives.",
+      "Finally, wrap the stack in the **serving-infra decisions** that determine cost and reliability at 500 concurrent users.\n\n**Autoscaling** is hard for LLMs because of **cold starts**: spinning up a new replica means pulling tens of GB of weights and loading them onto the GPU — tens of seconds to minutes. ==So you scale on a leading signal (queue depth / tokens-in-flight, not CPU) and keep warm replicas or a warm pool, because reactive scaling arrives too late for a traffic spike.== You also right-size GPUs to the SLA (H100 for tight latency, A100/L40S for cost), and separate prefill-heavy from decode-heavy traffic when it pays (disaggregated serving splits prefill and decode onto different GPU pools so a burst of long prompts doesn't wreck decode latency).\n\nAnd the honest top-level decision — **build vs buy** — belongs to the Production track: a managed API removes all of this operational surface (parallelism, engine builds, autoscaling, cold starts) at a per-token premium; self-hosting wins on cost at high, steady volume, on data control, and when you need a model or configuration no API offers. ==Stack selection is an SLA + hardware + team-capability decision, not a 'which is best' decision.==",
     ],
-    takeaway: "SKELETON: Serving stacks trade ease (vLLM) vs peak latency (TensorRT-LLM) vs orchestration (Triton); big models add tensor/pipeline/expert parallelism and precision choices. Stack selection is an SLA + hardware + team decision. Full content + interactive coming.",
+    keyPoints: [
+      "**Parallelism has three composable axes.** Tensor parallelism splits each layer's matrices across GPUs (low latency, all-reduce every layer, stays in-node); pipeline parallelism splits layers across GPUs (cheap comms, scales across nodes, risks pipeline bubbles); expert parallelism distributes MoE experts (all-to-all routing).",
+      "**The 70B recipe: TP within a node, PP across nodes only if needed.** TP=8 on an 8×A100 node fits a 70B model and gives low inter-token latency because all GPUs work the same token; add PP across nodes only when one node's memory is insufficient.",
+      "**Stack choice is about kernels and operational cost, not features.** vLLM = easy, high-throughput default (low ops cost); TensorRT-LLM = compiled fused engine, lowest latency, highest ops cost (per-model engine builds); Triton = multi-model orchestration layer, often fronting a vLLM/TRT-LLM backend.",
+      "**Kernel wins are IO-awareness wins.** FlashAttention tiles attention in on-chip SRAM and never writes the N×N score matrix to HBM (same output, far less memory traffic); kernel fusion keeps intermediates off HBM; CUDA graphs remove per-op launch overhead — all attacking decode's memory/launch bottleneck.",
+      "**LLM autoscaling is dominated by cold starts.** Loading tens of GB of weights takes tens of seconds, so scale on a leading signal (queue depth/tokens-in-flight) and keep warm replicas; reactive CPU-based scaling arrives too late. Disaggregating prefill and decode protects tail latency under bursty prompts.",
+      "**Stack selection is SLA + hardware + team, and build-vs-buy is upstream.** A managed API removes parallelism/engine/autoscaling/cold-start surface at a per-token premium; self-hosting wins on high steady volume, data control, and unavailable configurations (see the Production track).",
+    ],
+    recap: [
+      "**Parallelism axes:** tensor (split matrices in a layer; low latency; all-reduce/layer; in-node), pipeline (split layers across GPUs; cheap comms; cross-node; bubble risk), expert (spread MoE experts; all-to-all). They compose.",
+      "**70B recipe:** TP within a node to fit + cut inter-token latency; add PP across nodes only when memory demands it.",
+      "**Stacks differ on kernels + ops cost:** vLLM (easy, high throughput, low ops), TensorRT-LLM (compiled fused engine, lowest latency, high ops — per-model builds), Triton (multi-model orchestration, backends onto vLLM/TRT-LLM).",
+      "**Kernels = IO-awareness:** FlashAttention keeps attention tiles in SRAM and skips the HBM N×N matrix; fusion keeps intermediates off HBM; CUDA graphs cut launch overhead — all attack decode's memory/launch bottleneck.",
+      "**Infra:** autoscale on leading signals (queue depth) with warm replicas because cold starts load tens of GB; disaggregate prefill/decode to protect tail latency; right-size GPUs to the SLA.",
+      "**Selection is SLA + hardware + team; build-vs-buy is upstream** (managed API removes ops surface at a per-token premium; self-host wins on steady volume, data control, custom configs — see Production track).",
+    ],
+    mcqs: [
+      {
+        question: "You must serve a 70B model (140GB fp16) under a strict p99 inter-token-latency SLA on a single 8×A100 node. Which parallelism strategy fits the model AND best serves the latency target, and why?",
+        options: [
+          "Pipeline parallelism across the 8 GPUs, because splitting the 80 layers into 8 stages gives the lowest latency",
+          "Tensor parallelism (TP=8) within the node: it splits each layer's weight matrices across all 8 GPUs so the model fits, and because all GPUs work on the SAME token simultaneously it minimizes inter-token latency; the all-reduce cost per layer is acceptable over NVLink inside one node",
+          "Data parallelism: run 8 full copies of the model, one per GPU, to serve more users",
+          "Expert parallelism, because it's the most memory-efficient way to split any large model across GPUs",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: tensor parallelism shards each layer's matrices across the 8 GPUs, which both fits the 140GB model (each GPU holds ~1/8 of the weights) and minimizes latency because all 8 GPUs collaborate on the same token in parallel — the per-layer all-reduce is cheap over the node's NVLink. That's the standard low-latency recipe for a big dense model on one node. Option A is worse for latency — pipeline parallelism makes a token traverse stages sequentially and risks pipeline bubbles; its advantage (cheap cross-node comms) isn't needed within a single node. Option C is impossible — data parallelism needs each GPU to hold a FULL 140GB copy, which doesn't fit on 80GB. Option D applies only to Mixture-of-Experts models; a 70B dense model has no experts to distribute, so EP is inapplicable.",
+      },
+      {
+        question: "An interviewer asks why FlashAttention is faster than a standard attention implementation. What is the correct core explanation?",
+        options: [
+          "It uses a mathematically approximate attention that skips low-weight tokens, trading a little accuracy for speed",
+          "It's an IO-aware algorithm: standard attention writes the full N×N score matrix to HBM (huge memory traffic, and attention is memory-bound), while FlashAttention computes attention in tiles kept in fast on-chip SRAM using an online-softmax trick, never materializing the score matrix in HBM — same exact output, far fewer HBM reads/writes, especially at long context",
+          "It runs attention on the CPU in parallel with the GPU doing the feed-forward layers",
+          "It replaces attention with a linear-time approximation, so cost grows linearly instead of quadratically",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: FlashAttention is an exact algorithm whose speedup comes from IO-awareness, not approximation. Standard attention materializes the N×N attention-score matrix in HBM, and since attention is memory-bandwidth-bound, that traffic dominates. FlashAttention tiles the computation so each tile stays in on-chip SRAM and uses online softmax to accumulate results without ever writing the full score matrix to HBM — producing identical output with dramatically less HBM traffic, with the benefit growing at long sequence lengths. Options A and D are wrong because they describe *approximate* attention (sparse or linear attention), whereas FlashAttention is exact. Option C invents CPU offload; FlashAttention is a GPU kernel optimization.",
+      },
+      {
+        question: "Your self-hosted LLM service autoscales replicas reactively on GPU utilization. During a traffic spike, latency blows past SLA for ~90 seconds before new replicas help. What's the root cause and the correct fix?",
+        options: [
+          "The GPUs are too small; upgrade every replica to a bigger GPU so one replica handles the spike",
+          "LLM cold starts: bringing up a replica means loading tens of GB of weights onto the GPU (tens of seconds), so reactive utilization-based scaling reacts too late. Scale on a leading signal like queue depth / tokens-in-flight and keep warm replicas (a warm pool), so capacity is ready before the queue backs up",
+          "The load balancer is misconfigured; round-robin instead of least-connections would eliminate the delay",
+          "Autoscaling is fundamentally impossible for LLMs; you must statically provision for peak forever",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the 90-second gap is the LLM cold-start problem — a new replica must pull and load tens of GB of weights onto the GPU before it can serve, so by the time utilization triggers a scale-up and the replica warms, the spike has already violated the SLA. The fix is to scale on a *leading* indicator (queue depth or tokens-in-flight, which rises before utilization saturates) and maintain warm replicas so capacity exists ahead of demand. Option A doesn't address the timing problem — a bigger GPU still has to load weights and still reacts late. Option C is a distractor; load-balancer policy doesn't create or remove the weight-loading cold-start delay. Option D overstates it — autoscaling works fine for LLMs when driven by leading signals and warm pools; static peak provisioning is wasteful, not required.",
+      },
+    ],
+    takeaway: "Serving a model too big for one GPU is first a parallelism decision: tensor parallelism (split matrices in a layer, low latency, all-reduce per layer, in-node) fits a 70B model and hits tight inter-token SLAs, with pipeline parallelism added across nodes only when memory demands and expert parallelism reserved for MoE. The stack choice — vLLM (easy, high-throughput default) vs TensorRT-LLM (compiled fused engine, lowest latency, high ops cost) vs Triton (multi-model orchestration) — is really about kernels and operational cost; FlashAttention, fusion, and CUDA graphs win by cutting HBM traffic and launch overhead, the true decode bottleneck. Wrap it in leading-signal autoscaling with warm replicas (because cold starts load tens of GB) and treat build-vs-buy as an SLA + hardware + team decision, not a 'which is best' one.",
   },
 
   "infra-edge-ondevice": {
     depthTier: "deep",
     interviewWeight: "medium",
-    scenario: DEV + " Product wants an LLM running fully ON-DEVICE — a phone or laptop, no server — for privacy and offline use. You have ~8GB of RAM and no datacenter GPU. Explain how on-device / edge LLM inference is even possible.",
+    scenario: "Product wants an LLM assistant that runs fully ON-DEVICE — a phone or laptop, no server round-trip — for privacy (data never leaves the device), offline use, and zero per-query cost. The target hardware is a phone with 8GB of unified RAM and no datacenter GPU. Someone tries to load a 7B model at fp16 and the app crashes on launch. The interviewer wants you to explain how on-device LLM inference is even possible under these constraints, quantify what fits, and defend when to run locally versus escalate to the cloud.",
     explanation: [
-      "WHAT THIS MODULE WILL TEACH (spec):",
-      "1. Why the cloud recipe doesn't transport: no datacenter GPU, tight RAM/thermal/battery budgets, and a memory-bandwidth wall on consumer hardware.",
-      "2. Aggressive quantization for edge: int4/int3 weight quantization (GGUF/llama.cpp, GPTQ/AWQ), and the quality cliff you must respect.",
-      "3. Runtimes + hardware: llama.cpp/GGUF, MLX (Apple Silicon), ONNX Runtime, and using the NPU/GPU/unified memory on-device.",
-      "4. Model selection for edge: small capable models (1–8B), distillation, and matching model size to the RAM/latency budget.",
-      "5. The hybrid pattern: on-device for private/offline/cheap, escalate to cloud for hard queries — routing between them.",
-      { type: "illustration", label: "Planned on-device budget sketch (to be built)", content:
-`8GB device, 7B model:
-  fp16 weights   ~14GB  -> won't fit
-  int8 weights   ~7GB   -> tight, little headroom
-  int4 weights   ~3.5GB -> fits with room for KV cache + app
-  -> edge inference is a quantization + small-model + runtime problem.` },
-      "6. Interview canon: 'how do you run an LLM on a phone', 'why int4 for edge', 'what is GGUF/llama.cpp', 'when on-device vs cloud'.",
+      "The first thing to internalize is that **the datacenter recipe does not transport to a phone.** Everything the previous modules assumed is gone: there's no 80GB HBM, no A100, no NVLink, and — most importantly — a brutal **memory and bandwidth budget.** A phone has ~8GB of *unified* RAM shared between the OS, the app, and the model, with memory bandwidth an order of magnitude below a datacenter GPU, plus **thermal and battery** ceilings that throttle sustained compute. ==On the edge, memory is the wall and quantization is the ladder over it — it's not an optimization, it's the enabling technology.==\n\nRecall the same phase physics: decode is memory-bandwidth-bound. On a phone the bandwidth is low, so tokens-per-second is directly limited by how fast you can stream the (quantized) weights from RAM. Smaller weights don't just fit — they generate *faster*.",
+      "The core arithmetic is the same `params × bytes_per_param` from the Quantization module, and it decides everything on-device.\n\nA 7B model at fp16 is `7e9 × 2 = 14GB` of weights — larger than the entire 8GB device, so it can't load (that's the crash). ==Edge inference is therefore a quantization problem first:== `int8 → 7GB` (technically fits but leaves no headroom for the OS, the app, or the KV cache), and `int4 → ~3.5GB` (fits with room to spare for KV cache and the application). This is why on-device work standardizes on **int4** — often 4-bit with tricks like the NF4 non-uniform grid or k-quant mixed-bit schemes — as the sweet spot: aggressive enough to fit and stream fast, careful enough (via outlier-aware methods) to hold quality.",
+      { type: "illustration", label: "The on-device memory budget: what actually fits in 8GB", content: `Phone: 8 GB unified RAM (OS + app + model share it). Usable for model ≈ 5-6 GB.
+
+7B model weights by precision:
+  fp16 (2 B/param)   → 14.0 GB  ✗ exceeds the whole device — crash on load
+  int8 (1 B/param)   →  7.0 GB  ✗ fits weights but no room for OS/app/KV → unstable
+  int4 (0.5 B/param) →  3.5 GB  ✓ fits with ~2 GB left for KV cache + app
+
+Match the MODEL to the budget instead of forcing a 7B:
+  3B int4  → ~1.5 GB   comfortable, fast, good for on-device assistants
+  1B int4  → ~0.5 GB   very fast, tight quality — routing / simple tasks
+  8B int4  → ~4.0 GB   near the ceiling; viable on 8-12 GB devices
+
+Edge inference = (int4 quantization) + (small/distilled model) + (edge runtime).` },
+      "Beyond weight bits, **model selection and distillation** are the other half of fitting the budget. Rather than force a 7B down to a marginal size, you often pick a **small but capable** model in the 1–8B range purpose-built for edge, or a **distilled** model — a small student trained to mimic a large teacher (the foundations Distillation module) — which packs more capability per parameter than an equally-small model trained from scratch. ==The edge design question is 'what's the smallest model that clears the quality bar for THIS task,' not 'how small can I squeeze the big model.'== Task-specific fine-tunes of a small base frequently beat a heavily-quantized giant on the actual on-device workload while fitting comfortably.",
+      "You also need an **edge runtime** — datacenter stacks (vLLM/TensorRT-LLM) don't run here. The canonical ones:\n\n**llama.cpp / GGUF:** a portable C/C++ inference engine and its quantized model format (GGUF), with a family of 'k-quant' schemes (Q4_K_M, etc.). It runs on CPU, mobile, and consumer GPUs, and is the de-facto standard for local LLMs. **MLX** is Apple's framework tuned for **Apple Silicon's unified memory**, exploiting the shared CPU/GPU/Neural-Engine memory so weights aren't copied across a PCIe bus. **ONNX Runtime** and vendor stacks (Qualcomm, MediaTek) target mobile **NPUs** — dedicated neural accelerators that do quantized matmuls at far better performance-per-watt than the CPU, which matters for battery and thermals. ==The runtime's job is to map quantized weights onto whatever accelerator the device has (NPU > GPU > CPU) and to keep everything in unified memory to avoid copies.==",
+      "Finally, the honest architecture is usually **hybrid, not purely local.** On-device inference is *cheaper, private, and offline*, but a 1–8B int4 model genuinely can't match a frontier cloud model on hard reasoning, long context, or breadth. The production pattern is a **router**: run the small on-device model for the common, simple, privacy-sensitive, or offline cases, and **escalate to the cloud** for queries it can't handle well. ==You decide per-query where to run based on difficulty, privacy, connectivity, and cost.== The routing signal can be a confidence estimate, a small classifier, or explicit task type. This gives you the privacy/latency/cost wins of on-device for the bulk of traffic while preserving frontier quality for the tail — and it's the same build-vs-buy tradeoff from the Production track, just resolved *per request* instead of once for the whole product.",
     ],
-    takeaway: "SKELETON: On-device LLMs are a quantization (int4) + small/distilled model + edge-runtime (llama.cpp/MLX/ONNX) problem, often paired with cloud escalation for hard queries. Full content + interactive budget tool coming.",
+    keyPoints: [
+      "**On the edge, memory is the wall and quantization is the enabling technology, not an optimization.** A phone has ~8GB shared unified RAM, low bandwidth, and thermal/battery limits — so weight size decides both what fits and how fast it decodes.",
+      "**The `params × bytes` math forces int4.** 7B fp16 = 14GB (crashes an 8GB device); int8 = 7GB (fits but no headroom for OS/app/KV); int4 = ~3.5GB (fits with room for KV cache) — which is why on-device standardizes on 4-bit (NF4/k-quant) with outlier-aware methods to hold quality.",
+      "**Match the model to the budget instead of squeezing a giant.** Pick a small capable model (1–8B) or a distilled student that packs more capability per parameter; the question is the smallest model that clears the task's quality bar, not how small you can crush the big one.",
+      "**Edge runtimes map quantized weights onto device accelerators.** llama.cpp/GGUF (portable, de-facto standard), MLX (Apple Silicon unified memory), ONNX Runtime / vendor NPU stacks — preferring NPU > GPU > CPU for performance-per-watt and keeping weights in unified memory to avoid copies.",
+      "**The real architecture is hybrid with a router.** Run the small local model for common/simple/private/offline queries and escalate hard ones to a frontier cloud model; decide per-query on difficulty, privacy, connectivity, and cost — build-vs-buy resolved per request rather than once.",
+    ],
+    recap: [
+      "**Datacenter recipe doesn't transport:** ~8GB shared unified RAM, low bandwidth, thermal/battery limits. Memory is the wall; quantization is the ladder — the enabling tech, not an optional optimization.",
+      "**`params × bytes` decides what fits:** 7B fp16 = 14GB (crash), int8 = 7GB (no headroom), int4 = ~3.5GB (fits + KV room). On-device standardizes on int4 (NF4 / k-quant) with outlier-aware methods.",
+      "**Match model to budget:** small capable models (1–8B) or distilled students beat a heavily-quantized giant on the actual task while fitting comfortably.",
+      "**Edge runtimes:** llama.cpp/GGUF (portable standard), MLX (Apple Silicon unified memory), ONNX Runtime / NPU vendor stacks. Prefer NPU > GPU > CPU; keep weights in unified memory to avoid copies.",
+      "**Hybrid + router:** small model on-device for common/private/offline/cheap; escalate hard queries to a frontier cloud model. Per-query routing on difficulty/privacy/connectivity/cost — build-vs-buy resolved per request.",
+    ],
+    mcqs: [
+      {
+        question: "An app tries to load a 7B model at fp16 on an 8GB phone and crashes on launch. What's the direct cause, and what's the minimal change that makes on-device inference viable while preserving reasoning quality?",
+        options: [
+          "The phone's CPU is too slow to run a 7B model; the fix is to wait for faster phone chips",
+          "7B fp16 weights are 14GB — larger than the entire 8GB device — so it can't load. Quantize to int4 (~3.5GB), which fits with headroom for the KV cache, and use an outlier-aware 4-bit scheme (NF4 / k-quant) so multi-step reasoning survives the low bit-width",
+          "The model needs an internet connection to download layers on demand; enabling network access fixes the crash",
+          "fp16 isn't supported on phones at all; converting to fp32 (the mobile-native format) resolves it",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: by `params × bytes_per_param`, 7B fp16 is 14GB of weights, which exceeds the phone's total 8GB of unified RAM, so it can't even load. Quantizing to int4 brings weights to ~3.5GB, fitting with room for the OS, app, and KV cache — and using an outlier-aware 4-bit scheme (NF4 or llama.cpp k-quants) preserves quality that naive rounding would destroy at low bit-width. Option A misdiagnoses — the crash is an out-of-memory allocation, not slow compute. Option C invents on-demand layer downloading and defeats the whole offline/private premise; the crash is memory, not network. Option D is backwards — fp32 is LARGER (4 bytes/param = 28GB), making the problem far worse, and fp16 isn't 'unsupported.'",
+      },
+      {
+        question: "A team needs the best possible quality on a specific on-device task within a 4GB memory budget. Which approach is most sound?",
+        options: [
+          "Take the largest available model (e.g. 70B) and quantize it all the way down to int2 so it fits in 4GB",
+          "Choose the smallest model that clears the task's quality bar — often a small capable base (1–8B) or a distilled/fine-tuned student that packs more capability per parameter — quantized to int4, rather than crushing a giant model to a marginal bit-width",
+          "Always use exactly a 7B model at int4, since 7B is the universal on-device standard regardless of task",
+          "Run a 70B model in the cloud and cache all possible responses on-device so it works offline",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the edge design principle is to match the model to the budget and the task — pick the smallest model (a small capable base or a distilled student, which delivers more capability per parameter than an equally-small from-scratch model) that meets the quality bar, quantized to int4. That reliably beats forcing a giant model down to a destructive bit-width. Option A is the anti-pattern — int2 degrades quality severely even with smart methods, and a 70B at int2 would be both low-quality and still large. Option C over-generalizes; the right model size depends on the task's difficulty and the budget, not a fixed 7B. Option D breaks the offline requirement — you can't cache all possible responses to open-ended queries, and it isn't on-device inference at all.",
+      },
+      {
+        question: "A product ships a 3B int4 model on-device but users hit occasional hard reasoning and long-context queries the small model handles poorly. What's the standard production architecture that preserves the privacy/cost/offline wins for most traffic while covering the hard tail?",
+        options: [
+          "Replace the on-device model with the frontier cloud model for all queries, since quality is paramount",
+          "A hybrid router: serve the small on-device model for common/simple/private/offline queries, and escalate only the hard queries to a frontier cloud model — deciding per query based on difficulty, privacy, connectivity, and cost. Most traffic stays local (cheap, private, offline), while the hard tail gets frontier quality",
+          "Increase the on-device model to int8 so it becomes as capable as the frontier model",
+          "Pre-generate answers to all hard queries and bundle them in the app so nothing needs the cloud",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the production pattern is a hybrid router that runs the small local model for the bulk of traffic (common, simple, privacy-sensitive, offline) and escalates only the queries it can't handle to a frontier cloud model, choosing per request based on difficulty, privacy, connectivity, and cost. This keeps the privacy, latency, and zero-cost benefits for most requests while preserving frontier quality for the hard tail — the build-vs-buy tradeoff resolved per request. Option A throws away every on-device benefit (privacy, offline, cost) for the whole workload. Option C is wrong — int8 makes a 3B model slightly better numerically but doesn't turn a 3B into a frontier-quality model; capability is bounded by scale, not just precision. Option D is impossible for open-ended queries and defeats the assistant's purpose.",
+      },
+    ],
+    takeaway: "On-device LLM inference is fundamentally a memory problem, and the datacenter recipe doesn't transport: an 8GB phone has shared unified RAM, low bandwidth, and thermal limits, so weight size dictates both what fits and how fast it decodes. The `params × bytes` math forces int4 (7B fp16 = 14GB crashes; int4 = ~3.5GB fits) with outlier-aware 4-bit schemes to hold quality, paired with picking the smallest model — often a distilled student — that clears the task bar, run on an edge runtime (llama.cpp/GGUF, MLX, ONNX/NPU) that maps quantized weights onto the device's best accelerator in unified memory. The honest architecture is hybrid: a router keeps common, private, offline queries local and escalates the hard tail to a frontier cloud model — build-vs-buy resolved per request.",
   },
 };

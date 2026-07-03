@@ -1,112 +1,414 @@
-// GSL premium-niche track — Model Customization / Fine-tuning-as-a-Service (SKELETON, 2026-07-03)
+// GSL premium-niche track — Model Customization / Fine-tuning-as-a-Service.
 // RUNNER_DATA fragment. Spread into src/data/foundationsRunnerData.js via ...RUNNER_MODEL_CUSTOM.
 // Distinct from the existing "foundation-models" gym (which teaches LoRA/RLHF/DPO CONCEPTUALLY):
-// this track is the APPLIED PRODUCTIZATION niche — data curation, the fine-tune decision, serving
-// adapters at multi-tenant scale, and eval-driven customization. SKELETON HONESTY: spec +
-// "🚧 In development" marker. No MCQs yet. Keep the export name RUNNER_MODEL_CUSTOM. Additive only.
-
-const DEV = "🚧 In development — outline below. This module is a specced scaffold, not finished teaching content yet. The scenario and numbered outline show exactly what it will cover once authored.";
+// this track is the APPLIED PRODUCTIZATION niche — the fine-tune decision, data curation, serving
+// adapters at multi-tenant scale, preference alignment as a service, and eval-driven customization.
+// Keep the export name RUNNER_MODEL_CUSTOM.
 
 export const RUNNER_MODEL_CUSTOM = {
   "custom-when-to-finetune": {
     depthTier: "deep",
     interviewWeight: "high",
-    scenario: DEV + " A stakeholder says 'let's fine-tune a model on our data'. Your job is to push back with a decision framework: prompt engineering vs RAG vs fine-tuning vs pretraining — because fine-tuning is often the wrong, expensive answer.",
+    scenario: "A VP walks into your planning meeting and says: 'Our support answers are generic — let's fine-tune a model on our 400-page knowledge base and our past tickets.' The eng team is ready to start collecting data. But two of the three problems the VP is complaining about are *stale facts* (product prices, policy changes, new SKUs), and only one is a *behavior* problem (the tone is too corporate). If you fine-tune to fix all three, you'll spend six weeks, produce a model that's already out of date the day it ships, and still have the wrong tone half the time. You need to push back with a decision framework — because ==fine-tuning is often the expensive wrong answer, and knowing when *not* to reach for it is the senior signal.==",
     explanation: [
-      "WHAT THIS MODULE WILL TEACH (spec):",
-      "1. The customization ladder, cheapest→costliest: prompt/few-shot → RAG (inject knowledge) → fine-tune (change behavior/format/tone) → continued pretraining (new domain/language).",
-      "2. The core distinction: fine-tuning teaches BEHAVIOR and STYLE, not new FACTS — for changing facts/knowledge, RAG is usually right. Getting this wrong is the classic interview trap.",
-      "3. When fine-tuning genuinely wins: consistent format/tone, narrow task specialization, latency/cost via a smaller tuned model, or teaching a skill prompting can't reliably elicit.",
-      "4. The hidden costs: data collection/labeling, eval harness, retraining as base models improve, and serving/ops — fine-tuning is a commitment, not a one-off.",
-      "5. Combining them: RAG + a fine-tuned model, and why that's often the real answer.",
-      { type: "illustration", label: "Planned decision matrix (to be built)", content:
-`Need                              Reach for
-Inject changing facts/knowledge   RAG
-Enforce format/tone/style         Fine-tune (SFT)
-Specialize a narrow task cheaply  Fine-tune a small model
-New domain/language from scratch  Continued pretraining
-Quick behavior nudge              Prompt / few-shot
-  -> "fine-tune to add facts" is the classic wrong answer.` },
-      "6. Interview canon: 'fine-tune vs RAG', 'when do you fine-tune', 'does fine-tuning add knowledge', 'what does fine-tuning actually cost'.",
+      "Model customization is a **ladder of interventions ordered by cost**, and the entire discipline is about climbing only as high as the problem forces you to.\n\nFrom cheapest to costliest: **prompt / few-shot** (change behavior with instructions and examples in the context, zero training), **RAG** (inject external knowledge at inference time via retrieval), **fine-tuning / SFT** (update the model's weights to bake in behavior, format, and tone), and **continued pretraining** (train on a large corpus to teach a genuinely new domain or language). ==The senior move is to start at the bottom and only climb when the rung below has *measurably* failed.== Every rung up multiplies cost — engineering time, data, compute, and a permanent maintenance commitment.",
+      "The single most important distinction — and the one interviews probe hardest — is: **fine-tuning teaches behavior and form, not facts.**\n\nWhen you fine-tune on input→output pairs, you're shifting the model's *distribution over how it responds*: its format, tone, structure, the shape of its reasoning, which skills it reaches for. You are **not** reliably writing new facts into a lookup table. A model can absorb a few facts that appear thousands of times, but fine-tuning is a terrible, lossy, expensive way to store knowledge that changes — and it will confidently hallucinate the parts it half-learned.\n\n==Facts that change belong in a retrieval index (RAG), where you can update them the moment they change. Behavior that should be consistent belongs in the weights (fine-tuning).== Confusing these two is the classic trap that separates junior from senior answers.",
+      { type: "illustration", label: "The customization ladder — map each need to the cheapest rung that solves it", content: `NEED                                    CHEAPEST RUNG THAT SOLVES IT
+------------------------------------    ----------------------------------
+Quick behavior nudge, one-off task      Prompt / few-shot   (minutes, $0 training)
+Inject facts that CHANGE                 RAG                 (update index instantly)
+Enforce consistent format / tone / JSON  Fine-tune (SFT)     (weeks, needs a dataset)
+Specialize a narrow task, cut latency    Fine-tune a SMALL model
+Genuinely new domain / language          Continued pretraining (months, huge corpus)
+
+The scenario's three complaints, correctly routed:
+  "prices/policies are stale"   -> RAG        (facts, and they change)
+  "new SKUs not covered"        -> RAG        (facts, and they change)
+  "tone is too corporate"       -> Fine-tune  (behavior, should be consistent)
+
+=> "fine-tune the knowledge base" solves the ONE problem fine-tuning is good at
+   and fails the two that are actually knowledge problems.` },
+      "So **when does fine-tuning genuinely win?** Four cases, all about *behavior*, not facts:\n\n**(1) Consistent format or tone** — you need every output as valid JSON in your schema, or every answer in your brand voice, and prompting gets it right 90% of the time but you need 99.5%. **(2) Narrow task specialization** — a single well-defined task where a fine-tuned small model matches a huge prompted model. **(3) Latency and cost** — a fine-tuned 7B can replace a prompted 70B for a specialized task, cutting cost 10x and latency 3x, because the behavior is baked in instead of steered by a long expensive prompt. **(4) A skill prompting can't elicit** — a reasoning pattern or style the base model just won't do reliably no matter how you prompt.\n\n==The unifying test: is this a *behavior* I need to be reliable and repeated? Then weights. Is it *knowledge* I need to be current? Then retrieval.==",
+      "The costs that kill naive fine-tuning projects are the ones **not** on the training bill — they're the ongoing commitment.\n\n**Data**: you need thousands of clean, on-distribution examples, and collecting/labeling them is usually the bulk of the effort. **The eval harness**: you can't tell if a fine-tune helped without a held-out, production-representative eval — building it is a project in itself. **Base-model churn**: the frontier moves every few months; the base you tuned on becomes obsolete, and your fine-tune doesn't automatically ride the upgrade — you re-tune. **Serving and ops**: a fine-tuned model is another artifact to version, deploy, monitor, and roll back.\n\n==A prompt is an edit. A fine-tune is a *product* you now own forever.== That asymmetry is why the cheap rungs are the default.",
+      "The answer that lands in interviews is almost never 'fine-tune' alone — it's **RAG plus a fine-tuned model**, because the two solve orthogonal problems.\n\nFor the scenario: **RAG** serves the current prices, policies, and SKUs from an index you update the instant they change — no retraining, always fresh. A small **fine-tune** (SFT) fixes the tone and teaches the model to answer support questions in your exact format and voice. The retriever supplies *what to say*; the tuned weights supply *how to say it*.\n\n==This is the real production shape: retrieval for the facts (current, cheap to update), fine-tuning for the behavior (consistent, baked in). Reaching for one when you need both — or fine-tuning when you needed retrieval — is the mistake the framework exists to prevent.==",
     ],
-    takeaway: "SKELETON: Fine-tuning changes behavior/format, not facts — climb the cheapest-first ladder (prompt → RAG → fine-tune → pretrain). 'Fine-tune to add knowledge' is the classic trap; RAG + a tuned model is often the real answer. Full content + interactive coming.",
+    keyPoints: [
+      "**Customization is a cost-ordered ladder** — prompt/few-shot → RAG → fine-tune (SFT) → continued pretraining. Start at the bottom; only climb when the rung below has *measurably* failed. Each rung multiplies cost and adds a permanent maintenance commitment.",
+      "**Fine-tuning teaches behavior and form, not facts.** It shifts the distribution over *how* the model responds (format, tone, skills), not *what* it knows. Facts that change belong in a retrieval index; behavior that should be consistent belongs in the weights.",
+      "**'Fine-tune to add knowledge' is the classic trap.** A model half-learns changing facts and hallucinates the rest, and the fine-tune is stale the moment a price or policy changes — whereas a RAG index updates instantly.",
+      "**Fine-tuning wins on four behavior cases:** consistent format/tone, narrow task specialization, latency/cost (a tuned small model replacing a prompted large one), and eliciting a skill prompting can't reliably produce.",
+      "**The real cost is ongoing, not the training bill:** data collection/labeling, an eval harness, re-tuning as base models churn, and serving/ops. A prompt is an edit; a fine-tune is a product you own forever.",
+      "**The production answer is usually RAG *plus* a fine-tuned model** — retrieval for the current facts, tuned weights for the consistent behavior. They solve orthogonal problems.",
+    ],
+    recap: [
+      "**Climb the ladder cheapest-first:** prompt → RAG → fine-tune → continued pretraining. Only go up when the rung below measurably fails.",
+      "**Behavior vs facts is the whole game:** fine-tuning changes *how* the model responds; RAG changes *what* it knows. Route each need to the right one.",
+      "**Never fine-tune to add changing knowledge** — it's lossy, hallucination-prone, and stale on arrival. Put those facts in a retrieval index instead.",
+      "**Fine-tune when the need is behavioral:** consistent format/tone, narrow specialization, latency/cost via a tuned small model, or a skill prompting can't elicit.",
+      "**Budget for the commitment,** not the training run: data, evals, re-tuning on base-model churn, and serving. A fine-tune is a product you maintain.",
+      "**The real answer is often both:** RAG for current facts + a small fine-tune for consistent behavior. Confusing the two is the mistake to avoid.",
+    ],
+    mcqs: [
+      {
+        question: "A team wants their assistant to (a) always answer in valid JSON matching their schema, and (b) reflect this week's pricing, which changes weekly. They propose one fine-tune on a dataset that mixes formatting examples and current prices. What's the senior critique?",
+        options: [
+          "Correct approach — a single fine-tune is the most efficient way to handle both format and pricing at once",
+          "Split by problem type: fine-tune (SFT) for the JSON format because that's a consistent *behavior*, but serve pricing via RAG because it's a *fact that changes* — a fine-tune bakes prices into the weights and is stale the moment they change, while RAG updates instantly",
+          "Use continued pretraining instead, since pricing is domain knowledge and formatting is a low-level skill",
+          "Raise the temperature so the model can adapt its pricing answers to whatever the user asks",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: format is a consistent behavior (belongs in the weights via SFT), while weekly-changing prices are facts that belong in a retrieval index (RAG) so they can be updated the instant they change. A fine-tune bakes the prices in as of the training snapshot — it's stale on arrival and re-tuning every week is absurd. Option A is the trap: mixing a behavior need and a changing-fact need into one fine-tune fails the fact half. Option C is wrong — continued pretraining is the most expensive rung (months, huge corpus) and still bakes facts in statically; it's overkill and doesn't fix the staleness. Option D is wrong — temperature controls sampling randomness, not knowledge freshness; the model cannot invent this week's correct prices from thin air.",
+      },
+      {
+        question: "An interviewer asks: 'Our model doesn't know about our new product line launched last month. Should we fine-tune it on the product docs?' What is the best answer?",
+        options: [
+          "Yes — fine-tuning on the product docs is exactly how you teach a model new facts it doesn't currently know",
+          "No — fine-tuning teaches behavior and form, not reliable, current facts. New product info that will keep changing belongs in a RAG index you can update instantly; fine-tuning would half-learn the docs, hallucinate the rest, and go stale as the product line evolves",
+          "Yes, but only if you use QLoRA so the fine-tune is cheap enough to repeat weekly",
+          "It doesn't matter — both RAG and fine-tuning store knowledge equally well, so pick whichever is easier to implement",
+        ],
+        correct: 1,
+        explanation: "Option B is correct and is the canonical 'fine-tune vs RAG' answer: fine-tuning shifts the distribution over how the model responds, not what it factually knows; new, evolving product knowledge belongs in retrieval where it's current and cheap to update. A fine-tune on the docs would learn facts lossily, hallucinate the gaps, and be stale as the product changes. Option A is the exact trap the question is testing. Option C accepts the wrong premise — even a cheap QLoRA re-tune weekly is a worse, hallucination-prone solution than simply updating a retrieval index; cheapness doesn't make fine-tuning the right *tool* for changing facts. Option D is false — RAG and fine-tuning are not interchangeable knowledge stores; retrieval is designed for current, updatable facts, weights are not.",
+      },
+      {
+        question: "A startup insists on fine-tuning a 70B model for a narrow classification task where a well-crafted prompt already hits 92% accuracy and they need 96%. What's the strongest consideration to raise before greenlighting?",
+        options: [
+          "Fine-tuning is always wrong when a prompt already works, so reject the project outright",
+          "Fine-tuning could legitimately close the gap and even let a small tuned model replace the 70B (cutting latency/cost) — but the decision must weigh the *ongoing* costs: building a production-representative eval set, collecting/labeling clean data, and re-tuning when the base model churns. Those commitments, not the training run, are what usually sink naive fine-tuning projects",
+          "They should skip fine-tuning and add more few-shot examples until they reach 96%, since prompting can always match fine-tuning",
+          "They should use continued pretraining because 4 points of accuracy requires learning the domain from scratch",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: this is a legitimate fine-tuning case (narrow, well-defined task; a consistent behavior; a tuned small model can even replace the 70B for big latency/cost wins). The senior move is to surface that the real cost is ongoing — the eval harness, data curation, and re-tuning on base-model churn — not the one-time training. Option A is too absolute; a 92%→96% gap on a narrow task is exactly where fine-tuning can earn its keep. Option C is false — prompting has a ceiling; more few-shot examples inflate context cost and don't reliably reach the last few points that weight updates can. Option D is wrong — continued pretraining is for genuinely new domains/languages and is wildly overkill for closing a 4-point gap on an existing task.",
+      },
+    ],
+    takeaway: "Model customization is a cost-ordered ladder — prompt → RAG → fine-tune → continued pretraining — and the senior move is to climb only as high as the problem forces. The load-bearing distinction is that fine-tuning teaches *behavior and form*, not *facts*: changing knowledge belongs in a retrieval index, consistent behavior belongs in the weights. 'Fine-tune to add knowledge' is the classic trap. Fine-tuning wins on consistent format/tone, narrow specialization, and latency/cost, but its real price is the ongoing commitment (data, evals, re-tuning on base churn). The production answer is usually RAG for current facts *plus* a small fine-tune for consistent behavior.",
   },
 
   "custom-data-curation": {
     depthTier: "deep",
     interviewWeight: "high",
-    scenario: DEV + " You've decided to fine-tune. Now the hard part: the dataset. Your first tuned model got WORSE. You need to explain why data quality — not quantity — decides fine-tuning success, and how to build a good SFT set.",
+    scenario: "You've correctly decided to fine-tune for a consistent support-answer format and tone. Eng scraped 200,000 past tickets — closed conversations, agent replies, everything — and ran SFT overnight. The tuned model came out *worse* than the base: it copies agents' terse, sometimes rude phrasing, contradicts itself between answers, and occasionally leaks another customer's order details it memorized from the training set. The team's instinct is 'we need more data.' That's exactly backwards. You need to explain that ==fine-tuning success is a data-*curation* problem — quality, consistency, and coverage decide the outcome, and 200k noisy examples are worse than 3k clean ones.==",
     explanation: [
-      "WHAT THIS MODULE WILL TEACH (spec):",
-      "1. Quality over quantity: a few thousand clean, on-distribution examples often beats hundreds of thousands of noisy ones (the LIMA lesson).",
-      "2. Building an SFT dataset: format consistency, coverage of the real task distribution, deduplication, and removing contradictory/low-quality labels.",
-      "3. Synthetic data + distillation: using a stronger model to generate/augment training data (and the risks — bias inheritance, model collapse from too much synthetic data).",
-      "4. The eval set FIRST: you can't curate data without a held-out eval that reflects production; building it before you train.",
-      "5. Data leakage + contamination: keeping eval out of training, and why a rising loss with flat eval means you're overfitting noise.",
-      "6. Interview canon: 'how much data to fine-tune', 'quality vs quantity', 'how do you build an SFT set', 'how do you use synthetic data safely'.",
+      "The counterintuitive core: **for SFT, a few thousand clean, consistent, on-distribution examples routinely beat hundreds of thousands of noisy ones.**\n\nThe base model already learned language, reasoning, and world knowledge during pretraining. Fine-tuning isn't teaching it to think — it's teaching it *which behavior to surface*, a comparatively tiny adjustment. The **LIMA** result made this concrete: ~1,000 carefully curated examples produced a strongly aligned model, because SFT is mostly *style and format alignment*, not capability injection.\n\n==So every noisy example is not neutral — it's actively harmful.== The model imitates whatever you show it. Feed it 200k raw tickets and it faithfully learns the terse, inconsistent, occasionally-rude distribution of your *worst* agents alongside your best. More bad data makes a worse model, not a bigger one.",
+      "Building a good SFT set is four disciplines, and volume isn't one of them: **format consistency, distribution coverage, deduplication, and label quality.**\n\n**Format consistency** — every example should model the *exact* output shape you want. If half your tickets end abruptly and half are polished, the model learns a blurry average of both. **Coverage** — the training distribution must match the *production* distribution of questions: if 30% of real traffic is billing but your set is 5% billing, the model underperforms exactly where it's needed most. **Deduplication** — near-duplicate examples (the same canned reply pasted across thousands of tickets) let the model *memorize* instead of generalize, and inflate whatever bias that duplicate carries. **Label quality** — remove contradictory pairs (two tickets giving opposite answers to the same question) and low-quality responses; contradictions teach the model that both answers are acceptable.",
+      { type: "illustration", label: "Why 3k curated beats 200k raw — the same task, two datasets", content: `RAW 200,000 tickets (dump everything)          CURATED 3,000 (senior move)
+---------------------------------------        -----------------------------------
+Mixed tone (best + worst agents)               Only exemplar answers, brand voice
+Contradictory answers to same Q                Contradictions resolved / removed
+Canned reply duplicated 8,000x                 Deduped -> each pattern once
+PII leaked from real customers                 Scrubbed / synthesized
+Distribution skewed to easy tickets            Reweighted to match prod traffic
+
+RESULT:                                        RESULT:
+  memorizes duplicates + PII                     generalizes the format
+  imitates rude/terse phrasing                   consistent brand tone
+  contradicts itself                             coherent, on-distribution
+  eval WORSE than base                           eval clearly better
+
+Rule of thumb: hours spent curating 3k examples pay back more than
+weeks spent collecting the next 100k raw ones.` },
+      "**Synthetic data and distillation** are the standard way to fill coverage gaps — and they carry two specific failure modes you must name.\n\nThe technique: use a stronger model (or the same model with a good prompt) to *generate* training examples — paraphrase your best answers into more variety, synthesize examples for under-covered categories, or distill a large model's behavior into your smaller one. Done well, it cheaply fixes the coverage holes real data can't.\n\nThe risks: **bias inheritance** — the generator's quirks, refusals, and blind spots get copied straight into your training set, so you inherit its weaknesses. And **model collapse** — if you train on too much synthetic data (especially the model's own output), the distribution narrows over generations, losing the tails and diversity, and quality quietly degrades. ==The discipline: use synthetic data to *augment* real data and fill specific gaps, keep a healthy fraction of real examples, and eval synthetic-trained models against a *real* held-out set.==",
+      "You cannot curate a dataset without first building the **held-out eval set** — and it has to exist *before* you train.\n\nThe eval set is the *contract* that defines what 'better' means. It must be **production-representative** (sampled from real traffic, covering the real distribution including the hard cases) and **held out** — never seen in training. Without it, you're tuning blind: you'll optimize the training loss and have no idea whether the deployed behavior improved or regressed.\n\n==Build the eval first for a second reason: it tells you *what data to curate*.== If the eval shows billing questions are the weak spot, you know to enrich billing coverage in training. The eval isn't the last step — it's the compass that directs the whole curation effort.",
+      "The failure that hides in plain sight is **data leakage and contamination** — and its signature is a specific, readable pattern in the loss curves.\n\nIf any eval examples (or near-duplicates of them) leak into training, your eval metrics are inflated — the model looks great in testing and disappoints in production, because it partly *memorized the test*. Rigorous dedup *between* train and eval, not just within train, is mandatory. And watch the curves: ==**training loss falling while eval loss is flat or rising is the classic overfitting signature**== — the model is memorizing training noise (the duplicates, the PII, the one-off phrasings) rather than learning the generalizable behavior. That divergence is your cue to stop, clean the data, and shrink the run — not to add more epochs.",
     ],
-    takeaway: "SKELETON: Fine-tuning success is a data-curation problem — clean, consistent, on-distribution examples beat volume; build the held-out eval first; use synthetic data carefully. Full content + interactive coming.",
+    keyPoints: [
+      "**Quality beats quantity for SFT.** The base model already learned to think in pretraining; fine-tuning just aligns style/format — a small adjustment. A few thousand clean examples (the LIMA lesson, ~1k) routinely beat hundreds of thousands of noisy ones. Noisy data is *actively harmful*: the model imitates your worst examples too.",
+      "**A good SFT set is four disciplines:** format consistency (model the exact output shape), distribution coverage (match production traffic), deduplication (near-dupes cause memorization + bias inflation), and label quality (remove contradictory/low-quality answers).",
+      "**Synthetic data fills coverage gaps but carries two named risks:** bias inheritance (you copy the generator's quirks and blind spots) and model collapse (too much synthetic data narrows the distribution and degrades quality). Augment real data, keep a real fraction, eval on real held-out data.",
+      "**Build the held-out eval set FIRST.** It's the contract for what 'better' means (production-representative, never seen in training) *and* the compass telling you which gaps to curate.",
+      "**Dedup between train and eval, not just within train.** Leakage inflates eval metrics — the model memorizes the test and disappoints in production.",
+      "**Falling train loss with flat/rising eval loss = overfitting.** The model is memorizing noise (duplicates, PII, one-off phrasings). Cue to clean data and shrink the run, not add epochs.",
+    ],
+    recap: [
+      "**Curation, not volume, decides SFT success:** clean, consistent, on-distribution examples beat raw quantity — the model imitates everything you show it, including the bad.",
+      "**Four curation disciplines:** consistent output format, coverage matching production traffic, dedup (near-dupes cause memorization + bias), and removing contradictory/low-quality labels.",
+      "**Synthetic data augments, doesn't replace:** great for filling coverage gaps, but watch bias inheritance and model collapse; keep real examples and eval on real held-out data.",
+      "**Build the held-out, production-representative eval FIRST** — it defines 'better' and points you at which gaps to curate.",
+      "**Dedup train-vs-eval to prevent leakage** — a contaminated eval looks great and fails in production.",
+      "**Train loss down + eval loss flat/up = overfitting noise.** Stop, clean the data, shrink the run — don't add epochs.",
+    ],
+    mcqs: [
+      {
+        question: "A team's first SFT run on 200k raw support tickets produced a model that's *worse* than the base — inconsistent tone, self-contradicting, and it memorized some customer PII. Their plan is to collect 200k more tickets. What's the correct diagnosis and fix?",
+        options: [
+          "More data is right — 200k is too small for a 70B model, and doubling it will average out the noise",
+          "The problem is data quality, not quantity: the raw dump taught the model to imitate the worst agents, memorize duplicated canned replies (and PII), and treat contradictory answers as equally valid. Curate down to a few thousand clean, consistent, deduped, on-distribution examples — that will beat 400k raw ones",
+          "Switch from SFT to RAG, because support answers are facts that don't belong in the weights",
+          "Increase the number of training epochs so the model has more chances to smooth out the inconsistencies",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: SFT makes the model imitate its training distribution, so a raw dump bakes in the worst agents' tone, memorized duplicates and PII, and contradictory labels. The fix is aggressive curation (dedup, format consistency, remove contradictions, match production distribution) down to a few thousand clean examples — which reliably beats hundreds of thousands of noisy ones (the LIMA lesson). Option A has the causality backwards — more noisy data makes a worse model, not a bigger one; it doesn't 'average out.' Option C is wrong for this case — the goal is consistent format/tone (a behavior), which is exactly what SFT is for; the memorization/contradiction issues are curation failures, not a reason to abandon SFT. Option D is wrong and harmful — more epochs on noisy, duplicate-heavy data *increases* memorization and overfitting, worsening the exact symptoms described.",
+      },
+      {
+        question: "To fill gaps in under-covered ticket categories, a team generates 150k synthetic examples from a strong model and trains almost entirely on them. What risk should you flag most strongly?",
+        options: [
+          "None — synthetic data from a strong model is strictly higher quality than messy real tickets, so training entirely on it is ideal",
+          "Bias inheritance and model collapse: training almost entirely on synthetic data copies the generator's quirks, refusals, and blind spots into your model, and over-reliance on synthetic (especially self-generated) output narrows the distribution and degrades quality. Use synthetic data to *augment* real data and fill specific gaps, keep a healthy real fraction, and always eval against a real held-out set",
+          "Synthetic data is illegal to train on, so the project must be cancelled",
+          "The only risk is that synthetic data is slower to generate than collecting real tickets",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: synthetic data is a legitimate, standard tool for filling coverage gaps, but training almost entirely on it triggers two named failure modes — bias inheritance (the generator's weaknesses become yours) and model collapse (the distribution narrows over synthetic generations, losing tail diversity and quality). The discipline is to augment real data, keep a real fraction, and evaluate on a real held-out set. Option A is wrong — 'strong model' output still carries systematic biases and blind spots, and it lacks the real production distribution's messy tails. Option C is a fabricated legal claim, not the technical risk. Option D trivializes the risk — generation speed is irrelevant next to bias inheritance and collapse.",
+      },
+      {
+        question: "During a fine-tune, the training loss keeps dropping smoothly while the held-out eval loss flattens and then starts rising. What is happening and what should you do?",
+        options: [
+          "The model is still learning well — keep training until the training loss reaches zero",
+          "This is the classic overfitting signature: the model is memorizing training noise (duplicates, one-off phrasings, PII) rather than learning generalizable behavior. Stop, clean/dedup the data, shrink the run (fewer epochs / early stopping), and verify there's no train↔eval leakage inflating the picture",
+          "The eval set is broken and should be discarded so you can trust the training loss",
+          "Raise the learning rate so the model escapes the local minimum causing the eval loss to rise",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: falling train loss with flat/rising eval loss is the textbook overfitting signature — the model is fitting training-set noise instead of the generalizable target behavior. The response is to stop (early stopping), clean and dedup the data, reduce epochs, and check for train↔eval leakage that could also be distorting the signal. Option A is the mistake — chasing training loss to zero deepens the overfitting. Option C is backwards — the eval set is doing its job by catching the divergence; discarding it removes your only honest signal. Option D is wrong — a higher learning rate doesn't fix overfitting to noise and typically destabilizes training; the issue is data quality and run length, not the optimizer's step size.",
+      },
+    ],
+    takeaway: "Fine-tuning success is a data-*curation* problem, not a volume problem: the base model already learned to think, so SFT is mostly style/format alignment — a few thousand clean, consistent, deduped, on-distribution examples routinely beat hundreds of thousands of noisy ones (LIMA). Build the held-out, production-representative eval set *first* — it defines 'better' and points you at which gaps to fill. Use synthetic data to augment and fill coverage holes, but guard against bias inheritance and model collapse. Dedup between train and eval to prevent leakage, and read the loss curves: falling train loss with flat/rising eval loss means you're memorizing noise — clean the data, don't add epochs.",
   },
 
   "custom-peft-lora-serving": {
     depthTier: "deep",
     interviewWeight: "high",
-    scenario: DEV + " You need to fine-tune a 70B model but can't afford full fine-tuning, and you'll have DOZENS of customer-specific variants. Explain PEFT/LoRA and — the part interviews probe — how you SERVE many adapters efficiently.",
+    scenario: "You're building a fine-tuning-*as-a-service* product: 50 enterprise customers, each wanting a model tuned on *their* data and voice. The naive plan — full fine-tune a 70B per customer — means 50 full model copies. At ~140GB each in fp16 that's 7TB of weights, and serving them means 50 separate GPU deployments sitting mostly idle. That's economically impossible. The interview-relevant part isn't just 'use LoRA' — it's the productization: ==how do you tune cheaply *and* serve 50 customer-specific variants out of roughly one model's worth of GPU?== Get this wrong and the unit economics never close.",
     explanation: [
-      "WHAT THIS MODULE WILL TEACH (spec):",
-      "1. Why full fine-tuning is expensive: updating all weights needs huge memory (optimizer states) and produces a full model copy per variant.",
-      "2. LoRA / PEFT: freeze the base, train small low-rank adapter matrices (rank r); recap of rank, alpha, target modules, and QLoRA (4-bit base + LoRA) for single-GPU tuning.",
-      "3. The productization angle — MULTI-ADAPTER SERVING: one base model in memory + many swappable LoRA adapters; batched multi-LoRA inference (S-LoRA/punica-style) so N customers share one deployment.",
-      "4. Adapter lifecycle: versioning, A/B testing adapters, merging vs keeping adapters separate, and hot-swapping per request/tenant.",
-      "5. When PEFT isn't enough: tasks that need full fine-tuning or continued pretraining.",
-      { type: "illustration", label: "Planned multi-adapter serving (to be built)", content:
-`One base model (loaded once)
-   + adapter_customerA (small)
-   + adapter_customerB (small)
-   + adapter_customerC (small)
-  -> route each request to its tenant's adapter; batch across adapters.
-     N customers, ~1 model's worth of GPU memory.` },
-      "6. Interview canon: 'what is LoRA', 'LoRA vs full fine-tuning', 'how do you serve many fine-tunes', 'what is QLoRA'.",
+      "Full fine-tuning is expensive for two compounding reasons: **training memory** and **artifact size**.\n\nUpdating all 70B weights means the optimizer (Adam) stores, per parameter, the weight plus gradient plus two moment estimates — roughly **4× the model in memory just for optimizer state**, so a 70B full fine-tune needs a large multi-GPU node. Worse for a *service*: each full fine-tune produces a **complete 140GB model copy**. Fifty customers → fifty 140GB artifacts to store, deploy, and hold in GPU memory. ==The artifact-per-customer problem is what makes full fine-tuning a non-starter for multi-tenant customization, independent of the training cost.==",
+      "**LoRA / PEFT** breaks this by freezing the base and training only a tiny **low-rank adapter**.\n\nThe insight: the *update* a fine-tune applies to a big weight matrix is empirically low-rank — it can be approximated by the product of two skinny matrices. So instead of learning a full `d×d` update, LoRA learns `B·A` where `A` is `r×d` and `B` is `d×r`, with **rank `r` tiny** (8, 16, 64). You freeze the base weights entirely and train only `A` and `B`. (Mechanism detail lives in the DPO/LoRA Foundations module — here we care about the *consequences*.)\n\nThe knobs that matter in practice: **rank `r`** (capacity of the adapter — higher for harder tasks), **alpha** (a scaling factor on the adapter's contribution), and **target modules** (which layers get adapters — usually attention projections). **QLoRA** goes further: quantize the frozen base to 4-bit (NF4) and train LoRA adapters on top, so a 70B fine-tune fits on a *single* GPU. ==The adapter for a 70B is often just tens to a few hundred MB — a rounding error next to the 140GB base.==",
+      { type: "illustration", label: "The artifact-size collapse — why LoRA makes a service viable", content: `FULL FINE-TUNE per customer          LoRA per customer
+--------------------------------      --------------------------------
+Train: ~4x model in optimizer state   Train: base frozen, only A,B updated
+       (multi-GPU node)                      (QLoRA -> single GPU)
+Artifact: 140 GB full model copy      Artifact: ~50-300 MB adapter
+
+50 customers:                         50 customers:
+  50 x 140 GB = 7,000 GB weights        1 x 140 GB base
+  50 separate deployments               + 50 x ~150 MB adapters = ~7.5 GB
+                                        = ~148 GB total, ONE deployment
+
+  => impossible unit economics          => one base + swappable adapters
+                                           N customers ~ 1 model's GPU cost` },
+      "The productization win — and the part interviews probe — is **multi-adapter serving**: one base model in GPU memory, many swappable adapters routed per request.\n\nBecause every customer's adapter shares the same frozen base, you load the **base once** and keep the customer adapters (tiny) in memory or hot storage. Each incoming request is tagged with its tenant; the server applies *that tenant's* adapter for the forward pass. Naively this serializes (one adapter at a time), but systems like **S-LoRA** and **Punica** do **batched multi-LoRA inference**: they batch requests from *different* customers together, apply each request's adapter via specialized kernels, and share the base-model compute across the whole batch. ==Fifty customers are served from roughly one model's worth of GPU, at high utilization — that's the economic unlock.==",
+      "Once you serve adapters as first-class artifacts, you inherit an **adapter lifecycle** — versioning, A/B, merge-vs-keep-separate, and hot-swap.\n\n**Versioning**: each adapter is a small, cheap-to-store artifact, so you keep every version (customerA-v3, customerA-v4) and can **roll back instantly** by pointing the router at the previous adapter — no redeploy of a 140GB model. **A/B testing**: route a fraction of a customer's traffic to a new adapter version and compare, because swapping adapters is nearly free. **Merge vs keep separate**: you *can* merge an adapter into the base to erase the tiny per-request adapter-application overhead — but a merged model is a full 140GB copy again and loses hot-swap/rollback, so for a multi-tenant service you **keep adapters separate**. Merging is for the single-tenant, latency-critical case. **Hot-swap per tenant/request** is the default: the adapter is chosen at request time from the tenant tag.",
+      "PEFT isn't magic — know **when LoRA isn't enough**, because claiming it always suffices is a red flag in interviews.\n\nLoRA's low-rank update has limited capacity. It excels at *behavioral* adaptation — format, tone, task specialization — the same targets from the fine-tune-decision module. But when the goal is to teach a **genuinely new domain, language, or capability** that requires large-scale representational change, a low-rank adapter can't express the needed update, and you need **full fine-tuning or continued pretraining**. ==The decision mirrors the whole track: LoRA for behavioral customization at scale; full FT / pretraining for deep capability change.== Reaching for continued pretraining to fix a tone problem, or LoRA to teach a new language from scratch, are the two symmetric mistakes.",
     ],
-    takeaway: "SKELETON: LoRA/PEFT tunes small low-rank adapters over a frozen base; the productization win is multi-adapter serving — one base + many swappable adapters so many tenants share one deployment. Full content + interactive coming.",
+    keyPoints: [
+      "**Full fine-tuning is expensive twice:** ~4× model memory for Adam optimizer state during training, *and* a full 140GB model copy *per customer* — the artifact-per-tenant problem alone makes it a non-starter for a multi-tenant service.",
+      "**LoRA freezes the base and trains a tiny low-rank adapter** (`B·A`, rank `r`=8–64). Key knobs: rank (capacity), alpha (scaling), target modules (usually attention). The adapter is ~50–300MB vs a 140GB base — a rounding error.",
+      "**QLoRA quantizes the frozen base to 4-bit (NF4)** and trains LoRA on top, fitting a 70B fine-tune on a single GPU.",
+      "**Multi-adapter serving is the productization win:** load the base once, keep tiny adapters in memory, route each request to its tenant's adapter. S-LoRA/Punica do batched multi-LoRA inference — 50 customers served from ~one model's worth of GPU at high utilization.",
+      "**Adapter lifecycle:** versioning (keep every small version, instant rollback), A/B (nearly-free adapter swaps), merge-vs-separate (merge erases per-request overhead but rebuilds a 140GB copy and loses hot-swap — keep separate for multi-tenant), hot-swap per tenant/request.",
+      "**LoRA has a capacity ceiling:** great for behavioral adaptation (format/tone/task), but a genuinely new domain/language/capability needs full fine-tuning or continued pretraining. Claiming LoRA always suffices is a red flag.",
+    ],
+    recap: [
+      "**Full FT is a non-starter for a service:** ~4× model in optimizer state to train, and a full 140GB copy *per customer* — 50 tenants = 7TB and 50 idle deployments.",
+      "**LoRA trains a tiny low-rank adapter over a frozen base** (rank `r`, alpha, target modules); the adapter is ~50–300MB. QLoRA (4-bit base + LoRA) fits a 70B tune on one GPU.",
+      "**Multi-adapter serving is the unlock:** one base loaded once + many swappable adapters, routed per tenant; S-LoRA/Punica batch across adapters so N customers ≈ one model's GPU cost.",
+      "**Adapters are first-class artifacts:** version them, A/B them, hot-swap per request, and roll back instantly by re-pointing the router — no 140GB redeploy.",
+      "**Merge only for single-tenant/latency-critical:** merging rebuilds a full model copy and kills hot-swap/rollback; multi-tenant services keep adapters separate.",
+      "**Know LoRA's ceiling:** behavioral customization yes; genuinely new domain/language/capability needs full FT or continued pretraining.",
+    ],
+    mcqs: [
+      {
+        question: "A fine-tuning-as-a-service startup needs to serve 50 customer-specific variants of a 70B model. An engineer proposes full fine-tuning a separate 70B per customer. Why is this economically broken, and what's the right architecture?",
+        options: [
+          "It's fine — GPUs are cheap enough that 50 full 70B deployments is a reasonable cost of doing business",
+          "Full fine-tuning produces a complete ~140GB model copy per customer (50 × 140GB = 7TB) plus 50 mostly-idle deployments. Use LoRA: one frozen base loaded once + 50 tiny (~150MB) swappable adapters, with batched multi-LoRA serving (S-LoRA/Punica) routing each request to its tenant's adapter — 50 customers served from roughly one model's worth of GPU",
+          "Quantize each of the 50 full models to int4 so they fit — that solves the multi-tenant cost problem",
+          "Use RAG instead of fine-tuning for all 50 customers, since customer-specific behavior is just retrieved context",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the killer is the artifact-per-customer problem — full fine-tuning yields a full 140GB copy each, so 50 tenants means 7TB of weights and 50 separate, mostly-idle deployments. LoRA collapses this: freeze one shared base, train tiny per-customer adapters (~150MB), and use batched multi-LoRA serving (S-LoRA/Punica) to route each request to its tenant's adapter and share base compute — N customers from ~one model's GPU. Option A ignores that 50 idle 70B deployments is exactly the cost that makes the unit economics fail. Option C helps single-model memory but you'd still have 50 separate quantized full models to store and serve — it doesn't solve the multi-tenant *artifact* explosion. Option D throws away the requirement — the customers want their *behavior/voice* tuned in, which is a weights problem; RAG injects facts, not consistent per-tenant behavior.",
+      },
+      {
+        question: "For a multi-tenant LoRA service, an engineer suggests merging each customer's adapter into the base model to eliminate the per-request adapter-application overhead. What's the tradeoff, and is it right here?",
+        options: [
+          "Merge everything — merged models are always faster and there's no downside",
+          "Merging folds the adapter into the weights (removing per-request overhead) but recreates a full ~140GB model copy per customer and destroys hot-swap and instant rollback. For a multi-tenant service you keep adapters *separate*; merging is only for the single-tenant, latency-critical case where you serve one variant and don't need per-request swapping",
+          "Never merge under any circumstances — merged models are numerically incorrect",
+          "Merging is only about disk storage and has no effect on serving architecture or rollback",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: merging erases the small per-request adapter overhead by baking the adapter into the weights, but that rebuilds a full 140GB artifact per customer and loses the very properties a multi-tenant service depends on — hot-swap between tenants and instant rollback by re-pointing the router. So keep adapters separate for multi-tenant; merge only in single-tenant/latency-critical serving. Option A ignores the artifact-explosion and lost-flexibility cost. Option C is false — merging is mathematically valid (it's exact addition of the low-rank update into the base). Option D is wrong — merging directly changes the serving architecture (you can no longer batch many tenants over one base) and eliminates cheap rollback.",
+      },
+      {
+        question: "A customer's use case shifts from 'match our support tone' (which LoRA handled well) to 'operate fluently in a new language the base model barely knows.' The team wants to just bump the LoRA rank. What's the right call?",
+        options: [
+          "Bump the rank to 512 — LoRA can express any adaptation if you make the rank large enough",
+          "Recognize LoRA's capacity ceiling: low-rank adapters excel at *behavioral* adaptation (tone/format/task) but can't express the large-scale representational change needed to teach a genuinely new language — that requires full fine-tuning or continued pretraining. This is a different rung on the customization ladder, not a rank tweak",
+          "Switch to RAG — retrieving documents in the new language will make the model fluent in it",
+          "Increase the LoRA alpha, since alpha controls how much new knowledge the adapter can absorb",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: LoRA's low-rank update is designed for behavioral adaptation and has a capacity ceiling; teaching a genuinely new language requires broad representational change that a low-rank adapter can't express, so you move up the ladder to full fine-tuning or continued pretraining. Recognizing this boundary is exactly the senior signal. Option A is wrong — cranking rank toward full-rank erodes LoRA's efficiency benefits and still isn't the right tool for large-scale new-capability learning; it also blows up the adapter size that made the service viable. Option C confuses knowledge injection with capability — RAG can supply documents but won't make a model *fluent* in a language it fundamentally lacks. Option D misdescribes alpha, which is just a scaling factor on the adapter's contribution, not a knowledge-capacity dial.",
+      },
+    ],
+    takeaway: "Full fine-tuning is a non-starter for a multi-tenant customization service — it needs ~4× model memory to train and produces a full 140GB copy *per customer*. LoRA/PEFT freezes the base and trains a tiny (~50–300MB) low-rank adapter (rank/alpha/target-modules; QLoRA fits a 70B tune on one GPU). The productization unlock is multi-adapter serving: one base loaded once plus many swappable adapters, with batched multi-LoRA inference (S-LoRA/Punica) so N customers are served from roughly one model's GPU. Treat adapters as first-class artifacts — version, A/B, hot-swap per tenant, roll back instantly by re-pointing the router; keep them separate (merge only for single-tenant latency). And know LoRA's ceiling: behavioral customization yes, a genuinely new domain/language needs full FT or continued pretraining.",
   },
 
   "custom-preference-alignment": {
     depthTier: "deep",
     interviewWeight: "high",
-    scenario: DEV + " SFT made your model fluent but it still gives unhelpful or off-tone answers users dislike. You need preference alignment. Explain RLHF vs DPO as a customization service would apply them, and when each fits.",
+    scenario: "Your SFT model is fluent and on-format, but users keep thumbs-downing its answers: technically correct, yet unhelpful, hedge-everything, or subtly off-tone. SFT taught it to imitate *good* answers, but it never learned that users *prefer* one answer over another when both are plausible. You need preference alignment. The interview question isn't 'what is RLHF' in the abstract — it's ==how a customization *service* chooses between RLHF and DPO, how it sources preference data at scale, and how it avoids over-tuning the model into a useless over-refuser (the alignment tax).==",
     explanation: [
-      "WHAT THIS MODULE WILL TEACH (spec):",
-      "1. Why SFT isn't enough: it imitates good answers but doesn't optimize for PREFERRED-over-alternative — you need a preference signal.",
-      "2. RLHF pipeline: collect preference pairs → train a reward model → PPO against it with a KL penalty to the SFT model. Powerful but complex/unstable.",
-      "3. DPO: skip the separate reward model + RL — a direct pairwise loss on preference data (implicit reward, reference-KL). Simpler, more stable, the modern default for most teams. (Deep-dives to the existing DPO Foundations module.)",
-      "4. Getting preference data: human labeling vs AI feedback (RLAIF/constitutional), pair construction, and annotation quality.",
-      "5. The alignment tax + over-refusal: tuning too hard for 'safe/preferred' can make the model refuse valid requests — measuring both directions.",
-      "6. Interview canon: 'RLHF vs DPO', 'why not just SFT', 'how do you collect preference data', 'what is the alignment tax'.",
+      "The reason SFT plateaus is structural: **SFT imitates good answers but can't express *preferred-over-alternative*.**\n\nSFT is maximum-likelihood on a single 'correct' completion per prompt — it says 'produce *this*.' But quality is often relative: two answers are both fluent and factual, yet users clearly prefer one (more helpful, better tone, right length). SFT has no mechanism to encode 'A is better than B' — it only knows 'A is a valid target.' ==To optimize for what people prefer, you need a *comparative* signal — pairs of (chosen, rejected) — which is exactly what preference alignment consumes.== This is why even a well-SFT'd model still feels subtly off: it's fluent but not *preference-optimized*.",
+      "**RLHF** is the original pipeline, and it's three stages: **preference data → reward model → PPO.**\n\nFirst, collect **preference pairs**: show labelers two model outputs for the same prompt, they pick the better one. Second, train a **reward model (RM)** on those comparisons — a model that scores any output with a scalar 'how preferred is this.' Third, use **PPO** (reinforcement learning) to update the policy to maximize the RM's score, with a **KL-divergence penalty** that keeps the tuned policy from drifting too far from the SFT model. ==That KL leash is essential:== without it, the policy 'reward-hacks' — it finds degenerate outputs that fool the RM (repetition, sycophancy, weird tokens) and collapses. RLHF is powerful but **complex and unstable**: three models in play (policy, RM, reference), sensitive PPO hyperparameters, and reward-hacking to fight.",
+      { type: "illustration", label: "RLHF vs DPO — same preference data, very different machinery", content: `Both start from the SAME input: preference pairs (chosen > rejected)
+
+RLHF (3-stage, RL):
+  pairs --> train Reward Model --> PPO optimize policy vs RM
+                                   + KL penalty to SFT ref
+  models live at once: policy + reward model + reference  (3)
+  failure modes: reward hacking, PPO instability, tuning hell
+
+DPO (1-stage, no RL):
+  pairs --> direct pairwise loss on the policy
+            (implicit reward = log-ratio vs a frozen reference)
+  models live at once: policy + frozen reference  (2)
+  failure modes: fewer; sensitive to data quality + the beta/KL term
+
+Same goal (raise P(chosen) over P(rejected)); DPO folds the reward model
+INTO the loss. For most teams DPO is the modern default: simpler, stabler,
+cheaper. RLHF still shows up where a reusable reward model / online RL matters.` },
+      "**DPO (Direct Preference Optimization)** is the modern default because it gets the same result **without the reward model or the RL loop.**\n\nThe key idea: the RLHF objective has a closed-form optimal policy in terms of the reward, and you can *invert* that relationship so the reward is expressed *implicitly* through the policy itself. DPO then optimizes a **single pairwise classification loss** directly on the policy: raise the log-probability of the *chosen* response relative to the *rejected* one, measured against a **frozen reference model** (which plays the role of the KL leash, controlled by a `beta` term). ==No separate reward model, no PPO, no sampling loop — just a supervised-style loss on preference pairs.== The consequences: far simpler and more stable, cheaper to run, and it's why most customization teams reach for DPO first. (Mechanism deep-dive lives in the DPO Foundations module; here the point is *when a service picks it*.)",
+      "The choice between them, for a *service*, comes down to **operational complexity vs. flexibility.**\n\n**Reach for DPO** when: you have good static preference pairs, you want stability and low ops overhead, and a straightforward 'make outputs more preferred' objective — which describes most customization work. **Reach for RLHF** when: you want a **reusable reward model** as an asset (score outputs, filter data, run online RL as fresh data arrives), you need **online** optimization against a live reward signal, or you have the ML-ops maturity to run PPO reliably and the flexibility pays off. ==The senior framing: DPO is the default; RLHF is the answer when the reward model itself, or online RL, is worth its operational cost.== Newer direct methods (IPO, KTO, etc.) are variations on the DPO theme trading off different assumptions.",
+      "Where do the **preference pairs** come from, and what goes wrong: **human labeling vs. AI feedback (RLAIF), pair construction, and the alignment tax.**\n\nData sourcing: **human preference labels** are gold-standard but slow and expensive; **RLAIF / Constitutional AI** uses a strong model (guided by a written principle set) to *generate* the preference judgments, trading some fidelity for scale. Either way, **pair construction and annotation quality dominate** — noisy or inconsistent preferences teach a noisy objective, and if your pairs mostly differ on length, you'll train a model that just rambles.\n\nThe failure mode that catches teams: the **alignment tax and over-refusal.** Tune too aggressively toward 'safe/preferred' and the model becomes a hedging over-refuser — it declines valid requests, over-qualifies everything, and loses helpfulness. ==You must measure *both directions*: helpfulness on legitimate requests AND appropriate refusal on bad ones. A model that refuses everything scores perfectly on safety and is useless.== Preference alignment is a balance, not a maximization.",
     ],
-    takeaway: "SKELETON: Preference alignment optimizes preferred-over-alternative beyond SFT — RLHF (reward model + PPO) vs DPO (direct pairwise loss, the simpler modern default). Watch the alignment tax / over-refusal. Full content + interactive coming.",
+    keyPoints: [
+      "**SFT imitates good answers but can't express *preferred-over-alternative*.** It's max-likelihood on one target per prompt; quality is often relative. Optimizing for what users prefer needs a *comparative* (chosen, rejected) signal — the input to all preference alignment.",
+      "**RLHF is a 3-stage RL pipeline:** preference pairs → reward model → PPO against it with a KL penalty to the SFT reference. The KL leash prevents reward-hacking. Powerful but complex/unstable — three models in play, sensitive PPO tuning.",
+      "**DPO folds the reward model into a single pairwise loss.** It raises P(chosen) over P(rejected) against a frozen reference (KL role via `beta`) — no reward model, no PPO, no sampling loop. Simpler, stabler, cheaper — the modern default for most teams.",
+      "**Service-level choice = complexity vs flexibility.** DPO by default (static pairs, low ops); RLHF when a reusable reward model or online RL is worth its operational cost.",
+      "**Preference data: human labels (gold, slow) vs RLAIF/Constitutional (scalable, lower fidelity).** Pair construction and annotation quality dominate — length-biased pairs train a rambler.",
+      "**The alignment tax / over-refusal is the key failure mode.** Over-tuning toward 'safe/preferred' yields a hedging over-refuser that declines valid requests. Measure *both* directions — helpfulness on good requests AND refusal on bad ones. Alignment is a balance, not a maximization.",
+    ],
+    recap: [
+      "**SFT plateaus because it can't encode preference** — it imitates one good answer; you need (chosen, rejected) pairs to optimize preferred-over-alternative.",
+      "**RLHF = preference pairs → reward model → PPO + KL penalty.** Powerful, but three models and reward-hacking make it complex and unstable.",
+      "**DPO = one direct pairwise loss vs a frozen reference** (implicit reward, `beta`/KL term). No reward model, no RL loop — simpler, stabler, the modern default.",
+      "**Pick by ops vs flexibility:** DPO for most static-pair customization; RLHF when a reusable reward model or online RL earns its cost.",
+      "**Source pairs via humans (gold, slow) or RLAIF/Constitutional (scalable);** annotation quality and pair construction dominate — avoid length-biased pairs.",
+      "**Watch the alignment tax / over-refusal:** measure helpfulness *and* refusal in both directions — a model that refuses everything is 'safe' and useless.",
+    ],
+    mcqs: [
+      {
+        question: "After SFT, a model is fluent and on-format but users consistently rate its answers as unhelpful compared to alternatives they'd prefer. Why can't more SFT fix this, and what's the right next step?",
+        options: [
+          "More SFT will fix it — just add more examples of the best answers and the model will prefer them",
+          "SFT is maximum-likelihood on a single target per prompt; it can encode 'this is a valid answer' but not 'this answer is preferred over that one.' You need preference alignment, which consumes (chosen, rejected) pairs — via DPO (a direct pairwise loss) or RLHF (reward model + PPO) — to optimize preferred-over-alternative",
+          "The issue is factual accuracy, so add RAG to inject better facts",
+          "Raise the temperature so the model produces more varied answers that users might prefer",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: SFT optimizes likelihood of a single 'correct' completion and has no mechanism to encode a *relative* preference between two plausible answers. Preference alignment is exactly the tool — it trains on (chosen, rejected) comparisons via DPO or RLHF to raise the probability of preferred outputs over alternatives. Option A is the trap — adding more SFT targets still can't express 'A > B'; you can pile on good examples and the model remains preference-unaware. Option C misdiagnoses the problem — the complaint is unhelpful *relative to preferred alternatives* (a preference issue), not missing facts. Option D is wrong — temperature adds randomness, not a preference signal; more variance doesn't teach the model which variant users prefer.",
+      },
+      {
+        question: "A customization team with solid static preference pairs and limited ML-ops maturity is deciding between RLHF and DPO for aligning their tuned model. What's the best guidance?",
+        options: [
+          "Always use RLHF — it's the original method, so it's more powerful and correct in every case",
+          "Default to DPO: it folds the reward model into a single direct pairwise loss against a frozen reference — no separate reward model, no PPO/RL loop — so it's simpler, more stable, and cheaper, which fits a team with static pairs and limited ops maturity. Reach for RLHF only when a reusable reward model or online RL against a live signal is worth the added operational cost",
+          "Use neither — preference alignment isn't needed if SFT was done well",
+          "Use RLHF because DPO cannot enforce a KL constraint and will always drift arbitrarily far from the SFT model",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: DPO achieves the same preferred-over-alternative objective as RLHF but as a single supervised-style pairwise loss against a frozen reference, with no reward model or PPO loop — simpler, stabler, cheaper, and the right default especially for a team with static pairs and limited ops maturity. RLHF earns its complexity only when you want a reusable reward model asset or online RL. Option A overstates RLHF — it's not universally better and its instability is a real cost. Option C is wrong — the scenario is a preference gap SFT cannot close, so alignment is exactly what's needed. Option D is factually wrong — DPO's frozen reference and `beta` term play precisely the KL-regularization role; it does not drift arbitrarily.",
+      },
+      {
+        question: "After aggressive preference tuning for 'safe and helpful,' a model now refuses many perfectly legitimate requests and hedges everything. Its safety-refusal benchmark score is near-perfect. What went wrong and how should evaluation change?",
+        options: [
+          "Nothing went wrong — a near-perfect safety score means the alignment succeeded",
+          "This is the alignment tax / over-refusal: tuning too hard toward 'safe/preferred' made the model an over-refuser that declines valid requests. Evaluation must measure *both directions* — helpfulness/compliance on legitimate requests AND appropriate refusal on genuinely bad ones — because a model that refuses everything scores perfectly on refusal and is useless. Alignment is a balance, not a maximization",
+          "The reward model was too weak; make it stronger and refusals will disappear on their own",
+          "Increase the KL penalty further to lock the model even closer to the safe behavior",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the symptom is the classic alignment tax — over-optimizing toward 'safe/preferred' produces an over-refusing, hedging model that sacrifices helpfulness. The evaluation fix is to measure both directions (helpfulness on valid requests *and* correct refusal on bad ones); a one-sided refusal metric is gamed by a model that refuses everything. Option A is exactly the trap — a perfect refusal score with collapsed helpfulness is a failure, not a success. Option C misattributes the cause — over-refusal here comes from over-aggressive tuning/pair balance, not a weak reward model, and a 'stronger' RM tuned the same direction won't restore helpfulness. Option D would make it worse — a larger penalty toward the over-refusing behavior deepens the over-refusal; the fix is rebalancing the objective and evaluating both directions.",
+      },
+    ],
+    takeaway: "SFT imitates good answers but can't encode *preferred-over-alternative* — that gap is why a fluent model still feels off, and closing it needs preference alignment on (chosen, rejected) pairs. RLHF is the original 3-stage RL pipeline (preference data → reward model → PPO with a KL leash); DPO folds the reward model into a single direct pairwise loss against a frozen reference — no RM, no RL loop — making it simpler, stabler, cheaper, and the modern default. A service picks DPO by default and RLHF when a reusable reward model or online RL earns its operational cost. Source pairs via human labels (gold, slow) or RLAIF (scalable), and guard against the alignment tax: over-tuning for 'safe/preferred' yields an over-refuser, so measure helpfulness *and* refusal in both directions — alignment is a balance, not a maximization.",
   },
 
   "custom-eval-driven-loop": {
     depthTier: "deep",
     interviewWeight: "high",
-    scenario: DEV + " You shipped a fine-tuned model and it regressed on cases the old one handled — but you didn't notice for weeks. You need an eval-driven customization loop so every tuned model is measured before and after shipping.",
+    scenario: "You shipped a fine-tune that clearly improved the target task — billing-question answers got noticeably better in your demos. Three weeks later, support notices the model now botches *refund* questions it used to handle perfectly. Nobody caught it because there was no regression suite: you measured the new task and never checked whether the tune broke old capabilities. This is **catastrophic forgetting**, shipped silently. You need to design the ==eval-driven customization loop so *every* tuned model is measured — on the new task *and* a regression suite — before and after it ships, and so a regression triggers an instant rollback, not a three-week-late escalation.==",
     explanation: [
-      "WHAT THIS MODULE WILL TEACH (spec):",
-      "1. Eval BEFORE you train: a held-out, production-representative eval set is the contract that says whether a fine-tune helped.",
-      "2. Catastrophic forgetting: fine-tuning on a narrow task can degrade general/previous capabilities — measure on BOTH the new task and a regression suite.",
-      "3. The customization flywheel: collect prod failures → curate into training/eval → tune → eval (task + regression) → ship → collect again.",
-      "4. Comparing models: task metrics, LLM-as-judge (and its pitfalls), A/B in production, and guarding against overfitting the eval (Goodhart).",
-      "5. Governance for a fine-tuning service: dataset/version lineage, reproducibility, and rollback when a new adapter regresses.",
-      { type: "illustration", label: "Planned customization flywheel (to be built)", content:
-`  prod failures -> curate (train + eval sets)
-        ^                      |
-        |                 fine-tune
-        |                      |
-   ship + collect  <----  eval: NEW task  AND  regression suite
-  -> never ship a tune that wins the task but silently regresses elsewhere.` },
-      "6. Interview canon: 'how do you know a fine-tune helped', 'what is catastrophic forgetting', 'how do you eval a fine-tuned model', 'design a fine-tuning feedback loop'.",
+      "The foundational rule, repeated across this track: **the held-out, production-representative eval exists *before* you train.**\n\nThe eval set is the **contract** that decides whether a fine-tune helped — sampled from real traffic, covering the real distribution including hard cases, and never seen in training. Without it, 'the demo looked better' is your only signal, which is how the scenario happened. ==Build it first, and build it to reflect *production*, not the training distribution — a fine-tune can look great on training-like inputs and fail on the real spread.== This eval-first discipline is what turns customization from vibes into a measurable engineering loop.",
+      "The specific danger of fine-tuning is **catastrophic forgetting** — and it's why one eval is never enough.\n\nWhen you tune on a narrow task, gradient updates that improve *that* task can **degrade previously-working capabilities**: the weights move to fit refund-question patterns and, as a side effect, disturb the representations that handled other question types. The model gets better at the thing you measured and quietly worse at things you didn't. ==The countermeasure is structural: always evaluate on **two** suites — the **new-task eval** (did the tune help?) *and* a **regression suite** of previously-working capabilities (did the tune break anything?).== Shipping on the task metric alone is precisely the mistake that shipped the refund regression.",
+      { type: "illustration", label: "The customization flywheel — where the regression gate goes", content: `        prod failures (real thumbs-down, escalations, misses)
+                     |
+                     v
+        curate  ---> split into  TRAIN set  +  EVAL set (held out)
+                     |
+                     v
+                 fine-tune (SFT / LoRA / DPO)
+                     |
+                     v
+        EVAL GATE:   NEW-TASK eval   AND   REGRESSION suite
+                     |                        |
+              improved? ---yes--+            broke anything? ---yes--> BLOCK / rollback
+                     |          |                                       (never ship)
+                     no         v
+                     |     ship (A/B first)
+                     |          |
+                     +<---------+  collect prod failures again -> loop
+
+The gate has TWO conditions: task must improve AND regression must hold.
+A tune that wins the task but regresses elsewhere NEVER ships.` },
+      "Comparing two models rigorously means knowing your **measurement tools and their pitfalls**: task metrics, LLM-as-judge, and production A/B.\n\n**Task metrics** (exact-match, F1, pass rates) are cheap and objective but only cover what you can score automatically. **LLM-as-judge** scales subjective quality (helpfulness, tone) but has real pitfalls — position bias (favoring the first option), verbosity bias (favoring longer answers), and self-preference (favoring its own model's style); mitigate with randomized order, calibrated rubrics, and spot-checks against human labels. **Production A/B** is the ground truth — route a fraction of live traffic to the new model and compare real user outcomes — but it's slow and only catches what your metrics track. ==Use offline evals (task + regression) as the pre-ship gate, then A/B as the online confirmation; neither alone is sufficient.==",
+      "The subtle trap that undermines the whole loop is **Goodhart's law: when a metric becomes the target, it stops measuring what you want.**\n\nIf you tune and re-tune against the *same* eval set, you gradually **overfit the eval** — chasing its idiosyncrasies rather than real quality. The eval number climbs while production quality stalls or drops. ==Defenses: keep a *rotating* or periodically-refreshed held-out set the tuning process never trains against, hold back a truly-blind test set used only for go/no-go, and treat a rising eval with flat production A/B as a red flag that you're gaming the metric.== The regression suite helps here too: it's harder to game two orthogonal targets than one.",
+      "For a fine-tuning *service*, the loop needs **governance**: dataset/version lineage, reproducibility, and rollback.\n\n**Lineage** — every deployed model maps to an exact dataset version, base model, and config, so you can answer 'what data produced this behavior?' and reproduce or audit it. **Reproducibility** — pinned data + seed + config means a tune can be rebuilt, essential for debugging a regression. **Rollback** — because adapters are tiny, cheap artifacts (from the serving module), a regression detected in the gate or in A/B triggers an **instant rollback** to the previous adapter version by re-pointing the router — no 140GB redeploy, no three-week escalation. ==The whole point of the eval-driven loop is that a regression is *caught by a gate and reverted in minutes*, not discovered by a customer weeks later.== That's the difference between a fine-tuning hobby and a fine-tuning product.",
     ],
-    takeaway: "SKELETON: Productized fine-tuning is eval-driven — build the held-out eval first, always test task + regression (catastrophic forgetting), and run a flywheel of prod-failures → curate → tune → eval → ship. Full content + interactive coming.",
+    keyPoints: [
+      "**Build the held-out, production-representative eval BEFORE training.** It's the contract for whether a fine-tune helped — real distribution, hard cases included, never in training. 'The demo looked better' is not a signal.",
+      "**Catastrophic forgetting: narrow tuning silently degrades previously-working capabilities.** Gradient updates that help the target task disturb representations that handled other tasks. Always run *two* evals: the new-task eval AND a regression suite.",
+      "**The customization flywheel:** prod failures → curate (train + held-out eval) → fine-tune → eval gate (task improves AND regression holds) → A/B → ship → collect again. The gate has two conditions; a tune that wins the task but regresses elsewhere never ships.",
+      "**Know your measurement pitfalls:** task metrics (objective, narrow); LLM-as-judge (scalable but position/verbosity/self-preference biased — randomize, rubric, spot-check); production A/B (ground truth but slow). Offline evals gate pre-ship; A/B confirms online.",
+      "**Goodhart's law:** tuning repeatedly against one eval overfits it — the number rises while production stalls. Defend with rotating/blind held-out sets and treat rising-eval-with-flat-A/B as a red flag. Two orthogonal targets (task + regression) are harder to game.",
+      "**Service governance = lineage + reproducibility + instant rollback.** Every model maps to an exact dataset/base/config; regressions caught by the gate or A/B revert in minutes by re-pointing the router to the prior adapter — not a customer-reported, weeks-late escalation.",
+    ],
+    recap: [
+      "**Eval-first:** a held-out, production-representative eval set is the contract that decides if a fine-tune helped — build it before you train.",
+      "**Always test two suites:** new-task eval AND a regression suite, because narrow tuning silently causes catastrophic forgetting of old capabilities.",
+      "**Run the flywheel with a two-condition gate:** prod failures → curate → tune → (task improves AND regression holds) → A/B → ship → collect. Winning the task but regressing elsewhere = never ship.",
+      "**Mind measurement pitfalls:** task metrics (narrow), LLM-as-judge (bias-prone — randomize/rubric/spot-check), A/B (ground truth but slow). Gate offline, confirm online.",
+      "**Beat Goodhart:** rotating/blind held-out sets and rising-eval-vs-flat-A/B alarms; two orthogonal targets resist gaming.",
+      "**Govern it like a product:** dataset/version lineage, reproducibility, and instant adapter rollback — a regression is caught by a gate and reverted in minutes, not found by a customer weeks later.",
+    ],
+    mcqs: [
+      {
+        question: "A team shipped a fine-tune that improved billing-question answers (measured in demos) but weeks later discovered it broke refund questions it used to handle. What is the failure and what eval design prevents it?",
+        options: [
+          "The base model was simply too small; the fix is a bigger base model",
+          "This is catastrophic forgetting: tuning on the narrow billing task degraded previously-working refund capability, and it shipped silently because only the new task was measured. Prevent it by always evaluating on two suites before shipping — the new-task eval AND a regression suite of previously-working capabilities — and gating the ship on *both* (task improves AND regression holds)",
+          "The problem is that they used LoRA instead of full fine-tuning; full fine-tuning never forgets",
+          "They should have shipped faster so the regression would have been noticed sooner",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: fine-tuning on a narrow task can move weights in ways that degrade other, previously-working capabilities — catastrophic forgetting — and measuring only the target task lets it ship undetected. The structural fix is a two-suite eval (new task + regression) with a ship gate that requires *both* conditions. Option A is unrelated — model size isn't the cause of task-specific forgetting from tuning, and a bigger base doesn't add a regression gate. Option C is false — full fine-tuning is generally *more* prone to catastrophic forgetting than LoRA (which freezes the base); the missing piece is the regression suite regardless of method. Option D is backwards — shipping faster without a regression gate just ships regressions faster; the fix is measurement, not speed.",
+      },
+      {
+        question: "A team uses LLM-as-judge to compare their new fine-tune against the old model and reports the new one wins 70% of the time. Before trusting it, what pitfalls must they rule out?",
+        options: [
+          "None — LLM-as-judge is objective and unbiased, so 70% is a reliable result",
+          "LLM-as-judge has known biases: position bias (favoring whichever answer is shown first), verbosity bias (favoring longer answers regardless of quality), and self-preference (favoring outputs in its own model's style). Mitigate by randomizing answer order, using a calibrated rubric, controlling for length, and spot-checking against human labels — then confirm the win with a production A/B before fully trusting it",
+          "The only concern is that LLM-as-judge is expensive; accuracy is not in question",
+          "Discard LLM-as-judge entirely and rely only on training loss to compare the models",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: LLM-as-judge scales subjective evaluation but carries position, verbosity, and self-preference biases that can manufacture an apparent win. The mitigations are randomized ordering, calibrated rubrics, length controls, and human spot-checks, with a production A/B as the ground-truth confirmation. Option A is false — LLM judges are demonstrably biased, so a raw 70% is not automatically trustworthy. Option C ignores the accuracy/bias problem, which is the actual risk here. Option D overcorrects — training loss measures fit to the training data, not comparative output quality on held-out prompts, and is a worse comparison signal than a debiased LLM-as-judge plus A/B.",
+      },
+      {
+        question: "Over several tuning iterations, a team's offline eval score keeps climbing, but a production A/B shows no improvement in real user outcomes. What is most likely happening and how should the loop change?",
+        options: [
+          "The A/B is wrong; trust the rising offline eval and ship the latest model",
+          "This is Goodhart's law in action: repeatedly tuning against the same eval set is overfitting the metric, so the eval number rises while true production quality is flat. Fix the loop with a rotating/periodically-refreshed held-out set the tuning never trains against, keep a truly-blind go/no-go test set, and treat rising-eval-with-flat-A/B as a red flag — the production A/B is the ground truth here",
+          "The model has reached maximum possible quality, so the flat A/B is expected and fine",
+          "Increase the number of tuning iterations against the same eval until the A/B improves",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: when a metric becomes the optimization target across many iterations, the model overfits its idiosyncrasies — the eval climbs while real quality (A/B) stalls, the textbook Goodhart failure. The fix is to rotate/refresh the held-out eval, keep a blind go/no-go set, and treat the eval-vs-A/B divergence as the alarm, trusting the production A/B as ground truth. Option A inverts the trust hierarchy — the A/B on real users is the ground truth, not the gameable offline eval. Option C is an unsupported assumption; a flat A/B alongside a rising eval points to metric-gaming, not a quality ceiling. Option D makes it worse — more iterations against the same eval deepen the overfitting that caused the divergence.",
+      },
+    ],
+    takeaway: "Productized fine-tuning is eval-driven or it's guesswork. Build the held-out, production-representative eval *first* — it's the contract for whether a tune helped. Because narrow tuning causes catastrophic forgetting, always evaluate two suites (new-task *and* regression) and gate the ship on both: a tune that wins the task but regresses elsewhere never ships. Run the flywheel — prod failures → curate → tune → eval gate → A/B → ship → collect — and respect the measurement pitfalls: LLM-as-judge biases (randomize/rubric/spot-check) and Goodhart's law (rotating/blind evals; trust the A/B when it diverges from a rising offline score). Govern it like a product with dataset/version lineage, reproducibility, and instant adapter rollback, so a regression is caught by a gate and reverted in minutes — not discovered by a customer three weeks later.",
   },
 };
