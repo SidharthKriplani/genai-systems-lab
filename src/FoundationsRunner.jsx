@@ -27,8 +27,24 @@ export default function FoundationsRunner({
   const [answers, setAnswers]     = useState(() => Array(mcqList.length).fill(null));
   const [submitted, setSubmitted] = useState(() => Array(mcqList.length).fill(false));
   const [recapMode, setRecapMode] = useState(false);
+  const [tab, setTab]             = useState("lesson"); // "lesson" | "code"
 
   const { scenario, explanation, takeaway, keyPoints, recap } = runnerData;
+
+  // ── Code tab (2026-07-03): a module "has code" when it carries an explicit runnerData.code
+  //    field OR any `illustration` block in its explanation (the ASCII/trace/code panels). When
+  //    present, those live in a dedicated Code tab instead of inline prose; modules without code
+  //    show no tab. Supported code shapes: string | {label, content, lang} | array of either. ──
+  const illustrations = Array.isArray(explanation)
+    ? explanation.filter(it => it && typeof it === "object" && it.type === "illustration")
+    : [];
+  const explicitCode = normalizeCode(runnerData.code);
+  const codeBlocks = [...explicitCode, ...illustrations.map(it => ({ label: it.label, content: it.content, lang: it.lang }))];
+  const hasCode = codeBlocks.length > 0;
+  // When a Code tab exists, strip illustrations out of the inline explanation flow.
+  const explanationForLesson = hasCode && Array.isArray(explanation)
+    ? explanation.filter(it => !(it && typeof it === "object" && it.type === "illustration"))
+    : explanation;
 
   function selectAnswer(qi, i) {
     if (submitted[qi]) return;
@@ -94,9 +110,47 @@ export default function FoundationsRunner({
             </button>
           </div>
         )}
+
+        {/* ── Lesson / Code tab bar (only when the module carries code) ── */}
+        {hasCode && !recapMode && (
+          <div className="mt-4 inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
+            <button
+              onClick={() => setTab("lesson")}
+              className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
+                tab === "lesson" ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Lesson
+            </button>
+            <button
+              onClick={() => setTab("code")}
+              className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
+                tab === "code" ? "bg-amber-600 text-white" : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              {"</> Code"}
+            </button>
+          </div>
+        )}
       </div>
 
-      {recapMode && recap ? (
+      {/* ── Code tab body ── */}
+      {hasCode && tab === "code" && !recapMode ? (
+        <section className="space-y-6">
+          <SectionRule label={`Code${codeBlocks.length > 1 ? ` · ${codeBlocks.length} blocks` : ""}`} />
+          {codeBlocks.map((cb, i) => (
+            <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+              {cb.label && (
+                <p className="text-[10px] font-mono text-amber-400/80 uppercase tracking-widest mb-3">
+                  {cb.label}{cb.lang ? ` · ${cb.lang}` : ""}
+                </p>
+              )}
+              <pre className="text-xs font-mono text-zinc-300 leading-relaxed overflow-x-auto whitespace-pre">{cb.content}</pre>
+            </div>
+          ))}
+          <p className="text-[11px] text-zinc-600">Switch to the Lesson tab for the walkthrough and the check questions.</p>
+        </section>
+      ) : recapMode && recap ? (
         <div className="space-y-6">
           <section>
             <SectionRule label="Quick Recap" />
@@ -131,7 +185,7 @@ export default function FoundationsRunner({
         <section>
           <SectionRule label="Explanation" />
           <div className="mt-4 space-y-4">
-            {explanation.map((item, i) => {
+            {explanationForLesson.map((item, i) => {
               if (typeof item === "string") {
                 return <p key={i} className="text-sm text-zinc-200 leading-relaxed"><InlineMd text={item} /></p>;
               }
@@ -225,6 +279,25 @@ export default function FoundationsRunner({
       )}
     </div>
   );
+}
+
+// ── normalizeCode ───────────────────────────────────────────────────────────────
+// Accepts the optional runnerData.code field in any of these shapes and returns a
+// uniform array of { label, content, lang } blocks for the Code tab:
+//   "raw code string"
+//   { label, content, lang }
+//   [ "str" | { label, content, lang }, ... ]
+function normalizeCode(code) {
+  if (!code) return [];
+  const one = (c) => {
+    if (typeof c === "string") return { label: null, content: c, lang: null };
+    if (c && typeof c === "object" && (c.content || c.code))
+      return { label: c.label || null, content: c.content || c.code, lang: c.lang || null };
+    return null;
+  };
+  if (Array.isArray(code)) return code.map(one).filter(Boolean);
+  const single = one(code);
+  return single ? [single] : [];
 }
 
 // ── InlineMd ────────────────────────────────────────────────────────────────────

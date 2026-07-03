@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, lazy, Suspense } from "react";
 import { track } from "./analytics";
 import { ModuleNotes, GradientPanel } from "./shared";
 import { GRADIENT_CONTENT } from "./data/gradientContent";
@@ -7,6 +7,26 @@ import { Icon } from './Icon.jsx';
 import FoundationsRunner from "./FoundationsRunner";
 import { RUNNER_DATA } from "./data/foundationsRunnerData";
 import { AddTrackBtn } from "./AddToTrackPopover";
+
+// ── MIGRATED LAB CONTENT (2026-07-03, enforced-contract migration) ──────────────
+// The standalone Agent Lab / Eval Lab / LLM Lab and the 4 Domain Hubs were DELETED
+// from nav + top-level routes. Their rich interactive content now lives INSIDE the
+// Foundations gyms below — rendered inline via GymRoomView's "Lab" tab. These are the
+// physical homes now; there is no separate destination for them anymore.
+const AgentsApp    = lazy(() => import("./Agents"));       // ai-agents gym → Lab tab
+const SystemsApp   = lazy(() => import("./Systems"));      // evaluation + production gyms → Lab tab
+const LaunchChecklist = lazy(() => import("./AIPM").then(m => ({ default: m.LaunchChecklist }))); // salvaged from deleted ProductionHub → production gym
+
+// Which Systems modules each gym's Lab tab exposes (moved from App.jsx EVAL_LAB_MODULES / LLM_LAB_MODULES).
+const GYM_EVAL_LAB_MODULES = [
+  "evals","evalfw","evalmetrics","shouldai","strategy","canvas",
+  "incidents","observability","abtesting","mlcicd","debug_traces","langsmith",
+  "trapslab","deploy","buildthis","prompt-change-mgmt","abtesting-ai","router",
+];
+const GYM_LLM_LAB_MODULES = [
+  "decoding","kvcache","specdecoding","quantization","serving",
+  "reasoning","moe","inference","streaming",
+];
 
 // ─── TOKENIZER DATA ───────────────────────────────────────────────────────────
 
@@ -12102,13 +12122,56 @@ function GymSelectorView({ mastery, onEnterGym }) {
 
 // ─── GYM ROOM VIEW ────────────────────────────────────────────────────────────
 
+// The 3 gyms that absorbed a full standalone lab (2026-07-03 migration). Each renders
+// the rich interactive lab INSIDE Concepts via a "Lab" tab — no separate destination.
+const GYM_LAB = {
+  "ai-agents":  { kind: "agents", label: "Agent Lab",  note: "16 interactive agent modules — ReAct loop, tool design, MCP/A2A, failure modes." },
+  "evaluation": { kind: "eval",   label: "Eval Lab",   note: "18 interactive modules — LLM-as-judge, RAGAS, calibration, observability, incident room." },
+  "production": { kind: "llm",    label: "LLM Lab",    note: "9 interactive modules — serving, KV cache, speculative decoding, quantisation, streaming." },
+};
+
 function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
   const gym = GYMS.find(g => g.id === gymId);
+  const [labOpen, setLabOpen] = useState(false);
+  // Reset lab tab whenever the gym changes.
+  useEffect(() => { setLabOpen(false); }, [gymId]);
   if (!gym) return null;
   const modules = gym.moduleIds.map(id => MODULES.find(m => m.id === id)).filter(Boolean);
   const completedCount = modules.filter(m => mastery.has(m.id)).length;
   const nextModule = modules.find(m => !mastery.has(m.id));
   const pct = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
+  const labMeta = GYM_LAB[gym.id];
+
+  // ── Lab tab: the migrated standalone lab, rendered INSIDE the gym ──
+  if (labOpen && labMeta) {
+    return (
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-6 pt-6">
+          <button onClick={() => setLabOpen(false)}
+            className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1 transition-colors">
+            ← {gym.label} concepts
+          </button>
+        </div>
+        <Suspense fallback={<div className="flex items-center justify-center h-64 text-zinc-500 text-sm">Loading lab…</div>}>
+          {labMeta.kind === "agents" && (
+            <AgentsApp onNavigate={onNavigate} />
+          )}
+          {labMeta.kind === "eval" && (
+            <SystemsApp allowedModules={GYM_EVAL_LAB_MODULES} labTitle="Eval Lab"
+              labSubtitle="Evaluation, observability & ops strategy" suggestedStart="evals"
+              suggestedLabel="Evals Lab" suggestedNote="knowing how to measure is the skill every other module depends on"
+              onNavigate={onNavigate} />
+          )}
+          {labMeta.kind === "llm" && (
+            <SystemsApp allowedModules={GYM_LLM_LAB_MODULES} labTitle="LLM Lab"
+              labSubtitle="Architecture, training & inference systems" suggestedStart="decoding"
+              suggestedLabel="Decoding Strategies Lab" suggestedNote="the interactive where you actually see what temperature and top-p do to token distributions"
+              onNavigate={onNavigate} />
+          )}
+        </Suspense>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
@@ -12145,40 +12208,23 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
            Lab is the richer surface (15 interactive lab modules: EvalsLab, EvalFrameworks, EvalMetrics,
            LLM-judge/calibration, Observability, A/B testing, ML CI/CD, Incident Room, Debug Traces,
            LangSmith, Traps Lab, ...) vs the thinner 5-module Concepts eval gym. */}
-      {gym.id === "evaluation" && (
+      {/* ── In-gym Lab tab (2026-07-03 migration): the rich interactive lab now lives
+             INSIDE this gym. Clicking opens it inline (labOpen) — there is no separate
+             standalone destination anymore. ── */}
+      {labMeta && (
         <div className="rounded-xl p-4 flex items-start gap-3"
-          style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.35)", borderLeft: "3px solid rgba(245,158,11,0.75)" }}>
-          <span className="text-amber-400 mt-0.5 shrink-0"><Icon name="alert-triangle" size={16} /></span>
+          style={{ background: `${gym.color}14`, border: `1px solid ${gym.color}59`, borderLeft: `3px solid ${gym.color}bf` }}>
+          <span className="mt-0.5 shrink-0" style={{ color: gym.color }}><Icon name="layers" size={16} /></span>
           <div className="min-w-0 flex-1">
             <p className="text-sm text-zinc-200 leading-relaxed">
-              Evaluation has a deeper, interactive home — the <span className="font-bold text-white">Eval Lab</span>{" "}
-              (15 modules: LLM-as-judge, RAGAS metrics, calibration, observability, A/B testing, incident room, debug traces). The concepts below are a quick primer.
+              This gym includes the <span className="font-bold text-white">{labMeta.label}</span> — {labMeta.note} The concepts below are the primer; the Lab is the hands-on layer.
             </p>
             <button
-              onClick={() => onNavigate("evallab")}
+              onClick={() => setLabOpen(true)}
               className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:opacity-80"
-              style={{ color: "#f59e0b", borderColor: "rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.06)" }}
+              style={{ color: gym.color, borderColor: `${gym.color}66`, background: `${gym.color}0f` }}
             >
-              Open the Eval Lab →
-            </button>
-          </div>
-        </div>
-      )}
-      {gym.id === "ai-agents" && (
-        <div className="rounded-xl p-4 flex items-start gap-3"
-          style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.35)", borderLeft: "3px solid rgba(245,158,11,0.75)" }}>
-          <span className="text-amber-400 mt-0.5 shrink-0"><Icon name="alert-triangle" size={16} /></span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-zinc-200 leading-relaxed">
-              Agents has a deeper, interactive home — the <span className="font-bold text-white">Agent Lab</span>{" "}
-              (16 modules, simulators, MCP/A2A, failure modes). The concepts below are a quick primer.
-            </p>
-            <button
-              onClick={() => onNavigate("agentlab")}
-              className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:opacity-80"
-              style={{ color: "#f59e0b", borderColor: "rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.06)" }}
-            >
-              Open the Agent Lab →
+              Open the {labMeta.label} →
             </button>
           </div>
         </div>
@@ -12190,23 +12236,17 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
           decoding/inference are logic-accurate (real derived outcomes) — vs the thinner 9-module
           Concepts production gym (MCQ + light interactives). The thin modules stay below for
           deep-link backward-compat. */}
+      {/* production gym's Lab tab is handled by the unified labMeta block above (LLM Lab).
+          LaunchChecklist — the one genuinely-valuable module salvaged from the DELETED
+          ProductionHub — is folded in here so the pre-ship rigor checklist keeps a home. */}
       {gym.id === "production" && (
-        <div className="rounded-xl p-4 flex items-start gap-3"
-          style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.35)", borderLeft: "3px solid rgba(245,158,11,0.75)" }}>
-          <span className="text-amber-400 mt-0.5 shrink-0"><Icon name="alert-triangle" size={16} /></span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-zinc-200 leading-relaxed">
-              Production has a deeper, interactive home — the <span className="font-bold text-white">LLM Lab</span>{" "}
-              (9 modules: serving infrastructure, KV cache, speculative decoding, quantisation, streaming, inference optimisation). The concepts below are a quick primer.
-            </p>
-            <button
-              onClick={() => onNavigate("llmlab")}
-              className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:opacity-80"
-              style={{ color: "#f59e0b", borderColor: "rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.06)" }}
-            >
-              Open the LLM Lab →
-            </button>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+          <div className="px-4 pt-4 pb-1">
+            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500">Ship-readiness · Launch Checklist</p>
           </div>
+          <Suspense fallback={<div className="p-4 text-xs text-zinc-500">Loading checklist…</div>}>
+            <LaunchChecklist />
+          </Suspense>
         </div>
       )}
 

@@ -29,15 +29,14 @@ const PlaygroundApp  = lazy(() => import("./Playground"));
 const CareerApp      = lazy(() => import("./Career"));
 const CodeWalkthroughApp = lazy(() => import("./CodeWalkthrough"));
 const ExploreApp     = lazy(() => import("./Explore"));
-const AgentsApp      = lazy(() => import("./Agents"));
+// 2026-07-03 MIGRATION: AgentsApp (Agent Lab) and the 4 Domain Hubs (Retrieval / Evaluation /
+// AgentsHub / ProductionHub) are no longer imported here — they were DELETED as standalone
+// top-level destinations. AgentsApp + the Eval/LLM Systems labs now render INSIDE Concepts.jsx
+// (the gym "Lab" tabs). ProductionHub's one salvage (LaunchChecklist) is imported by Concepts.jsx.
 const PrepLabApp      = lazy(() => import("./PrepLab"));
 const LearningPathsApp = lazy(() => import("./LearningPaths"));
 // PromptLab retired — redirects to Playground via HASH_REDIRECTS
 const FoundationModelsLabApp = lazy(() => import("./FoundationModelsLab"));
-const RetrievalHub           = lazy(() => import("./Retrieval"));
-const EvaluationHub          = lazy(() => import("./EvaluationHub"));
-const AgentsHub              = lazy(() => import("./AgentsHub"));
-const ProductionHub          = lazy(() => import("./ProductionHub"));
 const FoundationsHub         = lazy(() => import("./FoundationsHub"));
 const ProfilePage            = lazy(() => import("./Profile"));
 const PlansPage              = lazy(() => import("./Plans"));
@@ -300,19 +299,14 @@ const NAV_SECTIONS = [
   { key: "know", label: "Learn", icon: "book-open", items: [
     { id: "concepts", label: "Foundations" },  // was "Concepts" — renamed sprint 92; gyms = tracks
     { id: "groundtruth", label: "Ground Truth" },
-    { id: "__domain_labs", label: "Domain Labs", header: true },
-    { id: "retrieval", label: "Retrieval" },
-    { id: "agents", label: "Agent Lab" },  // Rev-2 R2: single agents entry (the rich Agent Lab). agentshub route kept, row dropped.
-    { id: "evaluation", label: "Evaluation" },
-    { id: "production", label: "Production" },
+    // 2026-07-03 MIGRATION (enforced contract): the "Domain Labs" group (Retrieval / Agent Lab /
+    // Evaluation / Production) and the standalone "Prompt Engineering" row were DELETED. Every one
+    // of those domains is now reached ONLY through Foundations (the Concepts gyms). The rich Agent
+    // Lab / Eval Lab / LLM Lab content is rendered INSIDE its gym via the gym's "Lab" tab; the 4
+    // Domain Hubs are deleted (routes + render). Prompt Engineering is the `prompt-engineering` gym.
     { id: "__learn_more", label: "Sandboxes & drills", header: true },
     { id: "playground", label: "Playground" },
-    // Rev-2 R1: Prompt Engineering entry → routes to the Foundations (concepts) gym set, which
-    // holds the prompt-engineering track. No dedicated route id, so `route` points at `concepts`
-    // while `id` stays unique (avoids a duplicate React key / double active-highlight vs Foundations).
-    { id: "prompt-eng", route: "concepts", label: "Prompt Engineering" },
-    { id: "__soon_code", label: "Code Drills", soon: true },
-    { id: "__sister_labs", label: "Sister labs", header: true },
+    { id: "__code", label: "Code", header: true },  // 2026-07-03: was "Sister labs" — renamed to "Code" group.
     { id: "__pl", label: "Python · DSA", href: SIBLING_LABS.pl },
     { id: "__pal", label: "SQL", href: SIBLING_LABS.pal },
     // Rev-2 R4: `aipm` (AI Product Judgment) removed from nav. Route/render/hash (#aipm) kept
@@ -353,6 +347,21 @@ const TAB_FRAME = (() => {
 
 // Sprint 92: dead routes that redirect to Foundations (KNOW). #systems kept alive — still used as deep-reference target.
 const HASH_REDIRECTS = { paths: "concepts", promptlab: "playground", consult: "home", warroom: "home" };
+
+// 2026-07-03 MIGRATION back-compat: the standalone Agent Lab / Eval Lab / LLM Lab and the 4
+// Domain Hubs were DELETED as top-level destinations. Their content now lives INSIDE the
+// Foundations gyms. Old deep-hashes redirect into Concepts, opening the destination gym (whose
+// "Lab" tab holds the migrated lab). No standalone door remains.
+const HASH_GYM_REDIRECTS = {
+  agents:    "ai-agents",
+  agentlab:  "ai-agents",
+  agentshub: "ai-agents",
+  evallab:   "evaluation",
+  evaluation:"evaluation",
+  llmlab:    "production",
+  production:"production",
+  retrieval: "retrieval",
+};
 
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
@@ -1089,30 +1098,15 @@ function FeedbackFallbackModal({ onClose }) {
 
 
 // ─── LAB MODULE FILTERS ──────────────────────────────────────────────────────
-// These define which Systems modules appear in each lab. Systems tab still works
-// at #systems for backward compat but is no longer in the primary nav.
+// 2026-07-03 MIGRATION: EVAL_LAB_MODULES + LLM_LAB_MODULES moved into Concepts.jsx
+// (as GYM_EVAL_LAB_MODULES / GYM_LLM_LAB_MODULES) because the Eval Lab + LLM Lab now
+// render INSIDE their Foundations gyms. The plain #systems route (full Systems tab)
+// still works for backward compat.
 
-const EVAL_LAB_MODULES = [
-  "evals","evalfw","evalmetrics","shouldai","strategy","canvas",
-  "incidents","observability","abtesting","mlcicd","debug_traces","langsmith",
-  "trapslab","deploy","buildthis","prompt-change-mgmt","abtesting-ai","router",
-];
-
-// LLM Lab: only true simulators and decision engines — interactive, not reference
-// Everything else stays accessible via the main Systems tab
-const LLM_LAB_MODULES = [
-  "decoding",       // interactive: temperature + top-p token distribution
-  "kvcache",        // decision lab: when and how to cache
-  "specdecoding",   // simulator: speculative decoding tradeoffs
-  "quantization",   // calculator: bit-width vs quality vs VRAM
-  "serving",        // decision engine: batching, routing, hardware
-  "reasoning",      // explorer: chain-of-thought vs direct tradeoffs
-  "moe",            // failure scenarios: mixture-of-experts architecture
-  "inference",      // patterns: batching, throughput, latency
-  "streaming",      // patterns: token streaming implementation
-];
-
-const VALID_VIEWS = ["home","starthere","resources","concepts","flows","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","codelabs","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks","review","company-tracks","about","me"];
+// 2026-07-03 MIGRATION: agents/agentlab/evallab/llmlab and retrieval/evaluation/agentshub/
+// production are NO LONGER standalone views (removed from VALID_VIEWS). Their old hashes are
+// caught by HASH_GYM_REDIRECTS and redirected into #concepts (opening the destination gym).
+const VALID_VIEWS = ["home","starthere","resources","concepts","flows","lab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","codelabs","preplab","groundtruth","progress","profile","plans","qa","paths","foundations","leaderboard","my-tracks","review","company-tracks","about","me"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
@@ -1145,6 +1139,10 @@ function getInitialView() {
     if (HASH_REDIRECTS[hash]) {
       window.location.replace("#" + HASH_REDIRECTS[hash]);
       return HASH_REDIRECTS[hash];
+    }
+    if (HASH_GYM_REDIRECTS[hash]) {
+      window.location.replace("#concepts");
+      return "concepts";
     }
     if (VALID_VIEWS.includes(hash)) return hash;
     const params = new URLSearchParams(window.location.search);
@@ -1229,6 +1227,13 @@ export default function App() {
     catch { return new Set(["home"]); }
   });
   function navigate(view) {
+    // 2026-07-03 MIGRATION: any legacy nav to a DELETED lab/hub view (agents/agentlab/evallab/
+    // llmlab/retrieval/evaluation/agentshub/production) is redirected INTO Foundations, opening
+    // the destination gym. No standalone door remains — this catches every internal call site.
+    if (HASH_GYM_REDIRECTS[view]) {
+      setConceptsGym(HASH_GYM_REDIRECTS[view]);
+      view = "concepts";
+    }
     setTopView(view);
     window.location.hash = view;
     track("module_opened", { section: view });
@@ -1306,7 +1311,11 @@ export default function App() {
   const [agentsModule, setAgentsModule] = useState(null);
   const [gtPostId, setGtPostId] = useState(null);
   const [gtPathContext, setGtPathContext] = useState(null);
-  const [conceptsGym, setConceptsGym] = useState(null);
+  const [conceptsGym, setConceptsGym] = useState(() => {
+    // Deep-hash back-compat: if the app booted on a deleted lab/hub hash, open its gym.
+    try { return HASH_GYM_REDIRECTS[window.location.hash.replace('#', '').toLowerCase()] || null; }
+    catch { return null; }
+  });
   const [preplabInitialMode, setPreplabInitialMode] = useState(null);
   const [visitedModules, setVisitedModules] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited_modules") || "[]")); }
@@ -1483,6 +1492,7 @@ export default function App() {
     const handler = () => {
       const h = window.location.hash.replace('#', '').toLowerCase();
       if (HASH_REDIRECTS[h]) { window.location.replace("#" + HASH_REDIRECTS[h]); setTopView(HASH_REDIRECTS[h]); return; }
+      if (HASH_GYM_REDIRECTS[h]) { setConceptsGym(HASH_GYM_REDIRECTS[h]); window.location.replace("#concepts"); setTopView("concepts"); return; }
       if (VALID_VIEWS.includes(h)) setTopView(h);
       else if (!h) setTopView("home");
     };
@@ -1606,64 +1616,11 @@ export default function App() {
   const result = lookup?.result;
   const hasFallback = lookup && !lookup.curated;
 
-  // R1 — challenge-layer nav (Sprint 49). Sprint 60: TRACK group added (Profile + Progress + Plans).
-  const NAV_GROUPS = [
-    // TRACK — identity + progress (utilities, not a learning pillar)
-    { label: "TRACK", color: "#8b5cf6", items: [
-      { id: "profile",    label: "Profile" },
-      { id: "starthere",  label: "Start Here" },
-      { id: "progress",   label: "Progress" },
-      { id: "plans",      label: "Plans & Access" },
-    ]},
-    // KNOW — recall: structured concept modules, PAL runner
-    { label: "KNOW", color: "#6366f1", items: [
-      { id: "concepts", label: "Foundations" },
-    ]},
-    // LEARN — depth: long-form practitioner writing
-    { label: "LEARN", color: "#a78bfa", items: [
-      { id: "groundtruth", label: "Ground Truth", alwaysExpanded: true, subitems: [
-        { id: "groundtruth", label: "Agent Engineering",    postId: "react-pattern"                },
-        { id: "groundtruth", label: "RAG in Production",    postId: "how-rag-works"                },
-        { id: "groundtruth", label: "The Training Stack",   postId: "finetune-playbook"            },
-        { id: "groundtruth", label: "LLMOps in Production", postId: "your-prompt-is-code"          },
-        { id: "groundtruth", label: "How I'd Build X",      postId: "build-ai-search"              },
-        { id: "groundtruth", label: "NLP Origins",          postId: "ngrams-to-neural"             },
-        { id: "groundtruth", label: "Build From Scratch",   postId: "attention-from-scratch"       },
-        { id: "groundtruth", label: "LLM Internals",        postId: "mha-mqa-gqa-explained"        },
-        { id: "groundtruth", label: "Retrieval Depth",      postId: "ann-algorithms-deep-dive"     },
-        { id: "groundtruth", label: "Evaluation Depth",     postId: "ndcg-mrr-from-scratch"        },
-        { id: "groundtruth", label: "ML Foundations",       postId: "loss-functions-deep-dive"     },
-        { id: "groundtruth", label: "Agents in Production", postId: "mcp-explained"                },
-      ]},
-    ]},
-    // BUILD — fluency: PrepLab drills + hands-on challenge hubs with labs
-    { label: "BUILD", color: "var(--gal-build)", items: [
-      { id: "preplab",    label: "PrepLab" },
-      { id: "retrieval",  label: "Retrieval",        desc: "RAG · retrieval · context", subitems: [
-        { id: "lab",          label: "RAG Lab",        note: "6 scenarios" },
-      ]},
-      { id: "evaluation", label: "Evaluation",       desc: "Evals · metrics · LLM-judge", subitems: [
-        { id: "evallab",      label: "Eval Lab",       note: "15 modules"  },
-      ]},
-      { id: "agentshub",  label: "Agents",           desc: "Tool use · orchestration", subitems: [
-        { id: "agentlab",     label: "Agent Lab",      note: "16 modules"  },
-      ]},
-      { id: "production", label: "Production",       desc: "Serving · LLMOps · cost", subitems: [
-        { id: "llmlab",       label: "LLM Lab",        note: "9 modules"   },
-      ]},
-      { id: "foundations", label: "Foundation Models", desc: "Training · fine-tuning · prompting", subitems: [
-        { id: "foundationlab", label: "FM Lab",         note: "6 scenarios" },
-      ]},
-    ]},
-    // JUDGE — judgment: systems tradeoff modules
-    { label: "JUDGE", color: "#f59e0b", items: [
-      { id: "systems", label: "Systems" },
-    ]},
-    // EXTRAS — utilities
-    { label: "EXTRAS", color: "#52525b", items: [
-      { id: "leaderboard", label: "Leaderboard" },
-    ]},
-  ];
+  // 2026-07-03 MIGRATION: the dead in-component `NAV_GROUPS` array was DELETED. It was never
+  // consumed (no .map / no prop) yet still listed the old Domain-Lab doors (Retrieval/Evaluation/
+  // Agents/Production hubs + Eval Lab/LLM Lab/Agent Lab) as subitems — a phantom duplicate door.
+  // The live sidebar is NAV_TRACK + NAV_SECTIONS (top of file); those domains are reached only
+  // through Foundations now.
 
   return (
     <div className="min-h-screen text-white flex" data-palette={palette} data-theme={theme === "light" ? "light" : undefined} style={{ fontFamily: "'Inter', 'DM Sans', system-ui, -apple-system, sans-serif", background: "var(--bg)" }}>
@@ -2008,10 +1965,10 @@ export default function App() {
             <>
           {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} initialGym={conceptsGym} />}
           {topView === "flows"      && <FlowsApp onNavigate={navigateTo} />}
-          {topView === "agents"     && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
-          {topView === "agentlab"   && <AgentsApp initialModule={agentsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
-          {topView === "evallab"    && <SystemsApp allowedModules={EVAL_LAB_MODULES} labTitle="Eval Lab" labSubtitle="Evaluation, observability & ops strategy" suggestedStart="evals" suggestedLabel="Evals Lab" suggestedNote="knowing how to measure is the skill every other module depends on" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
-          {topView === "llmlab"     && <SystemsApp allowedModules={LLM_LAB_MODULES} labTitle="LLM Lab" labSubtitle="Architecture, training & inference systems" suggestedStart="decoding" suggestedLabel="Decoding Strategies Lab" suggestedNote="the interactive where you actually see what temperature and top-p do to token distributions" initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
+          {/* 2026-07-03 MIGRATION: the standalone Agent Lab (agents/agentlab), Eval Lab (evallab)
+              and LLM Lab (llmlab) top-level renders were DELETED. Their content now lives INSIDE
+              the Foundations gyms (ai-agents / evaluation / production) via each gym's "Lab" tab
+              in Concepts.jsx. Old hashes redirect into Concepts via HASH_GYM_REDIRECTS. */}
           {/* promptlab redirects to playground via HASH_REDIRECTS */}
           {topView === "foundationlab" && <FoundationModelsLabApp onNavigate={navigate} />}
 
@@ -2058,11 +2015,12 @@ export default function App() {
             </>
           )}
 
-          {/* ── Challenge area stubs (R1) — replaced by hub pages in R3–R7 ── */}
-          {topView === "retrieval" && <RetrievalHub onNavigate={navigate} onNavigateTo={navigateTo} />}
-          {topView === "evaluation" && <EvaluationHub onNavigate={navigate} onNavigateTo={navigateTo} />}
-          {topView === "agentshub"  && <AgentsHub     onNavigate={navigate} onNavigateTo={navigateTo} />}
-          {topView === "production" && <ProductionHub  onNavigate={navigate} onNavigateTo={navigateTo} />}
+          {/* ── 2026-07-03 MIGRATION: the 4 Domain Hubs (RetrievalHub / EvaluationHub /
+                 AgentsHub / ProductionHub) were DELETED as top-level destinations. Every
+                 domain is reached ONLY through Foundations (the Concepts gyms) now. Old
+                 hashes (retrieval/evaluation/agentshub/production) redirect into Concepts
+                 via HASH_GYM_REDIRECTS, opening the destination gym. FoundationsHub kept —
+                 it is the Foundations landing, not one of the 4 migrated domain hubs. ── */}
           {topView === "foundations"&& <FoundationsHub onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "study"      && <StudyRoom user={user} onNavigate={navigate} />}
           {topView === "starthere"  && <StartHereApp onNavigate={navigate} />}
