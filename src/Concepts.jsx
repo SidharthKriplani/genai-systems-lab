@@ -13,7 +13,14 @@ import { AddTrackBtn } from "./AddToTrackPopover";
 // from nav + top-level routes. Their rich interactive content now lives INSIDE the
 // Foundations gyms below — rendered inline via GymRoomView's "Lab" tab. These are the
 // physical homes now; there is no separate destination for them anymore.
-const AgentsApp    = lazy(() => import("./Agents"));       // ai-agents gym → Lab tab
+// ai-agents gym: the 16 Agent Lab components are now INDIVIDUAL MODULES of the gym,
+// each rendered through the uniform Foundations module shell (not a monolithic "Lab tab").
+import {
+  ReActPattern, ToolUseDesign, AgentMemory, LLMMemoryArchitecture, MultiAgentPatterns,
+  AgentFailureModes, PlanningPatterns, AgentDesignChallenge, AgentLoopSimulator,
+  FrameworkLandscape, MCPDeepDive, AgenticReliability, ComputerUseAgents,
+  LongRunningWorkflows, A2AProtocol, AgentConfigLab,
+} from "./Agents";
 const SystemsApp   = lazy(() => import("./Systems"));      // evaluation + production gyms → Lab tab
 const LaunchChecklist = lazy(() => import("./AIPM").then(m => ({ default: m.LaunchChecklist }))); // salvaged from deleted ProductionHub → production gym
 
@@ -10059,6 +10066,25 @@ export const MODULES = [
   { id: "system-prompts", label: "System Prompts", tag: "PROMPTING", level: "intermediate", title: "System Prompt Engineering", subtitle: "Persona, constraints, format — what goes in the system turn and why.", fidelity: { tier: "conceptual", note: "Illustrative — see explanation for precise details." }, component: SystemPromptsModule },
   { id: "structured-outputs", label: "Structured Outputs", tag: "PROMPTING", level: "intermediate", title: "Structured Output Design", subtitle: "JSON mode, function calling, and grammar-constrained generation — tradeoffs by use case.", fidelity: { tier: "conceptual", note: "Illustrative — see explanation for precise details." }, component: StructuredOutputsModule },
   { id: "prompt-security", label: "Prompt Security", tag: "SAFETY", level: "intermediate", title: "Prompt Injection & Defense Patterns", subtitle: "How injection attacks work and the layered defenses that catch them.", fidelity: { tier: "conceptual", note: "Illustrative — see explanation for precise details." }, component: PromptSecurityModule },
+  // ── AI Agents — the 16 Agent Lab components, now individual modules of the ai-agents gym ──
+  //    (rendered through the uniform Foundations module shell; imported from ./Agents)
+  //    Ids are agent-* prefixed to avoid collisions with the retired thin agent modules above.
+  { id: "agent-react",              label: "ReAct Pattern",           tag: "AGENTS", level: "intermediate", title: "The ReAct Pattern",              subtitle: "Reason, act, observe — the loop every agent runs.",                            fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: ReActPattern },
+  { id: "agent-tool-design",        label: "Tool Use Design",         tag: "AGENTS", level: "intermediate", title: "Tool Use Design",                 subtitle: "How to define the tools an agent can actually use well.",                     fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: ToolUseDesign },
+  { id: "agent-memory-foundations", label: "Memory · Foundations",    tag: "AGENTS", level: "intermediate", title: "Agent Memory · Foundations",      subtitle: "The four memory types every agent juggles.",                                  fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: AgentMemory },
+  { id: "agent-memory-libraries",   label: "Memory · Libraries",      tag: "AGENTS", level: "advanced",     title: "Agent Memory · Libraries",       subtitle: "The six storage libraries and how to pick one.",                             fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: LLMMemoryArchitecture },
+  { id: "agent-multiagent",         label: "Multi-Agent",             tag: "AGENTS", level: "advanced",     title: "Multi-Agent Patterns",           subtitle: "When to split into multiple agents — and how they coordinate.",               fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: MultiAgentPatterns },
+  { id: "agent-failure-modes",      label: "Failure Modes",           tag: "AGENTS", level: "advanced",     title: "Agent Failure Modes",            subtitle: "How agents break in production — and how to catch it.",                       fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: AgentFailureModes },
+  { id: "agent-planning-patterns",  label: "Planning Patterns",       tag: "AGENTS", level: "advanced",     title: "Planning Patterns",              subtitle: "ToT, GoT, LATS — structured search over an agent's actions.",                 fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: PlanningPatterns },
+  { id: "agent-design-challenge",   label: "Design Challenge",        tag: "AGENTS", level: "advanced",     title: "Agent Design Challenge",         subtitle: "Design an agent system end-to-end against real constraints.",                 fidelity: { tier: "conceptual", note: "Interactive challenge — see explanation for precise details." }, component: AgentDesignChallenge },
+  { id: "agent-loop-simulator",     label: "Loop Simulator",          tag: "AGENTS", level: "intermediate", title: "Agent Loop Simulator",           subtitle: "Step through a running agent loop and watch it decide.",                      fidelity: { tier: "conceptual", note: "Interactive simulator — see explanation for precise details." }, component: AgentLoopSimulator },
+  { id: "agent-frameworks",         label: "Framework Landscape",     tag: "AGENTS", level: "beginner",     title: "Framework Landscape",            subtitle: "LangGraph, CrewAI, Autogen and friends — what each is for.",                  fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: FrameworkLandscape },
+  { id: "agent-mcp",                label: "MCP Deep Dive",           tag: "AGENTS", level: "intermediate", title: "MCP Deep Dive",                  subtitle: "The Model Context Protocol — tools, resources, and the wire format.",         fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: MCPDeepDive },
+  { id: "agent-reliability",        label: "Agentic Reliability",     tag: "AGENTS", level: "advanced",     title: "Agentic Reliability",            subtitle: "Retries, guardrails, and the reliability budget for agents.",                 fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: AgenticReliability },
+  { id: "agent-computer-use",       label: "Computer Use",            tag: "AGENTS", level: "advanced",     title: "Computer-Use Agents",            subtitle: "Agents that drive a screen — and where they go wrong.",                       fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: ComputerUseAgents },
+  { id: "agent-long-running",       label: "Long-Running Workflows",  tag: "AGENTS", level: "advanced",     title: "Long-Running Workflows",         subtitle: "Durable, resumable agent workflows that outlive a request.",                  fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: LongRunningWorkflows },
+  { id: "agent-a2a",                label: "A2A Protocol",            tag: "AGENTS", level: "intermediate", title: "A2A Protocol",                   subtitle: "How agents talk to other agents — the agent-to-agent standard.",              fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: A2AProtocol },
+  { id: "agent-config-lab",         label: "Agent Config Lab",        tag: "AGENTS", level: "intermediate", title: "Agent Config Lab",               subtitle: "Tune an agent's config and watch the outcome shift.",                         fidelity: { tier: "conceptual", note: "Interactive lab — see explanation for precise details." }, component: AgentConfigLab },
 ];
 
 const LEVEL_STYLE = {
@@ -11925,7 +11951,7 @@ export const GYMS = [
     label: "AI Agents",
     desc: "The ReAct loop, tool design, memory architecture, planning, multi-agent coordination, and the safety layer every agent needs.",
     color: "#f59e0b",
-    moduleIds: ["agent", "agent-tools", "guardrails", "agent-tracing", "agent-memory", "agent-planning", "multiagent"],
+    moduleIds: ["agent-react", "agent-tool-design", "agent-memory-foundations", "agent-memory-libraries", "agent-multiagent", "agent-failure-modes", "agent-planning-patterns", "agent-design-challenge", "agent-loop-simulator", "agent-frameworks", "agent-mcp", "agent-reliability", "agent-computer-use", "agent-long-running", "agent-a2a", "agent-config-lab"],
     labId: "agentlab",
     labLabel: "Agent Lab",
   },
@@ -12124,8 +12150,10 @@ function GymSelectorView({ mastery, onEnterGym }) {
 
 // The 3 gyms that absorbed a full standalone lab (2026-07-03 migration). Each renders
 // the rich interactive lab INSIDE Concepts via a "Lab" tab — no separate destination.
+// NOTE (2026-07-03): ai-agents is NO LONGER a "Lab" tab. The 16 Agent Lab components are now
+// individual MODULES of the ai-agents gym (see MODULES: agent-* ids), rendered through the same
+// uniform Foundations module shell as every other gym. Only evaluation + production keep a Lab tab.
 const GYM_LAB = {
-  "ai-agents":  { kind: "agents", label: "Agent Lab",  note: "16 interactive agent modules — ReAct loop, tool design, MCP/A2A, failure modes." },
   "evaluation": { kind: "eval",   label: "Eval Lab",   note: "18 interactive modules — LLM-as-judge, RAGAS, calibration, observability, incident room." },
   "production": { kind: "llm",    label: "LLM Lab",    note: "9 interactive modules — serving, KV cache, speculative decoding, quantisation, streaming." },
 };
@@ -12153,9 +12181,6 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
           </button>
         </div>
         <Suspense fallback={<div className="flex items-center justify-center h-64 text-zinc-500 text-sm">Loading lab…</div>}>
-          {labMeta.kind === "agents" && (
-            <AgentsApp onNavigate={onNavigate} />
-          )}
           {labMeta.kind === "eval" && (
             <SystemsApp allowedModules={GYM_EVAL_LAB_MODULES} labTitle="Eval Lab"
               labSubtitle="Evaluation, observability & ops strategy" suggestedStart="evals"
@@ -12330,19 +12355,24 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
         })}
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs text-zinc-500 mb-0.5">Ready to apply these concepts?</p>
-          <p className="text-sm text-zinc-300 font-medium">Open the {gym.labLabel}</p>
+      {/* ai-agents no longer has a separate lab surface — its 16 Agent Lab components ARE the
+          modules above — so the "Go to lab" footer (which would round-trip back to this gym via
+          HASH_GYM_REDIRECTS) is suppressed for it. */}
+      {gym.id !== "ai-agents" && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-zinc-500 mb-0.5">Ready to apply these concepts?</p>
+            <p className="text-sm text-zinc-300 font-medium">Open the {gym.labLabel}</p>
+          </div>
+          <button
+            onClick={() => onNavigate(gym.labId)}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:opacity-80"
+            style={{ color: gym.color, borderColor: `${gym.color}40` }}
+          >
+            Go to lab →
+          </button>
         </div>
-        <button
-          onClick={() => onNavigate(gym.labId)}
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:opacity-80"
-          style={{ color: gym.color, borderColor: `${gym.color}40` }}
-        >
-          Go to lab →
-        </button>
-      </div>
+      )}
     </div>
   );
 }

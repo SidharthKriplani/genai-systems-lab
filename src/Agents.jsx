@@ -65,7 +65,7 @@ const REACT_STEPS = [
   },
 ];
 
-function ReActPattern({ onNavigate }) {
+export function ReActPattern({ onNavigate }) {
   const [activeStep, setActiveStep] = useState(null);
   const TYPE_ICONS = { thought: "💭", action: "⚡", observation: "👁", final: "✓" };
   return (
@@ -183,7 +183,7 @@ const TOOL_PATTERNS = [
   },
 ];
 
-function ToolUseDesign({ onNavigate }) {
+export function ToolUseDesign({ onNavigate }) {
   const [view, setView] = useState("schemas");
   const [selSchema, setSelSchema] = useState("bad");
   const [selPattern, setSelPattern] = useState("sequential");
@@ -411,7 +411,7 @@ const MEMORY_TYPES = [
   },
 ];
 
-function AgentMemory({ onNavigate }) {
+export function AgentMemory({ onNavigate }) {
   const [sel, setSel] = useState("working");
   const mem = MEMORY_TYPES.find(m => m.id === sel);
   return (
@@ -497,7 +497,7 @@ const MULTI_AGENT_PATTERNS = [
   },
 ];
 
-function MultiAgentPatterns({ onNavigate }) {
+export function MultiAgentPatterns({ onNavigate }) {
   const [sel, setSel] = useState("orchestrator");
   const pattern = MULTI_AGENT_PATTERNS.find(p => p.id === sel);
   return (
@@ -591,7 +591,7 @@ const AGENT_FAILURES = [
   },
 ];
 
-function AgentFailureModes({ onNavigate }) {
+export function AgentFailureModes({ onNavigate }) {
   const [sel, setSel] = useState("hallucinated_tools");
   const failure = AGENT_FAILURES.find(f => f.id === sel);
   const SEVER = {
@@ -680,7 +680,7 @@ const PLANNING_PATTERNS = [
   },
 ];
 
-function PlanningPatterns({ onNavigate }) {
+export function PlanningPatterns({ onNavigate }) {
   const [sel, setSel] = useState("cot");
   const plan = PLANNING_PATTERNS.find(p => p.id === sel);
   return (
@@ -926,7 +926,7 @@ const AGENT_INTERVIEW_STORIES = {
   },
 };
 
-function AgentDesignChallenge() {
+export function AgentDesignChallenge() {
   const [challengeId, setChallengeId] = useState("support_bot");
   const [sectionIdx, setSectionIdx] = useState(0);
   const [selections, setSelections] = useState({});
@@ -1825,7 +1825,7 @@ const SIMULATOR_INTERVIEW_STORIES = {
   },
 };
 
-function AgentLoopSimulator() {
+export function AgentLoopSimulator() {
   const [scenarioId, setScenarioId] = useState("research");
   const [stepIdx, setStepIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -2158,7 +2158,7 @@ const DECISION_QUESTIONS = [
   },
 ];
 
-function FrameworkLandscape() {
+export function FrameworkLandscape() {
   const [view, setView] = useState("compare");
   const [selectedFw, setSelectedFw] = useState("langchain");
   const [answers, setAnswers] = useState({});
@@ -2418,7 +2418,7 @@ const MEM_WIZARD_RESULTS = {
   "111": { strategy: "Full Memory Stack",         lib: "Mem0 + LangGraph + Custom DB",color: "#ec4899", desc: "Episodic + Semantic + Working memory. For complex personal assistants that run long tasks and remember users across time.", code: `history = await mem.get_episodes(uid)\nfacts = await mem.get_facts(uid, query=msg)\nstate = {"messages": history, "facts": facts, "plan": [], "step": 0}` },
 };
 
-function LLMMemoryArchitecture() {
+export function LLMMemoryArchitecture() {
   const [tab, setTab] = useState("types");
   const [selectedMem, setSelectedMem] = useState(null);
   const [wizardAnswers, setWizardAnswers] = useState({});
@@ -2586,7 +2586,7 @@ const MCP_VS_FUNCTIONS = [
   { aspect: "When to use", functions: "Single-app tool use, quick prototypes", mcp: "Reusable tooling, sharing across multiple LLM hosts, production tool ecosystems" },
 ];
 
-function MCPDeepDive() {
+export function MCPDeepDive() {
   const [tab, setTab] = useState("arch");
   const [selectedPrim, setSelectedPrim] = useState(null);
 
@@ -2808,7 +2808,7 @@ const RELIABILITY_PATTERNS_DATA = [
   { name: "Self-Critique Loop", desc: "After every N steps, inject: 'Review your progress. Have you made meaningful progress? What's blocking you?'", impl: "Every 5 steps: add critique_prompt to context. If critique reveals stagnation → escalate." },
 ];
 
-function AgenticReliability() {
+export function AgenticReliability() {
   const [tab, setTab] = useState("failures");
   const [selFailure, setSelFailure] = useState(null);
   const [selHITL, setSelHITL] = useState(null);
@@ -2954,7 +2954,7 @@ const CU_ARCHITECTURES = [
   { name: "OmniParser + Any LLM", desc: "Microsoft's grounding model detects UI elements, outputs bounding boxes. LLM plans actions on structured UI tree instead of raw pixels.", stack: ["OmniParser", "GPT-4V/Claude", "PyAutoGUI"], use: "High-accuracy grounding on complex UIs" },
 ];
 
-function ComputerUseAgents() {
+export function ComputerUseAgents() {
   const [tab, setTab] = useState("arch");
   const [selectedFailure, setSelectedFailure] = useState(null);
   const TABS = [
@@ -3142,7 +3142,7 @@ const LRW_TOOLS = [
   { name: "AWS Step Functions", type: "Managed workflow", lang: "Any (via JSON states)", strength: "Fully managed, 99.99% SLA, built-in retry/wait states", weakness: "Vendor lock-in, cold start latency, cost at scale" },
 ];
 
-function LongRunningWorkflows() {
+export function LongRunningWorkflows() {
   const [activePattern, setActivePattern] = useState(0);
   const [showCode, setShowCode] = useState(false);
   return (
@@ -3284,7 +3284,7 @@ const A2A_FRAMEWORKS = [
   { name: "OpenAI Agents SDK", a2a: "none",     mcp: "native",    notes: "MCP first-class; A2A not yet on roadmap" },
 ];
 
-function A2AProtocol() {
+export function A2AProtocol() {
   const [tab, setTab] = useState("solves");
   const [openConcept, setOpenConcept] = useState(null);
   const [answers, setAnswers] = useState({ q1: null, q2: null, q3: null });
@@ -3589,7 +3589,7 @@ function deriveAgentFailure(cfg) {
   return triggered[0];
 }
 
-function AgentConfigLab() {
+export function AgentConfigLab() {
   const [taskType, setTaskType] = useState("research");
   const [contextBudget, setContextBudget] = useState(8000);
   const [toolCount, setToolCount] = useState(8);
@@ -3740,7 +3740,7 @@ function AgentConfigLab() {
   );
 }
 
-const AGENTS_MODULES = [
+export const AGENTS_MODULES = [
   { id: "react",      label: "ReAct Pattern",       tag: "LOOP",   group: "CORE",      component: ReActPattern        },
   { id: "tools",      label: "Tool Use Design",     tag: "TOOLS",  group: "CORE",      component: ToolUseDesign       },
   // GSL fix #8 (2026-07-03): the 2 memory modules are relabeled as an explicit "Memory · Part 1/2" pair
