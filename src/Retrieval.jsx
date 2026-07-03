@@ -2,6 +2,7 @@ import { useState } from "react";
 import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
 import { TradeoffCard } from "./shared";
+import RetrievalCaseChains from "./RetrievalCaseChains";
 
 const TRADEOFF = {
   title: "Which knowledge strategy fits your use case?",
@@ -301,6 +302,18 @@ export default function RetrievalHub({ onNavigate, onNavigateTo }) {
             Open RAG Lab →
           </div>
         </button>
+      </div>
+
+      {/* ── 2a. L2 Case Chains (P0.2 pilot) ─────────────────────────────────── */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <SectionLabel>Case Chains</SectionLabel>
+          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full"
+            style={{ background: "var(--gal-build-tint)", border: "1px solid var(--gal-build-border)", color: "var(--gal-build)" }}>
+            L2 · multi-step
+          </span>
+        </div>
+        <RetrievalCaseChains domain="retrieval" />
       </div>
 
       {/* ── 2b. Tradeoff ────────────────────────────────────────────────────── */}

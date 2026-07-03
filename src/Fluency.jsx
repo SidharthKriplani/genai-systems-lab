@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Icon } from "./Icon.jsx";
+import SpeakMode from "./SpeakMode.jsx";
 
 // ─── PHRASE BANK DATA ─────────────────────────────────────────────────────────
 
@@ -2255,6 +2256,7 @@ const FLUENCY_MODULES = [
   { id: "cases", label: "Company Cases", tag: "ARENA" },
   { id: "prompts", label: "Prompt Engineering", tag: "PROMPTS" },
   { id: "interview", label: "Mock Interview", tag: "INTERVIEW" },
+  { id: "speak", label: "Speak", tag: "SPOKEN" },
   { id: "challenges", label: "Prompt Challenges", tag: "CHALLENGE" },
   { id: "assessment", label: "Readiness Check", tag: "TEST" },
 ];
@@ -2302,7 +2304,7 @@ export default function FluencyApp() {
   const FLUENCY_GROUPS = [
     { label: "VOCAB",    ids: ["phrases", "flashcards"] },
     { label: "PRACTICE", ids: ["drills", "challenges", "cases"] },
-    { label: "SKILL",    ids: ["prompts", "interview", "assessment"] },
+    { label: "SKILL",    ids: ["prompts", "interview", "speak", "assessment"] },
   ];
 
   return (
@@ -2333,6 +2335,7 @@ export default function FluencyApp() {
         {activeModule === "cases" && <CompanyCaseArena />}
         {activeModule === "prompts" && <PromptEngLab />}
         {activeModule === "interview" && <MockInterview />}
+        {activeModule === "speak" && <SpeakMode />}
         {activeModule === "flashcards" && <FlashcardMode />}
         {activeModule === "challenges" && <PromptChallengeMode />}
         {activeModule === "assessment" && <ReadinessAssessment />}

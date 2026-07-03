@@ -570,3 +570,160 @@ experiment/lab version."*
 **Phase 0.3 fully complete** — 5 knowledge domains consolidated (above) + the interactive widget layer
 deduped by canonical-home pointers (this section). Concepts is the canonical interactive teaching home;
 Playground and Explore keep their copies as complementary sandbox / spatial-math angles, now signposted.
+
+---
+
+## P0.1 — Speak layer grafted into Fluency (executed 2026-07-03)
+
+**What was ported.** MSL's tiered spoken-drill ("Spoken Practice") from
+`ml-systems-lab/src/tabs/SpokenPracticeTab.jsx`, grafted 1:1 in shape onto GSL's Fluency surface as a
+new **Speak** mode. This is a PORT, not a rebuild — the tier model, Web-Speech wiring, timer, and
+self-check flow are reused verbatim; only styling and the content source changed.
+
+**The ported pattern (unchanged shape):**
+- **4-tier drill per question:** 30-Second Answer (30s) → 2-Minute Answer (120s) → Interviewer Pushback
+  (60s) → Reason When Unsure (90s). Tiers 3–4 reframe the base prompt.
+- **Web Speech API:** `window.SpeechRecognition || window.webkitSpeechRecognition`, `continuous +
+  interimResults`, final transcripts appended, `onend`/`onerror` guarded against double-fire via
+  `isStoppingRef`. Live per-second timer runs only while recording.
+- **Self-check** ("Yes, hit it" / "Not yet") per tier + tier progress dots.
+
+**What changed from MSL:**
+- **Content source:** runs over the GSL **PrepLab bank** (`PREP_QUESTIONS`, 591 questions) instead of
+  MSL's 32-question hardcoded list. Topic + difficulty filters are derived dynamically from the bank.
+- **Model-answer self-comparison** (new, GSL-specific): after each rep the user reveals the question's
+  `explanation` + `staffLayer` ("Senior framing") + `keywords` to compare against. MSL had no model
+  answer to compare to.
+- **Pushback tier:** PrepLab questions have no per-question `pushback` field (MSL's did), so Tier 3
+  generates a generic interviewer challenge derived from the question's own `trap` when present, else a
+  topic-agnostic "where does it break in production?" prompt.
+- **Theme:** restyled from MSL's warm `--prime`/`--ink-*` tokens to GSL's dark zinc palette + `#22c55e`
+  green accent (Fluency sits in the GROW nav group). Tailwind classes, no lucide, no TypeScript — per
+  GSL constraints.
+
+**Files touched:**
+- **NEW** `src/SpeakMode.jsx` — the Speak component (default export `SpeakMode`), imports
+  `PREP_QUESTIONS` from `./data/preplabQuestions.js`. Read-only over the bank; content untouched.
+- `src/Fluency.jsx` — additive only: `import SpeakMode`, added `{ id: "speak", label: "Speak", tag:
+  "SPOKEN" }` to `FLUENCY_MODULES`, added `"speak"` to the SKILL nav group, added
+  `{activeModule === "speak" && <SpeakMode />}` render branch. No existing mode, route, hash, or key
+  changed.
+
+**New localStorage key:** `gsl-speak-history` — `{ [questionId]: true }` map of fully-drilled questions
+(all 4 tiers completed). Does not collide with existing keys (`gsl-preplab-history`,
+`gsl-concepts-mastery`, `genai_drill_best_*`, `genai_visited_fluency`, etc.).
+
+**Fallback behavior:** where the Web Speech API is unavailable (Firefox, iOS Safari — detected on mount)
+`speechSupported` flips to false: the mic controls are hidden, an amber notice explains why, and the
+transcript box becomes a textarea for a timed think-then-type flow. The 4-tier timer + self-check +
+model-answer comparison all still work — only voice capture degrades. Identical to MSL's fallback.
+
+**Verification:** esbuild-parse clean — `OK src/SpeakMode.jsx`, `OK src/Fluency.jsx`.
+
+**Deferred / notes:**
+- Speak does not yet respect PrepLab's `gated` flag — all 591 questions are drillable regardless of
+  access code. Consistent with the sibling Fluency modes (MockInterview, Timed Drills) which are also
+  ungated. If Speak should honor gating later, filter `PREP_QUESTIONS` by `user`/access state the same
+  way `ExamMode` does.
+- No PostHog event on drill completion (sibling Fluency modes are also uninstrumented). Add a
+  `speak_drill_completed` event if drill funnel data is wanted.
+- Pushback is generic-derived, not hand-authored per question. If per-question pushbacks are desired
+  later, add a `pushback` field to `PREP_QUESTIONS` (do not do this inside P0.1 — bank content is
+  read-only here).
+
+---
+
+## P0.2 pilot — Retrieval L2 case-chain (executed 2026-07-03)
+
+**What this was.** A single fully-authored L2 case chain for the **Retrieval** domain, plus the
+reusable **schema** and **renderer** the other domains (Agents / Eval / Production / Foundations)
+will be mass-produced against. GSL's existing labs diagnose **one** failure at a time; an L2 chain
+is a **multi-step narrative** where each correct diagnosis resolves the current symptom and
+**surfaces the next latent one**, forcing layered senior/staff diagnosis. Pilot only — one domain,
+one chain — to lock the contract before scaling.
+
+**Schema reused from MSL.** Mirrors MSL's Incident Room:
+`src/data/drills/caseChains.js` (data shape) + `src/tabs/IncidentRoomTab.jsx` (walk-through
+renderer: present step → pick → reveal correct diagnosis + causal `finding` → advance).
+GSL's one deliberate extension is a per-step **`consequence`** field — the connective tissue that
+makes it an L2 *chain* rather than a bag of independent MCQs (resolving step N exposes symptom N+1).
+
+**The GSL case-chain schema (author every future chain to this — it is documented in the header of `src/data/caseChains.js`):**
+```
+{ id, domain, subtopic, level:"senior"|"staff", type:"casechain", title,
+  context: string[],                       // system + numbers + top-level symptom
+  steps: [ {
+      symptom,                              // this layer's surfaced problem
+      evidence: string[],                   // metrics / traces to reason over
+      question,
+      options: [{ id, text }],              // 3–4 candidate diagnoses (one correct)
+      correct,                              // id of the right option
+      finding,                              // first-principles causal WHY
+      whatsTested, antiPattern, seniorFraming,
+      consequence                           // fixing this → next symptom (null on last step)
+  } ],
+  diagnosis, explanation, fix, source }
+```
+Public accessor `getCaseChains(domain)` keeps the renderer decoupled — future domains register
+their chains in the same array and filter by `domain`, no component changes.
+
+**The pilot chain (`chain-rag-recall-answer-quality`, staff, 4 layers):**
+1. **recall 0.93 but 61% answer quality** → precision/context-noise is the leak, not recall
+   (adding recall makes it worse). → fixing precision via a cross-encoder reranker + trimmed context…
+2. …**breaks multi-hop** — a single dense query can't serve two information needs; aggressive top-4
+   drops the second entity. → fixing it via query decomposition / per-entity budgets…
+3. …**exposes version-blindness** — semantic relevance is recency-blind, so stale near-duplicate
+   chunks win ties; `effective_date` metadata is present but unread. → fixing via bitemporal
+   metadata-aware reranking…
+4. …**exposes the missing abstention layer** — no retrieval-confidence gate + no grounding check, so
+   unanswerable queries produce confident fabrications. Close the loop with a calibrated score gate +
+   faithfulness verification ("I don't know" as a first-class output).
+Debrief: `diagnosis` / `explanation` (how layers compound) / `fix` (ordered remediation).
+
+**Renderer location.** `src/RetrievalCaseChains.jsx` (default export `RetrievalCaseChains`,
+prop `domain="retrieval"`). Mirrors IncidentRoomTab in GSL's idiom: destructured hooks, Tailwind
+`zinc-*` + `var(--gal-build)` / `var(--surface-2)` / `var(--border)` tokens, inline SVG only, no
+lucide, no TypeScript. Collapsible chain card → context → per-step (symptom → evidence → 3–4 options →
+pick → reveal `finding` + whatsTested/antiPattern/seniorFraming → `consequence`) → completion debrief.
+
+**Surfaced additively** in `src/Retrieval.jsx` as a new **"Case Chains" (L2 · multi-step)** section
+between "The Lab" and the tradeoff card. Static import of `RetrievalCaseChains` (RetrievalHub is
+itself lazy-loaded by App.jsx). **No routes / hashes / nav ids / existing localStorage changed.**
+
+**New localStorage key:** `gsl-casechain-history` — shape `{ [chainId]: { completed: true, at } }`.
+No collision with existing `gsl-*` keys (`gsl-preplab-history`, `gsl-concepts-mastery`,
+`gsl-rag-done`, `gsl-tracks-v1`, `gsl-speak-history`, etc.).
+
+**Files touched.**
+- NEW `src/data/caseChains.js` — schema (documented in header) + 1 Retrieval chain + `getCaseChains()`.
+- NEW `src/RetrievalCaseChains.jsx` — the walk-through renderer.
+- EDIT `src/Retrieval.jsx` — import + additive "Case Chains" section (nothing removed).
+
+**Verification.** esbuild-parse clean — `OK src/data/caseChains.js`, `OK src/RetrievalCaseChains.jsx`,
+`OK src/Retrieval.jsx`. No runtime (Mac-only build) — verified by parse + review.
+
+**PostHog events (new):** `casechain_view`, `casechain_open`, `casechain_pick`, `casechain_reveal`,
+`casechain_complete` (via the existing `track()` wrapper — env-gated, no-op without key).
+
+**Mass-produce pass (next) — what it entails.** The contract is now fixed, so scaling is content, not
+plumbing:
+1. **Author 1–2 chains per remaining domain** to `RETRIEVAL_CASE_CHAINS`'s sibling arrays in
+   `src/data/caseChains.js` (or split per-domain files that re-export into one registry), each with
+   `domain` set to `agents` / `eval` / `production` / `foundations`. Candidate chains:
+   - **Agents:** tool-call succeeds but wrong tool → fix routing → now loops/no-termination →
+     fix loop guard → now context-window blowup from accumulated observations → summarisation/memory.
+   - **Eval:** LLM-as-judge agrees with humans offline → ships → judge is position-biased →
+     fix ordering → now judge rewards verbosity → rubric anchoring → now offline/online eval gap.
+   - **Production:** p99 latency spike → fix batching → now cost blows up → semantic caching →
+     now cache serves stale/wrong answers → invalidation + retrieval-freshness.
+   - **Foundations:** tokenizer/context-window → attention/lost-in-the-middle → quantization quality
+     regression → serving tradeoffs.
+2. **Surface per domain** — each hub (`AgentsHub.jsx`, `EvaluationHub.jsx`, `ProductionHub.jsx`,
+   `FoundationsHub.jsx`) adds the same additive "Case Chains" section, rendering
+   `<RetrievalCaseChains domain="..." />` (rename the component to `CaseChains` at that point — one
+   generic renderer, N domains). No new localStorage key; `gsl-casechain-history` is domain-agnostic.
+3. **Optional wiring:** count completed chains into `readiness.js` (a new signal), add a My Tracks
+   `casechain` item type, and a Progress.jsx tile. All additive, none required for the content pass.
+4. **Depth bar:** every step must have a real first-principles `finding` + a plausible distractor set +
+   a `consequence` that genuinely surfaces the next layer. Reject any "chain" that is really N unrelated
+   MCQs — the layered dependency IS the product.
